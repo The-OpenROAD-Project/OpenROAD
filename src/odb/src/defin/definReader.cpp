@@ -1923,7 +1923,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
 
-  _db->triggerPostReadDef(_block);
+  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
 
   return chip;
 }
@@ -1975,7 +1975,7 @@ dbBlock* definReader::createBlock(dbBlock* parent,
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
 
-  _db->triggerPostReadDef(_block);
+  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
 
   return _block;
 }

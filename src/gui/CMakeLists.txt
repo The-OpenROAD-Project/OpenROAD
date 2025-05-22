@@ -56,6 +56,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/drcWidget.cpp
     src/helpWidget.cpp
     src/ruler.cpp
+    src/label.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
     src/heatMapPinDensity.cpp
@@ -99,7 +100,7 @@ else()
   )
   target_include_directories(gui
     PRIVATE
-      ${OPENROAD_HOME}/include
+      ${OPENROAD_HOME}/third-party/gif-h
   )
 endif()
 
@@ -109,6 +110,7 @@ target_include_directories(gui
   PRIVATE
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
+    ${OPENROAD_HOME}/third-party/gif-h
 )
 
 add_subdirectory(test)

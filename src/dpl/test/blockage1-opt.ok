@@ -36,9 +36,9 @@ Detailed placement improvement.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator displacement called 20 times.
 [INFO DPL-0335] Generator displacement, Cumulative attempts 20, swaps 0, moves    17 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 5.919500e+04, Scratch cost 5.681500e+04, Incremental cost 5.693500e+04, Mismatch? Y
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 5.919500e+04, Scratch cost 5.681500e+04, Incremental cost 5.681500e+04, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 5.681500e+04.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 3.82 percent.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 4.02 percent.
 [INFO DPL-0332] End of pass, Generator displacement called 20 times.
 [INFO DPL-0335] Generator displacement, Cumulative attempts 40, swaps 0, moves    32 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 5.681500e+04, Scratch cost 5.681500e+04, Incremental cost 5.681500e+04, Mismatch? N
@@ -56,8 +56,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL               59.3 u
-Final HPWL                  57.0 u
-Delta HPWL                  -4.0 %
+Original HPWL               59.3 u (      41.3,       18.1)
+Final HPWL                  57.0 u (      41.7,       15.2)
+Delta HPWL                  -4.0 % (       1.1,      -15.7)
 
 No differences found.

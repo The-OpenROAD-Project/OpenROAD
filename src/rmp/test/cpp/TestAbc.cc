@@ -193,6 +193,54 @@ class AbcTestSky130 : public AbcTest
   }
 };
 
+class AbcTestAsap7 : public AbcTest
+{
+  void SetUp() override
+  {
+    db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
+                                                     &odb::dbDatabase::destroy);
+    std::call_once(init_sta_flag, []() {
+      sta::initSta();
+      abc::Abc_Start();
+    });
+    db_->setLogger(&logger_);
+    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
+    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
+
+    std::vector<std::string> liberty_paths
+        = {"./asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+           "./asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+           "./asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+           "./asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+           "./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz"};
+
+    for (const std::string& liberty_path : liberty_paths) {
+      auto path = std::filesystem::canonical(liberty_path);
+      library_ = sta_->readLiberty(path.string().c_str(),
+                                   sta_->findCorner("default"),
+                                   /*min_max=*/sta::MinMaxAll::all(),
+                                   /*infer_latches=*/false);
+    }
+
+    odb::lefin lef_reader(
+        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+
+    auto tech_lef
+        = std::filesystem::canonical("./asap7/asap7_tech_1x_201209.lef");
+    auto stdcell_lef
+        = std::filesystem::canonical("./asap7/asap7sc7p5t_28_R_1x_220121a.lef");
+    odb::dbTech* tech
+        = lef_reader.createTech("asap7", tech_lef.string().c_str());
+    odb::dbLib* lib
+        = lef_reader.createLib(tech, "asap7", stdcell_lef.string().c_str());
+
+    sta_->postReadLef(/*tech=*/nullptr, lib);
+
+    sta::Units* units = library_->units();
+    power_unit_ = units->powerUnit();
+  }
+};
+
 TEST_F(AbcTest, CellPropertiesMatchOpenSta)
 {
   AbcLibraryFactory factory(&logger_);
@@ -234,6 +282,13 @@ TEST_F(AbcTest, DoesNotContainPhysicalCells)
 
   EXPECT_THAT(abc_cells, Not(Contains("ANTENNA_X1")));
   EXPECT_THAT(abc_cells, Not(Contains("FILLCELL_X1")));
+}
+
+TEST_F(AbcTestAsap7, ImportsWithoutErrors)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  EXPECT_NO_THROW(factory.Build());
 }
 
 TEST_F(AbcTest, DoesNotContainSequentialCells)
@@ -551,7 +606,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
-  DelayOptimizationStrategy strat(sta_.get());
+  DelayOptimizationStrategy strat;
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
       = strat.Optimize(mapped_abc_network.get(), abc_library, &logger_);
 
@@ -627,8 +682,10 @@ TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
 {
   LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
 
+  UniqueName name_generator;
   ZeroSlackStrategy zero_slack;
-  EXPECT_NO_THROW(zero_slack.OptimizeDesign(sta_.get(), &logger_));
+  EXPECT_NO_THROW(
+      zero_slack.OptimizeDesign(sta_.get(), name_generator, &logger_));
 }
 
 TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
@@ -647,7 +704,8 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
 
   std::vector<sta::Net*> primary_inputs = {};
   std::vector<sta::Net*> primary_outputs = {flop_net};
-  std::unordered_set<sta::Instance*> cut_instances = {flop_input_instance};
+  sta::InstanceSet cut_instances(network);
+  cut_instances.insert(flop_input_instance);
   LogicCut cut(primary_inputs, primary_outputs, cut_instances);
 
   // Create abc network that matches the underlying LogicCut

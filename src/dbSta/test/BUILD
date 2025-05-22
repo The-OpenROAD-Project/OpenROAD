@@ -5,6 +5,7 @@ load("//test:regression.bzl", "regression_test")
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "block_sta1",
+    "clock_pin",
     "constant1",
     "find_clks1",
     "find_clks2",
@@ -131,7 +132,7 @@ filegroup(
 [
     filegroup(
         name = test_name + "_resources",
-        data = [":regression_resources"] + glob(
+        srcs = [":regression_resources"] + glob(
             [
                 test_name + ".*",
             ],

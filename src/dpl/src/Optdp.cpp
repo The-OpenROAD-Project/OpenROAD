@@ -11,6 +11,38 @@
 #include "optimization/detailed_manager.h"
 
 namespace dpl {
+namespace {
+void reportHPWL(utl::Logger* logger,
+                const double dbu_micron,
+                const int64_t hpwlBefore,
+                const int64_t hpwlAfter,
+                const int64_t hpwlBefore_x,
+                const int64_t hpwlAfter_x,
+                const int64_t hpwlBefore_y,
+                const int64_t hpwlAfter_y)
+{
+  logger->report("Detailed Improvement Results");
+  logger->report("------------------------------------------");
+  logger->report("Original HPWL         {:10.1f} u ({:10.1f}, {:10.1f})",
+                 hpwlBefore / dbu_micron,
+                 hpwlBefore_x / dbu_micron,
+                 hpwlBefore_y / dbu_micron);
+  logger->report("Final HPWL            {:10.1f} u ({:10.1f}, {:10.1f})",
+                 hpwlAfter / dbu_micron,
+                 hpwlAfter_x / dbu_micron,
+                 hpwlAfter_y / dbu_micron);
+  const double hpwl_delta = (hpwlAfter - hpwlBefore) / (double) hpwlBefore;
+  const double hpwl_delta_x
+      = (hpwlAfter_x - hpwlBefore_x) / (double) hpwlBefore_x;
+  const double hpwl_delta_y
+      = (hpwlAfter_y - hpwlBefore_y) / (double) hpwlBefore_y;
+  logger->report("Delta HPWL            {:10.1f} % ({:10.1f}, {:10.1f})",
+                 hpwl_delta * 100.0,
+                 hpwl_delta_x * 100.0,
+                 hpwl_delta_y * 100.0);
+  logger->report("");
+}
+}  // namespace
 
 ////////////////////////////////////////////////////////////////
 void Opendp::improvePlacement(const int seed,
@@ -20,7 +52,9 @@ void Opendp::improvePlacement(const int seed,
   logger_->report("Detailed placement improvement.");
 
   odb::WireLengthEvaluator eval(db_->getChip()->getBlock());
-  const int64_t hpwlBefore = eval.hpwl();
+  int64_t hpwlBefore_x = 0;
+  int64_t hpwlBefore_y = 0;
+  const int64_t hpwlBefore = eval.hpwl(hpwlBefore_x, hpwlBefore_y);
 
   if (hpwlBefore == 0) {
     logger_->report("Skipping detailed improvement since hpwl is zero.");
@@ -83,18 +117,18 @@ void Opendp::improvePlacement(const int seed,
   updateDbInstLocations();
 
   // Get final hpwl.
-  const int64_t hpwlAfter = eval.hpwl();
-
+  int64_t hpwlAfter_x = 0;
+  int64_t hpwlAfter_y = 0;
+  const int64_t hpwlAfter = eval.hpwl(hpwlAfter_x, hpwlAfter_y);
   const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-
-  // Statistics.
-  logger_->report("Detailed Improvement Results");
-  logger_->report("------------------------------------------");
-  logger_->report("Original HPWL         {:10.1f} u", hpwlBefore / dbu_micron);
-  logger_->report("Final HPWL            {:10.1f} u", hpwlAfter / dbu_micron);
-  const double hpwl_delta = (hpwlAfter - hpwlBefore) / (double) hpwlBefore;
-  logger_->report("Delta HPWL            {:10.1f} %", hpwl_delta * 100);
-  logger_->report("");
+  reportHPWL(logger_,
+             dbu_micron,
+             hpwlBefore,
+             hpwlAfter,
+             hpwlBefore_x,
+             hpwlAfter_x,
+             hpwlBefore_y,
+             hpwlAfter_y);
 }
 
 ////////////////////////////////////////////////////////////////

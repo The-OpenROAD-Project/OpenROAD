@@ -149,7 +149,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
-  void saveGuides();
+  void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
   void readSegments(const char* file_name);
   bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
@@ -456,8 +456,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
-  // TODO: remove this flag after support incremental updates on DRT PA
-  bool skip_drt_aps_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

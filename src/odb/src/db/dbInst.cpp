@@ -423,6 +423,11 @@ void dbInst::setOrigin(int x, int y)
     block->_journal->endAction();
   }
 
+  for (auto iterm_idx : inst->_iterms) {
+    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
+    iterm->clearPrefAccessPoints();
+  }
+
   block->_flags._valid_bbox = 0;
   for (auto callback : block->_callbacks) {
     callback->inDbPostMoveInst(this);
@@ -509,6 +514,11 @@ void dbInst::setOrient(dbOrientType orient)
                orient.getValue());
     block->_journal->updateField(
         this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+  }
+
+  for (auto iterm_idx : inst->_iterms) {
+    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
+    iterm->clearPrefAccessPoints();
   }
 
   block->_flags._valid_bbox = 0;
@@ -1141,6 +1151,11 @@ bool dbInst::swapMaster(dbMaster* new_master_)
                                  newMasterName,
                                  this->getConstName());
     return false;
+  }
+
+  for (auto iterm_idx : inst->_iterms) {
+    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
+    iterm->clearPrefAccessPoints();
   }
 
   // remove reference to inst_hdr

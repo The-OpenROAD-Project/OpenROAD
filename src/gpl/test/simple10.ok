@@ -36,12 +36,12 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0026] Ideal bin count:              12719687
 [INFO GPL-0027] Total bin area:             63659493.251 um^2
 [INFO GPL-0028] Bin count (X, Y):        2048 ,   2048
-[INFO GPL-0029] Bin size (W * H):       3.897 *  3.896 um
+[INFO GPL-0029] Bin size (W * H):       3.896 *  3.895 um
 [INFO GPL-0030] Number of bins:                4194304
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.0000 |  2.065415e+06 |   +0.00% |  8.03e-23 |      
+        1 |   0.0000 |  2.065415e+06 |   +0.00% |  8.04e-23 |      
 [INFO GPL-1001] Finished with Overflow: 0.000000
 [INFO GPL-1002] Placed Cell Area                3.7536
 [INFO GPL-1003] Available Free Area         63659439.4496

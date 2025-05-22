@@ -1155,23 +1155,6 @@ void PlacerBase::initInstsForUnusableSites()
     }
   }
 
-  // fill fixed instances' bbox
-  for (auto& inst : pbCommon_->insts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-    std::pair<int, int> pairX = getMinMaxIdx(
-        inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
-    std::pair<int, int> pairY = getMinMaxIdx(
-        inst->ly(), inst->uy(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
-    for (int i = pairX.first; i < pairX.second; i++) {
-      for (int j = pairY.first; j < pairY.second; j++) {
-        siteGrid[j * siteCountX + i] = FixedInst;
-      }
-    }
-  }
-
   // In the case of top level power domain i.e no group,
   // mark all other power domains as empty
   if (group_ == nullptr) {
@@ -1200,6 +1183,23 @@ void PlacerBase::initInstsForUnusableSites()
             }
           }
         }
+      }
+    }
+  }
+
+  // fill fixed instances' bbox
+  for (auto& inst : pbCommon_->insts()) {
+    if (!inst->isFixed()) {
+      continue;
+    }
+    std::pair<int, int> pairX = getMinMaxIdx(
+        inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
+    std::pair<int, int> pairY = getMinMaxIdx(
+        inst->ly(), inst->uy(), die_.coreLy(), siteSizeY_, 0, siteCountY);
+
+    for (int i = pairX.first; i < pairX.second; i++) {
+      for (int j = pairY.first; j < pairY.second; j++) {
+        siteGrid[j * siteCountX + i] = FixedInst;
       }
     }
   }

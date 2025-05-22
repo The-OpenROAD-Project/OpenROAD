@@ -217,7 +217,7 @@ class RepairDesign : dbStaState
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
-  PreChecks* pre_checks_ = nullptr;
+  std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;
   int dbu_ = 0;
   double initial_design_area_ = 0;

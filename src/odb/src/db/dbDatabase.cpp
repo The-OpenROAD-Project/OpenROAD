@@ -693,11 +693,15 @@ void dbDatabase::triggerPostReadLef(dbTech* tech, dbLib* library)
   }
 }
 
-void dbDatabase::triggerPostReadDef(dbBlock* block)
+void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   for (dbDatabaseObserver* observer : db->observers_) {
-    observer->postReadDef(block);
+    if (floorplan) {
+      observer->postReadFloorplanDef(block);
+    } else {
+      observer->postReadDef(block);
+    }
   }
 }
 

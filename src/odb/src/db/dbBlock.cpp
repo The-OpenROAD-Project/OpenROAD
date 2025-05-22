@@ -411,6 +411,7 @@ _dbBlock::~_dbBlock()
   if (_name) {
     free((void*) _name);
   }
+  free(_corner_name_list);
 
   delete _bterm_tbl;
   delete _iterm_tbl;

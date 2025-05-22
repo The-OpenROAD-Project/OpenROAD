@@ -27,7 +27,7 @@
 [INFO GPL-0026] Ideal bin count:                 95622
 [INFO GPL-0027] Total bin area:               9958.417 um^2
 [INFO GPL-0028] Bin count (X, Y):         256 ,    256
-[INFO GPL-0029] Bin size (W * H):       0.391 *  0.390 um
+[INFO GPL-0029] Bin size (W * H):       0.390 *  0.389 um
 [INFO GPL-0030] Number of bins:                  65536
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group

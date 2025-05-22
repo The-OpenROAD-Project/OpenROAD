@@ -11,7 +11,7 @@ namespace gpl {
 class FFT
 {
  public:
-  FFT(int binCntX, int binCntY, int binSizeX, int binSizeY);
+  FFT(int binCntX, int binCntY, float binSizeX, float binSizeY);
   ~FFT();
 
   // input func
@@ -50,8 +50,8 @@ class FFT
 
   int binCntX_ = 0;
   int binCntY_ = 0;
-  int binSizeX_ = 0;
-  int binSizeY_ = 0;
+  float binSizeX_ = 0;
+  float binSizeY_ = 0;
 };
 
 //

@@ -23,87 +23,40 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPL-0303] Running algorithm for independent set matching.
 [INFO DPL-0300] Set matching objective is wirelength.
-[INFO DPL-0301] Pass   1 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   2 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   3 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   4 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   5 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   6 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   7 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   8 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass   9 of matching; objective is 0.000000e+00.
-[INFO DPL-0301] Pass  10 of matching; objective is 0.000000e+00.
-[INFO DPL-0302] End of matching; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   3 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   4 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   5 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   6 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   7 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   8 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass   9 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0306] Pass  10 of global swaps; hpwl is 0.000000e+00.
-[INFO DPL-0307] End of global swaps; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   3 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   4 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   5 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   6 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   7 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   8 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass   9 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0308] Pass  10 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPL-0309] End of vertical swaps; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   2 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   3 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   4 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   5 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   6 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   7 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   8 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass   9 of reordering; objective is 0.000000e+00.
-[INFO DPL-0304] Pass  10 of reordering; objective is 0.000000e+00.
-[INFO DPL-0305] End of reordering; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using displacement generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator displacement called 100 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 100, swaps 0, moves    42 since last reset.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 100, swaps 3, moves    45 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 0.000000e+00.
 [INFO DPL-0327] Pass   1 of random improver; improvement in cost is -nan percent.
 [INFO DPL-0332] End of pass, Generator displacement called 100 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 200, swaps 0, moves    77 since last reset.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 200, swaps 3, moves    91 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 0.000000e+00.
 [INFO DPL-0327] Pass   2 of random improver; improvement in cost is -nan percent.
 [INFO DPL-0332] End of pass, Generator displacement called 100 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 300, swaps 2, moves   117 since last reset.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 300, swaps 3, moves   124 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 0.000000e+00.
 [INFO DPL-0327] Pass   3 of random improver; improvement in cost is -nan percent.
 [INFO DPL-0332] End of pass, Generator displacement called 100 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 400, swaps 2, moves   158 since last reset.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 400, swaps 3, moves   169 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 0.000000e+00.
 [INFO DPL-0327] Pass   4 of random improver; improvement in cost is -nan percent.
 [INFO DPL-0332] End of pass, Generator displacement called 100 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 500, swaps 3, moves   188 since last reset.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 500, swaps 4, moves   208 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 0.000000e+00.
 [INFO DPL-0327] Pass   5 of random improver; improvement in cost is -nan percent.
 [INFO DPL-0328] End of random improver; improvement is -nan percent.
 [INFO DPL-0380] Cell flipping.
-[INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 0 cell flips.
-[INFO DPL-0384] End of flipping; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -111,8 +64,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL                0.0 u
-Final HPWL                   0.0 u
-Delta HPWL                   0.0 %
+Original HPWL                0.0 u (       0.0,        0.0)
+Final HPWL                   0.0 u (       0.0,        0.0)
+Delta HPWL                   0.0 % (       0.0,        0.0)
 
 No differences found.

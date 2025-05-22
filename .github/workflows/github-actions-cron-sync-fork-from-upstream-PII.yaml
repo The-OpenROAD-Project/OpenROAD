@@ -16,7 +16,7 @@ on:
 jobs:
   Sync-Branch-From-Upstream:
     name: Automatic sync 'master' from The-OpenROAD-Project/OpenROAD
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
 
     # Only allow one action to run at a time.
     concurrency: sync-branch-from-upstream

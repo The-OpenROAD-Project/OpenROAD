@@ -4,6 +4,7 @@
 %{
 #include "rmp/Restructure.h"
 #include "rmp/blif.h"
+#include "sta/Corner.hh"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
@@ -23,6 +24,7 @@ using ord::getRestructure;
 using ord::getOpenRoad;
 using odb::dbInst;
 using sta::LibertyPort;
+using sta::Corner;
 %}
 
 %include "../../Exception-py.i"

@@ -602,7 +602,7 @@ void dbMaster::setFrozen()
   }
 }
 
-void dbMaster::setSequential(uint v)
+void dbMaster::setSequential(bool v)
 {
   _dbMaster* master = (_dbMaster*) this;
   master->_flags._sequential = v;
@@ -611,7 +611,7 @@ void dbMaster::setSequential(uint v)
 bool dbMaster::isSequential()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._sequential > 0 ? true : false;
+  return master->_flags._sequential;
 }
 void dbMaster::setMark(uint mark)
 {

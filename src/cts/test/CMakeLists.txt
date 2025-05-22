@@ -14,6 +14,9 @@ or_integration_tests(
     check_buffers
     check_buffers_blockages
     check_buffers_blockages_merge
+    check_buffer_inference1
+    check_buffer_inference2
+    check_buffer_inference3
     check_charBuf
     check_max_fanout1
     check_max_fanout2

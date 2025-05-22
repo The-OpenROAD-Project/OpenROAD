@@ -103,6 +103,13 @@ using rsz::ParasiticsSrc;
   }
 }
 
+%typemap(in) std::vector<rsz::MoveType> {
+  const char* str = Tcl_GetString($input);
+  $1 = Resizer::parseMoveSequence(std::string(str));
+}
+
+
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ functions visible as TCL functions.
@@ -510,6 +517,7 @@ repair_setup(double setup_margin,
              int max_repairs_per_pass,
              bool match_cell_footprint,
              bool verbose,
+             std::vector<rsz::MoveType> sequence,
              bool skip_pin_swap,
              bool skip_gate_cloning,
              bool skip_buffering,
@@ -521,6 +529,7 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_repairs_per_pass,
                        match_cell_footprint, verbose,
+                       sequence,
                        skip_pin_swap, skip_gate_cloning,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);

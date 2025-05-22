@@ -62,11 +62,8 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _csVV.reserve(1024);
   _csNV.reserve(1024);
   _shortV.reserve(1024);
-  _cut_end_extMin = 1;
-  _need_short_wire_id = 0;
+  _need_short_wire_id = false;
   _first_for_clear = nullptr;
-  _preserveSWire = false;
-  _swireNetCnt = 0;
 }
 
 tmg_conn::~tmg_conn() = default;
@@ -78,11 +75,7 @@ int tmg_conn::ptDist(const int fr, const int to) const
 
 tmg_rcpt* tmg_conn::allocPt(int x, int y, dbTechLayer* layer)
 {
-  tmg_rcpt* pt = &_ptV.emplace_back();
-  pt->_x = x;
-  pt->_y = y;
-  pt->_layer = layer;
-  return pt;
+  return &_ptV.emplace_back(x, y, layer);
 }
 
 void tmg_conn::addRc(const dbShape& s,
@@ -180,9 +173,7 @@ void tmg_conn::addITerm(dbITerm* iterm)
   _csVV.emplace_back();
   _csNV.emplace_back();
 
-  tmg_rcterm& x = _termV.emplace_back();
-  x._iterm = iterm;
-  x._bterm = nullptr;
+  tmg_rcterm& x = _termV.emplace_back(iterm);
   x._pt = nullptr;
   x._first_pt = nullptr;
 }
@@ -192,19 +183,14 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
   _csVV.emplace_back();
   _csNV.emplace_back();
 
-  tmg_rcterm& x = _termV.emplace_back();
-  x._iterm = nullptr;
-  x._bterm = bterm;
+  tmg_rcterm& x = _termV.emplace_back(bterm);
   x._pt = nullptr;
   x._first_pt = nullptr;
 }
 
 void tmg_conn::addShort(const int i0, const int i1)
 {
-  tmg_rcshort& x = _shortV.emplace_back();
-  x._i0 = i0;
-  x._i1 = i1;
-  x._skip = false;
+  _shortV.emplace_back(i0, i1);
   if (_ptV[i0]._fre) {
     _ptV[i0]._fre = false;
   } else {
@@ -319,13 +305,13 @@ void tmg_conn::loadWire(dbWire* wire)
 }
 
 void tmg_conn::splitBySj(const int j,
-                         const tmg_rc_sh* sj,
                          const int rt,
                          const int sjxMin,
                          const int sjyMin,
                          const int sjxMax,
                          const int sjyMax)
 {
+  tmg_rc_sh* sj = &(_rcV[j]._shape);
   const int isVia = sj->isVia() ? 1 : 0;
   _search->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   int klast = -1;
@@ -338,6 +324,7 @@ void tmg_conn::splitBySj(const int j,
         || _rcV[j]._from_idx == _rcV[k]._to_idx) {
       continue;
     }
+    sj = &(_rcV[j]._shape);
     if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
@@ -427,7 +414,6 @@ void tmg_conn::splitTtop()
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
           splitBySj(j,
-                    sj,
                     layb->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
@@ -435,7 +421,6 @@ void tmg_conn::splitTtop()
                     via_y + b->yMax());
         } else if (b->getTechLayer() == layt) {
           splitBySj(j,
-                    sj,
                     layt->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
@@ -445,7 +430,7 @@ void tmg_conn::splitTtop()
       }
     } else {
       const int rt = sj->getTechLayer()->getRoutingLevel();
-      splitBySj(j, sj, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
+      splitBySj(j, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
     }
   }
 }
@@ -1337,13 +1322,7 @@ void tmg_conn::analyzeNet(dbNet* net)
     findConnections();
     bool noConvert = false;
     if (_hasSWire) {
-      if (_preserveSWire) {
-        net->setDoNotTouch(true);
-        noConvert = true;
-        _swireNetCnt++;
-      } else {
-        net->destroySWires();
-      }
+      net->destroySWires();
     }
     relocateShorts();
     treeReorder(noConvert);
@@ -1441,7 +1420,7 @@ bool tmg_conn::checkConnected()
 void tmg_conn::treeReorder(const bool no_convert)
 {
   _connected = true;
-  _need_short_wire_id = 0;
+  _need_short_wire_id = false;
   if (_ptV.empty()) {
     return;
   }
@@ -1660,7 +1639,7 @@ void tmg_conn::addToWire(const int fr,
       return;
     }
     if (_ptV[fr]._dbwire_id < 0) {
-      ++_need_short_wire_id;
+      _need_short_wire_id = true;
       return;
     }
     _ptV[to]._dbwire_id = _ptV[fr]._dbwire_id;
@@ -1792,7 +1771,7 @@ void tmg_conn::addToWire(const int fr,
 
   if (_need_short_wire_id) {
     copyWireIdToVisitedShorts(fr);
-    _need_short_wire_id = 0;
+    _need_short_wire_id = false;
   }
 
   int to_id = -1;

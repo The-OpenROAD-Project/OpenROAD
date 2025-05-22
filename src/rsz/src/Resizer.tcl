@@ -519,6 +519,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-slack_margin slack_margin]\
                                         [-libraries libs]\
                                         [-allow_setup_violations]\
+                                        [-sequence move_string]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_buffering]\
@@ -535,7 +536,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
-            -libraries -max_utilization -max_buffer_percent \
+            -libraries -max_utilization -max_buffer_percent -sequence \
             -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
            -skip_buffering -skip_buffer_removal -skip_last_gasp -match_cell_footprint \
@@ -561,6 +562,12 @@ proc repair_timing { args } {
   } else {
     set setup_margin [rsz::parse_time_margin_arg "-setup_margin" keys]
     set hold_margin [rsz::parse_time_margin_arg "-hold_margin" keys]
+  }
+
+  if { [info exists keys(-sequence)] } {
+    set sequence $keys(-sequence)
+  } else {
+    set sequence ""
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
@@ -624,6 +631,7 @@ proc repair_timing { args } {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_repairs_per_pass $match_cell_footprint $verbose \
+        $sequence \
         $skip_pin_swap $skip_gate_cloning $skip_buffering \
         $skip_buffer_removal $skip_last_gasp]
     }

@@ -18,8 +18,8 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":openroad_swig",
     ":openroad_tcl",
     #Utility
-    "//src/utl:utl_swig",
-    "//src/utl:utl_tcl",
+    "//src/utl:swig",
+    "//src/utl:tcl",
     #InitFp
     ":init_floorplan_swig",
     ":init_floorplan_tcl",
@@ -30,23 +30,23 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":upf_swig",
     ":upf_tcl",
     #DbSTA
-    "//src/dbSta:db_sta_tcl",
-    "//src/dbSta:dbsta_swig",
+    "//src/dbSta:tcl",
+    "//src/dbSta:swig",
     #ioPlacer
     ":ioplacer_tcl",
     ":ioplacer_swig",
     #Resizer
-    "//src/rsz:resizer_swig",
-    "//src/rsz:resizer_tcl",
+    "//src/rsz:swig",
+    "//src/rsz:tcl",
     #OpenDP
-    "//src/dpl:opendp_swig",
-    "//src/dpl:opendp_tcl",
+    "//src/dpl:swig",
+    "//src/dpl:tcl",
     #finale
     ":finale_swig",
     ":finale_tcl",
     #antenna_checker
-    "//src/ant:ant_swig",
-    "//src/ant:ant_tcl",
+    "//src/ant:swig",
+    "//src/ant:tcl",
     #FastRoute
     "//src/grt:fastroute_swig",
     "//src/grt:fastroute_tcl",
@@ -54,8 +54,8 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":replace_swig",
     ":replace_tcl",
     #TritonCTS
-    "//src/cts:triton_cts_tcl",
-    "//src/cts:triton_cts_swig",
+    "//src/cts:tcl",
+    "//src/cts:swig",
     #Tapcell
     ":tapcell_swig",
     ":tapcell_tcl",
@@ -81,8 +81,8 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":rmp_swig",
     ":rmp_tcl",
     #STT
-    "//src/stt:stt_swig",
-    "//src/stt:stt_tcl",
+    "//src/stt:swig",
+    "//src/stt:tcl",
     #Distributed
     ":dst_swig",
     ":dst_tcl",

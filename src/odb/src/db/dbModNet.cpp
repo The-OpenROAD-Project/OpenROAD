@@ -296,6 +296,11 @@ dbSet<dbITerm> dbModNet::getITerms()
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
 }
+
+unsigned dbModNet::connectionCount()
+{
+  return (getITerms().size() + getBTerms().size() + getModITerms().size());
+}
 // User Code End dbModNetPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

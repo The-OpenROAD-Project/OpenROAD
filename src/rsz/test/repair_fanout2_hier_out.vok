@@ -28,14 +28,12 @@ module hi_fanout (clk1);
     .net22_i(net22),
     .net13_i(net13),
     .net2_i(net2),
-    .net0(net0),
     .clk1(clk1));
  hi_fanout_child_hi_fanout_inst2 hi_fanout_inst2 (.net73_i(net73),
     .net64_i(net62),
     .net53_i(net53),
     .net45_i(net42),
     .net35_i(net33),
-    .net0(net0),
     .clk1(clk1));
 endmodule
 module hi_fanout_child (net62_i,
@@ -44,7 +42,6 @@ module hi_fanout_child (net62_i,
     net22_i,
     net13_i,
     net2_i,
-    net0,
     clk1);
  input net62_i;
  input net42_i;
@@ -52,7 +49,6 @@ module hi_fanout_child (net62_i,
  input net22_i;
  input net13_i;
  input net2_i;
- input net0;
  input clk1;
 
 
@@ -132,14 +128,12 @@ module hi_fanout_child_hi_fanout_inst2 (net73_i,
     net53_i,
     net45_i,
     net35_i,
-    net0,
     clk1);
  input net73_i;
  input net64_i;
  input net53_i;
  input net45_i;
  input net35_i;
- input net0;
  input clk1;
 
 

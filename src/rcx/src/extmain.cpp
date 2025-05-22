@@ -109,7 +109,19 @@ extMain::extMain()
 }
 extMain::~extMain()
 {
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
+
   delete _modelTable;
+  delete _btermTable;
+  delete _itermTable;
+  delete _nodeTable;
+  delete[] _tmpResTable;
+  delete[] _tmpSumResTable;
+  removeDgContextArray();
+  removeContextArray();
+  cleanCornerTables();
 }
 
 void extMain::initDgContextArray()
@@ -137,7 +149,7 @@ void extMain::initDgContextArray()
 
 void extMain::removeDgContextArray()
 {
-  if (!_dgContextPlanes || !_dgContextArray) {
+  if (!_dgContextArray) {
     return;
   }
   delete[] _dgContextBaseTrack;
@@ -160,18 +172,35 @@ void extMain::initContextArray()
   if (_ccContextArray) {
     return;
   }
-  uint layerCnt = getExtLayerCnt(_tech);
-  _ccContextArray = new Ath__array1D<int>*[layerCnt + 1];
+  _ccContextPlanes = getExtLayerCnt(_tech);
+  _ccContextArray = new Ath__array1D<int>*[_ccContextPlanes + 1];
   _ccContextArray[0] = nullptr;
   uint ii;
-  for (ii = 1; ii <= layerCnt; ii++) {
+  for (ii = 1; ii <= _ccContextPlanes; ii++) {
     _ccContextArray[ii] = new Ath__array1D<int>(1024);
   }
-  _ccMergedContextArray = new Ath__array1D<int>*[layerCnt + 1];
+  _ccMergedContextArray = new Ath__array1D<int>*[_ccContextPlanes + 1];
   _ccMergedContextArray[0] = nullptr;
-  for (ii = 1; ii <= layerCnt; ii++) {
+  for (ii = 1; ii <= _ccContextPlanes; ii++) {
     _ccMergedContextArray[ii] = new Ath__array1D<int>(1024);
   }
+}
+
+void extMain::removeContextArray()
+{
+  if (!_ccContextArray) {
+    return;
+  }
+
+  for (uint i = 0; i <= _ccContextPlanes; i++) {
+    delete _ccContextArray[i];
+    delete _ccMergedContextArray[i];
+  }
+
+  delete[] _ccContextArray;
+  delete[] _ccMergedContextArray;
+
+  _ccContextArray = nullptr;
 }
 
 uint extMain::getExtLayerCnt(dbTech* tech)

@@ -42,8 +42,6 @@
 [INFO DRT-0033] metal9 shape region query size = 0.
 [INFO DRT-0033] via9 shape region query size = 0.
 [INFO DRT-0033] metal10 shape region query size = 0.
-[WARNING DRT-0088] Exhaustive access point generation for b/disolved_block\/leaf/A (INV_X1) is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for b/disolved_block\/leaf/ZN (INV_X1) is unsatisfactory.
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.

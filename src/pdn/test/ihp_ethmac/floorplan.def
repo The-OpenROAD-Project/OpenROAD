@@ -1,0 +1,1144 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN ethmac ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 0 ) ( 0 822410 ) ( 822410 822410 ) ( 822410 0 ) ;
+ROW ROW_0 CoreSite 4800 7560 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_1 CoreSite 4800 11340 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_2 CoreSite 4800 15120 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_3 CoreSite 4800 18900 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_4 CoreSite 4800 22680 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_5 CoreSite 4800 26460 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_6 CoreSite 4800 30240 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_7 CoreSite 4800 34020 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_8 CoreSite 4800 37800 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_9 CoreSite 4800 41580 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_10 CoreSite 4800 45360 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_11 CoreSite 4800 49140 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_12 CoreSite 4800 52920 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_13 CoreSite 4800 56700 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_14 CoreSite 4800 60480 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_15 CoreSite 4800 64260 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_16 CoreSite 4800 68040 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_17 CoreSite 4800 71820 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_18 CoreSite 4800 75600 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_19 CoreSite 4800 79380 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_20 CoreSite 4800 83160 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_21 CoreSite 4800 86940 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_22 CoreSite 4800 90720 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_23 CoreSite 4800 94500 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_24 CoreSite 4800 98280 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_25 CoreSite 4800 102060 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_26 CoreSite 4800 105840 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_27 CoreSite 4800 109620 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_28 CoreSite 4800 113400 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_29 CoreSite 4800 117180 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_30 CoreSite 4800 120960 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_31 CoreSite 4800 124740 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_32 CoreSite 4800 128520 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_33 CoreSite 4800 132300 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_34 CoreSite 4800 136080 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_35 CoreSite 4800 139860 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_36 CoreSite 4800 143640 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_37 CoreSite 4800 147420 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_38 CoreSite 4800 151200 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_39 CoreSite 4800 154980 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_40 CoreSite 4800 158760 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_41 CoreSite 4800 162540 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_42 CoreSite 4800 166320 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_43 CoreSite 4800 170100 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_44 CoreSite 4800 173880 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_45 CoreSite 4800 177660 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_46 CoreSite 4800 181440 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_47 CoreSite 4800 185220 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_48 CoreSite 4800 189000 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_49 CoreSite 4800 192780 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_50 CoreSite 4800 196560 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_51 CoreSite 4800 200340 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_52 CoreSite 4800 204120 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_53 CoreSite 4800 207900 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_54 CoreSite 4800 211680 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_55 CoreSite 4800 215460 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_56 CoreSite 4800 219240 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_57 CoreSite 4800 223020 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_58 CoreSite 4800 226800 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_59 CoreSite 4800 230580 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_60 CoreSite 4800 234360 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_61 CoreSite 4800 238140 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_62 CoreSite 4800 241920 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_63 CoreSite 4800 245700 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_64 CoreSite 4800 249480 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_65 CoreSite 4800 253260 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_66 CoreSite 4800 257040 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_67 CoreSite 4800 260820 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_68 CoreSite 4800 264600 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_69 CoreSite 4800 268380 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_70 CoreSite 4800 272160 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_71 CoreSite 4800 275940 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_72 CoreSite 4800 279720 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_73 CoreSite 4800 283500 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_74 CoreSite 4800 287280 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_75 CoreSite 4800 291060 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_77_1 CoreSite 4800 298620 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_78_1 CoreSite 4800 302400 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_79_1 CoreSite 4800 306180 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_80_1 CoreSite 4800 309960 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_81_1 CoreSite 4800 313740 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_82_1 CoreSite 4800 317520 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_83_1 CoreSite 4800 321300 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_84_1 CoreSite 4800 325080 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_85_1 CoreSite 4800 328860 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_86_1 CoreSite 4800 332640 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_87_1 CoreSite 4800 336420 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_88_1 CoreSite 4800 340200 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_89_1 CoreSite 4800 343980 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_90_1 CoreSite 4800 347760 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_91_1 CoreSite 4800 351540 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_92_1 CoreSite 4800 355320 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_93_1 CoreSite 4800 359100 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_94_1 CoreSite 4800 362880 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_95_1 CoreSite 4800 366660 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_96_1 CoreSite 4800 370440 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_97_1 CoreSite 4800 374220 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_98_1 CoreSite 4800 378000 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_99_1 CoreSite 4800 381780 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_100_1 CoreSite 4800 385560 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_101_1 CoreSite 4800 389340 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_102_1 CoreSite 4800 393120 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_103_1 CoreSite 4800 396900 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_104_1 CoreSite 4800 400680 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_105_1 CoreSite 4800 404460 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_106_1 CoreSite 4800 408240 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_107_1 CoreSite 4800 412020 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_108_1 CoreSite 4800 415800 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_109_1 CoreSite 4800 419580 FS DO 362 BY 1 STEP 480 0 ;
+ROW ROW_110 CoreSite 4800 423360 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_111 CoreSite 4800 427140 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_112 CoreSite 4800 430920 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_113 CoreSite 4800 434700 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_114 CoreSite 4800 438480 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_115 CoreSite 4800 442260 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_116 CoreSite 4800 446040 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_117 CoreSite 4800 449820 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_118 CoreSite 4800 453600 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_119 CoreSite 4800 457380 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_120 CoreSite 4800 461160 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_121 CoreSite 4800 464940 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_122 CoreSite 4800 468720 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_123 CoreSite 4800 472500 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_124 CoreSite 4800 476280 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_125 CoreSite 4800 480060 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_126 CoreSite 4800 483840 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_127 CoreSite 4800 487620 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_128 CoreSite 4800 491400 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_129 CoreSite 4800 495180 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_130 CoreSite 4800 498960 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_131 CoreSite 4800 502740 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_132 CoreSite 4800 506520 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_133 CoreSite 4800 510300 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_134 CoreSite 4800 514080 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_135 CoreSite 4800 517860 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_136 CoreSite 4800 521640 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_137 CoreSite 4800 525420 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_138 CoreSite 4800 529200 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_139 CoreSite 4800 532980 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_140 CoreSite 4800 536760 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_141 CoreSite 4800 540540 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_142 CoreSite 4800 544320 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_143 CoreSite 4800 548100 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_144 CoreSite 4800 551880 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_145 CoreSite 4800 555660 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_146 CoreSite 4800 559440 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_147 CoreSite 4800 563220 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_148 CoreSite 4800 567000 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_149 CoreSite 4800 570780 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_150 CoreSite 4800 574560 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_151 CoreSite 4800 578340 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_152 CoreSite 4800 582120 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_153 CoreSite 4800 585900 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_154 CoreSite 4800 589680 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_155 CoreSite 4800 593460 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_156 CoreSite 4800 597240 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_157 CoreSite 4800 601020 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_158 CoreSite 4800 604800 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_159 CoreSite 4800 608580 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_160 CoreSite 4800 612360 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_161 CoreSite 4800 616140 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_162 CoreSite 4800 619920 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_163 CoreSite 4800 623700 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_164 CoreSite 4800 627480 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_165 CoreSite 4800 631260 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_166 CoreSite 4800 635040 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_167 CoreSite 4800 638820 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_168 CoreSite 4800 642600 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_169 CoreSite 4800 646380 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_170 CoreSite 4800 650160 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_171 CoreSite 4800 653940 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_172 CoreSite 4800 657720 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_173 CoreSite 4800 661500 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_174 CoreSite 4800 665280 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_175 CoreSite 4800 669060 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_176 CoreSite 4800 672840 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_177 CoreSite 4800 676620 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_178 CoreSite 4800 680400 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_179 CoreSite 4800 684180 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_180 CoreSite 4800 687960 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_181 CoreSite 4800 691740 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_182 CoreSite 4800 695520 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_183 CoreSite 4800 699300 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_184 CoreSite 4800 703080 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_185 CoreSite 4800 706860 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_186 CoreSite 4800 710640 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_187 CoreSite 4800 714420 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_188 CoreSite 4800 718200 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_189 CoreSite 4800 721980 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_190 CoreSite 4800 725760 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_191 CoreSite 4800 729540 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_192 CoreSite 4800 733320 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_193 CoreSite 4800 737100 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_194 CoreSite 4800 740880 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_195 CoreSite 4800 744660 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_196 CoreSite 4800 748440 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_197 CoreSite 4800 752220 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_198 CoreSite 4800 756000 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_199 CoreSite 4800 759780 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_200 CoreSite 4800 763560 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_201 CoreSite 4800 767340 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_202 CoreSite 4800 771120 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_203 CoreSite 4800 774900 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_204 CoreSite 4800 778680 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_205 CoreSite 4800 782460 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_206 CoreSite 4800 786240 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_207 CoreSite 4800 790020 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_208 CoreSite 4800 793800 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_209 CoreSite 4800 797580 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_210 CoreSite 4800 801360 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_211 CoreSite 4800 805140 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_212 CoreSite 4800 808920 N DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_213 CoreSite 4800 812700 FS DO 1693 BY 1 STEP 480 0 ;
+ROW ROW_76_1 CoreSite 4800 294840 N DO 362 BY 1 STEP 480 0 ;
+ROW ROW_76_2 CoreSite 779520 294840 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_77_2 CoreSite 779520 298620 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_78_2 CoreSite 779520 302400 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_79_2 CoreSite 779520 306180 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_80_2 CoreSite 779520 309960 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_81_2 CoreSite 779520 313740 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_82_2 CoreSite 779520 317520 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_83_2 CoreSite 779520 321300 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_84_2 CoreSite 779520 325080 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_85_2 CoreSite 779520 328860 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_86_2 CoreSite 779520 332640 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_87_2 CoreSite 779520 336420 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_88_2 CoreSite 779520 340200 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_89_2 CoreSite 779520 343980 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_90_2 CoreSite 779520 347760 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_91_2 CoreSite 779520 351540 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_92_2 CoreSite 779520 355320 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_93_2 CoreSite 779520 359100 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_94_2 CoreSite 779520 362880 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_95_2 CoreSite 779520 366660 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_96_2 CoreSite 779520 370440 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_97_2 CoreSite 779520 374220 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_98_2 CoreSite 779520 378000 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_99_2 CoreSite 779520 381780 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_100_2 CoreSite 779520 385560 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_101_2 CoreSite 779520 389340 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_102_2 CoreSite 779520 393120 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_103_2 CoreSite 779520 396900 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_104_2 CoreSite 779520 400680 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_105_2 CoreSite 779520 404460 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_106_2 CoreSite 779520 408240 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_107_2 CoreSite 779520 412020 FS DO 79 BY 1 STEP 480 0 ;
+ROW ROW_108_2 CoreSite 779520 415800 N DO 79 BY 1 STEP 480 0 ;
+ROW ROW_109_2 CoreSite 779520 419580 FS DO 79 BY 1 STEP 480 0 ;
+TRACKS X 480 DO 1713 STEP 480 LAYER Metal1 ;
+TRACKS Y 480 DO 1713 STEP 480 LAYER Metal1 ;
+TRACKS X 420 DO 1957 STEP 420 LAYER Metal2 ;
+TRACKS Y 420 DO 1957 STEP 420 LAYER Metal2 ;
+TRACKS X 480 DO 1713 STEP 480 LAYER Metal3 ;
+TRACKS Y 480 DO 1713 STEP 480 LAYER Metal3 ;
+TRACKS X 420 DO 1957 STEP 420 LAYER Metal4 ;
+TRACKS Y 420 DO 1957 STEP 420 LAYER Metal4 ;
+TRACKS X 480 DO 1713 STEP 480 LAYER Metal5 ;
+TRACKS Y 480 DO 1713 STEP 480 LAYER Metal5 ;
+TRACKS X 1640 DO 360 STEP 2280 LAYER TopMetal1 ;
+TRACKS Y 1640 DO 360 STEP 2280 LAYER TopMetal1 ;
+TRACKS X 2000 DO 205 STEP 4000 LAYER TopMetal2 ;
+TRACKS Y 2000 DO 205 STEP 4000 LAYER TopMetal2 ;
+COMPONENTS 1 ;
+    - wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory RM_IHPSG13_1P_256x48_c2_bm_bist + FIXED ( 180960 300090 ) FS ;
+END COMPONENTS
+PINS 216 ;
+    - int_o + NET int_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 587040 360 ) N ;
+    - m_wb_ack_i + NET m_wb_ack_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 172620 ) N ;
+    - m_wb_adr_o[0] + NET m_wb_adr_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 684180 ) N ;
+    - m_wb_adr_o[10] + NET m_wb_adr_o[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 441120 360 ) N ;
+    - m_wb_adr_o[11] + NET m_wb_adr_o[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 385140 ) N ;
+    - m_wb_adr_o[12] + NET m_wb_adr_o[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 804960 822050 ) N ;
+    - m_wb_adr_o[13] + NET m_wb_adr_o[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 655620 ) N ;
+    - m_wb_adr_o[14] + NET m_wb_adr_o[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 24480 822050 ) N ;
+    - m_wb_adr_o[15] + NET m_wb_adr_o[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 164640 360 ) N ;
+    - m_wb_adr_o[16] + NET m_wb_adr_o[16] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 408660 ) N ;
+    - m_wb_adr_o[17] + NET m_wb_adr_o[17] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 349920 822050 ) N ;
+    - m_wb_adr_o[18] + NET m_wb_adr_o[18] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 489120 360 ) N ;
+    - m_wb_adr_o[19] + NET m_wb_adr_o[19] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 667680 360 ) N ;
+    - m_wb_adr_o[1] + NET m_wb_adr_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 235680 822050 ) N ;
+    - m_wb_adr_o[20] + NET m_wb_adr_o[20] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 106080 822050 ) N ;
+    - m_wb_adr_o[21] + NET m_wb_adr_o[21] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 820320 822050 ) N ;
+    - m_wb_adr_o[22] + NET m_wb_adr_o[22] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 609120 822050 ) N ;
+    - m_wb_adr_o[23] + NET m_wb_adr_o[23] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 53340 ) N ;
+    - m_wb_adr_o[24] + NET m_wb_adr_o[24] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 627060 ) N ;
+    - m_wb_adr_o[25] + NET m_wb_adr_o[25] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 115500 ) N ;
+    - m_wb_adr_o[26] + NET m_wb_adr_o[26] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 186720 822050 ) N ;
+    - m_wb_adr_o[27] + NET m_wb_adr_o[27] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 749700 ) N ;
+    - m_wb_adr_o[28] + NET m_wb_adr_o[28] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 716640 360 ) N ;
+    - m_wb_adr_o[29] + NET m_wb_adr_o[29] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 684000 360 ) N ;
+    - m_wb_adr_o[2] + NET m_wb_adr_o[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 394380 ) N ;
+    - m_wb_adr_o[30] + NET m_wb_adr_o[30] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 197280 360 ) N ;
+    - m_wb_adr_o[31] + NET m_wb_adr_o[31] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 430560 822050 ) N ;
+    - m_wb_adr_o[3] + NET m_wb_adr_o[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 351540 ) N ;
+    - m_wb_adr_o[4] + NET m_wb_adr_o[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 214620 ) N ;
+    - m_wb_adr_o[5] + NET m_wb_adr_o[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 40800 822050 ) N ;
+    - m_wb_adr_o[6] + NET m_wb_adr_o[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 727020 ) N ;
+    - m_wb_adr_o[7] + NET m_wb_adr_o[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 564900 ) N ;
+    - m_wb_adr_o[8] + NET m_wb_adr_o[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 257460 ) N ;
+    - m_wb_adr_o[9] + NET m_wb_adr_o[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 397920 822050 ) N ;
+    - m_wb_bte_o[0] + NET m_wb_bte_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 763980 ) N ;
+    - m_wb_bte_o[1] + NET m_wb_bte_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 570780 ) N ;
+    - m_wb_cti_o[0] + NET m_wb_cti_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 732960 360 ) N ;
+    - m_wb_cti_o[1] + NET m_wb_cti_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 584220 ) N ;
+    - m_wb_cti_o[2] + NET m_wb_cti_o[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 123900 ) N ;
+    - m_wb_cyc_o + NET m_wb_cyc_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 570720 360 ) N ;
+    - m_wb_dat_i[0] + NET m_wb_dat_i[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 101220 ) N ;
+    - m_wb_dat_i[10] + NET m_wb_dat_i[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 89760 822050 ) N ;
+    - m_wb_dat_i[11] + NET m_wb_dat_i[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 366240 822050 ) N ;
+    - m_wb_dat_i[12] + NET m_wb_dat_i[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 792540 ) N ;
+    - m_wb_dat_i[13] + NET m_wb_dat_i[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 797580 ) N ;
+    - m_wb_dat_i[14] + NET m_wb_dat_i[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 414240 822050 ) N ;
+    - m_wb_dat_i[15] + NET m_wb_dat_i[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 485100 ) N ;
+    - m_wb_dat_i[16] + NET m_wb_dat_i[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 322980 ) N ;
+    - m_wb_dat_i[17] + NET m_wb_dat_i[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 294240 360 ) N ;
+    - m_wb_dat_i[18] + NET m_wb_dat_i[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 690720 822050 ) N ;
+    - m_wb_dat_i[19] + NET m_wb_dat_i[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 152460 ) N ;
+    - m_wb_dat_i[1] + NET m_wb_dat_i[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 277920 360 ) N ;
+    - m_wb_dat_i[20] + NET m_wb_dat_i[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 479220 ) N ;
+    - m_wb_dat_i[21] + NET m_wb_dat_i[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 512160 822050 ) N ;
+    - m_wb_dat_i[22] + NET m_wb_dat_i[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 739680 822050 ) N ;
+    - m_wb_dat_i[23] + NET m_wb_dat_i[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 456540 ) N ;
+    - m_wb_dat_i[24] + NET m_wb_dat_i[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 507780 ) N ;
+    - m_wb_dat_i[25] + NET m_wb_dat_i[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 99360 360 ) N ;
+    - m_wb_dat_i[26] + NET m_wb_dat_i[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 769020 ) N ;
+    - m_wb_dat_i[27] + NET m_wb_dat_i[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 308700 ) N ;
+    - m_wb_dat_i[28] + NET m_wb_dat_i[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 81060 ) N ;
+    - m_wb_dat_i[29] + NET m_wb_dat_i[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 692580 ) N ;
+    - m_wb_dat_i[2] + NET m_wb_dat_i[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 577440 822050 ) N ;
+    - m_wb_dat_i[30] + NET m_wb_dat_i[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 798240 360 ) N ;
+    - m_wb_dat_i[31] + NET m_wb_dat_i[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 556500 ) N ;
+    - m_wb_dat_i[3] + NET m_wb_dat_i[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 479520 822050 ) N ;
+    - m_wb_dat_i[4] + NET m_wb_dat_i[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 765600 360 ) N ;
+    - m_wb_dat_i[5] + NET m_wb_dat_i[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 781920 360 ) N ;
+    - m_wb_dat_i[6] + NET m_wb_dat_i[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 15540 ) N ;
+    - m_wb_dat_i[7] + NET m_wb_dat_i[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 95340 ) N ;
+    - m_wb_dat_i[8] + NET m_wb_dat_i[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 294420 ) N ;
+    - m_wb_dat_i[9] + NET m_wb_dat_i[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 328860 ) N ;
+    - m_wb_dat_o[0] + NET m_wb_dat_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 674400 822050 ) N ;
+    - m_wb_dat_o[10] + NET m_wb_dat_o[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 228960 360 ) N ;
+    - m_wb_dat_o[11] + NET m_wb_dat_o[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 472800 360 ) N ;
+    - m_wb_dat_o[12] + NET m_wb_dat_o[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 86940 ) N ;
+    - m_wb_dat_o[13] + NET m_wb_dat_o[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 550620 ) N ;
+    - m_wb_dat_o[14] + NET m_wb_dat_o[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 579180 ) N ;
+    - m_wb_dat_o[15] + NET m_wb_dat_o[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 513660 ) N ;
+    - m_wb_dat_o[16] + NET m_wb_dat_o[16] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 83040 360 ) N ;
+    - m_wb_dat_o[17] + NET m_wb_dat_o[17] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 284640 822050 ) N ;
+    - m_wb_dat_o[18] + NET m_wb_dat_o[18] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 641760 822050 ) N ;
+    - m_wb_dat_o[19] + NET m_wb_dat_o[19] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 522060 ) N ;
+    - m_wb_dat_o[1] + NET m_wb_dat_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 314580 ) N ;
+    - m_wb_dat_o[20] + NET m_wb_dat_o[20] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 528480 822050 ) N ;
+    - m_wb_dat_o[21] + NET m_wb_dat_o[21] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 749280 360 ) N ;
+    - m_wb_dat_o[22] + NET m_wb_dat_o[22] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 706860 ) N ;
+    - m_wb_dat_o[23] + NET m_wb_dat_o[23] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 612780 ) N ;
+    - m_wb_dat_o[24] + NET m_wb_dat_o[24] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 493500 ) N ;
+    - m_wb_dat_o[25] + NET m_wb_dat_o[25] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 170400 822050 ) N ;
+    - m_wb_dat_o[26] + NET m_wb_dat_o[26] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 39060 ) N ;
+    - m_wb_dat_o[27] + NET m_wb_dat_o[27] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 698460 ) N ;
+    - m_wb_dat_o[28] + NET m_wb_dat_o[28] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 707040 822050 ) N ;
+    - m_wb_dat_o[29] + NET m_wb_dat_o[29] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 243180 ) N ;
+    - m_wb_dat_o[2] + NET m_wb_dat_o[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 280140 ) N ;
+    - m_wb_dat_o[30] + NET m_wb_dat_o[30] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 603360 360 ) N ;
+    - m_wb_dat_o[31] + NET m_wb_dat_o[31] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 437220 ) N ;
+    - m_wb_dat_o[3] + NET m_wb_dat_o[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 505440 360 ) N ;
+    - m_wb_dat_o[4] + NET m_wb_dat_o[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 343140 ) N ;
+    - m_wb_dat_o[5] + NET m_wb_dat_o[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 446880 822050 ) N ;
+    - m_wb_dat_o[6] + NET m_wb_dat_o[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 593760 822050 ) N ;
+    - m_wb_dat_o[7] + NET m_wb_dat_o[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 310560 360 ) N ;
+    - m_wb_dat_o[8] + NET m_wb_dat_o[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 109620 ) N ;
+    - m_wb_dat_o[9] + NET m_wb_dat_o[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 122400 822050 ) N ;
+    - m_wb_err_i + NET m_wb_err_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 427980 ) N ;
+    - m_wb_sel_o[0] + NET m_wb_sel_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 664020 ) N ;
+    - m_wb_sel_o[1] + NET m_wb_sel_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 371700 ) N ;
+    - m_wb_sel_o[2] + NET m_wb_sel_o[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 195300 ) N ;
+    - m_wb_sel_o[3] + NET m_wb_sel_o[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 721140 ) N ;
+    - m_wb_stb_o + NET m_wb_stb_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 678300 ) N ;
+    - m_wb_we_o + NET m_wb_we_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 252000 822050 ) N ;
+    - mcoll_pad_i + NET mcoll_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 73440 822050 ) N ;
+    - mcrs_pad_i + NET mcrs_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 286020 ) N ;
+    - md_pad_i + NET md_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 536340 ) N ;
+    - md_pad_o + NET md_pad_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 649740 ) N ;
+    - md_padoe_o + NET md_padoe_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 756000 822050 ) N ;
+    - mdc_pad_o + NET mdc_pad_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 50400 360 ) N ;
+    - mrx_clk_pad_i + NET mrx_clk_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 343200 360 ) N ;
+    - mrxd_pad_i[0] + NET mrxd_pad_i[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 228900 ) N ;
+    - mrxd_pad_i[1] + NET mrxd_pad_i[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 209580 ) N ;
+    - mrxd_pad_i[2] + NET mrxd_pad_i[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 408480 360 ) N ;
+    - mrxd_pad_i[3] + NET mrxd_pad_i[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 181020 ) N ;
+    - mrxdv_pad_i + NET mrxdv_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 24780 ) N ;
+    - mrxerr_pad_i + NET mrxerr_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 619680 360 ) N ;
+    - mtx_clk_pad_i + NET mtx_clk_pad_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 72660 ) N ;
+    - mtxd_pad_o[0] + NET mtxd_pad_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 783300 ) N ;
+    - mtxd_pad_o[1] + NET mtxd_pad_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 375840 360 ) N ;
+    - mtxd_pad_o[2] + NET mtxd_pad_o[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 333600 822050 ) N ;
+    - mtxd_pad_o[3] + NET mtxd_pad_o[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 29820 ) N ;
+    - mtxen_pad_o + NET mtxen_pad_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 219360 822050 ) N ;
+    - mtxerr_pad_o + NET mtxerr_pad_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 359520 360 ) N ;
+    - wb_ack_o + NET wb_ack_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 542220 ) N ;
+    - wb_adr_i[10] + NET wb_adr_i[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 788640 822050 ) N ;
+    - wb_adr_i[11] + NET wb_adr_i[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 223860 ) N ;
+    - wb_adr_i[2] + NET wb_adr_i[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 203040 822050 ) N ;
+    - wb_adr_i[3] + NET wb_adr_i[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 261600 360 ) N ;
+    - wb_adr_i[4] + NET wb_adr_i[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 200340 ) N ;
+    - wb_adr_i[5] + NET wb_adr_i[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 138180 ) N ;
+    - wb_adr_i[6] + NET wb_adr_i[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 538080 360 ) N ;
+    - wb_adr_i[7] + NET wb_adr_i[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 499380 ) N ;
+    - wb_adr_i[8] + NET wb_adr_i[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 755580 ) N ;
+    - wb_adr_i[9] + NET wb_adr_i[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 213600 360 ) N ;
+    - wb_clk_i + NET wb_clk_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 138720 822050 ) N ;
+    - wb_cyc_i + NET wb_cyc_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 700320 360 ) N ;
+    - wb_dat_i[0] + NET wb_dat_i[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 470820 ) N ;
+    - wb_dat_i[10] + NET wb_dat_i[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 658080 822050 ) N ;
+    - wb_dat_i[11] + NET wb_dat_i[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 450660 ) N ;
+    - wb_dat_i[12] + NET wb_dat_i[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 155040 822050 ) N ;
+    - wb_dat_i[13] + NET wb_dat_i[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 271740 ) N ;
+    - wb_dat_i[14] + NET wb_dat_i[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 268320 822050 ) N ;
+    - wb_dat_i[15] + NET wb_dat_i[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 34080 360 ) N ;
+    - wb_dat_i[16] + NET wb_dat_i[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 148320 360 ) N ;
+    - wb_dat_i[17] + NET wb_dat_i[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 251580 ) N ;
+    - wb_dat_i[18] + NET wb_dat_i[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 424800 360 ) N ;
+    - wb_dat_i[19] + NET wb_dat_i[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 778260 ) N ;
+    - wb_dat_i[1] + NET wb_dat_i[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 357420 ) N ;
+    - wb_dat_i[20] + NET wb_dat_i[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 381600 822050 ) N ;
+    - wb_dat_i[21] + NET wb_dat_i[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 115680 360 ) N ;
+    - wb_dat_i[22] + NET wb_dat_i[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 337260 ) N ;
+    - wb_dat_i[23] + NET wb_dat_i[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 622020 ) N ;
+    - wb_dat_i[24] + NET wb_dat_i[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 8160 822050 ) N ;
+    - wb_dat_i[25] + NET wb_dat_i[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 464940 ) N ;
+    - wb_dat_i[26] + NET wb_dat_i[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 669900 ) N ;
+    - wb_dat_i[27] + NET wb_dat_i[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 158340 ) N ;
+    - wb_dat_i[28] + NET wb_dat_i[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 735420 ) N ;
+    - wb_dat_i[29] + NET wb_dat_i[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 463200 822050 ) N ;
+    - wb_dat_i[2] + NET wb_dat_i[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 245280 360 ) N ;
+    - wb_dat_i[30] + NET wb_dat_i[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 365820 ) N ;
+    - wb_dat_i[31] + NET wb_dat_i[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 58380 ) N ;
+    - wb_dat_i[3] + NET wb_dat_i[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 166740 ) N ;
+    - wb_dat_i[4] + NET wb_dat_i[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 712740 ) N ;
+    - wb_dat_i[5] + NET wb_dat_i[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 814560 360 ) N ;
+    - wb_dat_i[6] + NET wb_dat_i[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 132000 360 ) N ;
+    - wb_dat_i[7] + NET wb_dat_i[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 392160 360 ) N ;
+    - wb_dat_i[8] + NET wb_dat_i[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 265860 ) N ;
+    - wb_dat_i[9] + NET wb_dat_i[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 806820 ) N ;
+    - wb_dat_o[0] + NET wb_dat_o[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 144060 ) N ;
+    - wb_dat_o[10] + NET wb_dat_o[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 10500 ) N ;
+    - wb_dat_o[11] + NET wb_dat_o[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 300300 ) N ;
+    - wb_dat_o[12] + NET wb_dat_o[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 380100 ) N ;
+    - wb_dat_o[13] + NET wb_dat_o[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 17760 360 ) N ;
+    - wb_dat_o[14] + NET wb_dat_o[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 635460 ) N ;
+    - wb_dat_o[15] + NET wb_dat_o[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 772320 822050 ) N ;
+    - wb_dat_o[16] + NET wb_dat_o[16] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 66780 ) N ;
+    - wb_dat_o[17] + NET wb_dat_o[17] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 723360 822050 ) N ;
+    - wb_dat_o[18] + NET wb_dat_o[18] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 413700 ) N ;
+    - wb_dat_o[19] + NET wb_dat_o[19] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 442260 ) N ;
+    - wb_dat_o[1] + NET wb_dat_o[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 554400 360 ) N ;
+    - wb_dat_o[20] + NET wb_dat_o[20] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 2400 360 ) N ;
+    - wb_dat_o[21] + NET wb_dat_o[21] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 652320 360 ) N ;
+    - wb_dat_o[22] + NET wb_dat_o[22] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 527940 ) N ;
+    - wb_dat_o[23] + NET wb_dat_o[23] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 811860 ) N ;
+    - wb_dat_o[24] + NET wb_dat_o[24] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 317280 822050 ) N ;
+    - wb_dat_o[25] + NET wb_dat_o[25] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 399420 ) N ;
+    - wb_dat_o[26] + NET wb_dat_o[26] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 44100 ) N ;
+    - wb_dat_o[27] + NET wb_dat_o[27] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 66720 360 ) N ;
+    - wb_dat_o[28] + NET wb_dat_o[28] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 495840 822050 ) N ;
+    - wb_dat_o[29] + NET wb_dat_o[29] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 300960 822050 ) N ;
+    - wb_dat_o[2] + NET wb_dat_o[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 456480 360 ) N ;
+    - wb_dat_o[30] + NET wb_dat_o[30] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 625440 822050 ) N ;
+    - wb_dat_o[31] + NET wb_dat_o[31] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 238140 ) N ;
+    - wb_dat_o[3] + NET wb_dat_o[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 598500 ) N ;
+    - wb_dat_o[4] + NET wb_dat_o[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 607740 ) N ;
+    - wb_dat_o[5] + NET wb_dat_o[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 180960 360 ) N ;
+    - wb_dat_o[6] + NET wb_dat_o[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 326880 360 ) N ;
+    - wb_dat_o[7] + NET wb_dat_o[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 129780 ) N ;
+    - wb_dat_o[8] + NET wb_dat_o[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 593460 ) N ;
+    - wb_dat_o[9] + NET wb_dat_o[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 521760 360 ) N ;
+    - wb_err_o + NET wb_err_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 561120 822050 ) N ;
+    - wb_rst_i + NET wb_rst_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 544800 822050 ) N ;
+    - wb_sel_i[0] + NET wb_sel_i[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 741300 ) N ;
+    - wb_sel_i[1] + NET wb_sel_i[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 57120 822050 ) N ;
+    - wb_sel_i[2] + NET wb_sel_i[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal3 ( -100 -360 ) ( 100 360 )
+        + PLACED ( 636000 360 ) N ;
+    - wb_sel_i[3] + NET wb_sel_i[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 186900 ) N ;
+    - wb_stb_i + NET wb_stb_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 360 641340 ) N ;
+    - wb_we_i + NET wb_we_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER Metal2 ( -360 -100 ) ( 360 100 )
+        + PLACED ( 822050 422940 ) N ;
+END PINS
+SPECIALNETS 2 ;
+    - VDD ( wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory VDDARRAY! ) ( wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory VDD! ) + USE POWER ;
+    - VSS ( wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory VSS! ) + USE GROUND ;
+END SPECIALNETS
+NETS 11552 ;
+END NETS
+END DESIGN

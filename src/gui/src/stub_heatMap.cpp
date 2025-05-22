@@ -195,4 +195,60 @@ double GlobalRoutingDataSource::getGridYSize() const
   return HeatMapDataSource::getGridYSize();
 }
 
+//////////
+
+HeatMapRenderer::HeatMapRenderer(HeatMapDataSource& datasource)
+    : datasource_(datasource), first_paint_(true)
+{
+}
+
+void HeatMapRenderer::drawObjects(Painter& painter)
+{
+}
+
+std::string HeatMapRenderer::getSettingsGroupName()
+{
+  return groupname_prefix_;
+}
+
+Renderer::Settings HeatMapRenderer::getSettings()
+{
+  return {};
+}
+
+void HeatMapRenderer::setSettings(const Renderer::Settings& settings)
+{
+}
+
+//////////
+PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
+                                               utl::Logger* logger)
+    : gui::RealValueHeatMapDataSource(logger,
+                                      "W",
+                                      "Power Density",
+                                      "Power",
+                                      "PowerDensity"),
+      sta_(sta)
+{
+}
+
+bool PowerDensityDataSource::populateMap()
+{
+  return false;
+}
+
+void PowerDensityDataSource::combineMapData(bool base_has_value,
+                                            double& base,
+                                            const double new_data,
+                                            const double data_area,
+                                            const double intersection_area,
+                                            const double rect_area)
+{
+}
+
+sta::Corner* PowerDensityDataSource::getCorner() const
+{
+  return nullptr;
+}
+
 }  // namespace gui

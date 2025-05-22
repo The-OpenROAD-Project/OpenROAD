@@ -15,6 +15,7 @@
 ///  dbTablePage
 ///
 
+#include <boost/container/flat_map.hpp>
 #include <map>
 #include <set>
 #include <string>
@@ -119,6 +120,13 @@ struct MemInfo
 
   template <typename Key, typename T>
   void add(const std::unordered_map<Key, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(Key) + sizeof(T));
+  }
+
+  template <typename Key, typename T>
+  void add(const boost::container::flat_map<Key, T>& map)
   {
     cnt += 1;
     size += map.size() * (sizeof(Key) + sizeof(T));

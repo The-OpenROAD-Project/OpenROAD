@@ -962,26 +962,28 @@ bool dbModule::copyToChildBlock(dbModule* module)
   // This block contains only one module
   dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
   std::string block_name = module->getName();
-  // TODO: strip out instance name from block name
   dbTech* tech = top_block->getTech();
+  // TODO: strip out instance name from block name
   dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
-  child_block->setDefUnits(tech->getLefUnits());
-  child_block->setBusDelimiters('[', ']');
-  dbModule* new_module = child_block->getTopModule();
-  if (!new_module) {
-    logger->error(utl::ODB,
-                  476,
-                  "Top module {} could not be found under child block {}",
-                  block_name,
-                  block_name);
-    return false;
-  }
+  if (child_block) {
+    child_block->setDefUnits(tech->getLefUnits());
+    child_block->setBusDelimiters('[', ']');
+    dbModule* new_module = child_block->getTopModule();
+    if (!new_module) {
+      logger->error(utl::ODB,
+                    476,
+                    "Top module {} could not be found under child block {}",
+                    block_name,
+                    block_name);
+      return false;
+    }
 
-  modBTMap mod_bt_map;
-  copyModulePorts(module, new_module, mod_bt_map);
-  ITMap it_map;
-  copyModuleInsts(module, new_module, nullptr, it_map);
-  copyModuleModNets(module, new_module, mod_bt_map, it_map);
+    modBTMap mod_bt_map;
+    copyModulePorts(module, new_module, mod_bt_map);
+    ITMap it_map;
+    copyModuleInsts(module, new_module, nullptr, it_map);
+    copyModuleModNets(module, new_module, mod_bt_map, it_map);
+  }
   return true;
 }
 

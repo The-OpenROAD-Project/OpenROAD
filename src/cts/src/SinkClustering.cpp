@@ -59,15 +59,24 @@ void SinkClustering::normalizePoints(float maxDiameter)
     ySpan_ = ySpan;
     for (Point<double>& p : points_) {
       const double x = p.getX();
-      const double xNorm = (x - xMin) / xSpan;
+      const double xNorm = xSpan ? (x - xMin) / xSpan : 0;
       const double y = p.getY();
-      const double yNorm = (y - yMin) / ySpan;
+      const double yNorm = ySpan ? (y - yMin) / ySpan : 0;
       p = Point<double>(xNorm, yNorm);
     }
   }
-  maxInternalDiameter_ = maxDiameter / std::min(xSpan_, ySpan_);
-  capPerUnit_
-      = techChar_->getCapPerDBU() * scaleFactor_ * std::min(xSpan_, ySpan_);
+  double span;
+  if (xSpan_ == 0 && ySpan_ == 0) {
+    span = 1;  // arbitrary
+  } else if (xSpan_ == 0) {
+    span = ySpan_;
+  } else if (ySpan_ == 0) {
+    span = xSpan_;
+  } else {
+    span = std::min(xSpan_, ySpan_);
+  }
+  maxInternalDiameter_ = maxDiameter / span;
+  capPerUnit_ = techChar_->getCapPerDBU() * scaleFactor_ * span;
 
   // clang-format off
   debugPrint(logger_, CTS, "clustering", 1, "normalizePoints: "

@@ -48,6 +48,8 @@ or_integration_tests(
     read_segments_error1
     read_segments_error2
     read_segments_error3
+    read_segments_error4
+    read_segments_error5
     region_adjustment
     remove_buffers1
     remove_buffers2

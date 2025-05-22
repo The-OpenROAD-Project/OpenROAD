@@ -8,6 +8,7 @@ create_power_domain PD_AES_2 \
   -elements {u_aes_2} \
 
 create_logic_port power_down_aes_1 -direction in
+create_logic_port power_down_aes_2 -direction in
 
 create_power_switch psw_aes_1 \
   -domain PD_AES_1 \

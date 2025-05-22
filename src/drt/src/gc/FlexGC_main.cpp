@@ -3694,6 +3694,9 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       if (targetNet_ && net->getFrNet() != targetNet_->getFrNet()) {
         continue;
       }
+      if (targetDRNet_ && net != targetDRNet_) {
+        continue;
+      }
       if (connFig->typeId() == drcVia) {
         auto via = static_cast<drVia*>(connFig);
         if (routeBox.intersects(via->getOrigin())) {

@@ -260,7 +260,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
   return primary_outputs;
 }
 
-std::unordered_set<sta::Instance*> LogicExtractorFactory::GetCutInstances(
+sta::InstanceSet LogicExtractorFactory::GetCutInstances(
     std::vector<sta::Vertex*>& cut_vertices)
 {
   // Loop through all the verticies in the cut set, and then turn their pins
@@ -272,8 +272,8 @@ std::unordered_set<sta::Instance*> LogicExtractorFactory::GetCutInstances(
   //    Cut Vertex: _403_/A2(AND2_X1)
   //    Primary Input: _403_/A1
   //    Primary Input: _403_/A2
-  std::unordered_set<sta::Instance*> cut_instances;
   sta::dbNetwork* network = open_sta_->getDbNetwork();
+  sta::InstanceSet cut_instances(network);
   for (sta::Vertex* vertex : cut_vertices) {
     sta::Instance* instance = network->instance(vertex->pin());
     if (instance) {
@@ -293,15 +293,25 @@ std::unordered_set<sta::Instance*> LogicExtractorFactory::GetCutInstances(
 
 std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
     std::vector<sta::Pin*>& primary_outputs,
-    std::unordered_set<sta::Instance*>& cut_instances)
+    sta::InstanceSet& cut_instances)
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
   sta::PinSet filtered_pin_set(network);
 
   for (sta::Pin* pin : primary_outputs) {
-    sta::PinSet* pin_iterator = network->drivers(pin);
-    for (const sta::Pin* connected_pin : *pin_iterator) {
+    auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
+        network->connectedPinIterator(pin));
+    while (pin_iterator->hasNext()) {
+      const sta::Pin* connected_pin = pin_iterator->next();
       sta::Instance* connected_instance = network->instance(connected_pin);
+
+      if (!network->direction(connected_pin)->isOutput()) {
+        continue;
+      }
+
+      if (!connected_instance) {
+        continue;
+      }
       // Output pin is driven by something in the cutset. Keep it.
       if (cut_instances.find(connected_instance) != cut_instances.end()) {
         filtered_pin_set.insert(pin);
@@ -326,7 +336,15 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   std::unordered_set<sta::Net*> primary_input_nets;
   primary_input_nets.reserve(primary_io_pins.size());
   for (sta::Pin* pin : primary_io_pins) {
-    sta::Net* net = network->net(pin);
+    sta::Net* net = nullptr;
+    // check if this pin is a terminal
+    sta::Term* term = network->term(pin);
+    if (term) {
+      net = network->net(term);
+    } else {
+      net = network->net(pin);
+    }
+
     if (!net) {
       logger_->error(utl::RMP,
                      1023,
@@ -344,7 +362,7 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
 }
 
 void LogicExtractorFactory::RemovePrimaryOutputInstances(
-    std::unordered_set<sta::Instance*>& cut_instances,
+    sta::InstanceSet& cut_instances,
     std::vector<sta::Pin*>& primary_output_pins)
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
@@ -365,8 +383,7 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
 
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);
-  std::unordered_set<sta::Instance*> cut_instances
-      = GetCutInstances(cut_vertices);
+  sta::InstanceSet cut_instances = GetCutInstances(cut_vertices);
 
   // Remove primary outputs who are undriven. This can happen when a flop feeds
   // into another flop where the logic cone is essentially just a wire. Just

@@ -12,8 +12,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
+#include "rmp/unique_name.h"
 #include "sta/Liberty.hh"
-#include "unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -24,8 +24,16 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network)
 {
+  std::vector<sta::Net*> sorted_primary_inputs(primary_inputs.begin(),
+                                               primary_inputs.end());
+  std::sort(sorted_primary_inputs.begin(),
+            sorted_primary_inputs.end(),
+            [network](sta::Net* a, sta::Net* b) {
+              return network->id(a) < network->id(b);
+            });
+
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
-  for (sta::Net* input_pin : primary_inputs) {
+  for (sta::Net* input_pin : sorted_primary_inputs) {
     abc::Abc_Obj_t* primary_input_abc = abc::Abc_NtkCreatePi(&abc_network);
     abc::Abc_Obj_t* primary_input_net = abc::Abc_NtkCreateNet(&abc_network);
     std::string net_name(network->pathName(input_pin));
@@ -45,7 +53,16 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
     sta::dbNetwork* network)
 {
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
-  for (sta::Net* output_pin : primary_outputs) {
+  std::vector<sta::Net*> sorted_primary_outputs(primary_outputs.begin(),
+                                                primary_outputs.end());
+
+  std::sort(sorted_primary_outputs.begin(),
+            sorted_primary_outputs.end(),
+            [network](sta::Net* a, sta::Net* b) {
+              return network->id(a) < network->id(b);
+            });
+
+  for (sta::Net* output_pin : sorted_primary_outputs) {
     abc::Abc_Obj_t* primary_output_abc = abc::Abc_NtkCreatePo(&abc_network);
     abc::Abc_Obj_t* primary_output_net = abc::Abc_NtkCreateNet(&abc_network);
     std::string net_name(network->pathName(output_pin));
@@ -94,8 +111,8 @@ MioGateToPortOrder(abc::Mio_Library_t* library)
   return result;
 }
 
-std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
-    const std::unordered_set<sta::Instance*>& cut_instances,
+std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
+    sta::InstanceSet& cut_instances,
     AbcLibrary& abc_library,
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network,
@@ -105,8 +122,8 @@ std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
   std::unordered_map<std::string, abc::Mio_Gate_t*> cell_name_to_mio
       = NameToAbcGateMap(library);
 
-  std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> instance_map;
-  for (sta::Instance* instance : cut_instances) {
+  std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> instance_map;
+  for (const sta::Instance* instance : cut_instances) {
     // Assign this node its standard cell. This is what makes this node
     // an AND gate or whatever.
     sta::LibertyCell* cell = network->libertyCell(instance);
@@ -148,7 +165,8 @@ void ConnectPinToDriver(
     std::unordered_map<sta::Net*, abc::Abc_Obj_t*>& abc_net_map,
     utl::Logger* logger,
     abc::Abc_Ntk_t& abc_network,
-    const std::unordered_map<sta::Instance*, abc::Abc_Obj_t*>& abc_instances)
+    const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>&
+        abc_instances)
 {
   sta::Instance* instance = network->instance(output_pin);
   if (abc_instances.find(instance) == abc_instances.end()) {
@@ -199,32 +217,37 @@ void ConnectPinToDriver(
   abc_net_map[net] = abc_net;
 }
 
-void CreateNets(
-    const std::vector<sta::Net*>& output_nets,
-    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
-        abc_primary_input_nets,
-    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
-        abc_primary_output_nets,
-    const std::unordered_map<sta::Instance*, abc::Abc_Obj_t*>& abc_instances,
-    abc::Abc_Ntk_t& abc_network,
-    sta::dbNetwork* network,
-    abc::Mio_Library_t* library,
-    utl::Logger* logger)
+void CreateNets(const std::vector<sta::Net*>& output_nets,
+                const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+                    abc_primary_input_nets,
+                const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+                    abc_primary_output_nets,
+                const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>&
+                    abc_instances,
+                abc::Abc_Ntk_t& abc_network,
+                sta::dbNetwork* network,
+                abc::Mio_Library_t* library,
+                utl::Logger* logger)
 {
   // Sometimes we might create a net that drives multiple pins.
   // Save them here so that the ConnectPinToDriver function can reuse
   // the already created net.
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_net_map;
-
   for (auto& [sta_net, abc_instance] : abc_primary_input_nets) {
     abc_net_map[sta_net] = abc_instance;
   }
 
+  std::vector<sta::Net*> sorted_net(output_nets.begin(), output_nets.end());
+  std::sort(sorted_net.begin(),
+            sorted_net.end(),
+            [network](const sta::Net* a, const sta::Net* b) {
+              return network->id(a) < network->id(b);
+            });
   // Connect primary outputs from net. Grab first driver pin,
   // should be just one. Then grab the instance of that pin. Then
   // connect the fanout of the abc instance to the primary output of
   // that net.
-  for (sta::Net* output_net : output_nets) {
+  for (sta::Net* output_net : sorted_net) {
     sta::PinSet* pinset = network->drivers(output_net);
     // There should be exactly one pin.
     const sta::Pin* pin = *pinset->begin();
@@ -240,8 +263,23 @@ void CreateNets(
   std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>> port_order
       = MioGateToPortOrder(library);
 
-  // Loop through all the other instances
+  // Sort instances for stability.
+  std::vector<std::pair<const sta::Instance*, abc::Abc_Obj_t*>>
+      sorted_instances;
+  sorted_instances.reserve(abc_instances.size());
   for (auto& [sta_instance, abc_instance] : abc_instances) {
+    sorted_instances.emplace_back(sta_instance, abc_instance);
+  }
+  std::sort(
+      sorted_instances.begin(),
+      sorted_instances.end(),
+      [network](const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& a,
+                const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& b) {
+        return network->id(a.first) < network->id(b.first);
+      });
+
+  // Loop through all the other instances
+  for (auto& [sta_instance, abc_instance] : sorted_instances) {
     abc::Mio_Gate_t* gate
         = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_instance));
 
@@ -309,7 +347,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
 
   // Create cells from cut instances, get a map of the created nodes
   // keyed by the instance in the netlist.
-  std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> standard_cells
+  std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> standard_cells
       = CreateStandardCells(cut_instances_,
                             abc_library,
                             *abc_network,
@@ -331,22 +369,21 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
   return abc_network;
 }
 
-sta::Instance* GetLogicalParentInstance(
-    const std::unordered_set<sta::Instance*>& cut_instances_,
-    sta::dbNetwork* network,
-    utl::Logger* logger)
+sta::Instance* GetLogicalParentInstance(sta::InstanceSet& cut_instances,
+                                        sta::dbNetwork* network,
+                                        utl::Logger* logger)
 {
   // In physical designs with hierarchy we need to figure out
   // the parent module in which instances should be placed.
   // For now lets just grab the first Instance* we see. RMP
   // shouldn't be doing anything across modules right now, but
   // if that changes I assume things will break.
-  if (cut_instances_.empty()) {
+  if (cut_instances.empty()) {
     logger->error(utl::RMP, 1011, "Empty logic cuts are not allowed");
   }
 
   sta::Instance* instance = nullptr;
-  for (sta::Instance* cut_instance : cut_instances_) {
+  for (const sta::Instance* cut_instance : cut_instances) {
     if (instance == nullptr) {
       instance = network->parent(cut_instance);
     }
@@ -462,11 +499,11 @@ std::unordered_map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
 void DeleteExistingLogicCut(sta::dbNetwork* network,
                             std::vector<sta::Net*>& primary_inputs,
                             std::vector<sta::Net*>& primary_outputs,
-                            std::unordered_set<sta::Instance*>& cut_instances,
+                            sta::InstanceSet& cut_instances,
                             utl::Logger* logger)
 {
   // Delete nets that only belong to the cut set.
-  std::unordered_set<sta::Net*> nets_to_be_deleted;
+  sta::NetSet nets_to_be_deleted(network);
   std::unordered_set<sta::Net*> primary_input_or_output_nets;
 
   for (sta::Net* net : primary_inputs) {
@@ -476,7 +513,7 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
     primary_input_or_output_nets.insert(net);
   }
 
-  for (sta::Instance* instance : cut_instances) {
+  for (const sta::Instance* instance : cut_instances) {
     auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
         network->pinIterator(instance));
     while (pin_iterator->hasNext()) {
@@ -498,13 +535,12 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
       }
     }
   }
-
-  for (sta::Instance* instance : cut_instances) {
-    network->deleteInstance(instance);
+  for (const sta::Instance* instance : cut_instances) {
+    network->deleteInstance(const_cast<sta::Instance*>(instance));
   }
 
-  for (sta::Net* net : nets_to_be_deleted) {
-    network->deleteNet(net);
+  for (const sta::Net* net : nets_to_be_deleted) {
+    network->deleteNet(const_cast<sta::Net*>(net));
   }
 }
 
@@ -519,7 +555,21 @@ void ConnectInstances(
       = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
   std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>>
       gate_to_port_order = MioGateToPortOrder(library);
+
+  // Sorted for stability
+  std::vector<std::pair<abc::Abc_Obj_t*, sta::Instance*>> sorted_new_instances;
+  sorted_new_instances.reserve(new_instances.size());
   for (auto& [abc_obj, sta_instance] : new_instances) {
+    sorted_new_instances.emplace_back(abc_obj, sta_instance);
+  }
+  std::sort(sorted_new_instances.begin(),
+            sorted_new_instances.end(),
+            [network](const std::pair<abc::Abc_Obj_t*, sta::Instance*>& a,
+                      const std::pair<abc::Abc_Obj_t*, sta::Instance*>& b) {
+              return network->id(a.second) < network->id(b.second);
+            });
+
+  for (auto& [abc_obj, sta_instance] : sorted_new_instances) {
     auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_obj));
     if (gate_to_port_order.find(std_cell) == gate_to_port_order.end()) {
       logger->error(utl::RMP,
@@ -684,8 +734,6 @@ void LogicCut::InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
   // with the new ones. This should result in an equally valid LogicCut since
   // the PI/POs haven't changed just the junk inside.
   cut_instances_.clear();
-  cut_instances_.reserve(abc_objs_to_instances.size());
-
   for (const auto& kv : abc_objs_to_instances) {
     cut_instances_.insert(kv.second);
   }

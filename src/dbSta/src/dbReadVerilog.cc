@@ -396,6 +396,12 @@ void Verilog2db::makeDbModule(
 
     inst_pairs.emplace_back(inst, modinst);
 
+    std::string impl_oper = network_->getAttribute(inst, "implements_operator");
+    if (!impl_oper.empty()) {
+      odb::dbStringProperty::create(
+          modinst, "implements_operator", impl_oper.c_str());
+    }
+
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",

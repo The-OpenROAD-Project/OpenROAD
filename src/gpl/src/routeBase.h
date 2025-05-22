@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -168,12 +169,6 @@ class RouteBase
   int64_t inflatedAreaDelta() const;
   int numCall() const;
 
-  void revertGCellSizeToMinRc();
-  void pushBackMinRcCellSize(int dx, int dy)
-  {
-    minRcCellSize_.emplace_back(dx, dy);
-  }
-
  private:
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
@@ -196,7 +191,6 @@ class RouteBase
   float minRc_ = 1e30;
   float minRcTargetDensity_ = 0;
   int minRcViolatedCnt_ = 0;
-  std::vector<std::pair<int, int>> minRcCellSize_;
 
   void init();
   void reset();

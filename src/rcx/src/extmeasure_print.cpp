@@ -190,7 +190,7 @@ const char* extMeasureRC::srcWord(int& rsegId)
 {
   rsegId = _netSrcId;
   if (_netTgtId == _netId) {
-    rsegId = rsegId;
+    rsegId = _netTgtId;
     return "TGT";
   }
   return "SRC";
@@ -330,7 +330,7 @@ void extMeasureRC::DebugRes_calc(FILE* fp,
                                  double prev)
 {
   fprintf(fp,
-          "\t\%s tot %g addR %g unit %g prevR %g -- M%d %s %d d1 %d d2 %d rseg "
+          "\t%s tot %g addR %g unit %g prevR %g -- M%d %s %d d1 %d d2 %d rseg "
           "%d\n",
           msg,
           tot,

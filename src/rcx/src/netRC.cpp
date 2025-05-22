@@ -1245,6 +1245,7 @@ void extMain::makeCornerMapFromExtControl()
     }
     t->_dbIndex = ii;
     _block->getExtCornerName(ii, &cName[0]);
+    free(t->_name);
     t->_name = strdup(&cName[0]);
   }
 }

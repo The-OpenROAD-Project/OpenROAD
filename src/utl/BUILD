@@ -77,7 +77,7 @@ cc_library(
 )
 
 tcl_wrap_cc(
-    name = "utl_swig",
+    name = "swig",
     srcs = [
         "src/Logger.i",
         "src/LoggerCommon.h",
@@ -93,7 +93,7 @@ tcl_wrap_cc(
 )
 
 tcl_encode(
-    name = "utl_tcl",
+    name = "tcl",
     srcs = [
         "src/Utl.tcl",
     ],

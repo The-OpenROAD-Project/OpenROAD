@@ -150,60 +150,50 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const int dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
-  return {
-      {"Name", makeEditor([this, ruler](std::any value) {
-         auto new_name = std::any_cast<const std::string>(value);
-         if (new_name.empty()) {
-           return false;
-         }
-         for (const auto& check_ruler : rulers_) {
-           if (check_ruler->getName() == new_name) {
-             return false;
-           }
-         }
-         ruler->setName(new_name);
-         return true;
-       })},
-      {"Label", makeEditor([ruler](std::any value) {
-         ruler->setLabel(std::any_cast<const std::string>(value));
-         return true;
-       })},
-      {"Point 0 - x", makeEditor([ruler, dbu_per_uu_](const std::any& value) {
-         return RulerDescriptor::editPoint(
-             value, dbu_per_uu_, ruler->getPt0(), true);
-       })},
-      {"Point 0 - y", makeEditor([ruler, dbu_per_uu_](const std::any& value) {
-         return RulerDescriptor::editPoint(
-             value, dbu_per_uu_, ruler->getPt0(), false);
-       })},
-      {"Point 1 - x", makeEditor([ruler, dbu_per_uu_](const std::any& value) {
-         return RulerDescriptor::editPoint(
-             value, dbu_per_uu_, ruler->getPt1(), true);
-       })},
-      {"Point 1 - y", makeEditor([ruler, dbu_per_uu_](const std::any& value) {
-         return RulerDescriptor::editPoint(
-             value, dbu_per_uu_, ruler->getPt1(), false);
-       })},
-      {"Euclidian", makeEditor([ruler](const std::any& value) {
-         bool euclidian = std::any_cast<bool>(value);
-         ruler->setEuclidian(euclidian);
-         return true;
-       })}};
+  return {{"Name", makeEditor([this, ruler](std::any value) {
+             auto new_name = std::any_cast<const std::string>(value);
+             if (new_name.empty()) {
+               return false;
+             }
+             for (const auto& check_ruler : rulers_) {
+               if (check_ruler->getName() == new_name) {
+                 return false;
+               }
+             }
+             ruler->setName(new_name);
+             return true;
+           })},
+          {"Label", makeEditor([ruler](std::any value) {
+             ruler->setLabel(std::any_cast<const std::string>(value));
+             return true;
+           })},
+          {"Point 0 - x", makeEditor([ruler](const std::any& value) {
+             return RulerDescriptor::editPoint(value, ruler->getPt0(), true);
+           })},
+          {"Point 0 - y", makeEditor([ruler](const std::any& value) {
+             return RulerDescriptor::editPoint(value, ruler->getPt0(), false);
+           })},
+          {"Point 1 - x", makeEditor([ruler](const std::any& value) {
+             return RulerDescriptor::editPoint(value, ruler->getPt1(), true);
+           })},
+          {"Point 1 - y", makeEditor([ruler](const std::any& value) {
+             return RulerDescriptor::editPoint(value, ruler->getPt1(), false);
+           })},
+          {"Euclidian", makeEditor([ruler](const std::any& value) {
+             bool euclidian = std::any_cast<bool>(value);
+             ruler->setEuclidian(euclidian);
+             return true;
+           })}};
 }
 
-bool RulerDescriptor::editPoint(std::any value,
-                                int dbu_per_uu,
-                                odb::Point& pt,
-                                bool is_x)
+bool RulerDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
 {
-  double cast_value = 0;
-  try {
-    cast_value = std::any_cast<double>(value);
-  } catch (const std::bad_any_cast&) {
+  bool accept;
+  const int new_val = Descriptor::Property::convert_string(
+      std::any_cast<std::string>(value), &accept);
+  if (!accept) {
     return false;
   }
-  const int new_val = cast_value * dbu_per_uu;
   if (is_x) {
     pt.setX(new_val);
   } else {

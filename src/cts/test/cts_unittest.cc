@@ -11,6 +11,7 @@
 #include "src/cts/src/Clock.h"
 #include "src/cts/src/Clustering.h"
 #include "src/cts/src/HTreeBuilder.h"
+#include "src/cts/src/SinkClustering.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -71,6 +72,30 @@ TEST(Cluster, BranchingPointIsDisabledIfNoBranchesAreProvided)
                                               means_with_branching);
 
   EXPECT_NE(means_without_branching[0].first, means_with_branching[0].first);
+}
+
+// Check that we avoid a divide-by-zero error when the region has
+// zero height.
+TEST(SinkClusteringTest, ZeroHeightRegion)
+{
+  // Setup
+  utl::Logger logger;
+  CtsOptions options(&logger, nullptr);
+  TechChar techChar(&options, nullptr, nullptr, nullptr, nullptr, &logger);
+  Clock net("clock", "clock", "clock", 0, 0);
+  HTreeBuilder HTree(&options, net, nullptr, &logger, nullptr);
+  SinkClustering clustering(&options, &techChar, &HTree);
+  for (int i = 0; i < 3; ++i) {
+    clustering.addPoint(i, 0);
+    clustering.addCap(0);
+  }
+
+  // Run
+  unsigned best_size;
+  float best_diameter;
+  clustering.run(1, 1, 1, best_size, best_diameter);
+
+  // Pass == no crash
 }
 
 }  // namespace cts

@@ -804,13 +804,37 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   _dbITerm* iterm = (_dbITerm*) this;
-  std::vector<dbAccessPoint*> aps;
+  std::vector<std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>> sorted_aps;
+
   for (auto& [pin_id, ap_id] : iterm->aps_) {
     if (ap_id.isValid()) {
-      aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
+      sorted_aps.emplace_back(pin_id, ap_id);
     }
   }
+  // sort to maintain iterator stability, and backwards compatibility with
+  // std::map which used to be used to store aps.
+  std::sort(sorted_aps.begin(),
+            sorted_aps.end(),
+            [](const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& a,
+               const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& b) {
+              return a.first < b.first;
+            });
+
+  std::vector<dbAccessPoint*> aps;
+  aps.reserve(sorted_aps.size());
+  for (auto& [pin_id, ap_id] : sorted_aps) {
+    aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
+  }
+
   return aps;
+}
+
+void dbITerm::clearPrefAccessPoints()
+{
+  _dbITerm* iterm = (_dbITerm*) this;
+  // Clear aps_ map instead of destroying dbAccessPoint object to prevent
+  // destroying APs of other iterms.
+  iterm->aps_.clear();
 }
 
 std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const

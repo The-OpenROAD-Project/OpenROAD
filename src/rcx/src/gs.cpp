@@ -64,6 +64,9 @@ gs::~gs()
 void gs::freeMem()
 {
   if (init_ & ALLOCATED) {
+    for (auto& pm : pldata_) {
+      free(pm.plane);
+    }
     pldata_.clear();
     init_ = (init_ & ~ALLOCATED);
   }
@@ -144,6 +147,8 @@ void gs::setSize(const int plane,
             plane);
     exit(-1);
   }
+
+  free(plc.plane);
 
   plc.plane = pm;
 }
