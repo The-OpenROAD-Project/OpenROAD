@@ -37,23 +37,6 @@ namespace drt {
 using ViaRawPriorityTuple
     = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
 
-// struct LayerRectComp
-// {
-//   bool operator()(const std::pair<int, gtl::rectangle_data<frCoord>>& lhs,
-//                   const std::pair<int, gtl::rectangle_data<frCoord>>& rhs)
-//                   const
-//   {
-//     if (lhs.first != rhs.first)
-//       return lhs.first < rhs.first;
-
-//     const auto& rect1 = lhs.second;
-//     const auto& rect2 = rhs.second;
-
-//     if (gtl::xl(rect1) != gtl::xl(rect2))
-//       return gtl::xl(rect1) < gtl::xl(rect2);
-//     return gtl::yl(rect1) < gtl::yl(rect2);
-//   }
-// };
 using RectCoordMap = std::pair<gtl::rectangle_data<frCoord>,
                                std::pair<std::map<frCoord, frAccessPointEnum>,
                                          std::map<frCoord, frAccessPointEnum>>>;
@@ -289,8 +272,8 @@ class FlexPA
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       frInstTerm* inst_term,
-      const frAccessPointEnum lower_type,
-      const frAccessPointEnum upper_type);
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
 
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
@@ -427,8 +410,7 @@ class FlexPA
       const gtl::rectangle_data<frCoord>& rect,
       int offset = 0);
 
-  bool OnlyAllowOnGridAccess(const frLayerNum layer_num,
-                             const bool is_macro_cell_pin);
+  bool OnlyAllowOnGridAccess(frLayerNum layer_num, bool is_macro_cell_pin);
 
   /**
    * @brief Creates multiple access points from the coordinates
