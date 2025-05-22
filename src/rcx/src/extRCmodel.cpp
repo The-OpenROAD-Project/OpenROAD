@@ -3453,7 +3453,7 @@ void extMetRCTable::allocateInitialTables(uint widthCnt,
                                                widthCnt,
                                                _rcPoolPtr,
                                                _OUREVERSEORDER);
-      for (uint jj = 0; jj < _wireCnt; jj++)
+      for (uint jj = 0; jj < _wireCnt; jj++) {
         _capUnder_open[met][jj] = new extDistWidthRCTable(false,
                                                           met,
                                                           _layerCnt,
@@ -3461,6 +3461,7 @@ void extMetRCTable::allocateInitialTables(uint widthCnt,
                                                           widthCnt,
                                                           _rcPoolPtr,
                                                           _OUREVERSEORDER);
+      }
     }
     if (diag) {
       _capDiagUnder[met] = new extDistWidthRCTable(false,
