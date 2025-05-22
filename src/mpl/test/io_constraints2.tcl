@@ -1,5 +1,5 @@
 # Test if pin access blockage is generated correctly for a case
-# with all boundaries blocked except one.
+# with all boundaries entirely blocked except one.
 source "helpers.tcl"
 
 # We're not interested in the connections, so don't include the lib.
