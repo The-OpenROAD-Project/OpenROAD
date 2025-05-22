@@ -32,165 +32,28 @@
 #include <boost/icl/interval_set.hpp>
 #include <memory>
 #include <vector>
-
-
 #include <cuda_runtime.h>
 #include <cuda.h>
 
-#include "FlexGRCMap.h"
+#include "gr/FlexGRCMap.h"
 #include "db/grObj/grNet.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "gr/FlexGRGridGraph.h"
-#include "gr/FlexGR_CUDA_object.h"
+#include "gr/FlexGR_util.h"
 
 
 namespace odb {
 class dbDatabase;
 class Rect;
 }  // namespace odb
+
 namespace stt {
 class SteinerTreeBuilder;
 }
+
+
 namespace drt {
-using odb::Rect;
-
-
-struct Point2D_CUDA {
-  int x;
-  int y;
-
-  Point2D_CUDA(int x, int y) : x(x), y(y) {}
-};
-
-struct Point3D_CUDA {
-  int x;
-  int y;
-  int z;
-  Point3D_CUDA(int x, int y, int z) : x(x), y(y), z(z) {}
-};
-
-
-struct Rect2D_CUDA {
-  int xMin;
-  int yMin;
-  int xMax;
-  int yMax;
-
-  Rect2D_CUDA(int xMin, int yMin, int xMax, int yMax) : xMin(xMin), yMin(yMin), xMax(xMax), yMax(yMax) {}
-};
-
-
-enum Directions2D {
-  DIR_NORTH    = 0,
-  DIR_RIGHT = 1,
-  DIR_SOUTH  = 2,
-  DIR_LEFT  = 3,
-  DIR_NONE  = 255
-};
-
-
-
-struct NetStruct {
-  grNet* net = nullptr;
-  int netId = -1;
-
-  std::vector<int> points; // Store all the steiner points in the net
-  std::vector<std::pair<int, int> > vSegments;
-  std::vector<std::pair<int, int> > hSegments;
-
-  NetStruct() = default;
-
-  NetStruct(grNet* _net) : net(_net) { }
-};
-
-
-struct NodeData2D {
-  // forward and backward propagation (heuristic and real cost) (32 bits each)
-  uint32_t forward_h_cost; // heuristic cost
-  uint32_t forward_g_cost; // real cost
-  uint32_t backward_h_cost; // heuristic cost
-  uint32_t backward_g_cost; // real cost
-  uint32_t forward_h_cost_prev; 
-  uint32_t forward_g_cost_prev;
-  uint32_t backward_h_cost_prev;
-  uint32_t backward_g_cost_prev;
-  
-  // Store the direction (for turning point cost and path reconstruction)
-  uint8_t forward_direction;
-  uint8_t backward_direction;
-  uint8_t forward_direction_prev;
-  uint8_t backward_direction_prev;
-  int golden_parent_x;
-  int golden_parent_y;
-
-  // Flags (1 bit each, packed into a single 8-bit field)
-  struct Flags {
-    uint8_t src_flag : 1; // 1 if this node is the source
-    uint8_t dst_flag : 1; // 1 if this node is the destination
-    uint8_t forward_update_flag: 1; // 1 if the forward cost is updated
-    uint8_t backward_update_flag: 1; // 1 if the backward cost is updated
-    uint8_t forward_visited_flag: 1; // 1 if the forward node is visited
-    uint8_t backward_visited_flag: 1; // 1 if the backward node is visited
-    uint8_t forward_visited_flag_prev: 1; // 1 if the forward node is visited
-    uint8_t backward_visited_flag_prev: 1; // 1 if the backward node is visited
-  }  flags;
-};
-
-struct NodeData3D {
-  // forward and backward propagation (heuristic and real cost) (32 bits each)
-  uint32_t forward_h_cost; // heuristic cost
-  uint32_t forward_g_cost; // real cost
-  uint32_t backward_h_cost; // heuristic cost
-  uint32_t backward_g_cost; // real cost
-  uint32_t forward_h_cost_prev; 
-  uint32_t forward_g_cost_prev;
-  uint32_t backward_h_cost_prev;
-  uint32_t backward_g_cost_prev;
-  
-  // Store the direction (for turning point cost and path reconstruction)
-  uint8_t forward_direction;
-  uint8_t backward_direction;
-  uint8_t forward_direction_prev;
-  uint8_t backward_direction_prev;
-  int golden_parent_x;
-  int golden_parent_y;
-  int golden_parent_z;
-
-  // Flags (1 bit each, packed into a single 8-bit field)
-  struct Flags {
-    uint8_t src_flag : 1; // 1 if this node is the source
-    uint8_t dst_flag : 1; // 1 if this node is the destination
-    uint8_t forward_update_flag: 1; // 1 if the forward cost is updated
-    uint8_t backward_update_flag: 1; // 1 if the backward cost is updated
-    uint8_t forward_visited_flag: 1; // 1 if the forward node is visited
-    uint8_t backward_visited_flag: 1; // 1 if the backward node is visited
-    uint8_t forward_visited_flag_prev: 1; // 1 if the forward node is visited
-    uint8_t backward_visited_flag_prev: 1; // 1 if the backward node is visited
-  }  flags;
-};
-
-
-// We treat 0xFFFF as "infinite" cost for 32-bit fields
-//__device__ __host__ __constant__ uint32_t INF32 = 0xFFFFFFFF;
-
-
-#define cudaCheckError()                                                   \
-{                                                                          \
-    cudaError_t err = cudaGetLastError();                                  \
-    if (err != cudaSuccess) {                                              \
-        fprintf(stderr, "CUDA error at %s:%d: %s\n",                       \
-                __FILE__, __LINE__, cudaGetErrorString(err));              \
-        exit(1);                                                           \
-    }                                                                      \
-}
-
-constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
-constexpr int GRSUPPLYSIZE = 8;
-constexpr int GRDEMANDSIZE = 16;
-constexpr int GRFRACSIZE = 1;
-constexpr int VERBOSE = 0; 
-constexpr uint32_t INF32 = 0xFFFFFFFF;
 
 
 

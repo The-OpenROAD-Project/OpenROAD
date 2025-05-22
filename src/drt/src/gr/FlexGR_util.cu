@@ -32,623 +32,180 @@
 
 namespace drt {
 
-constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
-constexpr int GRSUPPLYSIZE = 8;
-constexpr int GRDEMANDSIZE = 16;
-constexpr int GRFRACSIZE = 1;
 
-
-__host__ __device__
-void correct(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) 
+__device__
+int getIdx__device(int x, int y, int z, int xDim, int yDim, int zDim)
 {
+  if (z < 0 || z >= zDim) {
+    return -1;
+  }
+  return z * xDim * yDim + y * xDim + x;    
+}
+
+
+__device__
+bool getBit__device(uint64_t* d_cmap, unsigned idx, unsigned pos)
+{
+  return (d_cmap[idx] >> pos) & 1;
+}
+
+
+__device__
+unsigned getBits__device(uint64_t* d_cmap, unsigned idx, unsigned pos, unsigned length)
+{
+  auto tmp = d_cmap[idx] & (((1ull << length) - 1) << pos);
+  return tmp >> pos;
+}
+
+
+
+// Non-atomic version (for reference only)
+__device__
+void setBits_naive__device(uint64_t* d_cmap, unsigned idx, unsigned pos, unsigned length, unsigned val)
+{
+  d_cmap[idx] &= ~(((1ull << length) - 1) << pos);  // clear related bits to 0
+  d_cmap[idx] |= ((uint64_t) val & ((1ull << length) - 1))
+              << pos;  // only get last length bits of val
+}
+
+
+
+__device__
+void setBits__device(uint64_t* d_cmap, unsigned idx, unsigned pos, unsigned length, unsigned val)
+{
+  uint64_t* address = &d_cmap[idx];
+  const uint64_t clear_mask = ((1ull << length) - 1) << pos; // clear related bits to 0
+  const uint64_t set_val = (static_cast<uint64_t>(val) & ((1ull << length) - 1)) << pos; // only get last length bits of val
+  uint64_t old = *address;
+  uint64_t new_val;
+  do {
+    old = *address;
+    new_val = (old & ~clear_mask) | set_val;
+  } while (atomicCAS(reinterpret_cast<unsigned long long int*>(address),
+           static_cast<unsigned long long int>(old),
+           static_cast<unsigned long long int>(new_val)) != old);
+}
+
+
+
+// Non-atomic version (for reference only)
+__device__
+void addToBits_naive__device(uint64_t* d_cmap, unsigned idx, unsigned pos, unsigned length, unsigned val)
+{
+  auto tmp = getBits__device(d_cmap, idx, pos, length) + val;
+  tmp = (tmp > (1u << length)) ? (1u << length) : tmp;
+  setBits_naive__device(d_cmap, idx, pos, length, tmp);
+}
+
+
+__device__
+void addToBits__device(uint64_t* d_cmap, unsigned idx, unsigned pos, unsigned length, unsigned val)
+{
+  uint64_t* address = &d_cmap[idx];
+  const uint64_t clear_mask = ((1ull << length) - 1) << pos;
+  const uint64_t val_mask = (1ull << length) - 1;
+  uint64_t old, new_val;
+  old = *address;
+  do {
+    old = *address;
+    uint64_t current_val = (old >> pos) & val_mask;
+    current_val += val;
+    // Clamp to original behavior 
+    current_val = min(current_val, static_cast<uint64_t>(1ull << length));
+    new_val = (old & ~clear_mask) | ((current_val & val_mask) << pos);
+  } while (atomicCAS(reinterpret_cast<unsigned long long int*>(address),
+           static_cast<unsigned long long int>(old),
+           static_cast<unsigned long long int>(new_val)) != old);
+}
+
+
+
+__device__
+bool hasBlock__device(uint64_t* d_cmap, 
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir)
+{
+  bool sol = false;
+  auto idx = getIdx__device(x, y, z, xDim, yDim, zDim);
   switch (dir) {
-    case frDirEnum::W:
-      x--;
-      dir = frDirEnum::E;
+    case frDirEnum::E:
+      sol = getBit__device(d_cmap, idx, 3);
       break;
-    case frDirEnum::S:
-      y--;
-      dir = frDirEnum::N;
+    case frDirEnum::N:
+      sol = getBit__device(d_cmap, idx, 2);
       break;
-    case frDirEnum::D:
-      z--;
-      dir = frDirEnum::U;
+    case frDirEnum::U:;
       break;
     default:;
-  }
-}
-
-
-__host__ __device__
-void correctU(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) 
-{
-  switch (dir) {
-    case frDirEnum::D:
-      z--;
-      dir = frDirEnum::U;
-      break;
-    default:;
-  }
-}
-
-
-__host__ __device__
-void reverse(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir)
-{
-  switch (dir) {
-    case frDirEnum::E:
-      x++;
-      dir = frDirEnum::W;
-      break;
-    case frDirEnum::S:
-      y--;
-      dir = frDirEnum::N;
-      break;
-    case frDirEnum::W:
-      x--;
-      dir = frDirEnum::E;
-      break;
-    case frDirEnum::N:
-      y++;
-      dir = frDirEnum::S;
-      break;
-    case frDirEnum::U:
-      z++;
-      dir = frDirEnum::D;
-      break;
-    case frDirEnum::D:
-      z--;
-      dir = frDirEnum::U;
-      break;
-    default:;
-  }
-}
-
-
-
-__host__ __device__
-bool addEdge(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) 
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-  
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      setBit(bits, idx, 0);
-      break;
-    case frDirEnum::N:
-      setBit(bits, idx, 1);
-      break;
-    case frDirEnum::U:
-      setBit(bits, idx, 2);
-      break;
-    default:
-      return false;
   }  
-  
-  return true; 
-}
-
-
-__host__ __device__
-bool removeEdge(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) 
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-  
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      resetBit(bits, idx, 0);
-      break;
-    case frDirEnum::N:
-      resetBit(bits, idx, 1);
-      break;
-    case frDirEnum::U:
-      resetBit(bits, idx, 2);
-      break;
-    default:
-      return false;
-  }  
-  
-  return true; 
-}
-
-
-__host__ __device__
-bool setBlock(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) 
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-  
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      setBit(bits, idx, 3);
-      break;
-    case frDirEnum::N:
-      setBit(bits, idx, 4);
-      break;
-    case frDirEnum::U:
-      setBit(bits, idx, 5);
-      break;
-    default:
-      return false;
-  }  
-  
-  return true; 
+  return sol;
 }
 
 
 
-__host__ __device__
-bool resetBlock(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) 
+__device__
+unsigned getRawSupply__device(uint64_t* d_cmap, 
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir)
 {
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-  
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      resetBit(bits, idx, 3);
-      break;
-    case frDirEnum::N:
-      resetBit(bits, idx, 4);
-      break;
-    case frDirEnum::U:
-      resetBit(bits, idx, 5);
-      break;
-    default:
-      return false;
-  }  
-  
-  return true; 
-}
-
-
-__host__ __device__
-void setHistoryCost(uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, unsigned histCostIn)
-{
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  setBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE, histCostIn);
-}
-
-
-__host__ __device__
-void addHistoryCost(uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, unsigned in)
-{
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);  
-  addToBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE, in);
-}
-
-
-__host__ __device__
-void decayHistoryCost(uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z)
-{
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);  
-  subToBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE, 1);
-}
-
-
-__host__ __device__
-void decayHistoryCost(uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, double d)
-{
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);  
-  int currCost = (getBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE));
-  currCost *= d;
-  currCost = std::max(0, currCost);
-  setBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE, currCost);
-}
-
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-void setSupply(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned supplyIn)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      setBits(bits, idx, 16, GRSUPPLYSIZE, supplyIn);
-      break;
-    case frDirEnum::N:
-      setBits(bits, idx, 24, GRSUPPLYSIZE, supplyIn);
-      break;
-    default:
-      return;
-  }
-}
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-void setDemand(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned demandIn)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      return setBits(
-        bits, idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, demandIn);
-    case frDirEnum::N:
-      return setBits(
-        bits, idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, demandIn);
-    default:
-      return;
-  }
-}
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-void setRawDemand(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned rawDemandIn)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      return setBits(bits, idx, 48, GRDEMANDSIZE, rawDemandIn);
-    case frDirEnum::N:
-      return setBits(bits, idx, 32, GRDEMANDSIZE, rawDemandIn);
-    default:
-      return;
-  }
-}
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-void addDemand(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned delta)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      addToBits(bits, idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, delta);
-      break;
-    case frDirEnum::N:
-      addToBits(bits, idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, delta);
-      break;
-    default:
-      return;
-  }
-}
-
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__ 
-void addRawDemand(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned delta)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      addToBits(bits, idx, 48, GRDEMANDSIZE, delta);
-      break;
-    case frDirEnum::N:
-      addToBits(bits, idx, 32, GRDEMANDSIZE, delta);
-      break;
-    default:
-      return;
-  }
-}
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-void subDemand(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned delta)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      subToBits(bits, idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, delta);
-      break;
-    case frDirEnum::N:
-      subToBits(bits, idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, delta);
-      break;
-    default:
-      return;
-  }
-}
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-void subRawDemand(uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, unsigned delta)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      subToBits(bits, idx, 48, GRDEMANDSIZE, delta);
-      break;
-    case frDirEnum::N:
-      subToBits(bits, idx, 32, GRDEMANDSIZE, delta);
-      break;
-    default:
-      return;
-  }
-} 
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-unsigned getSupply(const uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, bool isRaw)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return 0;
-  }
-    
   unsigned supply = 0;
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
+  auto idx = getIdx__device(x, y, z, xDim, yDim, zDim);
   switch (dir) {
     case frDirEnum::E:
-      supply = getBits(bits, idx, 24, GRSUPPLYSIZE);
+      supply = getBits__device(d_cmap, idx, 24, CMAPSUPPLYSIZE);
       break;
     case frDirEnum::N:
-      supply = getBits(bits, idx, 16, GRSUPPLYSIZE);
+      supply = getBits__device(d_cmap, idx, 16, CMAPSUPPLYSIZE);
       break;
-    default:
-      return 0;
+    case frDirEnum::U:;
+      break;
+    default:;
   }
-  
-  // Return the raw or processed supply value based on the isRaw flag
-  return isRaw ? (supply << GRFRACSIZE) : supply;
+  return supply << CMAPFRACSIZE;
 }
 
 
-__host__ __device__
-unsigned getRawSupply(const uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
+__device__
+unsigned getRawDemand__device(uint64_t* d_cmap,
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir)
 {
-  return getSupply(bits, zDir, xDim, yDim, zDim, x, y, z, dir, true);
-}
-
-
-// E == H; N == V; currently no U / D
-__host__ __device__
-unsigned getDemand(const uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return 0;
-  }
-    
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
+  unsigned demand = 0;
+  auto idx = getIdx__device(x, y, z, xDim, yDim, zDim);
   switch (dir) {
     case frDirEnum::E:
-      return getBits(bits, idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE);
+      demand = getBits__device(d_cmap, idx, 48, CMAPDEMANDSIZE);
+      break;
     case frDirEnum::N:
-      return getBits(bits, idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE);
-    default:
-      return 0;
+      demand = getBits__device(d_cmap, idx, 32, CMAPDEMANDSIZE);
+      break;
+    case frDirEnum::U:;
+      break;
+    default:;
   }
+
+  return demand;
 }
 
 
-// E == H; N == V; currently no U / D
-__host__ __device__
-unsigned getRawDemand(const uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
+__device__
+void addRawDemand__device(
+  uint64_t* d_cmap,
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir, unsigned delta)
 {
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return 0;
-  }
-    
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
+  int idx = getIdx__device(x, y, z, xDim, yDim, zDim);
   switch (dir) {
     case frDirEnum::E:
-      return getBits(bits, idx, 48, GRDEMANDSIZE);
+      addToBits__device(d_cmap, idx, 48, CMAPDEMANDSIZE, delta);
+      break;
     case frDirEnum::N:
-      return getBits(bits, idx, 32, GRDEMANDSIZE);
-    default:
-      return 0;
-  }
-}
-
-
-__host__ __device__
-bool hasBlock(const uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-  
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      return getBit(bits, idx, 3);
-    case frDirEnum::N:
-      return getBit(bits, idx, 4);
+      addToBits__device(d_cmap, idx, 32, CMAPDEMANDSIZE, delta);
+      break;
     case frDirEnum::U:
-      return getBit(bits, idx, 5);
-    default:
-      return false;
+      break;
+    default:;
   }
-}
-
-
-__host__ __device__
-bool hasHistoryCost(const uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z)
-{
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  return getBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE);
-}
-
-
-__host__ __device__
-bool hasEdge(const uint64_t* bits,
-  const bool* zDir, int xDim, int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-  
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  switch (dir) {
-    case frDirEnum::E:
-      return getBit(bits, idx, 0);
-    case frDirEnum::N:
-      return getBit(bits, idx, 1);
-    case frDirEnum::U:
-      return getBit(bits, idx, 2);
-    default:
-      return false;
-  }  
-}
-
-
-__host__ __device__
-frCoord getEdgeLength(
-  const frCoord* xCoords, const frCoord* yCoords, const frCoord* zHeights,
-  const bool* zDirs, int xDim , int yDim, int zDim,
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
-{
-  correct(x, y, z, dir);
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return false;
-  }
-
-  switch (dir) {
-    case frDirEnum::E:
-      return xCoords[x + 1] - xCoords[x];
-    case frDirEnum::N:
-      return yCoords[y + 1] - yCoords[y];
-    case frDirEnum::U:
-      return zHeights[z + 1] - zHeights[z];
-    default:
-      return 0;
-  }
-}
-
-
-
-
-__host__ __device__
-bool hasCongCost(const uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
-{
-  return (getRawDemand(bits, zDir, xDim, yDim, zDim, x, y, z, dir) > 
-          getRawSupply(bits, zDir, xDim, yDim, zDim, x, y, z, dir));
-}
-
-
-__host__ __device__
-unsigned getHistoryCost(const uint64_t* bits, 
-  const bool* zDir, int xDim, int yDim, int zDim, 
-  frMIdx x, frMIdx y, frMIdx z)
-{
-  if (!isValid(x, y, z, xDim, yDim, zDim)) {
-    return 0;
-  }
-
-  auto idx = getIdx(x, y, z, xDim, yDim, zDir);
-  return getBits(bits, idx, 8, GRGRIDGRAPHHISTCOSTSIZE);
 }
 
 
