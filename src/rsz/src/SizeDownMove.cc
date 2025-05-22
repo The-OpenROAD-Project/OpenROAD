@@ -50,14 +50,7 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   if (fanout < 2) {
     return false;
   }
-  const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-  if (tristate_drvr) {
-    return false;
-  }
   const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  if (resizer_->dontTouch(net)) {
-    return false;
-  }
   dbNet* db_net = db_network_->staToDb(net);
   if (db_net->isConnectedByAbutment()) {
     return false;
