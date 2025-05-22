@@ -760,7 +760,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   _firstDiagDist = nullptr;
   _lastDiagDist = nullptr;
 
-  for (jj = 0; jj < 16; jj++) {
+  for (jj = 0; jj < 32; jj++) {
     _diagWidthMapTable[jj] = nullptr;
     _diagDistMapTable[jj] = nullptr;
     _diagWidthTable[jj] = nullptr;
@@ -876,12 +876,29 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   _layerCnt = layerCnt;
   _met = met;
 
+  _firstDiagWidth = nullptr;
+  _lastDiagWidth = nullptr;
+  _firstDiagDist = nullptr;
+  _lastDiagDist = nullptr;
+  _rcDiagDistTable = nullptr;
+  _widthMapTable = nullptr;
+
+  for (uint jj = 0; jj < 32; jj++) {
+    _diagWidthMapTable[jj] = nullptr;
+    _diagDistMapTable[jj] = nullptr;
+    _diagWidthTable[jj] = nullptr;
+    _diagDistTable[jj] = nullptr;
+  }
+
   // dkf 09202024 skip width map table when  not knowing number of widths is not
   // know in advance after reading rules of different width width mapping should
   // be re-done before writting rules
   bool skip_width_map_table = widthTable == nullptr;
 
   if (!skip_width_map_table && widthTable->getCnt() == 0) {
+    _rcDistTable = nullptr;
+    _widthTable = nullptr;
+    _rcDistTable = nullptr;
     return;
   }
   _metCnt = metCnt;
@@ -937,17 +954,6 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   }
   _rcPoolPtr = rcPool;
 
-  _firstDiagWidth = nullptr;
-  _lastDiagWidth = nullptr;
-  _firstDiagDist = nullptr;
-  _lastDiagDist = nullptr;
-  for (uint jj = 0; jj < 12; jj++) {
-    _diagWidthMapTable[jj] = nullptr;
-    _diagDistMapTable[jj] = nullptr;
-    _diagWidthTable[jj] = nullptr;
-    _diagDistTable[jj] = nullptr;
-  }
-  _rcDiagDistTable = nullptr;
   _rc31 = rcPool->alloc();
 }
 
