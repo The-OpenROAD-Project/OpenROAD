@@ -4,3 +4,6 @@
 [submodule "src/abc"]
 	path = third-party/abc
 	url = ../../The-OpenROAD-Project/abc.git
+[submodule "thirdparty/naja-if"]
+	path = thirdparty/naja-if
+	url = https://github.com/najaeda/naja-if

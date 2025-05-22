@@ -38,7 +38,7 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
 # Allow disabling tests
-# option(ENABLE_TESTS "Enable OpenROAD tests" OFF)
+option(ENABLE_TESTS "Enable OpenROAD tests" OFF)
 
 # Allow enabling address sanitizer
 option(ASAN "Enable Address Sanitizer" OFF)
