@@ -343,6 +343,14 @@ void FlexPA::createMultipleAccessPoints(
       }
     }
   }
+  if (inst_term && isStdCell(inst_term->getInst())) {
+#pragma omp atomic
+    std_cell_pin_gen_ap_cnt_ += aps.size();
+  }
+  if (inst_term && isMacroCell(inst_term->getInst())) {
+#pragma omp atomic
+    macro_cell_pin_gen_ap_cnt_ += aps.size();
+  }
 }
 
 /**
@@ -1242,14 +1250,6 @@ bool FlexPA::genPinAccessCostBounded(
       layer_rect_to_coords, new_aps, apset, inst_term, lower_type, upper_type);
   filterMultipleAPAccesses(
       new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
-  if (is_std_cell_pin) {
-#pragma omp atomic
-    std_cell_pin_gen_ap_cnt_ += new_aps.size();
-  }
-  if (is_macro_cell_pin) {
-#pragma omp atomic
-    macro_cell_pin_gen_ap_cnt_ += new_aps.size();
-  }
   if (graphics_) {
     graphics_->setAPs(new_aps, lower_type, upper_type);
   }
