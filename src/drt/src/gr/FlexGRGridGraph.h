@@ -28,10 +28,7 @@
 
 #pragma once
 
-constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
-constexpr int GRSUPPLYSIZE = 8;
-constexpr int GRDEMANDSIZE = 16;
-constexpr int GRFRACSIZE = 1;
+
 
 #include <iostream>
 #include <map>
@@ -42,6 +39,8 @@ constexpr int GRFRACSIZE = 1;
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gr/FlexGRWavefront.h"
+#include "gr/FlexGR_util.h"
+
 
 namespace drt {
 class FlexGRWorker;

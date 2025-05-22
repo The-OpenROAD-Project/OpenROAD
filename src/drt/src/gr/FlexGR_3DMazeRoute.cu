@@ -69,21 +69,7 @@
 
 namespace drt {
 
-
 namespace cg = cooperative_groups;
-
-
-
-enum Directions3D {
-  DIR_NORTH_3D   = 0,
-  DIR_RIGHT_3D   = 1,
-  DIR_SOUTH_3D   = 2,
-  DIR_LEFT_3D    = 3,
-  DIR_UP_3D      = 4,
-  DIR_DOWN_3D    = 5,
-  DIR_NONE_3D    = 255
-};
-
 
 __host__ __device__ 
 void initNodeData3D(NodeData3D& nd) {
@@ -692,7 +678,7 @@ __device__
 void biwaveBellmanFord3D__device(
   int netId,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData3D* d_nodes,
@@ -715,7 +701,7 @@ void biwaveBellmanFord3D__device(
   int pinIdxStart = d_netPtr[netId];
   int pinIdxEnd = d_netPtr[netId + 1];
   int numPins = pinIdxEnd - pinIdxStart;
-  Rect2D_CUDA netBBox = d_netBBoxVec[netId];
+  Rect2D netBBox = d_netBBoxVec[netId];
   int LLX = netBBox.xMin;
   int LLY = netBBox.yMin;
   int URX = netBBox.xMax;
@@ -752,7 +738,7 @@ void biwaveBellmanFord3D__kernel(
   int netEndId,
   int* d_netBatchIdx,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData3D* d_nodes,
@@ -811,7 +797,7 @@ void initBatchNodeData3D__kernel(
 
 __global__
 void initParent3D__kernel(
-  Point3D_CUDA* d_parents,
+  Point3DCUDA* d_parents,
   int numParents)
 {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < numParents; idx += gridDim.x * blockDim.x) {
@@ -824,7 +810,7 @@ void initParent3D__kernel(
 __global__
 void copyParents3D__kernel(
   NodeData3D* d_nodes,
-  Point3D_CUDA* d_parents,
+  Point3DCUDA* d_parents,
   int numNodes)
 {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < numNodes; idx += gridDim.x * blockDim.x) {
@@ -867,7 +853,7 @@ float FlexGR::GPUAccelerated3DMazeRoute_update(
   std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
   std::vector<std::vector<grNet*> >& netBatches,
   std::vector<int>& validBatches,
-  std::vector<Point3D_CUDA>& h_parents_3D,
+  std::vector<Point3DCUDA>& h_parents_3D,
   std::vector<uint64_t>& h_costMap_3D,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
@@ -896,7 +882,7 @@ float FlexGR::GPUAccelerated3DMazeRoute_update(
   // To avoid frequent memory allocation, we will allocate the memory once  
   std::vector<int> netPtr;
   std::vector<int> netBatchIdxVec; 
-  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<Rect2D> netBBoxVec;
   std::vector<int> pinIdxVec;
   std::vector<int> chunkNetPtr; // store the first netIdx of each chunk
  
@@ -913,7 +899,7 @@ float FlexGR::GPUAccelerated3DMazeRoute_update(
       netBatchIdxVec.push_back(batchChunkIdx);
       netPtr.push_back(pinIdxVec.size());    
       auto netBBox = net->getRouteAbsBBox();
-      netBBoxVec.push_back(Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+      netBBoxVec.push_back(Rect2D(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
       // To be updated 
       maxHPWL = std::max(maxHPWL, static_cast<int>((netBBox.xMax() - netBBox.xMin()) * (netBBox.yMax() - netBBox.yMin())));
     }
@@ -1024,7 +1010,7 @@ float FlexGR::GPUAccelerated3DMazeRoute_update(
     cudaMemcpy(
       h_parents_3D.data(), 
       d_parents_3D_, 
-      h_parents_3D.size() * sizeof(Point3D_CUDA), 
+      h_parents_3D.size() * sizeof(Point3DCUDA), 
       cudaMemcpyDeviceToHost);
     cudaCheckError();
   }  
@@ -1041,10 +1027,10 @@ void FlexGR::allocateCUDAMem3D(
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
   std::vector<int>& h_zHeights,
-  std::vector<Point3D_CUDA>& h_parents,
+  std::vector<Point3DCUDA>& h_parents,
   std::vector<int>& pinIdxVec,
   std::vector<int>& netPtr,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
+  std::vector<Rect2D>& netBBoxVec,
   std::vector<int>& netBatchIdxVec,
   int numGrids,
   int maxChunkSize,
@@ -1108,9 +1094,9 @@ void FlexGR::allocateCUDAMem3D(
   if (netBBoxVec.size() > h_netBBoxVec_size_) {
     h_netBBoxVec_size_ = netBBoxVec.size();
     cudaFree(d_netBBox_);
-    cudaMalloc(&d_netBBox_, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+    cudaMalloc(&d_netBBox_, netBBoxVec.size() * sizeof(Rect2D));
   }
-  cudaMemcpy(d_netBBox_, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox_, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D), cudaMemcpyHostToDevice);
 
   if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
     h_netBatchIdxVec_size_ = netBatchIdxVec.size();
@@ -1124,7 +1110,7 @@ void FlexGR::allocateCUDAMem3D(
     int maxParentSize = numGrids * maxChunkSize;
     h_parents_size_3D_ = maxParentSize;
     cudaFree(d_parents_3D_);
-    cudaMalloc(&d_parents_3D_, maxParentSize * sizeof(Point3D_CUDA));
+    cudaMalloc(&d_parents_3D_, maxParentSize * sizeof(Point3DCUDA));
   }
 
   if (numNodes > h_nodes_size_) {

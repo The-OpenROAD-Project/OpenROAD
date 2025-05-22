@@ -318,7 +318,7 @@ class FlexGR
     std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
     std::vector<std::vector<grNet*> >& netBatches,
     std::vector<int>& validBatches,
-    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<Point2D>& h_parents,
     std::vector<uint64_t>& h_costMap,
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
@@ -331,7 +331,7 @@ class FlexGR
     std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
     std::vector<std::vector<grNet*> >& netBatches, 
     std::vector<int>& validBatches,
-    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<Point2D>& h_parents,
     std::vector<uint64_t>& h_costMap,
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
@@ -343,7 +343,7 @@ class FlexGR
     std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
     std::vector<std::vector<grNet*> >& netBatches, 
     std::vector<int>& validBatches,
-    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<Point2D>& h_parents,
     std::vector<uint64_t>& h_costMap,
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
@@ -358,7 +358,7 @@ class FlexGR
       std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
       std::vector<std::vector<grNet*> >& netBatches, 
       std::vector<int>& validBatches,
-      std::vector<Point2D_CUDA>& h_parents,
+      std::vector<Point2D>& h_parents,
       std::vector<uint64_t>& h_costMap,
       std::vector<int>& h_xCoords,
       std::vector<int>& h_yCoords,
@@ -392,11 +392,11 @@ class FlexGR
   int* d_zHeights_ = nullptr;
   NodeData2D* d_nodes_ = nullptr;
   NodeData3D* d_nodes_3D_ = nullptr;
-  Point2D_CUDA* d_parents_ = nullptr;
-  Point3D_CUDA* d_parents_3D_ = nullptr;
+  Point2D* d_parents_ = nullptr;
+  Point3DCUDA* d_parents_3D_ = nullptr;
   int* d_pinIdxVec_ = nullptr;
   int* d_netPtr_ = nullptr;
-  Rect2D_CUDA* d_netBBox_ = nullptr;
+  Rect2D* d_netBBox_ = nullptr;
   int* d_netBatchIdx_ = nullptr;
   
   int h_costMap_size_ = 0;
@@ -416,7 +416,7 @@ class FlexGR
     std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
     std::vector<std::vector<grNet*> >& netBatches,
     std::vector<int>& validBatches,
-    std::vector<Point3D_CUDA>& h_parents_3D,
+    std::vector<Point3DCUDA>& h_parents_3D,
     std::vector<uint64_t>& h_costMap_3D,
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
@@ -434,10 +434,10 @@ class FlexGR
     std::vector<uint64_t>& h_costMap,
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
-    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<Point2D>& h_parents,
     std::vector<int>& pinIdxVec,
     std::vector<int>& netPtr,
-    std::vector<Rect2D_CUDA>& netBBoxVec,
+    std::vector<Rect2D>& netBBoxVec,
     std::vector<int>& netBatchIdxVec,
     int numGrids,
     int maxChunkSize,
@@ -450,10 +450,10 @@ class FlexGR
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
     std::vector<int>& h_zHeights,
-    std::vector<Point3D_CUDA>& h_parents,
+    std::vector<Point3DCUDA>& h_parents,
     std::vector<int>& pinIdxVec,
     std::vector<int>& netPtr,
-    std::vector<Rect2D_CUDA>& netBBoxVec,
+    std::vector<Rect2D>& netBBoxVec,
     std::vector<int>& netBatchIdxVec,
     int numGrids,
     int maxChunkSize,
@@ -609,7 +609,7 @@ class FlexGRWorker
 
   void main_mt_restore(
     std::vector<grNet*>& rerouteNets, 
-    std::vector<Point2D_CUDA>& h_parent,
+    std::vector<Point2D>& h_parent,
     int xDim,
     int yDim) {
     for (auto& net : rerouteNets) {
@@ -662,7 +662,7 @@ class FlexGRWorker
 
   void main_mt_restore_CPU_GPU(
     std::vector<grNet*>& rerouteNets, 
-    std::vector<Point2D_CUDA>& h_parent,
+    std::vector<Point2D>& h_parent,
     int xDim,
     int yDim) {
     for (auto& net : rerouteNets) {

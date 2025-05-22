@@ -1926,7 +1926,7 @@ __device__
 void biwaveBellmanFord2D_v3__device(
   int netId,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -1946,7 +1946,7 @@ void biwaveBellmanFord2D_v3__device(
   int pinIdxStart = d_netPtr[netId];
   int pinIdxEnd = d_netPtr[netId + 1];
   int numPins = pinIdxEnd - pinIdxStart;
-  Rect2D_CUDA netBBox = d_netBBoxVec[netId];
+  Rect2D netBBox = d_netBBoxVec[netId];
   int LLX = netBBox.xMin;
   int LLY = netBBox.yMin;
   int URX = netBBox.xMax;
@@ -1986,7 +1986,7 @@ void biwaveBellmanFord2D_v3__kernel(
   int netEndId,
   int* d_netBatchIdx,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -2040,7 +2040,7 @@ void initBatchNodeData2D_v3__kernel(
 
 __global__
 void initParent2D__kernel(
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   int numParents)
 {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < numParents; idx += gridDim.x * blockDim.x) {
@@ -2053,7 +2053,7 @@ void initParent2D__kernel(
 __global__
 void copyParents2D__kernel(
   NodeData2D* d_nodes,
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   int numNodes)
 {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < numNodes; idx += gridDim.x * blockDim.x) {
@@ -2108,8 +2108,8 @@ void initBatchPin2D_v3__kernel(
 float ChunkPathSyncUp(
   std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
   std::vector<grNet*>& nets,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
-  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<Rect2D>& netBBoxVec,
+  std::vector<Point2D>& h_parents,
   int netIdStart,
   int netIdEnd,
   int xDim)
@@ -2166,10 +2166,10 @@ void FlexGR::allocateCUDAMem(
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
-  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<Point2D>& h_parents,
   std::vector<int>& pinIdxVec,
   std::vector<int>& netPtr,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
+  std::vector<Rect2D>& netBBoxVec,
   std::vector<int>& netBatchIdxVec,
   int numGrids,
   int maxChunkSize,
@@ -2221,12 +2221,12 @@ void FlexGR::allocateCUDAMem(
     int maxParentSize = numGrids * maxChunkSize;
     h_parents_size_ = maxParentSize;
     cudaFree(d_parents_);
-    cudaMalloc(&d_parents_, maxParentSize * sizeof(Point2D_CUDA));    
+    cudaMalloc(&d_parents_, maxParentSize * sizeof(Point2D));    
     // h_parents_size_ = h_parents.size();
     //cudaFree(d_parents_);
-    //cudaMalloc(&d_parents_, h_parents.size() * sizeof(Point2D_CUDA));
+    //cudaMalloc(&d_parents_, h_parents.size() * sizeof(Point2D));
   }
-  //cudaMemcpy(d_parents_, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
+  //cudaMemcpy(d_parents_, h_parents.data(), h_parents.size() * sizeof(Point2D), cudaMemcpyHostToDevice);
 
   if (pinIdxVec.size() > h_pinIdxVec_size_) {
     h_pinIdxVec_size_ = pinIdxVec.size();
@@ -2245,9 +2245,9 @@ void FlexGR::allocateCUDAMem(
   if (netBBoxVec.size() > h_netBBoxVec_size_) {
     h_netBBoxVec_size_ = netBBoxVec.size();
     cudaFree(d_netBBox_);
-    cudaMalloc(&d_netBBox_, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+    cudaMalloc(&d_netBBox_, netBBoxVec.size() * sizeof(Rect2D));
   }
-  cudaMemcpy(d_netBBox_, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox_, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D), cudaMemcpyHostToDevice);
 
   if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
     h_netBatchIdxVec_size_ = netBatchIdxVec.size();
@@ -2314,7 +2314,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
   std::vector<std::vector<grNet*> >& netBatches,
   std::vector<int>& validBatches,
-  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<Point2D>& h_parents,
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
@@ -2341,10 +2341,10 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   // Set the GPU device to 0.
   cudaSetDevice(0);
 
-  std::vector<Point2D_CUDA> netVec;
+  std::vector<Point2D> netVec;
   std::vector<int> netPtr;
   std::vector<int> netBatchIdxVec; 
-  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<Rect2D> netBBoxVec;
   std::vector<int> pinIdxVec;
   int maxHPWL = 0; // We will run the algorithm for maxHPWL * relaxThreshold iteratively
   
@@ -2370,14 +2370,14 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     auto& batch = netBatches[validBatches[batchIdx]];
     for (auto& net : batch) {
       for (auto& idx : net->getPinGCellAbsIdxs()) {
-        netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
+        netVec.push_back(Point2D(idx.x(), idx.y()));
         pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
       }
       netBatchIdxVec.push_back(batchChunkIdx);
       netPtr.push_back(netVec.size());
       auto netBBox = net->getRouteAbsBBox();
       netBBoxVec.push_back(
-        Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+        Rect2D(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
       // maxHPWL = std::max(maxHPWL, net->getHPWL());
       maxHPWL = std::max(maxHPWL, static_cast<int>((netBBox.xMax() - netBBox.xMin()) * (netBBox.yMax() - netBBox.yMin())));
     }
@@ -2547,7 +2547,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     cudaCheckError();
 
 
-    cudaMemcpy(h_parents.data(), d_parents_, h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_parents.data(), d_parents_, h_parents.size() * sizeof(Point2D), cudaMemcpyDeviceToHost);
 
     // Check the parents
     cudaCheckError();
@@ -2582,7 +2582,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
   std::vector<std::vector<grNet*> >& netBatches,
   std::vector<int>& validBatches,
-  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<Point2D>& h_parents,
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
@@ -2607,10 +2607,10 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   // Set the GPU device to 1.
   cudaSetDevice(1);
 
-  std::vector<Point2D_CUDA> netVec;
+  std::vector<Point2D> netVec;
   std::vector<int> netPtr;
   std::vector<int> netBatchIdxVec; 
-  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<Rect2D> netBBoxVec;
   std::vector<int> pinIdxVec;
   int maxHPWL = 0; // We will run the algorithm for maxHPWL * relaxThreshold iteratively
   
@@ -2636,14 +2636,14 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
     auto& batch = netBatches[validBatches[batchIdx]];
     for (auto& net : batch) {
       for (auto& idx : net->getPinGCellAbsIdxs()) {
-        netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
+        netVec.push_back(Point2D(idx.x(), idx.y()));
         pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
       }
       netBatchIdxVec.push_back(batchChunkIdx);
       netPtr.push_back(netVec.size());
       auto netBBox = net->getRouteAbsBBox();
       netBBoxVec.push_back(
-        Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+        Rect2D(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
       // maxHPWL = std::max(maxHPWL, net->getHPWL());
       maxHPWL = std::max(maxHPWL, static_cast<int>((netBBox.xMax() - netBBox.xMin()) * (netBBox.yMax() - netBBox.yMin())));
     }
@@ -2712,12 +2712,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   // For the chunk specific variables
   NodeData2D* d_nodes = nullptr; // (numGrids * chunkSize);
   
-  // Point2D_CUDA* d_parents = nullptr;
+  // Point2D* d_parents = nullptr;
   int* d_pinIdxVec = nullptr;
   int* d_netPtr = nullptr;
-  Rect2D_CUDA* d_netBBox = nullptr;
+  Rect2D* d_netBBox = nullptr;
   int* d_netBatchIdx = nullptr;
-  Point2D_CUDA* d_parents = nullptr;
+  Point2D* d_parents = nullptr;
   */
 
  
@@ -2756,10 +2756,10 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   uint64_t* d_costMap = d_costMap_;
   int* d_xCoords = d_xCoords_;
   int* d_yCoords = d_yCoords_;
-  Point2D_CUDA* d_parents = d_parents_;
+  Point2D* d_parents = d_parents_;
   int* d_pinIdxVec = d_pinIdxVec_;
   int* d_netPtr = d_netPtr_;
-  Rect2D_CUDA* d_netBBox = d_netBBox_;
+  Rect2D* d_netBBox = d_netBBox_;
   int* d_netBatchIdx = d_netBatchIdx_;
   NodeData2D* d_nodes = d_nodes_;
    
@@ -2799,10 +2799,10 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   uint64_t* d_costMap = d_costMap_;
   int* d_xCoords = d_xCoords_;
   int* d_yCoords = d_yCoords_;
-  Point2D_CUDA* d_parents = d_parents_;
+  Point2D* d_parents = d_parents_;
   int* d_pinIdxVec = d_pinIdxVec_;
   int* d_netPtr = d_netPtr_;
-  Rect2D_CUDA* d_netBBox = d_netBBox_;
+  Rect2D* d_netBBox = d_netBBox_;
   int* d_netBatchIdx = d_netBatchIdx_;
   NodeData2D* d_nodes = d_nodes_;
  
@@ -2845,9 +2845,9 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   if (h_parents.size() > h_parents_size_) {
     h_parents_size_ = h_parents.size();
     cudaFree(d_parents);
-    cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D_CUDA));
+    cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D));
   }
-  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D), cudaMemcpyHostToDevice);
 
   if (pinIdxVec.size() > h_pinIdxVec_size_) {
     h_pinIdxVec_size_ = pinIdxVec.size();
@@ -2867,9 +2867,9 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   if (netBBoxVec.size() > h_netBBoxVec_size_) {
     h_netBBoxVec_size_ = netBBoxVec.size();
     cudaFree(d_netBBox);
-    cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+    cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D));
   }
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D), cudaMemcpyHostToDevice);
 
   if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
     h_netBatchIdxVec_size_ = netBatchIdxVec.size();
@@ -3003,7 +3003,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
 
     std::cout << "Test d" << std::endl;
 
-    cudaMemcpy(h_parents.data(), d_parents, h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_parents.data(), d_parents, h_parents.size() * sizeof(Point2D), cudaMemcpyDeviceToHost);
 
     // Check the parents
     cudaCheckError();
@@ -3688,7 +3688,7 @@ void biwaveBellmanFord2D__device(
   int netId,
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -3709,7 +3709,7 @@ void biwaveBellmanFord2D__device(
   int pinIdxEnd = d_netPtr[netId + 1];
   int numPins = pinIdxEnd - pinIdxStart;
   int maxIters = d_netHPWL[netId];
-  Rect2D_CUDA netBBox = d_netBBoxVec[netId];
+  Rect2D netBBox = d_netBBoxVec[netId];
   int LLX = netBBox.xMin;
   int LLY = netBBox.yMin;
   int URX = netBBox.xMax;
@@ -3827,7 +3827,7 @@ void biwaveBellmanFord2D__kernel(
   int netId,
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -3873,7 +3873,7 @@ void biwaveBellmanFord2D__kernel(
 void launchMazeRouteStream(
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBox,
+  Rect2D* d_netBBox,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -3980,7 +3980,7 @@ void launchMazeRouteStream(
 float batchPathSyncUp(
   std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
   std::vector<grNet*>& nets,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
+  std::vector<Rect2D>& netBBoxVec,
   std::vector<NodeData2D>& nodes,
   int xDim)
 { 
@@ -4099,7 +4099,7 @@ void initBatchPin2D_v2__kernel(
 void launchMazeRouteStream_update_v2(
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBox,
+  Rect2D* d_netBBox,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -4110,7 +4110,7 @@ void launchMazeRouteStream_update_v2(
   int xDim, int yDim,
   const int* d_xCoords,
   const int* d_yCoords,
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   float congThreshold,
   int BLOCKCOST,
   int CONGCOST,
@@ -4199,7 +4199,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
   std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
   std::vector<std::vector<grNet*> >& netBatches,
   std::vector<int>& validBatches,
-  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<Point2D>& h_parents,
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
@@ -4211,11 +4211,11 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
   auto totalStart = std::chrono::high_resolution_clock::now();
   int numGrids = xDim * yDim;
   
-  std::vector<Point2D_CUDA> netVec;
+  std::vector<Point2D> netVec;
   std::vector<int> netPtr;
   std::vector<int> netBatchIdxVec; 
   std::vector<int> netHWPL;
-  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<Rect2D> netBBoxVec;
   std::vector<int> pinIdxVec;
   std::vector<int> batchPtr;
   
@@ -4228,14 +4228,14 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
     auto& batch = netBatches[batchId];
     for (auto& net : batch) {
       for (auto& idx : net->getPinGCellAbsIdxs()) {
-        netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
+        netVec.push_back(Point2D(idx.x(), idx.y()));
         pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
       }
       netBatchIdxVec.push_back(batchIdx);
       netPtr.push_back(netVec.size());
       auto netBBox = net->getRouteAbsBBox();
       netBBoxVec.push_back(
-        Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+        Rect2D(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
       netHWPL.push_back(net->getHPWL());
     }
     batchPtr.push_back(netHWPL.size());
@@ -4250,7 +4250,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
   // std::cout << "[INFO] Number of batches: " << numBatches << std::endl;
   std::cout << "[INFO] Max batch size: " << maxBatchSize << std::endl;
   std::cout << "[INFO] Min batch size: " << minBatchSize << std::endl;
-  // std::vector<Point2D_CUDA> h_parents(numGrids * numBatches, Point2D_CUDA(-1, -1));
+  // std::vector<Point2D> h_parents(numGrids * numBatches, Point2D(-1, -1));
 
   // Allocate and copy device memory
   // We need to define the needed utility variables
@@ -4269,12 +4269,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
   int* d_xCoords = nullptr;
   int* d_yCoords = nullptr;
   NodeData2D* d_nodes = nullptr;
-  Point2D_CUDA* d_parents = nullptr;
+  Point2D* d_parents = nullptr;
   
   int* d_pinIdxVec = nullptr;
   int* d_netHPWL = nullptr;
   int* d_netPtr = nullptr;
-  Rect2D_CUDA* d_netBBox = nullptr;
+  Rect2D* d_netBBox = nullptr;
   int* d_netBatchIdx = nullptr;
 
   int numBatchesParallel = numBatches;
@@ -4292,12 +4292,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
   cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
   cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
   cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
-  cudaMalloc(&d_parents, numNodes * sizeof(Point2D_CUDA));
+  cudaMalloc(&d_parents, numNodes * sizeof(Point2D));
 
   cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
   cudaMalloc(&d_netHPWL, netHWPL.size() * sizeof(int));
   cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D));
   cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
 
   cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
@@ -4307,12 +4307,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
   cudaMemcpy(d_costMap, h_costMap.data(), numNodes * sizeof(uint64_t), cudaMemcpyHostToDevice);
   cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_parents, h_parents.data(), numNodes * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_parents, h_parents.data(), numNodes * sizeof(Point2D), cudaMemcpyHostToDevice);
 
   cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netHPWL, netHWPL.data(), netHWPL.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);  
   
   cudaCheckError();
@@ -4385,7 +4385,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v2(
     cudaStreamSynchronize(netStreams[i]);
   }
 
-  cudaMemcpy(h_parents.data(), d_parents, numNodes * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
+  cudaMemcpy(h_parents.data(), d_parents, numNodes * sizeof(Point2D), cudaMemcpyDeviceToHost);
   cudaCheckError();
   
   for (int i = 0; i < maxBatchSize; i++) {
@@ -4445,10 +4445,10 @@ void biwaveBellmanFord2D_update__device(
   int netId,
   int netIdx,
   int batchIdx,
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -4469,7 +4469,7 @@ void biwaveBellmanFord2D_update__device(
   int pinIdxEnd = d_netPtr[netId + 1];
   int numPins = pinIdxEnd - pinIdxStart;
   int maxIters = d_netHPWL[netId];
-  Rect2D_CUDA netBBox = d_netBBoxVec[netId];
+  Rect2D netBBox = d_netBBoxVec[netId];
   int LLX = netBBox.xMin;
   int LLY = netBBox.yMin;
   int URX = netBBox.xMax;
@@ -4556,10 +4556,10 @@ void biwaveBellmanFord2D_update__kernel(
   int netId,
   int netIdx,
   int batchIdx,
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -4608,7 +4608,7 @@ void biwaveBellmanFord2D_update__kernel(
 void launchMazeRouteStream_update(
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBox,
+  Rect2D* d_netBBox,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -4619,7 +4619,7 @@ void launchMazeRouteStream_update(
   int xDim, int yDim,
   const int* d_xCoords,
   const int* d_yCoords,
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   float congThreshold,
   int BLOCKCOST,
   int CONGCOST,
@@ -4680,10 +4680,10 @@ void biwaveBellmanFord2D_update_v2__kernel(
   int netIdx,
   int batchIdx,
   int nodeBaseIdx,
-  Point2D_CUDA* d_parents,
+  Point2D* d_parents,
   int* d_netHPWL,
   int* d_netPtr,
-  Rect2D_CUDA* d_netBBoxVec,
+  Rect2D* d_netBBoxVec,
   int* d_pins,
   uint64_t* d_costMap,
   NodeData2D* d_nodes,
@@ -4735,7 +4735,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
   std::vector<std::vector<grNet*> >& netBatches,
   std::vector<int>& validBatches,
-  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<Point2D>& h_parents,
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
@@ -4747,10 +4747,10 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   auto totalStart = std::chrono::high_resolution_clock::now();
   int numGrids = xDim * yDim;
   
-  std::vector<Point2D_CUDA> netVec;
+  std::vector<Point2D> netVec;
   std::vector<int> netPtr; 
   std::vector<int> netHWPL;
-  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<Rect2D> netBBoxVec;
   std::vector<int> pinIdxVec;
   std::vector<int> batchPtr;
   
@@ -4762,13 +4762,13 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
     auto& batch = netBatches[batchId];
     for (auto& net : batch) {
       for (auto& idx : net->getPinGCellAbsIdxs()) {
-        netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
+        netVec.push_back(Point2D(idx.x(), idx.y()));
         pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
       }
       netPtr.push_back(netVec.size());
       auto netBBox = net->getRouteAbsBBox();
       netBBoxVec.push_back(
-        Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+        Rect2D(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
       netHWPL.push_back(net->getHPWL());
     }
     batchPtr.push_back(netHWPL.size());
@@ -4780,7 +4780,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   // std::cout << "[INFO] Number of batches: " << numBatches << std::endl;
   std::cout << "[INFO] Max batch size: " << maxBatchSize << std::endl;
   std::cout << "[INFO] Min batch size: " << minBatchSize << std::endl;
-  // std::vector<Point2D_CUDA> h_parents(numGrids * numBatches, Point2D_CUDA(-1, -1));
+  // std::vector<Point2D> h_parents(numGrids * numBatches, Point2D(-1, -1));
 
   // Allocate and copy device memory
   // We need to define the needed utility variables
@@ -4799,12 +4799,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   int* d_xCoords = nullptr;
   int* d_yCoords = nullptr;
   NodeData2D* d_nodes = nullptr;
-  Point2D_CUDA* d_parents = nullptr;
+  Point2D* d_parents = nullptr;
   
   int* d_pinIdxVec = nullptr;
   int* d_netHPWL = nullptr;
   int* d_netPtr = nullptr;
-  Rect2D_CUDA* d_netBBox = nullptr;
+  Rect2D* d_netBBox = nullptr;
 
   // Allocate the device memory for the d_dX and d_dY
   cudaMalloc(&d_dX, 4 * sizeof(int));
@@ -4817,12 +4817,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
   cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
   cudaMalloc(&d_nodes, numGrids * sizeof(NodeData2D));
-  cudaMalloc(&d_parents, numGrids * numBatches * sizeof(Point2D_CUDA));
+  cudaMalloc(&d_parents, numGrids * numBatches * sizeof(Point2D));
 
   cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
   cudaMalloc(&d_netHPWL, netHWPL.size() * sizeof(int));
   cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D));
 
 
   cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
@@ -4831,12 +4831,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
   cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_parents, h_parents.data(), numGrids * numBatches * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_parents, h_parents.data(), numGrids * numBatches * sizeof(Point2D), cudaMemcpyHostToDevice);
 
   cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netHPWL, netHWPL.data(), netHWPL.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D), cudaMemcpyHostToDevice);
   cudaCheckError();
 
 
@@ -4928,7 +4928,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update(
   // Sync up the golden parents
   cudaCheckError();
 
-  cudaMemcpy(h_parents.data(), d_parents, numGrids * numBatches * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
+  cudaMemcpy(h_parents.data(), d_parents, numGrids * numBatches * sizeof(Point2D), cudaMemcpyDeviceToHost);
   cudaCheckError();
 
   
@@ -4988,17 +4988,17 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   int numGrids = xDim * yDim;
   int numNets = nets.size();
   
-  std::vector<Point2D_CUDA> netVec;
+  std::vector<Point2D> netVec;
   std::vector<int> netPtr; 
   std::vector<int> netHWPL;
-  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<Rect2D> netBBoxVec;
   std::vector<int> pinIdxVec;
  
 
   netPtr.push_back(0);
   for (auto& net : nets) {
     for (auto& idx : net->getPinGCellAbsIdxs()) {
-      netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
+      netVec.push_back(Point2D(idx.x(), idx.y()));
       pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
       if (VERBOSE > 0) {
         std::cout << "Pin x = " << idx.x() << " y = " << idx.y() << " idx = " << locToIdx_2D(idx.x(), idx.y(), xDim) << std::endl;
@@ -5007,7 +5007,7 @@ float FlexGR::GPUAccelerated2DMazeRoute(
     netPtr.push_back(netVec.size());
     auto netBBox = net->getRouteAbsBBox();
     netBBoxVec.push_back(
-      Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+      Rect2D(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
     netHWPL.push_back(net->getHPWL());
   }
 
@@ -5048,7 +5048,7 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   NodeData2D* d_nodes = nullptr;
   int* d_netHPWL = nullptr;
   int* d_netPtr = nullptr;
-  Rect2D_CUDA* d_netBBox = nullptr;
+  Rect2D* d_netBBox = nullptr;
 
 
   // Allocate the device memory for the d_dX and d_dY
@@ -5063,7 +5063,7 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   cudaMalloc(&d_nodes, numGrids * sizeof(NodeData2D));
   cudaMalloc(&d_netHPWL, netHWPL.size() * sizeof(int));
   cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D));
 
 
   cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
@@ -5077,7 +5077,7 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   cudaMemcpy(d_nodes, h_nodesPinned, numGrids * sizeof(NodeData2D), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netHPWL, netHWPL.data(), netHWPL.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D), cudaMemcpyHostToDevice);
 
   cudaCheckError();
 

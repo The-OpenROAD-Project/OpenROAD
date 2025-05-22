@@ -1,6 +1,6 @@
 /* Authors: Zhiang Wang */
 /*
- * Copyright (c) 2024, The Regents of the University of California
+ * Copyright (c) 2025, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,15 +39,13 @@
 #include <mutex>
 #include <queue>
 
-
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frGuide.h"
 #include "odb/db.h"
 #include "utl/exception.h"
-#include "FlexGR_CUDA_object.h"
-
+#include "gr/FlexGR_util.h"
 
 namespace drt {
 

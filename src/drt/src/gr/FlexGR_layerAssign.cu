@@ -1,6 +1,6 @@
 /* Authors: Zhiang Wang */
 /*
- * Copyright (c) 2024, The Regents of the University of California
+ * Copyright (c) 2025, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,11 +45,10 @@
 #include "utl/exception.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "gr/FlexGRCMap.h"
-#include "FlexGR_CUDA_object.h"
-#include "FlexGR.h"
+#include "gr/FlexGR.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "FlexGR_util_update.h"
+#include "gr/FlexGR_util.h"
 
 
 namespace drt {
@@ -248,8 +247,8 @@ void layerAssignSegmentCommit__kernel(
     int childLayerNum = childNode.layerNum;
     int childX = childNode.x;
     int childY = childNode.y;
-    addRawDemand__device(d_cmap, xDim, yDim, numLayers, 
-      parentX, parentY, childX, childY, childLayerNum);
+    // To be implemented 
+    // addRawDemand__device(d_cmap, xDim, yDim, numLayers, parentX, parentY, childX, childY, childLayerNum);
   }
 }
 

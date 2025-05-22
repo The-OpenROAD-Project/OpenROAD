@@ -28,15 +28,14 @@
 
 #pragma once
 
-constexpr int CMAPHISTSIZE = 8;
-constexpr int CMAPSUPPLYSIZE = 8;
-constexpr int CMAPDEMANDSIZE = 16;
-constexpr int CMAPFRACSIZE = 1;
+
 
 #include <vector>
 
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "gr/FlexGR_util.h"
+
 
 namespace drt {
 class frTrackPattern;

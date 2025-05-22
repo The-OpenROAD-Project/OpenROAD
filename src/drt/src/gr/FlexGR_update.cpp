@@ -624,8 +624,8 @@ void FlexGR::searchRepair_update(int iter,
         if (VERBOSE > 0) {
           std::cout << "[INFO] Number of batches: " << numValidBatches << std::endl;
         }
-          // std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
-        std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
+          // std::vector<Point2D> h_parents(numGrids * numValidBatches, Point2D(-1, -1));
+        std::vector<Point2D> h_parents(numGrids * numValidBatches, Point2D(-1, -1));
   
         // In the current strategy, we ripup all the nets at the beginning
         // multi thread
@@ -755,8 +755,8 @@ void FlexGR::searchRepair_update(int iter,
       int numValidBatches = validBatchIds.size();
       int numGrids = xDim * yDim;
       std::cout << "[INFO] Number of batches: " << numValidBatches << std::endl;
-      // std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
-      std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
+      // std::vector<Point2D> h_parents(numGrids * numValidBatches, Point2D(-1, -1));
+      std::vector<Point2D> h_parents(numGrids * numValidBatches, Point2D(-1, -1));
 
       // In the current strategy, we ripup all the nets at the beginning
       // multi thread
