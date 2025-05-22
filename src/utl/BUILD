@@ -28,6 +28,7 @@ cc_library(
         "src/decode.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
+        "src/histogram.cpp",
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
@@ -62,6 +63,7 @@ cc_library(
         "include/utl/scope.h",
         "include/utl/timer.h",
         "include/utl/validation.h",
+        "include/utl/histogram.h",
     ],
     includes = ["include"],
     deps = [
@@ -75,7 +77,7 @@ cc_library(
 )
 
 tcl_wrap_cc(
-    name = "utl_swig",
+    name = "swig",
     srcs = [
         "src/Logger.i",
         "src/LoggerCommon.h",
@@ -91,7 +93,7 @@ tcl_wrap_cc(
 )
 
 tcl_encode(
-    name = "utl_tcl",
+    name = "tcl",
     srcs = [
         "src/Utl.tcl",
     ],

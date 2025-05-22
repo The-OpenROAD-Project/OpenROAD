@@ -1,0 +1,212 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+-- Before --
+
+Cell type report:                       Count       Area
+  Buffer                                 1908    2138.64
+  Inverter                                225     139.92
+  Sequential cell                         530    2396.66
+  Multi-Input combinational cell        14095   17315.54
+  Total                                 16758   21990.75
+[-0.369, -0.296): ********************************************** (127)
+[-0.296, -0.223): ************************* (69)
+[-0.223, -0.150): ********************* (57)
+[-0.150, -0.076): ********************************************** (129)
+[-0.076, -0.003): * (2)
+[-0.003,  0.070):  (0)
+[ 0.070,  0.143): * (2)
+[ 0.143,  0.217): ************************************************** (139)
+[ 0.217,  0.290): * (4)
+[ 0.290,  0.363]: *********************************************** (130)
+Startpoint: _33243_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _33122_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _33243_/CK (DFF_X1)
+   0.09    0.09 ^ _33243_/Q (DFF_X1)
+   0.03    0.12 ^ _29829_/Z (BUF_X2)
+   0.03    0.15 ^ _29921_/ZN (OR2_X1)
+   0.03    0.18 ^ _29922_/Z (BUF_X4)
+   0.02    0.20 v _29923_/ZN (NOR3_X2)
+   0.09    0.28 ^ _30031_/ZN (AOI222_X2)
+   0.04    0.33 v _30041_/ZN (OAI221_X1)
+   0.08    0.41 v _32345_/ZN (OR4_X2)
+   0.08    0.49 ^ _32346_/ZN (NOR4_X2)
+   0.05    0.54 v _32347_/ZN (NAND4_X2)
+   0.07    0.61 v _32588_/Z (XOR2_X2)
+   0.06    0.67 v _32661_/Z (XOR2_X1)
+   0.04    0.71 v _32662_/ZN (XNOR2_X1)
+   0.06    0.77 v _32663_/Z (MUX2_X1)
+   0.05    0.83 v _32664_/Z (XOR2_X1)
+   0.00    0.83 v _33122_/D (DFF_X1)
+           0.83   data arrival time
+
+   0.50    0.50   clock core_clock (rise edge)
+   0.00    0.50   clock network delay (ideal)
+   0.00    0.50   clock reconvergence pessimism
+           0.50 ^ _33122_/CK (DFF_X1)
+  -0.04    0.46   library setup time
+           0.46   data required time
+---------------------------------------------------------
+           0.46   data required time
+          -0.83   data arrival time
+---------------------------------------------------------
+          -0.37   slack (VIOLATED)
+
+
+wns max -0.37
+tns max -83.81
+-- After --
+
+[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
+The number of nodes on the critical paths =    411  ( 1.47 %)
+The cell delays are multiplied by the factor: <num_fanins> ^ (2.50).
+Cannot meet the target required times (1.00). Continue anyway.
+[-0.333, -0.263): ************** (36)
+[-0.263, -0.194): ****************************************** (109)
+[-0.194, -0.124): ********************************** (89)
+[-0.124, -0.054): ********************************** (89)
+[-0.054,  0.015): *********************** (61)
+[ 0.015,  0.085):  (0)
+[ 0.085,  0.154): ************************************************ (125)
+[ 0.154,  0.224): ******* (17)
+[ 0.224,  0.294): * (3)
+[ 0.294,  0.363]: ************************************************** (130)
+Cell type report:                       Count       Area
+  Buffer                                 1772    1909.88
+  Inverter                               3429    1824.23
+  Sequential cell                         530    2396.66
+  Multi-Input combinational cell        30518   27218.18
+  Total                                 36249   33348.95
+Startpoint: _33201_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _33128_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _33201_/CK (DFF_X1)
+   0.08    0.08 ^ _33201_/Q (DFF_X1)
+   0.04    0.12 ^ rmp_3/Z (CLKBUF_X2)
+   0.02    0.14 v rmp_51/ZN (INV_X1)
+   0.05    0.19 ^ rmp_52/ZN (NAND2_X1)
+   0.02    0.21 v rmp_53/ZN (NOR2_X1)
+   0.04    0.25 ^ rmp_54/ZN (INV_X1)
+   0.02    0.27 v rmp_2480/ZN (NOR2_X1)
+   0.03    0.31 ^ rmp_2481/ZN (NOR2_X1)
+   0.03    0.34 ^ rmp_3739/ZN (AND2_X1)
+   0.01    0.35 v rmp_3740/ZN (INV_X1)
+   0.03    0.37 ^ rmp_3741/ZN (NOR2_X1)
+   0.01    0.38 v rmp_3742/ZN (INV_X1)
+   0.03    0.41 ^ rmp_3743/ZN (NOR2_X1)
+   0.01    0.42 v rmp_3744/ZN (NAND2_X1)
+   0.03    0.45 ^ rmp_3745/ZN (NOR2_X1)
+   0.01    0.46 v rmp_3772/ZN (NAND2_X1)
+   0.07    0.53 ^ rmp_3807/ZN (NOR2_X1)
+   0.02    0.55 v rmp_3808/ZN (INV_X1)
+   0.07    0.62 v rmp_3809/Z (XOR2_X1)
+   0.06    0.68 v rmp_24465/Z (XOR2_X1)
+   0.06    0.74 v rmp_24466/Z (XOR2_X1)
+   0.02    0.76 ^ rmp_24468/ZN (NAND2_X1)
+   0.01    0.77 v rmp_24469/ZN (NAND2_X1)
+   0.01    0.78 ^ rmp_24471/ZN (NAND2_X1)
+   0.01    0.79 v rmp_24474/ZN (NAND2_X1)
+   0.00    0.79 v _33128_/D (DFF_X1)
+           0.79   data arrival time
+
+   0.50    0.50   clock core_clock (rise edge)
+   0.00    0.50   clock network delay (ideal)
+   0.00    0.50   clock reconvergence pessimism
+           0.50 ^ _33128_/CK (DFF_X1)
+  -0.04    0.46   library setup time
+           0.46   data required time
+---------------------------------------------------------
+           0.46   data required time
+          -0.79   data arrival time
+---------------------------------------------------------
+          -0.33   slack (VIOLATED)
+
+
+wns max -0.33
+tns max -59.40
+[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
+The number of nodes on the critical paths =   8225  (23.04 %)
+The cell delays are multiplied by the factor: <num_fanins> ^ (2.50).
+Cannot meet the target required times (1.00). Continue anyway.
+[-0.353, -0.281): ********** (26)
+[-0.281, -0.209): ************************************* (97)
+[-0.209, -0.138): ****************************** (79)
+[-0.138, -0.066): ***************************************** (106)
+[-0.066,  0.005): ***************************** (76)
+[ 0.005,  0.077): ********************************************** (120)
+[ 0.077,  0.148): ****** (15)
+[ 0.148,  0.220): **** (10)
+[ 0.220,  0.292):  (0)
+[ 0.292,  0.363]: ************************************************** (130)
+Cell type report:                       Count       Area
+  Buffer                                 1789    1923.45
+  Inverter                               3433    1826.36
+  Sequential cell                         530    2396.66
+  Multi-Input combinational cell        31341   27837.70
+  Total                                 37093   33984.16
+Startpoint: _33140_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _33182_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _33140_/CK (DFF_X1)
+   0.08    0.08 ^ _33140_/Q (DFF_X1)
+   0.04    0.12 ^ rmp_83853/Z (CLKBUF_X2)
+   0.02    0.14 v rmp_83891/ZN (INV_X1)
+   0.04    0.19 ^ rmp_84038/ZN (NAND2_X1)
+   0.03    0.21 v rmp_84040/ZN (NOR2_X1)
+   0.04    0.25 ^ rmp_85170/ZN (INV_X1)
+   0.01    0.26 v rmp_85330/ZN (NOR2_X1)
+   0.04    0.31 v rmp_85332/ZN (OR2_X1)
+   0.06    0.37 v rmp_85339/ZN (OR3_X1)
+   0.04    0.41 ^ rmp_85340/ZN (NOR2_X1)
+   0.02    0.42 v rmp_85357/ZN (NAND2_X1)
+   0.03    0.45 ^ rmp_85358/ZN (NOR2_X1)
+   0.01    0.47 v rmp_85359/ZN (NAND2_X1)
+   0.08    0.54 ^ rmp_85360/ZN (NOR2_X1)
+   0.07    0.62 ^ rmp_85361/Z (XOR2_X1)
+   0.06    0.67 ^ rmp_85565/Z (XOR2_X1)
+   0.05    0.72 ^ rmp_85566/Z (XOR2_X1)
+   0.02    0.74 v rmp_85567/ZN (NAND2_X1)
+   0.03    0.76 v rmp_85569/ZN (AND2_X1)
+   0.04    0.81 v rmp_85570/ZN (OR2_X1)
+   0.02    0.82 ^ rmp_85571/ZN (NAND2_X1)
+   0.00    0.82 ^ _33182_/D (DFF_X1)
+           0.82   data arrival time
+
+   0.50    0.50   clock core_clock (rise edge)
+   0.00    0.50   clock network delay (ideal)
+   0.00    0.50   clock reconvergence pessimism
+           0.50 ^ _33182_/CK (DFF_X1)
+  -0.03    0.47   library setup time
+           0.47   data required time
+---------------------------------------------------------
+           0.47   data required time
+          -0.82   data arrival time
+---------------------------------------------------------
+          -0.35   slack (VIOLATED)
+
+
+wns max -0.35
+tns max -58.39

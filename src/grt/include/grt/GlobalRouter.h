@@ -12,8 +12,8 @@
 #include <vector>
 
 #include "GRoute.h"
-#include "RoutePt.h"
-#include "ant/AntennaChecker.hh"
+#include "ant/GlobalRouteSource.hh"
+#include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -96,15 +96,6 @@ enum class NetType
   All
 };
 
-struct PinGridLocation
-{
-  PinGridLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm, odb::Point pt);
-
-  odb::dbITerm* iterm_;
-  odb::dbBTerm* bterm_;
-  odb::Point pt_;
-};
-
 using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
@@ -158,7 +149,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
-  void saveGuides();
+  void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
   void readSegments(const char* file_name);
   bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
@@ -465,8 +456,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
-  // TODO: remove this flag after support incremental updates on DRT PA
-  bool skip_drt_aps_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

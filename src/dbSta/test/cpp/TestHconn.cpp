@@ -274,7 +274,7 @@ class TestHconn : public ::testing::Test
     db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                      &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() { sta::initSta(); });
-    sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
+    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
@@ -987,11 +987,10 @@ TEST_F(TestHconn, ConnectionMade)
         = db_network_->connectedPinIterator(cur_net);
     while (npi->hasNext()) {
       const sta::Pin* cur_pin = npi->next();
-      odb::dbModBTerm* modbterm;
       odb::dbModITerm* moditerm;
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
-      db_network_->staToDb(cur_pin, iterm, bterm, moditerm, modbterm);
+      db_network_->staToDb(cur_pin, iterm, bterm, moditerm);
       if (iterm) {
         db_network_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
         sta_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
@@ -999,9 +998,6 @@ TEST_F(TestHconn, ConnectionMade)
       if (bterm) {
         db_network_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
         sta_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
-      }
-      if (modbterm) {
-        ;
       }
       if (moditerm) {
         ;

@@ -14,12 +14,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
 #include "ord/OpenRoad.hh"
-  
+
 namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
 getResizer();
-utl::Logger* 
+utl::Logger*
 getLogger();
 void
 ensureLinked();
@@ -102,6 +102,13 @@ using rsz::ParasiticsSrc;
     }
   }
 }
+
+%typemap(in) std::vector<rsz::MoveType> {
+  const char* str = Tcl_GetString($input);
+  $1 = Resizer::parseMoveSequence(std::string(str));
+}
+
+
 
 ////////////////////////////////////////////////////////////////
 //
@@ -219,7 +226,7 @@ wire_clk_capacitance(const Corner *corner)
   return resizer->wireClkCapacitance(corner);
 }
 
-void 
+void
 estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
@@ -500,7 +507,7 @@ repair_net_cmd(Net *net,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairNet(net, max_length, slew_margin, cap_margin); 
+  resizer->repairNet(net, max_length, slew_margin, cap_margin);
 }
 
 bool
@@ -510,6 +517,7 @@ repair_setup(double setup_margin,
              int max_repairs_per_pass,
              bool match_cell_footprint,
              bool verbose,
+             std::vector<rsz::MoveType> sequence,
              bool skip_pin_swap,
              bool skip_gate_cloning,
              bool skip_buffering,
@@ -521,6 +529,7 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_repairs_per_pass,
                        match_cell_footprint, verbose,
+                       sequence,
                        skip_pin_swap, skip_gate_cloning,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);

@@ -143,7 +143,7 @@ class AthHash
 
   ~AthHash()
   {
-    delete m_listOfPrimes;
+    delete[] m_listOfPrimes;
     unsigned int i;
     for (i = 0; i < m_prime; i++) {
       typename AthList<t_elem>::iterator iter = m_data[i].start();

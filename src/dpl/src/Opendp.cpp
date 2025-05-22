@@ -3,13 +3,8 @@
 
 #include "dpl/Opendp.h"
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <cfloat>
 #include <cmath>
-#include <iostream>
-#include <limits>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,6 +18,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/util.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -82,12 +78,27 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
   debug_observer_ = std::move(observer);
 }
 
+void Opendp::setJournal(Journal* journal)
+{
+  journal_ = journal;
+}
+
+Journal* Opendp::getJournal() const
+{
+  return journal_;
+}
+
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name)
 {
   importDb();
   adjustNodesOrient();
+  for (const auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed()) {
+      node->setPlaced(false);
+    }
+  }
 
   if (have_fillers_) {
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");

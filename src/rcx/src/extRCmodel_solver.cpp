@@ -193,6 +193,7 @@ uint extRCModel::readRCvalues(const char* corner,
           corner,
           filename);
 
+  free(_ruleFileName);
   _ruleFileName = strdup(filename);
   Ath__parser p(logger_);
   Ath__parser parser(logger_);

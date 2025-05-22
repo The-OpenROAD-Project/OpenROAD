@@ -127,7 +127,7 @@ filegroup(
 [
     filegroup(
         name = test_name + "_resources",
-        data = [":regression_resources"] + glob(
+        srcs = [":regression_resources"] + glob(
             [
                 test_name + ".*",
             ],
@@ -158,3 +158,15 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "cts_unittest",
+    srcs = ["cts_unittest.cc"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/utl",
+        "//src/cts",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

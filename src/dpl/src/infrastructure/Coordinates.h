@@ -35,7 +35,6 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
                          public boost::multipliable<TypedCoordinate<T>, int>
 {
   explicit TypedCoordinate(const int v = 0) : v(v) {}
-  TypedCoordinate(const TypedCoordinate<T>& v) = default;
 
   // totally_ordered
   bool operator<(const TypedCoordinate& rhs) const { return v < rhs.v; }
