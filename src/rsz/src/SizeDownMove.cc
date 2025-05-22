@@ -126,6 +126,10 @@ bool SizeDownMove::doMove(const Path* drvr_path,
 
     Pin* load_pin = load_vertex->pin();
     LibertyPort* load_port = network_->libertyPort(load_pin);
+    // Skip primary outputs
+    if (!load_port) {
+      continue;
+    }
     LibertyCell* load_cell = load_port->libertyCell();
     Instance* load_inst = network_->instance(load_pin);
 

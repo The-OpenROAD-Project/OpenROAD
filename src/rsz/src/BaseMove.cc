@@ -429,8 +429,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
   Net* output_net = network_->net(params.driver_pin);
-  auto pin_iter
-      = std::unique_ptr<NetConnectedPinIterator>(network_->connectedPinIterator(output_net));
+  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+      network_->connectedPinIterator(output_net));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin == params.driver_pin) {
@@ -464,7 +464,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   // Check side fanout paths.  Side fanout paths get no delay benefit from
   // buffer removal.
   Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = std::unique_ptr<NetConnectedPinIterator>(network_->connectedPinIterator(input_net));
+  pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+      network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();
     if (side_input_pin == params.prev_driver_pin
@@ -678,7 +679,8 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
     if (resizer_->haveEstimatedParasitics()) {
-      auto pin_iter = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
+      auto pin_iter
+          = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
       while (pin_iter->hasNext()) {
         const Pin* pin = pin_iter->next();
         const Net* net = network_->net(pin);
@@ -700,7 +702,8 @@ vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
 {
   vector<const Pin*> fanouts;
 
-  auto pin_iter = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isOutput()) {

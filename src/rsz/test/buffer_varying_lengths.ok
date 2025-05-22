@@ -20,7 +20,7 @@ tns max -30.987
     final |      35 |     751 |        0 |      0 |     0 |  +215.2% |   -0.279 |      -29.1 |    200 | p3-200
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 35 buffers.
-[INFO RSZ-0041] Resized 751 instances.
+[INFO RSZ-0051] Resized 751 instances, 751 sized up, 0 sized down.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 worst slack max -0.279

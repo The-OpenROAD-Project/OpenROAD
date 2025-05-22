@@ -335,7 +335,7 @@ worst slack max -23.63
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 1 buffers.
 [INFO RSZ-0040] Inserted 98 buffers.
-[INFO RSZ-0041] Resized 91 instances.
+[INFO RSZ-0051] Resized 91 instances, 91 sized up, 0 sized down.
 [INFO RSZ-0043] Swapped pins on 8 instances.
 [INFO RSZ-0049] Cloned 7 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
