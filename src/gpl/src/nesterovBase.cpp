@@ -2982,84 +2982,92 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   delta_area_ += area_change;
 }
 
-void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
-{
-  for (auto& db_inst : new_instances) {
+
+void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY) {
+  for (auto* db_inst : new_instances) {
     auto db_it = db_inst_to_nb_index_map_.find(db_inst);
     if (db_it != db_inst_to_nb_index_map_.end()) {
-      size_t gcells_index = db_it->second;
-      GCellHandle& handle = nb_gcells_[gcells_index];
-      GCell* gcell = handle;
-
-      for (auto& gpin : gcell->gPins()) {
-        gpin->pin()->updateCoordi(gpin->pin()->dbITerm());
-        gpin->updateCoordi();
-      }
-
-      // analogous to NesterovBase::updateDensitySize()
-      float scaleX = 0, scaleY = 0;
-      float densitySizeX = 0, densitySizeY = 0;
-      if (gcell->dx() < REPLACE_SQRT2 * bg_.binSizeX()) {
-        scaleX = static_cast<float>(gcell->dx())
-                 / static_cast<float>(REPLACE_SQRT2 * bg_.binSizeX());
-        densitySizeX = REPLACE_SQRT2 * static_cast<float>(bg_.binSizeX());
-      } else {
-        scaleX = 1.0;
-        densitySizeX = gcell->dx();
-      }
-
-      if (gcell->dy() < REPLACE_SQRT2 * bg_.binSizeY()) {
-        scaleY = static_cast<float>(gcell->dy())
-                 / static_cast<float>(REPLACE_SQRT2 * bg_.binSizeY());
-        densitySizeY = REPLACE_SQRT2 * static_cast<float>(bg_.binSizeY());
-      } else {
-        scaleY = 1.0;
-        densitySizeY = gcell->dy();
-      }
-
-      gcell->setDensitySize(densitySizeX, densitySizeY);
-      gcell->setDensityScale(scaleX * scaleY);
-
-      // analogous to NesterovBase::initDensity1()
-      updateDensityCoordiLayoutInside(gcell);
-      curSLPCoordi_[gcells_index] = prevSLPCoordi_[gcells_index]
-          = curCoordi_[gcells_index] = initCoordi_[gcells_index]
-          = FloatPoint(gcell->dCx(), gcell->dCy());
-
-      // analogous to updateCurGradient()
-      updateSingleCurGradient(gcells_index, wlCoeffX, wlCoeffY);
-
-      // analogous to NesterovBase::updateInitialPrevSLPCoordi()
-      GCell* curGCell = nb_gcells_[gcells_index];
-      float prevCoordiX = curSLPCoordi_[gcells_index].x
-                          - npVars_->initialPrevCoordiUpdateCoef
-                                * curSLPSumGrads_[gcells_index].x;
-      float prevCoordiY = curSLPCoordi_[gcells_index].y
-                          - npVars_->initialPrevCoordiUpdateCoef
-                                * curSLPSumGrads_[gcells_index].y;
-      FloatPoint newCoordi(
-          getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
-          getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
-      prevSLPCoordi_[gcells_index] = newCoordi;
-
-      // analogous to
-      // NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
-      nb_gcells_[gcells_index]->setDensityCenterLocation(
-          prevSLPCoordi_[gcells_index].x, prevSLPCoordi_[gcells_index].y);
-
-      // analogous to updatePrevGradient()
-      updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
+      updateSingleGCellState(db_it->second, wlCoeffX, wlCoeffY, /*update_pins=*/true);
     } else {
       debugPrint(log_,
                  GPL,
                  "callbacks",
                  1,
-                 "warning: updateGCellState, db_inst not found in "
-                 "db_inst_index_map_ for instance: {}",
+                 "warning: updateGCellState, db_inst not found in map for: {}",
                  db_inst->getName());
     }
   }
+
+  for (size_t idx : restored_filler_indexes_) {
+    updateSingleGCellState(idx, wlCoeffX, wlCoeffY, /*update_pins=*/false);
+  }
+
   new_instances.clear();
+  restored_filler_indexes_.clear();
+}
+
+
+void NesterovBase::updateSingleGCellState(size_t gcells_index,
+                                          float wlCoeffX,
+                                          float wlCoeffY,
+                                          bool update_pins) {
+  GCell* gcell = nb_gcells_[gcells_index];
+
+  // analogous to NesterovBase::updatePinCoordi()
+  if (update_pins) {
+    for (auto& gpin : gcell->gPins()) {
+      gpin->pin()->updateCoordi(gpin->pin()->dbITerm());
+      gpin->updateCoordi();
+    }
+  }
+
+  // analogous to NesterovBase::updateDensitySize()
+  float scaleX = 0, scaleY = 0;
+  float densitySizeX = 0, densitySizeY = 0;
+
+  if (gcell->dx() < REPLACE_SQRT2 * bg_.binSizeX()) {
+    scaleX = static_cast<float>(gcell->dx()) / static_cast<float>(REPLACE_SQRT2 * bg_.binSizeX());
+    densitySizeX = REPLACE_SQRT2 * static_cast<float>(bg_.binSizeX());
+  } else {
+    scaleX = 1.0;
+    densitySizeX = gcell->dx();
+  }
+
+  if (gcell->dy() < REPLACE_SQRT2 * bg_.binSizeY()) {
+    scaleY = static_cast<float>(gcell->dy()) / static_cast<float>(REPLACE_SQRT2 * bg_.binSizeY());
+    densitySizeY = REPLACE_SQRT2 * static_cast<float>(bg_.binSizeY());
+  } else {
+    scaleY = 1.0;
+    densitySizeY = gcell->dy();
+  }
+
+  gcell->setDensitySize(densitySizeX, densitySizeY);
+  gcell->setDensityScale(scaleX * scaleY);
+
+  // analogous to NesterovBase::initDensity1()
+  updateDensityCoordiLayoutInside(gcell);
+  FloatPoint center(gcell->dCx(), gcell->dCy());
+
+  curSLPCoordi_[gcells_index] = prevSLPCoordi_[gcells_index]
+      = curCoordi_[gcells_index] = initCoordi_[gcells_index] = center;
+
+  // analogous to updateCurGradient()
+  updateSingleCurGradient(gcells_index, wlCoeffX, wlCoeffY);
+
+  // analogous to NesterovBase::updateInitialPrevSLPCoordi()
+  float prevCoordiX = center.x - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[gcells_index].x;
+  float prevCoordiY = center.y - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[gcells_index].y;
+
+  FloatPoint newCoordi(
+      getDensityCoordiLayoutInsideX(gcell, prevCoordiX),
+      getDensityCoordiLayoutInsideY(gcell, prevCoordiY));
+  prevSLPCoordi_[gcells_index] = newCoordi;
+
+  // analogous to NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
+  gcell->setDensityCenterLocation(newCoordi.x, newCoordi.y);
+
+  // analogous to updatePrevGradient()
+  updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
 }
 
 void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
@@ -3074,8 +3082,8 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
   if (gcell != nullptr) {
     new_instances.push_back(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
-    log_->report("createcbkgcell index for nbc_gcells_: {}, nbc_gcells.size(): {}", stor_index, nbc_->getGCells().size());
-    log_->report("createcbkgcell index for nb_gcells_:  {}, nb_gcells_.size(): {}", stor_index, nb_gcells_.size());
+    // log_->report("createcbkgcell index for nbc_gcells_: {}, nbc_gcells.size(): {}", stor_index, nbc_->getGCells().size());
+    // log_->report("createcbkgcell index for nb_gcells_:  {}, nb_gcells_.size(): {}", stor_index, nb_gcells_.size());
     size_t gcells_index = nb_gcells_.size() - 1;
     db_inst_to_nb_index_map_[db_inst] = gcells_index;
     appendParallelVectors();
@@ -3263,7 +3271,33 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
   for (int i = nb_gcells_.size() - 1; i >= 0 && removed_count < maxFillersToRemove; --i) {
     if (nb_gcells_[i]->isFiller()) {
       const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
-      removed_fillers_.push_back(removed);
+      // removed_fillers_.push_back(removed);
+      removed_fillers_.push_back(RemovedFillerState {
+        .gcell = removed,
+        .curSLPCoordi = curSLPCoordi_[i],
+        .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
+        .curSLPDensityGrads = curSLPDensityGrads_[i],
+        .curSLPSumGrads = curSLPSumGrads_[i],
+      
+        .nextSLPCoordi = nextSLPCoordi_[i],
+        .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
+        .nextSLPDensityGrads = nextSLPDensityGrads_[i],
+        .nextSLPSumGrads = nextSLPSumGrads_[i],
+      
+        .prevSLPCoordi = prevSLPCoordi_[i],
+        .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
+        .prevSLPDensityGrads = prevSLPDensityGrads_[i],
+        .prevSLPSumGrads = prevSLPSumGrads_[i],
+      
+        .curCoordi = curCoordi_[i],
+        .nextCoordi = nextCoordi_[i],
+        .initCoordi = initCoordi_[i],
+      
+        .snapshotCoordi = snapshotCoordi_[i],
+        .snapshotSLPCoordi = snapshotSLPCoordi_[i],
+        .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]
+      });
+
       destroyFillerGCell(i);
       availableFillerArea -= fillerArea;
       inflationArea -= fillerArea;
@@ -3437,6 +3471,34 @@ void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
   }
 }
 
+void NesterovBase::printGCellsToFile(const std::string& filename,
+                                     bool print_only_name) const
+{
+  std::ofstream out(filename);
+  if (!out.is_open()) {
+    return;
+  }
+
+  out << "nb_gcells_.size(): " << nb_gcells_.size() << "\n";
+  out.close();
+
+  std::ofstream out_append(filename, std::ios::app);
+  if (!out_append.is_open()) {
+    return;
+  }
+
+  for (size_t i = 0; i < nb_gcells_.size(); ++i) {
+    const GCellHandle& handle = nb_gcells_[i];
+    const GCell* gcell = handle.operator->();
+
+    out_append << fmt::format("idx:{} filler:{}\n", i, gcell->isFiller());
+    gcell->printToFile(out_append, print_only_name);
+  }
+
+  out_append.close();
+}
+
+
 void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
                               size_t remove_index,
                               size_t last_index)
@@ -3510,7 +3572,7 @@ void NesterovBaseCommon::printGCells()
 
 void NesterovBaseCommon::printGCellsToFile(const std::string& filename,
                                            bool print_only_name,
-                                           bool also_print_minRc)
+                                           bool also_print_minRc) const
 {
   std::ofstream out(filename);
   if (!out.is_open()) {

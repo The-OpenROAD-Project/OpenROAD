@@ -861,8 +861,8 @@ class NesterovBaseCommon
 
   void printGCells();
   void printGCellsToFile(const std::string& filename,
-                         bool print_only_name = true,
-                         bool also_print_minRc = false);
+                        bool print_only_name,
+                        bool also_print_minRc) const;
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -1095,24 +1095,62 @@ class NesterovBase
   // including parallel vectors.
   void updateGCellState(float wlCoeffX, float wlCoeffY);
 
-
   void destroyFillerGCell(size_t index_remove);
-  void restoreRemovedFillers() { 
+
+  void restoreRemovedFillers() {
     log_->report("restoring removed fillers: {}", removed_fillers_.size());
-    while (!removed_fillers_.empty()) {
-      GCell gcellCopy = removed_fillers_.back();
-      removed_fillers_.pop_back();
+    // for (auto& filler : removed_fillers_) {
+    //   filler.gcell.print(log_, false);
+    // }
   
-      fillerStor_.push_back(gcellCopy);
+    log_->report("restoring!!!\n\n\n\n\n");
+  
+    for (const auto& filler : removed_fillers_) {
+      filler.gcell.print(log_, false);
+      fillerStor_.push_back(filler.gcell);
       size_t new_index = fillerStor_.size() - 1;
+  
       nb_gcells_.emplace_back(this, new_index);
       appendParallelVectors();
+  
+      size_t idx = nb_gcells_.size() - 1;
+  
+      // Restore parallel vector data
+      curSLPCoordi_[idx] = filler.curSLPCoordi;
+      curSLPWireLengthGrads_[idx] = filler.curSLPWireLengthGrads;
+      curSLPDensityGrads_[idx] = filler.curSLPDensityGrads;
+      curSLPSumGrads_[idx] = filler.curSLPSumGrads;
+  
+      nextSLPCoordi_[idx] = filler.nextSLPCoordi;
+      nextSLPWireLengthGrads_[idx] = filler.nextSLPWireLengthGrads;
+      nextSLPDensityGrads_[idx] = filler.nextSLPDensityGrads;
+      nextSLPSumGrads_[idx] = filler.nextSLPSumGrads;
+  
+      prevSLPCoordi_[idx] = filler.prevSLPCoordi;
+      prevSLPWireLengthGrads_[idx] = filler.prevSLPWireLengthGrads;
+      prevSLPDensityGrads_[idx] = filler.prevSLPDensityGrads;
+      prevSLPSumGrads_[idx] = filler.prevSLPSumGrads;
+  
+      curCoordi_[idx] = filler.curCoordi;
+      nextCoordi_[idx] = filler.nextCoordi;
+      initCoordi_[idx] = filler.initCoordi;
+  
+      snapshotCoordi_[idx] = filler.snapshotCoordi;
+      snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
+      snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
+  
+      restored_filler_indexes_.push_back(idx);
       totalFillerArea_ += getFillerCellArea();
     }
+  
     log_->report("fillerStor_.size(): {}", fillerStor_.size());
+    removed_fillers_.clear();
   }
-  void clearRemovedFillers() { removed_fillers_.clear(); 
-  }
+  
+  
+
+  void clearRemovedFillers() { removed_fillers_.clear(); }
+  void printGCellsToFile(const std::string& filename, bool print_only_name) const;
 
  private:
   NesterovBaseVars nbVars_;
@@ -1139,6 +1177,31 @@ class NesterovBase
 
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
+
+  struct RemovedFillerState {
+    GCell gcell;
+    FloatPoint curSLPCoordi;
+    FloatPoint curSLPWireLengthGrads;
+    FloatPoint curSLPDensityGrads;
+    FloatPoint curSLPSumGrads;
+    FloatPoint nextSLPCoordi;
+    FloatPoint nextSLPWireLengthGrads;
+    FloatPoint nextSLPDensityGrads;
+    FloatPoint nextSLPSumGrads;
+    FloatPoint prevSLPCoordi;
+    FloatPoint prevSLPWireLengthGrads;
+    FloatPoint prevSLPDensityGrads;
+    FloatPoint prevSLPSumGrads;
+    FloatPoint curCoordi;
+    FloatPoint nextCoordi;
+    FloatPoint initCoordi;
+    FloatPoint snapshotCoordi;
+    FloatPoint snapshotSLPCoordi;
+    FloatPoint snapshotSLPSumGrads;
+  };  
+
+  std::vector<RemovedFillerState> removed_fillers_;
+  std::vector<size_t> restored_filler_indexes_;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
@@ -1241,7 +1304,10 @@ class NesterovBase
   bool reprint_iter_header;
 
   void initFillerGCells();
-  std::vector<GCell> removed_fillers_;
+  void updateSingleGCellState(size_t gcells_index,
+                                          float wlCoeffX,
+                                          float wlCoeffY,
+                                          bool update_pins);
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
