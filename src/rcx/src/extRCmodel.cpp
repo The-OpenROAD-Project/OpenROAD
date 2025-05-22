@@ -3428,8 +3428,13 @@ void extMetRCTable::allocateInitialTables(uint widthCnt,
       _capOverUnder[met] = new extDistWidthRCTable(
           false, met, _layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
       for (uint jj = 0; jj < _wireCnt; jj++)
-        _capOverUnder_open[met][jj] = new extDistWidthRCTable(
-            false, met, _layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+        _capOverUnder_open[met][jj] = new extDistWidthRCTable(false,
+                                                              met,
+                                                              _layerCnt,
+                                                              n + 1,
+                                                              widthCnt,
+                                                              _rcPoolPtr,
+                                                              _OUREVERSEORDER);
     }
     if (over) {
       _capOver[met] = new extDistWidthRCTable(
