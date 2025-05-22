@@ -1106,7 +1106,7 @@ class NesterovBase
     log_->report("restoring!!!\n\n\n\n\n");
   
     for (const auto& filler : removed_fillers_) {
-      filler.gcell.print(log_, false);
+      // filler.gcell.print(log_, false);
       fillerStor_.push_back(filler.gcell);
       size_t new_index = fillerStor_.size() - 1;
   
