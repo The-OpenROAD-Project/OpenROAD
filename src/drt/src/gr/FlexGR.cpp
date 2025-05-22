@@ -1709,6 +1709,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       }
       node->setLoc(pt);
       node->setLayerNum(rpin->getAccessPoint()->getLayerNum());
+      // added by Zhiang   
       node->setRPin(rpin);
     }
   }

@@ -223,8 +223,8 @@ void FlexGR::layerAssign_chunk(
         node->clearChildren(); // disconnect the root ripin node with the first gcell node
         // update the min and max pin layer number for the first gcell node
         auto pinLayerNum = node->getLayerNum() / 2 - 1;
-        firstGCellNode->updateMinLayerNum(pinLayerNum);
-        firstGCellNode->updateMaxLayerNum(pinLayerNum);
+        firstGCellNode->updateMinPinLayerNum(pinLayerNum);
+        firstGCellNode->updateMaxPinLayerNum(pinLayerNum);
         if (firstGCellNode->isDontMove() == false) {
           logger_->error(utl::DRT, 64, "Error: firstGCellNode is not a pinGCellNode");
         }
@@ -235,8 +235,8 @@ void FlexGR::layerAssign_chunk(
         node->setParent(nullptr);
         // update the min and max pin layer number for the ripin node
         auto pinLayerNum = node->getLayerNum() / 2 - 1;
-        parent->updateMinLayerNum(pinLayerNum);
-        parent->updateMaxLayerNum(pinLayerNum);
+        parent->updateMinPinLayerNum(pinLayerNum);
+        parent->updateMaxPinLayerNum(pinLayerNum);
         if (parent->isDontMove() == false) {
           logger_->error(utl::DRT, 71, "Error: parent node is not a pinGCellNode");
         }

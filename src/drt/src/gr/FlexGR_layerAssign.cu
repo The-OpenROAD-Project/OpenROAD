@@ -49,10 +49,10 @@
 #include "FlexGR.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "FlexGR_util_update.h"
+
 
 namespace drt {
-
-
 
 
 __device__
@@ -248,7 +248,7 @@ void layerAssignSegmentCommit__kernel(
     int childLayerNum = childNode.layerNum;
     int childX = childNode.x;
     int childY = childNode.y;
-    addRawDemand_device(d_cmap, xDim, yDim, numLayers, 
+    addRawDemand__device(d_cmap, xDim, yDim, numLayers, 
       parentX, parentY, childX, childY, childLayerNum);
   }
 }
