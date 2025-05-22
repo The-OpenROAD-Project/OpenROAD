@@ -2551,8 +2551,10 @@ void GlobalRouter::readSegments(const char* file_name)
         GRT, 257, "Failed to open global route segments file {}.", file_name);
   }
 
+  int line_count = 0;
   while (fin.good()) {
     getline(fin, line);
+    line_count++;
     if (line == "(" || line.empty() || line == ")") {
       continue;
     }
@@ -2587,8 +2589,13 @@ void GlobalRouter::readSegments(const char* file_name)
                        layer2->getRoutingLevel());
       routes_[db_net].push_back(segment);
     } else {
-      logger_->error(
-          GRT, 261, "Error reading global route segments file {}.", file_name);
+      logger_->error(GRT,
+                     261,
+                     "Error reading global route segments file {} at line {}.\n"
+                     "\t\t Line content: \"{}\".",
+                     file_name,
+                     line_count,
+                     line);
     }
   }
   for (auto& [db_net, segments] : routes_) {
