@@ -74,7 +74,6 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
   unsigned char charnum[256], line[32], *linep, c;
   FILE *fpwv, *fprt;
-  struct csoln* p;
   int d, i, j, k, kk, ns, nn;
 
   for (i = 0; i <= 255; i++) {
@@ -118,8 +117,7 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
       } else {
         fgetc(fpwv);  // '\n'
         numsoln[d][k] = ns;
-        p = new struct csoln[ns];
-        (*LUT)[d][k] = std::shared_ptr<struct csoln[]>(p);
+        auto p = std::make_shared<struct csoln[]>(ns);
         for (i = 1; i <= ns; i++) {
           linep = (unsigned char*) fgets((char*) line, 32, fpwv);
           p->parent = charnum[*(linep++)];
@@ -147,6 +145,7 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 #endif
           p++;
         }
+        (*LUT)[d][k] = std::move(p);
       }
     }
   }
