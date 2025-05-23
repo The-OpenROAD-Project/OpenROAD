@@ -1855,7 +1855,7 @@ bool DisplayControls::areFillsVisible() const
   return isModelRowVisible(&shape_types_.fill);
 }
 
-QFont DisplayControls::pinMarkersFont() const
+QFont DisplayControls::ioPinMarkersFont() const
 {
   return pin_markers_font_;
 }

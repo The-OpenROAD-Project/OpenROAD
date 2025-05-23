@@ -1483,7 +1483,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   const double abs_min_dim = 8.0;  // prevent markers from falling apart
   pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
 
-  pin_font_ = viewer_->options_->pinMarkersFont();
+  pin_font_ = viewer_->options_->ioPinMarkersFont();
   const QFontMetrics font_metrics(pin_font_);
 
   QString largest_text;

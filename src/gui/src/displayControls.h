@@ -209,7 +209,7 @@ class DisplayControls : public QDockWidget,
   bool areSpecialRoutingSegmentsVisible() const override;
   bool areSpecialRoutingViasVisible() const override;
   bool areFillsVisible() const override;
-  QFont pinMarkersFont() const override;
+  QFont ioPinMarkersFont() const override;
 
   QColor rulerColor() override;
   QFont rulerFont() override;
