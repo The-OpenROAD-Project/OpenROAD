@@ -468,12 +468,12 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                   buffer_moves_ + split_load_moves_);
   if (size_up_moves_ + size_down_moves_ > 0) {
     repaired = true;
-  logger_->info(RSZ,
-                51,
-                "Resized {} instances, {} sized up, {} sized down.",
-                size_up_moves_ + size_down_moves_,
-                size_up_moves_,
-                size_down_moves_);
+    logger_->info(RSZ,
+                  51,
+                  "Resized {} instances, {} sized up, {} sized down.",
+                  size_up_moves_ + size_down_moves_,
+                  size_up_moves_,
+                  size_down_moves_);
   }
   if (swap_pins_moves_ > 0) {
     repaired = true;
@@ -531,12 +531,12 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   int size_up_moves_ = resizer_->size_up_move->numMoves();
   int size_down_moves_ = resizer_->size_down_move->numMoves();
   if (size_up_moves_ + size_down_moves_ > 0) {
-      logger_->info(RSZ,
-                    38,
-                    "Resized {} instances, {} sized up, {} sized down.",
-                    size_up_moves_ + size_down_moves_,
-                    size_up_moves_,
-                    size_down_moves_);
+    logger_->info(RSZ,
+                  38,
+                  "Resized {} instances, {} sized up, {} sized down.",
+                  size_up_moves_ + size_down_moves_,
+                  size_up_moves_,
+                  size_down_moves_);
   }
   int swap_pins_moves_ = resizer_->swap_pins_move->numMoves();
   if (swap_pins_moves_ > 0) {
