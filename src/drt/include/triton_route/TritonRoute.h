@@ -155,6 +155,7 @@ class TritonRoute
                             int ripupMode,
                             int followGuide);
   void setDistributed(bool on = true);
+  void setGPU(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
   void setCloudSize(unsigned int cloud_sz) { cloud_sz_ = cloud_sz; }
@@ -213,6 +214,7 @@ class TritonRoute
   gui::Gui* gui_{nullptr};
   dst::Distributed* dist_{nullptr};
   bool distributed_{false};
+  bool gpu_flag_{false};
   std::string dist_ip_;
   uint16_t dist_port_{0};
   std::string shared_volume_;

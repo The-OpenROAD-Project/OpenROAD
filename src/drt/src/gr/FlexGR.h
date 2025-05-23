@@ -89,6 +89,7 @@ class FlexGR
 
   // others
   void main(odb::dbDatabase* db = nullptr);
+  void main_gpu(odb::dbDatabase* db = nullptr);
 
  private:
   odb::dbDatabase* db_;

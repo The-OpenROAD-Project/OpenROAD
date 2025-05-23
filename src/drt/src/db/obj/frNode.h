@@ -34,6 +34,7 @@
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "frRPin.h"
 
 namespace drt {
 class frNet;
@@ -67,32 +68,7 @@ class frNode : public frBlockObject
       std::cout << "Warning: child already exists\n";
     }
   }
-  // void addChild1(frNode *in) {
-  //   bool exist = false;
-  //   for (auto child: children) {
-  //     if (child == in) {
-  //       exist = true;
-  //     }
-  //   }
-  //   if (!exist) {
-  //     children.push_back(in);
-  //   } else {
-  //     std::cout << "Warning1: child already exists\n";
-  //   }
-  // }
-  // void addChild2(frNode *in) {
-  //   bool exist = false;
-  //   for (auto child: children) {
-  //     if (child == in) {
-  //       exist = true;
-  //     }
-  //   }
-  //   if (!exist) {
-  //     children.push_back(in);
-  //   } else {
-  //     std::cout << "Warning2: child already exists\n";
-  //   }
-  // }
+ 
   void clearChildren() { children.clear(); }
   void removeChild(frNode* in)
   {
@@ -126,8 +102,44 @@ class frNode : public frBlockObject
 
   frBlockObjectEnum typeId() const override { return frcNode; }
 
+  // Modified by Zhiang Wang
+
+  // Flag 
+  void setDontMove() { dontMove = true; } 
+  void resetDontMove() { dontMove = false; }
+  bool isDontMove() { return dontMove; }
+
+  // Store the corresponding rpin if it exists
+  frRPin* getRPin() { return rpin; }
+  void setRPin(frRPin* in) { rpin = in; }
+
+  // Int property
+  void setIntProp(int value) {
+    intProp = value;
+  }
+  
+  int getIntProp() {
+    return intProp;
+  }
+
+  int getMinPinLayerNum() { return minPinLayerNum; }
+  int getMaxPinLayerNum() { return maxPinLayerNum; }
+
+  void updateMinPinLayerNum(int layerNum) {
+    if (layerNum < minPinLayerNum) {
+      minPinLayerNum = layerNum;
+    }
+  }
+
+  void updateMaxPinLayerNum(int layerNum) {
+    if (layerNum > maxPinLayerNum) {
+      maxPinLayerNum = layerNum;
+    }
+  }
+
  protected:
   frNet* net{nullptr};
+ 
   Point loc;                        // == prefAP bp if exist for pin
   frLayerNum layerNum{0};           // == prefAP bp if exist for pin
   frBlockObject* connFig{nullptr};  // wire / via / patch to parent
@@ -141,5 +153,17 @@ class frNode : public frBlockObject
   frListIter<std::unique_ptr<frNode>> iter;
 
   friend class grNode;
+
+
+  // Modified by Zhiang Wang
+  frRPin* rpin{nullptr};
+  bool dontMove = false;
+  int intProp = -1;
+
+  int minPinLayerNum {std::numeric_limits<int>::max()}; // min layer num of pin
+  int maxPinLayerNum {-1}; // max layer num of pin
+
+
+
 };
 }  // namespace drt

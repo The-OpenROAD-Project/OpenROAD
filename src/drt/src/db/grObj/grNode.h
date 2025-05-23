@@ -34,6 +34,8 @@
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frPoint.h"
 #include "db/obj/frNode.h"
+#include "db/obj/frRPin.h"
+
 #include "frBaseTypes.h"
 
 namespace drt {
@@ -117,7 +119,7 @@ class grNode : public grBlockObject
   frListIter<std::unique_ptr<grNode>> getIter() { return iter; }
 
   frBlockObjectEnum typeId() const override { return grcNode; }
-
+  
  protected:
   grNet* net{nullptr};
   Point loc;
@@ -134,5 +136,7 @@ class grNode : public grBlockObject
   frListIter<std::unique_ptr<grNode>> iter;
 
   friend class frNode;
+
+
 };
 }  // namespace drt

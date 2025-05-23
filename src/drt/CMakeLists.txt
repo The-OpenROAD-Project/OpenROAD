@@ -83,19 +83,25 @@ target_sources(drt
   PRIVATE
     src/gr/FlexGRCMap.cpp
     src/gr/FlexGR.cpp
+    src/gr/FlexGR_gpu.cpp
     src/gr/FlexGR_end.cpp
+    src/gr/FlexGR_aux.cpp
     src/gr/FlexGR_update.cpp
     src/gr/FlexGRGridGraph.cpp
     src/gr/FlexGRGridGraph_maze.cpp
     src/gr/FlexGR_2DMazeRoute.cu
     src/gr/FlexGR_3DMazeRoute.cu
+    src/gr/FlexGR_layerAssign.cpp
+    src/gr/FlexGR_layerAssign.cu
+    src/gr/FlexGR_util.cu
+    src/gr/FlexGR_util.cpp
     src/gr/FlexGR_init.cpp
     src/gr/FlexGR_maze.cpp
     src/gr/FlexGR_maze_restore.cpp
     src/gr/FlexGR_rq.cpp
     src/gr/FlexGR_topo.cpp
     src/dr/FlexDR_conn.cpp
-    src/dr/FlexDR_init.cpp
+    src/dr/FlexDR_init.cpp    
     src/dr/FlexDR.cpp
     src/db/drObj/drNet.cpp
     src/dr/FlexDR_maze.cpp

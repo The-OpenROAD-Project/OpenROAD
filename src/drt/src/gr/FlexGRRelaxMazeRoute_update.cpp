@@ -135,7 +135,7 @@ void FlexGR::getRipupRerouteNets_update(std::vector<frNet*>& nets2RR)
           }
         }
       } else {
-        logger_->error(DRT, 265, "Error: non-root node does not have parent in getRipupRerouteNets_update\n");
+        logger_->error(DRT, 286, "Error: non-root node does not have parent in getRipupRerouteNets_update\n");
       }      
 
       if (isCongested) {

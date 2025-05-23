@@ -247,6 +247,10 @@ class frNet : public frBlockObject
   void setHasJumpers(bool has_jumpers) { has_jumpers_ = has_jumpers; }
   bool hasJumpers() { return has_jumpers_; }
 
+  // Modified by Zhiang Wang
+  void setNumSteinerNodes(int num) { numSteinerNodes = num; }
+  int getNumSteinerNodes() { return numSteinerNodes; }
+
  protected:
   frString name_;
   RouterConfiguration* router_cfg_;
@@ -284,5 +288,10 @@ class frNet : public frBlockObject
   // to prevent antenna violations
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
+
+  // Modified by Zhiang Wang
+  int numSteinerNodes{0};  // number of steiner nodes in the net
+
+
 };
 }  // namespace drt

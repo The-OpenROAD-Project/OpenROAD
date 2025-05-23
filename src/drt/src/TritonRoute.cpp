@@ -117,6 +117,11 @@ void TritonRoute::setDistributed(bool on)
   }
 }
 
+void TritonRoute::setGPU(bool on)
+{
+  gpu_flag_ = on;
+}
+
 void TritonRoute::setDebugWriteNetTracks(bool on)
 {
   debug_->writeNetTracks = on;
@@ -622,10 +627,16 @@ void TritonRoute::prep()
   rp.main();
 }
 
+
+// Modified by Zhiang Wang 
 void TritonRoute::gr()
 {
   FlexGR gr(getDesign(), logger_, stt_builder_, router_cfg_.get());
-  gr.main(db_);
+  if (gpu_flag_) {
+    gr.main_gpu(db_);
+  } else {
+    gr.main(db_);
+  }
 }
 
 void TritonRoute::ta()
