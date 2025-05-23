@@ -193,10 +193,7 @@ float LatanciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
 void LatanciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
-  odb::dbNet* topInputClockNet = clock.getNetObj();
-  if (builder->getTopInputNet() != nullptr) {
-    topInputClockNet = builder->getTopInputNet();
-  }
+  odb::dbNet* topInputClockNet = builder->getTopInputNet();
   // compute average input arrival at all sinks
   float sumArrivals = 0.0;
   unsigned numSinks = 0;
