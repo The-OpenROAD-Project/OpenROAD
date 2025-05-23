@@ -61,6 +61,7 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.heap",
+        "@boost.multi_array",
         "@com_github_quantamhd_lemon//:lemon",
         "@tk_tcl//:tcl",
     ],
