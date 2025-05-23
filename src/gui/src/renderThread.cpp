@@ -1562,6 +1562,9 @@ void RenderThread::drawIOPins(Painter& painter,
     return;
   }
 
+  const bool pin_draw_names
+      = pin_draw_names_ && viewer_->options_->areIOPinNamesVisible();
+
   const auto die_area = block->getDieArea();
 
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
@@ -1667,7 +1670,7 @@ void RenderThread::drawIOPins(Painter& painter,
 
     painter.drawRect(box->getBox());
 
-    if (pin_draw_names_) {
+    if (pin_draw_names) {
       Point text_anchor_pt = xfm.getOffset();
 
       auto text_anchor = Painter::BOTTOM_CENTER;

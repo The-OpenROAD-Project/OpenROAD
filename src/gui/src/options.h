@@ -56,6 +56,7 @@ class Options
   virtual bool areNonPrefTracksVisible() = 0;
 
   virtual bool areIOPinsVisible() const = 0;
+  virtual bool areIOPinNamesVisible() const = 0;
   virtual QFont ioPinMarkersFont() const = 0;
 
   virtual bool areRoutingSegmentsVisible() const = 0;

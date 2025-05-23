@@ -444,8 +444,9 @@ DisplayControls::DisplayControls(QWidget* parent)
                shape_types_srouting,
                Qt::Checked);
   makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
   pin_markers_font_ = QApplication::font();  // use default font
-  setNameItemDoubleClickAction(shape_types_.pins, [this]() {
+  setNameItemDoubleClickAction(shape_types_.pin_names, [this]() {
     pin_markers_font_ = QFontDialog::getFont(
         nullptr, pin_markers_font_, this, "Pin marker font");
   });
@@ -1828,6 +1829,11 @@ bool DisplayControls::isGCellGridVisible() const
 bool DisplayControls::areIOPinsVisible() const
 {
   return isModelRowVisible(&shape_types_.pins);
+}
+
+bool DisplayControls::areIOPinNamesVisible() const
+{
+  return isModelRowVisible(&shape_types_.pin_names);
 }
 
 bool DisplayControls::areRoutingSegmentsVisible() const
