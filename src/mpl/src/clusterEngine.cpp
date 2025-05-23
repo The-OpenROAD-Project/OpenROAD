@@ -1093,15 +1093,13 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   if (level_ >= tree_->max_level) {
     return;
   }
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Current cluster: {} - Level: {} - Macros: {} - Std Cells: {}",
-             parent->getName(),
-             level_,
-             parent->getNumMacro(),
-             parent->getNumStdCell());
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nCurrent cluster: {}\n  Macros: {}\n  Std Cells: {}",
+                    parent->getName(),
+                    parent->getNumMacro(),
+                    parent->getNumStdCell());
+  }
 
   level_++;
   updateSizeThresholds();
@@ -1157,6 +1155,10 @@ void ClusteringEngine::updateSizeThresholds()
   if (min_std_cell_ <= 0) {
     min_std_cell_ = 100;
     max_std_cell_ = min_std_cell_ * tree_->cluster_size_ratio / 2.0;
+  }
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    reportThresholds();
   }
 }
 
@@ -2121,37 +2123,6 @@ void ClusteringEngine::replaceByStdCellCluster(
   virtual_conn_clusters.push_back(mixed_leaf->getId());
 }
 
-// Print Physical Hierarchy tree in a DFS manner
-void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
-{
-  std::string line;
-  for (int i = 0; i < level; i++) {
-    line += "+---";
-  }
-
-  line += fmt::format("{}  ({}) Type: {}",
-                      parent->getName(),
-                      parent->getId(),
-                      parent->getClusterTypeString());
-
-  if (parent->isClusterOfUnplacedIOPins()) {
-    line += fmt::format(" Pins: {}", getNumberOfIOs(parent));
-  } else if (!parent->isIOPadCluster()) {
-    line += fmt::format(" {}, StdCells: {} ({} μ²), Macros: {} ({} μ²)",
-                        parent->getIsLeafString(),
-                        parent->getNumStdCell(),
-                        parent->getStdCellArea(),
-                        parent->getNumMacro(),
-                        parent->getMacroArea());
-  }
-
-  logger_->report("{}", line);
-
-  for (auto& cluster : parent->getChildren()) {
-    printPhysicalHierarchyTree(cluster.get(), level + 1);
-  }
-}
-
 // When placing the HardMacros of a macro cluster, we create temporary
 // internal macro clusters - one representing each HardMacro - so we
 // can use them to compute the connections with the fixed terminals.
@@ -2202,6 +2173,62 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
     }
   }
   return number_of_ios;
+}
+
+///////////////////////////////////////////////
+
+void ClusteringEngine::reportThresholds() const
+{
+  logger_->report("\n    Level {}  |  Min  |  Max", level_);
+  logger_->report("-----------------------------");
+  logger_->report(
+      "  Std Cells  | {:>5d} | {:>6d}", min_std_cell_, max_std_cell_);
+  logger_->report("     Macros  | {:>5d} | {:>6d}\n", min_macro_, max_macro_);
+}
+
+void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
+{
+  std::string line;
+  for (int i = 0; i < level; i++) {
+    line += "+---";
+  }
+
+  line += fmt::format("{}  ({}) Type: {}",
+                      parent->getName(),
+                      parent->getId(),
+                      parent->getClusterTypeString());
+
+  if (parent->isClusterOfUnplacedIOPins()) {
+    int number_of_pins = 0;
+    for (const auto [pin, cluster_id] : tree_->maps.bterm_to_cluster_id) {
+      if (cluster_id == parent->getId()) {
+        ++number_of_pins;
+      }
+    }
+
+    line += fmt::format(" Pins: {}", number_of_pins);
+  } else if (!parent->isIOPadCluster()) {
+    line += fmt::format(" {}", parent->getIsLeafString());
+
+    // Using 'or' on purpose to certify that there is no discrepancy going on.
+    if (parent->getNumStdCell() != 0 || parent->getStdCellArea() != 0.0f) {
+      line += fmt::format(", StdCells: {} ({} μ²)",
+                          parent->getNumStdCell(),
+                          parent->getStdCellArea());
+    }
+
+    if (parent->getNumMacro() != 0 || parent->getMacroArea() != 0.0f) {
+      line += fmt::format(", Macros: {} ({} μ²),",
+                          parent->getNumMacro(),
+                          parent->getMacroArea());
+    }
+  }
+
+  logger_->report("{}", line);
+
+  for (auto& cluster : parent->getChildren()) {
+    printPhysicalHierarchyTree(cluster.get(), level + 1);
+  }
 }
 
 }  // namespace mpl
