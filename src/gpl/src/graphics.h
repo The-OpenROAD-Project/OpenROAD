@@ -83,13 +83,18 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 
-  void saveGuiImage(const std::string& filename);
-  void saveGuiImageWithHeatmaps(const std::string& density_filename,
-                                const std::string& rudy_filename);
-  void scaleAndAnnotateImage(const std::string& input_path,
-                             const std::string& output_path,
-                             const std::string& label,
-                             const std::string& fill_color = "white");
+  void addFrameLabel(gui::Gui* gui,
+                     const odb::Rect& bbox,
+                     const std::string& label,
+                     const std::string& label_name,
+                     int image_width_px = 500);
+
+  void saveLabeledImage(const std::string& path,
+                        const std::string& label,
+                        bool select_buffers,
+                        const std::string& heatmap_control = "",
+                        int image_width_px = 500);
+
   gui::Gui* getGuiObjectFromGraphics() { return gui::Gui::get(); }
 
  private:

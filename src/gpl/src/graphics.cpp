@@ -534,57 +534,53 @@ bool Graphics::guiActive()
   return gui::Gui::enabled();
 }
 
-void Graphics::saveGuiImage(const std::string& filename)
+void Graphics::addFrameLabel(gui::Gui* gui,
+                             const odb::Rect& bbox,
+                             const std::string& label,
+                             const std::string& label_name,
+                             int image_width_px)
 {
-  if (gui::Gui::enabled()) {
-    gui::Gui::get()->saveImage(filename.c_str());
-  } else {
-    logger_->report("GUI is not active. Cannot save '{}'.", filename);
-  }
+  int label_x = bbox.xMin() + 300;
+  int label_y = bbox.yMin() + 300;
+
+  gui::Painter::Color color = gui::Painter::stringToColor("yellow", logger_);
+  gui::Painter::Anchor anchor
+      = gui::Painter::stringToAnchor("bottom left", logger_);
+
+  int font_size = std::clamp(image_width_px / 50, 10, 24);
+
+  gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
 }
 
-void Graphics::scaleAndAnnotateImage(const std::string& input_path,
-                                     const std::string& output_path,
-                                     const std::string& label,
-                                     const std::string& fill_color)
+void Graphics::saveLabeledImage(const std::string& path,
+                                const std::string& label,
+                                bool select_buffers,
+                                const std::string& heatmap_control,
+                                int image_width_px)
 {
-  std::string cmd = fmt::format(
-      "convert {} -resize 50% -colors 64 -strip -quality 85 "
-      "-gravity SouthEast -pointsize 20 -fill {} "
-      "-annotate +5+5 '{}' PNG8:{}",
-      input_path,
-      fill_color,
-      label,
-      output_path);
+  gui::Gui* gui = getGuiObjectFromGraphics();
+  odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
 
-  int ret = std::system(cmd.c_str());
-  if (ret != 0) {
-    logger_->report("Image annotation command failed with exit code {}", ret);
-  }
-  std::filesystem::remove(input_path);
-}
-
-void Graphics::saveGuiImageWithHeatmaps(const std::string& density_filename,
-                                        const std::string& rudy_filename)
-{
-  if (!gui::Gui::enabled()) {
-    logger_->report("GUI is not active. Cannot save images '{}', '{}'.",
-                    density_filename,
-                    rudy_filename);
-    return;
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control.c_str(), true);
   }
 
-  gui::Gui* gui = gui::Gui::get();
-  // Placement Density
-  gui->setDisplayControlsVisible("Heat Maps/Placement Density", true);
-  gui->saveImage(density_filename);
-  gui->setDisplayControlsVisible("Heat Maps/Placement Density", false);
+  if (select_buffers) {
+    gui->select("Inst", "", "Description", "Timing Repair Buffer", true, -1);
+  }
 
-  // Estimated Congestion (RUDY)
-  gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)", true);
-  gui->saveImage(rudy_filename);
-  gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)",
-                                 false);
+  static int label_id = 0;
+  std::string label_name = fmt::format("auto_label_{}", label_id++);
+
+  addFrameLabel(gui, bbox, label, label_name, image_width_px);
+  gui->saveImage(path);
+  gui->deleteLabel(label_name);
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control.c_str(), false);
+  }
+
+  gui->clearSelections();
 }
 
 }  // namespace gpl

@@ -187,7 +187,6 @@ global_placement_debug
     [-draw_bins]
     [-initial]
     [-start_iter]
-    [-update_db]
     [-generate_images]
 ```
 
@@ -201,7 +200,6 @@ global_placement_debug
 | `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
 | `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
 | `-start_iter` | Start debug mode from such iteration. |
-| `-update_db` | Updates OpenROAD db during every gpl iteration, allowing for up to date location of instances. |
 | `-generate_images` | Generates a GIF animation showing the placement progression. Also generates snapshot images at the end of each routability and timing-driven iteration, including heatmaps. |
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`

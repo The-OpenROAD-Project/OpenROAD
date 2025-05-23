@@ -301,7 +301,6 @@ set_debug_cmd(int pause_iterations,
               bool initial,
               const char* inst_name,
               int start_iter,
-              bool update_db,
               bool generate_images,
               char* images_path)
 {
@@ -315,7 +314,7 @@ set_debug_cmd(int pause_iterations,
     images_path = "REPORTS_DIR";
   }
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst, start_iter, update_db, generate_images,
+                    initial, inst, start_iter, generate_images,
                     images_path);
 }
 

@@ -113,7 +113,6 @@ class NesterovPlace
   utl::Gauge<double>* hpwl_gauge_;
   // saving images with debug mode
   bool routability_driven_ = false;
-  bool timing_driven_ = false;
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
