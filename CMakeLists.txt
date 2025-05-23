@@ -194,6 +194,14 @@ if(BUILD_MAN)
   install(DIRECTORY ${OPENROAD_HOME}/docs/html DESTINATION ${OPENROAD_SHARE}/man)
 endif()
 
+find_package(Boost REQUIRED)
+
+set(CAPNP_INCLUDE_DIR "${CAPNP_DIR}/include")
+set(CAPNP_LIBRARY_DIR "${CAPNP_DIR}/lib")
+find_package(CapnProto REQUIRED PATHS ${CAPNP_DIR})
+include_directories(${CAPNP_INCLUDE_DIR})
+link_directories(${CAPNP_LIBRARY_DIR})
+
 # set(FLEX_INCLUDE_DIR /opt/homebrew/opt/flex/include CACHE PATH "Path to Flex include")
 # set(TCL_LIBRARY /opt/local/lib/libtcl.dylib CACHE PATH "Path to Tcl library")
 # set(TCL_INCLUDE_DIR /opt/local/include/ CACHE PATH "Path to Tcl include")
