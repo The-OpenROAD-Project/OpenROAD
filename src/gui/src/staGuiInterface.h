@@ -273,6 +273,10 @@ class ClockTree
   ClockTree* findTree(odb::dbNet* net, bool include_children = true);
   ClockTree* findTree(sta::Net* net, bool include_children = true);
 
+  bool getVisibility() { return visible_; };
+  void setVisibility(bool visibility, bool propagate_down=true);
+  void setVisibilitySubtreeOnly(bool visibility);
+
  private:
   ClockTree* parent_;
 
@@ -287,6 +291,8 @@ class ClockTree
   PinDelays leaves_;
 
   std::vector<std::unique_ptr<ClockTree>> fanout_;
+
+  bool visible_;
 
   void addPath(sta::PathExpanded& path, int idx, const sta::StaState* sta);
   ClockTree* getTree(sta::Net* net);
