@@ -14,6 +14,14 @@
 #include "TreeBuilder.h"
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/Liberty.hh"
+#include "sta/PathAnalysisPt.hh"
+#include "sta/PathEnd.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/Sdc.hh"
+
 
 namespace cts {
 
@@ -24,8 +32,17 @@ void LatanciesBalancer::run()
   findAllBuilders(root_);
 }
 
+void LatanciesBalancer::initSta() {
+  openSta_->ensureGraph();
+  openSta_->searchPreamble();
+  openSta_->ensureClkNetwork();
+  openSta_->ensureClkArrivals();
+  timing_graph_ = openSta_->graph();
+}
+
 void LatanciesBalancer::findAllBuilders(TreeBuilder* builder)
 {
+  initSta();
   expandBuilderGraph(builder);
   for (const auto& child : builder->getChildren()) {
     findAllBuilders(child);
@@ -71,6 +88,7 @@ void LatanciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   // If the builder is leaf don't expand it, as we don't want to insert delay
   // inside this tree
   if(builder->isLeafTree()) {
+    computeAveSinkArrivals(builder);
     return;
   }
 
@@ -120,6 +138,193 @@ odb::dbNet* LatanciesBalancer::getFirstInputNet(odb::dbInst* inst) const
   }
 
   return nullptr;
+}
+
+float LatanciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
+                                     odb::dbNet* topNet,
+                                     odb::dbITerm* iterm)
+{
+  sta::VertexPathIterator pathIter(sinkVertex, openSta_);
+  float clkPathArrival = 0.0;
+  while (pathIter.hasNext()) {
+    sta::Path* path = pathIter.next();
+    const sta::ClockEdge* clock_edge = path->clkEdge(openSta_);
+    if (clock_edge == nullptr) {
+      continue;
+    }
+
+    if (clock_edge->transition() != sta::RiseFall::rise()) {
+      // only populate with rising edges
+      continue;
+    }
+
+    if (path->dcalcAnalysisPt(openSta_)->delayMinMax() != sta::MinMax::max()) {
+      continue;
+      // only populate with max delay
+    }
+
+    const sta::Clock* clock = path->clock(openSta_);
+    if (clock) {
+      sta::PathExpanded expand(path, openSta_);
+      const sta::Path* start = expand.startPath();
+
+      odb::dbNet* pathStartNet = nullptr;
+
+      odb::dbITerm* term;
+      odb::dbBTerm* port;
+      odb::dbModITerm* modIterm;
+      network_->staToDb(start->pin(openSta_), term, port, modIterm);
+      if (term) {
+        pathStartNet = term->getNet();
+      }
+      if (port) {
+        pathStartNet = port->getNet();
+      }
+      if (pathStartNet == topNet) {
+        clkPathArrival = path->arrival();
+        return clkPathArrival;
+      }
+    }
+  }
+  logger_->warn(CTS, 179, "No paths found for pin {}.", iterm->getName());
+  return clkPathArrival;
+}
+
+void LatanciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
+{
+  Clock clock = builder->getClock();
+  odb::dbNet* topInputClockNet = clock.getNetObj();
+  if (builder->getTopInputNet() != nullptr) {
+    topInputClockNet = builder->getTopInputNet();
+  }
+  // compute average input arrival at all sinks
+  float sumArrivals = 0.0;
+  unsigned numSinks = 0;
+  clock.forEachSink([&](const ClockInst& sink) {
+    odb::dbITerm* iterm = sink.getDbInputPin();
+    computeSinkArrivalRecur(
+        topInputClockNet, iterm, sumArrivals, numSinks);
+  });
+  float aveArrival = sumArrivals / (float) numSinks;
+  builder->setAveSinkArrival(aveArrival);
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             1,
+             "{} {}: average sink arrival is {:0.3e}",
+             (builder->getTreeType() == TreeType::MacroTree) ? "macro tree"
+                                                             : "register tree",
+             clock.getName(),
+             builder->getAveSinkArrival());
+}
+
+void LatanciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
+                                        odb::dbITerm* iterm,
+                                        float& sumArrivals,
+                                        unsigned& numSinks)
+{
+  if (iterm) {
+    odb::dbInst* inst = iterm->getInst();
+    if (inst) {
+      if (isSink(iterm)) {
+        // either register or macro input pin
+        sta::Pin* pin = network_->dbToSta(iterm);
+        if (pin) {
+          sta::Vertex* sinkVertex = timing_graph_->pinDrvrVertex(pin);
+          float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
+          // add insertion delay
+          float insDelay = 0.0;
+          sta::LibertyCell* libCell
+              = network_->libertyCell(network_->dbToSta(inst));
+          odb::dbMTerm* mterm = iterm->getMTerm();
+          if (libCell && mterm) {
+            sta::LibertyPort* libPort
+                = libCell->findLibertyPort(mterm->getConstName());
+            if (libPort) {
+              const float rise = libPort->clkTreeDelay(
+                  0.0, sta::RiseFall::rise(), sta::MinMax::max());
+              const float fall = libPort->clkTreeDelay(
+                  0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+              if (rise != 0 || fall != 0) {
+                insDelay = (rise + fall) / 2.0;
+              }
+            }
+          }
+          sumArrivals += (arrival + insDelay);
+          numSinks++;
+        }
+      } else {
+        // not a sink, but a clock gater
+        odb::dbITerm* outTerm = inst->getFirstOutput();
+        if (outTerm) {
+          odb::dbNet* outNet = outTerm->getNet();
+          bool propagate = propagateClock(iterm);
+          if (outNet && propagate) {
+            odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
+            odb::dbSet<odb::dbITerm>::iterator iter;
+            for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
+              odb::dbITerm* inTerm = *iter;
+              if (inTerm->getIoType() == odb::dbIoType::INPUT) {
+                computeSinkArrivalRecur(
+                    topClokcNet, inTerm, sumArrivals, numSinks);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+bool LatanciesBalancer::propagateClock(odb::dbITerm* input)
+{
+  odb::dbInst* inst = input->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+  if (!libertyCell) {
+    return false;
+  }
+  // Clock tree buffers
+  if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+    return true;
+  }
+  // Combinational components
+  if (!libertyCell->hasSequentials()) {
+    return true;
+  }
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+
+  // Clock Gater / Latch improvised as clock gater
+  if (inputPort) {
+    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+  }
+
+  return false;
+}
+
+bool LatanciesBalancer::isSink(odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+  if (!libertyCell) {
+    return true;
+  }
+
+  if (inst->isBlock()) {
+    return true;
+  }
+
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
+  if (inputPort) {
+    return inputPort->isRegClk();
+  }
+
+  return false;
 }
 
 }  // namespace cts

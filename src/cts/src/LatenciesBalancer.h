@@ -21,6 +21,14 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
+namespace sta {
+class dbSta;
+class dbNetwork;
+class LibertyCell;
+class Vertex;
+class Graph;
+}  // namespace sta
+
 namespace cts {
 
 using utl::Logger;
@@ -77,36 +85,45 @@ class LatanciesBalancer
                 const CtsOptions* options,
                 Logger* logger,
                 odb::dbDatabase* db,
+                sta::dbNetwork* network,
+                sta::dbSta* sta,
                 double scalingUnit)
       : root_(root),
         options_(options),
         logger_(logger),
         db_(db),
+        network_(network),
+        openSta_(sta),
         wireSegmentUnit_(scalingUnit)
   {
   }
 
   void run();
-  void addBufferLevels(TreeBuilder* builder,
-                       const std::vector<ClockInst*>& cluster,
-                       ClockSubNet* driverNet,
-                       unsigned bufLevels,
-                       const std::string& nameSuffix);
-  void fixTreeLevels(TreeBuilder* builder,
-                     unsigned parentDepth,
-                     unsigned maxTreeDepth);
-  unsigned computeMaxTreeDepth(TreeBuilder* parent);
+
+ private:
+  void initSta();
   void findAllBuilders(TreeBuilder* builder);
   void expandBuilderGraph(TreeBuilder* builder);
   int getNodeIdByName(std::string name);
   odb::dbNet* getFirstInputNet(odb::dbInst* inst) const;
+  float getVertexClkArrival(sta::Vertex* sinkVertex,
+                                     odb::dbNet* topNet,
+                                     odb::dbITerm* iterm);
+  void computeAveSinkArrivals(TreeBuilder* builder);
+  void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
+                                        odb::dbITerm* iterm,
+                                        float& sumArrivals,
+                                        unsigned& numSinks);
+  bool propagateClock(odb::dbITerm* input);
+  bool isSink(odb::dbITerm* iterm);
 
- private:
-
-  TreeBuilder* root_;
-  const CtsOptions* options_;
-  Logger* logger_;
+  TreeBuilder* root_ = nullptr;
+  const CtsOptions* options_ = nullptr;
+  Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+  sta::dbNetwork* network_ = nullptr;
+  sta::dbSta* openSta_ = nullptr;
+  sta::Graph* timing_graph_ = nullptr;
   double wireSegmentUnit_;
   std::vector<GraphNode> graph_;
 };
