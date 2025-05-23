@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <sstream>
 #include <vector>
 
@@ -32,11 +33,14 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
+#include "zero_slack_strategy.h"
 
 using utl::RMP;
 using namespace abc;
 
 namespace rmp {
+
+std::once_flag init_abc_flag;
 
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
@@ -47,6 +51,8 @@ void Restructure::init(utl::Logger* logger,
   db_ = db;
   open_sta_ = open_sta;
   resizer_ = resizer;
+
+  std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 }
 
 void Restructure::deleteComponents()
@@ -62,6 +68,12 @@ void Restructure::reset()
 {
   lib_file_names_.clear();
   path_insts_.clear();
+}
+
+void Restructure::resynth(sta::Corner* corner)
+{
+  ZeroSlackStrategy zero_slack_strategy(corner);
+  zero_slack_strategy.OptimizeDesign(open_sta_, name_generator_, logger_);
 }
 
 void Restructure::run(char* liberty_file_name,
@@ -114,8 +126,7 @@ void Restructure::getBlob(unsigned max_depth)
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
       odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      open_sta_->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
+      open_sta_->getDbNetwork()->staToDb(pin, term, port, moditerm);
       if (term && !term->getInst()->getMaster()->isBlock())
         path_insts_.insert(term->getInst());
     }

@@ -53,7 +53,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/stt",
         "src",
     ],
     deps = [
@@ -62,13 +61,14 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.heap",
+        "@boost.multi_array",
         "@com_github_quantamhd_lemon//:lemon",
         "@tk_tcl//:tcl",
     ],
 )
 
 tcl_encode(
-    name = "stt_tcl",
+    name = "tcl",
     srcs = [
         "src/SteinerTreeBuilder.tcl",
     ],
@@ -77,7 +77,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "stt_swig",
+    name = "swig",
     srcs = [
         "src/SteinerTreeBuilder.i",
         "//:error_swig",

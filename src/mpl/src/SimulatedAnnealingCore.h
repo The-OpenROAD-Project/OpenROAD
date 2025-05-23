@@ -52,7 +52,8 @@ class SimulatedAnnealingCore
                          int num_perturb_per_step,
                          unsigned seed,
                          MplObserver* graphics,
-                         utl::Logger* logger);
+                         utl::Logger* logger,
+                         odb::dbBlock* block);
 
   virtual ~SimulatedAnnealingCore() = default;
 
@@ -98,9 +99,10 @@ class SimulatedAnnealingCore
 
   void fastSA();
 
+  void setAvailableRegionsForUnconstrainedPins(
+      const BoundaryRegionList& regions);
   void initSequencePair();
   void setDieArea(const Rect& die_area);
-  void setBlockedBoundariesForIOs();
   void updateBestValidResult(float cost);
   void useBestValidResult();
 
@@ -108,9 +110,9 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
-  void addBoundaryDistToWirelength(const T& macro,
-                                   const T& unplaced_ios,
-                                   float net_weight);
+  void computeWLForClusterOfUnplacedIOPins(const T& macro,
+                                           const T& unplaced_ios,
+                                           float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
@@ -137,8 +139,8 @@ class SimulatedAnnealingCore
   Rect outline_;
   Rect die_area_;  // Offset to the current outline.
 
-  // Boundaries blocked for IO pins
-  std::set<Boundary> blocked_boundaries_;
+  BoundaryRegionList available_regions_for_unconstrained_pins_;
+  ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
@@ -204,6 +206,7 @@ class SimulatedAnnealingCore
 
   utl::Logger* logger_ = nullptr;
   MplObserver* graphics_ = nullptr;
+  odb::dbBlock* block_;
 
   Result best_valid_result_;
 
@@ -214,13 +217,6 @@ class SimulatedAnnealingCore
   static constexpr float acc_tolerance_ = 0.001;
 
   bool has_initial_sequence_pair_ = false;
-
-  // Blocked boundaries data is kept in bools to avoid overhead
-  // during SA steps.
-  bool left_is_blocked_ = false;
-  bool right_is_blocked_ = false;
-  bool bottom_is_blocked_ = false;
-  bool top_is_blocked_ = false;
 };
 
 // SACore wrapper function

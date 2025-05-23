@@ -29,7 +29,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/db_sta",
     ],
     deps = [
         "//:opensta_lib",
@@ -42,7 +41,7 @@ cc_library(
 )
 
 tcl_encode(
-    name = "db_sta_tcl",
+    name = "tcl",
     srcs = [
         "src/dbReadVerilog.tcl",
         "src/dbSta.tcl",
@@ -53,7 +52,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "dbsta_swig",
+    name = "swig",
     srcs = [
         "src/dbSta.i",
         "//:error_swig",
