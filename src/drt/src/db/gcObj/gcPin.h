@@ -15,42 +15,36 @@ class gcPin : public gcBlockObject
 {
  public:
   // constructors
-  gcPin() = default;
   gcPin(const gtl::polygon_90_with_holes_data<frCoord>& shapeIn,
         frLayerNum layerNumIn,
         gcNet* netIn)
-      : polygon_(std::make_unique<gcPolygon>(shapeIn, layerNumIn, this, netIn)),
-        net_(netIn)
+      : polygon_(shapeIn, layerNumIn, this, netIn), net_(netIn)
   {
   }
   // setters
   void setNet(gcNet* in) { net_ = in; }
-  void addPolygonEdges(std::vector<std::unique_ptr<gcSegment>>& in)
+  void addPolygonEdges(std::vector<gcSegment*>& in)
   {
-    polygon_edges_.push_back(std::move(in));
+    polygon_edges_.push_back(in);
   }
-  void addPolygonCorners(std::vector<std::unique_ptr<gcCorner>>& in)
+  void addPolygonCorners(std::vector<gcCorner*>& in)
   {
-    polygon_corners_.push_back(std::move(in));
+    polygon_corners_.push_back(in);
   }
-  void addMaxRectangle(std::unique_ptr<gcRect> in)
-  {
-    max_rectangles_.push_back(std::move(in));
-  }
+  void addMaxRectangle(gcRect* in) { max_rectangles_.push_back(in); }
 
   // getters
-  gcPolygon* getPolygon() const { return polygon_.get(); }
-  const std::vector<std::vector<std::unique_ptr<gcSegment>>>& getPolygonEdges()
-      const
+  gcPolygon* getPolygon() { return &polygon_; }
+  const gcPolygon* getPolygon() const { return &polygon_; }
+  const std::vector<std::vector<gcSegment*>>& getPolygonEdges() const
   {
     return polygon_edges_;
   }
-  const std::vector<std::vector<std::unique_ptr<gcCorner>>>& getPolygonCorners()
-      const
+  const std::vector<std::vector<gcCorner*>>& getPolygonCorners() const
   {
     return polygon_corners_;
   }
-  const std::vector<std::unique_ptr<gcRect>>& getMaxRectangles() const
+  const std::vector<gcRect*>& getMaxRectangles() const
   {
     return max_rectangles_;
   }
@@ -60,11 +54,11 @@ class gcPin : public gcBlockObject
   frBlockObjectEnum typeId() const override { return gccPin; }
 
  private:
-  std::unique_ptr<gcPolygon> polygon_;
+  gcPolygon polygon_;
   gcNet* net_{nullptr};
   // assisting structures
-  std::vector<std::vector<std::unique_ptr<gcSegment>>> polygon_edges_;
-  std::vector<std::vector<std::unique_ptr<gcCorner>>> polygon_corners_;
-  std::vector<std::unique_ptr<gcRect>> max_rectangles_;
+  std::vector<std::vector<gcSegment*>> polygon_edges_;
+  std::vector<std::vector<gcCorner*>> polygon_corners_;
+  std::vector<gcRect*> max_rectangles_;
 };
 }  // namespace drt
