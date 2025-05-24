@@ -95,6 +95,8 @@ class Graphics : public gui::Renderer, public MplObserver
                         std::vector<std::vector<odb::Rect>>& outlines,
                         int level);
   bool isTargetCluster();
+  template <typename T>
+  bool isSkippable(const T& macro);
 
   template <typename T>
   void report(const std::optional<T>& value);

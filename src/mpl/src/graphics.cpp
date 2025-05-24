@@ -390,13 +390,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
-    Cluster* cluster = macro.getCluster();
-
-    if (!cluster) {  // fixed terminals
-      continue;
-    }
-
-    if (cluster->isClusterOfUnplacedIOPins()) {
+    if (isSkippable(macro)) {
       continue;
     }
 
@@ -431,6 +425,10 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   i = 0;
   for (const auto& macro : hard_macros_) {
+    if (isSkippable(macro)) {
+      continue;
+    }
+
     const int lx = block_->micronsToDbu(macro.getX());
     const int ly = block_->micronsToDbu(macro.getY());
     const int width = block_->micronsToDbu(macro.getWidth());
@@ -518,6 +516,14 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawGuides(painter);
     drawFences(painter);
   }
+}
+
+template <typename T>
+bool Graphics::isSkippable(const T& macro)
+{
+  Cluster* cluster = macro.getCluster();
+
+  return !cluster /*fixed terminal*/ || cluster->isClusterOfUnplacedIOPins();
 }
 
 // Draw guidance regions for macros.
