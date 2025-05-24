@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace odb {
@@ -115,7 +116,8 @@ class Replace
                 bool initial,
                 odb::dbInst* inst,
                 int start_iter,
-                bool update_db);
+                bool generate_images,
+                std::string images_path);
 
  private:
   bool initNesterovPlace(int threads);
@@ -192,7 +194,8 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
-  bool gui_debug_update_db_every_iteration = false;
+  bool gui_debug_generate_images = false;
+  std::string gui_debug_images_path = "REPORTS_DIR";
 };
 
 inline constexpr const char* format_label_int = "{:27} {:10}";
