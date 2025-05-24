@@ -204,12 +204,14 @@ class DisplayControls : public QDockWidget,
   bool areNonPrefTracksVisible() override;
 
   bool areIOPinsVisible() const override;
+  bool areIOPinNamesVisible() const override;
+  QFont ioPinMarkersFont() const override;
+
   bool areRoutingSegmentsVisible() const override;
   bool areRoutingViasVisible() const override;
   bool areSpecialRoutingSegmentsVisible() const override;
   bool areSpecialRoutingViasVisible() const override;
   bool areFillsVisible() const override;
-  QFont pinMarkersFont() const override;
 
   QColor rulerColor() override;
   QFont rulerFont() override;
@@ -395,6 +397,11 @@ class DisplayControls : public QDockWidget,
     ModelRow vias;
   };
 
+  struct IOPinModels
+  {
+    ModelRow names;
+  };
+
   struct ShapeTypeModels
   {
     ModelRow routing_group;
@@ -402,6 +409,7 @@ class DisplayControls : public QDockWidget,
     ModelRow special_routing_group;
     RoutingModels special_routing;
     ModelRow pins;
+    ModelRow pin_names;
     ModelRow fill;
   };
 

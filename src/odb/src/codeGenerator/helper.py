@@ -80,11 +80,8 @@ def components(structs, name, _type):
 
 
 def add_once_to_dict(src, target):
-    if isinstance(src, list):
-        for obj in src:
-            target.setdefault(obj, [])
-    elif src not in target:
-        target.setdefault(src, [])
+    for obj in src:
+        target.setdefault(obj, [])
     return target
 
 

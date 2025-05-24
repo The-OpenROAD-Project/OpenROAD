@@ -16,7 +16,7 @@
     {
       "name":"direction",
       "type":"std::string",
-      "flags":["no-set"]  
+      "flags":["no-set"]
     }
   ],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
