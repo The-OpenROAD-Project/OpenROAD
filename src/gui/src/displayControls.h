@@ -141,6 +141,15 @@ class DisplayControls : public QDockWidget,
   Q_OBJECT
 
  public:
+  // One leaf (non-group) row in the model
+  struct ModelRow
+  {
+    QStandardItem* name = nullptr;
+    QStandardItem* swatch = nullptr;
+    QStandardItem* visible = nullptr;
+    QStandardItem* selectable = nullptr;  // may be null
+  };
+
   DisplayControls(QWidget* parent = nullptr);
   ~DisplayControls() override;
 
@@ -274,15 +283,6 @@ class DisplayControls : public QDockWidget,
     Swatch,
     Visible,
     Selectable
-  };
-
-  // One leaf (non-group) row in the model
-  struct ModelRow
-  {
-    QStandardItem* name = nullptr;
-    QStandardItem* swatch = nullptr;
-    QStandardItem* visible = nullptr;
-    QStandardItem* selectable = nullptr;  // may be null
   };
 
   // The *Models are groups in the tree
@@ -578,6 +578,7 @@ class DisplayControls : public QDockWidget,
   static constexpr int callback_item_idx_ = Qt::UserRole + 1;
   static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
   static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
+  static constexpr int disable_row_item_idx_ = Qt::UserRole + 4;
 };
 
 }  // namespace gui
