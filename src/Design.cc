@@ -243,6 +243,12 @@ gpl::Replace* Design::getReplace()
   return getOpenRoad()->getReplace();
 }
 
+gpl2::DgReplace* Design::getDgReplace()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getDgReplace();
+}
+
 dpl::Opendp* Design::getOpendp()
 {
   return getOpenRoad()->getOpendp();
