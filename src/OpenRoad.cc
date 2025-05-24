@@ -453,7 +453,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 
   try {
     const std::string name(filename);
-    if (name.compare(name.length() - 3, 3, ".gz") == 0) {
+    if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
       boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
       inbuf.push(boost::iostreams::gzip_decompressor());
       inbuf.push(stream);
@@ -499,7 +499,7 @@ void OpenRoad::writeDb(const char* filename)
   utl::StreamHandler stream_handler(filename, true);
 
   const std::string name(filename);
-  if (name.compare(name.length() - 3, 3, ".gz") == 0) {
+  if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
     boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
     outbuf.push(boost::iostreams::gzip_compressor());
     outbuf.push(stream_handler.getStream());
