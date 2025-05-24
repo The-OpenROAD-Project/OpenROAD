@@ -1,5 +1,7 @@
 # Test if pin access blockages are generated correctly for a case
-# with two blocked regions for pins.
+# with two blocked regions for pins. We set the boundary weight to
+# zero so that the centralization attempt can make the macro be moved
+# to a region that "escapes" all the pin access blockages.
 source "helpers.tcl"
 
 # We're not interested in the connections, so don't include the lib.
@@ -15,7 +17,8 @@ read_def "./testcases/io_constraints1.def" -floorplan_initialize
 exclude_io_pin_region -region right:10-125 -region top:10-150
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/io_constraints3 -halo_width 4.0
+rtl_macro_placer -report_directory results/io_constraints3 \
+                 -halo_width 4.0 -boundary_weight 0
 
 set def_file [make_result_file io_constraints3.def]
 write_def $def_file
