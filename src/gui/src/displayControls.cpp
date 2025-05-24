@@ -1078,6 +1078,11 @@ std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
 
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
+  if (!model_->itemFromIndex(index)->isEnabled()) {
+    // ignore disabled items
+    return;
+  }
+
   if (index.column() == 0) {
     auto name_item = model_->itemFromIndex(index);
 
