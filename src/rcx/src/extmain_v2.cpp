@@ -321,7 +321,6 @@ bool extMain::ReadModels_v2(const char* rulesFileName,
 
   if (!(m->readRules_v2(
           (char*) rulesFileName, false, true, true, true, true, dbFactor))) {
-    delete m;
     return false;
   }
   // If RCX reads wrong extRules file format

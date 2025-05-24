@@ -398,8 +398,7 @@ class extMetRCTable
   extDistWidthRCTable*** allocTable();
   void deleteTable(extDistWidthRCTable*** table);
 
-  void allocateInitialTables(uint layerCnt,
-                             uint widthCnt,
+  void allocateInitialTables(uint widthCnt,
                              bool over,
                              bool under,
                              bool diag = false);
