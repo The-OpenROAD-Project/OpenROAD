@@ -2022,6 +2022,9 @@ void GlobalRouter::initGridAndNets()
   block_ = db_->getChip()->getBlock();
   routes_.clear();
   nets_to_route_.clear();
+  for (auto [ignored, net] : db_net_map_) {
+    delete net;
+  }
   db_net_map_.clear();
   if (getMaxRoutingLayer() == -1) {
     setMaxRoutingLayer(computeMaxRoutingLayer());
@@ -3514,6 +3517,9 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
       && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
+    if (db_net_map_.find(db_net) != db_net_map_.end()) {
+      delete db_net_map_[db_net];
+    }
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
@@ -3528,10 +3534,10 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
   Net* net = db_net_map_[db_net];
   if (net != nullptr && net->isMergedNet()) {
     fastroute_->mergeNet(db_net);
-    delete net;
   } else {
     fastroute_->removeNet(db_net);
   }
+  delete net;
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
   routes_.erase(db_net);
