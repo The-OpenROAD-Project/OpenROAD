@@ -27,6 +27,7 @@
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 Q_DECLARE_METATYPE(odb::dbSite*);
 Q_DECLARE_METATYPE(std::function<void()>);
+Q_DECLARE_METATYPE(gui::DisplayControls::ModelRow*);
 
 namespace gui {
 
@@ -445,6 +446,8 @@ DisplayControls::DisplayControls(QWidget* parent)
                Qt::Checked);
   makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
   makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
+  shape_types_.pins.visible->setData(
+      QVariant::fromValue(&shape_types_.pin_names), disable_row_item_idx_);
   pin_markers_font_ = QApplication::font();  // use default font
   setNameItemDoubleClickAction(shape_types_.pin_names, [this]() {
     pin_markers_font_ = QFontDialog::getFont(
@@ -480,6 +483,9 @@ DisplayControls::DisplayControls(QWidget* parent)
                Qt::Unchecked,
                false,
                iterm_label_color_);
+  instance_shapes_.pins.visible->setData(
+      QVariant::fromValue(&instance_shapes_.iterm_labels),
+      disable_row_item_idx_);
   makeLeafItem(
       instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
   toggleParent(misc_.instances);
@@ -981,6 +987,20 @@ void DisplayControls::itemChanged(QStandardItem* item)
       if (check_item->checkState() == Qt::Checked) {
         check_item->setCheckState(Qt::Unchecked);
       }
+    }
+  }
+
+  // check disabled pair
+  auto disabled_row_pair = item->data(disable_row_item_idx_);
+  if (disabled_row_pair.isValid()) {
+    const ModelRow* row = disabled_row_pair.value<ModelRow*>();
+    row->name->setEnabled(checked);
+    row->swatch->setEnabled(checked);
+    if (row->visible) {
+      row->visible->setEnabled(checked);
+    }
+    if (row->selectable) {
+      row->selectable->setEnabled(checked);
     }
   }
 
