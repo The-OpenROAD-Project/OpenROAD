@@ -1483,7 +1483,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   const double abs_min_dim = 8.0;  // prevent markers from falling apart
   pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
 
-  pin_font_ = viewer_->options_->pinMarkersFont();
+  pin_font_ = viewer_->options_->ioPinMarkersFont();
   const QFontMetrics font_metrics(pin_font_);
 
   QString largest_text;
@@ -1561,6 +1561,9 @@ void RenderThread::drawIOPins(Painter& painter,
   if (pins.empty()) {
     return;
   }
+
+  const bool pin_draw_names
+      = pin_draw_names_ && viewer_->options_->areIOPinNamesVisible();
 
   const auto die_area = block->getDieArea();
 
@@ -1667,7 +1670,7 @@ void RenderThread::drawIOPins(Painter& painter,
 
     painter.drawRect(box->getBox());
 
-    if (pin_draw_names_) {
+    if (pin_draw_names) {
       Point text_anchor_pt = xfm.getOffset();
 
       auto text_anchor = Painter::BOTTOM_CENTER;

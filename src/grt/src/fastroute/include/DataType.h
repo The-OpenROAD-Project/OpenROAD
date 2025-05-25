@@ -26,7 +26,7 @@ enum class RouteType
   MazeRoute
 };
 
-std::ostream& operator<<(std::ostream& os, RouteType type);
+std::ostream& operator<<(std::ostream& os, const RouteType& type);
 
 enum class Direction
 {
