@@ -111,14 +111,10 @@ void FastRouteCore::ConvertToFull3DType2()
   }
 }
 
-static bool comparePVMINX(const OrderNetPin& a, const OrderNetPin& b)
+static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
-  return a.minX < b.minX;
-}
-
-static bool comparePVPV(const OrderNetPin& a, const OrderNetPin& b)
-{
-  return a.npv < b.npv;
+  return std::tie(a.length_per_pin, a.minX, a.treeIndex)
+         < std::tie(b.length_per_pin, b.minX, b.treeIndex);
 }
 
 void FastRouteCore::netpinOrderInc()
@@ -126,25 +122,23 @@ void FastRouteCore::netpinOrderInc()
   tree_order_pv_.clear();
 
   for (const int& netID : net_ids_) {
-    int xmin = BIG_INT;
+    int16_t xmin = std::numeric_limits<int16_t>::max();
     int totalLength = 0;
     const auto& treenodes = sttrees_[netID].nodes;
-    StTree* stree = &(sttrees_[netID]);
+    const StTree* stree = &(sttrees_[netID]);
     const int num_edges = stree->num_edges();
     for (int ind = 0; ind < num_edges; ind++) {
       totalLength += stree->edges[ind].len;
-      if (xmin < treenodes[stree->edges[ind].n1].x) {
-        xmin = treenodes[stree->edges[ind].n1].x;
-      }
+      xmin = std::min(xmin, treenodes[stree->edges[ind].n1].x);
     }
 
-    float npvalue = (float) totalLength / stree->num_terminals;
+    const float length_per_pin = (float) totalLength / stree->num_terminals;
 
-    tree_order_pv_.push_back({netID, xmin, npvalue});
+    tree_order_pv_.push_back({netID, xmin, length_per_pin});
   }
 
-  std::stable_sort(tree_order_pv_.begin(), tree_order_pv_.end(), comparePVMINX);
-  std::stable_sort(tree_order_pv_.begin(), tree_order_pv_.end(), comparePVPV);
+  std::stable_sort(
+      tree_order_pv_.begin(), tree_order_pv_.end(), compareNetPins);
 }
 
 void FastRouteCore::fillVIA()
