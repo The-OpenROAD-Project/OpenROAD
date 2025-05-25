@@ -206,7 +206,7 @@ struct OrderNetPin
 {
   int treeIndex;
   int minX;
-  float npv;  // net length over pin
+  float length_per_pin;  // net length over pin count
 };
 
 struct OrderTree
