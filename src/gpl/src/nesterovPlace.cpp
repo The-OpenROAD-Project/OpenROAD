@@ -327,7 +327,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   int routability_driven_count = 0;
   int timing_driven_count = 0;
-  bool final_routability_snapshot_saved = false;
+  bool final_routability_image_saved = false;
 
   // Core Nesterov Loop
   int iter = start_iter;
@@ -446,6 +446,48 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       graphics_->addFrameLabel(gui, bbox, label, label_name);
       gui->gifAddFrame(region, width_px, dbu_per_pixel, delay);
       gui->deleteLabel(label_name);
+    }
+
+    // Save image if routability not needed and below routability overflow
+    if (npVars_.routability_driven_mode && !is_routability_need_
+        && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+        && !final_routability_image_saved) {
+      if (graphics_ && npVars_.debug_generate_images) {
+        updateDb();
+
+        std::string label = fmt::format("Iter {} |R: {} |T: {}",
+                                        iter,
+                                        routability_driven_count,
+                                        timing_driven_count);
+
+        graphics_->saveLabeledImage(
+            fmt::format("{}/1_density_routability_final_{:05d}.png",
+                        routability_driven_dir,
+                        iter),
+            label,
+            false,
+            "Heat Maps/Placement Density");
+
+        graphics_->saveLabeledImage(
+            fmt::format("{}/1_rudy_routability_final_{:05d}.png",
+                        routability_driven_dir,
+                        iter),
+            label,
+            false,
+            "Heat Maps/Estimated Congestion (RUDY)");
+
+        graphics_->saveLabeledImage(
+            fmt::format("{}/1_routability_final_{:05d}.png",
+                        routability_driven_dir,
+                        iter),
+            fmt::format("Iter {} |R: {} |T: {} final route",
+                        iter,
+                        routability_driven_count,
+                        timing_driven_count),
+            false);
+      }
+
+      final_routability_image_saved = true;
     }
 
     // timing driven feature
@@ -788,48 +830,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         log_->info(
             GPL, 89, "Routability end iteration: revert back to snapshot");
       }
-    }
-
-    // Save image if routability not needed and below routability overflow
-    if (npVars_.routability_driven_mode && !is_routability_need_
-        && average_overflow_unscaled_ <= npVars_.routability_end_overflow
-        && !final_routability_snapshot_saved) {
-      if (graphics_ && npVars_.debug_generate_images) {
-        updateDb();
-
-        std::string label = fmt::format("Iter {} |R: {} |T: {}",
-                                        iter,
-                                        routability_driven_count,
-                                        timing_driven_count);
-
-        graphics_->saveLabeledImage(
-            fmt::format("{}/1_density_routability_final_{:05d}.png",
-                        routability_driven_dir,
-                        iter),
-            label,
-            false,
-            "Heat Maps/Placement Density");
-
-        graphics_->saveLabeledImage(
-            fmt::format("{}/1_rudy_routability_final_{:05d}.png",
-                        routability_driven_dir,
-                        iter),
-            label,
-            false,
-            "Heat Maps/Estimated Congestion (RUDY)");
-
-        graphics_->saveLabeledImage(
-            fmt::format("{}/1_routability_final_{:05d}.png",
-                        routability_driven_dir,
-                        iter),
-            fmt::format("Iter {} |R: {} |T: {} final route",
-                        iter,
-                        routability_driven_count,
-                        timing_driven_count),
-            false);
-      }
-
-      final_routability_snapshot_saved = true;
     }
 
     // check each for converge and if all are converged then stop
