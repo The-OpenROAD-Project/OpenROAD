@@ -412,9 +412,9 @@ class FastRouteCore
   void routeMonotonicAll(int threshold, int expand, float logis_cof);
   void spiralRouteAll();
   void newrouteLInMaze(int netID);
-  void estimateOneSeg(Segment* seg);
-  void routeSegV(Segment* seg);
-  void routeSegH(Segment* seg);
+  void estimateOneSeg(const Segment* seg);
+  void routeSegV(const Segment* seg);
+  void routeSegH(const Segment* seg);
   void routeSegLFirstTime(Segment* seg);
   void spiralRoute(int netID, int edgeID);
   void routeMonotonic(int netID,
@@ -471,7 +471,7 @@ class FastRouteCore
                         int16_t& top_pin_l);
   int threeDVIA();
   void fixEdgeAssignment(int& net_layer,
-                         multi_array<Edge3D, 3>& edges_3D,
+                         const multi_array<Edge3D, 3>& edges_3D,
                          int x,
                          int y,
                          int k,
