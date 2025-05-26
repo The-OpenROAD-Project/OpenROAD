@@ -96,6 +96,9 @@ int Histogram<DataType>::getBinIndex(DataType val) const
   if (bin >= bins) {  // Special case for val with the maximum value.
     bin = bins - 1;
   }
+  if (bin < 0) {
+    return 0;
+  }
 
   return bin;
 }
