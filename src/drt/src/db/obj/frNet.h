@@ -251,6 +251,10 @@ class frNet : public frBlockObject
   void setNumSteinerNodes(int num) { numSteinerNodes = num; }
   int getNumSteinerNodes() { return numSteinerNodes; }
 
+  bool isGRValid() const { return isGRValid_; }
+  void setGRValid(bool valid) { isGRValid_ = valid; }
+
+
  protected:
   frString name_;
   RouterConfiguration* router_cfg_;
@@ -291,6 +295,8 @@ class frNet : public frBlockObject
 
   // Modified by Zhiang Wang
   int numSteinerNodes{0};  // number of steiner nodes in the net
+  bool isGRValid_{true};  // flag to indicate if the net is valid for global routing
+
 
 
 };

@@ -82,10 +82,10 @@ void FlexGR::initRoute_genTopology()
 
 
 
-
-
 // generate 2D topology, rpin node always connect to center of gcell
 // to be followed by layer assignment
+// In this function, we generate initial topology for the net
+// Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
 void FlexGR::initRoute_genTopology_net(frNet* net)
 {
   if (net->getNodes().empty()) {
@@ -404,8 +404,10 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
 void FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx)
 {
   // Initialize
-  bpIdx.set(-1, -1);
-  epIdx.set(-1, -1);
+  bpIdx.setX(-1);
+  bpIdx.setY(-1);
+  epIdx.setX(-1);
+  epIdx.setY(-1);
 
   if (node->getParent() == nullptr) return;
   
@@ -421,7 +423,7 @@ void FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx
   }
 
   if (bpIdx.x() != epIdx.x() && bpIdx.y() != epIdx.y()) {
-    logger_->error(utl::DRT, 100, 
+    logger_->error(utl::DRT, 121, 
       "initRoute_getNodeSegment2D: Node segment is not aligned!");   
     return;
   }
@@ -450,7 +452,7 @@ void FlexGR::initRoute_updateCongestion2D_Segment(
       cmap2D_->addRawDemand(bpIdx.x(), yIdx + 1, zIdx, frDirEnum::N);
     }
   } else {
-    logger_->error(utl::DRT, 101, 
+    logger_->error(utl::DRT, 111, 
       "initRoute_updateCongestion2D_Segment: Segment is not aligned!");
   } 
 }

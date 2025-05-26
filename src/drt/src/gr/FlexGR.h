@@ -136,6 +136,9 @@ class FlexGR
   // Initial Routing (two-pin net + pattern routing)
   void initRoute_gpu();
   void initRoute_genTopology();
+  
+  // In this function, we generate initial topology for the net
+  // Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
   void initRoute_genTopology_net(frNet* net);
 
   // 2D Maze Routing

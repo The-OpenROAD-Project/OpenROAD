@@ -632,7 +632,7 @@ void TritonRoute::prep()
 void TritonRoute::gr()
 {
   FlexGR gr(getDesign(), logger_, stt_builder_, router_cfg_.get());
-  logger_->report("\N\n[INFO] Starting global routing with GPUFlag = {} ...",
+  logger_->report("\n\n[INFO] Starting global routing with GPUFlag = {} ...",
                   gpu_flag_);
   
   if (gpu_flag_) {
