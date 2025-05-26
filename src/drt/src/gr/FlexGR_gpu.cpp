@@ -61,14 +61,41 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
   // resource analysis (the same as the CPU version)
   ra();
 
+
+  // Before we move on, we need to check if all the nets have been constructed correctly
+  // check rpin and node equivalence
+  int maxNetDegree = 0;
+  float avgNetDegree = 0;
+  for (auto& net : design_->getTopBlock()->getNets()) {
+    maxNetDegree = std::max(maxNetDegree, static_cast<int>(net->getNodes().size()));
+    avgNetDegree += static_cast<float>(net->getNodes().size());
+    if (net->getNodes().size() != net->getRPins().size()) {
+      logger_->error(utl::DRT, 72,
+        "Error: net {} initial #node ({}) != #rpin ({})", 
+        net->getName(), net->getNodes().size(), net->getRPins().size());
+    }
+  }
+
+  avgNetDegree /= design_->getTopBlock()->getNets().size();
+  logger_->report("[INFO] Basic statistics for the nets in the design:");
+  logger_->report("[INFO]   Num. of Nets: {}", design_->getTopBlock()->getNets().size());
+  logger_->report("[INFO]   Max Net Degree: {}", maxNetDegree);
+  logger_->report("[INFO]   Avg Net Degree: {:.2f}", avgNetDegree);
+
+
   // Allow the GPU Memory to be used
   // Do not frquently allocate and deallocate the GPU memory
   auto gpuDb_ = std::make_unique<FlexGRGPUDB>(logger_, cmap_.get(), cmap2D_.get());
+
 
   // Reserve the nets for the batch generation
   // Only once
   nets2Ripup_.clear();
   nets2Ripup_.reserve(design_->getTopBlock()->getNets().size());
+
+  // Initial Routing
+  initRoute_gpu();
+
 
 
   // free the GPU memory
@@ -80,6 +107,10 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
 
   exit(1);
 }
+
+
+
+
 
 
 }  // namespace drt

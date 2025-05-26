@@ -117,12 +117,33 @@ class FlexGR
   std::vector<frCoord> zHeights_;
 
   // others
+  // I do not touch this part
   void init();
   void initGCell();
   void initCMap();
   void initLayerPitch();
-
   void ra();
+
+  // Utility functions for 2D Congestion Map
+  
+  void initRoute_updateCongestion2D_net(frNet* net);
+  // Get the segment attached to the node (segment connecting the node and its parent).
+  void initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx);
+  // bpIdx <= epIdx
+  void initRoute_updateCongestion2D_Segment(const Point& bpIdx, const Point& epIdx);
+
+  // Modified by Zhiang Wang
+  // Initial Routing (two-pin net + pattern routing)
+  void initRoute_gpu();
+  void initRoute_genTopology();
+  void initRoute_genTopology_net(frNet* net);
+
+  // 2D Maze Routing
+
+  // Layer Assignment
+
+  // 3D Maze Routing
+
 
   void searchRepairMacro(int iter,
                          int size,
@@ -148,6 +169,10 @@ class FlexGR
 
   void setCMap(std::unique_ptr<FlexGRCMap>& in) { cmap_ = std::move(in); }
   void setCMap2D(std::unique_ptr<FlexGRCMap>& in) { cmap2D_ = std::move(in); }
+
+
+
+
 
   // initGR
   void initGR();
