@@ -29,6 +29,7 @@ COMPULSORY_TESTS = [
     "place_inst",
     "upf_test",
     "upf_aes",
+    "write_db",
 ]
 
 # Bazel OpenROAD is not compiled with Python support yet
