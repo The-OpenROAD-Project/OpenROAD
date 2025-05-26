@@ -482,7 +482,7 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
   gui_debug_generate_images = generate_images;
-  gui_debug_images_path = images_path;
+  gui_debug_images_path = std::move(images_path);
 }
 
 void Replace::setDisableRevertIfDiverge(bool mode)
