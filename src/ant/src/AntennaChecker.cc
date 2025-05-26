@@ -844,13 +844,17 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                         false,
                                         false,
                                         net_report);
-          bool psr_violation = checkPSR(db_net,
-                                        violation_layer,
-                                        violation_info,
-                                        ratio_margin,
-                                        false,
-                                        false,
-                                        net_report);
+          bool psr_violation = false;
+          // Only routing layers have side areas
+          if (violation_layer->getRoutingLevel() != 0) {
+            psr_violation = checkPSR(db_net,
+                                     violation_layer,
+                                     violation_info,
+                                     ratio_margin,
+                                     false,
+                                     false,
+                                     net_report);
+          }
           bool violated = par_violation || psr_violation;
           double excess_ratio = 1.0;
           if (violated) {
@@ -864,7 +868,11 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
               violation_info.iterm_diff_area += diode_diff_area * gates.size();
               diode_count_per_gate++;
               // re-calculate info only PAR & PSR
-              calculateWirePar(violation_layer, violation_info);
+              if (violation_layer->getRoutingLevel() == 0) {
+                calculateViaPar(violation_layer, violation_info);
+              } else {
+                calculateWirePar(violation_layer, violation_info);
+              }
               // re-check violations only PAR & PSR
               par_violation = checkPAR(db_net,
                                        violation_layer,
@@ -873,13 +881,16 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                        false,
                                        false,
                                        net_report);
-              psr_violation = checkPSR(db_net,
-                                       violation_layer,
-                                       violation_info,
-                                       ratio_margin,
-                                       false,
-                                       false,
-                                       net_report);
+              // Only routing layers have side areas
+              if (violation_layer->getRoutingLevel() != 0) {
+                psr_violation = checkPSR(db_net,
+                                         violation_layer,
+                                         violation_info,
+                                         ratio_margin,
+                                         false,
+                                         false,
+                                         net_report);
+              }
               if (diode_count_per_gate > max_diode_count_per_gate) {
                 debugPrint(logger_,
                            ANT,
