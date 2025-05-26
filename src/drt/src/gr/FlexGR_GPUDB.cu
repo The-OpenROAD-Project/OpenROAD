@@ -26,10 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexGR.h"
+#include "FlexGR_GPUDB.h"
 
 #include <omp.h>
-
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -44,42 +43,52 @@
 
 namespace drt {
 
-using utl::ThreadException;
+void FlexGRGPUDB::init(FlexGRCMap* cmap, FlexGRCMap* cmap2D)
+{
+  cmap->getDim(xDim, yDim, zDim);
+  auto& cmap_bits = cmap->getBits();
+  auto& cmap2D_bits = cmap2D->getBits();
 
-void FlexGR::main_gpu(odb::dbDatabase* db)
-{  
-  logger_->report(std::string(80, '*')); 
-  logger_->report("GPU mode is enabled ....");  
-  auto grRuntimeStart = std::chrono::high_resolution_clock::now();
+  cmap_bits_3D_size = cmap_bits.size();
+  cmap_bits_2D_size = cmap2D_bits.size();
   
-  db_ = db;
- 
-  // Set up the GCell grid structure and routing resources 
-  // The same as the CPU version
-  init();
+  // Allocate memory on the GPU side
+  cudaMalloc((void**)&cmap_bits_3D, cmap_bits_3D_size * sizeof(uint64_t));
+  cudaMalloc((void**)&cmap_bits_2D, cmap_bits_2D_size * sizeof(uint64_t));
+  cudaCheckError();
   
-  // resource analysis (the same as the CPU version)
-  ra();
-
-  // Allow the GPU Memory to be used
-  // Do not frquently allocate and deallocate the GPU memory
-  auto gpuDb_ = std::make_unique<FlexGRGPUDB>(logger_, cmap_.get(), cmap2D_.get());
-
-  // Reserve the nets for the batch generation
-  // Only once
-  nets2Ripup_.clear();
-  nets2Ripup_.reserve(design_->getTopBlock()->getNets().size());
+  // Copy the data from the host to the device
+  cudaMemcpy(cmap_bits_3D, cmap_bits.data(), cmap_bits_3D_size * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(cmap_bits_2D, cmap2D_bits.data(), cmap_bits_2D_size * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaCheckError();
 
 
-  // free the GPU memory
-  gpuDb_->freeCUDAMem();  
+  std::string msg = std::string("[INFO] ")
+                  + std::string("FlexGRGPUDB initialized with dimensions: \n")
+                  + "\t xDim: " + std::to_string(xDim) + ", "
+                  + "yDim: " + std::to_string(yDim) + ", "
+                  + "zDim: " + std::to_string(zDim) + "\n"
+                  + "\t cmap_bits_2D_size: " + std::to_string(cmap_bits_2D_size) + ", "
+                  + "cmap_bits_3D_size: " + std::to_string(cmap_bits_3D_size);
 
-  auto grRuntimeEnd = std::chrono::high_resolution_clock::now();
-  auto grRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(grRuntimeEnd - grRuntimeStart);
-  logger_->report("[INFO] Runtime for Global Routing : {} ms", static_cast<int>(grRuntime.count()));
-
-  exit(1);
+  logger_->report(msg);
 }
 
+void FlexGRGPUDB::freeCUDAMem()
+{
+  if (cmap_bits_3D) {
+    cudaFree(cmap_bits_3D);
+    cmap_bits_3D = nullptr;
+  }
+  
+  if (cmap_bits_2D) {
+    cudaFree(cmap_bits_2D);
+    cmap_bits_2D = nullptr;
+  }
+  
+  cudaCheckError();
+  
+  logger_->report("FlexGRGPUDB CUDA memory freed ....");
+}
 
 }  // namespace drt

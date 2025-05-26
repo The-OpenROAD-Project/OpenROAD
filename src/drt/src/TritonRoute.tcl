@@ -195,6 +195,7 @@ proc detailed_route { args } {
   } else {
     set min_access_points -1
   }
+  
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
     $output_guide_coverage $db_process_node $enableGPU \
     $enable_via_gen $droute_end_iter \

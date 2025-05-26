@@ -26,60 +26,77 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexGR.h"
+#pragma once
 
-#include <omp.h>
 
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <string>
 
+#include "odb/db.h"
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
+#include "db/grObj/grPin.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frGuide.h"
-#include "odb/db.h"
+#include "dr/FlexMazeTypes.h"
 #include "utl/exception.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "gr/FlexGRWavefront.h"
+#include "gr/FlexGRCMap.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "FlexGR_util.h"
+
+#include <iostream>
+#include <queue>
+#include <thread>
+#include <tuple>
+#include <sys/resource.h>
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include <thrust/device_vector.h>
+#include <thrust/functional.h>
+#include <thrust/host_vector.h>
+#include <thrust/transform_reduce.h>
 
 namespace drt {
 
-using utl::ThreadException;
-
-void FlexGR::main_gpu(odb::dbDatabase* db)
-{  
-  logger_->report(std::string(80, '*')); 
-  logger_->report("GPU mode is enabled ....");  
-  auto grRuntimeStart = std::chrono::high_resolution_clock::now();
-  
-  db_ = db;
+class FlexGRGPUDB
+{
+  public:
+    FlexGRGPUDB() = default;
+    
+    FlexGRGPUDB(utl::Logger* logger,
+                FlexGRCMap* cmap,
+                FlexGRCMap* cmap2D)
+      : logger_(logger), cmap_(cmap), cmap2D_(cmap2D)
+    {
+      init(cmap, cmap2D);
+    }
  
-  // Set up the GCell grid structure and routing resources 
-  // The same as the CPU version
-  init();
-  
-  // resource analysis (the same as the CPU version)
-  ra();
+    // Global Settings for GPUDB (congestion map)
+    // 2D Congestion Map  
+    uint64_t* cmap_bits_2D = nullptr;
+    int cmap_bits_2D_size = 0;
+        
+    // 3D Congestion Map
+    uint64_t* cmap_bits_3D = nullptr;
+    int cmap_bits_3D_size = 0;
 
-  // Allow the GPU Memory to be used
-  // Do not frquently allocate and deallocate the GPU memory
-  auto gpuDb_ = std::make_unique<FlexGRGPUDB>(logger_, cmap_.get(), cmap2D_.get());
+    int xDim = 0;
+    int yDim = 0;
+    int zDim = 0;
 
-  // Reserve the nets for the batch generation
-  // Only once
-  nets2Ripup_.clear();
-  nets2Ripup_.reserve(design_->getTopBlock()->getNets().size());
+    
+    void freeCUDAMem();
+
+  private:
+    utl::Logger* logger_ = nullptr;
+    FlexGRCMap* cmap_ = nullptr;
+    FlexGRCMap* cmap2D_ = nullptr;
+
+    void init(FlexGRCMap* cmap, FlexGRCMap* cmap2D);  
+};
 
 
-  // free the GPU memory
-  gpuDb_->freeCUDAMem();  
-
-  auto grRuntimeEnd = std::chrono::high_resolution_clock::now();
-  auto grRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(grRuntimeEnd - grRuntimeStart);
-  logger_->report("[INFO] Runtime for Global Routing : {} ms", static_cast<int>(grRuntime.count()));
-
-  exit(1);
 }
 
 
-}  // namespace drt

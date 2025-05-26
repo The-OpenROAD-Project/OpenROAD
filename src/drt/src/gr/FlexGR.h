@@ -41,7 +41,7 @@
 #include "frRTree.h"
 #include "gr/FlexGRGridGraph.h"
 #include "gr/FlexGR_util.h"
-
+#include "gr/FlexGR_GPUDB.h"
 
 namespace odb {
 class dbDatabase;
@@ -96,6 +96,8 @@ class FlexGR
   frDesign* design_;
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
+  std::unique_ptr<FlexGRGPUDB> gpuDB_;
+
   Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   RouterConfiguration* router_cfg_;

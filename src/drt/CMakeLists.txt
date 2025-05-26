@@ -93,6 +93,7 @@ target_sources(drt
     src/gr/FlexGR_3DMazeRoute.cu
     src/gr/FlexGR_layerAssign.cpp
     src/gr/FlexGR_layerAssign.cu
+    src/gr/FlexGR_GPUDB.cu
     src/gr/FlexGR_util.cu
     src/gr/FlexGR_util.cpp
     src/gr/FlexGR_init.cpp

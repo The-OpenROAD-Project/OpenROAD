@@ -132,7 +132,6 @@ struct NetStruct {
 
 
 
-
 struct IntPair {
   int start_val = -1;
   int end_val = -1;

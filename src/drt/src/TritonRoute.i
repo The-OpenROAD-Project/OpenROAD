@@ -124,9 +124,9 @@ void detailed_route_cmd(const char* outputMazeFile,
                     minAccessPoints,
                     saveGuideUpdates,
                     repairPDNLayerName});
+  router->setGPU(enableGPU);
   router->main();
   router->setDistributed(false);
-  router->setGPU(enableGPU);
 }
 
 void pin_access_cmd(const char* dbProcessNode,
