@@ -113,8 +113,7 @@ static void connectedPins(const Net* net,
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+    db_network->staToDb(pin, iterm, bterm, moditerm);
     //
     // only accumuate the flat pins (in hierarchical mode we may
     // hit moditerms/modbterms).

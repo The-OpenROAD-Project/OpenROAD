@@ -325,8 +325,7 @@ void Grid::erasePixel(Node* cell)
 void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
   GridX x_end = grid_x + gridPaddedWidth(cell);
-  GridY grid_height = gridHeight(cell);
-  GridY y_end = grid_y + grid_height;
+  GridY y_end = gridEndY(gridYToDbu(grid_y) + cell->getHeight());
 
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
@@ -553,11 +552,6 @@ void Grid::examineRows(dbBlock* block)
     logger_->error(DPL, 12, "no rows found.");
   }
 
-  if (hasHybridRows() && has_non_hybrid_rows) {
-    logger_->error(
-        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
-  }
-
   GridY index{0};
   DbuY prev_y{0};
   for (auto& [dbu_y, grid_y] : row_y_dbu_to_index_) {
@@ -566,15 +560,30 @@ void Grid::examineRows(dbBlock* block)
     row_index_to_pixel_height_.push_back(dbu_y - prev_y);
     prev_y = dbu_y;
   }
-
-  if (!hasHybridRows()) {
-    uniform_row_height_ = DbuY{std::numeric_limits<int>::max()};
-    visitDbRows(block, [&](odb::dbRow* db_row) {
-      const int site_height = db_row->getSite()->getHeight();
-      uniform_row_height_
-          = std::min(uniform_row_height_.value(), DbuY{site_height});
-    });
-  }
+  uniform_row_height_.reset();
+  bool is_uniform = true;
+  visitDbRows(block, [&](odb::dbRow* db_row) {
+    if (!is_uniform) {
+      return;
+    }
+    const int site_height = db_row->getSite()->getHeight();
+    if (uniform_row_height_.has_value()) {
+      // check if the bigger of both; the new and old heights, is a multiple of
+      // the smaller
+      const auto smaller = std::min(site_height, uniform_row_height_.value().v);
+      const auto larger = std::max(site_height, uniform_row_height_.value().v);
+      if (larger % smaller != 0) {
+        // not uniform
+        uniform_row_height_.reset();
+        is_uniform = false;
+      } else {
+        // uniform
+        uniform_row_height_ = DbuY{smaller};
+      }
+    } else {
+      uniform_row_height_ = DbuY{site_height};
+    }
+  });
   row_site_count_ = GridX{divFloor(getCore().dx(), getSiteWidth().v)};
   row_count_ = GridY{static_cast<int>(row_y_dbu_to_index_.size() - 1)};
 }
@@ -591,7 +600,7 @@ std::unordered_set<int> Grid::getRowCoordinates() const
 bool Grid::isMultiHeight(dbMaster* master) const
 {
   if (uniform_row_height_) {
-    return master->getHeight() != uniform_row_height_.value();
+    return master->getHeight() > uniform_row_height_.value();
   }
 
   return master->getSite()->hasRowPattern();

@@ -391,9 +391,7 @@ void FastRouteCore::updateRouteType13D(int netID,
 
   // reallocate memory for route.gridsX and route.gridsY
   if (treeedges[edge_n1A1].route.type == RouteType::MazeRoute
-      && treeedges[edge_n1A1].route.routelen
-             > 0)  // if originally allocated, free them first
-  {
+      && treeedges[edge_n1A1].route.routelen > 0) {
     treeedges[edge_n1A1].route.gridsX.clear();
     treeedges[edge_n1A1].route.gridsY.clear();
     treeedges[edge_n1A1].route.gridsL.clear();
@@ -435,9 +433,7 @@ void FastRouteCore::updateRouteType13D(int netID,
 
   // reallocate memory for route.gridsX and route.gridsY
   if (treeedges[edge_n1A2].route.type == RouteType::MazeRoute
-      && treeedges[edge_n1A2].route.routelen > 0)
-  // if originally allocated, free them first
-  {
+      && treeedges[edge_n1A2].route.routelen > 0) {
     treeedges[edge_n1A2].route.gridsX.clear();
     treeedges[edge_n1A2].route.gridsY.clear();
     treeedges[edge_n1A2].route.gridsL.clear();

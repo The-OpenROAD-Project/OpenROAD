@@ -67,7 +67,7 @@ class NesterovPlace
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);
 
-  void createGCell(odb::dbInst*);
+  void createCbkGCell(odb::dbInst*);
   void createGNet(odb::dbNet*);
   void createCbkITerm(odb::dbITerm*);
 
@@ -123,8 +123,6 @@ class NesterovPlace
 
   int recursionCntWlCoef_ = 0;
   int recursionCntInitSLPCoef_ = 0;
-
-  void cutFillerCoordinates();
 
   void init();
   void reset();

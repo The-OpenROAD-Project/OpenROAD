@@ -66,6 +66,9 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   mgrPtr_->getLogger()->info(DPL, 380, "Cell flipping.");
   uint64_t hpwl_x, hpwl_y;
   int64_t init_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+  if (init_hpwl == 0) {
+    return;
+  }
 
   // Orient cells correctly for each row.
   int changed = 0;

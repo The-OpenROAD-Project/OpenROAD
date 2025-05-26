@@ -218,8 +218,7 @@ void TimingPath::populateNodeList(sta::Path* path,
     odb::dbITerm* term;
     odb::dbBTerm* port;
     odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    sta->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
+    sta->getDbNetwork()->staToDb(pin, term, port, moditerm);
     odb::dbObject* pin_object = term;
     if (term == nullptr) {
       pin_object = port;
@@ -1211,9 +1210,8 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
       odb::dbBTerm* bterm;
       odb::dbITerm* iterm;
-      odb::dbModBTerm* modbterm;
       odb::dbModITerm* moditerm;
-      network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+      network->staToDb(pin, iterm, bterm, moditerm);
       if (bterm != nullptr) {
         dbpin = bterm;
       } else {
