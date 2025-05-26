@@ -604,7 +604,7 @@ bool FlexPA::isPointOutsideShapes(
 }
 
 template <typename T>
-void FlexPA::filterPlanarAccess(
+bool FlexPA::filterPlanarAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir,
@@ -614,7 +614,7 @@ void FlexPA::filterPlanarAccess(
   const Point begin_point = ap->getPoint();
   // skip viaonly access
   if (!ap->hasAccess(dir)) {
-    return;
+    return false;
   }
   const bool is_block
       = inst_term
@@ -625,7 +625,7 @@ void FlexPA::filterPlanarAccess(
   // skip if two width within shape for standard cell
   if (!is_outside) {
     ap->setAccess(dir, false);
-    return;
+    return false;
   }
   // TODO: EDIT HERE Wrongdirection segments
   frLayer* layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
@@ -656,6 +656,8 @@ void FlexPA::filterPlanarAccess(
   const bool no_drv
       = isPlanarViolationFree(ap, pin, ps.get(), inst_term, begin_point, layer);
   ap->setAccess(dir, no_drv);
+
+  return no_drv;
 }
 
 template <typename T>
@@ -886,6 +888,21 @@ void FlexPA::filterViaAccess(
 }
 
 template <typename T>
+bool FlexPA::validateAPForPlanarAccess(
+    frAccessPoint* ap,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
+    T* pin,
+    frInstTerm* inst_term)
+{
+  bool allow_planar_access = false;
+  for (const frDirEnum dir : frDirEnumPlanar) {
+    allow_planar_access |= filterPlanarAccess(
+        ap, layer_polys[ap->getLayerNum()], dir, pin, inst_term);
+  }
+  return allow_planar_access;
+}
+
+template <typename T>
 bool FlexPA::checkViaPlanarAccess(
     frAccessPoint* ap,
     frVia* via,
@@ -1023,23 +1040,6 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
 }
 
 template <typename T>
-void FlexPA::filterSingleAPAccesses(
-    frAccessPoint* ap,
-    const gtl::polygon_90_set_data<frCoord>& polyset,
-    const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-    T* pin,
-    frInstTerm* inst_term,
-    bool deep_search)
-{
-  if (!deep_search) {
-    for (const frDirEnum dir : frDirEnumPlanar) {
-      filterPlanarAccess(ap, polys, dir, pin, inst_term);
-    }
-  }
-  filterViaAccess(ap, polys, polyset, pin, inst_term, deep_search);
-}
-
-template <typename T>
 void FlexPA::filterMultipleAPAccesses(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
@@ -1055,11 +1055,11 @@ void FlexPA::filterMultipleAPAccesses(
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
-    filterSingleAPAccesses(ap.get(),
-                           pin_shapes[layer_num],
-                           layer_polys[layer_num],
-                           pin,
-                           inst_term);
+    filterViaAccess(ap.get(),
+                    layer_polys[layer_num],
+                    pin_shapes[layer_num],
+                    pin,
+                    inst_term);
     if (is_std_cell_pin) {
       has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
                       && ap->hasAccess(frDirEnum::U))
@@ -1072,12 +1072,12 @@ void FlexPA::filterMultipleAPAccesses(
   if (!has_access) {
     for (auto& ap : aps) {
       const auto layer_num = ap->getLayerNum();
-      filterSingleAPAccesses(ap.get(),
-                             pin_shapes[layer_num],
-                             layer_polys[layer_num],
-                             pin,
-                             inst_term,
-                             true);
+      filterViaAccess(ap.get(),
+                      layer_polys[layer_num],
+                      pin_shapes[layer_num],
+                      pin,
+                      inst_term,
+                      true);
     }
   }
 }
@@ -1197,7 +1197,8 @@ template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
-    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
     T* pin,
     frInstTerm* inst_term,
     const frAccessPointEnum lower_type,
@@ -1210,6 +1211,9 @@ bool FlexPA::genPinAccessCostBounded(
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   genAPsFromPinShapes(
       new_aps, apset, inst_term, pin_shapes, lower_type, upper_type);
+  for (auto& ap : new_aps) {
+    validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
+  }
   filterMultipleAPAccesses(
       new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
@@ -1344,6 +1348,12 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
+  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
+      pin_shapes.size());
+  for (int i = 0; i < (int) pin_shapes.size(); i++) {
+    pin_shapes[i].get_polygons(layer_polys[i]);
+  }
+
   pa_requirements_met reqs;
 
   for (auto upper : {frAccessPointEnum::OnGrid,
@@ -1360,8 +1370,15 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, pin, inst_term, lower, upper, reqs)) {
+      if (genPinAccessCostBounded(aps,
+                                  apset,
+                                  pin_shapes,
+                                  layer_polys,
+                                  pin,
+                                  inst_term,
+                                  lower,
+                                  upper,
+                                  reqs)) {
         return aps.size();
       }
     }
