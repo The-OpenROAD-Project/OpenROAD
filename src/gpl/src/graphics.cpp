@@ -547,7 +547,7 @@ void Graphics::addFrameLabel(gui::Gui* gui,
   gui::Painter::Anchor anchor
       = gui::Painter::stringToAnchor("bottom left", logger_);
 
-  int font_size = std::clamp(image_width_px / 50, 10, 24);
+  int font_size = std::clamp(image_width_px / 50, 15, 24);
 
   gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
 }
