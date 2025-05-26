@@ -562,7 +562,7 @@ void Graphics::saveLabeledImage(const std::string& path,
   odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
 
   if (!heatmap_control.empty()) {
-    gui->setDisplayControlsVisible(heatmap_control.c_str(), true);
+    gui->setDisplayControlsVisible(heatmap_control, true);
   }
 
   if (select_buffers) {
@@ -577,7 +577,7 @@ void Graphics::saveLabeledImage(const std::string& path,
   gui->deleteLabel(label_name);
 
   if (!heatmap_control.empty()) {
-    gui->setDisplayControlsVisible(heatmap_control.c_str(), false);
+    gui->setDisplayControlsVisible(heatmap_control, false);
   }
 
   gui->clearSelections();
