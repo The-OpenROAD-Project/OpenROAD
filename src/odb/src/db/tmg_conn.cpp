@@ -62,11 +62,8 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _csVV.reserve(1024);
   _csNV.reserve(1024);
   _shortV.reserve(1024);
-  _cut_end_extMin = 1;
-  _need_short_wire_id = 0;
+  _need_short_wire_id = false;
   _first_for_clear = nullptr;
-  _preserveSWire = false;
-  _swireNetCnt = 0;
 }
 
 tmg_conn::~tmg_conn() = default;
@@ -78,40 +75,42 @@ int tmg_conn::ptDist(const int fr, const int to) const
 
 tmg_rcpt* tmg_conn::allocPt(int x, int y, dbTechLayer* layer)
 {
-  tmg_rcpt* pt = &_ptV.emplace_back();
-  pt->_x = x;
-  pt->_y = y;
-  pt->_layer = layer;
-  return pt;
+  return &_ptV.emplace_back(x, y, layer);
 }
 
-void tmg_conn::addRc(const dbShape& s, const int from_idx, const int to_idx)
+void tmg_conn::addRc(const dbShape& s,
+                     const int from_idx,
+                     const int to_idx,
+                     dbTechNonDefaultRule* rule)
 {
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape._rect.reset(s.xMin(), s.yMin(), s.xMax(), s.yMax());
-  x._shape._layer = s.getTechLayer();
-  x._shape._tech_via = s.getTechVia();
-  x._shape._block_via = s.getVia();
-  x._shape._rule = nullptr;
-  if (x._shape._tech_via || x._shape._block_via) {
-    x._is_vertical = false;
-    x._width = 0;
+  bool is_vertical;
+  int width;
+  if (s.getTechVia() || s.getVia()) {
+    is_vertical = false;
+    width = 0;
   } else if (_ptV[from_idx]._x != _ptV[to_idx]._x) {
-    x._is_vertical = false;
-    x._width = s.yMax() - s.yMin();
+    is_vertical = false;
+    width = s.yMax() - s.yMin();
   } else if (_ptV[from_idx]._y != _ptV[to_idx]._y) {
-    x._is_vertical = true;
-    x._width = s.xMax() - s.xMin();
+    is_vertical = true;
+    width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
-    x._is_vertical = false;
-    x._width = s.xMax() - s.xMin();
+    is_vertical = false;
+    width = s.xMax() - s.xMin();
   } else {
-    x._is_vertical = false;
-    x._width = 0;
+    is_vertical = false;
+    width = 0;
   }
-  x._default_ext = x._width / 2;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{s.xMin(), s.yMin(), s.xMax(), s.yMax()},
+            s.getTechLayer(),
+            s.getTechVia(),
+            s.getVia(),
+            rule},
+           is_vertical,
+           width,
+           width / 2);
   _rcV.push_back(x);
 }
 
@@ -124,17 +123,17 @@ void tmg_conn::addRc(const int k,
                      const int xmax,
                      const int ymax)
 {
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape._rect.reset(xmin, ymin, xmax, ymax);
-  x._shape._layer = s._layer;
-  x._shape._tech_via = s._tech_via;
-  x._shape._block_via = s._block_via;
-  x._shape._rule = s._rule;
-  x._is_vertical = _rcV[k]._is_vertical;
-  x._width = _rcV[k]._width;
-  x._default_ext = x._width / 2;
+  const int width = _rcV[k]._width;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{xmin, ymin, xmax, ymax},
+            s.getTechLayer(),
+            s.getTechVia(),
+            s.getVia(),
+            s.getRule()},
+           _rcV[k]._is_vertical,
+           width,
+           width / 2);
   _rcV.push_back(x);
 }
 
@@ -146,16 +145,9 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
           && _ptV[from_idx]._y != _ptV[to_idx]._y)) {
     return nullptr;
   }
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape._layer = layer;
-  x._shape._tech_via = nullptr;
-  x._shape._block_via = nullptr;
-  x._width = layer->getWidth();  // trouble for nondefault
-  x._is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
+  const bool is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
   int xlo, ylo, xhi, yhi;
-  if (x._is_vertical) {
+  if (is_vertical) {
     xlo = _ptV[from_idx]._x;
     xhi = xlo;
     std::tie(ylo, yhi) = std::minmax(_ptV[from_idx]._y, _ptV[to_idx]._y);
@@ -164,20 +156,24 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
     yhi = ylo;
     std::tie(xlo, xhi) = std::minmax(_ptV[from_idx]._x, _ptV[to_idx]._x);
   }
-  const int hw = x._width / 2;
-  x._default_ext = hw;
-  x._shape._rect.reset(xlo - hw, ylo - hw, xhi + hw, yhi + hw);
+  const int width = layer->getWidth();  // trouble for nondefault
+  const int hw = width / 2;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{xlo - hw, ylo - hw, xhi + hw, yhi + hw}, layer, nullptr, nullptr},
+           is_vertical,
+           width,
+           hw);
   _rcV.push_back(x);
   return &_rcV.back();
 }
+
 void tmg_conn::addITerm(dbITerm* iterm)
 {
   _csVV.emplace_back();
   _csNV.emplace_back();
 
-  tmg_rcterm& x = _termV.emplace_back();
-  x._iterm = iterm;
-  x._bterm = nullptr;
+  tmg_rcterm& x = _termV.emplace_back(iterm);
   x._pt = nullptr;
   x._first_pt = nullptr;
 }
@@ -187,19 +183,14 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
   _csVV.emplace_back();
   _csNV.emplace_back();
 
-  tmg_rcterm& x = _termV.emplace_back();
-  x._iterm = nullptr;
-  x._bterm = bterm;
+  tmg_rcterm& x = _termV.emplace_back(bterm);
   x._pt = nullptr;
   x._first_pt = nullptr;
 }
 
 void tmg_conn::addShort(const int i0, const int i1)
 {
-  tmg_rcshort& x = _shortV.emplace_back();
-  x._i0 = i0;
-  x._i1 = i1;
-  x._skip = false;
+  _shortV.emplace_back(i0, i1);
   if (_ptV[i0]._fre) {
     _ptV[i0]._fre = false;
   } else {
@@ -287,7 +278,6 @@ void tmg_conn::loadSWire(dbNet* net)
 
       allocPt(x2, y2, layer2);
       addRc(shape, _ptV.size() - 2, _ptV.size() - 1);
-      _rcV.back()._shape._rule = nullptr;
     }
   }
 }
@@ -307,8 +297,7 @@ void tmg_conn::loadWire(dbWire* wire)
     dbWirePathShape pathShape;
     while (pitr.getNextShape(pathShape)) {
       allocPt(pathShape.point.getX(), pathShape.point.getY(), pathShape.layer);
-      addRc(pathShape.shape, _ptV.size() - 2, _ptV.size() - 1);
-      _rcV.back()._shape._rule = path.rule;
+      addRc(pathShape.shape, _ptV.size() - 2, _ptV.size() - 1, path.rule);
     }
   }
 
@@ -316,13 +305,13 @@ void tmg_conn::loadWire(dbWire* wire)
 }
 
 void tmg_conn::splitBySj(const int j,
-                         const tmg_rc_sh* sj,
                          const int rt,
                          const int sjxMin,
                          const int sjyMin,
                          const int sjxMax,
                          const int sjyMax)
 {
+  tmg_rc_sh* sj = &(_rcV[j]._shape);
   const int isVia = sj->isVia() ? 1 : 0;
   _search->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   int klast = -1;
@@ -335,10 +324,11 @@ void tmg_conn::splitBySj(const int j,
         || _rcV[j]._from_idx == _rcV[k]._to_idx) {
       continue;
     }
+    sj = &(_rcV[j]._shape);
     if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
-    tmg_rc_sh* sk = &(_rcV[k]._shape);
+    const tmg_rc_sh* sk = &(_rcV[k]._shape);
     if (sk->isVia()) {
       continue;
     }
@@ -424,7 +414,6 @@ void tmg_conn::splitTtop()
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
           splitBySj(j,
-                    sj,
                     layb->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
@@ -432,7 +421,6 @@ void tmg_conn::splitTtop()
                     via_y + b->yMax());
         } else if (b->getTechLayer() == layt) {
           splitBySj(j,
-                    sj,
                     layt->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
@@ -442,7 +430,7 @@ void tmg_conn::splitTtop()
       }
     } else {
       const int rt = sj->getTechLayer()->getRoutingLevel();
-      splitBySj(j, sj, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
+      splitBySj(j, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
     }
   }
 }
@@ -1334,13 +1322,7 @@ void tmg_conn::analyzeNet(dbNet* net)
     findConnections();
     bool noConvert = false;
     if (_hasSWire) {
-      if (_preserveSWire) {
-        net->setDoNotTouch(true);
-        noConvert = true;
-        _swireNetCnt++;
-      } else {
-        net->destroySWires();
-      }
+      net->destroySWires();
     }
     relocateShorts();
     treeReorder(noConvert);
@@ -1438,7 +1420,7 @@ bool tmg_conn::checkConnected()
 void tmg_conn::treeReorder(const bool no_convert)
 {
   _connected = true;
-  _need_short_wire_id = 0;
+  _need_short_wire_id = false;
   if (_ptV.empty()) {
     return;
   }
@@ -1657,7 +1639,7 @@ void tmg_conn::addToWire(const int fr,
       return;
     }
     if (_ptV[fr]._dbwire_id < 0) {
-      ++_need_short_wire_id;
+      _need_short_wire_id = true;
       return;
     }
     _ptV[to]._dbwire_id = _ptV[fr]._dbwire_id;
@@ -1671,11 +1653,11 @@ void tmg_conn::addToWire(const int fr,
   tmg_rc* rc = (k >= 0) ? &_rcV[k] : nullptr;
   int fr_id = _ptV[fr]._dbwire_id;
   dbTechLayerRule* lyr_rule = nullptr;
-  if (rc->_shape._rule) {
-    lyr_rule = rc->_shape._rule->getLayerRule(_ptV[fr]._layer);
+  if (rc->_shape.getRule()) {
+    lyr_rule = rc->_shape.getRule()->getLayerRule(_ptV[fr]._layer);
   }
   if (fr_id < 0) {
-    _path_rule = rc->_shape._rule;
+    _path_rule = rc->_shape.getRule();
     _firstSegmentAfterVia = 0;
     if (_last_id >= 0) {
       // term feedthru
@@ -1710,7 +1692,7 @@ void tmg_conn::addToWire(const int fr,
       }
     }
   } else if (fr_id != _last_id) {
-    _path_rule = rc->_shape._rule;
+    _path_rule = rc->_shape.getRule();
     if (rc->_shape.isVia()) {
       if (_path_rule) {
         _encoder.newPath(fr_id, lyr_rule);
@@ -1745,10 +1727,10 @@ void tmg_conn::addToWire(const int fr,
         _encoder.addBTerm(x->_bterm);
       }
     }
-  } else if (_path_rule != rc->_shape._rule) {
+  } else if (_path_rule != rc->_shape.getRule()) {
     // make a branch, for taper
 
-    _path_rule = rc->_shape._rule;
+    _path_rule = rc->_shape.getRule();
     if (rc->_shape.isVia()) {
       if (_path_rule) {
         _encoder.newPath(fr_id, lyr_rule);
@@ -1789,7 +1771,7 @@ void tmg_conn::addToWire(const int fr,
 
   if (_need_short_wire_id) {
     copyWireIdToVisitedShorts(fr);
-    _need_short_wire_id = 0;
+    _need_short_wire_id = false;
   }
 
   int to_id = -1;

@@ -21,6 +21,7 @@
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Units.hh"
+#include "utl/histogram.h"
 
 namespace gui {
 
@@ -218,9 +219,6 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
 
     if (slack != sta::INF && slack != -sta::INF) {
       slack = time_unit->staToUser(slack);
-      data.min = std::min(slack, data.min);
-      data.max = std::max(slack, data.max);
-
       ++pin_iter;
     } else {
       const bool is_input = network->direction(pin)->isAnyInput();
@@ -344,9 +342,6 @@ HistogramView::HistogramView(QWidget* parent)
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
       menu_(new QMenu(this)),
-      max_slack_(std::numeric_limits<float>::lowest()),
-      min_slack_(std::numeric_limits<float>::max()),
-      bucket_interval_(0.0f),
       precision_count_(0)
 {
   chart_->addAxis(axis_y_, Qt::AlignLeft);
@@ -363,9 +358,7 @@ void HistogramView::clear()
   buckets_.positive.clear();
   buckets_.negative.clear();
 
-  // reset limits
-  max_slack_ = std::numeric_limits<float>::lowest();
-  min_slack_ = std::numeric_limits<float>::max();
+  histogram_ = nullptr;
 
   chart_->setTitle("");
   chart_->removeAllSeries();
@@ -386,10 +379,7 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
 
     QString scaled_suffix = sta_->getSTA()->units()->timeUnit()->scaledSuffix();
 
-    const int neg_count_offset = static_cast<int>(buckets_.negative.size());
-
-    const float lower = (bar_index - neg_count_offset) * bucket_interval_;
-    const float upper = lower + bucket_interval_;
+    const auto& [lower, upper] = histogram_->getBinRange(bar_index);
 
     QString time_info
         = QString("Interval: [%1, %2) ").arg(lower).arg(upper) + scaled_suffix;
@@ -402,16 +392,63 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
   }
 }
 
+void HistogramView::populateBins()
+{
+  if (!histogram_->hasData()) {
+    return;
+  }
+
+  // determine interval
+  const float bin_interval = computeBucketInterval();
+  const float bin_min
+      = std::floor(std::min(0.0f, histogram_->getMinValue()) / bin_interval)
+        * bin_interval;
+  const float bin_max
+      = std::ceil(std::max(0.0f, histogram_->getMaxValue()) / bin_interval)
+        * bin_interval;
+  const int bins = (bin_max - bin_min) / bin_interval;
+  histogram_->generateBins(bins, bin_min, bin_interval);
+}
+
+void HistogramView::populateBuckets(
+    const std::vector<std::vector<const sta::Pin*>>& pin_bins)
+{
+  for (int bin = 0; bin < histogram_->getBinsCount(); bin++) {
+    const auto& [bin_start, bin_end] = histogram_->getBinRange(bin);
+    if ((bin_start + bin_end) / 2 < 0) {
+      buckets_.negative.push_front(pin_bins[bin]);
+    } else {
+      buckets_.positive.push_back(pin_bins[bin]);
+    }
+  }
+}
+
 void HistogramView::setData(const SlackHistogramData& data)
 {
   clear();
 
-  min_slack_ = data.min;
-  max_slack_ = data.max;
-
   clocks_ = data.clocks;
-  setBucketInterval();
-  populateBuckets(&data.constrained_pins, nullptr);
+
+  histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
+
+  // extract data
+  sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
+
+  for (const sta::Pin* pin : data.constrained_pins) {
+    const float slack = time_unit->staToUser(sta_->getPinSlack(pin));
+    histogram_->addData(slack);
+  }
+
+  populateBins();
+
+  std::vector<std::vector<const sta::Pin*>> pin_buckets(
+      histogram_->getBinsCount());
+  for (const sta::Pin* pin : data.constrained_pins) {
+    const float slack = time_unit->staToUser(sta_->getPinSlack(pin));
+    pin_buckets[histogram_->getBinIndex(slack)].push_back(pin);
+  }
+
+  populateBuckets(pin_buckets);
 
   setVisualConfig();
 }
@@ -420,59 +457,59 @@ void HistogramView::setData(const EndPointSlackMap& data)
 {
   clear();
 
-  setLimits(data);
+  histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
 
-  setBucketInterval();
-  populateBuckets(nullptr, &data);
+  // extract data
+  sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
+
+  for (const auto& [pin, sta_slack] : data) {
+    const float slack = time_unit->staToUser(sta_slack);
+    histogram_->addData(slack);
+  }
+
+  populateBins();
+
+  std::vector<std::vector<const sta::Pin*>> pin_buckets(
+      histogram_->getBinsCount());
+  for (const auto& [pin, sta_slack] : data) {
+    const float slack = time_unit->staToUser(sta_slack);
+    pin_buckets[histogram_->getBinIndex(slack)].push_back(pin);
+  }
+
+  populateBuckets(pin_buckets);
 
   setVisualConfig();
 }
 
-void HistogramView::setBucketInterval()
+float HistogramView::computeBucketInterval()
 {
-  // Avoid very tiny intervals from interfering with the presentation
-  if (min_slack_ < 0 && max_slack_ < 0) {
-    max_slack_ = 0;
-  } else if (min_slack_ > 0 && max_slack_ > 0) {
-    min_slack_ = 0;
+  float min_slack = histogram_->getMinValue();
+  float max_slack = histogram_->getMaxValue();
+
+  if (min_slack < 0 && max_slack < 0) {
+    max_slack = 0;
+  } else if (min_slack > 0 && max_slack > 0) {
+    min_slack = 0;
   }
 
   const float exact_interval
-      = (max_slack_ - min_slack_) / default_number_of_buckets_;
+      = (max_slack - min_slack) / default_number_of_buckets_;
 
   const float snap_interval = computeSnapBucketInterval(exact_interval);
 
   // We compute a new number of buckets based on the snap interval.
-  const int new_number_of_buckets
-      = computeNumberofBuckets(snap_interval, max_slack_, min_slack_);
-  const int minimum_number_of_buckets = 8;
+  const int new_number_of_buckets = (max_slack - min_slack) / snap_interval;
 
-  if (new_number_of_buckets < minimum_number_of_buckets) {
+  if (new_number_of_buckets < minimum_number_of_buckets_) {
     const float minimum_interval
-        = (max_slack_ - min_slack_) / minimum_number_of_buckets;
+        = (max_slack - min_slack) / minimum_number_of_buckets_;
 
     float decimal_snap_interval
         = computeSnapBucketDecimalInterval(minimum_interval);
 
-    bucket_interval_ = decimal_snap_interval;
-  } else {
-    bucket_interval_ = snap_interval;
+    return decimal_snap_interval;
   }
-}
-
-int HistogramView::computeNumberofBuckets(const float bucket_interval,
-                                          const float max_slack,
-                                          const float min_slack)
-{
-  int bucket_count = 1;
-  float current_value = min_slack;
-
-  while (current_value < max_slack) {
-    current_value += bucket_interval;
-    ++bucket_count;
-  }
-
-  return bucket_count;
+  return snap_interval;
 }
 
 float HistogramView::computeSnapBucketDecimalInterval(float minimum_interval)
@@ -536,71 +573,6 @@ void HistogramView::setVisualConfig()
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
   chart_->setTitle("Endpoint Slack");
-}
-
-// We define the slack interval as being inclusive in its lower
-// boundary and exclusive in upper: [lower upper)
-void HistogramView::populateBuckets(const StaPins* end_points,
-                                    const EndPointSlackMap* end_point_to_slack)
-{
-  if (end_points) {
-    if (end_points->empty()) {
-      return;
-    }
-  } else if (end_point_to_slack) {
-    if (end_point_to_slack->empty()) {
-      return;
-    }
-  }
-
-  sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
-
-  float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
-        negative_upper = 0.0f;
-
-  int bucket_index = 0;
-
-  do {
-    positive_lower = bucket_interval_ * bucket_index;
-    positive_upper = bucket_interval_ * (bucket_index + 1);
-    negative_lower = -positive_upper;
-    negative_upper = -positive_lower;
-
-    std::vector<const sta::Pin*> pos_bucket, neg_bucket;
-
-    if (end_points) {
-      for (const sta::Pin* pin : *end_points) {
-        const float slack = time_unit->staToUser(sta_->getPinSlack(pin));
-
-        if (negative_lower <= slack && slack < negative_upper) {
-          neg_bucket.push_back(pin);
-        } else if (positive_lower <= slack && slack < positive_upper) {
-          pos_bucket.push_back(pin);
-        }
-      }
-    } else if (end_point_to_slack) {
-      for (const auto [end_point, sta_slack] : *end_point_to_slack) {
-        const float slack = time_unit->staToUser(sta_slack);
-        if (negative_lower <= slack && slack < negative_upper) {
-          neg_bucket.push_back(end_point);
-        } else if (positive_lower <= slack && slack < positive_upper) {
-          pos_bucket.push_back(end_point);
-        }
-      }
-    }
-
-    // Push zeros - meaning no slack values in the current range - only in
-    // situations where the bucket is in a valid position of the queue.
-    if (min_slack_ < negative_upper) {
-      buckets_.negative.push_front(neg_bucket);
-    }
-
-    if (max_slack_ >= positive_lower) {
-      buckets_.positive.push_back(pos_bucket);
-    }
-
-    ++bucket_index;
-  } while (min_slack_ < negative_upper || max_slack_ >= positive_upper);
 }
 
 std::pair<QBarSet*, QBarSet*> HistogramView::createBarSets()
@@ -709,21 +681,15 @@ void HistogramView::setXAxisTitle()
 
 void HistogramView::setYAxisConfig()
 {
-  int largest_slack_count = 0;
+  const int largest_slack_count = histogram_->getMaxBinCount();
 
-  for (const std::vector<const sta::Pin*>& bucket : buckets_.negative) {
-    const int bucket_slack_count = static_cast<int>(bucket.size());
-    largest_slack_count = std::max(bucket_slack_count, largest_slack_count);
-  }
-
-  for (const std::vector<const sta::Pin*>& bucket : buckets_.positive) {
-    const int bucket_slack_count = static_cast<int>(bucket.size());
-    largest_slack_count = std::max(bucket_slack_count, largest_slack_count);
-  }
-
-  int y_interval = computeYInterval(largest_slack_count);
+  const int y_interval = computeYInterval(largest_slack_count);
   int max_y = 0;
   int tick_count = 1;
+
+  if (y_interval <= 0) {
+    return;
+  }
 
   // Do this instead of just using the return value of computeMaxYSnap()
   // so we don't get an empty range at the end of the axis.
@@ -748,8 +714,10 @@ void HistogramView::setXAxisConfig(const int all_bars_count)
 
   const int neg_count_offset = static_cast<int>(buckets_.negative.size());
   const int pos_bars_count = all_bars_count - neg_count_offset;
-  const float min = -(static_cast<float>(neg_count_offset)) * bucket_interval_;
-  const float max = static_cast<float>(pos_bars_count) * bucket_interval_;
+  const float min
+      = -(static_cast<float>(neg_count_offset)) * histogram_->getBinsWidth();
+  const float max
+      = static_cast<float>(pos_bars_count) * histogram_->getBinsWidth();
   axis_x_->setRange(min, max);
 
   axis_x_->setTickCount(all_bars_count + 1);
@@ -788,19 +756,6 @@ int HistogramView::computeMaxYSnap(const int largest_slack_count)
 int HistogramView::computeFirstDigit(int value, int digits)
 {
   return static_cast<int>(value / std::pow(10, digits - 1));
-}
-
-void HistogramView::setLimits(const EndPointSlackMap& end_point_to_slack)
-{
-  max_slack_ = std::numeric_limits<float>::lowest();
-  min_slack_ = std::numeric_limits<float>::max();
-
-  sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
-  for (const auto& [end_point, sta_slack] : end_point_to_slack) {
-    const float slack = time_unit->staToUser(sta_slack);
-    min_slack_ = std::min(slack, min_slack_);
-    max_slack_ = std::max(slack, max_slack_);
-  }
 }
 
 void HistogramView::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)

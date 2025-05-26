@@ -57,7 +57,8 @@ void RenderThread::setLogger(utl::Logger* logger)
 void RenderThread::render(const QRect& draw_rect,
                           const SelectionSet& selected,
                           const HighlightSet& highlighted,
-                          const Rulers& rulers)
+                          const Rulers& rulers,
+                          const Labels& labels)
 {
   if (abort_) {
     return;
@@ -73,6 +74,11 @@ void RenderThread::render(const QRect& draw_rect,
   rulers_.reserve(rulers.size());
   for (const auto& ruler : rulers) {
     rulers_.emplace_back(new Ruler(*ruler));
+  }
+  labels_.clear();
+  labels_.reserve(labels.size());
+  for (const auto& label : labels) {
+    labels_.emplace_back(new Label(*label));
   }
 
   if (!isRunning()) {
@@ -90,11 +96,13 @@ void RenderThread::run()
     SelectionSet selected;
     HighlightSet highlighted;
     Rulers rulers;
+    Labels labels;
     mutex_.lock();
     const QRect draw_bounds = draw_rect_;
     selected.swap(selected_);
     highlighted.swap(highlighted_);
     rulers.swap(rulers_);
+    labels.swap(labels_);
     mutex_.unlock();
     QImage image(draw_bounds.width(),
                  draw_bounds.height(),
@@ -106,6 +114,7 @@ void RenderThread::run()
            selected,
            highlighted,
            rulers,
+           labels,
            1.0,
            Qt::transparent);
     } catch (const std::exception& e) {
@@ -160,6 +169,7 @@ void RenderThread::draw(QImage& image,
                         const SelectionSet& selected,
                         const HighlightSet& highlighted,
                         const Rulers& rulers,
+                        const Labels& labels,
                         qreal render_ratio,
                         const QColor& background)
 {
@@ -205,6 +215,7 @@ void RenderThread::draw(QImage& image,
   // Always last so on top
   drawHighlighted(gui_painter, highlighted);
   drawRulers(gui_painter, rulers);
+  drawLabels(gui_painter, labels);
 }
 
 QColor RenderThread::getColor(dbTechLayer* layer)
@@ -429,6 +440,35 @@ void RenderThread::drawRulers(Painter& painter, const Rulers& rulers)
                       ruler->isEuclidian(),
                       ruler->getLabel());
   }
+}
+
+void RenderThread::drawLabels(Painter& painter, const Labels& labels)
+{
+  if (!viewer_->options_->areLabelsVisible()) {
+    return;
+  }
+
+  painter.saveState();
+
+  const QFont qfont = viewer_->options_->labelFont();
+  for (auto& label : labels) {
+    const Painter::Color color = label->getColor();
+
+    painter.setPen(color, true);
+    painter.setBrush(color);
+
+    const auto size = label->getSize();
+    const Painter::Font font(qfont.family().toStdString(),
+                             size.value_or(qfont.pointSize()));
+    painter.setFont(font);
+
+    painter.drawString(label->getPt().x(),
+                       label->getPt().y(),
+                       label->getAnchor(),
+                       label->getText());
+  }
+
+  painter.restoreState();
 }
 
 // Draw the instances bounds
@@ -1443,7 +1483,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   const double abs_min_dim = 8.0;  // prevent markers from falling apart
   pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
 
-  pin_font_ = viewer_->options_->pinMarkersFont();
+  pin_font_ = viewer_->options_->ioPinMarkersFont();
   const QFontMetrics font_metrics(pin_font_);
 
   QString largest_text;
@@ -1521,6 +1561,9 @@ void RenderThread::drawIOPins(Painter& painter,
   if (pins.empty()) {
     return;
   }
+
+  const bool pin_draw_names
+      = pin_draw_names_ && viewer_->options_->areIOPinNamesVisible();
 
   const auto die_area = block->getDieArea();
 
@@ -1627,7 +1670,7 @@ void RenderThread::drawIOPins(Painter& painter,
 
     painter.drawRect(box->getBox());
 
-    if (pin_draw_names_) {
+    if (pin_draw_names) {
       Point text_anchor_pt = xfm.getOffset();
 
       auto text_anchor = Painter::BOTTOM_CENTER;

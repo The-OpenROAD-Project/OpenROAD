@@ -3,6 +3,8 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -26,6 +28,7 @@
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
+#include "grt/GlobalRouter.h"
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
@@ -54,6 +57,7 @@
 #include "upf/MakeUpf.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
+#include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/decode.h"
 
@@ -139,41 +143,45 @@ void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 
 void initOpenRoad(Tcl_Interp* interp,
                   const char* log_filename,
-                  const char* metrics_filename)
+                  const char* metrics_filename,
+                  const bool batch_mode)
 {
-  OpenRoad::openRoad()->init(interp, log_filename, metrics_filename);
+  OpenRoad::openRoad()->init(
+      interp, log_filename, metrics_filename, batch_mode);
 }
 
 void OpenRoad::init(Tcl_Interp* tcl_interp,
                     const char* log_filename,
-                    const char* metrics_filename)
+                    const char* metrics_filename,
+                    const bool batch_mode)
 {
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = makeLogger(log_filename, metrics_filename);
+  utl::Progress::setBatchMode(batch_mode);
+  logger_ = utl::makeLogger(log_filename, metrics_filename);
   db_->setLogger(logger_);
-  sta_ = makeDbSta();
+  sta_ = sta::makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
-  ioPlacer_ = makeIoplacer();
-  resizer_ = makeResizer();
-  opendp_ = makeOpendp();
-  finale_ = makeFinale();
-  global_router_ = makeGlobalRouter();
-  restructure_ = makeRestructure();
-  tritonCts_ = makeTritonCts();
-  tapcell_ = makeTapcell();
-  macro_placer_ = makeMacroPlacer();
-  extractor_ = makeOpenRCX();
-  detailed_router_ = makeTritonRoute();
-  replace_ = makeReplace();
-  pdnsim_ = makePDNSim();
-  antenna_checker_ = makeAntennaChecker();
-  partitionMgr_ = makePartitionMgr();
-  pdngen_ = makePdnGen();
-  icewall_ = makeICeWall();
-  distributer_ = makeDistributed();
-  stt_builder_ = makeSteinerTreeBuilder();
+  ioPlacer_ = ppl::makeIoplacer();
+  resizer_ = rsz::makeResizer();
+  opendp_ = dpl::makeOpendp();
+  finale_ = fin::makeFinale();
+  global_router_ = grt::makeGlobalRouter();
+  restructure_ = rmp::makeRestructure();
+  tritonCts_ = cts::makeTritonCts();
+  tapcell_ = tap::makeTapcell();
+  macro_placer_ = mpl::makeMacroPlacer();
+  extractor_ = rcx::makeOpenRCX();
+  detailed_router_ = drt::makeTritonRoute();
+  replace_ = gpl::makeReplace();
+  pdnsim_ = psm::makePDNSim();
+  antenna_checker_ = ant::makeAntennaChecker();
+  partitionMgr_ = par::makePartitionMgr();
+  pdngen_ = pdn::makePdnGen();
+  icewall_ = pad::makeICeWall();
+  distributer_ = dst::makeDistributed();
+  stt_builder_ = stt::makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
 
   // Init components.
@@ -183,32 +191,64 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
 
   initLogger(logger_, tcl_interp);
   // GUI first so we can register our sink with the logger
-  initGui(tcl_interp, db_, sta_, logger_);
-  initOdb(tcl_interp);
-  initUpf(this);
-  initInitFloorplan(this);
-  initDbSta(this);
-  initResizer(this);
-  initDbVerilogNetwork(this);
-  initIoplacer(this);
-  initReplace(this);
-  initOpendp(this);
-  initFinale(this);
-  initGlobalRouter(this);
-  initTritonCts(this);
-  initTapcell(this);
-  initMacroPlacer(this);
-  initOpenRCX(this);
-  initICeWall(this);
-  initRestructure(this);
-  initTritonRoute(this);
-  initPDNSim(this);
-  initAntennaChecker(this);
-  initPartitionMgr(this);
-  initPdnGen(this);
-  initDistributed(this);
-  initSteinerTreeBuilder(this);
-  dft::initDft(this);
+  gui::initGui(tcl_interp, db_, sta_, logger_);
+  odb::initOdb(tcl_interp);
+  upf::initUpf(tcl_interp);
+  ifp::initInitFloorplan(tcl_interp);
+  initDbSta(sta_, logger_, tcl_interp, db_);
+  initResizer(resizer_,
+              tcl_interp,
+              logger_,
+              db_,
+              sta_,
+              stt_builder_,
+              global_router_,
+              opendp_);
+  initDbVerilogNetwork(verilog_network_, sta_);
+  initIoplacer(ioPlacer_, db_, logger_, tcl_interp);
+  initReplace(
+      replace_, db_, sta_, resizer_, global_router_, logger_, tcl_interp);
+  initOpendp(opendp_, db_, logger_, tcl_interp);
+  initFinale(finale_, db_, logger_, tcl_interp);
+  initGlobalRouter(global_router_,
+                   db_,
+                   sta_,
+                   resizer_,
+                   antenna_checker_,
+                   opendp_,
+                   stt_builder_,
+                   logger_,
+                   tcl_interp);
+  initTritonCts(tritonCts_,
+                db_,
+                getDbNetwork(),
+                sta_,
+                stt_builder_,
+                resizer_,
+                logger_,
+                tcl_interp);
+  initTapcell(tapcell_, db_, logger_, tcl_interp);
+  initMacroPlacer(macro_placer_,
+                  getDbNetwork(),
+                  db_,
+                  sta_,
+                  logger_,
+                  partitionMgr_,
+                  tcl_interp);
+  initOpenRCX(extractor_, db_, logger_, getVersion(), tcl_interp);
+  initICeWall(icewall_, db_, logger_, tcl_interp);
+  initRestructure(restructure_, logger_, sta_, db_, resizer_, tcl_interp);
+  initTritonRoute(
+      detailed_router_, db_, logger_, distributer_, stt_builder_, tcl_interp);
+  initPDNSim(pdnsim_, logger_, db_, sta_, resizer_, opendp_, tcl_interp);
+  initAntennaChecker(
+      antenna_checker_, db_, global_router_, logger_, tcl_interp);
+  initPartitionMgr(
+      partitionMgr_, db_, getDbNetwork(), sta_, logger_, tcl_interp);
+  initPdnGen(pdngen_, db_, logger_, tcl_interp);
+  initDistributed(distributer_, logger_, tcl_interp);
+  initSteinerTreeBuilder(stt_builder_, db_, logger_, tcl_interp);
+  dft::initDft(dft_, db_, sta_, logger_, tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
@@ -410,8 +450,19 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   std::ifstream stream;
   stream.open(filename, std::ios::binary);
+
   try {
-    readDb(stream);
+    const std::string name(filename);
+    if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
+      boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+      inbuf.push(boost::iostreams::gzip_decompressor());
+      inbuf.push(stream);
+      std::istream zstd_uncompressed(&inbuf);
+
+      readDb(zstd_uncompressed);
+    } else {
+      readDb(stream);
+    }
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
@@ -447,7 +498,17 @@ void OpenRoad::writeDb(const char* filename)
 {
   utl::StreamHandler stream_handler(filename, true);
 
-  db_->write(stream_handler.getStream());
+  const std::string name(filename);
+  if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
+    outbuf.push(boost::iostreams::gzip_compressor());
+    outbuf.push(stream_handler.getStream());
+    std::ostream zstd_compressed(&outbuf);
+
+    writeDb(zstd_compressed);
+  } else {
+    writeDb(stream_handler.getStream());
+  }
 }
 
 void OpenRoad::readVerilog(const char* filename)
@@ -457,15 +518,21 @@ void OpenRoad::readVerilog(const char* filename)
   if (verilog_reader_ == nullptr) {
     verilog_reader_ = new sta::VerilogReader(verilog_network_);
   }
-  setDbNetworkLinkFunc(this, verilog_reader_);
+  setDbNetworkLinkFunc(getVerilogNetwork(), verilog_reader_);
   verilog_reader_->read(filename);
 }
 
-void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
+void OpenRoad::linkDesign(const char* design_name,
+                          bool hierarchy,
+                          bool omit_filename_prop)
 
 {
-  bool success
-      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  bool success = dbLinkDesign(design_name,
+                              verilog_network_,
+                              db_,
+                              logger_,
+                              hierarchy,
+                              omit_filename_prop);
 
   if (success) {
     delete verilog_reader_;

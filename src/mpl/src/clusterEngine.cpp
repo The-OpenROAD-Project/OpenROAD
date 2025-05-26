@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "MplObserver.h"
 #include "db_sta/dbNetwork.hh"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
@@ -22,11 +23,13 @@ using utl::MPL;
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
                                    sta::dbNetwork* network,
                                    utl::Logger* logger,
-                                   par::PartitionMgr* triton_part)
+                                   par::PartitionMgr* triton_part,
+                                   MplObserver* graphics)
     : block_(block),
       network_(network),
       logger_(logger),
-      triton_part_(triton_part)
+      triton_part_(triton_part),
+      graphics_(graphics)
 {
 }
 
@@ -43,9 +46,7 @@ void ClusteringEngine::run()
   setBaseThresholds();
 
   createDataFlow();
-
   createIOClusters();
-  classifyBoundariesStateForIOs();
 
   if (design_metrics_->getNumStdCell() == 0) {
     logger_->warn(MPL, 25, "Design has no standard cells!");
@@ -87,6 +88,7 @@ void ClusteringEngine::init()
     return;
   }
 
+  setDieArea();
   setFloorplanShape();
   searchForFixedInstsInsideFloorplanShape();
 
@@ -106,6 +108,19 @@ void ClusteringEngine::init()
   tree_->io_pads = getIOPads();
 
   reportDesignData();
+}
+
+// Note: The die area's dimensions will be used inside
+// SA Core when computing the wirelength in a situation in which
+// the target cluster is a cluster of unplaced IOs.
+void ClusteringEngine::setDieArea()
+{
+  const odb::Rect& die = block_->getDieArea();
+
+  tree_->die_area = Rect(block_->dbuToMicrons(die.xMin()),
+                         block_->dbuToMicrons(die.yMin()),
+                         block_->dbuToMicrons(die.xMax()),
+                         block_->dbuToMicrons(die.yMax()));
 }
 
 float ClusteringEngine::computeMacroWithHaloArea(
@@ -348,10 +363,11 @@ void ClusteringEngine::setBaseThresholds()
 // 1. A Group of Unplaced Pins;
 // 2. An IO Pad.
 //
-// For the former, we group IO pins with the same constraints based on:
-// - If an IO pin has a constraint region in a certain boundary,
-//   it is constrained to that entire boundary;
-// - If an IO pin has no constraints, it is constrained to all boundaries.
+// For 1:
+// We group IO pins that are constrained to the same region - the cluster's
+// shape is the constraint region. If a pin has no constraints, we consider
+// it constrained to all edges of the die area - for this case, the cluster's
+// shape is the die area.
 void ClusteringEngine::createIOClusters()
 {
   if (!tree_->io_pads.empty()) {
@@ -359,151 +375,74 @@ void ClusteringEngine::createIOClusters()
     return;
   }
 
-  // Boundary with constrained IOs -> cluster
-  std::map<Boundary, Cluster*> boundary_to_cluster;
-  const odb::Rect die = block_->getDieArea();
-
-  for (odb::dbBTerm* bterm : block_->getBTerms()) {
-    Boundary constraint_boundary = NONE;
-
-    auto constraint_region = bterm->getConstraintRegion();
-    if (constraint_region) {
-      constraint_boundary
-          = getConstraintBoundary(die, constraint_region.value());
-    }
-
-    const auto itr = boundary_to_cluster.find(constraint_boundary);
-    if (itr != boundary_to_cluster.end()) {
-      Cluster* io_cluster = itr->second;
-      tree_->maps.bterm_to_cluster_id[bterm] = io_cluster->getId();
-    } else {
-      createIOCluster(die, constraint_boundary, boundary_to_cluster, bterm);
-    }
-  }
-
-  if (tree_->maps.id_to_cluster.size() == 1) {
+  if (block_->getBTerms().empty()) {
     logger_->warn(MPL, 26, "Design has no IO pins!");
     tree_->has_io_clusters = false;
   }
-}
 
-Boundary ClusteringEngine::getConstraintBoundary(
-    const odb::Rect& die,
-    const odb::Rect& constraint_region)
-{
-  Boundary constraint_boundary = NONE;
-  if (constraint_region.xMin() == constraint_region.xMax()) {
-    if (constraint_region.xMin() == die.xMin()) {
-      constraint_boundary = L;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    Cluster* same_constraint_cluster = findIOClusterWithSameConstraint(bterm);
+    if (same_constraint_cluster) {
+      tree_->maps.bterm_to_cluster_id[bterm] = same_constraint_cluster->getId();
     } else {
-      constraint_boundary = R;
-    }
-  } else {
-    if (constraint_region.yMin() == die.yMin()) {
-      constraint_boundary = B;
-    } else {
-      constraint_boundary = T;
+      createClusterOfUnplacedIOs(bterm);
     }
   }
-  return constraint_boundary;
+
+  if (graphics_) {
+    graphics_->setIOConstraintsMap(tree_->io_cluster_to_constraint);
+  }
 }
 
-void ClusteringEngine::createIOCluster(
-    const odb::Rect& die,
-    const Boundary constraint_boundary,
-    std::map<Boundary, Cluster*>& boundary_to_cluster,
-    odb::dbBTerm* bterm)
+Cluster* ClusteringEngine::findIOClusterWithSameConstraint(
+    odb::dbBTerm* bterm) const
+{
+  const auto& bterm_constraint = bterm->getConstraintRegion();
+  if (!bterm_constraint) {
+    return cluster_of_unconstrained_io_pins_;
+  }
+
+  for (const auto& [cluster, constraint_region] :
+       tree_->io_cluster_to_constraint) {
+    if (bterm_constraint == lineToRect(constraint_region.line)) {
+      return cluster;
+    }
+  }
+
+  return nullptr;
+}
+
+void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
 {
   auto cluster
-      = std::make_unique<Cluster>(id_, toString(constraint_boundary), logger_);
-  tree_->maps.bterm_to_cluster_id[bterm] = id_;
-  tree_->maps.id_to_cluster[id_++] = cluster.get();
+      = std::make_unique<Cluster>(id_, "ios_" + std::to_string(id_), logger_);
+  cluster->setParent(tree_->root.get());
 
-  boundary_to_cluster[constraint_boundary] = cluster.get();
-
-  int x = die.xMin(), y = die.yMin();
-  int width = die.dx(), height = die.dy();
-
-  if (constraint_boundary != NONE) {
-    setIOClusterDimensions(die, constraint_boundary, x, y, width, height);
+  bool is_cluster_of_unconstrained_io_pins = false;
+  odb::Rect constraint_shape;
+  const auto& bterm_constraint = bterm->getConstraintRegion();
+  if (bterm_constraint) {
+    constraint_shape = *bterm_constraint;
+    BoundaryRegion constraint_region(
+        rectToLine(block_, constraint_shape, logger_),
+        getBoundary(block_, constraint_shape));
+    tree_->io_cluster_to_constraint[cluster.get()] = constraint_region;
+  } else {
+    constraint_shape = block_->getDieArea();
+    is_cluster_of_unconstrained_io_pins = true;
+    cluster_of_unconstrained_io_pins_ = cluster.get();
   }
 
   cluster->setAsClusterOfUnplacedIOPins(
-      std::pair<float, float>(block_->dbuToMicrons(x), block_->dbuToMicrons(y)),
-      block_->dbuToMicrons(width),
-      block_->dbuToMicrons(height),
-      constraint_boundary);
+      {block_->dbuToMicrons(constraint_shape.xMin()),
+       block_->dbuToMicrons(constraint_shape.yMin())},
+      block_->dbuToMicrons(constraint_shape.dx()),
+      block_->dbuToMicrons(constraint_shape.dy()),
+      is_cluster_of_unconstrained_io_pins);
+
+  tree_->maps.bterm_to_cluster_id[bterm] = id_;
+  tree_->maps.id_to_cluster[id_++] = cluster.get();
   tree_->root->addChild(std::move(cluster));
-}
-
-void ClusteringEngine::classifyBoundariesStateForIOs()
-{
-  const float blocked_boundary_threshold = 0.7;
-  std::map<Boundary, float> blockage_extension_map
-      = computeBlockageExtensionMap();
-
-  for (const auto [boundary, blockage_extension] : blockage_extension_map) {
-    if (blockage_extension >= blocked_boundary_threshold) {
-      tree_->blocked_boundaries.insert(boundary);
-    } else {
-      tree_->unblocked_boundaries.insert(boundary);
-    }
-  }
-}
-
-// Computes how much blocked each boundary is for IOs base on PPL exclude
-// contraints.
-std::map<Boundary, float> ClusteringEngine::computeBlockageExtensionMap()
-{
-  std::map<Boundary, float> blockage_extension_map;
-
-  blockage_extension_map[L] = 0.0;
-  blockage_extension_map[R] = 0.0;
-  blockage_extension_map[B] = 0.0;
-  blockage_extension_map[T] = 0.0;
-
-  const odb::Rect die = block_->getDieArea();
-  for (const odb::Rect& blocked_region : block_->getBlockedRegionsForPins()) {
-    Boundary blocked_region_boundary
-        = getConstraintBoundary(die, blocked_region);
-    float blockage_extension = 0.0;
-
-    if (blocked_region_boundary == L || blocked_region_boundary == R) {
-      blockage_extension = blocked_region.dy() / static_cast<float>(die.dy());
-    } else if (blocked_region_boundary == B || blocked_region_boundary == T) {
-      blockage_extension = blocked_region.dx() / static_cast<float>(die.dx());
-    }
-
-    blockage_extension_map[blocked_region_boundary] += blockage_extension;
-  }
-
-  return blockage_extension_map;
-}
-
-void ClusteringEngine::setIOClusterDimensions(const odb::Rect& die,
-                                              const Boundary boundary,
-                                              int& x,
-                                              int& y,
-                                              int& width,
-                                              int& height)
-{
-  if (boundary == L) {
-    x = die.xMin();
-    y = die.yMin();
-    width = 0;
-  } else if (boundary == T) {
-    x = die.xMin();
-    y = die.yMax();
-    height = 0;
-  } else if (boundary == R) {
-    x = die.xMax();
-    y = die.yMin();
-    width = 0;
-  } else {  // Bottom
-    x = die.xMin();
-    y = die.yMin();
-    height = 0;
-  }
 }
 
 void ClusteringEngine::createIOPadClusters()
@@ -1148,15 +1087,13 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   if (level_ >= tree_->max_level) {
     return;
   }
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Current cluster: {} - Level: {} - Macros: {} - Std Cells: {}",
-             parent->getName(),
-             level_,
-             parent->getNumMacro(),
-             parent->getNumStdCell());
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nCurrent cluster: {}\n  Macros: {}\n  Std Cells: {}",
+                    parent->getName(),
+                    parent->getNumMacro(),
+                    parent->getNumStdCell());
+  }
 
   level_++;
   updateSizeThresholds();
@@ -1212,6 +1149,10 @@ void ClusteringEngine::updateSizeThresholds()
   if (min_std_cell_ <= 0) {
     min_std_cell_ = 100;
     max_std_cell_ = min_std_cell_ * tree_->cluster_size_ratio / 2.0;
+  }
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    reportThresholds();
   }
 }
 
@@ -2178,44 +2119,6 @@ void ClusteringEngine::replaceByStdCellCluster(
   virtual_conn_clusters.push_back(mixed_leaf->getId());
 }
 
-// Print Physical Hierarchy tree in a DFS manner
-void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
-{
-  std::string line;
-  for (int i = 0; i < level; i++) {
-    line += "+---";
-  }
-
-  line += fmt::format("{}  ({}) Type: {}",
-                      parent->getName(),
-                      parent->getId(),
-                      parent->getClusterTypeString());
-
-  if (parent->isClusterOfUnplacedIOPins()) {
-    int number_of_pins = 0;
-    for (const auto [pin, cluster_id] : tree_->maps.bterm_to_cluster_id) {
-      if (cluster_id == parent->getId()) {
-        ++number_of_pins;
-      }
-    }
-
-    line += fmt::format(" Pins: {}", number_of_pins);
-  } else if (!parent->isIOPadCluster()) {
-    line += fmt::format(" {}, StdCells: {} ({} μ²), Macros: {} ({} μ²)",
-                        parent->getIsLeafString(),
-                        parent->getNumStdCell(),
-                        parent->getStdCellArea(),
-                        parent->getNumMacro(),
-                        parent->getMacroArea());
-  }
-
-  logger_->report("{}", line);
-
-  for (auto& cluster : parent->getChildren()) {
-    printPhysicalHierarchyTree(cluster.get(), level + 1);
-  }
-}
-
 // When placing the HardMacros of a macro cluster, we create temporary
 // internal macro clusters - one representing each HardMacro - so we
 // can use them to compute the connections with the fixed terminals.
@@ -2254,6 +2157,73 @@ void ClusteringEngine::clearTempMacroClusterMapping(
 {
   for (auto& macro_cluster : macro_clusters) {
     tree_->maps.id_to_cluster.erase(macro_cluster->getId());
+  }
+}
+
+int ClusteringEngine::getNumberOfIOs(Cluster* target) const
+{
+  int number_of_ios = 0;
+  for (const auto& [pin, io_cluster_id] : tree_->maps.bterm_to_cluster_id) {
+    if (io_cluster_id == target->getId()) {
+      ++number_of_ios;
+    }
+  }
+  return number_of_ios;
+}
+
+///////////////////////////////////////////////
+
+void ClusteringEngine::reportThresholds() const
+{
+  logger_->report("\n    Level {}  |  Min  |  Max", level_);
+  logger_->report("-----------------------------");
+  logger_->report(
+      "  Std Cells  | {:>5d} | {:>6d}", min_std_cell_, max_std_cell_);
+  logger_->report("     Macros  | {:>5d} | {:>6d}\n", min_macro_, max_macro_);
+}
+
+void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
+{
+  std::string line;
+  for (int i = 0; i < level; i++) {
+    line += "+---";
+  }
+
+  line += fmt::format("{}  ({}) Type: {}",
+                      parent->getName(),
+                      parent->getId(),
+                      parent->getClusterTypeString());
+
+  if (parent->isClusterOfUnplacedIOPins()) {
+    int number_of_pins = 0;
+    for (const auto [pin, cluster_id] : tree_->maps.bterm_to_cluster_id) {
+      if (cluster_id == parent->getId()) {
+        ++number_of_pins;
+      }
+    }
+
+    line += fmt::format(" Pins: {}", number_of_pins);
+  } else if (!parent->isIOPadCluster()) {
+    line += fmt::format(" {}", parent->getIsLeafString());
+
+    // Using 'or' on purpose to certify that there is no discrepancy going on.
+    if (parent->getNumStdCell() != 0 || parent->getStdCellArea() != 0.0f) {
+      line += fmt::format(", StdCells: {} ({} μ²)",
+                          parent->getNumStdCell(),
+                          parent->getStdCellArea());
+    }
+
+    if (parent->getNumMacro() != 0 || parent->getMacroArea() != 0.0f) {
+      line += fmt::format(", Macros: {} ({} μ²),",
+                          parent->getNumMacro(),
+                          parent->getMacroArea());
+    }
+  }
+
+  logger_->report("{}", line);
+
+  for (auto& cluster : parent->getChildren()) {
+    printPhysicalHierarchyTree(cluster.get(), level + 1);
   }
 }
 

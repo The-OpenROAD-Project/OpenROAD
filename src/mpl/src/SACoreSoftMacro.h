@@ -42,7 +42,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   int num_perturb_per_step,
                   unsigned seed,
                   MplObserver* graphics,
-                  utl::Logger* logger);
+                  utl::Logger* logger,
+                  odb::dbBlock* block);
 
   void run() override;
 
@@ -77,8 +78,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void restore() override;
   // actions used
   void resizeOneCluster();
-
-  void shrink() override;
 
   // A utility function for FillDeadSpace.
   // It's used for calculate the start point and end point for a segment in a

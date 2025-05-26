@@ -292,6 +292,10 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
     }
   }
   if (found) {
+    if (!_measureInR) {
+      delete _measureTable;
+    }
+    _measureInR = true;
     _measureTable = _measureTableR[index_dist];
     _computeTable = _computeTableR[index_dist];
     extDistRC* res = findIndexed_res(dist1, dist2);

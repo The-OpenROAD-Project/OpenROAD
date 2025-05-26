@@ -2,6 +2,7 @@ or_integration_tests(
   "dbSta"
   TESTS
     block_sta1
+    clock_pin
     constant1
     find_clks1
     find_clks2
@@ -22,6 +23,7 @@ or_integration_tests(
     read_verilog8
     read_verilog9
     read_verilog10
+    read_verilog10_no_prop
     read_verilog11
     readdb_hier
     report_cell_usage

@@ -456,7 +456,9 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     setInstsPlacementStatus(insts_to_restore);
   }
   setDiodesAndGatesPlacementStatus(odb::dbPlacementStatus::FIRM);
-  getFixedInstances(fixed_insts);
+  int fixed_inst_count = 0;
+  getFixedInstances(fixed_insts, fixed_inst_count);
+  getPlacementBlockages(fixed_insts, fixed_inst_count);
 
   bool repair_failures = false;
   for (auto const& net_violations : antenna_violations_) {
@@ -572,9 +574,9 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
   fixed_inst_id++;
 }
 
-void RepairAntennas::getFixedInstances(r_tree& fixed_insts)
+void RepairAntennas::getFixedInstances(r_tree& fixed_insts,
+                                       int& fixed_inst_count)
 {
-  int fixed_inst_id = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbPlacementStatus status = inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::FIRM
@@ -582,10 +584,27 @@ void RepairAntennas::getFixedInstances(r_tree& fixed_insts)
       odb::dbBox* instBox = inst->getBBox();
       box b(point(instBox->xMin(), instBox->yMin()),
             point(instBox->xMax(), instBox->yMax()));
-      value v(b, fixed_inst_id);
+      value v(b, fixed_inst_count);
       fixed_insts.insert(v);
-      fixed_inst_id++;
+      fixed_inst_count++;
     }
+  }
+}
+
+void RepairAntennas::getPlacementBlockages(r_tree& fixed_insts,
+                                           int& fixed_inst_count)
+{
+  for (odb::dbBlockage* blockage : block_->getBlockages()) {
+    if (blockage->isSoft()) {
+      continue;
+    }
+    odb::Rect bbox = blockage->getBBox()->getBox();
+
+    box blockage_box(point(bbox.xMin(), bbox.yMin()),
+                     point(bbox.xMax(), bbox.yMax()));
+    value blockage_value(blockage_box, fixed_inst_count);
+    fixed_insts.insert(blockage_value);
+    fixed_inst_count++;
   }
 }
 
@@ -1376,7 +1395,8 @@ int RepairAntennas::addJumperOnSegments(
 
 void RepairAntennas::jumperInsertion(NetRouteMap& routing,
                                      const int& tile_size,
-                                     const int& max_routing_layer)
+                                     const int& max_routing_layer,
+                                     std::vector<odb::dbNet*>& modified_nets)
 {
   // Init jumper size
   tile_size_ = tile_size;
@@ -1433,6 +1453,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
         db_net->setJumpers(true);
         net_with_jumpers++;
         total_jumpers += jumper_by_net;
+        modified_nets.push_back(db_net);
       }
     }
   }

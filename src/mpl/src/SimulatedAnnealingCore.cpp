@@ -36,10 +36,9 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
                                                   int num_perturb_per_step,
                                                   unsigned seed,
                                                   MplObserver* graphics,
-                                                  utl::Logger* logger)
-    : outline_(outline),
-      blocked_boundaries_(tree->blocked_boundaries),
-      graphics_(graphics)
+                                                  utl::Logger* logger,
+                                                  odb::dbBlock* block)
+    : outline_(outline), graphics_(graphics), block_(block)
 {
   core_weights_ = weights;
 
@@ -61,26 +60,30 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
   logger_ = logger;
   macros_ = macros;
 
-  setBlockedBoundariesForIOs();
+  setDieArea(tree->die_area);
+  setAvailableRegionsForUnconstrainedPins(
+      tree->available_regions_for_unconstrained_pins);
+
+  io_cluster_to_constraint_ = tree->io_cluster_to_constraint;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setBlockedBoundariesForIOs()
+void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
 {
-  if (blocked_boundaries_.find(Boundary::L) != blocked_boundaries_.end()) {
-    left_is_blocked_ = true;
-  }
+  die_area_ = die_area;
+  die_area_.moveHor(-outline_.xMin());
+  die_area_.moveVer(-outline_.yMin());
+}
 
-  if (blocked_boundaries_.find(Boundary::R) != blocked_boundaries_.end()) {
-    right_is_blocked_ = true;
-  }
+template <class T>
+void SimulatedAnnealingCore<T>::setAvailableRegionsForUnconstrainedPins(
+    const BoundaryRegionList& regions)
+{
+  available_regions_for_unconstrained_pins_ = regions;
 
-  if (blocked_boundaries_.find(Boundary::B) != blocked_boundaries_.end()) {
-    bottom_is_blocked_ = true;
-  }
-
-  if (blocked_boundaries_.find(Boundary::T) != blocked_boundaries_.end()) {
-    top_is_blocked_ = true;
+  for (BoundaryRegion& region : available_regions_for_unconstrained_pins_) {
+    region.line.addX(-block_->micronsToDbu(outline_.xMin()));
+    region.line.addY(-block_->micronsToDbu(outline_.yMin()));
   }
 }
 
@@ -275,7 +278,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& target = macros_[net.terminals.second];
 
     if (target.isClusterOfUnplacedIOPins()) {
-      addBoundaryDistToWirelength(source, target, net.weight);
+      computeWLForClusterOfUnplacedIOPins(source, target, net.weight);
       continue;
     }
 
@@ -299,59 +302,40 @@ void SimulatedAnnealingCore<T>::calWirelength()
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
+void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     const T& macro,
-    const T& io,
+    const T& unplaced_ios,
     const float net_weight)
 {
-  Cluster* io_cluster = io.getCluster();
-  const Rect die = io_cluster->getBBox();
-  const float die_hpwl = die.getWidth() + die.getHeight();
+  // To generate maximum cost.
+  const float max_dist = die_area_.getPerimeter() / 2;
 
   if (isOutsideTheOutline(macro)) {
-    wirelength_ += net_weight * die_hpwl;
+    wirelength_ += net_weight * max_dist;
     return;
   }
 
-  const float x1 = macro.getPinX();
-  const float y1 = macro.getPinY();
-
-  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
-
-  if (constraint_boundary == NONE) {
-    float dist_to_left = die_hpwl;
-    if (!left_is_blocked_) {
-      dist_to_left = std::abs(x1 - die.xMin());
+  const odb::Point macro_location(block_->micronsToDbu(macro.getPinX()),
+                                  block_->micronsToDbu(macro.getPinY()));
+  double smallest_distance;
+  if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
+    if (available_regions_for_unconstrained_pins_.empty()) {
+      logger_->critical(
+          utl::MPL,
+          47,
+          "There's no available region for the unconstrained pins!");
     }
 
-    float dist_to_right = die_hpwl;
-    if (!right_is_blocked_) {
-      dist_to_right = std::abs(x1 - die.xMax());
-    }
-
-    float dist_to_bottom = die_hpwl;
-    if (!bottom_is_blocked_) {
-      dist_to_right = std::abs(y1 - die.yMin());
-    }
-
-    float dist_to_top = die_hpwl;
-    if (!top_is_blocked_) {
-      dist_to_top = std::abs(y1 - die.yMax());
-    }
-
-    wirelength_
-        += net_weight
-           * std::min(
-               {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
-  } else if (constraint_boundary == Boundary::L
-             || constraint_boundary == Boundary::R) {
-    const float x2 = io.getPinX();
-    wirelength_ += net_weight * std::abs(x2 - x1);
-  } else if (constraint_boundary == Boundary::T
-             || constraint_boundary == Boundary::B) {
-    const float y2 = io.getPinY();
-    wirelength_ += net_weight * std::abs(y2 - y1);
+    smallest_distance = computeDistToNearestRegion(
+        macro_location, available_regions_for_unconstrained_pins_, nullptr);
+  } else {
+    Cluster* cluster = unplaced_ios.getCluster();
+    const BoundaryRegion& constraint = io_cluster_to_constraint_.at(cluster);
+    smallest_distance
+        = computeDistToNearestRegion(macro_location, {constraint}, nullptr);
   }
+
+  wirelength_ += net_weight * block_->dbuToMicrons(smallest_distance);
 }
 
 // We consider the macro outside the outline based on the location of
@@ -732,9 +716,6 @@ void SimulatedAnnealingCore<T>::fastSA()
   // as it is too expensive
   notch_weight_ = 0.0;
 
-  int num_restart = 1;
-  const int max_num_restart = 2;
-
   if (isValid()) {
     updateBestValidResult();
   }
@@ -767,20 +748,6 @@ void SimulatedAnnealingCore<T>::fastSA()
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-
-    if (best_valid_result_.macro_id_to_width.empty()
-        && (num_restart <= max_num_restart)
-        && (step == std::floor(max_num_step_ / max_num_restart)
-            && (outline_penalty_ > 0.0))) {
-      shrink();
-      packFloorplan();
-      calPenalty();
-      pre_cost = calNormCost();
-      num_restart++;
-      step = 1;
-      num_perturb_per_step_ *= 2;
-      temperature = init_temperature_;
-    }
 
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;

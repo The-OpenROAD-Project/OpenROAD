@@ -52,7 +52,8 @@ class SimulatedAnnealingCore
                          int num_perturb_per_step,
                          unsigned seed,
                          MplObserver* graphics,
-                         utl::Logger* logger);
+                         utl::Logger* logger,
+                         odb::dbBlock* block);
 
   virtual ~SimulatedAnnealingCore() = default;
 
@@ -97,8 +98,10 @@ class SimulatedAnnealingCore
 
   void fastSA();
 
+  void setAvailableRegionsForUnconstrainedPins(
+      const BoundaryRegionList& regions);
   void initSequencePair();
-  void setBlockedBoundariesForIOs();
+  void setDieArea(const Rect& die_area);
   void updateBestValidResult();
   void useBestValidResult();
 
@@ -106,9 +109,9 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
-  void addBoundaryDistToWirelength(const T& macro,
-                                   const T& io,
-                                   float net_weight);
+  void computeWLForClusterOfUnplacedIOPins(const T& macro,
+                                           const T& unplaced_ios,
+                                           float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
@@ -123,8 +126,6 @@ class SimulatedAnnealingCore
   void exchangeMacros();
   void generateRandomIndices(int& index1, int& index2);
 
-  virtual void shrink() = 0;  // Shrink the size of macros
-
   // utilities
   static float calAverage(std::vector<float>& value_list);
 
@@ -134,14 +135,11 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  /////////////////////////////////////////////
-  // private member variables
-  /////////////////////////////////////////////
-  // boundary constraints
   Rect outline_;
+  Rect die_area_;  // Offset to the current outline.
 
-  // Boundaries blocked for IO pins
-  std::set<Boundary> blocked_boundaries_;
+  BoundaryRegionList available_regions_for_unconstrained_pins_;
+  ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
@@ -160,10 +158,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-
-  // shrink_factor for dynamic weight
-  const float shrink_factor_ = 0.8;
-  const float shrink_freq_ = 0.1;
 
   // seed for reproduciabilty
   std::mt19937 generator_;
@@ -211,6 +205,7 @@ class SimulatedAnnealingCore
 
   utl::Logger* logger_ = nullptr;
   MplObserver* graphics_ = nullptr;
+  odb::dbBlock* block_;
 
   Result best_valid_result_;
 
@@ -221,13 +216,6 @@ class SimulatedAnnealingCore
   static constexpr float acc_tolerance_ = 0.001;
 
   bool has_initial_sequence_pair_ = false;
-
-  // Blocked boundaries data is kept in bools to avoid overhead
-  // during SA steps.
-  bool left_is_blocked_ = false;
-  bool right_is_blocked_ = false;
-  bool bottom_is_blocked_ = false;
-  bool top_is_blocked_ = false;
 };
 
 // SACore wrapper function

@@ -34,7 +34,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   int num_perturb_per_step,
                   unsigned seed,
                   MplObserver* graphics,
-                  utl::Logger* logger);
+                  utl::Logger* logger,
+                  odb::dbBlock* block);
 
   void run() override;
 
@@ -49,7 +50,6 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
  private:
   float calNormCost() const override;
   void calPenalty() override;
-  void shrink() override {}
 
   void perturb() override;
   void restore() override;
