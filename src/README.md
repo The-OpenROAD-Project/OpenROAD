@@ -127,6 +127,45 @@ ibex_sky130hd.tcl
 
 Each of these designs use the common script `flow.tcl`.
 
+## Read database file
+
+To read a database from disk.
+
+``` tcl
+read_db filename
+```
+### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Path to the file to be read |
+
+### Examples
+```
+read_db reg1.db
+```
+
+## Write database file
+
+To write a database to disk.
+
+``` tcl
+write_db filename
+```
+### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Path to the file to be read, if the filename ends with `.gz` the file will be comprssed using gzip. |
+
+### Examples
+```
+write_db reg1.db
+
+# To write a database file with gzip compression.
+write_db reg1.db.gz
+```
+
 ## Abstract LEF Support
 
 OpenROAD contains an abstract LEF writer that can take your current design

@@ -123,7 +123,8 @@ class RepairAntennas
   bool hasNewViolations() { return has_new_violations_; }
   void jumperInsertion(NetRouteMap& routing,
                        const int& tile_size,
-                       const int& max_routing_layer);
+                       const int& max_routing_layer,
+                       std::vector<odb::dbNet*>& modified_nets);
 
  private:
   using coord_type = int;

@@ -329,7 +329,12 @@ void GlobalRouter::globalRoute(bool save_guides,
       logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
     }
     if (save_guides) {
-      saveGuides();
+      std::vector<odb::dbNet*> nets;
+      nets.reserve(block_->getNets().size());
+      for (odb::dbNet* db_net : block_->getNets()) {
+        nets.push_back(db_net);
+      }
+      saveGuides(nets);
     }
   }
 
@@ -402,6 +407,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "routing source is detailed routing.");
   }
 
+  std::vector<odb::dbNet*> modified_nets;
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -417,7 +423,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
         && repair_antennas_->hasNewViolations()) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(
-          routes_, grid_->getTileSize(), getMaxRoutingLayer());
+          routes_, grid_->getTileSize(), getMaxRoutingLayer(), modified_nets);
       repair_antennas_->clearViolations();
 
       // run again antenna checker
@@ -439,6 +445,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       nets_to_repair.clear();
       for (const Net* net : incr_groute.updateRoutes()) {
         nets_to_repair.push_back(net->getDbNet());
+        modified_nets.push_back(net->getDbNet());
       }
     }
     repair_antennas_->clearViolations();
@@ -446,7 +453,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   }
 
   logger_->metric("antenna_diodes_count", total_diodes_count_);
-  saveGuides();
+  saveGuides(modified_nets);
   return total_diodes_count_;
 }
 
@@ -2400,7 +2407,7 @@ void GlobalRouter::saveGuidesFromFile(
   }
 }
 
-void GlobalRouter::saveGuides()
+void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 {
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
@@ -2410,7 +2417,7 @@ void GlobalRouter::saveGuides()
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;
   total_jumpers = 0;
-  for (odb::dbNet* db_net : block_->getNets()) {
+  for (odb::dbNet* db_net : nets) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
       continue;
@@ -2545,8 +2552,10 @@ void GlobalRouter::readSegments(const char* file_name)
         GRT, 257, "Failed to open global route segments file {}.", file_name);
   }
 
+  int line_count = 0;
   while (fin.good()) {
     getline(fin, line);
+    line_count++;
     if (line == "(" || line.empty() || line == ")") {
       continue;
     }
@@ -2581,8 +2590,13 @@ void GlobalRouter::readSegments(const char* file_name)
                        layer2->getRoutingLevel());
       routes_[db_net].push_back(segment);
     } else {
-      logger_->error(
-          GRT, 261, "Error reading global route segments file {}.", file_name);
+      logger_->error(GRT,
+                     261,
+                     "Error reading global route segments file {} at line {}.\n"
+                     "\t\t Line content: \"{}\".",
+                     file_name,
+                     line_count,
+                     line);
     }
   }
   for (auto& [db_net, segments] : routes_) {
@@ -4811,6 +4825,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
+    std::vector<odb::dbNet*> modified_nets;
+    modified_nets.reserve(dirty_nets.size());
+    for (const Net* net : dirty_nets) {
+      modified_nets.push_back(net->getDbNet());
+    }
     fastroute_->setVerbose(false);
     fastroute_->clearNetsToRoute();
 
@@ -4888,7 +4907,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
     fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
     if (save_guides) {
-      saveGuides();
+      saveGuides(modified_nets);
     }
   }
 
