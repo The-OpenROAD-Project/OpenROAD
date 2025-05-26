@@ -119,7 +119,8 @@ use_repo(llvm, "llvm_toolchain")
 
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains(
-    "@llvm_toolchain//:all",
+    # FIXME re-enable when libomp works with this toolchain
+    # "@llvm_toolchain//:all",
     "@rules_verilator//verilator:verilator_toolchain",
 )
 

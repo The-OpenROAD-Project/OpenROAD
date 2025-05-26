@@ -103,6 +103,7 @@ OPENROAD_COPTS = [
     "-Wno-unused-parameter",
     # FIXME reenable when warnings are fixed
     "-Wno-unused-but-set-variable",
+    "-fopenmp=libomp",
 ]
 
 OPENROAD_DEFINES = [
@@ -127,7 +128,7 @@ cc_binary(
     features = ["-use_header_modules"],
     linkopts = select({
         ":platform_cli": [],
-    }),
+    }) + ["-fopenmp=libomp"],
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [

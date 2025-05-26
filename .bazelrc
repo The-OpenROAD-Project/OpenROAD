@@ -62,6 +62,13 @@ build:profile --copt -fno-omit-frame-pointer
 # TODO: document
 build --incompatible_strict_action_env
 
+# FIXME use local clang compiler until libomp works LLVM toolchain from
+# MODULE.bazel
+build --action_env=CC=/usr/bin/clang
+build --action_env=CXX=/usr/bin/clang++
+#build --cxxopt=-std=c++17
+#build --linkopt=-fuse-ld=lld
+
 # TODO: setup a new cache for OpenROAD
 # Read only remote cache, updated by OpenROAD team members and CI.
 #build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts
