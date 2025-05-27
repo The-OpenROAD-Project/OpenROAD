@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <libgen.h>
+#include <omp.h>
 #include <tcl.h>
 
 #include <array>
@@ -194,8 +195,32 @@ static void handler(int sig)
   raise(sig);
 }
 
+bool check_openmp_multithreading()
+{
+  std::set<int> thread_ids;
+
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+#pragma omp critical
+    {
+      thread_ids.insert(tid);
+    }
+  }
+
+  if (thread_ids.size() <= 1) {
+    std::cerr << "ERROR: OpenMP is enabled but only one thread was used. "
+              << "Check OMP_NUM_THREADS or system configuration." << std::endl;
+    return false;
+  }
+  return true;
+}
+
 int main(int argc, char* argv[])
 {
+  if (!check_openmp_multithreading()) {
+    return EXIT_FAILURE;
+  }
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
   std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
