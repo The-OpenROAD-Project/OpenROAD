@@ -33,34 +33,6 @@ namespace cts {
 
 using utl::Logger;
 
-/////////////////////////////////////////////////////////////////////////
-// Class: LevelBalancer
-// Purpose: Balance buffer levels accross nets of same clock
-// Nets driven by drivers other than clock source itself are driven by
-// clock gates (CGC). Each of these nets is build independently by CTS
-// Since the clock is same, large skew would be introduced between sinks
-// of different clock nets.
-//
-// INPUT to Level Balancer
-//
-//                |----|>----[]  Level = 1
-//                |----|>----[]
-//                |----|>----[]
-//   [root]-------|                   |---|>----[]   Level = 3
-//                |----|>----D--------|
-//                          (CGC)     |---|>-----[]
-//
-// OUTPUT of Level Balancer
-//
-//                |----|>-|>|>---[]  Level = 3
-//                |----|>-|>|>---[]
-//                |----|>-|>|>---[]
-//   [root]-------|                   |---|>----[] Level = 3
-//                |----|>----D--------|
-//                          (CGC)     |---|>-----[]
-//
-//
-
 struct GraphNode
 {
   GraphNode(int id,
@@ -76,6 +48,8 @@ struct GraphNode
   std::string name;
   int parentId;
   std::vector<int> childrenIds;
+  float delay = 0.0;
+  float nBuffInsert = 0;
 };
 
 class LatanciesBalancer
@@ -105,7 +79,7 @@ class LatanciesBalancer
   void findAllBuilders(TreeBuilder* builder);
   void expandBuilderGraph(TreeBuilder* builder);
   int getNodeIdByName(std::string name);
-  odb::dbNet* getFirstInputNet(odb::dbInst* inst) const;
+  odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                                      odb::dbNet* topNet,
                                      odb::dbITerm* iterm);
@@ -114,6 +88,8 @@ class LatanciesBalancer
                                         odb::dbITerm* iterm,
                                         float& sumArrivals,
                                         unsigned& numSinks);
+  void computeTopBufferDelay(TreeBuilder* builder);
+  void computeLeafsNumBufferToInsert(int node_id);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
 
@@ -125,6 +101,7 @@ class LatanciesBalancer
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timing_graph_ = nullptr;
   double wireSegmentUnit_;
+  float worse_delay_ = std::numeric_limits<float>::min();
   std::vector<GraphNode> graph_;
 };
 
