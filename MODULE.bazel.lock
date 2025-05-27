@@ -1085,8 +1085,8 @@
     },
     "@@bazel-orfs~//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "D8F4lxkxZKld3gfouPynfNto900AoYgU58+xOY+BTeA=",
-        "usagesDigest": "I3MUK98MGbXC+tBrA/aCqRMxkNXWzSJp5FpkEA4XEkk=",
+        "bzlTransitiveDigest": "opZMguyG+UPmDQ6vhzXe/u0WnKyao2m9IAQt+JWkhcA=",
+        "usagesDigest": "7Z+4PMSbHzx9aIrj+bG/VcpsQ7RUfMrGvyjGFg9B/iY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1106,8 +1106,8 @@
             "bzlFile": "@@bazel-orfs~//:docker.bzl",
             "ruleClassName": "docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-2883-ge22e4fc7",
-              "sha256": "6ad0b1b7fbf290f33f0050ead4da181c83c6e8a9337b65f5f9cff65d67788424",
+              "image": "docker.io/openroad/orfs:v3.0-3145-ge35c9b1f",
+              "sha256": "d2875b4834a7c01dab79b37816e8730c0505fabb98c112f6afa69577e5163c87",
               "build_file": "@@bazel-orfs~//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -1122,7 +1122,9 @@
               "makefile": "@@bazel-orfs~~orfs_repositories~docker_orfs//:makefile",
               "pdk": "@@bazel-orfs~~orfs_repositories~docker_orfs//:asap7",
               "makefile_yosys": "@@bazel-orfs~~orfs_repositories~docker_orfs//:makefile_yosys",
-              "openroad": "@@//:openroad"
+              "openroad": "@@//:openroad",
+              "yosys": "@@bazel-orfs~~orfs_repositories~docker_orfs//:yosys",
+              "yosys_abc": "@@bazel-orfs~~orfs_repositories~docker_orfs//:yosys-abc"
             }
           }
         },
