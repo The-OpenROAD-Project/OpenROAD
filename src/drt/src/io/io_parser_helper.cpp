@@ -410,6 +410,8 @@ void io::Parser::initConstraintLayerIdx()
         if (layer) {
           frLayerNum secondLayerNum = layer->getLayerNum();
           con->setSecondLayerNum(secondLayerNum);
+        } else {
+          con->setSecondLayerName("");
         }
       }
     }
@@ -421,6 +423,8 @@ void io::Parser::initConstraintLayerIdx()
         if (layer) {
           frLayerNum secondLayerNum = layer->getLayerNum();
           con->setSecondLayerNum(secondLayerNum);
+        } else {
+          con->setSecondLayerName("");
         }
       }
     }
