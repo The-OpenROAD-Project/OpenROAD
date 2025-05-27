@@ -731,12 +731,11 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
       _over(over),
       _layerCnt(layerCnt),
       _met(met),
-      _firstWidth(0),
       _modulo(4),
       _widthTableAllocFlag(false),
       _metCnt(metCnt),
       _widthCnt(maxWidthCnt),
-      _rcPoolPtr(rcPool),
+      _rcPoolPtr(rcPool)
 {
   _widthTable = new Ath__array1D<int>(maxWidthCnt);
 
@@ -815,11 +814,11 @@ extDistWidthRCTable::extDistWidthRCTable(bool dummy,
                                          uint widthCnt,
                                          bool OUREVERSEORDER)
     : _ouReadReverse(OUREVERSEORDER),
-      _met(met),
       _layerCnt(layerCnt),
+      _met(met),
       _widthTableAllocFlag(true),
       _metCnt(layerCnt),
-      _widthCnt(widthCnt),
+      _widthCnt(widthCnt)
 {
   _widthTable = new Ath__array1D<int>(widthCnt);
   for (uint ii = 0; ii < widthCnt; ii++) {
@@ -852,9 +851,9 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
                                          double dbFactor)
     : _ouReadReverse(OUREVERSEORDER),
       _over(over),
-      _met(met),
       _layerCnt(layerCnt),
-      _metCnt(layerCnt),
+      _met(met),
+      _metCnt(layerCnt)
 {
   for (uint jj = 0; jj < diagDepth; jj++) {
     _diagWidthMapTable[jj] = nullptr;
@@ -946,7 +945,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
       _metCnt(metCnt),
       _diagWidthCnt(diagWidthCnt),
       _diagDistCnt(diagDistCnt),
-      _rcPoolPtr(rcPool),
+      _rcPoolPtr(rcPool)
 {
   uint widthCnt = widthTable->getCnt();
   _widthTable = new Ath__array1D<int>(widthCnt);
