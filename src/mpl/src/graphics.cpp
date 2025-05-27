@@ -607,8 +607,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
   }
 
   painter.drawLine(from, to);
-  painter.drawString(
-      to.getX(), to.getY(), gui::Painter::CENTER, "Unconstrained IOs");
+  painter.drawString(to.getX(), to.getY(), gui::Painter::CENTER, io.getName());
 }
 
 template <typename T>
