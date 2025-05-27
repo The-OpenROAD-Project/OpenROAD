@@ -29,7 +29,10 @@ using utl::CTS;
 
 void LatanciesBalancer::run()
 {
+  initSta();
+  computeTopBufferDelay(root_);
   findAllBuilders(root_);
+  computeLeafsNumBufferToInsert(0);
 }
 
 void LatanciesBalancer::initSta() {
@@ -42,7 +45,6 @@ void LatanciesBalancer::initSta() {
 
 void LatanciesBalancer::findAllBuilders(TreeBuilder* builder)
 {
-  initSta();
   expandBuilderGraph(builder);
   for (const auto& child : builder->getChildren()) {
     findAllBuilders(child);
@@ -62,14 +64,15 @@ void LatanciesBalancer::expandBuilderGraph(TreeBuilder* builder)
 
   // Find node of the src of the tree. If there is none we create one,
   // should happend only for the root builder
-  odb::dbNet* topBufInputNet = getFirstInputNet(topBuffer);
-  odb::dbITerm* builderInputTerm = topBufInputNet->getFirstOutput();
+  odb::dbITerm* builderTopBufInputTerm = getFirstInput(topBuffer);
+  odb::dbNet* topBufInputNet = builderTopBufInputTerm->getNet();
+  odb::dbITerm* builderDriverTerm = topBufInputNet->getFirstOutput();
   std::string builderSrcName;
 
-  if(!builderInputTerm) {
+  if(!builderDriverTerm) {
     builderSrcName = topBufInputNet->getName();
   } else {
-    builderSrcName = builderInputTerm->getInst()->getName();
+    builderSrcName = builderDriverTerm->getInst()->getName();
   }
 
   int builderSrcId = getNodeIdByName(builderSrcName);
@@ -89,6 +92,8 @@ void LatanciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   // inside this tree
   if(builder->isLeafTree()) {
     computeAveSinkArrivals(builder);
+    worse_delay_ = std::max(worse_delay_, builder->getAveSinkArrival());
+    graph_[topBufId].delay = builder->getAveSinkArrival();
     return;
   }
 
@@ -128,12 +133,12 @@ int LatanciesBalancer::getNodeIdByName(std::string name)
   return -1;
 }
 
-odb::dbNet* LatanciesBalancer::getFirstInputNet(odb::dbInst* inst) const
+odb::dbITerm* LatanciesBalancer::getFirstInput(odb::dbInst* inst) const
 {
   odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm->isInputSignal()) {
-      return iterm->getNet();
+      return iterm;
     }
   }
 
@@ -271,6 +276,48 @@ void LatanciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         }
       }
     }
+  }
+}
+
+void LatanciesBalancer::computeTopBufferDelay(TreeBuilder* builder)
+{
+  Clock clock = builder->getClock();
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbInst* topBuffer = block->findInst(builder->getTopBufferName().c_str());
+  if (topBuffer) {
+    builder->setTopBuffer(topBuffer);
+    odb::dbITerm* inputTerm = getFirstInput(topBuffer);
+    odb::dbITerm* outputTerm = topBuffer->getFirstOutput();
+    sta::Pin* inputPin = network_->dbToSta(inputTerm);
+    sta::Pin* outputPin = network_->dbToSta(outputTerm);
+
+    float inputArrival = openSta_->pinArrival(
+        inputPin, sta::RiseFall::rise(), sta::MinMax::max());
+    float outputArrival = openSta_->pinArrival(
+        outputPin, sta::RiseFall::rise(), sta::MinMax::max());
+    float bufferDelay = outputArrival - inputArrival;
+    builder->setTopBufferDelay(bufferDelay);
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               1,
+               "top buffer delay for {} {} is {:0.3e}",
+               (builder->getTreeType() == TreeType::MacroTree)
+                   ? "macro tree"
+                   : "register tree",
+               topBuffer->getName(),
+               builder->getTopBufferDelay());
+  }
+}
+
+void LatanciesBalancer::computeLeafsNumBufferToInsert(int node_id) {
+  GraphNode* node = &graph_[node_id];
+  if(node->childrenIds.empty()) {
+    node->nBuffInsert = (int) ((worse_delay_ - node->delay) / root_->getTopBufferDelay());
+    return;
+  }
+  for(int child : node->childrenIds) {
+    computeLeafsNumBufferToInsert(child);
   }
 }
 
