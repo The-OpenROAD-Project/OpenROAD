@@ -405,21 +405,23 @@ void io::Parser::initConstraintLayerIdx()
     // diff-net
     for (auto& con : layer->getLef58CutSpacingConstraints(false)) {
       if (con->hasSecondLayer()) {
-        frLayerNum secondLayerNum = getDesign()
-                                        ->getTech()
-                                        ->getLayer(con->getSecondLayerName())
-                                        ->getLayerNum();
-        con->setSecondLayerNum(secondLayerNum);
+        frLayer* layer
+            = getDesign()->getTech()->getLayer(con->getSecondLayerName());
+        if (layer) {
+          frLayerNum secondLayerNum = layer->getLayerNum();
+          con->setSecondLayerNum(secondLayerNum);
+        }
       }
     }
     // same-net
     for (auto& con : layer->getLef58CutSpacingConstraints(true)) {
       if (con->hasSecondLayer()) {
-        frLayerNum secondLayerNum = getDesign()
-                                        ->getTech()
-                                        ->getLayer(con->getSecondLayerName())
-                                        ->getLayerNum();
-        con->setSecondLayerNum(secondLayerNum);
+        frLayer* layer
+            = getDesign()->getTech()->getLayer(con->getSecondLayerName());
+        if (layer) {
+          frLayerNum secondLayerNum = layer->getLayerNum();
+          con->setSecondLayerNum(secondLayerNum);
+        }
       }
     }
   }
