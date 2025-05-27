@@ -35,6 +35,8 @@
 
 namespace drt {
 
+
+
 // pinGCellNodes size always >= 2
 void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
                                  std::vector<frNode*>& steinerNodes)
@@ -149,6 +151,8 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
     }
   }
 }
+
+
 
 void FlexGR::genMSTTopology(std::vector<frNode*>& nodes)
 {

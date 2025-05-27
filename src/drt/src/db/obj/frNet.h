@@ -254,6 +254,23 @@ class frNet : public frBlockObject
   bool isGRValid() const { return isGRValid_; }
   void setGRValid(bool valid) { isGRValid_ = valid; }
 
+  std::map<odb::Point, std::vector<frNode*> >& getGCellIdx2Nodes() {
+    return gcellIdx2Nodes_;
+  }
+  
+  std::map<frNode*, std::vector<frNode*> >& getGCellNode2RPinNodes() {
+    return gcellNode2RPinNodes_;
+  }
+
+  int numPinGCellNodes() const { return gcellIdx2Nodes_.size(); }
+
+  std::vector<frNode*>& getPinGCellNodes() {
+    return pinGCellNodes_;
+  }
+
+  std::vector<frNode*>& getPinNodes() {
+    return pinNodes_;
+  }
 
  protected:
   frString name_;
@@ -296,6 +313,13 @@ class frNet : public frBlockObject
   // Modified by Zhiang Wang
   int numSteinerNodes{0};  // number of steiner nodes in the net
   bool isGRValid_{true};  // flag to indicate if the net is valid for global routing
+
+  // Store the mapping between GCell indices and pin nodes
+  std::map<odb::Point, std::vector<frNode*> > gcellIdx2Nodes_;  
+  std::map<frNode*, std::vector<frNode*> > gcellNode2RPinNodes_;
+  std::vector<frNode*> pinGCellNodes_;  // store pinGCellNodes for this net
+  std::vector<frNode*> pinNodes_; // store pin nodes for this net
+
 
 
 

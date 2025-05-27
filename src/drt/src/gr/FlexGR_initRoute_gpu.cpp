@@ -41,6 +41,8 @@
 #include "db/obj/frGuide.h"
 #include "odb/db.h"
 #include "utl/exception.h"
+#include "stt/SteinerTreeBuilder.h"
+
 
 namespace drt {
 
@@ -49,19 +51,22 @@ void FlexGR::initRoute_gpu()
 {
   // generate topology using FLUTE
   initRoute_genTopology();
+  // check how many nets are valid for GR routing
+  unsigned validNets = 0;
+  for (auto& net : design_->getTopBlock()->getNets()) {
+    if (net->isGRValid()) {
+      validNets++;
+    }
+  }
+  logger_->report("[INFO] {} ( {.2f} ) nets are valid for GR routing.", validNets, 
+                  static_cast<float>(validNets) / design_->getTopBlock()->getNets().size());  
+  logger_->report("[INFO] Initial congestion map after FLUTE topology generation ...");
+  reportCong2D();
 
   // initRoute_patternRoute();
 
   // initRoute_initObj();
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -73,6 +78,8 @@ void FlexGR::initRoute_genTopology()
 {
   logger_->report("[INFO] Generating net topology...");
   for (auto& net : design_->getTopBlock()->getNets()) {
+    initRoute_rpinMap(net.get());
+    initRoute_createPinGCellNodes(net.get());
     initRoute_genTopology_net(net.get());
     initRoute_updateCongestion2D_net(net.get());
   }
@@ -82,85 +89,126 @@ void FlexGR::initRoute_genTopology()
 
 
 
-// generate 2D topology, rpin node always connect to center of gcell
-// to be followed by layer assignment
-// In this function, we generate initial topology for the net
-// Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
-void FlexGR::initRoute_genTopology_net(frNet* net)
+// Map rpin to nodes
+void FlexGR::initRoute_rpinMap(frNet* net)
 {
   if (net->getNodes().empty()) {
+    net->setGRValid(false);
     return;
   }
 
   if (net->getNodes().size() == 1) {
     net->setRoot(net->getNodes().front().get());
+    net->setGRValid(false);  // single node net is not valid for GR routing
     return;
   }
 
 
-  /*
-  std::vector<frNode*> nodes(net->getNodes().size(), nullptr);  // 0 is source
-  std::map<frBlockObject*, std::vector<frNode*>>
-      pin2Nodes;  // vector order needs to align with map below
-  std::map<frBlockObject*, std::vector<frRPin*>> pin2RPins;
-  unsigned sinkIdx = 1;
+  auto& nodes = net->getPinNodes();
+  nodes.resize(net->getNodes().size(), nullptr);  // 0 is source
+  
+  // Each pin may multiple access points (see Via Pillar as an example)
+  // Map real pins to nodes
+  std::map<frBlockObject*, std::vector<frNode*> > pin2Nodes;  // vector order needs to align with map below
+  // Map real pins to rpins
+  std::map<frBlockObject*, std::vector<frRPin*> > pin2RPins;
+   
+  // Note that not all the nets have driver pin and sink pins.
+  // (1) a net may have multiple driver pins, in this case, we will set the first one as root
+  // (2) a net may have no driver pin, in this case, we will set the first node as root
 
+  // ------------------------------------------------------------------------------------------------
+  // Step 1: Map pins to nodes
+  // ------------------------------------------------------------------------------------------------
+  unsigned sinkIdx = 1;
   auto& netNodes = net->getNodes();
   // init nodes and populate pin2Nodes
   for (auto& node : netNodes) {
-    if (node->getPin()) {
-      if (node->getPin()->typeId() == frcInstTerm) {
-        auto ioType = static_cast<frInstTerm*>(node->getPin())
-                          ->getTerm()
-                          ->getDirection();
-        // for instTerm, direction OUTPUT is driver
-        if (ioType == dbIoType::OUTPUT && nodes[0] == nullptr) {
-          nodes[0] = node.get();
-        } else {
-          if (sinkIdx >= nodes.size()) {
-            sinkIdx %= nodes.size();
-          }
-          nodes[sinkIdx] = node.get();
-          sinkIdx++;
-        }
-        pin2Nodes[node->getPin()].push_back(node.get());
-      } else if (node->getPin()->typeId() == frcBTerm
-                 || node->getPin()->typeId() == frcMTerm) {
-        auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
-        // for IO term, direction INPUT is driver
-        if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {
-          nodes[0] = node.get();
-        } else {
-          if (sinkIdx >= nodes.size()) {
-            sinkIdx %= nodes.size();
-          }
-          nodes[sinkIdx] = node.get();
-          sinkIdx++;
-        }
-        pin2Nodes[node->getPin()].push_back(node.get());
-      } else {
-        std::cout << "Error: unknown pin type in initGR_genTopology_net\n";
-      }
+    auto pin = node->getPin();
+    if (pin == nullptr) {
+      logger_->report("[INFO] initRoute_genTopology_net: "
+                      "node has no pin in net ({}), skipping.",
+                      net->getName());
+      continue;
     }
-  }
 
+    if (!(pin->typeId() == frcInstTerm || pin->typeId() == frcBTerm)) {
+      logger_->report("[INFO] initRoute_genTopology_net: "
+                      "unkown pin type in net ({}), skipping.", net->getName());
+      continue;
+    }
+          
+    // Determine if the pin is a driver or a sink
+    bool isDriver = 
+      pin->typeId() == frcInstTerm && 
+      static_cast<frInstTerm*>(pin)->getTerm()->getDirection() == dbIoType::OUTPUT;    
+    // In the legacy code, the driver is defined as: 
+    // Not sure why input frcMTerm is defined as driver
+    // So temporarily remove this condition
+    // Please do not remove the following commented lines
+    //  isDriver |= 
+    //    (pin->typeId() == frcBTerm || pin->typeId() == frcMTerm) &&
+    //    static_cast<frTerm*>(pin)->getDirection() == dbIoType::INPUT;
+    isDriver |=
+      pin->typeId() == frcBTerm && 
+      static_cast<frBTerm*>(pin)->getDirection() == dbIoType::INPUT;
+
+    if (isDriver && nodes[0] != nullptr) {
+      logger_->report("[INFO] initRoute_genTopology_net: "
+                      "net ({}) has multiple driver pins, skipping.",
+                      net->getName());
+    }
+
+    if (isDriver && nodes[0] == nullptr) {
+      nodes[0] = node.get();  // set driver pin as root
+    } else {
+      if (sinkIdx >= nodes.size()) {
+        logger_->report("[INFO] initRoute_genTopology_net: "
+                        "sinkIdx ({}) is larger than nodes size ({}), wrapping around.\n"
+                        " This may happen if the net ({}) has NO driver pin.",
+                        sinkIdx, nodes.size(), net->getName());
+        sinkIdx %= nodes.size();
+      }
+      nodes[sinkIdx] = node.get();
+      sinkIdx++;
+    }
+
+    pin2Nodes[node->getPin()].push_back(node.get());
+  }
+  
   net->setRoot(nodes[0]);
-  // populate pin2RPins
+  
+ 
+  // ------------------------------------------------------------------------------------------------
+  // Step 2:  populate pin2RPins
+  // ------------------------------------------------------------------------------------------------
+  // Comments from Zhiang:
+  // Each term consists of one or more physical pins. Each pin consists of one or more
+  // physical shapes across one or more metal and cut layers.
+  // A term including more than one pin with “MUSTJOIN” keyword indicates
+  // that the two pins should be physically connected in detailed routing. 
+  // But at this point, we assume that each term holds one physical pin.
+  // To do list: support multiple pins in a term  
+  // Map rpin to node
   for (auto& rpin : net->getRPins()) {
     if (rpin->getFrTerm()) {
       pin2RPins[rpin->getFrTerm()].push_back(rpin.get());
     }
   }
+  
+  std::string errMsg;
   // update nodes location based on rpin
   for (auto& [pin, nodes] : pin2Nodes) {
     if (pin2RPins.find(pin) == pin2RPins.end()) {
-      std::cout << "Error: pin not found in pin2RPins\n";
-      exit(1);
+      errMsg = "Error: pin not found in pin2RPins for net " + net->getName();
+      break;
     }
+    
     if (pin2RPins[pin].size() != nodes.size()) {
-      std::cout << "Error: mismatch in nodes and ripins size\n";
-      exit(1);
+      errMsg = "Error: mismatch in nodes and ripins size for net " + net->getName();
+      break;
     }
+    
     auto& rpins = pin2RPins[pin];
     for (int i = 0; i < (int) nodes.size(); i++) {
       auto rpin = rpins[i];
@@ -178,45 +226,49 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
       node->setLayerNum(rpin->getAccessPoint()->getLayerNum());
       // added by Zhiang   
       node->setRPin(rpin);
+      node->setDontMove(); // do not move the pinNode during routing
     }
   }
+  
+  if (!errMsg.empty()) {
+    logger_->error(utl::DRT, 137, "initRoute_genTopology_net: {}", errMsg);
+    return;
+  }
+}
 
-  // std::map<std::pair<int, int>, std::vector<frNode*> > gcellIdx2Nodes;
-  auto& gcellIdx2Nodes = net2GCellIdx2Nodes_[net];
-  // std::map<frNode*, std::vector<frNode*> > gcellNode2RPinNodes;
-  auto& gcellNode2RPinNodes = net2GCellNode2RPinNodes_[net];
+
+// Create pinGCellNodes
+void FlexGR::initRoute_createPinGCellNodes(frNet* net)
+{
+  // auto nodes = net->getNodes();
+  auto& gcellIdx2Nodes = net->getGCellIdx2Nodes();
+  auto& gcellNodes = net->getPinGCellNodes();
+  auto& gcellNode2RPinNodes = net->getGCellNode2RPinNodes();
+  auto& nodes = net->getPinNodes();
 
   // prep for 2D topology generation in case two nodes are more than one rpin in
   // same gcell topology genration works on gcell (center-to-center) level
   for (auto node : nodes) {
-    Point apLoc = node->getLoc();
-    Point apGCellIdx = design_->getTopBlock()->getGCellIdx(apLoc);
-    gcellIdx2Nodes[std::make_pair(apGCellIdx.x(), apGCellIdx.y())].push_back(
-        node);
+    odb::Point apLoc = node->getLoc();
+    odb::Point apGCellIdx = design_->getTopBlock()->getGCellIdx(apLoc);
+    gcellIdx2Nodes[apGCellIdx].push_back(node);
   }
 
   // generate gcell-level node
-  // std::vector<frNode*> gcellNodes(gcellIdx2Nodes.size(), nullptr);
-  auto& gcellNodes = net2GCellNodes_[net];
   gcellNodes.resize(gcellIdx2Nodes.size(), nullptr);
-
-  std::vector<std::unique_ptr<frNode>> tmpGCellNodes;
-  sinkIdx = 1;
-  unsigned rootIdx = 0;
-  unsigned rootIdxCnt = 0;
+  std::vector<std::unique_ptr<frNode> > tmpGCellNodes;
+  int sinkIdx = 1;
+  int rootIdx = -1;
+  int idx = 0;
   for (auto& [gcellIdx, localNodes] : gcellIdx2Nodes) {
-    bool hasRoot = false;
-    for (auto localNode : localNodes) {
-      if (localNode == nodes[0]) {
-        hasRoot = true;
-      }
-    }
-
+    // check of nodes[0] is in localNodes
+    bool hasRoot = rootIdx == -1 && std::find(localNodes.begin(), localNodes.end(), nodes[0]) != localNodes.end();
     auto gcellNode = std::make_unique<frNode>();
     gcellNode->setType(frNodeTypeEnum::frcSteiner);
-    Rect gcellBox = design_->getTopBlock()->getGCellBox(
-        Point(gcellIdx.first, gcellIdx.second));
-    Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
+    gcellNode->setDontMove();  // do not move the gcell node during routing
+    odb::Rect gcellBox = design_->getTopBlock()->getGCellBox(
+        odb::Point(gcellIdx.x(), gcellIdx.y()));
+    odb::Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
               (gcellBox.yMin() + gcellBox.yMax()) / 2);
     gcellNode->setLayerNum(2);
     gcellNode->setLoc(loc);
@@ -227,142 +279,22 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     } else {
       gcellNode->setId(net->getNodes().back()->getId() + 1);
       gcellNodes[0] = gcellNode.get();
-      rootIdx = rootIdxCnt;
+      rootIdx = idx;
     }
     gcellNode2RPinNodes[gcellNode.get()] = localNodes;
     tmpGCellNodes.push_back(std::move(gcellNode));
-    rootIdxCnt++;
+    idx++;
   }
+  
+  
+  net->setRootGCellNode(gcellNodes[0]);
   net->setFirstNonRPinNode(gcellNodes[0]);
-
-  net->addNode(tmpGCellNodes[rootIdx]);
+  // All these unique_ptrs will be moved to net->addNode()
+  net->addNode(tmpGCellNodes[rootIdx]); 
   for (unsigned i = 0; i < tmpGCellNodes.size(); i++) {
     if (i != rootIdx) {
       net->addNode(tmpGCellNodes[i]);
     }
-  }
-
-  for (unsigned i = 0; i < gcellNodes.size(); i++) {
-    auto node = gcellNodes[i];
-    if (!node) {
-      std::cout << "Error: gcell node " << i << " is 0x0\n";
-    }
-  }
-
-  if (gcellNodes.size() <= 1) {
-    return;
-  }
-
-  net->setRootGCellNode(gcellNodes[0]);
-
-  auto& steinerNodes = net2SteinerNodes_[net];
-  // if (gcellNodes.size() >= 150) {
-  // TODO: remove connFig instantiation to match FLUTE behavior
-  if (false) {
-    // generate mst topology
-    genMSTTopology(gcellNodes);
-
-    // sanity check
-    for (unsigned i = 1; i < gcellNodes.size(); i++) {
-      if (gcellNodes[i]->getParent() == nullptr) {
-        std::cout << "Error: non-root gcell node does not have parent\n";
-      }
-    }
-
-    // generate steiner tree from MST
-    genSTTopology_HVW(gcellNodes, steinerNodes);
-    // generate shapes and update congestion map
-    for (auto node : gcellNodes) {
-      // add shape from child to parent
-      if (node->getParent()) {
-        auto parent = node->getParent();
-        Point childLoc = node->getLoc();
-        Point parentLoc = parent->getLoc();
-        Point bp, ep;
-        if (childLoc < parentLoc) {
-          bp = childLoc;
-          ep = parentLoc;
-        } else {
-          bp = parentLoc;
-          ep = childLoc;
-        }
-
-        auto uPathSeg = std::make_unique<grPathSeg>();
-        uPathSeg->setChild(node);
-        uPathSeg->setParent(parent);
-        uPathSeg->addToNet(net);
-        uPathSeg->setPoints(bp, ep);
-        // 2D shapes are all on layerNum == 2
-        // assuming (layerNum / - 1) == congestion map idx
-        uPathSeg->setLayerNum(2);
-
-        Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
-        Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-
-        // update congestion map
-        // horizontal
-        unsigned zIdx = 0;
-        if (bpIdx.y() == epIdx.y()) {
-          for (int xIdx = bpIdx.x(); xIdx < epIdx.x(); xIdx++) {
-            cmap_->addDemand(xIdx, bpIdx.y(), zIdx, frDirEnum::E);
-          }
-        } else {
-          for (int yIdx = bpIdx.y(); yIdx < epIdx.y(); yIdx++) {
-            cmap_->addDemand(bpIdx.x(), yIdx, zIdx, frDirEnum::N);
-          }
-        }
-
-        std::unique_ptr<grShape> uShape(std::move(uPathSeg));
-        net->addGRShape(uShape);
-      }
-    }
-
-    for (auto node : steinerNodes) {
-      // add shape from child to parent
-      if (node->getParent()) {
-        auto parent = node->getParent();
-        Point childLoc = node->getLoc();
-        Point parentLoc = parent->getLoc();
-        Point bp, ep;
-        if (childLoc < parentLoc) {
-          bp = childLoc;
-          ep = parentLoc;
-        } else {
-          bp = parentLoc;
-          ep = childLoc;
-        }
-
-        auto uPathSeg = std::make_unique<grPathSeg>();
-        uPathSeg->setChild(node);
-        uPathSeg->setParent(parent);
-        uPathSeg->addToNet(net);
-        uPathSeg->setPoints(bp, ep);
-        // 2D shapes are all on layerNum == 2
-        // assuming (layerNum / - 1) == congestion map idx
-        uPathSeg->setLayerNum(2);
-
-        Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
-        Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-
-        // update congestion map
-        // horizontal
-        unsigned zIdx = 0;
-        if (bpIdx.y() == epIdx.y()) {
-          for (int xIdx = bpIdx.x(); xIdx < epIdx.x(); xIdx++) {
-            cmap_->addDemand(xIdx, bpIdx.y(), zIdx, frDirEnum::E);
-          }
-        } else {
-          for (int yIdx = bpIdx.y(); yIdx < epIdx.y(); yIdx++) {
-            cmap_->addDemand(bpIdx.x(), yIdx, zIdx, frDirEnum::N);
-          }
-        }
-
-        std::unique_ptr<grShape> uShape(std::move(uPathSeg));
-        net->addGRShape(uShape);
-      }
-    }
-  } else {
-    genSTTopology_FLUTE(gcellNodes, steinerNodes);
   }
 
   // connect rpin node to gcell center node
@@ -378,21 +310,179 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     }
   }
 
-  // sanity check
-  for (size_t i = 1; i < nodes.size(); i++) {
-    if (nodes[i]->getParent() == nullptr) {
-      std::cout << "Error: non-root node does not have parent in "
-                << net->getName() << '\n';
-    }
+  if (gcellNodes.size() <= 1) {
+    net->setGRValid(false);  // single node net is not valid for GR routing
+  } else {
+    net->setGRValid(true);  // valid for GR routing
   }
-  if (nodes.size() > 1 && nodes[0]->getChildren().empty()) {
-    std::cout << "Error: root does not have any children\n";
-  }
-    */
 }
 
 
+// generate 2D topology, rpin node always connect to center of gcell
+// to be followed by layer assignment
+// In this function, we generate initial topology for the net
+// Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
+void FlexGR::initRoute_genTopology_net(frNet* net)
+{
+  if (net->isGRValid() == false) {
+    return;  // net is not valid for GR routing
+  }
 
+  auto& pinGCellNodes = net->getPinGCellNodes();
+  std::vector<frNode*> steinerNodes;
+  auto root = pinGCellNodes[0];
+
+  // prep for flute
+  int degree = pinGCellNodes.size();
+  std::vector<int> xs(degree);
+  std::vector<int> ys(degree);
+  for (int i = 0; i < (int) pinGCellNodes.size(); i++) {
+    auto gcellNode = pinGCellNodes[i];
+    Point loc = gcellNode->getLoc();
+    xs[i] = loc.x();
+    ys[i] = loc.y();
+  }
+  
+  // temporary to keep using flute here
+  stt_builder_->setAlpha(0);
+  auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
+
+  std::map<odb::Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  std::map<frNode*, std::set<frNode*, frBlockObjectComp>, frBlockObjectComp>
+      adjacencyList;
+
+  for (auto pinNode : pinGCellNodes) {
+    pinGCell2Nodes[pinNode->getLoc()] = pinNode;
+  }
+
+  // iterate over branches, create new nodes and build connectivity
+  for (int i = 0; i < degree * 2 - 2; i++) {
+    auto& branch1 = fluteTree.branch[i];
+    auto& branch2 = fluteTree.branch[branch1.n];
+
+    Point bp(branch1.x, branch1.y);
+    Point ep(branch2.x, branch2.y);
+
+    if (bp == ep) {
+      continue;
+    }
+
+    frNode* bpNode = nullptr;
+    frNode* epNode = nullptr;
+
+    // get bp node
+    if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
+      if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
+        // add steiner
+        auto steinerNode = std::make_unique<frNode>();
+        bpNode = steinerNode.get();
+        steinerNode->setType(frNodeTypeEnum::frcSteiner);
+        steinerNode->setLoc(bp);
+        steinerNode->setLayerNum(2);
+        steinerGCell2Nodes[bp] = steinerNode.get();
+        steinerNodes.push_back(steinerNode.get());
+        net->addNode(steinerNode);
+      } else {
+        bpNode = steinerGCell2Nodes[bp];
+      }
+    } else {
+      bpNode = pinGCell2Nodes[bp];
+    }
+    
+    // get ep node
+    if (pinGCell2Nodes.find(ep) == pinGCell2Nodes.end()) {
+      if (steinerGCell2Nodes.find(ep) == steinerGCell2Nodes.end()) {
+        // add steiner
+        auto steinerNode = std::make_unique<frNode>();
+        epNode = steinerNode.get();
+        steinerNode->setType(frNodeTypeEnum::frcSteiner);
+        steinerNode->setLoc(ep);
+        steinerNode->setLayerNum(2);
+        steinerGCell2Nodes[ep] = steinerNode.get();
+        steinerNodes.push_back(steinerNode.get());
+        net->addNode(steinerNode);
+      } else {
+        epNode = steinerGCell2Nodes[ep];
+      }
+    } else {
+      epNode = pinGCell2Nodes[ep];
+    }
+
+    if (bpNode == nullptr || epNode == nullptr) {
+      logger_->error(utl::DRT, 138, 
+        "initRoute_genTopology_net: bpNode or epNode is void for net {}",
+        net->getName());
+    }
+
+    adjacencyList[bpNode].insert(epNode);
+    adjacencyList[epNode].insert(bpNode);
+  }
+  
+  // reset nodes
+  // disconnect pinGCell2Nodes to ripins
+  for (auto& [loc, node] : pinGCell2Nodes) {
+    node->reset();
+  }
+
+  /*
+  // build tree
+  std::set<frNode*> visitedNodes;
+  std::queue<frNode*> nodeQueue;
+  visitedNodes.insert(root);
+  nodeQueue.push(root);
+  while (!nodeQueue.empty()) {
+    // pop from front
+    auto currNode = nodeQueue.front();
+    nodeQueue.pop();
+    for (auto adjNode : adjacencyList[currNode]) {
+      if (visitedNodes.find(adjNode) == visitedNodes.end()) {
+        currNode->addChild(adjNode);
+        adjNode->setParent(currNode);
+        nodeQueue.push(adjNode);
+        visitedNodes.insert(adjNode);
+      }
+    }
+  }*/
+
+  // build tree
+  std::set<frNode*> visitedNodes;
+  std::deque<frNode*> nodeQueue;
+
+  nodeQueue.push_front(root);
+  visitedNodes.insert(root);
+
+  while (!nodeQueue.empty()) {
+    auto currNode = nodeQueue.back();
+    nodeQueue.pop_back();
+
+    for (auto adjNode : adjacencyList[currNode]) {
+      if (visitedNodes.find(adjNode) == visitedNodes.end()) {
+        currNode->addChild(adjNode);
+        adjNode->setParent(currNode);
+        nodeQueue.push_front(adjNode);
+        visitedNodes.insert(adjNode);
+      }
+    }
+  }
+
+
+
+
+  auto& gcellNode2RPinNodes = net->getGCellNode2RPinNodes();
+  auto rootPinNode = net->getRoot();
+  // reconnect rpin node to gcell center node
+  for (auto& [gcellNode, localNodes] : gcellNode2RPinNodes) {
+    for (auto localNode : localNodes) {
+      if (localNode == rootPinNode) {
+        gcellNode->setParent(localNode);
+        localNode->addChild(gcellNode);
+      } else {
+        gcellNode->addChild(localNode);
+        localNode->setParent(gcellNode);
+      }
+    }
+  }  
+}
 
 
 // ----------------------------------------------------------------------------

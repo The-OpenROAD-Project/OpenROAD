@@ -135,6 +135,12 @@ class FlexGR
   // Modified by Zhiang Wang
   // Initial Routing (two-pin net + pattern routing)
   void initRoute_gpu();
+  
+  // Map rpin to nodes
+  void initRoute_rpinMap(frNet* net);
+  // create pinGCellNodes
+  void initRoute_createPinGCellNodes(frNet* net);
+
   void initRoute_genTopology();
   
   // In this function, we generate initial topology for the net
