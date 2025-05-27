@@ -61,9 +61,21 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
   std::map<frNode*, std::set<frNode*, frBlockObjectComp>, frBlockObjectComp>
       adjacencyList;
 
+  bool printFlag = std::string(net->getName()) == std::string("rst");  
   for (auto pinNode : pinGCellNodes) {
     pinGCell2Nodes[pinNode->getLoc()] = pinNode;
+    if (printFlag) {
+      std::cout << "PinGcellNode loc = " << " "
+                << "x = " << pinNode->getLoc().x() << ", "
+                << "y = " << pinNode->getLoc().y() << " "
+                << std::endl;
+    }  
   }
+
+  
+
+
+
 
   // iterate over branches, create new nodes and build connectivity
   for (int i = 0; i < degree * 2 - 2; i++) {
@@ -75,6 +87,16 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
 
     if (bp == ep) {
       continue;
+    }
+
+    if (printFlag) {
+      std::cout << "branch1 loc = " << " "
+                << "x = " << bp.x() << ", "
+                << "y = " << bp.y() << " "
+                << "branch2 loc = " << " "
+                << "x = " << ep.x() << ", "
+                << "y = " << ep.y() << " "
+                << std::endl;
     }
 
     // colinear

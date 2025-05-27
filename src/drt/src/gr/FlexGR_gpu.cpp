@@ -96,8 +96,6 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
   // Initial Routing
   initRoute_gpu();
 
-
-
   // free the GPU memory
   gpuDb_->freeCUDAMem();  
 

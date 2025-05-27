@@ -125,10 +125,12 @@ class FlexGR
   void ra();
 
   // Utility functions for 2D Congestion Map
-  
-  void initRoute_updateCongestion2D_net(frNet* net);
+  void initRoute_updateCongestion2D_net(
+    frNet* net, bool errFlag = true);
   // Get the segment attached to the node (segment connecting the node and its parent).
-  void initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx);
+  bool initRoute_getNodeSegment2D(frNode* node, 
+    Point& bpIdx, Point& epIdx, 
+    bool errFlag = true);
   // bpIdx <= epIdx
   void initRoute_updateCongestion2D_Segment(const Point& bpIdx, const Point& epIdx);
 
@@ -146,6 +148,7 @@ class FlexGR
   // In this function, we generate initial topology for the net
   // Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
   void initRoute_genTopology_net(frNet* net);
+  void initRoute_checkValid(frNet* net, bool printFlag = false);
 
   // 2D Maze Routing
 

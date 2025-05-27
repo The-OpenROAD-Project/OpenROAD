@@ -78,10 +78,21 @@ void FlexGR::initRoute_genTopology()
 {
   logger_->report("[INFO] Generating net topology...");
   for (auto& net : design_->getTopBlock()->getNets()) {
+    // We assume clk nets has been handled by the clock tree synthesis
+    // To do list: it seems that clock net sometimes cannot be identified by the isSpecial() function
+    std::string netName = net->getName();
+    if (netName.find("clk") != std::string::npos || netName.find("CLK") != std::string::npos) {
+      net->setGRValid(false);
+      logger_->report("[INFO] initRoute_genTopology: skipping clk net ({})", netName);
+      continue;
+    }  
+
     initRoute_rpinMap(net.get());
     initRoute_createPinGCellNodes(net.get());
-    initRoute_genTopology_net(net.get());
-    initRoute_updateCongestion2D_net(net.get());
+    // initRoute_genTopology_net(net.get());
+    // update the congestion map for the aligned segment in the Steiner trees
+    // Then we will use pattern routing for the unaligned segments
+    // initRoute_updateCongestion2D_net(net.get(), false);
   }
   
   logger_->report("[INFO] Net topology generation done ...");
@@ -329,6 +340,13 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
   }
 
   auto& pinGCellNodes = net->getPinGCellNodes();
+  if (pinGCellNodes.size() <= 1) {
+    std::cout << "Error:  net " << net->getName() 
+              << " has only one pinGCellNode, skipping topology generation.\n";
+  }
+  
+
+  
   std::vector<frNode*> steinerNodes;
   auto root = pinGCellNodes[0];
 
@@ -342,7 +360,9 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     xs[i] = loc.x();
     ys[i] = loc.y();
   }
+ 
   
+  /*
   // temporary to keep using flute here
   stt_builder_->setAlpha(0);
   auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
@@ -424,7 +444,7 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     node->reset();
   }
 
-  /*
+  
   // build tree
   std::set<frNode*> visitedNodes;
   std::queue<frNode*> nodeQueue;
@@ -442,32 +462,9 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
         visitedNodes.insert(adjNode);
       }
     }
-  }*/
-
-  // build tree
-  std::set<frNode*> visitedNodes;
-  std::deque<frNode*> nodeQueue;
-
-  nodeQueue.push_front(root);
-  visitedNodes.insert(root);
-
-  while (!nodeQueue.empty()) {
-    auto currNode = nodeQueue.back();
-    nodeQueue.pop_back();
-
-    for (auto adjNode : adjacencyList[currNode]) {
-      if (visitedNodes.find(adjNode) == visitedNodes.end()) {
-        currNode->addChild(adjNode);
-        adjNode->setParent(currNode);
-        nodeQueue.push_front(adjNode);
-        visitedNodes.insert(adjNode);
-      }
-    }
   }
 
-
-
-
+  
   auto& gcellNode2RPinNodes = net->getGCellNode2RPinNodes();
   auto rootPinNode = net->getRoot();
   // reconnect rpin node to gcell center node
@@ -475,23 +472,62 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     for (auto localNode : localNodes) {
       if (localNode == rootPinNode) {
         gcellNode->setParent(localNode);
-        localNode->addChild(gcellNode);
       } else {
         gcellNode->addChild(localNode);
-        localNode->setParent(gcellNode);
       }
     }
-  }  
+  }    
+
+  */
+
 }
+
+
+
+
+
 
 
 // ----------------------------------------------------------------------------
 // Utility functions for updating congestion
 // ----------------------------------------------------------------------------
+// The segment connecting the node and its parent should be aligned with the GCell grid.
+void FlexGR::initRoute_checkValid(frNet* net, bool printFlag)
+{
+  if (net->isGRValid() == false) {
+    return;  // net is not valid for GR routing
+  }
+  
+  if (printFlag) {
+    logger_->report("[INFO] initRoute_checkValid: checking net {} ...", net->getName());
+  }
+
+  auto node = net->getRootGCellNode();
+  std::queue<frNode*> nodeQueue;
+  nodeQueue.push(node);
+
+  while (!nodeQueue.empty()) {
+    auto currNode = nodeQueue.front();
+    nodeQueue.pop();
+
+    // Get the segment attached to the node
+    Point bpIdx, epIdx;
+    initRoute_getNodeSegment2D(currNode, bpIdx, epIdx);
+    
+    // Traverse children
+    for (auto& child : currNode->getChildren()) {
+      nodeQueue.push(child);
+    }
+  }
+
+  if (printFlag) {
+    logger_->report("[INFO] initRoute_checkValid: the routing tree is valid.");      
+  }
+}
 
 
 // Get the segment attached to the node (segment connecting the node and its parent).
-void FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx)
+bool FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx, bool errFlag)
 {
   // Initialize
   bpIdx.setX(-1);
@@ -499,11 +535,15 @@ void FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx
   epIdx.setX(-1);
   epIdx.setY(-1);
 
-  if (node->getParent() == nullptr) return;
+  if (node == nullptr) {
+    std::cout << "Error: node is null in initRoute_getNodeSegment2D\n";
+  }
+
+  if (node->getParent() == nullptr) return false;
   
   if (node->getType() != frNodeTypeEnum::frcSteiner
     || node->getParent()->getType() != frNodeTypeEnum::frcSteiner) {
-    return;
+    return false;
   }
     
   bpIdx = node->getLoc();
@@ -513,9 +553,13 @@ void FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx
   }
 
   if (bpIdx.x() != epIdx.x() && bpIdx.y() != epIdx.y()) {
-    logger_->error(utl::DRT, 121, 
-      "initRoute_getNodeSegment2D: Node segment is not aligned!");   
-    return;
+    if (errFlag) {
+      logger_->error(utl::DRT, 121, 
+        "initRoute_getNodeSegment2D: Node segment is not aligned!"
+        " bpIdx: ({}, {}), epIdx: ({}, {}) for net {}.",
+        bpIdx.x(), bpIdx.y(), epIdx.x(), epIdx.y(), node->getNet()->getName());   
+    }
+    return false;
   }
 
   // Transform to GCell indices
@@ -529,6 +573,11 @@ void FlexGR::initRoute_updateCongestion2D_Segment(
   const Point& bpIdx, 
   const Point& epIdx)
 {
+  if (bpIdx.x() < 0 || bpIdx.y() < 0 || 
+      epIdx.x() < 0 || epIdx.y() < 0) {
+    return;
+  }
+  
   // Update 2D congestion map
   unsigned zIdx = 0;
   if (bpIdx.y() == epIdx.y()) {
@@ -548,7 +597,7 @@ void FlexGR::initRoute_updateCongestion2D_Segment(
 }
 
 
-void FlexGR::initRoute_updateCongestion2D_net(frNet* net)
+void FlexGR::initRoute_updateCongestion2D_net(frNet* net, bool errFlag)
 {
   // net spanning multiple GCells
   if (net->isGRValid() == false) {
@@ -559,8 +608,9 @@ void FlexGR::initRoute_updateCongestion2D_net(frNet* net)
   // Traverse the entire routing tree of the net  
   for (auto& node : net->getNodes()) {
     // Get the segment attached to the node
-    initRoute_getNodeSegment2D(node.get(), bpIdx, epIdx);    
-    initRoute_updateCongestion2D_Segment(bpIdx, epIdx);
+    if (initRoute_getNodeSegment2D(node.get(), bpIdx, epIdx, errFlag) == true) {    
+      initRoute_updateCongestion2D_Segment(bpIdx, epIdx);
+    }
   }
 }
 
