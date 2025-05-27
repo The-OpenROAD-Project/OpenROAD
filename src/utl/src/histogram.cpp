@@ -27,7 +27,7 @@ void Histogram<DataType>::generateBins(int bins,
   bins_.resize(bins, 0);
 
   if (!hasData()) {
-    logger_->warn(UTL, 71, "No data for the histogram has been loaded.");
+    logger_->warn(UTL, 71, "No histogram data available in the design.");
     return;
   }
 
@@ -50,7 +50,7 @@ template <typename DataType>
 void Histogram<DataType>::report(int precision) const
 {
   if (!hasData()) {
-    logger_->error(UTL, 72, "No data for the histogram has been loaded.");
+    logger_->warn(UTL, 72, "The histogram is empty.");
     return;
   }
 
