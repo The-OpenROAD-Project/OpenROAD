@@ -859,6 +859,8 @@ class NesterovBaseCommon
   {
     return std::distance(gCellStor_.data(), gCell);
   }
+  
+  // const std::vector<GCell>& getGCellStor() const { return gCellStor_; }
 
   void printGCells();
   void printGCellsToFile(const std::string& filename,
@@ -1100,6 +1102,7 @@ class NesterovBase
 
   void restoreRemovedFillers() {
     log_->report("restoring removed fillers: {}", removed_fillers_.size());
+    log_->report("fillerStor_.size() before: {}", fillerStor_.size());
     // for (auto& filler : removed_fillers_) {
     //   filler.gcell.print(log_, false);
     // }
@@ -1108,14 +1111,13 @@ class NesterovBase
   
     for (const auto& filler : removed_fillers_) {
       // filler.gcell.print(log_, false);
-      fillerStor_.push_back(filler.gcell);
-      size_t new_index = fillerStor_.size() - 1;
-  
+      fillerStor_.push_back(filler.gcell);      
+      size_t new_index = fillerStor_.size() - 1;      
       nb_gcells_.emplace_back(this, new_index);
+      filler_stor_index_to_nb_index_[new_index] = nb_gcells_.size() - 1;
+
       appendParallelVectors();
-  
       size_t idx = nb_gcells_.size() - 1;
-  
       // Restore parallel vector data
       curSLPCoordi_[idx] = filler.curSLPCoordi;
       curSLPWireLengthGrads_[idx] = filler.curSLPWireLengthGrads;
@@ -1144,9 +1146,104 @@ class NesterovBase
       totalFillerArea_ += getFillerCellArea();
     }
   
-    log_->report("fillerStor_.size(): {}", fillerStor_.size());
+    log_->report("fillerStor_.size() after: {}", fillerStor_.size());
     removed_fillers_.clear();
   }
+
+  void appendGCellCSVNote(const std::string& filename,
+                                        int iteration,
+                                        const std::string& message) const {
+    std::ofstream file(filename, std::ios::app);
+    if (!file.is_open()) {
+      log_->report("Could not open CSV file for appending message: {}", filename);
+      return;
+    }
+
+    file << "# NOTE @ iteration " << iteration << ": " << message << "\n";
+    file.close();
+  }
+
+  void writeGCellVectorsToCSV(const std::string& filename,
+                                          int iteration,
+                                          bool write_header) const {
+  std::ofstream file(filename, std::ios::app);
+  if (!file.is_open()) {
+    log_->report("Could not open file: {}", filename);
+    return;
+  }
+
+  // Write header only on first call
+  if (write_header) {
+    file << "iteration,index";
+    auto add_header = [&](const std::string& name) {
+      file << "," << name << "_x" << "," << name << "_y";
+    };
+
+    add_header("curSLPCoordi");
+    add_header("curSLPWireLengthGrads");
+    add_header("curSLPDensityGrads");
+    add_header("curSLPSumGrads");
+
+    add_header("nextSLPCoordi");
+    add_header("nextSLPWireLengthGrads");
+    add_header("nextSLPDensityGrads");
+    add_header("nextSLPSumGrads");
+
+    add_header("prevSLPCoordi");
+    add_header("prevSLPWireLengthGrads");
+    add_header("prevSLPDensityGrads");
+    add_header("prevSLPSumGrads");
+
+    add_header("curCoordi");
+    add_header("nextCoordi");
+    add_header("initCoordi");
+
+    add_header("snapshotCoordi");
+    add_header("snapshotSLPCoordi");
+    add_header("snapshotSLPSumGrads");
+
+    file << "\n";
+  }
+
+  size_t num_rows = curSLPCoordi_.size();
+
+  for (size_t i = 0; i < num_rows; i += 5) {
+    file << iteration << "," << i;
+
+    auto add_value = [&](const std::vector<FloatPoint>& vec) {
+      file << "," << vec[i].x << "," << vec[i].y;
+    };
+
+    add_value(curSLPCoordi_);
+    add_value(curSLPWireLengthGrads_);
+    add_value(curSLPDensityGrads_);
+    add_value(curSLPSumGrads_);
+
+    add_value(nextSLPCoordi_);
+    add_value(nextSLPWireLengthGrads_);
+    add_value(nextSLPDensityGrads_);
+    add_value(nextSLPSumGrads_);
+
+    add_value(prevSLPCoordi_);
+    add_value(prevSLPWireLengthGrads_);
+    add_value(prevSLPDensityGrads_);
+    add_value(prevSLPSumGrads_);
+
+    add_value(curCoordi_);
+    add_value(nextCoordi_);
+    add_value(initCoordi_);
+
+    if(snapshotCoordi_.size() == curSLPCoordi_.size()){
+      add_value(snapshotCoordi_);
+      add_value(snapshotSLPCoordi_);
+      add_value(snapshotSLPSumGrads_);
+    }
+
+    file << "\n";
+  }
+
+  file.close();
+}
   
   
 
@@ -1174,7 +1271,8 @@ class NesterovBase
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
+  std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
@@ -1203,6 +1301,7 @@ class NesterovBase
 
   std::vector<RemovedFillerState> removed_fillers_;
   std::vector<size_t> restored_filler_indexes_;
+  // size_t last_filler_index_;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;

@@ -1676,13 +1676,16 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCell->updateLocations();
     nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
     size_t gcells_index = nb_gcells_.size() - 1;
-    db_inst_to_nb_index_map_[pb_inst->dbInst()] = gcells_index;
+    db_inst_to_nb_index_[pb_inst->dbInst()] = gcells_index;
   }
 
   // add filler cells to gCells_
   for (size_t i = 0; i < fillerStor_.size(); ++i) {
     nb_gcells_.emplace_back(this, i);
+    filler_stor_index_to_nb_index_[i] = nb_gcells_.size() - 1;
   }
+
+  // last_filler_index_ = fillerStor_.empty() ? 0 : fillerStor_.size() - 1;
 
   debugPrint(log_,
              GPL,
@@ -2984,9 +2987,11 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY) {
+  log_->report("new_instances.size():{}", new_instances.size());
+  log_->report("restored_filler_indexes_.size: {}", restored_filler_indexes_.size());
   for (auto* db_inst : new_instances) {
-    auto db_it = db_inst_to_nb_index_map_.find(db_inst);
-    if (db_it != db_inst_to_nb_index_map_.end()) {
+    auto db_it = db_inst_to_nb_index_.find(db_inst);
+    if (db_it != db_inst_to_nb_index_.end()) {
       updateSingleGCellState(db_it->second, wlCoeffX, wlCoeffY, /*update_pins=*/true);
     } else {
       debugPrint(log_,
@@ -2997,7 +3002,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY) {
                  db_inst->getName());
     }
   }
-
+  
   for (size_t idx : restored_filler_indexes_) {
     updateSingleGCellState(idx, wlCoeffX, wlCoeffY, /*update_pins=*/false);
   }
@@ -3085,7 +3090,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
     // log_->report("createcbkgcell index for nbc_gcells_: {}, nbc_gcells.size(): {}", stor_index, nbc_->getGCells().size());
     // log_->report("createcbkgcell index for nb_gcells_:  {}, nb_gcells_.size(): {}", stor_index, nb_gcells_.size());
     size_t gcells_index = nb_gcells_.size() - 1;
-    db_inst_to_nb_index_map_[db_inst] = gcells_index;
+    db_inst_to_nb_index_[db_inst] = gcells_index;
     appendParallelVectors();
 
   } else {
@@ -3118,6 +3123,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
                         * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
+  // log_->report("createcbkgcell gCellStor_ index for NBC_gcells_: {}, nbc_gcells.size(): {}", gCellStor_.size() - 1, nbc_gcells_.size() -1);
   return gCellStor_.size() - 1;
 }
 
@@ -3150,8 +3156,8 @@ void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NesterovBase::destroyGCel");
-  auto db_it = db_inst_to_nb_index_map_.find(db_inst);
-  if (db_it != db_inst_to_nb_index_map_.end()) {
+  auto db_it = db_inst_to_nb_index_.find(db_inst);
+  if (db_it != db_inst_to_nb_index_.end()) {
     size_t last_index = nb_gcells_.size() - 1;
     size_t gcell_index = db_it->second;
 
@@ -3171,7 +3177,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     }
     swapAndPopParallelVectors(gcell_index, last_index);
     nb_gcells_.pop_back();
-    db_inst_to_nb_index_map_.erase(db_it);
+    db_inst_to_nb_index_.erase(db_it);
 
     // From now on gcell_index is the index for the replacement (previous last
     // element)
@@ -3181,15 +3187,15 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
       odb::dbInst* replacer_inst
           = nb_gcells_[replacer_index]->insts()[0]->dbInst();
       // Update new replacer reference on map
-      db_inst_to_nb_index_map_.erase(replacer_inst);
-      db_inst_to_nb_index_map_[replacer_inst] = replacer_index;
+      db_inst_to_nb_index_.erase(replacer_inst);
+      db_inst_to_nb_index_[replacer_inst] = replacer_index;
     }
 
     std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
 
     if (replacer.first != nullptr) {
-      auto it = db_inst_to_nb_index_map_.find(replacer.first);
-      if (it != db_inst_to_nb_index_map_.end()) {
+      auto it = db_inst_to_nb_index_.find(replacer.first);
+      if (it != db_inst_to_nb_index_.end()) {
         nb_gcells_[it->second].updateHandle(nbc_.get(), replacer.second);
       } else {
         debugPrint(log_,
@@ -3247,29 +3253,30 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   return replacement;
 }
 
-void NesterovBase::cutFillerCells(int64_t inflationArea)
+void NesterovBase::cutFillerCells(int64_t inflation_area)
 {
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  if(inflationArea < 0) {
-    log_->warn(GPL,313, "Negative area provided to remove fillers: {}. Expected positive value, ignoring.", block->dbuAreaToMicrons(inflationArea));
+  if(inflation_area < 0) {
+    log_->warn(GPL,313, "Negative area provided to remove fillers: {}. Expected positive value, ignoring.", block->dbuAreaToMicrons(inflation_area));
     return;
   }
   
   int removed_count = 0;
-  const int64_t fillerArea = getFillerCellArea();
-  const int64_t maxFillersToRemove = std::min(
-      inflationArea / fillerArea, static_cast<int64_t>(fillerStor_.size()));
+  const int64_t single_filler_area = getFillerCellArea();
+  const int64_t max_fllers_to_remove = std::min(
+      inflation_area / single_filler_area, static_cast<int64_t>(fillerStor_.size()));
   log_->report("totalFillerArea_: {}",
                block->dbuAreaToMicrons(totalFillerArea_));
-  log_->report("inflationArea: {}", block->dbuAreaToMicrons(inflationArea));
+  log_->report("inflationArea: {}", block->dbuAreaToMicrons(inflation_area));
   log_->report("number of fillers before removal: {}", fillerStor_.size());
-  log_->report("filler area: {}", block->dbuAreaToMicrons(fillerArea));
+  log_->report("filler area: {}", block->dbuAreaToMicrons(single_filler_area));
 
-  int64_t availableFillerArea = fillerArea * fillerStor_.size();
-  int64_t originalInflationArea = inflationArea;
+  int64_t availableFillerArea = single_filler_area * fillerStor_.size();
+  int64_t originalInflationArea = inflation_area;
 
-  for (int i = nb_gcells_.size() - 1; i >= 0 && removed_count < maxFillersToRemove; --i) {
+  for (int i = nb_gcells_.size() - 1; i >= 0 && removed_count < max_fllers_to_remove; --i) {
     if (nb_gcells_[i]->isFiller()) {
+      // log_->report("filler to be removed in nb_gcells_ index: {}, nb_gcells_.size(): {}", i, nb_gcells_.size());
       const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
       // removed_fillers_.push_back(removed);
       removed_fillers_.push_back(RemovedFillerState {
@@ -3299,20 +3306,20 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
       });
 
       destroyFillerGCell(i);
-      availableFillerArea -= fillerArea;
-      inflationArea -= fillerArea;
+      availableFillerArea -= single_filler_area;
+      inflation_area -= single_filler_area;
       ++removed_count;
     }
   }
   
   totalFillerArea_ = availableFillerArea;
 
-  if (fillerArea * fillerStor_.size() != totalFillerArea_) {
+  if (single_filler_area * fillerStor_.size() != totalFillerArea_) {
     log_->warn(GPL,
                312,
                "Unexpected filler area! The value {}, should be equal to "
                "totalFillerArea_ {}.",
-               block->dbuAreaToMicrons(fillerArea * fillerStor_.size()),
+               block->dbuAreaToMicrons(single_filler_area * fillerStor_.size()),
                block->dbuAreaToMicrons(totalFillerArea_));
   }
 
@@ -3320,7 +3327,7 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
                removed_count);
   log_->report("number of fillers after removal: {}", fillerStor_.size());
 
-  int64_t removedFillerArea = fillerArea * removed_count;
+  int64_t removedFillerArea = single_filler_area * removed_count;
   int64_t remainingInflationArea = originalInflationArea - removedFillerArea;
 
   log_->report("Area removed by fillers: {}",
@@ -3329,7 +3336,7 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
       "Remaining inflation area to be compensated by modifying density: {}",
       block->dbuAreaToMicrons(remainingInflationArea));
 
-  if (remainingInflationArea > 0) {
+  if (remainingInflationArea > single_filler_area && fillerStor_.empty()) {
     if (fillerStor_.empty()) {
       log_->report("Not enough fillers to fully compensate inflation.");
     }
@@ -3377,29 +3384,36 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
     return;
   }
 
-  if (stor_index_remove != stor_last_index) {
-    std::swap(fillerStor_[stor_index_remove], fillerStor_[stor_last_index]);
-  }
-  fillerStor_.pop_back();
-
   size_t nb_last_index = nb_gcells_.size() - 1;
   if (nb_index_remove != nb_last_index) {
-    bool is_replacer_filler = nb_gcells_[nb_last_index]->isFiller();
-    size_t replacer_stor_index = 0;
-    if (!is_replacer_filler) {
-      replacer_stor_index = nb_gcells_[nb_last_index].getStorageIndex();
-    }    
-
-    std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);
-
-    if(is_replacer_filler) {
-      nb_gcells_[nb_index_remove].updateHandle(this, stor_index_remove);
-    } else {
-      nb_gcells_[nb_index_remove].updateHandle(nbc_.get(), replacer_stor_index);
+    GCellHandle& gcell_replace = nb_gcells_[nb_last_index];
+    if(!gcell_replace->isFiller()) {
+      odb::dbInst* db_inst = gcell_replace->insts()[0]->dbInst();
+      auto it = db_inst_to_nb_index_.find(db_inst);
+      if (it != db_inst_to_nb_index_.end()) {
+        it->second = nb_index_remove;
+      } else {
+        debugPrint(log_,
+                   GPL,
+                   "callbacks",
+                   1,
+                   "Warning: gcell_replace dbInst {} not found in db_inst_to_nb_index_ map",
+                   db_inst->getName());
+        }
     }
+    std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);    
   }
   swapAndPopParallelVectors(nb_index_remove, nb_last_index);
   nb_gcells_.pop_back();
+  filler_stor_index_to_nb_index_.erase(stor_index_remove);
+
+  if (stor_index_remove != stor_last_index) {
+    size_t replacer_index = filler_stor_index_to_nb_index_.find(stor_last_index)->second;
+    std::swap(fillerStor_[stor_index_remove], fillerStor_[stor_last_index]);    
+    nb_gcells_[replacer_index].updateHandle(this, stor_index_remove);
+    filler_stor_index_to_nb_index_[stor_index_remove] = replacer_index;
+  }    
+  fillerStor_.pop_back();
 }
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)

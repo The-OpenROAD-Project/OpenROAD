@@ -674,6 +674,8 @@ std::pair<bool, bool> RouteBase::routability()
       = inflatedAreaDelta_ + prev_total_gcells_area;
 
   nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
+  nbc_->fixPointers();
+  // nbVec_[0]->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
 
 
   // int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
