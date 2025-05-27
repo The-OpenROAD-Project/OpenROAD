@@ -26,9 +26,9 @@ cc_library(
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
         "src/decode.cpp",
+        "src/histogram.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
-        "src/histogram.cpp",
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
@@ -41,6 +41,7 @@ cc_library(
         "include/utl/decode.h",
         "include/utl/deleter.h",
         "include/utl/exception.h",
+        "include/utl/histogram.h",
         "include/utl/prometheus/atomic_floating.h",
         "include/utl/prometheus/benchmark.h",
         "include/utl/prometheus/builder.h",
@@ -63,7 +64,6 @@ cc_library(
         "include/utl/scope.h",
         "include/utl/timer.h",
         "include/utl/validation.h",
-        "include/utl/histogram.h",
     ],
     includes = ["include"],
     deps = [

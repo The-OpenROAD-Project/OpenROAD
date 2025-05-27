@@ -78,7 +78,7 @@ COMPULSORY_TESTS = [
     "multi_height1-opt",
     "edge_spacing-opt",
     "regions1-opt",
-    "regions2-opt"
+    "regions2-opt",
 ]
 
 # Disabled in CMakeLists.txt
