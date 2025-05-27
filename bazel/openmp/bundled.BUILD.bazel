@@ -12,6 +12,108 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# include/
+# runtime/src/include/omp-tools.h.var
+# runtime/src/include/omp.h.var
+# runtime/src/include/omp_lib.F90.var
+# runtime/src/include/omp_lib.h.var
+# runtime/src/include/ompx.h.var
+# runtime/src/kmp.h
+# runtime/src/kmp_affinity.cpp
+# runtime/src/kmp_affinity.h
+# runtime/src/kmp_alloc.cpp
+# runtime/src/kmp_atomic.cpp
+# runtime/src/kmp_atomic.h
+# runtime/src/kmp_barrier.cpp
+# runtime/src/kmp_barrier.h
+# runtime/src/kmp_cancel.cpp
+# runtime/src/kmp_collapse.cpp
+# runtime/src/kmp_collapse.h
+# runtime/src/kmp_csupport.cpp
+# runtime/src/kmp_debug.cpp
+# runtime/src/kmp_debug.h
+# runtime/src/kmp_debugger.cpp
+# runtime/src/kmp_debugger.h
+# runtime/src/kmp_dispatch.cpp
+# runtime/src/kmp_dispatch.h
+# runtime/src/kmp_dispatch_hier.h
+# runtime/src/kmp_dummy.txt
+# runtime/src/kmp_environment.cpp
+# runtime/src/kmp_environment.h
+# runtime/src/kmp_error.cpp
+# runtime/src/kmp_error.h
+# runtime/src/kmp_ftn_cdecl.cpp
+# runtime/src/kmp_ftn_entry.h
+# runtime/src/kmp_ftn_extra.cpp
+# runtime/src/kmp_ftn_os.h
+# runtime/src/kmp_ftn_stdcall.cpp
+# runtime/src/kmp_global.cpp
+# runtime/src/kmp_gsupport.cpp
+# runtime/src/kmp_i18n.cpp
+# runtime/src/kmp_i18n.h
+# runtime/src/kmp_io.cpp
+# runtime/src/kmp_io.h
+# runtime/src/kmp_itt.cpp
+# runtime/src/kmp_itt.h
+# runtime/src/kmp_itt.inl
+# runtime/src/kmp_lock.cpp
+# runtime/src/kmp_lock.h
+# runtime/src/kmp_omp.h
+# runtime/src/kmp_os.h
+# runtime/src/kmp_platform.h
+# runtime/src/kmp_runtime.cpp
+# runtime/src/kmp_safe_c_api.h
+# runtime/src/kmp_sched.cpp
+# runtime/src/kmp_settings.cpp
+# runtime/src/kmp_settings.h
+# runtime/src/kmp_stats.cpp
+# runtime/src/kmp_stats.h
+# runtime/src/kmp_stats_timing.cpp
+# runtime/src/kmp_stats_timing.h
+# runtime/src/kmp_str.cpp
+# runtime/src/kmp_str.h
+# runtime/src/kmp_stub.cpp
+# runtime/src/kmp_stub.h
+# runtime/src/kmp_taskdeps.cpp
+# runtime/src/kmp_taskdeps.h
+# runtime/src/kmp_tasking.cpp
+# runtime/src/kmp_threadprivate.cpp
+# runtime/src/kmp_utility.cpp
+# runtime/src/kmp_utils.h
+# runtime/src/kmp_version.cpp
+# runtime/src/kmp_version.h
+# runtime/src/kmp_wait_release.cpp
+# runtime/src/kmp_wait_release.h
+# runtime/src/kmp_wrapper_getpid.h
+# runtime/src/kmp_wrapper_malloc.h
+# runtime/src/libomp.rc.var
+# runtime/src/ompd-specific.cpp
+# runtime/src/ompd-specific.h
+# runtime/src/ompt-event-specific.h
+# runtime/src/ompt-general.cpp
+# runtime/src/ompt-internal.h
+# runtime/src/ompt-specific.cpp
+# runtime/src/ompt-specific.h
+# runtime/src/test-touch.c
+# thirdparty/
+# thirdparty/ittnotify/
+# runtime/src/thirdparty/ittnotify/LICENSE.txt
+# runtime/src/thirdparty/ittnotify/disable_warnings.h
+# runtime/src/thirdparty/ittnotify/ittnotify.h
+# runtime/src/thirdparty/ittnotify/ittnotify_config.h
+# runtime/src/thirdparty/ittnotify/ittnotify_static.cpp
+# runtime/src/thirdparty/ittnotify/ittnotify_static.h
+# runtime/src/thirdparty/ittnotify/ittnotify_types.h
+# thirdparty/ittnotify/legacy/
+# runtime/src/thirdparty/ittnotify/legacy/ittnotify.h
+# runtime/src/z_AIX_asm.S
+# runtime/src/z_Linux_asm.S
+# runtime/src/z_Linux_util.cpp
+# runtime/src/z_Windows_NT-586_asm.asm
+# runtime/src/z_Windows_NT-586_util.cpp
+# runtime/src/z_Windows_NT_util.cpp
+
+
 cc_library(
     name = "openmp",
     hdrs = [
@@ -19,75 +121,81 @@ cc_library(
       "runtime/src/include/omp-tools.h",
     ],
     srcs = [
-      "runtime/src/kmp.h",
-      "runtime/src/kmp_alloc.cpp",
-      "runtime/src/kmp_atomic.cpp",
-      "runtime/src/kmp_atomic.h",
-      "runtime/src/kmp_csupport.cpp",
-      "runtime/src/kmp_debug.cpp",
-      "runtime/src/kmp_debug.h",
-      "runtime/src/kmp_itt.cpp",
-      "runtime/src/kmp_itt.h",
-      "runtime/src/kmp_environment.cpp",
-      "runtime/src/kmp_environment.h",
-      "runtime/src/kmp_error.cpp",
-      "runtime/src/kmp_error.h",
-      "runtime/src/kmp_global.cpp",
-      "runtime/src/kmp_i18n.cpp",
-      "runtime/src/kmp_i18n.h",
-      "runtime/src/kmp_i18n_default.inc",
-      "runtime/src/kmp_i18n_id.inc",
-      "runtime/src/kmp_io.cpp",
-      "runtime/src/kmp_io.h",
-      "runtime/src/kmp_runtime.cpp",
-      "runtime/src/kmp_settings.cpp",
-      "runtime/src/kmp_settings.h",
-      "runtime/src/kmp_str.cpp",
-      "runtime/src/kmp_str.h",
-      "runtime/src/kmp_tasking.cpp",
-      "runtime/src/kmp_threadprivate.cpp",
-      "runtime/src/kmp_utility.cpp",
-      "runtime/src/kmp_barrier.cpp",
-      "runtime/src/kmp_wait_release.cpp",
-      "runtime/src/kmp_wait_release.h",
-      "runtime/src/kmp_affinity.cpp",
-      "runtime/src/kmp_affinity.h",
-      "runtime/src/kmp_dispatch.cpp",
-      "runtime/src/kmp_dispatch.h",
-      "runtime/src/kmp_dispatch_hier.h",
-      "runtime/src/kmp_lock.cpp",
-      "runtime/src/kmp_lock.h",
-      "runtime/src/kmp_sched.cpp",
-      "runtime/src/z_Linux_util.cpp",
-      "runtime/src/kmp_gsupport.cpp",
-      "runtime/src/z_Linux_asm.S",
-      "runtime/src/thirdparty/ittnotify/ittnotify_static.cpp",
-      "runtime/src/thirdparty/ittnotify/ittnotify_static.h",
-      "runtime/src/thirdparty/ittnotify/ittnotify_config.h",
-      "runtime/src/thirdparty/ittnotify/ittnotify_types.h",
-      "runtime/src/thirdparty/ittnotify/ittnotify.h",
-      "runtime/src/thirdparty/ittnotify/legacy/ittnotify.h",
-      "runtime/src/kmp_taskdeps.cpp",
-      "runtime/src/kmp_taskdeps.h",
-      "runtime/src/kmp_cancel.cpp",
-      "runtime/src/kmp_ftn_cdecl.cpp",
-      "runtime/src/kmp_ftn_extra.cpp",
-      "runtime/src/kmp_version.cpp",
-      "runtime/src/kmp_version.h",
-      "runtime/src/kmp_platform.h",
-      "runtime/src/kmp_config.h",
-      "runtime/src/kmp_os.h",
-      "runtime/src/kmp_safe_c_api.h",
-      "runtime/src/kmp_wrapper_malloc.h",
-      "runtime/src/ompt-internal.h",
-      "runtime/src/ompt-event-specific.h",
-      "runtime/src/kmp_ftn_os.h",
-      "runtime/src/kmp_ftn_entry.h",
-      "runtime/src/kmp_stats.h",
-      "runtime/src/ompt-specific.h",
-      "runtime/src/kmp_wrapper_getpid.h",
-      "runtime/src/tsan_annotations.h",
-      "runtime/src/ompt-general.cpp",
+"runtime/src/kmp.h",
+"runtime/src/kmp_affinity.cpp",
+"runtime/src/kmp_affinity.h",
+"runtime/src/kmp_alloc.cpp",
+"runtime/src/kmp_atomic.cpp",
+"runtime/src/kmp_atomic.h",
+"runtime/src/kmp_barrier.cpp",
+"runtime/src/kmp_barrier.h",
+"runtime/src/kmp_cancel.cpp",
+"runtime/src/kmp_collapse.cpp",
+"runtime/src/kmp_collapse.h",
+"runtime/src/kmp_csupport.cpp",
+"runtime/src/kmp_debug.cpp",
+"runtime/src/kmp_debug.h",
+"runtime/src/kmp_debugger.cpp",
+"runtime/src/kmp_debugger.h",
+"runtime/src/kmp_dispatch.cpp",
+"runtime/src/kmp_dispatch.h",
+"runtime/src/kmp_dispatch_hier.h",
+"runtime/src/kmp_environment.cpp",
+"runtime/src/kmp_environment.h",
+"runtime/src/kmp_error.cpp",
+"runtime/src/kmp_error.h",
+"runtime/src/kmp_ftn_cdecl.cpp",
+"runtime/src/kmp_ftn_entry.h",
+"runtime/src/kmp_ftn_extra.cpp",
+"runtime/src/kmp_ftn_os.h",
+"runtime/src/kmp_ftn_stdcall.cpp",
+"runtime/src/kmp_global.cpp",
+"runtime/src/kmp_gsupport.cpp",
+"runtime/src/kmp_i18n.cpp",
+"runtime/src/kmp_i18n.h",
+"runtime/src/kmp_io.cpp",
+"runtime/src/kmp_io.h",
+"runtime/src/kmp_itt.cpp",
+"runtime/src/kmp_itt.h",
+"runtime/src/kmp_itt.inl",
+"runtime/src/kmp_lock.cpp",
+"runtime/src/kmp_lock.h",
+"runtime/src/kmp_omp.h",
+"runtime/src/kmp_os.h",
+"runtime/src/kmp_platform.h",
+"runtime/src/kmp_runtime.cpp",
+"runtime/src/kmp_safe_c_api.h",
+"runtime/src/kmp_sched.cpp",
+"runtime/src/kmp_settings.cpp",
+"runtime/src/kmp_settings.h",
+"runtime/src/kmp_stats.cpp",
+"runtime/src/kmp_stats.h",
+"runtime/src/kmp_stats_timing.cpp",
+"runtime/src/kmp_stats_timing.h",
+"runtime/src/kmp_str.cpp",
+"runtime/src/kmp_str.h",
+"runtime/src/kmp_stub.cpp",
+"runtime/src/kmp_stub.h",
+"runtime/src/kmp_taskdeps.cpp",
+"runtime/src/kmp_taskdeps.h",
+"runtime/src/kmp_tasking.cpp",
+"runtime/src/kmp_threadprivate.cpp",
+"runtime/src/kmp_utility.cpp",
+"runtime/src/kmp_utils.h",
+"runtime/src/kmp_version.cpp",
+"runtime/src/kmp_version.h",
+"runtime/src/kmp_wait_release.cpp",
+"runtime/src/kmp_wait_release.h",
+"runtime/src/kmp_wrapper_getpid.h",
+"runtime/src/kmp_wrapper_malloc.h",
+"runtime/src/ompd-specific.cpp",
+"runtime/src/ompd-specific.h",
+"runtime/src/ompt-event-specific.h",
+"runtime/src/ompt-general.cpp",
+"runtime/src/ompt-internal.h",
+"runtime/src/ompt-specific.cpp",
+"runtime/src/ompt-specific.h",
+"runtime/src/test-touch.c",
     ],
     textual_hdrs = [
       "runtime/src/ompt-specific.cpp",
