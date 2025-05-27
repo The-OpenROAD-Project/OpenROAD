@@ -472,8 +472,7 @@ extDistWidthRCTable*** extMetRCTable::allocTable()
 {
   extDistWidthRCTable*** table = new extDistWidthRCTable**[_layerCnt];
   if (table == nullptr) {
-    fprintf(stderr,
-            "Cannot allocate memory for object: extDistWidthRCTable\n");
+    fprintf(stderr, "Cannot allocate memory for object: extDistWidthRCTable\n");
     exit(0);
   }
   for (uint ii = 0; ii < _layerCnt; ii++) {
