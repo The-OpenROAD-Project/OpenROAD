@@ -1710,7 +1710,7 @@ void ClusteringEngine::updateConnections()
     }
 
     bool net_has_io_pin = false;
-    if (!tree_->io_pads.empty()) {
+    if (tree_->io_pads.empty()) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
         net_has_io_pin = true;
