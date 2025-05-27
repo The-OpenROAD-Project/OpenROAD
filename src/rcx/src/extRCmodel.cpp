@@ -760,7 +760,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   _firstDiagDist = nullptr;
   _lastDiagDist = nullptr;
 
-  for (jj = 0; jj < 32; jj++) {
+  for (jj = 0; jj < diagDepth; jj++) {
     _diagWidthMapTable[jj] = nullptr;
     _diagDistMapTable[jj] = nullptr;
     _diagWidthTable[jj] = nullptr;
@@ -853,7 +853,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool dummy,
   _firstDiagDist = nullptr;
   _rcDiagDistTable = nullptr;
   _lastDiagDist = nullptr;
-  for (jj = 0; jj < 32; jj++) {
+  for (jj = 0; jj < diagDepth; jj++) {
     _diagWidthMapTable[jj] = nullptr;
     _diagDistMapTable[jj] = nullptr;
     _diagWidthTable[jj] = nullptr;
@@ -883,7 +883,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   _rcDiagDistTable = nullptr;
   _widthMapTable = nullptr;
 
-  for (uint jj = 0; jj < 32; jj++) {
+  for (uint jj = 0; jj < diagDepth; jj++) {
     _diagWidthMapTable[jj] = nullptr;
     _diagDistMapTable[jj] = nullptr;
     _diagWidthTable[jj] = nullptr;
@@ -984,6 +984,13 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
     _diagDistTable[i] = new Ath__array1D<int>(diagDistCnt);
     _diagWidthMapTable[i] = new Ath__array1D<uint>(10 * diagWidthCnt);
     _diagDistMapTable[i] = new Ath__array1D<uint>(10 * diagDistCnt);
+  }
+
+  for (uint i = layerCnt; i < diagDepth; i++) {
+    _diagWidthTable[i] = nullptr;
+    _diagDistTable[i] = nullptr;
+    _diagWidthMapTable[i] = nullptr;
+    _diagDistMapTable[i] = nullptr;
   }
 
   _firstWidth = _widthTable->get(0);

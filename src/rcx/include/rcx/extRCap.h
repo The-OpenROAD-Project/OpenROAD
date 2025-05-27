@@ -326,12 +326,14 @@ class extDistWidthRCTable
   uint _layerCnt;
   uint _met;
 
+  static constexpr int diagDepth = 32;
+
   Ath__array1D<int>* _widthTable;
   Ath__array1D<uint>* _widthMapTable;
-  Ath__array1D<int>* _diagWidthTable[32];
-  Ath__array1D<int>* _diagDistTable[32];
-  Ath__array1D<uint>* _diagWidthMapTable[32];
-  Ath__array1D<uint>* _diagDistMapTable[32];
+  Ath__array1D<int>* _diagWidthTable[diagDepth];
+  Ath__array1D<int>* _diagDistTable[diagDepth];
+  Ath__array1D<uint>* _diagWidthMapTable[diagDepth];
+  Ath__array1D<uint>* _diagDistMapTable[diagDepth];
 
   uint _modulo;
   int _firstWidth = 0;
