@@ -16,10 +16,11 @@ package(
     default_visibility = ["//visibility:private"],
 )
 
-exports_files([
-    "kmp_i18n_default.inc",
-    "kmp_i18n_id.inc",
-    "kmp_config.h",
-],
+exports_files(
+    [
+        "kmp_i18n_default.inc",
+        "kmp_i18n_id.inc",
+        "kmp_config.h",
+    ],
     visibility = ["//visibility:public"],
 )
