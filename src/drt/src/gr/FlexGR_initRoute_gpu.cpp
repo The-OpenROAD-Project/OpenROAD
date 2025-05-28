@@ -58,9 +58,9 @@ void FlexGR::initRoute_gpu()
       validNets++;
     }
   }
-  logger_->report("[INFO] {} ( {:.2f} ) nets are valid for GR routing.", 
+  logger_->report("[INFO] {} ( {:.2f} %) nets are valid for GR routing.", 
                   validNets, 
-                  static_cast<float>(validNets) / design_->getTopBlock()->getNets().size());  
+                  static_cast<float>(validNets) / design_->getTopBlock()->getNets().size() * 100.0);  
   logger_->report("[INFO] Initial congestion map after FLUTE topology generation ...");
   reportCong2D();
 
@@ -238,6 +238,9 @@ void FlexGR::initRoute_rpinMap(frNet* net)
       node->setLayerNum(rpin->getAccessPoint()->getLayerNum());
       // added by Zhiang   
       node->setRPin(rpin);
+      if (node->getType() != frNodeTypeEnum::frcPin) {
+        std::cout << "Error: node is not rpin" << std::endl;
+      }
       node->setDontMove(); // do not move the pinNode during routing
     }
   }
@@ -539,43 +542,36 @@ bool FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx
   epIdx.setX(-1);
   epIdx.setY(-1);
 
-  if (node == nullptr) {
-    std::cout << "Error: node is null in initRoute_getNodeSegment2D\n";
-  }
-
   if (node->getParent() == nullptr) return false;
   
   if (node->getType() != frNodeTypeEnum::frcSteiner
     || node->getParent()->getType() != frNodeTypeEnum::frcSteiner) {
     return false;
   }
-    
-  bpIdx = node->getLoc();
-  epIdx = node->getParent()->getLoc();
-  if (epIdx < bpIdx) {
-    std::swap(bpIdx, epIdx);
+  
+  auto bpLoc = node->getLoc();
+  auto epLoc = node->getParent()->getLoc();
+  if (epLoc < bpLoc) {
+    std::swap(bpLoc, epLoc);
   }
 
-  if (bpIdx.x() != epIdx.x() && bpIdx.y() != epIdx.y()) {
-    std::cout << "bpIdx.x = " << bpIdx.x() << "  "
-              << "epIdx.x = " << epIdx.x() << "  "
-              << "bpIdx.x == epIdx.x : " << (bpIdx.x() == epIdx.x()) << std::endl;
-    std::cout << "bpIdx.y = " << bpIdx.y() << "  "
-              << "epIdx.y = " << epIdx.y() << "  "
-              << "bpIdx.y == epIdx.y : " << (bpIdx.y() == epIdx.y()) << std::endl;
-    
+
+  // At initial routing stage, not all the parent-child pair are aligned
+  if (bpLoc.x() != epLoc.x() && bpLoc.y() != epLoc.y()) {
     if (errFlag) {
       logger_->error(utl::DRT, 121, 
         "initRoute_getNodeSegment2D: Node segment is not aligned!"
-        " bpIdx: ({}, {}), epIdx: ({}, {}) for net {}.",
-        bpIdx.x(), bpIdx.y(), epIdx.x(), epIdx.y(), node->getNet()->getName());   
+        " bpLoc: ({}, {}), epLoc: ({}, {}).",
+        bpLoc.x(), bpLoc.y(), epLoc.x(), epLoc.y());   
     }
     return false;
   }
 
   // Transform to GCell indices
-  bpIdx = design_->getTopBlock()->getGCellIdx(bpIdx);
-  epIdx = design_->getTopBlock()->getGCellIdx(epIdx);
+  bpIdx = design_->getTopBlock()->getGCellIdx(bpLoc);
+  epIdx = design_->getTopBlock()->getGCellIdx(epLoc);
+
+  return true;
 }
 
 
