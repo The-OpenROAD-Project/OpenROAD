@@ -52,10 +52,10 @@ struct GraphNode
   float nBuffInsert = 0;
 };
 
-class LatanciesBalancer
+class LatenciesBalancer
 {
  public:
- LatanciesBalancer(TreeBuilder* root,
+ LatenciesBalancer(TreeBuilder* root,
                 const CtsOptions* options,
                 Logger* logger,
                 odb::dbDatabase* db,
@@ -89,7 +89,7 @@ class LatanciesBalancer
                                         float& sumArrivals,
                                         unsigned& numSinks);
   void computeTopBufferDelay(TreeBuilder* builder);
-  void computeLeafsNumBufferToInsert(int node_id);
+  void computeLeafsNumBufferToInsert(int nodeId);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
 
@@ -99,9 +99,9 @@ class LatanciesBalancer
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   sta::dbSta* openSta_ = nullptr;
-  sta::Graph* timing_graph_ = nullptr;
+  sta::Graph* timingGraph_ = nullptr;
   double wireSegmentUnit_;
-  float worse_delay_ = std::numeric_limits<float>::min();
+  float worseDelay_ = std::numeric_limits<float>::min();
   std::vector<GraphNode> graph_;
 };
 

@@ -27,7 +27,7 @@ namespace cts {
 
 using utl::CTS;
 
-void LatanciesBalancer::run()
+void LatenciesBalancer::run()
 {
   initSta();
   computeTopBufferDelay(root_);
@@ -35,15 +35,15 @@ void LatanciesBalancer::run()
   computeLeafsNumBufferToInsert(0);
 }
 
-void LatanciesBalancer::initSta() {
+void LatenciesBalancer::initSta() {
   openSta_->ensureGraph();
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
   openSta_->ensureClkArrivals();
-  timing_graph_ = openSta_->graph();
+  timingGraph_ = openSta_->graph();
 }
 
-void LatanciesBalancer::findAllBuilders(TreeBuilder* builder)
+void LatenciesBalancer::findAllBuilders(TreeBuilder* builder)
 {
   expandBuilderGraph(builder);
   for (const auto& child : builder->getChildren()) {
@@ -51,7 +51,7 @@ void LatanciesBalancer::findAllBuilders(TreeBuilder* builder)
   }
 }
 
-void LatanciesBalancer::expandBuilderGraph(TreeBuilder* builder)
+void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
 {
   std::string topBufferName = builder->getTopBufferName();
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -92,7 +92,7 @@ void LatanciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   // inside this tree
   if(builder->isLeafTree()) {
     computeAveSinkArrivals(builder);
-    worse_delay_ = std::max(worse_delay_, builder->getAveSinkArrival());
+    worseDelay_ = std::max(worseDelay_, builder->getAveSinkArrival());
     graph_[topBufId].delay = builder->getAveSinkArrival();
     return;
   }
@@ -123,7 +123,7 @@ void LatanciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   });
 }
 
-int LatanciesBalancer::getNodeIdByName(std::string name)
+int LatenciesBalancer::getNodeIdByName(std::string name)
 {
   for(GraphNode node : graph_) {
     if(node.name == name) {
@@ -133,7 +133,7 @@ int LatanciesBalancer::getNodeIdByName(std::string name)
   return -1;
 }
 
-odb::dbITerm* LatanciesBalancer::getFirstInput(odb::dbInst* inst) const
+odb::dbITerm* LatenciesBalancer::getFirstInput(odb::dbInst* inst) const
 {
   odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   for (odb::dbITerm* iterm : iterms) {
@@ -145,7 +145,7 @@ odb::dbITerm* LatanciesBalancer::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
-float LatanciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
+float LatenciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
                                      odb::dbNet* topNet,
                                      odb::dbITerm* iterm)
 {
@@ -153,12 +153,12 @@ float LatanciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
   float clkPathArrival = 0.0;
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
-    const sta::ClockEdge* clock_edge = path->clkEdge(openSta_);
-    if (clock_edge == nullptr) {
+    const sta::ClockEdge* clockEdge = path->clkEdge(openSta_);
+    if (clockEdge == nullptr) {
       continue;
     }
 
-    if (clock_edge->transition() != sta::RiseFall::rise()) {
+    if (clockEdge->transition() != sta::RiseFall::rise()) {
       // only populate with rising edges
       continue;
     }
@@ -195,7 +195,7 @@ float LatanciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
   return clkPathArrival;
 }
 
-void LatanciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
+void LatenciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
   odb::dbNet* topInputClockNet = builder->getTopInputNet();
@@ -220,7 +220,7 @@ void LatanciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
              builder->getAveSinkArrival());
 }
 
-void LatanciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
+void LatenciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                         odb::dbITerm* iterm,
                                         float& sumArrivals,
                                         unsigned& numSinks)
@@ -232,7 +232,7 @@ void LatanciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         // either register or macro input pin
         sta::Pin* pin = network_->dbToSta(iterm);
         if (pin) {
-          sta::Vertex* sinkVertex = timing_graph_->pinDrvrVertex(pin);
+          sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
           float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
           // add insertion delay
           float insDelay = 0.0;
@@ -279,7 +279,7 @@ void LatanciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
   }
 }
 
-void LatanciesBalancer::computeTopBufferDelay(TreeBuilder* builder)
+void LatenciesBalancer::computeTopBufferDelay(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -310,10 +310,10 @@ void LatanciesBalancer::computeTopBufferDelay(TreeBuilder* builder)
   }
 }
 
-void LatanciesBalancer::computeLeafsNumBufferToInsert(int node_id) {
-  GraphNode* node = &graph_[node_id];
+void LatenciesBalancer::computeLeafsNumBufferToInsert(int nodeId) {
+  GraphNode* node = &graph_[nodeId];
   if(node->childrenIds.empty()) {
-    node->nBuffInsert = (int) ((worse_delay_ - node->delay) / root_->getTopBufferDelay());
+    node->nBuffInsert = (int) ((worseDelay_ - node->delay) / root_->getTopBufferDelay());
     return;
   }
   for(int child : node->childrenIds) {
@@ -321,7 +321,7 @@ void LatanciesBalancer::computeLeafsNumBufferToInsert(int node_id) {
   }
 }
 
-bool LatanciesBalancer::propagateClock(odb::dbITerm* input)
+bool LatenciesBalancer::propagateClock(odb::dbITerm* input)
 {
   odb::dbInst* inst = input->getInst();
   sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
@@ -349,7 +349,7 @@ bool LatanciesBalancer::propagateClock(odb::dbITerm* input)
   return false;
 }
 
-bool LatanciesBalancer::isSink(odb::dbITerm* iterm)
+bool LatenciesBalancer::isSink(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
