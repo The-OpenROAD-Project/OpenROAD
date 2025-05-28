@@ -1378,11 +1378,13 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                           router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN))
              + " sparse access points";
     }
-    logger_->warn(DRT,
-                  88,
-                  "Access point generation for {} did not meet :{}",
-                  inst_term->getName(),
-                  unmet_requirements);
+    debugPrint(logger_,
+               utl::DRT,
+               "pin_access",
+               1,
+               "Access point generation for {} did not meet :{}",
+               inst_term->getName(),
+               unmet_requirements);
   }
 
   // inst_term aps are written back here if not early stopped

@@ -56,7 +56,7 @@ cc_library(
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",
-        "@org_llvm_openmp//:openmp",
+        "@openmp//:openmp",
         "@tk_tcl//:tcl",
     ],
 )

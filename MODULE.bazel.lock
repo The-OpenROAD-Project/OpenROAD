@@ -133,7 +133,6 @@
     "https://bcr.bazel.build/modules/boost.detail/1.83.0/MODULE.bazel": "9bbd10b5c30d0c17908fd0c94e9a26f4899540d1c1a97088911d1195feb98da9",
     "https://bcr.bazel.build/modules/boost.dynamic_bitset/1.83.0.bcr.1/MODULE.bazel": "2093a9d09159b97ada67ed370492f61c775ae7df5018c8ba9c69053ed7813dab",
     "https://bcr.bazel.build/modules/boost.dynamic_bitset/1.83.0.bcr.1/source.json": "c8470feff0d94ef0c950dfa6b214cc119bbaae95355e27838b9d295c7b222b21",
-    "https://bcr.bazel.build/modules/boost.dynamic_bitset/1.83.0/MODULE.bazel": "8d2f0d7289219e8fd6391d1c64b1beefdd39ccffdf750ce63b83cccfe81ce9a1",
     "https://bcr.bazel.build/modules/boost.endian/1.83.0.bcr.1/MODULE.bazel": "334ce9f6e18c951767261b1e0050bd1b810607b0e508cfbf9ed03e20c6950b2f",
     "https://bcr.bazel.build/modules/boost.endian/1.83.0.bcr.2/MODULE.bazel": "d8e974127aa71ecb83ddaab5903038fd18d683ce4ac619fe2ef01539d48444e8",
     "https://bcr.bazel.build/modules/boost.endian/1.83.0.bcr.2/source.json": "c951ce2ddc24d19d474b52ebcf0986cbcbd99ad082becfc42768b5b2f04adfbc",
@@ -174,8 +173,8 @@
     "https://bcr.bazel.build/modules/boost.io/1.83.0.bcr.1/MODULE.bazel": "ce3b42ee33880f7250263a158c51b6c33c38ccbff754b78703c8af3f842e1cb1",
     "https://bcr.bazel.build/modules/boost.io/1.83.0.bcr.1/source.json": "94e74cc68d9ba9821aa35c207a943c8140856fbc494b3524d3729f0caa9e97db",
     "https://bcr.bazel.build/modules/boost.io/1.83.0/MODULE.bazel": "47457a879a81af920b096b76affd242f898fdf406aec12c62c6772a84aa0e0a0",
-    "https://bcr.bazel.build/modules/boost.iostreams/1.83.0/MODULE.bazel": "22624957ccd81622ecfcfb8486871787a828f954f554ee74e62f94738d68d6ce",
-    "https://bcr.bazel.build/modules/boost.iostreams/1.83.0/source.json": "236736c0c3678fb4f9053020248ba4e074617b7954d946c26279546c8722763f",
+    "https://bcr.bazel.build/modules/boost.iostreams/1.83.0.bcr.2/MODULE.bazel": "696dc3e7ba8557c5df20981b0e48e5f19196f5fa33fb7c3cb95e98e59f61b9df",
+    "https://bcr.bazel.build/modules/boost.iostreams/1.83.0.bcr.2/source.json": "3bc5f3725df4f3cfd2a5d59e077ee49c0fe1310197715d9327d5bc5de173518f",
     "https://bcr.bazel.build/modules/boost.iterator/1.83.0.bcr.1/MODULE.bazel": "6ac7783146113154a83e841bfa4449105718006378edff7fbfc53aeddf00812b",
     "https://bcr.bazel.build/modules/boost.iterator/1.83.0.bcr.1/source.json": "16e10bfe39dd3096147160668219e7a9bb8a42bbce5bd6a8a9bfcb9c428f7912",
     "https://bcr.bazel.build/modules/boost.iterator/1.83.0/MODULE.bazel": "a526477248e085c73e8059708b61b9238536f923ede8c310e979aec4672f2e5d",
@@ -241,7 +240,6 @@
     "https://bcr.bazel.build/modules/boost.qvm/1.83.0.bcr.2/source.json": "9b2876ab3bff17812e098b11fd2a2e597e651f05119f4cf0ee0e953a037fb8b3",
     "https://bcr.bazel.build/modules/boost.random/1.83.0.bcr.1/MODULE.bazel": "cabe3ba820c9588a9ca22548b88ad8c4b307be085691b286ff0dae8a46b25fa0",
     "https://bcr.bazel.build/modules/boost.random/1.83.0.bcr.1/source.json": "5cc5c8c13e525c5b1c12ea5b31359a16bfaf25b750c0601c0624b9342872e05d",
-    "https://bcr.bazel.build/modules/boost.random/1.83.0/MODULE.bazel": "e7b05549fc0fad578911a63c05ffe5c6102cb7bc399d8cc762aa3d5ad73ba30c",
     "https://bcr.bazel.build/modules/boost.range/1.83.0.bcr.1/MODULE.bazel": "136d623462d1d5c7cf79df83b5ce17a8582a92abb116da9d88c5e5594e5a7d92",
     "https://bcr.bazel.build/modules/boost.range/1.83.0.bcr.1/source.json": "f99062101034f19d9bf2bef3e07cc99bf192640b72560663227e5375efd1e144",
     "https://bcr.bazel.build/modules/boost.range/1.83.0/MODULE.bazel": "ceba0feb376949eecb77944bc37ac434261dede457fc449958164fca5d1430db",
@@ -558,8 +556,8 @@
     "https://bcr.bazel.build/modules/swig/4.3.0/source.json": "ea8dac67896e3a623cd92c48573a351c4bab1537f5aeb210c1c1e049994dd599",
     "https://bcr.bazel.build/modules/tcmalloc/0.0.0-20250331-43fcf6e/MODULE.bazel": "2c96170a724216604dd73a8295eeb234cdd45a34bfd212ed2e951d4463422ab8",
     "https://bcr.bazel.build/modules/tcmalloc/0.0.0-20250331-43fcf6e/source.json": "ee9f0745abbe18ae6e3c848409058d870cab6add7fa1daaf02443e502aa500a3",
-    "https://bcr.bazel.build/modules/toolchains_llvm/1.3.0/MODULE.bazel": "6e02731e51f7eb2ec4b01c5e79e722bf738a631f6e03d9b4917cbf2cb027bee1",
-    "https://bcr.bazel.build/modules/toolchains_llvm/1.3.0/source.json": "4ce0373a89c6df34dd37cd67285bb871d8e225d30dcb67dd093e077a04bbbb71",
+    "https://bcr.bazel.build/modules/toolchains_llvm/1.4.0/MODULE.bazel": "05239402b7374293359c2f22806f420b75aa5d6f4b15a2eaa809a2c214d58b31",
+    "https://bcr.bazel.build/modules/toolchains_llvm/1.4.0/source.json": "229a516d282b17a82be54c6e3ae220a1b750fb55a8495567e5c7a9d09423f3e2",
     "https://bcr.bazel.build/modules/upb/0.0.0-20211020-160625a/MODULE.bazel": "6cced416be2dc5b9c05efd5b997049ba795e5e4e6fafbe1624f4587767638928",
     "https://bcr.bazel.build/modules/upb/0.0.0-20220923-a547704/MODULE.bazel": "7298990c00040a0e2f121f6c32544bab27d4452f80d9ce51349b1a28f3005c43",
     "https://bcr.bazel.build/modules/upb/0.0.0-20230516-61a97ef/MODULE.bazel": "c0df5e35ad55e264160417fd0875932ee3c9dda63d9fccace35ac62f45e1b6f9",
@@ -579,8 +577,6 @@
     "https://bcr.bazel.build/modules/zstr/1.0.7/MODULE.bazel": "e6a2129c3747123db5b11375848865a8d03c0f27672506f694f9939b556eab7d",
     "https://bcr.bazel.build/modules/zstr/1.0.7/source.json": "d241d7f5f0330cfb5ffb1af66845f98479a3e1da094ad8f9bf3ec41c4e05499a",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/bazel_registry.json": "not found",
-    "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/chisel/7.0.0/MODULE.bazel": "e02803eb694145627f6ba114a32fbd4404db820d08120efffc9a3e036a216f83",
-    "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/chisel/7.0.0/source.json": "0aa555fbbea2910274ec1fb99d27ac130849ca5ea2b8f31838cabf739560af9b",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/rules_verilator/5.034/MODULE.bazel": "5b52208785a180fad253fdaba72daa144cec7ad42a06029c8021215c2777f45f",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/rules_verilator/5.034/source.json": "0ba62b7f2a39e28acdad1c564a8368f8a418c15e7c1d4744577472e58c298759",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/systemc/3.0.1/MODULE.bazel": "8d8d031d9dee3db5e17a5096abc809dd9b8480505afe43db280b143a2fa20df8",
@@ -1087,8 +1083,8 @@
     },
     "@@bazel-orfs~//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "D8F4lxkxZKld3gfouPynfNto900AoYgU58+xOY+BTeA=",
-        "usagesDigest": "I3MUK98MGbXC+tBrA/aCqRMxkNXWzSJp5FpkEA4XEkk=",
+        "bzlTransitiveDigest": "opZMguyG+UPmDQ6vhzXe/u0WnKyao2m9IAQt+JWkhcA=",
+        "usagesDigest": "7Z+4PMSbHzx9aIrj+bG/VcpsQ7RUfMrGvyjGFg9B/iY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1108,8 +1104,8 @@
             "bzlFile": "@@bazel-orfs~//:docker.bzl",
             "ruleClassName": "docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-2883-ge22e4fc7",
-              "sha256": "6ad0b1b7fbf290f33f0050ead4da181c83c6e8a9337b65f5f9cff65d67788424",
+              "image": "docker.io/openroad/orfs:v3.0-3145-ge35c9b1f",
+              "sha256": "d2875b4834a7c01dab79b37816e8730c0505fabb98c112f6afa69577e5163c87",
               "build_file": "@@bazel-orfs~//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -1124,7 +1120,9 @@
               "makefile": "@@bazel-orfs~~orfs_repositories~docker_orfs//:makefile",
               "pdk": "@@bazel-orfs~~orfs_repositories~docker_orfs//:asap7",
               "makefile_yosys": "@@bazel-orfs~~orfs_repositories~docker_orfs//:makefile_yosys",
-              "openroad": "@@//:openroad"
+              "openroad": "@@//:openroad",
+              "yosys": "@@bazel-orfs~~orfs_repositories~docker_orfs//:yosys",
+              "yosys_abc": "@@bazel-orfs~~orfs_repositories~docker_orfs//:yosys-abc"
             }
           }
         },
@@ -16601,7 +16599,7 @@
     "@@rules_scala~//scala/extensions:config.bzl%scala_config": {
       "general": {
         "bzlTransitiveDigest": "TYEDBdoN7s4wE8er7JwzFt7+3iw57BHsTSLyWmxbgZo=",
-        "usagesDigest": "efcJUJECqhuyw/xR2qdIAB5zGP89i3dmZL1gtPviJGs=",
+        "usagesDigest": "heBOrKf6AD9dBuQJQwlfrGOwBfT6pXHbgWYJHK+Di2Y=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {
@@ -16627,7 +16625,7 @@
     "@@rules_scala~//scala/extensions:deps.bzl%scala_deps": {
       "general": {
         "bzlTransitiveDigest": "T7l4IjF0mYrxoVLMrPbSTAFlIaia6tmiMt2UQ8X4vdE=",
-        "usagesDigest": "EMTf9Wl1jFzm/a1aud4nfFWxP5qSHMFKfi9kQo5y6tY=",
+        "usagesDigest": "HlmUcUs6MryoJPerRK74GS9mvPId1TVO4gdFlSKgKFQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -17733,8 +17731,8 @@
     },
     "@@toolchains_llvm~//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
-        "bzlTransitiveDigest": "DbHjmsbc+5UNcxe3NTxwxbUMxZqW/A99vu2JcopPuJk=",
-        "usagesDigest": "PBgeHvqqldjtrvNsFjXY1/tf5SqQWyasJBzOlxbPw0s=",
+        "bzlTransitiveDigest": "afRF0aFOIUrkYl3o040WQ606ep1qciEXzjnAxT3Kek8=",
+        "usagesDigest": "nuMjhHLQwJOC+sRTxXppWwp4ZhlL/GHVGmhv/63o0b0=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -17750,7 +17748,7 @@
               "exec_os": "",
               "libclang_rt": {},
               "llvm_mirror": "",
-              "llvm_version": "19.1.1",
+              "llvm_version": "20.1.0",
               "llvm_versions": {},
               "netrc": "",
               "sha256": {},
@@ -17779,7 +17777,7 @@
               "link_flags": {},
               "link_libs": {},
               "llvm_versions": {
-                "": "19.1.1"
+                "": "20.1.0"
               },
               "opt_compile_flags": {},
               "opt_link_flags": {},
