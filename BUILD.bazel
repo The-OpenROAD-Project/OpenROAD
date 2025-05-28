@@ -103,7 +103,6 @@ OPENROAD_COPTS = [
     "-Wno-unused-parameter",
     # FIXME reenable when warnings are fixed
     "-Wno-unused-but-set-variable",
-    "-fopenmp"
 ]
 
 OPENROAD_DEFINES = [

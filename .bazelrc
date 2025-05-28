@@ -15,6 +15,8 @@ common --incompatible_disallow_empty_glob
 build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
 build --cxxopt "-ffp-contract=off" --host_cxxopt "-ffp-contract=off"
+# Use OpenMP for everything, not just OpenROAD.
+build --cxxopt "-fopenmp"          --host_cxxopt "-fopenmp"
 
 # allow exceptions.
 build  --cxxopt=-fexceptions    --host_cxxopt=-fexceptions

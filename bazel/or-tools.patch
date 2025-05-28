@@ -1,0 +1,168 @@
+diff -u -r orig-or-tools/ortools/glop/BUILD.bazel or-tools-9.12/ortools/glop/BUILD.bazel
+--- orig-or-tools/ortools/glop/BUILD.bazel	2025-02-12 17:15:38.000000000 +0100
++++ or-tools-9.12/ortools/glop/BUILD.bazel	2025-05-28 09:17:20.792076032 +0200
+@@ -312,6 +312,7 @@
+         "//ortools/util:random_engine",
+         "//ortools/util:stats",
+         "@com_google_absl//absl/random:bit_gen_ref",
++        "@openroad@openmp//:openmp",
+     ],
+ )
+ 
+diff -u -r orig-or-tools/ortools/math_opt/solvers/BUILD.bazel or-tools-9.12/ortools/math_opt/solvers/BUILD.bazel
+--- orig-or-tools/ortools/math_opt/solvers/BUILD.bazel	2025-02-12 17:15:38.000000000 +0100
++++ or-tools-9.12/ortools/math_opt/solvers/BUILD.bazel	2025-05-28 09:13:26.971361311 +0200
+@@ -383,6 +383,7 @@
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/types:span",
+         "@eigen",
++        "@openroad@openmp//:openmp",
+     ],
+ )
+ 
+diff -u -r orig-or-tools/ortools/pdlp/BUILD.bazel or-tools-9.12/ortools/pdlp/BUILD.bazel
+--- orig-or-tools/ortools/pdlp/BUILD.bazel	2025-02-12 17:15:38.000000000 +0100
++++ or-tools-9.12/ortools/pdlp/BUILD.bazel	2025-05-28 09:16:34.239940412 +0200
+@@ -27,6 +27,7 @@
+         "//ortools/base:threadpool",
+         "@com_google_absl//absl/functional:any_invocable",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -98,6 +99,7 @@
+         "//ortools/base:mathutil",
+         "@com_google_absl//absl/random:distributions",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -114,6 +116,7 @@
+         ":test_util",
+         "//ortools/base:protobuf_util",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -150,6 +153,7 @@
+         "@com_google_absl//absl/time",
+         "@com_google_protobuf//:protobuf",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -178,6 +182,7 @@
+         "@com_google_absl//absl/status:statusor",
+         "@com_google_absl//absl/strings",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -193,6 +198,7 @@
+         "@com_google_absl//absl/status:statusor",
+         "@com_google_absl//absl/strings",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -210,6 +216,7 @@
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/status:statusor",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -233,6 +240,7 @@
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/strings:str_format",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -249,6 +257,7 @@
+         "//ortools/base:mathutil",
+         "@com_google_absl//absl/random:distributions",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -265,6 +274,7 @@
+         ":solve_log_cc_proto",
+         ":test_util",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -282,6 +292,7 @@
+         "@com_google_absl//absl/memory",
+         "@com_google_absl//absl/strings",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -295,6 +306,7 @@
+         ":sharder",
+         ":test_util",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -310,6 +322,7 @@
+         "@com_google_absl//absl/synchronization",
+         "@com_google_absl//absl/time",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -325,6 +338,7 @@
+         "//ortools/base:mathutil",
+         "@com_google_absl//absl/random:distributions",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -388,6 +402,7 @@
+         "//ortools/base:gmock",
+         "@com_google_absl//absl/types:span",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -400,6 +415,7 @@
+         "//ortools/base",
+         "@com_google_absl//absl/types:span",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -416,6 +432,7 @@
+         "//ortools/base:mathutil",
+         "@com_google_absl//absl/algorithm:container",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
+ 
+@@ -432,5 +449,6 @@
+         ":trust_region",
+         "@com_google_absl//absl/strings",
+         "@eigen",
++        "@openroad@openmp//:openmp",        
+     ],
+ )
