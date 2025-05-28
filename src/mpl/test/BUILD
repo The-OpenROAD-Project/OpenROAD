@@ -102,7 +102,11 @@ filegroup(
         srcs = [":regression_resources"] + glob(
             [
                 test_name + ".*",
-            ],
+            ] + {
+                "io_constraints6": ["testcases/io_constraints6.def"],
+                "io_constraints7": ["testcases/io_constraints6.def"],
+                "io_constraints8": ["testcases/io_constraints6.def"],
+            }.get(test_name, []),
         ),
     )
     for test_name in ALL_TESTS
