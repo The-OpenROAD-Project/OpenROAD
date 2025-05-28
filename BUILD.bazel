@@ -1009,6 +1009,7 @@ cc_library(
         "-Wformat-security",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
+        "-fopenmp",
     ],
     features = [
         "-use_header_modules",
@@ -1030,6 +1031,7 @@ cc_library(
     deps = [
         "@cudd",
         "@eigen",
+        "@openmp//:openmp",
         "@rules_flex//flex:current_flex_toolchain",
         "@tk_tcl//:tcl",
         "@zlib",
