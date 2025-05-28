@@ -526,9 +526,10 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
   bool violation = false;
   double calculated_value = 0.0;
   double required_value = 0.0;
-  // If node is connected to diffusion area, compare with diffusion area ratio.
-  // Otherwise compare with area ratio
-  if (info.iterm_diff_area != 0) {
+  // If node is connected to diffusion area or ANTENNAAREARATIO is not
+  // defined, compare with ANTENNADIFFAREARATIO. Otherwise compare with
+  // ANTENNAAREARATIO.
+  if (info.iterm_diff_area != 0 || PAR_ratio == 0) {
     if (diff_PAR_PWL_ratio != 0) {
       violation = info.diff_PAR > diff_PAR_PWL_ratio;
       info.excess_ratio_PAR
@@ -541,13 +542,9 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
       violation = info.PAR > PAR_ratio;
       info.excess_ratio_PAR
           = std::max(info.excess_ratio_PAR, info.PAR / PAR_ratio);
-      calculated_value = info.PAR;
-      required_value = PAR_ratio;
-    } else if (diff_PAR_PWL_ratio != 0.0) {
-      violation = info.diff_PAR > diff_PAR_PWL_ratio;
-      calculated_value = info.diff_PAR;
-      required_value = diff_PAR_PWL_ratio;
     }
+    calculated_value = info.PAR;
+    required_value = PAR_ratio;
   }
 
   if (report) {
@@ -585,30 +582,27 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
   diff_PSR_PWL_ratio *= (1.0 - ratio_margin / 100.0);
 
   bool violation = false;
-  double calculate_value = 0.0;
+  double calculated_value = 0.0;
   double required_value = 0.0;
-  // If node is connected to diffusion area, compare with diffusion side area
-  // ratio. Otherwise compare with side area ratio
-  if (info.iterm_diff_area != 0) {
+  // If node is connected to diffusion area or ANTENNASIDEAREARATIO is not
+  // defined, compare with ANTENNADIFFSIDEAREARATIO. Otherwise compare with
+  // ANTENNASIDEAREARATIO.
+  if (info.iterm_diff_area != 0 || PSR_ratio == 0) {
     if (diff_PSR_PWL_ratio != 0) {
       violation = info.diff_PSR > diff_PSR_PWL_ratio;
       info.excess_ratio_PSR
           = std::max(info.excess_ratio_PSR, info.diff_PSR / diff_PSR_PWL_ratio);
     }
-    calculate_value = info.diff_PSR;
+    calculated_value = info.diff_PSR;
     required_value = diff_PSR_PWL_ratio;
   } else {
     if (PSR_ratio != 0) {
       violation = info.PSR > PSR_ratio;
       info.excess_ratio_PSR
           = std::max(info.excess_ratio_PSR, info.PSR / PSR_ratio);
-      calculate_value = info.PSR;
-      required_value = PSR_ratio;
-    } else if (diff_PSR_PWL_ratio != 0.0) {
-      violation = info.diff_PSR > diff_PSR_PWL_ratio;
-      calculate_value = info.diff_PSR;
-      required_value = diff_PSR_PWL_ratio;
     }
+    calculated_value = info.PSR;
+    required_value = PSR_ratio;
   }
 
   if (report) {
@@ -616,7 +610,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
         "      Partial area ratio: {:7.2f}\n      Required ratio: "
         "{:7.2f} "
         "(Side area) {}",
-        calculate_value,
+        calculated_value,
         required_value,
         violation ? "(VIOLATED)" : "");
     net_report.report += psr_report + "\n";
@@ -641,26 +635,23 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
       = getPwlFactor(diffCAR, info.iterm_diff_area, 0);
 
   bool violation = false;
-  double calculate_value = 0.0;
+  double calculated_value = 0.0;
   double required_value = 0.0;
-  // If node is connected to diffusion area, compare with cum diffusion area
-  // ratio. Otherwise compare with cumulative area ratio
-  if (info.iterm_diff_area != 0) {
+  // If node is connected to diffusion area or ANTENNACUMAREARATIO is not
+  // defined, compare with ANTENNACUMDIFFAREARATIO. Otherwise compare with
+  // ANTENNACUMAREARATIO.
+  if (info.iterm_diff_area != 0 || CAR_ratio == 0) {
     if (diff_CAR_PWL_ratio != 0) {
       violation = info.diff_CAR > diff_CAR_PWL_ratio;
     }
-    calculate_value = info.diff_CAR;
+    calculated_value = info.diff_CAR;
     required_value = diff_CAR_PWL_ratio;
   } else {
     if (CAR_ratio != 0) {
       violation = info.CAR > CAR_ratio;
-      calculate_value = info.CAR;
-      required_value = CAR_ratio;
-    } else if (diff_CAR_PWL_ratio != 0.0) {
-      violation = info.diff_CAR > diff_CAR_PWL_ratio;
-      calculate_value = info.diff_CAR;
-      required_value = diff_CAR_PWL_ratio;
     }
+    calculated_value = info.CAR;
+    required_value = CAR_ratio;
   }
 
   if (report) {
@@ -668,7 +659,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
         "      Cumulative area ratio: {:7.2f}\n      Required ratio: "
         "{:7.2f} "
         "(Cumulative area) {}",
-        calculate_value,
+        calculated_value,
         required_value,
         violation ? "(VIOLATED)" : "");
     net_report.report += car_report + "\n";
@@ -693,26 +684,23 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
       = getPwlFactor(diffCSR, info.iterm_diff_area, 0);
 
   bool violation = false;
-  double calculate_value = 0.0;
+  double calculated_value = 0.0;
   double required_value = 0.0;
-  // If node is connected to diffusion area, compare with cum diffusion side
-  // area ratio. Otherwise compare with cumulative side area ratio
-  if (info.iterm_diff_area != 0) {
+  // If node is connected to diffusion area or ANTENNACUMSIDEAREARATIO is not
+  // defined, compare with ANTENNACUMDIFFSIDEAREARATIO. Otherwise compare with
+  // ANTENNACUMSIDEAREARATIO.
+  if (info.iterm_diff_area != 0 || CSR_ratio == 0) {
     if (diff_CSR_PWL_ratio != 0) {
       violation = info.diff_CSR > diff_CSR_PWL_ratio;
     }
-    calculate_value = info.diff_CSR;
+    calculated_value = info.diff_CSR;
     required_value = diff_CSR_PWL_ratio;
   } else {
     if (CSR_ratio != 0) {
       violation = info.CSR > CSR_ratio;
-      calculate_value = info.CSR;
-      required_value = CSR_ratio;
-    } else if (diff_CSR_PWL_ratio != 0.0) {
-      violation = info.diff_CSR > diff_CSR_PWL_ratio;
-      calculate_value = info.diff_CSR;
-      required_value = diff_CSR_PWL_ratio;
     }
+    calculated_value = info.CSR;
+    required_value = CSR_ratio;
   }
 
   if (report) {
@@ -720,7 +708,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
         "      Cumulative area ratio: {:7.2f}\n      Required ratio: "
         "{:7.2f} "
         "(Cumulative side area) {}",
-        calculate_value,
+        calculated_value,
         required_value,
         violation ? "(VIOLATED)" : "");
     net_report.report += csr_report + "\n";
@@ -829,6 +817,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_to_report_.at(db_net) = net_report;
   }
 
+  std::map<odb::dbITerm*, int> diodes_added;
   std::map<odb::dbTechLayer*, std::set<odb::dbITerm*>> pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
@@ -915,6 +904,9 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           pin_added[violation_layer].insert(gate);
           std::vector<odb::dbITerm*> gates_for_diode_insertion;
           gates_for_diode_insertion.push_back(gate);
+          diode_count_per_gate
+              = std::max(0, diode_count_per_gate - diodes_added[gate]);
+          diodes_added[gate] += diode_count_per_gate;
           // save antenna violation
           if (violated) {
             antenna_violations.push_back({layer->getRoutingLevel(),
