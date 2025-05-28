@@ -227,11 +227,21 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 std::vector<odb::dbInst*> ClusteringEngine::getIOPads() const
 {
   std::vector<odb::dbInst*> io_pads;
+
   for (odb::dbInst* inst : block_->getInsts()) {
+    const odb::dbMasterType& master_type = inst->getMaster()->getType();
+
+    // Skip PADs without core signal connections.
+    if (master_type == odb::dbMasterType::PAD_POWER
+        || master_type == odb::dbMasterType::PAD_SPACER) {
+      continue;
+    }
+
     if (inst->isPad()) {
       io_pads.push_back(inst);
     }
   }
+
   return io_pads;
 }
 
