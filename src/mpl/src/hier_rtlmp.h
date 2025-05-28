@@ -124,8 +124,8 @@ class HierRTLMP
  private:
   struct PinAccessDepthLimits
   {
-    float vertical{0.0f};
-    float horizontal{0.0f};
+    Interval x;
+    Interval y;
   };
 
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
