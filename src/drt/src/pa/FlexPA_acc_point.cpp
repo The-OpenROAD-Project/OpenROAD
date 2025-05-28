@@ -157,10 +157,10 @@ void FlexPA::genAPCosted(
     const frLayerNum base_layer_num,
     const frLayerNum layer_num,
     const gtl::rectangle_data<frCoord>& rect,
-    const bool is_curr_layer_horz,
     const int offset)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
+  const bool is_curr_layer_horz = layer->isHorizontal();
   const auto min_width_layer = layer->getMinWidth();
   const int rect_min = is_curr_layer_horz ? gtl::yl(rect) : gtl::xl(rect);
   const int rect_max = is_curr_layer_horz ? gtl::yh(rect) : gtl::xh(rect);
@@ -319,6 +319,7 @@ void FlexPA::createMultipleAccessPoints(
     allow_planar = true;
     allow_via = false;
   }
+  const int aps_size_before = aps.size();
   // build points;
   for (auto& [x_coord, cost_x] : x_coords) {
     for (auto& [y_coord, cost_y] : y_coords) {
@@ -339,22 +340,34 @@ void FlexPA::createMultipleAccessPoints(
       }
     }
   }
+  const int new_aps_size = aps.size() - aps_size_before;
+  if (inst_term && isStdCell(inst_term->getInst())) {
+#pragma omp atomic
+    std_cell_pin_gen_ap_cnt_ += new_aps_size;
+  }
+  if (inst_term && isMacroCell(inst_term->getInst())) {
+#pragma omp atomic
+    macro_cell_pin_gen_ap_cnt_ += new_aps_size;
+  }
 }
 
 /**
  * @details Generates all necessary access points from a rectangle shape
  * In this case a rectangle is one of the pin shapes of the pin
  */
-void FlexPA::genAPsFromRect(frInstTerm* inst_term,
-                            std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                            std::set<std::pair<Point, frLayerNum>>& apset,
-                            const gtl::rectangle_data<frCoord>& rect,
+void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             const frLayerNum layer_num,
+                            std::map<frCoord, frAccessPointEnum>& x_coords,
+                            std::map<frCoord, frAccessPointEnum>& y_coords,
                             const frAccessPointEnum lower_type,
                             const frAccessPointEnum upper_type,
                             const bool is_macro_cell_pin)
 {
-  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  if (OnlyAllowOnGridAccess(layer_num, is_macro_cell_pin)
+      && upper_type != frAccessPointEnum::OnGrid) {
+    return;
+  }
+  frLayer* layer = getDesign()->getTech()->getLayer(layer_num);
   const auto min_width_layer1 = layer->getMinWidth();
   if (std::min(gtl::delta(rect, gtl::HORIZONTAL),
                gtl::delta(rect, gtl::VERTICAL))
@@ -373,8 +386,6 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
   auto& layer2_track_coords = track_coords_[second_layer_num];
   const bool is_layer1_horz = layer->isHorizontal();
 
-  std::map<frCoord, frAccessPointEnum> x_coords;
-  std::map<frCoord, frAccessPointEnum> y_coords;
   int hwidth = layer->getWidth() / 2;
   bool use_center_line = false;
   if (is_macro_cell_pin && !layer->getLef58RightWayOnGridOnlyConstraint()) {
@@ -415,7 +426,6 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
                   layer_num,
                   second_layer_num,
                   rect,
-                  !is_layer1_horz,
                   offset);
     }
   }
@@ -427,8 +437,7 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
                     layer1_track_coords,
                     layer_num,
                     layer_num,
-                    rect,
-                    is_layer1_horz);
+                    rect);
       }
     }
   } else {
@@ -437,25 +446,10 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
     }
   }
-
-  frAccessPointEnum this_lower_type = lower_type;
-  if (use_center_line && is_layer1_horz) {
-    this_lower_type = frAccessPointEnum::OnGrid;
-  }
-
-  createMultipleAccessPoints(inst_term,
-                             aps,
-                             apset,
-                             rect,
-                             layer_num,
-                             x_coords,
-                             y_coords,
-                             this_lower_type,
-                             upper_type);
 }
 
-bool FlexPA::isUpperLayerOnGridOnly(const frLayerNum layer_num,
-                                    const bool is_macro_cell_pin)
+bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
+                                   const bool is_macro_cell_pin)
 {
   // lower layer is current layer
   // rightway on grid only forbid off track up via access on upper layer
@@ -471,35 +465,32 @@ bool FlexPA::isUpperLayerOnGridOnly(const frLayerNum layer_num,
 }
 
 void FlexPA::genAPsFromLayerShapes(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    std::set<std::pair<Point, frLayerNum>>& apset,
+    LayerToRectCoordsMap& layer_rect_to_coords,
     frInstTerm* inst_term,
     const gtl::polygon_90_set_data<frCoord>& layer_shapes,
     const frLayerNum layer_num,
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  if (!getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
-    return;
-  }
   // IO term is treated as the MacroCellPin as the top block
   bool is_macro_cell_pin = inst_term ? isMacroCell(inst_term->getInst()) : true;
 
-  if (isUpperLayerOnGridOnly(layer_num, is_macro_cell_pin)
-      && upper_type != frAccessPointEnum::OnGrid) {
-    return;
-  }
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
   for (auto& bbox_rect : maxrects) {
-    genAPsFromRect(inst_term,
-                   aps,
-                   apset,
-                   bbox_rect,
+    std::map<frCoord, frAccessPointEnum> x_coords;
+    std::map<frCoord, frAccessPointEnum> y_coords;
+
+    genAPsFromRect(bbox_rect,
                    layer_num,
+                   x_coords,
+                   y_coords,
                    lower_type,
                    upper_type,
                    is_macro_cell_pin);
+
+    layer_rect_to_coords[layer_num].push_back(
+        {bbox_rect, {x_coords, y_coords}});
   }
 }
 
@@ -509,9 +500,32 @@ void FlexPA::genAPsFromLayerShapes(
 // lower center  2, upper on-grid 0 = 2
 // lower center  2, upper center  2 = 4
 
-void FlexPA::genAPsFromPinShapes(
+void FlexPA::createAPsFromLayerToRectCoordsMap(
+    const LayerToRectCoordsMap& layer_rect_to_coords,
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
+    frInstTerm* inst_term,
+    const frAccessPointEnum lower_type,
+    const frAccessPointEnum upper_type)
+{
+  for (const auto& [layer_num, rect_coords] : layer_rect_to_coords) {
+    for (const auto& [rect, coords] : rect_coords) {
+      const auto& [x_coords, y_coords] = coords;
+      createMultipleAccessPoints(inst_term,
+                                 aps,
+                                 apset,
+                                 rect,
+                                 layer_num,
+                                 x_coords,
+                                 y_coords,
+                                 lower_type,
+                                 upper_type);
+    }
+  }
+}
+
+void FlexPA::genAPsFromPinShapes(
+    LayerToRectCoordsMap& layer_rect_to_coords,
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     const frAccessPointEnum lower_type,
@@ -522,8 +536,7 @@ void FlexPA::genAPsFromPinShapes(
   for (const auto& layer_shapes : pin_shapes) {
     if (!layer_shapes.empty()
         && getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
-      genAPsFromLayerShapes(aps,
-                            apset,
+      genAPsFromLayerShapes(layer_rect_to_coords,
                             inst_term,
                             layer_shapes,
                             layer_num,
@@ -1091,7 +1104,6 @@ void FlexPA::updatePinStats(
   }
   bool is_std_cell_pin = isStdCell(inst_term->getInst());
   bool is_macro_cell_pin = isMacroCell(inst_term->getInst());
-
   for (auto& ap : new_aps) {
     if (ap->hasPlanarAccess()) {
       if (is_std_cell_pin) {
@@ -1207,19 +1219,15 @@ bool FlexPA::genPinAccessCostBounded(
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
+
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
+  LayerToRectCoordsMap layer_rect_to_coords;
   genAPsFromPinShapes(
-      new_aps, apset, inst_term, pin_shapes, lower_type, upper_type);
+      layer_rect_to_coords, inst_term, pin_shapes, lower_type, upper_type);
+  createAPsFromLayerToRectCoordsMap(
+      layer_rect_to_coords, new_aps, apset, inst_term, lower_type, upper_type);
   filterMultipleAPAccesses(
       new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
-  if (is_std_cell_pin) {
-#pragma omp atomic
-    std_cell_pin_gen_ap_cnt_ += new_aps.size();
-  }
-  if (is_macro_cell_pin) {
-#pragma omp atomic
-    macro_cell_pin_gen_ap_cnt_ += new_aps.size();
-  }
   if (graphics_) {
     graphics_->setAPs(new_aps, lower_type, upper_type);
   }

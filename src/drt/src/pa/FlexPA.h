@@ -37,6 +37,12 @@ namespace drt {
 using ViaRawPriorityTuple
     = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
 
+using RectCoordMap = std::pair<gtl::rectangle_data<frCoord>,
+                               std::pair<std::map<frCoord, frAccessPointEnum>,
+                                         std::map<frCoord, frAccessPointEnum>>>;
+
+using LayerToRectCoordsMap = std::map<int, std::vector<RectCoordMap>>;
+
 struct frInstLocationComp
 {
   bool operator()(const frInst* lhs, const frInst* rhs) const
@@ -261,6 +267,14 @@ class FlexPA
   std::vector<gtl::polygon_90_set_data<frCoord>>
   mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
 
+  void createAPsFromLayerToRectCoordsMap(
+      const LayerToRectCoordsMap& layer_rect_to_coords,
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      frInstTerm* inst_term,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
+
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
    * @brief Generates all necessary access points from all pin_shapes (pin)
@@ -273,29 +287,15 @@ class FlexPA
    * @param upper_type highest access type considered
    */
   void genAPsFromPinShapes(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
+      LayerToRectCoordsMap& layer_rect_to_coords,
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
 
   /**
-   * @brief Determines if the upper layer to the passed layer_num only allows
-   * for onGrid access points
-   *
-   * @param layer_num the layer number
-   * @param is_macro_cell_pin if the current pin belongs to a macro
-   *
-   * @returns True if only allow onGrid access
-   */
-  bool isUpperLayerOnGridOnly(frLayerNum layer_num, bool is_macro_cell_pin);
-
-  /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
    *
-   * @param aps vector of access points that will be filled
-   * @param apset set of access points data (auxilary)
    * @param inst_term instance terminal, owner of the access points
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
@@ -303,8 +303,7 @@ class FlexPA
    * @param upper_type highest access type considered
    */
   void genAPsFromLayerShapes(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
+      LayerToRectCoordsMap& layer_rect_to_coords,
       frInstTerm* inst_term,
       const gtl::polygon_90_set_data<frCoord>& layer_shapes,
       frLayerNum layer_num,
@@ -315,18 +314,15 @@ class FlexPA
    * @brief Generates all necessary access points from a rectangle shape (pin
    * fig)
    *
-   * @param aps vector of access points that will be filled
-   * @param apset set of access points data (auxilary)
    * @param layer_num layer in which the rectangle exists
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    * @param is_macro_cell_pin if the pin belongs to a macro
    */
-  void genAPsFromRect(frInstTerm* inst_term,
-                      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                      std::set<std::pair<Point, frLayerNum>>& apset,
-                      const gtl::rectangle_data<frCoord>& rect,
+  void genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                       frLayerNum layer_num,
+                      std::map<frCoord, frAccessPointEnum>& x_coords,
+                      std::map<frCoord, frAccessPointEnum>& y_coords,
                       frAccessPointEnum lower_type,
                       frAccessPointEnum upper_type,
                       bool is_macro_cell_pin);
@@ -398,22 +394,24 @@ class FlexPA
                    frLayerNum base_layer_num,
                    frLayerNum layer_num,
                    const gtl::rectangle_data<frCoord>& rect,
-                   bool is_curr_layer_horz,
                    int offset = 0);
+
+  bool OnlyAllowOnGridAccess(frLayerNum layer_num, bool is_macro_cell_pin);
 
   /**
    * @brief Creates multiple access points from the coordinates
    *
+   * @param inst_term the instance terminal
    * @param aps Vector contaning the access points
    * @param apset Set containing access points data (auxilary)
    * @param rec Rect limiting where the point can be
+   * @param layer_num access point layer
    * @param x_coords map of access point x coords
    * @param y_coords map of access point y coords
    * @param lower_type access cost of the lower layer
    * @param upper_type access cost of the upper layer
    */
   void createMultipleAccessPoints(
-
       frInstTerm* inst_term,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
