@@ -292,7 +292,12 @@ set_timing_driven_net_weight_max_cmd(float max)
   return replace->setTimingNetWeightMax(max);
 }
 
-
+void
+set_port_buffer_locking(bool enable)
+{
+  Replace* replace = getReplace();
+  return replace->setPortBufferLocking(enable);
+}
 
 void
 set_debug_cmd(int pause_iterations,

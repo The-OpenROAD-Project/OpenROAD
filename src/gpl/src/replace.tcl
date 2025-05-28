@@ -35,6 +35,7 @@ sta::define_cmd_args "global_placement" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
+    [-lock_port_buffers]
 }
 
 proc global_placement { args } {
@@ -63,8 +64,9 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental\
-      -disable_revert_if_diverge}
+      -incremental \
+      -disable_revert_if_diverge \
+      -lock_port_buffers}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -278,6 +280,8 @@ proc global_placement { args } {
     set k4 [lindex $rc_coefficients 3]
     gpl::set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
+
+  gpl::set_port_buffer_locking [info exists flags(-lock_port_buffers)]
 
   # temp code.
   if { [info exists keys(-pad_left)] } {

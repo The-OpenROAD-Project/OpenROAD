@@ -117,8 +117,11 @@ class Replace
                 int start_iter,
                 bool update_db);
 
+  void setPortBufferLocking(bool enable);
+
  private:
   bool initNesterovPlace(int threads);
+  void lockPortBuffers();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -178,6 +181,7 @@ class Replace
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
   bool disableRevertIfDiverge_ = false;
+  bool lockPortBuffers_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
   Clusters clusters_;

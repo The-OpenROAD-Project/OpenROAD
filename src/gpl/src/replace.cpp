@@ -99,6 +99,8 @@ void Replace::reset()
   timingNetWeightOverflows_.shrink_to_fit();
   timingNetWeightMax_ = 5;
 
+  lockPortBuffers_ = false;
+
   gui_debug_ = false;
   gui_debug_pause_iterations_ = 10;
   gui_debug_update_iterations_ = 10;
@@ -216,6 +218,10 @@ void Replace::doInitialPlace(int threads)
     for (const auto& pb : pbVec_) {
       total_placeable_insts_ += pb->placeInsts().size();
     }
+  }
+
+  if (lockPortBuffers_) {
+    lockPortBuffers();
   }
 
   InitialPlaceVars ipVars;
@@ -572,6 +578,43 @@ void Replace::addTimingNetWeightOverflow(int overflow)
 void Replace::setTimingNetWeightMax(float max)
 {
   timingNetWeightMax_ = max;
+}
+
+void Replace::setPortBufferLocking(bool enable)
+{
+  lockPortBuffers_ = enable;
+}
+
+void Replace::lockPortBuffers()
+{
+  int locked_count = 0;
+  auto block = db_->getChip()->getBlock();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  for (auto db_inst : block->getInsts()) {
+    // Look at instances with placement data in the DB
+    if (db_inst->getPlacementStatus() == odb::dbPlacementStatus::PLACED) {
+      sta::Instance* inst = network->dbToSta(db_inst);
+      // Detect a standard cell buffer
+      if (db_inst->getMaster()->getType() == odb::dbMasterType::CORE
+          && network->libertyCell(inst)
+          && network->libertyCell(inst)->isBuffer()) {
+        bool is_io_buffer = false;
+        for (odb::dbITerm* iterm : db_inst->getITerms()) {
+          if (iterm->getNet() && iterm->getNet()->getITerms().size() == 1
+              && iterm->getNet()->getBTerms().size() == 1) {
+            is_io_buffer = true;
+          }
+        }
+
+        if (is_io_buffer) {
+          pbc_->dbToPb(db_inst)->lock();
+          locked_count++;
+        }
+      }
+    }
+  }
+
+  log_->info(GPL, 139, "Locked {} port buffer instances", locked_count);
 }
 
 }  // namespace gpl
