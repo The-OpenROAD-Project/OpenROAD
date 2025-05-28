@@ -5,13 +5,6 @@ module(
     name = "openroad",
 )
 
-bazel_dep(name = "chisel", version = "7.0.0")
-single_version_override(
-    module_name = "chisel",
-    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
-    version = "7.0.0",
-)
-
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_flex", version = "0.3.1")
@@ -188,6 +181,21 @@ scala_deps.settings(
 )
 scala_deps.scala()
 scala_deps.scalatest()
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "openroad_maven",
+    artifacts = [
+        "org.chipsalliance:chisel_2.13:7.0.0-RC1+22-2cb90ea2-SNAPSHOT",
+        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC1+22-2cb90ea2-SNAPSHOT",
+    ],
+    repositories = [
+        "https://s01.oss.sonatype.org/content/repositories/snapshots",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+use_repo(maven, "openroad_maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

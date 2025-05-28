@@ -200,6 +200,9 @@ chisel_binary(
     srcs = glob(["src/main/scala/**/*.scala"]),
     main_class = "GenerateMockArray",
     resources = glob(["src/main/resources/**/*"]),
+    deps = [
+        "@openroad_maven//:com_github_scopt_scopt_2_13",
+    ],
 )
 
 genrule(
