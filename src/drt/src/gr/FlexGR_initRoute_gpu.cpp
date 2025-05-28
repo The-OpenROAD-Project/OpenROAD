@@ -58,7 +58,8 @@ void FlexGR::initRoute_gpu()
       validNets++;
     }
   }
-  logger_->report("[INFO] {} ( {.2f} ) nets are valid for GR routing.", validNets, 
+  logger_->report("[INFO] {} ( {:.2f} ) nets are valid for GR routing.", 
+                  validNets, 
                   static_cast<float>(validNets) / design_->getTopBlock()->getNets().size());  
   logger_->report("[INFO] Initial congestion map after FLUTE topology generation ...");
   reportCong2D();
@@ -89,10 +90,10 @@ void FlexGR::initRoute_genTopology()
 
     initRoute_rpinMap(net.get());
     initRoute_createPinGCellNodes(net.get());
-    // initRoute_genTopology_net(net.get());
+    initRoute_genTopology_net(net.get());
     // update the congestion map for the aligned segment in the Steiner trees
     // Then we will use pattern routing for the unaligned segments
-    // initRoute_updateCongestion2D_net(net.get(), false);
+    initRoute_updateCongestion2D_net(net.get(), false);
   }
   
   logger_->report("[INFO] Net topology generation done ...");
@@ -251,17 +252,22 @@ void FlexGR::initRoute_rpinMap(frNet* net)
 // Create pinGCellNodes
 void FlexGR::initRoute_createPinGCellNodes(frNet* net)
 {
+  if (net->isGRValid() == false) {
+    return;  // net is not valid for GR routing
+  }
+  
   // auto nodes = net->getNodes();
   auto& gcellIdx2Nodes = net->getGCellIdx2Nodes();
   auto& gcellNodes = net->getPinGCellNodes();
   auto& gcellNode2RPinNodes = net->getGCellNode2RPinNodes();
-  auto& nodes = net->getPinNodes();
+  auto& pinNodes = net->getPinNodes();
+  auto& rootPinNode = pinNodes[0];
 
   // prep for 2D topology generation in case two nodes are more than one rpin in
   // same gcell topology genration works on gcell (center-to-center) level
-  for (auto node : nodes) {
-    odb::Point apLoc = node->getLoc();
-    odb::Point apGCellIdx = design_->getTopBlock()->getGCellIdx(apLoc);
+  for (auto node : pinNodes) {
+    const odb::Point apLoc = node->getLoc();
+    const odb::Point apGCellIdx = design_->getTopBlock()->getGCellIdx(apLoc);
     gcellIdx2Nodes[apGCellIdx].push_back(node);
   }
 
@@ -271,22 +277,23 @@ void FlexGR::initRoute_createPinGCellNodes(frNet* net)
   int sinkIdx = 1;
   int rootIdx = -1;
   int idx = 0;
+  
   for (auto& [gcellIdx, localNodes] : gcellIdx2Nodes) {
     // check of nodes[0] is in localNodes
-    bool hasRoot = rootIdx == -1 && std::find(localNodes.begin(), localNodes.end(), nodes[0]) != localNodes.end();
+    bool hasRoot = (rootIdx == -1) && 
+      (std::find(localNodes.begin(), localNodes.end(), rootPinNode) != localNodes.end());
     auto gcellNode = std::make_unique<frNode>();
     gcellNode->setType(frNodeTypeEnum::frcSteiner);
     gcellNode->setDontMove();  // do not move the gcell node during routing
-    odb::Rect gcellBox = design_->getTopBlock()->getGCellBox(
+    const odb::Rect gcellBox = design_->getTopBlock()->getGCellBox(
         odb::Point(gcellIdx.x(), gcellIdx.y()));
-    odb::Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
+    const odb::Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
               (gcellBox.yMin() + gcellBox.yMax()) / 2);
     gcellNode->setLayerNum(2);
     gcellNode->setLoc(loc);
     if (!hasRoot) {
       gcellNode->setId(net->getNodes().back()->getId() + sinkIdx + 1);
-      gcellNodes[sinkIdx] = gcellNode.get();
-      sinkIdx++;
+      gcellNodes[sinkIdx++] = gcellNode.get();
     } else {
       gcellNode->setId(net->getNodes().back()->getId() + 1);
       gcellNodes[0] = gcellNode.get();
@@ -297,7 +304,14 @@ void FlexGR::initRoute_createPinGCellNodes(frNet* net)
     idx++;
   }
   
-  
+ 
+  if (rootIdx == -1) {
+    logger_->error(utl::DRT, 145, "initRoute_createPinGCellNodes: "
+                   "rootIdx is -1 for net {}, this should not happen.",
+                   net->getName());
+    return;
+  }
+
   net->setRootGCellNode(gcellNodes[0]);
   net->setFirstNonRPinNode(gcellNodes[0]);
   // All these unique_ptrs will be moved to net->addNode()
@@ -311,7 +325,7 @@ void FlexGR::initRoute_createPinGCellNodes(frNet* net)
   // connect rpin node to gcell center node
   for (auto& [gcellNode, localNodes] : gcellNode2RPinNodes) {
     for (auto localNode : localNodes) {
-      if (localNode == nodes[0]) {
+      if (localNode == rootPinNode) {
         gcellNode->setParent(localNode);
         localNode->addChild(gcellNode);
       } else {
@@ -329,6 +343,7 @@ void FlexGR::initRoute_createPinGCellNodes(frNet* net)
 }
 
 
+
 // generate 2D topology, rpin node always connect to center of gcell
 // to be followed by layer assignment
 // In this function, we generate initial topology for the net
@@ -339,14 +354,7 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     return;  // net is not valid for GR routing
   }
 
-  auto& pinGCellNodes = net->getPinGCellNodes();
-  if (pinGCellNodes.size() <= 1) {
-    std::cout << "Error:  net " << net->getName() 
-              << " has only one pinGCellNode, skipping topology generation.\n";
-  }
-  
-
-  
+  auto& pinGCellNodes = net->getPinGCellNodes();  
   std::vector<frNode*> steinerNodes;
   auto root = pinGCellNodes[0];
 
@@ -362,7 +370,7 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
   }
  
   
-  /*
+  
   // temporary to keep using flute here
   stt_builder_->setAlpha(0);
   auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
@@ -464,7 +472,6 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
     }
   }
 
-  
   auto& gcellNode2RPinNodes = net->getGCellNode2RPinNodes();
   auto rootPinNode = net->getRoot();
   // reconnect rpin node to gcell center node
@@ -477,9 +484,6 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
       }
     }
   }    
-
-  */
-
 }
 
 
@@ -553,6 +557,13 @@ bool FlexGR::initRoute_getNodeSegment2D(frNode* node, Point& bpIdx, Point& epIdx
   }
 
   if (bpIdx.x() != epIdx.x() && bpIdx.y() != epIdx.y()) {
+    std::cout << "bpIdx.x = " << bpIdx.x() << "  "
+              << "epIdx.x = " << epIdx.x() << "  "
+              << "bpIdx.x == epIdx.x : " << (bpIdx.x() == epIdx.x()) << std::endl;
+    std::cout << "bpIdx.y = " << bpIdx.y() << "  "
+              << "epIdx.y = " << epIdx.y() << "  "
+              << "bpIdx.y == epIdx.y : " << (bpIdx.y() == epIdx.y()) << std::endl;
+    
     if (errFlag) {
       logger_->error(utl::DRT, 121, 
         "initRoute_getNodeSegment2D: Node segment is not aligned!"
