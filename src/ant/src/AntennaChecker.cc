@@ -541,11 +541,13 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
       violation = info.PAR > PAR_ratio;
       info.excess_ratio_PAR
           = std::max(info.excess_ratio_PAR, info.PAR / PAR_ratio);
+      calculated_value = info.PAR;
+      required_value = PAR_ratio;
     } else if (diff_PAR_PWL_ratio != 0.0) {
       violation = info.diff_PAR > diff_PAR_PWL_ratio;
+      calculated_value = info.diff_PAR;
+      required_value = diff_PAR_PWL_ratio;
     }
-    calculated_value = info.PAR;
-    required_value = PAR_ratio;
   }
 
   if (report) {
@@ -600,11 +602,13 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
       violation = info.PSR > PSR_ratio;
       info.excess_ratio_PSR
           = std::max(info.excess_ratio_PSR, info.PSR / PSR_ratio);
+      calculate_value = info.PSR;
+      required_value = PSR_ratio;
     } else if (diff_PSR_PWL_ratio != 0.0) {
       violation = info.diff_PSR > diff_PSR_PWL_ratio;
+      calculate_value = info.diff_PSR;
+      required_value = diff_PSR_PWL_ratio;
     }
-    calculate_value = info.PSR;
-    required_value = PSR_ratio;
   }
 
   if (report) {
@@ -650,11 +654,13 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
   } else {
     if (CAR_ratio != 0) {
       violation = info.CAR > CAR_ratio;
+      calculate_value = info.CAR;
+      required_value = CAR_ratio;
     } else if (diff_CAR_PWL_ratio != 0.0) {
       violation = info.diff_CAR > diff_CAR_PWL_ratio;
+      calculate_value = info.diff_CAR;
+      required_value = diff_CAR_PWL_ratio;
     }
-    calculate_value = info.CAR;
-    required_value = CAR_ratio;
   }
 
   if (report) {
@@ -700,11 +706,13 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
   } else {
     if (CSR_ratio != 0) {
       violation = info.CSR > CSR_ratio;
+      calculate_value = info.CSR;
+      required_value = CSR_ratio;
     } else if (diff_CSR_PWL_ratio != 0.0) {
       violation = info.diff_CSR > diff_CSR_PWL_ratio;
+      calculate_value = info.diff_CSR;
+      required_value = diff_CSR_PWL_ratio;
     }
-    calculate_value = info.CSR;
-    required_value = CSR_ratio;
   }
 
   if (report) {
