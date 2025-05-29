@@ -37,10 +37,12 @@ struct GraphNode
 {
   GraphNode(int id,
        std::string name,
-       int parentId)
+       int parentId,
+       odb::dbITerm* inputTerm)
     : id(id),
       name(name),
-      parentId(parentId)
+      parentId(parentId),
+      inputTerm(inputTerm)
     {
     }
 
@@ -49,7 +51,9 @@ struct GraphNode
   int parentId;
   std::vector<int> childrenIds;
   float delay = 0.0;
-  float nBuffInsert = 0;
+  int nBuffInsert = 0;
+  float would_insert_here = 0;
+  odb::dbITerm* inputTerm = nullptr;
 };
 
 class LatenciesBalancer
@@ -90,8 +94,13 @@ class LatenciesBalancer
                                         unsigned& numSinks);
   void computeTopBufferDelay(TreeBuilder* builder);
   void computeLeafsNumBufferToInsert(int nodeId);
+  odb::dbITerm* insertDelayBuffers(int numBuffers, int srcX, int srcY, std::vector<odb::dbITerm*> sinksInput);
+  odb::dbInst* createDelayBuffer(odb::dbNet* driverNet, const std::string& clockName, int locX, int locY);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
+
+
+  void showGraph();
 
   TreeBuilder* root_ = nullptr;
   const CtsOptions* options_ = nullptr;
@@ -101,7 +110,8 @@ class LatenciesBalancer
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
   double wireSegmentUnit_;
-  float worseDelay_ = std::numeric_limits<float>::min();
+  float worseDelay_;
+  int delayBufIndex_;
   std::vector<GraphNode> graph_;
 };
 
