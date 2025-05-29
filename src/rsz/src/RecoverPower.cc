@@ -50,6 +50,7 @@ void RecoverPower::init()
 
 bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   bool recovered = false;
   init();
   constexpr int digits = 3;
@@ -212,6 +213,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 // For testing.
 Vertex* RecoverPower::recoverPower(const Pin* end_pin)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   init();
   resize_count_ = 0;
 

@@ -79,6 +79,7 @@ void RepairDesign::repairDesign(double max_wire_length,
                                 bool verbose)
 {
   init();
+
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairDesign(max_wire_length,
@@ -187,6 +188,7 @@ void RepairDesign::repairDesign(
     int& fanout_violations,
     int& length_violations)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   init();
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
@@ -279,6 +281,7 @@ void RepairDesign::repairDesign(
 // Use max_wire_length zero for none (meters)
 void RepairDesign::repairClkNets(double max_wire_length)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   init();
 
   // Lift sizing restrictions for clock buffers.
@@ -360,6 +363,7 @@ void RepairDesign::repairNet(Net* net,
                              double slew_margin,
                              double cap_margin)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   init();
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
@@ -2547,9 +2551,6 @@ bool RepairDesign::makeRepeater(
       }
     }
   }
-
-  resizer_->parasiticsInvalid(buffer_ip_net);
-  resizer_->parasiticsInvalid(buffer_op_net);
 
   // Resize repeater as we back up by levels.
   if (resize) {

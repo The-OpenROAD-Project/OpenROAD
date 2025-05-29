@@ -757,6 +757,7 @@ bool Resizer::isLinkCell(LibertyCell* cell) const
 void Resizer::bufferInputs()
 {
   init();
+  RegisterOdbCallbackGuard guard(this);
   findBuffers();
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
@@ -970,11 +971,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
     db_network_->connectPin(const_cast<Pin*>(top_pin),
                             db_network_->dbToSta(top_pin_flat_net));
   }
-  // invalidate the parasitics on the buffer input and output
-  // nets (the top_pin_flat_net, buffer input, and buffer_out
-  // flat_net, buffer output).
-  parasiticsInvalid(db_network_->dbToSta(top_pin_flat_net));
-  parasiticsInvalid(db_network_->dbToSta(buffer_out_flat_net));
 
   return buffer;
 }
@@ -982,6 +978,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
 void Resizer::bufferOutputs()
 {
   init();
+  RegisterOdbCallbackGuard guard(this);
   findBuffers();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
@@ -1108,9 +1105,6 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
           buffer_ip_pin_iterm->getNet()->getName().c_str());
     }
   }
-
-  parasiticsInvalid(flat_op_net);
-  parasiticsInvalid(buffer_out);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1950,18 +1944,6 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
   return best_cell;
 }
 
-void Resizer::invalidateParasitics(const Pin* pin, const Net* net)
-{
-  // ODB is clueless about tristates so go to liberty for reality.
-  const LibertyPort* port = network_->libertyPort(pin);
-  // Invalidate estimated parasitics on all instance input pins.
-  // Tristate nets have multiple drivers and this is drivers^2 if
-  // the parasitics are updated for each resize.
-  if (net && !port->direction()->isAnyTristate()) {
-    parasiticsInvalid(net);
-  }
-}
-
 void Resizer::eraseParasitics(const Net* net)
 {
   parasitics_invalid_.erase(net);
@@ -1987,20 +1969,6 @@ bool Resizer::replaceCell(Instance* inst,
     if (parasitics_src_ == ParasiticsSrc::global_routing
         || parasitics_src_ == ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
-    }
-    if (haveEstimatedParasitics()) {
-      InstancePinIterator* pin_iter = network_->pinIterator(inst);
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        const Net* net = network_->net(pin);
-        odb::dbNet* db_net = nullptr;
-        odb::dbModNet* db_modnet = nullptr;
-        db_network_->staToDb(net, db_net, db_modnet);
-        // only work on dbnets
-        invalidateParasitics(pin, db_network_->dbToSta(db_net));
-        //        invalidateParasitics(pin, net);
-      }
-      delete pin_iter;
     }
     return true;
   }
@@ -2038,6 +2006,7 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
+  RegisterOdbCallbackGuard guard(this);
   if (run_journal_restore)
     journalBegin();
   estimateWireParasitics();
@@ -3828,10 +3797,6 @@ void Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   incrementalParasiticsBegin();
   odb::dbDatabase::beginEco(block_);
-  if (isCallBackRegistered()) {
-    db_cbk_->removeOwner();
-    setCallBackRegistered(false);
-  }
 
   buffer_move->undoMoves();
   size_move->undoMoves();
@@ -3892,26 +3857,9 @@ void Resizer::journalRestore()
   incrementalParasiticsEnd();
   incrementalParasiticsBegin();
 
-  // Observe netlist changes to invalidate relevant net parasitics
-  if (!isCallBackRegistered()) {
-    db_cbk_->addOwner(block_);
-    setCallBackRegistered(true);
-    debugPrint(logger_,
-               RSZ,
-               "odb",
-               1,
-               "ODB callback registered for block {}",
-               reinterpret_cast<uintptr_t>(block_));
-  }
-
   // Odb callbacks invalidate parasitics
   odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
-
-  // Done with restore.  Disable netlist observer.
-  db_cbk_->removeOwner();
-  setCallBackRegistered(false);
-  debugPrint(logger_, RSZ, "odb", 1, "ODB callback unregistered");
 
   updateParasitics();
   sta_->findRequireds();
@@ -4320,6 +4268,28 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     result.push_back(parseMove(item));
   }
   return result;
+}
+
+RegisterOdbCallbackGuard::RegisterOdbCallbackGuard(Resizer* resizer)
+    : resizer_(resizer)
+{
+  if (!resizer_->block_) {
+    resizer_->logger_->error(
+        RSZ, 101, "registering odb callback requires an initialized block");
+  }
+
+  // check to allow reentrancy
+  if (!resizer_->db_cbk_->hasOwner()) {
+    need_unregister_ = true;
+    resizer_->db_cbk_->addOwner(resizer_->block_);
+  }
+}
+
+RegisterOdbCallbackGuard::~RegisterOdbCallbackGuard()
+{
+  if (need_unregister_) {
+    resizer_->db_cbk_->removeOwner();
+  }
 }
 
 }  // namespace rsz

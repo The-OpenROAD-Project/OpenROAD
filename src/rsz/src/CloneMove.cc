@@ -224,7 +224,6 @@ bool CloneMove::doMove(const Path* drvr_path,
       if (modnet) {
         iterm->connect(modnet);
       }
-      resizer_->parasiticsInvalid(db_network_->dbToSta(dbnet));
     }
   }
 
@@ -279,8 +278,6 @@ bool CloneMove::doMove(const Path* drvr_path,
       }
     }
   }
-  resizer_->parasiticsInvalid(out_net);
-  resizer_->parasiticsInvalid(network_->net(drvr_pin));
   return true;
 }
 

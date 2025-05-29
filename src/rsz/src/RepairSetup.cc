@@ -80,6 +80,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_buffer_removal,
                               const bool skip_last_gasp)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   bool repaired = false;
   init();
   constexpr int digits = 3;
@@ -468,6 +469,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 // For testing.
 void RepairSetup::repairSetup(const Pin* end_pin)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   init();
   max_repairs_per_pass_ = 1;
 

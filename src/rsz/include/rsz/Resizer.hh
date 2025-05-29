@@ -117,6 +117,7 @@ class SplitLoadMove;
 class SizeMove;
 class SwapPinsMove;
 class UnbufferMove;
+class RegisterOdbCallbackGuard;
 
 class NetHash
 {
@@ -417,7 +418,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void journalBeginTest();
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
-  void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
@@ -779,9 +779,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
 
   std::unique_ptr<OdbCallBack> db_cbk_;
-  bool is_callback_registered_ = false;
-  bool isCallBackRegistered() { return is_callback_registered_; }
-  void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
   // Restrict default sizing such that one sizing move cannot increase area or
   // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
@@ -829,6 +826,18 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
+  friend class RegisterOdbCallbackGuard;
+};
+
+class RegisterOdbCallbackGuard
+{
+ public:
+  RegisterOdbCallbackGuard(Resizer* resizer);
+  ~RegisterOdbCallbackGuard();
+
+ private:
+  Resizer* resizer_;
+  bool need_unregister_;
 };
 
 }  // namespace rsz

@@ -63,6 +63,7 @@ bool RepairHold::repairHold(
     const int max_passes,
     const bool verbose)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   bool repaired = false;
   init();
   sta_->checkSlewLimitPreamble();
@@ -105,6 +106,7 @@ void RepairHold::repairHold(const Pin* end_pin,
                             const float max_buffer_percent,
                             const int max_passes)
 {
+  RegisterOdbCallbackGuard guard(resizer_);
   init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -586,8 +588,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     drvr_pin_moditerm->disconnect();
   }
 
-  resizer_->parasiticsInvalid(in_net);
-
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
 
@@ -627,8 +627,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       }
     }
   }
-
-  resizer_->parasiticsInvalid(out_net);
 
   // hook up loads to buffer
   for (const Pin* load_pin : load_pins) {

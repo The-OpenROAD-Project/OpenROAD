@@ -1004,15 +1004,6 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
       const int buffer_count = rebufferTopDown(
           choice->ref(), net2, level + 1, parent, buffer_op_iterm, mod_net_in);
 
-      // ip_net
-      odb::dbNet* db_net = nullptr;
-      odb::dbModNet* db_modnet = nullptr;
-      db_network_->staToDb(net, db_net, db_modnet);
-      resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
-
-      db_network_->staToDb(net2, db_net, db_modnet);
-      resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
-
       return buffer_count + 1;
     }
 
@@ -1116,8 +1107,6 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
           }
 
           // sta_->connectPin(load_inst, load_port, net);
-          resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
-          // resizer_->parasiticsInvalid(load_net);
         }
         return 0;
       }

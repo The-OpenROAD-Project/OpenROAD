@@ -281,6 +281,14 @@ bool Resizer::haveEstimatedParasitics() const
 
 void Resizer::incrementalParasiticsBegin()
 {
+  if (!db_cbk_->hasOwner()) {
+    // check callback has been registered via RegisterOdbCallbackGuard
+    logger_->error(
+        RSZ,
+        104,
+        "starting incremental parasitics without registered callback");
+  }
+
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       break;
