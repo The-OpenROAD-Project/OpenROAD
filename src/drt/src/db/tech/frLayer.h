@@ -328,8 +328,8 @@ class frLayer
       lef58CutSpacingConstraints_.push_back(in);
     }
   }
-  std::vector<frLef58CutSpacingConstraint*>& getLef58CutSpacingConstraints(
-      bool samenet = false)
+  const std::vector<frLef58CutSpacingConstraint*>&
+  getLef58CutSpacingConstraints(bool samenet = false) const
   {
     if (samenet) {
       return lef58CutSpacingSamenetConstraints_;
