@@ -241,7 +241,9 @@ class FlexPA
   bool genPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
@@ -267,6 +269,18 @@ class FlexPA
   std::vector<gtl::polygon_90_set_data<frCoord>>
   mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
 
+  /**
+   * @brief Builds access points from the access coordinate structures
+   *
+   * @param layer_rect_to_coords structure with all the access coordinates from
+   * that inst_term
+   * @param aps access point vector where the new acc points will be inserted
+   * @param apset auxilary set with all the already generated acc pts 3d
+   * coordinates
+   * @param inst_term instance terminal
+   * @param lower_type lowest access type considered
+   * @param upper_type highest access type considered
+   */
   void createAPsFromLayerToRectCoordsMap(
       const LayerToRectCoordsMap& layer_rect_to_coords,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -277,10 +291,10 @@ class FlexPA
 
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
-   * @brief Generates all necessary access points from all pin_shapes (pin)
+   * @brief Generates all access coordinates from all pin_shapes (pin)
    *
-   * @param aps vector of access points that will be filled
-   * @param apset set of access points data (auxilary)
+   * @param layer_rect_to_coords structure with all the access coordinates from
+   * that inst_term
    * @param inst_term instance terminal, owner of the access points
    * @param pin_shapes vector of pin shapes in every layer
    * @param lower_type lowest access type considered
@@ -294,8 +308,10 @@ class FlexPA
       frAccessPointEnum upper_type);
 
   /**
-   * @brief Generates all necessary access points from all layer_shapes (pin)
+   * @brief Generates all access coordinates from all layer_shapes (pin)
    *
+   * @param layer_rect_to_coords structure with all the access coordinates from
+   * that inst_term
    * @param inst_term instance terminal, owner of the access points
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
@@ -311,10 +327,12 @@ class FlexPA
       frAccessPointEnum upper_type);
 
   /**
-   * @brief Generates all necessary access points from a rectangle shape (pin
-   * fig)
+   * @brief Generates all access coordinates from a rectangle shape (pin fig)
    *
+   * @param rect the rectangle object iself
    * @param layer_num layer in which the rectangle exists
+   * @param x_coords x axis access coordinates of the rectangle
+   * @param y_coords y axis access coordinates of the rectangle
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    * @param is_macro_cell_pin if the pin belongs to a macro
@@ -328,9 +346,9 @@ class FlexPA
                       bool is_macro_cell_pin);
 
   /**
-   * @brief Generates an OnGrid access point (on or half track)
+   * @brief Generates an OnGrid access coordinate (on or half track)
    *
-   * @param coords map from access points to their cost
+   * @param coords map from access coordinate to their cost
    * @param track_coords all possible track coords with cost
    * @param low lower range of coordinates considered
    * @param high higher range of coordinates considered
@@ -345,9 +363,9 @@ class FlexPA
 
   /**
    * @brief If there are less than 3 OnGrid coords between low and high
-   * will generate a Centered access point to compensate
+   * will generate a Centered coordinate to compensate
    *
-   * @param coords map from candidate access points to their cost
+   * @param coords map from candidate access coordinate to their cost
    * @param layer_num number of the layer
    * @param low lower range of coordinates considered
    * @param high higher range of coordinates considered
@@ -364,9 +382,9 @@ class FlexPA
                             bool is_curr_layer_horz);
 
   /**
-   * @brief Generates an Enclosed Boundary access point
+   * @brief Generates an Enclosed Boundary access coordinate
    *
-   * @param coords map from access points to their cost
+   * @param coords map from access coordinate to their cost
    * @param rect pin rectangle to which via is bounded
    * @param layer_num number of the layer
    */
@@ -470,25 +488,6 @@ class FlexPA
       const bool& is_std_cell_pin);
 
   /**
-   * @brief Filters the accesses of a single access point
-   *
-   * @param ap access point
-   * @param polyset polys auxilary set (same information as polys)
-   * @param polys a vector of pin shapes on all layers of the current pin
-   * @param pin access pin
-   * @param inst_term terminal
-   * @param deep_search TODO: not sure
-   */
-  template <typename T>
-  void filterSingleAPAccesses(
-      frAccessPoint* ap,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      T* pin,
-      frInstTerm* inst_term,
-      bool deep_search = false);
-
-  /**
    * @brief Filters access in a given planar direction.
    *
    * @param ap access point
@@ -496,9 +495,11 @@ class FlexPA
    * @param dir candidate dir to the access
    * @param pin access pin
    * @param inst_term terminal
+   *
+   * @returns True if the access points can use planar access.
    */
   template <typename T>
-  void filterPlanarAccess(
+  bool filterPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
@@ -573,6 +574,25 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term,
       bool deep_search = false);
+
+  /**
+   * @brief checks if an access point can have planar access, alters the point
+   * to allow it and returns true if planar access is valid.
+   *
+   * @param ap Access point
+   * @param layer_polys A vector of polygons organized by layer
+   * @param pin Pin
+   * @param inst_term the instance terminal object
+   *
+   * @returns True if the point can have planar access.
+   */
+  template <typename T>
+  bool validateAPForPlanarAccess(
+      frAccessPoint* ap,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
+      T* pin,
+      frInstTerm* inst_term);
 
   /**
    * @brief Checks if a Via has at least one valid planar access
