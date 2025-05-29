@@ -62,6 +62,11 @@ build:profile --copt -fno-omit-frame-pointer
 # TODO: document
 build --incompatible_strict_action_env
 
+# Without this, `bazelisk test -c opt ...` will run a `bazelisk build -c opt ...` first,
+# which will build cfg=target versions of targets and afterwards OpenROAD will be built
+# again for `bazel-orfs` and `regression.bzl` tests that use the cfg=exec configuration.
+test --build_tests_only
+
 # TODO: setup a new cache for OpenROAD
 # Read only remote cache, updated by OpenROAD team members and CI.
 #build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts

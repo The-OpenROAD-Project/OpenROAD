@@ -83,7 +83,7 @@ OPENROAD_LIBRARY_DEPS = [
     "@or-tools//ortools/linear_solver:linear_solver",
     "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
     "@or-tools//ortools/sat:cp_model",
-    "@org_llvm_openmp//:openmp",
+    "@openmp//:openmp",
     "@spdlog",
     "@tk_tcl//:tcl",
 ]
@@ -103,6 +103,7 @@ OPENROAD_COPTS = [
     "-Wno-unused-parameter",
     # FIXME reenable when warnings are fixed
     "-Wno-unused-but-set-variable",
+    "-fopenmp"
 ]
 
 OPENROAD_DEFINES = [
@@ -1008,6 +1009,7 @@ cc_library(
         "-Wformat-security",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
+        "-fopenmp",
     ],
     features = [
         "-use_header_modules",
@@ -1029,6 +1031,7 @@ cc_library(
     deps = [
         "@cudd",
         "@eigen",
+        "@openmp//:openmp",
         "@rules_flex//flex:current_flex_toolchain",
         "@tk_tcl//:tcl",
         "@zlib",

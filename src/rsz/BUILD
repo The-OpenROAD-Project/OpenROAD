@@ -43,14 +43,14 @@ cc_library(
         "src/SizeMove.hh",
         "src/SplitLoadMove.cc",
         "src/SplitLoadMove.hh",
-        "src/SwapPinsMove.cc",
-        "src/SwapPinsMove.hh",
         "src/SteinerRenderer.cc",
         "src/SteinerRenderer.h",
         "src/SteinerTree.cc",
         "src/SteinerTree.hh",
+        "src/SwapPinsMove.cc",
+        "src/SwapPinsMove.hh",
         "src/UnbufferMove.cc",
-        "src/UnbufferMove.hh"
+        "src/UnbufferMove.hh",
     ],
     hdrs = [
         "include/rsz/MakeResizer.hh",

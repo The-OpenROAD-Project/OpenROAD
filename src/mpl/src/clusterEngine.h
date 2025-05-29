@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "object.h"
+#include "util.h"
 
 namespace par {
 class PartitionMgr;
@@ -26,6 +27,7 @@ class dbNetwork;
 }
 
 namespace mpl {
+class MplObserver;
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
@@ -88,14 +90,18 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  // This is set according to the ppl -exclude constraints
-  std::set<Boundary> blocked_boundaries;
-  std::set<Boundary> unblocked_boundaries;  // For orientation improvement.
+  BoundaryRegionList available_regions_for_unconstrained_pins;
+  ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
   float halo_width{0.0f};
   float halo_height{0.0f};
   float macro_with_halo_area{0.0f};
+
+  // The constraint set by the user.
   Rect global_fence;
+
+  // The actual area used by MPL - computed using the dimensions
+  // of the core versus the global fence set by the user.
   Rect floorplan_shape;
   Rect die_area;
 
@@ -127,7 +133,8 @@ class ClusteringEngine
   ClusteringEngine(odb::dbBlock* block,
                    sta::dbNetwork* network,
                    utl::Logger* logger,
-                   par::PartitionMgr* triton_part);
+                   par::PartitionMgr* triton_part,
+                   MplObserver* graphics);
 
   void run();
 
@@ -149,6 +156,8 @@ class ClusteringEngine
                                std::set<odb::dbMaster*>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
+  int getNumberOfIOs(Cluster* target) const;
+
   static bool isIgnoredInst(odb::dbInst* inst);
 
  private:
@@ -166,27 +175,16 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm) const;
+  void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
   void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
-  void classifyBoundariesStateForIOs();
-  std::map<Boundary, float> computeBlockageExtensionMap();
-  Boundary getConstraintBoundary(const odb::Rect& die,
-                                 const odb::Rect& constraint_region);
-  void createIOCluster(const odb::Rect& die,
-                       Boundary constraint_boundary,
-                       std::map<Boundary, Cluster*>& boundary_to_cluster,
-                       odb::dbBTerm* bterm);
-  void setIOClusterDimensions(const odb::Rect& die,
-                              Boundary boundary,
-                              int& x,
-                              int& y,
-                              int& width,
-                              int& height);
   void mapIOPinsAndPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
   void multilevelAutocluster(Cluster* parent);
+  void reportThresholds() const;
   void updateSizeThresholds();
   void breakCluster(Cluster* parent);
   void createFlatCluster(odb::dbModule* module, Cluster* parent);
@@ -262,9 +260,13 @@ class ClusteringEngine
   sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
+  MplObserver* graphics_;
 
   Metrics* design_metrics_{nullptr};
   PhysicalHierarchy* tree_{nullptr};
+
+  // Keep this pointer to avoid searching for it when creating IO clusters.
+  Cluster* cluster_of_unconstrained_io_pins_{nullptr};
 
   int level_{0};  // Current level
   int id_{0};     // Current "highest" id

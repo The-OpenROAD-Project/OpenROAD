@@ -269,21 +269,29 @@ class FlexPA
    *
    * @param aps vector of access points that will be filled
    * @param apset set of access points data (auxilary)
-   * @param pin pin object
    * @param inst_term instance terminal, owner of the access points
    * @param pin_shapes vector of pin shapes in every layer
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    */
-  template <typename T>
   void genAPsFromPinShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      T* pin,
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
+
+  /**
+   * @brief Determines if the upper layer to the passed layer_num only allows
+   * for onGrid access points
+   *
+   * @param layer_num the layer number
+   * @param is_macro_cell_pin if the current pin belongs to a macro
+   *
+   * @returns True if only allow onGrid access
+   */
+  bool isUpperLayerOnGridOnly(frLayerNum layer_num, bool is_macro_cell_pin);
 
   /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
@@ -293,7 +301,6 @@ class FlexPA
    * @param inst_term instance terminal, owner of the access points
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
-   * @param allow_via if via access is allowed
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    */
@@ -303,7 +310,6 @@ class FlexPA
       frInstTerm* inst_term,
       const gtl::polygon_90_set_data<frCoord>& layer_shapes,
       frLayerNum layer_num,
-      bool allow_via,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
 
@@ -314,18 +320,15 @@ class FlexPA
    * @param aps vector of access points that will be filled
    * @param apset set of access points data (auxilary)
    * @param layer_num layer in which the rectangle exists
-   * @param allow_planar if planar access is allowed
-   * @param allow_via if via access is allowed
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    * @param is_macro_cell_pin if the pin belongs to a macro
    */
-  void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+  void genAPsFromRect(frInstTerm* inst_term,
+                      std::vector<std::unique_ptr<frAccessPoint>>& aps,
                       std::set<std::pair<Point, frLayerNum>>& apset,
                       const gtl::rectangle_data<frCoord>& rect,
                       frLayerNum layer_num,
-                      bool allow_planar,
-                      bool allow_via,
                       frAccessPointEnum lower_type,
                       frAccessPointEnum upper_type,
                       bool is_macro_cell_pin);
@@ -406,22 +409,18 @@ class FlexPA
    * @param aps Vector contaning the access points
    * @param apset Set containing access points data (auxilary)
    * @param rec Rect limiting where the point can be
-   * @param layer_num access point layer
-   * @param allow_planar if the access point allows planar access
-   * @param allow_via if the access point allows via access
    * @param x_coords map of access point x coords
    * @param y_coords map of access point y coords
    * @param lower_type access cost of the lower layer
    * @param upper_type access cost of the upper layer
    */
   void createMultipleAccessPoints(
+
+      frInstTerm* inst_term,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum layer_num,
-      bool allow_planar,
-      bool allow_via,
-      bool is_layer1_horz,
       const std::map<frCoord, frAccessPointEnum>& x_coords,
       const std::map<frCoord, frAccessPointEnum>& y_coords,
       frAccessPointEnum lower_type,
@@ -437,8 +436,6 @@ class FlexPA
    * @param x access point x coord
    * @param y access point y coord
    * @param layer_num access point layer
-   * @param allow_planar if the access point allows planar access
-   * @param allow_via if the access point allows via access
    * @param lower_type lowest access cost considered
    * @param upper_type highest access cost considered
    */
@@ -636,10 +633,8 @@ class FlexPA
   /**
    * @brief Serially updates some of general pin stats
    */
-  template <typename T>
   void updatePinStats(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
-      T* pin,
       frInstTerm* inst_term);
 
   /**

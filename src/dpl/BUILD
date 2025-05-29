@@ -120,4 +120,7 @@ tcl_wrap_cc(
     swig_includes = [
         "src/dpl/src",
     ],
+    deps = [
+        "//src/odb:swig",
+    ],
 )
