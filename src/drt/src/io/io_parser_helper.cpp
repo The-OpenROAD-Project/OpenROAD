@@ -411,7 +411,10 @@ void io::Parser::initConstraintLayerIdx()
           frLayerNum secondLayerNum = layer->getLayerNum();
           con->setSecondLayerNum(secondLayerNum);
         } else {
-          con->setSecondLayerName("");
+          logger_->warn(DRT,
+                        244,
+                        "Second layer {} does not exist.",
+                        con->getSecondLayerName());
         }
       }
     }
@@ -424,7 +427,10 @@ void io::Parser::initConstraintLayerIdx()
           frLayerNum secondLayerNum = layer->getLayerNum();
           con->setSecondLayerNum(secondLayerNum);
         } else {
-          con->setSecondLayerName("");
+          logger_->warn(DRT,
+                        251,
+                        "Second layer {} does not exist.",
+                        con->getSecondLayerName());
         }
       }
     }

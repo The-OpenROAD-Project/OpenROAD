@@ -577,8 +577,6 @@
     "https://bcr.bazel.build/modules/zstr/1.0.7/MODULE.bazel": "e6a2129c3747123db5b11375848865a8d03c0f27672506f694f9939b556eab7d",
     "https://bcr.bazel.build/modules/zstr/1.0.7/source.json": "d241d7f5f0330cfb5ffb1af66845f98479a3e1da094ad8f9bf3ec41c4e05499a",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/bazel_registry.json": "not found",
-    "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/chisel/7.0.0/MODULE.bazel": "e02803eb694145627f6ba114a32fbd4404db820d08120efffc9a3e036a216f83",
-    "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/chisel/7.0.0/source.json": "0aa555fbbea2910274ec1fb99d27ac130849ca5ea2b8f31838cabf739560af9b",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/rules_verilator/5.034/MODULE.bazel": "5b52208785a180fad253fdaba72daa144cec7ad42a06029c8021215c2777f45f",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/rules_verilator/5.034/source.json": "0ba62b7f2a39e28acdad1c564a8368f8a418c15e7c1d4744577472e58c298759",
     "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/modules/systemc/3.0.1/MODULE.bazel": "8d8d031d9dee3db5e17a5096abc809dd9b8480505afe43db280b143a2fa20df8",
@@ -16601,7 +16599,7 @@
     "@@rules_scala~//scala/extensions:config.bzl%scala_config": {
       "general": {
         "bzlTransitiveDigest": "TYEDBdoN7s4wE8er7JwzFt7+3iw57BHsTSLyWmxbgZo=",
-        "usagesDigest": "efcJUJECqhuyw/xR2qdIAB5zGP89i3dmZL1gtPviJGs=",
+        "usagesDigest": "heBOrKf6AD9dBuQJQwlfrGOwBfT6pXHbgWYJHK+Di2Y=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {
@@ -16627,7 +16625,7 @@
     "@@rules_scala~//scala/extensions:deps.bzl%scala_deps": {
       "general": {
         "bzlTransitiveDigest": "T7l4IjF0mYrxoVLMrPbSTAFlIaia6tmiMt2UQ8X4vdE=",
-        "usagesDigest": "EMTf9Wl1jFzm/a1aud4nfFWxP5qSHMFKfi9kQo5y6tY=",
+        "usagesDigest": "HlmUcUs6MryoJPerRK74GS9mvPId1TVO4gdFlSKgKFQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
