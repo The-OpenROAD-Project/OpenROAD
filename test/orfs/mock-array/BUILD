@@ -144,6 +144,7 @@ orfs_flow(
     },
     macros = ["Element_generate_abstract"],
     sources = {
+        "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
     },
