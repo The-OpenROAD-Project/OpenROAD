@@ -11,7 +11,8 @@ find_program(CAPNPC_CXX_EXECUTABLE capnpc-c++)
 
 # Include directories
 find_path(CAPNP_INCLUDE_DIRECTORY capnp/capnp.h)
-include_directories(${CAPNP_INCLUDE_DIRECTORY})
+include_directories(${CAPNP_INCLUDE_DIRECTORY} PUBLIC ${PROJECT_SOURCE_DIR}/src/odb/include/odb)
+    
 
 # Link directories
 find_library(CAPNP_LIBRARY_DIR capnp)
@@ -29,14 +30,15 @@ capnp_generate_cpp(najaCommonSources najaCommonHeaders ${CAPNPC_SRC_PREFIX}/naja
 capnp_generate_cpp(najaNLInterfaceSources najaNLInterfaceHeaders ${CAPNPC_SRC_PREFIX}/naja_nl_interface.capnp)
 capnp_generate_cpp(najaNLImplementationSources najaNLImplementationHeaders ${CAPNPC_SRC_PREFIX}/naja_nl_implementation.capnp)
 
-add_library(naja_nl_dump STATIC
+add_library(naja_if_parser STATIC
     ${najaCommonSources} ${najaNLInterfaceSources}
     ${najaNLImplementationSources}
-    dbReadNajaImpl.cpp dbReadNajaInterface.cpp)
+    dbReadNajaImpl.cpp
+    dbReadNajaInterface.cpp)
 
-set_target_properties(naja_nl_dump PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(naja_if_parser PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(naja_nl_dump PRIVATE CapnProto::capnp )
-target_link_libraries(naja_nl_dump PUBLIC naja_nl)
-target_include_directories(naja_nl_dump PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(naja_nl_dump PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(naja_if_parser PRIVATE CapnProto::capnp PUBLIC odb)
+target_link_libraries(naja_if_parser PUBLIC naja_nl PUBLIC odb)
+target_include_directories(naja_if_parser PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(naja_if_parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
