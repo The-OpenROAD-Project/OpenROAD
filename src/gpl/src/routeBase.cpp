@@ -674,8 +674,7 @@ std::pair<bool, bool> RouteBase::routability()
       = inflatedAreaDelta_ + prev_total_gcells_area;
 
   nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
-  nbc_->fixPointers();
-  // nbVec_[0]->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
+  // nbc_->fixPointers();
 
 
   // int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
@@ -723,7 +722,7 @@ std::pair<bool, bool> RouteBase::routability()
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
     nbc_->revertGCellSizeToMinRc();
-    // nbVec_[0]->printGCellsToFile("before.txt",false);
+    // nbVec_[0]->printGCellsToFile("before.txt",false);    
     nbVec_[0]->restoreRemovedFillers();
     // nbVec_[0]->updateGCellState();
     // nbVec_[0]->printGCellsToFile("afterRestore.txt",false);

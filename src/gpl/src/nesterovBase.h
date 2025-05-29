@@ -113,6 +113,13 @@ class GCell
   void print(utl::Logger* logger, bool print_only_name) const;
   void printToFile(std::ostream& out, bool print_only_name = true) const;
 
+  void writeAttributesToCSV(std::ostream& out) const {
+    out << "," << insts_.size() << "," << gPins_.size();
+    out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
+    out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
+    out << "," << densityScale_ << "," << gradientX_ << "," << gradientY_;
+  }
+
  private:
   std::vector<Instance*> insts_;
   std::vector<GPin*> gPins_;
@@ -1118,6 +1125,7 @@ class NesterovBase
 
       appendParallelVectors();
       size_t idx = nb_gcells_.size() - 1;
+      log_->report("retore filler nb index:  {}", idx);      
       // Restore parallel vector data
       curSLPCoordi_[idx] = filler.curSLPCoordi;
       curSLPWireLengthGrads_[idx] = filler.curSLPWireLengthGrads;
@@ -1142,7 +1150,7 @@ class NesterovBase
       snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
       snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
   
-      restored_filler_indexes_.push_back(idx);
+      // restored_filler_indexes_.push_back(idx);
       totalFillerArea_ += getFillerCellArea();
     }
   
@@ -1165,85 +1173,7 @@ class NesterovBase
 
   void writeGCellVectorsToCSV(const std::string& filename,
                                           int iteration,
-                                          bool write_header) const {
-  std::ofstream file(filename, std::ios::app);
-  if (!file.is_open()) {
-    log_->report("Could not open file: {}", filename);
-    return;
-  }
-
-  // Write header only on first call
-  if (write_header) {
-    file << "iteration,index";
-    auto add_header = [&](const std::string& name) {
-      file << "," << name << "_x" << "," << name << "_y";
-    };
-
-    add_header("curSLPCoordi");
-    add_header("curSLPWireLengthGrads");
-    add_header("curSLPDensityGrads");
-    add_header("curSLPSumGrads");
-
-    add_header("nextSLPCoordi");
-    add_header("nextSLPWireLengthGrads");
-    add_header("nextSLPDensityGrads");
-    add_header("nextSLPSumGrads");
-
-    add_header("prevSLPCoordi");
-    add_header("prevSLPWireLengthGrads");
-    add_header("prevSLPDensityGrads");
-    add_header("prevSLPSumGrads");
-
-    add_header("curCoordi");
-    add_header("nextCoordi");
-    add_header("initCoordi");
-
-    add_header("snapshotCoordi");
-    add_header("snapshotSLPCoordi");
-    add_header("snapshotSLPSumGrads");
-
-    file << "\n";
-  }
-
-  size_t num_rows = curSLPCoordi_.size();
-
-  for (size_t i = 0; i < num_rows; i += 5) {
-    file << iteration << "," << i;
-
-    auto add_value = [&](const std::vector<FloatPoint>& vec) {
-      file << "," << vec[i].x << "," << vec[i].y;
-    };
-
-    add_value(curSLPCoordi_);
-    add_value(curSLPWireLengthGrads_);
-    add_value(curSLPDensityGrads_);
-    add_value(curSLPSumGrads_);
-
-    add_value(nextSLPCoordi_);
-    add_value(nextSLPWireLengthGrads_);
-    add_value(nextSLPDensityGrads_);
-    add_value(nextSLPSumGrads_);
-
-    add_value(prevSLPCoordi_);
-    add_value(prevSLPWireLengthGrads_);
-    add_value(prevSLPDensityGrads_);
-    add_value(prevSLPSumGrads_);
-
-    add_value(curCoordi_);
-    add_value(nextCoordi_);
-    add_value(initCoordi_);
-
-    if(snapshotCoordi_.size() == curSLPCoordi_.size()){
-      add_value(snapshotCoordi_);
-      add_value(snapshotSLPCoordi_);
-      add_value(snapshotSLPSumGrads_);
-    }
-
-    file << "\n";
-  }
-
-  file.close();
-}
+                                          bool write_header) const;
   
   
 
@@ -1300,7 +1230,7 @@ class NesterovBase
   };  
 
   std::vector<RemovedFillerState> removed_fillers_;
-  std::vector<size_t> restored_filler_indexes_;
+  // std::vector<size_t> restored_filler_indexes_;
   // size_t last_filler_index_;
 
   float sumPhi_ = 0;

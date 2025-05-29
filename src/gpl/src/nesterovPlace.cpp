@@ -407,8 +407,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     updateNextIter(iter);
 
-    if(iter==0 || iter % 100 == 0)
-    // nbVec_[0]->writeGCellVectorsToCSV("gcell_vectors.csv", iter, iter==0);
+    // // if(iter==0 || iter % 100 == 0)
+    // if(iter==0 || iter==1 || iter==711 || iter==801 || iter==899 || iter==901)
+    // // if(iter==899 || iter==901)
+    //   nbVec_[0]->writeGCellVectorsToCSV("gcell_vectors.csv", iter, iter==0);
 
     // For JPEG Saving
     // graphics_ is only true if debug mode is active
@@ -560,7 +562,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
-      nbVec_[0]->appendGCellCSVNote("gcell_vectors.csv",iter,"timing-driven iteration");
+      // nbVec_[0]->appendGCellCSVNote("gcell_vectors.csv",iter,"timing-driven iteration");
+      // if(!virtual_td_iter)
+      //   nbVec_[0]->writeGCellVectorsToCSV("gcell_vectors.csv", iter, iter==0);      
       nbVec_[0]->setTrueReprintIterHeader();
       ++timing_driven_count;
 
@@ -592,41 +596,41 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
       if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
-          // nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
+          nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
           // updates order in routability:
           // 1. change areas
           // 2. set target density with delta area
           // 3. updateareas
           // 4. updateDensitySize
 
-          // nesterov->setTargetDensity(
-          //     static_cast<float>(nbc_->getDeltaArea()
-          //                        + nesterov->nesterovInstsArea()
-          //                        + nesterov->getTotalFillerArea())
-          //     / static_cast<float>(nesterov->whiteSpaceArea()));
+          nesterov->setTargetDensity(
+              static_cast<float>(nbc_->getDeltaArea()
+                                 + nesterov->nesterovInstsArea()
+                                 + nesterov->getTotalFillerArea())
+              / static_cast<float>(nesterov->whiteSpaceArea()));
 
 
-// int64_t deltaArea = nbc_->getDeltaArea();
-// int64_t instArea = nesterov->nesterovInstsArea();
-// int64_t fillerArea = nesterov->getTotalFillerArea();
-// int64_t wsArea = nesterov->whiteSpaceArea();
+      // int64_t deltaArea = nbc_->getDeltaArea();
+      // int64_t instArea = nesterov->nesterovInstsArea();
+      // int64_t fillerArea = nesterov->getTotalFillerArea();
+      // int64_t wsArea = nesterov->whiteSpaceArea();
 
-// int64_t totalGCellArea = deltaArea + instArea + fillerArea;
-// float newTargetDensity = static_cast<float>(totalGCellArea)
-//                          / static_cast<float>(wsArea);
+      // int64_t totalGCellArea = deltaArea + instArea + fillerArea;
+      // float newTargetDensity = static_cast<float>(totalGCellArea)
+      //                          / static_cast<float>(wsArea);
 
-// log_->report("Density update breakdown (original method):");
-// log_->report("  deltaArea (inflatedAreaDelta_): {}", block->dbuAreaToMicrons(deltaArea));
-// log_->report("  nesterovInstsArea: {}", block->dbuAreaToMicrons(instArea));
-// log_->report("  totalFillerArea: {}", block->dbuAreaToMicrons(fillerArea));
-// log_->report("  whiteSpaceArea: {}", block->dbuAreaToMicrons(wsArea));
-// log_->report("  totalGCellArea: {}", block->dbuAreaToMicrons(totalGCellArea));
-// log_->report("  New target density: {}", newTargetDensity);
+      // log_->report("Density update breakdown (original method):");
+      // log_->report("  deltaArea (inflatedAreaDelta_): {}", block->dbuAreaToMicrons(deltaArea));
+      // log_->report("  nesterovInstsArea: {}", block->dbuAreaToMicrons(instArea));
+      // log_->report("  totalFillerArea: {}", block->dbuAreaToMicrons(fillerArea));
+      // log_->report("  whiteSpaceArea: {}", block->dbuAreaToMicrons(wsArea));
+      // log_->report("  totalGCellArea: {}", block->dbuAreaToMicrons(totalGCellArea));
+      // log_->report("  New target density: {}", newTargetDensity);
 
 
-          nesterov->cutFillerCells(nbc_->getDeltaArea());
-          nbc_->fixPointers();
-          nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
+          // nesterov->cutFillerCells(nbc_->getDeltaArea());
+          // nbc_->fixPointers();
+          // nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
 
           float rsz_delta_area_microns
               = block->dbuAreaToMicrons(nbc_->getDeltaArea());
@@ -676,6 +680,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nbc_->resetNewGcellsCount();
           nesterov->updateAreas();
           nesterov->updateDensitySize();
+
+          
+          // if(!virtual_td_iter){
+          //   nbVec_[0]->appendGCellCSVNote("gcell_vectors.csv",iter,"repeat after every udpates!");
+          //   nbVec_[0]->writeGCellVectorsToCSV("gcell_vectors.csv", iter, iter==0);
+          // }
         }
 
         // update snapshot after non-virtual TD
@@ -842,10 +852,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
 
-      if(is_routability_need_==false && isRevertInitNeeded==true) {
-        nbVec_[0]->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
-        // nbVec_[0]->printGCellsToFile("afterRestore.txt",false);
-      }
+      // if(is_routability_need_==false && isRevertInitNeeded==true) {
+      //   nbVec_[0]->appendGCellCSVNote("gcell_vectors.csv",iter,"restoring fillers");
+      //   nbVec_[0]->writeGCellVectorsToCSV("gcell_vectors.csv", iter, iter==0);
+      //   // nbVec_[0]->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
+      //   // nbVec_[0]->printGCellsToFile("afterRestore.txt",false);
+      // }
 
       // if routability is needed
       if (is_routability_need_ || isRevertInitNeeded) {
