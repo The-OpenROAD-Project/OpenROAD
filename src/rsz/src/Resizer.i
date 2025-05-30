@@ -117,6 +117,7 @@ using rsz::ParasiticsSrc;
 ////////////////////////////////////////////////////////////////
 
 %include "../../Exception.i"
+%include "std_string.i"
 
 %inline %{
 
@@ -787,6 +788,14 @@ void set_debug_cmd(const char* net_name,
   graphics->setNet(net);
   graphics->stopOnSubdivideStep(subdivide_step);
   resizer->setDebugGraphics(std::move(graphics));
+}
+
+void swap_arith_modules_cmd(int path_count,
+                            const std::string& target,
+                            float slack_margin)
+{
+  Resizer* resizer = getResizer();
+  resizer->swapArithModules(path_count, target, slack_margin);
 }
 
 } // namespace

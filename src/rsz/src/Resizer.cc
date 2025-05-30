@@ -27,6 +27,7 @@
 #include "ResizerObserver.hh"
 #include "SizeMove.hh"
 #include "SplitLoadMove.hh"
+#include "SwapArithModules.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "boost/multi_array.hpp"
@@ -123,6 +124,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      swap_arith_modules_(new SwapArithModules(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -3820,6 +3822,18 @@ bool Resizer::recoverPower(float recover_power_percent,
     opendp_->initMacrosAndGrid();
   }
   return recover_power_->recoverPower(recover_power_percent, verbose);
+}
+////////////////////////////////////////////////////////////////
+void Resizer::swapArithModules(int path_count,
+                               const std::string& target,
+                               float slack_margin)
+{
+  resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+    opendp_->initMacrosAndGrid();
+  }
+  swap_arith_modules_->replaceArithModules(path_count, target, slack_margin);
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes

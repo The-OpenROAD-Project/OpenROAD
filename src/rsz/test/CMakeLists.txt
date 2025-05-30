@@ -158,6 +158,7 @@ or_integration_tests(
     repair_setup6_multi
     repair_setup7_multi
     report_equiv_cells
+    replace_arith_modules1
   PASSFAIL_TESTS
     cpp_tests
 )

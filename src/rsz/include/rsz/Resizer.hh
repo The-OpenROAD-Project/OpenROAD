@@ -110,6 +110,7 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 class ResizerObserver;
+class SwapArithModules;
 
 class CloneMove;
 class BufferMove;
@@ -314,6 +315,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
                     bool verbose);
 
   ////////////////////////////////////////////////////////////////
+  void swapArithModules(int path_count,
+                        const std::string& target,
+                        float slack_margin);
+
+  ////////////////////////////////////////////////////////////////
+
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -695,6 +702,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  SwapArithModules* swap_arith_modules_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -829,6 +837,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
+  friend class SwapArithModules;
 };
 
 }  // namespace rsz
