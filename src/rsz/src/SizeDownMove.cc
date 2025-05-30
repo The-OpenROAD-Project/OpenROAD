@@ -24,7 +24,6 @@ using sta::InstancePinIterator;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
-using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;
@@ -45,16 +44,6 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   const Path* load_path = expanded->path(drvr_index + 1);
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
-
-  const int fanout = this->fanout(drvr_vertex);
-  if (fanout < 2) {
-    return false;
-  }
-  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  dbNet* db_net = db_network_->staToDb(net);
-  if (db_net->isConnectedByAbutment()) {
-    return false;
-  }
 
   // Divide and conquer.
   debugPrint(logger_,
@@ -90,7 +79,7 @@ bool SizeDownMove::doMove(const Path* drvr_path,
                  delayAsString(fanout_slack, sta_, 3),
                  delayAsString(drvr_slack, sta_, 3))
           // If we already have a move on the load, don't try to size down
-          if (fanout_slack > 0 && !hasMoves(load_inst))
+          if (!hasMoves(load_inst))
       {
         fanout_slacks.emplace_back(fanout_vertex, fanout_slack);
       }
@@ -285,6 +274,34 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
         continue;
       }
 
+      float cap, max_cap, cap_slack;
+      const Corner* corner;
+      const RiseFall* tr;
+      sta_->checkCapacitance(drvr_pin,
+                             nullptr /* corner */,
+                             resizer_->max_,
+                             // return values
+                             corner,
+                             tr,
+                             cap,
+                             max_cap,
+                             cap_slack);
+      if (max_cap > 0.0 && corner) {
+        // Check if the new driver load cap is within the max cap limit
+        if (new_drvr_load_cap > max_cap) {
+          debugPrint(logger_,
+                     RSZ,
+                     "size_down",
+                     2,
+                     " skip based on max cap {} FO={} cap={} max_cap={}",
+                     network_->pathName(fanout_pin),
+                     swappable->name(),
+                     new_drvr_load_cap,
+                     max_cap);
+          continue;
+        }
+      }
+
       float new_drvr_delay
           = resizer_->gateDelay(drvr_port, new_drvr_load_cap, dcalc_ap);
       float new_fanout_delay = resizer_->gateDelay(
@@ -303,10 +320,12 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
           delayAsString(fanout_delay - fanout_slack, sta_, 3),
           delayAsString(fanout_delay, sta_, 3),
           delayAsString(fanout_slack, sta_, 3));
-      // Check if the new delay is better than the old one
-      // and if the new fanout gate doesn't eat up all the fanout slack
-      if (new_drvr_delay <= drvr_delay
-          && new_fanout_delay <= fanout_delay + fanout_slack) {
+      // Check if the combined new delay is better than the old one
+      // If fanout slack is positive, this allows us to slow down the fanout
+      // gate If fnaout slack is negative, this allows us to accept it as long
+      // as the total delay improves
+      if (new_drvr_delay + new_fanout_delay
+          < drvr_delay + fanout_delay + fanout_slack) {
         best_cell = swappable;
         best_cap = new_fanout_cap;
         best_area = new_area;
