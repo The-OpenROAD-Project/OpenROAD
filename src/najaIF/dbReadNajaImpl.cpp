@@ -293,7 +293,14 @@ void loadInstance(
     leaf_map[instanceID] = db_inst;
   } else {
     // TODO need to uniquify it like they do in open road
+    //Uniquify model for this instance
+    //std::string instanceName = instance.getName();
+    // dbModule* uniquefied model = dbModule::makeUniqueDbModule(
+    //   model->getName().c_str(),
+    //   instanceName.c_str(),
+    //   design);
     dbModInst* modinst = dbModInst::create(design, model, instance.getName().cStr());
+    //dbModule::copy(model, uniquefied_model, modinst);
     instance_map[instanceID] = modinst;
   }
   // auto snlInstance =
@@ -487,7 +494,7 @@ void loadDesignImplementation(
       //if (net.isScalarNet()) {
         auto scalarNet = net.getScalarNet();
         loadScalarNet(design, scalarNet, instance_map, leaf_map);
-      // } else if (net.isBusNet()) {
+      // } else if (net.isBusNet()) { // TODO: support bus nets after flatening
       //   auto busNet = net.getBusNet();
       //   loadBusNet(snlDesign, busNet);
       // } 
@@ -606,6 +613,15 @@ void NajaIF::loadImplementation(const std::filesystem::path& implementationPath)
   int fd = open(implementationPath.c_str(), O_RDONLY);
   //return 
   loadImplementation(fd);
+  // Full unquification all modinst to match behavior of OR parser
+  for (auto& [key, value]: NajaIF::module_map_) {
+    dbModule* model = value.first;
+    for (dbModInst* inst : model->getModInsts()) {
+      std::string name = std::string(model->getName()) + "_" + std::string(inst->getName());
+      dbModule* uniqueModel = dbModule::create(NajaIF::block_, name.c_str());
+      dbModule::copy(model, uniqueModel, inst);
+    }
+  }
 }
 
 //LCOV_EXCL_START
