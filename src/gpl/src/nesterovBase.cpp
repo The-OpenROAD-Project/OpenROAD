@@ -1494,14 +1494,6 @@ void NesterovBaseCommon::revertGCellSizeToMinRc()
   }
 }
 
-// GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
-// {
-//   if (i >= gCellStor_.size()) {
-//     return nullptr;
-//   }
-//   return &gCellStor_[i];
-// }
-
 GCell* NesterovBaseCommon::getGCellByIndex(size_t idx)
 {
   if (idx >= gCellStor_.size()) {
@@ -1687,8 +1679,6 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     nb_gcells_.emplace_back(this, i);
     filler_stor_index_to_nb_index_[i] = nb_gcells_.size() - 1;
   }
-
-  // last_filler_index_ = fillerStor_.empty() ? 0 : fillerStor_.size() - 1;
 
   debugPrint(log_,
              GPL,
@@ -2103,12 +2093,7 @@ void NesterovBase::updateAreas()
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-  // int i =0;
-  // log_->report("updateAreas(), nb_gcells_.size(): {}", nb_gcells_.size());
-  // log_->report("updateAreas(), fillerStor_.size(): {}", fillerStor_.size());
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    // if(print)
-    // log_->report("{}",++i);
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (!gCell) {
       continue;
@@ -2131,14 +2116,6 @@ void NesterovBase::updateAreas()
   //                         / static_cast<float>(whiteSpaceArea_);
 
   if (totalFillerArea_ < 0) {
-    // log_->warn(GPL,
-    //            303,
-    //            "Consider increasing the target density or re-floorplanning "
-    //            "with a larger core area.\n"
-    //            "Given target density: {:.2f}\n"
-    //            "Suggested target density: {:.2f} (uniform density)",
-    //            targetDensity_,
-    //            uniformTargetDensity_);
     log_->report(
         "No more filler cells to remove (empty space), density is being "
         "modified to compensate for area modification. Desired filler area to "
@@ -2635,9 +2612,6 @@ void NesterovBase::updateNextIter(const int iter)
       nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
       nextSLPSumGrads_[k] = curSLPSumGrads_[k];
       nextCoordi_[k] = curCoordi_[k];
-    } else {
-      if (nb_gcells_[k]->isLocked())
-        log_->report("locked instance in updateNextIter, index {}!", k);
     }
   }
 
@@ -3077,18 +3051,18 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 
 void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 {
-  debugPrint(log_,
-             GPL,
-             "callbacks",
-             1,
-             "NesterovBase: creatGCell {}",
-             db_inst->getName());
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
     new_instances.push_back(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
     size_t gcells_index = nb_gcells_.size() - 1;
-    // log_->report("create gcell nb index:   {}", gcells_index);
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "NesterovBase: creatGCell {}, index: {}",
+               db_inst->getName(),
+               gcells_index);
     db_inst_to_nb_index_[db_inst] = gcells_index;
     appendParallelVectors();
 
@@ -3270,12 +3244,9 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   const int64_t max_fllers_to_remove
       = std::min(inflation_area / single_filler_area,
                  static_cast<int64_t>(fillerStor_.size()));
-  log_->report("totalFillerArea_: {}",
-               block->dbuAreaToMicrons(totalFillerArea_));
-  log_->report("inflationArea: {}", block->dbuAreaToMicrons(inflation_area));
-  log_->report("number of fillers before removal: {}", fillerStor_.size());
-  log_->report("filler area: {}", block->dbuAreaToMicrons(single_filler_area));
 
+  int64_t filler_area_before_removal = totalFillerArea_;
+  size_t num_filler_before_removal = fillerStor_.size();
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
@@ -3284,9 +3255,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
        --i) {
     if (nb_gcells_[i]->isFiller()) {
       // log_->report("filler to be removed in nb_gcells_ index: {},
-      // nb_gcells_.size(): {}", i, nb_gcells_.size());
       const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
-      // removed_fillers_.push_back(removed);
       removed_fillers_.push_back(RemovedFillerState{
           .gcell = removed,
           .curSLPCoordi = curSLPCoordi_[i],
@@ -3330,23 +3299,39 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                block->dbuAreaToMicrons(totalFillerArea_));
   }
 
-  log_->report("Filler cells removed to compensate for inflation: {}",
-               removed_count);
-  log_->report("number of fillers after removal: {}", fillerStor_.size());
+  log_->info(
+      GPL,
+      76,
+      "Fillers (count): Before - {}, After - {} ({:.2f}% reduction)",
+      num_filler_before_removal,
+      fillerStor_.size(),
+      (num_filler_before_removal > 0)
+          ? (static_cast<double>(num_filler_before_removal - fillerStor_.size())
+             / num_filler_before_removal * 100.0)
+          : 0.0);
+
+  log_->info(
+      GPL,
+      77,
+      "Filler area (um^2): Before - {:.3f}, After - {:.3f} ({:.2f}% reduction)",
+      block->dbuAreaToMicrons(filler_area_before_removal),
+      block->dbuAreaToMicrons(totalFillerArea_),
+      (filler_area_before_removal > 0)
+          ? (static_cast<double>(filler_area_before_removal - totalFillerArea_)
+             / filler_area_before_removal * 100.0)
+          : 0.0);
 
   int64_t removedFillerArea = single_filler_area * removed_count;
   int64_t remainingInflationArea = originalInflationArea - removedFillerArea;
 
-  log_->report("Area removed by fillers: {}",
-               block->dbuAreaToMicrons(removedFillerArea));
-  log_->report(
-      "Remaining inflation area to be compensated by modifying density: {}",
-      block->dbuAreaToMicrons(remainingInflationArea));
+  log_->info(GPL,
+             78,
+             "Area removed by fillers: {:.3f} um^2. Remaining area to be "
+             "compensated by modifying density: {:.3f} um^2",
+             block->dbuAreaToMicrons(removedFillerArea),
+             block->dbuAreaToMicrons(remainingInflationArea));
 
   if (remainingInflationArea > single_filler_area && fillerStor_.empty()) {
-    if (fillerStor_.empty()) {
-      log_->report("Not enough fillers to fully compensate inflation.");
-    }
     int64_t totalGCellArea = nesterovInstsArea() + removedFillerArea
                              + totalFillerArea_ + remainingInflationArea;
     setTargetDensity(static_cast<float>(totalGCellArea)
@@ -3354,26 +3339,22 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
     float newTargetDensity = static_cast<float>(totalGCellArea)
                              / static_cast<float>(whiteSpaceArea());
-    log_->report("Density update breakdown:");
-    log_->report("  nesterovInstsArea: {}",
-                 block->dbuAreaToMicrons(nesterovInstsArea()));
-    log_->report("  removedFillerArea: {}",
-                 block->dbuAreaToMicrons(removedFillerArea));
-    log_->report("  remaining fillers area (totalFillerArea_): {}",
-                 block->dbuAreaToMicrons(totalFillerArea_));
-    log_->report("  remainingInflationArea: {}",
-                 block->dbuAreaToMicrons(remainingInflationArea));
-    log_->report("  whiteSpaceArea: {}",
-                 block->dbuAreaToMicrons(whiteSpaceArea()));
-    log_->report("  totalGCellArea: {}",
-                 block->dbuAreaToMicrons(totalGCellArea));
-    log_->report("  New target density: {}", newTargetDensity);
+    log_->info(GPL,
+               79,
+               "Not enough fillers to fully compensate inflation.\n\t\tNew "
+               "target density: {}",
+               newTargetDensity);
   }
 }
 
 void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 {
-  // log_->report("destroy filler nb index: {}", nb_index_remove);
+  debugPrint(log_,
+             GPL,
+             "callbacks",
+             2,
+             "destroy filler nb index: {}",
+             nb_index_remove);
   size_t stor_last_index = fillerStor_.size() - 1;
   GCellHandle& gcell_remove = nb_gcells_[nb_index_remove];
   size_t stor_index_remove = gcell_remove.getStorageIndex();
@@ -3435,7 +3416,7 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 void NesterovBase::restoreRemovedFillers()
 {
   log_->info(GPL,
-             76,
+             80,
              "Restoring {} previously removed fillers.",
              removed_fillers_.size());
   size_t num_fill_before = fillerStor_.size();
@@ -3477,7 +3458,7 @@ void NesterovBase::restoreRemovedFillers()
   }
 
   log_->info(GPL,
-             77,
+             81,
              "Number of fillers before {} and after {} removal. Relative "
              "reduction: {:.2f}%%",
              num_fill_before,
