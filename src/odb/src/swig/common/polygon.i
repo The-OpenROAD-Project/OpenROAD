@@ -10,6 +10,10 @@
 %template(Polygon90Set) std::vector<Polygon90>;
 %template(Polygon90Sets) std::vector<Polygon90Set>;
 
+%typemap(newfree) Polygon90Set * {
+    delete $1;
+}
+
 // Simple constructor
 %newobject newSetFromRect;
 Polygon90Set* newSetFromRect(int xLo, int yLo, int xHi, int yHi);
