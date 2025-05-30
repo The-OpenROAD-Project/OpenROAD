@@ -113,7 +113,8 @@ class GCell
   void print(utl::Logger* logger, bool print_only_name) const;
   void printToFile(std::ostream& out, bool print_only_name = true) const;
 
-  void writeAttributesToCSV(std::ostream& out) const {
+  void writeAttributesToCSV(std::ostream& out) const
+  {
     out << "," << insts_.size() << "," << gPins_.size();
     out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
     out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
@@ -851,7 +852,8 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  GCell& getGCell(size_t index) {
+  GCell& getGCell(size_t index)
+  {
     if (index >= gCellStor_.size()) {
       log_->error(utl::GPL,
                   316,
@@ -866,13 +868,11 @@ class NesterovBaseCommon
   {
     return std::distance(gCellStor_.data(), gCell);
   }
-  
-  // const std::vector<GCell>& getGCellStor() const { return gCellStor_; }
 
   void printGCells();
   void printGCellsToFile(const std::string& filename,
-                        bool print_only_name,
-                        bool also_print_minRc) const;
+                         bool print_only_name,
+                         bool also_print_minRc) const;
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -930,17 +930,18 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index) {
+  GCell& getFillerGCell(size_t index)
+  {
     if (index >= fillerStor_.size()) {
-      log_->error(utl::GPL,
-                  314,
-                  "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
-                  index,
-                  fillerStor_.size());
+      log_->error(
+          utl::GPL,
+          314,
+          "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
+          index,
+          fillerStor_.size());
     }
     return fillerStor_[index];
   }
-  
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -1099,71 +1100,24 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  void destroyCbkGCell(odb::dbInst* db_inst);  
+  void destroyCbkGCell(odb::dbInst* db_inst);
 
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
   void updateGCellState(float wlCoeffX, float wlCoeffY);
 
   void destroyFillerGCell(size_t index_remove);
-
-  void restoreRemovedFillers() {
-    log_->report("restoring removed fillers: {}", removed_fillers_.size());
-    log_->report("fillerStor_.size() before: {}", fillerStor_.size());
-    // for (auto& filler : removed_fillers_) {
-    //   filler.gcell.print(log_, false);
-    // }
-  
-    log_->report("restoring!!!\n\n\n\n\n");
-  
-    for (const auto& filler : removed_fillers_) {
-      // filler.gcell.print(log_, false);
-      fillerStor_.push_back(filler.gcell);      
-      size_t new_index = fillerStor_.size() - 1;      
-      nb_gcells_.emplace_back(this, new_index);
-      filler_stor_index_to_nb_index_[new_index] = nb_gcells_.size() - 1;
-
-      appendParallelVectors();
-      size_t idx = nb_gcells_.size() - 1;
-      log_->report("retore filler nb index:  {}", idx);      
-      // Restore parallel vector data
-      curSLPCoordi_[idx] = filler.curSLPCoordi;
-      curSLPWireLengthGrads_[idx] = filler.curSLPWireLengthGrads;
-      curSLPDensityGrads_[idx] = filler.curSLPDensityGrads;
-      curSLPSumGrads_[idx] = filler.curSLPSumGrads;
-  
-      nextSLPCoordi_[idx] = filler.nextSLPCoordi;
-      nextSLPWireLengthGrads_[idx] = filler.nextSLPWireLengthGrads;
-      nextSLPDensityGrads_[idx] = filler.nextSLPDensityGrads;
-      nextSLPSumGrads_[idx] = filler.nextSLPSumGrads;
-  
-      prevSLPCoordi_[idx] = filler.prevSLPCoordi;
-      prevSLPWireLengthGrads_[idx] = filler.prevSLPWireLengthGrads;
-      prevSLPDensityGrads_[idx] = filler.prevSLPDensityGrads;
-      prevSLPSumGrads_[idx] = filler.prevSLPSumGrads;
-  
-      curCoordi_[idx] = filler.curCoordi;
-      nextCoordi_[idx] = filler.nextCoordi;
-      initCoordi_[idx] = filler.initCoordi;
-  
-      snapshotCoordi_[idx] = filler.snapshotCoordi;
-      snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
-      snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
-  
-      // restored_filler_indexes_.push_back(idx);
-      totalFillerArea_ += getFillerCellArea();
-    }
-  
-    log_->report("fillerStor_.size() after: {}", fillerStor_.size());
-    removed_fillers_.clear();
-  }
+  void restoreRemovedFillers();
+  void clearRemovedFillers() { removed_fillers_.clear(); }
 
   void appendGCellCSVNote(const std::string& filename,
-                                        int iteration,
-                                        const std::string& message) const {
+                          int iteration,
+                          const std::string& message) const
+  {
     std::ofstream file(filename, std::ios::app);
     if (!file.is_open()) {
-      log_->report("Could not open CSV file for appending message: {}", filename);
+      log_->report("Could not open CSV file for appending message: {}",
+                   filename);
       return;
     }
 
@@ -1172,13 +1126,11 @@ class NesterovBase
   }
 
   void writeGCellVectorsToCSV(const std::string& filename,
-                                          int iteration,
-                                          bool write_header) const;
-  
-  
+                              int iteration,
+                              bool write_header) const;
 
-  void clearRemovedFillers() { removed_fillers_.clear(); }
-  void printGCellsToFile(const std::string& filename, bool print_only_name) const;
+  void printGCellsToFile(const std::string& filename,
+                         bool print_only_name) const;
 
  private:
   NesterovBaseVars nbVars_;
@@ -1207,7 +1159,8 @@ class NesterovBase
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
 
-  struct RemovedFillerState {
+  struct RemovedFillerState
+  {
     GCell gcell;
     FloatPoint curSLPCoordi;
     FloatPoint curSLPWireLengthGrads;
@@ -1227,11 +1180,9 @@ class NesterovBase
     FloatPoint snapshotCoordi;
     FloatPoint snapshotSLPCoordi;
     FloatPoint snapshotSLPSumGrads;
-  };  
+  };
 
   std::vector<RemovedFillerState> removed_fillers_;
-  // std::vector<size_t> restored_filler_indexes_;
-  // size_t last_filler_index_;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
@@ -1277,29 +1228,7 @@ class NesterovBase
                   size_t remove_index,
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
-  void appendParallelVectors() {
-    // log_->report("curSLPCoordi_.size(): {}, snapshotCoordi_.size(): {}",curSLPCoordi_.size(), snapshotCoordi_.size());
-    if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
-      snapshotCoordi_.emplace_back();
-      snapshotSLPCoordi_.emplace_back();
-      snapshotSLPSumGrads_.emplace_back();
-    }
-    curSLPCoordi_.emplace_back();
-    curSLPWireLengthGrads_.emplace_back();
-    curSLPDensityGrads_.emplace_back();
-    curSLPSumGrads_.emplace_back();
-    nextSLPCoordi_.emplace_back();
-    nextSLPWireLengthGrads_.emplace_back();
-    nextSLPDensityGrads_.emplace_back();
-    nextSLPSumGrads_.emplace_back();
-    prevSLPCoordi_.emplace_back();
-    prevSLPWireLengthGrads_.emplace_back();
-    prevSLPDensityGrads_.emplace_back();
-    prevSLPSumGrads_.emplace_back();
-    curCoordi_.emplace_back();
-    nextCoordi_.emplace_back();
-    initCoordi_.emplace_back();
-  }
+  void appendParallelVectors();
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1334,10 +1263,6 @@ class NesterovBase
   bool reprint_iter_header;
 
   void initFillerGCells();
-  void updateSingleGCellState(size_t gcells_index,
-                                          float wlCoeffX,
-                                          float wlCoeffY,
-                                          bool update_pins);
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1365,6 +1290,7 @@ class GCellHandle
       : storage_(nbc), storage_index_(idx)
   {
   }
+
   GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
   {
   }
@@ -1384,12 +1310,14 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  void updateHandle(NesterovBaseCommon* nbc, size_t new_index) {
+  void updateHandle(NesterovBaseCommon* nbc, size_t new_index)
+  {
     storage_ = nbc;
     storage_index_ = new_index;
   }
-  
-  void updateHandle(NesterovBase* nb, size_t new_index) {
+
+  void updateHandle(NesterovBase* nb, size_t new_index)
+  {
     storage_ = nb;
     storage_index_ = new_index;
   }

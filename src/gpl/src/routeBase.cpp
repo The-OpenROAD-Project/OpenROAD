@@ -674,14 +674,6 @@ std::pair<bool, bool> RouteBase::routability()
       = inflatedAreaDelta_ + prev_total_gcells_area;
 
   nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
-  // nbc_->fixPointers();
-
-
-  // int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-  // + nbVec_[0]->getTotalFillerArea();
-  // nbVec_[0]->setTargetDensity(
-  //     static_cast<float>(totalGCellArea)
-  //     / static_cast<float>(nbVec_[0]->whiteSpaceArea()));
 
   //
   // max density detection or,
@@ -722,27 +714,12 @@ std::pair<bool, bool> RouteBase::routability()
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
     nbc_->revertGCellSizeToMinRc();
-    // nbVec_[0]->printGCellsToFile("before.txt",false);    
     nbVec_[0]->restoreRemovedFillers();
-    // nbVec_[0]->updateGCellState();
-    // nbVec_[0]->printGCellsToFile("afterRestore.txt",false);
     nbVec_[0]->updateDensitySize();
     resetRoutabilityResources();
-    // nbc_->fixPointers();
-
 
     return std::make_pair(false, true);
   }
-
-  // cut filler cells accordingly
-  //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
-  //    nb_->cutFillerCells( nb_->totalFillerArea() - inflatedAreaDelta_ );
-  //  }
-  // routability-driven cannot solve this problem with the given density...
-  // return false
-  //  else {
-  //    return false;
-  //  }
 
   // updateArea
   nbVec_[0]->updateAreas();
