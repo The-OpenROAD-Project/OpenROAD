@@ -30,3 +30,8 @@ foreach rect [odb::getRectangles $bloatXY] {
 }
 
 check "bloatXY" {list $test} {{{-5 -10 25 20}}}
+
+odb::destroySet bloatXY
+odb::destroySet or
+odb::destroySet ps1
+odb::destroySet ps2
