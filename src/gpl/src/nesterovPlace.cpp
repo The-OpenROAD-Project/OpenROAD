@@ -328,6 +328,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   int routability_driven_count = 0;
   int timing_driven_count = 0;
   bool final_routability_image_saved = false;
+  int64_t original_area = 0;
 
   // Core Nesterov Loop
   int iter = start_iter;
@@ -762,6 +763,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       for (auto& nb : nbVec_) {
         nb->snapshot();
+        original_area += nb->nesterovInstsArea();
       }
 
       log_->info(GPL, 88, "Routability snapshot saved at iter = {}", iter);
@@ -830,6 +832,25 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         log_->info(
             GPL, 89, "Routability end iteration: revert back to snapshot");
       }
+
+      if (!is_routability_need_) {
+        auto block = pbc_->db()->getChip()->getBlock();
+        int64_t end_routability_area = 0;
+        for (auto& nb : nbVec_) {
+          end_routability_area += nb->nesterovInstsArea();
+        }
+        double percent_diff
+            = 100.0 * (end_routability_area - original_area) / original_area;
+        log_->info(
+            GPL,
+            82,
+            "End routability - original area um^2: {:.2f}, new area: {:.2f}, "
+            "change: {:.2f}%. Change in area due to total routability "
+            "inflations.",
+            block->dbuAreaToMicrons(original_area),
+            block->dbuAreaToMicrons(end_routability_area),
+            percent_diff);
+      }
     }
 
     // check each for converge and if all are converged then stop
@@ -845,6 +866,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       break;
     }
   }
+  auto block = pbc_->db()->getChip()->getBlock();
+  int64_t new_area = 0;
+  for (auto& nb : nbVec_) {
+    new_area += nb->nesterovInstsArea();
+  }
+  double percent_diff = 100.0 * (new_area - original_area) / original_area;
+  log_->info(GPL,
+             83,
+             "Original area um^2: {:.2f}, new area: {:.2f}, change: {:.2f}%, "
+             "New area due "
+             "to routability inflation and/or timing-driven otimizations.",
+             block->dbuAreaToMicrons(original_area),
+             block->dbuAreaToMicrons(new_area),
+             percent_diff);
+
   // in all case including diverge,
   // db should be updated.
   updateDb();
