@@ -58,6 +58,7 @@
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/decode.h"
+#include "najaIF/NajaIF.h"
 
 namespace ord {
 extern const char* ord_tcl_inits[];
@@ -497,6 +498,26 @@ void OpenRoad::readVerilog(const char* filename)
   }
   setDbNetworkLinkFunc(getVerilogNetwork(), verilog_reader_);
   verilog_reader_->read(filename);
+}
+
+void OpenRoad::readNajaIFInterface(const char* filename)
+{
+  std::filesystem::path path(filename);
+  if (!std::filesystem::exists(path)) {
+    logger_->error(ORD, 58, "NajaIF interface file {} does not exist.", filename);
+  }
+  odb::NajaIF naja_if(db_); 
+  naja_if.loadInterface(path);
+}
+
+void OpenRoad::readNajaIFImplementation(const char* filename)
+{
+  std::filesystem::path path(filename);
+  if (!std::filesystem::exists(path)) {
+    logger_->error(ORD, 64, "NajaIF implementation file {} does not exist.", filename);
+  }
+  odb::NajaIF naja_if(db_); 
+  naja_if.loadImplementation(path);
 }
 
 void OpenRoad::linkDesign(const char* design_name,

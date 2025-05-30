@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <map>
 #include <tuple>
+#include <string>
 //#include <boost/asio.hpp>
 
 namespace odb {
@@ -19,13 +20,21 @@ class dbModule;
 
 class NajaIF {
   public:
+        NajaIF(dbDatabase* db){ db_ = db; }
+        ~NajaIF() = default;
+    
+        // odb::dbDatabase* getDb() const { return db_; }
+        // odb::dbBlock* getBlock() const { return block_; }
+        // odb::dbBlock* getTopBlock() const { return top_block_; }
+    
+        // boost::asio::ip::tcp::socket getSocket();
     // boost::asio::ip::tcp::socket getSocket(uint16_t port=0); 
      static constexpr std::string_view InterfaceName = "db_interface.snl";
      static constexpr std::string_view ImplementationName = "db_implementation.snl";
      //void dump(const NLDB* db, const std::filesystem::path& dumpPath);
     // void send(const NLDB* db, const std::string& ipAddress, uint16_t port);
     // void send(const NLDB* db, const std::string& ipAddress, uint16_t port, uint8_t forceDBID);
-     odb::dbDatabase* load(const std::filesystem::path& dumpPath);
+    //odb::dbDatabase* load(const std::filesystem::path& dumpPath);
     // NLDB* receive(boost::asio::ip::tcp::socket& socket);
     // NLDB* receive(uint16_t port);
 

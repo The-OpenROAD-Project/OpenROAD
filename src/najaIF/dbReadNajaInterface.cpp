@@ -29,6 +29,8 @@ using namespace odb;
 odb::dbDatabase* NajaIF::db_ = nullptr;
 odb::dbBlock* NajaIF::block_ = nullptr;
 odb::dbBlock* NajaIF::top_block_ = nullptr;
+std::map<std::tuple<size_t, size_t, size_t>, std::pair<odb::dbModule*, bool>> NajaIF::module_map_;
+std::map<size_t, std::vector<std::string>> NajaIF::module2terms_;
 
 // init the static variables to nullptr
 
@@ -344,7 +346,7 @@ void NajaIF::loadInterface(int fileDescriptor)
   }
   if (dbInterface.hasTopDesignReference()) {
     auto top = dbInterface.getTopDesignReference();
-    dbModule* topModule = module_map_[std::make_tuple(
+    dbModule* topModule = NajaIF::module_map_[std::make_tuple(
         dbInterface.getId(),
         top.getLibraryID(),
         top.getDesignID())].first;

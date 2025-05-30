@@ -206,6 +206,7 @@ target_link_libraries(ord
     dbSta
     odb
     OpenSTA
+    naja_if_parser
 )
 
 ################################################################
@@ -331,6 +332,7 @@ target_link_libraries(openroad
   dft
   mpl
   par
+  naja_if_parser
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -383,6 +385,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       odb
       OpenSTA
       ifp
+      naja_if_parser
   )
   target_link_libraries(openroad
     ord_py
@@ -405,6 +408,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     pdn_py
     dft_py
     par_py
+    naja_if_parser
   )
 
 else()
@@ -440,8 +444,10 @@ add_custom_target(openroad_tags etags -o TAGS
   ${OPENROAD_SOURCE}
   ${OPENROAD_HOME}/include/ord/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.hh
+  ${OPENROAD_HOME}/src/najaIF/*.h
   ${DBSTA_HOME}/include/db_sta/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.cc
+  ${OPENROAD_HOME}/src/najaIF/*.cc
   ${RESIZER_HOME}/src/*.hh
   ${RESIZER_HOME}/src/*.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src

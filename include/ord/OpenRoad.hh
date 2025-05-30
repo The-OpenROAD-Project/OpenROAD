@@ -191,6 +191,8 @@ class OpenRoad
                 bool includeFillers);
 
   void readVerilog(const char* filename);
+  void readNajaIFInterface(const char* filename);
+  void readNajaIFImplementation(const char* filename);
   void linkDesign(const char* design_name,
                   bool hierarchy,
                   bool omit_filename_prop = false);

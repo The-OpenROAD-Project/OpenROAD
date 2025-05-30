@@ -11,8 +11,7 @@ find_program(CAPNPC_CXX_EXECUTABLE capnpc-c++)
 
 # Include directories
 find_path(CAPNP_INCLUDE_DIRECTORY capnp/capnp.h)
-include_directories(${CAPNP_INCLUDE_DIRECTORY} PUBLIC ${PROJECT_SOURCE_DIR}/src/odb/include/odb)
-    
+include_directories(${CAPNP_INCLUDE_DIRECTORY} PUBLIC ${PROJECT_SOURCE_DIR}/src/odb/include/odb ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Link directories
 find_library(CAPNP_LIBRARY_DIR capnp)
@@ -39,6 +38,7 @@ add_library(naja_if_parser STATIC
 set_target_properties(naja_if_parser PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(naja_if_parser PRIVATE CapnProto::capnp PUBLIC odb)
-target_link_libraries(naja_if_parser PUBLIC naja_nl PUBLIC odb)
+target_link_libraries(naja_if_parser PUBLIC odb)
 target_include_directories(naja_if_parser PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(naja_if_parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
