@@ -29,10 +29,13 @@ using utl::CTS;
 
 void LatenciesBalancer::run()
 {
+  worseDelay_ = std::numeric_limits<float>::min();
+  delayBufIndex_ = 0;
   initSta();
   computeTopBufferDelay(root_);
   findAllBuilders(root_);
   computeLeafsNumBufferToInsert(0);
+  debugPrint(logger_, CTS, "insertion delay", 1, "inserted {} delay buffers.", delayBufIndex_);
 }
 
 void LatenciesBalancer::initSta() {
@@ -66,25 +69,25 @@ void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   // should happend only for the root builder
   odb::dbITerm* builderTopBufInputTerm = getFirstInput(topBuffer);
   odb::dbNet* topBufInputNet = builderTopBufInputTerm->getNet();
-  odb::dbITerm* builderDriverTerm = topBufInputNet->getFirstOutput();
+
   std::string builderSrcName;
 
-  if(!builderDriverTerm) {
+  if(!topBufInputNet->getFirstOutput()) {
     builderSrcName = topBufInputNet->getName();
   } else {
-    builderSrcName = builderDriverTerm->getInst()->getName();
+    builderSrcName = topBufInputNet->getFirstOutput()->getInst()->getName();
   }
 
   int builderSrcId = getNodeIdByName(builderSrcName);
   if(builderSrcId == -1) {
     builderSrcId = graph_.size();
-    GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, -1);
+    GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, -1, nullptr);
     graph_.push_back(builderSrcNode);
   }
 
   // Create the node for the root of the tree
   int topBufId = graph_.size();
-  GraphNode topBufNode = GraphNode(topBufId, topBufferName, builderSrcId);
+  GraphNode topBufNode = GraphNode(topBufId, topBufferName, builderSrcId, builderTopBufInputTerm);
   graph_.push_back(topBufNode);
   graph_[builderSrcId].childrenIds.push_back(topBufId);
 
@@ -110,13 +113,13 @@ void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
     subNet.forEachSink([&](ClockInst* inst) {
       int sinkId = graph_.size();
       std::string sinkName;
+      odb::dbITerm* sinkIterm = inst->getDbInputPin();
       if(!inst->isClockBuffer()) {
-        odb::dbITerm* sinkIterm = inst->getDbInputPin();
         sinkName = sinkIterm->getInst()->getName();
       } else {
         sinkName = inst->getName();
       }
-      GraphNode sinkNode = GraphNode(sinkId, sinkName, driverId);
+      GraphNode sinkNode = GraphNode(sinkId, sinkName, driverId, sinkIterm);
       graph_.push_back(sinkNode);
       graph_[driverId].childrenIds.push_back(sinkId);
     });
@@ -312,13 +315,167 @@ void LatenciesBalancer::computeTopBufferDelay(TreeBuilder* builder)
 
 void LatenciesBalancer::computeLeafsNumBufferToInsert(int nodeId) {
   GraphNode* node = &graph_[nodeId];
+  // Compute number of buffer needed for leaf node
   if(node->childrenIds.empty()) {
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               1,
+               "For node {}, isert {:2f} buffers",
+               node->name,
+               (worseDelay_ - node->delay) / root_->getTopBufferDelay());
     node->nBuffInsert = (int) ((worseDelay_ - node->delay) / root_->getTopBufferDelay());
     return;
   }
+
+  // If it is not a leaf node compute the amount of buffers needed for its children
+  std::map<int, std::vector<odb::dbITerm*>> buffersNeeded2Childern;
   for(int child : node->childrenIds) {
     computeLeafsNumBufferToInsert(child);
+    buffersNeeded2Childern[graph_[child].nBuffInsert].push_back(graph_[child].inputTerm);
   }
+
+  // If the children need a different amount of buffers insert this difference
+  std::vector<odb::dbITerm*> sinksInput;
+  int totalBuffersToInsert = buffersNeeded2Childern.rbegin()->first - buffersNeeded2Childern.begin()->first;
+  int previous_buf_to_insert = 0;
+  int srcX, srcY;
+  if(node->inputTerm == nullptr) {
+    odb::dbNet* rootNet = root_->getTopInputNet();
+    odb::dbBTerm* clkInput = rootNet->get1stBTerm();
+    odb::Rect clkInputBBox = clkInput->getBBox();
+    srcX = clkInputBBox.xCenter();
+    srcY = clkInputBBox.yCenter();
+  } else {
+    node->inputTerm->getAvgXY(&srcX, &srcY);
+  }
+
+  for (auto it = buffersNeeded2Childern.rbegin(); it != buffersNeeded2Childern.rend(); ++it) {
+    int buf_to_insert = it->first;
+    std::vector<odb::dbITerm*> childs = it->second;
+    if(!previous_buf_to_insert) {
+      previous_buf_to_insert = buf_to_insert;
+      sinksInput.clear();
+      sinksInput = childs;      
+      continue;
+    }
+
+    int numBuffers = previous_buf_to_insert - buf_to_insert;
+    odb::dbITerm* delauBuffInput = insertDelayBuffers(numBuffers, srcX, srcY, sinksInput);
+
+    sinksInput.clear();
+    sinksInput = childs;
+    sinksInput.push_back(delauBuffInput);
+
+    previous_buf_to_insert = buf_to_insert;
+  }
+
+  node->nBuffInsert = previous_buf_to_insert;
+  node->would_insert_here = totalBuffersToInsert;
+}
+
+odb::dbITerm* LatenciesBalancer::insertDelayBuffers(int numBuffers, int srcX, int srcY, std::vector<odb::dbITerm*> sinksInput)
+{
+  // get bbox of current load pins without driver output pin
+  int maxSinkX = 0, maxSinkY = 0;
+  int minSinkX = std::numeric_limits<int>::max(), minSinkY = std::numeric_limits<int>::max();
+  odb::dbNet* drivingNet = nullptr;
+  debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               1,
+               "Inserting {} buffers for sinks:",
+               numBuffers);
+  for (odb::dbITerm* sinkInput : sinksInput) {
+    if (drivingNet == nullptr) {
+      drivingNet = sinkInput->getNet();
+    }
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               1,
+               "  {}}",
+               sinkInput->getInst()->getName());
+    sinkInput->disconnect();
+    int sinkX, sinkY;
+    sinkInput->getAvgXY(&sinkX, &sinkY);
+    maxSinkX = std::max(maxSinkX, sinkX);
+    maxSinkY = std::max(maxSinkY, sinkY);
+    minSinkX = std::min(minSinkX, sinkX);
+    minSinkY = std::min(minSinkY, sinkY);
+  }
+
+  int destX = (maxSinkX + minSinkX) / 2;
+  int destY = (maxSinkY + minSinkY) / 2;
+  float offsetX = (float) (destX - srcX) / (numBuffers + 1);
+  float offsetY = (float) (destY - srcY) / (numBuffers + 1);
+  odb::dbInst* returnBuffer = nullptr;
+  for (int i = 0; i < numBuffers; i++) {
+    double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
+    double locY = (double) (srcY + offsetY * (i + 1)) / wireSegmentUnit_;
+    Point<double> bufferLoc(locX, locY);
+    Point<double> legalBufferLoc
+        = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
+    odb::dbInst* lastBuffer
+        = createDelayBuffer(drivingNet,
+                            root_->getClock().getSdcName(),
+                            legalBufferLoc.getX() * wireSegmentUnit_,
+                            legalBufferLoc.getY() * wireSegmentUnit_);
+
+    drivingNet = lastBuffer->getFirstOutput()->getNet();
+    if(returnBuffer == nullptr) {
+      returnBuffer = lastBuffer;
+    }
+  }
+  for (odb::dbITerm* sinkInput : sinksInput) {
+    if (drivingNet == nullptr) {
+      drivingNet = sinkInput->getNet();
+    }
+    sinkInput->connect(drivingNet);
+  }
+  return getFirstInput(returnBuffer);
+}
+
+// Create a new delay buffer and connect output pin of driver to input pin of
+// new buffer. Output pin of new buffer will be connected later.
+odb::dbInst* LatenciesBalancer::createDelayBuffer(odb::dbNet* driverNet,
+                                          const std::string& clockName,
+                                          int locX,
+                                          int locY)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  // creat a new input net
+  std::string newNetName
+      = "delaynet_" + std::to_string(delayBufIndex_) + "_" + clockName;
+  odb::dbNet* newNet = odb::dbNet::create(block, newNetName.c_str());
+  newNet->setSigType(odb::dbSigType::CLOCK);
+
+  // create a new delay buffer
+  std::string newBufName
+      = "delaybuf_" + std::to_string(delayBufIndex_++) + "_" + clockName;
+  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
+  odb::dbInst* newBuf = odb::dbInst::create(block, master, newBufName.c_str());
+
+  newBuf->setSourceType(odb::dbSourceType::TIMING);
+  newBuf->setLocation(locX, locY);
+  newBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  // connect driver output with new buffer input
+  odb::dbITerm* newBufOutTerm = newBuf->getFirstOutput();
+  odb::dbITerm* newBufInTerm = getFirstInput(newBuf);
+  newBufInTerm->connect(driverNet);
+  newBufOutTerm->connect(newNet);
+
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             1,
+             "new delay buffer {} is inserted at ({} {})",
+             newBuf->getName(),
+             locX,
+             locY);
+
+  return newBuf;
 }
 
 bool LatenciesBalancer::propagateClock(odb::dbITerm* input)
@@ -369,6 +526,25 @@ bool LatenciesBalancer::isSink(odb::dbITerm* iterm)
   }
 
   return false;
+}
+
+void LatenciesBalancer::showGraph() {
+  logger_->report("Graph builded:");
+  for(auto node : graph_) {
+    odb::dbITerm* inputTerm = node.inputTerm;
+    logger_->report(" Node {}", node.name);
+    logger_->report("   id       = {}", node.id);
+    logger_->report("   parent   = {}", node.parentId);
+    logger_->report("   delay    = {}", node.delay);
+    logger_->report("   n buffer = {}", node.nBuffInsert);
+    logger_->report("   would have inserted = {}", node.would_insert_here);
+    logger_->report("   in Term  = {}", inputTerm == nullptr ? "no dbITerm" : inputTerm->getName());
+    logger_->report("   childern [");
+    for(int cId : node.childrenIds) {
+      logger_->report("              {},", cId);
+    }
+    logger_->report("            ]");
+  }
 }
 
 }  // namespace cts
