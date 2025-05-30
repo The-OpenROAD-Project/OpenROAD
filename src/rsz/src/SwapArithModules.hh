@@ -35,15 +35,8 @@ namespace rsz {
 
 class Resizer;
 
-using odb::dbDatabase;
-using odb::dbInst;
 using odb::dbModInst;
-using sta::dbSta;
-using sta::LibertyCell;
 using sta::Path;
-using sta::PathEnd;
-using sta::Pin;
-using sta::PinSet;
 using std::set;
 using std::string;
 using utl::Logger;
@@ -52,7 +45,7 @@ class SwapArithModules : public sta::dbStaState
 {
  public:
   explicit SwapArithModules(Resizer* resizer);
-  ~SwapArithModules() = default;
+  ~SwapArithModules() override = default;
 
   // Main entry point for arithmetic module replacement
   // path_count: Number of critical paths to analyze
@@ -64,7 +57,7 @@ class SwapArithModules : public sta::dbStaState
   void collectArithInstsOnPath(Path* path, set<dbModInst*>& arithInsts);
   bool isArithInstance(Instance* inst, dbModInst*& mod_inst);
   bool hasArithOperatorProperty(dbModInst* mod_inst);
-  void doSwapInstances(set<dbModInst*> insts, const string& target);
+  void doSwapInstances(const set<dbModInst*>& insts, const string& target);
 
  private:
   void init();

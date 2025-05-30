@@ -22,7 +22,6 @@ namespace rsz {
 using odb::dbModInst;
 using odb::dbModule;
 using sta::PathExpanded;
-using std::max;
 using std::pair;
 using std::set;
 using std::string;
@@ -201,7 +200,7 @@ bool SwapArithModules::hasArithOperatorProperty(dbModInst* mod_inst)
   return false;
 }
 
-void SwapArithModules::doSwapInstances(set<dbModInst*> insts,
+void SwapArithModules::doSwapInstances(const set<dbModInst*>& insts,
                                        const std::string& target)
 {
   int swapped_count = 0;
@@ -263,7 +262,8 @@ void SwapArithModules::produceNewModuleName(const string& old_name,
     size_t pos;
     if (old_name.compare(0, 4, "ALU_") == 0) {
       // Swap ALU to KOGGE_STONE for best timing
-      const vector<string> alu_types = {"HAN_CARLSON", "BRENT_KUNG", "SKLANSKY"};
+      const vector<string> alu_types
+          = {"HAN_CARLSON", "BRENT_KUNG", "SKLANSKY"};
       for (const string& alu_type : alu_types) {
         pos = old_name.find(alu_type);
         if (pos != std::string::npos) {

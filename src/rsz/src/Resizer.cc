@@ -247,7 +247,13 @@ bool rszFuzzyEqual(double v1, double v2)
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void Resizer::initBlock()
 {
+  if (db_->getChip() == nullptr) {
+    logger_->error(RSZ, 162, "Database does not have a loaded design");
+  }
   block_ = db_->getChip()->getBlock();
+  if (block_ == nullptr) {
+    logger_->error(RSZ, 163, "Database has no block");
+  }
   core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
                    && core_.yMax() == 0);

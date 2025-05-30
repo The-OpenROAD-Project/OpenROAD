@@ -48,7 +48,3 @@ replace_arith_modules -path_count 100
 
 report_wns
 report_tns
-
-
-
-
