@@ -139,7 +139,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move);
     }
-    move_sequence.push_back(resizer_->size_down_move);
+    // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
     move_sequence.push_back(resizer_->size_up_move);
     if (!skip_pin_swap) {

@@ -60,7 +60,7 @@ set_wire_rc
 | Switch Name | Description |
 | ----- | ----- |
 | `-clock` | Enable setting of RC for clock nets. |
-| `-signal` | Enable setting of RC for signal nets. | 
+| `-signal` | Enable setting of RC for signal nets. |
 | `-layers` | Use the LEF technology resistance and area/edge capacitance values for the layers. The values for each layers will be used for wires with the prefered layer direction, if 2 or more layers have the same prefered direction the avarege value is used for wires with that direction. This is used for a default width wire on the layer. |
 | `-layer` | Use the LEF technology resistance and area/edge capacitance values for the layer. This is used for a default width wire on the layer. |
 | `-resistance` | Resistance per unit length, units are from the first Liberty file read. |
@@ -69,7 +69,6 @@ set_wire_rc
 | `-h_capacitance` | Capacitance per unit length for horizontal wires, units are from the first Liberty file read. |
 | `-v_resistance` | Resistance per unit length for vertical wires, units are from the first Liberty file read. |
 | `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
-
 
 ### Set Layer RC
 
@@ -110,7 +109,7 @@ After the `global_route` command has been called, the global routing topology
 and layers can be used to estimate parasitics  with the `-global_routing`
 flag.
 
-The optional argument `-spef_file` can be used to write the estimated parasitics using 
+The optional argument `-spef_file` can be used to write the estimated parasitics using
 Standard Parasitic Exchange Format.
 
 ```tcl
@@ -249,7 +248,7 @@ the wire. It also resizes gates to normalize slews.  Use `estimate_parasitics
 -placement` before `repair_design` to estimate parasitics considered
 during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
-to compensate. 
+to compensate.
 
 ```tcl
 repair_design 
@@ -318,7 +317,7 @@ Setup repair is done before hold repair so that hold repair does not
 cause setup checks to fail.
 
 The worst setup path is always repaired.  Next, violating paths to
-endpoints are repaired to reduced the total negative slack. 
+endpoints are repaired to reduced the total negative slack.
 
 ```tcl
 repair_timing 
@@ -356,7 +355,7 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,sizedown,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
+| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
@@ -372,7 +371,7 @@ repair_timing
 
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that
-this option be used with global routing based parasitics. 
+this option be used with global routing based parasitics.
 
 #### Instance Name Prefixes
 
@@ -609,9 +608,9 @@ report_wns
 
 ## Regression tests
 
-There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script: 
+Simply run the following script:
 
 ```shell
 ./test/regression

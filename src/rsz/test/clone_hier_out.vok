@@ -307,15 +307,15 @@ module hi_fanout (clk1,
  BUF_X8 split332 (.A(clk_to_nand0),
     .Z(net3376));
  BUF_X8 split295 (.A(clk_to_nand1),
-    .Z(net3638));
+    .Z(net3669));
  BUF_X8 split256 (.A(clk_to_nand0),
     .Z(net3018));
  BUF_X4 split255 (.A(clk_to_nand1),
     .Z(net3494));
  BUF_X8 split150 (.A(clk_to_nand0),
-    .Z(net3643));
+    .Z(net3675));
  BUF_X8 split148 (.A(clk_to_nand1),
-    .Z(net1756));
+    .Z(net3664));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
@@ -370,16 +370,16 @@ module hi_fanout (clk1,
  DFF_X1 load111 (.D(net1306),
     .CK(clk1),
     .Q(output111));
- DFF_X1 load112 (.D(net1324),
+ DFF_X1 load112 (.D(net3498),
     .CK(clk1),
     .Q(output112));
- DFF_X1 load113 (.D(net1325),
+ DFF_X1 load113 (.D(net3499),
     .CK(clk1),
     .Q(output113));
- DFF_X1 load114 (.D(net1326),
+ DFF_X1 load114 (.D(net3500),
     .CK(clk1),
     .Q(output114));
- DFF_X1 load115 (.D(net1327),
+ DFF_X1 load115 (.D(net3501),
     .CK(clk1),
     .Q(output115));
  DFF_X1 load116 (.D(net1328),
@@ -772,7 +772,11 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net0),
     .CK(clk1),
     .Q(output99));
- submodule cloneU1 (.net3466_o(net3466),
+ submodule cloneU1 (.net3501_o(net3501),
+    .net3500_o(net3500),
+    .net3499_o(net3499),
+    .net3498_o(net3498),
+    .net3466_o(net3466),
     .net3465_o(net3465),
     .net3464_o(net3464),
     .net3463_o(net3463),
@@ -796,7 +800,7 @@ module hi_fanout (clk1,
     .net3326_o(net3326),
     .net3325_o(net3325),
     .net3324_o(net3324),
-    .net3040_i(net3638),
+    .net3040_i(net3669),
     .net3038_o(net3038),
     .net3037_o(net3037),
     .net3036_o(net3036),
@@ -864,13 +868,13 @@ module hi_fanout (clk1,
     .net1961_o(net1961),
     .net1960_o(net1960),
     .net1959_o(net1959),
-    .net1707_i(net3643),
+    .net1707_i(net3675),
     .net1705_o(net1705),
     .net1704_o(net1704),
     .net1703_o(net1703),
     .net1702_o(net1702),
     .net1701_o(net1701),
-    .net1695_i(net1756),
+    .net1695_i(net3664),
     .net1693_o(net1693),
     .net1692_o(net1692),
     .net1691_o(net1691),
@@ -1084,7 +1088,11 @@ module hi_fanout (clk1,
     .ip1(clk_to_nand1),
     .op0(net0));
 endmodule
-module submodule (net3466_o,
+module submodule (net3501_o,
+    net3500_o,
+    net3499_o,
+    net3498_o,
+    net3466_o,
     net3465_o,
     net3464_o,
     net3463_o,
@@ -1395,6 +1403,10 @@ module submodule (net3466_o,
     ip0,
     ip1,
     op0);
+ output net3501_o;
+ output net3500_o;
+ output net3499_o;
+ output net3498_o;
  output net3466_o;
  output net3465_o;
  output net3464_o;
@@ -1708,6 +1720,9 @@ module submodule (net3466_o,
  output op0;
 
 
+ NAND2_X2 clone349 (.A1(net1707_i),
+    .A2(net1695_i),
+    .ZN(net3498_o));
  NAND2_X2 clone348 (.A1(ip1),
     .A2(net3376_i),
     .ZN(net3462_o));
@@ -1735,7 +1750,7 @@ module submodule (net3466_o,
  NAND2_X2 clone181 (.A1(ip0),
     .A2(net2673_i),
     .ZN(net1959_o));
- NAND2_X2 clone149 (.A1(net1707_i),
+ NAND2_X4 clone149 (.A1(net1707_i),
     .A2(net1695_i),
     .ZN(net1701_o));
  NAND2_X2 clone147 (.A1(net2678_i),
@@ -1747,7 +1762,7 @@ module submodule (net3466_o,
  NAND2_X2 clone110 (.A1(net1707_i),
     .A2(net1695_i),
     .ZN(net1340_o));
- NAND2_X2 clone108 (.A1(net1707_i),
+ NAND2_X4 clone108 (.A1(net1707_i),
     .A2(net1695_i),
     .ZN(net1324_o));
  NAND2_X2 clone105 (.A1(ip0),
@@ -1765,6 +1780,9 @@ module submodule (net3466_o,
  NAND2_X4 nand_inst_0 (.A1(ip1),
     .A2(net3376_i),
     .ZN(op0));
+ assign net3501_o = net3498_o;
+ assign net3500_o = net3498_o;
+ assign net3499_o = net3498_o;
  assign net3466_o = net3462_o;
  assign net3465_o = net3462_o;
  assign net3464_o = net3462_o;
