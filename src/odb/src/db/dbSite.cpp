@@ -224,7 +224,6 @@ void dbSite::setRowPattern(const RowPattern& row_pattern)
   site->_row_pattern.reserve(row_pattern.size());
   for (auto& row : row_pattern) {
     auto child_site = (_dbSite*) row.site;
-    child_site->_flags._is_hybrid = true;
     site->_row_pattern.push_back({child_site->getOwner()->getId(),
                                   child_site->getId(),
                                   row.orientation});

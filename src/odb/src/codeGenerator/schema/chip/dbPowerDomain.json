@@ -16,7 +16,7 @@
     {
       "name":"_elements",
       "type":"dbVector<std::string>",
-      "flags":["no-set","no-get"]  
+      "flags":["no-set","no-get"]
     },
     {
       "name":"_power_switch",
