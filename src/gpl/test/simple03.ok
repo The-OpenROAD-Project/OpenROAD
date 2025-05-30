@@ -80,4 +80,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.6637
 [INFO GPL-1008]     - For 80% usage of free space: 0.7467
 [INFO GPL-1009]     - For 50% usage of free space: 1.1946
+[INFO GPL-0083] Original area um^2: 0.00, new area: 569.77, change: inf%, New area due to routability inflation and/or timing-driven otimizations.
 No differences found.

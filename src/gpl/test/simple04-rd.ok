@@ -75,6 +75,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-0046] Average top 5.0% routing congestion: 0.4777
 [INFO GPL-0047] Routability iteration weighted routing congestion: 0.5491
 [INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(0.6700), end routability optimization.
+[INFO GPL-0082] End routability - original area um^2: 569.77, new area: 569.77, change: 0.00%. Change in area due to total routability inflations.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
       290 |   0.2677 |  4.777239e+06 |   +0.83% |  8.41e-08 |      
@@ -92,4 +93,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.6637
 [INFO GPL-1008]     - For 80% usage of free space: 0.7467
 [INFO GPL-1009]     - For 50% usage of free space: 1.1946
+[INFO GPL-0083] Original area um^2: 569.77, new area: 569.77, change: 0.00%, New area due to routability inflation and/or timing-driven otimizations.
 No differences found.
