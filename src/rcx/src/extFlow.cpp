@@ -1052,7 +1052,7 @@ uint extMain::couplingFlow(Rect& extRect,
     pitchTable[ii] = 0;
     widthTable[ii] = 0;
   }
-  uint dirTable[16];
+  uint dirTable[32];
   int baseX[32];
   int baseY[32];
   uint layerCnt = initSearchForNets(

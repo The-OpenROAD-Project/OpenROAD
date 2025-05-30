@@ -534,4 +534,52 @@ bool Graphics::guiActive()
   return gui::Gui::enabled();
 }
 
+void Graphics::addFrameLabel(gui::Gui* gui,
+                             const odb::Rect& bbox,
+                             const std::string& label,
+                             const std::string& label_name,
+                             int image_width_px)
+{
+  int label_x = bbox.xMin() + 300;
+  int label_y = bbox.yMin() + 300;
+
+  gui::Painter::Color color = gui::Painter::yellow;
+  gui::Painter::Anchor anchor = gui::Painter::BOTTOM_LEFT;
+
+  int font_size = std::clamp(image_width_px / 50, 15, 24);
+
+  gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
+}
+
+void Graphics::saveLabeledImage(const std::string& path,
+                                const std::string& label,
+                                bool select_buffers,
+                                const std::string& heatmap_control,
+                                int image_width_px)
+{
+  gui::Gui* gui = getGuiObjectFromGraphics();
+  odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, true);
+  }
+
+  if (select_buffers) {
+    gui->select("Inst", "", "Description", "Timing Repair Buffer", true, -1);
+  }
+
+  static int label_id = 0;
+  std::string label_name = fmt::format("auto_label_{}", label_id++);
+
+  addFrameLabel(gui, bbox, label, label_name, image_width_px);
+  gui->saveImage(path);
+  gui->deleteLabel(label_name);
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, false);
+  }
+
+  gui->clearSelections();
+}
+
 }  // namespace gpl

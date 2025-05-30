@@ -935,10 +935,25 @@ void HierRTLMP::createPinAccessBlockages()
 void HierRTLMP::computePinAccessDepthLimits()
 {
   const Rect die = dbuToMicrons(block_->getDieArea());
-  constexpr float max_depth_proportion = 0.20;
 
-  pin_access_depth_limits_.horizontal = max_depth_proportion * die.getWidth();
-  pin_access_depth_limits_.vertical = max_depth_proportion * die.getHeight();
+  constexpr float max_depth_proportion = 0.20;
+  pin_access_depth_limits_.x.max = max_depth_proportion * die.getWidth();
+  pin_access_depth_limits_.y.max = max_depth_proportion * die.getHeight();
+
+  constexpr float min_depth_proportion = 0.04;
+  pin_access_depth_limits_.x.min = min_depth_proportion * die.getWidth();
+  pin_access_depth_limits_.y.min = min_depth_proportion * die.getHeight();
+
+  if (logger_->debugCheck(MPL, "coarse_shaping", 1)) {
+    logger_->report("\n  Pin Access Depth (μm)  |  Min  |  Max");
+    logger_->report("-----------------------------------------");
+    logger_->report("             Horizontal  | {:>5.2f} | {:>6.2f}",
+                    pin_access_depth_limits_.x.min,
+                    pin_access_depth_limits_.x.max);
+    logger_->report("               Vertical  | {:>5.2f} | {:>6.2f}\n",
+                    pin_access_depth_limits_.y.min,
+                    pin_access_depth_limits_.y.max);
+  }
 }
 
 bool HierRTLMP::treeHasConstrainedIOs() const
@@ -1078,15 +1093,16 @@ std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
 void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
                                         const float depth)
 {
-  float blockage_depth;
-  if (isVertical(region.boundary)) {
-    blockage_depth = depth > pin_access_depth_limits_.horizontal
-                         ? pin_access_depth_limits_.horizontal
-                         : depth;
-  } else {
-    blockage_depth = depth > pin_access_depth_limits_.vertical
-                         ? pin_access_depth_limits_.vertical
-                         : depth;
+  float blockage_depth = depth;
+
+  const Interval& limits = isVertical(region.boundary)
+                               ? pin_access_depth_limits_.x
+                               : pin_access_depth_limits_.y;
+
+  if (blockage_depth > limits.max) {
+    blockage_depth = limits.max;
+  } else if (blockage_depth < limits.min) {
+    blockage_depth = limits.min;
   }
 
   debugPrint(logger_,

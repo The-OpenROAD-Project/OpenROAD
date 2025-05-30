@@ -235,7 +235,9 @@ class FlexPA
   bool genPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
@@ -472,25 +474,6 @@ class FlexPA
       const bool& is_std_cell_pin);
 
   /**
-   * @brief Filters the accesses of a single access point
-   *
-   * @param ap access point
-   * @param polyset polys auxilary set (same information as polys)
-   * @param polys a vector of pin shapes on all layers of the current pin
-   * @param pin access pin
-   * @param inst_term terminal
-   * @param deep_search TODO: not sure
-   */
-  template <typename T>
-  void filterSingleAPAccesses(
-      frAccessPoint* ap,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      T* pin,
-      frInstTerm* inst_term,
-      bool deep_search = false);
-
-  /**
    * @brief Filters access in a given planar direction.
    *
    * @param ap access point
@@ -498,9 +481,11 @@ class FlexPA
    * @param dir candidate dir to the access
    * @param pin access pin
    * @param inst_term terminal
+   *
+   * @returns True if the access points can use planar access.
    */
   template <typename T>
-  void filterPlanarAccess(
+  bool filterPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
@@ -575,6 +560,25 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term,
       bool deep_search = false);
+
+  /**
+   * @brief checks if an access point can have planar access, alters the point
+   * to allow it and returns true if planar access is valid.
+   *
+   * @param ap Access point
+   * @param layer_polys A vector of polygons organized by layer
+   * @param pin Pin
+   * @param inst_term the instance terminal object
+   *
+   * @returns True if the point can have planar access.
+   */
+  template <typename T>
+  bool validateAPForPlanarAccess(
+      frAccessPoint* ap,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
+      T* pin,
+      frInstTerm* inst_term);
 
   /**
    * @brief Checks if a Via has at least one valid planar access
