@@ -2106,23 +2106,6 @@ void NesterovBase::updateAreas()
                        * static_cast<int64_t>(gCell->dy());
     }
   }
-
-  int64_t coreArea = pb_->die().coreArea();
-  whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
-
-  movableArea_ = whiteSpaceArea_ * targetDensity_;
-  totalFillerArea_ = movableArea_ - nesterovInstsArea();
-  // uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
-  //                         / static_cast<float>(whiteSpaceArea_);
-
-  if (totalFillerArea_ < 0) {
-    log_->report(
-        "No more filler cells to remove (empty space), density is being "
-        "modified to compensate for area modification. Desired filler area to "
-        "be removed:{}",
-        totalFillerArea_);
-    totalFillerArea_ = 0;
-  }
 }
 
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
@@ -3096,8 +3079,6 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
                         * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
-  // log_->report("createcbkgcell gCellStor_ index for NBC_gcells_: {},
-  // nbc_gcells.size(): {}", gCellStor_.size() - 1, nbc_gcells_.size() -1);
   return gCellStor_.size() - 1;
 }
 
@@ -3299,25 +3280,26 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                block->dbuAreaToMicrons(totalFillerArea_));
   }
 
-  log_->info(
-      GPL,
-      76,
-      "Fillers (count): Before - {}, After - {} ({:.2f}% reduction)",
-      num_filler_before_removal,
-      fillerStor_.size(),
-      (num_filler_before_removal > 0)
-          ? (static_cast<double>(num_filler_before_removal - fillerStor_.size())
-             / num_filler_before_removal * 100.0)
-          : 0.0);
+  log_->info(GPL,
+             76,
+             "Removing fillers, count: Before: {}, After: {} ({:+.2f}%)",
+             num_filler_before_removal,
+             fillerStor_.size(),
+             (num_filler_before_removal != 0)
+                 ? (static_cast<double>(
+                        static_cast<int64_t>(fillerStor_.size())
+                        - static_cast<int64_t>(num_filler_before_removal))
+                    / num_filler_before_removal * 100.0)
+                 : 0.0);
 
   log_->info(
       GPL,
       77,
-      "Filler area (um^2): Before - {:.3f}, After - {:.3f} ({:.2f}% reduction)",
+      "Filler area (um^2)     : Before: {:.3f}, After: {:.3f} ({:+.2f}%)",
       block->dbuAreaToMicrons(filler_area_before_removal),
       block->dbuAreaToMicrons(totalFillerArea_),
-      (filler_area_before_removal > 0)
-          ? (static_cast<double>(filler_area_before_removal - totalFillerArea_)
+      (filler_area_before_removal != 0)
+          ? (static_cast<double>(totalFillerArea_ - filler_area_before_removal)
              / filler_area_before_removal * 100.0)
           : 0.0);
 
@@ -3326,8 +3308,10 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
   log_->info(GPL,
              78,
-             "Area removed by fillers: {:.3f} um^2. Remaining area to be "
+             "Removed fillers count: {}, area removed: {:.3f} um^2. Remaining "
+             "area to be "
              "compensated by modifying density: {:.3f} um^2",
+             removed_count,
              block->dbuAreaToMicrons(removedFillerArea),
              block->dbuAreaToMicrons(remainingInflationArea));
 
