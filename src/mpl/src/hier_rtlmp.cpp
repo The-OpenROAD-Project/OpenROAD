@@ -241,9 +241,11 @@ void HierRTLMP::run()
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
-
   writeMacroPlacement(macro_placement_file_);
+
   clear();
+
+  computeWireLength();
 }
 
 void HierRTLMP::init()
@@ -2912,6 +2914,13 @@ void HierRTLMP::clear()
   if (graphics_) {
     graphics_->eraseDrawing();
   }
+}
+
+void HierRTLMP::computeWireLength() const
+{
+  odb::WireLengthEvaluator wirelength_evaluator(block_);
+  logger_->metric("macro_place__wirelength",
+                  block_->dbuToMicrons(wirelength_evaluator.hpwl()));
 }
 
 void HierRTLMP::setDebug(std::unique_ptr<MplObserver>& graphics)
