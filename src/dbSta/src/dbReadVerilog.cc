@@ -492,7 +492,7 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
   // make the instance iterms and set up their reference
   // to the child ports (dbModBTerms).
 
-  InstancePinIterator* ip_iter = network_->pinIterator(inst);
+  std::unique_ptr<InstancePinIterator> ip_iter(network_->pinIterator(inst));
   while (ip_iter->hasNext()) {
     Pin* cur_pin = ip_iter->next();
     const std::string pin_name_string = network_->portName(cur_pin);
