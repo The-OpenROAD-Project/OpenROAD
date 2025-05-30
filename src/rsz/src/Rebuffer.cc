@@ -735,11 +735,8 @@ Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet,
 void BufferMove::rebufferNet(const Pin* drvr_pin)
 {
   init();
-  resizer_->incrementalParasiticsBegin();
+  IncrementalParasiticsGuard guard(resizer_);
   int inserted_buffer_count_ = rebuffer(drvr_pin);
-  // Leave the parasitics up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }
 

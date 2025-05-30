@@ -63,7 +63,6 @@ bool RepairHold::repairHold(
     const int max_passes,
     const bool verbose)
 {
-  RegisterOdbCallbackGuard guard(resizer_);
   bool repaired = false;
   init();
   sta_->checkSlewLimitPreamble();
@@ -81,19 +80,18 @@ bool RepairHold::repairHold(
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   // Prevent it from being too small on trivial designs
   max_buffer_count = std::max(max_buffer_count, 100);
-  resizer_->incrementalParasiticsBegin();
-  repaired = repairHold(ends1,
-                        buffer_cell,
-                        setup_margin,
-                        hold_margin,
-                        allow_setup_violations,
-                        max_buffer_count,
-                        max_passes,
-                        verbose);
 
-  // Leave the parasitices up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    repaired = repairHold(ends1,
+                          buffer_cell,
+                          setup_margin,
+                          hold_margin,
+                          allow_setup_violations,
+                          max_buffer_count,
+                          max_passes,
+                          verbose);
+  }
 
   return repaired;
 }
@@ -106,7 +104,6 @@ void RepairHold::repairHold(const Pin* end_pin,
                             const float max_buffer_percent,
                             const int max_passes)
 {
-  RegisterOdbCallbackGuard guard(resizer_);
   init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -118,18 +115,18 @@ void RepairHold::repairHold(const Pin* end_pin,
 
   sta_->findRequireds();
   const int max_buffer_count = max_buffer_percent * network_->instanceCount();
-  resizer_->incrementalParasiticsBegin();
-  repairHold(ends,
-             buffer_cell,
-             setup_margin,
-             hold_margin,
-             allow_setup_violations,
-             max_buffer_count,
-             max_passes,
-             false);
-  // Leave the parasitices up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
+
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    repairHold(ends,
+               buffer_cell,
+               setup_margin,
+               hold_margin,
+               allow_setup_violations,
+               max_buffer_count,
+               max_passes,
+               false);
+  }
 }
 
 // Find a good hold buffer using delay/area as the metric.
@@ -466,7 +463,6 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               // reduce setup slack in ways that are too expensive to
               // predict. Use the journal to back out the change if
               // the hold buffer blows through the setup margin.
-              resizer_->incrementalParasiticsEnd();
               resizer_->journalBegin();
               Slack setup_slack_before = sta_->worstSlack(max_);
               Slew slew_before = sta_->vertexSlew(path_vertex, max_);
@@ -489,7 +485,6 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               } else {
                 resizer_->journalEnd();
               }
-              resizer_->incrementalParasiticsBegin();
             }
           }
         }

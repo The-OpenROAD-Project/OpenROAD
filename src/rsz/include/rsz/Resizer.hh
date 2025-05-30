@@ -406,7 +406,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   dbNetwork* getDbNetwork() { return db_network_; }
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
-  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; }
+  void setParasiticsSrc(ParasiticsSrc src);
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -724,6 +724,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+  bool incremental_parasitics_enabled_ = false;
 
   double design_area_ = 0.0;
   const MinMax* min_ = MinMax::min();
@@ -826,14 +827,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
-  friend class RegisterOdbCallbackGuard;
+  friend class IncrementalParasiticsGuard;
 };
 
-class RegisterOdbCallbackGuard
+class IncrementalParasiticsGuard
 {
  public:
-  RegisterOdbCallbackGuard(Resizer* resizer);
-  ~RegisterOdbCallbackGuard();
+  IncrementalParasiticsGuard(Resizer* resizer);
+  ~IncrementalParasiticsGuard();
 
  private:
   Resizer* resizer_;
