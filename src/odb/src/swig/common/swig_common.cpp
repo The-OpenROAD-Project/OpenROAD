@@ -195,6 +195,11 @@ void destroySet(Polygon90Set* set)
   delete set;
 }
 
+void destroyPolygon(Polygon90* polygon)
+{
+  delete polygon;
+}
+
 std::vector<Polygon90> getPolygons(const Polygon90Set* set)
 {
   std::vector<Polygon90> s;

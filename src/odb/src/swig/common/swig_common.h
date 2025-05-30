@@ -53,6 +53,8 @@ Polygon90Set* subtractSet(const Polygon90Set* set1, const Polygon90Set* set2);
 
 void destroySet(Polygon90Set* set);
 
+void destroyPolygon(Polygon90* polygon);
+
 std::vector<Polygon90> getPolygons(const Polygon90Set* set);
 
 std::vector<odb::Rect> getRectangles(const Polygon90Set* set);

@@ -49,3 +49,6 @@ Polygon90Set* subtractSet(Polygon90Set* set1, const Polygon90Set* set2);
 
 %delobject destroySet;
 void destroySet(Polygon90Set* set);
+
+%delobject destroyPolygon;
+void destroyPolygon(Polygon90* polygon);
