@@ -85,6 +85,7 @@ void TritonCTS::runTritonCts()
     checkCharacterization();
     buildClockTrees();
     writeDataToDb();
+    setAllClocksPropagated();
     balanceMacroRegisterLatencies();
   }
 
@@ -2140,6 +2141,20 @@ void TritonCTS::printClockNetwork(const Clock& clockNet) const
   });
 }
 
+void TritonCTS::setAllClocksPropagated()
+{
+  if (options_->insertionDelayEnabled()) {
+    for (auto iter = builders_.begin(); iter != builders_.end(); ++iter) {
+      TreeBuilder* builder = iter->get();
+      computeTopBufferDelay(builder);
+    }
+  }
+  sta::Sdc* sdc = openSta_->sdc();
+    for (sta::Clock* clk : *sdc->clocks()) {
+      openSta_->setPropagatedClock(clk);
+    }
+}
+
 // Balance macro cell latencies with register latencies.
 // This is needed only if special insertion delay handling
 // is invoked.
@@ -2151,9 +2166,11 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
+  resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
   openSta_->ensureGraph();
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
+  openSta_->ensureClkArrivals();
   sta::Graph* graph = openSta_->graph();
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* registerBuilder = iter->get();
@@ -2161,10 +2178,11 @@ void TritonCTS::balanceMacroRegisterLatencies()
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
         // Update graph information after possible buffers inserted
-        openSta_->updateTiming(false);
         computeAveSinkArrivals(registerBuilder, graph);
         computeAveSinkArrivals(macroBuilder, graph);
         adjustLatencies(macroBuilder, registerBuilder);
+        openSta_->updateTiming(false);
+        resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
       }
     }
   }
@@ -2341,10 +2359,6 @@ bool TritonCTS::propagateClock(odb::dbITerm* input)
 void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
                                 TreeBuilder* registerBuilder)
 {
-  // compute top buffer delays
-  computeTopBufferDelay(registerBuilder);
-  computeTopBufferDelay(macroBuilder);
-
   float latencyDiff = macroBuilder->getAveSinkArrival()
                       - registerBuilder->getAveSinkArrival();
   int numBuffers = 0;
@@ -2434,7 +2448,7 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
     float outputArrival = openSta_->pinArrival(
         outputPin, sta::RiseFall::rise(), sta::MinMax::max());
     float bufferDelay = outputArrival - inputArrival;
-    builder->setTopBufferDelay(bufferDelay);
+    builder->setTopBufferDelay(bufferDelay + (bufferDelay * 0.1));
     debugPrint(logger_,
                CTS,
                "insertion delay",
