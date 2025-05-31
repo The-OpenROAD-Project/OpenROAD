@@ -920,27 +920,29 @@ void Connect::recordFailedVias() const
     tool_category = odb::dbMarkerCategory::create(grid_->getBlock(), "PDN");
     tool_category->setSource("PDN");
   }
+  odb::dbMarkerCategory* via_category
+      = odb::dbMarkerCategory::createOrReplace(tool_category, "Via");
 
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
     switch (reason) {
       case failedViaReason::OBSTRUCTED:
-        reason_str = "Via - Obstructed";
+        reason_str = "Obstructed";
         break;
       case failedViaReason::OVERLAPPING:
-        reason_str = "Via - Overlapping";
+        reason_str = "Overlapping";
         break;
       case failedViaReason::BUILD:
-        reason_str = "Via - Build";
+        reason_str = "Build";
         break;
       case failedViaReason::RIPUP:
-        reason_str = "Via - Ripup";
+        reason_str = "Ripup";
         break;
       case failedViaReason::RECHECK:
         // Do not report recheck vias
         continue;
       case failedViaReason::OTHER:
-        reason_str = "Via - Other";
+        reason_str = "Other";
         break;
     }
 
@@ -948,7 +950,7 @@ void Connect::recordFailedVias() const
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
 
     odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::createOrGet(tool_category, reason_str.c_str());
+        = odb::dbMarkerCategory::createOrGet(via_category, reason_str.c_str());
 
     for (const auto& [net, shape] : shapes) {
       odb::dbMarker* marker = odb::dbMarker::create(category);
