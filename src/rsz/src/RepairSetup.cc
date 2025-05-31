@@ -220,6 +220,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
+  IncrementalParasiticsGuard guard(resizer_);
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
@@ -504,7 +505,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   Vertex* vertex = graph_->pinLoadVertex(end_pin);
   const Slack slack = sta_->vertexSlack(vertex, max_);
   Path* path = sta_->vertexWorstSlackPath(vertex, max_);
-  resizer_->incrementalParasiticsBegin();
+
   move_sequence.clear();
   move_sequence = {resizer_->unbuffer_move,
                    resizer_->size_down_move,
@@ -513,10 +514,11 @@ void RepairSetup::repairSetup(const Pin* end_pin)
                    resizer_->buffer_move,
                    resizer_->clone_move,
                    resizer_->split_load_move};
-  repairPath(path, slack, 0.0);
-  // Leave the parasitices up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
+
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    repairPath(path, slack, 0.0);
+  }
 
   int unbuffer_moves_ = resizer_->unbuffer_move->numCommittedMoves();
   if (unbuffer_moves_ > 0) {

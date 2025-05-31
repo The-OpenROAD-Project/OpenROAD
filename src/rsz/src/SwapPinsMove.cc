@@ -183,16 +183,6 @@ void SwapPinsMove::swapPins(Instance* inst,
     sta_->disconnectPin(found_pin2);
     db_network_->connectPin(
         found_pin2, (Net*) flat_net_pin1, (Net*) mod_net_pin1);
-
-    // Invalidate the parasitics on these two nets.
-    if (resizer_->haveEstimatedParasitics()) {
-      resizer_->invalidateParasitics(
-          found_pin2,
-          db_network_->dbToSta(flat_net_pin1));  // net1);
-      resizer_->invalidateParasitics(
-          found_pin1,
-          db_network_->dbToSta(flat_net_pin2));  // net2);
-    }
   }
 }
 
