@@ -904,7 +904,7 @@ void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
 
 void HierRTLMP::createPinAccessBlockages()
 {
-  if (!tree_->maps.pad_to_bterm.empty()) {
+  if (!tree_->io_pads.empty()) {
     return;
   }
 
