@@ -43,6 +43,10 @@ namespace gpl {
 class Replace;
 }
 
+namespace gpl2 {
+class DgReplace;
+}
+
 namespace dpl {
 class Opendp;
 }
@@ -153,6 +157,7 @@ class Design
 
   // Services
   ant::AntennaChecker* getAntennaChecker();
+  gpl2::DgReplace* getDgReplace();
   cts::TritonCTS* getTritonCts();
   dft::Dft* getDft();
   dpl::Opendp* getOpendp();
