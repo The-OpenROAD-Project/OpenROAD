@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+find_package(OpenMP REQUIRED)
+
 add_library(FastRoute4.1
   src/FastRoute.cpp
   src/RSMT.cpp
@@ -31,4 +33,5 @@ target_link_libraries(FastRoute4.1
     stt_lib
     odb
     Boost::boost
+    OpenMP::OpenMP_CXX
 )
