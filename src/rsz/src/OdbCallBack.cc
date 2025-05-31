@@ -17,6 +17,8 @@
 #include <memory>
 
 #include "rsz/Resizer.hh"
+#include "sta/Liberty.hh"
+#include "sta/PortDirection.hh"
 
 namespace rsz {
 
@@ -115,14 +117,22 @@ void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
              "inDbInstSwapMasterAfter {}",
              inst->getName());
   Instance* sta_inst = db_network_->dbToSta(inst);
+
+  // Invalidate estimated parasitics on all instance pins.
   std::unique_ptr<InstancePinIterator> pin_iter{
       network_->pinIterator(sta_inst)};
   while (pin_iter->hasNext()) {
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
-    // we can only update parasitics for flat net
-    odb::dbNet* db_net = db_network_->flatNet(net);
-    resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
+
+    const LibertyPort* port = network_->libertyPort(pin);
+    // Tristate nets have multiple drivers and this is drivers^2 if
+    // the parasitics are updated for each resize.
+    if (!port || !port->direction()->isAnyTristate()) {
+      // we can only update parasitics for flat net
+      odb::dbNet* db_net = db_network_->flatNet(net);
+      resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
+    }
   }
 }
 

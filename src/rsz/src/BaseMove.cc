@@ -678,20 +678,6 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
         || resizer_->getParasiticsSrc() == ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
-    if (resizer_->haveEstimatedParasitics()) {
-      auto pin_iter
-          = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        const Net* net = network_->net(pin);
-        odb::dbNet* db_net = nullptr;
-        odb::dbModNet* db_modnet = nullptr;
-        db_network_->staToDb(net, db_net, db_modnet);
-        // only work on dbnets
-        resizer_->invalidateParasitics(pin, db_network_->dbToSta(db_net));
-        //        invalidateParasitics(pin, net);
-      }
-    }
 
     return true;
   }

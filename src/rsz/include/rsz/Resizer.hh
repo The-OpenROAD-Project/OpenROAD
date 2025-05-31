@@ -118,6 +118,7 @@ class SizeDownMove;
 class SizeUpMove;
 class SwapPinsMove;
 class UnbufferMove;
+class RegisterOdbCallbackGuard;
 
 class NetHash
 {
@@ -409,7 +410,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   dbNetwork* getDbNetwork() { return db_network_; }
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
-  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; }
+  void setParasiticsSrc(ParasiticsSrc src);
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -421,7 +422,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void journalBeginTest();
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
-  void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
@@ -728,6 +728,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+  bool incremental_parasitics_enabled_ = false;
 
   double design_area_ = 0.0;
   const MinMax* min_ = MinMax::min();
@@ -783,9 +784,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
 
   std::unique_ptr<OdbCallBack> db_cbk_;
-  bool is_callback_registered_ = false;
-  bool isCallBackRegistered() { return is_callback_registered_; }
-  void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
   // Restrict default sizing such that one sizing move cannot increase area or
   // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
@@ -837,6 +835,18 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
+  friend class IncrementalParasiticsGuard;
+};
+
+class IncrementalParasiticsGuard
+{
+ public:
+  IncrementalParasiticsGuard(Resizer* resizer);
+  ~IncrementalParasiticsGuard();
+
+ private:
+  Resizer* resizer_;
+  bool need_unregister_;
 };
 
 }  // namespace rsz

@@ -139,7 +139,6 @@ Resizer::~Resizer()
   delete repair_setup_;
   delete repair_hold_;
   delete target_load_map_;
-  delete incr_groute_;
   delete buffer_move;
   delete clone_move;
   delete size_down_move;
@@ -352,6 +351,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
+  IncrementalParasiticsGuard guard(this);
 
   if (insts.empty()) {
     // remove all the buffers
@@ -765,26 +765,25 @@ void Resizer::bufferInputs()
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
-  incrementalParasiticsBegin();
-  InstancePinIterator* port_iter
-      = network_->pinIterator(network_->topInstance());
-  while (port_iter->hasNext()) {
-    Pin* pin = port_iter->next();
-    Vertex* vertex = graph_->pinDrvrVertex(pin);
-    Net* net = network_->net(network_->term(pin));
+  {
+    IncrementalParasiticsGuard guard(this);
+    std::unique_ptr<InstancePinIterator> port_iter(
+        network_->pinIterator(network_->topInstance()));
+    while (port_iter->hasNext()) {
+      Pin* pin = port_iter->next();
+      Vertex* vertex = graph_->pinDrvrVertex(pin);
+      Net* net = network_->net(network_->term(pin));
 
-    if (network_->direction(pin)->isInput() && !dontTouch(net)
-        && !vertex->isConstant()
-        && !sta_->isClock(pin)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net) && hasPins(net)) {
-      // repair_design will resize to target slew.
-      bufferInput(pin, buffer_lowest_drive_);
+      if (network_->direction(pin)->isInput() && !dontTouch(net)
+          && !vertex->isConstant()
+          && !sta_->isClock(pin)
+          // Hands off special nets.
+          && !db_network_->isSpecial(net) && hasPins(net)) {
+        // repair_design will resize to target slew.
+        bufferInput(pin, buffer_lowest_drive_);
+      }
     }
   }
-  delete port_iter;
-  updateParasitics();
-  incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
     logger_->info(
@@ -973,11 +972,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
     db_network_->connectPin(const_cast<Pin*>(top_pin),
                             db_network_->dbToSta(top_pin_flat_net));
   }
-  // invalidate the parasitics on the buffer input and output
-  // nets (the top_pin_flat_net, buffer input, and buffer_out
-  // flat_net, buffer output).
-  parasiticsInvalid(db_network_->dbToSta(top_pin_flat_net));
-  parasiticsInvalid(db_network_->dbToSta(buffer_out_flat_net));
 
   return buffer;
 }
@@ -989,27 +983,26 @@ void Resizer::bufferOutputs()
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
-  incrementalParasiticsBegin();
-  InstancePinIterator* port_iter
-      = network_->pinIterator(network_->topInstance());
-  while (port_iter->hasNext()) {
-    Pin* pin = port_iter->next();
-    Vertex* vertex = graph_->pinLoadVertex(pin);
-    Net* net = network_->net(network_->term(pin));
-    if (network_->direction(pin)->isOutput() && net
-        && !dontTouch(net)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)
-        // DEF does not have tristate output types so we have look at the
-        // drivers.
-        && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
-        && hasPins(net)) {
-      bufferOutput(pin, buffer_lowest_drive_);
+  {
+    IncrementalParasiticsGuard guard(this);
+    std::unique_ptr<InstancePinIterator> port_iter(
+        network_->pinIterator(network_->topInstance()));
+    while (port_iter->hasNext()) {
+      Pin* pin = port_iter->next();
+      Vertex* vertex = graph_->pinLoadVertex(pin);
+      Net* net = network_->net(network_->term(pin));
+      if (network_->direction(pin)->isOutput() && net
+          && !dontTouch(net)
+          // Hands off special nets.
+          && !db_network_->isSpecial(net)
+          // DEF does not have tristate output types so we have look at the
+          // drivers.
+          && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
+          && hasPins(net)) {
+        bufferOutput(pin, buffer_lowest_drive_);
+      }
     }
   }
-  delete port_iter;
-  updateParasitics();
-  incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
     logger_->info(
@@ -1111,9 +1104,6 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
           buffer_ip_pin_iterm->getNet()->getName().c_str());
     }
   }
-
-  parasiticsInvalid(flat_op_net);
-  parasiticsInvalid(buffer_out);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1635,6 +1625,18 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
+void Resizer::setParasiticsSrc(ParasiticsSrc src)
+{
+  if (incremental_parasitics_enabled_) {
+    logger_->error(
+        RSZ,
+        108,
+        "cannot change parasitics source while incremental parasitics enabled");
+  }
+
+  parasitics_src_ = src;
+}
+
 void Resizer::makeEquivCells()
 {
   LibertyLibrarySeq libs;
@@ -1953,18 +1955,6 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
   return best_cell;
 }
 
-void Resizer::invalidateParasitics(const Pin* pin, const Net* net)
-{
-  // ODB is clueless about tristates so go to liberty for reality.
-  const LibertyPort* port = network_->libertyPort(pin);
-  // Invalidate estimated parasitics on all instance input pins.
-  // Tristate nets have multiple drivers and this is drivers^2 if
-  // the parasitics are updated for each resize.
-  if (net && !port->direction()->isAnyTristate()) {
-    parasiticsInvalid(net);
-  }
-}
-
 void Resizer::eraseParasitics(const Net* net)
 {
   parasitics_invalid_.erase(net);
@@ -1990,20 +1980,6 @@ bool Resizer::replaceCell(Instance* inst,
     if (parasitics_src_ == ParasiticsSrc::global_routing
         || parasitics_src_ == ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
-    }
-    if (haveEstimatedParasitics()) {
-      InstancePinIterator* pin_iter = network_->pinIterator(inst);
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        const Net* net = network_->net(pin);
-        odb::dbNet* db_net = nullptr;
-        odb::dbModNet* db_modnet = nullptr;
-        db_network_->staToDb(net, db_net, db_modnet);
-        // only work on dbnets
-        invalidateParasitics(pin, db_network_->dbToSta(db_net));
-        //        invalidateParasitics(pin, net);
-      }
-      delete pin_iter;
     }
     return true;
   }
@@ -2041,6 +2017,7 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
+  IncrementalParasiticsGuard guard(this);
   if (run_journal_restore)
     journalBegin();
   estimateWireParasitics();
@@ -3831,12 +3808,7 @@ bool Resizer::recoverPower(float recover_power_percent,
 void Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
-  incrementalParasiticsBegin();
   odb::dbDatabase::beginEco(block_);
-  if (isCallBackRegistered()) {
-    db_cbk_->removeOwner();
-    setCallBackRegistered(false);
-  }
 
   buffer_move->undoMoves();
   size_down_move->undoMoves();
@@ -3854,7 +3826,6 @@ void Resizer::journalEnd()
     updateParasitics();
     sta_->findRequireds();
   }
-  incrementalParasiticsEnd();
   odb::dbDatabase::endEco(block_);
 
   int move_count_ = 0;
@@ -3927,7 +3898,6 @@ void Resizer::journalRestore()
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
     odb::dbDatabase::endEco(block_);
-    incrementalParasiticsEnd();
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -3936,33 +3906,12 @@ void Resizer::journalRestore()
     return;
   }
 
-  incrementalParasiticsEnd();
-  incrementalParasiticsBegin();
-
-  // Observe netlist changes to invalidate relevant net parasitics
-  if (!isCallBackRegistered()) {
-    db_cbk_->addOwner(block_);
-    setCallBackRegistered(true);
-    debugPrint(logger_,
-               RSZ,
-               "odb",
-               1,
-               "ODB callback registered for block {}",
-               reinterpret_cast<uintptr_t>(block_));
-  }
-
   // Odb callbacks invalidate parasitics
   odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
-  // Done with restore.  Disable netlist observer.
-  db_cbk_->removeOwner();
-  setCallBackRegistered(false);
-  debugPrint(logger_, RSZ, "odb", 1, "ODB callback unregistered");
-
   updateParasitics();
   sta_->findRequireds();
-  incrementalParasiticsEnd();
 
   // Update transform counts
   debugPrint(
@@ -4414,6 +4363,64 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     result.push_back(parseMove(item));
   }
   return result;
+}
+
+IncrementalParasiticsGuard::IncrementalParasiticsGuard(Resizer* resizer)
+    : resizer_(resizer), need_unregister_(false)
+{
+  // check to allow reentrancy
+  if (!resizer_->incremental_parasitics_enabled_) {
+    if (!resizer_->block_) {
+      resizer_->logger_->error(
+          RSZ, 101, "incremental parasitics require an initialized block");
+    }
+
+    if (!resizer_->parasitics_invalid_.empty()) {
+      resizer_->logger_->error(RSZ, 104, "inconsistent parasitics state");
+    }
+
+    switch (resizer_->parasitics_src_) {
+      case ParasiticsSrc::placement:
+        break;
+      case ParasiticsSrc::global_routing:
+      case ParasiticsSrc::detailed_routing:
+        // TODO: add IncrementalDRoute
+        resizer_->incr_groute_
+            = new IncrementalGRoute(resizer_->global_router_, resizer_->block_);
+        // Don't print verbose messages for incremental routing
+        resizer_->global_router_->setVerbose(false);
+        break;
+      case ParasiticsSrc::none:
+        break;
+    }
+
+    resizer_->incremental_parasitics_enabled_ = true;
+    resizer_->db_cbk_->addOwner(resizer_->block_);
+    need_unregister_ = true;
+  }
+}
+
+IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
+{
+  if (need_unregister_) {
+    resizer_->db_cbk_->removeOwner();
+    resizer_->updateParasitics();
+
+    switch (resizer_->parasitics_src_) {
+      case ParasiticsSrc::placement:
+        break;
+      case ParasiticsSrc::global_routing:
+      case ParasiticsSrc::detailed_routing:
+        // TODO: add IncrementalDRoute
+        delete resizer_->incr_groute_;
+        resizer_->incr_groute_ = nullptr;
+        break;
+      case ParasiticsSrc::none:
+        break;
+    }
+
+    resizer_->incremental_parasitics_enabled_ = false;
+  }
 }
 
 }  // namespace rsz
