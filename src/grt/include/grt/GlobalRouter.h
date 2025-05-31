@@ -419,7 +419,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                            const odb::Rect& die_area,
                            odb::dbNet* db_net);
   int computeMaxRoutingLayer();
-  std::map<int, odb::dbTechVia*> getDefaultVias(int max_routing_layer);
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();

@@ -1640,6 +1640,8 @@ class dbBlock : public dbObject
 
   void clearUserInstFlags();
 
+  std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
+
  public:
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
