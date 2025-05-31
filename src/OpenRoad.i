@@ -374,6 +374,20 @@ read_verilog_cmd(const char *filename)
   ord->readVerilog(filename);
 }
 
+void 
+read_naja_if_interface_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->readNajaIFInterface(filename);
+}
+
+void
+read_naja_if_implementation_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->readNajaIFImplementation(filename);
+}
+
 void
 link_design_db_cmd(const char *design_name,
                    bool hierarchy,

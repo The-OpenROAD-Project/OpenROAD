@@ -408,7 +408,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     pdn_py
     dft_py
     par_py
-    naja_if_parser
   )
 
 else()
