@@ -925,22 +925,22 @@ void Connect::recordFailedVias() const
     std::string reason_str;
     switch (reason) {
       case failedViaReason::OBSTRUCTED:
-        reason_str = "Obstructed";
+        reason_str = "Via - Obstructed";
         break;
       case failedViaReason::OVERLAPPING:
-        reason_str = "Overlapping";
+        reason_str = "Via - Overlapping";
         break;
       case failedViaReason::BUILD:
-        reason_str = "Build";
+        reason_str = "Via - Build";
         break;
       case failedViaReason::RIPUP:
-        reason_str = "Ripup";
+        reason_str = "Via - Ripup";
         break;
       case failedViaReason::RECHECK:
-        reason_str = "Recheck";
-        break;
+        // Do not report recheck vias
+        continue;
       case failedViaReason::OTHER:
-        reason_str = "Other";
+        reason_str = "Via - Other";
         break;
     }
 
