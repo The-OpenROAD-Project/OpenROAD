@@ -84,6 +84,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       280 |   0.2922 |  1.292884e+09 |   +0.45% |  3.84e-09 |      
       290 |   0.2840 |  1.298895e+09 |   +0.46% |  5.65e-09 |      
       300 |   0.2706 |  1.303666e+09 |   +0.37% |  8.31e-09 |      
+[INFO GPL-0083] Original area um^2: 0.00, new area: 44590.38, change: inf%, New area due to routability inflation and/or timing-driven otimizations.
 [INFO GPL-0133] Unlocked instances
       310 |   0.4793 |  1.157110e+09 |  -11.24% |  1.09e-08 |      
       320 |   0.4447 |  1.155177e+09 |   -0.17% |  1.45e-08 |      
@@ -106,4 +107,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0553
 [INFO GPL-1008]     - For 80% usage of free space: 0.0622
+[INFO GPL-0083] Original area um^2: 0.00, new area: 44590.38, change: inf%, New area due to routability inflation and/or timing-driven otimizations.
 No differences found.

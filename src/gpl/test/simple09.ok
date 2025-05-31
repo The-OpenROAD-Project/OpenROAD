@@ -40,4 +40,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0022
 [INFO GPL-1008]     - For 80% usage of free space: 0.0024
+[INFO GPL-0083] Original area um^2: 0.00, new area: 1.86, change: inf%, New area due to routability inflation and/or timing-driven otimizations.
 No differences found.
