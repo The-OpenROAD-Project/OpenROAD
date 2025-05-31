@@ -114,7 +114,8 @@ class ResizerObserver;
 class CloneMove;
 class BufferMove;
 class SplitLoadMove;
-class SizeMove;
+class SizeDownMove;
+class SizeUpMove;
 class SwapPinsMove;
 class UnbufferMove;
 class RegisterOdbCallbackGuard;
@@ -154,6 +155,8 @@ enum class MoveType
   UNBUFFER,
   SWAP,
   SIZE,
+  SIZEUP,
+  SIZEDOWN,
   CLONE,
   SPLIT
 };
@@ -280,6 +283,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    const std::vector<MoveType>& sequence,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
+                   bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp);
@@ -808,9 +812,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   CloneMove* clone_move = nullptr;
   SplitLoadMove* split_load_move = nullptr;
   BufferMove* buffer_move = nullptr;
-  SizeMove* size_move = nullptr;
+  SizeDownMove* size_down_move = nullptr;
+  SizeUpMove* size_up_move = nullptr;
   SwapPinsMove* swap_pins_move = nullptr;
   UnbufferMove* unbuffer_move = nullptr;
+  int accepted_move_count_ = 0;
+  int rejected_move_count_ = 0;
 
   friend class BufferedNet;
   friend class GateCloner;
@@ -822,7 +829,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class SteinerTree;
   friend class BaseMove;
   friend class BufferMove;
-  friend class SizeMove;
+  friend class SizeDownMove;
+  friend class SizeUpMove;
   friend class SplitLoadMove;
   friend class CloneMove;
   friend class SwapPinsMove;
