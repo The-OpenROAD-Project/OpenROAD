@@ -921,7 +921,7 @@ void Connect::recordFailedVias() const
     tool_category->setSource("PDN");
   }
   odb::dbMarkerCategory* via_category
-      = odb::dbMarkerCategory::createOrReplace(tool_category, "Via");
+      = odb::dbMarkerCategory::createOrGet(tool_category, "Via");
 
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
