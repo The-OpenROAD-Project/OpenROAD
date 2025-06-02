@@ -12,6 +12,7 @@ foreach poly [odb::getPolygons $or] {
         lappend pts [$pt getX] [$pt getY]
     }
     lappend test $pts
+    odb::destroyPolygon $poly
 }
 
 check "polygon points" {list $test} {{{0 0 20 0 20 10 10 10 10 20 0 20}}}
@@ -30,3 +31,8 @@ foreach rect [odb::getRectangles $bloatXY] {
 }
 
 check "bloatXY" {list $test} {{{-5 -10 25 20}}}
+
+odb::destroySet $bloatXY
+odb::destroySet $or
+odb::destroySet $ps1
+odb::destroySet $ps2
