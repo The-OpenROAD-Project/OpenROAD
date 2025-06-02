@@ -860,7 +860,7 @@ void ClusteringEngine::dataFlowDFSMacroPin(
   }
 }
 
-void ClusteringEngine::updateDataFlow()
+void ClusteringEngine::buildDataFlowConnections()
 {
   if (data_connections_.is_empty) {
     return;
@@ -1542,7 +1542,8 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
 
   int num_small_children = static_cast<int>(small_children.size());
   while (true) {
-    updateConnections();  // update the connections between clusters
+    clearConnections();
+    buildNetlistConnections();
 
     std::vector<int> cluster_class(num_small_children, -1);  // merge flag
     std::vector<int> small_children_ids;                     // store cluster id
@@ -1690,12 +1691,22 @@ bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
   return false;
 }
 
-void ClusteringEngine::updateConnections()
+void ClusteringEngine::rebuildConnections()
+{
+  clearConnections();
+  buildNetlistConnections();
+  buildDataFlowConnections();
+}
+
+void ClusteringEngine::clearConnections()
 {
   for (auto& [cluster_id, cluster] : tree_->maps.id_to_cluster) {
     cluster->initConnection();
   }
+}
 
+void ClusteringEngine::buildNetlistConnections()
+{
   for (odb::dbNet* net : block_->getNets()) {
     if (!isValidNet(net)) {
       continue;
@@ -1826,7 +1837,8 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
   std::vector<Cluster*> macro_clusters;
   createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
 
-  updateConnections();
+  clearConnections();
+  buildNetlistConnections();
 
   const int number_of_macros = static_cast<int>(hard_macros.size());
   std::vector<int> size_class(number_of_macros, -1);

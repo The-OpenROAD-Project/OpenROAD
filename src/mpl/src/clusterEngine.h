@@ -142,8 +142,7 @@ class ClusteringEngine
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
-  void updateConnections();
-  void updateDataFlow();
+  void rebuildConnections();
   void updateInstancesAssociation(Cluster* cluster);
   void updateInstancesAssociation(odb::dbModule* module,
                                   int cluster_id,
@@ -224,6 +223,10 @@ class ClusteringEngine
                                   std::vector<int>& virtual_conn_clusters);
   void replaceByStdCellCluster(Cluster* mixed_leaf,
                                std::vector<int>& virtual_conn_clusters);
+
+  void clearConnections();
+  void buildNetlistConnections();
+  void buildDataFlowConnections();
 
   // Methods for data flow
   void createDataFlow();
