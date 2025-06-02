@@ -41,6 +41,9 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #OpenDP
     "//src/dpl:swig",
     "//src/dpl:tcl",
+    #Example
+    "//src/exa:swig",
+    "//src/exa:tcl",
     #finale
     ":finale_swig",
     ":finale_tcl",
