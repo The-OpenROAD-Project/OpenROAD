@@ -1728,8 +1728,39 @@ Polygon dbBlock::getBTermTopLayerGridRegion()
   return region;
 }
 
+void dbBlock::ensureConstraintRegion(const Direction2D& edge,
+                                     int& begin,
+                                     int& end)
+{
+  const int input_begin = begin;
+  const int input_end = end;
+  const Rect& die_bounds = getDieArea();
+  if (edge == south || edge == north) {
+    begin = std::max(begin, die_bounds.xMin());
+    end = std::min(end, die_bounds.xMax());
+  } else if (edge == west || edge == east) {
+    begin = std::max(begin, die_bounds.yMin());
+    end = std::min(end, die_bounds.yMax());
+  }
+
+  if (input_begin != begin || input_end != end) {
+    _dbBlock* block = (_dbBlock*) this;
+    utl::Logger* logger = block->getImpl()->getLogger();
+    logger->warn(utl::ODB,
+                 11,
+                 "Region {}-{} on edge {} modified to {}-{} to respect the "
+                 "die area limits.",
+                 dbuToMicrons(input_begin),
+                 dbuToMicrons(input_end),
+                 edge,
+                 dbuToMicrons(begin),
+                 dbuToMicrons(end));
+  }
+}
+
 Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)
 {
+  ensureConstraintRegion(edge, begin, end);
   Rect constraint_region;
   const Rect& die_bounds = getDieArea();
   if (edge == south) {
