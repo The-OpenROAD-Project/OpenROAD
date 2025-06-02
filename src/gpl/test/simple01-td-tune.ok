@@ -168,6 +168,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.5689
 [INFO GPL-1008]     - For 80% usage of free space: 0.6400
 [INFO GPL-1009]     - For 50% usage of free space: 1.0240
-[INFO GPL-0083] Original area um^2: 0.00, new area: 488.38, change: inf%, New area due to routability inflation and/or timing-driven otimizations.
+[INFO GPL-0083] Original area um^2: 553.28, new area: 488.38, change: -11.73%, New area due to routability inflation and/or timing-driven otimizations.
 worst slack max 1.40
 No differences found.

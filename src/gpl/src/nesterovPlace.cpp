@@ -289,10 +289,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // backTracking variable.
   float curA = 1.0;
 
+  int routability_driven_count = 0;
+  int timing_driven_count = 0;
+  bool final_routability_image_saved = false;
+  int64_t original_area = 0;
+
   for (auto& nb : nbVec_) {
     nb->setIter(start_iter);
     nb->setMaxPhiCoefChanged(false);
     nb->resetMinSumOverflow();
+    original_area += nb->nesterovInstsArea();
   }
 
   namespace fs = std::filesystem;
@@ -324,11 +330,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     clean_directory(timing_driven_dir);
     clean_directory(routability_driven_dir);
   }
-
-  int routability_driven_count = 0;
-  int timing_driven_count = 0;
-  bool final_routability_image_saved = false;
-  int64_t original_area = 0;
 
   // Core Nesterov Loop
   int iter = start_iter;
@@ -763,7 +764,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       for (auto& nb : nbVec_) {
         nb->snapshot();
-        original_area += nb->nesterovInstsArea();
       }
 
       log_->info(GPL, 88, "Routability snapshot saved at iter = {}", iter);
