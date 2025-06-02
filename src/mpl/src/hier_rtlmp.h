@@ -140,6 +140,7 @@ class HierRTLMP
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
   void clear();
+  void computeWireLength() const;
 
   // Coarse Shaping
   void runCoarseShaping();
