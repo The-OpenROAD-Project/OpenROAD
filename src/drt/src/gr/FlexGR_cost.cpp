@@ -26,24 +26,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexGR.h"
-
-#include <omp.h>
-
-#include <cmath>
-#include <fstream>
+#include "FlexGR_cost.h"
 #include <iostream>
-
-#include "db/grObj/grShape.h"
-#include "db/grObj/grVia.h"
-#include "db/infra/frTime.h"
-#include "db/obj/frGuide.h"
-#include "odb/db.h"
-#include "utl/exception.h"
+#include <sys/resource.h>
 
 namespace drt {
 
-using utl::ThreadException;
+double getCongCost(unsigned supply, unsigned demand)
+{
+  return demand * (1.0 + 8.0 / (1.0 + exp(supply - demand))) / (supply + 1);
+}
 
 
-}  // namespace drt
+} // namespace drt
+

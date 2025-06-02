@@ -131,8 +131,13 @@ class FlexGR
   bool initRoute_getNodeSegment2D(frNode* node, 
     Point& bpIdx, Point& epIdx, 
     bool errFlag = true);
+
   // bpIdx <= epIdx
   void initRoute_updateCongestion2D_Segment(const Point& bpIdx, const Point& epIdx);
+
+  inline frNode* initRoute_getNoncolinearParent(frNode* node);
+
+  inline frNode* initRoute_getColinearParent(frNode* node);
 
   // Modified by Zhiang Wang
   // Initial Routing (two-pin net + pattern routing)
@@ -144,7 +149,9 @@ class FlexGR
   void initRoute_createPinGCellNodes(frNet* net);
 
   void initRoute_genTopology();
-  
+    
+  void initRoute_patternRoute_Z_shape();
+
   // In this function, we generate initial topology for the net
   // Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
   void initRoute_genTopology_net(frNet* net);
@@ -223,7 +230,7 @@ class FlexGR
       std::vector<std::vector<unsigned>>& bestLayerCombs);
 
   // cost
-  double getCongCost(unsigned supply, unsigned demand);
+  // double getCongCost(unsigned supply, unsigned demand);
 
   // others
   void ripupRoute(frNode* child, frNode* parent);

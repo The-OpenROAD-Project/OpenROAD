@@ -42,7 +42,7 @@
 #include "odb/db.h"
 #include "utl/exception.h"
 #include "stt/SteinerTreeBuilder.h"
-
+#include "gr/FlexGR_cost.h"
 
 namespace drt {
 
@@ -64,8 +64,11 @@ void FlexGR::initRoute_gpu()
   logger_->report("[INFO] Initial congestion map after FLUTE topology generation ...");
   reportCong2D();
 
-  // initRoute_patternRoute();
+  // No need to use GPU-accelerated approach
+  // Initialize L-Shape pattern routing for non-clinear segments  
+  initRoute_patternRoute_Z_shape();
 
+  
   // initRoute_initObj();
 }
 
@@ -81,7 +84,7 @@ void FlexGR::initRoute_genTopology()
   for (auto& net : design_->getTopBlock()->getNets()) {
     // We assume clk nets has been handled by the clock tree synthesis
     // To do list: it seems that clock net sometimes cannot be identified by the isSpecial() function
-    std::string netName = net->getName();
+    std::string netName = net->getName();  
     if (netName.find("clk") != std::string::npos || netName.find("CLK") != std::string::npos) {
       net->setGRValid(false);
       logger_->report("[INFO] initRoute_genTopology: skipping clk net ({})", netName);
@@ -490,6 +493,19 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
 }
 
 
+// This function is used to route non-clinear segments in the routing tree.
+// Just for initial routing tree construction.
+// Later, we will use GPU-accelerated segment shifting and steiner point ajustment for RRR
+void FlexGR::initRoute_patternRoute_Z_shape()
+{
+  
+
+
+
+
+
+}
+
 
 
 
@@ -620,6 +636,8 @@ void FlexGR::initRoute_updateCongestion2D_net(frNet* net, bool errFlag)
     }
   }
 }
+
+
 
 
 

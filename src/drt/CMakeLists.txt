@@ -87,6 +87,7 @@ target_sources(drt
     src/gr/FlexGR_end.cpp
     src/gr/FlexGR_aux.cpp
     src/gr/FlexGR_update.cpp
+    src/gr/FlexGR_cost.cpp
     src/gr/FlexGRGridGraph.cpp
     src/gr/FlexGRGridGraph_maze.cpp
     src/gr/FlexGR_initRoute_gpu.cpp

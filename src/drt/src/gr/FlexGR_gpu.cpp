@@ -107,8 +107,4 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
 }
 
 
-
-
-
-
 }  // namespace drt
