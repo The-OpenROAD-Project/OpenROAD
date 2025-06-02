@@ -521,6 +521,7 @@ repair_setup(double setup_margin,
              std::vector<rsz::MoveType> sequence,
              bool skip_pin_swap,
              bool skip_gate_cloning,
+             bool skip_size_down,
              bool skip_buffering,
              bool skip_buffer_removal,
              bool skip_last_gasp)
@@ -532,6 +533,7 @@ repair_setup(double setup_margin,
                        match_cell_footprint, verbose,
                        sequence,
                        skip_pin_swap, skip_gate_cloning,
+                       skip_size_down,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);
 }

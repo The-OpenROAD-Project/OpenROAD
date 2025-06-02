@@ -22,7 +22,8 @@ add_library(rsz_lib
     RepairSetup.cc
     Rebuffer.cc
     SteinerTree.cc
-    SizeMove.cc
+    SizeDownMove.cc
+    SizeUpMove.cc
     SplitLoadMove.cc
     SwapPinsMove.cc
     UnbufferMove.cc
