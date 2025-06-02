@@ -42,6 +42,7 @@ class Progress;
   X(DPL)                \
   X(DRT)                \
   X(DST)                \
+  X(EXA)                \
   X(FIN)                \
   X(FLW)                \
   X(GPL)                \

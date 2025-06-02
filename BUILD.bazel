@@ -59,6 +59,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cts",
     "//src/dbSta",
     "//src/dpl",
+    "//src/exa",
     "//src/grt",
     "//src/gui",
     "//src/odb",
