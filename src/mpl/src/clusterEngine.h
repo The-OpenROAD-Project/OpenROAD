@@ -225,7 +225,7 @@ class ClusteringEngine
                                std::vector<int>& virtual_conn_clusters);
 
   void clearConnections();
-  void buildNetlistConnections();
+  void buildNetListConnections();
   void buildDataFlowConnections();
 
   // Methods for data flow

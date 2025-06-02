@@ -1543,7 +1543,7 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
   int num_small_children = static_cast<int>(small_children.size());
   while (true) {
     clearConnections();
-    buildNetlistConnections();
+    buildNetListConnections();
 
     std::vector<int> cluster_class(num_small_children, -1);  // merge flag
     std::vector<int> small_children_ids;                     // store cluster id
@@ -1694,7 +1694,7 @@ bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
 void ClusteringEngine::rebuildConnections()
 {
   clearConnections();
-  buildNetlistConnections();
+  buildNetListConnections();
   buildDataFlowConnections();
 }
 
@@ -1705,7 +1705,7 @@ void ClusteringEngine::clearConnections()
   }
 }
 
-void ClusteringEngine::buildNetlistConnections()
+void ClusteringEngine::buildNetListConnections()
 {
   for (odb::dbNet* net : block_->getNets()) {
     if (!isValidNet(net)) {
@@ -1838,7 +1838,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
   createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
 
   clearConnections();
-  buildNetlistConnections();
+  buildNetListConnections();
 
   const int number_of_macros = static_cast<int>(hard_macros.size());
   std::vector<int> size_class(number_of_macros, -1);
