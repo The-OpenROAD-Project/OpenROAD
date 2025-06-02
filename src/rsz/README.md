@@ -568,6 +568,111 @@ report_equiv_cells
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 | `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
 
+### Optimizing Arithmetic Modules
+
+The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing model.
+This command analyzes critical timing paths and replaces arithmetic modules with equivalent but architecturally different implementations to
+improve Quality of Results (QoR) for the specified target.
+
+#### Arithmetic Module Types
+
+Yosys and OpenROAD support the following arithmetic module variants with different timing/area trade-offs.
+
+ALU (Arithmetic Logic Unit) Variants
+
+Han-Carlson (default)
+: Balanced delay and area.  Best for general purpose applications.
+
+Kogge-Stone
+: Fastest, largest area.  Best for timing-constrained designs.
+
+Brent-Kung
+: Slower, smaller area.  Best for area-constrained designs.
+
+Sklansky
+: Moderate delay/area.  Best for balanced optimization.
+
+MACC (Multiply-Accumulate) Variants
+
+Booth (default)
+: Balanced delay and area.  Best for general purpose applications.
+
+Base (Han-Carlson)
+: Fastest, potentially larger area.  Best for timing-constrained designs.
+
+#### Requirements for Arithmetic Module Swap
+
+1. Hierarchical netlist with arithmetic operators.  Yosys can produce such designs by enabling "wrapped operator synthesis".
+In OpenROAD-flow-scripts, this can be done as follows:
+
+cd OpenROAD-flow-scripts/flow
+
+make SYNTH_WRAPPED_OPERATORS=1
+
+This requires a Verilog netlist.  DEF netlist alone is not sufficient for hierarchical optimization.
+
+2. Hierarchically linked design.  The design needs to be linked to preserve hierarchical boundaries.  For example,
+
+link_design top -hier
+
+read_db -hier
+
+```tcl
+replace_arith_modules 
+    [-path_count num_critical_paths]
+    [-slack_threshold float]
+    [-target setup | hold | power | area]
+```
+
+#### Options
+
+| Option             | Type    |  Default |   Description                                                                        |
+|:------------------ |: ------ |:-------- |: ----------------------------------------------------------------------------------  |
+| `-path_count`      | integer |  1000    | Number of critical paths to analyze to identify candidate arithmetic modules to swap |
+| `-slack_threshold` | float   |  0.0     | Slack threshold in library time units.  Use positive values to include paths with small positive slack |
+| `-target`          | string  |  setup   | Optimization target: setup, hold, power, area                                        |
+
+#### Arguments
+
+Setup
+ALU: replace all candidate modules with Kogge-Stone (fastest)
+MACC: replace all candidate modules with Base (fastest)
+
+Hold
+Not available yet
+
+Power
+Not available yet
+
+Area
+Not available yet
+
+#### SEE ALSO
+
+replace_hier_modules
+
+#### EXAMPLES
+
+Arithmetic modules follow this naming convention per Yosys:
+
+ALU_\<io_config\>_\<width\>_\<config\>_\<architecture\>
+
+MACC_\<io_config\>_\<width\>_\<architecture\>
+
+Examples:
+
+ALU_20_0_25_0_25_unused_CO_X_HAN_CARLSON
+
+ALU_20_0_25_0_25_unused_CO_X_KOGGE_STONE
+
+ALU_20_0_25_0_25_unused_CO_X_BRENT_KUNG
+
+ALU_25_0_20_0_25_unused_CO_X_SKLANSKY
+
+\\MACC_14'10001011010100_19_BOOTH
+
+\\MACC_14'10001011010100_19_BASE
+
 ## Example scripts
 
 A typical `resizer` command file (after a design and Liberty libraries have

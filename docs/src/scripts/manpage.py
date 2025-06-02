@@ -13,7 +13,7 @@
 ##
 ## * Redistributions in binary form must reproduce the above copyright notice,
 ##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
+##   and/or other materials provided with the distribution.
 ##
 ## * Neither the name of the copyright holder nor the names of its
 ##   contributors may be used to endorse or promote products derived from
@@ -38,6 +38,7 @@
 
 import io
 import datetime
+from typing import List, Dict, Union
 
 
 # identify key section and stored in ManPage class.
@@ -49,8 +50,42 @@ class ManPage:
         self.synopsis = ""
         self.switches = {}
         self.args = {}
+        self.examples = []  # List of example dictionaries
+        self.see_also = []  # List of related commands/functions
         self.datetime = datetime.datetime.now().strftime("%y/%m/%d")
         self.man_level = f"man{man_level}"
+
+    def add_example(self, description: str, code: str, output: str = None):
+        """
+        Add an example to the manpage.
+        
+        Args:
+            description: Description of what the example does
+            code: The actual code/command example
+            output: Optional expected output
+        """
+        example = {
+            'description': description,
+            'code': code,
+            'output': output
+        }
+        self.examples.append(example)
+
+    def add_see_also(self, reference: str, section: int = None, description: str = None):
+        """
+        Add a reference to the SEE ALSO section.
+        
+        Args:
+            reference: Name of the command/function to reference
+            section: Manual section number (optional)
+            description: Brief description of the reference (optional)
+        """
+        see_also_entry = {
+            'reference': reference,
+            'section': section,
+            'description': description
+        }
+        self.see_also.append(see_also_entry)
 
     def write_roff_file(self, dst_dir="./md/man2"):
         assert self.name, print("func name not set")
@@ -66,7 +101,9 @@ class ManPage:
             self.write_description(f)
             self.write_options(f)
             self.write_arguments(f)
-            self.write_placeholder(f)  # TODO.
+            self.write_examples(f)
+            self.write_see_also(f)
+            self.write_copyright(f)
 
     def write_header(self, f):
         assert (
@@ -110,8 +147,9 @@ class ManPage:
         f.write(f"\n# OPTIONS\n")
         if not self.switches:
             f.write(f"\nThis command has no switches.\n")
-        for key, val in self.switches.items():
-            f.write(f"\n`{key}`: {val}\n")
+        else:
+            for key, val in self.switches.items():
+                f.write(f"\n`{key}`: {val}\n")
 
     def write_arguments(self, f):
         assert (
@@ -121,19 +159,42 @@ class ManPage:
         f.write(f"\n# ARGUMENTS\n")
         if not self.args:
             f.write(f"\nThis command has no arguments.\n")
-        for key, val in self.args.items():
-            f.write(f"\n`{key}`: {val}\n")
+        else:
+            for key, val in self.args.items():
+                f.write(f"\n`{key}`: {val}\n")
 
-    def write_placeholder(self, f):
+    def write_examples(self, f):
+        """Write the EXAMPLES section with proper formatting."""
         assert (
             isinstance(f, io.TextIOBase) and f.writable()
         ), "File pointer is not open for writing."
 
-        # TODO: these are all not populated currently, not parseable from docs.
-        # TODO: Arguments can actually be parsed, but you need to preprocess the synopsis further.
-        sections = ["EXAMPLES", "SEE ALSO"]
-        for s in sections:
-            f.write(f"\n# {s}\n")
+        f.write(f"\n#### EXAMPLES\n")
+        
+        if not self.examples:
+            f.write(f"No examples available.\n")
+        else:
+            for example in self.examples:
+                f.write(f"{example['description']}\n")
+                if example.get('code'):
+                    f.write(f"{example['code']}\n")
+                if example.get('output'):
+                    f.write(f"\n{example['output']}\n")
+
+    def write_see_also(self, f):
+        """Write the SEE ALSO section with proper formatting."""
+        assert (
+            isinstance(f, io.TextIOBase) and f.writable()
+        ), "File pointer is not open for writing."
+
+        f.write(f"\n#### SEE ALSO\n")
+        
+        if not self.see_also:
+            f.write(f"No related references.\n")
+        else:
+            for ref in self.see_also:
+                reference = ref['reference']
+                f.write(f"{reference}\n")
 
     def write_copyright(self, f):
         assert (
@@ -146,5 +207,48 @@ class ManPage:
         )
 
 
+# Example usage demonstration
 if __name__ == "__main__":
-    pass
+    # Create a sample manpage
+    man = ManPage(man_level=2)
+    man.name = "sample_function"
+    man.desc = "A sample function that demonstrates the enhanced ManPage class capabilities."
+    man.synopsis = "int sample_function(int arg1, char *arg2, int flags);"
+    
+    # Add switches and arguments
+    man.switches = {
+        "-v, --verbose": "Enable verbose output",
+        "-h, --help": "Display help message"
+    }
+    
+    man.args = {
+        "arg1": "Integer argument for processing",
+        "arg2": "String argument containing input data",
+        "flags": "Bitwise flags for operation control"
+    }
+    
+    # Add examples
+    man.add_example(
+        "Basic usage with minimal arguments",
+        "result = sample_function(42, \"hello\", 0);",
+        "Returns: 0 on success"
+    )
+    
+    man.add_example(
+        "Usage with verbose flag enabled",
+        "result = sample_function(100, \"test data\", VERBOSE_FLAG);",
+        "Returns: 0 on success, with detailed logging"
+    )
+    
+    # Add see also references
+    man.add_see_also("related_function", 2, "Similar function with different parameters")
+    man.add_see_also("utility_helper", 3, "Helper function for data processing")
+    man.add_see_also("debugging_tools", description="Collection of debugging utilities")
+    
+    print("Enhanced ManPage class ready for use!")
+    print("Key improvements:")
+    print("- Added examples list and add_example() method")
+    print("- Added see_also list and add_see_also() method") 
+    print("- Replaced write_placeholder() with write_examples() and write_see_also()")
+    print("- Added copyright section to main write flow")
+    print("- Improved formatting and structure")
