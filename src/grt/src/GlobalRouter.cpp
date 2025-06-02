@@ -1315,6 +1315,10 @@ std::vector<LayerId> GlobalRouter::findTransitionLayers()
       = block_->getDefaultVias();
   std::vector<LayerId> transition_layers;
   for (const auto [tech_layer, via] : default_vias) {
+    if (tech_layer->getRoutingLevel() > getMaxRoutingLayer()) {
+      continue;
+    }
+
     const bool vertical
         = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     int via_width = 0;

@@ -3119,27 +3119,25 @@ std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
     utl::Logger* logger = getImpl()->getLogger();
     debugPrint(
         logger, utl::ODB, "get_default_vias", 1, "No OR_DEFAULT vias defined.");
-    for (int i = 1; i <= getMaxRoutingLayer(); i++) {
-      dbTechLayer* tech_layer = tech->findRoutingLayer(i);
-      for (odb::dbTechVia* via : vias) {
-        if (via->getBottomLayer()->getRoutingLevel() == i) {
-          debugPrint(logger,
-                     utl::ODB,
-                     "get_default_vias",
-                     1,
-                     "Via for layers {} and {}: {}",
-                     via->getBottomLayer()->getName(),
-                     via->getTopLayer()->getName(),
-                     via->getName());
-          default_vias[tech_layer] = via;
-          debugPrint(logger,
-                     utl::ODB,
-                     "get_default_vias",
-                     1,
-                     "Using via {} as default.",
-                     via->getConstName());
-          break;
-        }
+    for (odb::dbTechVia* via : vias) {
+      dbTechLayer* tech_layer = via->getBottomLayer();
+      if (tech_layer != nullptr && tech_layer->getRoutingLevel() != 0
+          && default_vias.find(tech_layer) == default_vias.end()) {
+        debugPrint(logger,
+                   utl::ODB,
+                   "get_default_vias",
+                   1,
+                   "Via for layers {} and {}: {}",
+                   via->getBottomLayer()->getName(),
+                   via->getTopLayer()->getName(),
+                   via->getName());
+        default_vias[tech_layer] = via;
+        debugPrint(logger,
+                   utl::ODB,
+                   "get_default_vias",
+                   1,
+                   "Using via {} as default.",
+                   via->getConstName());
       }
     }
   }
