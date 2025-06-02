@@ -219,7 +219,7 @@ object parse {
 object GenerateMockArray extends App {
   val (c, chiselArgs, firtoolArgs) = parse(args)
 
-  ChiselStage.emitSystemVerilogFile(
+  ChiselStage.emitSystemVerilog(
     new MockArray(c.width, c.height, c.dataWidth),
     chiselArgs,
     firtoolArgs

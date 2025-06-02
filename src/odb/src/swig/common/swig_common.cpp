@@ -190,6 +190,16 @@ Polygon90Set* subtractSet(const Polygon90Set* set1, const Polygon90Set* set2)
   return new Polygon90Set(*set1 - *set2);
 }
 
+void destroySet(Polygon90Set* set)
+{
+  delete set;
+}
+
+void destroyPolygon(Polygon90* polygon)
+{
+  delete polygon;
+}
+
 std::vector<Polygon90> getPolygons(const Polygon90Set* set)
 {
   std::vector<Polygon90> s;

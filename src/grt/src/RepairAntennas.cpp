@@ -1395,7 +1395,8 @@ int RepairAntennas::addJumperOnSegments(
 
 void RepairAntennas::jumperInsertion(NetRouteMap& routing,
                                      const int& tile_size,
-                                     const int& max_routing_layer)
+                                     const int& max_routing_layer,
+                                     std::vector<odb::dbNet*>& modified_nets)
 {
   // Init jumper size
   tile_size_ = tile_size;
@@ -1452,6 +1453,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
         db_net->setJumpers(true);
         net_with_jumpers++;
         total_jumpers += jumper_by_net;
+        modified_nets.push_back(db_net);
       }
     }
   }

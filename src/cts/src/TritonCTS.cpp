@@ -1723,8 +1723,7 @@ void TritonCTS::findClockRoots(sta::Clock* clk,
     odb::dbITerm* instTerm;
     odb::dbBTerm* port;
     odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    network_->staToDb(pin, instTerm, port, moditerm, modbterm);
+    network_->staToDb(pin, instTerm, port, moditerm);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
     clockNets.insert(net);
   }
@@ -2204,8 +2203,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
       odb::dbITerm* term;
       odb::dbBTerm* port;
       odb::dbModITerm* modIterm;
-      odb::dbModBTerm* modBterm;
-      network_->staToDb(start->pin(openSta_), term, port, modIterm, modBterm);
+      network_->staToDb(start->pin(openSta_), term, port, modIterm);
       if (term) {
         pathStartNet = term->getNet();
       }

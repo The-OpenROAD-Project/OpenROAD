@@ -67,6 +67,7 @@ class ClockTreeRenderer : public Renderer
   odb::dbITerm* path_to_;
 
   static constexpr int pen_width_ = 2;
+  static constexpr const char* render_label_ = "Clock trees";
 
   void drawTree(Painter& painter,
                 const Descriptor* descriptor,

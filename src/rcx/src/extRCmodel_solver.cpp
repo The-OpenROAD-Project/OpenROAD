@@ -472,15 +472,14 @@ extDistWidthRCTable*** extMetRCTable::allocTable()
 {
   extDistWidthRCTable*** table = new extDistWidthRCTable**[_layerCnt];
   if (table == nullptr) {
-    fprintf(stderr,
-            "Cannot allocate memory for oblject: extDistWidthRCTable\n");
+    fprintf(stderr, "Cannot allocate memory for object: extDistWidthRCTable\n");
     exit(0);
   }
   for (uint ii = 0; ii < _layerCnt; ii++) {
     table[ii] = new extDistWidthRCTable*[_wireCnt];
     if (table[ii] == nullptr) {
       fprintf(stderr,
-              "Cannot allocate memory for oblject: extDistWidthRCTable\n");
+              "Cannot allocate memory for object: extDistWidthRCTable\n");
       exit(0);
     }
     for (uint jj = 0; jj < _wireCnt; jj++) {

@@ -30,8 +30,8 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
   for (uint kk = 0; kk < _modelCnt; kk++)
     _dataRateTable->add(0.0);
 
-  // _modelTable[0]->allocateInitialTables(layerCnt, 10, true, true, true);
-  _modelTable[0]->allocateInitialTables(layerCnt, widthCnt, true, true, true);
+  // _modelTable[0]->allocateInitialTables(10, true, true, true);
+  _modelTable[0]->allocateInitialTables(widthCnt, true, true, true);
   return _modelTable[0];
 }
 AthPool<extDistRC>* extMetRCTable::getRCPool()

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "SteinerTreeBuilder.h"
+#include "boost/multi_array.hpp"
 
 #pragma once
 
@@ -32,7 +33,7 @@ class Flute
   struct csoln;
 
  private:
-  using LUT_TYPE = struct csoln***;
+  using LUT_TYPE = boost::multi_array<std::shared_ptr<struct csoln[]>, 2>*;
   using NUMSOLN_TYPE = int**;
 
  public:
