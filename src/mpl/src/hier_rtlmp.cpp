@@ -1138,7 +1138,6 @@ void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
     }
   }
 
-  macro_blockages_.push_back(blockage);
   io_blockages_.push_back(blockage);
 }
 
@@ -2068,7 +2067,7 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
     computeBlockageOverlap(placement_blockages, blockage, outline);
   }
 
-  for (auto& blockage : macro_blockages_) {
+  for (auto& blockage : io_blockages_) {
     computeBlockageOverlap(macro_blockages, blockage, outline);
   }
 
