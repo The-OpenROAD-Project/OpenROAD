@@ -140,7 +140,7 @@ class FlexPA
   ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
-  bool areAllSkipInstTerms(frInst* inst);
+  bool isSkipInst(frInst* inst);
   bool isDistributed() const { return !remote_host_.empty(); }
 
   // init

@@ -105,7 +105,7 @@ void FlexPA::addInst(frInst* inst)
   inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
 
   insts_set_.insert(inst);
-  if (areAllSkipInstTerms(inst)) {
+  if (isSkipInst(inst)) {
     return;
   }
   std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
@@ -306,7 +306,7 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
   return skip_unique_inst_term_.at({inst_class, in->getTerm()});
 }
 
-bool FlexPA::areAllSkipInstTerms(frInst* inst)
+bool FlexPA::isSkipInst(frInst* inst)
 {
   for (auto& inst_term : inst->getInstTerms()) {
     if (!isSkipInstTerm(inst_term.get())) {
