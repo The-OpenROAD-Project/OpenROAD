@@ -69,5 +69,9 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.1212
 [INFO GPL-1008]     - For 80% usage of free space: 0.1364
-[INFO GPL-0083] Original area um^2: 15.53, new area: 12.73, change: -18.03%, New area due to routability inflation and/or timing-driven otimizations.
+[INFO GPL-1009]     - For 50% usage of free space: 0.2182
+[INFO GPL-0083] Original area (um^2): 15.53
+[INFO GPL-0085] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-0086] Total timing-driven delta area: -2.80 (-18.03%)
+[INFO GPL-0084] Final placement area: 12.73 (-18.03%)
 No differences found.
