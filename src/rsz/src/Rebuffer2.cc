@@ -2127,28 +2127,6 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       removed_count_++;
     }
 
-#if 0
-    visitTree(
-        [&](auto& recurse, int level, const BnetPtr& bnet) -> int {
-          switch (bnet->type()) {
-            case BnetType::wire:
-              return recurse(bnet->ref());
-            case BnetType::junction:
-              return recurse(bnet->ref()) + recurse(bnet->ref2());
-            case BnetType::load:
-              levelize_->setLevel(graph_->pinDrvrVertex(bnet->loadPin()), 0);
-              levelize_->invalidFrom(graph_->pinDrvrVertex(bnet->loadPin()));
-              return 1;
-            case BnetType::buffer: {
-              return recurse(bnet->ref());
-            }
-            default:
-              abort();
-          }
-        },
-        unbuffered_tree);
-#endif
-
     sta_->ensureLevelized();
     sta::Level max_level = 0;
     visitTree(
