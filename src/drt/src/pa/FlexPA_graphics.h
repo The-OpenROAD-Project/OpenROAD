@@ -59,6 +59,7 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
 
   void setViaAP(const frAccessPoint* ap,
                 const frVia* via,
+                const frPathSeg* path_seg,
                 const std::vector<std::unique_ptr<frMarker>>& markers) override;
 
   void setPlanarAP(

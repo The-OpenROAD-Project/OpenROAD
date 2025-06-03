@@ -103,7 +103,9 @@ void pin_access_cmd(const char* dbProcessNode,
                     const char* bottomRoutingLayer,
                     const char* topRoutingLayer,
                     int verbose,
-                    int minAccessPoints)
+                    int minAccessPoints,
+                    const char* viaInPinBottomLayer,
+                    const char* viaInPinTopLayer)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   drt::ParamStruct params;
@@ -112,6 +114,8 @@ void pin_access_cmd(const char* dbProcessNode,
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
   params.minAccessPoints = minAccessPoints;
+  params.viaInPinBottomLayer = viaInPinBottomLayer;
+  params.viaInPinTopLayer = viaInPinTopLayer;
   params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();
@@ -219,3 +223,4 @@ void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const c
   router->checkDRC(drc_file, x1, y1, x2, y2, marker_name, num_threads);
 }
 %} // inline
+

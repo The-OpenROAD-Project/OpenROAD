@@ -395,6 +395,13 @@ void logGuidesRead(const int num_guides, utl::Logger* logger)
     logger->info(DRT, 156, "guideIn read {} guides.", num_guides);
   }
 }
+bool isViaAccessLayerNum(const frLayerNum layer_num,
+                         const RouterConfiguration* router_cfg)
+{
+  return layer_num == router_cfg->VIA_ACCESS_LAYERNUM
+         || (layer_num >= router_cfg->VIAINPIN_BOTTOMLAYERNUM
+             && layer_num <= router_cfg->VIAINPIN_TOPLAYERNUM);
+}
 /**
  * @brief Checks the validity of the odb guide layer
  *
@@ -432,9 +439,10 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
   if (guide_above_top_routing_layer && net->hasBTermsAboveTopLayer()) {
     return false;
   }
+
   const bool guide_below_bottom_routing_layer
       = layer_num < router_cfg->BOTTOM_ROUTING_LAYER
-        && layer_num != router_cfg->VIA_ACCESS_LAYERNUM;
+        && !isViaAccessLayerNum(layer_num, router_cfg);
   if (guide_below_bottom_routing_layer || guide_above_top_routing_layer) {
     logger->error(DRT,
                   155,
@@ -1177,7 +1185,7 @@ void GuideProcessor::genGuides_split(
         auto end_idx = intv.upper();
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
-        if (via_access_only && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
+        if (via_access_only && isViaAccessLayerNum(layer_num, router_cfg_)) {
           // split by pin
           split::splitByPins(pin_helper,
                              layer_num,
@@ -1719,7 +1727,7 @@ void GuidePathFinder::constructAdjList()
           // no M1 cross-gcell routing allowed
           // BX200307: in general VIA_ACCESS_LAYER should not be used (instead
           // of 0)
-          if (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM) {
+          if (!isViaAccessLayerNum(layer_num, router_cfg_)) {
             adj_list_[idx1].push_back(idx2);
             adj_list_[idx2].push_back(idx1);
           }

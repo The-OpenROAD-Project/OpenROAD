@@ -1028,6 +1028,9 @@ int TritonRoute::main()
 
 void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
 {
+  if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    router_cfg_->USENONPREFTRACKS = false;
+  }
   if (distributed_) {
     asio::post(*dist_pool_, [this]() {
       sendDesignDist();

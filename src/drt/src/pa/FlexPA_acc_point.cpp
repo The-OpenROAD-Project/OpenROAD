@@ -1034,7 +1034,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   const bool no_drv = design_rule_checker.getMarkers().empty();
 
   if (graphics_) {
-    graphics_->setViaAP(ap, via, design_rule_checker.getMarkers());
+    graphics_->setViaAP(ap, via, ps, design_rule_checker.getMarkers());
   }
   return no_drv;
 }
@@ -1061,10 +1061,12 @@ void FlexPA::filterMultipleAPAccesses(
                     pin,
                     inst_term);
     if (is_std_cell_pin) {
-      has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-                      && ap->hasAccess(frDirEnum::U))
-                     || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
-                         && ap->hasAccess()));
+      const bool isViaAccessLayer
+          = layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
+            || (layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+                && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM);
+      has_access |= ((isViaAccessLayer && ap->hasAccess(frDirEnum::U))
+                     || (!isViaAccessLayer && ap->hasAccess()));
     } else {
       has_access |= ap->hasAccess();
     }
@@ -1235,7 +1237,10 @@ bool FlexPA::genPinAccessCostBounded(
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
       const bool ap_in_via_acc_layer
-          = (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM);
+          = (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM
+        || (ap->getLayerNum() >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+                 && ap->getLayerNum() <= router_cfg_->VIAINPIN_TOPLAYERNUM));
+
       if (!ap_in_via_acc_layer || ap->hasAccess(frDirEnum::U)) {
         aps.push_back(std::move(ap));
       }
