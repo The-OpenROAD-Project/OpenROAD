@@ -1311,28 +1311,31 @@ void GlobalRouter::computeTrackConsumption(
 
 std::vector<LayerId> GlobalRouter::findTransitionLayers()
 {
-  odb::dbTech* tech = db_->getTech();
-  const int max_layer = std::max(getMaxRoutingLayer(), getMaxLayerForClock());
-  std::map<int, odb::dbTechVia*> default_vias = getDefaultVias(max_layer);
+  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+      = block_->getDefaultVias();
   std::vector<LayerId> transition_layers;
-  for (const auto [layer, via] : default_vias) {
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+  for (const auto [tech_layer, via] : default_vias) {
+    if (tech_layer->getRoutingLevel() > getMaxRoutingLayer()) {
+      continue;
+    }
+
     const bool vertical
         = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     int via_width = 0;
-    for (const auto box : default_vias[layer]->getBoxes()) {
-      if (box->getTechLayer()->getRoutingLevel() == layer) {
+    for (const auto box : default_vias[tech_layer]->getBoxes()) {
+      if (box->getTechLayer() == tech_layer) {
         via_width = vertical ? box->getWidth() : box->getLength();
         break;
       }
     }
 
-    const double track_pitch = grid_->getTrackPitches()[layer - 1];
+    const double track_pitch
+        = grid_->getTrackPitches()[tech_layer->getRoutingLevel() - 1];
     // threshold to define what is a transition layer based on the width of the
     // fat via. using 0.8 to consider transition layers for wide vias
     const float fat_via_threshold = 0.8;
     if (via_width / track_pitch > fat_via_threshold) {
-      transition_layers.push_back(layer);
+      transition_layers.push_back(tech_layer->getRoutingLevel());
     }
   }
 
@@ -3234,8 +3237,9 @@ void GlobalRouter::initGrid(int max_layer)
               num_layers);
 }
 
-void getViaDims(std::map<int, odb::dbTechVia*> default_vias,
-                int level,
+void getViaDims(std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
+                odb::dbTechLayer* tech_layer,
+                odb::dbTechLayer* bottom_layer,
                 int& width_up,
                 int& prl_up,
                 int& width_down,
@@ -3245,18 +3249,18 @@ void getViaDims(std::map<int, odb::dbTechVia*> default_vias,
   prl_up = -1;
   width_down = -1;
   prl_down = -1;
-  if (default_vias.find(level) != default_vias.end()) {
-    for (auto box : default_vias[level]->getBoxes()) {
-      if (box->getTechLayer()->getRoutingLevel() == level) {
+  if (default_vias.find(tech_layer) != default_vias.end()) {
+    for (auto box : default_vias[tech_layer]->getBoxes()) {
+      if (box->getTechLayer() == tech_layer) {
         width_up = std::min(box->getWidth(), box->getLength());
         prl_up = std::max(box->getWidth(), box->getLength());
         break;
       }
     }
   }
-  if (default_vias.find(level - 1) != default_vias.end()) {
-    for (auto box : default_vias[level - 1]->getBoxes()) {
-      if (box->getTechLayer()->getRoutingLevel() == level) {
+  if (default_vias.find(bottom_layer) != default_vias.end()) {
+    for (auto box : default_vias[bottom_layer]->getBoxes()) {
+      if (box->getTechLayer() == tech_layer) {
         width_down = std::min(box->getWidth(), box->getLength());
         prl_down = std::max(box->getWidth(), box->getLength());
         break;
@@ -3267,9 +3271,10 @@ void getViaDims(std::map<int, odb::dbTechVia*> default_vias,
 
 std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
 {
-  std::map<int, odb::dbTechVia*> default_vias = getDefaultVias(max_layer);
-  std::vector<std::pair<int, int>> pitches(
-      db_->getTech()->getRoutingLayerCount() + 1);
+  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+      = block_->getDefaultVias();
+  odb::dbTech* tech = db_->getTech();
+  std::vector<std::pair<int, int>> pitches(tech->getRoutingLayerCount() + 1);
   for (auto const& [level, layer] : routing_layers_) {
     if (layer->getType() != odb::dbTechLayerType::ROUTING)
       continue;
@@ -3278,7 +3283,15 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
     pitches.push_back({-1, -1});
 
     int width_up, prl_up, width_down, prl_down;
-    getViaDims(default_vias, level, width_up, prl_up, width_down, prl_down);
+    odb::dbTechLayer* bottom_layer
+        = tech->findRoutingLayer(layer->getRoutingLevel() - 1);
+    getViaDims(default_vias,
+               layer,
+               bottom_layer,
+               width_up,
+               prl_up,
+               width_down,
+               prl_down);
     bool up_via_valid = width_up != -1;
     bool down_via_valid = width_down != -1;
     if (!up_via_valid && !down_via_valid)
@@ -4329,59 +4342,6 @@ void GlobalRouter::getBlockage(odb::dbTechLayer* layer,
   if (layer->getRoutingLevel() <= max_layer) {
     fastroute_->getBlockage(layer, x, y, blockage_h, blockage_v);
   }
-}
-
-std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
-    int max_routing_layer)
-{
-  odb::dbTech* tech = db_->getTech();
-  odb::dbSet<odb::dbTechVia> vias = tech->getVias();
-  std::map<int, odb::dbTechVia*> default_vias;
-
-  for (odb::dbTechVia* via : vias) {
-    odb::dbStringProperty* prop
-        = odb::dbStringProperty::find(via, "OR_DEFAULT");
-
-    if (prop == nullptr) {
-      continue;
-    }
-    debugPrint(logger_,
-               utl::GRT,
-               "l2v_pitch",
-               1,
-               "Default via: {}.",
-               via->getConstName());
-    default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
-  }
-
-  if (default_vias.empty()) {
-    if (verbose_)
-      logger_->info(GRT, 43, "No OR_DEFAULT vias defined.");
-    for (int i = 1; i <= max_routing_layer; i++) {
-      for (odb::dbTechVia* via : vias) {
-        if (via->getBottomLayer()->getRoutingLevel() == i) {
-          debugPrint(logger_,
-                     utl::GRT,
-                     "l2v_pitch",
-                     1,
-                     "Via for layers {} and {}: {}",
-                     via->getBottomLayer()->getName(),
-                     via->getTopLayer()->getName(),
-                     via->getName());
-          default_vias[i] = via;
-          debugPrint(logger_,
-                     utl::GRT,
-                     "l2v_pitch",
-                     1,
-                     "Using via {} as default.",
-                     via->getConstName());
-          break;
-        }
-      }
-    }
-  }
-
-  return default_vias;
 }
 
 RegionAdjustment::RegionAdjustment(int min_x,
