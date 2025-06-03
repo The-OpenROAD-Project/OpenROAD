@@ -8,10 +8,36 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        25
-    final |     +3.4% |       1 |       1 |             1 |         0
+    final |     +5.9% |       1 |       2 |             1 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0039] Resized 1 instances.
-[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
-r1q 0.726
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+   Iter   |    Area   | Removed | Inserted | Remaining
+          |           | Buffers | Buffers  |
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         3
+        1 |     +1.4% |       0 |        1 |         2
+        2 |     -0.5% |       2 |        2 |         1
+    final |     -2.3% |       4 |        4 |         0
+-------------------------------------------------------
+Signal 11 received
+Stack trace:
+ 0# 0x00006190EC587322 in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+ 1# 0x000077A6A0E42520 in /lib/x86_64-linux-gnu/libc.so.6
+ 2# 0x000077A6A0FB20BC in /lib/x86_64-linux-gnu/libc.so.6
+ 3# sta::SdcNetwork::staToSdc(char const*) const in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+ 4# sta::Properties::getProperty(sta::Net const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+ 5# 0x00006190EC7903E8 in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+ 6# TclNRRunCallbacks in /lib/x86_64-linux-gnu/libtcl8.6.so
+ 7# 0x000077A6A5980028 in /lib/x86_64-linux-gnu/libtcl8.6.so
+ 8# Tcl_EvalEx in /lib/x86_64-linux-gnu/libtcl8.6.so
+ 9# Tcl_Eval in /lib/x86_64-linux-gnu/libtcl8.6.so
+10# sta::sourceTclFile(char const*, bool, bool, Tcl_Interp*) in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+11# 0x00006190EC586B23 in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+12# Tcl_MainEx in /lib/x86_64-linux-gnu/libtcl8.6.so
+13# main in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
+14# 0x000077A6A0E29D90 in /lib/x86_64-linux-gnu/libc.so.6
+15# __libc_start_main in /lib/x86_64-linux-gnu/libc.so.6
+16# _start in /home/mpoviser/repos/openroad-flow-scripts/tools/OpenROAD/build/src/openroad
