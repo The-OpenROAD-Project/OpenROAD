@@ -26,6 +26,7 @@
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
 #include "dst/MakeDistributed.h"
+#include "exa/MakeExample.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
 #include "grt/GlobalRouter.h"
@@ -101,6 +102,7 @@ OpenRoad::~OpenRoad()
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
+  deleteExample(example_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -172,6 +174,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tritonCts_ = cts::makeTritonCts();
   tapcell_ = tap::makeTapcell();
   macro_placer_ = mpl::makeMacroPlacer();
+  example_ = exa::makeExample();
   extractor_ = rcx::makeOpenRCX();
   detailed_router_ = drt::makeTritonRoute();
   replace_ = gpl::makeReplace();
@@ -235,6 +238,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                   logger_,
                   partitionMgr_,
                   tcl_interp);
+  initExample(example_, db_, logger_, tcl_interp);
   initOpenRCX(extractor_, db_, logger_, getVersion(), tcl_interp);
   initICeWall(icewall_, db_, logger_, tcl_interp);
   initRestructure(restructure_, logger_, sta_, db_, resizer_, tcl_interp);
