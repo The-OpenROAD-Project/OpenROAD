@@ -1387,8 +1387,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
 
-  clustering_engine_->updateConnections();
-  clustering_engine_->updateDataFlow();
+  clustering_engine_->rebuildConnections();
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -1790,8 +1789,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
 
-  clustering_engine_->updateConnections();
-  clustering_engine_->updateDataFlow();
+  clustering_engine_->rebuildConnections();
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -2383,7 +2381,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     graphics_->setFences(fences);
   }
 
-  clustering_engine_->updateConnections();
+  clustering_engine_->rebuildConnections();
 
   createFixedTerminals(outline, macro_clusters, cluster_to_macro, sa_macros);
 
