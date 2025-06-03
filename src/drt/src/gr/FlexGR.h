@@ -42,6 +42,7 @@
 #include "gr/FlexGRGridGraph.h"
 #include "gr/FlexGR_util.h"
 #include "gr/FlexGR_GPUDB.h"
+#include "gr/FlexGR_cost.h"
 
 namespace odb {
 class dbDatabase;
@@ -149,13 +150,24 @@ class FlexGR
   void initRoute_createPinGCellNodes(frNet* net);
 
   void initRoute_genTopology();
-    
+   
+
+  // Pattern Routing
+  inline double initRoute_getGCellCost2D(int xIdx, int yIdx, frDirEnum dir) const;
+  double initRoute_getSegmentCost2D(const Point& bpIdx, const Point& epIdx) const;
+  frNode* addSteinerNodeToNet(frNode* child, const Point& gcellIdx, int layerNum);
+  void addSegmentToNet(frNode* child, int layerNum);
+
+
   void initRoute_patternRoute_Z_shape();
+  void initRoute_patternRoute_Z_shape(frNode* child, frNode* parent);
 
   // In this function, we generate initial topology for the net
   // Also,  we will check if the net is valid for GR routing (i.e., the net spanning multiple GCells).
   void initRoute_genTopology_net(frNet* net);
   void initRoute_checkValid(frNet* net, bool printFlag = false);
+
+  void initGR_initPhysicalObj();
 
   // 2D Maze Routing
 
@@ -230,7 +242,7 @@ class FlexGR
       std::vector<std::vector<unsigned>>& bestLayerCombs);
 
   // cost
-  // double getCongCost(unsigned supply, unsigned demand);
+  double getCongCost(unsigned supply, unsigned demand);
 
   // others
   void ripupRoute(frNode* child, frNode* parent);

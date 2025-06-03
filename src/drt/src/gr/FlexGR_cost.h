@@ -62,7 +62,7 @@ namespace drt {
 // The cost functions are extremely important for the performance
 // ------------------------------------------------------------------------------
 // Note that: please use double here.  (This is very important !!!)
-double getCongCost(unsigned supply, unsigned demand);
+double getCongCost_PattenRoute(unsigned supply, unsigned demand);
 
 
 

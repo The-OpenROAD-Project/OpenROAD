@@ -65,12 +65,17 @@ void FlexGR::initRoute_gpu()
   reportCong2D();
 
   // No need to use GPU-accelerated approach
-  // Initialize L-Shape pattern routing for non-clinear segments  
+  // Initialize Z-Shape pattern routing for non-clinear segments  
   initRoute_patternRoute_Z_shape();
+ 
+  logger_->report("[INFO] Initial congestion map after Z-shape pattern routing ...");
+  reportCong2D();
 
-  
-  // initRoute_initObj();
+  // convert topological connection to physical connection
+  initGR_initPhysicalObj();
 }
+
+
 
 
 
@@ -493,21 +498,135 @@ void FlexGR::initRoute_genTopology_net(frNet* net)
 }
 
 
-// This function is used to route non-clinear segments in the routing tree.
-// Just for initial routing tree construction.
-// Later, we will use GPU-accelerated segment shifting and steiner point ajustment for RRR
-void FlexGR::initRoute_patternRoute_Z_shape()
+void FlexGR::initRoute_patternRoute_Z_shape() 
 {
+  // avoid frequent memory allocation
+  std::vector<frNode*> stack;
+  stack.reserve(1000);  // reserve some space for the stack
   
+  for (auto& net : design_->getTopBlock()->getNets()) {
+    if (net->isGRValid() == false) {
+      continue;  // net is not valid for GR routing
+    }
 
+    stack.push_back(net->getRootGCellNode());
+    while (!stack.empty()) {
+      auto currNode = stack.back();
+      stack.pop_back();
 
+      // push children to the stack
+      for (auto child : currNode->getChildren()) {
+        stack.push_back(child);
+      }
 
+      // check if the current node has a parent
+      auto parent = currNode->getParent();
+      if (parent == nullptr) {
+        continue;  // root node, no routing needed
+      }
 
+      if (parent->getType() != frNodeTypeEnum::frcSteiner ||
+          currNode->getType() != frNodeTypeEnum::frcSteiner) {
+        continue;
+      }
 
+      const auto& cLoc = currNode->getLoc();
+      const auto& pLoc = parent->getLoc();
+      if (cLoc.x() == pLoc.x() && cLoc.y() == pLoc.y()) {
+        continue;  // colinear, no routing needed
+      }
+
+      // non-colinear segment, route it using Z-shape pattern
+      initRoute_patternRoute_Z_shape(currNode, parent);
+    }
+  }
 }
 
 
 
+// This function is used to route non-clinear segments in the routing tree.
+// Just for initial routing tree construction.
+// Later, we will use GPU-accelerated segment shifting and steiner point ajustment for RRR
+void FlexGR::initRoute_patternRoute_Z_shape(frNode* child, frNode* parent)
+{
+  const Point childGCellIdx = design_->getTopBlock()->getGCellIdx(child->getLoc());
+  const Point parentGCellIdx = design_->getTopBlock()->getGCellIdx(parent->getLoc());
+  // check the all the combinations of child and parent gcell indices
+  // first horizontal, then vertical
+  const int xDistMax = std::abs(parentGCellIdx.x() - childGCellIdx.x());
+  const int yDistMax = std::abs(parentGCellIdx.y() - childGCellIdx.y());
+  
+  if (xDistMax == 0 && yDistMax == 0) {
+    //logger_->report("[INFO] initRoute_patternRoute_Z_shape: "
+    //                  "child and parent are colinear, no routing needed.");
+    return;
+  }
+  
+  const int xDelta = (childGCellIdx.x() < parentGCellIdx.x()) ? 1 : -1;
+  const int yDelta = (childGCellIdx.y() < parentGCellIdx.y()) ? 1 : -1;
+
+  double bestCost = std::numeric_limits<double>::max();
+  int bestXDisp = 0;
+  int bestYDisp = 0;
+  int xDisp = 0;
+  int yDisp = 0;
+
+
+  // check over horizontal and vertical displacements
+  for (int idx = 0; idx < xDistMax; idx++) {
+    xDisp += xDelta;   
+    const Point cornerGCellIdx1(childGCellIdx.x() + xDisp, childGCellIdx.y());
+    const Point cornerGCellIdx2(childGCellIdx.x() + xDisp, parentGCellIdx.y());
+    double cost = initRoute_getSegmentCost2D(childGCellIdx, cornerGCellIdx1);
+    cost += initRoute_getSegmentCost2D(cornerGCellIdx1, cornerGCellIdx2);
+    cost += initRoute_getSegmentCost2D(cornerGCellIdx2, parentGCellIdx);
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestXDisp = xDisp;
+      bestYDisp = 0;  // no vertical displacement
+    }
+  }  
+
+  // check vertical displacements
+  for (int idx = 0; idx < yDistMax; idx++) {
+    yDisp += yDelta;   
+    const Point cornerGCellIdx1(childGCellIdx.x(), childGCellIdx.y() + yDisp);
+    const Point cornerGCellIdx2(parentGCellIdx.x(), childGCellIdx.y() + yDisp);
+    double cost = initRoute_getSegmentCost2D(childGCellIdx, cornerGCellIdx1);
+    cost += initRoute_getSegmentCost2D(cornerGCellIdx1, cornerGCellIdx2);
+    cost += initRoute_getSegmentCost2D(cornerGCellIdx2, parentGCellIdx);
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestXDisp = 0;  // no horizontal displacement
+      bestYDisp = yDisp;
+    }
+  }
+  
+  // remove the connection information
+  parent->removeChild(child);
+  child->setParent(nullptr);  
+  frNode* cornerNode1 = nullptr;
+  frNode* cornerNode2 = nullptr;
+
+  // commit the best displacement
+  if (bestXDisp == 0) {
+    // vertical displacement
+    cornerNode1 = addSteinerNodeToNet(child, Point(childGCellIdx.x(), childGCellIdx.y() + bestYDisp), 2);
+    cornerNode2 = addSteinerNodeToNet(cornerNode1, Point(parentGCellIdx.x(), childGCellIdx.y() + bestYDisp), 2);
+  } else if (bestYDisp == 0) {
+    // horizontal displacement
+    cornerNode1 = addSteinerNodeToNet(child, Point(childGCellIdx.x() + bestXDisp, childGCellIdx.y()), 2);
+    cornerNode2 = addSteinerNodeToNet(cornerNode1, Point(childGCellIdx.x() + bestXDisp, parentGCellIdx.y()), 2);
+  } else {
+    logger_->error(utl::DRT, 188, 
+      "initRoute_patternRoute_Z_shape: "
+      "bestXDisp ({}) and bestYDisp ({}) are not zero, this should not happen.",
+      bestXDisp, bestYDisp);
+  }    
+
+  parent->addChild(cornerNode2);
+  cornerNode2->setParent(parent);
+}
 
 
 
@@ -638,13 +757,60 @@ void FlexGR::initRoute_updateCongestion2D_net(frNet* net, bool errFlag)
 }
 
 
+// ---------------------------------------------------------------------------------------
+// Convert topological connection to physical connection
+// ---------------------------------------------------------------------------------------
+void FlexGR::initGR_initPhysicalObj()
+{
+  std::vector<frNode*> stack;
+  stack.reserve(1000);  // reserve some space for the stack  
+  for (auto& net : design_->getTopBlock()->getNets()) {
+    if (net->isGRValid() == false) {
+      continue;  // net is not valid for GR routing
+    }
+ 
+    stack.clear();
+    stack.push_back(net->getRootGCellNode());
+    
+    while (!stack.empty()) {
+      auto currNode = stack.back();
+      stack.pop_back();
 
+      // push children to the stack
+      for (auto child : currNode->getChildren()) {
+        stack.push_back(child);
+      }
 
+      // check if the current node has a parent
+      auto parent = currNode->getParent();
+      if (parent == nullptr) {
+        continue;  // root node, no routing needed
+      }
 
+      if (parent->getType() != frNodeTypeEnum::frcSteiner ||
+          currNode->getType() != frNodeTypeEnum::frcSteiner) {
+        continue;
+      }
 
-
-
-
+      if (currNode->getLayerNum() != 2 || parent->getLayerNum() != 2) {
+        logger_->error(utl::DRT, 196, 
+          "initGR_initPhysicalObj: Node or parent is not on layerNum == 2 , "
+          "node layerNum: {}, parent layerNum: {}. "
+          "this should not happen.", currNode->getLayerNum(), parent->getLayerNum());
+      }
+              
+      addSegmentToNet(currNode, 2);
+    }
+  
+    // for testing purpose, sanity check
+    const int numSteinerNodes = net->getNodes().size() - net->getRPins().size();
+    if (numSteinerNodes != 0 && (int) net->getGRShapes().size() != (numSteinerNodes - 1)) {
+      logger_->error(utl::DRT, 189, 
+        "initGR_initPhysicalObj: Net {} has {} steiner nodes, but {} pathSegs.",
+        net->getName(), numSteinerNodes, net->getGRShapes().size());
+    }
+  }
+}
 
 
 

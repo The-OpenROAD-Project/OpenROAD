@@ -1431,10 +1431,15 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
   }
 }
 
+
+
 double FlexGR::getCongCost(unsigned supply, unsigned demand)
 {
   return demand * (1.0 + 8.0 / (1.0 + exp(supply - demand))) / (supply + 1);
 }
+
+
+
 
 // child node and parent node must be colinear
 void FlexGR::ripupRoute(frNode* child, frNode* parent)

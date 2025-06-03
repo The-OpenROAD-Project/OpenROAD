@@ -32,7 +32,7 @@
 
 namespace drt {
 
-double getCongCost(unsigned supply, unsigned demand)
+double getCongCost_PattenRoute(unsigned supply, unsigned demand)
 {
   return demand * (1.0 + 8.0 / (1.0 + exp(supply - demand))) / (supply + 1);
 }
