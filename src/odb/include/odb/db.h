@@ -1007,12 +1007,6 @@ class dbBlock : public dbObject
   Polygon getBTermTopLayerGridRegion();
 
   ///
-  /// Ensure that the constraint region defined in the given edge is completely
-  /// inside the die area.
-  ///
-  void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
-
-  ///
   /// Find the rectangle corresponding to the constraint region in a specific
   /// edge of the die area.
   ///
@@ -1695,6 +1689,12 @@ class dbBlock : public dbObject
 
  private:
   void ComputeBBox();
+
+  ///
+  /// Ensure that the constraint region defined in the given edge is completely
+  /// inside the die area.
+  ///
+  void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
