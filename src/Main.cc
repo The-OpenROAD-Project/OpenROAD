@@ -54,6 +54,7 @@ using std::string;
   X(grt)                                 \
   X(gpl)                                 \
   X(dpl)                                 \
+  X(exa)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \

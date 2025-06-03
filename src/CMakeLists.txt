@@ -251,6 +251,7 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
+add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -306,6 +307,7 @@ target_link_libraries(openroad
   ord
   gpl
   dpl
+  exa
   fin
   rsz
   ppl
@@ -393,6 +395,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     grt_py
     gpl_py
     dpl_py
+    exa_py
     ppl_py
     tap_py
     cts_py

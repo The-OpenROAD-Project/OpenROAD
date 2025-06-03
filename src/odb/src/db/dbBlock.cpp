@@ -3111,6 +3111,52 @@ void dbBlock::clearUserInstFlags()
   }
 }
 
+std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
+{
+  odb::dbTech* tech = getTech();
+  odb::dbSet<odb::dbTechVia> vias = tech->getVias();
+  std::map<dbTechLayer*, odb::dbTechVia*> default_vias;
+
+  for (odb::dbTechVia* via : vias) {
+    odb::dbStringProperty* prop
+        = odb::dbStringProperty::find(via, "OR_DEFAULT");
+
+    if (prop == nullptr) {
+      continue;
+    }
+    default_vias[via->getBottomLayer()] = via;
+  }
+
+  if (default_vias.empty()) {
+    utl::Logger* logger = getImpl()->getLogger();
+    debugPrint(
+        logger, utl::ODB, "get_default_vias", 1, "No OR_DEFAULT vias defined.");
+    for (odb::dbTechVia* via : vias) {
+      dbTechLayer* tech_layer = via->getBottomLayer();
+      if (tech_layer != nullptr && tech_layer->getRoutingLevel() != 0
+          && default_vias.find(tech_layer) == default_vias.end()) {
+        debugPrint(logger,
+                   utl::ODB,
+                   "get_default_vias",
+                   1,
+                   "Via for layers {} and {}: {}",
+                   via->getBottomLayer()->getName(),
+                   via->getTopLayer()->getName(),
+                   via->getName());
+        default_vias[tech_layer] = via;
+        debugPrint(logger,
+                   utl::ODB,
+                   "get_default_vias",
+                   1,
+                   "Using via {} as default.",
+                   via->getConstName());
+      }
+    }
+  }
+
+  return default_vias;
+}
+
 void dbBlock::setDrivingItermsforNets()
 {
   for (dbNet* net : getNets()) {
