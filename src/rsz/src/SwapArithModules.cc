@@ -97,6 +97,9 @@ void SwapArithModules::replaceArithModules(int path_count,
   }
   logger_->info(
       RSZ, 154, "Identified {} critical arith instances", arithInsts.size());
+  if (arithInsts.empty()) {
+    return;
+  }
   if (logger_->debugCheck(RSZ, "replace_arith", 1)) {
     for (dbModInst* mod_inst : arithInsts) {
       dbModule* master = mod_inst->getMaster();
