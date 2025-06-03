@@ -1502,7 +1502,6 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t idx)
                 "getGCellByIndex out of bounds: idx = {}, size = {}",
                 idx,
                 gCellStor_.size());
-    return nullptr;
   }
   return &gCellStor_[idx];
 }
@@ -2836,7 +2835,7 @@ bool NesterovBase::checkConvergence()
         static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.80));
 
     if (static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.50)
-        >= 1.0) {
+        <= 1.0) {
       log_->info(
           GPL,
           1009,
@@ -3475,7 +3474,6 @@ void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
                 "index {} out of bounds for gNetStor_ (max: {})",
                 index_remove,
                 last_index);
-    return;
   }
 
   if (index_remove != last_index) {
@@ -3505,7 +3503,6 @@ void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
                   "index {} out of bounds for gPinStor_ (max:{})",
                   index_remove,
                   last_index);
-      return;
     }
     if (index_remove != last_index) {
       std::swap(gPinStor_[index_remove], gPinStor_[last_index]);
