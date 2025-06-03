@@ -8,7 +8,6 @@
 [INFO GRT-0021] Max routing layer: metal8
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
@@ -18,7 +17,6 @@
 [INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
@@ -38,11 +36,11 @@ metal7     Horizontal       4512          4416          2.13%
 metal8     Vertical         4610          4512          2.13%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 452
+[INFO GRT-0197] Via related to pin nodes: 453
 [INFO GRT-0198] Via related Steiner nodes: 10
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 723
-[INFO GRT-0112] Final usage 3D: 3263
+[INFO GRT-0111] Final number of vias: 725
+[INFO GRT-0112] Final usage 3D: 3269
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

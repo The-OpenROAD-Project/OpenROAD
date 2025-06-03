@@ -3,6 +3,8 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -24,6 +26,7 @@
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
 #include "dst/MakeDistributed.h"
+#include "exa/MakeExample.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
 #include "grt/GlobalRouter.h"
@@ -99,6 +102,7 @@ OpenRoad::~OpenRoad()
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
+  deleteExample(example_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -170,6 +174,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tritonCts_ = cts::makeTritonCts();
   tapcell_ = tap::makeTapcell();
   macro_placer_ = mpl::makeMacroPlacer();
+  example_ = exa::makeExample();
   extractor_ = rcx::makeOpenRCX();
   detailed_router_ = drt::makeTritonRoute();
   replace_ = gpl::makeReplace();
@@ -233,6 +238,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                   logger_,
                   partitionMgr_,
                   tcl_interp);
+  initExample(example_, db_, logger_, tcl_interp);
   initOpenRCX(extractor_, db_, logger_, getVersion(), tcl_interp);
   initICeWall(icewall_, db_, logger_, tcl_interp);
   initRestructure(restructure_, logger_, sta_, db_, resizer_, tcl_interp);
@@ -448,8 +454,19 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   std::ifstream stream;
   stream.open(filename, std::ios::binary);
+
   try {
-    readDb(stream);
+    const std::string name(filename);
+    if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
+      boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+      inbuf.push(boost::iostreams::gzip_decompressor());
+      inbuf.push(stream);
+      std::istream zstd_uncompressed(&inbuf);
+
+      readDb(zstd_uncompressed);
+    } else {
+      readDb(stream);
+    }
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
@@ -485,7 +502,17 @@ void OpenRoad::writeDb(const char* filename)
 {
   utl::StreamHandler stream_handler(filename, true);
 
-  db_->write(stream_handler.getStream());
+  const std::string name(filename);
+  if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
+    outbuf.push(boost::iostreams::gzip_compressor());
+    outbuf.push(stream_handler.getStream());
+    std::ostream zstd_compressed(&outbuf);
+
+    writeDb(zstd_compressed);
+  } else {
+    writeDb(stream_handler.getStream());
+  }
 }
 
 void OpenRoad::readVerilog(const char* filename)

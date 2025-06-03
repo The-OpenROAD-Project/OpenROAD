@@ -301,7 +301,8 @@ set_debug_cmd(int pause_iterations,
               bool initial,
               const char* inst_name,
               int start_iter,
-              bool update_db)
+              bool generate_images,
+              const char* images_path)
 {
   Replace* replace = getReplace();
   odb::dbInst* inst = nullptr;
@@ -309,8 +310,14 @@ set_debug_cmd(int pause_iterations,
     auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
     inst = block->findInst(inst_name);
   }
+
+  std::string resolved_path = (images_path && *images_path)
+                                  ? images_path
+                                  : "REPORTS_DIR";
+
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst, start_iter, update_db);
+                    initial, inst, start_iter, generate_images,
+                    resolved_path);
 }
 
 %} // inline

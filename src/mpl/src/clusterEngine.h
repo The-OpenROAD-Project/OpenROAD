@@ -184,6 +184,7 @@ class ClusteringEngine
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
   void multilevelAutocluster(Cluster* parent);
+  void reportThresholds() const;
   void updateSizeThresholds();
   void breakCluster(Cluster* parent);
   void createFlatCluster(odb::dbModule* module, Cluster* parent);

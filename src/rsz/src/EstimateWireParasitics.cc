@@ -279,43 +279,15 @@ bool Resizer::haveEstimatedParasitics() const
   return parasitics_src_ != ParasiticsSrc::none;
 }
 
-void Resizer::incrementalParasiticsBegin()
-{
-  switch (parasitics_src_) {
-    case ParasiticsSrc::placement:
-      break;
-    case ParasiticsSrc::global_routing:
-    case ParasiticsSrc::detailed_routing:
-      // TODO: add IncrementalDRoute
-      incr_groute_ = new IncrementalGRoute(global_router_, block_);
-      // Don't print verbose messages for incremental routing
-      global_router_->setVerbose(false);
-      break;
-    case ParasiticsSrc::none:
-      break;
-  }
-  parasitics_invalid_.clear();
-}
-
-void Resizer::incrementalParasiticsEnd()
-{
-  switch (parasitics_src_) {
-    case ParasiticsSrc::placement:
-      break;
-    case ParasiticsSrc::global_routing:
-    case ParasiticsSrc::detailed_routing:
-      // TODO: add IncrementalDRoute
-      delete incr_groute_;
-      incr_groute_ = nullptr;
-      break;
-    case ParasiticsSrc::none:
-      break;
-  }
-  parasitics_invalid_.clear();
-}
-
 void Resizer::updateParasitics(bool save_guides)
 {
+  if (!incremental_parasitics_enabled_) {
+    logger_->error(
+        RSZ,
+        109,
+        "updateParasitics() called with incremental parasitics disabled");
+  }
+
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
@@ -327,7 +299,6 @@ void Resizer::updateParasitics(bool save_guides)
         }
         estimateWireParasitic(net);
       }
-      parasitics_invalid_.clear();
       break;
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing: {
@@ -336,12 +307,13 @@ void Resizer::updateParasitics(bool save_guides)
       for (const Net* net : parasitics_invalid_) {
         global_router_->estimateRC(db_network_->staToDb(net));
       }
-      parasitics_invalid_.clear();
       break;
     }
     case ParasiticsSrc::none:
       break;
   }
+
+  parasitics_invalid_.clear();
 }
 
 bool Resizer::parasiticsValid() const

@@ -8,7 +8,6 @@
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
@@ -20,7 +19,6 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
@@ -43,21 +41,21 @@ metal10    Vertical         2305             0          100.00%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 4139
-[INFO GRT-0198] Via related Steiner nodes: 170
+[INFO GRT-0197] Via related to pin nodes: 4135
+[INFO GRT-0198] Via related Steiner nodes: 164
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 6786
-[INFO GRT-0112] Final usage 3D: 25465
+[INFO GRT-0111] Final number of vias: 6774
+[INFO GRT-0112] Final usage 3D: 25429
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            2209          1067           48.30%             0 /  0 /  0
-metal3            2208          1283           58.11%             1 /  0 /  4
+metal2            2209          1065           48.21%             0 /  0 /  0
+metal3            2208          1281           58.02%             1 /  0 /  4
 metal4            2209          1026           46.45%             0 /  1 /  1
-metal5            2208           894           40.49%             1 /  0 /  4
-metal6            2209           837           37.89%             0 /  1 /  3
+metal5            2208           896           40.58%             1 /  0 /  4
+metal6            2209           839           37.98%             0 /  1 /  3
 metal7               0             0            0.00%             0 /  0 /  0
 metal8               0             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
@@ -65,7 +63,7 @@ metal10              0             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            11043          5107           46.25%             2 /  2 / 12
 
-[INFO GRT-0018] Total wirelength: 15271 um
+[INFO GRT-0018] Total wirelength: 15273 um
 [INFO GRT-0014] Routed nets: 563
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.

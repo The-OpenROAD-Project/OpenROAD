@@ -38,15 +38,10 @@
 [INFO DRT-0033] met4 shape region query size = 435.
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] met5 shape region query size = 0.
-[WARNING DRT-0088] Access point generation for _331_/D did not meet :
-	At least 3 sparse access points
-[WARNING DRT-0088] Access point generation for _497_/A did not meet :
-	At least 3 sparse access points
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%
 [INFO GRT-0023] Grid origin: (0, 0)
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
@@ -54,7 +49,6 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 35
 [INFO GRT-0019] Found 6 clock nets.
 [INFO GRT-0001] Minimum degree: 2
@@ -73,24 +67,24 @@ met5       Horizontal       3403          1640          51.81%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2441
+[INFO GRT-0197] Via related to pin nodes: 2455
 [INFO GRT-0198] Via related Steiner nodes: 73
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3285
-[INFO GRT-0112] Final usage 3D: 12913
+[INFO GRT-0111] Final number of vias: 3300
+[INFO GRT-0112] Final usage 3D: 12952
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              3480           886           25.46%             0 /  0 /  0
-met2              6290          1330           21.14%             0 /  0 /  0
-met3              6670           637            9.55%             0 /  0 /  0
-met4              4572           205            4.48%             0 /  0 /  0
+met1              3480           882           25.34%             0 /  0 /  0
+met2              6290          1310           20.83%             0 /  0 /  0
+met3              6670           645            9.67%             0 /  0 /  0
+met4              4572           215            4.70%             0 /  0 /  0
 met5              1640             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            22652          3058           13.50%             0 /  0 /  0
+Total            22652          3052           13.47%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30441 um
+[INFO GRT-0018] Total wirelength: 30376 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

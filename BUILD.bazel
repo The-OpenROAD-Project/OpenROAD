@@ -59,6 +59,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cts",
     "//src/dbSta",
     "//src/dpl",
+    "//src/exa",
     "//src/grt",
     "//src/gui",
     "//src/odb",
@@ -83,7 +84,7 @@ OPENROAD_LIBRARY_DEPS = [
     "@or-tools//ortools/linear_solver:linear_solver",
     "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
     "@or-tools//ortools/sat:cp_model",
-    "@org_llvm_openmp//:openmp",
+    "@openmp//:openmp",
     "@spdlog",
     "@tk_tcl//:tcl",
 ]
@@ -103,6 +104,7 @@ OPENROAD_COPTS = [
     "-Wno-unused-parameter",
     # FIXME reenable when warnings are fixed
     "-Wno-unused-but-set-variable",
+    "-fopenmp",
 ]
 
 OPENROAD_DEFINES = [
@@ -848,6 +850,7 @@ filegroup(
         "src/sta/power/Power.i",
         "src/sta/sdc/Sdc.i",
         "src/sta/sdf/Sdf.i",
+        "src/sta/search/Property.i",
         "src/sta/search/Search.i",
         "src/sta/spice/WriteSpice.i",
         "src/sta/tcl/Exception.i",
@@ -1008,6 +1011,7 @@ cc_library(
         "-Wformat-security",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
+        "-fopenmp",
     ],
     features = [
         "-use_header_modules",
@@ -1029,6 +1033,7 @@ cc_library(
     deps = [
         "@cudd",
         "@eigen",
+        "@openmp",
         "@rules_flex//flex:current_flex_toolchain",
         "@tk_tcl//:tcl",
         "@zlib",

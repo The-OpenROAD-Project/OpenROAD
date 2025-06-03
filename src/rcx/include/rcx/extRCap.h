@@ -326,31 +326,33 @@ class extDistWidthRCTable
   uint _layerCnt;
   uint _met;
 
-  Ath__array1D<int>* _widthTable;
-  Ath__array1D<uint>* _widthMapTable;
-  Ath__array1D<int>* _diagWidthTable[32];
-  Ath__array1D<int>* _diagDistTable[32];
-  Ath__array1D<uint>* _diagWidthMapTable[32];
-  Ath__array1D<uint>* _diagDistMapTable[32];
+  static constexpr int diagDepth = 32;
+
+  Ath__array1D<int>* _widthTable = nullptr;
+  Ath__array1D<uint>* _widthMapTable = nullptr;
+  Ath__array1D<int>* _diagWidthTable[diagDepth];
+  Ath__array1D<int>* _diagDistTable[diagDepth];
+  Ath__array1D<uint>* _diagWidthMapTable[diagDepth];
+  Ath__array1D<uint>* _diagDistMapTable[diagDepth];
 
   uint _modulo;
   int _firstWidth = 0;
   int _lastWidth = -1;
-  Ath__array1D<int>* _firstDiagWidth;
-  Ath__array1D<int>* _lastDiagWidth;
-  Ath__array1D<int>* _firstDiagDist;
-  Ath__array1D<int>* _lastDiagDist;
+  Ath__array1D<int>* _firstDiagWidth = nullptr;
+  Ath__array1D<int>* _lastDiagWidth = nullptr;
+  Ath__array1D<int>* _firstDiagDist = nullptr;
+  Ath__array1D<int>* _lastDiagDist = nullptr;
   bool _widthTableAllocFlag;  // if false widthtable is pointer
 
-  extDistRCTable*** _rcDistTable;  // per over/under metal, per width
-  extDistRCTable***** _rcDiagDistTable;
+  extDistRCTable*** _rcDistTable = nullptr;  // per over/under metal, per width
+  extDistRCTable***** _rcDiagDistTable = nullptr;
   uint _metCnt;  // if _over==false _metCnt???
   uint _widthCnt;
   uint _diagWidthCnt;
   uint _diagDistCnt;
 
-  AthPool<extDistRC>* _rcPoolPtr;
-  extDistRC* _rc31;
+  AthPool<extDistRC>* _rcPoolPtr = nullptr;
+  extDistRC* _rc31 = nullptr;
 };
 
 class extMetRCTable
@@ -398,8 +400,7 @@ class extMetRCTable
   extDistWidthRCTable*** allocTable();
   void deleteTable(extDistWidthRCTable*** table);
 
-  void allocateInitialTables(uint layerCnt,
-                             uint widthCnt,
+  void allocateInitialTables(uint widthCnt,
                              bool over,
                              bool under,
                              bool diag = false);
