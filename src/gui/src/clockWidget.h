@@ -137,7 +137,11 @@ class ClockNodeGraphicsViewItem : public QGraphicsObject
   virtual QColor getColor() const = 0;
 
   void setupToolTip();
-  void setExtraToolTip(const QString& tooltip) { extra_tooltip_ = tooltip; setupToolTip(); }
+  void setExtraToolTip(const QString& tooltip)
+  {
+    extra_tooltip_ = tooltip;
+    setupToolTip();
+  }
 
   qreal getSize() const { return size_; }
   void scaleSize(double scale) { size_ *= scale; }
@@ -183,7 +187,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsObject
   QString extra_tooltip_;
 
   QMenu menu_;
-  QAction *show_hide_subtree_;
+  QAction* show_hide_subtree_;
 };
 
 // Handles drawing the root node for a tree

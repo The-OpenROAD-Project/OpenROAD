@@ -275,7 +275,10 @@ class ClockTree
 
   void setSubtreeVisibility(bool visibility);
   bool getSubtreeVisibility() const { return subtree_visibility_; };
-  bool isVisible() const { return (parent_) ? parent_->getSubtreeVisibility() : true; };
+  bool isVisible() const
+  {
+    return (parent_) ? parent_->getSubtreeVisibility() : true;
+  };
 
  private:
   ClockTree* parent_;

@@ -3,7 +3,6 @@
 
 #include "clockWidget.h"
 
-#include <QtAlgorithms>
 #include <QApplication>
 #include <QFontMetrics>
 #include <QGraphicsRectItem>
@@ -19,6 +18,7 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QWidgetAction>
+#include <QtAlgorithms>
 #include <cmath>
 #include <memory>
 #include <optional>
@@ -304,8 +304,13 @@ void ClockNetGraphicsViewItem::paint(QPainter* painter,
 
 ////////////////
 
-ClockNodeGraphicsViewItem::ClockNodeGraphicsViewItem(ClockTree* tree, QGraphicsItem* parent)
-    : QGraphicsObject(parent), tree_(tree), size_(default_size_), name_(""), extra_tooltip_("")
+ClockNodeGraphicsViewItem::ClockNodeGraphicsViewItem(ClockTree* tree,
+                                                     QGraphicsItem* parent)
+    : QGraphicsObject(parent),
+      tree_(tree),
+      size_(default_size_),
+      name_(""),
+      extra_tooltip_("")
 {
   setAcceptHoverEvents(true);
   setZValue(1);
@@ -319,8 +324,10 @@ ClockNodeGraphicsViewItem::ClockNodeGraphicsViewItem(ClockTree* tree, QGraphicsI
       show_hide_subtree_ = new QAction("Show subtree", &menu_);
     }
     menu_.addAction(show_hide_subtree_);
-    connect(show_hide_subtree_, &QAction::triggered,
-            this, &ClockNodeGraphicsViewItem::showHideSubtree);
+    connect(show_hide_subtree_,
+            &QAction::triggered,
+            this,
+            &ClockNodeGraphicsViewItem::showHideSubtree);
   }
 }
 
@@ -425,14 +432,15 @@ void ClockNodeGraphicsViewItem::showHideSubtree()
 
 void ClockNodeGraphicsViewItem::updateVisibility()
 {
-  if (tree_->getSubtreeVisibility())
+  if (tree_->getSubtreeVisibility()) {
     show_hide_subtree_->setText("Hide subtree");
-  else
+  } else {
     show_hide_subtree_->setText("Show subtree");
+  }
 }
 
 void ClockNodeGraphicsViewItem::contextMenuEvent(
-  QGraphicsSceneContextMenuEvent* event)
+    QGraphicsSceneContextMenuEvent* event)
 {
   event->accept();
   menu_.popup(event->screenPos());
@@ -839,7 +847,7 @@ void ClockTreeView::build()
   QRectF scene_margin = scene_->itemsBoundingRect();
   const qreal x_margin = 0.1 * scene_margin.width();
   const qreal y_margin = 0.1 * scene_margin.height();
-  scene_margin.adjust(-x_margin*2, -y_margin, x_margin, y_margin);
+  scene_margin.adjust(-x_margin * 2, -y_margin, x_margin, y_margin);
   scene_->setSceneRect(scene_margin);
   fit();
 }
@@ -906,7 +914,7 @@ void ClockTreeView::fitSelection()
 
   const qreal x_margin = 0.1 * selection_area.width();
   const qreal y_margin = 0.1 * selection_area.height();
-  selection_area.adjust(-x_margin*2, -y_margin, x_margin, y_margin);
+  selection_area.adjust(-x_margin * 2, -y_margin, x_margin, y_margin);
   fitInView(selection_area, Qt::KeepAspectRatio);
 }
 
@@ -1138,9 +1146,8 @@ QString ClockTreeView::convertDelayToString(sta::Delay delay) const
 
 std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
     ClockTree* tree,
-    int center_index) 
+    int center_index)
 {
-  
   center_index = std::max(
       std::min(center_index, static_cast<int>(bin_center_.size() - 1)), 0);
 
@@ -1164,7 +1171,8 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
         input_pin.delay = time;
       }
 
-      node = addCellToScene(driver_offset, input_pin, output_pin, network, tree);
+      node
+          = addCellToScene(driver_offset, input_pin, output_pin, network, tree);
       node->updateVisibility();
       if (!tree->isVisible()) {
         continue;
@@ -1187,8 +1195,7 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
   std::vector<ClockNodeGraphicsViewItem*> fanout;
   for (const auto& fan_tree : tree->getFanout()) {
     const int fan_width = fan_tree->getTotalFanout(true);
-    auto fanout_nodes
-        = buildTree(fan_tree.get(), child_offset + fan_width / 2);
+    auto fanout_nodes = buildTree(fan_tree.get(), child_offset + fan_width / 2);
     if (!tree->getSubtreeVisibility()) {
       continue;
     }
@@ -1201,8 +1208,10 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
   QPolygonF leaves_bbox;
   qreal leaf_offset = 0;
   for (const auto& [leaf, arrival] : tree->getLeavesDelays()) {
-    auto* leaf_rect
-        = addLeafToScene(leaf_offset, PinArrival{leaf, arrival}, network, tree->getSubtreeVisibility());
+    auto* leaf_rect = addLeafToScene(leaf_offset,
+                                     PinArrival{leaf, arrival},
+                                     network,
+                                     tree->getSubtreeVisibility());
 
     if (!tree->getSubtreeVisibility()) {
       continue;
@@ -1264,10 +1273,12 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
     tooltip += "Launch: " + convertDelayToString(output_pin.delay);
 
     addNode(x, node, tooltip, output_pin.delay);
-    connect(node, &ClockNodeGraphicsViewItem::updateView,
-            this, &ClockTreeView::build);
+    connect(node,
+            &ClockNodeGraphicsViewItem::updateView,
+            this,
+            &ClockTreeView::build);
   }
-  
+
   return node;
 }
 
@@ -1312,8 +1323,8 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
         }
       }
 
-      temp_node
-          = new ClockMacroNodeGraphicsViewItem(iterm, convertDelayToY(ins_delay));
+      temp_node = new ClockMacroNodeGraphicsViewItem(
+          iterm, convertDelayToY(ins_delay));
     } else {
       temp_node = new ClockRegisterNodeGraphicsViewItem(iterm);
     }
@@ -1321,12 +1332,12 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
 
     QString tooltip;
     tooltip += "Arrival: " + convertDelayToString(input_pin.delay + ins_delay);
-  
+
     addNode(x, temp_node, tooltip, input_pin.delay);
 
-    connect(temp_node->getHighlightAction(), &QAction::triggered, [this, iterm]() {
-      emit highlightTo(iterm);
-    });
+    connect(temp_node->getHighlightAction(),
+            &QAction::triggered,
+            [this, iterm]() { emit highlightTo(iterm); });
     node = temp_node;
   }
 
@@ -1384,20 +1395,24 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
 
   if (node) {
     node->setPos({x, convertDelayToY(input_pin.delay)});
-    
+
     if (is_inverter_buffer and !is_clockgate) {
-      ClockBufferNodeGraphicsViewItem* buff = (ClockBufferNodeGraphicsViewItem*) node;
+      ClockBufferNodeGraphicsViewItem* buff
+          = (ClockBufferNodeGraphicsViewItem*) node;
       buff->setDelayY(delay_y);
     } else {
-      ClockGateNodeGraphicsViewItem* gate = (ClockGateNodeGraphicsViewItem*) node;
+      ClockGateNodeGraphicsViewItem* gate
+          = (ClockGateNodeGraphicsViewItem*) node;
       gate->setDelayY(delay_y);
     }
   } else {
     if (is_clockgate) {
-      node = new ClockGateNodeGraphicsViewItem(input_term, output_term, delay_y, tree);
+      node = new ClockGateNodeGraphicsViewItem(
+          input_term, output_term, delay_y, tree);
     } else if (is_inverter_buffer) {
       ClockBufferNodeGraphicsViewItem* buf_node
-          = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y, tree);
+          = new ClockBufferNodeGraphicsViewItem(
+              input_term, output_term, delay_y, tree);
       node = buf_node;
 
       if (lib_port != nullptr) {
@@ -1408,7 +1423,8 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
       }
     } else {
       ClockGateNodeGraphicsViewItem* gate_node
-          = new ClockGateNodeGraphicsViewItem(input_term, output_term, delay_y, tree_.get());
+          = new ClockGateNodeGraphicsViewItem(
+              input_term, output_term, delay_y, tree_.get());
       gate_node->setIsClockGate(false);
       node = gate_node;
     }
@@ -1418,13 +1434,16 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
     tooltip += "\n";
     tooltip += "Input arrival: " + convertDelayToString(input_pin.delay);
     tooltip += "\n";
-    tooltip += "Output: " + ClockNodeGraphicsViewItem::getITermName(output_term);
+    tooltip
+        += "Output: " + ClockNodeGraphicsViewItem::getITermName(output_term);
     tooltip += "\n";
     tooltip += "Output launch: " + convertDelayToString(output_pin.delay);
 
     addNode(x, node, tooltip, input_pin.delay);
-    connect(node, &ClockNodeGraphicsViewItem::updateView,
-            this, &ClockTreeView::build);
+    connect(node,
+            &ClockNodeGraphicsViewItem::updateView,
+            this,
+            &ClockTreeView::build);
   }
 
   node->setVisible(tree->isVisible());

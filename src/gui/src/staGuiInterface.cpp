@@ -476,7 +476,7 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
   net_ = getNet(*clock_->pins().begin());
 }
 
-std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility=false) const
+std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility = false) const
 {
   std::set<const sta::Pin*> drivers;
   if (!visibility or isVisible()) {
@@ -487,7 +487,7 @@ std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility=false) const
   return drivers;
 }
 
-std::set<const sta::Pin*> ClockTree::getLeaves(bool visibility=false) const
+std::set<const sta::Pin*> ClockTree::getLeaves(bool visibility = false) const
 {
   std::set<const sta::Pin*> leaves;
   if (!visibility or subtree_visibility_) {
@@ -540,11 +540,12 @@ ClockTree* ClockTree::findTree(sta::Net* net, bool include_children)
 }
 
 // Change its own visibility and subtree visibility
-void ClockTree::setSubtreeVisibility(bool visibility) 
+void ClockTree::setSubtreeVisibility(bool visibility)
 {
   subtree_visibility_ = visibility;
-  for (const auto& fanout : fanout_)
-    fanout->setSubtreeVisibility(subtree_visibility_); 
+  for (const auto& fanout : fanout_) {
+    fanout->setSubtreeVisibility(subtree_visibility_);
+  }
 }
 
 int ClockTree::getSinkCount() const
@@ -552,10 +553,11 @@ int ClockTree::getSinkCount() const
   return leaves_.size() + fanout_.size();
 }
 
-int ClockTree::getTotalLeaves(bool visibility=false) const
+int ClockTree::getTotalLeaves(bool visibility = false) const
 {
-  if (visibility and !subtree_visibility_)
+  if (visibility and !subtree_visibility_) {
     return 0;
+  }
 
   int total = leaves_.size();
 
@@ -566,10 +568,11 @@ int ClockTree::getTotalLeaves(bool visibility=false) const
   return total;
 }
 
-int ClockTree::getTotalFanout(bool visibility=false) const
+int ClockTree::getTotalFanout(bool visibility = false) const
 {
-  if (visibility and !subtree_visibility_)
+  if (visibility and !subtree_visibility_) {
     return 1;
+  }
 
   int total = 0;
   if (!leaves_.empty()) {
@@ -583,10 +586,11 @@ int ClockTree::getTotalFanout(bool visibility=false) const
   return total;
 }
 
-int ClockTree::getMaxLeaves(bool visibility=false) const
+int ClockTree::getMaxLeaves(bool visibility = false) const
 {
-  if (visibility and !subtree_visibility_)
+  if (visibility and !subtree_visibility_) {
     return 0;
+  }
 
   int width = leaves_.size();
 
@@ -597,7 +601,7 @@ int ClockTree::getMaxLeaves(bool visibility=false) const
   return width;
 }
 
-sta::Delay ClockTree::getMinimumArrival(bool visibility=false) const
+sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 {
   sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
   if (!visibility or isVisible()) {
@@ -619,7 +623,7 @@ sta::Delay ClockTree::getMinimumArrival(bool visibility=false) const
   return minimum;
 }
 
-sta::Delay ClockTree::getMaximumArrival(bool visibility=false) const
+sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 {
   sta::Delay maximum = std::numeric_limits<sta::Delay>::min();
   if (!visibility or isVisible()) {
@@ -641,7 +645,7 @@ sta::Delay ClockTree::getMaximumArrival(bool visibility=false) const
   return maximum;
 }
 
-sta::Delay ClockTree::getMinimumDriverDelay(bool visibility=false) const
+sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
 {
   sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
   if (!visibility or isVisible()) {
@@ -662,7 +666,7 @@ sta::Delay ClockTree::getMinimumDriverDelay(bool visibility=false) const
   return minimum;
 }
 
-std::set<odb::dbNet*> ClockTree::getNets(bool visibility=false) const
+std::set<odb::dbNet*> ClockTree::getNets(bool visibility = false) const
 {
   std::set<odb::dbNet*> nets;
 
