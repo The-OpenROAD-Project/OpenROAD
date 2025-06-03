@@ -1138,7 +1138,6 @@ void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
     }
   }
 
-  macro_blockages_.push_back(blockage);
   io_blockages_.push_back(blockage);
 }
 
@@ -1295,8 +1294,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
     cluster->setSoftMacro(std::move(soft_macro));
   }
 
-  // The simulated annealing outline is determined by the parent's shape
   const Rect outline = parent->getBBox();
+  if (graphics_) {
+    graphics_->setOutline(micronsToDbu(outline));
+  }
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -1696,11 +1697,10 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
     cluster->setSoftMacro(std::move(soft_macro));
   }
 
-  // The simulated annealing outline is determined by the parent's shape
-  const Rect outline(parent->getX(),
-                     parent->getY(),
-                     parent->getX() + parent->getWidth(),
-                     parent->getY() + parent->getHeight());
+  const Rect outline = parent->getBBox();
+  if (graphics_) {
+    graphics_->setOutline(micronsToDbu(outline));
+  }
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -2068,12 +2068,11 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
     computeBlockageOverlap(placement_blockages, blockage, outline);
   }
 
-  for (auto& blockage : macro_blockages_) {
+  for (auto& blockage : io_blockages_) {
     computeBlockageOverlap(macro_blockages, blockage, outline);
   }
 
   if (graphics_) {
-    graphics_->setOutline(micronsToDbu(outline));
     graphics_->setMacroBlockages(macro_blockages);
     graphics_->setPlacementBlockages(placement_blockages);
   }
@@ -2374,10 +2373,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   clustering_engine_->createTempMacroClusters(
       hard_macros, sa_macros, macro_clusters, cluster_to_macro, masters);
 
-  const Rect outline(cluster->getX(),
-                     cluster->getY(),
-                     cluster->getX() + cluster->getWidth(),
-                     cluster->getY() + cluster->getHeight());
+  const Rect outline = cluster->getBBox();
 
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
