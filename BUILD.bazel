@@ -57,6 +57,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cts",
     "//src/dbSta",
     "//src/dpl",
+    "//src/drt",
     "//src/dst",
     "//src/exa",
     "//src/fin",
@@ -233,15 +234,6 @@ genrule(
 )
 
 tcl_encode(
-    name = "triton_route_tcl",
-    srcs = [
-        "src/drt/src/TritonRoute.tcl",
-    ],
-    char_array_name = "drt_tcl_inits",
-    namespace = "drt",
-)
-
-tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
         "src/Metrics.tcl",
@@ -267,20 +259,6 @@ tcl_encode(
     ],
     char_array_name = "dft_tcl_inits",
     namespace = "dft",
-)
-
-tcl_wrap_cc(
-    name = "triton_route_swig",
-    srcs = [
-        "src/drt/src/TritonRoute.i",
-        ":error_swig",
-    ],
-    module = "drt",
-    namespace_prefix = "drt",
-    root_swig_src = "src/drt/src/TritonRoute.i",
-    swig_includes = [
-        "src/drt/src",
-    ],
 )
 
 tcl_wrap_cc(
