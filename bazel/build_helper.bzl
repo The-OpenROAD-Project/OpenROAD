@@ -23,9 +23,6 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #TritonRoute
     ":triton_route_swig",
     ":triton_route_tcl",
-    #RMP
-    ":rmp_swig",
-    ":rmp_tcl",
     #dft
     ":dft_swig",
     ":dft_tcl",
@@ -37,9 +34,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     #TritonRoute
     "src/drt/include/triton_route/*.h",
     "src/drt/src/db/infra/*.hpp",
-    #RMP
-    "src/rmp/src/*.h",
-    "src/rmp/include/rmp/*.h",
     #dft
     "src/dft/include/dft/*.hh",
 ]
@@ -60,8 +54,6 @@ OPENROAD_LIBRARY_INCLUDES = [
     "src/drt/include/triton_route",
     "src/drt/src",
     "src/drt/include",
-    #RMP
-    "src/rmp/include",
     #dft
     "src/dft/include",
     "src/dft/src/clock_domain",
@@ -91,8 +83,6 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/drt/src/**/*.h",
     "src/drt/src/**/*.cpp",
     "src/drt/src/**/*.cc",
-    #RMP
-    "src/rmp/src/*.cpp",
     #dft
     "src/dft/src/**/*.cpp",
     "src/dft/src/**/*.hh",

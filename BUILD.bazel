@@ -71,6 +71,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/ppl",
     "//src/psm",
     "//src/rcx",
+    "//src/rmp",
     "//src/rsz",
     "//src/stt",
     "//src/tap",
@@ -252,15 +253,6 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "rmp_tcl",
-    srcs = [
-        "src/rmp/src/rmp.tcl",
-    ],
-    char_array_name = "rmp_tcl_inits",
-    namespace = "rmp",
-)
-
-tcl_encode(
     name = "dft_tcl",
     srcs = [
         "src/dft/src/dft.tcl",
@@ -294,22 +286,6 @@ tcl_wrap_cc(
     root_swig_src = "src/OpenRoad.i",
     swig_includes = [
         "src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "rmp_swig",
-    srcs = [
-        "src/rmp/src/rmp.i",
-        ":error_swig",
-        "//:sta_swig_files",
-    ],
-    module = "rmp",
-    namespace_prefix = "rmp",
-    root_swig_src = "src/rmp/src/rmp.i",
-    swig_includes = [
-        "src/rmp/src",
-        "src/sta",
     ],
 )
 
