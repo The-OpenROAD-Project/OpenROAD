@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "rsz",
+    name = "lib",
     srcs = [
         "src/AbstractSteinerRenderer.h",
         "src/BaseMove.cc",
@@ -22,9 +22,6 @@ cc_library(
         "src/CloneMove.cc",
         "src/CloneMove.hh",
         "src/EstimateWireParasitics.cc",
-        "src/Graphics.cc",
-        "src/Graphics.hh",
-        "src/MakeResizer.cc",
         "src/OdbCallBack.cc",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
@@ -45,8 +42,6 @@ cc_library(
         "src/SizeUpMove.hh",
         "src/SplitLoadMove.cc",
         "src/SplitLoadMove.hh",
-        "src/SteinerRenderer.cc",
-        "src/SteinerRenderer.h",
         "src/SteinerTree.cc",
         "src/SteinerTree.hh",
         "src/SwapPinsMove.cc",
@@ -63,6 +58,47 @@ cc_library(
         "include",
     ],
     deps = [
+        "//:opensta_lib",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/grt:types",
+        "//src/gui",
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
+        "@boost.container_hash",
+        "@boost.multi_array",
+        "@spdlog",
+    ],
+)
+
+cc_library(
+    name = "rsz",
+    srcs = [
+        "src/AbstractSteinerRenderer.h",
+        "src/Graphics.cc",
+        "src/Graphics.hh",
+        "src/MakeResizer.cc",
+        "src/ResizerObserver.hh",
+        "src/SteinerRenderer.cc",
+        "src/SteinerRenderer.h",
+        "src/SteinerTree.hh",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/rsz/MakeResizer.hh",
+        "include/rsz/OdbCallBack.hh",
+        "include/rsz/Resizer.hh",
+    ],
+    copts = [
+        "-Isrc/rsz/src",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":lib",
         "//:opensta_lib",
         "//:ord",
         "//src/dbSta",

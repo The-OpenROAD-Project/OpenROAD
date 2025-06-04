@@ -3,7 +3,7 @@
 
 // DELETE #include <dbRtTree.h>
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"

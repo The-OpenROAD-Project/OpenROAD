@@ -292,7 +292,6 @@ class HierRTLMP
   std::map<std::string, Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
   std::vector<Rect> placement_blockages_;
-  std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;

@@ -4,7 +4,6 @@
 #include "ant/AntennaChecker.hh"
 
 #include <omp.h>
-#include <tcl.h>
 
 #include <algorithm>
 #include <boost/pending/disjoint_sets.hpp>
@@ -54,10 +53,6 @@ struct AntennaModel
   double plus_diff_factor;
   double diff_metal_reduce_factor;
 };
-
-extern "C" {
-extern int Ant_Init(Tcl_Interp* interp);
-}
 
 AntennaChecker::AntennaChecker() = default;
 AntennaChecker::~AntennaChecker() = default;
