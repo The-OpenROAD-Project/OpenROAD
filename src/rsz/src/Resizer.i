@@ -639,11 +639,13 @@ find_resize_slacks()
   resizer->findResizeSlacks(true);
 }
 
-NetSeq *
+TmpNetSeq *
 resize_worst_slack_nets()
 {
   Resizer *resizer = getResizer();
-  return &resizer->resizeWorstSlackNets();
+  TmpNetSeq *seq = new TmpNetSeq;
+  *seq = resizer->resizeWorstSlackNets();
+  return seq;
 }
 
 float

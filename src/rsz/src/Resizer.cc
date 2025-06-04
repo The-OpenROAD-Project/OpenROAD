@@ -2054,7 +2054,6 @@ void Resizer::findResizeSlacks1()
   // Use driver pin slacks rather than Sta::netSlack to save visiting
   // the net pins and min'ing the slack.
   net_slack_map_.clear();
-  NetSeq nets;
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
@@ -2066,34 +2065,26 @@ void Resizer::findResizeSlacks1()
         // Hands off special nets.
         && !db_network_->isSpecial(net) && !sta_->isClock(drvr_pin)) {
       net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
-      nets.emplace_back(net);
     }
   }
+}
 
+NetSeq Resizer::resizeWorstSlackNets()
+{
   // Find the nets with the worst slack.
-
-  //  sort(nets.begin(), nets.end(). [&](const Net *net1,
+  NetSeq nets;
+  for (auto pair : net_slack_map_) {
+    nets.push_back(pair.first);
+  }
   sort(nets, [this](const Net* net1, const Net* net2) {
     return resizeNetSlack(net1) < resizeNetSlack(net2);
   });
-  worst_slack_nets_.clear();
+
+  NetSeq worst_slack_nets;
   for (int i = 0; i < nets.size() * worst_slack_nets_percent_ / 100.0; i++) {
-    worst_slack_nets_.emplace_back(nets[i]);
+    worst_slack_nets.push_back(nets[i]);
   }
-}
-
-NetSeq& Resizer::resizeWorstSlackNets()
-{
-  return worst_slack_nets_;
-}
-
-vector<dbNet*> Resizer::resizeWorstSlackDbNets()
-{
-  vector<dbNet*> nets;
-  for (const Net* net : worst_slack_nets_) {
-    nets.emplace_back(db_network_->staToDb(net));
-  }
-  return nets;
+  return worst_slack_nets;
 }
 
 std::optional<Slack> Resizer::resizeNetSlack(const Net* net)

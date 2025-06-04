@@ -394,11 +394,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void resizeSlackPreamble();
   void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
-  NetSeq& resizeWorstSlackNets();
+  NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
   std::optional<Slack> resizeNetSlack(const Net* net);
-  // db flavor
-  std::vector<dbNet*> resizeWorstSlackDbNets();
   std::optional<Slack> resizeNetSlack(const dbNet* db_net);
 
   ////////////////////////////////////////////////////////////////
@@ -771,7 +769,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   float max_wire_length_ = 0;
   float worst_slack_nets_percent_ = 10;
   Map<const Net*, Slack> net_slack_map_;
-  NetSeq worst_slack_nets_;
 
   std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
@@ -841,6 +838,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class UnbufferMove;
   friend class IncrementalParasiticsGuard;
   friend class Rebuffer;
+  friend class OdbCallBack;
 };
 
 class IncrementalParasiticsGuard
