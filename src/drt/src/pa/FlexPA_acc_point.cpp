@@ -1238,7 +1238,7 @@ bool FlexPA::genPinAccessCostBounded(
     if (is_std_cell_pin) {
       const bool ap_in_via_acc_layer
           = (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM
-        || (ap->getLayerNum() >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+             || (ap->getLayerNum() >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
                  && ap->getLayerNum() <= router_cfg_->VIAINPIN_TOPLAYERNUM));
 
       if (!ap_in_via_acc_layer || ap->hasAccess(frDirEnum::U)) {
