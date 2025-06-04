@@ -34,11 +34,8 @@ genrule(
 )
 
 cc_library(
-    name = "stt",
+    name = "lib",
     srcs = [
-        "src/LinesRenderer.cpp",
-        "src/LinesRenderer.h",
-        "src/MakeSteinerTreeBuilder.cpp",
         "src/SteinerTreeBuilder.cpp",
         "src/flt/etc/POST9.cpp",
         "src/flt/etc/POWV9.cpp",
@@ -46,23 +43,51 @@ cc_library(
         "src/pdr/src/pd.cpp",
     ],
     hdrs = [
-        "include/stt/MakeSteinerTreeBuilder.h",
         "include/stt/SteinerTreeBuilder.h",
         "include/stt/flute.h",
         "include/stt/pd.h",
     ],
     includes = [
         "include",
-        "src",
     ],
     deps = [
-        "//:ord",
-        "//src/gui",
         "//src/odb",
         "//src/utl",
         "@boost.heap",
         "@boost.multi_array",
         "@com_github_quantamhd_lemon//:lemon",
+    ],
+)
+
+cc_library(
+    name = "stt",
+    srcs = [
+        "src/LinesRenderer.cpp",
+        "src/LinesRenderer.h",
+        "src/MakeSteinerTreeBuilder.cpp",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/stt/MakeSteinerTreeBuilder.h",
+        "include/stt/SteinerTreeBuilder.h",
+        "include/stt/flute.h",
+        "include/stt/pd.h",
+    ],
+    copts = [
+        "-Wno-missing-braces",  # from TCL swigging
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":lib",
+        "//:ord",
+        "//src/gui",
+        "//src/odb",
+        "//src/utl",
+        "@boost.multi_array",
         "@tk_tcl//:tcl",
     ],
 )

@@ -12,49 +12,37 @@ package(
 cc_library(
     name = "lib",
     srcs = [
-        "src/example.cpp",
-        "src/observer.h",
-        "src/MakeExample.cpp",
+        "src/upf.cpp",
+        "src/writer.cpp",
+        "src/writer.h",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
+        "include/upf/upf.h",
     ],
     includes = [
         "include",
     ],
     deps = [
-        "//:ord",
+        "//:opensta_lib",
+        "//src/dbSta",
         "//src/odb",
         "//src/utl",
-        "@tk_tcl//:tcl",
     ],
 )
 
 cc_library(
-    name = "exa",
+    name = "upf",
     srcs = [
-        "src/observer.h",
-        "src/graphics.h",
-        "src/graphics.cpp",
-        "src/MakeExample.cpp",
+        "src/MakeUpf.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
-    ],
-    includes = [
-        "include",
-    ],
-    copts = [
-        "-Isrc/exa/src",
+        "include/upf/MakeUpf.h",
     ],
     deps = [
         ":lib",
         "//:ord",
-        "//src/gui",
         "//src/odb",
         "//src/utl",
         "@tk_tcl//:tcl",
@@ -64,23 +52,23 @@ cc_library(
 tcl_encode(
     name = "tcl",
     srcs = [
-        "src/example.tcl",
+        "src/upf.tcl",
     ],
-    char_array_name = "exa_tcl_inits",
-    namespace = "exa",
+    char_array_name = "upf_tcl_inits",
+    namespace = "upf",
 )
 
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "src/example.i",
+        "src/upf.i",
         "//:error_swig",
     ],
-    module = "exa",
-    namespace_prefix = "exa",
-    root_swig_src = "src/example.i",
+    module = "upf",
+    namespace_prefix = "upf",
+    root_swig_src = "src/upf.i",
     swig_includes = [
-        "src/exa/src",
+        "src/upf/src",
     ],
     deps = [
         "//src/odb:swig",
