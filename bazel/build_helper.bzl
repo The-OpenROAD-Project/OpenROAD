@@ -23,9 +23,6 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #RMP
     ":rmp_swig",
     ":rmp_tcl",
-    #dft
-    ":dft_swig",
-    ":dft_tcl",
 ]
 
 OPENROAD_LIBRARY_HDRS_INCLUDE = [
@@ -34,8 +31,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     #RMP
     "src/rmp/src/*.h",
     "src/rmp/include/rmp/*.h",
-    #dft
-    "src/dft/include/dft/*.hh",
 ]
 
 # Once we properly include headers relative to project-root,
@@ -52,15 +47,6 @@ OPENROAD_LIBRARY_INCLUDES = [
     "src/sta/include/sta",
     #RMP
     "src/rmp/include",
-    #dft
-    "src/dft/include",
-    "src/dft/src/clock_domain",
-    "src/dft/src/config",
-    "src/dft/src/utils",
-    "src/dft/src/cells",
-    "src/dft/src/replace",
-    "src/dft/src/architect",
-    "src/dft/src/stitch",
 ]
 
 OPENROAD_LIBRARY_SRCS_EXCLUDE = [
@@ -77,7 +63,4 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/rcx/src/*.h",
     #RMP
     "src/rmp/src/*.cpp",
-    #dft
-    "src/dft/src/**/*.cpp",
-    "src/dft/src/**/*.hh",
 ]
