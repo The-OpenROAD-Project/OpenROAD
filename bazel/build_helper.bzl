@@ -17,9 +17,6 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #Root OpenRoad
     ":openroad_swig",
     ":openroad_tcl",
-    #OpenDB
-    "//src/odb:tcl",
-    "//src/odb:swig",
     #RMP
     ":rmp_swig",
     ":rmp_tcl",
@@ -43,10 +40,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
 OPENROAD_LIBRARY_INCLUDES = [
     #Root OpenRoad
     "include",
-    #OpenDB
-    "src/odb/include/odb",
-    #OpenDBTCL
-    "src/odb/src/swig/common",
     #STA
     "src/sta",
     "src/sta/include/sta",

@@ -67,6 +67,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/ifp",
     "//src/mpl",
     "//src/odb",
+    "//src/odb:ui",
     "//src/pad",
     "//src/pdn",
     "//src/ppl",

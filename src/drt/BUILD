@@ -259,6 +259,7 @@ cc_library(
     ],
     copts = [
         "-Isrc/drt/src",
+        "-Wno-missing-braces",  # from TCL swigging
     ],
     deps = [
         ":db_hdrs",
