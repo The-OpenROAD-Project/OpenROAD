@@ -56,6 +56,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/ant",
     "//src/cts",
     "//src/dbSta",
+    "//src/dft",
     "//src/dpl",
     "//src/drt",
     "//src/dst",
@@ -253,15 +254,6 @@ tcl_encode(
     namespace = "rmp",
 )
 
-tcl_encode(
-    name = "dft_tcl",
-    srcs = [
-        "src/dft/src/dft.tcl",
-    ],
-    char_array_name = "dft_tcl_inits",
-    namespace = "dft",
-)
-
 tcl_wrap_cc(
     name = "openroad_swig",
     srcs = [
@@ -289,20 +281,6 @@ tcl_wrap_cc(
     swig_includes = [
         "src/rmp/src",
         "src/sta",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "dft_swig",
-    srcs = [
-        "src/dft/src/dft.i",
-        ":error_swig",
-    ],
-    module = "dft",
-    namespace_prefix = "dft",
-    root_swig_src = "src/dft/src/dft.i",
-    swig_includes = [
-        "src/dft/src",
     ],
 )
 
@@ -483,7 +461,6 @@ genrule(
     name = "StaConfig",
     srcs = [],
     outs = ["src/sta/util/StaConfig.hh"],
-    visibility = ["//:__subpackages__"],
     cmd = """echo -e '
     #define STA_VERSION "2.2.1"
     #define STA_GIT_SHA1 "53d4d57cb8550d2ceed18adad75b73bba7858f4f"
@@ -491,6 +468,7 @@ genrule(
     #define SSTA 0
     #define ZLIB_FOUND' > \"$@\"
     """,
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
