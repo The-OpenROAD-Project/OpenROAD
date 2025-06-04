@@ -67,6 +67,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/mpl",
     "//src/odb",
     "//src/pad",
+    "//src/pdn",
     "//src/ppl",
     "//src/psm",
     "//src/rcx",
@@ -241,15 +242,6 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "pdngen_tcl",
-    srcs = [
-        "src/pdn/src/pdn.tcl",
-    ],
-    char_array_name = "pdn_tcl_inits",
-    namespace = "pdn",
-)
-
-tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
         "src/Metrics.tcl",
@@ -288,23 +280,6 @@ tcl_wrap_cc(
     root_swig_src = "src/drt/src/TritonRoute.i",
     swig_includes = [
         "src/drt/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "pdngen_swig",
-    srcs = [
-        "src/pdn/src/PdnGen.i",
-        ":error_swig",
-        "//src/odb:swig_imports",
-    ],
-    module = "pdn",
-    namespace_prefix = "pdn",
-    root_swig_src = "src/pdn/src/PdnGen.i",
-    swig_includes = [
-        "src/odb/src/swig/common",
-        "src/odb/src/swig/tcl",
-        "src/pdn/src",
     ],
 )
 
