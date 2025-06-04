@@ -248,9 +248,6 @@ void FlexPAGraphics::setViaAP(
   if (!pin_ || !settings_->paMarkers) {
     return;
   }
-  if (markers.size() > 0) {
-    return;
-  }
   logger_->report(
       "Via {} markers {}", via->getViaDef()->getName(), markers.size());
   pa_ap_ = ap;
