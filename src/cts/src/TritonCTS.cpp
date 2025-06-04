@@ -30,7 +30,6 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
-#include "ord/OpenRoad.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
