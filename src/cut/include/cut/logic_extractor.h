@@ -14,7 +14,7 @@
 #include "sta/SearchPred.hh"
 #include "utl/Logger.h"
 
-namespace rmp {
+namespace cut {
 
 // This class is an implementation of an sta::SearchPred that constrains
 // the edges BfsBwkIterators are allowed to traverse. In this case this
@@ -74,4 +74,4 @@ class LogicExtractorFactory
   sta::dbSta* open_sta_;
   utl::Logger* logger_;
 };
-}  // namespace rmp
+}  // namespace cut

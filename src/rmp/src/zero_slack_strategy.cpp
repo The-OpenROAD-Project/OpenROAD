@@ -5,13 +5,12 @@
 
 #include <vector>
 
-#include "abc_library_factory.h"
+#include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
+#include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
-#include "logic_cut.h"
-#include "logic_extractor.h"
-#include "rmp/unique_name.h"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/PortDirection.hh"
@@ -21,6 +20,7 @@
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+#include "utl/unique_name.h"
 
 namespace rmp {
 
@@ -47,7 +47,7 @@ std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta)
 }
 
 void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
-                                       UniqueName& name_generator,
+                                       utl::UniqueName& name_generator,
                                        utl::Logger* logger)
 {
   sta->ensureGraph();
@@ -61,26 +61,26 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
 
   if (candidate_vertices.empty()) {
     logger->info(
-        utl::RMP, 1030, "All endpoints have positive slack, nothing to do.");
+        utl::RMP, 50, "All endpoints have positive slack, nothing to do.");
     return;
   }
 
-  AbcLibraryFactory factory(logger);
+  cut::AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
   factory.SetCorner(corner_);
-  AbcLibrary abc_library = factory.Build();
+  cut::AbcLibrary abc_library = factory.Build();
 
   // Disable incremental timing.
   sta->graphDelayCalc()->delaysInvalid();
   sta->search()->arrivalsInvalid();
   sta->search()->endpointsInvalid();
 
-  LogicExtractorFactory logic_extractor(sta, logger);
+  cut::LogicExtractorFactory logic_extractor(sta, logger);
   for (sta::Vertex* negative_endpoint : candidate_vertices) {
     logic_extractor.AppendEndpoint(negative_endpoint);
   }
 
-  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+  cut::LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, logger);

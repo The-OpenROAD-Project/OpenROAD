@@ -16,7 +16,7 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace cut {
 
 class AbcLibrary
 {
@@ -80,4 +80,4 @@ class AbcLibraryFactory
   sta::Corner* corner_ = nullptr;
 };
 
-}  // namespace rmp
+}  // namespace cut
