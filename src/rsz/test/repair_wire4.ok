@@ -17,13 +17,14 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0039] Resized 1 instances.
 [INFO RSZ-0038] Inserted 5 buffers in 1 nets.
 Driver    length delay
 wire1/Z manhtn 591.2 steiner 591.2 0.05
 wire3/Z manhtn 590.0 steiner 590.0 0.05
-wire2/Z manhtn 587.2 steiner 587.2 0.05
-wire4/Z manhtn 587.2 steiner 587.2 0.05
-u2/Z manhtn 324.2 steiner 324.2 0.01
-load_slew5/Z manhtn 324.2 steiner 324.2 0.01
+u2/Z manhtn 478.7 steiner 478.7 0.03
+max_length5/Z manhtn 478.6 steiner 478.6 0.03
+wire2/Z manhtn 432.8 steiner 432.8 0.03
+wire4/Z manhtn 432.8 steiner 432.8 0.03
 u3/Z manhtn 1.1 steiner 1.1 0.00

@@ -17,7 +17,6 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 r0/Q                                    0.17    0.00    0.17 (MET)
 
-[INFO RSZ-0058] Using max wire length 2406um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       252
