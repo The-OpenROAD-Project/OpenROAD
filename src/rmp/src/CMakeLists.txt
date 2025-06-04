@@ -14,10 +14,10 @@ swig_lib(NAME      rmp
 
 target_sources(rmp
   PRIVATE
-    blifParser.cpp
-    blif.cpp
     Restructure.cpp
     MakeRestructure.cpp
+    delay_optimization_strategy.cpp
+    zero_slack_strategy.cpp
 )
 
 messages(
@@ -35,39 +35,16 @@ target_include_directories(rmp
     ${OPENSTA_HOME}
  )
 
-target_link_libraries(rmp 
+target_link_libraries(rmp
   PRIVATE
     odb
     dbSta
     OpenSTA
     rsz
     utl_lib
-    rmp_abc_library
+    cut
     ${ABC_LIBRARY}
  )
-
-add_library(rmp_abc_library 
-  abc_library_factory.cpp
-  logic_extractor.cpp
-  logic_cut.cpp
-  delay_optimization_strategy.cpp
-  zero_slack_strategy.cpp
-)
-
-target_include_directories(rmp_abc_library
-  PUBLIC
-    ../include
-  PRIVATE
-    .
-)
-
-target_link_libraries(rmp_abc_library
-  PUBLIC
-    OpenSTA
-    dbSta_lib
-    utl_lib
-    ${ABC_LIBRARY}
-)
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          rmp_py
@@ -93,6 +70,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dbSta
       OpenSTA
       rsz
+      cut
   )
 
 endif()

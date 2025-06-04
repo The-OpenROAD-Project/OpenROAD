@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rmp/blifParser.h"
+#include "cut/blifParser.h"
 
 #include <boost/bind/bind.hpp>
 #include <boost/config/warning_disable.hpp>
@@ -38,50 +38,50 @@ using qi::lexeme;
 using ascii::char_;
 using ascii::space;
 
-void setNewInput(std::string input, rmp::BlifParser* parser)
+void setNewInput(std::string input, cut::BlifParser* parser)
 {
   if (input != "\\") {
     parser->addInput(input);
   }
 }
 
-void setNewOutput(std::string output, rmp::BlifParser* parser)
+void setNewOutput(std::string output, cut::BlifParser* parser)
 {
   if (output != "\\") {
     parser->addOutput(output);
   }
 }
 
-void setNewClock(std::string clock, rmp::BlifParser* parser)
+void setNewClock(std::string clock, cut::BlifParser* parser)
 {
   if (clock != "\\") {
     parser->addClock(clock);
   }
 }
 
-void setNewInstanceType(std::string type, rmp::BlifParser* parser)
+void setNewInstanceType(std::string type, cut::BlifParser* parser)
 {
   parser->addNewInstanceType(type);
 }
 
-void setNewGate(std::string gate, rmp::BlifParser* parser)
+void setNewGate(std::string gate, cut::BlifParser* parser)
 {
   parser->addNewGate(gate);
 }
 
-void setGateNets(std::string net, rmp::BlifParser* parser)
+void setGateNets(std::string net, cut::BlifParser* parser)
 {
   parser->addConnection(net);
 }
 
-void endParser(std::string end, rmp::BlifParser* parser)
+void endParser(std::string end, cut::BlifParser* parser)
 {
   parser->endParser();
 }
 
 bool parse(std::string::iterator first,
            std::string::iterator last,
-           rmp::BlifParser* parser)
+           cut::BlifParser* parser)
 {
   qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
   _string %= lexeme[+(char_ - (' ' | qi::eol))];
@@ -110,7 +110,7 @@ bool parse(std::string::iterator first,
 
 }  // namespace blif_parser
 
-namespace rmp {
+namespace cut {
 
 BlifParser::BlifParser()
 {
@@ -195,4 +195,4 @@ bool BlifParser::parse(std::string& file_contents)
 {
   return blif_parser::parse(file_contents.begin(), file_contents.end(), this);
 }
-}  // namespace rmp
+}  // namespace cut

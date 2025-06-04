@@ -52,6 +52,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/ant:ui",
     "//src/cts",
     "//src/cts:ui",
+    "//src/cut",
     "//src/dbSta",
     "//src/dbSta:ui",
     "//src/dft",
@@ -191,11 +192,10 @@ cc_library(
         ":openroad_tcl",
         ":rmp_swig",
         ":rmp_tcl",
-    ] + glob([
-        "src/rmp/src/*.cpp",
-        "src/rmp/src/*.h",
+    ] + glob(["src/rmp/src/*.cpp"]),
+    hdrs = glob([
+        "src/rmp/include/rmp/*.h",
     ]),
-    hdrs = glob(["src/rmp/include/rmp/*.h"]),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
     features = ["-use_header_modules"],

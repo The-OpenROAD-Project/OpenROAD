@@ -62,7 +62,7 @@ proc restructure { args } {
   if { [info exists keys(-liberty_file)] } {
     set liberty_file_name $keys(-liberty_file)
   } else {
-    utl::error RMP 12 "Missing argument -liberty_file"
+    utl::error RMP 1 "Missing argument -liberty_file"
   }
 
   if { [info exists keys(-tielo_port)] } {
@@ -78,7 +78,7 @@ proc restructure { args } {
       rmp::set_tielo_port_cmd $loport
     }
   } else {
-    utl::warn RMP 32 "-tielo_port not specified"
+    utl::warn RMP 7 "-tielo_port not specified"
   }
 
   if { [info exists keys(-tiehi_port)] } {
@@ -94,7 +94,7 @@ proc restructure { args } {
       rmp::set_tiehi_port_cmd $hiport
     }
   } else {
-    utl::warn RMP 33 "-tiehi_port not specified"
+    utl::warn RMP 8 "-tiehi_port not specified"
   }
 
   if { [info exists keys(-work_dir)] } {

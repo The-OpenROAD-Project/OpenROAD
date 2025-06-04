@@ -3,7 +3,7 @@
 
 %{
 #include "rmp/Restructure.h"
-#include "rmp/blif.h"
+#include "cut/blif.h"
 #include "sta/Corner.hh"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
@@ -20,6 +20,7 @@ getOpenRoad();
 }
 
 using namespace rmp;
+using namespace cut;
 using ord::getRestructure;
 using ord::getOpenRoad;
 using odb::dbInst;
@@ -31,5 +32,5 @@ using sta::Corner;
 
 %include <typemaps.i>
 %include <std_string.i>
-%include "rmp/blif.h"
+%include "cut/blif.h"
 %include "rmp/Restructure.h"

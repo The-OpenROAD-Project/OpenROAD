@@ -61,6 +61,7 @@ cc_library(
         "include/utl/prometheus/time_window_quantiles.h",
         "include/utl/scope.h",
         "include/utl/timer.h",
+        "include/utl/unique_name.h",
         "include/utl/validation.h",
     ],
     includes = ["include"],

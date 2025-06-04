@@ -5,8 +5,8 @@
 
 #include <mutex>
 
-#include "abc_library_factory.h"
 #include "base/abc/abc.h"
+#include "cut/abc_library_factory.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
@@ -56,7 +56,7 @@ void AbcPrintStats(const abc::Abc_Ntk_t* ntk)
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
     abc::Abc_Ntk_t* ntk,
-    AbcLibrary& abc_sc_library)
+    cut::AbcLibrary& abc_sc_library)
 {
   abc::SC_BusPars buffer_parameters;
   memset(&buffer_parameters, 0, sizeof(abc::SC_BusPars));
@@ -82,7 +82,7 @@ std::mutex abc_library_mutex;
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     const abc::Abc_Ntk_t* ntk,
-    AbcLibrary& abc_library,
+    cut::AbcLibrary& abc_library,
     utl::Logger* logger)
 {
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> current_network(
@@ -109,7 +109,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     if (!buffer_cell) {
       logger->error(
           utl::RMP,
-          1029,
+          49,
           "Cannot find buffer cell in abc library (ensure buffer "
           "exists in your PDK), if it does please report this internal error.");
     }

@@ -29,7 +29,7 @@ lohitemp = Template(
 
 def set_tiehi(design, tiehi_port):
     if tiehi_port == None:
-        utl.error(utl.RMP, 301, "Must specify a tiehi_port")
+        utl.error(utl.RMP, 12, "Must specify a tiehi_port")
     tieHiport = design.evalTclString(
         lohitemp.substitute({"tielohi_port": tiehi_port, "tie": "hi"})
     )
@@ -37,7 +37,7 @@ def set_tiehi(design, tiehi_port):
 
 def set_tielo(design, tielo_port):
     if tielo_port == None:
-        utl.error(utl.RMP, 302, "Must specify a tielo_port")
+        utl.error(utl.RMP, 13, "Must specify a tielo_port")
     tieLoport = design.evalTclString(
         lohitemp.substitute({"tielohi_port": tielo_port, "tie": "lo"})
     )
