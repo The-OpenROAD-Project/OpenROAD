@@ -12,48 +12,41 @@ package(
 cc_library(
     name = "lib",
     srcs = [
-        "src/example.cpp",
-        "src/observer.h",
-        "src/MakeExample.cpp",
+        "src/InitFloorplan.cc",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
+        "include/ifp/InitFloorplan.hh",
     ],
     includes = [
         "include",
     ],
     deps = [
-        "//:ord",
+        "//:opensta_lib",
+        "//src/dbSta",
         "//src/odb",
+        "//src/upf:lib",
         "//src/utl",
-        "@tk_tcl//:tcl",
     ],
 )
 
 cc_library(
-    name = "exa",
+    name = "ifp",
     srcs = [
-        "src/observer.h",
-        "src/graphics.h",
-        "src/graphics.cpp",
-        "src/MakeExample.cpp",
+        "src/MakeInitFloorplan.cc",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
-    ],
-    includes = [
-        "include",
+        "include/ifp/MakeInitFloorplan.hh",
     ],
     copts = [
-        "-Isrc/exa/src",
+        "-Isrc/ifp/src",
     ],
     deps = [
         ":lib",
+        "//:opensta_lib",
         "//:ord",
+        "//src/dbSta",
         "//src/gui",
         "//src/odb",
         "//src/utl",
@@ -64,23 +57,23 @@ cc_library(
 tcl_encode(
     name = "tcl",
     srcs = [
-        "src/example.tcl",
+        "src/InitFloorplan.tcl",
     ],
-    char_array_name = "exa_tcl_inits",
-    namespace = "exa",
+    char_array_name = "ifp_tcl_inits",
+    namespace = "ifp",
 )
 
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "src/example.i",
+        "src/InitFloorplan.i",
         "//:error_swig",
     ],
-    module = "exa",
-    namespace_prefix = "exa",
-    root_swig_src = "src/example.i",
+    module = "ifp",
+    namespace_prefix = "ifp",
+    root_swig_src = "src/InitFloorplan.i",
     swig_includes = [
-        "src/exa/src",
+        "src/ifp/src",
     ],
     deps = [
         "//src/odb:swig",

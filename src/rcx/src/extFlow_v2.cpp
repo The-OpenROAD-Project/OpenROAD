@@ -4,12 +4,12 @@
 #include <map>
 #include <vector>
 
-#include "grids.h"
 #include "gseq.h"
 #include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 namespace rcx {

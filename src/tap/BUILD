@@ -12,49 +12,34 @@ package(
 cc_library(
     name = "lib",
     srcs = [
-        "src/example.cpp",
-        "src/observer.h",
-        "src/MakeExample.cpp",
+        "src/tapcell.cpp",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
+        "include/tap/tapcell.h",
     ],
     includes = [
         "include",
     ],
     deps = [
-        "//:ord",
         "//src/odb",
         "//src/utl",
-        "@tk_tcl//:tcl",
+        "@boost.polygon",
     ],
 )
 
 cc_library(
-    name = "exa",
+    name = "tap",
     srcs = [
-        "src/observer.h",
-        "src/graphics.h",
-        "src/graphics.cpp",
-        "src/MakeExample.cpp",
+        "src/MakeTapcell.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
-    ],
-    includes = [
-        "include",
-    ],
-    copts = [
-        "-Isrc/exa/src",
+        "include/tap/MakeTapcell.h",
     ],
     deps = [
         ":lib",
         "//:ord",
-        "//src/gui",
         "//src/odb",
         "//src/utl",
         "@tk_tcl//:tcl",
@@ -64,23 +49,23 @@ cc_library(
 tcl_encode(
     name = "tcl",
     srcs = [
-        "src/example.tcl",
+        "src/tapcell.tcl",
     ],
-    char_array_name = "exa_tcl_inits",
-    namespace = "exa",
+    char_array_name = "tap_tcl_inits",
+    namespace = "tap",
 )
 
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "src/example.i",
+        "src/tapcell.i",
         "//:error_swig",
     ],
-    module = "exa",
-    namespace_prefix = "exa",
-    root_swig_src = "src/example.i",
+    module = "tap",
+    namespace_prefix = "tap",
+    root_swig_src = "src/tapcell.i",
     swig_includes = [
-        "src/exa/src",
+        "src/tap/src",
     ],
     deps = [
         "//src/odb:swig",
