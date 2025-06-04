@@ -1,15 +1,18 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #pragma once
 
-#include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbSta.hh"
+#include "lext/abc_library_factory.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace lext {
 
 // The `LogicOptimizationStrategy` class defines an interface for different
 // logic optimization strategies that can be applied to an ABC network.
@@ -52,4 +55,4 @@ class LogicOptimizationStrategy
       = 0;
 };
 
-}  // namespace rmp
+}  // namespace lext

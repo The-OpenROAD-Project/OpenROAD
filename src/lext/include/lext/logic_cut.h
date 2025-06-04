@@ -1,21 +1,25 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #pragma once
 
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbNetwork.hh"
-#include "rmp/unique_name.h"
+#include "lext/unique_name.h"
 #include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace lext {
 class LogicCut
 {
  public:
@@ -61,4 +65,4 @@ class LogicCut
   std::vector<sta::Net*> primary_outputs_;
   sta::InstanceSet cut_instances_;
 };
-}  // namespace rmp
+}  // namespace lext

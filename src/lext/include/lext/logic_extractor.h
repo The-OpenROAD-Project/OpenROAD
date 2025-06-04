@@ -1,5 +1,8 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #pragma once
 
@@ -14,7 +17,7 @@
 #include "sta/SearchPred.hh"
 #include "utl/Logger.h"
 
-namespace rmp {
+namespace lext {
 
 // This class is an implementation of an sta::SearchPred that constrains
 // the edges BfsBwkIterators are allowed to traverse. In this case this
@@ -74,4 +77,4 @@ class LogicExtractorFactory
   sta::dbSta* open_sta_;
   utl::Logger* logger_;
 };
-}  // namespace rmp
+}  // namespace lext

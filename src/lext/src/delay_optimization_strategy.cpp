@@ -1,11 +1,14 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
-#include "delay_optimization_strategy.h"
+#include "lext/delay_optimization_strategy.h"
 
 #include <mutex>
 
-#include "abc_library_factory.h"
+#include "lext/abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
@@ -32,7 +35,7 @@ extern void Abc_FrameSetLibGen(void* pLib);
 extern void Abc_FrameSetDrivingCell(char* pName);
 }  // namespace abc
 
-namespace rmp {
+namespace lext {
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> WrapUnique(abc::Abc_Ntk_t* ntk)
 {
@@ -85,6 +88,19 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     AbcLibrary& abc_library,
     utl::Logger* logger)
 {
+	// TODO(jbylicki): Where did this come from?!
+
+  // auto library = static_cast<abc::Mio_Library_t*>(ntk->pManFunc);
+  // // Install library for NtkMap
+  // abc::Abc_FrameSetLibGen(library);
+  //
+  // // Set up libraries for buffering
+  // AbcLibraryFactory library_factory(logger);
+  // library_factory.AddDbSta(sta_);
+  // AbcLibrary abc_sc_library = library_factory.Build();
+
+  AbcPrintStats(ntk);
+
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> current_network(
       abc::Abc_NtkToLogic(const_cast<abc::Abc_Ntk_t*>(ntk)),
       &abc::Abc_NtkDelete);
@@ -108,8 +124,8 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     abc::Mio_Gate_t* buffer_cell = abc::Mio_LibraryReadBuf(library);
     if (!buffer_cell) {
       logger->error(
-          utl::RMP,
-          1029,
+          utl::LEXT,
+          4,
           "Cannot find buffer cell in abc library (ensure buffer "
           "exists in your PDK), if it does please report this internal error.");
     }
@@ -141,4 +157,4 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
   return current_network;
 }
 
-}  // namespace rmp
+}  // namespace lext

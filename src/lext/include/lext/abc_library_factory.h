@@ -1,5 +1,8 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #pragma once
 
@@ -16,16 +19,22 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace lext {
 
 class AbcLibrary
 {
  public:
+  AbcLibrary() = default;
+  ~AbcLibrary() = default;
+
+  AbcLibrary(AbcLibrary&&) = default;
+  AbcLibrary& operator=(AbcLibrary&&) = default;
+
   AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library)
       : abc_library_(std::move(abc_library))
   {
   }
-  ~AbcLibrary() = default;
+
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
   bool IsSupportedCell(const std::string& cell_name);
   bool IsConst0Cell(const std::string& cell_name);
@@ -80,4 +89,4 @@ class AbcLibraryFactory
   sta::Corner* corner_ = nullptr;
 };
 
-}  // namespace rmp
+}  // namespace lext

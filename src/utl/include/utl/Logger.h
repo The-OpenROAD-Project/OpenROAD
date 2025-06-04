@@ -49,6 +49,7 @@ class Progress;
   X(GRT)                \
   X(GUI)                \
   X(IFP)                \
+  X(LEXT)               \
   X(MPL)                \
   X(ODB)                \
   X(ORD)                \

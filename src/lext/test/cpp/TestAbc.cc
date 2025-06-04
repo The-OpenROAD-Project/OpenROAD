@@ -16,17 +16,17 @@
 #include <set>
 #include <string>
 
-#include "abc_library_factory.h"
+#include "lext/abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
 #include "base/main/abcapis.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
-#include "delay_optimization_strategy.h"
+#include "lext/delay_optimization_strategy.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "logic_extractor.h"
+#include "lext/logic_extractor.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "odb/lefin.h"
@@ -41,7 +41,7 @@
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
-#include "zero_slack_strategy.h"
+#include "lext/zero_slack_strategy.h"
 
 // Headers have duplicate declarations so we include
 // a forward one to get at this function without angering
@@ -53,6 +53,12 @@ void* Abc_FrameReadLibGen();
 namespace rmp {
 
 using ::testing::Contains;
+using lext::LogicCut;
+using lext::LogicExtractorFactory;
+using lext::AbcLibrary;
+using lext::DelayOptimizationStrategy;
+using lext::ZeroSlackStrategy;
+using lext::AbcLibraryFactory;
 
 std::once_flag init_sta_flag;
 
@@ -577,7 +583,7 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
-  rmp::UniqueName unique_name;
+  lext::UniqueName unique_name;
   EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
       mapped_abc_network.get(), abc_library, network, unique_name, &logger_));
 }
@@ -610,7 +616,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
       = strat.Optimize(mapped_abc_network.get(), abc_library, &logger_);
 
-  rmp::UniqueName unique_name;
+  lext::UniqueName unique_name;
   EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
       remapped.get(), abc_library, network, unique_name, &logger_));
 }
@@ -640,7 +646,7 @@ TEST_F(AbcTest,
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
-  rmp::UniqueName unique_name;
+  lext::UniqueName unique_name;
   cut.InsertMappedAbcNetwork(
       mapped_abc_network.get(), abc_library, network, unique_name, &logger_);
 
@@ -682,7 +688,7 @@ TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
 {
   LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
 
-  UniqueName name_generator;
+  lext::UniqueName name_generator;
   ZeroSlackStrategy zero_slack;
   EXPECT_NO_THROW(
       zero_slack.OptimizeDesign(sta_.get(), name_generator, &logger_));
@@ -732,7 +738,7 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
   std::string output_name = "flop_net";
   abc::Abc_ObjAssignName(output_net, output_name.data(), /*pSuffix=*/nullptr);
 
-  rmp::UniqueName unique_namer;
+  lext::UniqueName unique_namer;
 
   // We want to make sure this thing correctly maps to the multi-output sky130
   // cell.

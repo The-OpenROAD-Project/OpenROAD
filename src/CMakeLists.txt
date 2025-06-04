@@ -263,6 +263,7 @@ add_subdirectory(dpl)
 add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
+add_subdirectory(lext)
 add_subdirectory(rmp)
 add_subdirectory(cts)
 add_subdirectory(grt)
@@ -327,6 +328,7 @@ target_link_libraries(openroad
   odbtcl
   rcx
   rmp
+  lext
   cts
   grt
   tap

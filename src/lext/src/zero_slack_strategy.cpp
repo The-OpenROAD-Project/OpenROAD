@@ -1,17 +1,19 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2025-2025, The OpenROAD Authors
+// Copyright 2025 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
-#include "zero_slack_strategy.h"
+#include "lext/zero_slack_strategy.h"
 
 #include <vector>
 
-#include "abc_library_factory.h"
+#include "lext/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "delay_optimization_strategy.h"
-#include "logic_cut.h"
-#include "logic_extractor.h"
-#include "rmp/unique_name.h"
+#include "lext/delay_optimization_strategy.h"
+#include "lext/logic_cut.h"
+#include "lext/logic_extractor.h"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/PortDirection.hh"
@@ -19,10 +21,11 @@
 #include "sta/StaMain.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
+#include "lext/unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace lext {
 
 std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta)
 {
@@ -61,7 +64,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
 
   if (candidate_vertices.empty()) {
     logger->info(
-        utl::RMP, 1030, "All endpoints have positive slack, nothing to do.");
+        utl::LEXT, 5, "All endpoints have positive slack, nothing to do.");
     return;
   }
 
@@ -92,4 +95,4 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   cut.InsertMappedAbcNetwork(
       remapped.get(), abc_library, network, name_generator, logger);
 }
-}  // namespace rmp
+}  // namespace lext

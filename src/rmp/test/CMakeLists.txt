@@ -19,7 +19,3 @@ or_integration_tests(
 # Skipped
 #rmp_man_tcl_check
 #rmp_readme_msgs_check
-
-if (ENABLE_TESTS)
-    add_subdirectory(cpp)
-endif()

@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "rmp/unique_name.h"
+#include "lext/unique_name.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
@@ -35,6 +35,7 @@ class dbSta;
 namespace rmp {
 
 using utl::Logger;
+// using lext::UniqueName;
 
 enum class Mode
 {
@@ -84,7 +85,7 @@ class Restructure
   bool readAbcLog(std::string abc_file_name, int& level_gain, float& delay_val);
 
   Logger* logger_;
-  UniqueName name_generator_;
+  lext::UniqueName name_generator_;
   std::string logfile_;
   std::string locell_;
   std::string loport_;

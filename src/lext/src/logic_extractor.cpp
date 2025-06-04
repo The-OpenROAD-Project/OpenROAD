@@ -1,16 +1,13 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
-
-#include "logic_extractor.h"
+#include "lext/logic_extractor.h"
 
 #include <memory>
 #include <unordered_set>
 #include <vector>
 
-#include "abc_library_factory.h"
+#include "lext/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "logic_cut.h"
+#include "lext/logic_cut.h"
 #include "sta/Bfs.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -20,7 +17,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/SearchPred.hh"
 
-namespace rmp {
+namespace lext {
 
 bool SearchPredNonReg2AbcSupport::searchThru(sta::Edge* edge)
 {
@@ -52,7 +49,7 @@ LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
 std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     AbcLibrary& abc_network)
 {
-  rmp::SearchPredNonReg2AbcSupport pred(
+  lext::SearchPredNonReg2AbcSupport pred(
       open_sta_, &abc_network, open_sta_->graph());
   sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta_);
   for (const auto& end_point : endpoints_) {
@@ -126,7 +123,7 @@ sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
   sta::PinSet* constant_driver = network->drivers(input_vertex->pin());
   if (constant_driver->size() != 1) {
     logger->error(
-        utl::RMP,
+        utl::LEXT,
         1028,
         "constant vertex: {} should have exactly one constant driver. "
         "Has {}, please report this internal error.",
@@ -346,7 +343,7 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
     }
 
     if (!net) {
-      logger_->error(utl::RMP,
+      logger_->error(utl::LEXT,
                      1023,
                      "primary input pin {} connected to null net",
                      network->name(pin));
@@ -397,9 +394,10 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
       = ConvertIoPinsToNets(filtered_primary_outputs);
 
   // Modifies cut_instances in-place
-  RemovePrimaryOutputInstances(cut_instances, primary_outputs);
+  // TODO: Disable with a flag? This deletes cells connected to outputs.
+  // RemovePrimaryOutputInstances(cut_instances, primary_outputs);
 
   return LogicCut(primary_input_nets, primary_output_nets, cut_instances);
 }
 
-}  // namespace rmp
+}  // namespace lext

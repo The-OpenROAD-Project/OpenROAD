@@ -1,23 +1,25 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
-#include "logic_cut.h"
+#include "lext/logic_cut.h"
 
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
-#include "abc_library_factory.h"
+#include "lext/abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
-#include "rmp/unique_name.h"
 #include "sta/Liberty.hh"
+#include "lext/unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace lext {
 
 std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
     const std::vector<sta::Net*>& primary_inputs,
@@ -141,7 +143,7 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
 
     // Is a regular standard cell
     if (cell_name_to_mio.find(cell_name) == cell_name_to_mio.end()) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1001,
                     "cell: {} was not found in the ABC library. Please report "
                     "this internal error.",
@@ -170,7 +172,7 @@ void ConnectPinToDriver(
 {
   sta::Instance* instance = network->instance(output_pin);
   if (abc_instances.find(instance) == abc_instances.end()) {
-    logger->error(utl::RMP,
+    logger->error(utl::LEXT,
                   1018,
                   "Cannot find instance {} in abc instance map. Please "
                   "report this internal error.",
@@ -188,7 +190,7 @@ void ConnectPinToDriver(
 
   sta::PinSet* drivers = network->drivers(net);
   if (drivers->size() != 1) {
-    logger->error(utl::RMP,
+    logger->error(utl::LEXT,
                   1002,
                   "output_pin: {} has the wrong number of drivers {}. Please "
                   "report this internal error.",
@@ -205,7 +207,7 @@ void ConnectPinToDriver(
 
   if (abc_instances.find(driver_instance) == abc_instances.end()) {
     logger->error(
-        utl::RMP,
+        utl::LEXT,
         1003,
         "ABC version of instance {} of type {} not found. Please report this "
         "internal error.",
@@ -285,7 +287,7 @@ void CreateNets(const std::vector<sta::Net*>& output_nets,
 
     if (port_order.find(gate) == port_order.end()) {
       logger->error(
-          utl::RMP,
+          utl::LEXT,
           1007,
           "Can't find gate for {}. Please report this internal error.",
           network->name(sta_instance));
@@ -316,7 +318,7 @@ void AssertAbcNetworkHasNoZeroFanoutNodes(abc::Abc_Ntk_t* abc_network,
     }
 
     if (abc::Abc_ObjFanoutNum(obj) == 0) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1025,
                     "Zero fanout node emitted from ABC. Please report this "
                     "internal error.");
@@ -375,11 +377,11 @@ sta::Instance* GetLogicalParentInstance(sta::InstanceSet& cut_instances,
 {
   // In physical designs with hierarchy we need to figure out
   // the parent module in which instances should be placed.
-  // For now lets just grab the first Instance* we see. RMP
+  // For now lets just grab the first Instance* we see. LEXT
   // shouldn't be doing anything across modules right now, but
   // if that changes I assume things will break.
   if (cut_instances.empty()) {
-    logger->error(utl::RMP, 1011, "Empty logic cuts are not allowed");
+    logger->error(utl::LEXT, 1, "Empty logic cuts are not allowed");
   }
 
   sta::Instance* instance = nullptr;
@@ -389,7 +391,7 @@ sta::Instance* GetLogicalParentInstance(sta::InstanceSet& cut_instances,
     }
 
     if (instance != network->parent(cut_instance)) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1012,
                     "LogiCuts with multiple parent modules are not allowed.");
     }
@@ -422,7 +424,7 @@ std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> CreateInstances(
 
     if (liberty_cell == nullptr) {
       logger->error(
-          utl::RMP,
+          utl::LEXT,
           1010,
           "Could not find cell name {}, please report this internal error",
           std_cell_name);
@@ -462,7 +464,7 @@ std::unordered_map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
     }
 
     if (!abc::Abc_ObjIsNet(net_obj)) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1013,
                     "Primary input or output is not connected to an AIG PI/PO, "
                     "please report this internal error");
@@ -471,7 +473,7 @@ std::unordered_map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
     std::string net_name = abc::Abc_ObjName(net_obj);
     sta::Net* net = network->findNet(net_name.c_str());
     if (!net) {
-      logger->error(utl::RMP, 1024, "Cannot find primary net {}", net_name);
+      logger->error(utl::LEXT, 1024, "Cannot find primary net {}", net_name);
     }
     result[net_obj] = net;
   }
@@ -572,7 +574,7 @@ void ConnectInstances(
   for (auto& [abc_obj, sta_instance] : sorted_new_instances) {
     auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_obj));
     if (gate_to_port_order.find(std_cell) == gate_to_port_order.end()) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1021,
                     "Cannot find abc gate port order {}, please report this "
                     "internal error",
@@ -584,7 +586,7 @@ void ConnectInstances(
     std::string gate_name = abc::Mio_GateReadName(std_cell);
     sta::LibertyCell* cell = network->findLibertyCell(gate_name.c_str());
     if (!cell) {
-      logger->error(utl::RMP, 1014, "Cannot find cell {}", gate_name);
+      logger->error(utl::LEXT, 1014, "Cannot find cell {}", gate_name);
     }
 
     int i = 0;
@@ -596,19 +598,19 @@ void ConnectInstances(
       sta::LibertyPort* port = cell->findLibertyPort(port_name.c_str());
       if (!port) {
         logger->error(
-            utl::RMP, 1015, "Cannot find port  {}/{}", gate_name, port_name);
+            utl::LEXT, 1015, "Cannot find port  {}/{}", gate_name, port_name);
       }
 
       abc::Abc_Obj_t* net = abc::Abc_ObjFanin(abc_obj, i);
       if (!abc::Abc_ObjIsNet(net)) {
-        logger->error(utl::RMP,
+        logger->error(utl::LEXT,
                       1016,
                       "Object is not a net in ABC netlist {}",
                       abc::Abc_ObjName(net));
       }
 
       if (new_nets.find(net) == new_nets.end()) {
-        logger->error(utl::RMP,
+        logger->error(utl::LEXT,
                       1022,
                       "Could not find corresponding sta net for abc net: {}",
                       abc::Abc_ObjName(net));
@@ -627,7 +629,7 @@ void ConnectInstances(
         = cell->findLibertyPort(output_port_name.c_str());
 
     if (!output_port) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1017,
                     "Cannot find port  {}/{}",
                     gate_name,
@@ -635,14 +637,14 @@ void ConnectInstances(
     }
     abc::Abc_Obj_t* net = abc::Abc_ObjFanout0(abc_obj);
     if (!abc::Abc_ObjIsNet(net)) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1019,
                     "Object is not a net in ABC netlist {}",
                     abc::Abc_ObjName(net));
     }
 
     if (new_nets.find(net) == new_nets.end()) {
-      logger->error(utl::RMP,
+      logger->error(utl::LEXT,
                     1020,
                     "Could not find corresponding sta net for abc net: {}",
                     abc::Abc_ObjName(net));
@@ -661,13 +663,13 @@ void MapConstantCells(AbcLibrary& abc_library,
   std::pair<abc::SC_Cell*, abc::SC_Pin*> const_0
       = abc_library.ConstantZeroCell();
   if (!const_0.first || !const_0.second) {
-    logger->error(utl::RMP, 1026, "cannot find 0 valued constant tie cell.");
+    logger->error(utl::LEXT, 2, "cannot find 0 valued constant tie cell.");
   }
 
   std::pair<abc::SC_Cell*, abc::SC_Pin*> const_1
       = abc_library.ConstantOneCell();
   if (!const_1.first || !const_1.second) {
-    logger->error(utl::RMP, 1027, "cannot find 1 valued constant tie cell.");
+    logger->error(utl::LEXT, 3, "cannot find 1 valued constant tie cell.");
   }
   std::string const_0_output_pin_name = const_0.second->pName;
   std::string const_1_output_pin_name = const_1.second->pName;
@@ -696,14 +698,14 @@ void LogicCut::InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
 {
   if (!abc::Abc_NtkHasMapping(abc_network)) {
     logger->error(
-        utl::RMP,
+        utl::LEXT,
         1008,
         "abc_network has no mapping, please report this internal error.");
   }
 
   if (!abc::Abc_NtkIsNetlist(abc_network)) {
     logger->error(
-        utl::RMP,
+        utl::LEXT,
         1009,
         "abc_network is not a netlist, please report this internal error.");
   }
@@ -734,9 +736,10 @@ void LogicCut::InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
   // with the new ones. This should result in an equally valid LogicCut since
   // the PI/POs haven't changed just the junk inside.
   cut_instances_.clear();
+
   for (const auto& kv : abc_objs_to_instances) {
     cut_instances_.insert(kv.second);
   }
 }
 
-}  // namespace rmp
+}  // namespace lext

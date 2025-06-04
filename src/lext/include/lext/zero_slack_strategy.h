@@ -1,15 +1,18 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2025-2025, The OpenROAD Authors
+// Copyright 2025 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #pragma once
 
 #include "db_sta/dbSta.hh"
-#include "resynthesis_strategy.h"
-#include "rmp/unique_name.h"
+#include "lext/resynthesis_strategy.h"
+#include "lext/unique_name.h"
 #include "sta/Corner.hh"
 #include "utl/Logger.h"
 
-namespace rmp {
+namespace lext {
 
 class ZeroSlackStrategy : public ResynthesisStrategy
 {
@@ -23,4 +26,4 @@ class ZeroSlackStrategy : public ResynthesisStrategy
   sta::Corner* corner_;
 };
 
-}  // namespace rmp
+}  // namespace lext

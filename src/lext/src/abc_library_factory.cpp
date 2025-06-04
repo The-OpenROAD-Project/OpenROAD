@@ -1,7 +1,10 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
-#include "abc_library_factory.h"
+#include "lext/abc_library_factory.h"
 
 #include <cmath>
 #include <cstddef>
@@ -32,7 +35,7 @@
 #include "sta/Units.hh"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace lext {
 
 static bool IsCombinational(sta::LibertyCell* cell)
 {
@@ -104,7 +107,7 @@ void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
 
   // 2 axis tables are expected in Liberty timing constructs
   if (model->order() != 2) {
-    logger_->error(utl::RMP,
+    logger_->error(utl::LEXT,
                    17,
                    "sta::TableModel order not equal to 2, order: {}",
                    model->order());
@@ -113,7 +116,7 @@ void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
   const sta::TableAxis* axis_1 = model->axis1();
   sta::FloatSeq* axis1_values = axis_1->values();
   if (!axis1_values) {
-    logger_->error(utl::RMP, 18, "axis 1 null cannot create ABC table");
+    logger_->error(utl::LEXT, 18, "axis 1 null cannot create ABC table");
   }
 
   for (float axis_value : *axis1_values) {
@@ -125,7 +128,7 @@ void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
   const sta::TableAxis* axis_2 = model->axis2();
   sta::FloatSeq* axis2_values = axis_2->values();
   if (!axis2_values) {
-    logger_->error(utl::RMP, 19, "axis 2 null cannot create ABC table");
+    logger_->error(utl::LEXT, 19, "axis 2 null cannot create ABC table");
   }
 
   for (float axis_value : *axis2_values) {
@@ -265,7 +268,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
       } else if (timing_sense == sta::TimingSense::non_unate) {
         time_table->tsense = abc::SC_TSense::sc_ts_Non;
       } else {
-        logger_->error(utl::RMP,
+        logger_->error(utl::LEXT,
                        24,
                        "Unrecognized sta::TimingSense -> {}",
                        static_cast<int>(timing_sense));
@@ -283,7 +286,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
           = dynamic_cast<sta::GateTableModel*>(fall_model);
 
       if (!rise_gate_model || !fall_gate_model) {
-        logger_->error(utl::RMP,
+        logger_->error(utl::LEXT,
                        23,
                        "rise/fall Gate model is empty for cell {}. Need timing "
                        "information",
@@ -321,12 +324,12 @@ AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Corner* corner)
 AbcLibrary AbcLibraryFactory::Build()
 {
   if (!db_sta_) {
-    logger_->error(utl::RMP, 15, "Build called with null sta library");
+    logger_->error(utl::LEXT, 15, "Build called with null sta library");
   }
 
   if (db_sta_->corners()->count() > 1 && !corner_) {
-    logger_->error(utl::RMP,
-                   1031,
+    logger_->error(utl::LEXT,
+                   6,
                    "More than one corner is loaded, and no corner was set");
   }
 
@@ -454,7 +457,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(
       abc_cell->leakage = power_unit->staToUser(average_leakage.value()
                                                 / leakage_powers->size());
     } else {
-      logger_->warn(utl::RMP,
+      logger_->warn(utl::LEXT,
                     22,
                     "Leakage power doesn't exist for cell {}",
                     cell->name());
@@ -496,7 +499,7 @@ int AbcLibraryFactory::StaTimeUnitToAbcInt(sta::Unit* time_unit)
 
   if (abc_time_unit < 9 || abc_time_unit > 12) {
     logger_->error(
-        utl::RMP, 14, "Time unit {} outside abc range [1e-9, 1e-12]", scale);
+        utl::LEXT, 14, "Time unit {} outside abc range [1e-9, 1e-12]", scale);
   }
 
   return abc_time_unit;
@@ -522,7 +525,7 @@ int AbcLibraryFactory::ScaleAbbreviationToExponent(
   }
 
   logger_->error(
-      utl::RMP, 13, "Can't convert scale abbreviation {}", scale_abbreviation);
+      utl::LEXT, 13, "Can't convert scale abbreviation {}", scale_abbreviation);
 }
 
 bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
@@ -580,6 +583,9 @@ std::pair<abc::SC_Cell*, abc::SC_Pin*> FindConstantCell(abc::SC_Lib* library,
   for (int i = 0; i < abc::SC_LibCellNum(library); i++) {
     abc::SC_Cell* current_cell = abc::SC_LibCell(library, i);
     if (current_cell->n_inputs != 0) {
+      continue;
+    }
+    if (current_cell->n_outputs != 1) {
       continue;
     }
 
@@ -656,4 +662,4 @@ bool AbcLibrary::IsConstCell(const std::string& cell_name)
   return IsConst1Cell(cell_name) || IsConst0Cell(cell_name);
 }
 
-}  // namespace rmp
+}  // namespace lext

@@ -1,24 +1,54 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2019-2025, The OpenROAD Authors
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2019, The Regents of the University of California
+// All rights reserved.
+//
+// BSD 3-Clause License
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#include "rmp/blif.h"
+#include "lext/blif.h"
 
 #include <algorithm>
 #include <fstream>
 #include <iterator>
 #include <map>
-#include <set>
 #include <streambuf>
 #include <string>
 #include <tuple>
-#include <utility>
 #include <vector>
 
+#include "lext/blifParser.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "rmp/blifParser.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -28,9 +58,9 @@
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
-using utl::RMP;
+using utl::LEXT;
 
-namespace rmp {
+namespace lext {
 
 Blif::Blif(Logger* logger,
            sta::dbSta* sta,
@@ -71,7 +101,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   open_sta_->searchPreamble();
 
   if (f.bad()) {
-    logger_->error(RMP, 1, "Cannot open file {}.", file_name);
+    logger_->error(LEXT, 1, "Cannot open file {}.", file_name);
     return false;
   }
 
@@ -331,7 +361,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
   f.close();
 
-  logger_->info(RMP,
+  logger_->info(LEXT,
                 2,
                 "Blif writer successfully dumped file with {} instances.",
                 instIndex);
@@ -355,7 +385,7 @@ bool Blif::inspectBlif(const char* file_name, int& numInstances)
 {
   std::ifstream f(file_name);
   if (f.bad()) {
-    logger_->error(RMP, 3, "Cannot open file {}.", file_name);
+    logger_->error(LEXT, 3, "Cannot open file {}.", file_name);
     return false;
   }
 
@@ -379,7 +409,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 {
   std::ifstream f(file_name);
   if (f.bad()) {
-    logger_->error(RMP, 4, "Cannot open file {}.", file_name);
+    logger_->error(LEXT, 4, "Cannot open file {}.", file_name);
     return false;
   }
 
@@ -393,7 +423,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
   bool isValid = blif.parse(fileString);
   if (!isValid) {
-    logger_->error(RMP,
+    logger_->error(LEXT,
                    34,
                    "Blif parser failed. File doesn't follow blif spec.",
                    instances_to_optimize.size());
@@ -401,11 +431,11 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   }
 
   // Remove and disconnect old instances
-  logger_->info(RMP,
+  logger_->info(LEXT,
                 5,
                 "Blif parsed successfully, will destroy {} existing instances.",
                 instances_to_optimize.size());
-  logger_->info(RMP,
+  logger_->info(LEXT,
                 6,
                 "Found {} inputs, {} outputs, {} clocks, {} combinational "
                 "gates, {} registers after parsing the blif file.",
@@ -430,7 +460,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
   // Create and connect new instances
   auto gates = blif.getGates();
-  logger_->info(RMP, 7, "Inserting {} new instances.", gates.size());
+  logger_->info(LEXT, 7, "Inserting {} new instances.", gates.size());
   std::map<std::string, int> instIds;
 
   for (auto&& gate : gates) {
@@ -449,7 +479,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     if (master == nullptr
         && (masterName == "_const0_" || masterName == "_const1_")) {
       if (connections.size() < 1) {
-        logger_->info(RMP,
+        logger_->info(LEXT,
                       8,
                       "Const driver {} doesn't have any connected nets.",
                       masterName.c_str());
@@ -493,7 +523,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     }
 
     if (master == nullptr) {
-      logger_->info(RMP,
+      logger_->info(LEXT,
                     9,
                     "Master ({}) not found while stitching back instances.",
                     masterName.c_str());
@@ -513,7 +543,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     auto newInst = odb::dbInst::create(block, master, instName.c_str());
 
     if (newInst == nullptr) {
-      logger_->error(RMP,
+      logger_->error(LEXT,
                      76,
                      "Could not create new instance of type {} with name {}.",
                      masterName,
@@ -546,7 +576,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         continue;
       } else {
         if (equalSignPos == connection.length() - 1) {
-          logger_->info(RMP,
+          logger_->info(LEXT,
                         10,
                         "Connection {} parsing failed for {} instance.",
                         connection,
@@ -568,7 +598,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       }
 
       if (mtermName == "") {
-        logger_->info(RMP,
+        logger_->info(LEXT,
                       146,
                       "Could not connect instance of cell type {} to {} net "
                       "due to unknown mterm in blif.",
@@ -630,4 +660,4 @@ void Blif::addRequired(sta::Pin* pin, std::string netName)
   }
 }
 
-}  // namespace rmp
+}  // namespace lext
