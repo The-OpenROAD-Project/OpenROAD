@@ -4,6 +4,7 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
+#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -29,7 +30,7 @@
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
-#include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
 #include "utl/Logger.h"
@@ -1382,10 +1383,9 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
   std::vector<SoftMacro> macros;
   std::vector<BundledNet> nets;
 
-  std::vector<Rect> placement_blockages;
-  std::vector<Rect> macro_blockages;
-
-  findBlockagesWithinOutline(macro_blockages, placement_blockages, outline);
+  std::vector<Rect> blockages = findBlockagesWithinOutline(outline);
+  eliminateOverlaps(blockages);
+  createSoftMacrosForBlockages(blockages, soft_macro_id_map, macros, fences);
 
   // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -1656,8 +1656,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->addBlockages(placement_blockages);
-      sa->addBlockages(macro_blockages);
       sa_batch.push_back(std::move(sa));
     }
 
@@ -1734,23 +1732,20 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
 }
 
 // Find the area of blockages that are inside the outline.
-void HierRTLMP::findBlockagesWithinOutline(
-    std::vector<Rect>& macro_blockages,
-    std::vector<Rect>& placement_blockages,
+std::vector<Rect> HierRTLMP::findBlockagesWithinOutline(
     const Rect& outline) const
 {
+  std::vector<Rect> blockages_within_outline;
+
   for (auto& blockage : placement_blockages_) {
-    getBlockageRegionWithinOutline(placement_blockages, blockage, outline);
+    getBlockageRegionWithinOutline(blockages_within_outline, blockage, outline);
   }
 
   for (auto& blockage : io_blockages_) {
-    getBlockageRegionWithinOutline(macro_blockages, blockage, outline);
+    getBlockageRegionWithinOutline(blockages_within_outline, blockage, outline);
   }
 
-  if (graphics_) {
-    graphics_->setMacroBlockages(macro_blockages);
-    graphics_->setPlacementBlockages(placement_blockages);
-  }
+  return blockages_within_outline;
 }
 
 void HierRTLMP::getBlockageRegionWithinOutline(
@@ -1768,6 +1763,49 @@ void HierRTLMP::getBlockageRegionWithinOutline(
                                           b_ly - outline.yMin(),
                                           b_ux - outline.xMin(),
                                           b_uy - outline.yMin());
+  }
+}
+
+void HierRTLMP::eliminateOverlaps(std::vector<Rect>& blockages) const
+{
+  namespace gtl = boost::polygon;
+  using gtl::operators::operator+=;
+  using PolygonSet = gtl::polygon_90_set_data<int>;
+
+  PolygonSet polygons;
+  for (const Rect& blockage : blockages) {
+    const odb::Rect dbu_blockage = micronsToDbu(block_, blockage);
+    polygons += dbu_blockage;
+  }
+
+  blockages.clear();
+
+  std::vector<odb::Rect> new_blockages;
+  polygons.get_rectangles(new_blockages);
+
+  for (const odb::Rect& new_blockage : new_blockages) {
+    blockages.push_back(dbuToMicrons(block_, new_blockage));
+  }
+}
+
+// We model blockages as macro clusters (SoftMacros) constrained to fences.
+// The rationale of this model comes from the fact that the area occupied
+// by blockages should be empty, i.e., with neither macros or std cells.
+void HierRTLMP::createSoftMacrosForBlockages(
+    const std::vector<Rect>& blockages,
+    std::map<std::string, int>& soft_macro_id_map,
+    std::vector<SoftMacro>& macros,
+    std::map<int, Rect>& fences)
+{
+  for (const Rect& blockage : blockages) {
+    const int macro_id = static_cast<int>(macros.size());
+    std::string macro_name = fmt::format("blockage_{}", macro_id);
+
+    soft_macro_id_map[macro_name] = macro_id;
+    fences[macro_id] = blockage;
+
+    SoftMacro macro(blockage.getWidth(), blockage.getHeight(), macro_name);
+    macros.push_back(macro);
   }
 }
 

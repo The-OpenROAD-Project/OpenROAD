@@ -449,6 +449,7 @@ class SoftMacro
   bool isMixedCluster() const;
   bool isClusterOfUnplacedIOPins() const;
   bool isClusterOfUnconstrainedIOPins() const;
+  bool isBlockage() const { return is_blockage_; }
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
@@ -482,6 +483,7 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
+  bool is_blockage_ = false;
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or
