@@ -516,6 +516,31 @@ std::vector<int> MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net) const
         route_pts.insert(RoutePt(segment.final_x, segment.final_y, layer));
       }
     }
+    // Mimic MakeWireParasitics::makeParasiticsToPin functionality.
+    Net* net = grouter_->getNet(db_net);
+    for (Pin& pin : net->getPins()) {
+      int layer = pin.getConnectionLayer() + 1;
+      odb::Point grid_pt = pin.getOnGridPosition();
+      odb::Point pt = pin.getPosition();
+
+      std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+      bool has_access_points
+          = grouter_->findPinAccessPointPositions(pin, ap_positions);
+      if (has_access_points) {
+        auto ap_position = ap_positions.front();
+        pt = ap_position.first;
+        grid_pt = ap_position.second;
+      }
+
+      RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
+      auto pt_itr = route_pts.find(grid_route);
+      if (pt_itr == route_pts.end())
+        layer--;
+      int wire_length_dbu
+          = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
+      layer_lengths[tech_->findRoutingLayer(layer)->getNumber()]
+          += wire_length_dbu;
+    }
   }
   return layer_lengths;
 }
