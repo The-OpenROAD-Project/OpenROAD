@@ -314,6 +314,7 @@ class _dbBlock : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
   void clearSystemBlockagesAndObstructions();
+  void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);

@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "grids.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
