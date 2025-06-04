@@ -145,9 +145,9 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
             result;
         std::unique_ptr<PinAccessJobDescription> uDesc
             = std::make_unique<PinAccessJobDescription>();
+        uDesc->setPath(path);
         uDesc->setType(PinAccessJobDescription::INST_ROWS);
         msg.setJobDescription(std::move(uDesc));
-        uDesc->setPath(path);
         const bool ok
             = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
         if (!ok) {
