@@ -659,11 +659,13 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   if (y1 == y2) {  // horizontal edge
     for (int x = x1; x < x2; x++) {
       h_edges_[y1][x].usage += used;
+      h_used_ggrid_.insert({y1, x});
       h_edges_3D_[k][y1][x].usage += used;
     }
   } else if (x1 == x2) {  // vertical edge
     for (int y = y1; y < y2; y++) {
       v_edges_[y][x1].usage += used;
+      v_used_ggrid_.insert({y, x1});
       v_edges_3D_[k][y][x1].usage += used;
     }
   }

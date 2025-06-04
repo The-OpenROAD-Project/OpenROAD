@@ -19,7 +19,7 @@ template <class RandomIt, class URBG>
 void shuffle(RandomIt first, RandomIt last, URBG&& g)
 {
   int n = last - first;
-  if (n == 0) {
+  if (n <= 1) {
     return;
   }
 
