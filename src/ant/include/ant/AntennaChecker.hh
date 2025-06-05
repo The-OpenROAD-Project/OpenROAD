@@ -97,6 +97,35 @@ struct Violation
   double excess_ratio;
 };
 
+struct GuidePoint
+{
+  odb::Point pt;
+  odb::dbTechLayer* layer;
+  friend bool operator<(const GuidePoint& pt1, const GuidePoint& pt2);
+};
+
+struct GuideSegment
+{
+  GuidePoint pt1;
+  GuidePoint pt2;
+  bool isVia() const { return pt1.pt == pt2.pt; }
+  bool operator==(const GuideSegment& segment) const;
+};
+
+struct GuidePtPins
+{
+  std::vector<odb::dbBTerm*> bterms;
+  std::vector<odb::dbITerm*> iterms;
+  bool connected;
+};
+
+using GuidePtPinsMap = std::map<GuidePoint, GuidePtPins>;
+
+struct GuideSegmentHash
+{
+  std::size_t operator()(const GuideSegment& seg) const;
+};
+
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
 using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
 using LayerToGraphNodes = std::map<odb::dbTechLayer*, GraphNodes>;

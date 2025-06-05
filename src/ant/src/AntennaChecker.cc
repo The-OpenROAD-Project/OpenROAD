@@ -1220,4 +1220,29 @@ void AntennaChecker::setReportFileName(const char* file_name)
   report_file_name_ = file_name;
 }
 
+bool operator<(const GuidePoint& pt1, const GuidePoint& pt2)
+{
+  return (pt1.pt.getX() < pt2.pt.getX())
+         || (pt1.pt.getX() == pt2.pt.getX() && pt1.pt.getY() < pt2.pt.getY())
+         || (pt1.pt.getX() == pt2.pt.getX() && pt1.pt.getY() == pt2.pt.getY()
+             && pt1.layer->getRoutingLevel() < pt2.layer->getRoutingLevel());
+}
+
+bool GuideSegment::operator==(const GuideSegment& segment) const
+{
+  return pt1.layer == segment.pt1.layer && pt2.layer == segment.pt2.layer
+         && pt1.pt == segment.pt1.pt && pt2.pt == segment.pt2.pt;
+}
+
+std::size_t GuideSegmentHash::operator()(const GuideSegment& seg) const
+{
+  return boost::hash<std::tuple<int, int, int, int, int, int>>()(
+      {seg.pt1.pt.getX(),
+       seg.pt1.pt.getY(),
+       seg.pt1.layer->getRoutingLevel(),
+       seg.pt2.pt.getX(),
+       seg.pt2.pt.getY(),
+       seg.pt2.layer->getRoutingLevel()});
+}
+
 }  // namespace ant
