@@ -641,11 +641,21 @@ _installCI() {
         apt-transport-https \
         ca-certificates \
         curl \
+        default-jdk \
         gnupg \
+        python3 \
+        python3-pip \
+        python3-pandas \
         jq \
         lsb-release \
         parallel \
-        software-properties-common
+        software-properties-common \
+        time \
+        unzip zip
+
+    curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+    chmod +x bazelisk
+    mv bazelisk /usr/local/bin/bazel
 
     if command -v docker &> /dev/null; then
         # The user can uninstall docker if they want to reinstall it,
