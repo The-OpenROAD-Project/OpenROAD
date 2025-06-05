@@ -1015,6 +1015,59 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
   saveGates(db_net, node_by_layer_map, node_count);
 }
 
+int AntennaChecker::computeGuideDimension()
+{
+  for (odb::dbNet* db_net : block_->getNets()) {
+    for (odb::dbGuide* guide : db_net->getGuides()) {
+      if (guide->getBox().dx() == guide->getBox().dy()) {
+        return guide->getBox().dx();
+      }
+    }
+  }
+
+  return 0;
+}
+
+void AntennaChecker::boxToGuideSegment(const odb::Rect& guide_box,
+                                       odb::dbTechLayer* layer,
+                                       odb::dbTechLayer* via_layer,
+                                       std::vector<GuideSegment>& route,
+                                       const int guide_dimension)
+{
+  int x0 = (guide_dimension * (guide_box.xMin() / guide_dimension))
+           + (guide_dimension / 2);
+  int y0 = (guide_dimension * (guide_box.yMin() / guide_dimension))
+           + (guide_dimension / 2);
+
+  const int x1 = (guide_dimension * (guide_box.xMax() / guide_dimension))
+                 - (guide_dimension / 2);
+  const int y1 = (guide_dimension * (guide_box.yMax() / guide_dimension))
+                 - (guide_dimension / 2);
+
+  if (x0 == x1 && y0 == y1) {
+    const GuideSegment seg
+        = GuideSegment{GuidePoint{odb::Point(x0, y0), layer},
+                       GuidePoint{odb::Point(x1, y1), via_layer}};
+    route.push_back(seg);
+  }
+
+  while (y0 == y1 && (x0 + guide_dimension) <= x1) {
+    const GuideSegment seg
+        = GuideSegment{GuidePoint{odb::Point(x0, y0), layer},
+                       GuidePoint{odb::Point(x0 + guide_dimension, y0), layer}};
+    route.push_back(seg);
+    x0 += guide_dimension;
+  }
+
+  while (x0 == x1 && (y0 + guide_dimension) <= y1) {
+    const GuideSegment seg
+        = GuideSegment{GuidePoint{odb::Point(x0, y0), layer},
+                       GuidePoint{odb::Point(x0, y0 + guide_dimension), layer}};
+    route.push_back(seg);
+    y0 += guide_dimension;
+  }
+}
+
 int AntennaChecker::checkNet(odb::dbNet* db_net,
                              bool verbose,
                              bool save_report,

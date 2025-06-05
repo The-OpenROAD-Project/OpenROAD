@@ -140,8 +140,7 @@ class AntennaChecker
   AntennaChecker();
   ~AntennaChecker();
 
-  void init(odb::dbDatabase* db,
-            utl::Logger* logger);
+  void init(odb::dbDatabase* db, utl::Logger* logger);
 
   // net nullptr -> check all nets
   int checkAntennas(odb::dbNet* net = nullptr,
@@ -170,6 +169,12 @@ class AntennaChecker
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
+  int computeGuideDimension();
+  void boxToGuideSegment(const odb::Rect& guide_box,
+                         odb::dbTechLayer* layer,
+                         odb::dbTechLayer* via_layer,
+                         std::vector<GuideSegment>& segment,
+                         const int guide_dimension);
   int checkNet(odb::dbNet* net,
                bool verbose,
                bool save_report,
