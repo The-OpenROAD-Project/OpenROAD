@@ -2452,7 +2452,7 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
     // add a 10% increase on the buffer delay as this is an ideal model
     // TODO: compute the exact delay adding a buffer adds,
     // removing the need for the derate
-    builder->setTopBufferDelay(bufferDelay + (bufferDelay * 0.1));
+    builder->setTopBufferDelay(bufferDelay * 1.1);
     debugPrint(logger_,
                CTS,
                "insertion delay",
