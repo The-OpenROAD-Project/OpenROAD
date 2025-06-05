@@ -13,7 +13,7 @@ package(
 # However, there are cyclic dependencies currently between all these, which
 # need to be taken care of first
 cc_library(
-    name = "lib",
+    name = "utl",
     srcs = [
         "src/CFileUtils.cpp",
         "src/CommandLineProgress.cpp",
@@ -75,7 +75,7 @@ cc_library(
 )
 
 cc_library(
-    name = "utl",
+    name = "ui",
     srcs = [
         "src/LoggerCommon.h",
         "src/MakeLogger.cpp",
@@ -122,7 +122,6 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
-        ":lib",
         "//:opensta_lib",
         "//:ord",
         "@boost.asio",

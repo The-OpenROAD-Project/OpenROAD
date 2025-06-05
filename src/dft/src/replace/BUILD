@@ -19,7 +19,7 @@ cc_library(
     ],
     includes = [
         ".",
-    ],    
+    ],
     deps = [
         "//:opensta_lib",
         "//src/dbSta",
