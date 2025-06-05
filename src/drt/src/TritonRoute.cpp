@@ -934,6 +934,15 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
 
 int TritonRoute::main()
 {
+  // Just to verify that OMP support is compiled in correctly.
+  omp_set_num_threads(2);
+#pragma omp parallel
+  {
+    if (omp_get_num_threads() != 2) {
+      logger_->error(DRT, 623, "OMP threading is not working.");
+    }
+  }
+
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
