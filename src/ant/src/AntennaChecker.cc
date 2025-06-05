@@ -1066,10 +1066,10 @@ void AntennaChecker::makeNetWire(
                    "make_net_wire",
                    1,
                    "invalid seg: ({}, {})um to ({}, {})um",
-                   block_->dbuToMicrons(seg.pt1.pt.getX()),
-                   block_->dbuToMicrons(seg.pt1.pt.getY()),
-                   block_->dbuToMicrons(seg.pt2.pt.getX()),
-                   block_->dbuToMicrons(seg.pt2.pt.getY()));
+                   block_->dbuToMicrons(seg.pt1.pos.getX()),
+                   block_->dbuToMicrons(seg.pt1.pos.getY()),
+                   block_->dbuToMicrons(seg.pt2.pos.getX()),
+                   block_->dbuToMicrons(seg.pt2.pos.getY()));
 
         logger_->error(ANT,
                        15,
@@ -1081,8 +1081,8 @@ void AntennaChecker::makeNetWire(
                        top_tech_layer->getName());
       }
       if (wire_segments.find(seg) == wire_segments.end()) {
-        int x1 = seg.pt1.pt.getX();
-        int y1 = seg.pt1.pt.getY();
+        int x1 = seg.pt1.pos.getX();
+        int y1 = seg.pt1.pos.getY();
         if (seg.isVia()) {
           if (bottom_tech_layer->getRoutingLevel()
               >= block_->getMinRoutingLayer()) {
@@ -1117,8 +1117,8 @@ void AntennaChecker::makeNetWire(
           }
         } else {
           // Add wire
-          int x2 = seg.pt2.pt.getX();
-          int y2 = seg.pt2.pt.getY();
+          int x2 = seg.pt2.pos.getX();
+          int y2 = seg.pt2.pos.getY();
           if (x1 != x2 || y1 != y2) {
             odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l1);
             addWireTerms(db_net,
@@ -1177,7 +1177,7 @@ void AntennaChecker::addWireTerms(
   for (int l : layers) {
     odb::dbTech* tech = db_->getTech();
     GuidePoint guide_pt;
-    guide_pt.pt = odb::Point(grid_x, grid_y);
+    guide_pt.pos = odb::Point(grid_x, grid_y);
     guide_pt.layer = tech->findRoutingLayer(l);
     ;
     auto itr = route_pt_pins.find(guide_pt);
@@ -1288,8 +1288,8 @@ bool AntennaChecker::pinOverlapsGSegment(
     for (const GuideSegment& seg : route) {
       if (seg.pt1.layer == seg.pt2.layer &&  // ignore vias
           seg.pt1.layer == pin_layer) {
-        auto [x0, x1] = std::minmax(seg.pt1.pt.getX(), seg.pt2.pt.getX());
-        auto [y0, y1] = std::minmax(seg.pt1.pt.getY(), seg.pt2.pt.getY());
+        auto [x0, x1] = std::minmax(seg.pt1.pos.getX(), seg.pt2.pos.getX());
+        auto [y0, y1] = std::minmax(seg.pt1.pos.getY(), seg.pt2.pos.getY());
         odb::Rect seg_rect(x0, y0, x1, y1);
 
         if (box.intersects(seg_rect)) {
@@ -1577,26 +1577,28 @@ void AntennaChecker::setReportFileName(const char* file_name)
 
 bool operator<(const GuidePoint& pt1, const GuidePoint& pt2)
 {
-  return (pt1.pt.getX() < pt2.pt.getX())
-         || (pt1.pt.getX() == pt2.pt.getX() && pt1.pt.getY() < pt2.pt.getY())
-         || (pt1.pt.getX() == pt2.pt.getX() && pt1.pt.getY() == pt2.pt.getY()
+  return (pt1.pos.getX() < pt2.pos.getX())
+         || (pt1.pos.getX() == pt2.pos.getX()
+             && pt1.pos.getY() < pt2.pos.getY())
+         || (pt1.pos.getX() == pt2.pos.getX()
+             && pt1.pos.getY() == pt2.pos.getY()
              && pt1.layer->getRoutingLevel() < pt2.layer->getRoutingLevel());
 }
 
 bool GuideSegment::operator==(const GuideSegment& segment) const
 {
   return pt1.layer == segment.pt1.layer && pt2.layer == segment.pt2.layer
-         && pt1.pt == segment.pt1.pt && pt2.pt == segment.pt2.pt;
+         && pt1.pos == segment.pt1.pos && pt2.pos == segment.pt2.pos;
 }
 
 std::size_t GuideSegmentHash::operator()(const GuideSegment& seg) const
 {
   return boost::hash<std::tuple<int, int, int, int, int, int>>()(
-      {seg.pt1.pt.getX(),
-       seg.pt1.pt.getY(),
+      {seg.pt1.pos.getX(),
+       seg.pt1.pos.getY(),
        seg.pt1.layer->getRoutingLevel(),
-       seg.pt2.pt.getX(),
-       seg.pt2.pt.getY(),
+       seg.pt2.pos.getX(),
+       seg.pt2.pos.getY(),
        seg.pt2.layer->getRoutingLevel()});
 }
 

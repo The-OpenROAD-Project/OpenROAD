@@ -99,7 +99,7 @@ struct Violation
 
 struct GuidePoint
 {
-  odb::Point pt;
+  odb::Point pos;
   odb::dbTechLayer* layer;
   friend bool operator<(const GuidePoint& pt1, const GuidePoint& pt2);
 };
@@ -108,7 +108,7 @@ struct GuideSegment
 {
   GuidePoint pt1;
   GuidePoint pt2;
-  bool isVia() const { return pt1.pt == pt2.pt; }
+  bool isVia() const { return pt1.pos == pt2.pos; }
   bool operator==(const GuideSegment& segment) const;
 };
 
