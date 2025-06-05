@@ -151,6 +151,8 @@ pin_access
     [-db_process_node name]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
     [-min_access_points count]
     [-verbose level]
     [-distributed]
