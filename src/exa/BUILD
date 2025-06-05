@@ -12,11 +12,9 @@ package(
 cc_library(
     name = "exa",
     srcs = [
+        "src/MakeExample.cpp",
         "src/example.cpp",
         "src/observer.h",
-        "src/graphics.h",
-        "src/graphics.cpp",
-        "src/MakeExample.cpp",
     ],
     hdrs = [
         "include/exa/MakeExample.h",
@@ -24,7 +22,34 @@ cc_library(
     ],
     includes = [
         "include",
-        "src",
+    ],
+    deps = [
+        "//:ord",
+        "//src/odb",
+        "//src/utl",
+        "@tk_tcl//:tcl",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakeExample.cpp",
+        "src/graphics.cpp",
+        "src/graphics.h",
+        "src/observer.h",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/exa/MakeExample.h",
+        "include/exa/example.h",
+    ],
+    copts = [
+        "-Isrc/exa/src",
+    ],
+    includes = [
+        "include",
     ],
     deps = [
         "//:ord",

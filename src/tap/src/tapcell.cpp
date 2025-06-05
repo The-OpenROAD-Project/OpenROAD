@@ -17,7 +17,6 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
-#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 namespace tap {

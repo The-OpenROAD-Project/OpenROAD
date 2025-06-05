@@ -929,10 +929,15 @@ std::string HardMacro::getMasterName() const
 }
 
 ///////////////////////////////////////////////////////////////////////
-// SoftMacro Class
-// Create a SoftMacro with specified size
-// In this case, we think the cluster is a macro cluster with only one macro
-// SoftMacro : Hard Macro (or pin access blockage)
+
+// Represent a "regular" cluster (Mixed, StdCell or Macro).
+SoftMacro::SoftMacro(Cluster* cluster)
+{
+  name_ = cluster->getName();
+  cluster_ = cluster;
+}
+
+// Represent a blockage.
 SoftMacro::SoftMacro(float width, float height, const std::string& name)
 {
   name_ = name;
@@ -942,7 +947,7 @@ SoftMacro::SoftMacro(float width, float height, const std::string& name)
   cluster_ = nullptr;
 }
 
-// Create a SoftMacro representing a cluster of unplaced IOs or fixed terminals
+// Represent an IO cluster or fixed terminal.
 SoftMacro::SoftMacro(const std::pair<float, float>& location,
                      const std::string& name,
                      float width,
@@ -963,13 +968,6 @@ SoftMacro::SoftMacro(const std::pair<float, float>& location,
 
   cluster_ = cluster;
   fixed_ = true;
-}
-
-// create a SoftMacro from a cluster
-SoftMacro::SoftMacro(Cluster* cluster)
-{
-  name_ = cluster->getName();
-  cluster_ = cluster;
 }
 
 // name

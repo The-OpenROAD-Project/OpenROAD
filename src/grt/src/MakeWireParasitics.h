@@ -48,11 +48,11 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                      odb::dbTech* tech,
                      odb::dbBlock* block,
                      GlobalRouter* grouter);
-  void estimateParasitcs(odb::dbNet* net,
-                         std::vector<Pin>& pins,
-                         GRoute& route,
-                         sta::SpefWriter* spef_writer = nullptr);
-  void estimateParasitcs(odb::dbNet* net, GRoute& route) override;
+  void estimateParasitics(odb::dbNet* net,
+                          std::vector<Pin>& pins,
+                          GRoute& route,
+                          sta::SpefWriter* spef_writer = nullptr);
+  void estimateParasitics(odb::dbNet* net, GRoute& route) override;
 
   void clearParasitics() override;
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing

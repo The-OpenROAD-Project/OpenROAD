@@ -418,46 +418,30 @@ class HardMacro
   Cluster* cluster_ = nullptr;
 };
 
-// We have three types of SoftMacros
-// Type 1:  a SoftMacro corresponding to a Cluster (MixedCluster,
-// StdCellCluster, HardMacroCluster)
-// Type 2:  a SoftMacro corresponding to a IO cluster
-// Type 3:  a SoftMacro corresponding to a all kinds of blockages
-// Here (x, y) is the lower left corner of the soft macro
-// For all the soft macros, we model the bundled pin at the center
-// of the soft macro. So we do not need private variables for pin positions
-// SoftMacro is a physical abstraction for Cluster.
-// Note that constrast to classical soft macro definition,
-// we allow the soft macro to change its area.
-// For the SoftMacro corresponding to different types of clusters,
-// we allow different shape constraints:
-// For SoftMacro corresponding to MixedCluster and StdCellCluster,
-// the macro must have fixed area
-// For SoftMacro corresponding to HardMacroCluster,
-// the macro can have different sizes. In this case, the width_list and
-// height_list is not sorted. Generally speaking we can have following types of
-// SoftMacro (1) SoftMacro : MixedCluster (2) SoftMacro : StdCellCluster (3)
-// SoftMacro : HardMacroCluster (4) SoftMacro : Fixed Hard Macro (or blockage)
-// (5) SoftMacro : Hard Macro (or pin access blockage)
-// (6) SoftMacro : Fixed Terminals
-
+// This is the abstraction of the moveable objects inside the simulated
+// annealing for:
+//  1. Coarse shaping of Mixed clusters (tilings generation);
+//  2. Cluster placement.
+//
+// A SoftMacro can represent:
+//  - a "regular" Cluster (Mixed, StdCell or Macro);
+//  - an IO Cluster (PAD or group of unplaced pins) which has its position
+//    fixed;
+//  - a fixed terminal;
+//  - a blockage.
+//
+// Obs: The bundled pin of a SoftMacro is always its center.
 class SoftMacro
 {
  public:
-  // Create a SoftMacro with specified size
-  // Create a SoftMacro representing the blockage
+  SoftMacro(Cluster* cluster);
   SoftMacro(float width, float height, const std::string& name);
-
   SoftMacro(const std::pair<float, float>& location,
             const std::string& name,
             float width,
             float height,
             Cluster* cluster);
 
-  // create a SoftMacro from a cluster
-  SoftMacro(Cluster* cluster);
-
-  // name
   const std::string& getName() const;
 
   void setX(float x);

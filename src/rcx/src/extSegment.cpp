@@ -3,7 +3,7 @@
 
 #include "rcx/extSegment.h"
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 

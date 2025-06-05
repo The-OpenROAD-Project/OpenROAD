@@ -1245,7 +1245,7 @@ float FastRouteCore::CalculatePartialSlack()
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     if (!route.empty()) {
-      parasitics_builder_->estimateParasitcs(db_net, route);
+      parasitics_builder_->estimateParasitics(db_net, route);
     }
   }
   for (const int& netID : net_ids_) {
