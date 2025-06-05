@@ -1472,7 +1472,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       disconnectAllPinsFromNet(clkSubNet);
       odb::dbNet::destroy(clkSubNet);
       ++numFixedNets_;
-      --numClkNets_;
+      --num
       odb::dbInst::destroy(driver);
       removedSinks.insert(subNet.getDriver());
       checkUpstreamConnections(inputNet);
@@ -2143,6 +2143,7 @@ void TritonCTS::printClockNetwork(const Clock& clockNet) const
 
 void TritonCTS::setAllClocksPropagated()
 {
+  // Compute ideal buffer delay to use in delay insertion
   if (options_->insertionDelayEnabled()) {
     for (auto iter = builders_.begin(); iter != builders_.end(); ++iter) {
       TreeBuilder* builder = iter->get();
@@ -2448,6 +2449,9 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
     float outputArrival = openSta_->pinArrival(
         outputPin, sta::RiseFall::rise(), sta::MinMax::max());
     float bufferDelay = outputArrival - inputArrival;
+    // add a 10% increase on the buffer delay as this is an ideal model
+    // TODO: compute the exact delay adding a buffer adds,
+    // removing the need for the derate
     builder->setTopBufferDelay(bufferDelay + (bufferDelay * 0.1));
     debugPrint(logger_,
                CTS,
