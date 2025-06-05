@@ -3286,7 +3286,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
                      "evaluate max wire length for buffer. Check over your "
                      "`set_wire_rc` configuration");
     } else {
-     max_length = -std::numeric_limits<double>::infinity();
+      max_length = -std::numeric_limits<double>::infinity();
     }
   }
 

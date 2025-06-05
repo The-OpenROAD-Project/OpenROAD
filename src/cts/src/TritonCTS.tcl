@@ -215,9 +215,9 @@ proc clock_tree_synthesis { args } {
   cts::set_apply_ndr [info exists flags(-apply_ndr)]
 
   if { [info exists flags(-repair_clock_nets)] } {
-    cts::set_repair_clock_nets true;
+    cts::set_repair_clock_nets true
   } else {
-    cts::set_repair_clock_nets false;
+    cts::set_repair_clock_nets false
   }
 
   if { [ord::get_db_block] == "NULL" } {
