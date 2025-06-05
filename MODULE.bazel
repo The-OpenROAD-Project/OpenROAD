@@ -200,7 +200,6 @@ maven.install(
         "https://repo1.maven.org/maven2",
     ],
 )
-
 use_repo(maven, "openroad_maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -216,11 +215,11 @@ exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
 )
 
 http_archive(
-        name = "openmp",
-        urls = [
-            "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
-        ],
-        strip_prefix = "openmp-20.1.0.src",
-        sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
-        build_file = "//bazel/openmp:bundled.BUILD.bazel",
-    )
+    name = "openmp",
+    build_file = "//bazel/openmp:bundled.BUILD.bazel",
+    sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
+    strip_prefix = "openmp-20.1.0.src",
+    urls = [
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
+    ],
+)
