@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -50,7 +50,8 @@ class SwapArithModules : public sta::dbStaState
                                    const std::string& target,
                                    float slack_threshold = 0.0)
       = 0;
-  virtual void collectArithInstsOnPath(Path* path, unordered_set<dbModInst*>& arithInsts)
+  virtual void collectArithInstsOnPath(Path* path,
+                                       unordered_set<dbModInst*>& arithInsts)
       = 0;
   virtual bool isArithInstance(Instance* inst, dbModInst*& mod_inst) = 0;
   virtual bool hasArithOperatorProperty(dbModInst* mod_inst) = 0;
