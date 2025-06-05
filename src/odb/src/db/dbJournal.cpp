@@ -1681,7 +1681,7 @@ dbObjectType dbJournal::popObjectType()
 }
 
 //
-// WORK-IN-PROGRESS undo does not yet work.
+// WORK-IN-PROGRESS undo is incomplete
 //
 void dbJournal::undo()
 {
@@ -2591,6 +2591,11 @@ void dbJournal::undo_updateCCSegField()
       break;
     }
   }
+}
+
+void dbJournal::append(dbJournal *other)
+{
+  _log.append(other->_log);
 }
 
 dbOStream& operator<<(dbOStream& stream, const dbJournal& journal)

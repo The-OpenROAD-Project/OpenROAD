@@ -7423,11 +7423,6 @@ class dbDatabase : public dbObject
   static void beginEco(dbBlock* block);
 
   ///
-  /// End collecting netlist changes on specified block.
-  ///
-  static void endEco(dbBlock* block);
-
-  ///
   /// Returns true of the pending eco is empty
   ///
   static bool ecoEmpty(dbBlock* block);
@@ -7442,7 +7437,6 @@ class dbDatabase : public dbObject
   /// Write the eco netlist changes to the specified stream.
   ///
   static void writeEco(dbBlock* block, const char* filename);
-  static int checkEco(dbBlock* block);
 
   ///
   /// Commit any pending netlist changes.

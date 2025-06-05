@@ -301,7 +301,7 @@ class _dbBlock : public _dbObject
   void* _extmi;
 
   dbJournal* _journal;
-  dbJournal* _journal_pending;
+  std::vector<dbJournal*> _journal_save;
 
   _dbBlock(_dbDatabase* db);
   ~_dbBlock();

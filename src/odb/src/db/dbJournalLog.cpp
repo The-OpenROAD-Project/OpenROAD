@@ -237,6 +237,17 @@ void dbJournalLog::pop(std::string& value)
   }
 }
 
+void dbJournalLog::append(dbJournalLog &other)
+{
+  if (debug_ != other.debug_) {
+    logger_->error(utl::ODB, 429, "Journal debug mode mismatch.");
+  }
+
+  for (unsigned int i = 0; i < other.data_.size(); i++) {
+    data_.push_back(other.data_[i]);
+  }
+}
+
 /* static*/
 std::string dbJournalLog::to_string(LogDataType type)
 {

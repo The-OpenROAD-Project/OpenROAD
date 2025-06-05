@@ -707,26 +707,45 @@ void dbDatabase::write(std::ostream& file)
 void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-
-  {
-    delete block->_journal;
+  if (block->_journal) {
+    block->_journal_save.push_back(block->_journal);
   }
-
   block->_journal = new dbJournal(block_);
   assert(block->_journal);
 }
 
-void dbDatabase::endEco(dbBlock* block_)
+void dbDatabase::commitEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  dbJournal* eco = block->_journal;
-  block->_journal = nullptr;
+  assert(block->_journal);
+  if (!block->_journal_save.empty()) {
+    dbJournal *next_journal = block->_journal_save.back();
+    block->_journal_save.pop_back();
+    next_journal->append(block->_journal);
+    delete block->_journal;
+    block->_journal = next_journal;
+  } else {
+    delete block->_journal;
+    block->_journal = nullptr;
+  }
+}
+
+void dbDatabase::undoEco(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+  assert(block->_journal);
 
   {
-    delete block->_journal_pending;
+    dbJournal* journal = block->_journal;
+    block->_journal = nullptr;
+    journal->undo();
+    delete journal;
   }
 
-  block->_journal_pending = eco;
+  if (!block->_journal_save.empty()) {
+    block->_journal = block->_journal_save.back();
+    block->_journal_save.pop_back();
+  }
 }
 
 bool dbDatabase::ecoEmpty(dbBlock* block_)
@@ -740,18 +759,10 @@ bool dbDatabase::ecoEmpty(dbBlock* block_)
   return false;
 }
 
-int dbDatabase::checkEco(dbBlock* block_)
-{
-  _dbBlock* block = (_dbBlock*) block_;
-
-  if (block->_journal) {
-    return block->_journal->size();
-  }
-  return 0;
-}
-
 void dbDatabase::readEco(dbBlock* block_, const char* filename)
 {
+  abort();
+#if 0
   _dbBlock* block = (_dbBlock*) block_;
 
   std::ifstream file;
@@ -769,10 +780,13 @@ void dbDatabase::readEco(dbBlock* block_, const char* filename)
   }
 
   block->_journal_pending = eco;
+#endif
 }
 
 void dbDatabase::writeEco(dbBlock* block_, const char* filename)
 {
+  abort();
+#if 0
   _dbBlock* block = (_dbBlock*) block_;
 
   std::ofstream file(filename, std::ios::binary);
@@ -790,30 +804,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
   }
-}
-
-void dbDatabase::commitEco(dbBlock* block_)
-{
-  _dbBlock* block = (_dbBlock*) block_;
-
-  // TODO: Need a check to ensure the commit is not applied to the block of
-  // which this eco was generated from.
-  if (block->_journal_pending) {
-    block->_journal_pending->redo();
-    delete block->_journal_pending;
-    block->_journal_pending = nullptr;
-  }
-}
-
-void dbDatabase::undoEco(dbBlock* block_)
-{
-  _dbBlock* block = (_dbBlock*) block_;
-
-  if (block->_journal_pending) {
-    block->_journal_pending->undo();
-    delete block->_journal_pending;
-    block->_journal_pending = nullptr;
-  }
+#endif
 }
 
 void dbDatabase::setLogger(utl::Logger* logger)
