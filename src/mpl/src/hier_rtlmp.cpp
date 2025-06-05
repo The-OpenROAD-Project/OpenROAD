@@ -876,7 +876,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 
 void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
 {
-  if (treeHasConstrainedIOs()) {
+  if (!treeHasUnconstrainedIOs()) {
     return;
   }
 
@@ -902,18 +902,12 @@ void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
   }
 }
 
+// If there are no constraints at all, we give freedom to SA so it
+// doesn't have to deal with pin access blockages across the entire
+// extension of all edges of the die area.
 void HierRTLMP::createPinAccessBlockages()
 {
   if (!tree_->maps.pad_to_bterm.empty()) {
-    return;
-  }
-
-  if (!treeHasConstrainedIOs() && block_->getBlockedRegionsForPins().empty()) {
-    // If there are no constraints at all, we give freedom to SA so it
-    // doesn't have to deal with pin access blockages across the entire
-    // extension of all edges of the die area. This should help SA not
-    // relying on extreme utilizations to converge for designs such as
-    // sky130hd/uW.
     return;
   }
 
@@ -926,12 +920,8 @@ void HierRTLMP::createPinAccessBlockages()
   }
 
   computePinAccessDepthLimits();
-
-  if (!tree_->available_regions_for_unconstrained_pins.empty()) {
-    createBlockagesForAvailableRegions();
-  } else {
-    createBlockagesForConstraintRegions();
-  }
+  createBlockagesForAvailableRegions();
+  createBlockagesForConstraintRegions();
 }
 
 void HierRTLMP::computePinAccessDepthLimits()
@@ -958,6 +948,17 @@ void HierRTLMP::computePinAccessDepthLimits()
   }
 }
 
+bool HierRTLMP::treeHasUnconstrainedIOs() const
+{
+  std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
+  for (Cluster* io_cluster : io_clusters) {
+    if (io_cluster->isClusterOfUnconstrainedIOPins()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool HierRTLMP::treeHasConstrainedIOs() const
 {
   std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
@@ -971,6 +972,10 @@ bool HierRTLMP::treeHasConstrainedIOs() const
 
 void HierRTLMP::createBlockagesForAvailableRegions()
 {
+  if (block_->getBlockedRegionsForPins().empty()) {
+    return;
+  }
+
   double io_span = 0.0;
   for (const BoundaryRegion& region :
        tree_->available_regions_for_unconstrained_pins) {
@@ -988,6 +993,10 @@ void HierRTLMP::createBlockagesForAvailableRegions()
 
 void HierRTLMP::createBlockagesForConstraintRegions()
 {
+  if (!treeHasConstrainedIOs()) {
+    return;
+  }
+
   float io_span = 0.0f;
   std::vector<Cluster*> clusters_of_unplaced_ios
       = getClustersOfUnplacedIOPins();
