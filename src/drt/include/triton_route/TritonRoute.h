@@ -9,6 +9,7 @@
 #include <mutex>
 #include <optional>
 #include <queue>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,6 +39,7 @@ class Distributed;
 namespace drt {
 
 class frDesign;
+class frInst;
 class DesignCallBack;
 class FlexDR;
 class FlexPA;
@@ -176,6 +178,8 @@ class TritonRoute
   void prep();
   odb::dbDatabase* getDb() const { return db_; }
   void fixMaxSpacing(int num_threads);
+  void deleteInstancePAData(frInst* inst);
+  void addInstancePAData(frInst* inst);
 
  private:
   std::unique_ptr<frDesign> design_;
