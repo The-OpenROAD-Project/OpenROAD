@@ -201,6 +201,7 @@ cc_library(
         "-Isrc/drt/src/pa",
         "-Isrc/drt/src/rp",
         "-Isrc/drt/src/ta",
+        "-fopenmp",
     ],
     includes = [
         "include",
