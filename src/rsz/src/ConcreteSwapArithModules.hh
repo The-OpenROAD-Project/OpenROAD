@@ -11,8 +11,6 @@ class Resizer;
 
 using odb::dbModInst;
 using sta::Path;
-using std::set;
-using utl::Logger;
 
 class ConcreteSwapArithModules : public SwapArithModules
 {
@@ -22,23 +20,23 @@ class ConcreteSwapArithModules : public SwapArithModules
 
   void replaceArithModules(int path_count,
                            const std::string& target,
-                           float slack_threshold = 0.0);
+                           float slack_threshold) override;
   void collectArithInstsOnPath(Path* path,
-                               unordered_set<dbModInst*>& arithInsts);
-  bool isArithInstance(Instance* inst, dbModInst*& mod_inst);
-  bool hasArithOperatorProperty(dbModInst* mod_inst);
+                               unordered_set<dbModInst*>& arithInsts) override;
+  bool isArithInstance(Instance* inst, dbModInst*& mod_inst) override;
+  bool hasArithOperatorProperty(dbModInst* mod_inst) override;
   void findCriticalInstances(int path_count,
                              const std::string& target,
                              float slack_threshold,
-                             unordered_set<dbModInst*>& insts);
+                             unordered_set<dbModInst*>& insts) override;
   void doSwapInstances(const unordered_set<dbModInst*>& insts,
-                       const std::string& target);
+                       const std::string& target) override;
 
  protected:
-  void init();
+  void init() override;
   void produceNewModuleName(const std::string& old_name,
                             std::string& new_name,
-                            const std::string& target);
+                            const std::string& target) override;
 };
 
 }  // namespace rsz

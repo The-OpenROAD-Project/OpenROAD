@@ -23,7 +23,6 @@ using odb::dbModInst;
 using odb::dbModule;
 using sta::PathExpanded;
 using std::pair;
-using std::set;
 using std::vector;
 using utl::RSZ;
 
