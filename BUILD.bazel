@@ -51,7 +51,6 @@ config_setting(
 # need these blanked dependencies in multiple places anymore.
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
-    ":opensta_lib",
     ":ord",
     "//src/ant",
     "//src/cts",
@@ -79,27 +78,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/tap",
     "//src/upf",
     "//src/utl",
-    "@boost.asio",
-    "@boost.geometry",
-    "@boost.graph",
-    "@boost.heap",
-    "@boost.icl",
-    "@boost.json",
-    "@boost.multi_array",
-    "@boost.polygon",
-    "@boost.property_tree",
-    "@boost.stacktrace",
-    "@boost.thread",
-    "@com_github_quantamhd_lemon//:lemon",
     "@edu_berkeley_abc//:abc-lib",
-    "@eigen",
-    "@or-tools//ortools/base:base",
-    "@or-tools//ortools/linear_solver:linear_solver",
-    "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
-    "@or-tools//ortools/sat:cp_model",
-    "@openmp//:openmp",
-    "@spdlog",
-    "@tk_tcl//:tcl",
 ]
 
 OPENROAD_COPTS = [
