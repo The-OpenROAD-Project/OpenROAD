@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "rsz",
     srcs = [
         "src/AbstractSteinerRenderer.h",
         "src/BaseMove.cc",
@@ -73,7 +73,7 @@ cc_library(
 )
 
 cc_library(
-    name = "rsz",
+    name = "ui",
     srcs = [
         "src/AbstractSteinerRenderer.h",
         "src/Graphics.cc",
@@ -98,7 +98,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":lib",
         "//:opensta_lib",
         "//:ord",
         "//src/dbSta",

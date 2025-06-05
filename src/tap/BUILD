@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "tap",
     srcs = [
         "src/tapcell.cpp",
     ],
@@ -28,8 +28,9 @@ cc_library(
 )
 
 cc_library(
-    name = "tap",
+    name = "ui",
     srcs = [
+        "include/tap/tapcell.h",
         "src/MakeTapcell.cpp",
         ":swig",
         ":tcl",
@@ -37,11 +38,14 @@ cc_library(
     hdrs = [
         "include/tap/MakeTapcell.h",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.polygon",
         "@tk_tcl//:tcl",
     ],
 )

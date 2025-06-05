@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "dst",
     srcs = [
         "src/BalancerConnection.cc",
         "src/BalancerConnection.h",
@@ -46,8 +46,9 @@ cc_library(
 )
 
 cc_library(
-    name = "dst",
+    name = "ui",
     srcs = [
+        "include/dst/Distributed.h",
         "src/MakeDistributed.cc",
         ":swig",
         ":tcl",
@@ -55,11 +56,14 @@ cc_library(
     hdrs = [
         "include/dst/MakeDistributed.h",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.asio",
         "@tk_tcl//:tcl",
     ],
 )

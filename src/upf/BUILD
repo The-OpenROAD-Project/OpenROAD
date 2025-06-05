@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "upf",
     srcs = [
         "src/upf.cpp",
         "src/writer.cpp",
@@ -31,8 +31,9 @@ cc_library(
 )
 
 cc_library(
-    name = "upf",
+    name = "ui",
     srcs = [
+        "include/upf/upf.h",
         "src/MakeUpf.cpp",
         ":swig",
         ":tcl",
@@ -40,8 +41,10 @@ cc_library(
     hdrs = [
         "include/upf/MakeUpf.h",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/odb",
         "//src/utl",

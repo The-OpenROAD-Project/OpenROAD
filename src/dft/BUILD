@@ -10,47 +10,56 @@ package(
 )
 
 cc_library(
-    name = "ifp",
+    name = "dft",
     srcs = [
-        "src/InitFloorplan.cc",
+        "src/Dft.cpp",
     ],
     hdrs = [
-        "include/ifp/InitFloorplan.hh",
+        "include/dft/Dft.hh",
     ],
     includes = [
         "include",
     ],
     deps = [
-        "//:opensta_lib",
         "//src/dbSta",
+        "//src/dft/src/architect",
+        "//src/dft/src/cells",
+        "//src/dft/src/clock_domain",
+        "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/dft/src/stitch",
         "//src/odb",
-        "//src/upf",
         "//src/utl",
+        "@boost.property_tree",
     ],
 )
 
 cc_library(
     name = "ui",
     srcs = [
-        "include/ifp/InitFloorplan.hh",
-        "src/MakeInitFloorplan.cc",
+        "include/dft/Dft.hh",
+        "src/MakeDft.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/ifp/MakeInitFloorplan.hh",
+        "include/dft/MakeDft.hh",
     ],
     copts = [
-        "-Isrc/ifp/src",
+        "-Isrc/dft/src",
     ],
     includes = [
         "include",
     ],
     deps = [
-        "//:opensta_lib",
         "//:ord",
         "//src/dbSta",
-        "//src/gui",
+        "//src/dft/src/architect",
+        "//src/dft/src/cells",
+        "//src/dft/src/clock_domain",
+        "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/dft/src/stitch",
         "//src/odb",
         "//src/utl",
         "@tk_tcl//:tcl",
@@ -60,23 +69,23 @@ cc_library(
 tcl_encode(
     name = "tcl",
     srcs = [
-        "src/InitFloorplan.tcl",
+        "src/dft.tcl",
     ],
-    char_array_name = "ifp_tcl_inits",
-    namespace = "ifp",
+    char_array_name = "dft_tcl_inits",
+    namespace = "dft",
 )
 
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "src/InitFloorplan.i",
+        "src/dft.i",
         "//:error_swig",
     ],
-    module = "ifp",
-    namespace_prefix = "ifp",
-    root_swig_src = "src/InitFloorplan.i",
+    module = "dft",
+    namespace_prefix = "dft",
+    root_swig_src = "src/dft.i",
     swig_includes = [
-        "src/ifp/src",
+        "src/dft/src",
     ],
     deps = [
         "//src/odb:swig",
