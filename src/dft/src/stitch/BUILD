@@ -19,7 +19,7 @@ cc_library(
     ],
     includes = [
         ".",
-    ],    
+    ],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/cells",

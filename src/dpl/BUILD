@@ -10,9 +10,8 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "dpl",
     srcs = [
-        "src/graphics/DplObserver.h",
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
         "src/FillerPlacement.cpp",
@@ -23,6 +22,7 @@ cc_library(
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
         "src/dbToOpendp.cpp",
+        "src/graphics/DplObserver.h",
         "src/infrastructure/Coordinates.h",
         "src/infrastructure/DecapObjects.h",
         "src/infrastructure/Grid.cpp",
@@ -75,6 +75,9 @@ cc_library(
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
     ],
+    copts = [
+        "-Isrc/dpl/src",
+    ],
     includes = [
         "include",
     ],
@@ -91,13 +94,10 @@ cc_library(
         "@com_github_quantamhd_lemon//:lemon",
         "@tk_tcl//:tcl",
     ],
-    copts = [
-        "-Isrc/dpl/src",
-    ],
 )
 
 cc_library(
-    name = "dpl",
+    name = "ui",
     srcs = [
         "src/MakeOpendp.cpp",
         "src/graphics/DplObserver.h",
@@ -121,7 +121,6 @@ cc_library(
         "src",
     ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/gui",
         "//src/odb",

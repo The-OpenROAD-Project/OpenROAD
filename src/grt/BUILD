@@ -72,7 +72,7 @@ cc_library(
 )
 
 cc_library(
-    name = "lib",
+    name = "grt",
     srcs = [
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
@@ -101,7 +101,7 @@ cc_library(
         ":fastroute",
         ":types",
         "//:opensta_lib",
-        "//src/ant:lib",
+        "//src/ant",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
@@ -119,7 +119,7 @@ cc_library(
 )
 
 cc_library(
-    name = "grt",
+    name = "ui",
     srcs = [
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
@@ -149,11 +149,10 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":lib",
         ":types",
         "//:opensta_lib",
         "//:ord",
-        "//src/ant:lib",
+        "//src/ant",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",

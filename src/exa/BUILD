@@ -10,11 +10,11 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "exa",
     srcs = [
+        "src/MakeExample.cpp",
         "src/example.cpp",
         "src/observer.h",
-        "src/MakeExample.cpp",
     ],
     hdrs = [
         "include/exa/MakeExample.h",
@@ -32,12 +32,12 @@ cc_library(
 )
 
 cc_library(
-    name = "exa",
+    name = "ui",
     srcs = [
-        "src/observer.h",
-        "src/graphics.h",
-        "src/graphics.cpp",
         "src/MakeExample.cpp",
+        "src/graphics.cpp",
+        "src/graphics.h",
+        "src/observer.h",
         ":swig",
         ":tcl",
     ],
@@ -45,14 +45,13 @@ cc_library(
         "include/exa/MakeExample.h",
         "include/exa/example.h",
     ],
-    includes = [
-        "include",
-    ],
     copts = [
         "-Isrc/exa/src",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/gui",
         "//src/odb",

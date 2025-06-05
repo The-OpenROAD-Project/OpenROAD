@@ -21,7 +21,7 @@ cc_library(
     ],
     includes = [
         ".",
-    ],    
+    ],
     deps = [
         "//src/dft/src/config",
     ],

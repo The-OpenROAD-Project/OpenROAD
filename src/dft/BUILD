@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "dft",
     srcs = [
         "src/Dft.cpp",
     ],
@@ -21,7 +21,6 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
         "//src/dbSta",
         "//src/dft/src/architect",
         "//src/dft/src/cells",
@@ -36,8 +35,9 @@ cc_library(
 )
 
 cc_library(
-    name = "dft",
+    name = "ui",
     srcs = [
+        "include/dft/Dft.hh",
         "src/MakeDft.cpp",
         ":swig",
         ":tcl",
@@ -48,9 +48,12 @@ cc_library(
     copts = [
         "-Isrc/dft/src",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:ord",
+        "//src/dbSta",
         "//src/dft/src/architect",
         "//src/dft/src/cells",
         "//src/dft/src/clock_domain",

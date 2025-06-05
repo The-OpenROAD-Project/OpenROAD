@@ -27,7 +27,7 @@ cc_library(
 )
 
 cc_library(
-    name = "lib",
+    name = "cts",
     srcs = [
         "src/Clock.cpp",
         "src/Clock.h",
@@ -60,7 +60,7 @@ cc_library(
 )
 
 cc_library(
-    name = "cts",
+    name = "ui",
     srcs = [
         "src/CtsGraphics.cpp",
         "src/CtsGraphics.h",
@@ -72,16 +72,17 @@ cc_library(
         "include/cts/MakeTritoncts.h",
         "include/cts/TritonCTS.h",
     ],
-    includes = ["include"],
     copts = [
         "-Isrc/cts/src",
     ],
+    includes = ["include"],
     deps = [
-        ":lib",
         ":private_hdrs",
         "//:ord",
+        "//src/dbSta",
         "//src/gui",
         "//src/odb",
+        "//src/rsz",
         "//src/utl",
         "@tk_tcl//:tcl",
     ],

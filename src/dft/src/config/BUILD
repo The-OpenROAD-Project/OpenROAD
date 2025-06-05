@@ -23,7 +23,7 @@ cc_library(
     ],
     includes = [
         ".",
-    ],    
+    ],
     deps = [
         "//src/dft/src/utils",
         "//src/utl",

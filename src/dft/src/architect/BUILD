@@ -25,7 +25,7 @@ cc_library(
     ],
     includes = [
         ".",
-    ],    
+    ],
     deps = [
         "//src/dft/src/cells",
         "//src/dft/src/clock_domain",
