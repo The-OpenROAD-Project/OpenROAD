@@ -50,21 +50,34 @@ config_setting(
 # TODO: once project is properly decomposed, we don't
 # need these blanked dependencies in multiple places anymore.
 OPENROAD_LIBRARY_DEPS = [
-    ":munkres",
     ":openroad_version",
     ":opensta_lib",
     ":ord",
     "//src/ant",
-    "//src/ant:make-antenna-checker",
     "//src/cts",
     "//src/dbSta",
+    "//src/dft",
     "//src/dpl",
+    "//src/drt",
+    "//src/dst",
     "//src/exa",
+    "//src/fin",
+    "//src/gpl",
     "//src/grt",
     "//src/gui",
+    "//src/ifp",
+    "//src/mpl",
     "//src/odb",
+    "//src/odb:ui",
+    "//src/pad",
+    "//src/pdn",
+    "//src/ppl",
+    "//src/psm",
+    "//src/rcx",
     "//src/rsz",
     "//src/stt",
+    "//src/tap",
+    "//src/upf",
     "//src/utl",
     "@boost.asio",
     "@boost.geometry",
@@ -205,20 +218,6 @@ cc_library(
 )
 
 cc_library(
-    name = "munkres",
-    srcs = glob([
-        "src/ppl/src/munkres/src/*.cpp",
-    ]),
-    hdrs = glob([
-        "src/ppl/src/munkres/src/*.h",
-    ]),
-    includes = [
-        "src/ppl/src/munkres/src",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
-cc_library(
     name = "openroad_version",
     hdrs = [
         ":OpenRoadVersion",
@@ -237,97 +236,6 @@ genrule(
 )
 
 tcl_encode(
-    name = "init_floorplan_tcl",
-    srcs = [
-        "src/ifp/src/InitFloorplan.tcl",
-    ],
-    out = "InitFloorplanTclInitVar.cc",
-    char_array_name = "ifp_tcl_inits",
-    namespace = "ifp",
-)
-
-tcl_encode(
-    name = "ioplacer_tcl",
-    srcs = [
-        "src/ppl/src/IOPlacer.tcl",
-    ],
-    char_array_name = "ppl_tcl_inits",
-    namespace = "ppl",
-)
-
-tcl_encode(
-    name = "finale_tcl",
-    srcs = [
-        "src/fin/src/finale.tcl",
-    ],
-    char_array_name = "fin_tcl_inits",
-    namespace = "fin",
-)
-
-tcl_encode(
-    name = "tapcell_tcl",
-    srcs = [
-        "src/tap/src/tapcell.tcl",
-    ],
-    char_array_name = "tap_tcl_inits",
-    namespace = "tap",
-)
-
-tcl_encode(
-    name = "replace_tcl",
-    srcs = [
-        "src/gpl/src/replace.tcl",
-    ],
-    char_array_name = "gpl_tcl_inits",
-    namespace = "gpl",
-)
-
-tcl_encode(
-    name = "rcx_tcl",
-    srcs = [
-        "src/rcx/src/OpenRCX.tcl",
-    ],
-    char_array_name = "rcx_tcl_inits",
-    namespace = "rcx",
-)
-
-tcl_encode(
-    name = "triton_route_tcl",
-    srcs = [
-        "src/drt/src/TritonRoute.tcl",
-    ],
-    char_array_name = "drt_tcl_inits",
-    namespace = "drt",
-)
-
-tcl_encode(
-    name = "pdn_sim_tcl",
-    srcs = [
-        "src/psm/src/pdnsim.tcl",
-    ],
-    char_array_name = "psm_tcl_inits",
-    namespace = "psm",
-)
-
-tcl_encode(
-    name = "partition_manager_tcl",
-    srcs = [
-        "src/par/src/partitionmgr.tcl",
-    ],
-    char_array_name = "par_tcl_inits",
-    namespace = "par",
-)
-
-tcl_encode(
-    name = "pdngen_tcl",
-    srcs = [
-        "src/pdn/src/pdn.tcl",
-    ],
-    char_array_name = "pdn_tcl_inits",
-    namespace = "pdn",
-)
-
-tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
         "src/Metrics.tcl",
@@ -338,225 +246,12 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "pad_tcl",
-    srcs = [
-        "src/pad/src/pad.tcl",
-    ],
-    char_array_name = "pad_tcl_inits",
-    namespace = "pad",
-)
-
-tcl_encode(
-    name = "mpl_tcl",
-    srcs = [
-        "src/mpl/src/mpl.tcl",
-    ],
-    char_array_name = "mpl_tcl_inits",
-    namespace = "mpl",
-)
-
-tcl_encode(
     name = "rmp_tcl",
     srcs = [
         "src/rmp/src/rmp.tcl",
     ],
     char_array_name = "rmp_tcl_inits",
     namespace = "rmp",
-)
-
-tcl_encode(
-    name = "dst_tcl",
-    srcs = [
-        "src/dst/src/Distributed.tcl",
-    ],
-    char_array_name = "dst_tcl_inits",
-    namespace = "dst",
-)
-
-tcl_encode(
-    name = "upf_tcl",
-    srcs = [
-        "src/upf/src/upf.tcl",
-    ],
-    char_array_name = "upf_tcl_inits",
-    namespace = "upf",
-)
-
-tcl_encode(
-    name = "dft_tcl",
-    srcs = [
-        "src/dft/src/dft.tcl",
-    ],
-    char_array_name = "dft_tcl_inits",
-    namespace = "dft",
-)
-
-tcl_wrap_cc(
-    name = "dst_swig",
-    srcs = [
-        "src/dst/src/Distributed.i",
-        ":error_swig",
-    ],
-    module = "dst",
-    namespace_prefix = "dst",
-    root_swig_src = "src/dst/src/Distributed.i",
-    swig_includes = [
-        "src/dst/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "init_floorplan_swig",
-    srcs = [
-        "src/ifp/src/InitFloorplan.i",
-        ":design_swig",
-        ":error_swig",
-        "//src/odb:swig_imports",
-    ],
-    module = "ifp",
-    namespace_prefix = "ifp",
-    root_swig_src = "src/ifp/src/InitFloorplan.i",
-    swig_includes = [
-        "src/ifp/src",
-        "src/odb/src/swig/common",
-        "src/odb/src/swig/tcl",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "ioplacer_swig",
-    srcs = [
-        "src/ppl/src/IOPlacer.i",
-        ":error_swig",
-    ],
-    module = "ppl",
-    namespace_prefix = "ppl",
-    root_swig_src = "src/ppl/src/IOPlacer.i",
-    swig_includes = [
-        "src/ppl/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "finale_swig",
-    srcs = [
-        "src/fin/src/finale.i",
-        ":error_swig",
-    ],
-    module = "fin",
-    namespace_prefix = "fin",
-    root_swig_src = "src/fin/src/finale.i",
-    swig_includes = [
-        "src/fin/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "replace_swig",
-    srcs = [
-        "src/gpl/src/replace.i",
-        ":error_swig",
-        "//src/odb:swig_imports",
-    ],
-    module = "gpl",
-    namespace_prefix = "gpl",
-    root_swig_src = "src/gpl/src/replace.i",
-    swig_includes = [
-        "src/gpl/src",
-        "src/odb/src/swig/common",
-        "src/odb/src/swig/tcl",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "tapcell_swig",
-    srcs = [
-        "src/tap/src/tapcell.i",
-        ":error_swig",
-        "//src/odb:swig_imports",
-    ],
-    module = "tap",
-    namespace_prefix = "tap",
-    root_swig_src = "src/tap/src/tapcell.i",
-    swig_includes = [
-        "src/odb/src/swig/common",
-        "src/odb/src/swig/tcl",
-        "src/tap/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "rcx_swig",
-    srcs = [
-        "src/rcx/src/ext.i",
-        ":design_swig",
-        ":error_swig",
-    ],
-    module = "rcx",
-    namespace_prefix = "rcx",
-    root_swig_src = "src/rcx/src/ext.i",
-    swig_includes = [
-        "src/rcx/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "triton_route_swig",
-    srcs = [
-        "src/drt/src/TritonRoute.i",
-        ":error_swig",
-    ],
-    module = "drt",
-    namespace_prefix = "drt",
-    root_swig_src = "src/drt/src/TritonRoute.i",
-    swig_includes = [
-        "src/drt/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "pdn_sim_swig",
-    srcs = [
-        "src/psm/src/pdnsim.i",
-        ":error_swig",
-    ],
-    module = "psm",
-    namespace_prefix = "psm",
-    root_swig_src = "src/psm/src/pdnsim.i",
-    swig_includes = [
-        "src/psm/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "partition_manager_swig",
-    srcs = [
-        "src/par/src/partitionmgr.i",
-        ":error_swig",
-    ],
-    module = "Par",
-    namespace_prefix = "par",
-    root_swig_src = "src/par/src/partitionmgr.i",
-    swig_includes = [
-        "src/par/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "pdngen_swig",
-    srcs = [
-        "src/pdn/src/PdnGen.i",
-        ":error_swig",
-        "//src/odb:swig_imports",
-    ],
-    module = "pdn",
-    namespace_prefix = "pdn",
-    root_swig_src = "src/pdn/src/PdnGen.i",
-    swig_includes = [
-        "src/odb/src/swig/common",
-        "src/odb/src/swig/tcl",
-        "src/pdn/src",
-    ],
 )
 
 tcl_wrap_cc(
@@ -570,38 +265,6 @@ tcl_wrap_cc(
     root_swig_src = "src/OpenRoad.i",
     swig_includes = [
         "src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "pad_swig",
-    srcs = [
-        "src/pad/src/pad.i",
-        ":error_swig",
-        "//src/odb:swig_imports",
-    ],
-    module = "pad",
-    namespace_prefix = "pad",
-    root_swig_src = "src/pad/src/pad.i",
-    swig_includes = [
-        "src/odb/include",
-        "src/odb/src/swig/common",
-        "src/odb/src/swig/tcl",
-        "src/pad/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "mpl_swig",
-    srcs = [
-        "src/mpl/src/mpl.i",
-        ":error_swig",
-    ],
-    module = "mpl",
-    namespace_prefix = "mpl",
-    root_swig_src = "src/mpl/src/mpl.i",
-    swig_includes = [
-        "src/mpl/src",
     ],
 )
 
@@ -621,20 +284,6 @@ tcl_wrap_cc(
     ],
 )
 
-tcl_wrap_cc(
-    name = "dft_swig",
-    srcs = [
-        "src/dft/src/dft.i",
-        ":error_swig",
-    ],
-    module = "dft",
-    namespace_prefix = "dft",
-    root_swig_src = "src/dft/src/dft.i",
-    swig_includes = [
-        "src/dft/src",
-    ],
-)
-
 filegroup(
     name = "error_swig",
     srcs = [
@@ -647,22 +296,6 @@ filegroup(
     name = "design_swig",
     srcs = [
         "src/Design.i",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "upf_swig",
-    srcs = glob([
-        "src/upf/include/upf/*.h",
-    ]) + [
-        "src/upf/src/upf.i",
-    ],
-    module = "upf",
-    namespace_prefix = "upf",
-    root_swig_src = "src/upf/src/upf.i",
-    swig_includes = [
-        "src/odb/include",
-        "src/upf/include",
     ],
 )
 
@@ -835,6 +468,7 @@ genrule(
     #define SSTA 0
     #define ZLIB_FOUND' > \"$@\"
     """,
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -998,7 +632,21 @@ cc_library(
     #    })
     hdrs = glob(
         include = ["src/sta/include/sta/*.hh"],
-    ),
+    ) + [
+        # Required for swig
+        "src/sta/search/Tag.hh",
+        "src/sta/dcalc/ArcDcalcWaveforms.hh",
+        "src/sta/power/Power.hh",
+        "src/sta/power/VcdReader.hh",
+        "src/sta/power/SaifReader.hh",
+        "src/sta/sdf/SdfReader.hh",
+        "src/sta/sdf/ReportAnnotation.hh",
+        "src/sta/sdf/SdfWriter.hh",
+        "src/sta/search/Levelize.hh",
+        "src/sta/search/ReportPath.hh",
+        "src/sta/spice/WritePathSpice.hh",
+        "src/sta/dcalc/PrimaDelayCalc.hh",
+    ],
     copts = [
         "-fexceptions",
         "-Wno-error",

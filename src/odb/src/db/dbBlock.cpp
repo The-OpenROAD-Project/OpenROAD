@@ -1730,6 +1730,8 @@ Polygon dbBlock::getBTermTopLayerGridRegion()
 
 Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)
 {
+  _dbBlock* block = (_dbBlock*) this;
+  block->ensureConstraintRegion(edge, begin, end);
   Rect constraint_region;
   const Rect& die_bounds = getDieArea();
   if (edge == south) {
@@ -3643,6 +3645,38 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["cc_val"].add(*_cc_val_tbl);
 
   info.children_["module_name_id_map"].add(_module_name_id_map);
+}
+
+void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
+                                      int& begin,
+                                      int& end)
+{
+  /// Ensure that the constraint region defined in the given edge is completely
+  /// inside the die area.
+  dbBlock* block = (dbBlock*) this;
+  const int input_begin = begin;
+  const int input_end = end;
+  const Rect& die_bounds = block->getDieArea();
+  if (edge == south || edge == north) {
+    begin = std::max(begin, die_bounds.xMin());
+    end = std::min(end, die_bounds.xMax());
+  } else if (edge == west || edge == east) {
+    begin = std::max(begin, die_bounds.yMin());
+    end = std::min(end, die_bounds.yMax());
+  }
+
+  if (input_begin != begin || input_end != end) {
+    utl::Logger* logger = getImpl()->getLogger();
+    logger->warn(utl::ODB,
+                 11,
+                 "Region {}-{} on edge {} modified to {}-{} to respect the "
+                 "die area limits.",
+                 block->dbuToMicrons(input_begin),
+                 block->dbuToMicrons(input_end),
+                 edge,
+                 block->dbuToMicrons(begin),
+                 block->dbuToMicrons(end));
+  }
 }
 
 }  // namespace odb

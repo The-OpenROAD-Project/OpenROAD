@@ -16,6 +16,7 @@ or_integration_tests(
     asap7_vias_dont_use
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
+    asap7_M1_M3_followpins
     bpin_removal
     core_grid
     core_grid_adjacentcuts

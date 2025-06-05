@@ -7,10 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "grids.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/grids.h"
 #include "util.h"
 #include "utl/Logger.h"
 

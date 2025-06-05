@@ -19,6 +19,7 @@ or_integration_tests(
     add_constraint16
     add_constraint17
     add_constraint18
+    add_constraint19
     add_constraint_debug
     add_constraint_error1
     add_constraint_error2

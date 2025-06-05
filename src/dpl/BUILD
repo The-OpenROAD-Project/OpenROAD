@@ -10,12 +10,12 @@ package(
 )
 
 cc_library(
-    name = "dpl",
+    name = "lib",
     srcs = [
+        "src/graphics/DplObserver.h",
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
         "src/FillerPlacement.cpp",
-        "src/MakeOpendp.cpp",
         "src/Opendp.cpp",
         "src/OptMirror.cpp",
         "src/Optdp.cpp",
@@ -23,9 +23,6 @@ cc_library(
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
         "src/dbToOpendp.cpp",
-        "src/graphics/DplObserver.h",
-        "src/graphics/Graphics.cpp",
-        "src/graphics/Graphics.h",
         "src/infrastructure/Coordinates.h",
         "src/infrastructure/DecapObjects.h",
         "src/infrastructure/Grid.cpp",
@@ -80,11 +77,8 @@ cc_library(
     ],
     includes = [
         "include",
-        "src",
     ],
     deps = [
-        "//:ord",
-        "//src/gui",
         "//src/odb",
         "//src/utl",
         "@boost.format",
@@ -95,6 +89,46 @@ cc_library(
         "@boost.tokenizer",
         "@boost.utility",
         "@com_github_quantamhd_lemon//:lemon",
+        "@tk_tcl//:tcl",
+    ],
+    copts = [
+        "-Isrc/dpl/src",
+    ],
+)
+
+cc_library(
+    name = "dpl",
+    srcs = [
+        "src/MakeOpendp.cpp",
+        "src/graphics/DplObserver.h",
+        "src/graphics/Graphics.cpp",
+        "src/graphics/Graphics.h",
+        "src/infrastructure/Coordinates.h",
+        "src/infrastructure/Grid.h",
+        "src/infrastructure/Objects.h",
+        "src/infrastructure/architecture.h",
+        "src/infrastructure/network.h",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/dpl/MakeOpendp.h",
+        "include/dpl/Opendp.h",
+        "include/dpl/OptMirror.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":lib",
+        "//:ord",
+        "//src/gui",
+        "//src/odb",
+        "//src/utl",
+        "@boost.geometry",
+        "@boost.polygon",
+        "@boost.utility",
         "@tk_tcl//:tcl",
     ],
 )
