@@ -38,8 +38,6 @@
 
 import io
 import datetime
-from typing import List, Dict, Union
-
 
 # identify key section and stored in ManPage class.
 class ManPage:
@@ -55,7 +53,7 @@ class ManPage:
         self.datetime = datetime.datetime.now().strftime("%y/%m/%d")
         self.man_level = f"man{man_level}"
 
-    def add_example(self, description: str, code: str, output: str = None):
+    def add_example(self, description: str, code: str, output: str | None = None):
         """
         Add an example to the manpage.
 
@@ -68,7 +66,7 @@ class ManPage:
         self.examples.append(example)
 
     def add_see_also(
-        self, reference: str, section: int = None, description: str = None
+        self, reference: str, section: int = None, description: str | None = None
     ):
         """
         Add a reference to the SEE ALSO section.
@@ -167,7 +165,7 @@ class ManPage:
             isinstance(f, io.TextIOBase) and f.writable()
         ), "File pointer is not open for writing."
 
-        f.write(f"\n#### EXAMPLES\n")
+        f.write(f"\n# EXAMPLES\n")
 
         if not self.examples:
             f.write(f"No examples available.\n")
@@ -185,7 +183,7 @@ class ManPage:
             isinstance(f, io.TextIOBase) and f.writable()
         ), "File pointer is not open for writing."
 
-        f.write(f"\n#### SEE ALSO\n")
+        f.write(f"\n# SEE ALSO\n")
 
         if not self.see_also:
             f.write(f"No related references.\n")
@@ -247,10 +245,17 @@ if __name__ == "__main__":
     man.add_see_also("utility_helper", 3, "Helper function for data processing")
     man.add_see_also("debugging_tools", description="Collection of debugging utilities")
 
-    print("Enhanced ManPage class ready for use!")
-    print("Key improvements:")
-    print("- Added examples list and add_example() method")
-    print("- Added see_also list and add_see_also() method")
-    print("- Replaced write_placeholder() with write_examples() and write_see_also()")
-    print("- Added copyright section to main write flow")
-    print("- Improved formatting and structure")
+    # Create a temporary directory for the output
+    with tempfile.TemporaryDirectory() as temp_dir:
+        man.write_roff_file(temp_dir)
+        
+        # Read and print the generated content
+        filepath = os.path.join(temp_dir, f"{man.name}.md")
+        with open(filepath, 'r') as f:
+            generated_content = f.read()
+            
+        print("Generated man page content:")
+        print("=" * 50)
+        print(generated_content)
+        print("=" * 50)    
+    

@@ -994,6 +994,9 @@ proc replace_arith_modules { args } {
   }
   if { [info exists keys(-target)] } {
     set target $keys(-target)
+    if { [lsearch -exact {setup hold power area} $target] == -1 } {
+      util::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
+    }
   } else {
     set target "setup"
   }

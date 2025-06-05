@@ -28,7 +28,7 @@
 #include "SizeDownMove.hh"
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
-#include "SwapArithModules.hh"
+#include "ConcreteSwapArithModules.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "boost/multi_array.hpp"
@@ -125,7 +125,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
-      swap_arith_modules_(new SwapArithModules(this)),
+      swap_arith_modules_(new ConcreteSwapArithModules(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),

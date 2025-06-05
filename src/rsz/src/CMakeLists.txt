@@ -30,7 +30,7 @@ add_library(rsz_lib
     EstimateWireParasitics.cc
     Resizer.cc
     OdbCallBack.cc
-    SwapArithModules.cc
+    ConcreteSwapArithModules.cc
 )
 
 target_sources(rsz

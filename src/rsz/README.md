@@ -627,11 +627,11 @@ replace_arith_modules
 
 #### Options
 
-| Option             | Type    |  Default |   Description                                                                        |
-|:------------------ |: ------ |:-------- |: ----------------------------------------------------------------------------------  |
-| `-path_count`      | integer |  1000    | Number of critical paths to analyze to identify candidate arithmetic modules to swap |
-| `-slack_threshold` | float   |  0.0     | Slack threshold in library time units.  Use positive values to include paths with small positive slack |
-| `-target`          | string  |  setup   | Optimization target: setup, hold, power, area                                        |
+| Switch Name | Description |
+| ----------- | ---------- |
+| `-path_count`           | Number of critical paths to analyze to identify candidate arithmetic modules to swap. The default value is `1000`, and the allowed values are integers. |
+| `-slack_threshold`      | Slack threshold in library time units.  Use positive values to include paths with small positive slack. The default value is `0.0`, and the allowed values are floats. |
+| `-target`               | Optimization target. Valid types are `setup`, `hold`, `power`, `area`. Default type is `setup`, and the allowed value is string. |
 
 #### Arguments
 

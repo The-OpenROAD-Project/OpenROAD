@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <set>
+#include <unordered_set>
 #include <string>
 #include <vector>
 
@@ -37,33 +37,38 @@ class Resizer;
 
 using odb::dbModInst;
 using sta::Path;
-using std::set;
-using std::string;
+using std::unordered_set;
 using utl::Logger;
 
 class SwapArithModules : public sta::dbStaState
 {
  public:
-  explicit SwapArithModules(Resizer* resizer);
-  ~SwapArithModules() override = default;
+  explicit SwapArithModules(Resizer* resizer) : resizer_(resizer) {}
+  virtual ~SwapArithModules() override = default;
 
-  // Main entry point for arithmetic module replacement
-  // path_count: Number of critical paths to analyze
-  // target: Optimization target ("setup", "hold", "power", "area")
-  // slack_threshold: Only consider paths with slack worse than this value
-  void replaceArithModules(int path_count,
-                           const string& target,
-                           float slack_threshold = 0.0);
-  void collectArithInstsOnPath(Path* path, set<dbModInst*>& arithInsts);
-  bool isArithInstance(Instance* inst, dbModInst*& mod_inst);
-  bool hasArithOperatorProperty(dbModInst* mod_inst);
-  void doSwapInstances(const set<dbModInst*>& insts, const string& target);
+  virtual void replaceArithModules(int path_count,
+                                   const std::string& target,
+                                   float slack_threshold = 0.0)
+      = 0;
+  virtual void collectArithInstsOnPath(Path* path, unordered_set<dbModInst*>& arithInsts)
+      = 0;
+  virtual bool isArithInstance(Instance* inst, dbModInst*& mod_inst) = 0;
+  virtual bool hasArithOperatorProperty(dbModInst* mod_inst) = 0;
+  virtual void findCriticalInstances(int path_count,
+                                     const std::string& target,
+                                     float slack_threshold,
+                                     unordered_set<dbModInst*>& insts)
+      = 0;
+  virtual void doSwapInstances(const unordered_set<dbModInst*>& insts,
+                               const std::string& target)
+      = 0;
 
- private:
-  void init();
-  void produceNewModuleName(const string& old_name,
-                            string& new_name,
-                            const string& target);
+ protected:
+  virtual void init() = 0;
+  virtual void produceNewModuleName(const std::string& old_name,
+                                    std::string& new_name,
+                                    const std::string& target)
+      = 0;
 
   // Member variables
   Resizer* resizer_;
