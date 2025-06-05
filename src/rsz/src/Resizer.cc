@@ -3241,24 +3241,26 @@ ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
 
 ////////////////////////////////////////////////////////////////
 
-double Resizer::findMaxWireLength()
+double Resizer::findMaxWireLength(bool issue_error)
 {
   init();
   checkLibertyForAllCorners();
   findBuffers();
   findTargetLoads();
-  return findMaxWireLength1();
+  return findMaxWireLength1(issue_error);
 }
 
-double Resizer::findMaxWireLength1()
+double Resizer::findMaxWireLength1(bool issue_error)
 {
   std::optional<double> max_length;
   for (const Corner* corner : *sta_->corners()) {
     if (wireSignalResistance(corner) <= 0.0) {
-      logger_->warn(RSZ,
-                    88,
-                    "Corner: {} has no wire signal resistance value.",
-                    corner->name());
+      if (issue_error) {
+        logger_->warn(RSZ,
+                      88,
+                      "Corner: {} has no wire signal resistance value.",
+                      corner->name());
+      }
       continue;
     }
 
@@ -3277,11 +3279,15 @@ double Resizer::findMaxWireLength1()
   }
 
   if (!max_length.has_value()) {
-    logger_->error(RSZ,
-                   89,
-                   "Could not find a resistance value for any corner. Cannot "
-                   "evaluate max wire length for buffer. Check over your "
-                   "`set_wire_rc` configuration");
+    if (issue_error) {
+      logger_->error(RSZ,
+                     89,
+                     "Could not find a resistance value for any corner. Cannot "
+                     "evaluate max wire length for buffer. Check over your "
+                     "`set_wire_rc` configuration");
+    } else {
+     max_length = -std::numeric_limits<double>::infinity();
+    }
   }
 
   return max_length.value();
