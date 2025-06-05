@@ -70,10 +70,11 @@ void ConcreteSwapArithModules::replaceArithModules(int path_count,
   doSwapInstances(arithInsts, target);
 }
 
-void ConcreteSwapArithModules::findCriticalInstances(int path_count,
-                                                     const std::string& target,
-                                                     float slack_threshold,
-                                                     unordered_set<dbModInst*>& insts)
+void ConcreteSwapArithModules::findCriticalInstances(
+    int path_count,
+    const std::string& target,
+    float slack_threshold,
+    unordered_set<dbModInst*>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -219,8 +220,9 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(dbModInst* mod_inst)
   return false;
 }
 
-void ConcreteSwapArithModules::doSwapInstances(const unordered_set<dbModInst*>& insts,
-                                               const std::string& target)
+void ConcreteSwapArithModules::doSwapInstances(
+    const unordered_set<dbModInst*>& insts,
+    const std::string& target)
 {
   int swapped_count = 0;
 
