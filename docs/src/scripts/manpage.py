@@ -39,6 +39,7 @@
 import io
 import datetime
 
+
 # identify key section and stored in ManPage class.
 class ManPage:
     def __init__(self, man_level=2):
@@ -248,14 +249,13 @@ if __name__ == "__main__":
     # Create a temporary directory for the output
     with tempfile.TemporaryDirectory() as temp_dir:
         man.write_roff_file(temp_dir)
-        
+
         # Read and print the generated content
         filepath = os.path.join(temp_dir, f"{man.name}.md")
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             generated_content = f.read()
-            
+
         print("Generated man page content:")
         print("=" * 50)
         print(generated_content)
-        print("=" * 50)    
-    
+        print("=" * 50)
