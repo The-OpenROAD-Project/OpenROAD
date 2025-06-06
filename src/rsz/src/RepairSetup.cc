@@ -735,18 +735,18 @@ void RepairSetup::printProgress(const int iteration,
     const double area_growth = design_area - initial_design_area_;
 
     // This actually prints both committed and pending moves, so the moves could
-    // could go down if a pass is restrored by the journal.
+    // could go down if a pass is rejected and restored by the ECO.
     logger_->report(
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
-        resizer_->unbuffer_move->numCommittedMoves(),
-        resizer_->size_up_move->numCommittedMoves()
-            + resizer_->size_down_move->numCommittedMoves(),
-        resizer_->buffer_move->numCommittedMoves()
-            + resizer_->split_load_move->numCommittedMoves(),
-        resizer_->clone_move->numCommittedMoves(),
-        resizer_->swap_pins_move->numCommittedMoves(),
+        resizer_->unbuffer_move->numMoves(),
+        resizer_->size_up_move->numMoves()
+            + resizer_->size_down_move->numMoves(),
+        resizer_->buffer_move->numMoves()
+            + resizer_->split_load_move->numMoves(),
+        resizer_->clone_move->numMoves(),
+        resizer_->swap_pins_move->numMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),

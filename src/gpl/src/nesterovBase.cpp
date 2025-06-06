@@ -3202,6 +3202,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   int64_t area_change = static_cast<int64_t>(gCellStor_.back().dx())
                         * static_cast<int64_t>(gCellStor_.back().dy());
   delta_area_ -= area_change;
+  new_gcells_count_--;
 
   gCellStor_.pop_back();
   minRcCellSize_.pop_back();

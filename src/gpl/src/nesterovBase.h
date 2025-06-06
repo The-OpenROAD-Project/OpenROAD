@@ -913,7 +913,7 @@ class NesterovBaseCommon
 
   int num_threads_;
   int64_t delta_area_;
-  uint new_gcells_count_;
+  int new_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
