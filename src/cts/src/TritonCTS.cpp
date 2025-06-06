@@ -2156,6 +2156,7 @@ void TritonCTS::setAllClocksPropagated()
   for (sta::Clock* clk : *sdc->clocks()) {
     openSta_->setPropagatedClock(clk);
   }
+  resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
 }
 void TritonCTS::repairClockNets()
 {
