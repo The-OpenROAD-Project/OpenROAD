@@ -372,9 +372,7 @@ int Replace::doNesterovPlace(int threads, int start_iter)
              "NP->doNesterovPlace() runtime: {} seconds ",
              elapsed.count());
 
-  log_->report("are we going to loading fast route?");
   if (load_fast_route_) {
-    log_->report("loading fast route!");
     fr_->setAllowCongestion(true);
     fr_->setCongestionIterations(0);
     fr_->setCriticalNetsPercentage(0);
