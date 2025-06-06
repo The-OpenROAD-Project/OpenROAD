@@ -483,15 +483,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
             false,
             "Heat Maps/Estimated Congestion (RUDY)");
 
-        // rb_->loadGrt();
-        // graphics_->saveLabeledImage(
-        // fmt::format(
-        //     "{}/1_grt_routability_final_{:05d}.png", routability_driven_dir,
-        //     iter),
-        // label,
-        // /* select_buffers = */ false,
-        // "Heat Maps/Routing Congestion");
-
         graphics_->saveLabeledImage(
             fmt::format("{}/1_routability_final_{:05d}.png",
                         routability_driven_dir,
@@ -823,14 +814,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
             label,
             /* select_buffers = */ false,
             "Heat Maps/Estimated Congestion (RUDY)");
-
-        // rb_->loadGrt();
-        // graphics_->saveLabeledImage(
-        // fmt::format(
-        //     "{}/grt_routability_{:05d}.png", routability_driven_dir, iter),
-        // label,
-        // /* select_buffers = */ false,
-        // "Heat Maps/Routing Congestion");
       }
 
       // recover the densityPenalty values
