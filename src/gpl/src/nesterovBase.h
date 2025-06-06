@@ -1146,6 +1146,7 @@ class NesterovBase
   int64_t whiteSpaceArea_ = 0;
   int64_t movableArea_ = 0;
   int64_t totalFillerArea_ = 0;
+  int64_t initial_filler_area_ = 0;
 
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;

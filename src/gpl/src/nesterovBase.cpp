@@ -1927,6 +1927,7 @@ void NesterovBase::initFillerGCells()
     fillerStor_.push_back(myGCell);
   }
   totalFillerArea_ = fillerStor_.size() * getFillerCellArea();
+  initial_filler_area_ = totalFillerArea_;
 }
 
 NesterovBase::~NesterovBase() = default;
@@ -3230,41 +3231,43 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
-  for (int i = nb_gcells_.size() - 1;
-       i >= 0 && removed_count < max_fllers_to_remove;
-       --i) {
-    if (nb_gcells_[i]->isFiller()) {
-      // log_->report("filler to be removed in nb_gcells_ index: {},
-      const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
-      removed_fillers_.push_back(RemovedFillerState{
-          .gcell = removed,
-          .curSLPCoordi = curSLPCoordi_[i],
-          .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
-          .curSLPDensityGrads = curSLPDensityGrads_[i],
-          .curSLPSumGrads = curSLPSumGrads_[i],
+  if(totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.5)) {
+    for (int i = nb_gcells_.size() - 1;
+        i >= 0 && removed_count < max_fllers_to_remove;
+        --i) {
+      if (nb_gcells_[i]->isFiller()) {
+        // log_->report("filler to be removed in nb_gcells_ index: {},
+        const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
+        removed_fillers_.push_back(RemovedFillerState{
+            .gcell = removed,
+            .curSLPCoordi = curSLPCoordi_[i],
+            .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
+            .curSLPDensityGrads = curSLPDensityGrads_[i],
+            .curSLPSumGrads = curSLPSumGrads_[i],
 
-          .nextSLPCoordi = nextSLPCoordi_[i],
-          .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
-          .nextSLPDensityGrads = nextSLPDensityGrads_[i],
-          .nextSLPSumGrads = nextSLPSumGrads_[i],
+            .nextSLPCoordi = nextSLPCoordi_[i],
+            .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
+            .nextSLPDensityGrads = nextSLPDensityGrads_[i],
+            .nextSLPSumGrads = nextSLPSumGrads_[i],
 
-          .prevSLPCoordi = prevSLPCoordi_[i],
-          .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
-          .prevSLPDensityGrads = prevSLPDensityGrads_[i],
-          .prevSLPSumGrads = prevSLPSumGrads_[i],
+            .prevSLPCoordi = prevSLPCoordi_[i],
+            .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
+            .prevSLPDensityGrads = prevSLPDensityGrads_[i],
+            .prevSLPSumGrads = prevSLPSumGrads_[i],
 
-          .curCoordi = curCoordi_[i],
-          .nextCoordi = nextCoordi_[i],
-          .initCoordi = initCoordi_[i],
+            .curCoordi = curCoordi_[i],
+            .nextCoordi = nextCoordi_[i],
+            .initCoordi = initCoordi_[i],
 
-          .snapshotCoordi = snapshotCoordi_[i],
-          .snapshotSLPCoordi = snapshotSLPCoordi_[i],
-          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
+            .snapshotCoordi = snapshotCoordi_[i],
+            .snapshotSLPCoordi = snapshotSLPCoordi_[i],
+            .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
 
-      destroyFillerGCell(i);
-      availableFillerArea -= single_filler_area;
-      inflation_area -= single_filler_area;
-      ++removed_count;
+        destroyFillerGCell(i);
+        availableFillerArea -= single_filler_area;
+        inflation_area -= single_filler_area;
+        ++removed_count;
+      }
     }
   }
 
@@ -3314,7 +3317,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
              block->dbuAreaToMicrons(removedFillerArea),
              block->dbuAreaToMicrons(remainingInflationArea));
 
-  if (remainingInflationArea > single_filler_area && fillerStor_.empty()) {
+  if (remainingInflationArea > single_filler_area) {
     int64_t totalGCellArea = nesterovInstsArea() + removedFillerArea
                              + totalFillerArea_ + remainingInflationArea;
     setTargetDensity(static_cast<float>(totalGCellArea)
@@ -3324,9 +3327,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                              / static_cast<float>(whiteSpaceArea());
     log_->info(GPL,
                79,
-               "Not enough fillers to fully compensate inflation.\n\t\tNew "
-               "target density: {}",
-               newTargetDensity);
+               "New target density: {}",
+               newTargetDensity);    
   }
 }
 
@@ -3402,7 +3404,13 @@ void NesterovBase::restoreRemovedFillers()
              80,
              "Restoring {} previously removed fillers.",
              removed_fillers_.size());
+
+  if(removed_fillers_.size() == 0){
+    return;
+  }
+  
   size_t num_fill_before = fillerStor_.size();
+  int64_t area_before = totalFillerArea_;
 
   for (const auto& filler : removed_fillers_) {
     fillerStor_.push_back(filler.gcell);
@@ -3440,16 +3448,35 @@ void NesterovBase::restoreRemovedFillers()
     totalFillerArea_ += getFillerCellArea();
   }
 
+  size_t num_fill_after = fillerStor_.size();
+  int64_t area_after = totalFillerArea_;
+
+  double rel_count_change = (num_fill_before > 0)
+                                ? (static_cast<double>(num_fill_after - num_fill_before) / num_fill_before) * 100.0
+                                : 0.0;
+
+  double rel_area_change = (area_before > 0)
+                               ? (static_cast<double>(area_after - area_before) / static_cast<double>(area_before)) * 100.0
+                               : 0.0;
+
+  dbBlock* block = pb_->db()->getChip()->getBlock();
+  double area_before_um = block->dbuAreaToMicrons(area_before);
+  double area_after_um = block->dbuAreaToMicrons(area_after);
+
   log_->info(GPL,
              81,
-             "Number of fillers before {} and after {} removal. Relative "
-             "reduction: {:.2f}%%",
+             "Number of fillers before restoration {} and after {} . Relative change: {:+.2f}%%",
              num_fill_before,
-             fillerStor_.size(),
-             (num_fill_before > 0)
-                 ? (static_cast<double>(num_fill_before - fillerStor_.size())
-                    / num_fill_before * 100.0)
-                 : 0.0);
+             num_fill_after,
+             rel_count_change);
+
+  log_->info(GPL,
+             82,
+             "Total filler area before restoration {:.2f} and after {:.2f} (um^2). Relative change: {:+.2f}%%",
+             area_before_um,
+             area_after_um,
+             rel_area_change);
+
   removed_fillers_.clear();
 }
 
