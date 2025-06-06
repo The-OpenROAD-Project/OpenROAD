@@ -30,7 +30,6 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
-#include "ord/OpenRoad.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -86,6 +85,9 @@ void TritonCTS::runTritonCts()
     buildClockTrees();
     writeDataToDb();
     setAllClocksPropagated();
+    if (options_->getRepairClockNets()) {
+      repairClockNets();
+    }
     balanceMacroRegisterLatencies();
   }
 
@@ -1472,7 +1474,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       disconnectAllPinsFromNet(clkSubNet);
       odb::dbNet::destroy(clkSubNet);
       ++numFixedNets_;
-      --num
+      --numClkNets_;
       odb::dbInst::destroy(driver);
       removedSinks.insert(subNet.getDriver());
       checkUpstreamConnections(inputNet);
@@ -2151,9 +2153,17 @@ void TritonCTS::setAllClocksPropagated()
     }
   }
   sta::Sdc* sdc = openSta_->sdc();
-    for (sta::Clock* clk : *sdc->clocks()) {
-      openSta_->setPropagatedClock(clk);
-    }
+  for (sta::Clock* clk : *sdc->clocks()) {
+    openSta_->setPropagatedClock(clk);
+  }
+}
+void TritonCTS::repairClockNets()
+{
+  double max_wire_length
+      = resizer_->findMaxWireLength(/* don't issue error */ false);
+  if (max_wire_length > 0.0) {
+    resizer_->repairClkNets(max_wire_length);
+  }
 }
 
 // Balance macro cell latencies with register latencies.

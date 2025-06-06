@@ -127,8 +127,8 @@ void RepairAntennas::makeNetWires(
     const std::vector<odb::dbNet*>& nets_to_repair,
     int max_routing_layer)
 {
-  std::map<int, odb::dbTechVia*> default_vias
-      = grouter_->getDefaultVias(max_routing_layer);
+  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+      = block_->getDefaultVias();
 
   for (odb::dbNet* db_net : nets_to_repair) {
     if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
@@ -142,7 +142,7 @@ void RepairAntennas::makeNetWires(
 odb::dbWire* RepairAntennas::makeNetWire(
     odb::dbNet* db_net,
     GRoute& route,
-    std::map<int, odb::dbTechVia*>& default_vias)
+    std::map<odb::dbTechLayer*, odb::dbTechVia*>& default_vias)
 {
   odb::dbWire* wire = odb::dbWire::create(db_net);
   if (wire) {
@@ -203,7 +203,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
             }
             wire_encoder.addPoint(x1, y1);
-            wire_encoder.addTechVia(default_vias[bottom_layer]);
+            wire_encoder.addTechVia(default_vias[bottom_tech_layer]);
             addWireTerms(net,
                          route,
                          x1,
@@ -272,16 +272,17 @@ RoutePtPinsMap RepairAntennas::findRoutePtPins(Net* net)
   return route_pt_pins;
 }
 
-void RepairAntennas::addWireTerms(Net* net,
-                                  GRoute& route,
-                                  int grid_x,
-                                  int grid_y,
-                                  int layer,
-                                  odb::dbTechLayer* tech_layer,
-                                  RoutePtPinsMap& route_pt_pins,
-                                  odb::dbWireEncoder& wire_encoder,
-                                  std::map<int, odb::dbTechVia*>& default_vias,
-                                  bool connect_to_segment)
+void RepairAntennas::addWireTerms(
+    Net* net,
+    GRoute& route,
+    int grid_x,
+    int grid_y,
+    int layer,
+    odb::dbTechLayer* tech_layer,
+    RoutePtPinsMap& route_pt_pins,
+    odb::dbWireEncoder& wire_encoder,
+    std::map<odb::dbTechLayer*, odb::dbTechVia*>& default_vias,
+    bool connect_to_segment)
 {
   std::vector<int> layers;
   layers.push_back(layer);
@@ -328,9 +329,10 @@ void RepairAntennas::addWireTerms(Net* net,
             // layer. the min routing layer will be used to connect to the pin.
             wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
             wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-            for (int l = min_layer->getRoutingLevel();
-                 l < tech_layer->getRoutingLevel();
-                 l++) {
+            for (int i = min_layer->getRoutingLevel();
+                 i < tech_layer->getRoutingLevel();
+                 i++) {
+              odb::dbTechLayer* l = tech->findRoutingLayer(i);
               wire_encoder.addTechVia(default_vias[l]);
             }
           }
@@ -340,8 +342,7 @@ void RepairAntennas::addWireTerms(Net* net,
                      min_layer,
                      grid_pt,
                      odb::Point(grid_pt.x(), pin_pt.y()));
-            wire_encoder.addTechVia(
-                default_vias[grouter_->getMinRoutingLayer()]);
+            wire_encoder.addTechVia(default_vias[min_layer]);
             makeWire(wire_encoder,
                      min_layer,
                      odb::Point(grid_pt.x(), pin_pt.y()),
@@ -351,8 +352,7 @@ void RepairAntennas::addWireTerms(Net* net,
                      min_layer,
                      grid_pt,
                      odb::Point(pin_pt.x(), grid_pt.y()));
-            wire_encoder.addTechVia(
-                default_vias[grouter_->getMinRoutingLayer()]);
+            wire_encoder.addTechVia(default_vias[min_layer]);
             makeWire(wire_encoder,
                      min_layer,
                      odb::Point(pin_pt.x(), grid_pt.y()),
@@ -361,7 +361,8 @@ void RepairAntennas::addWireTerms(Net* net,
 
           // create vias to reach the pin
           for (int i = min_layer->getRoutingLevel() - 1; i >= conn_layer; i--) {
-            wire_encoder.addTechVia(default_vias[i]);
+            odb::dbTechLayer* l = tech->findRoutingLayer(i);
+            wire_encoder.addTechVia(default_vias[l]);
           }
         }
       }

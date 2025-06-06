@@ -12,7 +12,6 @@ package(
 cc_library(
     name = "dbSta",
     srcs = [
-        "src/MakeDbSta.cc",
         "src/SpefWriter.cc",
         "src/dbNetwork.cc",
         "src/dbReadVerilog.cc",
@@ -21,11 +20,41 @@ cc_library(
         "src/dbSta.cc",
     ],
     hdrs = [
+        "include/db_sta/SpefWriter.hh",
+        "include/db_sta/dbNetwork.hh",
+        "include/db_sta/dbReadVerilog.hh",
+        "include/db_sta/dbSta.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//:opensta_lib",
+        "//src/odb",
+        "//src/utl",
+        "@boost.json",
+        "@tk_tcl//:tcl",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakeDbSta.cc",
+        ":swig",
+        ":tcl",
+        "//:StaConfig",
+    ],
+    hdrs = [
         "include/db_sta/MakeDbSta.hh",
         "include/db_sta/SpefWriter.hh",
         "include/db_sta/dbNetwork.hh",
         "include/db_sta/dbReadVerilog.hh",
         "include/db_sta/dbSta.hh",
+    ],
+    copts = [
+        "-Isrc/dbSta/src",
+        "-Wno-missing-braces",  # from TCL swigging
     ],
     includes = [
         "include",

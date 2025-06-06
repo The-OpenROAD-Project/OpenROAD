@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
 #include "sta/Network.hh"
 #include "sta/Corner.hh"
 #include "rsz/Resizer.hh"
@@ -121,6 +122,36 @@ using rsz::ParasiticsSrc;
 %inline %{
 
 namespace rsz {
+
+void
+report_net_parasitic(Net *net)
+{
+  Resizer *resizer = getResizer();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    resizer->parasitics()->report(parasitic);
+  }
+}
+
+float
+sum_parasitic_network_resist(Net *net)
+{
+  Resizer *resizer = getResizer();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    float ret = 0.0;
+    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
+      ret += resizer->parasitics()->value(resist);
+    }
+    return ret;
+  } else {
+    return 0.0f;
+  }
+}
 
 void
 set_layer_rc_cmd(odb::dbTechLayer *layer,
@@ -520,6 +551,7 @@ repair_setup(double setup_margin,
              std::vector<rsz::MoveType> sequence,
              bool skip_pin_swap,
              bool skip_gate_cloning,
+             bool skip_size_down,
              bool skip_buffering,
              bool skip_buffer_removal,
              bool skip_last_gasp)
@@ -531,6 +563,7 @@ repair_setup(double setup_margin,
                        match_cell_footprint, verbose,
                        sequence,
                        skip_pin_swap, skip_gate_cloning,
+                       skip_size_down,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);
 }
