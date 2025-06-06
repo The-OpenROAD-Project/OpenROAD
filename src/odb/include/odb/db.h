@@ -7661,6 +7661,10 @@ class dbGuide : public dbObject
 
   void setIsJumper(bool jumper);
 
+  bool isConnectedToTerm();
+
+  void setIsConnectedToTerm(bool is_connected);
+
   // User Code End dbGuide
 };
 
