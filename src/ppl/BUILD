@@ -35,11 +35,11 @@ cc_library(
         "include/ppl/MakeIoplacer.h",
         "include/ppl/Parameters.h",
     ],
-    includes = [
-        "include",
-    ],
     copts = [
         "-Isrc/ppl/src",
+    ],
+    includes = [
+        "include",
     ],
     deps = [
         ":munkres",

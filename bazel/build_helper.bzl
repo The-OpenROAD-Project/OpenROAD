@@ -17,31 +17,17 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #Root OpenRoad
     ":openroad_swig",
     ":openroad_tcl",
-    #OpenDB
-    "//src/odb:tcl",
-    "//src/odb:swig",
-    #TritonRoute
-    ":triton_route_swig",
-    ":triton_route_tcl",
     #RMP
     ":rmp_swig",
     ":rmp_tcl",
-    #dft
-    ":dft_swig",
-    ":dft_tcl",
 ]
 
 OPENROAD_LIBRARY_HDRS_INCLUDE = [
     #STA
     "src/sta/include/sta/*.hh",
-    #TritonRoute
-    "src/drt/include/triton_route/*.h",
-    "src/drt/src/db/infra/*.hpp",
     #RMP
     "src/rmp/src/*.h",
     "src/rmp/include/rmp/*.h",
-    #dft
-    "src/dft/include/dft/*.hh",
 ]
 
 # Once we properly include headers relative to project-root,
@@ -49,28 +35,11 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
 OPENROAD_LIBRARY_INCLUDES = [
     #Root OpenRoad
     "include",
-    #OpenDB
-    "src/odb/include/odb",
-    #OpenDBTCL
-    "src/odb/src/swig/common",
     #STA
     "src/sta",
     "src/sta/include/sta",
-    #TritonRoute
-    "src/drt/include/triton_route",
-    "src/drt/src",
-    "src/drt/include",
     #RMP
     "src/rmp/include",
-    #dft
-    "src/dft/include",
-    "src/dft/src/clock_domain",
-    "src/dft/src/config",
-    "src/dft/src/utils",
-    "src/dft/src/cells",
-    "src/dft/src/replace",
-    "src/dft/src/architect",
-    "src/dft/src/stitch",
 ]
 
 OPENROAD_LIBRARY_SRCS_EXCLUDE = [
@@ -82,18 +51,6 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     #Root OpenRoad
     "src/*.cc",
     "src/*.cpp",
-    #OpenRCX
-    "src/rcx/src/*.cpp",
-    "src/rcx/src/*.h",
-    #TritonRoute
-    "src/drt/src/*.cpp",
-    "src/drt/src/*.h",
-    "src/drt/src/**/*.h",
-    "src/drt/src/**/*.cpp",
-    "src/drt/src/**/*.cc",
     #RMP
     "src/rmp/src/*.cpp",
-    #dft
-    "src/dft/src/**/*.cpp",
-    "src/dft/src/**/*.hh",
 ]

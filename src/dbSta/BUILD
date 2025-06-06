@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "dbSta",
     srcs = [
         "src/SpefWriter.cc",
         "src/dbNetwork.cc",
@@ -38,9 +38,8 @@ cc_library(
 )
 
 cc_library(
-    name = "dbSta",
+    name = "ui",
     srcs = [
-        ":lib",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
@@ -61,7 +60,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":lib",
         "//:opensta_lib",
         "//:ord",
         "//src/odb",

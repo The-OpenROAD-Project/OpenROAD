@@ -32,8 +32,8 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/psm/pdnsim.h",
         "include/psm/MakePDNSim.hh",
+        "include/psm/pdnsim.h",
     ],
     includes = [
         "include",
