@@ -96,6 +96,9 @@ cc_library(
     includes = [
         "include",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     deps = [
         ":abstract-fastroute",
         ":fastroute",
@@ -142,6 +145,7 @@ cc_library(
     copts = [
         "-Isrc/grt/src",
         "-Wno-missing-braces",  # from TCL swigging
+        "-fopenmp",
     ],
     includes = [
         "include",

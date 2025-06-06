@@ -47,6 +47,9 @@ cc_library(
     includes = [
         "include",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     deps = [
         "//:opensta_lib",
         "//:ord",
