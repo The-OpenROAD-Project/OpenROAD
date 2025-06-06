@@ -271,10 +271,10 @@ set_disable_revert_if_diverge(bool disable_revert_if_diverge)
 }
 
 void
-set_load_fast_route(bool load_fast_route)
+set_enable_routing_congestion(bool enable_routing_congestion)
 {
   Replace* replace = getReplace();
-  replace->setLoadFastRoute(load_fast_route);
+  replace->setLoadFastRoute(enable_routing_congestion);
 }
 
 float

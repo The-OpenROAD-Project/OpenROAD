@@ -372,7 +372,7 @@ int Replace::doNesterovPlace(int threads, int start_iter)
              "NP->doNesterovPlace() runtime: {} seconds ",
              elapsed.count());
 
-  if (load_fast_route_) {
+  if (enable_routing_congestion_) {
     fr_->setAllowCongestion(true);
     fr_->setCongestionIterations(0);
     fr_->setCriticalNetsPercentage(0);
@@ -499,7 +499,7 @@ void Replace::setDisableRevertIfDiverge(bool mode)
 
 void Replace::setLoadFastRoute(bool mode)
 {
-  load_fast_route_ = mode;
+  enable_routing_congestion_ = mode;
 }
 
 void Replace::setSkipIoMode(bool mode)

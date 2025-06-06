@@ -180,7 +180,7 @@ class Replace
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
   bool disableRevertIfDiverge_ = false;
-  bool load_fast_route_ = false;
+  bool enable_routing_congestion_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
   Clusters clusters_;

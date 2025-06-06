@@ -35,7 +35,7 @@ sta::define_cmd_args "global_placement" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
-    [-load_fast_route]
+    [-enable_routing_congestion]
 }
 
 proc global_placement { args } {
@@ -66,7 +66,7 @@ proc global_placement { args } {
       -skip_io \
       -incremental \
       -disable_revert_if_diverge \
-      -load_fast_route}
+      -enable_routing_congestion}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -158,8 +158,8 @@ proc global_placement { args } {
       "Revert-to-snapshot on divergence detection is disabled."
   }
 
-  set load_fast_route [info exists flags(-load_fast_route)]
-  gpl::set_load_fast_route $load_fast_route
+  set enable_routing_congestion [info exists flags(-enable_routing_congestion)]
+  gpl::set_enable_routing_congestion $enable_routing_congestion
 
   if { [info exists keys(-initial_place_max_fanout)] } {
     set initial_place_max_fanout $keys(-initial_place_max_fanout)
