@@ -2080,7 +2080,10 @@ NetSeq Resizer::resizeWorstSlackNets()
     return resizeNetSlack(net1) < resizeNetSlack(net2);
   });
 
-  nets.resize(nets.size() * worst_slack_nets_percent_ / 100.0);
+  int nworst_nets = std::ceil(nets.size() * worst_slack_nets_percent_ / 100.0);
+  if (nets.size() > nworst_nets) {
+    nets.resize(nworst_nets);
+  }
   return nets;
 }
 
