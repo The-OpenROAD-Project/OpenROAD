@@ -45,9 +45,9 @@ void ConcreteSwapArithModules::init()
   db_network_ = resizer_->db_network_;
 }
 
-void ConcreteSwapArithModules::replaceArithModules(int path_count,
+void ConcreteSwapArithModules::replaceArithModules(const int path_count,
                                                    const std::string& target,
-                                                   float slack_threshold)
+                                                   const float slack_threshold)
 {
   init();
 
@@ -69,10 +69,11 @@ void ConcreteSwapArithModules::replaceArithModules(int path_count,
   doSwapInstances(arithInsts, target);
 }
 
-void ConcreteSwapArithModules::findCriticalInstances(int path_count,
-                                                     const std::string& target,
-                                                     float slack_threshold,
-                                                     set<dbModInst*>& insts)
+void ConcreteSwapArithModules::findCriticalInstances(
+    const int path_count,
+    const std::string& target,
+    const float slack_threshold,
+    set<dbModInst*>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -106,7 +107,8 @@ void ConcreteSwapArithModules::findCriticalInstances(int path_count,
           "Collecting worst path instances for endpoint {} with slack {}",
           vertex_slack.first->name(network_),
           vertex_slack.second);
-      Path* end_path = sta_->vertexWorstSlackPath(vertex_slack.first, max_);
+      const Path* end_path
+          = sta_->vertexWorstSlackPath(vertex_slack.first, max_);
       collectArithInstsOnPath(end_path, insts);
       num_endpoints++;
     }
@@ -125,7 +127,7 @@ void ConcreteSwapArithModules::findCriticalInstances(int path_count,
 }
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
-    Path* path,
+    const Path* path,
     set<dbModInst*>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
@@ -140,7 +142,7 @@ void ConcreteSwapArithModules::collectArithInstsOnPath(
         if (pin && network_->direction(pin)->isAnyOutput()) {
           debugRAPrint2(
               "Traversing output pin {} at path {}", network_->name(pin), i);
-          Instance* inst = network_->instance(pin);
+          const Instance* inst = network_->instance(pin);
           dbModInst* db_mod_inst;
           if (isArithInstance(inst, db_mod_inst)) {
             arithInsts.insert(db_mod_inst);
@@ -151,15 +153,15 @@ void ConcreteSwapArithModules::collectArithInstsOnPath(
   }
 }
 
-bool ConcreteSwapArithModules::isArithInstance(Instance* inst,
+bool ConcreteSwapArithModules::isArithInstance(const Instance* inst,
                                                dbModInst*& mod_inst)
 {
-  mod_inst = nullptr;
   if (inst == nullptr) {
     return false;
   }
+  mod_inst = nullptr;
 
-  Instance* curr_inst = inst;
+  const Instance* curr_inst = inst;
   int hier_depth = 0;
   const int MAX_HIER_DEPTH = 100;
 
@@ -170,7 +172,8 @@ bool ConcreteSwapArithModules::isArithInstance(Instance* inst,
     db_network_->staToDb(curr_inst, db_inst, curr_mod_inst);
     if (curr_mod_inst) {
       debugRAPrint2("  Instance {} has mod inst", network_->name(curr_inst));
-      if (hasArithOperatorProperty(curr_mod_inst)) {
+      if (hasArithOperatorProperty(
+              static_cast<const dbModInst*>(curr_mod_inst))) {
         mod_inst = curr_mod_inst;
         return true;
       }
@@ -191,14 +194,15 @@ bool ConcreteSwapArithModules::isArithInstance(Instance* inst,
   return false;
 }
 
-bool ConcreteSwapArithModules::hasArithOperatorProperty(dbModInst* mod_inst)
+bool ConcreteSwapArithModules::hasArithOperatorProperty(
+    const dbModInst* mod_inst)
 {
   if (!mod_inst) {
     return false;
   }
 
-  odb::dbStringProperty* prop
-      = odb::dbStringProperty::find(mod_inst, "implements_operator");
+  odb::dbStringProperty* prop = odb::dbStringProperty::find(
+      const_cast<dbModInst*>(mod_inst), "implements_operator");
   if (prop) {
     debugRAPrint2(
         "Found arith instance {} [{}]", mod_inst->getName(), prop->getValue());
