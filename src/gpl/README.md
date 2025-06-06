@@ -122,7 +122,7 @@ global_placement
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
-| `-load_fast_route` | Loads FastRoute GRT allowing for Heatmap Routing Congestion to be available after global placement. |
+| `-load_fast_route` | Flag for loading FastRoute GRT allowing for Heatmap Routing Congestion to be available after global placement. |
 
 #### Routability-Driven Arguments
 
