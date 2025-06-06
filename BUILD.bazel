@@ -159,7 +159,6 @@ cc_library(
     name = "openroad_lib_private",
     srcs = glob(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ),
     hdrs = glob(OPENROAD_LIBRARY_HDRS_INCLUDE),
@@ -176,7 +175,6 @@ cc_library(
     name = "openroad_lib",
     srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
         "src/OpenRoad.cc",
