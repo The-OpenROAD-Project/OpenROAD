@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "par",
     srcs = [
         "src/Coarsener.cpp",
         "src/Coarsener.h",
@@ -65,7 +65,7 @@ cc_library(
 )
 
 cc_library(
-    name = "par",
+    name = "ui",
     srcs = [
         "src/MakePartitionMgr.cpp",
         ":swig",
@@ -82,7 +82,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":lib",
         "//:opensta_lib",
         "//:ord",
         "//src/dbSta",
