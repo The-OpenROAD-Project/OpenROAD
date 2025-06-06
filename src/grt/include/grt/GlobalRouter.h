@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "GRoute.h"
+#include "RoutePt.h"
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -87,6 +88,12 @@ struct RegionAdjustment
   float getAdjustment() { return adjustment; }
 };
 
+struct RoutePointPins
+{
+  std::vector<Pin*> pins;
+  bool connected = false;
+};
+
 enum class NetType
 {
   Clock,
@@ -98,6 +105,7 @@ enum class NetType
 using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
+using RoutePointToPinsMap = std::map<RoutePt, RoutePointPins>;
 
 class GlobalRouter
 {
@@ -375,6 +383,10 @@ class GlobalRouter
                     const std::map<int, int>& tile_size_y_map,
                     int& tile_size_x,
                     int& tile_size_y);
+  RoutePointToPinsMap findRoutePtPins(Net* net);
+  void addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                const RoutePt& route_pt,
+                                odb::dbGuide* guide);
 
   // check functions
   void checkPinPlacement();
