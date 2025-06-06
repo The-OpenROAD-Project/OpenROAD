@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include <set>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -36,8 +36,9 @@ namespace rsz {
 class Resizer;
 
 using odb::dbModInst;
+using sta::Instance;
 using sta::Path;
-using std::unordered_set;
+using std::set;
 using utl::Logger;
 
 class SwapArithModules : public sta::dbStaState
@@ -50,17 +51,16 @@ class SwapArithModules : public sta::dbStaState
                                    const std::string& target,
                                    float slack_threshold)
       = 0;
-  virtual void collectArithInstsOnPath(Path* path,
-                                       unordered_set<dbModInst*>& arithInsts)
+  virtual void collectArithInstsOnPath(Path* path, set<dbModInst*>& arithInsts)
       = 0;
   virtual bool isArithInstance(Instance* inst, dbModInst*& mod_inst) = 0;
   virtual bool hasArithOperatorProperty(dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     unordered_set<dbModInst*>& insts)
+                                     set<dbModInst*>& insts)
       = 0;
-  virtual void doSwapInstances(const unordered_set<dbModInst*>& insts,
+  virtual void doSwapInstances(const set<dbModInst*>& insts,
                                const std::string& target)
       = 0;
 

@@ -59,7 +59,7 @@ void ConcreteSwapArithModules::replaceArithModules(int path_count,
 
   // Identify critical mod instances based on target, path_count and
   // slack_threshold
-  unordered_set<dbModInst*> arithInsts;
+  set<dbModInst*> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
     return;
@@ -69,11 +69,10 @@ void ConcreteSwapArithModules::replaceArithModules(int path_count,
   doSwapInstances(arithInsts, target);
 }
 
-void ConcreteSwapArithModules::findCriticalInstances(
-    int path_count,
-    const std::string& target,
-    float slack_threshold,
-    unordered_set<dbModInst*>& insts)
+void ConcreteSwapArithModules::findCriticalInstances(int path_count,
+                                                     const std::string& target,
+                                                     float slack_threshold,
+                                                     set<dbModInst*>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -127,7 +126,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
     Path* path,
-    unordered_set<dbModInst*>& arithInsts)
+    set<dbModInst*>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
   if (expanded.size() > 1) {
@@ -219,9 +218,8 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(dbModInst* mod_inst)
   return false;
 }
 
-void ConcreteSwapArithModules::doSwapInstances(
-    const unordered_set<dbModInst*>& insts,
-    const std::string& target)
+void ConcreteSwapArithModules::doSwapInstances(const set<dbModInst*>& insts,
+                                               const std::string& target)
 {
   int swapped_count = 0;
 

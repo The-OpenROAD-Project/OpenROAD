@@ -9,9 +9,6 @@ namespace rsz {
 
 class Resizer;
 
-using odb::dbModInst;
-using sta::Path;
-
 class ConcreteSwapArithModules : public SwapArithModules
 {
  public:
@@ -22,14 +19,14 @@ class ConcreteSwapArithModules : public SwapArithModules
                            const std::string& target,
                            float slack_threshold) override;
   void collectArithInstsOnPath(Path* path,
-                               unordered_set<dbModInst*>& arithInsts) override;
+                               set<dbModInst*>& arithInsts) override;
   bool isArithInstance(Instance* inst, dbModInst*& mod_inst) override;
   bool hasArithOperatorProperty(dbModInst* mod_inst) override;
   void findCriticalInstances(int path_count,
                              const std::string& target,
                              float slack_threshold,
-                             unordered_set<dbModInst*>& insts) override;
-  void doSwapInstances(const unordered_set<dbModInst*>& insts,
+                             set<dbModInst*>& insts) override;
+  void doSwapInstances(const set<dbModInst*>& insts,
                        const std::string& target) override;
 
  protected:

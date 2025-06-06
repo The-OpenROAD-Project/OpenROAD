@@ -571,7 +571,7 @@ report_equiv_cells
 
 ### Optimizing Arithmetic Modules
 
-The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing model.
+The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing models.
 This command analyzes critical timing paths and replaces arithmetic modules with equivalent but architecturally different implementations to
 improve Quality of Results (QoR) for the specified target.
 
