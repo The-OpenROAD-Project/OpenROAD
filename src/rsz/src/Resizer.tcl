@@ -978,13 +978,13 @@ proc report_equiv_cells { args } {
   rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells
 }
 
-sta::define_cmd_args "replace_arith_modules" {[-path_count num_paths] \
-                                      [-target opto_goal] \
-                                      [-slack_margin slack_margin]}
+sta::define_cmd_args "replace_arith_modules" { [-path_count num_critical_paths] \
+                                      [-slack_threshold float] \
+                                      [-target opto_goal] }
 
 proc replace_arith_modules { args } {
-  sta::parse_key_args "repair_arith_modules" args \
-    keys {-path_count -target -slack_margin} \
+  sta::parse_key_args "replace_arith_modules" args \
+    keys {-path_count -slack_threshold -target} \
     flags {}
 
   if { [info exists keys(-path_count)] } {
