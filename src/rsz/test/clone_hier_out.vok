@@ -304,118 +304,118 @@ module hi_fanout (clk1,
  output output99;
 
 
- BUF_X8 split332 (.A(clk_to_nand0),
-    .Z(net3376));
- BUF_X8 split295 (.A(clk_to_nand1),
-    .Z(net3669));
- BUF_X8 split256 (.A(clk_to_nand0),
-    .Z(net3018));
- BUF_X4 split255 (.A(clk_to_nand1),
-    .Z(net3494));
- BUF_X8 split150 (.A(clk_to_nand0),
-    .Z(net3675));
- BUF_X8 split148 (.A(clk_to_nand1),
-    .Z(net3664));
+ BUF_X8 split334 (.A(clk_to_nand0),
+    .Z(net3378));
+ BUF_X8 split297 (.A(clk_to_nand1),
+    .Z(net3671));
+ BUF_X8 split258 (.A(clk_to_nand0),
+    .Z(net3020));
+ BUF_X4 split257 (.A(clk_to_nand1),
+    .Z(net3496));
+ BUF_X8 split152 (.A(clk_to_nand0),
+    .Z(net3677));
+ BUF_X8 split150 (.A(clk_to_nand1),
+    .Z(net3666));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
  DFF_X2 drvr_2 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand1));
- DFF_X1 load0 (.D(net1293),
+ DFF_X1 load0 (.D(net1295),
     .CK(clk1),
     .Q(output0));
- DFF_X1 load1 (.D(net1294),
+ DFF_X1 load1 (.D(net1296),
     .CK(clk1),
     .Q(output1));
- DFF_X1 load10 (.D(net1295),
+ DFF_X1 load10 (.D(net1297),
     .CK(clk1),
     .Q(output10));
- DFF_X1 load100 (.D(net1296),
+ DFF_X1 load100 (.D(net1298),
     .CK(clk1),
     .Q(output100));
- DFF_X1 load101 (.D(net1297),
+ DFF_X1 load101 (.D(net1299),
     .CK(clk1),
     .Q(output101));
- DFF_X1 load102 (.D(net1298),
+ DFF_X1 load102 (.D(net1300),
     .CK(clk1),
     .Q(output102));
- DFF_X1 load103 (.D(net1299),
+ DFF_X1 load103 (.D(net1301),
     .CK(clk1),
     .Q(output103));
- DFF_X1 load104 (.D(net1300),
+ DFF_X1 load104 (.D(net1302),
     .CK(clk1),
     .Q(output104));
- DFF_X1 load105 (.D(net1301),
+ DFF_X1 load105 (.D(net1303),
     .CK(clk1),
     .Q(output105));
- DFF_X1 load106 (.D(net1302),
+ DFF_X1 load106 (.D(net1304),
     .CK(clk1),
     .Q(output106));
- DFF_X1 load107 (.D(net1303),
+ DFF_X1 load107 (.D(net1305),
     .CK(clk1),
     .Q(output107));
- DFF_X1 load108 (.D(net1304),
+ DFF_X1 load108 (.D(net1306),
     .CK(clk1),
     .Q(output108));
- DFF_X1 load109 (.D(net1289),
+ DFF_X1 load109 (.D(net1291),
     .CK(clk1),
     .Q(output109));
- DFF_X1 load11 (.D(net1290),
+ DFF_X1 load11 (.D(net1292),
     .CK(clk1),
     .Q(output11));
- DFF_X1 load110 (.D(net1305),
+ DFF_X1 load110 (.D(net1307),
     .CK(clk1),
     .Q(output110));
- DFF_X1 load111 (.D(net1306),
+ DFF_X1 load111 (.D(net1308),
     .CK(clk1),
     .Q(output111));
- DFF_X1 load112 (.D(net3498),
+ DFF_X1 load112 (.D(net3500),
     .CK(clk1),
     .Q(output112));
- DFF_X1 load113 (.D(net3499),
+ DFF_X1 load113 (.D(net3501),
     .CK(clk1),
     .Q(output113));
- DFF_X1 load114 (.D(net3500),
+ DFF_X1 load114 (.D(net3502),
     .CK(clk1),
     .Q(output114));
- DFF_X1 load115 (.D(net3501),
+ DFF_X1 load115 (.D(net3503),
     .CK(clk1),
     .Q(output115));
- DFF_X1 load116 (.D(net1328),
+ DFF_X1 load116 (.D(net1330),
     .CK(clk1),
     .Q(output116));
- DFF_X1 load117 (.D(net1329),
+ DFF_X1 load117 (.D(net1331),
     .CK(clk1),
     .Q(output117));
- DFF_X1 load118 (.D(net1330),
+ DFF_X1 load118 (.D(net1332),
     .CK(clk1),
     .Q(output118));
- DFF_X1 load119 (.D(net1331),
+ DFF_X1 load119 (.D(net1333),
     .CK(clk1),
     .Q(output119));
- DFF_X1 load12 (.D(net1332),
+ DFF_X1 load12 (.D(net1334),
     .CK(clk1),
     .Q(output12));
- DFF_X1 load120 (.D(net1340),
+ DFF_X1 load120 (.D(net1342),
     .CK(clk1),
     .Q(output120));
- DFF_X1 load121 (.D(net1341),
+ DFF_X1 load121 (.D(net1343),
     .CK(clk1),
     .Q(output121));
- DFF_X1 load122 (.D(net1342),
+ DFF_X1 load122 (.D(net1344),
     .CK(clk1),
     .Q(output122));
- DFF_X1 load123 (.D(net1291),
+ DFF_X1 load123 (.D(net1293),
     .CK(clk1),
     .Q(output123));
- DFF_X1 load124 (.D(net1292),
+ DFF_X1 load124 (.D(net1294),
     .CK(clk1),
     .Q(output124));
- DFF_X1 load125 (.D(net1343),
+ DFF_X1 load125 (.D(net1345),
     .CK(clk1),
     .Q(output125));
- DFF_X1 load126 (.D(net1344),
+ DFF_X1 load126 (.D(net1346),
     .CK(clk1),
     .Q(output126));
  DFF_X1 load127 (.D(net110),
@@ -433,103 +433,103 @@ module hi_fanout (clk1,
  DFF_X1 load130 (.D(net114),
     .CK(clk1),
     .Q(output130));
- DFF_X1 load131 (.D(net1685),
+ DFF_X1 load131 (.D(net1687),
     .CK(clk1),
     .Q(output131));
- DFF_X1 load132 (.D(net1686),
+ DFF_X1 load132 (.D(net1688),
     .CK(clk1),
     .Q(output132));
- DFF_X1 load133 (.D(net1687),
+ DFF_X1 load133 (.D(net1689),
     .CK(clk1),
     .Q(output133));
- DFF_X1 load134 (.D(net1688),
+ DFF_X1 load134 (.D(net1690),
     .CK(clk1),
     .Q(output134));
- DFF_X1 load135 (.D(net1689),
+ DFF_X1 load135 (.D(net1691),
     .CK(clk1),
     .Q(output135));
- DFF_X1 load136 (.D(net1690),
+ DFF_X1 load136 (.D(net1692),
     .CK(clk1),
     .Q(output136));
- DFF_X1 load137 (.D(net1691),
+ DFF_X1 load137 (.D(net1693),
     .CK(clk1),
     .Q(output137));
- DFF_X1 load138 (.D(net1692),
+ DFF_X1 load138 (.D(net1694),
     .CK(clk1),
     .Q(output138));
- DFF_X1 load139 (.D(net1693),
+ DFF_X1 load139 (.D(net1695),
     .CK(clk1),
     .Q(output139));
- DFF_X1 load14 (.D(net1701),
+ DFF_X1 load14 (.D(net1703),
     .CK(clk1),
     .Q(output14));
- DFF_X1 load140 (.D(net1702),
+ DFF_X1 load140 (.D(net1704),
     .CK(clk1),
     .Q(output140));
- DFF_X1 load141 (.D(net1703),
+ DFF_X1 load141 (.D(net1705),
     .CK(clk1),
     .Q(output141));
- DFF_X1 load142 (.D(net1704),
+ DFF_X1 load142 (.D(net1706),
     .CK(clk1),
     .Q(output142));
- DFF_X1 load143 (.D(net1705),
+ DFF_X1 load143 (.D(net1707),
     .CK(clk1),
     .Q(output143));
- DFF_X1 load144 (.D(net1681),
+ DFF_X1 load144 (.D(net1683),
     .CK(clk1),
     .Q(output144));
- DFF_X1 load145 (.D(net1682),
+ DFF_X1 load145 (.D(net1684),
     .CK(clk1),
     .Q(output145));
- DFF_X1 load146 (.D(net1683),
+ DFF_X1 load146 (.D(net1685),
     .CK(clk1),
     .Q(output146));
- DFF_X1 load147 (.D(net1959),
+ DFF_X1 load147 (.D(net1961),
     .CK(clk1),
     .Q(output147));
- DFF_X1 load148 (.D(net1960),
+ DFF_X1 load148 (.D(net1962),
     .CK(clk1),
     .Q(output148));
- DFF_X1 load149 (.D(net1667),
+ DFF_X1 load149 (.D(net1669),
     .CK(clk1),
     .Q(output149));
- DFF_X1 load15 (.D(net1668),
+ DFF_X1 load15 (.D(net1670),
     .CK(clk1),
     .Q(output15));
- DFF_X1 load16 (.D(net1961),
+ DFF_X1 load16 (.D(net1963),
     .CK(clk1),
     .Q(output16));
- DFF_X1 load17 (.D(net1962),
+ DFF_X1 load17 (.D(net1964),
     .CK(clk1),
     .Q(output17));
- DFF_X1 load18 (.D(net1963),
+ DFF_X1 load18 (.D(net1965),
     .CK(clk1),
     .Q(output18));
- DFF_X1 load19 (.D(net1964),
+ DFF_X1 load19 (.D(net1966),
     .CK(clk1),
     .Q(output19));
- DFF_X1 load2 (.D(net1965),
+ DFF_X1 load2 (.D(net1967),
     .CK(clk1),
     .Q(output2));
- DFF_X1 load20 (.D(net1966),
+ DFF_X1 load20 (.D(net1968),
     .CK(clk1),
     .Q(output20));
- DFF_X1 load21 (.D(net1967),
+ DFF_X1 load21 (.D(net1969),
     .CK(clk1),
     .Q(output21));
- DFF_X1 load22 (.D(net1975),
+ DFF_X1 load22 (.D(net1977),
     .CK(clk1),
     .Q(output22));
- DFF_X1 load23 (.D(net1976),
+ DFF_X1 load23 (.D(net1978),
     .CK(clk1),
     .Q(output23));
- DFF_X1 load24 (.D(net1977),
+ DFF_X1 load24 (.D(net1979),
     .CK(clk1),
     .Q(output24));
- DFF_X1 load25 (.D(net1978),
+ DFF_X1 load25 (.D(net1980),
     .CK(clk1),
     .Q(output25));
- DFF_X1 load26 (.D(net1979),
+ DFF_X1 load26 (.D(net1981),
     .CK(clk1),
     .Q(output26));
  DFF_X1 load27 (.D(net72),
@@ -547,100 +547,100 @@ module hi_fanout (clk1,
  DFF_X1 load30 (.D(net76),
     .CK(clk1),
     .Q(output30));
- DFF_X1 load31 (.D(net2658),
+ DFF_X1 load31 (.D(net2660),
     .CK(clk1),
     .Q(output31));
- DFF_X1 load32 (.D(net2659),
+ DFF_X1 load32 (.D(net2661),
     .CK(clk1),
     .Q(output32));
- DFF_X1 load33 (.D(net2660),
+ DFF_X1 load33 (.D(net2662),
     .CK(clk1),
     .Q(output33));
- DFF_X1 load34 (.D(net2661),
+ DFF_X1 load34 (.D(net2663),
     .CK(clk1),
     .Q(output34));
- DFF_X1 load35 (.D(net2662),
+ DFF_X1 load35 (.D(net2664),
     .CK(clk1),
     .Q(output35));
- DFF_X1 load36 (.D(net2663),
+ DFF_X1 load36 (.D(net2665),
     .CK(clk1),
     .Q(output36));
- DFF_X1 load37 (.D(net2654),
+ DFF_X1 load37 (.D(net2656),
     .CK(clk1),
     .Q(output37));
- DFF_X1 load38 (.D(net2655),
+ DFF_X1 load38 (.D(net2657),
     .CK(clk1),
     .Q(output38));
- DFF_X1 load39 (.D(net2664),
+ DFF_X1 load39 (.D(net2666),
     .CK(clk1),
     .Q(output39));
- DFF_X1 load4 (.D(net2665),
+ DFF_X1 load4 (.D(net2667),
     .CK(clk1),
     .Q(output4));
- DFF_X1 load40 (.D(net2666),
+ DFF_X1 load40 (.D(net2668),
     .CK(clk1),
     .Q(output40));
- DFF_X1 load41 (.D(net2667),
+ DFF_X1 load41 (.D(net2669),
     .CK(clk1),
     .Q(output41));
- DFF_X1 load42 (.D(net2668),
+ DFF_X1 load42 (.D(net2670),
     .CK(clk1),
     .Q(output42));
- DFF_X1 load43 (.D(net2669),
+ DFF_X1 load43 (.D(net2671),
     .CK(clk1),
     .Q(output43));
- DFF_X1 load44 (.D(net2670),
+ DFF_X1 load44 (.D(net2672),
     .CK(clk1),
     .Q(output44));
- DFF_X1 load45 (.D(net2671),
+ DFF_X1 load45 (.D(net2673),
     .CK(clk1),
     .Q(output45));
- DFF_X1 load46 (.D(net2992),
+ DFF_X1 load46 (.D(net2994),
     .CK(clk1),
     .Q(output46));
- DFF_X1 load47 (.D(net2993),
+ DFF_X1 load47 (.D(net2995),
     .CK(clk1),
     .Q(output47));
- DFF_X1 load48 (.D(net2994),
+ DFF_X1 load48 (.D(net2996),
     .CK(clk1),
     .Q(output48));
- DFF_X1 load49 (.D(net2995),
+ DFF_X1 load49 (.D(net2997),
     .CK(clk1),
     .Q(output49));
- DFF_X1 load5 (.D(net2996),
+ DFF_X1 load5 (.D(net2998),
     .CK(clk1),
     .Q(output5));
- DFF_X1 load50 (.D(net2997),
+ DFF_X1 load50 (.D(net2999),
     .CK(clk1),
     .Q(output50));
- DFF_X1 load51 (.D(net2656),
+ DFF_X1 load51 (.D(net2658),
     .CK(clk1),
     .Q(output51));
- DFF_X1 load52 (.D(net2657),
+ DFF_X1 load52 (.D(net2659),
     .CK(clk1),
     .Q(output52));
- DFF_X1 load53 (.D(net2998),
+ DFF_X1 load53 (.D(net3000),
     .CK(clk1),
     .Q(output53));
- DFF_X1 load54 (.D(net2999),
+ DFF_X1 load54 (.D(net3001),
     .CK(clk1),
     .Q(output54));
- DFF_X1 load55 (.D(net3000),
+ DFF_X1 load55 (.D(net3002),
     .CK(clk1),
     .Q(output55));
- DFF_X1 load56 (.D(net3011),
+ DFF_X1 load56 (.D(net3013),
     .CK(clk1),
     .Q(output56));
- DFF_X1 load57 (.D(net3012),
+ DFF_X1 load57 (.D(net3014),
     .CK(clk1),
     .Q(output57));
- DFF_X1 load58 (.D(net3013),
+ DFF_X1 load58 (.D(net3015),
     .CK(clk1),
     .Q(output58));
- DFF_X1 load59 (.D(net3014),
+ DFF_X1 load59 (.D(net3016),
     .CK(clk1),
     .Q(output59));
- DFF_X1 load6 (.D(net3015),
+ DFF_X1 load6 (.D(net3017),
     .CK(clk1),
     .Q(output6));
  DFF_X1 load60 (.D(net148),
@@ -658,103 +658,103 @@ module hi_fanout (clk1,
  DFF_X1 load64 (.D(net152),
     .CK(clk1),
     .Q(output64));
- DFF_X1 load65 (.D(net3324),
+ DFF_X1 load65 (.D(net3326),
     .CK(clk1),
     .Q(output65));
- DFF_X1 load66 (.D(net3325),
+ DFF_X1 load66 (.D(net3327),
     .CK(clk1),
     .Q(output66));
- DFF_X1 load67 (.D(net3326),
+ DFF_X1 load67 (.D(net3328),
     .CK(clk1),
     .Q(output67));
- DFF_X1 load68 (.D(net3327),
+ DFF_X1 load68 (.D(net3329),
     .CK(clk1),
     .Q(output68));
- DFF_X1 load69 (.D(net3328),
+ DFF_X1 load69 (.D(net3330),
     .CK(clk1),
     .Q(output69));
- DFF_X1 load7 (.D(net3329),
+ DFF_X1 load7 (.D(net3331),
     .CK(clk1),
     .Q(output7));
- DFF_X1 load70 (.D(net3330),
+ DFF_X1 load70 (.D(net3332),
     .CK(clk1),
     .Q(output70));
- DFF_X1 load71 (.D(net3331),
+ DFF_X1 load71 (.D(net3333),
     .CK(clk1),
     .Q(output71));
- DFF_X1 load72 (.D(net3332),
+ DFF_X1 load72 (.D(net3334),
     .CK(clk1),
     .Q(output72));
- DFF_X1 load73 (.D(net3029),
+ DFF_X1 load73 (.D(net3031),
     .CK(clk1),
     .Q(output73));
- DFF_X1 load74 (.D(net3030),
+ DFF_X1 load74 (.D(net3032),
     .CK(clk1),
     .Q(output74));
- DFF_X1 load75 (.D(net3031),
+ DFF_X1 load75 (.D(net3033),
     .CK(clk1),
     .Q(output75));
- DFF_X1 load76 (.D(net3032),
+ DFF_X1 load76 (.D(net3034),
     .CK(clk1),
     .Q(output76));
- DFF_X1 load77 (.D(net3033),
+ DFF_X1 load77 (.D(net3035),
     .CK(clk1),
     .Q(output77));
- DFF_X1 load78 (.D(net3034),
+ DFF_X1 load78 (.D(net3036),
     .CK(clk1),
     .Q(output78));
- DFF_X1 load79 (.D(net3035),
+ DFF_X1 load79 (.D(net3037),
     .CK(clk1),
     .Q(output79));
- DFF_X1 load8 (.D(net3036),
+ DFF_X1 load8 (.D(net3038),
     .CK(clk1),
     .Q(output8));
- DFF_X1 load80 (.D(net3037),
+ DFF_X1 load80 (.D(net3039),
     .CK(clk1),
     .Q(output80));
- DFF_X1 load81 (.D(net3038),
+ DFF_X1 load81 (.D(net3040),
     .CK(clk1),
     .Q(output81));
- DFF_X1 load82 (.D(net3366),
+ DFF_X1 load82 (.D(net3368),
     .CK(clk1),
     .Q(output82));
- DFF_X1 load83 (.D(net3367),
+ DFF_X1 load83 (.D(net3369),
     .CK(clk1),
     .Q(output83));
- DFF_X1 load84 (.D(net3368),
+ DFF_X1 load84 (.D(net3370),
     .CK(clk1),
     .Q(output84));
- DFF_X1 load85 (.D(net3369),
+ DFF_X1 load85 (.D(net3371),
     .CK(clk1),
     .Q(output85));
- DFF_X1 load86 (.D(net3370),
+ DFF_X1 load86 (.D(net3372),
     .CK(clk1),
     .Q(output86));
- DFF_X1 load87 (.D(net3371),
+ DFF_X1 load87 (.D(net3373),
     .CK(clk1),
     .Q(output87));
- DFF_X1 load88 (.D(net3372),
+ DFF_X1 load88 (.D(net3374),
     .CK(clk1),
     .Q(output88));
- DFF_X1 load89 (.D(net3373),
+ DFF_X1 load89 (.D(net3375),
     .CK(clk1),
     .Q(output89));
- DFF_X1 load9 (.D(net3374),
+ DFF_X1 load9 (.D(net3376),
     .CK(clk1),
     .Q(output9));
- DFF_X1 load90 (.D(net3462),
+ DFF_X1 load90 (.D(net3464),
     .CK(clk1),
     .Q(output90));
- DFF_X1 load91 (.D(net3463),
+ DFF_X1 load91 (.D(net3465),
     .CK(clk1),
     .Q(output91));
- DFF_X1 load92 (.D(net3464),
+ DFF_X1 load92 (.D(net3466),
     .CK(clk1),
     .Q(output92));
- DFF_X1 load93 (.D(net3465),
+ DFF_X1 load93 (.D(net3467),
     .CK(clk1),
     .Q(output93));
- DFF_X1 load94 (.D(net3466),
+ DFF_X1 load94 (.D(net3468),
     .CK(clk1),
     .Q(output94));
  DFF_X1 load95 (.D(net0),
@@ -772,16 +772,18 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net0),
     .CK(clk1),
     .Q(output99));
- submodule cloneU1 (.net3501_o(net3501),
+ submodule cloneU1 (.net3503_o(net3503),
+    .net3502_o(net3502),
+    .net3501_o(net3501),
     .net3500_o(net3500),
-    .net3499_o(net3499),
-    .net3498_o(net3498),
+    .net3468_o(net3468),
+    .net3467_o(net3467),
     .net3466_o(net3466),
     .net3465_o(net3465),
     .net3464_o(net3464),
-    .net3463_o(net3463),
-    .net3462_o(net3462),
-    .net3376_i(net3376),
+    .net3378_i(net3378),
+    .net3376_o(net3376),
+    .net3375_o(net3375),
     .net3374_o(net3374),
     .net3373_o(net3373),
     .net3372_o(net3372),
@@ -789,8 +791,8 @@ module hi_fanout (clk1,
     .net3370_o(net3370),
     .net3369_o(net3369),
     .net3368_o(net3368),
-    .net3367_o(net3367),
-    .net3366_o(net3366),
+    .net3334_o(net3334),
+    .net3333_o(net3333),
     .net3332_o(net3332),
     .net3331_o(net3331),
     .net3330_o(net3330),
@@ -798,9 +800,9 @@ module hi_fanout (clk1,
     .net3328_o(net3328),
     .net3327_o(net3327),
     .net3326_o(net3326),
-    .net3325_o(net3325),
-    .net3324_o(net3324),
-    .net3040_i(net3669),
+    .net3042_i(net3671),
+    .net3040_o(net3040),
+    .net3039_o(net3039),
     .net3038_o(net3038),
     .net3037_o(net3037),
     .net3036_o(net3036),
@@ -818,13 +820,13 @@ module hi_fanout (clk1,
     .net3024_o(net3024),
     .net3023_o(net3023),
     .net3022_o(net3022),
-    .net3021_o(net3021),
-    .net3020_o(net3020),
+    .net3017_o(net3017),
+    .net3016_o(net3016),
     .net3015_o(net3015),
     .net3014_o(net3014),
     .net3013_o(net3013),
-    .net3012_o(net3012),
-    .net3011_o(net3011),
+    .net3002_o(net3002),
+    .net3001_o(net3001),
     .net3000_o(net3000),
     .net2999_o(net2999),
     .net2998_o(net2998),
@@ -832,10 +834,10 @@ module hi_fanout (clk1,
     .net2996_o(net2996),
     .net2995_o(net2995),
     .net2994_o(net2994),
-    .net2993_o(net2993),
-    .net2992_o(net2992),
-    .net2678_i(net3018),
-    .net2673_i(net3494),
+    .net2680_i(net3020),
+    .net2675_i(net3496),
+    .net2673_o(net2673),
+    .net2672_o(net2672),
     .net2671_o(net2671),
     .net2670_o(net2670),
     .net2669_o(net2669),
@@ -852,13 +854,13 @@ module hi_fanout (clk1,
     .net2658_o(net2658),
     .net2657_o(net2657),
     .net2656_o(net2656),
-    .net2655_o(net2655),
-    .net2654_o(net2654),
+    .net1981_o(net1981),
+    .net1980_o(net1980),
     .net1979_o(net1979),
     .net1978_o(net1978),
     .net1977_o(net1977),
-    .net1976_o(net1976),
-    .net1975_o(net1975),
+    .net1969_o(net1969),
+    .net1968_o(net1968),
     .net1967_o(net1967),
     .net1966_o(net1966),
     .net1965_o(net1965),
@@ -866,15 +868,15 @@ module hi_fanout (clk1,
     .net1963_o(net1963),
     .net1962_o(net1962),
     .net1961_o(net1961),
-    .net1960_o(net1960),
-    .net1959_o(net1959),
-    .net1707_i(net3675),
+    .net1709_i(net3677),
+    .net1707_o(net1707),
+    .net1706_o(net1706),
     .net1705_o(net1705),
     .net1704_o(net1704),
     .net1703_o(net1703),
-    .net1702_o(net1702),
-    .net1701_o(net1701),
-    .net1695_i(net3664),
+    .net1697_i(net3666),
+    .net1695_o(net1695),
+    .net1694_o(net1694),
     .net1693_o(net1693),
     .net1692_o(net1692),
     .net1691_o(net1691),
@@ -882,8 +884,8 @@ module hi_fanout (clk1,
     .net1689_o(net1689),
     .net1688_o(net1688),
     .net1687_o(net1687),
-    .net1686_o(net1686),
     .net1685_o(net1685),
+    .net1684_o(net1684),
     .net1683_o(net1683),
     .net1682_o(net1682),
     .net1681_o(net1681),
@@ -901,13 +903,13 @@ module hi_fanout (clk1,
     .net1669_o(net1669),
     .net1668_o(net1668),
     .net1667_o(net1667),
-    .net1666_o(net1666),
-    .net1665_o(net1665),
+    .net1346_o(net1346),
+    .net1345_o(net1345),
     .net1344_o(net1344),
     .net1343_o(net1343),
     .net1342_o(net1342),
-    .net1341_o(net1341),
-    .net1340_o(net1340),
+    .net1334_o(net1334),
+    .net1333_o(net1333),
     .net1332_o(net1332),
     .net1331_o(net1331),
     .net1330_o(net1330),
@@ -915,8 +917,8 @@ module hi_fanout (clk1,
     .net1328_o(net1328),
     .net1327_o(net1327),
     .net1326_o(net1326),
-    .net1325_o(net1325),
-    .net1324_o(net1324),
+    .net1308_o(net1308),
+    .net1307_o(net1307),
     .net1306_o(net1306),
     .net1305_o(net1305),
     .net1304_o(net1304),
@@ -933,8 +935,6 @@ module hi_fanout (clk1,
     .net1293_o(net1293),
     .net1292_o(net1292),
     .net1291_o(net1291),
-    .net1290_o(net1290),
-    .net1289_o(net1289),
     .net152_o(net152),
     .net151_o(net151),
     .net150_o(net150),
@@ -1088,16 +1088,18 @@ module hi_fanout (clk1,
     .ip1(clk_to_nand1),
     .op0(net0));
 endmodule
-module submodule (net3501_o,
+module submodule (net3503_o,
+    net3502_o,
+    net3501_o,
     net3500_o,
-    net3499_o,
-    net3498_o,
+    net3468_o,
+    net3467_o,
     net3466_o,
     net3465_o,
     net3464_o,
-    net3463_o,
-    net3462_o,
-    net3376_i,
+    net3378_i,
+    net3376_o,
+    net3375_o,
     net3374_o,
     net3373_o,
     net3372_o,
@@ -1105,8 +1107,8 @@ module submodule (net3501_o,
     net3370_o,
     net3369_o,
     net3368_o,
-    net3367_o,
-    net3366_o,
+    net3334_o,
+    net3333_o,
     net3332_o,
     net3331_o,
     net3330_o,
@@ -1114,9 +1116,9 @@ module submodule (net3501_o,
     net3328_o,
     net3327_o,
     net3326_o,
-    net3325_o,
-    net3324_o,
-    net3040_i,
+    net3042_i,
+    net3040_o,
+    net3039_o,
     net3038_o,
     net3037_o,
     net3036_o,
@@ -1134,13 +1136,13 @@ module submodule (net3501_o,
     net3024_o,
     net3023_o,
     net3022_o,
-    net3021_o,
-    net3020_o,
+    net3017_o,
+    net3016_o,
     net3015_o,
     net3014_o,
     net3013_o,
-    net3012_o,
-    net3011_o,
+    net3002_o,
+    net3001_o,
     net3000_o,
     net2999_o,
     net2998_o,
@@ -1148,10 +1150,10 @@ module submodule (net3501_o,
     net2996_o,
     net2995_o,
     net2994_o,
-    net2993_o,
-    net2992_o,
-    net2678_i,
-    net2673_i,
+    net2680_i,
+    net2675_i,
+    net2673_o,
+    net2672_o,
     net2671_o,
     net2670_o,
     net2669_o,
@@ -1168,13 +1170,13 @@ module submodule (net3501_o,
     net2658_o,
     net2657_o,
     net2656_o,
-    net2655_o,
-    net2654_o,
+    net1981_o,
+    net1980_o,
     net1979_o,
     net1978_o,
     net1977_o,
-    net1976_o,
-    net1975_o,
+    net1969_o,
+    net1968_o,
     net1967_o,
     net1966_o,
     net1965_o,
@@ -1182,15 +1184,15 @@ module submodule (net3501_o,
     net1963_o,
     net1962_o,
     net1961_o,
-    net1960_o,
-    net1959_o,
-    net1707_i,
+    net1709_i,
+    net1707_o,
+    net1706_o,
     net1705_o,
     net1704_o,
     net1703_o,
-    net1702_o,
-    net1701_o,
-    net1695_i,
+    net1697_i,
+    net1695_o,
+    net1694_o,
     net1693_o,
     net1692_o,
     net1691_o,
@@ -1198,8 +1200,8 @@ module submodule (net3501_o,
     net1689_o,
     net1688_o,
     net1687_o,
-    net1686_o,
     net1685_o,
+    net1684_o,
     net1683_o,
     net1682_o,
     net1681_o,
@@ -1217,13 +1219,13 @@ module submodule (net3501_o,
     net1669_o,
     net1668_o,
     net1667_o,
-    net1666_o,
-    net1665_o,
+    net1346_o,
+    net1345_o,
     net1344_o,
     net1343_o,
     net1342_o,
-    net1341_o,
-    net1340_o,
+    net1334_o,
+    net1333_o,
     net1332_o,
     net1331_o,
     net1330_o,
@@ -1231,8 +1233,8 @@ module submodule (net3501_o,
     net1328_o,
     net1327_o,
     net1326_o,
-    net1325_o,
-    net1324_o,
+    net1308_o,
+    net1307_o,
     net1306_o,
     net1305_o,
     net1304_o,
@@ -1249,8 +1251,6 @@ module submodule (net3501_o,
     net1293_o,
     net1292_o,
     net1291_o,
-    net1290_o,
-    net1289_o,
     net152_o,
     net151_o,
     net150_o,
@@ -1403,16 +1403,18 @@ module submodule (net3501_o,
     ip0,
     ip1,
     op0);
+ output net3503_o;
+ output net3502_o;
  output net3501_o;
  output net3500_o;
- output net3499_o;
- output net3498_o;
+ output net3468_o;
+ output net3467_o;
  output net3466_o;
  output net3465_o;
  output net3464_o;
- output net3463_o;
- output net3462_o;
- input net3376_i;
+ input net3378_i;
+ output net3376_o;
+ output net3375_o;
  output net3374_o;
  output net3373_o;
  output net3372_o;
@@ -1420,8 +1422,8 @@ module submodule (net3501_o,
  output net3370_o;
  output net3369_o;
  output net3368_o;
- output net3367_o;
- output net3366_o;
+ output net3334_o;
+ output net3333_o;
  output net3332_o;
  output net3331_o;
  output net3330_o;
@@ -1429,9 +1431,9 @@ module submodule (net3501_o,
  output net3328_o;
  output net3327_o;
  output net3326_o;
- output net3325_o;
- output net3324_o;
- input net3040_i;
+ input net3042_i;
+ output net3040_o;
+ output net3039_o;
  output net3038_o;
  output net3037_o;
  output net3036_o;
@@ -1449,13 +1451,13 @@ module submodule (net3501_o,
  output net3024_o;
  output net3023_o;
  output net3022_o;
- output net3021_o;
- output net3020_o;
+ output net3017_o;
+ output net3016_o;
  output net3015_o;
  output net3014_o;
  output net3013_o;
- output net3012_o;
- output net3011_o;
+ output net3002_o;
+ output net3001_o;
  output net3000_o;
  output net2999_o;
  output net2998_o;
@@ -1463,10 +1465,10 @@ module submodule (net3501_o,
  output net2996_o;
  output net2995_o;
  output net2994_o;
- output net2993_o;
- output net2992_o;
- input net2678_i;
- input net2673_i;
+ input net2680_i;
+ input net2675_i;
+ output net2673_o;
+ output net2672_o;
  output net2671_o;
  output net2670_o;
  output net2669_o;
@@ -1483,13 +1485,13 @@ module submodule (net3501_o,
  output net2658_o;
  output net2657_o;
  output net2656_o;
- output net2655_o;
- output net2654_o;
+ output net1981_o;
+ output net1980_o;
  output net1979_o;
  output net1978_o;
  output net1977_o;
- output net1976_o;
- output net1975_o;
+ output net1969_o;
+ output net1968_o;
  output net1967_o;
  output net1966_o;
  output net1965_o;
@@ -1497,15 +1499,15 @@ module submodule (net3501_o,
  output net1963_o;
  output net1962_o;
  output net1961_o;
- output net1960_o;
- output net1959_o;
- input net1707_i;
+ input net1709_i;
+ output net1707_o;
+ output net1706_o;
  output net1705_o;
  output net1704_o;
  output net1703_o;
- output net1702_o;
- output net1701_o;
- input net1695_i;
+ input net1697_i;
+ output net1695_o;
+ output net1694_o;
  output net1693_o;
  output net1692_o;
  output net1691_o;
@@ -1513,8 +1515,8 @@ module submodule (net3501_o,
  output net1689_o;
  output net1688_o;
  output net1687_o;
- output net1686_o;
  output net1685_o;
+ output net1684_o;
  output net1683_o;
  output net1682_o;
  output net1681_o;
@@ -1532,13 +1534,13 @@ module submodule (net3501_o,
  output net1669_o;
  output net1668_o;
  output net1667_o;
- output net1666_o;
- output net1665_o;
+ output net1346_o;
+ output net1345_o;
  output net1344_o;
  output net1343_o;
  output net1342_o;
- output net1341_o;
- output net1340_o;
+ output net1334_o;
+ output net1333_o;
  output net1332_o;
  output net1331_o;
  output net1330_o;
@@ -1546,8 +1548,8 @@ module submodule (net3501_o,
  output net1328_o;
  output net1327_o;
  output net1326_o;
- output net1325_o;
- output net1324_o;
+ output net1308_o;
+ output net1307_o;
  output net1306_o;
  output net1305_o;
  output net1304_o;
@@ -1564,8 +1566,6 @@ module submodule (net3501_o,
  output net1293_o;
  output net1292_o;
  output net1291_o;
- output net1290_o;
- output net1289_o;
  output net152_o;
  output net151_o;
  output net150_o;
@@ -1720,173 +1720,173 @@ module submodule (net3501_o,
  output op0;
 
 
- NAND2_X2 clone349 (.A1(net1707_i),
-    .A2(net1695_i),
-    .ZN(net3498_o));
- NAND2_X2 clone348 (.A1(ip1),
-    .A2(net3376_i),
-    .ZN(net3462_o));
- NAND2_X2 clone331 (.A1(ip1),
-    .A2(net3376_i),
-    .ZN(net3366_o));
- NAND2_X2 clone326 (.A1(net3040_i),
-    .A2(net3376_i),
-    .ZN(net3324_o));
- NAND2_X4 clone294 (.A1(net3040_i),
-    .A2(net3376_i),
-    .ZN(net3020_o));
- NAND2_X2 clone293 (.A1(net3040_i),
-    .A2(net2678_i),
-    .ZN(net3011_o));
- NAND2_X4 clone291 (.A1(net3040_i),
-    .A2(net2678_i),
-    .ZN(net2992_o));
- NAND2_X2 clone254 (.A1(ip1),
+ NAND2_X2 clone351 (.A1(net1709_i),
+    .A2(net1697_i),
+    .ZN(net3500_o));
+ NAND2_X2 clone350 (.A1(ip1),
+    .A2(net3378_i),
+    .ZN(net3464_o));
+ NAND2_X2 clone333 (.A1(ip1),
+    .A2(net3378_i),
+    .ZN(net3368_o));
+ NAND2_X2 clone328 (.A1(net3042_i),
+    .A2(net3378_i),
+    .ZN(net3326_o));
+ NAND2_X4 clone296 (.A1(net3042_i),
+    .A2(net3378_i),
+    .ZN(net3022_o));
+ NAND2_X2 clone295 (.A1(net3042_i),
+    .A2(net2680_i),
+    .ZN(net3013_o));
+ NAND2_X4 clone293 (.A1(net3042_i),
+    .A2(net2680_i),
+    .ZN(net2994_o));
+ NAND2_X2 clone256 (.A1(ip1),
     .A2(ip0),
-    .ZN(net2654_o));
- NAND2_X2 clone183 (.A1(net2678_i),
-    .A2(net2673_i),
-    .ZN(net1975_o));
- NAND2_X2 clone181 (.A1(ip0),
-    .A2(net2673_i),
-    .ZN(net1959_o));
- NAND2_X4 clone149 (.A1(net1707_i),
-    .A2(net1695_i),
-    .ZN(net1701_o));
- NAND2_X2 clone147 (.A1(net2678_i),
-    .A2(net2673_i),
-    .ZN(net1685_o));
- NAND2_X4 clone146 (.A1(net1707_i),
-    .A2(net1695_i),
-    .ZN(net1665_o));
- NAND2_X2 clone110 (.A1(net1707_i),
-    .A2(net1695_i),
-    .ZN(net1340_o));
- NAND2_X4 clone108 (.A1(net1707_i),
-    .A2(net1695_i),
-    .ZN(net1324_o));
- NAND2_X2 clone105 (.A1(ip0),
+    .ZN(net2656_o));
+ NAND2_X2 clone185 (.A1(net2680_i),
+    .A2(net2675_i),
+    .ZN(net1977_o));
+ NAND2_X2 clone183 (.A1(ip0),
+    .A2(net2675_i),
+    .ZN(net1961_o));
+ NAND2_X4 clone151 (.A1(net1709_i),
+    .A2(net1697_i),
+    .ZN(net1703_o));
+ NAND2_X2 clone149 (.A1(net2680_i),
+    .A2(net2675_i),
+    .ZN(net1687_o));
+ NAND2_X4 clone148 (.A1(net1709_i),
+    .A2(net1697_i),
+    .ZN(net1667_o));
+ NAND2_X2 clone112 (.A1(net1709_i),
+    .A2(net1697_i),
+    .ZN(net1342_o));
+ NAND2_X4 clone110 (.A1(net1709_i),
+    .A2(net1697_i),
+    .ZN(net1326_o));
+ NAND2_X2 clone107 (.A1(ip0),
     .A2(ip1),
-    .ZN(net1289_o));
- NAND2_X4 clone3 (.A1(net3040_i),
-    .A2(net2678_i),
+    .ZN(net1291_o));
+ NAND2_X4 clone3 (.A1(net3042_i),
+    .A2(net2680_i),
     .ZN(net116_o));
- NAND2_X4 clone2 (.A1(net1707_i),
-    .A2(net1695_i),
+ NAND2_X4 clone2 (.A1(net1709_i),
+    .A2(net1697_i),
     .ZN(net78_o));
- NAND2_X4 clone1 (.A1(net2678_i),
-    .A2(net2673_i),
+ NAND2_X4 clone1 (.A1(net2680_i),
+    .A2(net2675_i),
     .ZN(net2_o));
  NAND2_X4 nand_inst_0 (.A1(ip1),
-    .A2(net3376_i),
+    .A2(net3378_i),
     .ZN(op0));
- assign net3501_o = net3498_o;
- assign net3500_o = net3498_o;
- assign net3499_o = net3498_o;
- assign net3466_o = net3462_o;
- assign net3465_o = net3462_o;
- assign net3464_o = net3462_o;
- assign net3463_o = net3462_o;
- assign net3332_o = net3324_o;
- assign net3331_o = net3324_o;
- assign net3330_o = net3324_o;
- assign net3329_o = net3324_o;
- assign net3328_o = net3324_o;
- assign net3327_o = net3324_o;
- assign net3326_o = net3324_o;
- assign net3325_o = net3324_o;
- assign net3015_o = net3011_o;
- assign net3014_o = net3011_o;
- assign net3013_o = net3011_o;
- assign net3012_o = net3011_o;
- assign net2671_o = net2654_o;
- assign net2670_o = net2654_o;
- assign net2669_o = net2654_o;
- assign net2668_o = net2654_o;
- assign net2667_o = net2654_o;
- assign net2666_o = net2654_o;
- assign net2665_o = net2654_o;
- assign net2664_o = net2654_o;
- assign net2663_o = net2654_o;
- assign net2662_o = net2654_o;
- assign net2661_o = net2654_o;
- assign net2660_o = net2654_o;
- assign net2659_o = net2654_o;
- assign net2658_o = net2654_o;
- assign net2657_o = net2654_o;
- assign net2656_o = net2654_o;
- assign net2655_o = net2654_o;
- assign net1979_o = net1975_o;
- assign net1978_o = net1975_o;
- assign net1977_o = net1975_o;
- assign net1976_o = net1975_o;
- assign net1967_o = net1959_o;
- assign net1966_o = net1959_o;
- assign net1965_o = net1959_o;
- assign net1964_o = net1959_o;
- assign net1963_o = net1959_o;
- assign net1962_o = net1959_o;
- assign net1961_o = net1959_o;
- assign net1960_o = net1959_o;
- assign net1705_o = net1701_o;
- assign net1704_o = net1701_o;
- assign net1703_o = net1701_o;
- assign net1702_o = net1701_o;
- assign net1693_o = net1685_o;
- assign net1692_o = net1685_o;
- assign net1691_o = net1685_o;
- assign net1690_o = net1685_o;
- assign net1689_o = net1685_o;
- assign net1688_o = net1685_o;
- assign net1687_o = net1685_o;
- assign net1686_o = net1685_o;
- assign net1683_o = net1665_o;
- assign net1682_o = net1665_o;
- assign net1681_o = net1665_o;
- assign net1680_o = net1665_o;
- assign net1679_o = net1665_o;
- assign net1678_o = net1665_o;
- assign net1677_o = net1665_o;
- assign net1676_o = net1665_o;
- assign net1675_o = net1665_o;
- assign net1674_o = net1665_o;
- assign net1673_o = net1665_o;
- assign net1672_o = net1665_o;
- assign net1671_o = net1665_o;
- assign net1670_o = net1665_o;
- assign net1669_o = net1665_o;
- assign net1668_o = net1665_o;
- assign net1667_o = net1665_o;
- assign net1666_o = net1665_o;
- assign net1344_o = net1340_o;
- assign net1343_o = net1340_o;
- assign net1342_o = net1340_o;
- assign net1341_o = net1340_o;
- assign net1332_o = net1324_o;
- assign net1331_o = net1324_o;
- assign net1330_o = net1324_o;
- assign net1329_o = net1324_o;
- assign net1328_o = net1324_o;
- assign net1327_o = net1324_o;
- assign net1326_o = net1324_o;
- assign net1325_o = net1324_o;
- assign net1306_o = net1289_o;
- assign net1305_o = net1289_o;
- assign net1304_o = net1289_o;
- assign net1303_o = net1289_o;
- assign net1302_o = net1289_o;
- assign net1301_o = net1289_o;
- assign net1300_o = net1289_o;
- assign net1299_o = net1289_o;
- assign net1298_o = net1289_o;
- assign net1297_o = net1289_o;
- assign net1296_o = net1289_o;
- assign net1295_o = net1289_o;
- assign net1294_o = net1289_o;
- assign net1293_o = net1289_o;
- assign net1292_o = net1289_o;
- assign net1291_o = net1289_o;
- assign net1290_o = net1289_o;
+ assign net3503_o = net3500_o;
+ assign net3502_o = net3500_o;
+ assign net3501_o = net3500_o;
+ assign net3468_o = net3464_o;
+ assign net3467_o = net3464_o;
+ assign net3466_o = net3464_o;
+ assign net3465_o = net3464_o;
+ assign net3334_o = net3326_o;
+ assign net3333_o = net3326_o;
+ assign net3332_o = net3326_o;
+ assign net3331_o = net3326_o;
+ assign net3330_o = net3326_o;
+ assign net3329_o = net3326_o;
+ assign net3328_o = net3326_o;
+ assign net3327_o = net3326_o;
+ assign net3017_o = net3013_o;
+ assign net3016_o = net3013_o;
+ assign net3015_o = net3013_o;
+ assign net3014_o = net3013_o;
+ assign net2673_o = net2656_o;
+ assign net2672_o = net2656_o;
+ assign net2671_o = net2656_o;
+ assign net2670_o = net2656_o;
+ assign net2669_o = net2656_o;
+ assign net2668_o = net2656_o;
+ assign net2667_o = net2656_o;
+ assign net2666_o = net2656_o;
+ assign net2665_o = net2656_o;
+ assign net2664_o = net2656_o;
+ assign net2663_o = net2656_o;
+ assign net2662_o = net2656_o;
+ assign net2661_o = net2656_o;
+ assign net2660_o = net2656_o;
+ assign net2659_o = net2656_o;
+ assign net2658_o = net2656_o;
+ assign net2657_o = net2656_o;
+ assign net1981_o = net1977_o;
+ assign net1980_o = net1977_o;
+ assign net1979_o = net1977_o;
+ assign net1978_o = net1977_o;
+ assign net1969_o = net1961_o;
+ assign net1968_o = net1961_o;
+ assign net1967_o = net1961_o;
+ assign net1966_o = net1961_o;
+ assign net1965_o = net1961_o;
+ assign net1964_o = net1961_o;
+ assign net1963_o = net1961_o;
+ assign net1962_o = net1961_o;
+ assign net1707_o = net1703_o;
+ assign net1706_o = net1703_o;
+ assign net1705_o = net1703_o;
+ assign net1704_o = net1703_o;
+ assign net1695_o = net1687_o;
+ assign net1694_o = net1687_o;
+ assign net1693_o = net1687_o;
+ assign net1692_o = net1687_o;
+ assign net1691_o = net1687_o;
+ assign net1690_o = net1687_o;
+ assign net1689_o = net1687_o;
+ assign net1688_o = net1687_o;
+ assign net1685_o = net1667_o;
+ assign net1684_o = net1667_o;
+ assign net1683_o = net1667_o;
+ assign net1682_o = net1667_o;
+ assign net1681_o = net1667_o;
+ assign net1680_o = net1667_o;
+ assign net1679_o = net1667_o;
+ assign net1678_o = net1667_o;
+ assign net1677_o = net1667_o;
+ assign net1676_o = net1667_o;
+ assign net1675_o = net1667_o;
+ assign net1674_o = net1667_o;
+ assign net1673_o = net1667_o;
+ assign net1672_o = net1667_o;
+ assign net1671_o = net1667_o;
+ assign net1670_o = net1667_o;
+ assign net1669_o = net1667_o;
+ assign net1668_o = net1667_o;
+ assign net1346_o = net1342_o;
+ assign net1345_o = net1342_o;
+ assign net1344_o = net1342_o;
+ assign net1343_o = net1342_o;
+ assign net1334_o = net1326_o;
+ assign net1333_o = net1326_o;
+ assign net1332_o = net1326_o;
+ assign net1331_o = net1326_o;
+ assign net1330_o = net1326_o;
+ assign net1329_o = net1326_o;
+ assign net1328_o = net1326_o;
+ assign net1327_o = net1326_o;
+ assign net1308_o = net1291_o;
+ assign net1307_o = net1291_o;
+ assign net1306_o = net1291_o;
+ assign net1305_o = net1291_o;
+ assign net1304_o = net1291_o;
+ assign net1303_o = net1291_o;
+ assign net1302_o = net1291_o;
+ assign net1301_o = net1291_o;
+ assign net1300_o = net1291_o;
+ assign net1299_o = net1291_o;
+ assign net1298_o = net1291_o;
+ assign net1297_o = net1291_o;
+ assign net1296_o = net1291_o;
+ assign net1295_o = net1291_o;
+ assign net1294_o = net1291_o;
+ assign net1293_o = net1291_o;
+ assign net1292_o = net1291_o;
  assign net152_o = net116_o;
  assign net151_o = net116_o;
  assign net150_o = net116_o;

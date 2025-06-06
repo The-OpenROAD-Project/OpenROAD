@@ -670,11 +670,13 @@ find_resize_slacks()
   resizer->findResizeSlacks(true);
 }
 
-NetSeq *
+TmpNetSeq *
 resize_worst_slack_nets()
 {
   Resizer *resizer = getResizer();
-  return &resizer->resizeWorstSlackNets();
+  TmpNetSeq *seq = new TmpNetSeq;
+  *seq = resizer->resizeWorstSlackNets();
+  return seq;
 }
 
 float
@@ -820,6 +822,15 @@ void set_debug_cmd(const char* net_name,
   graphics->setNet(net);
   graphics->stopOnSubdivideStep(subdivide_step);
   resizer->setDebugGraphics(std::move(graphics));
+}
+
+// Test stub
+void
+fully_rebuffer(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->fullyRebuffer(pin);
 }
 
 } // namespace

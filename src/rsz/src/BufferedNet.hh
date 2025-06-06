@@ -141,6 +141,44 @@ class BufferedNet
 
   static constexpr int null_layer = -1;
 
+  struct Metrics
+  {
+    int max_load_wl;
+    Delay slack;
+    float cap;
+    float max_load_slew;
+    float fanout;
+
+    Metrics withMaxLoadWl(int max_load_wl)
+    {
+      Metrics ret = *this;
+      ret.max_load_wl = max_load_wl;
+      return ret;
+    }
+
+    Metrics withSlack(Delay slack)
+    {
+      Metrics ret = *this;
+      ret.slack = slack;
+      return ret;
+    }
+
+    Metrics withCap(float cap)
+    {
+      Metrics ret = *this;
+      ret.cap = cap;
+      return ret;
+    }
+  };
+
+  Metrics metrics() const
+  {
+    return Metrics{
+        maxLoadWireLength(), slack(), cap(), maxLoadSlew(), fanout()};
+  }
+
+  bool fitsEnvelope(Metrics target);
+
  private:
   BufferedNetType type_;
   Point location_;

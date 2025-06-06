@@ -20,6 +20,7 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
+#include "Rebuffer.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
@@ -124,6 +125,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      rebuffer_(new Rebuffer(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -656,7 +658,7 @@ void Resizer::findFastBuffers()
                && bufferSizeOutmatched(fast_buffers.back(), size, R_max)) {
           debugPrint(logger_,
                      RSZ,
-                     "gain_buffering",
+                     "resizer",
                      2,
                      "{} trumps {}",
                      size->name(),
@@ -667,7 +669,7 @@ void Resizer::findFastBuffers()
       } else {
         debugPrint(logger_,
                    RSZ,
-                   "gain_buffering",
+                   "resizer",
                    2,
                    "{} trumps {}",
                    fast_buffers.back()->name(),
@@ -676,9 +678,9 @@ void Resizer::findFastBuffers()
     }
   }
 
-  debugPrint(logger_, RSZ, "gain_buffering", 1, "pre-selected buffers:");
+  debugPrint(logger_, RSZ, "resizer", 1, "pre-selected buffers:");
   for (auto size : fast_buffers) {
-    debugPrint(logger_, RSZ, "gain_buffering", 1, " - {}", size->name());
+    debugPrint(logger_, RSZ, "resizer", 1, " - {}", size->name());
   }
 
   buffer_fast_sizes_ = {fast_buffers.begin(), fast_buffers.end()};
@@ -2039,6 +2041,8 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           fanout_violations,
                                           length_violations,
                                           repaired_net_count);
+  fullyRebuffer(nullptr);
+  ensureLevelDrvrVertices();
 
   findResizeSlacks1();
   if (run_journal_restore)
@@ -2050,7 +2054,6 @@ void Resizer::findResizeSlacks1()
   // Use driver pin slacks rather than Sta::netSlack to save visiting
   // the net pins and min'ing the slack.
   net_slack_map_.clear();
-  NetSeq nets;
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
@@ -2062,32 +2065,24 @@ void Resizer::findResizeSlacks1()
         // Hands off special nets.
         && !db_network_->isSpecial(net) && !sta_->isClock(drvr_pin)) {
       net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
-      nets.emplace_back(net);
     }
   }
+}
 
+NetSeq Resizer::resizeWorstSlackNets()
+{
   // Find the nets with the worst slack.
-
-  //  sort(nets.begin(), nets.end(). [&](const Net *net1,
+  NetSeq nets;
+  for (auto pair : net_slack_map_) {
+    nets.push_back(pair.first);
+  }
   sort(nets, [this](const Net* net1, const Net* net2) {
     return resizeNetSlack(net1) < resizeNetSlack(net2);
   });
-  worst_slack_nets_.clear();
-  for (int i = 0; i < nets.size() * worst_slack_nets_percent_ / 100.0; i++) {
-    worst_slack_nets_.emplace_back(nets[i]);
-  }
-}
 
-NetSeq& Resizer::resizeWorstSlackNets()
-{
-  return worst_slack_nets_;
-}
-
-vector<dbNet*> Resizer::resizeWorstSlackDbNets()
-{
-  vector<dbNet*> nets;
-  for (const Net* net : worst_slack_nets_) {
-    nets.emplace_back(db_network_->staToDb(net));
+  int nworst_nets = std::ceil(nets.size() * worst_slack_nets_percent_ / 100.0);
+  if (nets.size() > nworst_nets) {
+    nets.resize(nworst_nets);
   }
   return nets;
 }
@@ -4107,9 +4102,18 @@ float Resizer::maxInputSlew(const LibertyPort* input,
   float limit;
   bool exists;
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
-  // umich brain damage control
   if (!exists || limit == 0.0) {
-    limit = INF;
+    // Fixup for nangate45: This library doesn't specify any max transition on
+    // input pins which indirectly causes issues for the resizer when repairing
+    // driver pin transitions.
+    //
+    // To address, if there's no max tran on the port directly, use the library
+    // default (the default only applies to output pins per the Liberty spec,
+    // as a workaround we apply it to input pins too).
+    input->libertyLibrary()->defaultMaxSlew(limit, exists);
+    if (!exists) {
+      limit = INF;
+    }
   }
   return limit;
 }
@@ -4134,6 +4138,29 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
       float limit1, slack1;
       sta_->checkSlew(
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
+      if (!corner1) {
+        // Fixup for nangate45: see comment in maxInputSlew
+        if (!corner1) {
+          LibertyPort* port = network_->libertyPort(pin);
+          if (port) {
+            bool exists;
+            port->libertyLibrary()->defaultMaxSlew(limit1, exists);
+            if (exists) {
+              slew1 = 0.0;
+              corner1 = tgt_slew_corner_;
+              for (const RiseFall* rf : RiseFall::range()) {
+                const DcalcAnalysisPt* dcalc_ap
+                    = corner1->findDcalcAnalysisPt(max_);
+                const Vertex* vertex = graph_->pinLoadVertex(pin);
+                Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
+                if (slew2 > slew1) {
+                  slew1 = slew2;
+                }
+              }
+            }
+          }
+        }
+      }
       if (corner1) {
         limit1 *= (1.0 - slew_margin / 100.0);
         limit = min(limit, limit1);
@@ -4314,6 +4341,12 @@ void Resizer::copyDontUseFromLiberty()
       }
     }
   }
+}
+
+void Resizer::fullyRebuffer(Pin* user_pin)
+{
+  resizePreamble();
+  rebuffer_->fullyRebuffer(user_pin);
 }
 
 void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)

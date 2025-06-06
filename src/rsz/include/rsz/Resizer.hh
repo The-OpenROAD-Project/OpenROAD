@@ -109,6 +109,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class Rebuffer;
 class ResizerObserver;
 
 class CloneMove;
@@ -393,11 +394,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void resizeSlackPreamble();
   void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
-  NetSeq& resizeWorstSlackNets();
+  NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
   std::optional<Slack> resizeNetSlack(const Net* net);
-  // db flavor
-  std::vector<dbNet*> resizeWorstSlackDbNets();
   std::optional<Slack> resizeNetSlack(const dbNet* db_net);
 
   ////////////////////////////////////////////////////////////////
@@ -433,6 +432,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
+  void fullyRebuffer(Pin* pin);
 
  protected:
   void init();
@@ -638,11 +638,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBufferIfPossible(Instance* buffer,
-                              bool honorDontTouchFixed = true,
-                              bool recordJournal = false);
-  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed = true);
-  void removeBuffer(Instance* buffer, bool recordJournal = false);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
@@ -658,10 +653,16 @@ class Resizer : public dbStaState, public dbNetworkObserver
                               float load_cap,
                               bool revisiting_inst);
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
+  SteinerTree* makeSteinerTree(Point drvr_location,
+                               const std::vector<Point>& sink_locations);
   SteinerTree* makeSteinerTree(const Pin* drvr_pin);
   BufferedNetPtr makeBufferedNet(const Pin* drvr_pin, const Corner* corner);
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
                                         const Corner* corner);
+  BufferedNetPtr makeBufferedNetSteinerOverBnets(
+      Point root,
+      const std::vector<BufferedNetPtr>& sinks,
+      const Corner* corner);
   BufferedNetPtr makeBufferedNetGroute(const Pin* drvr_pin,
                                        const Corner* corner);
   float bufferSlew(LibertyCell* buffer_cell,
@@ -699,6 +700,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  Rebuffer* rebuffer_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -767,7 +769,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   float max_wire_length_ = 0;
   float worst_slack_nets_percent_ = 10;
   Map<const Net*, Slack> net_slack_map_;
-  NetSeq worst_slack_nets_;
 
   std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
@@ -836,6 +837,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class SwapPinsMove;
   friend class UnbufferMove;
   friend class IncrementalParasiticsGuard;
+  friend class Rebuffer;
+  friend class OdbCallBack;
 };
 
 class IncrementalParasiticsGuard

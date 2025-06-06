@@ -31,9 +31,9 @@ class UnbufferMove : public BaseMove
   const char* name() override { return "UnbufferMove"; }
 
   bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
+  void removeBuffer(Instance* buffer);
 
  private:
-  void removeBuffer(Instance* buffer);
   bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
   bool bufferBetweenPorts(Instance* buffer);
 
