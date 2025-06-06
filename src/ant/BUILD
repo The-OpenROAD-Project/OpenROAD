@@ -30,6 +30,9 @@ cc_library(
     includes = [
         "include",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     deps = [
         ":types",
         "//src/odb",
