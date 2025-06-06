@@ -105,6 +105,7 @@ class Replace
   void setRoutabilityInflationRatioCoef(float coef);
   void setRoutabilityMaxInflationRatio(float ratio);
   void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
+  void setLoadFastRoute(bool mode);
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
@@ -162,14 +163,13 @@ class Replace
   float routabilityTargetRcMetric_ = 1.01;
   float routabilityInflationRatioCoef_ = 3;
   float routabilityMaxInflationRatio_ = 6;
+  int routabilityMaxInflationIter_ = 4;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
   float routabilityRcK2_ = 1.0;
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
-
-  int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 5;
   float keepResizeBelowOverflow_ = 0.3;
@@ -180,6 +180,7 @@ class Replace
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
   bool disableRevertIfDiverge_ = false;
+  bool load_fast_route_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
   Clusters clusters_;

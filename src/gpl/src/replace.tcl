@@ -35,6 +35,7 @@ sta::define_cmd_args "global_placement" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
+    [-load_fast_route]
 }
 
 proc global_placement { args } {
@@ -63,8 +64,9 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental\
-      -disable_revert_if_diverge}
+      -incremental \
+      -disable_revert_if_diverge \
+      -load_fast_route}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -155,6 +157,9 @@ proc global_placement { args } {
     utl::info "GPL" 153 \
       "Revert-to-snapshot on divergence detection is disabled."
   }
+
+  set load_fast_route [info exists flags(-load_fast_route)]
+  gpl::set_load_fast_route $load_fast_route
 
   if { [info exists keys(-initial_place_max_fanout)] } {
     set initial_place_max_fanout $keys(-initial_place_max_fanout)

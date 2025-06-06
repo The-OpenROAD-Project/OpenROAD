@@ -155,6 +155,7 @@ class RouteBase
   // Functions using fastroute on grt are saved as backup.
   void updateGrtRoute();
   void getGrtResult();
+  void loadGrt();
   float getGrtRC() const;
 
   void updateRudyRoute();
