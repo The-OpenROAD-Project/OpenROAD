@@ -48,8 +48,8 @@ SteinerTree* Resizer::makeSteinerTree(Point drvr_location,
   });
   int pin_count = pinlocs.size();
   if (pin_count >= 1) {
-    std::vector<int> x,
-        y;  // Two separate vectors of coordinates needed by flute.
+    // Two separate vectors of coordinates needed by flute.
+    std::vector<int> x, y;
     int drvr_idx = pinlocs.size();
     pinlocs.push_back(PinLoc{nullptr, drvr_location});
     for (int i = 0; i < pin_count + 1; i++) {

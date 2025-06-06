@@ -174,7 +174,7 @@ BnetPtr Rebuffer::resteiner(const BnetPtr& tree)
             return 1;
           }
           default:
-            abort();
+            logger_->critical(RSZ, 1006, "unhandled BufferedNet type");
         }
       },
       tree);
@@ -1555,7 +1555,7 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
       tree);
 }
 
-static Delay criticalPathDelay(const BnetPtr& root)
+static Delay criticalPathDelay(Logger* logger, const BnetPtr& root)
 {
   Delay worst_load_slack = INF;
   visitTree(
@@ -1572,14 +1572,14 @@ static Delay criticalPathDelay(const BnetPtr& root)
             }
             return 1;
           default:
-            abort();
+            logger->critical(RSZ, 1007, "unhandled BufferedNet type");
         }
       },
       root);
   return worst_load_slack - root->slack();
 }
 
-static Delay maxLoadSlack(const BnetPtr& root)
+static Delay maxLoadSlack(Logger* logger, const BnetPtr& root)
 {
   Delay best_load_slack = -INF;
   visitTree(
@@ -1594,7 +1594,7 @@ static Delay maxLoadSlack(const BnetPtr& root)
             best_load_slack = std::max(best_load_slack, node->slack());
             return 1;
           default:
-            abort();
+            logger->critical(RSZ, 1008, "unhandled BufferedNet type");
         }
       },
       root);
@@ -2074,15 +2074,15 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     //    computation of wire load, we are using pin position for the existing
     //    buffer, but instance position for the new buffer.)
     //
-    Delay relaxation
-        = std::max(0.0f,
-                   (slackAtDriverPin(timing_tree)
-                    - std::min(original_tree_slack_error, 0.0f)))
-              / 4.0f
-          + (std::max(drvr_gate_delay, 0.0f) + criticalPathDelay(timing_tree))
-                * relaxation_factor_;
+    Delay relaxation = std::max(0.0f,
+                                (slackAtDriverPin(timing_tree)
+                                 - std::min(original_tree_slack_error, 0.0f)))
+                           / 4.0f
+                       + (std::max(drvr_gate_delay, 0.0f)
+                          + criticalPathDelay(logger_, timing_tree))
+                             * relaxation_factor_;
 
-    ref_slack_ = maxLoadSlack(timing_tree);
+    ref_slack_ = maxLoadSlack(logger_, timing_tree);
     Delay target = slackAtDriverPin(timing_tree) - relaxation;
     BnetPtr area_opt_tree = timing_tree;
 

@@ -793,6 +793,7 @@ void set_debug_cmd(const char* net_name,
   resizer->setDebugGraphics(std::move(graphics));
 }
 
+// Test stub
 void
 fully_rebuffer(Pin *pin)
 {
