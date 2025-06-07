@@ -5,6 +5,34 @@
 [INFO ODB-0131]     Created 3 components and 16 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
+   Layer   | Unit Resistance | Unit Capacitance 
+           |       (kohm/um) |          (fF/um)
+------------------------------------------------
+    metal1 |        5.43e-03 |         8.49e-02
+    metal2 |        3.57e-03 |         8.08e-02
+    metal3 |        3.57e-03 |         7.52e-02
+    metal4 |        1.50e-03 |         9.66e-02
+    metal5 |        1.50e-03 |         8.39e-02
+    metal6 |        1.50e-03 |         7.30e-02
+    metal7 |        1.88e-04 |         1.11e-01
+    metal8 |        1.88e-04 |         8.53e-02
+    metal9 |        3.78e-05 |         9.06e-02
+   metal10 |        3.78e-05 |         6.64e-02
+------------------------------------------------
+
+   Layer   | Via Resistance 
+           |         (kohm) 
+----------------------------
+      via1 |       5.00e-03 
+      via2 |       5.00e-03 
+      via3 |       5.00e-03 
+      via4 |       3.00e-03 
+      via5 |       3.00e-03 
+      via6 |       3.00e-03 
+      via7 |       1.00e-03 
+      via8 |       1.00e-03 
+      via9 |       5.00e-04 
+----------------------------
 Net in1
  Pin capacitance: 2.20
  Wire capacitance: 0.00
