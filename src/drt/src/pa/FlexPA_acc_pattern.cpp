@@ -438,12 +438,12 @@ int FlexPA::getEdgeCost(
     const auto target_obj = inst_term_1->getInst();
     const int pin_access_idx = target_obj->getPinAccessIdx();
     const auto pa_1 = pin_1->getPinAccess(pin_access_idx);
+    const frAccessPoint* ap_1 = pa_1->getAccessPoint(prev_acc_point_idx);
     std::unique_ptr<frVia> via1;
-    if (pa_1->getAccessPoint(prev_acc_point_idx)->hasAccess(frDirEnum::U)) {
-      via1 = std::make_unique<frVia>(
-          pa_1->getAccessPoint(prev_acc_point_idx)->getViaDef());
-      Point pt1(pa_1->getAccessPoint(prev_acc_point_idx)->getPoint());
+    if (ap_1->hasAccess(frDirEnum::U)) {
+      Point pt1(ap_1->getPoint());
       xform.apply(pt1);
+      via1 = std::make_unique<frVia>(ap_1->getViaDef(), pt1);
       via1->setOrigin(pt1);
       if (inst_term_1->hasNet()) {
         objs.emplace_back(via1.get(), inst_term_1->getNet());
@@ -454,13 +454,12 @@ int FlexPA::getEdgeCost(
 
     const auto& [pin_2, inst_term_2] = pins[curr_pin_idx];
     const auto pa_2 = pin_2->getPinAccess(pin_access_idx);
+    const frAccessPoint* ap_2 = pa_2->getAccessPoint(curr_acc_point_idx);
     std::unique_ptr<frVia> via2;
-    if (pa_2->getAccessPoint(curr_acc_point_idx)->hasAccess(frDirEnum::U)) {
-      via2 = std::make_unique<frVia>(
-          pa_2->getAccessPoint(curr_acc_point_idx)->getViaDef());
-      Point pt2(pa_2->getAccessPoint(curr_acc_point_idx)->getPoint());
+    if (ap_2->hasAccess(frDirEnum::U)) {
+      Point pt2(ap_2->getPoint());
       xform.apply(pt2);
-      via2->setOrigin(pt2);
+      via2 = std::make_unique<frVia>(ap_2->getViaDef(), pt2);
       if (inst_term_2->hasNet()) {
         objs.emplace_back(via2.get(), inst_term_2->getNet());
       } else {
@@ -480,16 +479,14 @@ int FlexPA::getEdgeCost(
             = prev_prev_node->getIdx();
         if (!prev_prev_node->isSource()) {
           const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
-          auto pa_3 = pin_3->getPinAccess(pin_access_idx);
+          const auto pa_3 = pin_3->getPinAccess(pin_access_idx);
+          const frAccessPoint* ap_3
+              = pa_3->getAccessPoint(prev_prev_acc_point_idx);
           std::unique_ptr<frVia> via3;
-          if (pa_3->getAccessPoint(prev_prev_acc_point_idx)
-                  ->hasAccess(frDirEnum::U)) {
-            via3 = std::make_unique<frVia>(
-                pa_3->getAccessPoint(prev_prev_acc_point_idx)->getViaDef());
-            Point pt3(
-                pa_3->getAccessPoint(prev_prev_acc_point_idx)->getPoint());
+          if (ap_3->hasAccess(frDirEnum::U)) {
+            Point pt3(ap_3->getPoint());
             xform.apply(pt3);
-            via3->setOrigin(pt3);
+            via3 = std::make_unique<frVia>(ap_3->getViaDef(), pt3);
             if (inst_term_3->hasNet()) {
               objs.emplace_back(via3.get(), inst_term_3->getNet());
             } else {

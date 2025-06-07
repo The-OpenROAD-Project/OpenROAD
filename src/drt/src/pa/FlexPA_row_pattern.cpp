@@ -495,10 +495,9 @@ void FlexPA::addAccessPatternObj(
         continue;
       }
       if (access_point->hasAccess(frDirEnum::U)) {
-        auto via = std::make_unique<frVia>(access_point->getViaDef());
         Point pt(access_point->getPoint());
         xform.apply(pt);
-        via->setOrigin(pt);
+        auto via = std::make_unique<frVia>(access_point->getViaDef(), pt);
         auto rvia = via.get();
         if (inst_term->hasNet()) {
           objs.emplace_back(rvia, inst_term->getNet());
