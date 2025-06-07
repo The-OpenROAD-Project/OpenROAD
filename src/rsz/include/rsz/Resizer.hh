@@ -382,7 +382,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void reportLongWires(int count, int digits);
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
-  double findMaxWireLength();
+  double findMaxWireLength(bool issue_error = true);
   double findMaxWireLength(LibertyCell* buffer_cell, const Corner* corner);
   double findMaxWireLength(LibertyPort* drvr_port, const Corner* corner);
   // Longest driver to load wire (in meters).
@@ -519,7 +519,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex* drvr);
 
-  double findMaxWireLength1();
+  double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(LibertyPort* port) const;
   float portCapacitance(LibertyPort* input, const Corner* corner) const;
   float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap) const;
