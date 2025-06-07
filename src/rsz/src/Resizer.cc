@@ -121,11 +121,11 @@ using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
-    : recover_power_(new RecoverPower(this)),
-      repair_design_(new RepairDesign(this)),
-      repair_setup_(new RepairSetup(this)),
-      repair_hold_(new RepairHold(this)),
-      swap_arith_modules_(new ConcreteSwapArithModules(this)),
+    : recover_power_(std::make_unique<RecoverPower>(this)),
+      repair_design_(std::make_unique<RepairDesign>(this)),
+      repair_setup_(std::make_unique<RepairSetup>(this)),
+      repair_hold_(std::make_unique<RepairHold>(this)),
+      swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -134,21 +134,7 @@ Resizer::Resizer()
 {
 }
 
-Resizer::~Resizer()
-{
-  delete recover_power_;
-  delete repair_design_;
-  delete repair_setup_;
-  delete repair_hold_;
-  delete target_load_map_;
-  delete buffer_move;
-  delete clone_move;
-  delete size_down_move;
-  delete size_up_move;
-  delete split_load_move;
-  delete swap_pins_move;
-  delete unbuffer_move;
-}
+Resizer::~Resizer() = default;
 
 void Resizer::init(Logger* logger,
                    dbDatabase* db,
@@ -173,13 +159,13 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
-  buffer_move = new BufferMove(this);
-  clone_move = new CloneMove(this);
-  size_down_move = new SizeDownMove(this);
-  size_up_move = new SizeUpMove(this);
-  split_load_move = new SplitLoadMove(this);
-  swap_pins_move = new SwapPinsMove(this);
-  unbuffer_move = new UnbufferMove(this);
+  buffer_move_ = std::make_unique<BufferMove>(this);
+  clone_move_ = std::make_unique<CloneMove>(this);
+  size_down_move_ = std::make_unique<SizeDownMove>(this);
+  size_up_move_ = std::make_unique<SizeUpMove>(this);
+  split_load_move_ = std::make_unique<SplitLoadMove>(this);
+  swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
+  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -365,8 +351,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (unbuffer_move->removeBufferIfPossible(buffer,
-                                                /* honor dont touch */ true)) {
+      if (unbuffer_move_->removeBufferIfPossible(buffer,
+                                                 /* honor dont touch */ true)) {
       }
     }
   } else {
@@ -374,7 +360,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (unbuffer_move->removeBufferIfPossible(
+      if (unbuffer_move_->removeBufferIfPossible(
               buffer, /* don't honor dont touch */ false)) {
       } else {
         logger_->warn(
@@ -386,9 +372,9 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
       }
     }
   }
-  unbuffer_move->commitMoves();
+  unbuffer_move_->commitMoves();
   level_drvr_vertices_valid_ = false;
-  logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move->numMoves());
+  logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
 void Resizer::unbufferNet(Net* net)
@@ -2416,7 +2402,7 @@ void Resizer::findTargetLoads()
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
 
-    target_load_map_ = new CellTargetLoadMap;
+    target_load_map_ = std::make_unique<CellTargetLoadMap>();
     // Find target loads at the tgt_slew_corner.
     int lib_ap_index = tgt_slew_corner_->libertyIndex(max_);
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
@@ -3727,7 +3713,7 @@ bool Resizer::repairSetup(double setup_margin,
 void Resizer::reportSwappablePins()
 {
   resizePreamble();
-  swap_pins_move->reportSwappablePins();
+  swap_pins_move_->reportSwappablePins();
 }
 
 void Resizer::repairSetup(const Pin* end_pin)
@@ -3739,7 +3725,7 @@ void Resizer::repairSetup(const Pin* end_pin)
 void Resizer::rebufferNet(const Pin* drvr_pin)
 {
   resizePreamble();
-  buffer_move->rebufferNet(drvr_pin);
+  buffer_move_->rebufferNet(drvr_pin);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3836,13 +3822,13 @@ void Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(block_);
 
-  buffer_move->undoMoves();
-  size_down_move->undoMoves();
-  size_up_move->undoMoves();
-  clone_move->undoMoves();
-  split_load_move->undoMoves();
-  swap_pins_move->undoMoves();
-  unbuffer_move->undoMoves();
+  buffer_move_->undoMoves();
+  size_down_move_->undoMoves();
+  size_up_move_->undoMoves();
+  clone_move_->undoMoves();
+  split_load_move_->undoMoves();
+  swap_pins_move_->undoMoves();
+  unbuffer_move_->undoMoves();
 }
 
 void Resizer::journalEnd()
@@ -3855,12 +3841,12 @@ void Resizer::journalEnd()
   odb::dbDatabase::endEco(block_);
 
   int move_count_ = 0;
-  move_count_ += size_up_move->numPendingMoves();
-  move_count_ += size_down_move->numPendingMoves();
-  move_count_ += buffer_move->numPendingMoves();
-  move_count_ += clone_move->numPendingMoves();
-  move_count_ += swap_pins_move->numPendingMoves();
-  move_count_ += unbuffer_move->numPendingMoves();
+  move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
+  move_count_ += buffer_move_->numPendingMoves();
+  move_count_ += clone_move_->numPendingMoves();
+  move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += unbuffer_move_->numPendingMoves();
 
   debugPrint(
       logger_,
@@ -3869,22 +3855,22 @@ void Resizer::journalEnd()
       2,
       "COMMIT {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
       move_count_,
-      size_up_move->numPendingMoves(),
-      size_down_move->numPendingMoves(),
-      buffer_move->numPendingMoves(),
-      clone_move->numPendingMoves(),
-      swap_pins_move->numPendingMoves(),
-      unbuffer_move->numPendingMoves());
+      size_up_move_->numPendingMoves(),
+      size_down_move_->numPendingMoves(),
+      buffer_move_->numPendingMoves(),
+      clone_move_->numPendingMoves(),
+      swap_pins_move_->numPendingMoves(),
+      unbuffer_move_->numPendingMoves());
 
   accepted_move_count_ += move_count_;
 
-  buffer_move->commitMoves();
-  size_up_move->commitMoves();
-  size_down_move->commitMoves();
-  clone_move->commitMoves();
-  split_load_move->commitMoves();
-  swap_pins_move->commitMoves();
-  unbuffer_move->commitMoves();
+  buffer_move_->commitMoves();
+  size_up_move_->commitMoves();
+  size_down_move_->commitMoves();
+  clone_move_->commitMoves();
+  split_load_move_->commitMoves();
+  swap_pins_move_->commitMoves();
+  unbuffer_move_->commitMoves();
 
   debugPrint(logger_,
              RSZ,
@@ -3895,12 +3881,12 @@ void Resizer::journalEnd()
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
-             size_up_move->numCommittedMoves(),
-             size_down_move->numCommittedMoves(),
-             buffer_move->numCommittedMoves(),
-             clone_move->numCommittedMoves(),
-             swap_pins_move->numCommittedMoves(),
-             unbuffer_move->numCommittedMoves());
+             size_up_move_->numCommittedMoves(),
+             size_down_move_->numCommittedMoves(),
+             buffer_move_->numCommittedMoves(),
+             clone_move_->numCommittedMoves(),
+             swap_pins_move_->numCommittedMoves(),
+             unbuffer_move_->numCommittedMoves());
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -3946,19 +3932,19 @@ void Resizer::journalRestore()
       "journal",
       1,
       "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
-      size_up_move->numPendingMoves() + size_down_move->numPendingMoves(),
-      buffer_move->numPendingMoves(),
-      clone_move->numPendingMoves(),
-      swap_pins_move->numPendingMoves(),
-      unbuffer_move->numPendingMoves());
+      size_up_move_->numPendingMoves() + size_down_move_->numPendingMoves(),
+      buffer_move_->numPendingMoves(),
+      clone_move_->numPendingMoves(),
+      swap_pins_move_->numPendingMoves(),
+      unbuffer_move_->numPendingMoves());
 
   int move_count_ = 0;
-  move_count_ += size_down_move->numPendingMoves();
-  move_count_ += size_up_move->numPendingMoves();
-  move_count_ += buffer_move->numPendingMoves();
-  move_count_ += clone_move->numPendingMoves();
-  move_count_ += swap_pins_move->numPendingMoves();
-  move_count_ += unbuffer_move->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
+  move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += buffer_move_->numPendingMoves();
+  move_count_ += clone_move_->numPendingMoves();
+  move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += unbuffer_move_->numPendingMoves();
 
   debugPrint(logger_,
              RSZ,
@@ -3966,22 +3952,22 @@ void Resizer::journalRestore()
              2,
              "UNDO {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
              move_count_,
-             size_up_move->numPendingMoves(),
-             size_down_move->numPendingMoves(),
-             buffer_move->numPendingMoves(),
-             clone_move->numPendingMoves(),
-             swap_pins_move->numPendingMoves(),
-             unbuffer_move->numPendingMoves());
+             size_up_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
 
   rejected_move_count_ += move_count_;
 
-  size_down_move->undoMoves();
-  size_up_move->undoMoves();
-  buffer_move->undoMoves();
-  clone_move->undoMoves();
-  split_load_move->undoMoves();
-  swap_pins_move->undoMoves();
-  unbuffer_move->undoMoves();
+  size_down_move_->undoMoves();
+  size_up_move_->undoMoves();
+  buffer_move_->undoMoves();
+  clone_move_->undoMoves();
+  split_load_move_->undoMoves();
+  swap_pins_move_->undoMoves();
+  unbuffer_move_->undoMoves();
 
   debugPrint(logger_,
              RSZ,
@@ -3992,12 +3978,12 @@ void Resizer::journalRestore()
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
-             size_up_move->numCommittedMoves(),
-             size_down_move->numCommittedMoves(),
-             buffer_move->numCommittedMoves(),
-             clone_move->numCommittedMoves(),
-             swap_pins_move->numCommittedMoves(),
-             unbuffer_move->numCommittedMoves());
+             size_up_move_->numCommittedMoves(),
+             size_down_move_->numCommittedMoves(),
+             buffer_move_->numCommittedMoves(),
+             clone_move_->numCommittedMoves(),
+             swap_pins_move_->numCommittedMoves(),
+             unbuffer_move_->numCommittedMoves());
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
@@ -4010,22 +3996,22 @@ void Resizer::journalBeginTest()
 
 void Resizer::journalRestoreTest()
 {
-  int resize_count_old = size_up_move->numMoves();
-  int inserted_buffer_count_old = buffer_move->numMoves();
-  int cloned_gate_count_old = clone_move->numMoves();
-  int swap_pin_count_old = swap_pins_move->numMoves();
-  int removed_buffer_count_old = unbuffer_move->numMoves();
+  int resize_count_old = size_up_move_->numMoves();
+  int inserted_buffer_count_old = buffer_move_->numMoves();
+  int cloned_gate_count_old = clone_move_->numMoves();
+  int swap_pin_count_old = swap_pins_move_->numMoves();
+  int removed_buffer_count_old = unbuffer_move_->numMoves();
 
   journalRestore();
 
   logger_->report(
       "journalRestoreTest restored {} sizing, {} buffering, {} "
       "cloning, {} pin swaps, {} buffer removal",
-      resize_count_old - size_up_move->numMoves(),
-      inserted_buffer_count_old - buffer_move->numMoves(),
-      cloned_gate_count_old - clone_move->numMoves(),
-      swap_pin_count_old - swap_pins_move->numMoves(),
-      removed_buffer_count_old - unbuffer_move->numMoves());
+      resize_count_old - size_up_move_->numMoves(),
+      inserted_buffer_count_old - buffer_move_->numMoves(),
+      cloned_gate_count_old - clone_move_->numMoves(),
+      swap_pin_count_old - swap_pins_move_->numMoves(),
+      removed_buffer_count_old - unbuffer_move_->numMoves());
 }
 
 void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
