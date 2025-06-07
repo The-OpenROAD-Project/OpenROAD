@@ -239,8 +239,8 @@ class ClockTree
   int getLevel() const { return level_; }
   bool isRoot() const { return level_ == 0; }
 
-  std::set<const sta::Pin*> getDrivers() const;
-  std::set<const sta::Pin*> getLeaves() const;
+  std::set<const sta::Pin*> getDrivers(bool visibility) const;
+  std::set<const sta::Pin*> getLeaves(bool visibility) const;
 
   const std::vector<std::unique_ptr<ClockTree>>& getFanout() const
   {
@@ -256,15 +256,15 @@ class ClockTree
   std::pair<const sta::Pin*, sta::Delay> getPairedSink(
       const sta::Pin* paired_pin) const;
 
-  int getTotalFanout() const;
-  int getTotalLeaves() const;
-  int getMaxLeaves() const;
-  sta::Delay getMinimumArrival() const;
-  sta::Delay getMaximumArrival() const;
-  sta::Delay getMinimumDriverDelay() const;
+  int getTotalFanout(bool visibility) const;
+  int getTotalLeaves(bool visibility) const;
+  int getMaxLeaves(bool visibility) const;
+  sta::Delay getMinimumArrival(bool visibility) const;
+  sta::Delay getMaximumArrival(bool visibility) const;
+  sta::Delay getMinimumDriverDelay(bool visibility) const;
   int getSinkCount() const;
 
-  std::set<odb::dbNet*> getNets() const;
+  std::set<odb::dbNet*> getNets(bool visibility) const;
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 
@@ -272,6 +272,13 @@ class ClockTree
       const sta::Pin* pin) const;
   ClockTree* findTree(odb::dbNet* net, bool include_children = true);
   ClockTree* findTree(sta::Net* net, bool include_children = true);
+
+  void setSubtreeVisibility(bool visibility);
+  bool getSubtreeVisibility() const { return subtree_visibility_; };
+  bool isVisible() const
+  {
+    return (parent_) ? parent_->getSubtreeVisibility() : true;
+  };
 
  private:
   ClockTree* parent_;
@@ -287,6 +294,8 @@ class ClockTree
   PinDelays leaves_;
 
   std::vector<std::unique_ptr<ClockTree>> fanout_;
+
+  bool subtree_visibility_;
 
   void addPath(sta::PathExpanded& path, int idx, const sta::StaState* sta);
   ClockTree* getTree(sta::Net* net);
