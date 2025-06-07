@@ -101,8 +101,6 @@ OPENROAD_LIBRARY_DEPS = [
 ]
 
 OPENROAD_COPTS = [
-    "-fexceptions",
-    "-ffp-contract=off",  # Needed for floating point stability.
     "-Wno-error",
     "-Wall",
     "-Wextra",
@@ -551,7 +549,6 @@ cc_binary(
         "//bazel:runfiles",
     ],
     copts = [
-        "-fexceptions",
         "-Wno-error",
         "-Wall",
         "-Wextra",
@@ -642,7 +639,6 @@ cc_library(
         "src/sta/dcalc/PrimaDelayCalc.hh",
     ],
     copts = [
-        "-fexceptions",
         "-Wno-error",
         "-Wall",
         "-Wextra",
