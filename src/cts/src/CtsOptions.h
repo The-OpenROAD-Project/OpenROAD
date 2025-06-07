@@ -261,6 +261,9 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region) override;
 
+  void setRepairClockNets(bool value) { repairClockNets_ = value; }
+  bool getRepairClockNets() { return repairClockNets_; }
+
  private:
   std::string clockNets_ = "";
   std::string rootBuffer_ = "";
@@ -326,6 +329,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   MasterCount buffer_count_;
   std::string dummyload_prefix_ = "clkload";
   MasterCount dummy_count_;
+  bool repairClockNets_ = false;
 };
 
 }  // namespace cts
