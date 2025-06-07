@@ -3672,9 +3672,9 @@ void ModDbNetAssociation::operator()(const Pin* pin)
     return;
   }
 
-  if (db_network_->isDriver(pin)) {
-    return;
-  }
+  //  if (db_network_->isDriver(pin)) {
+  //    return;
+  //  }
 
   dbNet* cur_flat_net = db_network_->flatNet(pin);
 
@@ -3728,9 +3728,9 @@ void DbModNetAssociation::operator()(const Pin* pin)
     return;
   }
 
-  if (db_network_->isDriver(pin)) {
-    return;
-  }
+  //  if (db_network_->isDriver(pin)) {
+  //    return;
+  //  }
 
   if (iterm) {
     dbInst* owning_inst = iterm->getInst();

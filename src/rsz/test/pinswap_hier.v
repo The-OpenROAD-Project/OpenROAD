@@ -20,8 +20,6 @@ module td1 (a1,
 
  wire n1;
  wire net1;
- wire net2;
- wire net3;
 
  NAND2_X1 U3 (.A1(a1),
 	      .A2(a2),
