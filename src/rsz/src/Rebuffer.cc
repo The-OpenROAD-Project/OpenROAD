@@ -679,10 +679,11 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
                                load_count,
                                wire_count,
                                junction_count);
-        if (junction_count != 0 && (buffer_count != 0 || load_count != 0))
+        if (junction_count != 0 && (buffer_count != 0 || load_count != 0)) {
           propagate_mod_net = false;
-        else
+        } else {
           propagate_mod_net = true;
+        }
 
         if (db_net && db_modnet && propagate_mod_net) {
           // as we move the modnet and dbnet around we will get a clash
