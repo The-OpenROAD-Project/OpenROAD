@@ -94,41 +94,41 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       switch (move) {
         case MoveType::BUFFER:
           if (!skip_buffering) {
-            move_sequence.push_back(resizer_->buffer_move);
+            move_sequence.push_back(resizer_->buffer_move.get());
           }
           break;
         case MoveType::UNBUFFER:
           if (!skip_buffer_removal) {
-            move_sequence.push_back(resizer_->unbuffer_move);
+            move_sequence.push_back(resizer_->unbuffer_move.get());
           }
           break;
         case MoveType::SWAP:
           if (!skip_pin_swap) {
-            move_sequence.push_back(resizer_->swap_pins_move);
+            move_sequence.push_back(resizer_->swap_pins_move.get());
           }
           break;
         case MoveType::SIZE:
           if (!skip_size_down) {
-            move_sequence.push_back(resizer_->size_down_move);
+            move_sequence.push_back(resizer_->size_down_move.get());
           }
-          move_sequence.push_back(resizer_->size_up_move);
+          move_sequence.push_back(resizer_->size_up_move.get());
           break;
         case MoveType::SIZEUP:
-          move_sequence.push_back(resizer_->size_up_move);
+          move_sequence.push_back(resizer_->size_up_move.get());
           break;
         case MoveType::SIZEDOWN:
           if (!skip_size_down) {
-            move_sequence.push_back(resizer_->size_down_move);
+            move_sequence.push_back(resizer_->size_down_move.get());
           }
           break;
         case MoveType::CLONE:
           if (!skip_gate_cloning) {
-            move_sequence.push_back(resizer_->clone_move);
+            move_sequence.push_back(resizer_->clone_move.get());
           }
           break;
         case MoveType::SPLIT:
           if (!skip_buffering) {
-            move_sequence.push_back(resizer_->split_load_move);
+            move_sequence.push_back(resizer_->split_load_move.get());
           }
           break;
       }
@@ -137,22 +137,22 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   } else {
     move_sequence.clear();
     if (!skip_buffer_removal) {
-      move_sequence.push_back(resizer_->unbuffer_move);
+      move_sequence.push_back(resizer_->unbuffer_move.get());
     }
     // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
-    move_sequence.push_back(resizer_->size_up_move);
+    move_sequence.push_back(resizer_->size_up_move.get());
     if (!skip_pin_swap) {
-      move_sequence.push_back(resizer_->swap_pins_move);
+      move_sequence.push_back(resizer_->swap_pins_move.get());
     }
     if (!skip_buffering) {
-      move_sequence.push_back(resizer_->buffer_move);
+      move_sequence.push_back(resizer_->buffer_move.get());
     }
     if (!skip_gate_cloning) {
-      move_sequence.push_back(resizer_->clone_move);
+      move_sequence.push_back(resizer_->clone_move.get());
     }
     if (!skip_buffering) {
-      move_sequence.push_back(resizer_->split_load_move);
+      move_sequence.push_back(resizer_->split_load_move.get());
     }
   }
 
@@ -507,13 +507,13 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   Path* path = sta_->vertexWorstSlackPath(vertex, max_);
 
   move_sequence.clear();
-  move_sequence = {resizer_->unbuffer_move,
-                   resizer_->size_down_move,
-                   resizer_->size_up_move,
-                   resizer_->swap_pins_move,
-                   resizer_->buffer_move,
-                   resizer_->clone_move,
-                   resizer_->split_load_move};
+  move_sequence = {resizer_->unbuffer_move.get(),
+                   resizer_->size_down_move.get(),
+                   resizer_->size_up_move.get(),
+                   resizer_->swap_pins_move.get(),
+                   resizer_->buffer_move.get(),
+                   resizer_->clone_move.get(),
+                   resizer_->split_load_move.get()};
 
   {
     IncrementalParasiticsGuard guard(resizer_);
@@ -676,7 +676,7 @@ bool RepairSetup::repairPath(Path* path,
                          path_slack,
                          &expanded,
                          setup_slack_margin)) {
-          if (move == resizer_->unbuffer_move) {
+          if (move == resizer_->unbuffer_move.get()) {
             // Only allow one unbuffer move per pass to
             // prevent the use-after-free error of multiple buffer removals.
             changed += repairs_per_pass;

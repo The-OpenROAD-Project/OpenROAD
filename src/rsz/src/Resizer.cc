@@ -121,11 +121,11 @@ using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
-    : recover_power_(new RecoverPower(this)),
-      repair_design_(new RepairDesign(this)),
-      repair_setup_(new RepairSetup(this)),
-      repair_hold_(new RepairHold(this)),
-      swap_arith_modules_(new ConcreteSwapArithModules(this)),
+    : recover_power_(std::make_unique<RecoverPower>(this)),
+      repair_design_(std::make_unique<RepairDesign>(this)),
+      repair_setup_(std::make_unique<RepairSetup>(this)),
+      repair_hold_(std::make_unique<RepairHold>(this)),
+      swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -134,21 +134,7 @@ Resizer::Resizer()
 {
 }
 
-Resizer::~Resizer()
-{
-  delete recover_power_;
-  delete repair_design_;
-  delete repair_setup_;
-  delete repair_hold_;
-  delete target_load_map_;
-  delete buffer_move;
-  delete clone_move;
-  delete size_down_move;
-  delete size_up_move;
-  delete split_load_move;
-  delete swap_pins_move;
-  delete unbuffer_move;
-}
+Resizer::~Resizer() = default;
 
 void Resizer::init(Logger* logger,
                    dbDatabase* db,
@@ -173,13 +159,13 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
-  buffer_move = new BufferMove(this);
-  clone_move = new CloneMove(this);
-  size_down_move = new SizeDownMove(this);
-  size_up_move = new SizeUpMove(this);
-  split_load_move = new SplitLoadMove(this);
-  swap_pins_move = new SwapPinsMove(this);
-  unbuffer_move = new UnbufferMove(this);
+  buffer_move = std::make_unique<BufferMove>(this);
+  clone_move = std::make_unique<CloneMove>(this);
+  size_down_move = std::make_unique<SizeDownMove>(this);
+  size_up_move = std::make_unique<SizeUpMove>(this);
+  split_load_move = std::make_unique<SplitLoadMove>(this);
+  swap_pins_move = std::make_unique<SwapPinsMove>(this);
+  unbuffer_move = std::make_unique<UnbufferMove>(this);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2416,7 +2402,7 @@ void Resizer::findTargetLoads()
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
 
-    target_load_map_ = new CellTargetLoadMap;
+    target_load_map_ = std::make_unique<CellTargetLoadMap>();
     // Find target loads at the tgt_slew_corner.
     int lib_ap_index = tgt_slew_corner_->libertyIndex(max_);
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
