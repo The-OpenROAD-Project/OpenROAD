@@ -20,6 +20,7 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
+#include "ConcreteSwapArithModules.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
@@ -124,6 +125,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      swap_arith_modules_(new ConcreteSwapArithModules(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -247,7 +249,13 @@ bool rszFuzzyEqual(double v1, double v2)
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void Resizer::initBlock()
 {
+  if (db_->getChip() == nullptr) {
+    logger_->error(RSZ, 162, "Database does not have a loaded design");
+  }
   block_ = db_->getChip()->getBlock();
+  if (block_ == nullptr) {
+    logger_->error(RSZ, 163, "Database has no block");
+  }
   core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
                    && core_.yMax() == 0);
@@ -3802,6 +3810,18 @@ bool Resizer::recoverPower(float recover_power_percent,
     opendp_->initMacrosAndGrid();
   }
   return recover_power_->recoverPower(recover_power_percent, verbose);
+}
+////////////////////////////////////////////////////////////////
+void Resizer::swapArithModules(int path_count,
+                               const std::string& target,
+                               float slack_margin)
+{
+  resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+    opendp_->initMacrosAndGrid();
+  }
+  swap_arith_modules_->replaceArithModules(path_count, target, slack_margin);
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
