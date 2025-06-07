@@ -107,7 +107,9 @@ void pin_access_cmd(const char* dbProcessNode,
                     const char* bottomRoutingLayer,
                     const char* topRoutingLayer,
                     int verbose,
-                    int minAccessPoints)
+                    int minAccessPoints,
+                    const char* viaInPinBottomLayer,
+                    const char* viaInPinTopLayer)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   drt::ParamStruct params;
@@ -116,6 +118,8 @@ void pin_access_cmd(const char* dbProcessNode,
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
   params.minAccessPoints = minAccessPoints;
+  params.viaInPinBottomLayer = viaInPinBottomLayer;
+  params.viaInPinTopLayer = viaInPinTopLayer;
   params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();
@@ -231,3 +235,4 @@ route_layer_lengths(odb::dbWire* db_wire)
 }
 
 %} // inline
+
