@@ -314,6 +314,14 @@ void RouteBase::getGrtResult()
   updateGrtRoute();
 }
 
+void RouteBase::loadGrt()
+{
+  grouter_->setAllowCongestion(true);
+  grouter_->setCongestionIterations(0);
+  grouter_->setCriticalNetsPercentage(0);
+  grouter_->globalRoute();
+}
+
 int64_t RouteBase::inflatedAreaDelta() const
 {
   return inflatedAreaDelta_;

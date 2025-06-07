@@ -155,6 +155,9 @@ class RouteBase
   // Functions using fastroute on grt are saved as backup.
   void updateGrtRoute();
   void getGrtResult();
+  // TODO: understand why this function is breaking RUDY.
+  // Allow for grt heatmap during gpl execution.
+  void loadGrt();
   float getGrtRC() const;
 
   void updateRudyRoute();
