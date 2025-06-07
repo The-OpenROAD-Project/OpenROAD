@@ -817,13 +817,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Optimization moves
   // Will eventually be replaced with a getter method and some "recipes"
-  std::unique_ptr<CloneMove> clone_move;
-  std::unique_ptr<SplitLoadMove> split_load_move;
-  std::unique_ptr<BufferMove> buffer_move;
-  std::unique_ptr<SizeDownMove> size_down_move;
-  std::unique_ptr<SizeUpMove> size_up_move;
-  std::unique_ptr<SwapPinsMove> swap_pins_move;
-  std::unique_ptr<UnbufferMove> unbuffer_move;
+  std::unique_ptr<CloneMove> clone_move_;
+  std::unique_ptr<SplitLoadMove> split_load_move_;
+  std::unique_ptr<BufferMove> buffer_move_;
+  std::unique_ptr<SizeDownMove> size_down_move_;
+  std::unique_ptr<SizeUpMove> size_up_move_;
+  std::unique_ptr<SwapPinsMove> swap_pins_move_;
+  std::unique_ptr<UnbufferMove> unbuffer_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
 
