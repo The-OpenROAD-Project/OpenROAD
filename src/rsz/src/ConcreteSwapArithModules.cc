@@ -70,9 +70,9 @@ void ConcreteSwapArithModules::replaceArithModules(const int path_count,
 }
 
 void ConcreteSwapArithModules::findCriticalInstances(
-    const int& path_count,
+    const int path_count,
     const std::string& target,
-    const float& slack_threshold,
+    const float slack_threshold,
     set<dbModInst*>& insts)
 {
   logger_->info(RSZ,

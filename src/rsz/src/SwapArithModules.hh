@@ -56,9 +56,9 @@ class SwapArithModules : public sta::dbStaState
       = 0;
   virtual bool isArithInstance(const Instance* inst, dbModInst*& mod_inst) = 0;
   virtual bool hasArithOperatorProperty(const dbModInst* mod_inst) = 0;
-  virtual void findCriticalInstances(const int& path_count,
+  virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
-                                     const float& slack_threshold,
+                                     float slack_threshold,
                                      set<dbModInst*>& insts)
       = 0;
   virtual void doSwapInstances(const set<dbModInst*>& insts,
