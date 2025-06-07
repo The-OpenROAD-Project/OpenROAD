@@ -15,9 +15,9 @@ class ConcreteSwapArithModules : public SwapArithModules
   explicit ConcreteSwapArithModules(Resizer* resizer);
   ~ConcreteSwapArithModules() override = default;
 
-  void replaceArithModules(const int& path_count,
+  void replaceArithModules(int path_count,
                            const std::string& target,
-                           const float& slack_threshold) override;
+                           float slack_threshold) override;
   void collectArithInstsOnPath(const Path* path,
                                set<dbModInst*>& arithInsts) override;
   bool isArithInstance(const Instance* inst, dbModInst*& mod_inst) override;

@@ -45,9 +45,9 @@ void ConcreteSwapArithModules::init()
   db_network_ = resizer_->db_network_;
 }
 
-void ConcreteSwapArithModules::replaceArithModules(const int& path_count,
+void ConcreteSwapArithModules::replaceArithModules(const int path_count,
                                                    const std::string& target,
-                                                   const float& slack_threshold)
+                                                   const float slack_threshold)
 {
   init();
 

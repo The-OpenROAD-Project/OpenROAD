@@ -47,9 +47,9 @@ class SwapArithModules : public sta::dbStaState
   explicit SwapArithModules(Resizer* resizer) : resizer_(resizer) {}
   ~SwapArithModules() override = default;
 
-  virtual void replaceArithModules(const int& path_count,
+  virtual void replaceArithModules(int path_count,
                                    const std::string& target,
-                                   const float& slack_threshold)
+                                   float slack_threshold)
       = 0;
   virtual void collectArithInstsOnPath(const Path* path,
                                        set<dbModInst*>& arithInsts)
