@@ -632,8 +632,8 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
            const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
            const float capacitance1 = port1->capacitance();
            const float capacitance2 = port2->capacitance();
-           return std::tie(drive2, intrinsic1, capacitance1)
-                  < std::tie(drive1, intrinsic2, capacitance2);
+           return std::tie(drive1, intrinsic1, capacitance1)
+                  < std::tie(drive2, intrinsic2, capacitance2);
          });
     const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     const float delay
