@@ -198,17 +198,9 @@ class RepairAntennas
   void setDiodesAndGatesPlacementStatus(
       odb::dbPlacementStatus placement_status);
   void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
-  bool setDiodeLoc(odb::dbInst* diode_inst,
-                   odb::dbITerm* gate,
-                   int site_width,
-                   bool place_vertically,
-                   r_tree& fixed_insts);
   void getInstancePlacementData(odb::dbITerm* gate,
                                 int& inst_loc_x,
-                                int& inst_loc_y,
-                                int& inst_width,
-                                int& inst_height,
-                                odb::dbOrientType& inst_orient);
+                                int& inst_loc_y);
   bool checkDiodeLoc(odb::dbInst* diode_inst,
                      int site_width,
                      r_tree& fixed_insts);
