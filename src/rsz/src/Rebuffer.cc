@@ -677,13 +677,30 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
         int load_count = 0;
         int wire_count = 0;
         int junction_count = 0;
+        /*
+          We characaterize the choice tree by counting up the types
+          of its elements to see if this something we can propagate
+          a hierarchical net through
+        */
         characterizeChoiceTree(1,
                                best_option,
                                buffer_count,
                                load_count,
                                wire_count,
                                junction_count);
-        if (junction_count != 0 && (buffer_count != 0 || load_count != 0)) {
+
+        /*
+          Propagating a hierarchicial through a single buffer or serial chain
+          of buffers is fine.
+
+          However, normally we cannot propagate a hierarchical net through a
+          junction, because we cannot discriminate between the two outputs.
+
+          Specifically if there is a junction with loads or buffers we
+          cannot do the propagation. However, if there is a
+          junction which is just doing wiring (no buffers or loads) then fine.
+         */
+        if (junction_count != 0 && (!(buffer_count == 0 && load_count == 0))) {
           propagate_mod_net = false;
         } else {
           propagate_mod_net = true;

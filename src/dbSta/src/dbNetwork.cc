@@ -3672,6 +3672,11 @@ void ModDbNetAssociation::operator()(const Pin* pin)
     return;
   }
 
+  // Note that we allow the reassociation to be done across all pins
+  // In prior versions we assumed the reassocitation was done after
+  // setting up the driver so we did not reassociate the driver
+  // This minor change lets the net be reassociated from any pin
+  // along the net.
   //  if (db_network_->isDriver(pin)) {
   //    return;
   //  }
@@ -3728,6 +3733,11 @@ void DbModNetAssociation::operator()(const Pin* pin)
     return;
   }
 
+  // Note that we allow the reassociation to be done across all pins
+  // In prior versions we assumed the reassocitation was done after
+  // setting up the driver so we did not need to reassociate the driver
+  // This minor change lets the net be reassociated from any pin
+  // along the net.
   //  if (db_network_->isDriver(pin)) {
   //    return;
   //  }
