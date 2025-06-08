@@ -5,7 +5,6 @@ the design area is `-max_utilization util` percent of the core area. `util`
 is between 0 and 100.  The `resizer` stops and reports an error if the max
 utilization is exceeded.
 
-
 ## Commands
 
 ```{note}
@@ -79,7 +78,7 @@ The `buffer_ports -inputs` command adds a buffer between the input and its
 loads.  The `buffer_ports -outputs` adds a buffer between the port driver
 and the output port. Inserting buffers on input and output ports makes
 the block input capacitances and output drives independent of the block
-internals. It uses the buffer library cell defined by `-buffer_cell` if it is given. 
+internals. It uses the buffer library cell defined by `-buffer_cell` if it is given.
 
 ```tcl
 buffer_ports 
@@ -248,7 +247,7 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,vt_swap,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
+| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,vt_swap,sizeup,sizedown,swap,buffer,clone,split". Obeys skip flags also. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
@@ -477,6 +476,7 @@ cell footprint and leakage are also reported.
 report_buffers
     [-filtered]
 ```
+
 #### Options
 
 | Switch Name | Description |

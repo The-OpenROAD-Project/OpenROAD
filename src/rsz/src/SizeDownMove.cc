@@ -287,10 +287,13 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
         continue;
       }
 
+      // We only need to check the output pin cap of the fanout
+      // gate that gets sized down. The driver will always have
+      // less fanout cap so will only improve the max cap limit.
       float cap, max_cap, cap_slack;
       const Corner* corner;
       const RiseFall* tr;
-      sta_->checkCapacitance(drvr_pin,
+      sta_->checkCapacitance(fanout_output_pin,
                              nullptr /* corner */,
                              resizer_->max_,
                              // return values
@@ -301,7 +304,7 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
                              cap_slack);
       if (max_cap > 0.0 && corner) {
         // Check if the new driver load cap is within the max cap limit
-        if (new_drvr_load_cap > max_cap) {
+        if (cap > max_cap) {
           debugPrint(logger_,
                      RSZ,
                      "size_down",
@@ -315,28 +318,58 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
         }
       }
 
+      // Only check the max slew for the fanout gate that gets sized down
+      // too.
+      const Corner* slew_corner;
+      const RiseFall* slew_tr;
+      float slew, max_slew, slew_slack;
+      sta_->checkSlew(fanout_output_pin,
+                      nullptr,
+                      resizer_->max_,
+                      false,
+                      slew_corner,
+                      slew_tr,
+                      slew,
+                      max_slew,
+                      slew_slack);
+      if (slew_corner) {
+        // Check if the new driver load slew is within the max slew limit
+        if (slew > max_slew) {
+          debugPrint(logger_,
+                     RSZ,
+                     "size_down",
+                     2,
+                     " skip based on max slew {} FO={} slew={} max_slew={}",
+                     network_->pathName(fanout_pin),
+                     swappable->name(),
+                     slew,
+                     max_slew);
+          continue;
+        }
+      }
+
       float new_drvr_delay
           = resizer_->gateDelay(drvr_port, new_drvr_load_cap, dcalc_ap);
       float new_fanout_delay = resizer_->gateDelay(
           new_fanout_output_port, fanout_load_cap, dcalc_ap);
-      debugPrint(
-          logger_,
-          RSZ,
-          "size_down",
-          3,
-          " new delay {} FO={} drvr_delay {}<{}, fanout_delay: {}<{} ({}+{}) ",
-          network_->pathName(fanout_pin),
-          swappable->name(),
-          delayAsString(new_drvr_delay, sta_, 3),
-          delayAsString(drvr_delay, sta_, 3),
-          delayAsString(new_fanout_delay, sta_, 3),
-          delayAsString(fanout_delay - fanout_slack, sta_, 3),
-          delayAsString(fanout_delay, sta_, 3),
-          delayAsString(fanout_slack, sta_, 3));
+      debugPrint(logger_,
+                 RSZ,
+                 "size_down",
+                 3,
+                 " new delay {} FO={} drvr_delay {}<{}, fanout_delay: {}<{} "
+                 "({}+{}) ",
+                 network_->pathName(fanout_pin),
+                 swappable->name(),
+                 delayAsString(new_drvr_delay, sta_, 3),
+                 delayAsString(drvr_delay, sta_, 3),
+                 delayAsString(new_fanout_delay, sta_, 3),
+                 delayAsString(fanout_delay - fanout_slack, sta_, 3),
+                 delayAsString(fanout_delay, sta_, 3),
+                 delayAsString(fanout_slack, sta_, 3));
       // Check if the combined new delay is better than the old one
       // If fanout slack is positive, this allows us to slow down the fanout
-      // gate If fnaout slack is negative, this allows us to accept it as long
-      // as the total delay improves
+      // gate. If fanout slack is negative, this allows us to accept it as
+      // long as the total delay improves.
       if (new_drvr_delay + new_fanout_delay
           < drvr_delay + fanout_delay + fanout_slack) {
         best_cell = swappable;

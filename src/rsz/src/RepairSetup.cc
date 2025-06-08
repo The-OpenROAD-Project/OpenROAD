@@ -171,6 +171,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     }
     // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
+    move_sequence.push_back(resizer_->size_down_move_.get());
     move_sequence.push_back(resizer_->size_up_move_.get());
     if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move_.get());
@@ -248,6 +249,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Ensure that max cap and max fanout violations don't get worse
   sta_->checkCapacitanceLimitPreamble();
+  sta_->checkSlewLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
