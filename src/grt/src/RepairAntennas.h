@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/iterator/function_output_iterator.hpp>
 #include <map>
 #include <set>
 #include <string>
@@ -35,9 +32,6 @@ class dbWireEncoder;
 namespace utl {
 class Logger;
 }  // namespace utl
-
-namespace bg = boost::geometry;
-namespace bgi = boost::geometry::index;
 
 namespace grt {
 
@@ -127,13 +121,6 @@ class RepairAntennas
                        std::vector<odb::dbNet*>& modified_nets);
 
  private:
-  using coord_type = int;
-  using coord_sys_type = bg::cs::cartesian;
-  using point = bg::model::point<coord_type, 2, coord_sys_type>;
-  using box = bg::model::box<point>;
-  using value = std::pair<box, int>;
-  using r_tree = bgi::rtree<value, bgi::quadratic<8, 4>>;
-
   void addJumperAndVias(GRoute& route,
                         const int& init_x,
                         const int& init_y,
@@ -191,19 +178,13 @@ class RepairAntennas
                    odb::dbMTerm* diode_mterm,
                    odb::dbITerm* sink_iterm,
                    int site_width,
-                   r_tree& fixed_insts,
                    odb::dbTechLayer* violation_layer);
-  void getFixedInstances(r_tree& fixed_insts, int& fixed_inst_count);
-  void getPlacementBlockages(r_tree& fixed_insts, int& fixed_inst_count);
   void setDiodesAndGatesPlacementStatus(
       odb::dbPlacementStatus placement_status);
   void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
   void getInstancePlacementData(odb::dbITerm* gate,
                                 int& inst_loc_x,
                                 int& inst_loc_y);
-  bool checkDiodeLoc(odb::dbInst* diode_inst,
-                     int site_width,
-                     r_tree& fixed_insts);
   void computeHorizontalOffset(int diode_width,
                                int inst_width,
                                int site_width,

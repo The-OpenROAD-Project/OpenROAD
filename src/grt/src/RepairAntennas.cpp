@@ -428,7 +428,6 @@ void RepairAntennas::destroyNetWires(
 void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
 {
   int site_width = -1;
-  r_tree fixed_insts;
   odb::dbTech* tech = db_->getTech();
 
   illegal_diode_placement_count_ = 0;
@@ -457,9 +456,6 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     setInstsPlacementStatus(insts_to_restore);
   }
   setDiodesAndGatesPlacementStatus(odb::dbPlacementStatus::FIRM);
-  int fixed_inst_count = 0;
-  getFixedInstances(fixed_insts, fixed_inst_count);
-  getPlacementBlockages(fixed_insts, fixed_inst_count);
 
   bool repair_failures = false;
   for (auto const& net_violations : antenna_violations_) {
@@ -480,12 +476,7 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
           for (int j = 0; j < violation.diode_count_per_gate; j++) {
             odb::dbTechLayer* violation_layer
                 = tech->findRoutingLayer(violation.routing_level);
-            insertDiode(db_net,
-                        diode_mterm,
-                        gate,
-                        site_width,
-                        fixed_insts,
-                        violation_layer);
+            insertDiode(db_net, diode_mterm, gate, site_width, violation_layer);
             inserted_diodes = true;
           }
         }
@@ -529,7 +520,6 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
                                  odb::dbMTerm* diode_mterm,
                                  odb::dbITerm* gate,
                                  int site_width,
-                                 r_tree& fixed_insts,
                                  odb::dbTechLayer* violation_layer)
 {
   // Create instance for diode
@@ -555,40 +545,6 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
   diode_iterm->connect(net);
 
   diode_insts_.push_back(diode_inst);
-}
-
-void RepairAntennas::getFixedInstances(r_tree& fixed_insts,
-                                       int& fixed_inst_count)
-{
-  for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbPlacementStatus status = inst->getPlacementStatus();
-    if (status == odb::dbPlacementStatus::FIRM
-        || status == odb::dbPlacementStatus::LOCKED) {
-      odb::dbBox* instBox = inst->getBBox();
-      box b(point(instBox->xMin(), instBox->yMin()),
-            point(instBox->xMax(), instBox->yMax()));
-      value v(b, fixed_inst_count);
-      fixed_insts.insert(v);
-      fixed_inst_count++;
-    }
-  }
-}
-
-void RepairAntennas::getPlacementBlockages(r_tree& fixed_insts,
-                                           int& fixed_inst_count)
-{
-  for (odb::dbBlockage* blockage : block_->getBlockages()) {
-    if (blockage->isSoft()) {
-      continue;
-    }
-    odb::Rect bbox = blockage->getBBox()->getBox();
-
-    box blockage_box(point(bbox.xMin(), bbox.yMin()),
-                     point(bbox.xMax(), bbox.yMax()));
-    value blockage_value(blockage_box, fixed_inst_count);
-    fixed_insts.insert(blockage_value);
-    fixed_inst_count++;
-  }
 }
 
 void RepairAntennas::setDiodesAndGatesPlacementStatus(
@@ -634,25 +590,6 @@ void RepairAntennas::getInstancePlacementData(odb::dbITerm* gate,
   odb::Rect sink_bbox = getInstRect(sink_inst, gate);
   inst_loc_x = sink_bbox.xMin();
   inst_loc_y = sink_bbox.yMin();
-}
-
-bool RepairAntennas::checkDiodeLoc(odb::dbInst* diode_inst,
-                                   const int site_width,
-                                   r_tree& fixed_insts)
-{
-  const odb::Rect& core_area = block_->getCoreArea();
-  const int left_pad = opendp_->padLeft(diode_inst);
-  const int right_pad = opendp_->padRight(diode_inst);
-  odb::dbBox* instBox = diode_inst->getBBox();
-  box box(point(instBox->xMin() - ((left_pad + right_pad) * site_width) + 1,
-                instBox->yMin() + 1),
-          point(instBox->xMax() + ((left_pad + right_pad) * site_width) - 1,
-                instBox->yMax() - 1));
-
-  std::vector<value> overlap_insts;
-  fixed_insts.query(bgi::intersects(box), std::back_inserter(overlap_insts));
-
-  return overlap_insts.empty() && core_area.contains(instBox->getBox());
 }
 
 void RepairAntennas::computeHorizontalOffset(const int diode_width,
