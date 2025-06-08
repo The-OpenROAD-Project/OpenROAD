@@ -51,10 +51,10 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
 {
 }
 
-void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
-                                           std::vector<Pin>& pins,
-                                           GRoute& route,
-                                           sta::SpefWriter* spef_writer)
+void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
+                                            std::vector<Pin>& pins,
+                                            GRoute& route,
+                                            sta::SpefWriter* spef_writer)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
@@ -95,7 +95,7 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   parasitics_->deleteParasiticNetworks(sta_net);
 }
 
-void MakeWireParasitics::estimateParasitcs(odb::dbNet* net, GRoute& route)
+void MakeWireParasitics::estimateParasitics(odb::dbNet* net, GRoute& route)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
@@ -493,19 +493,27 @@ float MakeWireParasitics::getNetSlack(odb::dbNet* net)
 std::vector<int> MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net) const
 {
   NetRouteMap& routes = grouter_->getRoutes();
-  std::vector<int> layer_lengths(grouter_->getMaxRoutingLayer() + 1);
+
+  // dbu wirelength for wires, via count for vias
+  std::vector<int> layer_lengths(tech_->getLayerCount());
+
   if (!db_net->getSigType().isSupply()) {
     GRoute& route = routes[db_net];
     std::set<RoutePt> route_pts;
     for (GSegment& segment : route) {
       if (segment.isVia()) {
-        route_pts.insert(
-            RoutePt(segment.init_x, segment.init_y, segment.init_layer));
-        route_pts.insert(
-            RoutePt(segment.final_x, segment.final_y, segment.final_layer));
+        auto& s = segment;
+        // Mimic makeRouteParasitics
+        int min_layer = min(s.init_layer, s.final_layer);
+        odb::dbTechLayer* cut_layer
+            = tech_->findRoutingLayer(min_layer)->getUpperLayer();
+        layer_lengths[cut_layer->getNumber()] += 1;
+        route_pts.insert(RoutePt(s.init_x, s.init_y, s.init_layer));
+        route_pts.insert(RoutePt(s.final_x, s.final_y, s.final_layer));
       } else {
         int layer = segment.init_layer;
-        layer_lengths[layer] += segment.length();
+        layer_lengths[tech_->findRoutingLayer(layer)->getNumber()]
+            += segment.length();
         route_pts.insert(RoutePt(segment.init_x, segment.init_y, layer));
         route_pts.insert(RoutePt(segment.final_x, segment.final_y, layer));
       }
@@ -532,7 +540,8 @@ std::vector<int> MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net) const
         layer--;
       int wire_length_dbu
           = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
-      layer_lengths[layer] += wire_length_dbu;
+      layer_lengths[tech_->findRoutingLayer(layer)->getNumber()]
+          += wire_length_dbu;
     }
   }
   return layer_lengths;

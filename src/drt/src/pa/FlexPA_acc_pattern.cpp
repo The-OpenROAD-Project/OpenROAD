@@ -51,16 +51,10 @@ void FlexPA::buildInstsSet()
     if (!isStdCell(inst.get())) {
       continue;
     }
-    bool is_skip = true;
-    for (auto& inst_term : inst->getInstTerms()) {
-      if (!isSkipInstTerm(inst_term.get())) {
-        is_skip = false;
-        break;
-      }
+    if (isSkipInst(inst.get())) {
+      continue;
     }
-    if (!is_skip) {
-      insts_set_.insert(inst.get());
-    }
+    insts_set_.insert(inst.get());
   }
 }
 

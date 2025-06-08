@@ -40,10 +40,6 @@ cc_library(
         "include/odb/*.h",
         "include/odb/*.hpp",
     ]),
-    copts = [
-        "-fexceptions",
-        "-Wno-error",
-    ],
     features = [
         "-use_header_modules",
     ],
@@ -73,6 +69,34 @@ cc_library(
         "@spdlog",
         "@tk_tcl//:tcl",
         "@zlib",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "include/odb/geom.h",
+        "src/swig/common/swig_common.h",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = glob([
+        "include/odb/*.h",
+        "include/odb/*.hpp",
+    ]),
+    copts = [
+        "-Wno-missing-braces",  # from TCL swigging
+        "-Isrc/odb/src/swig/common",
+        "-Isrc/odb/include",
+    ],
+    features = [
+        "-use_header_modules",
+    ],
+    deps = [
+        "//:ord",
+        "//src/utl",
+        "@boost.container",
+        "@tk_tcl//:tcl",
     ],
 )
 

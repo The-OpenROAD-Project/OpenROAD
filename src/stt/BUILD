@@ -34,7 +34,7 @@ genrule(
 )
 
 cc_library(
-    name = "lib",
+    name = "stt",
     srcs = [
         "src/SteinerTreeBuilder.cpp",
         "src/flt/etc/POST9.cpp",
@@ -60,7 +60,7 @@ cc_library(
 )
 
 cc_library(
-    name = "stt",
+    name = "ui",
     srcs = [
         "src/LinesRenderer.cpp",
         "src/LinesRenderer.h",
@@ -82,7 +82,6 @@ cc_library(
         "src",
     ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/gui",
         "//src/odb",

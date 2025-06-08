@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "mpl",
     srcs = [
         "src/MplObserver.h",
         "src/SACoreHardMacro.cpp",
@@ -47,8 +47,9 @@ cc_library(
 )
 
 cc_library(
-    name = "mpl",
+    name = "ui",
     srcs = [
+        "include/mpl/rtl_mp.h",
         "src/MakeMacroPlacer.cpp",
         "src/MplObserver.h",
         "src/clusterEngine.h",
@@ -66,8 +67,10 @@ cc_library(
     copts = [
         "-Isrc/mpl/src",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:ord",
         "//src/gui",
         "//src/odb",

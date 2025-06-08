@@ -1892,7 +1892,19 @@ dbInst* dbBlock::findInst(const char* name)
 dbModule* dbBlock::findModule(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
-  return (dbModule*) block->_module_hash.find(name);
+  dbModule* module = (dbModule*) block->_module_hash.find(name);
+  if (module != nullptr) {
+    return module;
+  }
+  // Search in children blocks for uninstantiated modules
+  dbSet<dbBlock> children = getChildren();
+  for (auto* child : children) {
+    module = child->findModule(name);
+    if (module != nullptr) {
+      return module;
+    }
+  }
+  return nullptr;
 }
 
 dbPowerDomain* dbBlock::findPowerDomain(const char* name)
