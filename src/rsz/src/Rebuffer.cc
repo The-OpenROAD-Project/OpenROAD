@@ -125,7 +125,8 @@ void characterizeChoiceTree(int level,
                              load_count,
                              wire_count,
                              junction_count);
-    } break;
+      break;
+    }
     case BufferedNetType::wire: {
       wire_count++;
       characterizeChoiceTree(level + 1,
@@ -134,7 +135,8 @@ void characterizeChoiceTree(int level,
                              load_count,
                              wire_count,
                              junction_count);
-    } break;
+      break;
+    }
     case BufferedNetType::junction: {
       junction_count++;
       characterizeChoiceTree(level + 1,
@@ -149,10 +151,12 @@ void characterizeChoiceTree(int level,
                              load_count,
                              wire_count,
                              junction_count);
-    } break;
+      break;
+    }
     case BufferedNetType::load: {
       load_count++;
-    } break;
+      break;
+    }
   }
 }
 
