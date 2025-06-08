@@ -4,7 +4,7 @@
 #include "Slots.h"
 
 #include <algorithm>
-#include <boost/functional/hash.hpp>
+#include <boost/container_hash/hash.hpp>
 #include <limits>
 #include <vector>
 

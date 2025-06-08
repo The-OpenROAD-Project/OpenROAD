@@ -69,20 +69,26 @@ bazel_dep(name = "boost.geometry", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.graph", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.heap", version = BOOST_VERSION)
 bazel_dep(name = "boost.icl", version = BOOST_VERSION)
+bazel_dep(name = "boost.io", version = BOOST_VERSION)
 bazel_dep(name = "boost.iostreams", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.iterator", version = BOOST_VERSION)
 bazel_dep(name = "boost.json", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.lambda", version = BOOST_VERSION + ".bcr.2")
+bazel_dep(name = "boost.lexical_cast", version = BOOST_VERSION)
 bazel_dep(name = "boost.multi_array", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.optional", version = BOOST_VERSION)
 bazel_dep(name = "boost.phoenix", version = BOOST_VERSION)
 bazel_dep(name = "boost.polygon", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.property_tree", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.random", version = BOOST_VERSION + ".bcr.1")
+bazel_dep(name = "boost.range", version = BOOST_VERSION)
 bazel_dep(name = "boost.regex", version = BOOST_VERSION)
+bazel_dep(name = "boost.serialization", version = BOOST_VERSION)
+bazel_dep(name = "boost.smart_ptr", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
-bazel_dep(name = "boost.thread", version = BOOST_VERSION)
+bazel_dep(name = "boost.system", version = BOOST_VERSION)
+bazel_dep(name = "boost.thread", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
 bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
@@ -142,7 +148,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "0408d693af0e193fd736f44580fc9a17c2bef8f0",
+    commit = "2f62c613d4448e99ffabb93f813f36c80012ba9f",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -151,10 +157,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3145-ge35c9b1f",
+    image = "docker.io/openroad/orfs:v3.0-3182-gd5f6f3a8",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "d2875b4834a7c01dab79b37816e8730c0505fabb98c112f6afa69577e5163c87",
+    sha256 = "6a22498612aee139de3073f953c5afa9979ae882bb0f456c4ca39b4efcc84d4d",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -194,7 +200,6 @@ maven.install(
         "https://repo1.maven.org/maven2",
     ],
 )
-
 use_repo(maven, "openroad_maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -210,11 +215,11 @@ exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
 )
 
 http_archive(
-        name = "openmp",
-        urls = [
-            "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
-        ],
-        strip_prefix = "openmp-20.1.0.src",
-        sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
-        build_file = "//bazel/openmp:bundled.BUILD.bazel",
-    )
+    name = "openmp",
+    build_file = "//bazel/openmp:bundled.BUILD.bazel",
+    sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
+    strip_prefix = "openmp-20.1.0.src",
+    urls = [
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
+    ],
+)

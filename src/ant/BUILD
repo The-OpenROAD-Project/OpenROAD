@@ -17,46 +17,51 @@ cc_library(
 )
 
 cc_library(
-    name = "make-antenna-checker",
-    srcs = [
-        "src/MakeAntennaChecker.cc",
-    ],
-    hdrs = [
-        "include/ant/MakeAntennaChecker.hh",
-    ],
-    includes = ["include"],
-    deps = [
-        ":ant",
-        "//:ord",
-        "//src/grt:types",
-        "//src/utl",
-        "@tk_tcl//:tcl",
-    ],
-)
-
-cc_library(
     name = "ant",
     srcs = [
         "src/AntennaChecker.cc",
+        "src/PinType.hh",
         "src/Polygon.cc",
+        "src/Polygon.hh",
     ],
     hdrs = [
         "include/ant/AntennaChecker.hh",
-        "src/PinType.hh",
-        "src/Polygon.hh",
     ],
     includes = [
         "include",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     deps = [
         ":types",
-        "//:ord",
         "//src/odb",
         "//src/utl",
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",
-        "@openmp//:openmp",
+        "@openmp",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakeAntennaChecker.cc",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/ant/AntennaChecker.hh",
+        "include/ant/GlobalRouteSource.hh",
+        "include/ant/MakeAntennaChecker.hh",
+    ],
+    includes = ["include"],
+    deps = [
+        "//:ord",
+        "//src/grt:types",
+        "//src/odb",
+        "//src/utl",
         "@tk_tcl//:tcl",
     ],
 )

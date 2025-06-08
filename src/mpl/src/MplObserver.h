@@ -4,14 +4,12 @@
 #pragma once
 
 #include <map>
-#include <optional>
 #include <vector>
 
 #include "clusterEngine.h"
 #include "object.h"
 #include "odb/geom.h"
 #include "util.h"
-#include "utl/Logger.h"
 
 namespace mpl {
 
