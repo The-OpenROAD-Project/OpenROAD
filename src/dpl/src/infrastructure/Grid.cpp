@@ -138,6 +138,9 @@ void Grid::markBlocked(dbBlock* block)
           if (routing_level <= 1 || routing_level > 3) {  // considering M2, M3
             return;
           }
+          if (wire_rect.getDir() == 1) {  // horizontal
+            return;
+          }
           wire_rect.moveDelta(-core.xMin(), -core.yMin());
           GridRect grid_rect = gridCovering(wire_rect);
           GridRect core{.xlo = GridX{0},
