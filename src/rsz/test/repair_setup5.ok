@@ -8,7 +8,7 @@
 [WARNING STA-1554] repair_setup5.tcl line 1, 'u1/X' is not a valid start point.
 [WARNING STA-1551] repair_setup5.tcl line 1, 'u5/A' is not a valid endpoint.
 worst slack max -1.88
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeDownMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
