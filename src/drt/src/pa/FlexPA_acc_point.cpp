@@ -244,8 +244,6 @@ void FlexPA::createSingleAccessPoint(
       }
     }
   }
-  ap->setAccess(frDirEnum::D, false);
-  ap->setAccess(frDirEnum::U, allow_via);
 
   ap->setAllowVia(allow_via);
   ap->setType((frAccessPointEnum) lower_type, true);
@@ -772,7 +770,8 @@ void FlexPA::getViasFromMetalWidthMap(
 frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
                           frAccessPoint* ap,
                           const gtl::polygon_90_set_data<frCoord>& polyset,
-                          const frViaDef* via_def)
+                          const frViaDef* via_def,
+                          const bool early_stop)
 {
   const Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
@@ -806,6 +805,9 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   for (const auto& r : int_rects) {
     max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
     max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
+  }
+  if (early_stop && max_ext) {
+    return max_ext;
   }
   if (!is_side_bound) {
     if (int_rects.size() > 1) {
@@ -866,7 +868,7 @@ void FlexPA::filterViaAccess(
     }
   }
 
-  std::set<std::tuple<frCoord, int, const frViaDef*>> valid_via_defs;
+  int valid_via_count = 0;
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def);
     via->setOrigin(begin_point);
@@ -882,21 +884,19 @@ void FlexPA::filterViaAccess(
       }
     }
 
-    frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def);
+    frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def, true);
 
     if (via_in_pin && max_ext) {
       continue;
     }
     if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
-      valid_via_defs.insert({max_ext, idx, via_def});
-      if (valid_via_defs.size() >= max_num_via_trial) {
+      ap->addViaDef(via_def);
+      ap->setAccess(frDirEnum::U);
+      valid_via_count++;
+      if (valid_via_count >= max_num_via_trial) {
         break;
       }
     }
-  }
-  ap->setAccess(frDirEnum::U, !valid_via_defs.empty());
-  for (auto& [ext, idx, via_def] : valid_via_defs) {
-    ap->addViaDef(via_def);
   }
 }
 
@@ -1409,6 +1409,19 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                "Access point generation for {} did not meet :{}",
                inst_term->getName(),
                unmet_requirements);
+  }
+
+  // Sorts via_defs in each ap
+  for (auto& ap : aps) {
+    std::map<const frViaDef*, int> cost_map;
+    for (auto viaDefsLayer : ap->getAllViaDefs()) {
+      for (const frViaDef* via_def : viaDefsLayer) {
+        cost_map[via_def] = viaMaxExt(
+            inst_term, ap.get(), pin_shapes[ap->getLayerNum()], via_def);
+      }
+    }
+
+    ap->sortViaDefs(cost_map);
   }
 
   updatePinStats(aps, inst_term);

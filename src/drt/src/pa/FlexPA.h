@@ -542,10 +542,23 @@ class FlexPA
       const Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
+  /**
+   * @brief Calculates the maximum extension a via has overhang on pin shapes
+   *
+   * @param inst_term the term representing the pin
+   * @param ap the access point the via is centered on
+   * @param polyset the polygon set representing pin shapes
+   * @param via_def the via def
+   * @param early_stop some use cases just want to check if max_ext > 0. In
+   * those cases if max_ext is > 0 at some point we can return early.
+   *
+   * @returns the maximum extension
+   */
   frCoord viaMaxExt(frInstTerm* inst_term,
                     frAccessPoint* ap,
                     const gtl::polygon_90_set_data<frCoord>& polyset,
-                    const frViaDef*);
+                    const frViaDef* via_def,
+                    const bool early_stop = false);
 
   /**
    * @brief Filters access through via on the access point
