@@ -1,0 +1,23 @@
+>> read_lef gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef, created 13 layers, 60 vias
+>> read_lef gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
+>> read_verilog jpeg.v
+>> link_design jpeg_encoder -hier
+>> read_sdc jpeg.sdc
+number instances in verilog is 39260
+wns max -85.02
+tns max -174582.05
+replace_arith_module -path_count 100 -target setup -slack_margin 0.0
+[INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
+[INFO RSZ-0152] Analyzing 100 critical paths with slack < 0.00
+[INFO RSZ-0153] Identified 3788 violating endpoints
+[INFO RSZ-0154] Identified 64 critical arithmetic instances
+[INFO RSZ-0160] 64 arithmetic instances have swapped to improve 'setup' target
+wns max -50.87
+tns max -109534.32

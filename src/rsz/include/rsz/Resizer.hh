@@ -110,6 +110,7 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 class ResizerObserver;
+class ConcreteSwapArithModules;
 
 class CloneMove;
 class BufferMove;
@@ -319,6 +320,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
                     bool verbose);
 
   ////////////////////////////////////////////////////////////////
+  void swapArithModules(int path_count,
+                        const std::string& target,
+                        float slack_margin);
+
+  ////////////////////////////////////////////////////////////////
+
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -695,10 +702,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   ////////////////////////////////////////////////////////////////
 
   // Components
-  RecoverPower* recover_power_;
-  RepairDesign* repair_design_;
-  RepairSetup* repair_setup_;
-  RepairHold* repair_hold_;
+  std::unique_ptr<RecoverPower> recover_power_;
+  std::unique_ptr<RepairDesign> repair_design_;
+  std::unique_ptr<RepairSetup> repair_setup_;
+  std::unique_ptr<RepairHold> repair_hold_;
+  std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -743,7 +751,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Cache results of getSwappableCells() as this is expensive for large PDKs.
   std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
 
-  CellTargetLoadMap* target_load_map_ = nullptr;
+  std::unique_ptr<CellTargetLoadMap> target_load_map_;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
@@ -809,13 +817,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Optimization moves
   // Will eventually be replaced with a getter method and some "recipes"
-  CloneMove* clone_move = nullptr;
-  SplitLoadMove* split_load_move = nullptr;
-  BufferMove* buffer_move = nullptr;
-  SizeDownMove* size_down_move = nullptr;
-  SizeUpMove* size_up_move = nullptr;
-  SwapPinsMove* swap_pins_move = nullptr;
-  UnbufferMove* unbuffer_move = nullptr;
+  std::unique_ptr<CloneMove> clone_move_;
+  std::unique_ptr<SplitLoadMove> split_load_move_;
+  std::unique_ptr<BufferMove> buffer_move_;
+  std::unique_ptr<SizeDownMove> size_down_move_;
+  std::unique_ptr<SizeUpMove> size_up_move_;
+  std::unique_ptr<SwapPinsMove> swap_pins_move_;
+  std::unique_ptr<UnbufferMove> unbuffer_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
 
@@ -835,6 +843,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
+  friend class SwapArithModules;
+  friend class ConcreteSwapArithModules;
   friend class IncrementalParasiticsGuard;
 };
 
