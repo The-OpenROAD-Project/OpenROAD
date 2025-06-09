@@ -456,7 +456,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       gui->deleteLabel(label_name);
     }
 
-    // Save image if routability not needed and below routability overflow
+    // Save image once if routability not needed and below routability overflow
     if (npVars_.routability_driven_mode && !is_routability_need_
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow
         && !final_routability_image_saved) {
@@ -467,6 +467,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                         iter,
                                         routability_driven_count,
                                         timing_driven_count);
+
+        graphics_->saveLabeledImage(
+            fmt::format("{}/1_routability_final_{:05d}.png",
+                        routability_driven_dir,
+                        iter),
+            label,
+            /* select_buffers = */ false);
 
         graphics_->saveLabeledImage(
             fmt::format("{}/1_density_routability_final_{:05d}.png",
@@ -816,6 +823,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
             /* select_buffers = */ false,
             "Heat Maps/Estimated Congestion (RUDY)");
       }
+
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
