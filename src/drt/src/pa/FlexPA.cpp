@@ -330,6 +330,24 @@ bool FlexPA::isMacroCell(frInst* inst)
           || masterType == dbMasterType::RING);
 }
 
+bool FlexPA::isStdCellTerm(frInstTerm* inst_term)
+{
+  return inst_term && isStdCell(inst_term->getInst());
+}
+
+bool FlexPA::isMacroCellTerm(frInstTerm* inst_term)
+{
+  return inst_term && isMacroCell(inst_term->getInst());
+}
+
+// It is sometimes important to understant that when PA is checking for nullptr
+// it means its checking for an io term, not a corner case with an invalid
+// inst_term. This function is made to avoid confusion
+bool FlexPA::isIOTerm(frInstTerm* inst_term)
+{
+  return inst_term == nullptr;
+}
+
 int FlexPA::main()
 {
   ProfileTask profile("PA:main");

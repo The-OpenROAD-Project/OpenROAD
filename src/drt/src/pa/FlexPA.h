@@ -153,7 +153,10 @@ class FlexPA
   void prep();
 
   bool isStdCell(frInst* unique_inst);
+  bool isStdCellTerm(frInstTerm* inst_term);
   bool isMacroCell(frInst* unique_inst);
+  bool isMacroCellTerm(frInstTerm* inst_term);
+  bool isIOTerm(frInstTerm* inst_term);
 
   /**
    * @brief generates all access points of a single unique instance
