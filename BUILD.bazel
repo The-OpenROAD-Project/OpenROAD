@@ -80,6 +80,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/odb",
     "//src/odb:ui",
     "//src/pad",
+    "//src/par",
+    "//src/par:ui",
     "//src/pdn",
     "//src/ppl",
     "//src/psm",
@@ -99,8 +101,6 @@ OPENROAD_LIBRARY_DEPS = [
 ]
 
 OPENROAD_COPTS = [
-    "-fexceptions",
-    "-ffp-contract=off",  # Needed for floating point stability.
     "-Wno-error",
     "-Wall",
     "-Wextra",
@@ -111,8 +111,6 @@ OPENROAD_COPTS = [
     "-Wformat-security",
     "-Wno-sign-compare",
     "-Wno-unused-parameter",
-    # FIXME reenable when warnings are fixed
-    "-Wno-unused-but-set-variable",
     "-fopenmp",
 ]
 
@@ -157,7 +155,6 @@ cc_library(
     name = "openroad_lib_private",
     srcs = glob(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ),
     hdrs = glob(OPENROAD_LIBRARY_HDRS_INCLUDE),
@@ -174,7 +171,6 @@ cc_library(
     name = "openroad_lib",
     srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
         "src/OpenRoad.cc",
@@ -553,7 +549,6 @@ cc_binary(
         "//bazel:runfiles",
     ],
     copts = [
-        "-fexceptions",
         "-Wno-error",
         "-Wall",
         "-Wextra",
@@ -644,7 +639,6 @@ cc_library(
         "src/sta/dcalc/PrimaDelayCalc.hh",
     ],
     copts = [
-        "-fexceptions",
         "-Wno-error",
         "-Wall",
         "-Wextra",

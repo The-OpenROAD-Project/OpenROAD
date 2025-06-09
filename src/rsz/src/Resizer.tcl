@@ -978,6 +978,38 @@ proc report_equiv_cells { args } {
   rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells
 }
 
+sta::define_cmd_args "replace_arith_modules" { [-path_count num_critical_paths] \
+                                      [-slack_threshold float] \
+                                      [-target opto_goal] }
+
+proc replace_arith_modules { args } {
+  sta::parse_key_args "replace_arith_modules" args \
+    keys {-path_count -slack_threshold -target} \
+    flags {}
+
+  if { [info exists keys(-path_count)] } {
+    set path_count $keys(-path_count)
+  } else {
+    set path_count 1000
+  }
+  if { [info exists keys(-target)] } {
+    set target $keys(-target)
+    if { [lsearch -exact {setup hold power area} $target] == -1 } {
+      util::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
+    }
+  } else {
+    set target "setup"
+  }
+  if { [info exists keys(-slack_margin)] } {
+    set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  } else {
+    set slack_margin 0.0
+  }
+
+  puts "replace_arith_module -path_count $path_count -target $target -slack_margin $slack_margin"
+  rsz::swap_arith_modules_cmd $path_count $target $slack_margin
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
