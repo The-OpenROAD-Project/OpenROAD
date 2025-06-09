@@ -96,10 +96,7 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  int illegalDiodePlacementCount() const
-  {
-    return illegal_diode_placement_count_;
-  }
+  int illegalDiodePlacementCount() const { return diode_placement_count_; }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
   void setAntennaViolations(AntennaViolations antenna_violations)
@@ -176,9 +173,7 @@ class RepairAntennas
                           GRoute& route);
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
-                   odb::dbITerm* sink_iterm,
-                   int site_width,
-                   odb::dbTechLayer* violation_layer);
+                   odb::dbITerm* sink_iterm);
   void setDiodesAndGatesPlacementStatus(
       odb::dbPlacementStatus placement_status);
   void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
@@ -233,7 +228,7 @@ class RepairAntennas
   std::vector<odb::dbInst*> diode_insts_;
   AntennaViolations antenna_violations_;
   int unique_diode_index_;
-  int illegal_diode_placement_count_;
+  int diode_placement_count_;
   bool has_new_violations_;
   RoutingSource routing_source_;
   //////////////////////////////////////////

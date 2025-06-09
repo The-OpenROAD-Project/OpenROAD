@@ -35,7 +35,7 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
       db_(db),
       logger_(logger),
       unique_diode_index_(1),
-      illegal_diode_placement_count_(0),
+      diode_placement_count_(0),
       has_new_violations_(false),
       routing_source_(RoutingSource::None)
 {
@@ -427,27 +427,8 @@ void RepairAntennas::destroyNetWires(
 
 void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
 {
-  int site_width = -1;
-  odb::dbTech* tech = db_->getTech();
-
-  illegal_diode_placement_count_ = 0;
+  diode_placement_count_ = 0;
   diode_insts_.clear();
-
-  auto rows = block_->getRows();
-  for (odb::dbRow* db_row : rows) {
-    odb::dbSite* site = db_row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
-    int width = site->getWidth();
-    if (site_width == -1) {
-      site_width = width;
-    }
-
-    if (site_width != width) {
-      logger_->warn(GRT, 27, "Design has rows with different site widths.");
-    }
-  }
 
   std::vector<odb::dbInst*> insts_to_restore;
   if (routing_source_ == RoutingSource::DetailedRouting) {
@@ -474,9 +455,7 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
       if (violation.diode_count_per_gate > 0) {
         for (odb::dbITerm* gate : violation.gates) {
           for (int j = 0; j < violation.diode_count_per_gate; j++) {
-            odb::dbTechLayer* violation_layer
-                = tech->findRoutingLayer(violation.routing_level);
-            insertDiode(db_net, diode_mterm, gate, site_width, violation_layer);
+            insertDiode(db_net, diode_mterm, gate);
             inserted_diodes = true;
           }
         }
@@ -493,13 +472,13 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
   }
 
-  if (illegal_diode_placement_count_ > 0) {
+  if (diode_placement_count_ > 0) {
     debugPrint(logger_,
                GRT,
                "repair_antennas",
                2,
                "using detailed placer to place {} diodes.",
-               illegal_diode_placement_count_);
+               diode_placement_count_);
   }
 
   legalizePlacedCells();
@@ -518,9 +497,7 @@ void RepairAntennas::legalizePlacedCells()
 
 void RepairAntennas::insertDiode(odb::dbNet* net,
                                  odb::dbMTerm* diode_mterm,
-                                 odb::dbITerm* gate,
-                                 int site_width,
-                                 odb::dbTechLayer* violation_layer)
+                                 odb::dbITerm* gate)
 {
   // Create instance for diode
   odb::dbMaster* diode_master = diode_mterm->getMaster();
@@ -537,7 +514,7 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
   diode_inst->setLocation(inst_loc_x, inst_loc_y);
   diode_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
-  illegal_diode_placement_count_++;
+  diode_placement_count_++;
 
   // Add diode instance to net
   odb::dbITerm* diode_iterm
