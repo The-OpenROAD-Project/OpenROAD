@@ -81,7 +81,7 @@ cc_library(
 )
 
 cc_library(
-    name = "lib",
+    name = "drt",
     srcs = [
         "src/AbstractGraphicsFactory.h",
         "src/DesignCallBack.cpp",
@@ -201,13 +201,14 @@ cc_library(
         "-Isrc/drt/src/pa",
         "-Isrc/drt/src/rp",
         "-Isrc/drt/src/ta",
+        "-fopenmp",
     ],
     includes = [
         "include",
     ],
     deps = [
         ":db_hdrs",
-        "//src/dst:lib",
+        "//src/dst",
         "//src/odb",
         "//src/stt",
         "//src/utl",
@@ -223,8 +224,9 @@ cc_library(
 )
 
 cc_library(
-    name = "drt",
+    name = "ui",
     srcs = [
+        "include/triton_route/TritonRoute.h",
         "src/AbstractGraphicsFactory.h",
         "src/GraphicsFactory.cpp",
         "src/GraphicsFactory.h",
@@ -261,14 +263,17 @@ cc_library(
         "-Isrc/drt/src",
         "-Wno-missing-braces",  # from TCL swigging
     ],
+    includes = [
+        "include",
+    ],
     deps = [
         ":db_hdrs",
-        ":lib",
         "//:ord",
-        "//src/dst:lib",
+        "//src/dst",
         "//src/gui",
         "//src/odb",
         "//src/utl",
+        "@boost.asio",
         "@boost.container",
         "@boost.geometry",
         "@boost.polygon",

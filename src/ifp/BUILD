@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "ifp",
     srcs = [
         "src/InitFloorplan.cc",
     ],
@@ -24,14 +24,15 @@ cc_library(
         "//:opensta_lib",
         "//src/dbSta",
         "//src/odb",
-        "//src/upf:lib",
+        "//src/upf",
         "//src/utl",
     ],
 )
 
 cc_library(
-    name = "ifp",
+    name = "ui",
     srcs = [
+        "include/ifp/InitFloorplan.hh",
         "src/MakeInitFloorplan.cc",
         ":swig",
         ":tcl",
@@ -42,8 +43,10 @@ cc_library(
     copts = [
         "-Isrc/ifp/src",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
         "//:opensta_lib",
         "//:ord",
         "//src/dbSta",
