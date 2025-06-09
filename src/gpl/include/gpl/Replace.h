@@ -105,7 +105,7 @@ class Replace
   void setRoutabilityInflationRatioCoef(float coef);
   void setRoutabilityMaxInflationRatio(float ratio);
   void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
-  void setLoadFastRoute(bool mode);
+  void setEnableRoutingCongestion(bool mode);
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
