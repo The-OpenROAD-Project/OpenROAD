@@ -159,7 +159,7 @@ void GCell::setCenterLocation(int cx, int cy)
 }
 
 // changing size and preserve center coordinates
-void GCell::setSize(int dx, int dy)
+void GCell::setSize(int dx, int dy, GCellChange change)
 {
   const int centerX = cx();
   const int centerY = cy();
@@ -168,6 +168,8 @@ void GCell::setSize(int dx, int dy)
   ly_ = centerY - dy / 2;
   ux_ = centerX + dx / 2;
   uy_ = centerY + dy / 2;
+
+  change_ = change;
 }
 
 // Used for initialization
@@ -1490,7 +1492,16 @@ void NesterovBaseCommon::revertGCellSizeToMinRc()
 
     int idx = &gCell - nbc_gcells_.data();
 
-    gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
+    if (minRcCellSize_[idx].first * minRcCellSize_[idx].second
+        > gCell->insts()[0]->area()) {
+      gCell->setSize(minRcCellSize_[idx].first,
+                     minRcCellSize_[idx].second,
+                     GCell::GCellChange::kRoutability);
+    } else {
+      gCell->setSize(minRcCellSize_[idx].first,
+                     minRcCellSize_[idx].second,
+                     GCell::GCellChange::kNone);
+    }
   }
 }
 
@@ -2925,7 +2936,8 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   int64_t prevCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   odb::dbBox* bbox = db_inst->getBBox();
-  gcell->setSize(bbox->getDX(), bbox->getDY());
+  gcell->setSize(
+      bbox->getDX(), bbox->getDY(), GCell::GCellChange::kTimingDriven);
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
