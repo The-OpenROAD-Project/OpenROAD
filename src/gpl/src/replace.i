@@ -274,7 +274,7 @@ void
 set_enable_routing_congestion(bool enable_routing_congestion)
 {
   Replace* replace = getReplace();
-  replace->setLoadFastRoute(enable_routing_congestion);
+  replace->setEnableRoutingCongestion(enable_routing_congestion);
 }
 
 float

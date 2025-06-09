@@ -98,7 +98,7 @@ global_placement
     [-timing_driven_nets_percentage]
     [-keep_resize_below_overflow]
     [-disable_revert_if_diverge]
-    [-enable_routing_congestion_fast_route]
+    [-enable_routing_congestion]
 ```
 
 #### Options

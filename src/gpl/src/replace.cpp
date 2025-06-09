@@ -497,7 +497,7 @@ void Replace::setDisableRevertIfDiverge(bool mode)
   disableRevertIfDiverge_ = mode;
 }
 
-void Replace::setLoadFastRoute(bool mode)
+void Replace::setEnableRoutingCongestion(bool mode)
 {
   enable_routing_congestion_ = mode;
 }
