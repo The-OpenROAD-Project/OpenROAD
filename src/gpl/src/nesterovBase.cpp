@@ -1926,7 +1926,7 @@ void NesterovBase::initFillerGCells()
 
     fillerStor_.push_back(myGCell);
   }
-  totalFillerArea_ = fillerStor_.size() * getFillerCellArea();
+  // totalFillerArea_ = fillerStor_.size() * getFillerCellArea();
   initial_filler_area_ = totalFillerArea_;
 }
 
