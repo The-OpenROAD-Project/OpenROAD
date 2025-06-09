@@ -542,6 +542,11 @@ class FlexPA
       const Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
+  frCoord viaMaxExt(frInstTerm* inst_term,
+                    frAccessPoint* ap,
+                    const gtl::polygon_90_set_data<frCoord>& polyset,
+                    const frViaDef*);
+
   /**
    * @brief Filters access through via on the access point
    *

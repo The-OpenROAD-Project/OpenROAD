@@ -769,6 +769,58 @@ void FlexPA::getViasFromMetalWidthMap(
   }
 }
 
+frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
+                          frAccessPoint* ap,
+                          const gtl::polygon_90_set_data<frCoord>& polyset,
+                          const frViaDef* via_def)
+{
+  const Point begin_point = ap->getPoint();
+  const auto layer_num = ap->getLayerNum();
+  auto via = std::make_unique<frVia>(via_def);
+  via->setOrigin(begin_point);
+  const Rect box = via->getLayer1BBox();
+
+  // check if ap is on the left/right boundary of the cell
+  Rect boundary_bbox;
+  bool is_side_bound = false;
+  if (inst_term) {
+    boundary_bbox = inst_term->getInst()->getBoundaryBBox();
+    frCoord width = getDesign()->getTech()->getLayer(layer_num)->getWidth();
+    if (begin_point.x() <= boundary_bbox.xMin() + 3 * width
+        || begin_point.x() >= boundary_bbox.xMax() - 3 * width) {
+      is_side_bound = true;
+    }
+  }
+
+  frCoord max_ext = 0;
+  const gtl::rectangle_data<frCoord> viarect(
+      box.xMin(), box.yMin(), box.xMax(), box.yMax());
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator&=;
+  gtl::polygon_90_set_data<frCoord> intersection;
+  intersection += viarect;
+  intersection &= polyset;
+  // via ranking criteria: max extension distance beyond pin shape
+  std::vector<gtl::rectangle_data<frCoord>> int_rects;
+  intersection.get_rectangles(int_rects, gtl::orientation_2d_enum::HORIZONTAL);
+  for (const auto& r : int_rects) {
+    max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
+    max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
+  }
+  if (!is_side_bound) {
+    if (int_rects.size() > 1) {
+      int_rects.clear();
+      intersection.get_rectangles(int_rects,
+                                  gtl::orientation_2d_enum::VERTICAL);
+    }
+    for (const auto& r : int_rects) {
+      max_ext = std::max(max_ext, box.yMax() - gtl::yh(r));
+      max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
+    }
+  }
+  return max_ext;
+}
+
 template <typename T>
 void FlexPA::filterViaAccess(
     frAccessPoint* ap,
@@ -780,6 +832,7 @@ void FlexPA::filterViaAccess(
 {
   const Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
+
   // skip planar only access
   if (!ap->isViaAllowed()) {
     return;
@@ -798,17 +851,6 @@ void FlexPA::filterViaAccess(
     via_in_pin = true;
   }
 
-  // check if ap is on the left/right boundary of the cell
-  Rect boundary_bbox;
-  bool is_side_bound = false;
-  if (inst_term) {
-    boundary_bbox = inst_term->getInst()->getBoundaryBBox();
-    frCoord width = getDesign()->getTech()->getLayer(layer_num)->getWidth();
-    if (begin_point.x() <= boundary_bbox.xMin() + 3 * width
-        || begin_point.x() >= boundary_bbox.xMax() - 3 * width) {
-      is_side_bound = true;
-    }
-  }
   const int max_num_via_trial = 2;
   // use std:pair to ensure deterministic behavior
   std::vector<std::pair<int, const frViaDef*>> via_defs;
@@ -830,6 +872,7 @@ void FlexPA::filterViaAccess(
     via->setOrigin(begin_point);
     const Rect box = via->getLayer1BBox();
     if (inst_term) {
+      Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
         continue;
       }
@@ -839,33 +882,8 @@ void FlexPA::filterViaAccess(
       }
     }
 
-    frCoord max_ext = 0;
-    const gtl::rectangle_data<frCoord> viarect(
-        box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    using boost::polygon::operators::operator+=;
-    using boost::polygon::operators::operator&=;
-    gtl::polygon_90_set_data<frCoord> intersection;
-    intersection += viarect;
-    intersection &= polyset;
-    // via ranking criteria: max extension distance beyond pin shape
-    std::vector<gtl::rectangle_data<frCoord>> int_rects;
-    intersection.get_rectangles(int_rects,
-                                gtl::orientation_2d_enum::HORIZONTAL);
-    for (const auto& r : int_rects) {
-      max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
-      max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
-    }
-    if (!is_side_bound) {
-      if (int_rects.size() > 1) {
-        int_rects.clear();
-        intersection.get_rectangles(int_rects,
-                                    gtl::orientation_2d_enum::VERTICAL);
-      }
-      for (const auto& r : int_rects) {
-        max_ext = std::max(max_ext, box.yMax() - gtl::yh(r));
-        max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
-      }
-    }
+    frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def);
+
     if (via_in_pin && max_ext) {
       continue;
     }
