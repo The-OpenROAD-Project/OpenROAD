@@ -3232,7 +3232,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
-  if(totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.5)) {
+  if(totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) {
     for (int i = nb_gcells_.size() - 1;
         i >= 0 && removed_count < max_fllers_to_remove;
         --i) {
