@@ -1492,7 +1492,8 @@ void NesterovBaseCommon::revertGCellSizeToMinRc()
 
     int idx = &gCell - nbc_gcells_.data();
 
-    if (minRcCellSize_[idx].first * minRcCellSize_[idx].second
+    if (static_cast<int64_t>(minRcCellSize_[idx].first)
+            * static_cast<int64_t>(minRcCellSize_[idx].second)
         > gCell->insts()[0]->area()) {
       gCell->setSize(minRcCellSize_[idx].first,
                      minRcCellSize_[idx].second,
