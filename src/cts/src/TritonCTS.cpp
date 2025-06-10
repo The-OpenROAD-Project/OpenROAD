@@ -2147,7 +2147,7 @@ void TritonCTS::setAllClocksPropagated()
 {
   // Compute ideal buffer delay to use in delay insertion
   if (options_->insertionDelayEnabled()) {
-    for (auto & iter : builders_) {
+    for (auto& iter : builders_) {
       TreeBuilder* builder = iter.get();
       computeTopBufferDelay(builder);
     }
@@ -2158,6 +2158,7 @@ void TritonCTS::setAllClocksPropagated()
   }
   resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
 }
+
 void TritonCTS::repairClockNets()
 {
   double max_wire_length
@@ -2184,7 +2185,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->ensureClkNetwork();
   openSta_->ensureClkArrivals();
   sta::Graph* graph = openSta_->graph();
-  for (auto & iter : builders_) {
+  for (auto& iter : builders_) {
     TreeBuilder* registerBuilder = iter.get();
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
