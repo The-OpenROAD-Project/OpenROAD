@@ -572,7 +572,7 @@ class FlexPA
                     frAccessPoint* ap,
                     const gtl::polygon_90_set_data<frCoord>& polyset,
                     const frViaDef* via_def,
-                    const bool early_stop = false);
+                    bool early_stop = false);
 
   /**
    * @brief Filters access through via on the access point
