@@ -1820,8 +1820,8 @@ void Rebuffer::printProgress(int iteration,
   const bool start = iteration == 0;
 
   if (start && !end) {
-    logger_->report("   Iter   |    Area   | Removed | Inserted | Remaining");
-    logger_->report("          |           | Buffers | Buffers  |");
+    logger_->report("   Iter   |    Area   | Removed | Inserted |   Pins");
+    logger_->report("          |           | Buffers | Buffers  | Remaining");
     logger_->report("-------------------------------------------------------");
   }
 
