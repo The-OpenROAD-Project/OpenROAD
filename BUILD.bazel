@@ -51,57 +51,56 @@ config_setting(
 # need these blanked dependencies in multiple places anymore.
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
-    ":opensta_lib",
     ":ord",
     "//src/ant",
+    "//src/ant:ui",
     "//src/cts",
+    "//src/cts:ui",
     "//src/dbSta",
+    "//src/dbSta:ui",
+    "//src/dft",
+    "//src/dft:ui",
     "//src/dpl",
+    "//src/dpl:ui",
+    "//src/drt",
+    "//src/drt:ui",
     "//src/dst",
+    "//src/dst:ui",
     "//src/exa",
+    "//src/exa:ui",
     "//src/fin",
     "//src/gpl",
     "//src/grt",
+    "//src/grt:ui",
     "//src/gui",
     "//src/ifp",
+    "//src/ifp:ui",
     "//src/mpl",
+    "//src/mpl:ui",
     "//src/odb",
+    "//src/odb:ui",
     "//src/pad",
+    "//src/par",
+    "//src/par:ui",
     "//src/pdn",
     "//src/ppl",
     "//src/psm",
     "//src/rcx",
+    "//src/rcx:ui",
     "//src/rsz",
+    "//src/rsz:ui",
     "//src/stt",
+    "//src/stt:ui",
     "//src/tap",
+    "//src/tap:ui",
     "//src/upf",
+    "//src/upf:ui",
     "//src/utl",
-    "@boost.asio",
-    "@boost.geometry",
-    "@boost.graph",
-    "@boost.heap",
-    "@boost.icl",
-    "@boost.json",
-    "@boost.multi_array",
-    "@boost.polygon",
-    "@boost.property_tree",
-    "@boost.stacktrace",
-    "@boost.thread",
-    "@com_github_quantamhd_lemon//:lemon",
+    "//src/utl:ui",
     "@edu_berkeley_abc//:abc-lib",
-    "@eigen",
-    "@or-tools//ortools/base:base",
-    "@or-tools//ortools/linear_solver:linear_solver",
-    "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
-    "@or-tools//ortools/sat:cp_model",
-    "@openmp//:openmp",
-    "@spdlog",
-    "@tk_tcl//:tcl",
 ]
 
 OPENROAD_COPTS = [
-    "-fexceptions",
-    "-ffp-contract=off",  # Needed for floating point stability.
     "-Wno-error",
     "-Wall",
     "-Wextra",
@@ -112,8 +111,6 @@ OPENROAD_COPTS = [
     "-Wformat-security",
     "-Wno-sign-compare",
     "-Wno-unused-parameter",
-    # FIXME reenable when warnings are fixed
-    "-Wno-unused-but-set-variable",
     "-fopenmp",
 ]
 
@@ -158,7 +155,6 @@ cc_library(
     name = "openroad_lib_private",
     srcs = glob(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ),
     hdrs = glob(OPENROAD_LIBRARY_HDRS_INCLUDE),
@@ -175,7 +171,6 @@ cc_library(
     name = "openroad_lib",
     srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
         "src/OpenRoad.cc",
@@ -233,15 +228,6 @@ genrule(
 )
 
 tcl_encode(
-    name = "triton_route_tcl",
-    srcs = [
-        "src/drt/src/TritonRoute.tcl",
-    ],
-    char_array_name = "drt_tcl_inits",
-    namespace = "drt",
-)
-
-tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
         "src/Metrics.tcl",
@@ -258,29 +244,6 @@ tcl_encode(
     ],
     char_array_name = "rmp_tcl_inits",
     namespace = "rmp",
-)
-
-tcl_encode(
-    name = "dft_tcl",
-    srcs = [
-        "src/dft/src/dft.tcl",
-    ],
-    char_array_name = "dft_tcl_inits",
-    namespace = "dft",
-)
-
-tcl_wrap_cc(
-    name = "triton_route_swig",
-    srcs = [
-        "src/drt/src/TritonRoute.i",
-        ":error_swig",
-    ],
-    module = "drt",
-    namespace_prefix = "drt",
-    root_swig_src = "src/drt/src/TritonRoute.i",
-    swig_includes = [
-        "src/drt/src",
-    ],
 )
 
 tcl_wrap_cc(
@@ -310,20 +273,6 @@ tcl_wrap_cc(
     swig_includes = [
         "src/rmp/src",
         "src/sta",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "dft_swig",
-    srcs = [
-        "src/dft/src/dft.i",
-        ":error_swig",
-    ],
-    module = "dft",
-    namespace_prefix = "dft",
-    root_swig_src = "src/dft/src/dft.i",
-    swig_includes = [
-        "src/dft/src",
     ],
 )
 
@@ -504,7 +453,6 @@ genrule(
     name = "StaConfig",
     srcs = [],
     outs = ["src/sta/util/StaConfig.hh"],
-    visibility = ["//:__subpackages__"],
     cmd = """echo -e '
     #define STA_VERSION "2.2.1"
     #define STA_GIT_SHA1 "53d4d57cb8550d2ceed18adad75b73bba7858f4f"
@@ -512,6 +460,7 @@ genrule(
     #define SSTA 0
     #define ZLIB_FOUND' > \"$@\"
     """,
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -600,7 +549,6 @@ cc_binary(
         "//bazel:runfiles",
     ],
     copts = [
-        "-fexceptions",
         "-Wno-error",
         "-Wall",
         "-Wextra",
@@ -691,7 +639,6 @@ cc_library(
         "src/sta/dcalc/PrimaDelayCalc.hh",
     ],
     copts = [
-        "-fexceptions",
         "-Wno-error",
         "-Wall",
         "-Wextra",

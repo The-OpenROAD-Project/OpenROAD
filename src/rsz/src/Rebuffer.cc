@@ -109,6 +109,57 @@ void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& options)
   options.resize(si);
 }
 
+void characterizeChoiceTree(int level,
+                            const BufferedNetPtr& choice,
+                            int& buffer_count,
+                            int& load_count,
+                            int& wire_count,
+                            int& junction_count)
+{
+  switch (choice->type()) {
+    case BufferedNetType::buffer: {
+      buffer_count++;
+      characterizeChoiceTree(level + 1,
+                             choice->ref(),
+                             buffer_count,
+                             load_count,
+                             wire_count,
+                             junction_count);
+      break;
+    }
+    case BufferedNetType::wire: {
+      wire_count++;
+      characterizeChoiceTree(level + 1,
+                             choice->ref(),
+                             buffer_count,
+                             load_count,
+                             wire_count,
+                             junction_count);
+      break;
+    }
+    case BufferedNetType::junction: {
+      junction_count++;
+      characterizeChoiceTree(level + 1,
+                             choice->ref(),
+                             buffer_count,
+                             load_count,
+                             wire_count,
+                             junction_count);
+      characterizeChoiceTree(level + 1,
+                             choice->ref2(),
+                             buffer_count,
+                             load_count,
+                             wire_count,
+                             junction_count);
+      break;
+    }
+    case BufferedNetType::load: {
+      load_count++;
+      break;
+    }
+  }
+}
+
 void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
 {
   sort(options.begin(),
@@ -621,20 +672,56 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
         db_network_->staToDb(
             drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
-        if (db_net && db_modnet) {
+        bool propagate_mod_net = false;
+        int buffer_count = 0;
+        int load_count = 0;
+        int wire_count = 0;
+        int junction_count = 0;
+        /*
+          We characaterize the choice tree by counting up the types
+          of its elements to see if this something we can propagate
+          a hierarchical net through
+        */
+        characterizeChoiceTree(1,
+                               best_option,
+                               buffer_count,
+                               load_count,
+                               wire_count,
+                               junction_count);
+
+        /*
+          Propagating a hierarchicial through a single buffer or serial chain
+          of buffers is fine.
+
+          However, normally we cannot propagate a hierarchical net through a
+          junction, because we cannot discriminate between the two outputs.
+
+          Specifically if there is a junction with loads or buffers we
+          cannot do the propagation. However, if there is a
+          junction which is just doing wiring (no buffers or loads) then fine.
+         */
+        if (junction_count != 0 && (!(buffer_count == 0 && load_count == 0))) {
+          propagate_mod_net = false;
+        } else {
+          propagate_mod_net = true;
+        }
+
+        if (db_net && db_modnet && propagate_mod_net) {
           // as we move the modnet and dbnet around we will get a clash
           //(the dbNet name now exposed is the same as the modnet name)
-          // so we uniquify the modnet name
+          // so we uniquify the modnet name. Only do this is if we
+          // are propagating the modnet..
           const std::string new_name = resizer_->makeUniqueNetName();
           db_modnet->rename(new_name.c_str());
         }
 
-        inserted_buffer_count = rebufferTopDown(best_option,
-                                                db_network_->dbToSta(db_net),
-                                                1,
-                                                parent,
-                                                drvr_op_iterm,
-                                                db_modnet);
+        inserted_buffer_count
+            = rebufferTopDown(best_option,
+                              db_network_->dbToSta(db_net),
+                              1,
+                              parent,
+                              drvr_op_iterm,
+                              (propagate_mod_net ? db_modnet : nullptr));
         if (inserted_buffer_count > 0) {
           rebuffer_net_count_++;
           debugPrint(logger_,

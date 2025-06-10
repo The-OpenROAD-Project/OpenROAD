@@ -451,6 +451,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     repair_antennas_->clearViolations();
     itr++;
   }
+
   logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides(modified_nets);
   return total_diodes_count_;
@@ -517,7 +518,7 @@ void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
   for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
       Net* net = getNet(db_net);
-      builder.estimateParasitcs(db_net, net->getPins(), route, spef_writer);
+      builder.estimateParasitics(db_net, net->getPins(), route, spef_writer);
     }
   }
 }
@@ -533,7 +534,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
   GRoute& route = iter->second;
   if (!route.empty()) {
     Net* net = getNet(db_net);
-    builder.estimateParasitcs(db_net, net->getPins(), route);
+    builder.estimateParasitics(db_net, net->getPins(), route);
   }
 }
 
@@ -4529,11 +4530,12 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net,
       via_count++;
     }
   }
+  out << " " << via_count;
   for (size_t i = 0; i < lengths.size(); i++) {
     int64_t length = lengths[i];
     odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
     if (i > 0 && out.is_open()) {
-      out << " " << via_count << " " << block_->dbuToMicrons(length);
+      out << " " << block_->dbuToMicrons(length);
     }
     if (length > 0) {
       logger_->report("\tLayer {:5s}: {:5.2f}um",
@@ -4662,11 +4664,12 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
     }
   }
 
+  out << " " << via_count;
   for (size_t i = 1; i < lengths.size(); i++) {
     int64_t length = lengths[i];
     odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
     if (i > 0 && out.is_open()) {
-      out << " " << via_count << " " << block_->dbuToMicrons(length);
+      out << " " << block_->dbuToMicrons(length);
     }
     if (length > 0) {
       logger_->report("\tLayer {:5s}: {:5.2f}um",
@@ -4862,6 +4865,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       }
       if (fastroute_->has2Doverflow()) {
         is_congested_ = true;
+        updateDbCongestion();
         saveCongestion();
         logger_->error(GRT,
                        232,

@@ -17,7 +17,7 @@ cc_library(
 )
 
 cc_library(
-    name = "lib",
+    name = "ant",
     srcs = [
         "src/AntennaChecker.cc",
         "src/PinType.hh",
@@ -29,6 +29,9 @@ cc_library(
     ],
     includes = [
         "include",
+    ],
+    copts = [
+        "-fopenmp",
     ],
     deps = [
         ":types",
@@ -42,7 +45,7 @@ cc_library(
 )
 
 cc_library(
-    name = "ant",
+    name = "ui",
     srcs = [
         "src/MakeAntennaChecker.cc",
         ":swig",
@@ -55,7 +58,6 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
-        ":lib",
         "//:ord",
         "//src/grt:types",
         "//src/odb",

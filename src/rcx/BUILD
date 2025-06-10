@@ -10,7 +10,33 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "hdrs",
+    hdrs = [
+        "include/rcx/box.h",
+        "include/rcx/dbUtil.h",
+        "include/rcx/ext.h",
+        "include/rcx/ext2dBox.h",
+        "include/rcx/extMeasureRC.h",
+        "include/rcx/extModelGen.h",
+        "include/rcx/extPattern.h",
+        "include/rcx/extProgressTracker.hpp",
+        "include/rcx/extRCap.h",
+        "include/rcx/extRulesPattern.h",
+        "include/rcx/extSegment.h",
+        "include/rcx/extSolverGen.h",
+        "include/rcx/extSpef.h",
+        "include/rcx/extViaModel.h",
+        "include/rcx/ext_options.h",
+        "include/rcx/extprocess.h",
+        "include/rcx/grids.h",
+        "include/rcx/name.h",
+        "include/rcx/rcx.h",
+        "include/rcx/util.h",
+    ],
+)
+
+cc_library(
+    name = "rcx",
     srcs = [
         "src/dbUtil.cpp",
         "src/ext.cpp",
@@ -62,39 +88,18 @@ cc_library(
         "src/util.cpp",
         "src/util.h",
     ],
-    hdrs = [
-        "include/rcx/box.h",
-        "include/rcx/dbUtil.h",
-        "include/rcx/ext.h",
-        "include/rcx/ext2dBox.h",
-        "include/rcx/extMeasureRC.h",
-        "include/rcx/extModelGen.h",
-        "include/rcx/extPattern.h",
-        "include/rcx/extProgressTracker.hpp",
-        "include/rcx/extRCap.h",
-        "include/rcx/extRulesPattern.h",
-        "include/rcx/extSegment.h",
-        "include/rcx/extSolverGen.h",
-        "include/rcx/extSpef.h",
-        "include/rcx/extViaModel.h",
-        "include/rcx/ext_options.h",
-        "include/rcx/extprocess.h",
-        "include/rcx/grids.h",
-        "include/rcx/name.h",
-        "include/rcx/rcx.h",
-        "include/rcx/util.h",
-    ],
     includes = [
         "include",
     ],
     deps = [
+        ":hdrs",
         "//src/odb",
         "//src/utl",
     ],
 )
 
 cc_library(
-    name = "rcx",
+    name = "ui",
     srcs = [
         "src/MakeOpenRCX.cpp",
         ":swig",
@@ -106,8 +111,11 @@ cc_library(
     copts = [
         "-Isrc/rcx/src",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        ":lib",
+        ":hdrs",
         "//:ord",
         "//src/odb",
         "//src/utl",

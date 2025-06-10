@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "rsz",
     srcs = [
         "src/AbstractSteinerRenderer.h",
         "src/BaseMove.cc",
@@ -19,6 +19,8 @@ cc_library(
         "src/BufferMove.hh",
         "src/BufferedNet.cc",
         "src/BufferedNet.hh",
+        "src/ConcreteSwapArithModules.cc",
+        "src/ConcreteSwapArithModules.hh",
         "src/CloneMove.cc",
         "src/CloneMove.hh",
         "src/EstimateWireParasitics.cc",
@@ -44,6 +46,7 @@ cc_library(
         "src/SplitLoadMove.hh",
         "src/SteinerTree.cc",
         "src/SteinerTree.hh",
+        "src/SwapArithModules.hh",
         "src/SwapPinsMove.cc",
         "src/SwapPinsMove.hh",
         "src/UnbufferMove.cc",
@@ -73,7 +76,7 @@ cc_library(
 )
 
 cc_library(
-    name = "rsz",
+    name = "ui",
     srcs = [
         "src/AbstractSteinerRenderer.h",
         "src/Graphics.cc",
@@ -98,7 +101,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":lib",
         "//:opensta_lib",
         "//:ord",
         "//src/dbSta",

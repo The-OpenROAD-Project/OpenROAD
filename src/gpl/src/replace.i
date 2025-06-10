@@ -183,7 +183,7 @@ set_routability_driven_mode(bool routability_driven)
 }
 
 void
-  set_routability_use_grt(bool use_grt)
+set_routability_use_grt(bool use_grt)
 {
   Replace* replace = getReplace();
   replace->setRoutabilityUseGrt(use_grt);
@@ -268,6 +268,13 @@ set_disable_revert_if_diverge(bool disable_revert_if_diverge)
 {
   Replace* replace = getReplace();
   replace->setDisableRevertIfDiverge(disable_revert_if_diverge);
+}
+
+void
+set_enable_routing_congestion(bool enable_routing_congestion)
+{
+  Replace* replace = getReplace();
+  replace->setEnableRoutingCongestion(enable_routing_congestion);
 }
 
 float

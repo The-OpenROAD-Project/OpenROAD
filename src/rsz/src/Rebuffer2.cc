@@ -2123,7 +2123,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
                                         db_modnet);
 
     for (auto* inst : insts) {
-      resizer_->unbuffer_move->removeBuffer(inst);
+      resizer_->unbuffer_move_->removeBuffer(inst);
       removed_count_++;
     }
 

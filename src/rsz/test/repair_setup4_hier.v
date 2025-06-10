@@ -5,14 +5,11 @@
 
 module reg1 (clk);
  input clk;
-
  DFF_X1 r1 (.CK(clk),
     .Q(r1q));
-   
    submodule u1(.r1q(r1q),
 		.clk(clk)
 		);
-   
 endmodule // reg1
 
 module submodule(input r1q,
