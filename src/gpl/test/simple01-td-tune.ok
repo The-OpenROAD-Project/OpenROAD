@@ -45,8 +45,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |    -12.8% |      75 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 75 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       320
        32 |     +0.0% |       0 |        0 |       288
@@ -63,8 +63,6 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0107] Timing-driven: repair_design delta area: -69.958 um^2 (-12.64%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
 [INFO GPL-0110] Timing-driven: new target density: 0.62665915
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -97,8 +95,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +0.8% |      43 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 43 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
@@ -114,11 +112,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
-[WARNING GPL-0092] Mismatch in #cells between central object and all regions. NesterovBaseCommon: 1, Summing all regions: 0
 [INFO GPL-0107] Timing-driven: repair_design delta area: 3.724 um^2 (+0.77%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.6305633
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -132,8 +127,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |      39 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 39 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
@@ -149,11 +144,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[WARNING GPL-0092] Mismatch in #cells between central object and all regions. NesterovBaseCommon: 1, Summing all regions: 0
 [INFO GPL-0107] Timing-driven: repair_design delta area: -0.532 um^2 (-0.11%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.6300056
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -167,8 +159,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +0.1% |      39 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 39 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
@@ -184,11 +176,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[WARNING GPL-0092] Mismatch in #cells between central object and all regions. NesterovBaseCommon: 1, Summing all regions: 0
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.266 um^2 (+0.05%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.6302844
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -202,8 +191,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +0.2% |      39 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 39 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
@@ -219,11 +208,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[WARNING GPL-0092] Mismatch in #cells between central object and all regions. NesterovBaseCommon: 1, Summing all regions: 0
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.532 um^2 (+0.11%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.63084215
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -237,8 +223,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +0.1% |      38 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 38 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
@@ -254,11 +240,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[WARNING GPL-0092] Mismatch in #cells between central object and all regions. NesterovBaseCommon: 1, Summing all regions: 0
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.63084215
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -272,8 +255,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +0.1% |      38 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 38 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
@@ -289,11 +272,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[WARNING GPL-0092] Mismatch in #cells between central object and all regions. NesterovBaseCommon: 1, Summing all regions: 0
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
-[WARNING GPL-0093] Buffer insertion count by rsz (0) and cells created by gpl (1) do not match.
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.63084215
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

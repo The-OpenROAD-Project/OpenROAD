@@ -109,19 +109,22 @@
 [INFO CTS-0101]  Average sink wire length 4117.74 um
 [INFO CTS-0102]  Path depth 17 - 17
 [INFO CTS-0207]  Leaf load cells 4
+[INFO RSZ-0058] Using max wire length 693um.
+[INFO RSZ-0047] Found 38 long wires.
+[INFO RSZ-0048] Inserted 112 buffers in 38 nets.
 Placement Analysis
 ---------------------------------
-total displacement       1957.4 u
-average displacement        0.6 u
-max displacement            6.3 u
-original HPWL          173922.6 u
-legalized HPWL         174384.3 u
-delta HPWL                    0 %
+total displacement       4294.0 u
+average displacement        1.4 u
+max displacement          146.3 u
+original HPWL          190059.1 u
+legalized HPWL         191096.3 u
+delta HPWL                    1 %
 
 Clock clk
-   2.41 source latency inst_5_7/clk ^
-  -2.05 target latency inst_6_7/clk ^
+   1.07 source latency inst_5_4/clk ^
+  -1.18 target latency inst_6_4/clk ^
    0.00 CRPR
 --------------
-   0.37 setup skew
+  -0.12 setup skew
 

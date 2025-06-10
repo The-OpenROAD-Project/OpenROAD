@@ -11,8 +11,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -1.4% |      77 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 77 instances.
-   Iter   |    Area   | Removed | Inserted | Remaining
-          |           | Buffers | Buffers  |
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       341
        34 |     +0.0% |       0 |        0 |       307
