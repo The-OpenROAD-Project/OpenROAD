@@ -310,7 +310,8 @@ ClockNodeGraphicsViewItem::ClockNodeGraphicsViewItem(ClockTree* tree,
       tree_(tree),
       size_(default_size_),
       name_(""),
-      extra_tooltip_("")
+      extra_tooltip_(""),
+      show_hide_subtree_(nullptr)
 {
   setAcceptHoverEvents(true);
   setZValue(1);
