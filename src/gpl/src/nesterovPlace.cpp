@@ -842,23 +842,33 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for (auto& nb : nbVec_) {
           nb->revertToSnapshot();
           nb->resetMinSumOverflow();
-        }      
+        }
       }
 
-      if(is_routability_need_ && isRevertInitNeeded) {
-        log_->info(GPL, 87, "Routability end iteration: reverting from divergence.");
-      }      
-
-      if(is_routability_need_ && !isRevertInitNeeded) {
-        log_->info(GPL, 88, "Routability end iteration: increase inflation and revert back to snapshot.");
+      if (is_routability_need_ && isRevertInitNeeded) {
+        log_->info(
+            GPL, 87, "Routability end iteration: reverting from divergence.");
       }
 
-      if(!is_routability_need_ && isRevertInitNeeded) {
-        log_->info(GPL, 89, "Routability finished. Reverting to minimal observed routing congestion, could not reach target.");
+      if (is_routability_need_ && !isRevertInitNeeded) {
+        log_->info(GPL,
+                   88,
+                   "Routability end iteration: increase inflation and revert "
+                   "back to snapshot.");
       }
-      
-      if(!is_routability_need_ && !isRevertInitNeeded) {
-        log_->info(GPL, 90, "Routability finished. Target routing congestion achieved succesfully.");  
+
+      if (!is_routability_need_ && isRevertInitNeeded) {
+        log_->info(GPL,
+                   89,
+                   "Routability finished. Reverting to minimal observed "
+                   "routing congestion, could not reach target.");
+      }
+
+      if (!is_routability_need_ && !isRevertInitNeeded) {
+        log_->info(GPL,
+                   90,
+                   "Routability finished. Target routing congestion achieved "
+                   "succesfully.");
       }
 
       if (!is_routability_need_) {

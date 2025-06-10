@@ -3232,10 +3232,10 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
-  if(totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) {
+  if (totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) {
     for (int i = nb_gcells_.size() - 1;
-        i >= 0 && removed_count < max_fllers_to_remove;
-        --i) {
+         i >= 0 && removed_count < max_fllers_to_remove;
+         --i) {
       if (nb_gcells_[i]->isFiller()) {
         const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
         removed_fillers_.push_back(RemovedFillerState{
@@ -3325,10 +3325,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
     float newTargetDensity = static_cast<float>(totalGCellArea)
                              / static_cast<float>(whiteSpaceArea());
-    log_->info(GPL,
-               79,
-               "New target density: {}",
-               newTargetDensity);    
+    log_->info(GPL, 79, "New target density: {}", newTargetDensity);
   }
 }
 
@@ -3405,10 +3402,10 @@ void NesterovBase::restoreRemovedFillers()
              "Restoring {} previously removed fillers.",
              removed_fillers_.size());
 
-  if(removed_fillers_.size() == 0){
+  if (removed_fillers_.size() == 0) {
     return;
   }
-  
+
   size_t num_fill_before = fillerStor_.size();
   int64_t area_before = totalFillerArea_;
 
@@ -3451,12 +3448,17 @@ void NesterovBase::restoreRemovedFillers()
   size_t num_fill_after = fillerStor_.size();
   int64_t area_after = totalFillerArea_;
 
-  double rel_count_change = (num_fill_before > 0)
-                                ? (static_cast<double>(num_fill_after - num_fill_before) / num_fill_before) * 100.0
-                                : 0.0;
+  double rel_count_change
+      = (num_fill_before > 0)
+            ? (static_cast<double>(num_fill_after - num_fill_before)
+               / num_fill_before)
+                  * 100.0
+            : 0.0;
 
   double rel_area_change = (area_before > 0)
-                               ? (static_cast<double>(area_after - area_before) / static_cast<double>(area_before)) * 100.0
+                               ? (static_cast<double>(area_after - area_before)
+                                  / static_cast<double>(area_before))
+                                     * 100.0
                                : 0.0;
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
@@ -3465,14 +3467,16 @@ void NesterovBase::restoreRemovedFillers()
 
   log_->info(GPL,
              81,
-             "Number of fillers before restoration {} and after {} . Relative change: {:+.2f}%%",
+             "Number of fillers before restoration {} and after {} . Relative "
+             "change: {:+.2f}%%",
              num_fill_before,
              num_fill_after,
              rel_count_change);
 
   log_->info(GPL,
              82,
-             "Total filler area before restoration {:.2f} and after {:.2f} (um^2). Relative change: {:+.2f}%%",
+             "Total filler area before restoration {:.2f} and after {:.2f} "
+             "(um^2). Relative change: {:+.2f}%%",
              area_before_um,
              area_after_um,
              rel_area_change);
