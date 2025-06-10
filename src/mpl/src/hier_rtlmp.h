@@ -157,6 +157,7 @@ class HierRTLMP
   void createPinAccessBlockages();
   void computePinAccessDepthLimits();
   bool treeHasConstrainedIOs() const;
+  bool treeHasUnconstrainedIOs() const;
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
   void createPinAccessBlockage(const BoundaryRegion& region, float depth);
   float computePinAccessBaseDepth(double io_span) const;

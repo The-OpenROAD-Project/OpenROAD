@@ -50,7 +50,6 @@ OPENROAD_LIBRARY_SRCS_EXCLUDE = [
 OPENROAD_LIBRARY_SRCS_INCLUDE = [
     #Root OpenRoad
     "src/*.cc",
-    "src/*.cpp",
     #RMP
     "src/rmp/src/*.cpp",
 ]

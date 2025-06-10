@@ -4899,6 +4899,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       }
       if (fastroute_->has2Doverflow()) {
         is_congested_ = true;
+        updateDbCongestion();
         saveCongestion();
         logger_->error(GRT,
                        232,
