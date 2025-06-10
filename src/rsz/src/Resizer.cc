@@ -2016,6 +2016,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   IncrementalParasiticsGuard guard(this);
   if (run_journal_restore)
     journalBegin();
+  ensureLevelDrvrVertices();
   estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
