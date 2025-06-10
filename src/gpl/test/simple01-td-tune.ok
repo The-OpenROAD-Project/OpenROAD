@@ -172,6 +172,4 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1012] Total timing-driven delta area: -64.90 (-11.73%)
 [INFO GPL-1013] Final placement area: 488.38 (-11.73%)
 worst slack max 1.40
-Differences found at line 63.
-    - _276_ NOR2_X4 + PLACED ( 8992 31218 ) N ;
-    - _276_ NOR2_X4 + PLACED ( 5661 28030 ) N ;
+No differences found.
