@@ -2039,8 +2039,10 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   ensureLevelDrvrVertices();
 
   findResizeSlacks1();
-  if (run_journal_restore)
+  if (run_journal_restore) {
     journalRestore();
+    level_drvr_vertices_valid_ = false;
+  }
 }
 
 void Resizer::findResizeSlacks1()
