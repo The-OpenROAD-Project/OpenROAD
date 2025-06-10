@@ -3402,7 +3402,7 @@ void NesterovBase::restoreRemovedFillers()
              "Restoring {} previously removed fillers.",
              removed_fillers_.size());
 
-  if (removed_fillers_.size() == 0) {
+  if (removed_fillers_.empty()) {
     return;
   }
 
