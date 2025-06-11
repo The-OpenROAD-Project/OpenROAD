@@ -1420,7 +1420,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // Sorts via_defs in each ap
   for (auto& ap : aps) {
     std::map<const frViaDef*, int> cost_map;
-    for (auto viaDefsLayer : ap->getAllViaDefs()) {
+    for (const auto& viaDefsLayer : ap->getAllViaDefs()) {
       for (const frViaDef* via_def : viaDefsLayer) {
         cost_map[via_def] = viaMaxExt(
             inst_term, ap.get(), pin_shapes[ap->getLayerNum()], via_def);
