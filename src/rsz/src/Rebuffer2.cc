@@ -1910,7 +1910,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       if (inst && network_->libertyCell(inst)
           && (!network_->libertyCell(inst)->isBuffer()
               || !resizer_->isLogicStdCell(inst)
-              || !isPortBuffer(db_network_, inst))) {
+              || isPortBuffer(db_network_, inst))) {
         filtered_pins.push_back(drvr_pin);
       }
     }
