@@ -12,10 +12,6 @@
 #include "odb/dbWireGraph.h"
 #include "utl/Logger.h"
 
-namespace grt {
-class GlobalRouter;
-}
-
 namespace ant {
 
 using utl::Logger;
@@ -23,6 +19,7 @@ using utl::Logger;
 struct PARinfo;
 struct ARinfo;
 struct AntennaModel;
+class WireBuilder;
 
 ///////////////////////////////////////
 struct GraphNode;
@@ -97,35 +94,6 @@ struct Violation
   double excess_ratio;
 };
 
-struct GuidePoint
-{
-  odb::Point pos;
-  odb::dbTechLayer* layer;
-  friend bool operator<(const GuidePoint& pt1, const GuidePoint& pt2);
-};
-
-struct GuideSegment
-{
-  GuidePoint pt1;
-  GuidePoint pt2;
-  bool isVia() const { return pt1.pos == pt2.pos; }
-  bool operator==(const GuideSegment& segment) const;
-};
-
-struct GuidePtPins
-{
-  std::vector<odb::dbBTerm*> bterms;
-  std::vector<odb::dbITerm*> iterms;
-  bool connected;
-};
-
-using GuidePtPinsMap = std::map<GuidePoint, GuidePtPins>;
-
-struct GuideSegmentHash
-{
-  std::size_t operator()(const GuideSegment& seg) const;
-};
-
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
 using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
 using LayerToGraphNodes = std::map<odb::dbTechLayer*, GraphNodes>;
@@ -169,36 +137,6 @@ class AntennaChecker
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
-  void makeNetWiresFromGuides();
-  void makeNetWire(odb::dbNet* db_net,
-                   std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
-                   const int guide_size);
-  void addWireTerms(odb::dbNet* db_net,
-                    std::vector<GuideSegment>& route,
-                    int grid_x,
-                    int grid_y,
-                    odb::dbTechLayer* tech_layer,
-                    GuidePtPinsMap& route_pt_pins,
-                    odb::dbWireEncoder& wire_encoder,
-                    std::map<odb::dbTechLayer*, odb::dbTechVia*>& default_vias,
-                    bool connect_to_segment);
-  void makeWire(odb::dbWireEncoder& wire_encoder,
-                odb::dbTechLayer* layer,
-                const odb::Point& start,
-                const odb::Point& end);
-  std::vector<GuideSegment> makeWireFromGuides(odb::dbNet* db_net,
-                                               const int guide_size);
-  int computeGuideDimension();
-  void boxToGuideSegment(const odb::Rect& guide_box,
-                         odb::dbTechLayer* layer,
-                         odb::dbTechLayer* via_layer,
-                         std::vector<GuideSegment>& segment,
-                         const int guide_dimension);
-  bool pinOverlapsGSegment(const odb::Point& pin_position,
-                           const odb::dbTechLayer* pin_layer,
-                           const std::vector<odb::Rect>& pin_boxes,
-                           const std::vector<GuideSegment>& route);
-  // RoutePtPinsMap findRoutePtPins(odb::dbNet* db_net);
   int checkNet(odb::dbNet* net,
                bool verbose,
                bool save_report,
@@ -257,6 +195,7 @@ class AntennaChecker
                 bool report,
                 ViolationReport& net_report);
 
+  std::unique_ptr<ant::WireBuilder> wire_builder_;
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};

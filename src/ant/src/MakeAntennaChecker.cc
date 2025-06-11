@@ -4,7 +4,6 @@
 #include "ant/MakeAntennaChecker.hh"
 
 #include "ant/AntennaChecker.hh"
-#include "grt/GlobalRouter.h"
 #include "utl/decode.h"
 
 extern "C" {
