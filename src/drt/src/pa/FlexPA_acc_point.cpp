@@ -783,8 +783,7 @@ void FlexPA::getViasFromMetalWidthMap(
 frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
                           frAccessPoint* ap,
                           const gtl::polygon_90_set_data<frCoord>& polyset,
-                          const frViaDef* via_def,
-                          const bool early_stop)
+                          const frViaDef* via_def)
 {
   const Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
@@ -818,9 +817,6 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   for (const auto& r : int_rects) {
     max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
     max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
-  }
-  if (early_stop && max_ext) {
-    return max_ext;
   }
   if (!is_side_bound) {
     if (int_rects.size() > 1) {
@@ -897,7 +893,7 @@ void FlexPA::filterViaAccess(
       }
     }
 
-    frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def, true);
+    frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def);
 
     if (via_in_pin && max_ext) {
       continue;

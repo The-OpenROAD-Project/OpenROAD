@@ -563,16 +563,13 @@ class FlexPA
    * @param ap the access point the via is centered on
    * @param polyset the polygon set representing pin shapes
    * @param via_def the via def
-   * @param early_stop some use cases just want to check if max_ext > 0. In
-   * those cases if max_ext is > 0 at some point we can return early.
    *
    * @returns the maximum extension
    */
   frCoord viaMaxExt(frInstTerm* inst_term,
                     frAccessPoint* ap,
                     const gtl::polygon_90_set_data<frCoord>& polyset,
-                    const frViaDef* via_def,
-                    const bool early_stop = false);
+                    const frViaDef* via_def);
 
   /**
    * @brief Filters access through via on the access point
