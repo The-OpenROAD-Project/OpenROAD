@@ -1884,7 +1884,7 @@ Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 void IOPlacer::getConstraintsFromDB()
 {
   std::map<Interval, PinSet> pins_per_interval;
-  std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
+  std::map<Rect, PinSet> pins_per_rect;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
