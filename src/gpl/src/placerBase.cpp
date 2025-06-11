@@ -1192,6 +1192,9 @@ void PlacerBase::initInstsForUnusableSites()
     if (!inst->isFixed()) {
       continue;
     }
+    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
+      continue;
+    }
     std::pair<int, int> pairX = getMinMaxIdx(
         inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
     std::pair<int, int> pairY = getMinMaxIdx(
