@@ -2924,8 +2924,14 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 
   int64_t prevCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-  odb::dbBox* bbox = db_inst->getBBox();
-  gcell->setSize(bbox->getDX(), bbox->getDY());
+
+  // pull new instance dimensions from DB
+  for (Instance* inst : gcell->insts()) {
+    inst->copyDbLocation(pbc_.get());
+  }
+  // update gcell
+  gcell->updateLocations();
+
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
