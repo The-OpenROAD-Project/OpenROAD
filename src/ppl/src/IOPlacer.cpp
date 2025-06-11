@@ -1883,7 +1883,7 @@ Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 
 void IOPlacer::getConstraintsFromDB()
 {
-  std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
+  std::map<Interval, PinSet> pins_per_interval;
   std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
@@ -1957,7 +1957,6 @@ void IOPlacer::initConstraints(bool annealing)
 {
   constraints_.clear();
   getConstraintsFromDB();
-  int constraint_idx = 0;
   int constraints_no_slots = 0;
   if (top_layer_pins_count_ > top_layer_slots_.size()) {
     logger_->error(PPL,
@@ -2007,19 +2006,6 @@ void IOPlacer::initConstraints(bool annealing)
     } else {
       logger_->error(PPL, 76, "Constraint does not have available slots.");
     }
-
-    for (odb::dbBTerm* term : constraint.pin_list) {
-      int pin_idx = netlist_->getIoPinIdx(term);
-      IOPin& io_pin = netlist_->getIoPin(pin_idx);
-      io_pin.setConstraintIdx(constraint_idx);
-      io_pin.setInConstraint();
-      constraint.pin_indices.push_back(pin_idx);
-      constraint.mirrored_pins_count += io_pin.isMirrored() ? 1 : 0;
-      if (io_pin.getGroupIdx() != -1) {
-        constraint.pin_groups.insert(io_pin.getGroupIdx());
-      }
-    }
-    constraint_idx++;
   }
 
   if (constraints_no_slots > 0) {
@@ -2032,6 +2018,22 @@ void IOPlacer::initConstraints(bool annealing)
 
   if (!annealing) {
     sortConstraints();
+  }
+
+  int constraint_idx = 0;
+  for (Constraint& constraint : constraints_) {
+    for (odb::dbBTerm* term : constraint.pin_list) {
+      int pin_idx = netlist_->getIoPinIdx(term);
+      IOPin& io_pin = netlist_->getIoPin(pin_idx);
+      io_pin.setConstraintIdx(constraint_idx);
+      io_pin.setInConstraint();
+      constraint.pin_indices.push_back(pin_idx);
+      constraint.mirrored_pins_count += io_pin.isMirrored() ? 1 : 0;
+      if (io_pin.getGroupIdx() != -1) {
+        constraint.pin_groups.insert(io_pin.getGroupIdx());
+      }
+    }
+    constraint_idx++;
   }
 
   checkPinsInMultipleConstraints();
