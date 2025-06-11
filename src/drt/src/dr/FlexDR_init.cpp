@@ -2701,12 +2701,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access
             modBlockedPlanar(box, zIdx, false);
-            bool costVia = zIdx <= (router_cfg_->VIA_ACCESS_LAYERNUM / 2 - 1);
-            costVia
-                = costVia
-                  || (zIdx >= (router_cfg_->VIAINPIN_BOTTOMLAYERNUM / 2 - 1)
-                      && zIdx <= (router_cfg_->VIAINPIN_TOPLAYERNUM / 2 - 1));
-            if (costVia) {
+            if (zIdx <= (router_cfg_->VIA_ACCESS_LAYERNUM / 2 - 1)) {
               modMinSpacingCostPlanar(
                   box, zIdx, ModCostType::addFixedShape, true);
               modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);

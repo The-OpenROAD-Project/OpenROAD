@@ -103,8 +103,6 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       bbox = via->getLayer1BBox();
     } else if (via_def->getLayer2Num() == layer_num) {
       bbox = via->getLayer2BBox();
-    } else if (via_def->getCutLayerNum() == layer_num) {
-      bbox = via->getCutBBox();
     } else {
       skip = true;
     }
@@ -242,7 +240,6 @@ void FlexPAGraphics::setAPs(
 void FlexPAGraphics::setViaAP(
     const frAccessPoint* ap,
     const frVia* via,
-    const frPathSeg* path_seg,
     const std::vector<std::unique_ptr<frMarker>>& markers)
 {
   if (!pin_ || !settings_->paMarkers) {
@@ -252,7 +249,7 @@ void FlexPAGraphics::setViaAP(
       "Via {} markers {}", via->getViaDef()->getName(), markers.size());
   pa_ap_ = ap;
   pa_vias_ = {via};
-  pa_segs_ = {path_seg};
+  pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
     Rect bbox = marker->getBBox();
@@ -279,7 +276,6 @@ void FlexPAGraphics::setViaAP(
 
   // These are going away once we return
   pa_ap_ = nullptr;
-  pa_segs_.clear();
   pa_vias_.clear();
   pa_markers_ = nullptr;
 }
