@@ -114,16 +114,16 @@
 [INFO RSZ-0048] Inserted 112 buffers in 38 nets.
 Placement Analysis
 ---------------------------------
-total displacement       4294.0 u
+total displacement       4272.4 u
 average displacement        1.4 u
-max displacement          146.3 u
-original HPWL          190059.1 u
-legalized HPWL         191096.3 u
+max displacement          141.1 u
+original HPWL          190059.3 u
+legalized HPWL         191027.1 u
 delta HPWL                    1 %
 
 Clock clk
-   1.07 source latency inst_5_4/clk ^
-  -1.18 target latency inst_6_4/clk ^
+   1.06 source latency inst_12_11/clk ^
+  -1.20 target latency inst_13_11/clk ^
    0.00 CRPR
 --------------
   -0.12 setup skew

@@ -19,6 +19,10 @@ class frVia : public frRef
   // constructors
   frVia() = default;
   frVia(const frViaDef* in) : viaDef_(in) {}
+  frVia(const frViaDef* def_in, const Point& pt_in)
+      : origin_(pt_in), viaDef_(def_in)
+  {
+  }
   frVia(const frVia& in)
       : frRef(in),
         origin_(in.origin_),
