@@ -370,16 +370,16 @@ module hi_fanout (clk1,
  DFF_X1 load111 (.D(net1304),
     .CK(clk1),
     .Q(output111));
- DFF_X1 load112 (.D(net3279),
+ DFF_X1 load112 (.D(net1322),
     .CK(clk1),
     .Q(output112));
- DFF_X1 load113 (.D(net3280),
+ DFF_X1 load113 (.D(net1323),
     .CK(clk1),
     .Q(output113));
- DFF_X1 load114 (.D(net3281),
+ DFF_X1 load114 (.D(net1324),
     .CK(clk1),
     .Q(output114));
- DFF_X1 load115 (.D(net3282),
+ DFF_X1 load115 (.D(net1325),
     .CK(clk1),
     .Q(output115));
  DFF_X1 load116 (.D(net1326),
@@ -772,11 +772,7 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net0),
     .CK(clk1),
     .Q(output99));
- submodule cloneU1 (.net3282_o(net3282),
-    .net3281_o(net3281),
-    .net3280_o(net3280),
-    .net3279_o(net3279),
-    .net3277_o(net3277),
+ submodule cloneU1 (.net3277_o(net3277),
     .net3276_o(net3276),
     .net3275_o(net3275),
     .net3274_o(net3274),
@@ -1088,11 +1084,7 @@ module hi_fanout (clk1,
     .ip1(clk_to_nand1),
     .op0(net0));
 endmodule
-module submodule (net3282_o,
-    net3281_o,
-    net3280_o,
-    net3279_o,
-    net3277_o,
+module submodule (net3277_o,
     net3276_o,
     net3275_o,
     net3274_o,
@@ -1403,10 +1395,6 @@ module submodule (net3282_o,
     ip0,
     ip1,
     op0);
- output net3282_o;
- output net3281_o;
- output net3280_o;
- output net3279_o;
  output net3277_o;
  output net3276_o;
  output net3275_o;
@@ -1720,9 +1708,6 @@ module submodule (net3282_o,
  output op0;
 
 
- NAND2_X2 clone351 (.A1(net1700_i),
-    .A2(net1689_i),
-    .ZN(net3279_o));
  NAND2_X2 clone350 (.A1(ip1),
     .A2(net3187_i),
     .ZN(net3273_o));
@@ -1762,7 +1747,7 @@ module submodule (net3282_o,
  NAND2_X2 clone112 (.A1(net1700_i),
     .A2(net1689_i),
     .ZN(net1338_o));
- NAND2_X4 clone110 (.A1(net1700_i),
+ NAND2_X2 clone110 (.A1(net1700_i),
     .A2(net1689_i),
     .ZN(net1322_o));
  NAND2_X2 clone107 (.A1(ip0),
@@ -1780,9 +1765,6 @@ module submodule (net3282_o,
  NAND2_X4 nand_inst_0 (.A1(ip1),
     .A2(net3187_i),
     .ZN(op0));
- assign net3282_o = net3279_o;
- assign net3281_o = net3279_o;
- assign net3280_o = net3279_o;
  assign net3277_o = net3273_o;
  assign net3276_o = net3273_o;
  assign net3275_o = net3273_o;
