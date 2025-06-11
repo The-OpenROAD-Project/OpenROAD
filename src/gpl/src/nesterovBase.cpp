@@ -3061,11 +3061,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
-  Instance gpl_inst(db_inst,
-                    pbc_->padLeft() * pbc_->siteSizeX(),
-                    pbc_->padRight() * pbc_->siteSizeX(),
-                    pbc_->siteSizeY(),
-                    log_);
+  Instance gpl_inst(db_inst, pbc_.get(), log_);
 
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());

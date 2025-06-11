@@ -54,9 +54,7 @@ Instance::Instance() = default;
 
 // for movable real instances
 Instance::Instance(odb::dbInst* inst,
-                   int padLeft,
-                   int padRight,
-                   int site_height,
+                   PlacerBaseCommon* pbc,
                    utl::Logger* logger)
     : Instance()
 {
@@ -67,8 +65,8 @@ Instance::Instance(odb::dbInst* inst,
   uy_ = ly_ + bbox->getDY();
 
   if (isPlaceInstance()) {
-    lx_ -= padLeft;
-    ux_ += padRight;
+    lx_ -= pbc->padLeft() * pbc->siteSizeX();
+    ux_ += pbc->padRight() * pbc->siteSizeX();
   }
 
   // Masters more than row_limit rows tall are treated as macros
@@ -76,7 +74,7 @@ Instance::Instance(odb::dbInst* inst,
 
   if (inst->getMaster()->getType().isBlock()) {
     is_macro_ = true;
-  } else if (bbox->getDY() > 6 * site_height) {
+  } else if (bbox->getDY() > 6 * pbc->siteSizeY()) {
     is_macro_ = true;
     logger->warn(GPL,
                  134,
@@ -798,11 +796,7 @@ void PlacerBaseCommon::init()
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
-    Instance myInst(inst,
-                    pbVars_.padLeft * siteSizeX_,
-                    pbVars_.padRight * siteSizeX_,
-                    siteSizeY_,
-                    log_);
+    Instance myInst(inst, this, log_);
 
     // Fixed instaces need to be snapped outwards to the nearest site
     // boundary.  A partially overlapped site is unusable and this
