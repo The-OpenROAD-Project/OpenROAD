@@ -687,6 +687,7 @@ bool GuideProcessor::isValidGuideLayerNum(odb::dbGuide* db_guide,
         router_cfg_->BOTTOM_ROUTING_LAYER,
         getTech()->getLayer(router_cfg_->TOP_ROUTING_LAYER)->getName(),
         router_cfg_->TOP_ROUTING_LAYER,
+        getTech()->getLayer(router_cfg_->VIA_ACCESS_LAYERNUM)->getName(),
         router_cfg_->VIA_ACCESS_LAYERNUM);
   }
   return true;
