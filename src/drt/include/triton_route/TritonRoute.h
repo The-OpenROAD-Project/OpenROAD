@@ -64,6 +64,7 @@ struct ParamStruct
   int drouteEndIter = -1;
   std::string viaInPinBottomLayer;
   std::string viaInPinTopLayer;
+  std::string viaAccessLayer;
   int orSeed = 0;
   double orK = 0;
   std::string bottomRoutingLayer;

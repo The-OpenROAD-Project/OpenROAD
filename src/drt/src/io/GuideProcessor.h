@@ -201,6 +201,35 @@ class GuideProcessor
   // write guide
   void saveGuidesUpdates();
 
+  /**
+   * @brief Reads the GCell grid information from the database
+   * This function should be called before processing guides to ensure
+   * we have all necessary grid information from the database.
+   */
+  void readGCellGrid();
+
+  /**
+   * @brief Checks the validity of the odb guide layer
+   *
+   * The db_guide layer is invalid if it is any of the following conditions:
+   * - Not in the DRT layer database
+   * - Above the sepecified top routing layer
+   * - Below the specified bottom routing layer and the via access layer
+   * @note If a layer is invalid, this produces an error unless it is above the
+   * top routing layer for a net that has pins above the top routing layer. In
+   * the latest case, we just ignore the guide and the pin is handled by
+   * io::Parser::setBTerms_addPinFig_helper
+   * @param db_guide The guide to check
+   * @param net The net containing the guide
+   * @param layer_num The layer_num of the guide returned by this function if it
+   * is a valid layer
+   * @returns True if the guide is valid by the previous criteria and False
+   * if above top routing layer for a net with bterms above top routing layer
+   */
+  bool isValidGuideLayerNum(odb::dbGuide* db_guide,
+                            frNet* net,
+                            frLayerNum& layer_num);
+
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
