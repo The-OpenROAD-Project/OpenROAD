@@ -155,7 +155,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _corners_per_block = 0;
   _corner_name_list = nullptr;
   _name = nullptr;
-  _die_area = Rect(0, 0, 0, 0);
+  _die_area = Polygon();
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
