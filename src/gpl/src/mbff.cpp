@@ -2253,6 +2253,8 @@ void MBFF::ReadLibs()
       dbInst* tmp_tray = dbInst::create(block_, master, tray_name.c_str());
 
       if (!IsValidTray(tmp_tray)) {
+        dbInst::destroy(tmp_tray);
+        --test_idx_;
         continue;
       }
 
