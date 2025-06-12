@@ -10,6 +10,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb {
 
@@ -22,13 +23,7 @@ lefTechLayerForbiddenSpacingRuleParser::lefTechLayerForbiddenSpacingRuleParser(
 void lefTechLayerForbiddenSpacingRuleParser::parse(std::string s,
                                                    odb::dbTechLayer* layer)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
+  processRules(s, [this, layer](std::string& rule) {
     rule += " ; ";
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(
@@ -38,7 +33,7 @@ void lefTechLayerForbiddenSpacingRuleParser::parse(std::string s,
           layer->getName(),
           rule);
     }
-  }
+  });
 }
 
 void lefTechLayerForbiddenSpacingRuleParser::setInt(

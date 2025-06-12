@@ -10,6 +10,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 using namespace odb;
 
@@ -56,13 +57,7 @@ void MinCutParser::setAreaWithin(double within)
 
 void MinCutParser::parse(const std::string& s)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
+  processRules(s, [this](std::string& rule) {
     rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
@@ -71,7 +66,7 @@ void MinCutParser::parse(const std::string& s)
                       layer_->getName(),
                       rule);
     }
-  }
+  });
 }
 
 bool MinCutParser::parseSubRule(std::string s)

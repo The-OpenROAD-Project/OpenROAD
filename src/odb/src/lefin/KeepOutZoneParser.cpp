@@ -10,6 +10,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 using namespace odb;
 
@@ -22,13 +23,7 @@ void KeepOutZoneParser::setInt(
 
 void KeepOutZoneParser::parse(const std::string& s)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
+  processRules(s, [this](std::string& rule) {
     rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(388,
@@ -37,7 +32,7 @@ void KeepOutZoneParser::parse(const std::string& s)
                       layer_->getName(),
                       rule);
     }
-  }
+  });
 }
 
 bool KeepOutZoneParser::parseSubRule(std::string s)

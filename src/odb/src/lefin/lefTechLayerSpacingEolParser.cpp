@@ -9,6 +9,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb::lefTechLayerSpacingEol {
 
@@ -470,19 +471,13 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
                                          dbTechLayer* layer,
                                          odb::lefinReader* l)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
+  processRules(s, [layer, l](std::string& rule) {
     if (rule.find("ENDOFLINE") == std::string::npos) {
       l->warning(254,
                  "unsupported LEF58_SPACING property for layer {} :\"{}\"",
                  layer->getName(),
                  rule);
-      continue;
+      return;
     }
     if (!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l)) {
       l->warning(255,
@@ -491,7 +486,7 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
                  layer->getName(),
                  rule);
     }
-  }
+  });
 }
 
 }  // namespace odb

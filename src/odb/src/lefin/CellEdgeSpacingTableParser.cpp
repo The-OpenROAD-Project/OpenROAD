@@ -9,23 +9,20 @@
 #include <vector>
 
 #include "boostParser.h"
+#include "parserUtils.h"
 
 namespace odb {
 void CellEdgeSpacingTableParser::parse(const std::string& s)
 {
-  std::vector<std::string> entries;
-  boost::split(entries, s, boost::is_any_of(";"));
-  for (auto& entry : entries) {
-    boost::algorithm::trim(entry);
-    if (entry.empty()) {
-      continue;
+  processRules(s, [this](std::string& rule) {
+    rule += " ; ";
+    if (!parseEntry(rule)) {
+      lefin_->warning(
+          299,
+          "parse mismatch in property LEF58_CELLEDGESPACINGTABLE: \"{}\"",
+          rule);
     }
-    entry += " ; ";
-    if (!parseEntry(entry)) {
-      lefin_->warning(299,
-                      "parse mismatch in property LEF58_CELLEDGESPACINGTABLE");
-    }
-  }
+  });
 }
 
 void CellEdgeSpacingTableParser::createEntry()
