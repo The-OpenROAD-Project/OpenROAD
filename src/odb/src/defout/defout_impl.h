@@ -117,6 +117,7 @@ class defout_impl
   void setVersion(int v) { _version = v; }
 
   bool writeBlock(dbBlock* block, const char* def_file);
+  bool writeBlock(dbBlock* block, std::ostream& stream);
 };
 
 }  // namespace odb

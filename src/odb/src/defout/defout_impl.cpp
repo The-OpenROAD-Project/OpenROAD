@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 
 #include <algorithm>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
@@ -104,7 +106,7 @@ void defout_impl::selectInst(dbInst* inst)
   _select_inst_list.push_back(inst);
 }
 
-bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
+bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
 {
   if (!_select_net_list.empty()) {
     _select_net_map = new dbMap<dbNet, char>(block->getNets());
@@ -141,14 +143,8 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   _dist_factor
       = (double) block->getDefUnits() / (double) block->getDbUnitsPerMicron();
-  utl::StreamHandler fileHandler(def_file, true);
-  _out = &fileHandler.getStream();
 
-  if (!*_out) {
-    _logger->warn(
-        utl::ODB, 172, "Cannot open DEF file ({}) for writing", def_file);
-    return false;
-  }
+  _out = &stream;
 
   // By default C File*'s are line buffered which means they get dumped on every
   // newline, which is nominally pretty expensive. This makes it so that the
@@ -156,7 +152,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   // be as much as 16kb. DEF's have a lot of newlines, and are large in size
   // which makes writing them really slow with line buffering.
   //
-  // The following lines enable IO buffering based on disk block size.
+  // The following line disables automatic flushing of the buffer.
   *_out << std::nounitbuf;
 
   if (_version == defout::DEF_5_3) {
@@ -252,7 +248,27 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   {
     delete _select_inst_map;
   }
+
+  _out = nullptr;
+
   return true;
+}
+
+bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
+{
+  utl::StreamHandler stream_handler(def_file, false);
+
+  const std::string name(def_file);
+  if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
+    outbuf.push(boost::iostreams::gzip_compressor());
+    outbuf.push(stream_handler.getStream());
+    std::ostream zstd_compressed(&outbuf);
+
+    return writeBlock(block, zstd_compressed);
+  } else {
+    return writeBlock(block, stream_handler.getStream());
+  }
 }
 
 void defout_impl::writeRows(dbBlock* block)
