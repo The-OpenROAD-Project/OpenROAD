@@ -67,7 +67,9 @@ dbOStream& operator<<(dbOStream& stream, const Polygon& p)
 
 dbIStream& operator>>(dbIStream& stream, Polygon& p)
 {
-  stream >> p.points_;
+  std::vector<Point> p_vec;
+  stream >> p_vec;
+  p.setPoints(p_vec);
   return stream;
 }
 
