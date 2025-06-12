@@ -4450,6 +4450,11 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(Resizer* resizer)
   }
 }
 
+void IncrementalParasiticsGuard::update()
+{
+  resizer_->updateParasitics();
+}
+
 IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
 {
   if (need_unregister_) {

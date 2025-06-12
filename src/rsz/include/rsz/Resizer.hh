@@ -857,6 +857,9 @@ class IncrementalParasiticsGuard
   IncrementalParasiticsGuard(Resizer* resizer);
   ~IncrementalParasiticsGuard();
 
+  // calls resizer_->updateParasitics()
+  void update();
+
  private:
   Resizer* resizer_;
   bool need_unregister_;
