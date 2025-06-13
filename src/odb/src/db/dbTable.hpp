@@ -7,6 +7,7 @@
 #include <new>
 #include <vector>
 
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/ZException.h"
@@ -162,8 +163,7 @@ template <class T>
 void dbTable<T>::newPage()
 {
   const uint size = pageSize() * sizeof(T) + sizeof(dbObjectPage);
-  dbTablePage* page = (dbTablePage*) malloc(size);
-  ZALLOCATED(page);
+  dbTablePage* page = (dbTablePage*) safe_malloc(size);
   memset(page, 0, size);
 
   const uint page_id = _page_cnt;
@@ -574,8 +574,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
   uint i;
   for (i = 0; i < table._page_cnt; ++i) {
     uint size = table.pageSize() * sizeof(T) + sizeof(dbObjectPage);
-    dbTablePage* page = (dbTablePage*) malloc(size);
-    ZALLOCATED(page);
+    dbTablePage* page = (dbTablePage*) safe_malloc(size);
     memset(page, 0, size);
     page->_page_addr = i << table._page_shift;
     page->_table = &table;

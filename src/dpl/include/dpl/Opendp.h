@@ -261,7 +261,8 @@ class Opendp
                     const std::vector<Node*>& site_align_failures,
                     const std::vector<Node*>& region_placement_failures,
                     const std::vector<Node*>& placement_failures,
-                    const std::vector<Node*>& edge_spacing_failures);
+                    const std::vector<Node*>& edge_spacing_failures,
+                    const std::vector<Node*>& blocked_layers_failures);
   void writeJsonReport(const std::string& filename);
 
   void rectDist(const Node* cell,

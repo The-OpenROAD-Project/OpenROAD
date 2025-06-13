@@ -5,6 +5,7 @@
 #include "dbModule.h"
 
 #include "dbBlock.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
@@ -363,8 +364,7 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbModule* module = _block->_module_tbl->create();
-  module->_name = strdup(name);
-  ZALLOCATED(module->_name);
+  module->_name = safe_strdup(name);
   _block->_module_hash.insert(module);
 
   if (_block->_journal) {
