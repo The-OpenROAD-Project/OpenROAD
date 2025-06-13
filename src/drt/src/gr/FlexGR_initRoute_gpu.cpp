@@ -76,10 +76,6 @@ void FlexGR::initRoute_gpu()
 }
 
 
-
-
-
-
 // To do list:  provide two options: 
 // 1. generate topology using FLUTE [Done]
 // 2. generate topology using PD-tree
