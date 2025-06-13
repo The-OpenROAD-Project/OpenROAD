@@ -217,8 +217,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
     block->_journal->endAction();
   }
 
-  modinst->_name = strdup(name);
-  ZALLOCATED(modinst->_name);
+  modinst->_name = safe_strdup(name);
   modinst->_master = master->getOID();
   modinst->_parent = module->getOID();
   // push to head of list in block

@@ -43,7 +43,7 @@
 	    "schema":"db_schema_update_hierarchy"	    	    	
 	}
     ],
-    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h","dbJournal.h"],
+    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h","dbJournal.h", "dbCommon.h"],
     "h_includes": [
 	"dbVector.h",
 	"odb/dbSet.h"

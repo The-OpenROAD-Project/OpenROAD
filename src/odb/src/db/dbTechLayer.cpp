@@ -1288,8 +1288,7 @@ void dbTechLayer::setAlias(const char* alias)
   }
 
   layer->flags_.has_alias_ = 1;
-  layer->_alias = strdup(alias);
-  ZALLOCATED(layer->_alias);
+  layer->_alias = safe_strdup(alias);
 }
 
 uint dbTechLayer::getWidth() const
@@ -2252,8 +2251,7 @@ dbTechLayer* dbTechLayer::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();
-  layer->_name = strdup(name_);
-  ZALLOCATED(layer->_name);
+  layer->_name = safe_strdup(name_);
   layer->_number = tech->_layer_cnt++;
   layer->flags_.type_ = type.getValue();
 

@@ -468,7 +468,7 @@ void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
   } else if (box->_flags._is_block_via) {
     boxes = getBlockVia()->getBoxes();
   } else {
-    throw ZException("getViaBoxes called with non-via");
+    throw std::runtime_error("getViaBoxes called with non-via");
   }
 
   shapes.clear();
@@ -501,7 +501,7 @@ void dbBox::getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
   } else if (box->_flags._is_block_via) {
     boxes = getBlockVia()->getBoxes();
   } else {
-    throw ZException("getViaBoxes called with non-via");
+    throw std::runtime_error("getViaBoxes called with non-via");
   }
 
   shapes.clear();
