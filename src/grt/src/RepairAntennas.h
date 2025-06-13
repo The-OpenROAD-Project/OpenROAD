@@ -114,9 +114,6 @@ class RepairAntennas
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
-  void makeNetWires(NetRouteMap& routing,
-                    const std::vector<odb::dbNet*>& nets_to_repair,
-                    int max_routing_layer);
   void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);
   odb::dbMTerm* findDiodeMTerm();
   double diffArea(odb::dbMTerm* mterm);
@@ -227,25 +224,7 @@ class RepairAntennas
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
   odb::dbOrientType getRowOrient(const odb::Point& point);
-  odb::dbWire* makeNetWire(
-      odb::dbNet* db_net,
-      GRoute& route,
-      std::map<odb::dbTechLayer*, odb::dbTechVia*>& default_vias);
   RoutePtPinsMap findRoutePtPins(Net* net);
-  void addWireTerms(Net* net,
-                    GRoute& route,
-                    int grid_x,
-                    int grid_y,
-                    int layer,
-                    odb::dbTechLayer* tech_layer,
-                    RoutePtPinsMap& route_pt_pins,
-                    odb::dbWireEncoder& wire_encoder,
-                    std::map<odb::dbTechLayer*, odb::dbTechVia*>& default_vias,
-                    bool connect_to_segment);
-  void makeWire(odb::dbWireEncoder& wire_encoder,
-                odb::dbTechLayer* layer,
-                const odb::Point& start,
-                const odb::Point& end);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,

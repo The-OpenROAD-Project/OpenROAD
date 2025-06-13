@@ -426,6 +426,8 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
           routes_, grid_->getTileSize(), getMaxRoutingLayer(), modified_nets);
       repair_antennas_->clearViolations();
 
+      saveGuides(modified_nets);
+      modified_nets.clear();
       // run again antenna checker
       violations
           = repair_antennas_->checkAntennaViolations(routes_,
@@ -455,20 +457,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides(modified_nets);
   return total_diodes_count_;
-}
-
-void GlobalRouter::makeNetWires()
-{
-  std::vector<odb::dbNet*> nets_to_repair;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    nets_to_repair.push_back(db_net);
-  }
-
-  if (repair_antennas_ == nullptr) {
-    repair_antennas_
-        = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
-  }
-  repair_antennas_->makeNetWires(routes_, nets_to_repair, getMaxRoutingLayer());
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,

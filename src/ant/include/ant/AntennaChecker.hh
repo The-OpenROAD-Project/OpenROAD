@@ -120,6 +120,7 @@ class AntennaChecker
                                   float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
+  void makeNetWiresFromGuides();
 
  private:
   bool haveRoutedNets();
