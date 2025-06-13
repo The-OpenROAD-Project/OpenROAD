@@ -336,13 +336,11 @@ BufferedNetPtr createBnetJunction(Resizer* resizer,
                                   const BufferedNetPtr& q,
                                   Point location)
 {
-  const BufferedNetPtr& min_req = fuzzyLess(p->slack(), q->slack()) ? p : q;
   BufferedNetPtr junc = make_shared<BufferedNet>(
       BufferedNetType::junction, location, p, q, resizer);
-
   junc->setSlackTransition(
       combinedTransition(p->slackTransition(), q->slackTransition()));
-  junc->setSlack(min_req->slack());
+  junc->setSlack(std::min(p->slack(), q->slack()));
   return junc;
 }
 
