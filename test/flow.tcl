@@ -227,7 +227,6 @@ pin_access -bottom_routing_layer $min_routing_layer \
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \
-               -save_guide_updates \
                -bottom_routing_layer $min_routing_layer \
                -top_routing_layer $max_routing_layer \
                -verbose 0
@@ -254,7 +253,6 @@ while {[check_antennas] && $repair_antennas_iters < 5} {
 
   detailed_route -output_drc [make_result_file "${design}_${platform}_ant_fix_drc.rpt"] \
                  -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
-                 -save_guide_updates \
                  -bottom_routing_layer $min_routing_layer \
                  -top_routing_layer $max_routing_layer \
                  -verbose 0
