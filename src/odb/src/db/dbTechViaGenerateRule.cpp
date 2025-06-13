@@ -50,8 +50,7 @@ _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
     : _flags(v._flags), _name(nullptr), _layer_rules(v._layer_rules)
 {
   if (v._name) {
-    _name = strdup(v._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(v._name);
   }
 }
 
@@ -134,8 +133,7 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = tech->_via_generate_rule_tbl->create();
-  rule->_name = strdup(name);
-  ZALLOCATED(rule->_name);
+  rule->_name = safe_strdup(name);
   rule->_flags._default = is_default;
   return (dbTechViaGenerateRule*) rule;
 }

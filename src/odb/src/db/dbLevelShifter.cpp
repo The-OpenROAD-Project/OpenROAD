@@ -473,8 +473,7 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
   }
 
   _dbLevelShifter* shifter = _block->_levelshifter_tbl->create();
-  shifter->_name = strdup(name);
-  ZALLOCATED(shifter->_name);
+  shifter->_name = safe_strdup(name);
 
   shifter->_domain = domain->getImpl()->getOID();
 

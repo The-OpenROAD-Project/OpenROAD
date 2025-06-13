@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "dbCommon.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
@@ -19,10 +20,10 @@ tmg_conn_graph::tmg_conn_graph()
   _ptNmax = 1024;
   _shortNmax = 1024;
   _eNmax = 1024;
-  _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
-  _path_vis = (int*) malloc(_ptNmax * sizeof(int));
-  _eV = (tcg_edge*) malloc(2UL * _ptNmax * sizeof(tcg_edge));
-  _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
+  _ptV = (tcg_pt*) safe_malloc(_ptNmax * sizeof(tcg_pt));
+  _path_vis = (int*) safe_malloc(_ptNmax * sizeof(int));
+  _eV = (tcg_edge*) safe_malloc(2UL * _ptNmax * sizeof(tcg_edge));
+  _stackV = (tcg_edge**) safe_malloc(_shortNmax * sizeof(tcg_edge*));
 }
 
 tmg_conn_graph::~tmg_conn_graph()
@@ -38,14 +39,14 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
   if (ptN > _ptNmax) {
     _ptNmax = 2 * ptN;
     free(_ptV);
-    _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
+    _ptV = (tcg_pt*) safe_malloc(_ptNmax * sizeof(tcg_pt));
     free(_path_vis);
-    _path_vis = (int*) malloc(_ptNmax * sizeof(int));
+    _path_vis = (int*) safe_malloc(_ptNmax * sizeof(int));
   }
   if (shortN > _shortNmax) {
     _shortNmax = 2 * shortN;
     free(_stackV);
-    _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
+    _stackV = (tcg_edge**) safe_malloc(_shortNmax * sizeof(tcg_edge*));
   }
   if (4 * ptN + 2 * shortN > _eNmax) {
     _eNmax *= 2;
@@ -53,7 +54,7 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
       _eNmax = 4 * ptN + 2 * shortN;
     }
     free(_eV);
-    _eV = (tcg_edge*) malloc(_eNmax * sizeof(tcg_edge));
+    _eV = (tcg_edge*) safe_malloc(_eNmax * sizeof(tcg_edge));
   }
   _eN = 0;
   for (int j = 0; j < ptN; j++) {

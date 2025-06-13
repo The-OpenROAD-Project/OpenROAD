@@ -18,10 +18,4 @@ namespace odb {
 #define ZASSERT(x) assert(x)
 #endif
 
-#define ZALLOCATED(expr)                         \
-  do {                                           \
-    if ((expr) == nullptr)                       \
-      throw std::runtime_error("Out of memory"); \
-  } while (0);
-
 }  // namespace odb
