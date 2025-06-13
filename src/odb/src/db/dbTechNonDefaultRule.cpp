@@ -35,8 +35,7 @@ _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*,
       _min_cuts(r._min_cuts)
 {
   if (r._name) {
-    _name = strdup(r._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(r._name);
   }
 }
 
@@ -392,8 +391,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechNonDefaultRule* rule = tech->_non_default_rule_tbl->create();
-  rule->_name = strdup(name_);
-  ZALLOCATED(rule->_name);
+  rule->_name = safe_strdup(name_);
   rule->_layer_rules.resize(tech->_layer_cnt);
 
   int i;
@@ -415,8 +413,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
   _dbTech* tech = (_dbTech*) block->getDb()->getTech();
   _dbTechNonDefaultRule* rule = block->_non_default_rule_tbl->create();
 
-  rule->_name = strdup(name_);
-  ZALLOCATED(rule->_name);
+  rule->_name = safe_strdup(name_);
   rule->_flags._block_rule = 1;
   rule->_layer_rules.resize(tech->_layer_cnt);
 

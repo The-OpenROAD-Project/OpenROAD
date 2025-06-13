@@ -284,8 +284,7 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   modbterm->_next_net_modbterm = 0;
   modbterm->_prev_net_modbterm = 0;
   modbterm->_busPort = 0;
-  modbterm->_name = strdup(name);
-  ZALLOCATED(modbterm->_name);
+  modbterm->_name = safe_strdup(name);
   modbterm->_parent = module->getOID();
   modbterm->_next_entry = module->_modbterms;
   modbterm->_prev_entry = 0;

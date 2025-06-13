@@ -123,8 +123,7 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       pin_access_idx_(i.pin_access_idx_)
 {
   if (i._name) {
-    _name = strdup(i._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(i._name);
   }
 }
 
@@ -365,8 +364,7 @@ bool dbInst::rename(const char* name)
 
   block->_inst_hash.remove(inst);
   free((void*) inst->_name);
-  inst->_name = strdup(name);
-  ZALLOCATED(inst->_name);
+  inst->_name = safe_strdup(name);
   block->_inst_hash.insert(inst);
 
   return true;
@@ -1277,8 +1275,7 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->endAction();
   }
 
-  inst->_name = strdup(name_);
-  ZALLOCATED(inst->_name);
+  inst->_name = safe_strdup(name_);
   inst->_inst_hdr = inst_hdr->getOID();
   block->_inst_hash.insert(inst);
   inst_hdr->_inst_cnt++;
