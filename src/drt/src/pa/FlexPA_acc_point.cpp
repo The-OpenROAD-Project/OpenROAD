@@ -244,8 +244,6 @@ void FlexPA::createSingleAccessPoint(
       }
     }
   }
-  ap->setAccess(frDirEnum::D, false);
-  ap->setAccess(frDirEnum::U, allow_via);
 
   ap->setAllowVia(allow_via);
   ap->setType((frAccessPointEnum) lower_type, true);
@@ -304,20 +302,15 @@ void FlexPA::createMultipleAccessPoints(
     const frAccessPointEnum upper_type)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
-  bool allow_via = true;
+  bool allow_via = !isIOTerm(inst_term);
   bool allow_planar = true;
   //  only VIA_ACCESS_LAYERNUM layer can have via access
-  if (inst_term) {
-    if (isStdCell(inst_term->getInst())) {
-      if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
-           && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
-          || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
-        allow_planar = false;
-      }
+  if (isStdCellTerm(inst_term)) {
+    if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+         && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
+        || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
+      allow_planar = false;
     }
-  } else {
-    allow_planar = true;
-    allow_via = false;
   }
   const int aps_size_before = aps.size();
   // build points;
@@ -473,7 +466,7 @@ void FlexPA::genAPsFromLayerShapes(
     const frAccessPointEnum upper_type)
 {
   // IO term is treated as the MacroCellPin as the top block
-  bool is_macro_cell_pin = inst_term ? isMacroCell(inst_term->getInst()) : true;
+  bool is_macro_cell_pin = isMacroCellTerm(inst_term) || isIOTerm(inst_term);
 
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
@@ -787,34 +780,16 @@ void FlexPA::getViasFromMetalWidthMap(
   }
 }
 
-template <typename T>
-bool FlexPA::validateAPForVia(
-    frAccessPoint* ap,
-    const frViaDef* via_def,
-    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
-    const gtl::polygon_90_set_data<frCoord>& polyset,
-    T* pin,
-    frInstTerm* inst_term)
+frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
+                          frAccessPoint* ap,
+                          const gtl::polygon_90_set_data<frCoord>& polyset,
+                          const frViaDef* via_def)
 {
-  if (!ap->isViaAllowed()) {
-    return false;
-  }
-
   const Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
-
-  bool via_in_pin = false;
-  const auto lower_type = ap->getType(true);
-  const auto upper_type = ap->getType(false);
-  if (layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
-      && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM) {
-    via_in_pin = true;
-  } else if ((lower_type == frAccessPointEnum::EncOpt
-              && upper_type != frAccessPointEnum::NearbyGrid)
-             || (upper_type == frAccessPointEnum::EncOpt
-                 && lower_type != frAccessPointEnum::NearbyGrid)) {
-    via_in_pin = true;
-  }
+  auto via = std::make_unique<frVia>(via_def);
+  via->setOrigin(begin_point);
+  const Rect box = via->getLayer1BBox();
 
   // check if ap is on the left/right boundary of the cell
   Rect boundary_bbox;
@@ -825,19 +800,6 @@ bool FlexPA::validateAPForVia(
     if (begin_point.x() <= boundary_bbox.xMin() + 3 * width
         || begin_point.x() >= boundary_bbox.xMax() - 3 * width) {
       is_side_bound = true;
-    }
-  }
-
-  auto via = std::make_unique<frVia>(via_def);
-  via->setOrigin(begin_point);
-  const Rect box = via->getLayer1BBox();
-  if (inst_term) {
-    if (!boundary_bbox.contains(box)) {
-      return false;
-    }
-    Rect layer2_boundary_box = via->getLayer2BBox();
-    if (!boundary_bbox.contains(layer2_boundary_box)) {
-      return false;
     }
   }
 
@@ -867,14 +829,65 @@ bool FlexPA::validateAPForVia(
       max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
     }
   }
+  return max_ext;
+}
+
+template <typename T>
+bool FlexPA::validateAPForVia(
+    frAccessPoint* ap,
+    const frViaDef* via_def,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
+    const gtl::polygon_90_set_data<frCoord>& polyset,
+    T* pin,
+    frInstTerm* inst_term)
+{
+  if (!ap->isViaAllowed()) {
+    return false;
+  }
+
+  const Point begin_point = ap->getPoint();
+  const auto layer_num = ap->getLayerNum();
+  const int max_num_via_trial = 2;
+
+  bool via_in_pin = false;
+  const auto lower_type = ap->getType(true);
+  const auto upper_type = ap->getType(false);
+  if (layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+      && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM) {
+    via_in_pin = true;
+  } else if ((lower_type == frAccessPointEnum::EncOpt
+              && upper_type != frAccessPointEnum::NearbyGrid)
+             || (upper_type == frAccessPointEnum::EncOpt
+                 && lower_type != frAccessPointEnum::NearbyGrid)) {
+    via_in_pin = true;
+  }
+
+  auto via = std::make_unique<frVia>(via_def);
+  via->setOrigin(begin_point);
+  const Rect box = via->getLayer1BBox();
+  if (inst_term) {
+    auto boundary_bbox = inst_term->getInst()->getBoundaryBBox();
+    if (!boundary_bbox.contains(box)) {
+      return false;
+    }
+    Rect layer2_boundary_box = via->getLayer2BBox();
+    if (!boundary_bbox.contains(layer2_boundary_box)) {
+      return false;
+    }
+  }
+
+  frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def);
+
   if (via_in_pin && max_ext) {
     return false;
   }
+
   if (!checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
     return false;
   }
-  ap->setAccess(frDirEnum::U);
+
   ap->addViaDef(via_def);
+  ap->setAccess(frDirEnum::U);
   return true;
 }
 
@@ -1100,11 +1113,21 @@ void FlexPA::updatePinStats(
     const std::vector<std::unique_ptr<frAccessPoint>>& new_aps,
     frInstTerm* inst_term)
 {
-  if (!inst_term) {
+  if (isIOTerm(inst_term)) {
     return;
   }
-  bool is_std_cell_pin = isStdCell(inst_term->getInst());
-  bool is_macro_cell_pin = isMacroCell(inst_term->getInst());
+
+  bool is_std_cell_pin = isStdCellTerm(inst_term);
+  bool is_macro_cell_pin = isMacroCellTerm(inst_term);
+
+  if (new_aps.empty()) {
+    if (is_std_cell_pin) {
+      std_cell_pin_no_ap_cnt_++;
+    } else if (is_macro_cell_pin) {
+      macro_cell_pin_no_ap_cnt_++;
+    }
+  }
+
   for (auto& ap : new_aps) {
     if (ap->hasPlanarAccess()) {
       if (is_std_cell_pin) {
@@ -1133,8 +1156,8 @@ bool FlexPA::EnoughSparsePoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     frInstTerm* inst_term)
 {
-  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
-  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
+  const bool is_std_cell_pin = isStdCellTerm(inst_term);
+  const bool is_macro_cell_pin = isMacroCellTerm(inst_term);
   /* This is a Max Clique problem, each ap is a node, draw an edge between two
    aps if they are far away as to not intersect. n_sparse_access_points,
    ideally, is the Max Clique of this graph. the current implementation gives a
@@ -1195,9 +1218,7 @@ bool FlexPA::EnoughAccessPoints(
     frInstTerm* inst_term,
     pa_requirements_met& reqs)
 {
-  const bool is_io_pin = (inst_term == nullptr);
-
-  if (is_io_pin) {
+  if (isIOTerm(inst_term)) {
     return !aps.empty();
   }
 
@@ -1218,10 +1239,7 @@ bool FlexPA::genPinAccessCostBounded(
     const frAccessPointEnum upper_type,
     pa_requirements_met& reqs)
 {
-  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
-  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
-  const bool is_io_pin = (inst_term == nullptr);
-
+  const bool is_std_cell_pin = isStdCellTerm(inst_term);
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   LayerToRectCoordsMap layer_rect_to_coords;
   genAPsFromPinShapes(
@@ -1244,29 +1262,15 @@ bool FlexPA::genPinAccessCostBounded(
     // for stdcell, add (i) planar access if layer_num != VIA_ACCESS_LAYERNUM,
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
-      const bool ap_in_via_acc_layer
-          = (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM);
-      if (!ap_in_via_acc_layer || ap->hasAccess(frDirEnum::U)) {
-        aps.push_back(std::move(ap));
+      if (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM
+          && !ap->hasAccess(frDirEnum::U)) {
+        continue;
       }
-    } else if (is_macro_cell_pin || is_io_pin) {
-      aps.push_back(std::move(ap));
     }
+    aps.push_back(std::move(ap));
   }
 
-  if (!EnoughAccessPoints(aps, inst_term, reqs)) {
-    return false;
-  }
-
-  updatePinStats(aps, inst_term);
-  // IO term pin always only have one access
-  const int pin_access_idx
-      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
-  // write to pa
-  for (auto& ap : aps) {
-    pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-  }
-  return true;
+  return EnoughAccessPoints(aps, inst_term, reqs);
 }
 
 template <typename T>
@@ -1366,6 +1370,8 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 
   pa_requirements_met reqs;
 
+  bool enough_access_points = false;
+
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
                      frAccessPointEnum::Center,
@@ -1380,26 +1386,29 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(aps,
-                                  apset,
-                                  pin_shapes,
-                                  layer_polys,
-                                  pin,
-                                  inst_term,
-                                  lower,
-                                  upper,
-                                  reqs)) {
-        return aps.size();
+
+      if (enough_access_points) {
+        break;
       }
+
+      enough_access_points = genPinAccessCostBounded(aps,
+                                                     apset,
+                                                     pin_shapes,
+                                                     layer_polys,
+                                                     pin,
+                                                     inst_term,
+                                                     lower,
+                                                     upper,
+                                                     reqs);
     }
   }
 
-  if (inst_term) {
+  if (!enough_access_points && inst_term) {
     std::string unmet_requirements;
     if (!reqs.sparse_points) {
       unmet_requirements
           += "\n\tAt least "
-             + (isStdCell(inst_term->getInst())
+             + (isStdCellTerm(inst_term)
                     ? std::to_string(router_cfg_->MINNUMACCESSPOINT_STDCELLPIN)
                     : std::to_string(
                           router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN))
@@ -1414,29 +1423,28 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                unmet_requirements);
   }
 
-  // inst_term aps are written back here if not early stopped
-  // IO term aps are are written back in genPinAccessCostBounded and always
-  // early stopped
-  updatePinStats(aps, inst_term);
-  const int n_aps = aps.size();
-  if (n_aps == 0) {
-    if (inst_term && isStdCell(inst_term->getInst())) {
-      std_cell_pin_no_ap_cnt_++;
+  // Sorts via_defs in each ap
+  for (auto& ap : aps) {
+    std::map<const frViaDef*, int> cost_map;
+    for (const auto& viaDefsLayer : ap->getAllViaDefs()) {
+      for (const frViaDef* via_def : viaDefsLayer) {
+        cost_map[via_def] = viaMaxExt(
+            inst_term, ap.get(), pin_shapes[ap->getLayerNum()], via_def);
+      }
     }
-    if (inst_term && isMacroCell(inst_term->getInst())) {
-      macro_cell_pin_no_ap_cnt_++;
-    }
-  } else {
-    if (inst_term == nullptr) {
-      logger_->error(DRT, 254, "inst_term can not be nullptr");
-    }
-    // write to pa
-    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
-    for (auto& ap : aps) {
-      pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-    }
+
+    ap->sortViaDefs(cost_map);
   }
-  return n_aps;
+
+  updatePinStats(aps, inst_term);
+  // IO term pin always only have one access
+  const int pin_access_idx
+      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
+  // write to pa
+  for (auto& ap : aps) {
+    pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
+  }
+  return aps.size();
 }
 
 void FlexPA::genInstAccessPoints(frInst* unique_inst)
