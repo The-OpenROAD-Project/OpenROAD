@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 
 #include <algorithm>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <cstdint>
@@ -258,8 +259,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 {
   utl::StreamHandler stream_handler(def_file, false);
 
-  const std::string name(def_file);
-  if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
+  if (boost::ends_with(std::string(def_file), ".gz")) {
     boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
     outbuf.push(boost::iostreams::gzip_compressor());
     outbuf.push(stream_handler.getStream());
