@@ -20,12 +20,14 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
+#include "ConcreteSwapArithModules.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
 #include "ResizerObserver.hh"
-#include "SizeMove.hh"
+#include "SizeDownMove.hh"
+#include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
@@ -119,10 +121,11 @@ using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
-    : recover_power_(new RecoverPower(this)),
-      repair_design_(new RepairDesign(this)),
-      repair_setup_(new RepairSetup(this)),
-      repair_hold_(new RepairHold(this)),
+    : recover_power_(std::make_unique<RecoverPower>(this)),
+      repair_design_(std::make_unique<RepairDesign>(this)),
+      repair_setup_(std::make_unique<RepairSetup>(this)),
+      repair_hold_(std::make_unique<RepairHold>(this)),
+      swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -131,21 +134,7 @@ Resizer::Resizer()
 {
 }
 
-Resizer::~Resizer()
-{
-  delete recover_power_;
-  delete repair_design_;
-  delete repair_setup_;
-  delete repair_hold_;
-  delete target_load_map_;
-  delete incr_groute_;
-  delete buffer_move;
-  delete clone_move;
-  delete size_move;
-  delete split_load_move;
-  delete swap_pins_move;
-  delete unbuffer_move;
-}
+Resizer::~Resizer() = default;
 
 void Resizer::init(Logger* logger,
                    dbDatabase* db,
@@ -170,12 +159,13 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
-  buffer_move = new BufferMove(this);
-  clone_move = new CloneMove(this);
-  size_move = new SizeMove(this);
-  split_load_move = new SplitLoadMove(this);
-  swap_pins_move = new SwapPinsMove(this);
-  unbuffer_move = new UnbufferMove(this);
+  buffer_move_ = std::make_unique<BufferMove>(this);
+  clone_move_ = std::make_unique<CloneMove>(this);
+  size_down_move_ = std::make_unique<SizeDownMove>(this);
+  size_up_move_ = std::make_unique<SizeUpMove>(this);
+  split_load_move_ = std::make_unique<SplitLoadMove>(this);
+  swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
+  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -245,7 +235,13 @@ bool rszFuzzyEqual(double v1, double v2)
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void Resizer::initBlock()
 {
+  if (db_->getChip() == nullptr) {
+    logger_->error(RSZ, 162, "Database does not have a loaded design");
+  }
   block_ = db_->getChip()->getBlock();
+  if (block_ == nullptr) {
+    logger_->error(RSZ, 163, "Database has no block");
+  }
   core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
                    && core_.yMax() == 0);
@@ -349,13 +345,14 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
+  IncrementalParasiticsGuard guard(this);
 
   if (insts.empty()) {
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (unbuffer_move->removeBufferIfPossible(buffer,
-                                                /* honor dont touch */ true)) {
+      if (unbuffer_move_->removeBufferIfPossible(buffer,
+                                                 /* honor dont touch */ true)) {
       }
     }
   } else {
@@ -363,7 +360,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (unbuffer_move->removeBufferIfPossible(
+      if (unbuffer_move_->removeBufferIfPossible(
               buffer, /* don't honor dont touch */ false)) {
       } else {
         logger_->warn(
@@ -375,9 +372,9 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
       }
     }
   }
-  unbuffer_move->commitMoves();
+  unbuffer_move_->commitMoves();
   level_drvr_vertices_valid_ = false;
-  logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move->numMoves());
+  logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
 void Resizer::unbufferNet(Net* net)
@@ -762,26 +759,25 @@ void Resizer::bufferInputs()
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
-  incrementalParasiticsBegin();
-  InstancePinIterator* port_iter
-      = network_->pinIterator(network_->topInstance());
-  while (port_iter->hasNext()) {
-    Pin* pin = port_iter->next();
-    Vertex* vertex = graph_->pinDrvrVertex(pin);
-    Net* net = network_->net(network_->term(pin));
+  {
+    IncrementalParasiticsGuard guard(this);
+    std::unique_ptr<InstancePinIterator> port_iter(
+        network_->pinIterator(network_->topInstance()));
+    while (port_iter->hasNext()) {
+      Pin* pin = port_iter->next();
+      Vertex* vertex = graph_->pinDrvrVertex(pin);
+      Net* net = network_->net(network_->term(pin));
 
-    if (network_->direction(pin)->isInput() && !dontTouch(net)
-        && !vertex->isConstant()
-        && !sta_->isClock(pin)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net) && hasPins(net)) {
-      // repair_design will resize to target slew.
-      bufferInput(pin, buffer_lowest_drive_);
+      if (network_->direction(pin)->isInput() && !dontTouch(net)
+          && !vertex->isConstant()
+          && !sta_->isClock(pin)
+          // Hands off special nets.
+          && !db_network_->isSpecial(net) && hasPins(net)) {
+        // repair_design will resize to target slew.
+        bufferInput(pin, buffer_lowest_drive_);
+      }
     }
   }
-  delete port_iter;
-  updateParasitics();
-  incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
     logger_->info(
@@ -970,11 +966,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
     db_network_->connectPin(const_cast<Pin*>(top_pin),
                             db_network_->dbToSta(top_pin_flat_net));
   }
-  // invalidate the parasitics on the buffer input and output
-  // nets (the top_pin_flat_net, buffer input, and buffer_out
-  // flat_net, buffer output).
-  parasiticsInvalid(db_network_->dbToSta(top_pin_flat_net));
-  parasiticsInvalid(db_network_->dbToSta(buffer_out_flat_net));
 
   return buffer;
 }
@@ -986,27 +977,26 @@ void Resizer::bufferOutputs()
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
-  incrementalParasiticsBegin();
-  InstancePinIterator* port_iter
-      = network_->pinIterator(network_->topInstance());
-  while (port_iter->hasNext()) {
-    Pin* pin = port_iter->next();
-    Vertex* vertex = graph_->pinLoadVertex(pin);
-    Net* net = network_->net(network_->term(pin));
-    if (network_->direction(pin)->isOutput() && net
-        && !dontTouch(net)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)
-        // DEF does not have tristate output types so we have look at the
-        // drivers.
-        && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
-        && hasPins(net)) {
-      bufferOutput(pin, buffer_lowest_drive_);
+  {
+    IncrementalParasiticsGuard guard(this);
+    std::unique_ptr<InstancePinIterator> port_iter(
+        network_->pinIterator(network_->topInstance()));
+    while (port_iter->hasNext()) {
+      Pin* pin = port_iter->next();
+      Vertex* vertex = graph_->pinLoadVertex(pin);
+      Net* net = network_->net(network_->term(pin));
+      if (network_->direction(pin)->isOutput() && net
+          && !dontTouch(net)
+          // Hands off special nets.
+          && !db_network_->isSpecial(net)
+          // DEF does not have tristate output types so we have look at the
+          // drivers.
+          && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
+          && hasPins(net)) {
+        bufferOutput(pin, buffer_lowest_drive_);
+      }
     }
   }
-  delete port_iter;
-  updateParasitics();
-  incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
     logger_->info(
@@ -1108,9 +1098,6 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
           buffer_ip_pin_iterm->getNet()->getName().c_str());
     }
   }
-
-  parasiticsInvalid(flat_op_net);
-  parasiticsInvalid(buffer_out);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1632,6 +1619,18 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
+void Resizer::setParasiticsSrc(ParasiticsSrc src)
+{
+  if (incremental_parasitics_enabled_) {
+    logger_->error(
+        RSZ,
+        108,
+        "cannot change parasitics source while incremental parasitics enabled");
+  }
+
+  parasitics_src_ = src;
+}
+
 void Resizer::makeEquivCells()
 {
   LibertyLibrarySeq libs;
@@ -1950,18 +1949,6 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
   return best_cell;
 }
 
-void Resizer::invalidateParasitics(const Pin* pin, const Net* net)
-{
-  // ODB is clueless about tristates so go to liberty for reality.
-  const LibertyPort* port = network_->libertyPort(pin);
-  // Invalidate estimated parasitics on all instance input pins.
-  // Tristate nets have multiple drivers and this is drivers^2 if
-  // the parasitics are updated for each resize.
-  if (net && !port->direction()->isAnyTristate()) {
-    parasiticsInvalid(net);
-  }
-}
-
 void Resizer::eraseParasitics(const Net* net)
 {
   parasitics_invalid_.erase(net);
@@ -1987,20 +1974,6 @@ bool Resizer::replaceCell(Instance* inst,
     if (parasitics_src_ == ParasiticsSrc::global_routing
         || parasitics_src_ == ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
-    }
-    if (haveEstimatedParasitics()) {
-      InstancePinIterator* pin_iter = network_->pinIterator(inst);
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        const Net* net = network_->net(pin);
-        odb::dbNet* db_net = nullptr;
-        odb::dbModNet* db_modnet = nullptr;
-        db_network_->staToDb(net, db_net, db_modnet);
-        // only work on dbnets
-        invalidateParasitics(pin, db_network_->dbToSta(db_net));
-        //        invalidateParasitics(pin, net);
-      }
-      delete pin_iter;
     }
     return true;
   }
@@ -2038,6 +2011,7 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
+  IncrementalParasiticsGuard guard(this);
   if (run_journal_restore)
     journalBegin();
   estimateWireParasitics();
@@ -2306,6 +2280,7 @@ void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
 }
@@ -2316,6 +2291,7 @@ void Resizer::resetDontUse()
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
 
@@ -2428,7 +2404,7 @@ void Resizer::findTargetLoads()
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
 
-    target_load_map_ = new CellTargetLoadMap;
+    target_load_map_ = std::make_unique<CellTargetLoadMap>();
     // Find target loads at the tgt_slew_corner.
     int lib_ap_index = tgt_slew_corner_->libertyIndex(max_);
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
@@ -3261,24 +3237,26 @@ ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
 
 ////////////////////////////////////////////////////////////////
 
-double Resizer::findMaxWireLength()
+double Resizer::findMaxWireLength(bool issue_error)
 {
   init();
   checkLibertyForAllCorners();
   findBuffers();
   findTargetLoads();
-  return findMaxWireLength1();
+  return findMaxWireLength1(issue_error);
 }
 
-double Resizer::findMaxWireLength1()
+double Resizer::findMaxWireLength1(bool issue_error)
 {
   std::optional<double> max_length;
   for (const Corner* corner : *sta_->corners()) {
     if (wireSignalResistance(corner) <= 0.0) {
-      logger_->warn(RSZ,
-                    88,
-                    "Corner: {} has no wire signal resistance value.",
-                    corner->name());
+      if (issue_error) {
+        logger_->warn(RSZ,
+                      88,
+                      "Corner: {} has no wire signal resistance value.",
+                      corner->name());
+      }
       continue;
     }
 
@@ -3297,11 +3275,15 @@ double Resizer::findMaxWireLength1()
   }
 
   if (!max_length.has_value()) {
-    logger_->error(RSZ,
-                   89,
-                   "Could not find a resistance value for any corner. Cannot "
-                   "evaluate max wire length for buffer. Check over your "
-                   "`set_wire_rc` configuration");
+    if (issue_error) {
+      logger_->error(RSZ,
+                     89,
+                     "Could not find a resistance value for any corner. Cannot "
+                     "evaluate max wire length for buffer. Check over your "
+                     "`set_wire_rc` configuration");
+    } else {
+      max_length = -std::numeric_limits<double>::infinity();
+    }
   }
 
   return max_length.value();
@@ -3704,6 +3686,7 @@ bool Resizer::repairSetup(double setup_margin,
                           const std::vector<MoveType>& sequence,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
+                          bool skip_size_down,
                           bool skip_buffering,
                           bool skip_buffer_removal,
                           bool skip_last_gasp)
@@ -3723,6 +3706,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     sequence,
                                     skip_pin_swap,
                                     skip_gate_cloning,
+                                    skip_size_down,
                                     skip_buffering,
                                     skip_buffer_removal,
                                     skip_last_gasp);
@@ -3731,7 +3715,7 @@ bool Resizer::repairSetup(double setup_margin,
 void Resizer::reportSwappablePins()
 {
   resizePreamble();
-  swap_pins_move->reportSwappablePins();
+  swap_pins_move_->reportSwappablePins();
 }
 
 void Resizer::repairSetup(const Pin* end_pin)
@@ -3743,7 +3727,7 @@ void Resizer::repairSetup(const Pin* end_pin)
 void Resizer::rebufferNet(const Pin* drvr_pin)
 {
   resizePreamble();
-  buffer_move->rebufferNet(drvr_pin);
+  buffer_move_->rebufferNet(drvr_pin);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3822,23 +3806,31 @@ bool Resizer::recoverPower(float recover_power_percent,
   return recover_power_->recoverPower(recover_power_percent, verbose);
 }
 ////////////////////////////////////////////////////////////////
+void Resizer::swapArithModules(int path_count,
+                               const std::string& target,
+                               float slack_margin)
+{
+  resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+    opendp_->initMacrosAndGrid();
+  }
+  swap_arith_modules_->replaceArithModules(path_count, target, slack_margin);
+}
+////////////////////////////////////////////////////////////////
 // Journal to roll back changes
 void Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
-  incrementalParasiticsBegin();
   odb::dbDatabase::beginEco(block_);
-  if (isCallBackRegistered()) {
-    db_cbk_->removeOwner();
-    setCallBackRegistered(false);
-  }
 
-  buffer_move->undoMoves();
-  size_move->undoMoves();
-  clone_move->undoMoves();
-  split_load_move->undoMoves();
-  swap_pins_move->undoMoves();
-  unbuffer_move->undoMoves();
+  buffer_move_->undoMoves();
+  size_down_move_->undoMoves();
+  size_up_move_->undoMoves();
+  clone_move_->undoMoves();
+  split_load_move_->undoMoves();
+  swap_pins_move_->undoMoves();
+  unbuffer_move_->undoMoves();
 }
 
 void Resizer::journalEnd()
@@ -3848,15 +3840,55 @@ void Resizer::journalEnd()
     updateParasitics();
     sta_->findRequireds();
   }
-  incrementalParasiticsEnd();
   odb::dbDatabase::endEco(block_);
 
-  buffer_move->commitMoves();
-  size_move->commitMoves();
-  clone_move->commitMoves();
-  split_load_move->commitMoves();
-  swap_pins_move->commitMoves();
-  unbuffer_move->commitMoves();
+  int move_count_ = 0;
+  move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
+  move_count_ += buffer_move_->numPendingMoves();
+  move_count_ += clone_move_->numPendingMoves();
+  move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += unbuffer_move_->numPendingMoves();
+
+  debugPrint(
+      logger_,
+      RSZ,
+      "opt_moves",
+      2,
+      "COMMIT {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
+      move_count_,
+      size_up_move_->numPendingMoves(),
+      size_down_move_->numPendingMoves(),
+      buffer_move_->numPendingMoves(),
+      clone_move_->numPendingMoves(),
+      swap_pins_move_->numPendingMoves(),
+      unbuffer_move_->numPendingMoves());
+
+  accepted_move_count_ += move_count_;
+
+  buffer_move_->commitMoves();
+  size_up_move_->commitMoves();
+  size_down_move_->commitMoves();
+  clone_move_->commitMoves();
+  split_load_move_->commitMoves();
+  swap_pins_move_->commitMoves();
+  unbuffer_move_->commitMoves();
+
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             1,
+             "TOTAL {} moves (acc {} rej {}):  up {} down {} buffer {} clone "
+             "{} swap {} unbuf {}",
+             accepted_move_count_ + rejected_move_count_,
+             accepted_move_count_,
+             rejected_move_count_,
+             size_up_move_->numCommittedMoves(),
+             size_down_move_->numCommittedMoves(),
+             buffer_move_->numCommittedMoves(),
+             clone_move_->numCommittedMoves(),
+             swap_pins_move_->numCommittedMoves(),
+             unbuffer_move_->numCommittedMoves());
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -3880,7 +3912,6 @@ void Resizer::journalRestore()
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
     odb::dbDatabase::endEco(block_);
-    incrementalParasiticsEnd();
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -3889,52 +3920,72 @@ void Resizer::journalRestore()
     return;
   }
 
-  incrementalParasiticsEnd();
-  incrementalParasiticsBegin();
-
-  // Observe netlist changes to invalidate relevant net parasitics
-  if (!isCallBackRegistered()) {
-    db_cbk_->addOwner(block_);
-    setCallBackRegistered(true);
-    debugPrint(logger_,
-               RSZ,
-               "odb",
-               1,
-               "ODB callback registered for block {}",
-               reinterpret_cast<uintptr_t>(block_));
-  }
-
   // Odb callbacks invalidate parasitics
   odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
-  // Done with restore.  Disable netlist observer.
-  db_cbk_->removeOwner();
-  setCallBackRegistered(false);
-  debugPrint(logger_, RSZ, "odb", 1, "ODB callback unregistered");
-
   updateParasitics();
   sta_->findRequireds();
-  incrementalParasiticsEnd();
 
   // Update transform counts
+  debugPrint(
+      logger_,
+      RSZ,
+      "journal",
+      1,
+      "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
+      size_up_move_->numPendingMoves() + size_down_move_->numPendingMoves(),
+      buffer_move_->numPendingMoves(),
+      clone_move_->numPendingMoves(),
+      swap_pins_move_->numPendingMoves(),
+      unbuffer_move_->numPendingMoves());
+
+  int move_count_ = 0;
+  move_count_ += size_down_move_->numPendingMoves();
+  move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += buffer_move_->numPendingMoves();
+  move_count_ += clone_move_->numPendingMoves();
+  move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += unbuffer_move_->numPendingMoves();
+
   debugPrint(logger_,
              RSZ,
-             "journal",
-             1,
-             "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
-             size_move->numPendingMoves(),
-             inserted_buffer_count_,
-             clone_move->numPendingMoves(),
-             swap_pins_move->numPendingMoves(),
-             unbuffer_move->numPendingMoves());
+             "opt_moves",
+             2,
+             "UNDO {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
+             move_count_,
+             size_up_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
 
-  size_move->undoMoves();
-  buffer_move->undoMoves();
-  clone_move->undoMoves();
-  split_load_move->undoMoves();
-  swap_pins_move->undoMoves();
-  unbuffer_move->undoMoves();
+  rejected_move_count_ += move_count_;
+
+  size_down_move_->undoMoves();
+  size_up_move_->undoMoves();
+  buffer_move_->undoMoves();
+  clone_move_->undoMoves();
+  split_load_move_->undoMoves();
+  swap_pins_move_->undoMoves();
+  unbuffer_move_->undoMoves();
+
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             1,
+             "TOTAL {} moves (acc {} rej {}):  up {} down {} buffer {} clone "
+             "{} swap {} unbuf {}",
+             accepted_move_count_ + rejected_move_count_,
+             accepted_move_count_,
+             rejected_move_count_,
+             size_up_move_->numCommittedMoves(),
+             size_down_move_->numCommittedMoves(),
+             buffer_move_->numCommittedMoves(),
+             clone_move_->numCommittedMoves(),
+             swap_pins_move_->numCommittedMoves(),
+             unbuffer_move_->numCommittedMoves());
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
@@ -3947,22 +3998,22 @@ void Resizer::journalBeginTest()
 
 void Resizer::journalRestoreTest()
 {
-  int resize_count_old = size_move->numMoves();
-  int inserted_buffer_count_old = buffer_move->numMoves();
-  int cloned_gate_count_old = clone_move->numMoves();
-  int swap_pin_count_old = swap_pins_move->numMoves();
-  int removed_buffer_count_old = unbuffer_move->numMoves();
+  int resize_count_old = size_up_move_->numMoves();
+  int inserted_buffer_count_old = buffer_move_->numMoves();
+  int cloned_gate_count_old = clone_move_->numMoves();
+  int swap_pin_count_old = swap_pins_move_->numMoves();
+  int removed_buffer_count_old = unbuffer_move_->numMoves();
 
   journalRestore();
 
   logger_->report(
       "journalRestoreTest restored {} sizing, {} buffering, {} "
       "cloning, {} pin swaps, {} buffer removal",
-      resize_count_old - size_move->numMoves(),
-      inserted_buffer_count_old - buffer_move->numMoves(),
-      cloned_gate_count_old - clone_move->numMoves(),
-      swap_pin_count_old - swap_pins_move->numMoves(),
-      removed_buffer_count_old - unbuffer_move->numMoves());
+      resize_count_old - size_up_move_->numMoves(),
+      inserted_buffer_count_old - buffer_move_->numMoves(),
+      cloned_gate_count_old - clone_move_->numMoves(),
+      swap_pin_count_old - swap_pins_move_->numMoves(),
+      removed_buffer_count_old - unbuffer_move_->numMoves());
 }
 
 void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
@@ -4301,6 +4352,12 @@ MoveType Resizer::parseMove(const std::string& s)
   if (lower == "size") {
     return rsz::MoveType::SIZE;
   }
+  if (lower == "sizeup") {
+    return rsz::MoveType::SIZEUP;
+  }
+  if (lower == "sizedown") {
+    return rsz::MoveType::SIZEDOWN;
+  }
   if (lower == "clone") {
     return rsz::MoveType::CLONE;
   }
@@ -4320,6 +4377,64 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     result.push_back(parseMove(item));
   }
   return result;
+}
+
+IncrementalParasiticsGuard::IncrementalParasiticsGuard(Resizer* resizer)
+    : resizer_(resizer), need_unregister_(false)
+{
+  // check to allow reentrancy
+  if (!resizer_->incremental_parasitics_enabled_) {
+    if (!resizer_->block_) {
+      resizer_->logger_->error(
+          RSZ, 101, "incremental parasitics require an initialized block");
+    }
+
+    if (!resizer_->parasitics_invalid_.empty()) {
+      resizer_->logger_->error(RSZ, 104, "inconsistent parasitics state");
+    }
+
+    switch (resizer_->parasitics_src_) {
+      case ParasiticsSrc::placement:
+        break;
+      case ParasiticsSrc::global_routing:
+      case ParasiticsSrc::detailed_routing:
+        // TODO: add IncrementalDRoute
+        resizer_->incr_groute_
+            = new IncrementalGRoute(resizer_->global_router_, resizer_->block_);
+        // Don't print verbose messages for incremental routing
+        resizer_->global_router_->setVerbose(false);
+        break;
+      case ParasiticsSrc::none:
+        break;
+    }
+
+    resizer_->incremental_parasitics_enabled_ = true;
+    resizer_->db_cbk_->addOwner(resizer_->block_);
+    need_unregister_ = true;
+  }
+}
+
+IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
+{
+  if (need_unregister_) {
+    resizer_->db_cbk_->removeOwner();
+    resizer_->updateParasitics();
+
+    switch (resizer_->parasitics_src_) {
+      case ParasiticsSrc::placement:
+        break;
+      case ParasiticsSrc::global_routing:
+      case ParasiticsSrc::detailed_routing:
+        // TODO: add IncrementalDRoute
+        delete resizer_->incr_groute_;
+        resizer_->incr_groute_ = nullptr;
+        break;
+      case ParasiticsSrc::none:
+        break;
+    }
+
+    resizer_->incremental_parasitics_enabled_ = false;
+  }
 }
 
 }  // namespace rsz

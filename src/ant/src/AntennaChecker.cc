@@ -4,7 +4,6 @@
 #include "ant/AntennaChecker.hh"
 
 #include <omp.h>
-#include <tcl.h>
 
 #include <algorithm>
 #include <boost/pending/disjoint_sets.hpp>
@@ -54,10 +53,6 @@ struct AntennaModel
   double plus_diff_factor;
   double diff_metal_reduce_factor;
 };
-
-extern "C" {
-extern int Ant_Init(Tcl_Interp* interp);
-}
 
 AntennaChecker::AntennaChecker() = default;
 AntennaChecker::~AntennaChecker() = default;
@@ -817,6 +812,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_to_report_.at(db_net) = net_report;
   }
 
+  std::unordered_map<odb::dbITerm*, int> num_diodes_added;
   std::map<odb::dbTechLayer*, std::set<odb::dbITerm*>> pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
@@ -903,6 +899,10 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           pin_added[violation_layer].insert(gate);
           std::vector<odb::dbITerm*> gates_for_diode_insertion;
           gates_for_diode_insertion.push_back(gate);
+          // Reduce the number of added diodes in other layer
+          diode_count_per_gate
+              = std::max(0, diode_count_per_gate - num_diodes_added[gate]);
+          num_diodes_added[gate] += diode_count_per_gate;
           // save antenna violation
           if (violated) {
             antenna_violations.push_back({layer->getRoutingLevel(),

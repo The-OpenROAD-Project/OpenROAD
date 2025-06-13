@@ -83,12 +83,12 @@ bool CloneMove::doMove(const Path* drvr_path,
     return false;
   }
   // We can probably relax this with the new ECO code
-  if (resizer_->buffer_move->hasPendingMoves(db_network_->instance(drvr_pin))
+  if (resizer_->buffer_move_->hasPendingMoves(db_network_->instance(drvr_pin))
       > 0) {
     return false;
   }
   // We can probably relax this with the new ECO code
-  if (resizer_->split_load_move->hasPendingMoves(
+  if (resizer_->split_load_move_->hasPendingMoves(
           db_network_->instance(drvr_pin))
       > 0) {
     return false;
@@ -97,7 +97,7 @@ bool CloneMove::doMove(const Path* drvr_path,
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
-             "moves",
+             "clone",
              3,
              "clone driver {} -> {}",
              network_->pathName(drvr_pin),
@@ -123,7 +123,7 @@ bool CloneMove::doMove(const Path* drvr_path,
     const Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_,
                RSZ,
-               "moves",
+               "clone",
                4,
                " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
@@ -144,6 +144,12 @@ bool CloneMove::doMove(const Path* drvr_path,
   Instance* drvr_inst = db_network_->instance(drvr_pin);
 
   if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT clone {}",
+               network_->pathName(drvr_pin));
     return false;
   }
 
@@ -170,18 +176,13 @@ bool CloneMove::doMove(const Path* drvr_path,
 
   debugPrint(logger_,
              RSZ,
-             "moves",
+             "opt_moves",
              1,
-             "clone_move {} ({}) -> {} ({})",
+             "ACCEPT clone {} ({}) -> {} ({})",
              network_->pathName(drvr_pin),
              original_cell->name(),
              network_->pathName(clone_inst),
              clone_cell->name());
-  addMove(clone_inst);
-  // We add the driver instance to the pending move set, but don't count it as a
-  // move.
-  addMove(drvr_inst, 0);
-
   debugPrint(logger_,
              RSZ,
              "repair_setup",
@@ -191,6 +192,10 @@ bool CloneMove::doMove(const Path* drvr_path,
              original_cell->name(),
              network_->pathName(clone_inst),
              clone_cell->name());
+  addMove(clone_inst);
+  // We add the driver instance to the pending move set, but don't count it as a
+  // move.
+  addMove(drvr_inst, 0);
 
   // Hierarchy fix, make out_net in parent.
 
@@ -224,7 +229,6 @@ bool CloneMove::doMove(const Path* drvr_path,
       if (modnet) {
         iterm->connect(modnet);
       }
-      resizer_->parasiticsInvalid(db_network_->dbToSta(dbnet));
     }
   }
 
@@ -279,8 +283,6 @@ bool CloneMove::doMove(const Path* drvr_path,
       }
     }
   }
-  resizer_->parasiticsInvalid(out_net);
-  resizer_->parasiticsInvalid(network_->net(drvr_pin));
   return true;
 }
 

@@ -5,7 +5,7 @@
 [INFO ODB-0132]     Created 2 special nets and 306 connections.
 [INFO ODB-0133]     Created 155 nets and 459 connections.
 worst slack max -23.63
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 150 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 150 out of 150 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -344,7 +344,7 @@ worst slack max -23.63
     final |       0 |      98 |       97 |      7 |     8 |   +40.4% |   -2.975 |     -308.6 |    150 | load143/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 97 buffers.
-[INFO RSZ-0041] Resized 98 instances.
+[INFO RSZ-0051] Resized 98 instances, 98 sized up, 0 sized down.
 [INFO RSZ-0043] Swapped pins on 8 instances.
 [INFO RSZ-0049] Cloned 7 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

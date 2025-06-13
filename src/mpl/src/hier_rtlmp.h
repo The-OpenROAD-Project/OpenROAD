@@ -140,6 +140,7 @@ class HierRTLMP
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
   void clear();
+  void computeWireLength() const;
 
   // Coarse Shaping
   void runCoarseShaping();
@@ -156,6 +157,7 @@ class HierRTLMP
   void createPinAccessBlockages();
   void computePinAccessDepthLimits();
   bool treeHasConstrainedIOs() const;
+  bool treeHasUnconstrainedIOs() const;
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
   void createPinAccessBlockage(const BoundaryRegion& region, float depth);
   float computePinAccessBaseDepth(double io_span) const;
@@ -175,12 +177,13 @@ class HierRTLMP
   void placeChildren(Cluster* parent);
   void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
 
-  void findOverlappingBlockages(std::vector<Rect>& blockages,
-                                std::vector<Rect>& placement_blockages,
-                                const Rect& outline);
-  void computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
-                              const Rect& blockage,
-                              const Rect& outline);
+  void findBlockagesWithinOutline(std::vector<Rect>& macro_blockages,
+                                  std::vector<Rect>& placement_blockages,
+                                  const Rect& outline) const;
+  void getBlockageRegionWithinOutline(
+      std::vector<Rect>& blockages_within_outline,
+      const Rect& blockage,
+      const Rect& outline) const;
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
                             std::vector<SoftMacro>& soft_macros);
@@ -221,8 +224,8 @@ class HierRTLMP
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
   // Aux for conversion
-  odb::Rect micronsToDbu(const Rect& micron_rect);
-  Rect dbuToMicrons(const odb::Rect& dbu_rect);
+  odb::Rect micronsToDbu(const Rect& micron_rect) const;
+  Rect dbuToMicrons(const odb::Rect& dbu_rect) const;
 
   template <typename Macro>
   void createFixedTerminal(Cluster* cluster,
@@ -291,7 +294,6 @@ class HierRTLMP
   std::map<std::string, Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
   std::vector<Rect> placement_blockages_;
-  std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;

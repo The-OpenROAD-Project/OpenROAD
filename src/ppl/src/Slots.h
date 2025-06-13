@@ -29,6 +29,7 @@ class Interval
   int getEnd() const { return end_; }
   int getLayer() const { return layer_; }
   bool operator==(const Interval& interval) const;
+  bool operator<(const Interval& interval) const;
 
  private:
   Edge edge_;

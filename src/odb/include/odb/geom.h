@@ -303,6 +303,7 @@ class Polygon
 {
  public:
   Polygon() = default;
+  Polygon& operator=(const Polygon&) = default;
   Polygon(const Polygon& r) = default;
   Polygon(const std::vector<Point>& points);
   Polygon(const Rect& rect);

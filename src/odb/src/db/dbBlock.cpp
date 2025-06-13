@@ -508,8 +508,7 @@ void dbBlock::clear()
   _dbTech* tech = (_dbTech*) getTech();
 
   // save a copy of the name
-  char* name = strdup(block->_name);
-  ZALLOCATED(name);
+  char* name = safe_strdup(block->_name);
 
   // save a copy of the delimiter
   char delimiter = block->_hier_delimiter;
@@ -555,8 +554,7 @@ void _dbBlock::initialize(_dbChip* chip,
                           const char* name,
                           char delimiter)
 {
-  _name = strdup(name);
-  ZALLOCATED(name);
+  _name = safe_strdup(name);
 
   _dbBox* box = _box_tbl->create();
   box->_flags._owner_type = dbBoxOwner::BLOCK;
@@ -1730,6 +1728,8 @@ Polygon dbBlock::getBTermTopLayerGridRegion()
 
 Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)
 {
+  _dbBlock* block = (_dbBlock*) this;
+  block->ensureConstraintRegion(edge, begin, end);
   Rect constraint_region;
   const Rect& die_bounds = getDieArea();
   if (edge == south) {
@@ -1890,7 +1890,19 @@ dbInst* dbBlock::findInst(const char* name)
 dbModule* dbBlock::findModule(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
-  return (dbModule*) block->_module_hash.find(name);
+  dbModule* module = (dbModule*) block->_module_hash.find(name);
+  if (module != nullptr) {
+    return module;
+  }
+  // Search in children blocks for uninstantiated modules
+  dbSet<dbBlock> children = getChildren();
+  for (auto* child : children) {
+    module = child->findModule(name);
+    if (module != nullptr) {
+      return module;
+    }
+  }
+  return nullptr;
 }
 
 dbPowerDomain* dbBlock::findPowerDomain(const char* name)
@@ -3099,6 +3111,52 @@ void dbBlock::clearUserInstFlags()
   }
 }
 
+std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
+{
+  odb::dbTech* tech = getTech();
+  odb::dbSet<odb::dbTechVia> vias = tech->getVias();
+  std::map<dbTechLayer*, odb::dbTechVia*> default_vias;
+
+  for (odb::dbTechVia* via : vias) {
+    odb::dbStringProperty* prop
+        = odb::dbStringProperty::find(via, "OR_DEFAULT");
+
+    if (prop == nullptr) {
+      continue;
+    }
+    default_vias[via->getBottomLayer()] = via;
+  }
+
+  if (default_vias.empty()) {
+    utl::Logger* logger = getImpl()->getLogger();
+    debugPrint(
+        logger, utl::ODB, "get_default_vias", 1, "No OR_DEFAULT vias defined.");
+    for (odb::dbTechVia* via : vias) {
+      dbTechLayer* tech_layer = via->getBottomLayer();
+      if (tech_layer != nullptr && tech_layer->getRoutingLevel() != 0
+          && default_vias.find(tech_layer) == default_vias.end()) {
+        debugPrint(logger,
+                   utl::ODB,
+                   "get_default_vias",
+                   1,
+                   "Via for layers {} and {}: {}",
+                   via->getBottomLayer()->getName(),
+                   via->getTopLayer()->getName(),
+                   via->getName());
+        default_vias[tech_layer] = via;
+        debugPrint(logger,
+                   utl::ODB,
+                   "get_default_vias",
+                   1,
+                   "Using via {} as default.",
+                   via->getConstName());
+      }
+    }
+  }
+
+  return default_vias;
+}
+
 void dbBlock::setDrivingItermsforNets()
 {
   for (dbNet* net : getNets()) {
@@ -3585,6 +3643,38 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["cc_val"].add(*_cc_val_tbl);
 
   info.children_["module_name_id_map"].add(_module_name_id_map);
+}
+
+void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
+                                      int& begin,
+                                      int& end)
+{
+  /// Ensure that the constraint region defined in the given edge is completely
+  /// inside the die area.
+  dbBlock* block = (dbBlock*) this;
+  const int input_begin = begin;
+  const int input_end = end;
+  const Rect& die_bounds = block->getDieArea();
+  if (edge == south || edge == north) {
+    begin = std::max(begin, die_bounds.xMin());
+    end = std::min(end, die_bounds.xMax());
+  } else if (edge == west || edge == east) {
+    begin = std::max(begin, die_bounds.yMin());
+    end = std::min(end, die_bounds.yMax());
+  }
+
+  if (input_begin != begin || input_end != end) {
+    utl::Logger* logger = getImpl()->getLogger();
+    logger->warn(utl::ODB,
+                 11,
+                 "Region {}-{} on edge {} modified to {}-{} to respect the "
+                 "die area limits.",
+                 block->dbuToMicrons(input_begin),
+                 block->dbuToMicrons(input_end),
+                 edge,
+                 block->dbuToMicrons(begin),
+                 block->dbuToMicrons(end));
+  }
 }
 
 }  // namespace odb

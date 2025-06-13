@@ -185,8 +185,7 @@ void dbModNet::rename(const char* new_name)
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
   parent->_modnet_hash.erase(obj->_name);
   free((void*) (obj->_name));
-  obj->_name = strdup(new_name);
-  ZALLOCATED(obj->_name);
+  obj->_name = safe_strdup(new_name);
   parent->_modnet_hash[new_name] = obj->getOID();
 }
 
