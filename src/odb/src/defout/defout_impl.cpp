@@ -266,9 +266,8 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
     std::ostream zstd_compressed(&outbuf);
 
     return writeBlock(block, zstd_compressed);
-  } else {
-    return writeBlock(block, stream_handler.getStream());
   }
+  return writeBlock(block, stream_handler.getStream());
 }
 
 void defout_impl::writeRows(dbBlock* block)
