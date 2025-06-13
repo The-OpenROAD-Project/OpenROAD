@@ -508,8 +508,7 @@ void dbBlock::clear()
   _dbTech* tech = (_dbTech*) getTech();
 
   // save a copy of the name
-  char* name = strdup(block->_name);
-  ZALLOCATED(name);
+  char* name = safe_strdup(block->_name);
 
   // save a copy of the delimiter
   char delimiter = block->_hier_delimiter;
@@ -555,8 +554,7 @@ void _dbBlock::initialize(_dbChip* chip,
                           const char* name,
                           char delimiter)
 {
-  _name = strdup(name);
-  ZALLOCATED(name);
+  _name = safe_strdup(name);
 
   _dbBox* box = _box_tbl->create();
   box->_flags._owner_type = dbBoxOwner::BLOCK;

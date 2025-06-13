@@ -176,8 +176,7 @@ dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbIsolation* iso = _block->_isolation_tbl->create();
-  iso->_name = strdup(name);
-  ZALLOCATED(iso->_name);
+  iso->_name = safe_strdup(name);
 
   _block->_isolation_hash.insert(iso);
   return (dbIsolation*) iso;
