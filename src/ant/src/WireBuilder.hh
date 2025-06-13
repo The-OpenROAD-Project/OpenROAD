@@ -51,9 +51,7 @@ class WireBuilder
   void makeNetWiresFromGuides();
 
  private:
-  void makeNetWire(odb::dbNet* db_net,
-                   std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
-                   const int guide_size);
+  void makeNetWire(odb::dbNet* db_net, const int guide_size);
   void addWireTerms(odb::dbNet* db_net,
                     std::vector<GuideSegment>& route,
                     int grid_x,
@@ -61,8 +59,15 @@ class WireBuilder
                     odb::dbTechLayer* tech_layer,
                     GuidePtPinsMap& route_pt_pins,
                     odb::dbWireEncoder& wire_encoder,
-                    std::map<odb::dbTechLayer*, odb::dbTechVia*>& default_vias,
                     bool connect_to_segment);
+  void makeWireToTerm(odb::dbWireEncoder& wire_encoder,
+                      std::vector<GuideSegment>& route,
+                      odb::dbTechLayer* tech_layer,
+                      odb::dbTechLayer* conn_layer,
+                      const std::vector<odb::Rect>& pin_boxes,
+                      const odb::Point& grid_pt,
+                      odb::Point& pin_pt,
+                      const bool connect_to_segment);
   void makeWire(odb::dbWireEncoder& wire_encoder,
                 odb::dbTechLayer* layer,
                 const odb::Point& start,
@@ -90,11 +95,18 @@ class WireBuilder
                            const odb::dbTechLayer* pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const std::vector<GuideSegment>& route);
-  // RoutePtPinsMap findRoutePtPins(odb::dbNet* db_net);
+  void getBTermTopLayerRects(odb::dbBTerm* bterm,
+                             std::vector<odb::Rect>& rects,
+                             int& top_layer_idx);
+  void getITermTopLayerRects(odb::dbITerm* iterm,
+                             std::vector<odb::Rect>& rects,
+                             int& top_layer_idx);
+  bool dbNetIsLocal(odb::dbNet* db_net);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};
+  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias_;
 };
 
 }  // namespace ant
