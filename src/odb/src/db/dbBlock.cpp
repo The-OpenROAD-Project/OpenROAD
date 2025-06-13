@@ -110,6 +110,13 @@
 #include "odb/poly_decomp.h"
 #include "utl/Logger.h"
 
+// custom  p2f
+#include "dbSupplyNet.h"
+#include "dbSupplyPort.h"
+#include "dbSupplySet.h"
+#include "dbPowerState.h"
+// custom  p2f end
+
 namespace odb {
 
 struct OldTransform
@@ -203,6 +210,24 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _logicport_tbl = new dbTable<_dbLogicPort>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLogicPortObj);
+
+  // custom p2f //////////////////////////////////////////////////////////////////
+ 
+  _supplynet_tbl = new dbTable<_dbSupplyNet>(
+    db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbSupplyNetObj);
+
+  _supplyport_tbl = new dbTable<_dbSupplyPort>(
+      db,this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbSupplyPortObj);
+
+  _supplyset_tbl = new dbTable<_dbSupplySet>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbSupplySetObj);
+
+  
+  _powerstate_tbl = new dbTable<_dbPowerState>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerStateObj,  4096, 12);
+
+  // custom p2f end/////////////////////////////////////////////////////////////////////
+
 
   _powerswitch_tbl = new dbTable<_dbPowerSwitch>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerSwitchObj);
@@ -339,6 +364,14 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
   _levelshifter_hash.setTable(_levelshifter_tbl);
+
+  //custom p2f 
+  _supplynet_hash.setTable(_supplynet_tbl);
+  _supplyport_hash.setTable(_supplyport_tbl);
+   _supplyset_hash.setTable(_supplyset_tbl);
+  _powerstate_hash.setTable(_powerstate_tbl);
+  //custom p2f end
+
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
@@ -425,6 +458,16 @@ _dbBlock::~_dbBlock()
   delete _busport_tbl;
   delete _powerdomain_tbl;
   delete _logicport_tbl;
+  
+  // custom p2f
+  delete _supplynet_tbl;
+ 
+  delete _supplyport_tbl;
+  delete _supplyset_tbl;
+  delete _powerstate_tbl;
+
+  // custom p2f end
+
   delete _powerswitch_tbl;
   delete _isolation_tbl;
   delete _levelshifter_tbl;
@@ -598,6 +641,21 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
 
     case dbLogicPortObj:
       return _logicport_tbl;
+    
+    // custom p2f /
+    case dbSupplyNetObj:
+      return _supplynet_tbl;
+
+    case dbSupplyPortObj:
+      return _supplyport_tbl;
+
+    case dbSupplySetObj:
+      return _supplyset_tbl;
+
+    case dbPowerStateObj:
+      return _powerstate_tbl;
+    
+    // custom p2f end
 
     case dbPowerSwitchObj:
       return _powerswitch_tbl;
@@ -782,6 +840,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
+
+  // custom p2f    
+  // }
+ 
+  stream << block._supplynet_hash;
+  stream << block._supplyport_hash;
+  stream << block._supplyset_hash;
+  stream << block._powerstate_hash;
+  // custom p2f end 
+
   stream << block._powerswitch_hash;
   stream << block._isolation_hash;
   stream << block._levelshifter_hash;
@@ -817,6 +885,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   }
   stream << *block._powerdomain_tbl;
   stream << *block._logicport_tbl;
+
+  // custom p2f
+
+  stream << *block._supplynet_tbl;
+  stream << *block._supplyport_tbl;
+  stream << *block._supplyset_tbl;
+  stream << *block._powerstate_tbl;
+
+  // custom p2f end
+
+
   stream << *block._powerswitch_tbl;
   stream << *block._isolation_tbl;
   stream << *block._levelshifter_tbl;
@@ -939,6 +1018,20 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
+  // custom p2f
+  // if(db->isSchema(db_schema_p2f_upf)) {
+  //   stream >> block._supplynet_hash;
+  //   stream >> block._supplyport_hash;
+  //   stream >> block._supplyset_hash;
+  //   stream >> block._powerstate_hash;
+  // }
+
+  stream >> block._supplynet_hash;
+  stream >> block._supplyport_hash;
+  stream >> block._supplyset_hash;
+  stream >> block._powerstate_hash;
+  // custom p2f end
+
   stream >> block._powerswitch_hash;
   stream >> block._isolation_hash;
   if (db->isSchema(db_schema_level_shifter)) {
@@ -983,6 +1076,20 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   stream >> *block._powerdomain_tbl;
   stream >> *block._logicport_tbl;
+
+  // custom p2f
+  // if(db->isSchema(db_schema_p2f_upf)) {
+  //   stream >> *block._supplynet_tbl;
+  //   stream >> *block._supplyport_tbl;
+  //   stream >> *block._supplyset_tbl;
+  //   stream >> *block._powerstate_tbl;
+  // }
+  stream >> *block._supplynet_tbl;
+    stream >> *block._supplyport_tbl;
+    stream >> *block._supplyset_tbl;
+    stream >> *block._powerstate_tbl;
+
+  // custom p2f end
   stream >> *block._powerswitch_tbl;
   stream >> *block._isolation_tbl;
   if (db->isSchema(db_schema_level_shifter)) {
@@ -1225,6 +1332,25 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_logicport_hash != rhs._logicport_hash) {
     return false;
   }
+  // custom p2f
+
+  if (_supplynet_hash != rhs._supplynet_hash) {
+    return false;
+  }
+
+  if (_supplyport_hash != rhs._supplyport_hash) {
+    return false;
+  }
+
+  if (_supplyset_hash != rhs._supplyset_hash) {
+    return false;
+  }
+  
+  if (_powerstate_hash != rhs._powerstate_hash) {
+    return false;
+  } 
+
+  // custom p2f end
 
   if (_powerswitch_hash != rhs._powerswitch_hash) {
     return false;
@@ -1309,6 +1435,30 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (*_logicport_tbl != *rhs._logicport_tbl) {
     return false;
   }
+  // custom p2f
+
+  if (*_supplynet_tbl != *rhs._supplynet_tbl) {
+    return false;
+  }
+
+  if (*_supplyport_tbl != *rhs._supplyport_tbl) {
+    return false;
+  }
+
+  if (*_supplyset_tbl != *rhs._supplyset_tbl) {
+    return false;
+  }
+
+  if (*_supplyport_tbl != *rhs._supplyport_tbl) {
+    return false;
+  }
+
+
+  if (*_powerstate_tbl != *rhs._powerstate_tbl) {
+    return false;
+  } 
+  // custom p2f end
+  
 
   if (*_powerswitch_tbl != *rhs._powerswitch_tbl) {
     return false;
@@ -1825,6 +1975,33 @@ dbSet<dbLogicPort> dbBlock::getLogicPorts()
   return dbSet<dbLogicPort>(block, block->_logicport_tbl);
 }
 
+// custom p2f
+
+dbSet<dbSupplyNet> dbBlock::getSupplyNets()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbSupplyNet>(block, block->_supplynet_tbl);
+}
+
+dbSet<dbSupplyPort> dbBlock::getSupplyPorts()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbSupplyPort>(block, block->_supplyport_tbl);
+}
+
+dbSet<dbSupplySet> dbBlock::getSupplySets()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbSupplySet>(block, block->_supplyset_tbl);
+}
+
+dbSet<dbPowerState> dbBlock::getPowerStates()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbPowerState>(block, block->_powerstate_tbl);
+}
+
+// custom p2f end
 dbSet<dbPowerSwitch> dbBlock::getPowerSwitches()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1903,6 +2080,33 @@ dbLogicPort* dbBlock::findLogicPort(const char* name)
   _dbBlock* block = (_dbBlock*) this;
   return (dbLogicPort*) block->_logicport_hash.find(name);
 }
+// custom p2f
+
+dbSupplyNet* dbBlock::findSupplyNet(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbSupplyNet*) block->_supplynet_hash.find(name);
+}
+
+dbSupplyPort* dbBlock::findSupplyPort(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbSupplyPort*) block->_supplyport_hash.find(name);
+}
+
+dbSupplySet* dbBlock::findSupplySet(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbSupplySet*) block->_supplyset_hash.find(name);
+}
+
+dbPowerState* dbBlock::findPowerState(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbPowerState*) block->_powerstate_hash.find(name);
+}
+
+// custom p2f end
 
 dbPowerSwitch* dbBlock::findPowerSwitch(const char* name)
 {
@@ -3523,6 +3727,14 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["modinst_hash"].add(_modinst_hash);
   info.children_["powerdomain_hash"].add(_powerdomain_hash);
   info.children_["logicport_hash"].add(_logicport_hash);
+
+  // custom p2f
+  info.children_["supplynet_hash"].add(_supplynet_hash);  
+  info.children_["supplyport_hash"].add(_supplyport_hash); 
+  info.children_["supplyset_hash"].add(_supplyset_hash);
+  info.children_["powerstate_hash"].add(_powerstate_hash);
+
+  // custom p2f end
   info.children_["powerswitch_hash"].add(_powerswitch_hash);
   info.children_["isolation_hash"].add(_isolation_hash);
   info.children_["marker_category_hash"].add(_marker_category_hash);
@@ -3559,6 +3771,16 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   _module_tbl->collectMemInfo(info.children_["module"]);
   _powerdomain_tbl->collectMemInfo(info.children_["powerdomain"]);
   _logicport_tbl->collectMemInfo(info.children_["logicport"]);
+  
+  // custom p2f
+  
+  _supplynet_tbl->collectMemInfo(info.children_["supplynet"]);
+  _supplyport_tbl->collectMemInfo(info.children_["supplyport"]);
+  _supplyset_tbl->collectMemInfo(info.children_["supplyset"]);
+  _powerstate_tbl->collectMemInfo(info.children_["powerstate"]);
+
+  // custom p2f end
+  
   _powerswitch_tbl->collectMemInfo(info.children_["powerswitch"]);
   _isolation_tbl->collectMemInfo(info.children_["isolation"]);
   _levelshifter_tbl->collectMemInfo(info.children_["levelshifter"]);

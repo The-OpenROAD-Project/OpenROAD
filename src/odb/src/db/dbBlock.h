@@ -60,6 +60,13 @@ class _dbTechNonDefaultRule;
 class _dbModule;
 class _dbPowerDomain;
 class _dbLogicPort;
+
+// custom p2f
+class _dbSupplyNet;
+class _dbSupplyPort;
+class _dbSupplySet;
+class _dbPowerState;
+
 class _dbPowerSwitch;
 class _dbIsolation;
 class _dbLevelShifter;
@@ -176,6 +183,15 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbPowerSwitch> _powerswitch_hash;
   dbHashTable<_dbIsolation> _isolation_hash;
   dbHashTable<_dbMarkerCategory> _marker_category_hash;
+  
+  // custom p2f
+
+  dbHashTable<_dbSupplyNet> _supplynet_hash;
+  dbHashTable<_dbSupplyPort> _supplyport_hash;
+  dbHashTable<_dbSupplySet> _supplyset_hash;
+  dbHashTable<_dbPowerState> _powerstate_hash;
+
+  //custom p2f end//
 
   dbHashTable<_dbLevelShifter> _levelshifter_hash;
   dbHashTable<_dbGroup> _group_hash;
@@ -221,6 +237,15 @@ class _dbBlock : public _dbObject
   dbTable<_dbModule>* _module_tbl;
   dbTable<_dbPowerDomain>* _powerdomain_tbl;
   dbTable<_dbLogicPort>* _logicport_tbl;
+
+  // // custom p2f
+  dbTable<_dbSupplyNet>* _supplynet_tbl;
+  dbTable<_dbSupplyPort>* _supplyport_tbl;
+  dbTable<_dbSupplySet>* _supplyset_tbl;
+  dbTable<_dbPowerState>* _powerstate_tbl;
+
+  // custom p2f end
+  
   dbTable<_dbPowerSwitch>* _powerswitch_tbl;
   dbTable<_dbIsolation>* _isolation_tbl;
   dbTable<_dbLevelShifter>* _levelshifter_tbl;

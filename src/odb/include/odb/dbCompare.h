@@ -734,6 +734,16 @@ struct less<odb::dbPowerDomain*>
 };
 
 template <>
+struct less<odb::dbPowerState*>
+{
+  bool operator()(const odb::dbPowerState* lhs,
+                  const odb::dbPowerState* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbPowerSwitch*>
 {
   bool operator()(const odb::dbPowerSwitch* lhs,
@@ -785,6 +795,36 @@ template <>
 struct less<odb::dbScanPin*>
 {
   bool operator()(const odb::dbScanPin* lhs, const odb::dbScanPin* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbSupplyNet*>
+{
+  bool operator()(const odb::dbSupplyNet* lhs,
+                  const odb::dbSupplyNet* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbSupplyPort*>
+{
+  bool operator()(const odb::dbSupplyPort* lhs,
+                  const odb::dbSupplyPort* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbSupplySet*>
+{
+  bool operator()(const odb::dbSupplySet* lhs,
+                  const odb::dbSupplySet* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

@@ -1,0 +1,54 @@
+{
+    "name":"dbSupplySet",
+    "type":"dbObject",  
+    "fields":[
+        {
+            "name":"_name",
+            "type":"char *",
+            "default": "nullptr",
+            "flags":["no-set"]
+        },
+        {
+            "name":"_next_entry",
+            "type":"dbId<_dbSupplySet>",
+            "flags":["no-set","no-get"]
+        },
+        {
+            "name":"_power_nets",
+            "type":"dbId<_dbSupplyNet>",
+            "flags":["no-set","no-get"]
+        },
+        {
+            "name":"_ground_nets",
+            "type":"dbVector<std::string>",
+            "flags":["no-set","no-get"]
+        },
+        {
+            "name":"_nwellnets",
+            "type":"dbId<_dbSupplyNet>",
+            "flags":["no-set","no-get"]
+            
+        },
+        {
+            "name":"_pwellnets",
+            "type":"dbId<_dbSupplyNet>",
+            "flags":["no-set","no-get"]
+        },
+            {
+            "name":"_group",
+            "type":"dbId<_dbGroup>",
+            "flags":["no-set"],
+            "parent":"dbBlock"
+            }
+    ],
+    "cpp_includes":["dbBlock.h",
+                    "dbHashTable.hpp",
+                    "dbVector.h",
+                    "dbModInst.h",
+                    "dbGroup.h",
+                    "dbNet.h"
+    ],
+    "h_includes": [
+        "dbVector.h"
+    ]
+}

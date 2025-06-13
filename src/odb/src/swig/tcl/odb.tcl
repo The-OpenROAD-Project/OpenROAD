@@ -493,6 +493,32 @@ proc report_voltage_domains { args } {
     }
   }
 }
+# sta::define_cmd_args "report_power_domains" {}
+
+# proc report_power_domain {args} {
+#   sta::parse_key_args "report_power_domains" args keys {} flags {}
+#   set db [ord::get_db]
+#   set chip [$db getChip]
+#   if { $chip == "NULL" } {
+   
+#     puts "please load the design before trying to use this command"
+#   }
+#   set block [$chip getBlock]
+#   set groups [$block getGroups]
+#     if { [llength $groups] == 0 } {
+#     puts "No power domains (groups) found in the design."
+#     return
+#   }
+#   puts "Power Domains:"
+#   foreach group $groups {
+#     set name [$group getName]
+#     set insts [$group getInsts]
+#     puts "  - Domain: $name"
+#     puts "    Contains [llength $insts] instances."
+#   }
+
+# }
+
 
 sta::define_cmd_args "report_group" {group};# checker off
 proc report_group { group } {

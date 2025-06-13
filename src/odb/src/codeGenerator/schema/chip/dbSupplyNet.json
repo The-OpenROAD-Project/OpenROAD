@@ -1,0 +1,49 @@
+{
+    "name" : "dbSupplyNet",
+    "type" : "dbObject",
+    "fields":[
+        {
+            "name" : "_name",
+            "type" : "char*",
+            "default" : "nullptr",
+            "flags" : ["no-set"],
+            "parent" : "dbBlock"
+        },
+        {
+            "name":"_next_entry",
+            "type":"dbId<_dbSupplyNet>",
+            "flags":["no-set","no-get"]
+        },
+        {
+            "name":"_direction",
+            "type":"std::string",
+            "flags":["no-set"]  
+        },
+        {
+            "name":"_group",
+            "type":"dbId<_dbGroup>",
+            "flags":[],
+            "parent":"dbBlock"
+        },
+        {
+            "name": "_parent",
+            "type": "dbId<_dbSupplyNet>",
+            "parent":"dbBlock"
+        },
+        {
+            "name" : "_in",
+            "type" : "dbId<_dbSupplyNet>",
+          
+            "flags": ["no-set","no-get"],
+            "parent":"dbBlock"
+        },
+        {
+            "name" : "_out",
+            "type" : "dbId<_dbSupplyNet>",
+            "flags": ["no-set","no-get"],
+            "parent":"dbBlock"
+        }
+    ],
+    "cpp_includes" : ["dbBlock.h", "dbHashTable.hpp", "dbVector.h", "dbSupplyPort.h" ],
+    "h_includes": [ "dbVector.h" ]
+}

@@ -198,6 +198,18 @@ float dbPowerDomain::getVoltage() const
   return obj->_voltage;
 }
 
+void dbPowerDomain::getPrimarysupply(std::vector<std::string>& tbl) const
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  tbl = obj->_primarysupply;
+}
+
+void dbPowerDomain::getAvailablesupply(std::vector<std::string>& tbl) const
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  tbl = obj->_availablesupply;
+}
+
 // User Code Begin dbPowerDomainPublicMethods
 dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
 {
@@ -218,7 +230,9 @@ void dbPowerDomain::destroy(dbPowerDomain* pd)
   // TODO
 }
 
-
+/////////custom p2f
+//
+/////////
 
 void dbPowerDomain::addPrimarysupply(const std::string& primary_supply)
 {
@@ -232,11 +246,26 @@ void dbPowerDomain::addAvailablesupply(const std::string& available_supply)
   obj->_availablesupply.push_back(available_supply);
 }
 
+std::vector<std::string> dbPowerDomain::getPrimarysupply()
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  return obj->_primarysupply;
+}
 
+std::vector<std::string> dbPowerDomain::getAvailablesupply()
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  return obj->_availablesupply;
+}
+
+///////////////////////
 
 void dbPowerDomain::addElement(const std::string& element)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  if (element == ".") {
+    obj->_top = true;
+  }
   obj->_elements.push_back(element);
 }
 

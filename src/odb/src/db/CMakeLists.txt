@@ -117,12 +117,16 @@ add_library(db
     dbNetTrack.cpp
     dbPolygon.cpp
     dbPowerDomain.cpp
+    dbPowerState.cpp
     dbPowerSwitch.cpp
     dbScanChain.cpp
     dbScanInst.cpp
     dbScanList.cpp
     dbScanPartition.cpp
     dbScanPin.cpp
+    dbSupplyNet.cpp
+    dbSupplyPort.cpp
+    dbSupplySet.cpp
     dbTechLayer.cpp
     dbTechLayerAreaRule.cpp
     dbTechLayerArraySpacingRule.cpp

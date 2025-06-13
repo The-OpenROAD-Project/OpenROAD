@@ -135,12 +135,16 @@ class dbModule;
 class dbNetTrack;
 class dbPolygon;
 class dbPowerDomain;
+class dbPowerState;
 class dbPowerSwitch;
 class dbScanChain;
 class dbScanInst;
 class dbScanList;
 class dbScanPartition;
 class dbScanPin;
+class dbSupplyNet;
+class dbSupplyPort;
+class dbSupplySet;
 class dbTechLayer;
 class dbTechLayerAreaRule;
 class dbTechLayerArraySpacingRule;
@@ -1057,6 +1061,25 @@ class dbBlock : public dbObject
   ///
   dbSet<dbLogicPort> getLogicPorts();
 
+  // custom p2f
+
+  /// Get the Supply Nets of this block.
+  dbSet<dbSupplyNet> getSupplyNets();
+
+  // /// Get the Supply sets of this block.
+  // ///
+  dbSet<dbSupplySet> getSupplySets();
+  // ///
+  /// Get the Supply Ports of this block.
+  ///
+  dbSet<dbSupplyPort> getSupplyPorts();
+
+  // ///
+
+  dbSet<dbPowerState> getPowerStates();
+
+  // custom p2f end
+
   ///
   /// Get the Power Switches of this block.
   ///
@@ -1142,6 +1165,19 @@ class dbBlock : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbLogicPort* findLogicPort(const char* name);
+
+  // custom p2f
+  /// Find a specific SupplySet in this block.
+  dbSupplyNet* findSupplyNet(const char* name);
+
+  dbSupplySet* findSupplySet(const char* name);
+
+  /// Find a specific SupplyPort in this block.
+  /// Returns nullptr if the object was not found.
+  dbSupplyPort* findSupplyPort(const char* name);
+
+  dbPowerState* findPowerState(const char* name);
+  // // custom p2f end
 
   ///
   /// Find a specific PowerSwitch in this block.
@@ -8270,6 +8306,10 @@ class dbPowerDomain : public dbObject
 
   float getVoltage() const;
 
+  void getPrimarysupply(std::vector<std::string>& tbl) const;
+
+  void getAvailablesupply(std::vector<std::string>& tbl) const;
+
   // User Code Begin dbPowerDomain
   void setGroup(dbGroup* group);
   static dbPowerDomain* create(dbBlock* block, const char* name);
@@ -8293,7 +8333,52 @@ class dbPowerDomain : public dbObject
   void addPrimarysupply(const std::string& primary_supply);
   void addAvailablesupply(const std::string& available_supply);
 
+  std::vector<std::string> getPrimarysupply();
+  std::vector<std::string> getAvailablesupply();
+  // std::vector<std::string> getSupplyNet();
+
+  // void addSupplyNet(const std::string& element);
+
   // User Code End dbPowerDomain
+};
+
+class dbPowerState : public dbObject
+{
+ public:
+  struct Supply
+  {
+    std::string _mode;
+    std::vector<float> _voltages = {};
+  };
+  struct SupplyExpr
+  {
+    Supply _power;
+    Supply _ground;
+    Supply _nwell;
+    Supply _pwell;
+  };
+  struct PowerStateEntry
+  {
+    std::string _name;
+    SupplyExpr _supply_expr;
+    std::string _simstate = "NORMAL";
+  };
+
+  const char* getName() const;
+
+  void getStates(std::vector<dbPowerState::PowerStateEntry>& tbl) const;
+
+  // User Code Begin dbPowerState
+
+  static dbPowerState* create(dbBlock* block, const char* name);
+
+  // bool addState(utl::Logger* logger,
+  //               const std::string& state,
+  //               const std::string& simulate);
+
+  // std::string format_supply_expr(const odb::dbPowerState::SupplyExpr& expr);
+  // void report_power_states(odb::dbBlock* block);
+  // User Code End dbPowerState
 };
 
 class dbPowerSwitch : public dbObject
@@ -8498,6 +8583,62 @@ class dbScanPin : public dbObject
   static dbId<dbScanPin> create(dbDft* dft, dbBTerm* bterm);
   static dbId<dbScanPin> create(dbDft* dft, dbITerm* iterm);
   // User Code End dbScanPin
+};
+
+class dbSupplyNet : public dbObject
+{
+ public:
+  char* getName() const;
+
+  std::string getDirection() const;
+
+  void setGroup(dbGroup* group);
+
+  dbGroup* getGroup() const;
+
+  void setParent(dbSupplyNet* parent);
+
+  dbSupplyNet* getParent() const;
+
+  // User Code Begin dbSupplyNet
+
+  static dbSupplyNet* create(dbBlock* block,
+                             const char* direction,
+                             const char* name);
+
+  static bool connectPort(dbSupplyNet* supply_net, dbSupplyPort* supply_port);
+  // User Code End dbSupplyNet
+};
+
+class dbSupplyPort : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  std::string getDirection() const;
+
+  dbPowerDomain* getDomain() const;
+
+  // User Code Begin dbSupplyPort
+  static dbSupplyPort* create(dbBlock* block,
+                              const char* direction,
+                              dbPowerDomain* pd,
+                              const char* supplyport);
+
+  // User Code End dbSupplyPort
+};
+
+class dbSupplySet : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  dbGroup* getGroup() const;
+
+  // User Code Begin dbSupplySet
+
+  static dbSupplySet* create(dbBlock* block, const char* name);
+  // User Code End dbSupplySet
 };
 
 class dbTechLayer : public dbObject

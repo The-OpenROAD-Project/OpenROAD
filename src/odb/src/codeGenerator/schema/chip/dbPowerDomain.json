@@ -67,12 +67,12 @@
     {
       "name": "_primarysupply",
       "type": "dbVector<std::string>",
-      "flags": ["no-get","no-set"]
+      "flags": ["no-set"]
     },
     {
       "name":"_availablesupply",
       "type":"dbVector<std::string>",
-      "flags":["no-set","no-get"]
+      "flags":["no-set"]
     }
   ],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],

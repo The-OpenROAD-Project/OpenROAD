@@ -1,0 +1,85 @@
+{
+  "name": "dbPowerState",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "_name",
+      "type": "char *",
+      "default": "nullptr",
+      "flags": ["no-set"],
+      "description": "Name of the supply set. Example: \"SS_VDD_1\""
+    },
+    {
+      "name": "_states",
+      "type": "dbVector<dbPowerState::PowerStateEntry>",
+      "flags": ["no-set"],
+      "description": "List of named states (NOM, OD, OFF). Example: [{ name: \"NOM\", ... }, { name: \"OFF\", ... }]"
+    },
+    {
+      "name": "_next_entry",
+      "type": "dbId<_dbPowerState>",
+      "flags": ["no-set", "no-get"],
+      "parent": "dbBlock",
+      "description": "Linked list entry for dbBlock context."
+    }
+  ],
+  "structs": [
+    {
+      "name": "Supply",
+      "description": "Supply mode and optional voltages (min/typ/max). Example: { mode: \"FULL_ON\", voltages: [0.675, 0.75, 0.825] } or { mode: \"OFF\" }",
+      "fields": [
+        {
+          "name": "_mode",
+          "type": "std::string",
+          "flags": ["no-set"],
+          "description": "Supply mode: FULL_ON or OFF. Example: \"FULL_ON\""
+        },
+        {
+          "name": "_voltages",
+          "type": "std::vector<float>",
+          "description": "Vector of 3 voltages: [min, typ, max]. Optional. Example: [0.675, 0.75, 0.825]",
+          "default": "{}"
+        }
+      ],
+      "flags": ["no-set"],
+      "public": true
+    },
+    {
+      "name": "SupplyExpr",
+      "description": "Group of supply settings for a power state. Example: { power: FULL_ON [0.75], ground: FULL_ON [0.0], nwell: FULL_ON [0.75], pwell: FULL_ON [0.0] }",
+      "fields": [
+        { "name": "_power", "type": "Supply", "description": "Power rail supply. Example: { mode: \"FULL_ON\", voltages: [0.675, 0.75, 0.825] }" ,"flags":["no-set"]},
+        { "name": "_ground", "type": "Supply", "description": "Ground rail. Example: { mode: \"FULL_ON\", voltages: [0.0, 0.0, 0.0] }" ,"flags":["no-set"] },
+        { "name": "_nwell", "type": "Supply", "description": "Nwell rail. Example: { mode: \"FULL_ON\", voltages: [0.675, 0.75, 0.825] }","flags":["no-set"] },
+        { "name": "_pwell", "type": "Supply", "description": "Pwell rail. Example: { mode: \"FULL_ON\", voltages: [0.0, 0.0, 0.0] }" ,"flags":["no-set"]}
+      ],
+      "public": true
+    },
+    {
+      "name": "PowerStateEntry",
+      "description": "Named state in a power domain. Example: { name: \"NOM\", supply_expr: <SupplyExpr>, simstate: \"NORMAL\" }",
+      "fields": [
+        { "name": "_name", "type": "std::string", "description": "State name. Example: \"NOM\"" },
+        { "name": "_supply_expr", "type": "SupplyExpr", "description": "Grouped supply information for the state." },
+        { "name": "_simstate", "type": "std::string", "default": "\"NORMAL\"", "description": "Simulation state for the mode. Example: \"NORMAL\"" }
+      ],
+      "public": true
+    }
+  ],
+
+  "cpp_includes": [
+    "dbBlock.h",
+    "dbHashTable.hpp",
+    "dbNet.h",
+    "dbMaster.h",
+    "dbMTerm.h",
+    "utl/Logger.h",
+    "odb/dbMap.h"
+  ],
+  "h_includes": [
+    "dbPowerState.h",
+    "dbBlock.h",
+    "odb/dbSet.h",
+    "odb/dbMap.h"
+  ]
+}
