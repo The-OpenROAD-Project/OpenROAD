@@ -675,8 +675,7 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
   _dbMaster* master = lib->_master_tbl->create();
-  master->_name = strdup(name_);
-  ZALLOCATED(master->_name);
+  master->_name = safe_strdup(name_);
   master->_id = db->_master_id++;
   lib->_master_hash.insert(master);
   return (dbMaster*) master;

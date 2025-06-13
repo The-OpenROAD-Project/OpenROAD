@@ -844,8 +844,7 @@ void FlexPA::filterViaAccess(
 
   std::set<std::tuple<frCoord, int, const frViaDef*>> valid_via_defs;
   for (auto& [idx, via_def] : via_defs) {
-    auto via = std::make_unique<frVia>(via_def);
-    via->setOrigin(begin_point);
+    auto via = std::make_unique<frVia>(via_def, begin_point);
     const Rect box = via->getLayer1BBox();
     if (inst_term) {
       if (!boundary_bbox.contains(box)) {

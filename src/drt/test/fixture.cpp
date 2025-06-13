@@ -748,8 +748,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
 
 frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
 {
-  auto via_p = std::make_unique<frVia>(viaDef);
-  via_p->setOrigin(origin);
+  auto via_p = std::make_unique<frVia>(viaDef, origin);
   via_p->addToNet(net);
   frVia* via = via_p.get();
   net->addVia(std::move(via_p));

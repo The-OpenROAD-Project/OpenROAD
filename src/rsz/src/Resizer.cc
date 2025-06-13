@@ -2280,6 +2280,7 @@ void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
 }
@@ -2290,6 +2291,7 @@ void Resizer::resetDontUse()
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
 

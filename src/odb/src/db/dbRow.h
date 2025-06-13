@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "dbCommon.h"
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
@@ -60,8 +61,7 @@ inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)
       _spacing(r._spacing)
 {
   if (r._name) {
-    _name = strdup(r._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(r._name);
   }
 }
 
