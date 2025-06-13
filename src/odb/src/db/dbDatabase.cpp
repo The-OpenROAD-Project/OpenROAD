@@ -239,33 +239,34 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   stream >> db._magic1;
 
   if (db._magic1 != DB_MAGIC1) {
-    throw ZException("database file is not an OpenDB Database");
+    throw std::runtime_error("database file is not an OpenDB Database");
   }
 
   stream >> db._magic2;
 
   if (db._magic2 != DB_MAGIC2) {
-    throw ZException("database file is not an OpenDB Database");
+    throw std::runtime_error("database file is not an OpenDB Database");
   }
 
   stream >> db._schema_major;
 
   if (db._schema_major != db_schema_major) {
-    throw ZException("Incompatible database schema revision");
+    throw std::runtime_error("Incompatible database schema revision");
   }
 
   stream >> db._schema_minor;
 
   if (db._schema_minor < db_schema_initial) {
-    throw ZException("incompatible database schema revision");
+    throw std::runtime_error("incompatible database schema revision");
   }
 
   if (db._schema_minor > db_schema_minor) {
-    throw ZException("incompatible database schema revision %d.%d > %d.%d",
-                     db._schema_major,
-                     db._schema_minor,
-                     db_schema_major,
-                     db_schema_minor);
+    throw std::runtime_error(
+        fmt::format("incompatible database schema revision {}.{} > {}.{}",
+                    db._schema_major,
+                    db._schema_minor,
+                    db_schema_major,
+                    db_schema_minor));
   }
 
   stream >> db._master_id;

@@ -2003,7 +2003,7 @@ void defout_impl::writeSpecialPath(dbSBox* box)
         y2 -= dw;
         assert(y1 == y2);
       } else {
-        throw ZException("odd dimension in both directions");
+        throw std::runtime_error("odd dimension in both directions");
       }
 
       break;
@@ -2036,7 +2036,7 @@ void defout_impl::writeSpecialPath(dbSBox* box)
       break;
     }
     default:
-      throw ZException("unknown direction");
+      throw std::runtime_error("unknown direction");
       break;
   }
 
