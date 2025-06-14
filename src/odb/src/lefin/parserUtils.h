@@ -25,6 +25,8 @@ void processRules(const std::string& s, RuleHandler handler)
       continue;
     }
 
+    rule += " ; ";
+
     // Delegate rule processing to the provided handler
     handler(rule);
   }

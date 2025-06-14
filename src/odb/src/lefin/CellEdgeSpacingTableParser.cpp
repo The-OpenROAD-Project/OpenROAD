@@ -15,7 +15,6 @@ namespace odb {
 void CellEdgeSpacingTableParser::parse(const std::string& s)
 {
   processRules(s, [this](std::string& rule) {
-    rule += " ; ";
     if (!parseEntry(rule)) {
       lefin_->warning(
           299,

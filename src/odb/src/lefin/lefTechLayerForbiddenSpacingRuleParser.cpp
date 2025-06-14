@@ -24,7 +24,6 @@ void lefTechLayerForbiddenSpacingRuleParser::parse(std::string s,
                                                    odb::dbTechLayer* layer)
 {
   processRules(s, [this, layer](std::string& rule) {
-    rule += " ; ";
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(
           438,

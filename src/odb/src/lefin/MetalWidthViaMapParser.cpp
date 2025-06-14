@@ -50,7 +50,6 @@ void MetalWidthViaMapParser::setPGVia()
 void MetalWidthViaMapParser::parse(const std::string& s)
 {
   processRules(s, [this](std::string& rule) {
-    rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
                       "parse mismatch in property LEF58_METALWIDTHVIAMAP"
