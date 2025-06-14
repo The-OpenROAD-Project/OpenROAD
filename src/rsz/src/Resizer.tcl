@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+namespace eval rsz {
+proc get_db_tech_checked { } {
+  set tech [ord::get_db_tech]
+  if { $tech == "NULL" } {
+    utl::error RSZ 210 "No technology loaded."
+  }
+  return $tech
+}
+}
+
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
 sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-via via_layer]\
@@ -17,7 +27,7 @@ proc set_layer_rc { args } {
   }
 
   set corners [sta::parse_corner_or_all keys]
-  set tech [ord::get_db_tech]
+  set tech [rsz::get_db_tech_checked]
   if { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
     set layer [$tech findLayer $layer_name]
@@ -91,6 +101,57 @@ proc set_layer_rc { args } {
   }
 }
 
+sta::define_cmd_args "report_layer_rc" {[-corner corner]}
+proc report_layer_rc { args } {
+  sta::parse_key_args "report_layer_rc" args \
+    keys {-corner} \
+    flags {}
+  set corner [sta::parse_corner_or_all keys]
+  set tech [rsz::get_db_tech_checked]
+  set no_routing_layers [$tech getRoutingLayerCount]
+  ord::ensure_units_initialized
+  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
+  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
+  set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+  set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+
+  puts "   Layer   | Unit Resistance | Unit Capacitance "
+  puts [format "           | %15s | %16s" [format "(%s)" $res_unit] [format "(%s)" $cap_unit]]
+  puts "------------------------------------------------"
+  for { set i 1 } { $i <= $no_routing_layers } { incr i } {
+    set layer [$tech findRoutingLayer $i]
+    if { $corner == "NULL" } {
+      lassign [rsz::dblayer_wire_rc $layer] layer_wire_res layer_wire_cap
+    } else {
+      set layer_wire_res [rsz::layer_resistance $layer $corner]
+      set layer_wire_cap [rsz::layer_capacitance $layer $corner]
+    }
+    set res_ui [expr $layer_wire_res * $res_convert]
+    set cap_ui [expr $layer_wire_cap * $cap_convert]
+    puts [format "%10s | %15.2e | %16.2e" [$layer getName] $res_ui $cap_ui]
+  }
+  puts "------------------------------------------------"
+
+  set res_unit "[sta::unit_scaled_suffix "resistance"]"
+  set res_convert [sta::resistance_sta_ui 1.0]
+  puts ""
+  puts "   Layer   | Via Resistance "
+  puts [format "           | %14s " [format "(%s)" $res_unit]]
+  puts "----------------------------"
+  # ignore the last routing layer (no via layer above it)
+  for { set i 1 } { $i < $no_routing_layers } { incr i } {
+    set layer [[$tech findRoutingLayer $i] getUpperLayer]
+    if { $corner == "NULL" } {
+      set layer_via_res [$layer getResistance]
+    } else {
+      set layer_via_res [rsz::layer_resistance $layer $corner]
+    }
+    set res_ui [expr $layer_via_res * $res_convert]
+    puts [format "%10s | %14.2e " [$layer getName] $res_ui]
+  }
+  puts "----------------------------"
+}
+
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layers layers]\
                                       [-layer layer]\
@@ -138,7 +199,7 @@ proc set_wire_rc { args } {
     set layers $keys(-layers)
 
     foreach layer_name $layers {
-      set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+      set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error RSZ 2 "layer $layer_name not found."
       }
@@ -179,7 +240,7 @@ proc set_wire_rc { args } {
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
-    set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+    set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
       utl::error RSZ 15 "layer $tec_layer not found."
     }
