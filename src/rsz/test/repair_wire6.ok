@@ -31,7 +31,7 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         3
-    final |   +250.0% |       1 |       2 |             1 |         0
+    final |   +216.7% |       1 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0039] Resized 1 instances.
@@ -39,7 +39,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Driver    length delay
 wire1/Z manhtn 569.8 steiner 569.8 0.04
 u2/Z manhtn 488.6 steiner 488.6 0.03
-wire2/Z manhtn 441.2 steiner 441.2 0.03
+wire2/Z manhtn 441.3 steiner 441.3 0.03
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -53,13 +53,13 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    1.811    0.007    0.019    0.019 ^ u1/Z (BUF_X1)
             0.007    0.000    0.019 ^ u2/A (BUF_X2)
-  40.128    0.039    0.052    0.071 ^ u2/Z (BUF_X2)
-            0.056    0.034    0.105 ^ wire2/A (BUF_X4)
-  36.559    0.018    0.040    0.144 ^ wire2/Z (BUF_X4)
-            0.036    0.026    0.171 ^ wire1/A (BUF_X4)
-  42.829    0.020    0.040    0.211 ^ wire1/Z (BUF_X4)
-            0.047    0.036    0.246 ^ out1 (out)
-                              0.246   data arrival time
+  38.148    0.038    0.052    0.070 ^ u2/Z (BUF_X2)
+            0.053    0.031    0.101 ^ wire2/A (CLKBUF_X3)
+  36.570    0.025    0.064    0.165 ^ wire2/Z (CLKBUF_X3)
+            0.040    0.027    0.192 ^ wire1/A (BUF_X4)
+  42.829    0.020    0.041    0.233 ^ wire1/Z (BUF_X4)
+            0.047    0.036    0.268 ^ out1 (out)
+                              0.268   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
