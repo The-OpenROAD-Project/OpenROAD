@@ -24,7 +24,7 @@ void lefTechLayerAreaRuleParser::parse(
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  processRules(s, [this, layer, &incomplete_props](std::string& rule) {
+  processRules(s, [this, layer, &incomplete_props](const std::string& rule) {
     if (!parseSubRule(rule, layer, incomplete_props)) {
       lefin_->warning(278,
                       "parse mismatch in layer property LEF58_AREA for "

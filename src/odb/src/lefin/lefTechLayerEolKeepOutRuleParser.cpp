@@ -22,7 +22,7 @@ lefTechLayerEolKeepOutRuleParser::lefTechLayerEolKeepOutRuleParser(
 void lefTechLayerEolKeepOutRuleParser::parse(const std::string& s,
                                              odb::dbTechLayer* layer)
 {
-  processRules(s, [this, layer](std::string& rule) {
+  processRules(s, [this, layer](const std::string& rule) {
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(280,
                       "parse mismatch in layer property LEF58_EOLKEEPOUT for "

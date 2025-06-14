@@ -44,7 +44,7 @@ bool WidthTableParser::parseSubRule(std::string s)
 
 void WidthTableParser::parse(const std::string& s)
 {
-  processRules(s, [this](std::string& rule) {
+  processRules(s, [this](const std::string& rule) {
     if (!parseSubRule(rule)) {
       lefin_->warning(279,
                       "parse mismatch in layer property "

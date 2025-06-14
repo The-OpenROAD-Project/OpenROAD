@@ -13,7 +13,7 @@
 namespace odb {
 void lefMacroEdgeTypeParser::parse(const std::string& s)
 {
-  processRules(s, [this](std::string& rule) {
+  processRules(s, [this](const std::string& rule) {
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
                       "parse mismatch in layer property LEF58_EDGETYPE for "
