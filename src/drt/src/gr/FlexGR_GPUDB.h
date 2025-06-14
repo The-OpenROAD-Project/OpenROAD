@@ -64,27 +64,31 @@ class FlexGRGPUDB
   public:
     FlexGRGPUDB() = default;
     
-    FlexGRGPUDB(utl::Logger* logger,
+    FlexGRGPUDB(frDesign* design,
+                utl::Logger* logger,
                 FlexGRCMap* cmap,
                 FlexGRCMap* cmap2D)
       : logger_(logger), cmap_(cmap), cmap2D_(cmap2D)
     {
-      init(cmap, cmap2D);
+      init(design, cmap, cmap2D);
     }
  
     // Global Settings for GPUDB (congestion map)
     // 2D Congestion Map  
-    uint64_t* cmap_bits_2D = nullptr;
+    uint64_t* d_cmap_bits_2D = nullptr;
     int cmap_bits_2D_size = 0;
         
     // 3D Congestion Map
-    uint64_t* cmap_bits_3D = nullptr;
+    uint64_t* d_cmap_bits_3D = nullptr;
     int cmap_bits_3D_size = 0;
+
+    // store the layer direction
+    // 0: horizontal, 1: vertical
+    bool* d_layerDir = nullptr;
 
     int xDim = 0;
     int yDim = 0;
     int zDim = 0;
-
     
     void freeCUDAMem();
 
@@ -92,8 +96,8 @@ class FlexGRGPUDB
     utl::Logger* logger_ = nullptr;
     FlexGRCMap* cmap_ = nullptr;
     FlexGRCMap* cmap2D_ = nullptr;
-
-    void init(FlexGRCMap* cmap, FlexGRCMap* cmap2D);  
+  
+    void init(frDesign* design, FlexGRCMap* cmap, FlexGRCMap* cmap2D);  
 };
 
 

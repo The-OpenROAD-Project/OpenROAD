@@ -98,6 +98,8 @@ class FlexGR
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
   std::unique_ptr<FlexGRGPUDB> gpuDB_;
+  bool debugMode_ = true;
+
 
   Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
@@ -172,6 +174,39 @@ class FlexGR
   // 2D Maze Routing
 
   // Layer Assignment
+  void layerAssign_gpu();
+  
+    
+  
+  
+  int layerAssignChunkSize_ = 1000000;
+  void layerAssign_update();
+  void layerAssign_chunk(
+    std::vector<std::pair<int, frNet*> >& sortedNets,
+    int chunkStartIdx, int chunkEndIdx);
+   
+  void layerAssign_batchGeneration(
+    std::vector<std::pair<int, frNet*> >& sortedNets,
+    std::vector<std::vector<int> >& batchNets,
+    int chunkStartIdx, int chunkEndIdx);
+
+  void layerAssign_nodeLevelization(
+    std::vector<NodeStruct>& nodes,
+    frNode* currNode, 
+    int netId, int depth, int& maxDepth);
+
+  void layerAssign_node_compute_CUDA(
+    std::vector<unsigned>& bestLayerCosts,
+    std::vector<unsigned>& bestLayerCombs,
+    std::vector<int>& netBatchNodePtr,
+    std::vector<int>& netBatchMaxDepth,
+    std::vector<NodeStruct>& nodes);
+  
+
+  void updateNetAttribute(
+    std::vector<std::pair<int, frNet*> >& sortedNets,
+    int mode, frNet* net);
+    
 
   // 3D Maze Routing
 
@@ -316,35 +351,6 @@ class FlexGR
   // For GPU-accelerated GGR-TR
   bool gpuFlag_ = true;
 
-  
-  int layerAssignChunkSize_ = 1000000;
-  void layerAssign_update();
-  void layerAssign_chunk(
-    std::vector<std::pair<int, frNet*> >& sortedNets,
-    int chunkStartIdx, int chunkEndIdx);
-   
-  void layerAssign_batchGeneration(
-    std::vector<std::pair<int, frNet*> >& sortedNets,
-    std::vector<std::vector<int> >& batchNets,
-    int chunkStartIdx, int chunkEndIdx);
-
-  void layerAssign_nodeLevelization(
-    std::vector<NodeStruct>& nodes,
-    frNode* currNode, 
-    int netId, int depth, int& maxDepth);
-
-  void layerAssign_node_compute_CUDA(
-    std::vector<unsigned>& bestLayerCosts,
-    std::vector<unsigned>& bestLayerCombs,
-    std::vector<int>& netBatchNodePtr,
-    std::vector<int>& netBatchMaxDepth,
-    std::vector<NodeStruct>& nodes);
-  
-
-  void updateNetAttribute(
-    std::vector<std::pair<int, frNet*> >& sortedNets,
-    int mode, frNet* net);
-    
   void searchRepair_update(
     int iter,
     int size,

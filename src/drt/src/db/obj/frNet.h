@@ -272,6 +272,29 @@ class frNet : public frBlockObject
     return pinNodes_;
   }
 
+
+  // #HPWL / #Pins
+  float getNetPriority() const {
+    if (pinNodes_.empty()) {
+      return 0.0f;
+    }
+  
+    int minX = std::numeric_limits<int>::max();
+    int minY = std::numeric_limits<int>::max();
+    int maxX = std::numeric_limits<int>::min();
+    int maxY = std::numeric_limits<int>::min();
+
+    for (const auto& node : pinNodes_) {
+      const auto loc = node->getLoc();
+      minX = std::min(minX, loc.x());
+      minY = std::min(minY, loc.y());
+      maxX = std::max(maxX, loc.x());
+      maxY = std::max(maxY, loc.y());      
+    }
+
+    return static_cast<float>(maxX - minX + maxY - minY) / static_cast<float>(pinNodes_.size());
+  }
+
  protected:
   frString name_;
   RouterConfiguration* router_cfg_;
@@ -319,9 +342,5 @@ class frNet : public frBlockObject
   std::map<frNode*, std::vector<frNode*> > gcellNode2RPinNodes_;
   std::vector<frNode*> pinGCellNodes_;  // store pinGCellNodes for this net
   std::vector<frNode*> pinNodes_; // store pin nodes for this net
-
-
-
-
 };
 }  // namespace drt

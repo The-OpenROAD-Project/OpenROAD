@@ -85,8 +85,7 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
 
   // Allow the GPU Memory to be used
   // Do not frquently allocate and deallocate the GPU memory
-  auto gpuDb_ = std::make_unique<FlexGRGPUDB>(logger_, cmap_.get(), cmap2D_.get());
-
+  auto gpuDb_ = std::make_unique<FlexGRGPUDB>(design_, logger_, cmap_.get(), cmap2D_.get());
 
   // Reserve the nets for the batch generation
   // Only once
@@ -95,6 +94,9 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
 
   // Initial Routing
   initRoute_gpu();
+
+  // layer assignment
+  layerAssign_gpu();
 
   // free the GPU memory
   gpuDb_->freeCUDAMem();  

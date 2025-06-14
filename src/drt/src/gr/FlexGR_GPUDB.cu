@@ -43,7 +43,8 @@
 
 namespace drt {
 
-void FlexGRGPUDB::init(FlexGRCMap* cmap, FlexGRCMap* cmap2D)
+void FlexGRGPUDB::init(frDesign* design,
+  FlexGRCMap* cmap, FlexGRCMap* cmap2D)
 {
   cmap->getDim(xDim, yDim, zDim);
   auto& cmap_bits = cmap->getBits();
@@ -53,13 +54,13 @@ void FlexGRGPUDB::init(FlexGRCMap* cmap, FlexGRCMap* cmap2D)
   cmap_bits_2D_size = cmap2D_bits.size();
   
   // Allocate memory on the GPU side
-  cudaMalloc((void**)&cmap_bits_3D, cmap_bits_3D_size * sizeof(uint64_t));
-  cudaMalloc((void**)&cmap_bits_2D, cmap_bits_2D_size * sizeof(uint64_t));
+  cudaMalloc((void**)&d_cmap_bits_3D, cmap_bits_3D_size * sizeof(uint64_t));
+  cudaMalloc((void**)&d_cmap_bits_2D, cmap_bits_2D_size * sizeof(uint64_t));
   cudaCheckError();
   
   // Copy the data from the host to the device
-  cudaMemcpy(cmap_bits_3D, cmap_bits.data(), cmap_bits_3D_size * sizeof(uint64_t), cudaMemcpyHostToDevice);
-  cudaMemcpy(cmap_bits_2D, cmap2D_bits.data(), cmap_bits_2D_size * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_cmap_bits_3D, cmap_bits.data(), cmap_bits_3D_size * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_cmap_bits_2D, cmap2D_bits.data(), cmap_bits_2D_size * sizeof(uint64_t), cudaMemcpyHostToDevice);
   cudaCheckError();
 
 
@@ -72,18 +73,48 @@ void FlexGRGPUDB::init(FlexGRCMap* cmap, FlexGRCMap* cmap2D)
                   + "cmap_bits_3D_size: " + std::to_string(cmap_bits_3D_size);
 
   logger_->report(msg);
+
+  // Determine the layer direction
+  bool* layerDir = new bool[zDim]; // 0 for horizontal, 1 for vertical
+  for (int layerNum = 0; layerNum < zDim; layerNum++) {
+    auto dir = design->getTech()->getLayer((layerNum + 1) * 2)->getDir();
+    layerDir[layerNum] = (dir == dbTechLayerDir::HORIZONTAL) ? 0 : 1;
+  }
+
+  for (int layerNum = 0; layerNum < zDim; layerNum++) {
+    if (layerDir[layerNum]) {
+      logger_->report("Layer " + std::to_string(layerNum) + " is vertical");
+    } else {
+      logger_->report("Layer " + std::to_string(layerNum) + " is horizontal");
+    }
+  }
+
+  // Allocate memory for layerDir on the GPU side
+  cudaMalloc((void**)&d_layerDir, zDim * sizeof(bool));
+  // Copy the data from the host to the device
+  cudaMemcpy(d_layerDir, layerDir, zDim * sizeof(bool), cudaMemcpyHostToDevice);
+  cudaCheckError();
+
+  delete[] layerDir;
+
+  logger_->report("FlexGRGPUDB initialized ....");
 }
 
 void FlexGRGPUDB::freeCUDAMem()
 {
-  if (cmap_bits_3D) {
-    cudaFree(cmap_bits_3D);
-    cmap_bits_3D = nullptr;
+  if (d_cmap_bits_3D) {
+    cudaFree(d_cmap_bits_3D);
+    d_cmap_bits_3D = nullptr;
   }
   
-  if (cmap_bits_2D) {
-    cudaFree(cmap_bits_2D);
-    cmap_bits_2D = nullptr;
+  if (d_cmap_bits_2D) {
+    cudaFree(d_cmap_bits_2D);
+    d_cmap_bits_2D = nullptr;
+  }
+ 
+  if (d_layerDir) {
+    cudaFree(d_layerDir);
+    d_layerDir = nullptr;
   }
   
   cudaCheckError();
