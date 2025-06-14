@@ -360,7 +360,6 @@ orfs_run(
     },
     data = [
                ":vcd",
-               "//:opensta",
            ] + ["{macro}_{stage}".format(
                macro = macro,
                stage = POWER_STAGE_NAME,
@@ -369,6 +368,7 @@ orfs_run(
     script = ":power.tcl",
     tags = ["manual"],
     visibility = ["//visibility:public"],
+    tools = ["//:opensta"],
 )
 
 # FIXME an orfs_run_test() rule would be nicer
@@ -381,6 +381,4 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
-    # FIXME enable when it works in CI
-    tags = ["manual"],
 )
