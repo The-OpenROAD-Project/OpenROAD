@@ -19,8 +19,6 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
-template <class T>
-class dbTable;
 class _dbTechLayerSpacingEolRule;
 class _dbTechLayerCutSpacingRule;
 class _dbTechLayerMinStepRule;

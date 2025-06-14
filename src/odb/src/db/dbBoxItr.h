@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
@@ -11,8 +12,6 @@ namespace odb {
 
 class _dbBox;
 class _dbPolygon;
-template <class T>
-class dbTable;
 
 class dbBoxItr : public dbIterator
 {

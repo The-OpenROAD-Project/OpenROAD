@@ -195,8 +195,6 @@ const uint db_schema_wrongway_width = 60;
 // Revision where dbGlobalConnect was added
 const uint db_schema_add_global_connect = 58;
 
-template <class T>
-class dbTable;
 class _dbProperty;
 class dbPropertyItr;
 class _dbNameCache;

@@ -22,8 +22,6 @@
 namespace odb {
 
 template <class T>
-class dbTable;
-template <class T>
 class dbArrayTable;
 class _dbProperty;
 class dbPropertyItr;

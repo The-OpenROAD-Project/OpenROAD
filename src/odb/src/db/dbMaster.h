@@ -10,8 +10,6 @@
 
 namespace odb {
 
-template <class T>
-class dbTable;
 class _dbMTerm;
 class _dbBox;
 class _dbPolygon;

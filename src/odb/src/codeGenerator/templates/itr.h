@@ -6,14 +6,12 @@
 
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
+#include "dbCore.h"
 // User Code Begin Includes
 // User Code End Includes
 
 namespace odb {
   class _{{itr.parentObject}};
-
-  template <class T>
-  class dbTable;
 
   //User Code Begin classes
   //User Code End classes
