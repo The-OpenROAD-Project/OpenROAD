@@ -133,17 +133,17 @@ void FlexGRGPUDB::generate2DBatch(
   // The checking may fail is the segment is too long 
   // and the two end points cover all the existing segments
   // For speedup, no worry, we need to use atomic operations when updating the demand in congestion map
-  auto hasConflict = [&](std::vector<std::vector<bool> >::iterator maskIter, int netId) -> bool {
+  auto hasConflict_lambda = [&](std::vector<std::vector<bool> >::iterator maskIter, int netId) -> bool {
     for (auto& point : netTrees[netId]->points) {
       if ((*maskIter)[point]) { return true; }
     }
     return false;
   };
 
-  auto findBatch = [&](int netId) -> int {
+  auto findBatch_lambda = [&](int netId) -> int {
     std::vector<std::vector<bool> >::iterator maskIter = batchMask.begin();
     while (maskIter != batchMask.end()) {
-      if (!hasConflict(maskIter, netId)) {
+      if (!hasConflict_lambda(maskIter, netId)) {
         return std::distance(batchMask.begin(), maskIter);
       }
       maskIter++;
@@ -151,7 +151,7 @@ void FlexGRGPUDB::generate2DBatch(
     return -1; 
   };    
   
-  auto maskExactRegion = [&](int netId, std::vector<bool>& mask) -> void {    
+  auto maskExactRegion_lambda = [&](int netId, std::vector<bool>& mask) -> void {    
     for (auto& vSeg : netTrees[netId]->vSegments) {
       for (int id = vSeg.first; id <= vSeg.second; id += xDim) {
         mask[id] = true;
@@ -169,7 +169,7 @@ void FlexGRGPUDB::generate2DBatch(
   // We limit the maximum batch size to the number of grids
   int numGrids = xDim * yDim;
   for (int netId = 0; netId < numNets; netId++) {
-    int batchId = findBatch(netId);  
+    int batchId = findBatch_lambda(netId);  
     // always create a new batch if no batch is found
     if (batchId == -1 || batches[batchId].size() >= numGrids) {
       batchId = batches.size();
@@ -177,7 +177,7 @@ void FlexGRGPUDB::generate2DBatch(
       batchMask.push_back(std::vector<bool>(static_cast<size_t>(numGrids), false));
     }  
     batches[batchId].push_back(netId);
-    maskExactRegion(netId, batchMask[batchId]);      
+    maskExactRegion_lambda(netId, batchMask[batchId]);      
   }
 
   // For testing
@@ -203,9 +203,10 @@ void FlexGRGPUDB::levelizeNodes(
   netBatchNodePtr.reserve(batches.size() + 1);
   netBatchNodePtr.push_back(0);
 
+  std::vector<int> netDepth(sortedNets.size(), -1);
+  
   std::vector<int> netNodePtr;
   netNodePtr.reserve(sortedNets.size() + 1);
-  
   netNodePtr.push_back(0);
   int totNumNodes = 0;
   for (const auto& batch : batches) {
@@ -220,53 +221,82 @@ void FlexGRGPUDB::levelizeNodes(
   nodes.clear();
   nodes.resize(totNumNodes);
 
-
   // Create NodeStruct in parallel 
   int numNets = static_cast<int>(sortedNets.size());
   int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
   #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
+  for (int i = 0; i < numNets; i++) {
+    // traverse the net's GCell nodes in a pre-order manner
+    auto& net = sortedNets[i];
+    int nodeIdx = netNodePtr[i];
+    int& maxDepth = netDepth[i];
+    std::queue<frNode*> nodeQ;
+    nodeQ.push(net->getRootGCellNode());
 
-  
+    while (!nodeQ.empty()) {
+      auto currNode = nodeQ.front();
+      nodeQ.pop();
+      Point locIdx = design_->getTopBlock()->getGCellIdx(currNode->getLoc());
+      currNode->setIntProp(nodeIdx); // set the node index as an integer property      
+      NodeStruct gcellNode;
+      gcellNode.netId = i;
+      gcellNode.nodeIdx = nodeIdx;      
+      gcellNode.minLayerNum = currNode->getMinPinLayerNum();
+      gcellNode.maxLayerNum = currNode->getMaxPinLayerNum();    
+      gcellNode.childCnt = 0;
+      gcellNode.layerNum = 0xFF; // default value
+      gcellNode.x = locIdx.x();
+      gcellNode.y = locIdx.y();
+      // set parent relationship
+      if (currNode->getParent() != nullptr) {
+        int parentNodeIdx = currNode->getParent()->getIntProp();
+        auto& parentNode = nodes[parentNodeIdx];
+        parentNode.children[parentNode.childCnt++] = nodeIdx;
+        gcellNode.level = parentNode.level + 1; // increment the level from the parent node
+        maxDepth = std::max(maxDepth, static_cast<int>(gcellNode.level));
+      } else {
+        gcellNode.level = 0; // root node has depth 0
+        maxDepth = 0; // root node has max depth 0
+      }
+
+      nodes[nodeIdx] = gcellNode; // store the node in the vector
+      nodeIdx++;
+      for (auto& child : currNode->getChildren()) {
+        if (child->getType() == frNodeTypeEnum::frcSteiner) {
+          nodeQ.push(child);
+        }
+      }
+    
+    }    
+  }
+
+  // Set the netBatchMaxDepth
+  netBatchMaxDepth.clear();
+  netBatchMaxDepth.reserve(batches.size());
+  for (const auto& batch : batches) {
+    int maxDepth = -1;
+    for (auto netId : batch) {
+      maxDepth = std::max(maxDepth, netDepth[netId]);
+    }
+    netBatchMaxDepth.push_back(maxDepth);
+  }
+
+  if (debugMode_) {
+    logger_->report("[INFO] Max depth for each net:");
+    for (int i = 0; i < numNets; i++) {
+      logger_->report("[INFO]   Net {}: Max Depth = {}", sortedNets[i]->getName(), netDepth[i]);
+    }
+  }
 
 
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  if (debugMode_) {
+    logger_->report("[INFO] Total number of nodes: {}", totNumNodes);
+    logger_->report("[INFO] Total number of nets: {}", numNets);
+    logger_->report("[INFO] Max depth for each batch:");
+    for (size_t i = 0; i < netBatchMaxDepth.size(); i++) {
+      logger_->report("[INFO]   Batch {}: Max Depth = {}", i, netBatchMaxDepth[i]);
+    }
+  }
 }
 
 
