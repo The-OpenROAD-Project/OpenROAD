@@ -390,7 +390,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
-    if (isSkippable(macro)) {
+    if (isSkippable(macro) && !macro.isBlockage()) {
       continue;
     }
 
@@ -630,6 +630,11 @@ void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
+  if (soft_macro.isBlockage()) {
+    painter.setBrush(gui::Painter::dark_red);
+    return;
+  }
+
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
     painter.setBrush(gui::Painter::dark_blue);
   } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
