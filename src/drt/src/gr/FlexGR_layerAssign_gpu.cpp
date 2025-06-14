@@ -86,10 +86,23 @@ void FlexGR::layerAssign_gpu()
     }
   }
 
-  // Step 2: divide the nets into chunks
+  // Step 2: preprocessing all the nets in a multi-threaded manner
+  layerAssign_preproces(sortedNets);
 
-  
+  // Step 2: divide the nets into chunks
+  // multi-threading is used
+  std::vector<std::vector<int> > batches;   
+  gpuDB_->generate2DBatch(sortedNets, batches);
+
   // Step 3: perform layer assignment in parallel for each chunk
+  // Perform node levelization
+  // Arrange node based on the batch size
+  // multi-threading is used
+  std::vector<NodeStruct> nodes;  
+  std::vector<int> netBatchMaxDepth; // the maximum depth of the net batch
+  std::vector<int> netBatchNodePtr;  // the pointer to the first node of the net batch
+  gpuDB_->levelizeNodes(sortedNets, batches, nodes, netBatchMaxDepth, netBatchNodePtr);
+
 
 
   // Step 4: push the layer assignment results back to the router 
@@ -97,6 +110,133 @@ void FlexGR::layerAssign_gpu()
   // (2) construct the 2D GR shapes based on the layer assignment results
   // (4) remove unnecessary loops
 }
+
+
+void FlexGR::layerAssign_preproces(std::vector<frNet*>& sortedNets)
+{
+  // use multi-threading to preprocess the nets
+  // use OpenMP to parallelize the preprocessing
+  int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
+  int numNets = static_cast<int>(sortedNets.size());
+  
+#pragma omp parallel for num_threads(numThreads) schedule(dynamic)
+  for (int i = 0; i < numNets; i++) {
+    auto net = sortedNets[i];
+    // Clear all the GR Shapes
+    net->clearGRShapes();
+    
+    // break connections between rpin and gcell nodes
+    unsigned rpinNodeSize = net->getRPins().size();
+    auto& nodes = net->getNodes();
+    auto endIter = nodes.begin();
+    std::advance(endIter, rpinNodeSize);
+
+    // Not sure why we have both firstNonRPinNode and rootGCellNode
+    // We always set the rootGCellNode as the firstNonRPinNode
+    std::string errMsg = "";
+    // only loop over rpin nodes
+    for (auto iter = nodes.begin(); iter != endIter; ++iter) {
+      auto rpinNode = iter->get();
+      if (rpinNode == net->getRoot()) {
+        auto firstGCellNode = rpinNode->getChildren().front();   
+        firstGCellNode->setParent(nullptr);      
+        rpinNode->clearChildren(); // disconnect the root ripin node with the first gcell node
+        // update the min and max pin layer number for the first gcell node
+        // We assume the pin metal layer is M1 and above
+        int pinLayerNum = rpinNode->getLayerNum() / 2 - 1;
+        firstGCellNode->updateMinPinLayerNum(pinLayerNum);
+        firstGCellNode->updateMaxPinLayerNum(pinLayerNum);
+        if (pinLayerNum < 0) {
+          errMsg = "Error: pinLayerNum is negative for net " + net->getName();
+          break;
+        }
+
+        if (firstGCellNode->isDontMove() == false) {
+          errMsg = "Error: firstGCellNode is not a pinGCellNode for net " + net->getName();
+          break;
+        }
+      } else {
+        auto parent = rpinNode->getParent();
+        // disconnect the ripin node with its parent
+        parent->removeChild(rpinNode);
+        rpinNode->setParent(nullptr);
+        // update the min and max pin layer number for the ripin node
+        int pinLayerNum = rpinNode->getLayerNum() / 2 - 1;
+        parent->updateMinPinLayerNum(pinLayerNum);
+        parent->updateMaxPinLayerNum(pinLayerNum);
+        if (pinLayerNum < 0) {
+          errMsg = "Error: pinLayerNum is negative for net " + net->getName();
+          break;
+        }
+      
+        if (parent->isDontMove() == false) {
+          // If the parent is not a pinGCellNode, we have an error
+          errMsg = "Error: parent node is not a pinGCellNode for net " + net->getName();
+          break;
+        }
+      }
+    
+      if (!errMsg.empty()) {
+        logger_->error(utl::DRT, 80, "{}", errMsg);
+        continue; // skip this net if there is an error
+      }
+
+      // clear all connFig
+      for (auto& node : net->getNodes()) {
+        node->setConnFig(nullptr);
+      }    
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

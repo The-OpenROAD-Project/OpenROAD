@@ -175,9 +175,8 @@ class FlexGR
 
   // Layer Assignment
   void layerAssign_gpu();
-  
-    
-  
+  void layerAssign_preproces(std::vector<frNet*>& sortedNets);
+     
   
   int layerAssignChunkSize_ = 1000000;
   void layerAssign_update();

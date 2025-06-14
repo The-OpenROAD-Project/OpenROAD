@@ -85,21 +85,32 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
 
   // Allow the GPU Memory to be used
   // Do not frquently allocate and deallocate the GPU memory
-  auto gpuDb_ = std::make_unique<FlexGRGPUDB>(design_, logger_, cmap_.get(), cmap2D_.get());
+  gpuDB_ = std::make_unique<FlexGRGPUDB>(design_, logger_, cmap_.get(), cmap2D_.get(), debugMode_);
 
   // Reserve the nets for the batch generation
   // Only once
   nets2Ripup_.clear();
   nets2Ripup_.reserve(design_->getTopBlock()->getNets().size());
 
+
+
   // Initial Routing
+  auto initRouteRuntimeStart = std::chrono::high_resolution_clock::now();
   initRoute_gpu();
+  auto initRouteRuntimeEnd = std::chrono::high_resolution_clock::now();
+  auto initRouteRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(initRouteRuntimeEnd - initRouteRuntimeStart);
+  logger_->report("[INFO] Runtime for Initial Routing : {} ms", static_cast<int>(initRouteRuntime.count()));
 
   // layer assignment
+  auto layerAssignRuntimeStart = std::chrono::high_resolution_clock::now();
   layerAssign_gpu();
+  auto layerAssignRuntimeEnd = std::chrono::high_resolution_clock::now();
+  auto layerAssignRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(layerAssignRuntimeEnd - layerAssignRuntimeStart);
+  logger_->report("[INFO] Runtime for Layer Assignment : {} ms", static_cast<int>(layerAssignRuntime.count()));
+
 
   // free the GPU memory
-  gpuDb_->freeCUDAMem();  
+  gpuDB_->freeCUDAMem();  
 
   auto grRuntimeEnd = std::chrono::high_resolution_clock::now();
   auto grRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(grRuntimeEnd - grRuntimeStart);

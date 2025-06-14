@@ -67,8 +67,9 @@ class FlexGRGPUDB
     FlexGRGPUDB(frDesign* design,
                 utl::Logger* logger,
                 FlexGRCMap* cmap,
-                FlexGRCMap* cmap2D)
-      : logger_(logger), cmap_(cmap), cmap2D_(cmap2D)
+                FlexGRCMap* cmap2D,
+                bool debugMode = false)
+      : design_(design), logger_(logger), cmap_(cmap), cmap2D_(cmap2D), debugMode_(debugMode)
     {
       init(design, cmap, cmap2D);
     }
@@ -92,13 +93,41 @@ class FlexGRGPUDB
     
     void freeCUDAMem();
 
+    void generate2DBatch(
+      std::vector<frNet*>& sortedNets,
+      std::vector<std::vector<int> >& batches);
+
+    void levelizeNodes(
+      std::vector<frNet*>& sortedNets,
+      std::vector<std::vector<int> >& batches,      
+      std::vector<NodeStruct>& nodes,
+      std::vector<int>& netBatchMaxDepth,
+      std::vector<int>& netBatchNodePtr);
+
   private:
+    frDesign* design_ = nullptr;
     utl::Logger* logger_ = nullptr;
     FlexGRCMap* cmap_ = nullptr;
     FlexGRCMap* cmap2D_ = nullptr;
-  
+    bool debugMode_ = false;    
+
     void init(frDesign* design, FlexGRCMap* cmap, FlexGRCMap* cmap2D);  
-};
+
+    void frNet2NetTree(
+      std::vector<frNet*>& sortedNets,
+      std::vector<std::unique_ptr<NetStruct> >& netTrees);
+
+    inline int getGCellIdx1D(int x, int y) const 
+    {
+      return y * xDim + x;
+    }
+
+    inline int getGCellIdx1D(int x, int y, int z) const 
+    {
+      return z * xDim * yDim + y * xDim + x;
+    }
+   
+  };
 
 
 }
