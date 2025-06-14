@@ -8,18 +8,12 @@
 
 #include "boostParser.h"
 #include "lefMacroPropParser.h"
+#include "parserUtils.h"
 
 namespace odb {
 void lefMacroEdgeTypeParser::parse(const std::string& s)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
-    rule += " ; ";
+  processRules(s, [this](const std::string& rule) {
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
                       "parse mismatch in layer property LEF58_EDGETYPE for "
@@ -27,7 +21,7 @@ void lefMacroEdgeTypeParser::parse(const std::string& s)
                       master_->getName(),
                       rule);
     }
-  }
+  });
 }
 
 void lefMacroEdgeTypeParser::setRange(
