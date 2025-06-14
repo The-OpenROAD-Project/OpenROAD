@@ -363,9 +363,7 @@ void wrongDirSpaceParser(double value,
   sc->setWrongDirSpace(l->dbdist(value));
 }
 
-bool parse(std::string s,
-           odb::dbTechLayer* layer,
-           odb::lefinReader* l)
+bool parse(std::string s, odb::dbTechLayer* layer, odb::lefinReader* l)
 {
   odb::dbTechLayerSpacingEolRule* sc
       = odb::dbTechLayerSpacingEolRule::create(layer);
@@ -452,7 +450,7 @@ bool parse(std::string s,
               >> double_[boost::bind(&wrongDirSpaceParser, _1, sc, l)])
          >> (withinRule | toconcavecornerrule | tonotchlengthrule)
          >> -lit(";"));
-  
+
   auto first = s.begin();
   auto last = s.end();
   bool valid
