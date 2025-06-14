@@ -15,10 +15,12 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "Polygon.hh"
+#include "WireBuilder.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -57,12 +59,9 @@ struct AntennaModel
 AntennaChecker::AntennaChecker() = default;
 AntennaChecker::~AntennaChecker() = default;
 
-void AntennaChecker::init(odb::dbDatabase* db,
-                          GlobalRouteSource* global_route_source,
-                          utl::Logger* logger)
+void AntennaChecker::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
-  global_route_source_ = global_route_source;
   logger_ = logger;
 }
 
@@ -1062,6 +1061,44 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
   return antenna_violations;
 }
 
+bool AntennaChecker::designIsPlaced()
+{
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getFirstPinPlacementStatus() == odb::dbPlacementStatus::NONE) {
+      return false;
+    }
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (!inst->isPlaced()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool AntennaChecker::haveGuides()
+{
+  if (!designIsPlaced()) {
+    return false;
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (!net->isSpecial() && net->getGuides().empty()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
@@ -1080,7 +1117,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   bool drt_routes = haveRoutedNets();
   bool grt_routes = false;
   if (!drt_routes) {
-    grt_routes = global_route_source_->haveRoutes();
+    grt_routes = haveGuides();
   }
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
@@ -1091,7 +1128,8 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   }
 
   if (use_grt_routes) {
-    global_route_source_->makeNetWires();
+    wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
+    wire_builder_->makeNetWiresFromGuides();
   }
 
   int net_violation_count = 0;
@@ -1146,7 +1184,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   }
 
   if (use_grt_routes) {
-    global_route_source_->destroyNetWires();
+    block_->destroyNetWires();
   }
 
   net_violation_count_ = net_violation_count;
@@ -1183,6 +1221,15 @@ double AntennaChecker::diffArea(odb::dbMTerm* mterm)
 void AntennaChecker::setReportFileName(const char* file_name)
 {
   report_file_name_ = file_name;
+}
+
+void AntennaChecker::makeNetWiresFromGuides()
+{
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
+  wire_builder_->makeNetWiresFromGuides();
 }
 
 }  // namespace ant

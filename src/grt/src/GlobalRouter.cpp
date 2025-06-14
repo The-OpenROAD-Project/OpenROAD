@@ -426,6 +426,8 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
           routes_, grid_->getTileSize(), getMaxRoutingLayer(), modified_nets);
       repair_antennas_->clearViolations();
 
+      saveGuides(modified_nets);
+      modified_nets.clear();
       // run again antenna checker
       violations
           = repair_antennas_->checkAntennaViolations(routes_,
@@ -455,30 +457,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides(modified_nets);
   return total_diodes_count_;
-}
-
-void GlobalRouter::makeNetWires()
-{
-  std::vector<odb::dbNet*> nets_to_repair;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    nets_to_repair.push_back(db_net);
-  }
-
-  if (repair_antennas_ == nullptr) {
-    repair_antennas_
-        = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
-  }
-  repair_antennas_->makeNetWires(routes_, nets_to_repair, getMaxRoutingLayer());
-}
-
-void GlobalRouter::destroyNetWires()
-{
-  std::vector<odb::dbNet*> nets_to_repair;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    nets_to_repair.push_back(db_net);
-  }
-
-  repair_antennas_->destroyNetWires(nets_to_repair);
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
@@ -2430,6 +2408,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
     }
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
+    RoutePointToPinsMap point_to_pins = findRoutePtPins(net);
 
     int jumper_count = 0;
     if (!route.empty()) {
@@ -2450,18 +2429,32 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(
+            auto guide1 = odb::dbGuide::create(
                 db_net, layer1, layer2, box, guide_is_congested);
-            odb::dbGuide::create(
+            auto guide2 = odb::dbGuide::create(
                 db_net, layer2, layer1, box, guide_is_congested);
+
+            RoutePt route_pt1(
+                segment.init_x, segment.init_y, segment.init_layer);
+            RoutePt route_pt2(
+                segment.final_x, segment.final_y, segment.final_layer);
+            addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
+            addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-            odb::dbGuide::create(
+            auto guide = odb::dbGuide::create(
                 db_net, layer, via_layer, box, guide_is_congested);
+
+            RoutePt route_pt1(
+                segment.init_x, segment.init_y, segment.init_layer);
+            RoutePt route_pt2(
+                segment.final_x, segment.final_y, segment.final_layer);
+            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
+            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -2482,6 +2475,12 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             guide->setIsJumper(true);
             jumper_count++;
           }
+
+          RoutePt route_pt1(segment.init_x, segment.init_y, segment.init_layer);
+          RoutePt route_pt2(
+              segment.final_x, segment.final_y, segment.final_layer);
+          addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
+          addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
         }
       }
     }
@@ -2500,6 +2499,29 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
              "Remaining jumpers {} in {} repaired nets after GRT",
              total_jumpers,
              net_with_jumpers);
+}
+
+RoutePointToPinsMap GlobalRouter::findRoutePtPins(Net* net)
+{
+  RoutePointToPinsMap route_pt_pins;
+  for (Pin& pin : net->getPins()) {
+    int conn_layer = pin.getConnectionLayer();
+    odb::Point grid_pt = pin.getOnGridPosition();
+    RoutePt route_pt(grid_pt.x(), grid_pt.y(), conn_layer);
+    route_pt_pins[route_pt].pins.push_back(&pin);
+  }
+  return route_pt_pins;
+}
+
+void GlobalRouter::addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                            const RoutePt& route_pt,
+                                            odb::dbGuide* guide)
+{
+  auto itr = point_to_pins.find(route_pt);
+  if (itr != point_to_pins.end() && !itr->second.connected) {
+    itr->second.connected = true;
+    guide->setIsConnectedToTerm(true);
+  }
 }
 
 void GlobalRouter::writeSegments(const char* file_name)

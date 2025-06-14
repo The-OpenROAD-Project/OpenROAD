@@ -1589,6 +1589,11 @@ class dbBlock : public dbObject
   bool designIsRouted(bool verbose);
 
   ///
+  /// Destroy wires of nets
+  ///
+  void destroyNetWires();
+
+  ///
   /// clear
   ///
   void clear();
@@ -7655,6 +7660,10 @@ class dbGuide : public dbObject
   bool isJumper();
 
   void setIsJumper(bool jumper);
+
+  bool isConnectedToTerm();
+
+  void setIsConnectedToTerm(bool is_connected);
 
   // User Code End dbGuide
 };
