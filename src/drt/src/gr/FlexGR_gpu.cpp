@@ -83,23 +83,21 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
   logger_->report("[INFO]   Avg Net Degree: {:.2f}", avgNetDegree);
 
 
-  // Allow the GPU Memory to be used
-  // Do not frquently allocate and deallocate the GPU memory
-  gpuDB_ = std::make_unique<FlexGRGPUDB>(design_, logger_, cmap_.get(), cmap2D_.get(), debugMode_);
-
-  // Reserve the nets for the batch generation
-  // Only once
-  nets2Ripup_.clear();
-  nets2Ripup_.reserve(design_->getTopBlock()->getNets().size());
-
-
-
   // Initial Routing
+  // No gpu acceleration for the initial routing
+  // Construct the initial routing tree for each net
   auto initRouteRuntimeStart = std::chrono::high_resolution_clock::now();
   initRoute_gpu();
   auto initRouteRuntimeEnd = std::chrono::high_resolution_clock::now();
   auto initRouteRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(initRouteRuntimeEnd - initRouteRuntimeStart);
   logger_->report("[INFO] Runtime for Initial Routing : {} ms", static_cast<int>(initRouteRuntime.count()));
+
+  // Allow the GPU Memory to be used
+  // Do not frquently allocate and deallocate the GPU memory
+  gpuDB_ = std::make_unique<FlexGRGPUDB>(design_, 
+    logger_, cmap_.get(), cmap2D_.get(), router_cfg_,
+    debugMode_);
+
 
   // layer assignment
   auto layerAssignRuntimeStart = std::chrono::high_resolution_clock::now();

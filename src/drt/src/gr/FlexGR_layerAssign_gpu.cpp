@@ -56,7 +56,7 @@ void FlexGR::layerAssign_gpu()
 {
   // Perform layer assignment in a GPU-accelerated manner  
   // Step 1: sort all the nets based on the HPWL / numPins ratio
-  std::vector<frNet*> sortedNets;
+  std::vector<frNet*>& sortedNets = gpuDB_->sortedNets;
   sortedNets.reserve(design_->getTopBlock()->getNets().size());
   for (auto& uNet : design_->getTopBlock()->getNets()) {
     if (uNet->isGRValid() == false) {
@@ -103,7 +103,8 @@ void FlexGR::layerAssign_gpu()
   std::vector<int> netBatchNodePtr;  // the pointer to the first node of the net batch
   gpuDB_->levelizeNodes(sortedNets, batches, nodes, netBatchMaxDepth, netBatchNodePtr);
 
-
+  // Move the GPU side
+  gpuDB_->layerAssign_CUDA(sortedNets, batches, nodes, netBatchMaxDepth, netBatchNodePtr);
 
   // Step 4: push the layer assignment results back to the router 
   // (1) remove the original 2D GR shapes

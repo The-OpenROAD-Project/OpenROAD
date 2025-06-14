@@ -122,6 +122,12 @@ void TritonRoute::setGPU(bool on)
   gpu_flag_ = on;
 }
 
+void TritonRoute::setDebug(bool on)
+{
+  debug_flag_ = on;
+}
+
+
 void TritonRoute::setDebugWriteNetTracks(bool on)
 {
   debug_->writeNetTracks = on;
@@ -632,6 +638,7 @@ void TritonRoute::prep()
 void TritonRoute::gr()
 {
   FlexGR gr(getDesign(), logger_, stt_builder_, router_cfg_.get());
+  gr.setDebug(debug_flag_);
   logger_->report("\n\n[INFO] Starting global routing with GPUFlag = {} ...",
                   gpu_flag_);
   

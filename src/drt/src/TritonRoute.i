@@ -81,6 +81,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                         const char* outputGuideCoverageFile,
                         const char* dbProcessNode,
                         bool enableGPU,
+                        bool enableDebug,
                         bool enableViaGen,
                         int drouteEndIter,
                         const char* viaInPinBottomLayer,
@@ -125,6 +126,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     saveGuideUpdates,
                     repairPDNLayerName});
   router->setGPU(enableGPU);
+  router->setDebug(enableDebug);
   router->main();
   router->setDistributed(false);
 }

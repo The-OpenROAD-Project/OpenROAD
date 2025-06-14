@@ -91,14 +91,15 @@ class FlexGR
   // others
   void main(odb::dbDatabase* db = nullptr);
   void main_gpu(odb::dbDatabase* db = nullptr);
-
+  void setDebug(bool debugMode) { debugMode_ = debugMode; }
+ 
  private:
   odb::dbDatabase* db_;
   frDesign* design_;
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
   std::unique_ptr<FlexGRGPUDB> gpuDB_;
-  bool debugMode_ = true;
+  bool debugMode_ = false;
 
 
   Logger* logger_;

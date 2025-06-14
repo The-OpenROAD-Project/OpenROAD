@@ -41,6 +41,7 @@ sta::define_cmd_args "detailed_route" {
     [-drc_report_iter_step step]
     [-db_process_node name]
     [-enableGPU]
+    [-enableDebug]
     [-disable_via_gen]
     [-droute_end_iter iter]
     [-via_in_pin_bottom_layer layer]
@@ -70,13 +71,14 @@ proc detailed_route { args } {
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
       -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
-    flags {-disable_via_gen -enableGPU \
+    flags {-disable_via_gen -enableGPU -enableDebug \
            -distributed -clean_patches -no_pin_access \
            -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
   set enableGPU [expr [info exists flags(-enableGPU)]]
+  set enableDebug [expr [info exists flags(-enableDebug)]]
   set clean_patches [expr [info exists flags(-clean_patches)]]
   set no_pin_access [expr [info exists flags(-no_pin_access)]]
   # single_step_dr is not a user option but is intended for algorithm
@@ -197,7 +199,7 @@ proc detailed_route { args } {
   }
   
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
-    $output_guide_coverage $db_process_node $enableGPU \
+    $output_guide_coverage $db_process_node $enableGPU $enableDebug \
     $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
     $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \

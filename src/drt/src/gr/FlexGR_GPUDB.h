@@ -68,8 +68,14 @@ class FlexGRGPUDB
                 utl::Logger* logger,
                 FlexGRCMap* cmap,
                 FlexGRCMap* cmap2D,
+                RouterConfiguration* router_cfg,
                 bool debugMode = false)
-      : design_(design), logger_(logger), cmap_(cmap), cmap2D_(cmap2D), debugMode_(debugMode)
+      : design_(design), 
+        logger_(logger), 
+        cmap_(cmap), 
+        cmap2D_(cmap2D), 
+        router_cfg_(router_cfg),
+        debugMode_(debugMode)
     {
       init(design, cmap, cmap2D);
     }
@@ -104,12 +110,23 @@ class FlexGRGPUDB
       std::vector<int>& netBatchMaxDepth,
       std::vector<int>& netBatchNodePtr);
 
+    void layerAssign_CUDA(
+      std::vector<frNet*>& sortedNets,
+      std::vector<std::vector<int> >& batches,
+      std::vector<NodeStruct>& nodes,
+      std::vector<int>& netBatchMaxDepth,
+      std::vector<int>& netBatchNodePtr);
+
+    // We do not keep allocated memory for the nets
+    std::vector<frNet*> sortedNets;
+
   private:
     frDesign* design_ = nullptr;
     utl::Logger* logger_ = nullptr;
     FlexGRCMap* cmap_ = nullptr;
     FlexGRCMap* cmap2D_ = nullptr;
     bool debugMode_ = false;    
+    RouterConfiguration* router_cfg_;
 
     void init(frDesign* design, FlexGRCMap* cmap, FlexGRCMap* cmap2D);  
 
