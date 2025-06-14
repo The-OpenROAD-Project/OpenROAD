@@ -543,6 +543,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbMarkerCategory*>(
       new DbMarkerCategoryDescriptor(db_));
   gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanInst*>(new DbScanInstDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
