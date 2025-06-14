@@ -28,6 +28,8 @@ cc_library(
         "src/PreChecks.cc",
         "src/PreChecks.hh",
         "src/Rebuffer.cc",
+        "src/Rebuffer.hh",
+        "src/Rebuffer2.cc",
         "src/RecoverPower.cc",
         "src/RecoverPower.hh",
         "src/RepairDesign.cc",
