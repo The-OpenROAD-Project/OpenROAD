@@ -66,9 +66,11 @@ cc_library(
     includes = ["include"],
     deps = [
         "//:opensta_lib",
+        "@boost.algorithm",
         "@boost.asio",
         "@boost.beast",
         "@boost.core",
+        "@boost.iostreams",
         "@spdlog",
         "@tk_tcl//:tcl",
     ],
