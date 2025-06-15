@@ -5,8 +5,10 @@
 
 #include <climits>
 #include <cstdio>
+#include <memory>
 #include <fstream>
 #include <string>
+#include <boost/iostreams/filtering_streambuf.hpp>
 
 #include "utl/Logger.h"
 
@@ -44,12 +46,15 @@ class StreamHandler
   // Set binary to true to open in binary mode
   StreamHandler(const char* filename, bool binary = false);
   ~StreamHandler();
-  std::ofstream& getStream();
+  std::ostream& getStream();
 
  private:
   std::string filename_;
   std::string tmp_filename_;
   std::ofstream os_;
+
+  std::unique_ptr<boost::iostreams::filtering_ostreambuf> buf_;
+  std::unique_ptr<std::ostream> stream_;
 };
 
 class FileHandler
