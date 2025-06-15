@@ -360,7 +360,6 @@ orfs_run(
     },
     data = [
                ":vcd",
-               "//:opensta",
            ] + ["{macro}_{stage}".format(
                macro = macro,
                stage = POWER_STAGE_NAME,
@@ -368,6 +367,7 @@ orfs_run(
            (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
     script = ":power.tcl",
     tags = ["manual"],
+    tools = ["//:opensta"],
     visibility = ["//visibility:public"],
 )
 
@@ -381,6 +381,15 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
-    # FIXME enable when it works in CI
-    tags = ["manual"],
+)
+
+# FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
+genrule(
+    name = "opensta_runfiles",
+    srcs = [],
+    outs = ["dummy"],
+    cmd = """
+    $(location :opensta) >$@
+    """,
+    tools = [":opensta"],
 )
