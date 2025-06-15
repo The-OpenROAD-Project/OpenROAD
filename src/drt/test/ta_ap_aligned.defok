@@ -106,13 +106,13 @@ END COMPONENTS
 NETS 2 ;
     - net_M2 ( inv_M2_2 A ) ( inv_M2_1 A ) + USE SIGNAL
       + ROUTED metal2 ( 100130 21140 ) ( * 180460 )
-      NEW metal1 ( 100130 21140 ) via1_4
-      NEW metal1 ( 100130 180460 ) via1_4 ;
+      NEW metal1 ( 100130 21140 ) via1_7
+      NEW metal1 ( 100130 180460 ) via1_7 ;
     - net_M3 ( inv_M3_2 A ) ( inv_M3_1 A ) + USE SIGNAL
       + ROUTED metal3 ( 20330 102060 ) ( 180310 * )
-      NEW metal1 ( 20330 102060 ) via1_4
+      NEW metal1 ( 20330 102060 ) via1_7
       NEW metal2 ( 20330 102060 ) via2_5
-      NEW metal1 ( 180310 102060 ) via1_4
+      NEW metal1 ( 180310 102060 ) via1_7
       NEW metal2 ( 180310 102060 ) via2_5 ;
 END NETS
 END DESIGN
