@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <utility>
@@ -104,6 +105,16 @@ class frAccessPoint : public frBlockObject
   const std::vector<std::vector<const frViaDef*>>& getAllViaDefs() const
   {
     return viaDefs_;
+  }
+  void sortViaDefs(const std::map<const frViaDef*, int> cost_map)
+  {
+    auto cmp = [&](const frViaDef* a, const frViaDef* b) {
+      return cost_map.at(a) < cost_map.at(b);
+    };
+
+    for (auto& viaDefsLayer : viaDefs_) {
+      std::sort(viaDefsLayer.begin(), viaDefsLayer.end(), cmp);
+    }
   }
   // e.g., getViaDef()     --> get best one-cut viadef
   // e.g., getViaDef(1)    --> get best one-cut viadef
