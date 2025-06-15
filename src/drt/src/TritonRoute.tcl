@@ -259,6 +259,8 @@ sta::define_cmd_args "pin_access" {
     [-db_process_node name]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
     [-min_access_points count]
     [-verbose level]
     [-distributed]
@@ -270,7 +272,8 @@ sta::define_cmd_args "pin_access" {
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
     keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
-          -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
+          -min_access_points -remote_host -remote_port -shared_volume -cloud_size \
+          -via_in_pin_bottom_layer -via_in_pin_top_layer} \
     flags {-distributed}
   sta::check_argc_eq0 "detailed_route_debug" $args
   if { [info exists keys(-db_process_node)] } {
@@ -323,8 +326,19 @@ proc pin_access { args } {
     }
     drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
+  if { [info exists keys(-via_in_pin_bottom_layer)] } {
+    set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
+  } else {
+    set via_in_pin_bottom_layer ""
+  }
+  if { [info exists keys(-via_in_pin_top_layer)] } {
+    set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
+  } else {
+    set via_in_pin_top_layer ""
+  }
   drt::pin_access_cmd $db_process_node $bottom_routing_layer \
-    $top_routing_layer $verbose $min_access_points
+    $top_routing_layer $verbose $min_access_points $via_in_pin_bottom_layer \
+    $via_in_pin_top_layer
 }
 
 sta::define_cmd_args "detailed_route_run_worker" {
