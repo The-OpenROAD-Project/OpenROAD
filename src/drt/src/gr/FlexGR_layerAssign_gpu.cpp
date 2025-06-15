@@ -91,8 +91,10 @@ void FlexGR::layerAssign_gpu()
 
   // Step 2: divide the nets into chunks
   // multi-threading is used
-  std::vector<std::vector<int> > batches;   
-  gpuDB_->generate2DBatch(sortedNets, batches);
+  // Need to change 2D batch to 1D batch
+  std::vector<int> netBatches;
+  std::vector<int> netBatchPtr;
+  gpuDB_->generate2DBatch(sortedNets, netBatches, netBatchPtr);
 
   // Step 3: perform layer assignment in parallel for each chunk
   // Perform node levelization
@@ -104,7 +106,9 @@ void FlexGR::layerAssign_gpu()
   gpuDB_->levelizeNodes(sortedNets, batches, nodes, netBatchMaxDepth, netBatchNodePtr);
 
   // Move the GPU side
-  gpuDB_->layerAssign_CUDA(sortedNets, batches, nodes, netBatchMaxDepth, netBatchNodePtr);
+  gpuDB_->layerAssign_CUDA(sortedNets, 
+    netBatches, netBatchPtr,
+    nodes, netBatchMaxDepth, netBatchNodePtr);
 
   // Step 4: push the layer assignment results back to the router 
   // (1) remove the original 2D GR shapes

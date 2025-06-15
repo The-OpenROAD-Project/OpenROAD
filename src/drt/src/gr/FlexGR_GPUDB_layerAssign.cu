@@ -43,6 +43,173 @@
 
 namespace drt {
 
+
+/*
+__global__ void layerAssignNodeCompute__kernel(  
+  NodeStruct* d_nodes,
+  unsigned* d_bestLayerCombs,
+  unsigned* d_bestLayerCosts,
+  int nodeStartIdx, int nodeEndIdx, int depth,
+  int xDim, int yDim, int numLayers,
+  unsigned VIACOST, unsigned VIA_ACCESS_LAYERNUM,
+  unsigned LA_PIN_LAYER_COST_FACTOR,
+  int maxChild)
+{
+  extern __shared__ unsigned s_data[];
+  int nodeId = nodeStartIdx + blockIdx.x;
+  if (nodeId >= nodeEndIdx) return;
+
+  // Shared memory pointers setup
+  unsigned* s_childCosts = s_data;
+  unsigned* s_fixedCostPerLayer = s_data + maxChild * numLayers;
+  unsigned* s_reductionCosts = s_fixedCostPerLayer + numLayers;
+  unsigned* s_reductionCombs = s_reductionCosts + blockDim.x;
+
+  // Load node info to shared memory
+  __shared__ int s_childCnt, s_minPinLayer, s_maxPinLayer, s_parentIdx, s_curLocX, s_curLocY;
+  if (threadIdx.x == 0) {
+    NodeStruct node = d_nodes[nodeId];
+    s_childCnt = node.childCnt;
+    s_minPinLayer = node.minLayerNum;
+    s_maxPinLayer = node.maxLayerNum;
+    s_parentIdx = node.parentIdx;
+    s_curLocX = node.x;
+    s_curLocY = node.y;
+    
+    // Handle invalid nodes immediately
+    if (node.level != depth || s_childCnt > maxChild) {
+      s_childCnt = -1; // Mark as invalid
+    }
+  }
+  __syncthreads();
+
+  // Skip invalid nodes
+  if (s_childCnt == -1) return;
+  if (s_childCnt == 0) {  // Leaf node special case
+    if (threadIdx.x == 0) {
+      for (int layerNum = 0; layerNum < numLayers; layerNum++) {
+        unsigned numVias = max(layerNum, s_maxPinLayer) - min(layerNum, s_minPinLayer);
+        unsigned viaCost = VIACOST * numVias;
+        unsigned congestionCost = 0;
+        if (layerNum <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
+          congestionCost += VIACOST * LA_PIN_LAYER_COST_FACTOR;
+        }
+        if (s_parentIdx != -1) {
+          congestionCost += 100; // Simplified alignment cost
+        }
+        d_bestLayerCosts[nodeId * numLayers + layerNum] = viaCost + congestionCost;
+        d_bestLayerCombs[nodeId * numLayers + layerNum] = 0;
+      }
+    }
+    return;
+  }
+
+  // Load child costs to shared memory
+  if (threadIdx.x == 0) {
+    NodeStruct node = d_nodes[nodeId];
+    for (int i = 0; i < s_childCnt; i++) {
+      int childIdx = node.children[i];
+      for (int l = 0; l < numLayers; l++) {
+        s_childCosts[i * numLayers + l] = d_bestLayerCosts[childIdx * numLayers + l];
+      }
+    }
+  }
+  __syncthreads();
+
+  // Precompute fixed costs per layer
+  if (threadIdx.x < numLayers) {
+    int layerNum = threadIdx.x;
+    unsigned numVias = max(layerNum, s_maxPinLayer) - min(layerNum, s_minPinLayer);
+    unsigned viaCost = VIACOST * numVias;
+    unsigned congestionCost = 0;
+    
+    if (layerNum <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
+      congestionCost += VIACOST * LA_PIN_LAYER_COST_FACTOR;
+    }
+    if (s_parentIdx != -1) {
+      congestionCost += 100; // Simplified alignment cost
+    }
+    s_fixedCostPerLayer[layerNum] = viaCost + congestionCost;
+  }
+  __syncthreads();
+
+  // Process each layer combination
+  for (int layerNum = 0; layerNum < numLayers; layerNum++) {
+    unsigned fixedCost = s_fixedCostPerLayer[layerNum];
+    unsigned long long numComb = 1;
+    for (int i = 0; i < s_childCnt; i++) {
+      numComb *= numLayers;
+    }
+
+    // Parallelize combination evaluation
+    unsigned long long combPerThread = (numComb + blockDim.x - 1) / blockDim.x;
+    unsigned long long start = threadIdx.x * combPerThread;
+    unsigned long long end = min(start + combPerThread, numComb);
+
+    unsigned myMinCost = UINT_MAX;
+    unsigned myBestComb = 0;
+
+    // Evaluate combinations in parallel
+    for (unsigned long long comb = start; comb < end; comb++) {
+      unsigned temp = comb;
+      unsigned cost = 0;
+      for (int i = 0; i < s_childCnt; i++) {
+        int layer_i = temp % numLayers;
+        temp /= numLayers;
+        cost += s_childCosts[i * numLayers + layer_i];
+      }
+      if (cost < myMinCost) {
+        myMinCost = cost;
+        myBestComb = comb;
+      }
+    }
+
+    // Parallel reduction for best combination
+    s_reductionCosts[threadIdx.x] = myMinCost;
+    s_reductionCombs[threadIdx.x] = myBestComb;
+    __syncthreads();
+
+    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+      if (threadIdx.x < stride) {
+        if (s_reductionCosts[threadIdx.x + stride] < s_reductionCosts[threadIdx.x]) {
+          s_reductionCosts[threadIdx.x] = s_reductionCosts[threadIdx.x + stride];
+          s_reductionCombs[threadIdx.x] = s_reductionCombs[threadIdx.x + stride];
+        }
+      }
+      __syncthreads();
+    }
+
+    // Store results
+    if (threadIdx.x == 0) {
+      d_bestLayerCosts[nodeId * numLayers + layerNum] = s_reductionCosts[0] + fixedCost;
+      d_bestLayerCombs[nodeId * numLayers + layerNum] = s_reductionCombs[0];
+    }
+    __syncthreads();
+  }
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 __global__
 void layerAssignNodeCompute__kernel(  
   NodeStruct* d_nodes,
@@ -123,13 +290,13 @@ void layerAssignNodeCompute__kernel(
         int parentX = d_nodes[parentIdx].x;
         int parentY = d_nodes[parentIdx].y;
 
-        if (curLocX == parentX) { // vertical segment
-          congestionCost += 100;
-        } else if (curLocY == parentY) { // horizontal segment
-          congestionCost += 100;
-        } else {
-          printf("Node %d: current node and parent node are not aligned collinearly\n", nodeId);
-        }
+        // if (curLocX == parentX) { // vertical segment
+        //  congestionCost += 100;
+        // } else if (curLocY == parentY) { // horizontal segment
+        //  congestionCost += 100;
+        //} else {
+        //  printf("Node %d: current node and parent node are not aligned collinearly\n", nodeId);
+        //}
       }
 
       unsigned currLayerCost = downStreamCost + downstreamViaCost + congestionCost;
@@ -175,6 +342,29 @@ void FlexGRGPUDB::layerAssign_CUDA(
   syncCMapHostToDevice();
 
   cudaCheckError();
+
+
+  if (debugMode_) {
+    for (auto& node : nodes) {
+      if (node.parentIdx == -1) {
+        continue; // Skip root nodes
+      }
+
+      auto& parentNode = nodes[node.parentIdx];
+      if (node.x != parentNode.x && node.y != parentNode.y) {
+        std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                  << "Node " << node.nodeIdx
+                  << " is not aligned with its parent node "
+                  << parentNode.nodeIdx << ".\n";
+        std::cout << "node.x = " << node.x
+                  << ", node.y = " << node.y
+                  << ", parentNode.x = " << parentNode.x
+                  << ", parentNode.y = " << parentNode.y << "\n";
+        exit(1); 
+      }
+    }
+  }
+
 
   // Node-level layer assignment kernel
   int numBatches = netBatchMaxDepth.size();

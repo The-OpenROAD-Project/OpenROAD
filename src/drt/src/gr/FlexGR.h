@@ -236,9 +236,7 @@ class FlexGR
   void setCMap(std::unique_ptr<FlexGRCMap>& in) { cmap_ = std::move(in); }
   void setCMap2D(std::unique_ptr<FlexGRCMap>& in) { cmap2D_ = std::move(in); }
 
-
-
-
+  void checkNetNodeMatch();
 
   // initGR
   void initGR();

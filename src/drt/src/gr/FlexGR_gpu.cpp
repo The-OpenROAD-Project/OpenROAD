@@ -97,7 +97,8 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
   gpuDB_ = std::make_unique<FlexGRGPUDB>(design_, 
     logger_, cmap_.get(), cmap2D_.get(), router_cfg_,
     debugMode_);
-
+  
+  checkNetNodeMatch();
 
   // layer assignment
   auto layerAssignRuntimeStart = std::chrono::high_resolution_clock::now();

@@ -64,12 +64,16 @@ void FlexGR::initRoute_gpu()
   logger_->report("[INFO] Initial congestion map after FLUTE topology generation ...");
   reportCong2D();
 
+  // checkNetNodeMatch();
+
   // No need to use GPU-accelerated approach
   // Initialize Z-Shape pattern routing for non-clinear segments  
   initRoute_patternRoute_Z_shape();
  
   logger_->report("[INFO] Initial congestion map after Z-shape pattern routing ...");
   reportCong2D();
+
+  // checkNetNodeMatch();
 
   // convert topological connection to physical connection
   initGR_initPhysicalObj();

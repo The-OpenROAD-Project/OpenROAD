@@ -180,4 +180,37 @@ void FlexGR::addSegmentToNet(frNode* child, int layerNum)
 }
 
 
+void FlexGR::checkNetNodeMatch()
+{
+  for (auto& net : design_->getTopBlock()->getNets()) {
+    if (net->isGRValid() == false) {
+      continue; // net is not valid for GR routing
+    }
+    
+    const int nodeCnt = net->getNodes().size() - net->getRPins().size(); // exclude the rpin nodes          
+    int nodeIdx = 0;
+    std::queue<frNode*> nodeQ;
+    nodeQ.push(net->getRootGCellNode());
+
+    while (!nodeQ.empty()) {
+      auto currNode = nodeQ.front();
+      nodeQ.pop();      
+      nodeIdx++;
+      for (auto& child : currNode->getChildren()) {
+        if (child->getType() == frNodeTypeEnum::frcSteiner) {
+          nodeQ.push(child);
+        }
+      }
+    }
+     
+    if (nodeIdx != nodeCnt) {
+      logger_->error(utl::DRT, 208, 
+        "checkNetNodeMatch: Node count mismatch for net {}: "
+        "expected {}, found {}.", net->getName(), nodeCnt, nodeIdx);
+    }
+  }
+}
+
+
+
 }  // namespace drt
