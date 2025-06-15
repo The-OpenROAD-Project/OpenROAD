@@ -93,11 +93,11 @@ cc_library(
     hdrs = [
         "include/grt/Rudy.h",
     ],
-    includes = [
-        "include",
-    ],
     copts = [
         "-fopenmp",
+    ],
+    includes = [
+        "include",
     ],
     deps = [
         ":abstract-fastroute",
