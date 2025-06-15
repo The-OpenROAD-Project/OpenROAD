@@ -10,6 +10,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb {
 
@@ -23,14 +24,7 @@ void lefTechLayerAreaRuleParser::parse(
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
-    rule += " ; ";
+  processRules(s, [this, layer, &incomplete_props](const std::string& rule) {
     if (!parseSubRule(rule, layer, incomplete_props)) {
       lefin_->warning(278,
                       "parse mismatch in layer property LEF58_AREA for "
@@ -38,7 +32,7 @@ void lefTechLayerAreaRuleParser::parse(
                       layer->getName(),
                       rule);
     }
-  }
+  });
 }
 
 void lefTechLayerAreaRuleParser::setInt(

@@ -9,6 +9,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb::lefTechLayerSpacingEol {
 
@@ -362,11 +363,7 @@ void wrongDirSpaceParser(double value,
   sc->setWrongDirSpace(l->dbdist(value));
 }
 
-template <typename Iterator>
-bool parse(Iterator first,
-           Iterator last,
-           odb::dbTechLayer* layer,
-           odb::lefinReader* l)
+bool parse(std::string s, odb::dbTechLayer* layer, odb::lefinReader* l)
 {
   odb::dbTechLayerSpacingEolRule* sc
       = odb::dbTechLayerSpacingEolRule::create(layer);
@@ -454,6 +451,8 @@ bool parse(Iterator first,
          >> (withinRule | toconcavecornerrule | tonotchlengthrule)
          >> -lit(";"));
 
+  auto first = s.begin();
+  auto last = s.end();
   bool valid
       = qi::phrase_parse(first, last, spacingRule, space) && first == last;
 
@@ -470,28 +469,22 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
                                          dbTechLayer* layer,
                                          odb::lefinReader* l)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
+  processRules(s, [layer, l](const std::string& rule) {
     if (rule.find("ENDOFLINE") == std::string::npos) {
       l->warning(254,
                  "unsupported LEF58_SPACING property for layer {} :\"{}\"",
                  layer->getName(),
                  rule);
-      continue;
+      return;
     }
-    if (!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l)) {
+    if (!lefTechLayerSpacingEol::parse(rule, layer, l)) {
       l->warning(255,
                  "parse mismatch in layer property LEF58_SPACING ENDOFLINE for "
                  "layer {} :\"{}\"",
                  layer->getName(),
                  rule);
     }
-  }
+  });
 }
 
 }  // namespace odb
