@@ -120,6 +120,9 @@ class FlexGRGPUDB
     // We do not keep allocated memory for the nets
     std::vector<frNet*> sortedNets;
 
+    // some cost term needs to tuned
+    unsigned LA_PIN_LAYER_COST_FACTOR = 8;
+
   private:
     frDesign* design_ = nullptr;
     utl::Logger* logger_ = nullptr;
@@ -143,10 +146,10 @@ class FlexGRGPUDB
     {
       return z * xDim * yDim + y * xDim + x;
     }
-   
+  
+    void syncCMapHostToDevice();
+    void syncCMapDeviceToHost();      
   };
-
-
 }
 
 

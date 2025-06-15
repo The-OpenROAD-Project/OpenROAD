@@ -252,6 +252,7 @@ void FlexGRGPUDB::levelizeNodes(
         int parentNodeIdx = currNode->getParent()->getIntProp();
         auto& parentNode = nodes[parentNodeIdx];
         parentNode.children[parentNode.childCnt++] = nodeIdx;
+        gcellNode.parentIdx = parentNodeIdx; // set the parent index
         gcellNode.level = parentNode.level + 1; // increment the level from the parent node
         maxDepth = std::max(maxDepth, static_cast<int>(gcellNode.level));
       } else {

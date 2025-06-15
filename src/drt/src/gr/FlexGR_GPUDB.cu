@@ -122,4 +122,21 @@ void FlexGRGPUDB::freeCUDAMem()
   logger_->report("FlexGRGPUDB CUDA memory freed ....");
 }
 
+
+void FlexGRGPUDB::syncCMapHostToDevice()
+{
+  auto& h_costMap = cmap_->getBits();
+  cudaMemcpy(d_cmap_bits_3D, h_costMap.data(), h_costMap.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaCheckError();
+}
+
+
+void FlexGRGPUDB::syncCMapDeviceToHost()
+{
+  auto& h_costMap = cmap_->getBits();
+  cudaMemcpy(h_costMap.data(), d_cmap_bits_3D, h_costMap.size() * sizeof(uint64_t), cudaMemcpyDeviceToHost);
+  cudaCheckError();
+}      
+
+
 }  // namespace drt
