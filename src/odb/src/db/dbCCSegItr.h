@@ -13,10 +13,10 @@ class _dbCCSeg;
 
 class dbCCSegItr : public dbIterator
 {
-  dbTable<_dbCCSeg>* _seg_tbl;
+  dbTable<_dbCCSeg, 4096>* _seg_tbl;
 
  public:
-  dbCCSegItr(dbTable<_dbCCSeg>* seg_tbl) { _seg_tbl = seg_tbl; }
+  dbCCSegItr(dbTable<_dbCCSeg, 4096>* seg_tbl) { _seg_tbl = seg_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

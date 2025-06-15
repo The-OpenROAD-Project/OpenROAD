@@ -217,10 +217,10 @@ class _dbDatabase : public _dbObject
   dbId<_dbChip> _chip;
 
   // NON_PERSISTANT_MEMBERS
-  dbTable<_dbTech>* _tech_tbl;
+  dbTable<_dbTech, 2>* _tech_tbl;
   dbTable<_dbLib>* _lib_tbl;
-  dbTable<_dbChip>* _chip_tbl;
-  dbTable<_dbGDSLib>* _gds_lib_tbl;
+  dbTable<_dbChip, 2>* _chip_tbl;
+  dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
   dbTable<_dbProperty>* _prop_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;

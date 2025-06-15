@@ -13,10 +13,10 @@ class _dbRSeg;
 
 class dbRSegItr : public dbIterator
 {
-  dbTable<_dbRSeg>* _seg_tbl;
+  dbTable<_dbRSeg, 4096>* _seg_tbl;
 
  public:
-  dbRSegItr(dbTable<_dbRSeg>* seg_tbl) { _seg_tbl = seg_tbl; }
+  dbRSegItr(dbTable<_dbRSeg, 4096>* seg_tbl) { _seg_tbl = seg_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

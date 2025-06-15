@@ -13,10 +13,10 @@ class _dbCapNode;
 
 class dbCapNodeItr : public dbIterator
 {
-  dbTable<_dbCapNode>* _seg_tbl;
+  dbTable<_dbCapNode, 4096>* _seg_tbl;
 
  public:
-  dbCapNodeItr(dbTable<_dbCapNode>* seg_tbl) { _seg_tbl = seg_tbl; }
+  dbCapNodeItr(dbTable<_dbCapNode, 4096>* seg_tbl) { _seg_tbl = seg_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

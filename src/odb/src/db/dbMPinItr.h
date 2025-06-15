@@ -13,10 +13,10 @@ class _dbMPin;
 
 class dbMPinItr : public dbIterator
 {
-  dbTable<_dbMPin>* _mpin_tbl;
+  dbTable<_dbMPin, 4>* _mpin_tbl;
 
  public:
-  dbMPinItr(dbTable<_dbMPin>* mpin_tbl) { _mpin_tbl = mpin_tbl; }
+  dbMPinItr(dbTable<_dbMPin, 4>* mpin_tbl) { _mpin_tbl = mpin_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

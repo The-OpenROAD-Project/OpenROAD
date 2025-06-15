@@ -1,3 +1,4 @@
+{% import 'macros.jinja' as macros %}
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
@@ -19,7 +20,7 @@ namespace odb {
   class {{itr.name}} : public dbIterator
   {
   public:
-    {{itr.name}}(dbTable<_{{itr.parentObject}}>* {{itr.tableName}}) { _{{itr.tableName}} = {{itr.tableName}}; }
+    {{itr.name}}({{macros.table_type(itr)}}* {{itr.tableName}}) { _{{itr.tableName}} = {{itr.tableName}}; }
 
     bool      reversible() override;
     bool      orderReversed() override;
@@ -33,7 +34,7 @@ namespace odb {
     // User Code Begin Methods
     // User Code End Methods
   private:
-    dbTable<_{{itr.parentObject}}>* _{{itr.tableName}};
+    {{macros.table_type(itr)}}* _{{itr.tableName}};
     // User Code Begin Fields
     // User Code End Fields
   };

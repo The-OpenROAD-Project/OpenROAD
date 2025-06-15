@@ -31,12 +31,12 @@ class Logger;
 }
 namespace odb {
 
-template <class T>
+template <class T, uint page_size = 128>
 class dbTable;
 class _dbDatabase;
 class _dbProperty;
 class dbObjectTable;
-template <typename T>
+template <typename T, uint page_size = 128>
 class dbHashTable;
 template <typename T>
 class dbIntHashTable;
@@ -80,14 +80,14 @@ struct MemInfo
     size += vec.size() * sizeof(T);
   }
 
-  template <typename T>
-  void add(const dbHashTable<T>& table)
+  template <class T, uint page_size>
+  void add(const dbHashTable<T, page_size>& table)
   {
     cnt += 1;
     size += table._hash_tbl.size() * sizeof(dbId<T>);
   }
 
-  template <typename T>
+  template <class T>
   void add(const dbIntHashTable<T>& table)
   {
     cnt += 1;
@@ -171,7 +171,7 @@ class _dbObject : public dbObject
   uint getOID() const;
   utl::Logger* getLogger() const;
 
-  template <class T>
+  template <class T, uint page_size>
   friend class dbTable;
   template <class T>
   friend class dbArrayTable;

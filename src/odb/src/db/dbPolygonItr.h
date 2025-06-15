@@ -14,10 +14,10 @@ class _dbPolygon;
 class dbPolygonItr : public dbIterator
 {
  protected:
-  dbTable<_dbPolygon>* pbox_tbl_;
+  dbTable<_dbPolygon, 8>* pbox_tbl_;
 
  public:
-  dbPolygonItr(dbTable<_dbPolygon>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
+  dbPolygonItr(dbTable<_dbPolygon, 8>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;
