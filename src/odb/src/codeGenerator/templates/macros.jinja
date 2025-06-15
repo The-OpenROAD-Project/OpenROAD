@@ -43,3 +43,11 @@
     {{field.getterReturnType}} {{prefix}}{{field.getterFunctionName}}() const
   {% endif %}
 {%- endmacro %}
+
+{% macro table_type(itr) -%}
+  {% if itr.tablePageSize %}
+     dbTable<_{{itr.parentObject}}, {{itr.tablePageSize}}>
+  {% else %}
+     dbTable<_{{itr.parentObject}}>
+  {% endif %}
+{%- endmacro %}

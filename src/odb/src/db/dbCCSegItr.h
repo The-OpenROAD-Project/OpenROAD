@@ -3,21 +3,20 @@
 
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 
 class _dbCCSeg;
-template <class T>
-class dbTable;
 
 class dbCCSegItr : public dbIterator
 {
-  dbTable<_dbCCSeg>* _seg_tbl;
+  dbTable<_dbCCSeg, 4096>* _seg_tbl;
 
  public:
-  dbCCSegItr(dbTable<_dbCCSeg>* seg_tbl) { _seg_tbl = seg_tbl; }
+  dbCCSegItr(dbTable<_dbCCSeg, 4096>* seg_tbl) { _seg_tbl = seg_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

@@ -19,8 +19,6 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
-template <class T>
-class dbTable;
 class _dbTechLayerSpacingEolRule;
 class _dbTechLayerCutSpacingRule;
 class _dbTechLayerMinStepRule;
@@ -150,9 +148,9 @@ class _dbTechLayer : public _dbObject
   dbId<_dbTechLayer> _lower;
   dbTable<_dbTechLayerSpacingRule>* _spacing_rules_tbl;
 
-  dbTable<_dbTechMinCutRule>* _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule>* _min_enc_rules_tbl;
-  dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
+  dbTable<_dbTechMinCutRule, 8>* _min_cut_rules_tbl;
+  dbTable<_dbTechMinEncRule, 8>* _min_enc_rules_tbl;
+  dbTable<_dbTechV55InfluenceEntry, 8>* _v55inf_tbl;
   dbVector<uint> _v55sp_length_idx;
   dbVector<uint> _v55sp_width_idx;
   dbMatrix<uint> _v55sp_spacing;

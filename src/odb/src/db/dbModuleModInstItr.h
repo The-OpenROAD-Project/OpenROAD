@@ -4,14 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 class _dbModInst;
-
-template <class T>
-class dbTable;
 
 class dbModuleModInstItr : public dbIterator
 {

@@ -10,8 +10,6 @@
 
 namespace odb {
 
-template <class T>
-class dbTable;
 class _dbMTerm;
 class _dbBox;
 class _dbPolygon;
@@ -21,6 +19,7 @@ class _dbSite;
 class _dbDatabase;
 class _dbTechAntennaPinModel;
 class _dbMasterEdgeType;
+template <uint page_size>
 class dbBoxItr;
 class dbPolygonItr;
 class dbMPinItr;
@@ -59,20 +58,20 @@ class _dbMaster : public _dbObject
   dbId<_dbPolygon> _poly_obstructions;
   dbId<_dbLib> _lib_for_site;
   dbId<_dbSite> _site;
-  dbHashTable<_dbMTerm> _mterm_hash;
-  dbTable<_dbMTerm>* _mterm_tbl;
-  dbTable<_dbMPin>* _mpin_tbl;
-  dbTable<_dbBox>* _box_tbl;
-  dbTable<_dbPolygon>* _poly_box_tbl;
-  dbTable<_dbTechAntennaPinModel>* _antenna_pin_model_tbl;
-  dbTable<_dbMasterEdgeType>* edge_types_tbl_;
+  dbHashTable<_dbMTerm, 4> _mterm_hash;
+  dbTable<_dbMTerm, 4>* _mterm_tbl;
+  dbTable<_dbMPin, 4>* _mpin_tbl;
+  dbTable<_dbBox, 8>* _box_tbl;
+  dbTable<_dbPolygon, 8>* _poly_box_tbl;
+  dbTable<_dbTechAntennaPinModel, 8>* _antenna_pin_model_tbl;
+  dbTable<_dbMasterEdgeType, 8>* edge_types_tbl_;
 
   void* _sta_cell;  // not saved
 
   // NON-PERSISTANT-MEMBERS
-  dbBoxItr* _box_itr;
+  dbBoxItr<8>* _box_itr;
   dbPolygonItr* _pbox_itr;
-  dbBoxItr* _pbox_box_itr;
+  dbBoxItr<8>* _pbox_box_itr;
   dbMPinItr* _mpin_itr;
 
   _dbMaster(_dbDatabase* db);

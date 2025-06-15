@@ -3,21 +3,20 @@
 
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 
 class _dbITerm;
-template <class T>
-class dbTable;
 
 class dbNetITermItr : public dbIterator
 {
-  dbTable<_dbITerm>* _iterm_tbl;
+  dbTable<_dbITerm, 1024>* _iterm_tbl;
 
  public:
-  dbNetITermItr(dbTable<_dbITerm>* iterm_tbl) { _iterm_tbl = iterm_tbl; }
+  dbNetITermItr(dbTable<_dbITerm, 1024>* iterm_tbl) { _iterm_tbl = iterm_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;
@@ -32,10 +31,10 @@ class dbNetITermItr : public dbIterator
 
 class dbInstITermItr : public dbIterator
 {
-  dbTable<_dbITerm>* _iterm_tbl;
+  dbTable<_dbITerm, 1024>* _iterm_tbl;
 
  public:
-  dbInstITermItr(dbTable<_dbITerm>* iterm_tbl) { _iterm_tbl = iterm_tbl; }
+  dbInstITermItr(dbTable<_dbITerm, 1024>* iterm_tbl) { _iterm_tbl = iterm_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

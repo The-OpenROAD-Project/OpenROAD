@@ -138,19 +138,14 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _logger = nullptr;
   _unique_id = db_unique_id++;
 
-  _chip_tbl = new dbTable<_dbChip>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
+  _chip_tbl = new dbTable<_dbChip, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
 
-  _gds_lib_tbl
-      = new dbTable<_dbGDSLib>(this,
-                               this,
-                               (GetObjTbl_t) &_dbDatabase::getObjectTable,
-                               dbGdsLibObj,
-                               2,
-                               1);
+  _gds_lib_tbl = new dbTable<_dbGDSLib, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
 
-  _tech_tbl = new dbTable<_dbTech>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj, 2, 1);
+  _tech_tbl = new dbTable<_dbTech, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj);
 
   _lib_tbl = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
@@ -178,19 +173,14 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _logger = nullptr;
   _unique_id = id;
 
-  _chip_tbl = new dbTable<_dbChip>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
+  _chip_tbl = new dbTable<_dbChip, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
 
-  _gds_lib_tbl
-      = new dbTable<_dbGDSLib>(this,
-                               this,
-                               (GetObjTbl_t) &_dbDatabase::getObjectTable,
-                               dbGdsLibObj,
-                               2,
-                               1);
+  _gds_lib_tbl = new dbTable<_dbGDSLib, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
 
-  _tech_tbl = new dbTable<_dbTech>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj, 2, 1);
+  _tech_tbl = new dbTable<_dbTech, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj);
 
   _lib_tbl = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
