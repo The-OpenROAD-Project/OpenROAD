@@ -1276,7 +1276,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
   bool isVertical = layer->isVertical();
 
   for (auto& edges : pin->getPolygonEdges()) {
-    for (auto& edge : edges) {
+    for (auto edge : edges) {
       if (ignoreLongSideEOL_
           && layer->getLayerNum() > 2 /* above the 1st metal layer */) {
         switch (edge->getDir()) {
@@ -1298,16 +1298,16 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
       }
 
       for (auto con : cons) {
-        checkMetalEndOfLine_eol(edge.get(), con);
+        checkMetalEndOfLine_eol(edge, con);
       }
       for (auto con : lef58Cons) {
-        checkMetalEndOfLine_eol(edge.get(), con);
+        checkMetalEndOfLine_eol(edge, con);
       }
       for (auto con : keepoutCons) {
-        checkMetalEOLkeepout_main(edge.get(), con);
+        checkMetalEOLkeepout_main(edge, con);
       }
       for (auto con : extCons) {
-        checkMetalEndOfLine_ext(edge.get(), con);
+        checkMetalEndOfLine_ext(edge, con);
       }
     }
   }
@@ -1326,8 +1326,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
-      for (auto& pin : targetNet_->getPins(i)) {
-        checkMetalEndOfLine_main(pin.get());
+      for (auto pin : targetNet_->getPins(i)) {
+        checkMetalEndOfLine_main(pin);
       }
     }
   } else {
@@ -1341,9 +1341,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
-      for (auto& net : getNets()) {
-        for (auto& pin : net->getPins(i)) {
-          checkMetalEndOfLine_main(pin.get());
+      for (auto net : getNets()) {
+        for (auto pin : net->getPins(i)) {
+          checkMetalEndOfLine_main(pin);
         }
       }
     }
