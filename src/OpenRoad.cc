@@ -31,6 +31,9 @@
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
 #include "grt/GlobalRouter.h"
+#ifdef ENABLE_KOKKOS
+#include "gpl2/MakeDgReplace.h"
+#endif
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
@@ -108,6 +111,9 @@ OpenRoad::~OpenRoad()
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deletePDNSim(pdnsim_);
+#ifdef ENABLE_KOKKOS
+  deleteDgReplace(dg_replace_);
+#endif
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
@@ -179,6 +185,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   extractor_ = rcx::makeOpenRCX();
   detailed_router_ = drt::makeTritonRoute();
   replace_ = gpl::makeReplace();
+#ifdef ENABLE_KOKKOS
+  dg_replace_ = gpl2::makeDgReplace();
+#endif
   pdnsim_ = psm::makePDNSim();
   antenna_checker_ = ant::makeAntennaChecker();
   partitionMgr_ = par::makePartitionMgr();
@@ -212,6 +221,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initIoplacer(ioPlacer_, db_, logger_, tcl_interp);
   initReplace(
       replace_, db_, sta_, resizer_, global_router_, logger_, tcl_interp);
+#ifdef ENABLE_KOKKOS
+  gpl2::initDgReplace(this);
+#endif
   initOpendp(opendp_, db_, logger_, tcl_interp);
   initFinale(finale_, db_, logger_, tcl_interp);
   initGlobalRouter(global_router_,
