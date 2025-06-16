@@ -8024,7 +8024,6 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
-
   void setParentModITerm(dbModITerm* parent_pin);
   dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
@@ -8042,8 +8041,6 @@ class dbModBTerm : public dbObject
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
   static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
-
- private:
   // User Code End dbModBTerm
 };
 
@@ -8068,6 +8065,11 @@ class dbModInst : public dbObject
 
   void RemoveUnusedPortsAndPins();
 
+  /// Swap the module of this instance.
+  /// Returns new mod inst if the operations succeeds.
+  /// Old mod inst is deleted along with its child insts.
+  dbModInst* swapMaster(dbModule* module);
+
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
                            const char* name);
@@ -8078,11 +8080,6 @@ class dbModInst : public dbObject
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
-
-  /// Swap the module of this instance.
-  /// Returns new mod inst if the operations succeeds.
-  /// Old mod inst is deleted along with its child insts.
-  dbModInst* swapMaster(dbModule* module);
   // User Code End dbModInst
 };
 
@@ -8122,11 +8119,11 @@ class dbModNet : public dbObject
   unsigned connectionCount();
   const char* getName() const;
   void rename(const char* new_name);
+
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
-
   // User Code End dbModNet
 };
 
