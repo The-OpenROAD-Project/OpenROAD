@@ -88,7 +88,7 @@ class WireBuilder
   void boxToGuideSegment(const odb::Rect& guide_box,
                          odb::dbTechLayer* layer,
                          odb::dbTechLayer* via_layer,
-                         std::vector<GuideSegment>& segment,
+                         std::vector<GuideSegment>& route,
                          std::pair<GuidePoint, GuidePoint>& endpoints,
                          std::pair<odb::Point, odb::Point>& box_limits,
                          int guide_dimension);
