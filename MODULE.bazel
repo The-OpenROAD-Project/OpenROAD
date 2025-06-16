@@ -149,7 +149,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "389e01a04552f6fe88f9fb9d210408254297f205",
+    commit = "6763c2ba623ce017566889696f18a2229b5ad626",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
