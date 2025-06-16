@@ -304,6 +304,46 @@ void layerAssignNodeCompute__kernel(
 
 
 
+__global__
+void layerAssignNodeCommit__kernel(  
+  NodeStruct* d_nodes,
+  unsigned* d_bestLayerCombs,
+  unsigned* d_bestLayerCosts,
+  int nodeStartIdx, int nodeEndIdx, int depth,
+  int numLayers)
+{
+  int tIdx = blockIdx.x * blockDim.x + threadIdx.x;
+  int nodeId = tIdx + nodeStartIdx;
+  if (nodeId >= nodeEndIdx) { return;  } // Out of bounds 
+
+  NodeStruct& node = d_nodes[nodeId];
+  if (node.level != depth) { return; }
+  
+  if (node.level == 0) { // root node
+    unsigned minCost = UINT_MAX;
+    int bestLayerNum = -1;
+    for (int l = 0; l < numLayers; l++) {
+      unsigned cost = d_bestLayerCosts[nodeId * numLayers + l];
+      if (cost < minCost) {
+        minCost = cost;
+        bestLayerNum = l;
+      }
+    }
+    node.layerNum = bestLayerNum;
+  }
+
+  // Decode the child's layer from bestComb
+  int numChild = node.childCnt;
+  unsigned comb = d_bestLayerCombs[nodeId * numLayers + node.layerNum];
+  for (int i = 0; i < numChild; i++) { 
+    int mylayer = comb % numLayers;
+    comb /= numLayers;
+    int childId = node.children[i];
+    d_nodes[childId].layerNum = mylayer; // Assign layer to child node  
+  }
+}
+
+
 // To do: large-net with highest depth should be done in CPU mode
 // instead of GPU mode
 // It seems that we do not the batches and netBatchPtr in this function
@@ -394,11 +434,18 @@ void FlexGRGPUDB::layerAssign_CUDA(
         LA_PIN_LAYER_COST_FACTOR);
     }
 
-
+    cudaDeviceSynchronize();  // Wait for the kernel to finish
+    cudaCheckError();
+   
+    for (int depth = 0; depth < maxDepth; depth++) {
+      layerAssignNodeCommit__kernel<<<numBlocks, numThreads>>>(
+        d_nodes, d_bestLayerCombs, d_bestLayerCosts,
+        nodeStartIdx, nodeEndIdx, depth, zDim);
+    }
+  
     cudaDeviceSynchronize();  // Wait for the kernel to finish
     cudaCheckError();
   }
-
 
   cudaCheckError();  
 
