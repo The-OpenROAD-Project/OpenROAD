@@ -4,7 +4,6 @@
 [INFO ODB-0131]     Created 36 components and 216 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 72 connections.
 [INFO ODB-0133]     Created 2 nets and 72 connections.
-[INFO RSZ-0058] Using max wire length 530um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        73
@@ -23,7 +22,6 @@ Instance drvr
  Output pins:
   Q output net0
   QN output (unconnected)
-[INFO RSZ-0058] Using max wire length 530um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        77

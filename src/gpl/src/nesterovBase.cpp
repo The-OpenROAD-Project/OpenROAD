@@ -2924,8 +2924,14 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 
   int64_t prevCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-  odb::dbBox* bbox = db_inst->getBBox();
-  gcell->setSize(bbox->getDX(), bbox->getDY());
+
+  // pull new instance dimensions from DB
+  for (Instance* inst : gcell->insts()) {
+    inst->copyDbLocation(pbc_.get());
+  }
+  // update gcell
+  gcell->updateLocations();
+
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
@@ -3061,11 +3067,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
-  Instance gpl_inst(db_inst,
-                    pbc_->padLeft() * pbc_->siteSizeX(),
-                    pbc_->padRight() * pbc_->siteSizeX(),
-                    pbc_->siteSizeY(),
-                    log_);
+  Instance gpl_inst(db_inst, pbc_.get(), log_);
 
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());
@@ -3202,6 +3204,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   int64_t area_change = static_cast<int64_t>(gCellStor_.back().dx())
                         * static_cast<int64_t>(gCellStor_.back().dy());
   delta_area_ -= area_change;
+  new_gcells_count_--;
 
   gCellStor_.pop_back();
   minRcCellSize_.pop_back();

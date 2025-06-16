@@ -79,15 +79,12 @@ struct PhysicalHierarchyMaps
 
   InstToHardMap inst_to_hard;
   ModuleToMetricsMap module_to_metrics;
-
-  // Only for designs with IO Pads
-  std::map<odb::dbInst*, odb::dbBTerm*> pad_to_bterm;
-  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_pad;
 };
 
 struct PhysicalHierarchy
 {
   std::unique_ptr<Cluster> root;
+  std::vector<odb::dbInst*> io_pads;
   PhysicalHierarchyMaps maps;
 
   BoundaryRegionList available_regions_for_unconstrained_pins;
@@ -142,8 +139,7 @@ class ClusteringEngine
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
-  void updateConnections();
-  void updateDataFlow();
+  void rebuildConnections();
   void updateInstancesAssociation(Cluster* cluster);
   void updateInstancesAssociation(odb::dbModule* module,
                                   int cluster_id,
@@ -171,6 +167,7 @@ class ClusteringEngine
   void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
+  std::vector<odb::dbInst*> getIOPads() const;
   void reportDesignData();
   void createRoot();
   void setBaseThresholds();
@@ -178,8 +175,7 @@ class ClusteringEngine
   Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm) const;
   void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
-  void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
-  void mapIOPinsAndPads();
+  void createIOPadCluster(odb::dbInst* pad);
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
@@ -225,11 +221,16 @@ class ClusteringEngine
   void replaceByStdCellCluster(Cluster* mixed_leaf,
                                std::vector<int>& virtual_conn_clusters);
 
+  void clearConnections();
+  void buildNetListConnections();
+  void buildDataFlowConnections();
+
   // Methods for data flow
   void createDataFlow();
   bool stdCellsHaveLiberty();
   VerticesMaps computeVertices();
   void computeIOVertices(VerticesMaps& vertices_maps);
+  void computePadVertices(VerticesMaps& vertices_maps);
   void computeStdCellVertices(VerticesMaps& vertices_maps);
   void computeMacroPinVertices(VerticesMaps& vertices_maps);
   DataFlowHypergraph computeHypergraph(int num_of_vertices);

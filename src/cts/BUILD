@@ -10,41 +10,44 @@ package(
 )
 
 cc_library(
+    name = "private_hdrs",
+    hdrs = [
+        "src/Clock.h",
+        "src/Clustering.h",
+        "src/CtsObserver.h",
+        "src/CtsOptions.h",
+        "src/HTreeBuilder.h",
+        "src/LevelBalancer.h",
+        "src/SinkClustering.h",
+        "src/TechChar.h",
+        "src/TreeBuilder.h",
+        "src/Util.h",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
     name = "cts",
     srcs = [
         "src/Clock.cpp",
         "src/Clock.h",
         "src/Clustering.cpp",
-        "src/Clustering.h",
-        "src/CtsGraphics.cpp",
-        "src/CtsGraphics.h",
-        "src/CtsObserver.h",
         "src/CtsOptions.cpp",
-        "src/CtsOptions.h",
         "src/HTreeBuilder.cpp",
-        "src/HTreeBuilder.h",
         "src/LevelBalancer.cpp",
-        "src/LevelBalancer.h",
-        "src/MakeTritoncts.cpp",
         "src/SinkClustering.cpp",
-        "src/SinkClustering.h",
         "src/TechChar.cpp",
-        "src/TechChar.h",
         "src/TreeBuilder.cpp",
-        "src/TreeBuilder.h",
         "src/TritonCTS.cpp",
-        "src/Util.h",
     ],
     hdrs = [
-        "include/cts/MakeTritoncts.h",
         "include/cts/TritonCTS.h",
     ],
     includes = ["include"],
     deps = [
+        ":private_hdrs",
         "//:opensta_lib",
-        "//:ord",
         "//src/dbSta",
-        "//src/gui",
         "//src/odb",
         "//src/rsz",
         "//src/stt",
@@ -53,6 +56,34 @@ cc_library(
         "@boost.polygon",
         "@boost.unordered",
         "@com_github_quantamhd_lemon//:lemon",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/CtsGraphics.cpp",
+        "src/CtsGraphics.h",
+        "src/MakeTritoncts.cpp",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/cts/MakeTritoncts.h",
+        "include/cts/TritonCTS.h",
+    ],
+    copts = [
+        "-Isrc/cts/src",
+    ],
+    includes = ["include"],
+    deps = [
+        ":private_hdrs",
+        "//:ord",
+        "//src/dbSta",
+        "//src/gui",
+        "//src/odb",
+        "//src/rsz",
+        "//src/utl",
         "@tk_tcl//:tcl",
     ],
 )

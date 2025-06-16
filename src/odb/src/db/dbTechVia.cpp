@@ -8,6 +8,7 @@
 
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -109,13 +110,11 @@ _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
       _next_entry(v._next_entry)
 {
   if (v._name) {
-    _name = strdup(v._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(v._name);
   }
 
   if (v._pattern) {
-    _pattern = strdup(v._pattern);
-    ZALLOCATED(_pattern);
+    _pattern = safe_strdup(v._pattern);
   }
 }
 
@@ -388,8 +387,7 @@ dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = strdup(name_);
-  ZALLOCATED(via->_name);
+  via->_name = safe_strdup(name_);
   tech->_via_hash.insert(via);
   tech->_via_cnt++;
   return (dbTechVia*) via;
@@ -410,8 +408,7 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = strdup(new_name);
-  ZALLOCATED(via->_name);
+  via->_name = safe_strdup(new_name);
 
   via->_flags = _invia->_flags;
   via->_resistance = _invia->_resistance;
@@ -443,8 +440,7 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = strdup(name_);
-  ZALLOCATED(via->_name);
+  via->_name = safe_strdup(name_);
   tech->_via_cnt++;
   via->_non_default_rule = rule->getOID();
   tech->_via_hash.insert(via);

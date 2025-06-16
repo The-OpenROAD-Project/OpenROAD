@@ -54,29 +54,20 @@ Instance::Instance() = default;
 
 // for movable real instances
 Instance::Instance(odb::dbInst* inst,
-                   int padLeft,
-                   int padRight,
-                   int site_height,
+                   PlacerBaseCommon* pbc,
                    utl::Logger* logger)
     : Instance()
 {
   inst_ = inst;
-  dbBox* bbox = inst->getBBox();
-  inst->getLocation(lx_, ly_);
-  ux_ = lx_ + bbox->getDX();
-  uy_ = ly_ + bbox->getDY();
-
-  if (isPlaceInstance()) {
-    lx_ -= padLeft;
-    ux_ += padRight;
-  }
+  copyDbLocation(pbc);
 
   // Masters more than row_limit rows tall are treated as macros
   constexpr int row_limit = 6;
+  dbBox* bbox = inst->getBBox();
 
   if (inst->getMaster()->getType().isBlock()) {
     is_macro_ = true;
-  } else if (bbox->getDY() > 6 * site_height) {
+  } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
     is_macro_ = true;
     logger->warn(GPL,
                  134,
@@ -103,6 +94,19 @@ Instance::~Instance()
   lx_ = ly_ = 0;
   ux_ = uy_ = 0;
   pins_.clear();
+}
+
+void Instance::copyDbLocation(PlacerBaseCommon* pbc)
+{
+  dbBox* bbox = inst_->getBBox();
+  inst_->getLocation(lx_, ly_);
+  ux_ = lx_ + bbox->getDX();
+  uy_ = ly_ + bbox->getDY();
+
+  if (isPlaceInstance()) {
+    lx_ -= pbc->padLeft() * pbc->siteSizeX();
+    ux_ += pbc->padRight() * pbc->siteSizeX();
+  }
 }
 
 bool Instance::isFixed() const
@@ -798,11 +802,7 @@ void PlacerBaseCommon::init()
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
-    Instance myInst(inst,
-                    pbVars_.padLeft * siteSizeX_,
-                    pbVars_.padRight * siteSizeX_,
-                    siteSizeY_,
-                    log_);
+    Instance myInst(inst, this, log_);
 
     // Fixed instaces need to be snapped outwards to the nearest site
     // boundary.  A partially overlapped site is unusable and this
@@ -1190,6 +1190,9 @@ void PlacerBase::initInstsForUnusableSites()
   // fill fixed instances' bbox
   for (auto& inst : pbCommon_->insts()) {
     if (!inst->isFixed()) {
+      continue;
+    }
+    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
       continue;
     }
     std::pair<int, int> pairX = getMinMaxIdx(
