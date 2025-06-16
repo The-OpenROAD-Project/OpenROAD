@@ -103,11 +103,11 @@ void FlexGR::layerAssign_gpu()
   std::vector<NodeStruct> nodes;  
   std::vector<int> netBatchMaxDepth; // the maximum depth of the net batch
   std::vector<int> netBatchNodePtr;  // the pointer to the first node of the net batch
-  gpuDB_->levelizeNodes(sortedNets, batches, nodes, netBatchMaxDepth, netBatchNodePtr);
+  gpuDB_->levelizeNodes(sortedNets, netBatches, netBatchPtr,
+    nodes, netBatchMaxDepth, netBatchNodePtr);
 
   // Move the GPU side
-  gpuDB_->layerAssign_CUDA(sortedNets, 
-    netBatches, netBatchPtr,
+  gpuDB_->layerAssign_CUDA(sortedNets, netBatches, netBatchPtr,
     nodes, netBatchMaxDepth, netBatchNodePtr);
 
   // Step 4: push the layer assignment results back to the router 

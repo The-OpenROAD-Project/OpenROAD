@@ -315,10 +315,11 @@ void layerAssignNodeCompute__kernel(
 
 // To do: large-net with highest depth should be done in CPU mode
 // instead of GPU mode
-
+// It seems that we do not the batches and netBatchPtr in this function
 void FlexGRGPUDB::layerAssign_CUDA(
   std::vector<frNet*>& sortedNets,
-  std::vector<std::vector<int> >& batches,
+  std::vector<int>& batches,
+  std::vector<int>& netBatchPtr,
   std::vector<NodeStruct>& nodes,
   std::vector<int>& netBatchMaxDepth,
   std::vector<int>& netBatchNodePtr)
@@ -342,7 +343,6 @@ void FlexGRGPUDB::layerAssign_CUDA(
   syncCMapHostToDevice();
 
   cudaCheckError();
-
 
   if (debugMode_) {
     for (auto& node : nodes) {
@@ -402,7 +402,8 @@ void FlexGRGPUDB::layerAssign_CUDA(
         router_cfg_->MARKERCOST,
         LA_PIN_LAYER_COST_FACTOR);
     }
-    
+
+
     cudaDeviceSynchronize();  // Wait for the kernel to finish
     cudaCheckError();
   }

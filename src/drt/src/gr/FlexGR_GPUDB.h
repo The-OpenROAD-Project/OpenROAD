@@ -101,18 +101,21 @@ class FlexGRGPUDB
 
     void generate2DBatch(
       std::vector<frNet*>& sortedNets,
-      std::vector<std::vector<int> >& batches);
+      std::vector<int>& netBatches,
+      std::vector<int>& netBatchPtr);
 
     void levelizeNodes(
       std::vector<frNet*>& sortedNets,
-      std::vector<std::vector<int> >& batches,      
+      std::vector<int>& netBatches,
+      std::vector<int>& netBatchPtr,
       std::vector<NodeStruct>& nodes,
       std::vector<int>& netBatchMaxDepth,
       std::vector<int>& netBatchNodePtr);
 
     void layerAssign_CUDA(
       std::vector<frNet*>& sortedNets,
-      std::vector<std::vector<int> >& batches,
+      std::vector<int>& netBatches,
+      std::vector<int>& netBatchPtr,
       std::vector<NodeStruct>& nodes,
       std::vector<int>& netBatchMaxDepth,
       std::vector<int>& netBatchNodePtr);

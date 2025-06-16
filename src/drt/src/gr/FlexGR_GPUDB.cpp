@@ -110,8 +110,10 @@ void FlexGRGPUDB::frNet2NetTree(
 
 void FlexGRGPUDB::generate2DBatch(
   std::vector<frNet*>& sortedNets,
-  std::vector<std::vector<int> >& batches)
+  std::vector<int>& netBatches,
+  std::vector<int>& netBatchPtr)
 {
+  std::vector<std::vector<int> > batches;
   int numNets = static_cast<int>(sortedNets.size());
   batches.clear();
   batches.reserve(numNets);
@@ -188,55 +190,56 @@ void FlexGRGPUDB::generate2DBatch(
       batchIdx++;
     }
   }
-}
 
+  // transfer the batches to the 1D vector
+  // convert the 2D vectors to 1D vector
+  netBatches.reserve(sortedNets.size());
+  netBatchPtr.reserve(batches.size() + 1);
+  netBatchPtr.push_back(0);
+
+  for (auto& batch : batches) {
+    netBatches.insert(netBatches.end(), batch.begin(), batch.end());
+    netBatchPtr.push_back(netBatches.size());
+  }
+}
 
 
 void FlexGRGPUDB::levelizeNodes(
   std::vector<frNet*>& sortedNets,
-  std::vector<std::vector<int> >& batches_matrix,      
+  std::vector<int>& batches,
+  std::vector<int>& netBatchPtr,
   std::vector<NodeStruct>& nodes,
   std::vector<int>& netBatchMaxDepth,
   std::vector<int>& netBatchNodePtr)
 {
-  // convert the 2D vectors to 1D vector
-  std::vector<int> batches;
-  batches.reserve(sortedNets.size());
-  std::vector<int> netBatchPtr;
-  netBatchPtr.reserve(batches_matrix.size() + 1);
-  netBatchPtr.push_back(0);
-
-  for (auto& batch : batches_matrix) {
-    batches.insert(batches.end(), batch.begin(), batch.end());
-    netBatchPtr.push_back(batches.size());
-  }
+  const int numBatches = netBatchPtr.size() - 1;
+  int numNets = static_cast<int>(sortedNets.size());
   
+  std::vector<int> netDepth(sortedNets.size(), -1);
   netBatchNodePtr.clear();
   netBatchNodePtr.reserve(batches.size() + 1);
   netBatchNodePtr.push_back(0);
-
-  std::vector<int> netDepth(sortedNets.size(), -1);
-  
+ 
   std::vector<int> netNodePtr;
   netNodePtr.reserve(sortedNets.size() + 1);
   netNodePtr.push_back(0);
-  
-  
+   
   int totNumNodes = 0;
-  for (auto& netId : batches) {
-    auto& net = sortedNets[netId];
-    totNumNodes += net->getNodes().size() - net->getRPins().size(); // exclude the rpin nodes          
-    netNodePtr.push_back(totNumNodes);
+  for (int batchId = 0; batchId < numBatches; batchId++) {
+    for (int netIdx = netBatchPtr[batchId]; netIdx < netBatchPtr[batchId + 1]; netIdx++) {
+      int netId = batches[netIdx]; 
+      totNumNodes += sortedNets[netId]->getNumSteinerNodes(); // get the number of Steiner nodes
+      netNodePtr.push_back(totNumNodes);
+    }
+    netBatchNodePtr.push_back(totNumNodes);
   }
-  netBatchNodePtr.push_back(totNumNodes);
 
   nodes.clear();
   nodes.resize(totNumNodes);
 
   // Create NodeStruct in parallel 
-  int numNets = static_cast<int>(sortedNets.size());
-  //int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
-  int numThreads = 1;
+  int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
+  //int numThreads = 1;
   #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
   for (int i = 0; i < numNets; i++) {
     // traverse the net's GCell nodes in a pre-order manner
@@ -248,14 +251,15 @@ void FlexGRGPUDB::levelizeNodes(
     std::queue<frNode*> nodeQ;
     nodeQ.push(net->getRootGCellNode());
 
-    if ((nodeEndIdx - nodeIdx) != net->getNodes().size() - net->getRPins().size()) {
-      std::cout << "total num nodes: " << net->getNodes().size() - net->getRPins().size() << std::endl;
-      std::cout << "nodeIdxStart : " << netNodePtr[i] << " nodeIdxEnd: " << netNodePtr[i + 1] << " "
-                << "delta: " << nodeEndIdx - nodeIdx << std::endl;
-        
-      logger_->error(DRT, 351, "Node index {} exceeds the end index {} for net {}", nodeIdx, nodeEndIdx, net->getName());
+    if (debugMode_ == true) {
+      if ((nodeEndIdx - nodeIdx) != net->getNodes().size() - net->getRPins().size()) {
+        std::cout << "total num nodes: " << net->getNodes().size() - net->getRPins().size() << std::endl;
+        std::cout << "nodeIdxStart : " << netNodePtr[i] << " nodeIdxEnd: " << netNodePtr[i + 1] << " "
+                  << "delta: " << nodeEndIdx - nodeIdx << std::endl;
+          
+        logger_->error(DRT, 351, "Node index {} exceeds the end index {} for net {}", nodeIdx, nodeEndIdx, net->getName());
+      }
     }
-
 
     while (!nodeQ.empty()) {
       auto currNode = nodeQ.front();
@@ -280,25 +284,26 @@ void FlexGRGPUDB::levelizeNodes(
         gcellNode.parentIdx = parentNodeIdx; // set the parent index
         gcellNode.level = parentNode.level + 1; // increment the level from the parent node
         maxDepth = std::max(maxDepth, static_cast<int>(gcellNode.level));
-   
-        if (nodeIdx == 7045) {       
-          std::cout << "nodeIdx " << nodeIdx << " locIdx.x() " << locIdx.x() << " locIdx.y() " << locIdx.y() << " "
-                    << " parentNodeIdx " << parentNodeIdx << " parentNode.x " << parentNode.x << " parentNode.y " << parentNode.y
-                    << std::endl;
-        }
+  
+        
+        if (debugMode_ == true) {
+          if (nodeIdx == 7045) {       
+            std::cout << "nodeIdx " << nodeIdx << " locIdx.x() " << locIdx.x() << " locIdx.y() " << locIdx.y() << " "
+                      << " parentNodeIdx " << parentNodeIdx << " parentNode.x " << parentNode.x << " parentNode.y " << parentNode.y
+                      << std::endl;
+          }
 
-        // check if the parent and child are aligned collinearly
-        if (locIdx.x() != parentNode.x && locIdx.y() != parentNode.y) {
-          std::cout << "locIdx.x " << locIdx.x() << " locIdx.y " << locIdx.y()
-                    << " parentNode.x " << parentNode.x << " parentNode.y " << parentNode.y
-                    << std::endl;
-          Point parentLocIdx = design_->getTopBlock()->getGCellIdx(currNode->getParent()->getLoc());
-          std::cout << "parentLocIdx.x " << parentLocIdx.x() << " parentLocIdx.y " << parentLocIdx.y()
-                    << std::endl;  
-          logger_->error(DRT, 323, "current node and parent node are not aligned collinearly.");
+          // check if the parent and child are aligned collinearly
+          if (locIdx.x() != parentNode.x && locIdx.y() != parentNode.y) {
+            std::cout << "locIdx.x " << locIdx.x() << " locIdx.y " << locIdx.y()
+                      << " parentNode.x " << parentNode.x << " parentNode.y " << parentNode.y
+                      << std::endl;
+            Point parentLocIdx = design_->getTopBlock()->getGCellIdx(currNode->getParent()->getLoc());
+            std::cout << "parentLocIdx.x " << parentLocIdx.x() << " parentLocIdx.y " << parentLocIdx.y()
+                      << std::endl;  
+            logger_->error(DRT, 323, "current node and parent node are not aligned collinearly.");
+          }
         }
-    
-      
       } else {
         gcellNode.level = 0; // root node has depth 0
         maxDepth = 0; // root node has max depth 0
@@ -316,7 +321,6 @@ void FlexGRGPUDB::levelizeNodes(
   }
 
   // Set the netBatchMaxDepth
-  const int numBatches = netBatchPtr.size() - 1;
   netBatchMaxDepth.clear();
   netBatchMaxDepth.reserve(numBatches);
   for (int batchId = 0; batchId < numBatches; batchId++) {

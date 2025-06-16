@@ -249,7 +249,7 @@ class frNet : public frBlockObject
 
   // Modified by Zhiang Wang
   void setNumSteinerNodes(int num) { numSteinerNodes = num; }
-  int getNumSteinerNodes() { return numSteinerNodes; }
+  int getNumSteinerNodes() const { return this->getNodes().size() - this->getRPins().size(); }
 
   bool isGRValid() const { return isGRValid_; }
   void setGRValid(bool valid) { isGRValid_ = valid; }
