@@ -2,9 +2,9 @@
 
 The main use-case for Bazel is to make modifications to OpenROAD and run local tests before creating a PR.
 
-After [installing Baselisk](https://bazel.build/install/bazelisk), the command line below will discover all tests starting in the current working directory and build all dependencies, including openroad:
+After [installing Baselisk](https://bazel.build/install/bazelisk), the command line below will discover all tests starting in the current working directory and build all dependencies, including openroad and opensta:
 
-    bazelisk test -c opt ...
+    bazelisk test ...
 
 A word on expectations: Bazel is a valuable skill for the future. Is a example of a new generation of build tools(Buck2 is another example) that scales very well, is hermetic and has many features, such as artifacts. Unsurprisingly, this does mean that there is a lot to learn. The OpenROAD documentation makes no attempt at teaching Bazel. Bazel is a very wide topic and it can not be learned in a day or two with intense reading of a well defined document with a start and an end. It is probably best to start as a user running canned commands, such as above, but switch from mechanical repetition of canned command to being curious and following breadcrumbs of interest: read, search, engage with the community and use AI to learn.
 
