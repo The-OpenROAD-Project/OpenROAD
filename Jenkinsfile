@@ -136,32 +136,6 @@ def getParallelTests(String image) {
             }
         },
 
-        'Build with Bazel': {
-            node {
-                withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
-                    stage('Setup Bazel Build') {
-                        echo "Build with Bazel";
-                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                        checkout scm;
-                    }
-                    stage('Bazel Build') {
-                        timeout(time: 120, unit: 'MINUTES') {
-                            sh label: 'Bazel Build', script: '''
-                                bazel test \
-                                -c opt \
-                                --keep_going \
-                                --show_timestamps \
-                                --test_output=errors \
-                                --curses=no \
-                                --force_pic \
-                                ...
-                                ''';
-                        }
-                    }
-                }
-            }
-        },
-
         'Check message IDs': {
             dir('src') {
                 sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';
@@ -249,6 +223,38 @@ def getParallelTests(String image) {
     return ret;
 }
 
+get Ubuntu24ParallelTests(String image) {
+    return {
+            node {
+                withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
+                    stage('Setup Bazel Build') {
+                        echo "Build with Bazel";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                        sh label: 'Install Bazelisk', script: '''
+                            curl -fsSL https://bazel.build/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazel
+                            chmod +x /usr/local/bin/bazel
+                        ''';
+                    }
+                    stage('Bazel Build') {
+                        timeout(time: 120, unit: 'MINUTES') {
+                            sh label: 'Bazel Build', script: '''
+                                bazel test \
+                                -c opt \
+                                --keep_going \
+                                --show_timestamps \
+                                --test_output=errors \
+                                --curses=no \
+                                --force_pic \
+                                ...
+                                ''';
+                        }
+                    }
+                }
+            }
+    };
+}
+
 node {
 
     def isDefaultBranch = (env.BRANCH_NAME == 'master') 
@@ -268,7 +274,7 @@ node {
         checkout scm;
     }
     def DOCKER_IMAGE;
-    stage('Build, Test and Push Docker Image') {
+    stage('Buildxxx, Test and Push Docker Image') {
         Map build_docker_images  = [failFast: false];
         test_os = [
             [name: 'Ubuntu 20.04', base: 'ubuntu:20.04', image: 'ubuntu20.04'],
@@ -287,6 +293,7 @@ node {
                 }
             }
         }
+        build_docker_images['Bazel tests'] = getUbuntu24ParallelTests("ubuntu24.04");
         parallel(build_docker_images);
         DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
         echo "Docker image is ${DOCKER_IMAGE}";
