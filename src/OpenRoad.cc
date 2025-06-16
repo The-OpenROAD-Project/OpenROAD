@@ -3,9 +3,6 @@
 
 #include "ord/OpenRoad.hh"
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -453,20 +450,9 @@ void OpenRoad::writeCdl(const char* outFilename,
 
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
-  std::ifstream stream;
-  stream.open(filename, std::ios::binary);
-
   try {
-    if (boost::ends_with(std::string(filename), ".gz")) {
-      boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
-      inbuf.push(boost::iostreams::gzip_decompressor());
-      inbuf.push(stream);
-      std::istream zstd_uncompressed(&inbuf);
-
-      readDb(zstd_uncompressed);
-    } else {
-      readDb(stream);
-    }
+    utl::InStreamHandler handler(filename, true);
+    readDb(handler.getStream());
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
