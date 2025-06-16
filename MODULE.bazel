@@ -69,6 +69,7 @@ bazel_dep(name = "boost.geometry", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.graph", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.heap", version = BOOST_VERSION)
 bazel_dep(name = "boost.icl", version = BOOST_VERSION)
+bazel_dep(name = "boost.integer", version = BOOST_VERSION)
 bazel_dep(name = "boost.io", version = BOOST_VERSION)
 bazel_dep(name = "boost.iostreams", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.iterator", version = BOOST_VERSION)
@@ -148,7 +149,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "e63b59bce64209aa6f93384ac7089718d44a4062",
+    commit = "ca614657a795785bd4b472e406fc1d583e0620a2",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -157,10 +158,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3238-g4c4bee15",
+    image = "docker.io/openroad/orfs:v3.0-3240-g821a2bfa",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "b43254de359538687b48735ad604923c15ae104e6cc53a729dc99428c8a7b073",
+    sha256 = "5fc6bcacc138d557e6b1fd8500ad8565b22f558728b3149800b6cc5eb632b91a",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")

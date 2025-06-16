@@ -1032,7 +1032,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "SFBJN6DEIqZq6ShtnaiklYmaIQHQVZHnvFgtBwjvTFM=",
-        "usagesDigest": "UlCyuNtlLtHBPeGoQ1o1/dZvwdanvuhdqHCmDaR0zkQ=",
+        "usagesDigest": "JV4vamIeXGnhd1V9C1cfdUyyhKMrKdAESspJgEB3f24=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1050,8 +1050,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-3238-g4c4bee15",
-              "sha256": "b43254de359538687b48735ad604923c15ae104e6cc53a729dc99428c8a7b073",
+              "image": "docker.io/openroad/orfs:v3.0-3240-g821a2bfa",
+              "sha256": "5fc6bcacc138d557e6b1fd8500ad8565b22f558728b3149800b6cc5eb632b91a",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -1691,7 +1691,7 @@
         "usagesDigest": "Q+Y7fb2RtpRDi0hjPZshaInmnujXDBp59RXQ96PBZ+8=",
         "recordedFileInputs": {
           "@@//bazel/requirements_lock_3_13.txt": "e153f3d398c8db7efc25a203ab8d82a3cb513f4a492a58c72425c3e62c21044b",
-          "@@bazel-orfs+//requirements_lock_3_13.txt": "fcabafb7192fe8f92d82e7ec8ddd8e3fd6787f8acea3ec694f105ed63821416a",
+          "@@bazel-orfs+//requirements_lock_3_13.txt": "6d409e2c9f81ceee67c23e6f26b6742b4ee6c32826c7d0591c5c57df72a6a16b",
           "@@grpc+//requirements.bazel.txt": "95a27c3f9a46b8114d464c70ba93cda18cfe8c02004db81028f9306b2691701e",
           "@@or-tools+//bazel/notebook_requirements.txt": "ca78fad693f1b35eed8bb7c54e5ddf7ad255c4b9d94ce18efa55859759a8fb70",
           "@@or-tools+//bazel/ortools_requirements.txt": "37e22395e78ef3572ab57b7717fd8f54851919bb73ca404f367536dc15a8e3eb",
@@ -1779,6 +1779,15 @@
               "requirement": "packaging==24.2 --hash=sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759 --hash=sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f"
             }
           },
+          "bazel-orfs-pip_313_pandas": {
+            "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
+            "attributes": {
+              "dep_template": "@bazel-orfs-pip//{name}:{target}",
+              "python_interpreter_target": "@@rules_python++python+python_3_13_host//:python",
+              "repo": "bazel-orfs-pip_313",
+              "requirement": "pandas==2.3.0 --hash=sha256:034abd6f3db8b9880aaee98f4f5d4dbec7c4829938463ec046517220b2f8574e --hash=sha256:094e271a15b579650ebf4c5155c05dcd2a14fd4fdd72cf4854b2f7ad31ea30be --hash=sha256:14a0cc77b0f089d2d2ffe3007db58f170dae9b9f54e569b299db871a3ab5bf46 --hash=sha256:1a881bc1309f3fce34696d07b00f13335c41f5f5a8770a33b09ebe23261cfc67 --hash=sha256:1d2b33e68d0ce64e26a4acc2e72d747292084f4e8db4c847c6f5f6cbe56ed6d8 --hash=sha256:213cd63c43263dbb522c1f8a7c9d072e25900f6975596f883f4bebd77295d4f3 --hash=sha256:23c2b2dc5213810208ca0b80b8666670eb4660bbfd9d45f58592cc4ddcfd62e1 --hash=sha256:2c7e2fc25f89a49a11599ec1e76821322439d90820108309bf42130d2f36c983 --hash=sha256:2eb4728a18dcd2908c7fccf74a982e241b467d178724545a48d0caf534b38ebf --hash=sha256:34600ab34ebf1131a7613a260a61dbe8b62c188ec0ea4c296da7c9a06b004133 --hash=sha256:39ff73ec07be5e90330cc6ff5705c651ace83374189dcdcb46e6ff54b4a72cd6 --hash=sha256:404d681c698e3c8a40a61d0cd9412cc7364ab9a9cc6e144ae2992e11a2e77a20 --hash=sha256:40cecc4ea5abd2921682b57532baea5588cc5f80f0231c624056b146887274d2 --hash=sha256:430a63bae10b5086995db1b02694996336e5a8ac9a96b4200572b413dfdfccb9 --hash=sha256:4930255e28ff5545e2ca404637bcc56f031893142773b3468dc021c6c32a1390 --hash=sha256:6021910b086b3ca756755e86ddc64e0ddafd5e58e076c72cb1585162e5ad259b --hash=sha256:625466edd01d43b75b1883a64d859168e4556261a5035b32f9d743b67ef44634 --hash=sha256:75651c14fde635e680496148a8526b328e09fe0572d9ae9b638648c46a544ba3 --hash=sha256:84141f722d45d0c2a89544dd29d35b3abfc13d2250ed7e68394eda7564bd6324 --hash=sha256:8adff9f138fc614347ff33812046787f7d43b3cef7c0f0171b3340cae333f6ca --hash=sha256:951805d146922aed8357e4cc5671b8b0b9be1027f0619cea132a9f3f65f2f09c --hash=sha256:9efc0acbbffb5236fbdf0409c04edce96bec4bdaa649d49985427bd1ec73e085 --hash=sha256:9ff730713d4c4f2f1c860e36c005c7cefc1c7c80c21c0688fd605aa43c9fcf09 --hash=sha256:a6872d695c896f00df46b71648eea332279ef4077a409e2fe94220208b6bb675 --hash=sha256:b198687ca9c8529662213538a9bb1e60fa0bf0f6af89292eb68fea28743fcd5a --hash=sha256:b9d8c3187be7479ea5c3d30c32a5d73d62a621166675063b2edd21bc47614027 --hash=sha256:ba24af48643b12ffe49b27065d3babd52702d95ab70f50e1b34f71ca703e2c0d --hash=sha256:bb32dc743b52467d488e7a7c8039b821da2826a9ba4f85b89ea95274f863280f --hash=sha256:bb3be958022198531eb7ec2008cfc78c5b1eed51af8600c6c5d9160d89d8d249 --hash=sha256:bf5be867a0541a9fb47a4be0c5790a4bccd5b77b92f0a59eeec9375fafc2aa14 --hash=sha256:c06f6f144ad0a1bf84699aeea7eff6068ca5c63ceb404798198af7eb86082e33 --hash=sha256:c6da97aeb6a6d233fb6b17986234cc723b396b50a3c6804776351994f2a658fd --hash=sha256:e0f51973ba93a9f97185049326d75b942b9aeb472bec616a129806facb129ebb --hash=sha256:e1991bbb96f4050b09b5f811253c4f3cf05ee89a589379aa36cd623f21a31d6f --hash=sha256:e5f08eb9a445d07720776df6e641975665c9ea12c9d8a331e0f6890f2dcd76ef --hash=sha256:e78ad363ddb873a631e92a3c063ade1ecfb34cae71e9a2be6ad100f875ac1042 --hash=sha256:ed16339bc354a73e0a609df36d256672c7d296f3f767ac07257801aa064ff73c --hash=sha256:f4dd97c19bd06bc557ad787a15b6489d2614ddaab5d104a0310eb314c724b2d2 --hash=sha256:f925f1ef673b4bd0271b1809b72b3270384f2b7d9d14a189b12b7fc02574d575 --hash=sha256:f95a2aef32614ed86216d3c450ab12a4e82084e8102e355707a1d96e33d51c34 --hash=sha256:fa07e138b3f6c04addfeaf56cc7fdb96c3b68a3fe5e5401251f231fce40a0d7a --hash=sha256:fa35c266c8cd1a67d75971a1912b185b492d257092bdd2709bbdebe574ed228d"
+            }
+          },
           "bazel-orfs-pip_313_pillow": {
             "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
             "attributes": {
@@ -1806,6 +1815,15 @@
               "requirement": "python-dateutil==2.9.0.post0 --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
             }
           },
+          "bazel-orfs-pip_313_pytz": {
+            "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
+            "attributes": {
+              "dep_template": "@bazel-orfs-pip//{name}:{target}",
+              "python_interpreter_target": "@@rules_python++python+python_3_13_host//:python",
+              "repo": "bazel-orfs-pip_313",
+              "requirement": "pytz==2025.2 --hash=sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"
+            }
+          },
           "bazel-orfs-pip_313_pyyaml": {
             "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
             "attributes": {
@@ -1822,6 +1840,15 @@
               "python_interpreter_target": "@@rules_python++python+python_3_13_host//:python",
               "repo": "bazel-orfs-pip_313",
               "requirement": "six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 --hash=sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"
+            }
+          },
+          "bazel-orfs-pip_313_tzdata": {
+            "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
+            "attributes": {
+              "dep_template": "@bazel-orfs-pip//{name}:{target}",
+              "python_interpreter_target": "@@rules_python++python+python_3_13_host//:python",
+              "repo": "bazel-orfs-pip_313",
+              "requirement": "tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8 --hash=sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9"
             }
           },
           "grpc_python_dependencies_310_cachetools": {
@@ -11747,11 +11774,14 @@
                 "matplotlib": "{\"bazel-orfs-pip_313_matplotlib\":[{\"version\":\"3.13\"}]}",
                 "numpy": "{\"bazel-orfs-pip_313_numpy\":[{\"version\":\"3.13\"}]}",
                 "packaging": "{\"bazel-orfs-pip_313_packaging\":[{\"version\":\"3.13\"}]}",
+                "pandas": "{\"bazel-orfs-pip_313_pandas\":[{\"version\":\"3.13\"}]}",
                 "pillow": "{\"bazel-orfs-pip_313_pillow\":[{\"version\":\"3.13\"}]}",
                 "pyparsing": "{\"bazel-orfs-pip_313_pyparsing\":[{\"version\":\"3.13\"}]}",
                 "python_dateutil": "{\"bazel-orfs-pip_313_python_dateutil\":[{\"version\":\"3.13\"}]}",
+                "pytz": "{\"bazel-orfs-pip_313_pytz\":[{\"version\":\"3.13\"}]}",
                 "pyyaml": "{\"bazel-orfs-pip_313_pyyaml\":[{\"version\":\"3.13\"}]}",
-                "six": "{\"bazel-orfs-pip_313_six\":[{\"version\":\"3.13\"}]}"
+                "six": "{\"bazel-orfs-pip_313_six\":[{\"version\":\"3.13\"}]}",
+                "tzdata": "{\"bazel-orfs-pip_313_tzdata\":[{\"version\":\"3.13\"}]}"
               },
               "packages": [
                 "contourpy",
@@ -11761,11 +11791,14 @@
                 "matplotlib",
                 "numpy",
                 "packaging",
+                "pandas",
                 "pillow",
                 "pyparsing",
                 "python_dateutil",
+                "pytz",
                 "pyyaml",
-                "six"
+                "six",
+                "tzdata"
               ],
               "groups": {}
             }

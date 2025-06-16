@@ -80,6 +80,9 @@ void OdbCallBack::inDbNetDestroy(dbNet* net)
   if (sta_net) {
     resizer_->eraseParasitics(sta_net);
   }
+  if (resizer_->net_slack_map_.count(sta_net)) {
+    resizer_->net_slack_map_.erase(sta_net);
+  }
 }
 
 void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)

@@ -6,8 +6,6 @@ add_library(defout
     defout_impl.cpp
 )
 
-find_package(Boost REQUIRED COMPONENTS iostreams)
-
 target_include_directories(defout
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
@@ -16,7 +14,6 @@ target_include_directories(defout
 target_link_libraries(defout
     db
     utl_lib
-    ${Boost_LIBRARIES}
 )
 
 set_target_properties(defout
