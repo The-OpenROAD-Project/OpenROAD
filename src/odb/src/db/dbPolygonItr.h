@@ -3,22 +3,21 @@
 
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 
 class _dbPolygon;
-template <class T>
-class dbTable;
 
 class dbPolygonItr : public dbIterator
 {
  protected:
-  dbTable<_dbPolygon>* pbox_tbl_;
+  dbTable<_dbPolygon, 8>* pbox_tbl_;
 
  public:
-  dbPolygonItr(dbTable<_dbPolygon>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
+  dbPolygonItr(dbTable<_dbPolygon, 8>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;
