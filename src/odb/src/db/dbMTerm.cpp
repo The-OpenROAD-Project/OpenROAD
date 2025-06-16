@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dbDatabase.h"
+#include "dbHashTable.hpp"
 #include "dbLib.h"
 #include "dbMPinItr.h"
 #include "dbMaster.h"
