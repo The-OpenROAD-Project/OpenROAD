@@ -309,7 +309,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _extControl = new dbExtControl();
 
-  _dft_tbl = new dbTable<_dbDft>(
+  _dft_tbl = new dbTable<_dbDft, 4096>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbDftObj);
   _dbDft* dft_ptr = _dft_tbl->create();
   dft_ptr->initialize();

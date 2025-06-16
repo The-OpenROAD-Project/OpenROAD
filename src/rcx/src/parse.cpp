@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 
 #include "odb/odb.h"
 
@@ -278,9 +279,7 @@ int Ath__parser::mkWords(const char* word, const char* sep)
 
 bool Ath__parser::mkDir(char* word)
 {
-  char command[1024];
-  sprintf(command, "mkdir -p %s", word);
-  return system(command) == 0;
+  return std::filesystem::create_directories(word);
 }
 
 int Ath__parser::mkDirTree(const char* word, const char* sep)

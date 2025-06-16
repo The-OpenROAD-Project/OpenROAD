@@ -41,6 +41,8 @@ build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extensio
 build --copt "-Wno-unused-private-field"  --host_copt "-Wno-unused-private-field"
 build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
 build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
+build --copt "-Wno-deprecated-copy"  --host_copt "-Wno-deprecated-copy"
+build --copt "-Wno-deprecated-copy-with-user-provided-copy"  --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.

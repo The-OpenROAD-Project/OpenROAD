@@ -32,8 +32,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <ctime>
 #include <filesystem>
 #include <memory>
@@ -144,20 +142,20 @@ TEST(Utl, read_all_of_file_exactly_1025B)
   }
 }
 
-// Add new tests for StreamHandler
+// Add new tests for OutStreamHandler
 TEST(Utl, stream_handler_write_and_read)
 {
   const char* filename = "test_write_and_read.txt";
   const std::string kTestData = "\x1\x2\x3\x4";
 
   {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     std::ostream& os = sh.getStream();
     os.write(kTestData.c_str(), kTestData.size());
   }
 
-  std::ifstream is(filename, std::ios_base::binary);
-  std::string contents((std::istreambuf_iterator<char>(is)),
+  InStreamHandler ish(filename);
+  std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
                        std::istreambuf_iterator<char>());
   EXPECT_EQ(contents, kTestData);
   std::filesystem::remove(filename);
@@ -169,18 +167,13 @@ TEST(Utl, stream_handler_write_and_read_gzip)
   const std::string kTestData = "\x1\x2\x3\x4";
 
   {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     std::ostream& os = sh.getStream();
     os.write(kTestData.c_str(), kTestData.size());
   }
 
-  std::ifstream is(filename, std::ios_base::binary);
-  boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
-  inbuf.push(boost::iostreams::gzip_decompressor());
-  inbuf.push(is);
-  std::istream zstd_uncompressed(&inbuf);
-
-  std::string contents((std::istreambuf_iterator<char>(zstd_uncompressed)),
+  InStreamHandler ish(filename);
+  std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
                        std::istreambuf_iterator<char>());
   EXPECT_EQ(contents, kTestData);
   std::filesystem::remove(filename);
@@ -193,7 +186,7 @@ TEST(Utl, stream_handler_temp_file_handling)
 
   // Check that the temp file is created
   {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     EXPECT_TRUE(std::filesystem::exists(tmp_filename));
   }
 
@@ -209,7 +202,7 @@ TEST(Utl, stream_handler_exception_handling)
 
   // Ensure the temporary file is handled correctly if an exception occurs
   try {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     throw std::runtime_error("Simulated exception");
   } catch (...) {
     std::string tmp_filename = std::string(filename) + ".1";
