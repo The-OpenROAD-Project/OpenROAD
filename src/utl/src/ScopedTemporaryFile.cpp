@@ -69,7 +69,7 @@ OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
                                               + "' for writing"));
   }
 
-  if (boost::ends_with(std::string(filename), ".gz")) {
+  if (boost::ends_with(filename_, ".gz")) {
     buf_ = std::make_unique<boost::iostreams::filtering_ostreambuf>();
 
     buf_->push(boost::iostreams::gzip_compressor());
@@ -101,6 +101,53 @@ std::ostream& OutStreamHandler::getStream()
     return *stream_;
   }
   return os_;
+}
+
+InStreamHandler::InStreamHandler(const char* filename, bool binary)
+    : filename_(filename)
+{
+  is_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+  std::ios_base::openmode mode = std::ios_base::in;
+  if (binary) {
+    mode |= std::ios::binary;
+  }
+  try {
+    is_.open(filename_, mode);
+  } catch (std::ios_base::failure& e) {
+    std::throw_with_nested(
+        std::runtime_error("Failed to open '" + filename_ + "' for reading"));
+  }
+
+  if (boost::ends_with(filename_, ".gz")) {
+    buf_ = std::make_unique<boost::iostreams::filtering_istreambuf>();
+
+    buf_->push(boost::iostreams::gzip_decompressor());
+    buf_->push(is_);
+
+    stream_ = std::make_unique<std::istream>(buf_.get());
+  }
+}
+
+InStreamHandler::~InStreamHandler()
+{
+  if (stream_) {
+    boost::iostreams::close(*buf_);
+    buf_ = nullptr;
+    stream_ = nullptr;
+  }
+
+  if (is_.is_open()) {
+    // Any pending output sequence is written to the file.
+    is_.close();
+  }
+}
+
+std::istream& InStreamHandler::getStream()
+{
+  if (stream_) {
+    return *stream_;
+  }
+  return is_;
 }
 
 FileHandler::FileHandler(const char* filename, bool binary)

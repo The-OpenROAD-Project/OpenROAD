@@ -57,6 +57,22 @@ class OutStreamHandler
   std::unique_ptr<std::ostream> stream_;
 };
 
+class InStreamHandler
+{
+ public:
+  // Set binary to true to open in binary mode
+  InStreamHandler(const char* filename, bool binary = false);
+  ~InStreamHandler();
+  std::istream& getStream();
+
+ private:
+  std::string filename_;
+  std::ifstream is_;
+
+  std::unique_ptr<boost::iostreams::filtering_istreambuf> buf_;
+  std::unique_ptr<std::istream> stream_;
+};
+
 class FileHandler
 {
  public:

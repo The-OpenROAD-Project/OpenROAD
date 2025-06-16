@@ -32,8 +32,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <ctime>
 #include <filesystem>
 #include <memory>
@@ -156,8 +154,8 @@ TEST(Utl, stream_handler_write_and_read)
     os.write(kTestData.c_str(), kTestData.size());
   }
 
-  std::ifstream is(filename, std::ios_base::binary);
-  std::string contents((std::istreambuf_iterator<char>(is)),
+  InStreamHandler ish(filename);
+  std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
                        std::istreambuf_iterator<char>());
   EXPECT_EQ(contents, kTestData);
   std::filesystem::remove(filename);
@@ -174,13 +172,8 @@ TEST(Utl, stream_handler_write_and_read_gzip)
     os.write(kTestData.c_str(), kTestData.size());
   }
 
-  std::ifstream is(filename, std::ios_base::binary);
-  boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
-  inbuf.push(boost::iostreams::gzip_decompressor());
-  inbuf.push(is);
-  std::istream zstd_uncompressed(&inbuf);
-
-  std::string contents((std::istreambuf_iterator<char>(zstd_uncompressed)),
+  InStreamHandler ish(filename);
+  std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
                        std::istreambuf_iterator<char>());
   EXPECT_EQ(contents, kTestData);
   std::filesystem::remove(filename);
