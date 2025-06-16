@@ -1176,7 +1176,16 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
             if (db_mod_net) {
               preferred_connection_name = db_mod_net->getName();
             } else if (db_mod_load_net) {
+              // if we expose the load hierarchical net make sure
+              // there is no name clash when using that name
+              // with any flat nets. The flat net names
+              // are globally scoped so it is possible to inadvertanly
+              // cause a name clash in a parent hierarchical level.
               preferred_connection_name = db_mod_load_net->getName();
+              if (db_network_->block()->findNet(
+                      preferred_connection_name.c_str())) {
+                preferred_connection_name = resizer_->makeUniqueNetName();
+              }
             } else {
               preferred_connection_name = resizer_->makeUniqueNetName();
             }
