@@ -10,7 +10,6 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 in1                                      10     35    -25 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 530um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        36

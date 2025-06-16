@@ -3,7 +3,7 @@
 
 include("openroad")
 
-find_package(Boost 1.78 REQUIRED)
+find_package(Boost 1.78 REQUIRED COMPONENTS iostreams)
 
 swig_lib(NAME      utl
          NAMESPACE utl
@@ -61,6 +61,7 @@ target_link_libraries(utl_lib
   PUBLIC
     spdlog::spdlog
     ${TCL_LIBRARY}
+    ${Boost_LIBRARIES}
 )
 
 target_sources(utl

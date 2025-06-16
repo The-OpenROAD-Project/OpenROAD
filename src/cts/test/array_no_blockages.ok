@@ -111,20 +111,20 @@
 [INFO CTS-0207]  Leaf load cells 4
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 38 long wires.
-[INFO RSZ-0048] Inserted 98 buffers in 38 nets.
+[INFO RSZ-0048] Inserted 112 buffers in 38 nets.
 Placement Analysis
 ---------------------------------
-total displacement       4272.4 u
+total displacement       4367.4 u
 average displacement        1.4 u
-max displacement          141.1 u
-original HPWL          190059.3 u
-legalized HPWL         191027.1 u
+max displacement          146.3 u
+original HPWL          190067.1 u
+legalized HPWL         191157.7 u
 delta HPWL                    1 %
 
 Clock clk
-   1.06 source latency inst_12_11/clk ^
-  -1.20 target latency inst_13_11/clk ^
+   1.05 source latency inst_5_4/clk ^
+  -1.17 target latency inst_6_4/clk ^
    0.00 CRPR
 --------------
-  -0.14 setup skew
+  -0.12 setup skew
 
