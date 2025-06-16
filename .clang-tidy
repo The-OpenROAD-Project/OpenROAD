@@ -65,7 +65,7 @@ CheckOptions:
 
 # All modules but sta
 # Exclude build as there is too much noise from swig generated code
-HeaderFilterRegex: "(?!build/.*)/(ant|cts|dbSta|dft|dpl|drt|dst|fin|gpl|grt|gui|ifp|mpl|mpl2|odb|ord|pad|par|pdn|ppl|psm|rcx|rmp|rsz|stt|tap|upf|utl)/.*"
+HeaderFilterRegex: "(?!build/.*)/(ant|cts|dbSta|dft|dpl|drt|dst|exa|fin|gpl|grt|gui|ifp|mpl|odb|ord|pad|par|pdn|ppl|psm|rcx|rmp|rsz|stt|tap|upf|utl)/.*"
 
 # Not currently handling identifier naming
 # WarningsAsErrors: "*"
