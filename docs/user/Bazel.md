@@ -6,7 +6,28 @@ After [installing Baselisk](https://bazel.build/install/bazelisk), the command l
 
     bazelisk test ...
 
-A word on expectations: Bazel is a valuable skill for the future. Is a example of a new generation of build tools(Buck2 is another example) that scales very well, is hermetic and has many features, such as artifacts. Unsurprisingly, this does mean that there is a lot to learn. The OpenROAD documentation makes no attempt at teaching Bazel. Bazel is a very wide topic and it can not be learned in a day or two with intense reading of a well defined document with a start and an end. It is probably best to start as a user running canned commands, such as above, but switch from mechanical repetition of canned command to being curious and following breadcrumbs of interest: read, search, engage with the community and use AI to learn.
+A word on expectations: Bazel is a valuable skill for the future. It is an example of a new generation of build tools(Buck2 is another example) that scales very well, are hermetic and have many features, such as artifacts. Unsurprisingly, this does mean that there is a lot to learn. The OpenROAD documentation makes no attempt at teaching Bazel. Bazel is a very wide topic and it can not be learned in a day or two with intense reading of a well defined document with a start and an end. It is probably best to start as a user running canned commands, such as above, but switch from mechanical repetition of canned command to being curious and following breadcrumbs of interest: read, search, engage with the community and use AI to learn.
+
+## Some OpenROAD and OpenSTA Bazel Specifics
+
+Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) configurations, a concept that becomes important when cross-compilation or tool usage is involved.
+
+In the OpenROAD Bazel build:
+
+- `bazelisk build ...` builds all targets in the **target configuration** (`cfg=target`), assuming you're building for deployment or installation.
+- `bazelisk test ...`, on the other hand, uses OpenROAD and OpenSTA **as host tools**, meaning they are built and run in the **execution configuration** (`cfg=exec`), often to run tests or launch `bazel-orfs` builds.
+
+### ⚠️ Avoiding Redundant Builds
+
+By default, `bazel test` would:
+1. First build test dependencies in the **target** configuration.
+2. Then build tools like OpenROAD/OpenSTA again in the **host** configuration to actually run the tests.
+
+This causes unnecessary duplication.
+
+To avoid this, `.bazelrc` includes the following to build only the tests:
+
+    test --build_tests_only
 
 ## Using the OpenROAD project Bazel artifact server to download pre-built results
 
