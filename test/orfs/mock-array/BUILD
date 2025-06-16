@@ -359,8 +359,6 @@ orfs_run(
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
     },
     data = [
-               # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
-               ":opensta_runfiles",
                ":vcd",
            ] + ["{macro}_{stage}".format(
                macro = macro,
@@ -383,15 +381,4 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
-)
-
-# FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
-genrule(
-    name = "opensta_runfiles",
-    srcs = [],
-    outs = ["dummy"],
-    cmd = """
-    $(location //:opensta) >$@
-    """,
-    tools = ["//:opensta"],
 )
