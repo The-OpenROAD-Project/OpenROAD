@@ -52,7 +52,6 @@ struct GraphNode
   std::vector<int> childrenIds;
   float delay = 0.0;
   int nBuffInsert = 0;
-  float would_insert_here = 0;
   odb::dbITerm* inputTerm = nullptr;
 };
 
@@ -87,12 +86,12 @@ class LatenciesBalancer
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                                      odb::dbNet* topNet,
                                      odb::dbITerm* iterm);
-  void computeAveSinkArrivals(TreeBuilder* builder);
+  float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                         odb::dbITerm* iterm,
                                         float& sumArrivals,
                                         unsigned& numSinks);
-  void computeTopBufferDelay(TreeBuilder* builder);
+
   void computeLeafsNumBufferToInsert(int nodeId);
   odb::dbITerm* insertDelayBuffers(int numBuffers, int srcX, int srcY, std::vector<odb::dbITerm*> sinksInput);
   odb::dbInst* createDelayBuffer(odb::dbNet* driverNet, const std::string& clockName, int locX, int locY);
