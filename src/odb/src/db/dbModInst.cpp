@@ -592,7 +592,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   debugRDPrint1("New mod inst has {} mod iterms",
                 new_mod_inst->getModITerms().size());
 
-  dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
+  _dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
     for (dbInst* inst : new_module_copy->getInsts()) {
       logger->report("new_module_copy {} instance {} has the following iterms:",
@@ -700,7 +700,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     dbNet::destroy(net);
   }
 
-  dbModule::copyToChildBlock(old_module);
+  _dbModule::copyToChildBlock(old_module);
   debugRDPrint1("Copied to child block and deleted old module {}",
                 old_module->getName());
   dbModule::destroy(old_module);
