@@ -144,14 +144,14 @@ TEST(Utl, read_all_of_file_exactly_1025B)
   }
 }
 
-// Add new tests for StreamHandler
+// Add new tests for OutStreamHandler
 TEST(Utl, stream_handler_write_and_read)
 {
   const char* filename = "test_write_and_read.txt";
   const std::string kTestData = "\x1\x2\x3\x4";
 
   {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     std::ostream& os = sh.getStream();
     os.write(kTestData.c_str(), kTestData.size());
   }
@@ -169,7 +169,7 @@ TEST(Utl, stream_handler_write_and_read_gzip)
   const std::string kTestData = "\x1\x2\x3\x4";
 
   {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     std::ostream& os = sh.getStream();
     os.write(kTestData.c_str(), kTestData.size());
   }
@@ -193,7 +193,7 @@ TEST(Utl, stream_handler_temp_file_handling)
 
   // Check that the temp file is created
   {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     EXPECT_TRUE(std::filesystem::exists(tmp_filename));
   }
 
@@ -209,7 +209,7 @@ TEST(Utl, stream_handler_exception_handling)
 
   // Ensure the temporary file is handled correctly if an exception occurs
   try {
-    StreamHandler sh(filename);
+    OutStreamHandler sh(filename);
     throw std::runtime_error("Simulated exception");
   } catch (...) {
     std::string tmp_filename = std::string(filename) + ".1";

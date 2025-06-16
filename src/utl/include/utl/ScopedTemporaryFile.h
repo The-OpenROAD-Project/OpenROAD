@@ -40,12 +40,12 @@ class ScopedTemporaryFile
   FILE* file_;
 };
 
-class StreamHandler
+class OutStreamHandler
 {
  public:
   // Set binary to true to open in binary mode
-  StreamHandler(const char* filename, bool binary = false);
-  ~StreamHandler();
+  OutStreamHandler(const char* filename, bool binary = false);
+  ~OutStreamHandler();
   std::ostream& getStream();
 
  private:

@@ -52,7 +52,7 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
-StreamHandler::StreamHandler(const char* filename, bool binary)
+OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
     : filename_(filename)
 {
   tmp_filename_ = generate_unused_filename(filename_);
@@ -79,7 +79,7 @@ StreamHandler::StreamHandler(const char* filename, bool binary)
   }
 }
 
-StreamHandler::~StreamHandler()
+OutStreamHandler::~OutStreamHandler()
 {
   if (stream_) {
     boost::iostreams::close(*buf_);
@@ -95,7 +95,7 @@ StreamHandler::~StreamHandler()
   fs::rename(tmp_filename_, filename_);
 }
 
-std::ostream& StreamHandler::getStream()
+std::ostream& OutStreamHandler::getStream()
 {
   if (stream_) {
     return *stream_;

@@ -254,7 +254,7 @@ bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
 
 bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 {
-  utl::StreamHandler stream_handler(def_file, false);
+  utl::OutStreamHandler stream_handler(def_file, false);
   return writeBlock(block, stream_handler.getStream());
 }
 
