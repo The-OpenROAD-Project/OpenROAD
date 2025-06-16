@@ -33,6 +33,21 @@ void WireBuilder::makeNetWiresFromGuides()
   }
 }
 
+void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
+{
+  const int guide_dimension = computeGuideDimension();
+  default_vias_ = block_->getDefaultVias();
+  for (odb::dbNet* db_net : nets) {
+    const bool is_detailed_routed
+        = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
+
+    if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
+        && !dbNetIsLocal(db_net) && !is_detailed_routed) {
+      makeNetWire(db_net, guide_dimension);
+    }
+  }
+}
+
 void WireBuilder::makeNetWire(odb::dbNet* db_net, const int guide_dimension)
 {
   odb::dbWire* wire = odb::dbWire::create(db_net);

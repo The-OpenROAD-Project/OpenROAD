@@ -1225,13 +1225,14 @@ void AntennaChecker::setReportFileName(const char* file_name)
   report_file_name_ = file_name;
 }
 
-void AntennaChecker::makeNetWiresFromGuides()
+void AntennaChecker::makeNetWiresFromGuides(
+    const std::vector<odb::dbNet*>& nets)
 {
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
   }
   wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
-  wire_builder_->makeNetWiresFromGuides();
+  wire_builder_->makeNetWiresFromGuides(nets);
 }
 
 }  // namespace ant

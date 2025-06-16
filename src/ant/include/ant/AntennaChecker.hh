@@ -120,7 +120,7 @@ class AntennaChecker
                                   float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
-  void makeNetWiresFromGuides();
+  void makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets);
 
  private:
   bool haveRoutedNets();

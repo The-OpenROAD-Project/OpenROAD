@@ -70,7 +70,7 @@ bool RepairAntennas::checkAntennaViolations(
                         : RoutingSource::GlobalRouting;
   bool destroy_wires = routing_source_ == RoutingSource::GlobalRouting;
 
-  arc_->makeNetWiresFromGuides();
+  arc_->makeNetWiresFromGuides(nets_to_repair);
   arc_->initAntennaRules();
   omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
@@ -127,7 +127,7 @@ void RepairAntennas::destroyNetWires(
 {
   for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
-    if (wire) {
+    if (!db_net->isSpecial() && wire) {
       odb::dbWire::destroy(wire);
     }
   }

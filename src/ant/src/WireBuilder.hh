@@ -49,6 +49,7 @@ class WireBuilder
   ~WireBuilder();
 
   void makeNetWiresFromGuides();
+  void makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets);
 
  private:
   void makeNetWire(odb::dbNet* db_net, int guide_dimension);
