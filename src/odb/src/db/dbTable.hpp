@@ -578,6 +578,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T, page_size>& table)
 
   if (table._page_tbl_size == 0) {
     table._pages = nullptr;
+    assert(table._page_cnt == 0);
   } else {
     table._pages = new dbTablePage*[table._page_tbl_size];
   }
