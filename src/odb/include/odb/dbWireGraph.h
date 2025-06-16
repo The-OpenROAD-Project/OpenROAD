@@ -34,7 +34,7 @@ class dbWireEncoder;
 //                    |
 //                    +----->o
 //
-//   The graph may contains a fortest of trees.
+//   The graph may contains a forest of trees.
 //
 //   This graph may be edited and encoded back to the wire.
 //
@@ -48,14 +48,14 @@ class dbWireGraph
   class EndStyle
   {
    public:
-    // End-Types:
-    //     EXTENDED - segment extended 1/2 path-width
-    //     VARIABLE - segment extended variable amount
     enum Type
     {
-      EXTENDED,
-      VARIABLE
+      EXTENDED,  // segment extended 1/2 path-width
+      VARIABLE   // segment extended variable amount
     };
+
+    Type getType() const { return _type; }
+    int getExt() const { return _ext; }
 
     void setExtended()
     {
@@ -82,8 +82,6 @@ class dbWireGraph
    private:
     Type _type{EXTENDED};
     int _ext{0};
-
-    friend class dbWireGraph;
   };
 
   class Node;
