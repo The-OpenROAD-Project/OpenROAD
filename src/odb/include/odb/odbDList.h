@@ -28,7 +28,7 @@ template <class T, DListEntry<T>* ENTRY(T*)>
 class DListIterator
 {
  public:
-  DListIterator()  = default;
+  DListIterator() = default;
   DListIterator(T* cur) { _cur = cur; }
   DListIterator(const DListIterator& i) { _cur = i._cur; }
   DListIterator& operator=(const DListIterator& i)

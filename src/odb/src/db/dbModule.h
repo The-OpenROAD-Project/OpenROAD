@@ -18,10 +18,6 @@
 
 namespace odb {
 class dbIStream;
-class dbITerm;
-class dbModBTerm;
-class dbModInst;
-class dbModule;
 class dbOStream;
 class _dbDatabase;
 class _dbInst;
@@ -29,7 +25,11 @@ class _dbModInst;
 class _dbModNet;
 class _dbModBTerm;
 // User Code Begin Classes
+class dbITerm;
 class dbInst;
+class dbModBTerm;
+class dbModInst;
+class dbModule;
 // User Code End Classes
 
 class _dbModule : public _dbObject

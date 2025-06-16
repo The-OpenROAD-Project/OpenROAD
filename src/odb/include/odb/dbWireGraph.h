@@ -99,11 +99,6 @@ class dbWireGraph
       VWIRE
     };
 
-    Edge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
-        : _type(type), _wire_type(wire_type), _non_default_rule(rule)
-    {
-    }
-
     virtual ~Edge() = default;
 
     Type type() const { return _type; }
@@ -111,6 +106,12 @@ class dbWireGraph
     Node* target() const { return _tgt; }
     dbWireType::Value wireType() const { return _wire_type; }
     dbTechLayerRule* nonDefaultRule() const { return _non_default_rule; }
+
+   protected:
+    Edge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
+        : _type(type), _wire_type(wire_type), _non_default_rule(rule)
+    {
+    }
 
    private:
     static DListEntry<Edge>* edgeEntry(Edge* edge)
