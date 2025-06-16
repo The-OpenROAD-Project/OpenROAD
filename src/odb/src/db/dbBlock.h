@@ -230,7 +230,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbGuide>* _guide_tbl;
   dbTable<_dbNetTrack>* _net_tracks_tbl;
   _dbNameCache* _name_cache;
-  dbTable<_dbDft>* _dft_tbl;
+  dbTable<_dbDft, 4096>* _dft_tbl;
   dbTable<_dbMarkerCategory>* _marker_categories_tbl;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;

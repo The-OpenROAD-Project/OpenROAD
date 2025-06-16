@@ -43,7 +43,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 107;  // Current revision number
+const uint db_schema_minor = 108;  // Current revision number
+
+// Revision where dbTable's mask/shift are compile constants
+const uint db_schema_table_mask_shift = 108;
 
 // Revision where dbBTerm top layer grid was added to dbBlock
 const uint db_schema_bterm_top_layer_grid = 107;
