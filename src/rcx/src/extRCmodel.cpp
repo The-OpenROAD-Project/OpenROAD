@@ -4,6 +4,7 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <filesystem>
 
 #include "parse.h"
 #include "rcx/extRCap.h"
@@ -2792,8 +2793,6 @@ bool extRCModel::openCapLogFile()
   }
   fclose(fp);
 
-  char cmd[4000];
-
   FILE* fp1 = nullptr;
   if (_readCapLog) {
     fp1 = openFile(buff, capLog, nullptr, "r");
@@ -2801,16 +2800,17 @@ bool extRCModel::openCapLogFile()
   } else if (_metLevel > 0) {
     _capLogFP = openFile(buff, capLog, nullptr, "a");
   } else {
-    sprintf(cmd,
-            "mv %s/%s/%s %s/%s/%s.in",
-            _topDir,
-            _patternName,
-            capLog,
-            _topDir,
-            _patternName,
-            capLog);
-    if (system(cmd) == -1) {
-      logger_->error(RCX, 489, "mv failed: {}", cmd);
+    try {
+      std::filesystem::path path0(_topDir);
+      path0 += _patternName;
+      path0 += capLog;
+      std::filesystem::path path1(_topDir);
+      path0 += _patternName;
+      path0 += std::string(capLog) + ".in";
+
+      std::filesystem::rename(path0, path1);
+    } catch (const std::filesystem::filesystem_error&) {
+      logger_->error(RCX, 489, "mv failed: {}/{}/{}", _topDir, _patternName, capLog);
     }
 
     _capLogFP = openFile(buff, capLog, nullptr, "w");
@@ -3052,10 +3052,10 @@ void extRCModel::closeFiles()
 
 void extRCModel::cleanFiles()
 {
-  char cmd[4000];
-  sprintf(cmd, "rm -rf %s ", _wireDirName);
-  if (system(cmd) == -1) {
-    logger_->error(RCX, 491, "rm failed on {}", _wireDirName);
+  try {
+    std::filesystem::remove_all(_wireDirName);
+  } catch (const std::filesystem::filesystem_error& err) {
+    logger_->error(RCX, 491, "rm failed on {}: {}", _wireDirName, err.what());
   }
 }
 
