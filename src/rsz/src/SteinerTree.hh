@@ -65,6 +65,7 @@ class SteinerTree
 {
  public:
   SteinerTree(const Pin* drvr_pin, Resizer* resizer);
+  SteinerTree(Point drvr_location, Resizer* resizer);
   Vector<PinLoc>& pinlocs() { return pinlocs_; }
   int pinCount() const { return pinlocs_.size(); }
   int branchCount() const;
@@ -115,7 +116,7 @@ class SteinerTree
   void locAddPin(const Point& loc, const Pin* pin);
 
   stt::Tree tree_;
-  const Pin* drvr_pin_;
+  const Point drvr_location_;
   int drvr_steiner_pt_ = 0;  // index into tree_.branch
   Vector<PinLoc> pinlocs_;   // Initial input
   LocPinMap loc_pin_map_;    // location -> pins map

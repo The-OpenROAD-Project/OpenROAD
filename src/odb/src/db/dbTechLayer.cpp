@@ -500,29 +500,23 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingRuleObj);
 
-  _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule>(
+  _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechMinCutRuleObj,
-      8,
-      3);
+      dbTechMinCutRuleObj);
 
-  _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule>(
+  _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechMinEncRuleObj,
-      8,
-      3);
+      dbTechMinEncRuleObj);
 
-  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(
+  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechV55InfluenceEntryObj,
-      8,
-      3);
+      dbTechV55InfluenceEntryObj);
   // User Code End Constructor
 }
 
@@ -1288,8 +1282,7 @@ void dbTechLayer::setAlias(const char* alias)
   }
 
   layer->flags_.has_alias_ = 1;
-  layer->_alias = strdup(alias);
-  ZALLOCATED(layer->_alias);
+  layer->_alias = safe_strdup(alias);
 }
 
 uint dbTechLayer::getWidth() const
@@ -2252,8 +2245,7 @@ dbTechLayer* dbTechLayer::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();
-  layer->_name = strdup(name_);
-  ZALLOCATED(layer->_name);
+  layer->_name = safe_strdup(name_);
   layer->_number = tech->_layer_cnt++;
   layer->flags_.type_ = type.getValue();
 

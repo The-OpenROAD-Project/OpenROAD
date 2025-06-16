@@ -590,8 +590,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       if (graphics_ && npVars_.debug_generate_images) {
         updateDb();
-        bool select_buffers
-            = tb_->repairDesignBufferCount() > 0 && !virtual_td_iter;
+        bool select_buffers = !virtual_td_iter;
         graphics_->saveLabeledImage(
             fmt::format("{}/timing_{:05d}_1.png", timing_driven_dir, iter),
             fmt::format("Iter {} |R: {} |T: {} after TD",
@@ -643,19 +642,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               nbc_->getNewGcellsCount(),
               new_gcells_percentage);
 
-          if (tb_->repairDesignBufferCount() != nbc_->getNewGcellsCount()) {
-            log_->warn(GPL,
-                       93,
-                       "Buffer insertion count by rsz ({}) and cells created "
-                       "by gpl ({}) do not match.",
-                       tb_->repairDesignBufferCount(),
-                       nbc_->getNewGcellsCount());
-          }
-          log_->info(GPL,
-                     109,
-                     "Timing-driven: inserted buffers as reported by "
-                     "repair_design: {}",
-                     tb_->repairDesignBufferCount());
           log_->info(GPL,
                      110,
                      "Timing-driven: new target density: {}",

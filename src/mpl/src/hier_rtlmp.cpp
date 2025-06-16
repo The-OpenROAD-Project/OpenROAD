@@ -907,7 +907,7 @@ void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
 // extension of all edges of the die area.
 void HierRTLMP::createPinAccessBlockages()
 {
-  if (!tree_->maps.pad_to_bterm.empty()) {
+  if (!tree_->io_pads.empty()) {
     return;
   }
 

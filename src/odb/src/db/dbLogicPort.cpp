@@ -107,8 +107,7 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
     return nullptr;
   }
   _dbLogicPort* lp = _block->_logicport_tbl->create();
-  lp->_name = strdup(name);
-  ZALLOCATED(lp->_name);
+  lp->_name = safe_strdup(name);
 
   if (direction.empty()) {
     lp->direction = "in";

@@ -37,16 +37,13 @@ namespace gpl {
 class Pin;
 class Net;
 class GCell;
+class PlacerBaseCommon;
 
 class Instance
 {
  public:
   Instance();
-  Instance(odb::dbInst* inst,
-           int padLeft,
-           int padRight,
-           int site_height,
-           utl::Logger* logger);
+  Instance(odb::dbInst* inst, PlacerBaseCommon* pbc, utl::Logger* logger);
   Instance(int lx, int ly, int ux, int uy);  // dummy instance
   ~Instance();
 
@@ -73,6 +70,7 @@ class Instance
   // unusable sites.  It will have inst_ as nullptr
   bool isDummy() const;
 
+  void copyDbLocation(PlacerBaseCommon* pbc);
   void setLocation(int x, int y);
   void setCenterLocation(int x, int y);
 

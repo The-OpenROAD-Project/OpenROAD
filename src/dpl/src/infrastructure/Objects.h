@@ -117,6 +117,7 @@ class Node
   int getGroupId() const;
   Rect getBBox() const;
   dbBTerm* getBTerm() const;
+  uint8_t getUsedLayers() const;
 
   // setters
   void setId(int id);
@@ -140,6 +141,7 @@ class Node
   void setMaster(Master* in);
   void addPin(Pin* pin);
   void setGroupId(int id);
+  void addUsedLayer(int layer);
 
   bool adjustCurrOrient(const dbOrientType& newOrient);
 
@@ -173,6 +175,8 @@ class Node
   int group_id_{-1};
   // Pins.
   std::vector<Pin*> pins_;
+  // used layers
+  uint8_t used_layers_{0};
 };
 
 class Group

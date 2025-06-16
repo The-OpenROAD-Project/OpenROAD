@@ -124,7 +124,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
   }
 
   // get worst resize nets
-  sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
+  sta::NetSeq worst_slack_nets = rs_->resizeWorstSlackNets();
 
   if (worst_slack_nets.empty()) {
     log_->warn(
