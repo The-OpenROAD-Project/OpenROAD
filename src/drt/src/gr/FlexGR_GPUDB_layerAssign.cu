@@ -196,20 +196,6 @@ __global__ void layerAssignNodeCompute__kernel(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 __global__
 void layerAssignNodeCompute__kernel(  
   NodeStruct* d_nodes,
@@ -289,14 +275,19 @@ void layerAssignNodeCompute__kernel(
       if (parentIdx != -1) {
         int parentX = d_nodes[parentIdx].x;
         int parentY = d_nodes[parentIdx].y;
-
-        // if (curLocX == parentX) { // vertical segment
-        //  congestionCost += 100;
-        // } else if (curLocY == parentY) { // horizontal segment
-        //  congestionCost += 100;
-        //} else {
-        //  printf("Node %d: current node and parent node are not aligned collinearly\n", nodeId);
-        //}
+        if (curLocX == parentX) { // vertical segment
+          bool isLayerBlocked = d_layerDir[layerNum] == false; // false means horizontal
+          congestionCost += getSegmentCostV__device(
+            d_cmap, curLocX, min(curLocY, parentY), max(curLocY, parentY), layerNum,
+            xDim, yDim, numLayers, isLayerBlocked, BLOCKCOST, MARKERCOST);
+        } else if (curLocY == parentY) { // horizontal segment
+          bool isLayerBlocked = d_layerDir[layerNum] == true; // true means vertical
+          congestionCost += getSegmentCostH__device(
+            d_cmap, min(curLocX, parentX), max(curLocX, parentX), curLocY, layerNum,
+            xDim, yDim, numLayers, isLayerBlocked, BLOCKCOST, MARKERCOST);
+        } else {
+          printf("Error Node %d: current node and parent node are not aligned collinearly\n", nodeId);
+        }
       }
 
       unsigned currLayerCost = downStreamCost + downstreamViaCost + congestionCost;

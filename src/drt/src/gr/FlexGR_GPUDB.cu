@@ -43,6 +43,78 @@
 
 namespace drt {
 
+
+
+
+__device__ __forceinline__ 
+unsigned getGCellSegmentCost__device(uint64_t* d_cmap_bits_3D,
+  int xIdx, int yIdx, int layerNum, frDirEnum dir,
+  int xDim, int yDim, int zDim, 
+  bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST)
+{
+  unsigned congestionCost = 0;
+ 
+  /*
+  if (xIdx < 0 || xIdx >= xDim
+      || yIdx < 0 || yIdx >= yDim
+      || layerNum < 0 || layerNum >= zDim) {
+    printf("getGCellSegmentCost__device out of bounds: xIdx=%d, yIdx=%d, layerNum=%d, xDim=%d, yDim=%d, zDim=%d\n",
+           xIdx, yIdx, layerNum, xDim, yDim, zDim);
+  }
+  */
+  
+  const unsigned supply = getRawSupply__device(d_cmap_bits_3D, xDim, yDim, zDim, xIdx, yIdx, layerNum, dir);
+  const unsigned demand = getRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim, xIdx, yIdx, layerNum, dir);
+  if (isLayerBlocked
+      || hasBlock__device(d_cmap_bits_3D, xDim, yDim, zDim, xIdx, yIdx, layerNum, dir)) {
+    congestionCost += BLOCKCOST * 100;
+  }
+  
+  // congestion cost
+  if (demand > supply / 4) {
+    congestionCost += (demand * 10 / (supply + 1));
+  }
+
+  // overflow
+  if (demand >= supply) {
+    congestionCost += MARKERCOST * 8;
+  }
+
+  return congestionCost;
+}
+
+__device__
+unsigned getSegmentCostH__device(uint64_t* d_cmap_bits_3D,
+  int xIdxStart, int xIdxEnd, int yIdx, int layerNum,
+  int xDim, int yDim, int zDim,
+  bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST)
+{
+  unsigned congestionCost = 0;
+  for (int xIdx = xIdxStart; xIdx < xIdxEnd; xIdx++) {
+    congestionCost += getGCellSegmentCost__device(d_cmap_bits_3D, xIdx, yIdx, layerNum,
+                                                  frDirEnum::E, xDim, yDim, zDim,
+                                                  isLayerBlocked, BLOCKCOST, MARKERCOST);
+  }
+  return congestionCost;
+}  
+  
+__device__
+unsigned getSegmentCostV__device(uint64_t* d_cmap_bits_3D,
+  int xIdx, int yIdxStart, int yIdxEnd, int layerNum,
+  int xDim, int yDim, int zDim,
+  bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST)
+{
+  unsigned congestionCost = 0;
+  for (int yIdx = yIdxStart; yIdx < yIdxEnd; yIdx++) {
+    congestionCost += getGCellSegmentCost__device(d_cmap_bits_3D, xIdx, yIdx, layerNum,
+                                                  frDirEnum::N, xDim, yDim, zDim,
+                                                  isLayerBlocked, BLOCKCOST, MARKERCOST);
+  }
+  return congestionCost;
+}
+
+
+
 void FlexGRGPUDB::init(frDesign* design,
   FlexGRCMap* cmap, FlexGRCMap* cmap2D)
 {

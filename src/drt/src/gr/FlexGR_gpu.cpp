@@ -46,6 +46,11 @@ namespace drt {
 
 using utl::ThreadException;
 
+
+
+
+
+
 void FlexGR::main_gpu(odb::dbDatabase* db)
 {  
   logger_->report(std::string(80, '*')); 

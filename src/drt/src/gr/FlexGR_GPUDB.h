@@ -59,6 +59,32 @@
 
 namespace drt {
 
+
+// define the utility functions
+
+// Layer Assigment related to cost functions
+
+__device__ __forceinline__
+unsigned getGCellSegmentCost__device(uint64_t* d_cmap_bits_3D,
+  int xIdx, int yIdx, int layerNum, frDirEnum dir,
+  int xDim, int yDim, int zDim,
+  bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST);
+
+
+__device__
+unsigned getSegmentCostH__device(uint64_t* d_cmap_bits_3D,
+  int xIdxStart, int xIdxEnd, int yIdx, int layerNum,
+  int xDim, int yDim, int zDim,
+  bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST);
+  
+__device__
+unsigned getSegmentCostV__device(uint64_t* d_cmap_bits_3D,
+  int yIdxStart, int yIdxEnd, int xIdx, int layerNum,
+  int xDim, int yDim, int zDim,
+  bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST);
+
+
+
 class FlexGRGPUDB
 {
   public:
