@@ -81,7 +81,7 @@ void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   int builderSrcId = getNodeIdByName(builderSrcName);
   if(builderSrcId == -1) {
     builderSrcId = graph_.size();
-    GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, -1, nullptr);
+    GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, -1, topBufInputNet->getFirstOutput());
     graph_.push_back(builderSrcNode);
   }
 
