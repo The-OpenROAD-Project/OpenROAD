@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <filesystem>
 #include <limits>
 #include <map>
 #include <vector>
-#include <filesystem>
 
 #include "parse.h"
 #include "rcx/extRCap.h"
@@ -2810,7 +2810,8 @@ bool extRCModel::openCapLogFile()
 
       std::filesystem::rename(path0, path1);
     } catch (const std::filesystem::filesystem_error&) {
-      logger_->error(RCX, 489, "mv failed: {}/{}/{}", _topDir, _patternName, capLog);
+      logger_->error(
+          RCX, 489, "mv failed: {}/{}/{}", _topDir, _patternName, capLog);
     }
 
     _capLogFP = openFile(buff, capLog, nullptr, "w");
