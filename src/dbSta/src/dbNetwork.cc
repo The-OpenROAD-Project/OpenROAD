@@ -117,8 +117,10 @@ char* tmpStringCopy(const char* str)
 // lower 4  bits used to encode type
 //
 
-ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
+ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
 {
+  const dbObjectType typ = object->getObjectType();
+  const ObjectId db_id = object->getId();
   if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
     logger_->error(ORD, 2019, "Database id exceeds capacity");
   }
@@ -600,9 +602,8 @@ ObjectId dbNetwork::id(const Port* port) const
     if (isConcretePort(port)) {
       return ConcreteNetwork::id(port);
     }
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(port);
+    return getDbNwkObjectId(obj);
   }
   // default
   return ConcreteNetwork::id(port);
@@ -621,9 +622,8 @@ ObjectId dbNetwork::id(const Cell* cell) const
   // in hierarchical flow we use the object id for the index
   if (hierarchy_) {
     if (!isConcreteCell(cell)) {
-      dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Cell*>(cell));
-      dbObjectType type = obj->getObjectType();
-      return getDbNwkObjectId(type, obj->getId());
+      const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
+      return getDbNwkObjectId(obj);
     }
   }
   // default behaviour use the concrete cell.
@@ -639,10 +639,8 @@ ObjectId dbNetwork::id(const Instance* instance) const
     return 0;
   }
   if (hierarchy_) {
-    dbObject* obj
-        = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(instance);
+    return getDbNwkObjectId(obj);
   }
   return staToDb(instance)->getId();
 }
@@ -1154,9 +1152,8 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   if (hierarchy_) {
     // get the id for hierarchical objects using dbid.
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(pin);
+    return getDbNwkObjectId(obj);
   }
   if (iterm != nullptr) {
     return iterm->getId() << 1;
@@ -1491,9 +1488,8 @@ ObjectId dbNetwork::id(const Net* net) const
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   if (hierarchy_) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(net);
+    return getDbNwkObjectId(obj);
   }
   return dnet->getId();
 }
@@ -1769,9 +1765,8 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 ObjectId dbNetwork::id(const Term* term) const
 {
   if (hierarchy_) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Term*>(term));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(term);
+    return getDbNwkObjectId(obj);
   }
   return staToDb(term)->getId();
 }
