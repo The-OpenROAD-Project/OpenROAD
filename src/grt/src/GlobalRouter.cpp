@@ -422,8 +422,10 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     if (!haveDetailedRoutes(nets_to_repair)
         && repair_antennas_->hasNewViolations()) {
       // Run jumper insertion and clean
-      repair_antennas_->jumperInsertion(
-          routes_, grid_->getTileSize(), getMaxRoutingLayer(), nets_with_jumpers);
+      repair_antennas_->jumperInsertion(routes_,
+                                        grid_->getTileSize(),
+                                        getMaxRoutingLayer(),
+                                        nets_with_jumpers);
       repair_antennas_->clearViolations();
 
       saveGuides(nets_with_jumpers);
