@@ -61,6 +61,7 @@ public:
 void
 ensureLinked()
 {
+  return;
   OpenRoad *openroad = getOpenRoad();
   dbNetwork *network = openroad->getDbNetwork();
   if (!network->isLinked())
@@ -445,6 +446,10 @@ get_db_block()
   if (db) {
     odb::dbChip *chip = db->getChip();
     if (chip)
+      printf("Chip name: %s\n", chip->getBlock()->getName().c_str());
+      // print getBTerms
+      printf("BTerms %lu:\n", chip->getBlock()->getBTerms().size());
+      printf("BTerms top %lu:\n", chip->getBlock()->getTopModule()->getModBTerms().size());
       return chip->getBlock();
   }
   return nullptr;

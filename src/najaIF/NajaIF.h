@@ -62,7 +62,7 @@ class NajaIF {
     // NLDB* receiveImplementation(uint16_t port);
     // NLDB* receiveImplementation(boost::asio::ip::tcp::socket& socket); 
 
-    void makeBlock();
+    void makeBlock(const std::string& topName);
 
 //private:
      static std::map<std::tuple<size_t,size_t,size_t>, std::pair<odb::dbModule*, bool>> module_map_;

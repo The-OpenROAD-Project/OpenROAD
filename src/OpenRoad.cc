@@ -525,7 +525,7 @@ void OpenRoad::linkDesign(const char* design_name,
                           bool omit_filename_prop)
 
 {
-  bool success = dbLinkDesign(design_name,
+  /*bool success = dbLinkDesign(design_name,
                               verilog_network_,
                               db_,
                               logger_,
@@ -535,7 +535,7 @@ void OpenRoad::linkDesign(const char* design_name,
   if (success) {
     delete verilog_reader_;
     verilog_reader_ = nullptr;
-  }
+  }*/
 
   if (hierarchy) {
     sta::dbSta* sta = getSta();

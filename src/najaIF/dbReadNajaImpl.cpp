@@ -266,6 +266,12 @@ void loadInstance(
   //   snlName = NLName(instance.getName());
   // }
   auto modelReference = instance.getModelReference();
+  // print the name and ids
+  printf("Loading instance %s with model reference: dbID=%d, libraryID=%d, designID=%d\n",
+         instance.getName().cStr(),
+         modelReference.getDbID(),
+         modelReference.getLibraryID(),
+         modelReference.getDesignID());
   dbModule* model = NajaIF::module_map_[std::make_tuple(
       modelReference.getDbID(),
       modelReference.getLibraryID(),
@@ -288,8 +294,11 @@ void loadInstance(
       modelReference.getDbID(),
       modelReference.getLibraryID(),
       modelReference.getDesignID())].second) {
+    printf("handling leaf %s\n", model->getName());
     dbMaster* master = NajaIF::db_->findMaster(model->getName());
+    assert(master != nullptr);
     auto db_inst = dbInst::create(NajaIF::block_, master, instance.getName().cStr(), false, design);
+    printf("cache with inst id %lu\n", instanceID);
     leaf_map[instanceID] = db_inst;
   } else {
     // TODO need to uniquify it like they do in open road
@@ -315,7 +324,12 @@ void loadInstance(
 void loadTermReference(
   dbModNet* net,
   const DBImplementation::TermReference::Reader& termReference) {
+  
   dbModule* design = net->getParent();
+  printf("module name: %s\n", design->getName());
+  printf("Loading term reference with termID %d and bit %d (%lu)\n",
+         termReference.getTermID(),
+         termReference.getBit(), NajaIF::module2terms_[design->getId()].size());
   dbModBTerm* term = design->findModBTerm(NajaIF::module2terms_[design->getId()][termReference.getTermID()].c_str());
   //auto term = design->getTerm(NLID::DesignObjectID(termReference.getTermID()));
   //LCOV_EXCL_START
@@ -396,11 +410,11 @@ void loadInstTermReference(
     instTerm->connect(net);
     return;
   }
+  printf("looking for inst id %u\n", instanceID);
   dbInst* leaf = leaf_map[instanceID];
-  if (nullptr != leaf) {
-
+  if (nullptr == leaf) {
+    assert(false);
   }
-  assert(false);
 }
 
 // void loadBusNet(
@@ -474,7 +488,7 @@ void loadDesignImplementation(
   //SNLDesign* snlDesign = library->getSNLDesign(NLID::DesignID(designID));
   dbModule* design = NajaIF::module_map_[std::make_tuple(
       db.getId(),
-      designImplementation.getId(),
+      libraryImplementation.getId(),
       designImplementation.getId())].first;
   //LCOV_EXCL_START
   // if (not snlDesign) {
@@ -491,12 +505,13 @@ void loadDesignImplementation(
   }
   if (designImplementation.hasNets()) {
     for (auto net: designImplementation.getNets()) {
-      //if (net.isScalarNet()) {
+      if (net.isScalarNet()) {
         auto scalarNet = net.getScalarNet();
         loadScalarNet(design, scalarNet, instance_map, leaf_map);
-      // } else if (net.isBusNet()) { // TODO: support bus nets after flatening
-      //   auto busNet = net.getBusNet();
-      //   loadBusNet(snlDesign, busNet);
+      } 
+      // else if (net.isBusNet()) { // TODO: support bus nets after flatening
+      //    auto busNet = net.getBusNet();
+      //    loadBusNet(snlDesign, busNet);
       // } 
     }
   }

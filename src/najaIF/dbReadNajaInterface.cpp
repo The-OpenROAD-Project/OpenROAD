@@ -109,6 +109,9 @@ void loadScalarTerm(dbModule* mod,
   auto termID = term.getId();
   auto termDirection = term.getDirection();
   dbModBTerm* modbterm = dbModBTerm::create(mod, term.getName().cStr());
+  printf("Inserting scalar term %s with ID: %zu\n",
+         term.getName().cStr(),
+         termID);
   NajaIF::module2terms_[mod->getId()].push_back(term.getName());
 }
 
@@ -130,6 +133,11 @@ void loadBusTerm(
       bmodterm->setBusPort(dbbusport);
       const dbIoType io_type = CapnPtoODBDirection(termDirection);
       bmodterm->setIoType(io_type);
+  printf("Inserting bus term %s with ID: %zu, msb: %d, lsb: %d\n",
+         term.getName().cStr(),
+         termID,
+         msb,
+         lsb);
   NajaIF::module2terms_[mod->getId()].push_back(term.getName());
   // NLName snlName;
   // if (term.hasName()) {
@@ -163,7 +171,19 @@ void loadDesignInterface(
   // if (designInterface.hasName()) {
   //   snlName = NLName(designInterface.getName());
   // }
-  dbModule* mod = dbModule::create(NajaIF::block_, designInterface.getName().cStr());
+  //print the name and ids
+  printf("Inserting design %s with ID: dbID=%zu, libraryID=%zu, designID=%zu\n",
+         designInterface.getName().cStr(),
+         dbInterface.getId(),
+         libraryInterface.getId(),
+         designID);
+  dbModule* mod = nullptr;
+  if (dbInterface.getTopDesignReference().getLibraryID() == libraryInterface.getId() &&
+      dbInterface.getTopDesignReference().getDesignID() == designID) {
+    mod = NajaIF::block_->getTopModule();
+  } else {
+    mod = dbModule::create(NajaIF::block_, designInterface.getName().cStr());
+  }
   NajaIF::module_map_[std::make_tuple(
       dbInterface.getId(), libraryInterface.getId(), designID)] = std::pair<dbModule*, bool>(mod, 
         designInterface.getType() == DesignType::PRIMITIVE ? true : false);
@@ -184,7 +204,15 @@ void loadDesignInterface(
   //     loadDesignParameter(snlDesign, parameter);
   //   }
   // }
+  // print description of designInterface
+  printf("Design %s with ID: %zu has type: %d\n",
+         designInterface.getName().cStr(),
+         designID,
+         static_cast<int>(designType));
   if (designInterface.hasTerms()) {
+    printf("----- Loading terms for design %s with ID: %zu -------\n",
+           designInterface.getName().cStr(),
+           designID);
     for (auto term : designInterface.getTerms()) {
       if (term.isScalarTerm()) {
         auto scalarTerm = term.getScalarTerm();
@@ -195,6 +223,7 @@ void loadDesignInterface(
       }
     }
   }
+  mod->getModBTerms().reverse();
 }
 
 void loadLibraryInterface(
@@ -238,12 +267,42 @@ void loadLibraryInterface(
   }
   if (libraryInterface.hasLibraryInterfaces()) {
     for (auto subLibraryInterface : libraryInterface.getLibraryInterfaces()) {
+      printf("Loading sub-library interface with ID: %zu\n",
+             subLibraryInterface.getId());
       loadLibraryInterface(dbInterface,/*snlLibrary,*/ subLibraryInterface);
     }
   }
   // if (snlLibrary->isPrimitives()) {
   //   NLLibraryTruthTables::construct(snlLibrary);
   // }
+}
+
+std::string getTopName(DBInterface::Reader dbInterface) {
+  if (dbInterface.hasTopDesignReference()) {
+    auto top = dbInterface.getTopDesignReference();
+    printf("Looking for top design reference: dbID=%zu, libraryID=%zu, designID=%zu\n",
+           dbInterface.getId(),
+           top.getLibraryID(),
+           top.getDesignID());
+    for (auto libraryInterface : dbInterface.getLibraryInterfaces()) {
+      if (libraryInterface.hasSnlDesignInterfaces()) {
+        for (auto designInterface : libraryInterface.getSnlDesignInterfaces()) {
+          if (designInterface.getId() == top.getDesignID() &&
+              libraryInterface.getId() == top.getLibraryID()) {
+            // Found the top design reference in the DBInterface
+            // Return the name of the design
+            printf("Found top design reference: %s with ID: %zu and library ID: %zu\n",
+                   designInterface.getName().cStr(),
+                   designInterface.getId(),
+                   libraryInterface.getId());
+            return designInterface.getName().cStr();
+          }
+        }
+      }
+    }
+  }
+  assert(false && "Top design reference not found in DBInterface");
+  return "error"; 
 }
 
 //}  // namespace
@@ -323,9 +382,10 @@ void loadLibraryInterface(
 
 void NajaIF::loadInterface(int fileDescriptor)
 {
-  makeBlock();
   ::capnp::PackedFdMessageReader message(fileDescriptor);
   DBInterface::Reader dbInterface = message.getRoot<DBInterface>();
+  makeBlock(getTopName(dbInterface));
+  
   // auto dbID = dbInterface.getId();
   // auto universe = NLUniverse::get();
   // if (not universe) {
@@ -341,31 +401,34 @@ void NajaIF::loadInterface(int fileDescriptor)
 
   if (dbInterface.hasLibraryInterfaces()) {
     for (auto libraryInterface : dbInterface.getLibraryInterfaces()) {
+      printf("Loading library interface with ID: %zu\n",
+             libraryInterface.getId());
       loadLibraryInterface(dbInterface,/*snldb,*/ libraryInterface);
     }
   }
-  if (dbInterface.hasTopDesignReference()) {
-    auto top = dbInterface.getTopDesignReference();
-    dbModule* topModule = NajaIF::module_map_[std::make_tuple(
-        dbInterface.getId(),
-        top.getLibraryID(),
-        top.getDesignID())].first;
-    block_->getName() = topModule->getName();
-    // auto snlDesignReference
-    //     = NLID::DesignReference(designReference.getDbID(),
-    //                             designReference.getLibraryID(),
-    //                             designReference.getDesignID());
-    // auto topDesign = NLUniverse::get()->getSNLDesign(snlDesignReference);
-    // if (not topDesign) {
-    //   // LCOV_EXCL_START
-    //   std::ostringstream reason;
-    //   reason << "cannot deserialize top design: no design found with provided "
-    //             "reference";
-    //   throw NLException(reason.str());
-    //   // LCOV_EXCL_STOP
-    // }
-    // snldb->setTopDesign(topDesign);
-  }
+  // if (dbInterface.hasTopDesignReference()) {
+  //   auto top = dbInterface.getTopDesignReference();
+  //   dbModule* topModule = NajaIF::module_map_[std::make_tuple(
+  //       dbInterface.getId(),
+  //       top.getLibraryID(),
+  //       top.getDesignID())].first;
+  //   block_->getName() = topModule->getName();
+  //   block_->setTopModule(topModule);
+  //   // auto snlDesignReference
+  //   //     = NLID::DesignReference(designReference.getDbID(),
+  //   //                             designReference.getLibraryID(),
+  //   //                             designReference.getDesignID());
+  //   // auto topDesign = NLUniverse::get()->getSNLDesign(snlDesignReference);
+  //   // if (not topDesign) {
+  //   //   // LCOV_EXCL_START
+  //   //   std::ostringstream reason;
+  //   //   reason << "cannot deserialize top design: no design found with provided "
+  //   //             "reference";
+  //   //   throw NLException(reason.str());
+  //   //   // LCOV_EXCL_STOP
+  //   // }
+  //   // snldb->setTopDesign(topDesign);
+  // }
   //return db_;
 }
 
@@ -373,10 +436,10 @@ void NajaIF::loadInterface(const std::filesystem::path& interfacePath)
 {
   // FIXME: verify if file can be opened
   int fd = open(interfacePath.c_str(), O_RDONLY);
-  //return loadInterface(fd);
+  loadInterface(fd);
 }
 
-void NajaIF::makeBlock()
+void NajaIF::makeBlock(const std::string& topName)
 {
   dbChip* chip = db_->getChip();
   if (chip == nullptr) {
@@ -405,7 +468,7 @@ void NajaIF::makeBlock()
     //const char* design
     //    = network_->name(network_->cell(network_->topInstance()));
     block_ = dbBlock::create(
-        chip, "", db_->getTech(), '/');
+        chip, topName.c_str(), db_->getTech(), '/');
   }
   dbTech* tech = db_->getTech();
   block_->setDefUnits(tech->getLefUnits());
