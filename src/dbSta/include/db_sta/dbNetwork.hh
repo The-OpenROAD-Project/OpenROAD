@@ -359,7 +359,7 @@ class dbNetwork : public ConcreteNetwork
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
-  ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const;
+  ObjectId getDbNwkObjectId(const dbObject* object) const;
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
