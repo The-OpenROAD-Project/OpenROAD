@@ -828,6 +828,11 @@ Delay Rebuffer::marginedSlackThreshold(Delay slack)
   return slack - (ref_slack_ - slack) * 2e-6;
 }
 
+float lerp(float a, float b, float t)
+{
+  return a + (b - a) * t;
+}
+
 // Recover area on a rebuffering choice without regressing timing
 BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
                                      Delay slack_target,
@@ -877,9 +882,8 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
               opts = recurse(inner, 0);
             }
 
-            Delay threshold = marginedSlackThreshold(
-                (slack_target + node->arrivalDelay()) * alpha
-                + node->slack() * (1.0 - alpha));
+            Delay threshold = marginedSlackThreshold(lerp(
+                node->slack(), slack_target + node->arrivalDelay(), alpha));
             insertBufferOptions(opts,
                                 level,
                                 /*next_segment_wl=*/upstream_wl,
@@ -892,9 +896,8 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
             const BnetSeq& left_opts = recurse(node->ref(), upstream_wl);
             const BnetSeq& right_opts = recurse(node->ref2(), upstream_wl);
 
-            Delay threshold = marginedSlackThreshold(
-                (slack_target + node->arrivalDelay()) * alpha
-                + node->slack() * (1.0 - alpha));
+            Delay threshold = marginedSlackThreshold(lerp(
+                node->slack(), slack_target + node->arrivalDelay(), alpha));
             BnetMetrics assured_envelope = node->metrics().withSlack(threshold);
             BnetPtr assured_fallback;
 
@@ -1030,10 +1033,9 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             int ret = recurse(bnet->ref()) + recurse(bnet->ref2());
             const BnetPtr& p = bnet->ref();
             const BnetPtr& q = bnet->ref2();
-            const BnetPtr& min_req = fuzzyLess(p->slack(), q->slack()) ? p : q;
             bnet->setSlackTransition(
                 combinedTransition(p->slackTransition(), q->slackTransition()));
-            bnet->setSlack(min_req->slack());
+            bnet->setSlack(std::min(p->slack(), q->slack()));
             bnet->setCapacitance(p->cap() + q->cap());
             return ret;
           }
