@@ -76,6 +76,7 @@ _installCommonDev() {
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
+    kokkosfftVersion="v0.2.1"
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -171,6 +172,34 @@ _installCommonDev() {
         echo "Eigen already installed."
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath $eigenPrefix) "
+
+
+    if [[ ${gpl2} == "yes" ]]; then
+        kokkosfftPrefix=${PREFIX:-"/usr/local"}
+        if [[ ! -d ${kokkosfftPrefix}/include/kokkos ||
+            ( ! -n "$(grep -e "^#define\s\+KOKKOS_ENABLE_CUDA\s*$" ${kokkosfftPrefix}/include/kokkos/KokkosCore_config.h)" && ${gpuDeps} == 'nvidia' )
+        ]]; then
+            cd "${baseDir}"
+            git clone --recurse-submodules https://github.com/kokkos/kokkos-fft
+            cd kokkos-fft
+            git checkout ${kokkosfftVersion}
+            git submodule update --recursive
+            ARGS_KOKKOSFFT=" -DCMAKE_BUILD_TYPE=Release -DKokkos_ENABLE_OPENMP=ON -DKokkosFFT_ENABLE_INTERNAL_KOKKOS=ON"
+            if [[ ${gpuDeps} == "nvidia" && -n "$(lspci -vnnn 2>/dev/null | grep -i vga.*nvidia*)" ]]; then
+                if [[ -z "$(which g++-10)" ]]; then
+                    export PATH=$(pwd)/tpls/kokkos/bin:$PATH
+                    ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=nvcc_wrapper "
+                else
+                    ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=g++-10 "
+                fi
+            fi
+            ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${kokkosfftPrefix}" ${ARGS_KOKKOSFFT} -B build
+            ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
+        else
+            echo "KokkosFFT already installed."
+        fi
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D Kokkos_ROOT=$(realpath $kokkosfftPrefix) "
+    fi
 
     # cudd
     cuddPrefix=${PREFIX:-"/usr/local"}
@@ -340,7 +369,7 @@ _installUbuntuCleanUp() {
 _installUbuntuPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install --no-install-recommends tzdata
+    apt-get -y install --no-install-recommends tzdata pciutils
     apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
@@ -361,6 +390,8 @@ _installUbuntuPackages() {
         libfl-dev \
         libgomp1 \
         libomp-dev \
+        libfftw3-dev\
+        libfmt-dev \
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
@@ -391,6 +422,10 @@ _installUbuntuPackages() {
         packages+=("libpython3.11")
     else
         packages+=("libpython3.8")
+    fi
+
+    if [[ ${gpuDeps} == "nvidia" && -n "$(lspci -vnnn 2>/dev/null | grep -i vga.*nvidia*)" ]]; then
+        packages+=("nvidia-cuda-dev" "nvidia-cuda-toolkit" "g++-10")
     fi
 
     # Chose QT libraries
@@ -429,6 +464,8 @@ _installRHELPackages() {
         automake \
         clang \
         clang-devel \
+        fftw \
+        fftw-devel \
         gcc \
         gcc-c++ \
         gdb \
@@ -481,36 +518,42 @@ _installOpenSusePackages() {
     zypper refresh
     zypper -n update
     zypper -n install -t pattern devel_basis
-    zypper -n install \
-        binutils \
-        clang \
-        gcc \
-        gcc11-c++ \
-        git \
-        groff \
-        gzip \
-        lcov \
-        libffi-devel \
-        libgomp1 \
-        libomp11-devel \
-        libpython3_6m1_0 \
-        libqt5-creator \
-        libqt5-qtbase \
-        libqt5-qtstyleplugins \
-        libstdc++6-devel-gcc8 \
-        llvm \
-        pandoc \
-        pcre-devel \
-        pcre2-devel \
-        python3-devel \
-        python3-pip \
-        qimgv \
-        readline-devel \
-        tcl \
-        tcl-devel \
-        tcllib \
-        wget \
-        zlib-devel
+    zypper -n --gpg-auto-import-keys \
+        --plus-repo https://download.opensuse.org/repositories/games/$(grep ^VERSION= /etc/os-release | sed  's/VERSION="\(.*\)"/\1/g') \
+        --plus-repo https://download.opensuse.org/repositories/Education/$(grep ^VERSION= /etc/os-release | sed  's/VERSION="\(.*\)"/\1/g')\
+        install \
+            binutils \
+            clang \
+            fftw3-devel\
+            gcc \
+            gcc11-c++ \
+            git \
+            groff \
+            gzip \
+            lcov \
+            libffi-devel \
+            libgomp1 \
+            libomp11-devel \
+            libfmt11 \
+            libpython3_6m1_0 \
+            libqt5-creator \
+            libqt5-qtbase \
+            libqt5-qtstyleplugins \
+            libstdc++6-devel-gcc8 \
+            llvm \
+            pandoc \
+            pcre-devel \
+            pcre2-devel \
+            python3-devel \
+            python3-pip \
+            qimgv \
+            readline-devel \
+            tcl \
+            tcl-devel \
+            tcllib \
+            unzip \
+            wget \
+            zlib-devel
 
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
@@ -574,7 +617,7 @@ _installDebianCleanUp() {
 _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install --no-install-recommends tzdata
+    apt-get -y install --no-install-recommends tzdata pciutils lsb-release
     if [[ $1 == rodete ]]; then
         tclver=8.6
     else
@@ -598,6 +641,8 @@ _installDebianPackages() {
         libffi-dev \
         libfl-dev \
         libgomp1 \
+        libfftw3-dev\
+        libfmt-dev \
         libomp-dev \
         libpcre2-dev \
         libpcre3-dev \
@@ -612,6 +657,20 @@ _installDebianPackages() {
         unzip \
         wget \
         zlib1g-dev
+
+    if [[ ${gpuDeps} == "nvidia" ]]; then
+        RELEASE_CODENAME=$(lsb_release -c | awk '{print $2}')
+
+        NEW_LINES="deb http://deb.debian.org/debian/ $RELEASE_CODENAME main contrib non-free
+        deb-src http://deb.debian.org/debian/ $RELEASE_CODENAME main contrib non-free"
+
+        if ! grep -q "$NEW_LINES" /etc/apt/sources.list; then
+            echo "$NEW_LINES" | tee -a /etc/apt/sources.list > /dev/null
+        fi
+        apt-get update
+        apt-get -y install --no-install-recommends libcu++-dev nvidia-cuda-toolkit
+    fi
+
 
     if [[ $1 == 10 ]]; then
         apt-get install -y --no-install-recommends \
@@ -753,6 +812,8 @@ isLocal="false"
 equivalenceDeps="no"
 CI="no"
 saveDepsPrefixes=""
+gpuDeps="no"
+gpl2="no"
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -782,12 +843,32 @@ while [ "$#" -gt 0 ]; do
             ;;
         -common)
             if [[ "${option}" != "none" ]]; then
-                echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
+                echo "WARNING: previous argument -${option} will be overwritten with -common."  >&2
             fi
             option="common"
             ;;
         -eqy)
             equivalenceDeps="yes"
+            ;;
+        -gpu)
+            shift 1
+            case "${1}" in
+                nvidia)
+                    gpuDeps="nvidia"
+                    ;;
+                amd)
+                    echo "AMD selected, but it's currently unsupported."
+                    echo "Consider using the 'nvidia' option or remove the -gpu flag."
+                    exit 1
+                    ;;
+                *)
+                    echo "Invalid GPU option. Please use 'nvidia' or 'amd'."
+                    exit 1
+                    ;;
+            esac
+            ;;
+        -use_gpl2)
+            gpl2="yes"
             ;;
         -ci)
             CI="yes"
@@ -906,6 +987,10 @@ case "${os}" in
             echo "ERROR: Unsupported ${rhelVersion} version. Only '9' is supported."
             exit 1
         fi
+        if [[ ${gpuDeps} == 'nvidia' ]]; then
+            echo "ERROR: GPU backends are not supported on RHEL."
+            exit 1
+        fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
@@ -923,6 +1008,10 @@ case "${os}" in
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
+        if [[ ${gpuDeps} == 'nvidia' ]]; then
+            echo "ERROR: GPU backends are not supported on Darwin."
+            exit 1
+        fi
         _installDarwin
         cat <<EOF
 
@@ -934,6 +1023,10 @@ EOF
     "openSUSE Leap" )
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
+        if [[ ${gpuDeps} == 'nvidia' ]]; then
+            echo "ERROR: GPU backends are not supported on OpenSUSE."
+            exit 1
         fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal

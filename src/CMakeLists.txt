@@ -232,6 +232,35 @@ endif()
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+if(USE_GPL2)
+  find_package(OpenMP REQUIRED)
+  find_package(Kokkos)
+  find_package(KokkosFFT)
+  if(NOT (${Kokkos_FOUND} AND ${KokkosFFT_FOUND}))
+    include(FetchContent)
+    FetchContent_Populate(
+      kokkos-fft
+      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gpl2/kokkos-fft
+      GIT_REPOSITORY https://github.com/kokkos/kokkos-fft
+      GIT_TAG origin/main
+    )
+    set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "Set Kokkos OpenMP backend" FORCE)
+    if(GPU)
+      set(Kokkos_ENABLE_CUDA ON CACHE BOOL "Set Kokkos CUDA backend" FORCE)
+      set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
+      set(KokkosFFT_ENABLE_HOST_AND_DEVICE ON CACHE BOOL "Enable execution of kokkos fft on host" FORCE)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_NO_CUDA")
+      if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14")
+        message(FATAL_ERROR "Detected version of GCC is not supported by NVCC. Consider using Clang or disabling GPU support.")
+      endif()
+    else()
+      set(Kokkos_ENABLE_CUDA OFF CACHE BOOL "Set Kokkos CUDA backend" FORCE)
+      set(Kokkos_ENABLE_CUDA_LAMBDA OFF CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
+    endif()
+    set(KokkosFFT_ENABLE_INTERNAL_KOKKOS ON CACHE BOOL "Use Kokkos-FFT to build Kokkos" FORCE)
+  endif()
+endif()
+
 ################################################################
 
 # Build flow tools
@@ -250,6 +279,9 @@ add_subdirectory(dbSta)
 add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
+if(USE_GPL2)
+  add_subdirectory(gpl2)
+endif()
 add_subdirectory(dpl)
 add_subdirectory(exa)
 add_subdirectory(fin)
@@ -276,6 +308,9 @@ add_subdirectory(par)
 add_executable(openroad
   ${OPENROAD_SOURCE}
 )
+if(USE_GPL2)
+  target_compile_definitions(openroad PUBLIC ENABLE_KOKKOS)
+endif()
 
 target_compile_options(openroad
   PRIVATE
@@ -337,6 +372,15 @@ target_link_libraries(openroad
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
 )
+
+if(USE_GPL2)
+  find_package(fmt REQUIRED)
+  target_link_libraries(openroad
+    gpl2
+    KokkosFFT::fft
+    fmt::fmt-header-only
+  )
+endif()
 
 target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
@@ -409,6 +453,9 @@ if (Python3_FOUND AND BUILD_PYTHON)
     dft_py
     par_py
   )
+  if(USE_GPL2)
+    target_link_libraries(openroad gpl2_py KokkosFFT::fft)
+  endif()
 
 else()
   message(STATUS "Python3 disabled")

@@ -25,7 +25,7 @@ const char *
 openroad_git_describe();
 
 const bool
-openroad_gpu_compiled();
+openroad_dg_compiled();
 
 const bool 
 openroad_python_compiled();

@@ -46,6 +46,7 @@ class Progress;
   X(FIN)                \
   X(FLW)                \
   X(GPL)                \
+  X(GPL2)               \
   X(GRT)                \
   X(GUI)                \
   X(IFP)                \
@@ -376,9 +377,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int) -> decltype(std::declval<std::ostream>()
-                                        << std::declval<T>(),
-                                    std::true_type());
+  static auto test(int)
+      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
+                  std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;
