@@ -224,6 +224,7 @@ class BaseMove : public sta::dbStaState
                           const DcalcAnalysisPt* dcalc_ap);
   bool replaceCell(Instance* inst, const LibertyCell* replacement);
 
+  static constexpr int size_down_max_fanout_ = 10;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr int buffer_removal_max_fanout_ = 10;

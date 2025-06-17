@@ -34,6 +34,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 
+[INFO RSZ-0058] Using max wire length 1247um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        14
