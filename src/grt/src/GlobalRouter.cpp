@@ -407,7 +407,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "routing source is detailed routing.");
   }
 
-  std::vector<odb::dbNet*> modified_nets;
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -419,15 +418,16 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           ratio_margin,
                                                           num_threads);
     // if run in GRT and it need run jumper insertion
+    std::vector<odb::dbNet*> nets_with_jumpers;
     if (!haveDetailedRoutes(nets_to_repair)
         && repair_antennas_->hasNewViolations()) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(
-          routes_, grid_->getTileSize(), getMaxRoutingLayer(), modified_nets);
+          routes_, grid_->getTileSize(), getMaxRoutingLayer(), nets_with_jumpers);
       repair_antennas_->clearViolations();
 
-      saveGuides(modified_nets);
-      modified_nets.clear();
+      saveGuides(nets_with_jumpers);
+      nets_with_jumpers.clear();
       // run again antenna checker
       violations
           = repair_antennas_->checkAntennaViolations(routes_,
@@ -447,7 +447,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       nets_to_repair.clear();
       for (const Net* net : incr_groute.updateRoutes()) {
         nets_to_repair.push_back(net->getDbNet());
-        modified_nets.push_back(net->getDbNet());
+        saveGuides(nets_to_repair);
       }
     }
     repair_antennas_->clearViolations();
@@ -455,7 +455,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   }
 
   logger_->metric("antenna_diodes_count", total_diodes_count_);
-  saveGuides(modified_nets);
   return total_diodes_count_;
 }
 
