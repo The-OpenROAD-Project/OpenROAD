@@ -9,7 +9,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0038] Inserted 159 buffers in 88 nets.
 worst slack max -0.355
 tns max -40.710
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SizeDownMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 200 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 200 out of 200 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst

@@ -1,7 +1,7 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 worst slack max -0.16
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SizeDownMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 150 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 150 out of 150 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -48,30 +48,23 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone14/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-       50 |       0 |      25 |        6 |     15 |     4 |    +8.4% |   -0.166 |      -21.7 |    150 | load122/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone18/ZN
-       54 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone8/ZN
+       48 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       50 |       0 |       5 |        0 |      4 |     2 |    +1.4% |   -0.125 |      -18.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone23/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-       60 |       0 |       7 |        0 |      5 |     3 |    +1.9% |   -0.139 |      -20.0 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone24/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone25/ZN
-       63 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       57 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       60 |       0 |       6 |        0 |      4 |     2 |    +1.5% |   -0.129 |      -18.7 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone26/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -79,8 +72,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone27/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone28/ZN
-       69 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
-       70 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       63 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone29/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -88,25 +80,25 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone30/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone31/ZN
-       75 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       69 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       70 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone32/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-       80 |       0 |       7 |        0 |      5 |     2 |    +1.9% |   -0.139 |      -20.0 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone33/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone33/ZN
-       81 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       75 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone35/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+       80 |       0 |       7 |        0 |      5 |     2 |    +1.9% |   -0.139 |      -20.0 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone36/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone36/ZN
-       87 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
-       90 |       0 |       6 |        0 |      4 |     2 |    +1.5% |   -0.129 |      -18.7 |    150 | load65/D
+       81 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone38/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -114,7 +106,8 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone39/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone39/ZN
-       93 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       87 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       90 |       0 |       6 |        0 |      4 |     2 |    +1.5% |   -0.129 |      -18.7 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone41/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -122,8 +115,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone42/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone42/ZN
-       99 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
-      100 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       93 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone44/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -131,75 +123,75 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone45/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone45/ZN
-      105 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+       99 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      100 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone47/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone47/ZN
-      110 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.2 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone49/ZN
-      110 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      104 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone50/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone50/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone52/ZN
-      115 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      109 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      110 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone53/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone53/ZN
-      120 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.2 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone55/ZN
-      120 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      114 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone56/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone56/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone58/ZN
-      125 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      119 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      120 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone59/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone59/ZN
-      130 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.2 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone59/ZN
+      124 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone62/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone62/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone62/ZN
+      129 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
       130 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone62/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone65/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone62/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone65/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone62/ZN
-      135 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone65/ZN
+      134 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone65/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone68/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone65/ZN
-      140 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.2 |    150 | load65/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone68/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone65/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone68/ZN
+      139 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
       140 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone68/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone68/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone68/ZN
-      145 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone71/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone71/ZN
-      150 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.2 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone71/ZN
-      150 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      144 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -207,16 +199,16 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone75/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone76/ZN
-      155 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      149 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      150 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone78/ZN
-      160 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone79/ZN
-      160 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      154 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -224,67 +216,67 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone81/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone82/ZN
-      165 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      159 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      160 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone84/ZN
-      170 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone85/ZN
+      164 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone87/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone87/ZN
+      169 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
       170 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone87/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone90/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone87/ZN
-      175 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone90/ZN
+      174 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone90/ZN
-      180 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone93/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone90/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone93/ZN
+      179 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
       180 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone93/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone96/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone93/ZN
-      185 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone96/ZN
+      184 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone96/ZN
-      190 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone99/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone96/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone99/ZN
+      189 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
       190 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone99/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone99/ZN
-      195 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      200 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone103/ZN
-      200 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      194 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -292,16 +284,16 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone106/ZN
-      205 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      199 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      200 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      210 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone109/ZN
-      210 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      204 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -309,68 +301,68 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone112/ZN
-      215 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      209 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      210 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      220 |       0 |       6 |        0 |      6 |     2 |    +1.9% |   -0.140 |      -20.4 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone115/ZN
-      220 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
+      214 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.119 |      -17.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-      224 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.136 |      -20.2 |    150 | load65/D
+      218 |       0 |       5 |        0 |      3 |     2 |    +1.2% |   -0.136 |      -20.2 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      220 |       0 |       5 |        0 |      4 |     2 |    +1.4% |   -0.125 |      -18.3 |    150 | load65/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
+      222 |       0 |       5 |        0 |      4 |     2 |    +1.4% |   -0.136 |      -19.9 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-      228 |       0 |       5 |        0 |      4 |     2 |    +1.4% |   -0.136 |      -19.9 |    150 | load65/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-      230 |       0 |       5 |        0 |      5 |     2 |    +1.6% |   -0.130 |      -19.0 |    150 | load65/D
+      225 |       0 |       5 |        0 |      5 |     2 |    +1.6% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-      231 |       0 |       5 |        0 |      5 |     2 |    +1.6% |   -0.136 |      -19.8 |    150 | load65/D
+      227 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
+      228 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-      233 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone2/ZN
-      234 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      230 |       0 |       5 |        0 |      7 |     2 |    +2.0% |   -0.141 |      -20.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone125/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      240 |       0 |       6 |        1 |      8 |     3 |    +2.5% |   -0.151 |      -21.4 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone126/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      240 |       0 |      10 |        2 |      9 |     3 |    +3.5% |   -0.160 |      -20.1 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone129/ZN
-      246 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      240 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone130/ZN
-      250 |       0 |       6 |        0 |      8 |     2 |    +2.3% |   -0.151 |      -21.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -378,14 +370,14 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone131/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      250 |       0 |       7 |        2 |      9 |     4 |    +3.0% |   -0.156 |      -19.5 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone134/ZN
-      256 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      250 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone135/ZN
-      260 |       0 |       6 |        0 |      8 |     2 |    +2.3% |   -0.151 |      -21.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -393,47 +385,47 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone136/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone139/ZN
-      264 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      258 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      260 |       0 |       5 |        0 |      7 |     2 |    +2.0% |   -0.141 |      -20.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone140/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      270 |       0 |       6 |        2 |      8 |     2 |    +2.6% |   -0.149 |      -18.2 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone141/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone144/ZN
-      272 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      266 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone145/ZN
+      270 |       0 |       6 |        0 |      8 |     2 |    +2.3% |   -0.151 |      -21.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone146/ZN
-      280 |       0 |       7 |        2 |      9 |     2 |    +3.0% |   -0.157 |      -19.5 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone146/ZN
-      280 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      274 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone150/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      280 |       0 |       6 |        2 |      8 |     2 |    +2.6% |   -0.149 |      -18.2 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone151/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone151/ZN
-      288 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      282 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      290 |       0 |       5 |        0 |      7 |     2 |    +2.0% |   -0.141 |      -20.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone155/ZN
@@ -442,14 +434,14 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone156/ZN
+      290 |       0 |       7 |        2 |      9 |     2 |    +3.0% |   -0.157 |      -19.5 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone156/ZN
-      296 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      290 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone160/ZN
-      300 |       0 |       6 |        0 |      8 |     2 |    +2.3% |   -0.151 |      -21.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -457,34 +449,47 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone161/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone161/ZN
-      304 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      298 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      300 |       0 |       5 |        0 |      7 |     2 |    +2.0% |   -0.141 |      -20.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone165/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      310 |       0 |       6 |        2 |      8 |     2 |    +2.6% |   -0.149 |      -18.2 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone166/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone166/ZN
-      312 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
+      306 |       0 |       5 |        0 |      6 |     2 |    +1.8% |   -0.136 |      -19.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
+      310 |       0 |       6 |        0 |      8 |     2 |    +2.3% |   -0.151 |      -21.3 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
-      320 |       0 |       8 |        1 |      9 |     2 |    +3.0% |   -0.151 |      -21.3 |    150 | load0/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
+      319 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      320 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
+      321 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
+      323 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
       325 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -492,36 +497,23 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
       327 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
+      328 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
       329 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
       330 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
+      330 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
       331 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone173/ZN
-      333 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
-      334 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
-      335 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
-      336 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
-      337 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone170/ZN
-      338 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      332 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      340 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -529,41 +521,41 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone176/ZN
-      344 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      338 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
+      340 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone177/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone178/ZN
-      348 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      342 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      350 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone179/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone180/ZN
-      352 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      346 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone181/ZN
+      350 |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.140 |      -19.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone182/ZN
-      356 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      350 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone183/ZN
-      360 |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.140 |      -19.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone183/ZN
-      360 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      354 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -571,41 +563,41 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone185/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone185/ZN
-      364 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      358 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
+      360 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone187/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone187/ZN
-      368 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      362 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      370 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone189/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone189/ZN
-      372 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      366 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone191/ZN
+      370 |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.140 |      -19.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone191/ZN
-      376 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      370 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      380 |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.140 |      -19.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone194/ZN
-      380 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      374 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
@@ -613,231 +605,231 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone196/ZN
-      384 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      378 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
+      380 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone198/ZN
-      388 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      382 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      390 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.132 |      -18.3 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone200/ZN
-      392 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      386 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      390 |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.140 |      -19.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone202/ZN
-      396 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
+      390 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.127 |      -17.6 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      399 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.136 |      -19.2 |    150 | load114/D
-      400 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.136 |      -19.2 |    150 | load114/D
+      393 |       0 |      10 |        2 |      9 |     2 |    +3.5% |   -0.136 |      -19.2 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      402 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.136 |      -19.1 |    150 | load114/D
+      396 |       0 |      10 |        2 |     10 |     2 |    +3.7% |   -0.136 |      -19.1 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      404 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      398 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      405 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      399 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      400 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone1/ZN
-      406 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      400 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      410 |       0 |      11 |        3 |     12 |     2 |    +4.4% |   -0.142 |      -19.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone208/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone211/ZN
+      410 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone212/ZN
-      417 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      420 |       0 |      11 |        2 |     12 |     2 |    +4.2% |   -0.144 |      -19.8 |    150 | load114/D
+      411 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone213/ZN
+      420 |       0 |      14 |        4 |     13 |     2 |    +5.2% |   -0.147 |      -18.8 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone216/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone217/ZN
-      428 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      430 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      422 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone218/ZN
+      430 |       0 |      13 |        4 |     13 |     2 |    +5.1% |   -0.144 |      -18.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone221/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone222/ZN
-      439 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      440 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      433 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      440 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone223/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone226/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      450 |       0 |      15 |        4 |     14 |     2 |    +5.6% |   -0.155 |      -19.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone227/ZN
-      450 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      444 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      450 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone228/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone231/ZN
-      460 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone231/ZN
-      460 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      454 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      460 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone233/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone236/ZN
-      470 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone236/ZN
-      470 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      464 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      470 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone238/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone241/ZN
-      480 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone241/ZN
-      480 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      474 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      480 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone243/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone246/ZN
-      490 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone246/ZN
-      490 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      484 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      490 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone248/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone251/ZN
-      500 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone251/ZN
-      500 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      494 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      500 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone253/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone253/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      510 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone257/ZN
-      510 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      504 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      510 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone258/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone258/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      520 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone262/ZN
-      520 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      514 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      520 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone263/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone263/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      530 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone267/ZN
-      530 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      524 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      530 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone268/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone268/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      540 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone272/ZN
-      540 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      534 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      540 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.140 |      -18.2 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone273/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone273/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone273/ZN
-      549 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      550 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      543 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      550 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone278/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone278/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone278/ZN
-      558 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      560 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      552 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone283/ZN
+      560 |       0 |      13 |        4 |     13 |     2 |    +5.1% |   -0.144 |      -18.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone283/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone283/ZN
-      567 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      570 |       0 |      11 |        2 |     12 |     2 |    +4.2% |   -0.144 |      -19.8 |    150 | load114/D
+      561 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone288/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone288/ZN
+      570 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone288/ZN
-      576 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      570 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      580 |       0 |      11 |        3 |     12 |     2 |    +4.4% |   -0.142 |      -19.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone293/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone293/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone293/ZN
-      585 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      579 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      580 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      590 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -845,10 +837,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone302/ZN
-      595 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      589 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      590 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      600 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -856,10 +848,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone307/ZN
-      605 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      599 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      600 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      610 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -867,10 +859,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone312/ZN
-      615 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      609 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      610 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      620 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -878,124 +870,107 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone317/ZN
-      625 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      619 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      620 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      630 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone321/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone321/ZN
-      634 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      628 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      630 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      640 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone326/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone326/ZN
-      643 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      637 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      640 |       0 |      10 |        3 |     12 |     2 |    +4.2% |   -0.138 |      -19.6 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      650 |       0 |      12 |        4 |     13 |     2 |    +4.9% |   -0.140 |      -17.8 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone331/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone331/ZN
-      652 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      646 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      650 |       0 |      10 |        4 |     12 |     2 |    +4.4% |   -0.136 |      -17.7 |    150 | load48/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      660 |       0 |      13 |        4 |     13 |     2 |    +5.1% |   -0.144 |      -18.3 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone336/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone336/ZN
-      661 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      655 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      660 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone341/ZN
-      670 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone341/ZN
-      670 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      664 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      670 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone347/ZN
-      679 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      680 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      673 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+      680 |       0 |      12 |        4 |     13 |     2 |    +4.9% |   -0.140 |      -17.8 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone352/ZN
-      688 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      690 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      682 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+      690 |       0 |      12 |        4 |     14 |     2 |    +5.1% |   -0.144 |      -18.4 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone357/ZN
-      697 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      691 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      700 |       0 |      10 |        3 |     12 |     2 |    +4.2% |   -0.138 |      -19.6 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      700 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone362/ZN
-      706 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      700 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      710 |       0 |      10 |        4 |     12 |     2 |    +4.4% |   -0.136 |      -17.7 |    150 | load48/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone367/ZN
-      715 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      720 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      723 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      730 |       0 |      12 |        4 |     13 |     2 |    +4.9% |   -0.140 |      -17.8 |    150 | load149/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      731 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      709 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      710 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
@@ -1003,8 +978,34 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      739 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      740 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      717 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+      720 |       0 |      10 |        3 |     12 |     2 |    +4.2% |   -0.138 |      -19.6 |    150 | load149/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+      725 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      730 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+      733 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+      740 |       0 |      12 |        4 |     13 |     2 |    +4.9% |   -0.140 |      -17.8 |    150 | load149/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
+      741 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
@@ -1012,19 +1013,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      747 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      750 |       0 |      10 |        3 |     12 |     2 |    +4.2% |   -0.138 |      -19.6 |    150 | load149/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
-      755 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      749 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      750 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      760 |       0 |      11 |        4 |     12 |     2 |    +4.6% |   -0.141 |      -18.8 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split395/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone393/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split395/Z
@@ -1033,12 +1025,12 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone396/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split395/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      760 |       0 |      15 |        4 |     14 |     2 |    +5.6% |   -0.155 |      -19.8 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split395/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone397/ZN
-      766 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      760 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-      770 |       0 |      11 |        3 |     12 |     2 |    +4.4% |   -0.142 |      -19.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver split400/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone398/ZN
@@ -1046,18 +1038,19 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split400/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone401/ZN
+      770 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.3 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split400/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver split400/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone402/ZN
-      777 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      780 |       0 |      11 |        2 |     12 |     2 |    +4.2% |   -0.144 |      -19.7 |    150 | load114/D
+      771 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver split405/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone403/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split405/Z
+      780 |       0 |      14 |        4 |     13 |     2 |    +5.2% |   -0.147 |      -18.8 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split405/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone406/ZN
@@ -1066,12 +1059,12 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split405/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone407/ZN
-      788 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      790 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      782 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver split410/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone408/ZN
+      790 |       0 |      13 |        4 |     13 |     2 |    +5.1% |   -0.144 |      -18.3 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split410/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver split410/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
@@ -1081,10 +1074,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split410/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone412/ZN
-      799 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      800 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      793 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      800 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split415/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone413/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split415/Z
@@ -1094,10 +1087,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split415/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone416/ZN
-      809 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      810 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      803 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      810 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split420/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone418/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split420/Z
@@ -1107,10 +1100,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split420/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone421/ZN
-      819 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      820 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      813 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      820 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split425/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone423/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split425/Z
@@ -1120,10 +1113,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split425/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone426/ZN
-      829 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      830 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      823 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      830 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split430/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone428/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split430/Z
@@ -1133,10 +1126,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split430/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone431/ZN
-      839 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      840 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      833 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      840 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split435/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone433/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split435/Z
@@ -1146,10 +1139,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split435/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone436/ZN
-      849 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      850 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      843 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      850 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split440/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone438/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split440/Z
@@ -1160,10 +1153,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split440/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone442/ZN
-      859 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      860 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      853 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      860 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split445/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone443/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split445/Z
@@ -1174,10 +1167,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split445/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone447/ZN
-      869 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      870 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      863 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      870 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split450/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone448/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split450/Z
@@ -1188,10 +1181,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split450/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone452/ZN
-      879 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      880 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      873 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      880 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split455/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone453/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split455/Z
@@ -1202,10 +1195,10 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split455/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone457/ZN
-      889 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      890 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      883 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      890 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split460/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone458/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split460/Z
@@ -1216,230 +1209,236 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split460/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone462/ZN
-      899 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      900 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      893 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+      900 |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.140 |      -17.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split465/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone463/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split465/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone463/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver split465/Z
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone463/ZN
+      902 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver split470/Z
 [WARNING RSZ-0075] message limit (1000) reached. This message will no longer print.
-      908 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      910 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
-      917 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      920 |       0 |      11 |        2 |     12 |     2 |    +4.2% |   -0.144 |      -19.7 |    150 | load114/D
-      926 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      930 |       0 |      11 |        3 |     12 |     2 |    +4.4% |   -0.142 |      -19.9 |    150 | load149/D
-      935 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      940 |       0 |      11 |        4 |     12 |     2 |    +4.6% |   -0.141 |      -18.8 |    150 | load65/D
-      944 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      950 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
-      954 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      960 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
-      964 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      970 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
-      974 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      980 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
-      984 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-      990 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
-      993 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1000 |       0 |      12 |        4 |     13 |     2 |    +4.9% |   -0.140 |      -17.8 |    150 | load149/D
-     1002 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1010 |       0 |      13 |        4 |     13 |     2 |    +5.1% |   -0.144 |      -18.3 |    150 | load149/D
-     1011 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1020 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
-     1020 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1029 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1030 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1038 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1040 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
-     1047 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1050 |       0 |      10 |        3 |     12 |     2 |    +4.2% |   -0.138 |      -19.6 |    150 | load149/D
-     1056 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1060 |       0 |      10 |        4 |     12 |     2 |    +4.4% |   -0.136 |      -17.7 |    150 | load131/D
-     1065 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1070 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
-     1074 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1080 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
-     1082 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1090 |       0 |      12 |        4 |     14 |     2 |    +5.1% |   -0.144 |      -18.4 |    150 | load149/D
-     1090 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1098 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
-     1100 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
-     1100 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.140 |      -19.7 |    150 | load114/D
-     1108 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.144 |      -18.5 |    150 | load149/D
-    1110* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -17.0 |    150 | load149/D
-    1110* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1111* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1112* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1113* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1114* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1115* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1116* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1117* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1118* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1119* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1120* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1120* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1121* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1122* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1123* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1124* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1125* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1126* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1127* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1128* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1129* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1130* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1130* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1131* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1132* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1133* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1134* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1135* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1136* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1137* |       0 |      13 |        4 |     12 |     2 |    +4.9% |   -0.123 |      -16.9 |    150 | load149/D
-    1139* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1140* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1140* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1141* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1142* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1143* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1144* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1145* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1146* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1147* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1148* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1149* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1150* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1150* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1151* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1152* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1153* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1154* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1155* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1156* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1157* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1158* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1159* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1160* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1160* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1161* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1162* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1163* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1164* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1165* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1166* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1167* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1168* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1169* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1170* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1170* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1171* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1172* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1173* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1174* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1175* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1176* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1177* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1178* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1179* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1180* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1180* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1181* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1182* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1183* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1184* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1185* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1186* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1187* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1188* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1189* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1190* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1190* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1191* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1192* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1193* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1194* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1195* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1196* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1197* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1198* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1199* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1200* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1201* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1202* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1203* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1204* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1205* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1206* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1207* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1208* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1209* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1210* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1210* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1211* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1212* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1213* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1214* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1215* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1216* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1217* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1218* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1219* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1220* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1220* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1221* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1222* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1223* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1224* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1225* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1226* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1227* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1228* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1229* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1230* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1230* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1231* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1232* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1233* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1234* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1235* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1236* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1237* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1238* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1239* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1240* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1240* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1241* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1242* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1243* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1244* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1245* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1246* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1247* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1248* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1249* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1250* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1250* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1251* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1252* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1253* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1254* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1255* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1256* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1257* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1258* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1259* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1260* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    1260* |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
-    final |       0 |      14 |        4 |     12 |     2 |    +5.0% |   -0.123 |      -16.9 |    150 | load149/D
+      910 |       0 |      13 |        4 |     13 |     2 |    +5.1% |   -0.144 |      -18.3 |    150 | load149/D
+      911 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      920 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
+      920 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      929 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      930 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      938 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      940 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      948 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      950 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      958 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      960 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      968 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      970 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      978 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      980 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+      987 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+      990 |       0 |      10 |        3 |     12 |     2 |    +4.2% |   -0.138 |      -19.6 |    150 | load149/D
+      996 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1000 |       0 |      10 |        4 |     12 |     2 |    +4.4% |   -0.136 |      -17.7 |    150 | load131/D
+     1005 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1010 |       0 |      11 |        4 |     12 |     2 |    +4.5% |   -0.136 |      -17.4 |    150 | load149/D
+     1014 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1020 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
+     1023 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1030 |       0 |      12 |        4 |     13 |     2 |    +4.9% |   -0.140 |      -17.8 |    150 | load149/D
+     1032 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1040 |       0 |      12 |        4 |     14 |     2 |    +5.1% |   -0.144 |      -18.4 |    150 | load149/D
+     1041 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1050 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
+     1050 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1059 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1060 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1068 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1070 |       0 |      10 |        2 |     12 |     2 |    +4.1% |   -0.140 |      -19.4 |    150 | load114/D
+     1076 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1080 |       0 |      10 |        4 |     12 |     2 |    +4.4% |   -0.136 |      -17.7 |    150 | load131/D
+     1084 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1090 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
+     1092 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1100 |       0 |      12 |        4 |     14 |     2 |    +5.1% |   -0.144 |      -18.4 |    150 | load149/D
+     1100 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+     1108 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
+    1110* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1110* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1111* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1112* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1113* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1114* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1115* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1116* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1117* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1118* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1119* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1120* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1120* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1121* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1122* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1123* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1124* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1125* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1126* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1127* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1128* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1129* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1130* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1130* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1131* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1132* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1133* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1134* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1135* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1136* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1137* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1138* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1139* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1140* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1140* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1141* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1142* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1143* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1144* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1145* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1146* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1147* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1148* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1149* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1150* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1150* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1151* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1152* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1153* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1154* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1155* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1156* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1157* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1158* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1159* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1160* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1160* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1161* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1162* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1163* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1164* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1165* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1166* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1167* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1168* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1169* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1170* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1170* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1171* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1172* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1173* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1174* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1175* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1176* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1177* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1178* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1179* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1180* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1180* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1181* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1182* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1183* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1184* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1185* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1186* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1187* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1188* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1189* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1190* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1190* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1191* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1192* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1193* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1194* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1195* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1196* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1197* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1198* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1199* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1200* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1201* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1202* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1203* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1204* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1205* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1206* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1207* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1208* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1209* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1210* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1210* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1211* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1212* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1213* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1214* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1215* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1216* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1217* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1218* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1219* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1220* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1220* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1221* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1222* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1223* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1224* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1225* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1226* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1227* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1228* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1229* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1230* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1230* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1231* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1232* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1233* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1234* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1235* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1236* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1237* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1238* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1239* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1240* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1240* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1241* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1242* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1243* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1244* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1245* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1246* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1247* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1248* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1249* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1250* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1250* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1251* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1252* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1253* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1254* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1255* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1256* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1257* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1258* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    1259* |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
+    final |       0 |      11 |        2 |     11 |     2 |    +4.0% |   -0.132 |      -19.0 |    150 | load65/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 4 buffers, 4 to split loads.
-[INFO RSZ-0051] Resized 14 instances: 14 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 2 buffers, 2 to split loads.
+[INFO RSZ-0051] Resized 11 instances: 11 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 2 instances.
-[INFO RSZ-0049] Cloned 12 instances.
+[INFO RSZ-0049] Cloned 11 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -0.12
+worst slack max -0.13
 No differences found.

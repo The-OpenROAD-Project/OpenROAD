@@ -19,24 +19,14 @@ module td1 (a1,
 
  wire net1;
  wire n1;
- wire net2;
 
-<<<<<<< HEAD
- BUF_X4 rebuffer1 (.A(net1),
-    .Z(net2));
-=======
->>>>>>> 90dc34bb19 (Add slew violation check to size_down, re-enable size_down.)
  NAND2_X4 U3 (.A1(a2),
     .A2(a1),
     .ZN(n1));
  AND2_X4 U5 (.A1(a3),
     .A2(n1),
     .ZN(net1));
-<<<<<<< HEAD
- BUF_X8 wire1 (.A(net2),
-=======
- CLKBUF_X1 wire1 (.A(net1),
->>>>>>> 90dc34bb19 (Add slew violation check to size_down, re-enable size_down.)
+ BUF_X1 wire1 (.A(net1),
     .Z(y1));
  pinswap U4 (.ip0(a6),
     .ip1(a4),

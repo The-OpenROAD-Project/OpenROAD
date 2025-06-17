@@ -7,7 +7,7 @@
 worst slack max -0.43
 worst slack min -0.05
 tns max -3.964
-[INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: SizeUpMove SizeDownMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 19 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 19 out of 19 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst

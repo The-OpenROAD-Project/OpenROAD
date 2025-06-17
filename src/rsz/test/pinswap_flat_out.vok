@@ -31,6 +31,6 @@ module td1 (a1,
  AND2_X4 U5 (.A1(a3),
     .A2(n1),
     .ZN(net1));
- CLKBUF_X1 wire1 (.A(net1),
+ BUF_X1 wire1 (.A(net1),
     .Z(y1));
 endmodule
