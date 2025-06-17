@@ -20,7 +20,7 @@ lefTechLayerForbiddenSpacingRuleParser::lefTechLayerForbiddenSpacingRuleParser(
   lefin_ = l;
 }
 
-void lefTechLayerForbiddenSpacingRuleParser::parse(std::string s,
+void lefTechLayerForbiddenSpacingRuleParser::parse(const std::string& s,
                                                    odb::dbTechLayer* layer)
 {
   processRules(s, [this, layer](const std::string& rule) {
@@ -53,15 +53,16 @@ void lefTechLayerForbiddenSpacingRuleParser::setForbiddenSpacing(
 }
 
 bool lefTechLayerForbiddenSpacingRuleParser::parseSubRule(
-    std::string s,
+    const std::string& s,
     odb::dbTechLayer* layer)
 {
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
+  qi::rule<std::string::const_iterator, std::string(), ascii::space_type>
+      _string;
   _string %= lexeme[+(char_ - ' ')];
   odb::dbTechLayerForbiddenSpacingRule* rule
       = odb::dbTechLayerForbiddenSpacingRule::create(layer);
 
-  qi::rule<std::string::iterator, space_type> forbiddenSpacing
+  qi::rule<std::string::const_iterator, space_type> forbiddenSpacing
       = (lit("FORBIDDENSPACING") >> double_ >> double_)[boost::bind(
             &lefTechLayerForbiddenSpacingRuleParser::setForbiddenSpacing,
             this,

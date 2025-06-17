@@ -57,22 +57,22 @@ void lefTechLayerEolKeepOutRuleParser::setInt(
 {
   (rule->*func)(lefin_->dbdist(val));
 }
-bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
+bool lefTechLayerEolKeepOutRuleParser::parseSubRule(const std::string& s,
                                                     odb::dbTechLayer* layer)
 {
   odb::dbTechLayerEolKeepOutRule* rule
       = odb::dbTechLayerEolKeepOutRule::create(layer);
-  qi::rule<std::string::iterator, space_type> EXCEPTWITHIN
+  qi::rule<std::string::const_iterator, space_type> EXCEPTWITHIN
       = (lit("EXCEPTWITHIN") >> double_ >> double_)[boost::bind(
           &lefTechLayerEolKeepOutRuleParser::setExceptWithin, this, _1, rule)];
-  qi::rule<std::string::iterator, space_type> CLASS
+  qi::rule<std::string::const_iterator, space_type> CLASS
       = (lit("CLASS")
          >> _string[boost::bind(&lefTechLayerEolKeepOutRuleParser::setClass,
                                 this,
                                 _1,
                                 rule,
                                 layer)]);
-  qi::rule<std::string::iterator, space_type> EOLKEEPOUT
+  qi::rule<std::string::const_iterator, space_type> EOLKEEPOUT
       = (lit("EOLKEEPOUT")
          >> double_[boost::bind(&lefTechLayerEolKeepOutRuleParser::setInt,
                                 this,

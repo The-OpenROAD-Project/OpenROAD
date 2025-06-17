@@ -48,18 +48,18 @@ void lefTechLayerEolExtensionRuleParser::addEntry(
   double ext = at_c<1>(params);
   rule->addEntry(lefin_->dbdist(eol), lefin_->dbdist(ext));
 }
-bool lefTechLayerEolExtensionRuleParser::parseSubRule(std::string s,
+bool lefTechLayerEolExtensionRuleParser::parseSubRule(const std::string& s,
                                                       odb::dbTechLayer* layer)
 {
   odb::dbTechLayerEolExtensionRule* rule
       = odb::dbTechLayerEolExtensionRule::create(layer);
 
-  qi::rule<std::string::iterator, space_type> EXTENSION_ENTRY
+  qi::rule<std::string::const_iterator, space_type> EXTENSION_ENTRY
       = (lit("ENDOFLINE") >> double_ >> lit("EXTENSION")
          >> double_)[boost::bind(
           &lefTechLayerEolExtensionRuleParser::addEntry, this, _1, rule)];
 
-  qi::rule<std::string::iterator, space_type> EOLEXTENSIONSPACING
+  qi::rule<std::string::const_iterator, space_type> EOLEXTENSIONSPACING
       = (lit("EOLEXTENSIONSPACING")
          >> double_[boost::bind(&lefTechLayerEolExtensionRuleParser::setInt,
                                 this,

@@ -64,14 +64,14 @@ bool parse(Iterator first,
 {
   odb::dbTechLayerSpacingTablePrlRule* rule
       = odb::dbTechLayerSpacingTablePrlRule::create(layer);
-  qi::rule<std::string::iterator, space_type> SPACINGTABLE
+  qi::rule<std::string::const_iterator, space_type> SPACINGTABLE
       = (lit("SPACINGTABLE") >> lit("INFLUENCE")
          >> +(lit("WIDTH") >> double_ >> lit("WITHIN") >> double_
               >> lit("SPACING")
               >> double_)[boost::bind(&addInfluence, _1, parser, lefinReader)]
          >> lit(";"));
 
-  qi::rule<std::string::iterator, space_type> spacingTableRule
+  qi::rule<std::string::const_iterator, space_type> spacingTableRule
       = (lit("SPACINGTABLE") >> lit("PARALLELRUNLENGTH")
          >> -lit("WRONGDIRECTION")[boost::bind(
              &odb::dbTechLayerSpacingTablePrlRule::setWrongDirection,
@@ -122,7 +122,7 @@ bool parse(Iterator first,
 
 namespace odb {
 
-bool lefTechLayerSpacingTablePrlParser::parse(std::string s,
+bool lefTechLayerSpacingTablePrlParser::parse(const std::string& s,
                                               dbTechLayer* layer,
                                               odb::lefinReader* l)
 {
