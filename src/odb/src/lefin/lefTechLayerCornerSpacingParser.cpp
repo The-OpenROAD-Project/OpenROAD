@@ -75,7 +75,7 @@ bool parse(Iterator first,
 {
   odb::dbTechLayerCornerSpacingRule* rule
       = odb::dbTechLayerCornerSpacingRule::create(layer);
-  qi::rule<std::string::iterator, space_type> convexCornerRule
+  qi::rule<std::string::const_iterator, space_type> convexCornerRule
       = (lit("CONVEXCORNER")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setType,
              rule,
@@ -98,7 +98,7 @@ bool parse(Iterator first,
                        &odb::dbTechLayerCornerSpacingRule::setIncludeShape,
                        rule,
                        true)]))));
-  qi::rule<std::string::iterator, space_type> concaveCornerRule
+  qi::rule<std::string::const_iterator, space_type> concaveCornerRule
       = (lit("CONCAVECORNER")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setType,
              rule,
@@ -111,7 +111,7 @@ bool parse(Iterator first,
                        true)]
                    >> -double_[boost::bind(
                        &setExceptNotchLength, _1, rule, lefinReader)])));
-  qi::rule<std::string::iterator, space_type> exceptSameRule
+  qi::rule<std::string::const_iterator, space_type> exceptSameRule
       = (lit("EXCEPTSAMENET")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setExceptSameNet, rule, true)]
          | lit("EXCEPTSAMEMETAL")[boost::bind(
@@ -119,11 +119,11 @@ bool parse(Iterator first,
              rule,
              true)]);
 
-  qi::rule<std::string::iterator, space_type> spacingRule
+  qi::rule<std::string::const_iterator, space_type> spacingRule
       = (lit("WIDTH") >> double_ >> lit("SPACING") >> double_
          >> -double_)[boost::bind(&addSpacing, _1, rule, lefinReader)];
 
-  qi::rule<std::string::iterator, space_type> cornerSpacingRule
+  qi::rule<std::string::const_iterator, space_type> cornerSpacingRule
       = (lit("CORNERSPACING") >> (convexCornerRule | concaveCornerRule)
          >> -(exceptSameRule) >> +(spacingRule) >> lit(";"));
 
@@ -140,7 +140,7 @@ bool parse(Iterator first,
 
 namespace odb {
 
-bool lefTechLayerCornerSpacingParser::parse(std::string s,
+bool lefTechLayerCornerSpacingParser::parse(const std::string& s,
                                             dbTechLayer* layer,
                                             odb::lefinReader* l)
 {
