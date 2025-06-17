@@ -429,7 +429,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       repair_antennas_->clearViolations();
 
       saveGuides(nets_with_jumpers);
-      nets_with_jumpers.clear();
       // run again antenna checker
       violations
           = repair_antennas_->checkAntennaViolations(routes_,
@@ -447,10 +446,14 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
       nets_to_repair.clear();
-      for (const Net* net : incr_groute.updateRoutes()) {
-        nets_to_repair.push_back(net->getDbNet());
-        saveGuides(nets_to_repair);
+      // store all dirty nets for repair to ensure violations are fixed, even in
+      // nets whose route guides were not modified but may have changes in
+      // instance positions
+      for (odb::dbNet* db_net : dirty_nets_) {
+        nets_to_repair.push_back(db_net);
       }
+      incr_groute.updateRoutes();
+      saveGuides(nets_to_repair);
     }
     repair_antennas_->clearViolations();
     itr++;
