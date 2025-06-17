@@ -1030,10 +1030,9 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             int ret = recurse(bnet->ref()) + recurse(bnet->ref2());
             const BnetPtr& p = bnet->ref();
             const BnetPtr& q = bnet->ref2();
-            const BnetPtr& min_req = fuzzyLess(p->slack(), q->slack()) ? p : q;
             bnet->setSlackTransition(
                 combinedTransition(p->slackTransition(), q->slackTransition()));
-            bnet->setSlack(min_req->slack());
+            bnet->setSlack(std::min(p->slack(), q->slack()));
             bnet->setCapacitance(p->cap() + q->cap());
             return ret;
           }
