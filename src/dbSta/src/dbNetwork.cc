@@ -2776,6 +2776,7 @@ void dbNetwork::staToDb(const Port* port,
                         dbMTerm*& mterm,
                         dbModBTerm*& modbterm) const
 {
+  bterm = nullptr;
   mterm = nullptr;
   modbterm = nullptr;
 
