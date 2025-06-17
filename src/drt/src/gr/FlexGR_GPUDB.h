@@ -84,6 +84,16 @@ unsigned getSegmentCostV__device(uint64_t* d_cmap_bits_3D,
   bool isLayerBlocked, unsigned BLOCKCOST, unsigned MARKERCOST);
 
 
+__device__
+void addSegmentH__device(uint64_t* d_cmap_bits_3D,
+  int xIdxStart, int xIdxEnd, int yIdx, int layerNum,
+  int xDim, int yDim, int zDim);
+
+__device__
+void addSegmentV__device(uint64_t* d_cmap_bits_3D,
+  int yIdxStart, int yIdxEnd, int xIdx, int layerNum,
+  int xDim, int yDim, int zDim);
+
 
 class FlexGRGPUDB
 {

@@ -114,6 +114,30 @@ unsigned getSegmentCostV__device(uint64_t* d_cmap_bits_3D,
 }
 
 
+__device__
+void addSegmentH__device(uint64_t* d_cmap_bits_3D,
+  int xIdxStart, int xIdxEnd, int yIdx, int layerNum,
+  int xDim, int yDim, int zDim)
+{
+  #pragma unroll
+  for (int xIdx = xIdxStart; xIdx < xIdxEnd; xIdx++) {
+    addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
+      xIdx, yIdx, layerNum, frDirEnum::E, 1);
+  }
+}
+
+__device__
+void addSegmentV__device(uint64_t* d_cmap_bits_3D,
+  int xIdx, int yIdxStart, int yIdxEnd, int layerNum,
+  int xDim, int yDim, int zDim)
+{
+  #pragma unroll
+  for (int yIdx = yIdxStart; yIdx < yIdxEnd; yIdx++) {
+    addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
+      xIdx, yIdx, layerNum, frDirEnum::N, 1);
+  }
+} 
+
 
 void FlexGRGPUDB::init(frDesign* design,
   FlexGRCMap* cmap, FlexGRCMap* cmap2D)

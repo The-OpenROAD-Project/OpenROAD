@@ -286,7 +286,7 @@ void layerAssignNodeCompute__kernel(
             d_cmap, min(curLocX, parentX), max(curLocX, parentX), curLocY, layerNum,
             xDim, yDim, numLayers, isLayerBlocked, BLOCKCOST, MARKERCOST);
         } else {
-          printf("Error Node %d: current node and parent node are not aligned collinearly\n", nodeId);
+          printf("LANodeCompute Error Node %d: current node and parent node are not aligned collinearly\n", nodeId);
         }
       }
 
@@ -310,7 +310,7 @@ void layerAssignNodeCommit__kernel(
   unsigned* d_bestLayerCombs,
   unsigned* d_bestLayerCosts,
   int nodeStartIdx, int nodeEndIdx, int depth,
-  int numLayers)
+  uint64_t* d_cmap, int xDim, int yDim, int numLayers)
 {
   int tIdx = blockIdx.x * blockDim.x + threadIdx.x;
   int nodeId = tIdx + nodeStartIdx;
@@ -336,10 +336,24 @@ void layerAssignNodeCommit__kernel(
   int numChild = node.childCnt;
   unsigned comb = d_bestLayerCombs[nodeId * numLayers + node.layerNum];
   for (int i = 0; i < numChild; i++) { 
-    int mylayer = comb % numLayers;
+    int myLayer = comb % numLayers;
     comb /= numLayers;
     int childId = node.children[i];
-    d_nodes[childId].layerNum = mylayer; // Assign layer to child node  
+    d_nodes[childId].layerNum = myLayer; // Assign layer to child node  
+    // update cmap
+    int childX = d_nodes[childId].x;
+    int childY = d_nodes[childId].y;
+    int parentX = node.x;
+    int parentY = node.y;
+    if (childX == parentX) { // vertical segment
+      addSegmentV__device(d_cmap, min(childY, parentY), max(childY, parentY), childX, myLayer,
+        xDim, yDim, numLayers);
+    } else if (childY == parentY) { // horizontal segment
+      addSegmentH__device(d_cmap, min(childX, parentX), max(childX, parentX), childY, myLayer,
+        xDim, yDim, numLayers);
+    } else {
+      printf("LANodeCommit Error Node %d: current node and parent node are not aligned collinearly\n", nodeId);
+    }
   }
 }
 
@@ -377,6 +391,43 @@ void FlexGRGPUDB::layerAssign_CUDA(
 
   if (debugMode_) {
     for (auto& node : nodes) {
+      // check if the node is aligned with its children 
+      for (int i = 0; i < node.childCnt; i++) {
+        auto& childNode = nodes[node.children[i]];
+        if (node.x != childNode.x && node.y != childNode.y) {    
+          std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                    << "Node " << node.nodeIdx
+                    << " is not aligned with its child node "
+                    << childNode.nodeIdx << ".\n";
+          std::cout << "Number of children: " << static_cast<int>(node.childCnt) << "\n";
+          // print all the child nodes
+          std::cout << "Child nodes: ";
+          for (int j = 0; j < node.childCnt; j++) {
+            auto& child = nodes[node.children[j]];
+            std::cout << child.nodeIdx << " (x: " << child.x
+                      << ", y: " << child.y << ") ";
+          }
+          std::cout << "\n";
+          std::cout << "node.x = " << node.x
+                    << ", node.y = " << node.y
+                    << ", childNode.x = " << childNode.x
+                    << ", childNode.y = " << childNode.y << "\n";
+          if (childNode.parentIdx == -1) {
+            std::cout << "Child node is a root node, no parent to check.\n";
+          } else {
+            // Print parent node information
+            auto parentNode = nodes[childNode.parentIdx];
+            std::cout << "Parent node: "
+                      << parentNode.nodeIdx << ", "
+                      << "x = " << parentNode.x
+                      << ", y = " << parentNode.y << "\n";
+          }
+          std::cout << "Exiting due to misalignment.\n";
+          exit(1); 
+        }
+      }
+      
+      
       if (node.parentIdx == -1) {
         continue; // Skip root nodes
       }
@@ -440,7 +491,8 @@ void FlexGRGPUDB::layerAssign_CUDA(
     for (int depth = 0; depth < maxDepth; depth++) {
       layerAssignNodeCommit__kernel<<<numBlocks, numThreads>>>(
         d_nodes, d_bestLayerCombs, d_bestLayerCosts,
-        nodeStartIdx, nodeEndIdx, depth, zDim);
+        nodeStartIdx, nodeEndIdx, depth, 
+        d_cmap_bits_3D, xDim, yDim, zDim);
     }
   
     cudaDeviceSynchronize();  // Wait for the kernel to finish
