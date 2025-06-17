@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <boost/fusion/container/vector.hpp>
 #include <string>
 #include <string_view>
 
