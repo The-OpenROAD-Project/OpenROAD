@@ -16,7 +16,7 @@ To list all tests:
 
 Run specific test:
 
-    //src/upf/test:levelshifter-tcl
+    baselisk test //src/upf/test:levelshifter-tcl
 
 To run or list tests below a folder:
 
