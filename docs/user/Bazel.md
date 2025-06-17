@@ -8,6 +8,36 @@ After [installing Baselisk](https://bazel.build/install/bazelisk), the command l
 
 A word on expectations: Bazel is a valuable skill for the future. It is an example of a new generation of build tools(Buck2 is another example) that scales very well, are hermetic and have many features, such as artifacts. Unsurprisingly, this does mean that there is a lot to learn. The OpenROAD documentation makes no attempt at teaching Bazel. Bazel is a very wide topic and it can not be learned in a day or two with intense reading of a well defined document with a start and an end. It is probably best to start as a user running canned commands, such as above, but switch from mechanical repetition of canned command to being curious and following breadcrumbs of interest: read, search, engage with the community and use AI to learn.
 
+## Running specific tests or tests below a folder
+
+To list all tests:
+
+    bazelisk query 'kind(test, ...)'
+
+Run specific test:
+
+    //src/upf/test:levelshifter-tcl
+
+To run or list tests below a folder:
+
+    bazelisk test src/gpl/...
+
+## Testing an OpenROAD build with ORFS from within the OpenROAD folder
+
+    OPENROAD_EXE=$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+
+`$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad` points to the `cfg=exec` optimized configuration which is Bazel builds to run tests on host with e.g. `bazelisk test ...`
+
+## Testing debug build of OpenROAD with ORFS
+
+Build OpenROAD in debug mode using a [workaround](https://github.com/The-OpenROAD-Project/OpenROAD/issues/7349):
+
+    bazelisk build --cxxopt=-stdlib=libstdc++ --linkopt=-lstdc++ -c dbg :openroad
+
+Run ORFS flow and use debugger as usual for ORFS:
+
+    OPENROAD_EXE=$(pwd)/bazel-out/k8-dbg/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+
 ## Some OpenROAD and OpenSTA Bazel Specifics
 
 Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) configurations, a concept that becomes important when cross-compilation or tool usage is involved.
