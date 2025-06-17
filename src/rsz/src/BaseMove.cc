@@ -684,7 +684,7 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
   return false;
 }
 
-vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
+vector<const Pin*> BaseMove::getOutputPins(const Instance* inst)
 {
   vector<const Pin*> fanouts;
 
