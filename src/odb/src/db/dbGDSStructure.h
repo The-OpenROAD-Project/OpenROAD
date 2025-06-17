@@ -15,8 +15,6 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbGDSBoundary;
-template <class T>
-class dbTable;
 class _dbGDSBox;
 class _dbGDSPath;
 class _dbGDSSRef;

@@ -3,14 +3,13 @@
 
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 
 class _dbBPin;
-template <class T>
-class dbTable;
 
 class dbBPinItr : public dbIterator
 {

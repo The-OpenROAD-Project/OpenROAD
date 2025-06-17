@@ -48,6 +48,7 @@ or_integration_tests(
     transform
     wire_encoder
     write_def58
+    write_def58_gzip
     write_lef_and_def
     write_lef_polygon
     write_macro_placement

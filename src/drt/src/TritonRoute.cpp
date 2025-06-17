@@ -841,7 +841,7 @@ void TritonRoute::sendDesignDist()
     std::string router_cfg_path
         = fmt::format("{}DESIGN.router_cfg", shared_volume_);
 
-    db_->write(utl::StreamHandler(design_path.c_str(), true).getStream());
+    db_->write(utl::OutStreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -1020,7 +1020,7 @@ int TritonRoute::main()
     }
   }
   if (debug_->debugDumpDR) {
-    db_->write(utl::StreamHandler(
+    db_->write(utl::OutStreamHandler(
                    fmt::format("{}/design.odb", debug_->dumpDir).c_str(), true)
                    .getStream());
   }

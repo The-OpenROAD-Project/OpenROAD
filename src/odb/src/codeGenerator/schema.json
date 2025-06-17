@@ -98,6 +98,7 @@
       "name": "dbModuleModNetITermItr",
       "parentObject": "dbITerm",
       "tableName": "iterm_tbl",
+      "tablePageSize": 1024,
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
