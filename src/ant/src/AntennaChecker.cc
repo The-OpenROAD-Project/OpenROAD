@@ -1092,8 +1092,8 @@ bool AntennaChecker::haveGuides()
 
   for (odb::dbNet* net : block_->getNets()) {
     // check term count due to 1-pin nets in multiple designs.
-    if (!net->isSpecial() && net->getGuides().empty()
-        && net->getTermCount() > 1) {
+    if (!net->isSpecial() && net->getGuides().empty() && net->getTermCount() > 1
+        && !net->isConnectedByAbutment()) {
       return false;
     }
   }
