@@ -45,6 +45,12 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
 
+  // Skip nets with large fanout because we will need to buffer them.
+  const int fanout = this->fanout(drvr_vertex);
+  if (fanout >= size_down_max_fanout_) {
+    return false;
+  }
+
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
