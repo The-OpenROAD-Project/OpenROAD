@@ -38,6 +38,43 @@ Run ORFS flow and use debugger as usual for ORFS:
 
     OPENROAD_EXE=$(pwd)/bazel-out/k8-dbg/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
 
+## Profiling OpenROAD with an ORFS build and your favorite profiling tool
+
+Build an optimized profile binary, using a [workaround](https://github.com/The-OpenROAD-Project/OpenROAD/issues/7349):
+
+    bazelisk build --config=profile --cxxopt=-stdlib=libstdc++ --linkopt=-lstdc++ :openroad
+
+`bazel-bin` points to the results of the most recent `bazelisk build`. If you are switching between various builds, the more robust alternative is to point `OPENROAD_EXE` to the specific build configuration you want in `bazel-out`.
+
+Start an ORFS job that you want to profile:
+
+    OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+
+At this point, use your favorite preformance tool, such as the Linx Perf tool:
+
+    perf top
+
+Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, emacs, or vim?
+
+    $ gdb bazel-bin/openroad
+    [deleted]
+    (gdb) attach 578603
+    Attaching to program: /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-fastbuild/bin/openroad, process 578603
+    #7  0x00005efc3b72b865 in isPolygonCorner () at src/drt/src/gc/FlexGC_init.cpp:705
+    705	  poly_set.get(polygons);
+    (gdb) list
+    700	bool isPolygonCorner(const frCoord x,
+    701	                     const frCoord y,
+    702	                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+    703	{
+    704	  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+    705	  poly_set.get(polygons);
+    706	  for (const auto& polygon : polygons) {
+    707	    for (const auto& pt : polygon) {
+    708	      if (pt.x() == x && pt.y() == y) {
+    709	        return true;
+
+
 ## Some OpenROAD and OpenSTA Bazel Specifics
 
 Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) configurations, a concept that becomes important when cross-compilation or tool usage is involved.
