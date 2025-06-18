@@ -16,11 +16,26 @@ To list all tests:
 
 Run specific test:
 
-    baselisk test //src/upf/test:levelshifter-tcl
+    baselisk test --test_output=errors //src/upf/test:levelshifter-tcl
 
 To run or list tests below a folder:
 
     bazelisk test src/gpl/...
+
+## Run tests with [address sanetizers](https://github.com/google/sanitizers/wiki/addresssanitizer):
+
+    bazelisk test --config=asan src/...
+
+Example output:
+
+```
+[deleted]
+Direct leak of 18191 byte(s) in 2525 object(s) allocated from:
+    #0 0x5f8556654e04  (/home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/external/org_swig/swig+0x37de04) (BuildId: f982b51b51338154ba961612c62b330f)
+[deleted]
+SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
+[deleted]
+```
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
