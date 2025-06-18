@@ -1002,6 +1002,7 @@ void dbBox::destroy(dbBox* box)
       _dbBPin* pin = (_dbBPin*) box->getBoxOwner();
       pin->removeBox(db_box);
       _dbBlock* block = (_dbBlock*) pin->getOwner();
+      block->remove_rect(db_box->_shape._rect);
       block->_box_tbl->destroy(db_box);
       break;
     }
