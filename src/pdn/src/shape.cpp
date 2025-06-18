@@ -328,36 +328,58 @@ bool Shape::hasDBConnectivity() const
   return false;
 }
 
-void Shape::writeToDb(odb::dbSWire* swire,
-                      bool add_pins,
-                      bool make_rect_as_pin) const
+bool Shape::hasInternalConnections() const
+{
+  if (hasITermConnections() || type_ == odb::dbWireShapeType::FOLLOWPIN) {
+    // if shape is connected to an instance or block pin allow it is valid
+    // if shape is a followpin assume it will be connected
+    return true;
+  }
+
+  for (const auto& via : vias_) {
+    if (!via->isFailed()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
+                                          bool add_pins,
+                                          bool make_rect_as_pin) const
 {
   debugPrint(getLogger(),
              utl::PDN,
              "Shape",
              5,
-             "Adding shape {} with pins {} and rect as pin {}",
+             "Adding shape {} with pins {} and rect as pin {} / {} {} - {}",
              getReportText(),
              add_pins,
-             make_rect_as_pin);
+             make_rect_as_pin,
+             is_locked_,
+             hasITermConnections(),
+             hasBTermConnections());
 
   if (!is_locked_ && !hasDBConnectivity()) {
     getLogger()->warn(
         utl::PDN, 200, "Removing floating shape: {}", getReportText());
-    return;
+    return {};
   }
 
-  odb::dbSBox::create(swire,
-                      layer_,
-                      rect_.xMin(),
-                      rect_.yMin(),
-                      rect_.xMax(),
-                      rect_.yMax(),
-                      type_);
+  std::vector<odb::dbBox*> objs;
+
+  objs.push_back(odb::dbSBox::create(swire,
+                                     layer_,
+                                     rect_.xMin(),
+                                     rect_.yMin(),
+                                     rect_.xMax(),
+                                     rect_.yMax(),
+                                     type_));
 
   if (add_pins) {
     if (make_rect_as_pin) {
-      addBPinToDb(rect_);
+      objs.push_back(addBPinToDb(rect_));
     }
     const odb::Rect block_area = getGridComponent()->getBlock()->getDieArea();
     for (const auto& bterm : bterm_connections_) {
@@ -372,12 +394,13 @@ void Shape::writeToDb(odb::dbSWire* swire,
         bterm_shape.set_xlo(rect_.xMin());
         bterm_shape.set_xhi(rect_.xMax());
       }
-      addBPinToDb(bterm_shape);
+      objs.push_back(addBPinToDb(bterm_shape));
     }
   }
+  return objs;
 }
 
-void Shape::addBPinToDb(const odb::Rect& rect) const
+odb::dbBox* Shape::addBPinToDb(const odb::Rect& rect) const
 {
   // find existing bterm, else make it
   odb::dbBTerm* bterm = nullptr;
@@ -389,6 +412,8 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
   }
   bterm->setSigType(net_->getSigType());
   bterm->setSpecial();
+
+  odb::dbBox* box = nullptr;
 
   odb::dbBPin* pin = nullptr;
   auto pins = bterm->getBPins();
@@ -409,11 +434,13 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
     } else {
       pin = *pins.begin();
     }
-    odb::dbBox::create(
+    box = odb::dbBox::create(
         pin, layer_, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
   }
 
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  return box;
 }
 
 void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)

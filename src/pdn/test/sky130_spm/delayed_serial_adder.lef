@@ -1,0 +1,102 @@
+VERSION 5.7 ;
+  NOWIREEXTENSIONATPIN ON ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO delayed_serial_adder
+  CLASS BLOCK ;
+  FOREIGN delayed_serial_adder ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 29.645 BY 40.365 ;
+  PIN VGND
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met4 ;
+        RECT 13.220 10.640 15.220 27.440 ;
+    END
+  END VGND
+  PIN VPWR
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met4 ;
+        RECT 9.520 10.640 11.520 27.440 ;
+    END
+  END VPWR
+  PIN a
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 25.645 13.640 29.645 14.240 ;
+    END
+  END a
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.852000 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 17.040 4.000 17.640 ;
+    END
+  END clk
+  PIN rst
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 25.645 17.040 29.645 17.640 ;
+    END
+  END rst
+  PIN x
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 25.645 23.840 29.645 24.440 ;
+    END
+  END x
+  PIN y_in
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 20.440 4.000 21.040 ;
+    END
+  END y_in
+  PIN y_out
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 0.445500 ;
+    PORT
+      LAYER met3 ;
+        RECT 25.645 20.440 29.645 21.040 ;
+    END
+  END y_out
+  OBS
+      LAYER nwell ;
+        RECT 5.330 10.795 24.110 27.285 ;
+      LAYER li1 ;
+        RECT 5.520 10.795 23.920 27.285 ;
+      LAYER met1 ;
+        RECT 4.210 10.240 23.920 27.440 ;
+      LAYER met2 ;
+        RECT 4.230 10.210 22.450 27.385 ;
+      LAYER met3 ;
+        RECT 3.990 24.840 25.645 27.365 ;
+        RECT 3.990 23.440 25.245 24.840 ;
+        RECT 3.990 21.440 25.645 23.440 ;
+        RECT 4.400 20.040 25.245 21.440 ;
+        RECT 3.990 18.040 25.645 20.040 ;
+        RECT 4.400 16.640 25.245 18.040 ;
+        RECT 3.990 14.640 25.645 16.640 ;
+        RECT 3.990 13.240 25.245 14.640 ;
+        RECT 3.990 10.715 25.645 13.240 ;
+  END
+END delayed_serial_adder
+END LIBRARY
+

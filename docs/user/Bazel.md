@@ -8,6 +8,88 @@ After [installing Baselisk](https://bazel.build/install/bazelisk), the command l
 
 A word on expectations: Bazel is a valuable skill for the future. It is an example of a new generation of build tools(Buck2 is another example) that scales very well, are hermetic and have many features, such as artifacts. Unsurprisingly, this does mean that there is a lot to learn. The OpenROAD documentation makes no attempt at teaching Bazel. Bazel is a very wide topic and it can not be learned in a day or two with intense reading of a well defined document with a start and an end. It is probably best to start as a user running canned commands, such as above, but switch from mechanical repetition of canned command to being curious and following breadcrumbs of interest: read, search, engage with the community and use AI to learn.
 
+## Running specific tests or tests below a folder
+
+To list all tests:
+
+    bazelisk query 'kind(test, ...)'
+
+Run specific test:
+
+    baselisk test --test_output=errors //src/upf/test:levelshifter-tcl
+
+To run or list tests below a folder:
+
+    bazelisk test src/gpl/...
+
+## Run tests with [address sanetizers](https://github.com/google/sanitizers/wiki/addresssanitizer):
+
+    bazelisk test --config=asan src/...
+
+Example output:
+
+```
+[deleted]
+Direct leak of 18191 byte(s) in 2525 object(s) allocated from:
+    #0 0x5f8556654e04  (/home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/external/org_swig/swig+0x37de04) (BuildId: f982b51b51338154ba961612c62b330f)
+[deleted]
+SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
+[deleted]
+```
+
+## Testing an OpenROAD build with ORFS from within the OpenROAD folder
+
+    OPENROAD_EXE=$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+
+`$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad` points to the `cfg=exec` optimized configuration which is Bazel builds to run tests on host with e.g. `bazelisk test ...`
+
+## Testing debug build of OpenROAD with ORFS
+
+Build OpenROAD in debug mode using a [workaround](https://github.com/The-OpenROAD-Project/OpenROAD/issues/7349):
+
+    bazelisk build --cxxopt=-stdlib=libstdc++ --linkopt=-lstdc++ -c dbg :openroad
+
+Run ORFS flow and use debugger as usual for ORFS:
+
+    OPENROAD_EXE=$(pwd)/bazel-out/k8-dbg/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+
+## Profiling OpenROAD with an ORFS build and your favorite profiling tool
+
+Build an optimized profile binary, using a [workaround](https://github.com/The-OpenROAD-Project/OpenROAD/issues/7349):
+
+    bazelisk build --config=profile --cxxopt=-stdlib=libstdc++ --linkopt=-lstdc++ :openroad
+
+`bazel-bin` points to the results of the most recent `bazelisk build`. If you are switching between various builds, the more robust alternative is to point `OPENROAD_EXE` to the specific build configuration you want in `bazel-out`.
+
+Start an ORFS job that you want to profile:
+
+    OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+
+At this point, use your favorite preformance tool, such as the Linx Perf tool:
+
+    perf top
+
+Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, emacs, or vim?
+
+    $ gdb bazel-bin/openroad
+    [deleted]
+    (gdb) attach 578603
+    Attaching to program: /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-fastbuild/bin/openroad, process 578603
+    #7  0x00005efc3b72b865 in isPolygonCorner () at src/drt/src/gc/FlexGC_init.cpp:705
+    705	  poly_set.get(polygons);
+    (gdb) list
+    700	bool isPolygonCorner(const frCoord x,
+    701	                     const frCoord y,
+    702	                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+    703	{
+    704	  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+    705	  poly_set.get(polygons);
+    706	  for (const auto& polygon : polygons) {
+    707	    for (const auto& pt : polygon) {
+    708	      if (pt.x() == x && pt.y() == y) {
+    709	        return true;
+
+
 ## Some OpenROAD and OpenSTA Bazel Specifics
 
 Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) configurations, a concept that becomes important when cross-compilation or tool usage is involved.
