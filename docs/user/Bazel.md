@@ -4,10 +4,10 @@ The main use-case for Bazel is to make modifications to OpenROAD and run local t
 
 After [installing Baselisk](https://bazel.build/install/bazelisk), the command line below will discover all tests starting in the current working directory and build all dependencies, including openroad and opensta:
 
-    bazelisk test --jobs=$(nproc) ...
+    bazelisk test --jobs=4 ...
 
 - `...` means everything below this folder, so use `src/gpl/...` to run a smaller set of tests.
-- `--jobs=$(nproc)` limits parallel builds to number of cores in the system, optional.
+- `--jobs=4` limits parallel builds to 4 cores, default is use all cores.
 
 Note! You'll see `bazel` in examples and documentation as well as `bazelisk`. The latter is a wafer thin layer on top of `bazel` that reads in the `.bazelversion` file to decide which version of Bazel to use in bazel.
 
@@ -55,7 +55,7 @@ Without offering any deeper insight some comments about what is shown above:
 - Each configuration has a textual shorthand used in folder names followed by a full hash
 - `fastbuild` is the default compromise between optimization and fast builds
 - `exec` means host, appears with `ST` and an extra hash at the end
-- `k8` always there, history?
+- `k8` always there, possibly referring to [K8](https://en.wikipedia.org/wiki/X86-64)
 
 ## Build without testing
 
