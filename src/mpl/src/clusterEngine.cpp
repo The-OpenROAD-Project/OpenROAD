@@ -1978,14 +1978,14 @@ void ClusteringEngine::breakMixedLeaves(
 //               A1  A2  A3
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
-  Cluster* parent = mixed_leaf;
+  Cluster* parent = mixed_leaf->getParent();
   const float macro_dominated_cluster_ratio = 0.01;
 
   // Split by replacement if macro dominated.
-  if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_ratio
-      < mixed_leaf->getNumMacro()) {
-    parent = mixed_leaf->getParent();
-  }
+  //if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_ratio
+  //    < mixed_leaf->getNumMacro()) {
+  //  parent = mixed_leaf->getParent();
+  //}
 
   mapMacroInCluster2HardMacro(mixed_leaf);
 
