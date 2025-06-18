@@ -493,7 +493,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                         timing_driven_count),
             false);
       }
-
       final_routability_image_saved = true;
     }
 
@@ -847,9 +846,22 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_ && npVars_.debug_generate_images) {
+  if (graphics_) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
+  }
+
+  if (graphics_ && npVars_.debug_generate_images) {
+    std::string label = fmt::format("Iter {} |R: {} |T: {}",
+                                    iter,
+                                    routability_driven_count,
+                                    timing_driven_count);
+
+    graphics_->saveLabeledImage(
+        fmt::format(
+            "{}/2_final_placement_{:05d}.png", routability_driven_dir, iter),
+        label,
+        /* select_buffers = */ false);
   }
 
   if (db_cbk_ != nullptr) {
