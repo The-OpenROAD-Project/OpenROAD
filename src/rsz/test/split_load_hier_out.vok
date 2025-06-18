@@ -7,12 +7,12 @@ module reg1 (clk);
  BUF_X1 rebuffer2 (.A(r1q),
     .Z(net16));
  CLKBUF_X3 split1 (.A(r1q),
-    .Z(net2));
+    .Z(net60));
  DFF_X2 r1 (.CK(clk),
     .Q(r1q));
  submodule u1 (.net25_i(net25),
     .net16_i(net16),
-    .net2_i(net2),
+    .net2_i(net60),
     .r1q(r1q),
     .clk(clk));
 endmodule
