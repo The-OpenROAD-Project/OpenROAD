@@ -114,16 +114,10 @@ void FlexGR::layerAssign_gpu()
   // (1) remove the original 2D GR shapes
   // (2) construct the 2D GR shapes based on the layer assignment results
   // (4) remove unnecessary loops
-  // Step 4.1: update the net with real GR shapes (multi-threading)
-  
+  // Step 4.1: update the net with real GR shapes (multi-threading) 
+  layerAssign_postproces(sortedNets);
 
-
-
-
-  
   // 4.2: update the congestion map (sequentially)
-
-
 }
 
 
@@ -303,8 +297,14 @@ void FlexGR::layerAssign_postprocess_node_commit(frNode* currNode, frNet* net)
     // connect vertical
     // the connection is like this:  lower layer -> parent layer <- child layer
     if (layerNum < parentLayer) {
-      if (debugMode_ == true && layerNum + 2 > maxLayerNum) {
-        logger_->error(utl::DRT, 212, "Error: layerNum out of upper bound for net {}", net->getName());
+      if (debugMode_ == true && layerNum + 2 > maxLayerNum) {    
+        logger_->error(utl::DRT, 212, 
+          "Error: layerNum out of upper bound for net {} "
+          "layerNum: {} "
+          "minLayerNum: {} "
+          "maxLayerNum: {} "
+          "parentLayer: {} ",
+          net->getName(), layerNum, minLayerNum, maxLayerNum, parentLayer);
       }
       layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum + 2]);
       layerNum2SubNode[layerNum + 2]->addChild(layerNum2SubNode[layerNum]);
@@ -332,16 +332,50 @@ void FlexGR::layerAssign_postprocess_node_commit(frNode* currNode, frNet* net)
 }
 
 
-// create the physical connection between the nodes
-void FlexGR::layerAssign_postproces(std::vector<frNet*>& sortedNets)
+
+void FlexGR::layerAssign_postprocess_create_shape(frNet* net)
 {
-
-
+  // create shapes and update congestion
+  // Note: all the shape are assigned to the child node
+  for (auto& uNode : net->getNodes()) {
+    auto node = uNode.get();
+    if (node->getParent() == nullptr) { continue; }
+    if (node->getType() == frNodeTypeEnum::frcPin
+        || node->getParent()->getType() == frNodeTypeEnum::frcPin) {
+      continue;
+    }
+   
+    const int childLayerNum = node->getLayerNum();
+    const int parentLayerNum = node->getParent()->getLayerNum();
+    if (childLayerNum == parentLayerNum) { // pathSeg
+      addSegmentToNet(node, childLayerNum);  
+    } else { // via
+      addViaToNet(node);
+    }
+  }
 }
 
 
+// create the physical connection between the nodes
+void FlexGR::layerAssign_postproces(std::vector<frNet*>& sortedNets)
+{
+  // create the physical connection between the nodes
+  // use OpenMP to parallelize the preprocessing
+  int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
+  numThreads = 1;
+  int numNets = static_cast<int>(sortedNets.size());
+  #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
+  for (int i = 0; i < numNets; i++) {
+    auto& net = sortedNets[i];
+    layerAssign_postprocess_node_commit(net->getRootGCellNode(), net);
+  }
 
-
+  // create shapes in parallel
+  #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
+  for (int i = 0; i < numNets; i++) {
+    layerAssign_postprocess_create_shape(sortedNets[i]);  
+  }
+}
 
 
 

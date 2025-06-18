@@ -104,6 +104,28 @@ double FlexGR::initRoute_getSegmentCost2D(const Point& bpIdx, const Point& epIdx
 }
 
 
+inline void FlexGR::correctSegLoc(const Point& childLoc,
+  const Point& parentLoc, Point& bpLoc, Point& epLoc)
+{
+  if (childLoc < parentLoc) {
+    bpLoc = childLoc;
+    epLoc = parentLoc;
+  } else {
+    bpLoc = parentLoc;
+    epLoc = childLoc;
+  }
+}
+
+
+inline void FlexGR::transformSegLoc(const Point& bpLoc,
+  const Point& epLoc, Point& bpIdx, Point& epIdx)
+{
+  bpIdx = design_->getTopBlock()->getGCellIdx(bpLoc);
+  epIdx = design_->getTopBlock()->getGCellIdx(epLoc);
+}
+
+
+
 frNode* FlexGR::addSteinerNodeToNet(frNode* child, const Point& gcellIdx, int layerNum)
 {
   // Perform check if location is valid
@@ -177,6 +199,31 @@ void FlexGR::addSegmentToNet(frNode* child, int layerNum)
   // transfer the ownership of the path segment to the net
   std::unique_ptr<grShape> uShape(std::move(uPathSeg));
   net->addGRShape(uShape);
+}
+
+
+// The segment is added to the child node
+void FlexGR::addViaToNet(frNode* node)
+{
+  auto net = node->getNet();
+  auto parent = node->getParent();
+  const Point loc = node->getLoc();
+  const frLayerNum beginLayerNum = node->getLayerNum();
+  const frLayerNum endLayerNum = parent->getLayerNum();
+
+  auto uVia = std::make_unique<grVia>();
+  uVia->setChild(node);
+  uVia->setParent(parent);
+  uVia->addToNet(net);
+  uVia->setOrigin(loc);
+  uVia->setViaDef(design_->getTech()
+                         ->getLayer((beginLayerNum + endLayerNum) / 2)
+                         ->getDefaultViaDef());
+  // assign to child
+  node->setConnFig(uVia.get());
+  
+  // TODO: update congestion map
+  net->addGRVia(uVia);
 }
 
 

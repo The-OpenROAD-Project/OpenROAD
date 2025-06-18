@@ -120,6 +120,16 @@ class FlexGR
   std::vector<frCoord> layerPitches_;
   std::vector<frCoord> zHeights_;
 
+
+
+  // inline utilities
+  inline void correctSegLoc(const Point& childLoc,
+    const Point& parentLoc, Point& bpLoc, Point& epLoc);
+  
+  inline void transformSegLoc(const Point& bpLoc,
+    const Point& epLoc, Point& bpIdx, Point& epIdx);
+
+
   // others
   // I do not touch this part
   void init();
@@ -160,7 +170,7 @@ class FlexGR
   double initRoute_getSegmentCost2D(const Point& bpIdx, const Point& epIdx) const;
   frNode* addSteinerNodeToNet(frNode* child, const Point& gcellIdx, int layerNum);
   void addSegmentToNet(frNode* child, int layerNum);
-
+  void addViaToNet(frNode* node);
 
   void initRoute_patternRoute_Z_shape();
   void initRoute_patternRoute_Z_shape(frNode* child, frNode* parent);
@@ -178,6 +188,7 @@ class FlexGR
   void layerAssign_gpu();
   void layerAssign_preproces(std::vector<frNet*>& sortedNets); 
   void layerAssign_postprocess_node_commit(frNode* currNode, frNet* net);
+  void layerAssign_postprocess_create_shape(frNet* net);
   void layerAssign_postproces(std::vector<frNet*>& sortedNets);
 
   int layerAssignChunkSize_ = 1000000;
