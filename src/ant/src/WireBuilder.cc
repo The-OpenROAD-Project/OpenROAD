@@ -406,7 +406,11 @@ bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
   if (!aps.empty()) {
     for (auto ap : aps) {
       odb::Point ap_position = ap->getPoint();
-      odb::dbTransform xform = iterm->getInst()->getTransform();
+      odb::dbTransform xform;
+      int x, y;
+      iterm->getInst()->getLocation(x, y);
+      xform.setOffset({x, y});
+      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
       xform.apply(ap_position);
       if (guide_box.intersects(ap_position)
           && ap->getLayer() == guide_pt.layer) {
