@@ -501,12 +501,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
     const bool is_before_routability
-        = average_overflow_ > routability_save_snapshot_;
+        = average_overflow_unscaled_ > routability_save_snapshot_;
     const bool is_after_routability
-        = (average_overflow_ < npVars_.routability_end_overflow
+        = (average_overflow_unscaled_ < npVars_.routability_end_overflow
            && !is_routability_need_);
     if (npVars_.timingDrivenMode
-        && tb_->isTimingNetWeightOverflow(average_overflow_) &&
+        && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_) &&
         // do not execute timing-driven if routability is under execution
         (is_before_routability || is_after_routability
          || !npVars_.routability_driven_mode)) {
@@ -529,7 +529,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       //
       // See timingBase.cpp in detail
       bool virtual_td_iter
-          = (average_overflow_ > npVars_.keepResizeBelowOverflow);
+          = (average_overflow_unscaled_ > npVars_.keepResizeBelowOverflow);
 
       log_->info(GPL,
                  100,
@@ -543,7 +543,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                  "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
                  "HPWL: {}",
                  iter + 1,
-                 average_overflow_,
+                 average_overflow_unscaled_,
                  npVars_.keepResizeBelowOverflow,
                  nbc_->getHpwl());
 
