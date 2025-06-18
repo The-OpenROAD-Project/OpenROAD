@@ -288,6 +288,7 @@ void printPeakMemoryUsage();
 // For a node in a routed tree, there are at most 4 children nodes
 struct NodeStruct 
 {
+  frNode* node = nullptr; // pointer to the frNode 
   int x; // 4 bytes
   int y; // 4 bytes
   int netId; // 4 bytes
@@ -296,7 +297,7 @@ struct NodeStruct
   int children[4]; // 4 * 32-bit indices
   int level; // 16-bit index
   //uint16_t children[4];
-  
+ 
   int childCnt;
   int layerNum;
   int minLayerNum;

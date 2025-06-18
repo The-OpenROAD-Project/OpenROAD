@@ -396,7 +396,7 @@ void FlexGRGPUDB::layerAssign_CUDA(
   // check if the initialization is correct
   if (debugMode_) {
     for (const auto& node : nodes) {
-      if (node.level > 100 || node.level < 0) {
+      if (node.level > 100000 || node.level < 0) {
         std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
                   << "Node " << node.nodeIdx << " has an invalid level: " << node.level << ".\n";
         exit(1);
@@ -577,6 +577,10 @@ void FlexGRGPUDB::layerAssign_CUDA(
     }
   }
 
+  // update the nodes to the specific layers
+  for (auto& node : nodes) {
+    node.node->setLayerNum(node.layerNum * 2 + 1); // Convert to odd layer number
+  }
 
   // Free device memory
   cudaFree(d_nodes);

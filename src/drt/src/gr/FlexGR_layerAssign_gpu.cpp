@@ -114,6 +114,16 @@ void FlexGR::layerAssign_gpu()
   // (1) remove the original 2D GR shapes
   // (2) construct the 2D GR shapes based on the layer assignment results
   // (4) remove unnecessary loops
+  // Step 4.1: update the net with real GR shapes (multi-threading)
+  
+
+
+
+
+  
+  // 4.2: update the congestion map (sequentially)
+
+
 }
 
 
@@ -197,6 +207,137 @@ void FlexGR::layerAssign_preproces(std::vector<frNet*>& sortedNets)
 
 
 
+// Post-order DFS to commit the layer assignment results
+void FlexGR::layerAssign_postprocess_node_commit(frNode* currNode, frNet* net)
+{
+  if (currNode == nullptr) {
+    return;
+  }
+
+  // Use a vector to store the current children nodes
+  std::vector<frNode*> children;
+  children.reserve(currNode->getChildren().size());
+  for (auto child : currNode->getChildren()) {
+    if (debugMode_ == true && (child->getType() == frNodeTypeEnum::frcPin)) {
+      logger_->error(utl::DRT, 88, "Error: pin node should not be committed!");
+    }
+    children.push_back(child);
+  }
+
+  // Recursively commit the layer assignment for the children nodes
+  for (auto child : children) {
+    layerAssign_postprocess_node_commit(child, net);
+  }
+
+  // tech layer num, not grid layer num
+  const int currLayerNum = currNode->getLayerNum();
+  const Point currNodeLoc = currNode->getLoc();
+  int minLayerNum = currLayerNum;
+  int maxLayerNum = currLayerNum;
+
+  std::map<frLayerNum, std::vector<frNode*> > layerNum2Children;
+  std::map<frLayerNum, std::vector<frNode*> > layerNum2RPinNodes;
+  // sub nodes are created at same loc as currNode but differnt layerNum
+  // since we move from 2d to 3d
+  std::map<frLayerNum, frNode*> layerNum2SubNode;
+  for (auto& child : children) {
+    const int childLayerNum = child->getLayerNum();
+    minLayerNum = std::min(minLayerNum, childLayerNum);
+    maxLayerNum = std::max(maxLayerNum, childLayerNum);
+    layerNum2Children[childLayerNum].push_back(child);
+  }
+
+  bool hasRootNode = false;
+  // only pinGCellNode has attribute: isDontMove() == true
+  // To do list: this part can be further optimized
+  // All these attributes can be associated with the net
+  if (currNode->isDontMove()) {
+    auto& gcellNode2RPinNodes = net->getGCellNode2RPinNodes();
+    if ((debugMode_ == true) && (gcellNode2RPinNodes.find(currNode) == gcellNode2RPinNodes.end())) {
+      logger_->error(utl::DRT, 209, "Error: gcellNode2RPinNodes not found for net {}",net->getName());
+    }
+    
+    auto& rpinNodes = gcellNode2RPinNodes[currNode];
+    for (auto& rpinNode : rpinNodes) {
+      if((debugMode_ == true) && (rpinNode->getType() != frNodeTypeEnum::frcPin)) {
+        logger_->error(utl::DRT, 211, "Error: rpinNode is not a pin for net {}", net->getName());
+      }
+      
+      if (rpinNode == net->getRoot()) { hasRootNode = true; }
+      const int rpinLayerNum = rpinNode->getLayerNum();
+      minLayerNum = std::min(minLayerNum, rpinLayerNum);
+      maxLayerNum = std::max(maxLayerNum, rpinLayerNum);
+      layerNum2RPinNodes[rpinLayerNum].push_back(rpinNode);
+    }
+  }
+
+  for (auto layerNum = minLayerNum; layerNum <= maxLayerNum; layerNum += 2) {
+    // create node if the layer number is not equal to currNode layerNum
+    if (layerNum != currLayerNum) {
+      auto uNode = std::make_unique<frNode>();
+      uNode->setType(frNodeTypeEnum::frcSteiner);
+      uNode->setLoc(currNodeLoc);
+      uNode->setLayerNum(layerNum);
+      layerNum2SubNode[layerNum] = uNode.get();
+      net->addNode(uNode);
+    } else {
+      layerNum2SubNode[layerNum] = currNode;
+    }
+  }
+
+
+  // update connectivity between children and current sub nodes
+  currNode->clearChildren();
+  const frLayerNum parentLayer
+      = hasRootNode ? net->getRoot()->getLayerNum() : currLayerNum;
+
+  for (auto layerNum = minLayerNum; layerNum <= maxLayerNum; layerNum += 2) {
+    // connect children nodes and sub node (including currNode) (i.e., planar)
+    if (layerNum2Children.find(layerNum) != layerNum2Children.end()) {
+      for (auto child : layerNum2Children[layerNum]) {
+        child->setParent(layerNum2SubNode[layerNum]);
+        layerNum2SubNode[layerNum]->addChild(child);
+      }
+    }
+    
+    // connect vertical
+    // the connection is like this:  lower layer -> parent layer <- child layer
+    if (layerNum < parentLayer) {
+      if (debugMode_ == true && layerNum + 2 > maxLayerNum) {
+        logger_->error(utl::DRT, 212, "Error: layerNum out of upper bound for net {}", net->getName());
+      }
+      layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum + 2]);
+      layerNum2SubNode[layerNum + 2]->addChild(layerNum2SubNode[layerNum]);
+    } else if (layerNum > parentLayer) {
+      if (debugMode_ == true && layerNum - 2 < minLayerNum) {
+        logger_->error(utl::DRT, 213, "Error: layerNum out of lower bound for net {}", net->getName());
+      }
+      layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum - 2]);
+      layerNum2SubNode[layerNum - 2]->addChild(layerNum2SubNode[layerNum]);
+    }
+  }
+
+  // update connectivity if there is local rpin node
+  for (auto& [layerNum, rpinNodes] : layerNum2RPinNodes) {
+    for (auto rpinNode : rpinNodes) {
+      if (rpinNode == net->getRoot()) {
+        layerNum2SubNode[layerNum]->setParent(rpinNode);
+        rpinNode->addChild(layerNum2SubNode[layerNum]);
+      } else {
+        rpinNode->setParent(layerNum2SubNode[layerNum]);
+        layerNum2SubNode[layerNum]->addChild(rpinNode);
+      }
+    }
+  }
+}
+
+
+// create the physical connection between the nodes
+void FlexGR::layerAssign_postproces(std::vector<frNet*>& sortedNets)
+{
+
+
+}
 
 
 

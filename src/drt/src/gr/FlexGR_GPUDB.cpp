@@ -270,6 +270,7 @@ void FlexGRGPUDB::levelizeNodes(
       NodeStruct gcellNode;
       gcellNode.netId = netId;
       gcellNode.nodeIdx = nodeIdx;      
+      gcellNode.node = currNode;
       gcellNode.minLayerNum = currNode->getMinPinLayerNum();
       gcellNode.maxLayerNum = currNode->getMaxPinLayerNum();    
       gcellNode.childCnt = 0;
@@ -291,12 +292,6 @@ void FlexGRGPUDB::levelizeNodes(
         gcellNode.level = parentNode.level + 1; // increment the level from the parent node
         maxDepth = std::max(maxDepth, static_cast<int>(gcellNode.level)); 
         if (debugMode_ == true) {
-          if (nodeIdx == 7045) {       
-            std::cout << "nodeIdx " << nodeIdx << " locIdx.x() " << locIdx.x() << " locIdx.y() " << locIdx.y() << " "
-                      << " parentNodeIdx " << parentNodeIdx << " parentNode.x " << parentNode.x << " parentNode.y " << parentNode.y
-                      << std::endl;
-          }
-
           // check if the parent and child are aligned collinearly
           if (locIdx.x() != parentNode.x && locIdx.y() != parentNode.y) {
             std::cout << "locIdx.x " << locIdx.x() << " locIdx.y " << locIdx.y()
@@ -311,12 +306,6 @@ void FlexGRGPUDB::levelizeNodes(
       } else {
         gcellNode.level = 0; // root node has depth 0
         maxDepth = 0; // root node has max depth 0
-      }
-
-      if (debugMode_ == true && nodeIdx == 199) {
-        std::cout << "nodeIdx " << nodeIdx << " locIdx.x() " << locIdx.x() << " locIdx.y() " << locIdx.y() << " "
-                  << " parentNodeIdx " << gcellNode.parentIdx << " level " << gcellNode.level
-                  << " maxDepth " << maxDepth << std::endl;
       }
 
       nodes[nodeIdx] = gcellNode; // store the node in the vector
@@ -369,6 +358,13 @@ void FlexGRGPUDB::levelizeNodes(
     }
   }
 }
+
+
+
+
+
+
+
 
 
 }  // namespace drt
