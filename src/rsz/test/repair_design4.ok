@@ -10,13 +10,11 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 drvr/Q                                   10     35    -25 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 530um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        73
     final |     +0.0% |       0 |       0 |             0 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0058] Using max wire length 530um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        73

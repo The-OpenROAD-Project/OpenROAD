@@ -392,8 +392,7 @@ bool dbMarkerCategory::rename(const char* name)
     block->_marker_category_hash.remove(_category);
 
     free((void*) _category->_name);
-    _category->_name = strdup(name);
-    ZALLOCATED(_category->_name);
+    _category->_name = safe_strdup(name);
 
     block->_marker_category_hash.insert(_category);
   } else {
@@ -406,8 +405,7 @@ bool dbMarkerCategory::rename(const char* name)
     parent->categories_hash_.remove(_category);
 
     free((void*) _category->_name);
-    _category->_name = strdup(name);
-    ZALLOCATED(_category->_name);
+    _category->_name = safe_strdup(name);
 
     parent->categories_hash_.insert(_category);
   }
@@ -770,8 +768,7 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 
   _dbMarkerCategory* _category = parent->_marker_categories_tbl->create();
 
-  _category->_name = strdup(name);
-  ZALLOCATED(_category->_name);
+  _category->_name = safe_strdup(name);
 
   parent->_marker_category_hash.insert(_category);
 
@@ -817,8 +814,7 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
 
   _dbMarkerCategory* _category = parent->categories_tbl_->create();
 
-  _category->_name = strdup(name);
-  ZALLOCATED(_category->_name);
+  _category->_name = safe_strdup(name);
 
   parent->categories_hash_.insert(_category);
 

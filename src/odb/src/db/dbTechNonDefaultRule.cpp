@@ -35,8 +35,7 @@ _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*,
       _min_cuts(r._min_cuts)
 {
   if (r._name) {
-    _name = strdup(r._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(r._name);
   }
 }
 
@@ -222,22 +221,21 @@ void dbTechNonDefaultRule::getLayerRules(
     std::vector<dbTechLayerRule*>& layer_rules)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  dbTable<_dbTechLayerRule>* layer_rule_tbl = nullptr;
-
-  if (rule->_flags._block_rule == 0) {
-    _dbTech* tech = rule->getTech();
-    layer_rule_tbl = tech->_layer_rule_tbl;
-  } else {
-    _dbBlock* block = rule->getBlock();
-    layer_rule_tbl = block->_layer_rule_tbl;
-  }
 
   layer_rules.clear();
 
-  for (const auto& id : rule->_layer_rules) {
-    if (id.isValid()) {
-      layer_rules.push_back((dbTechLayerRule*) layer_rule_tbl->getPtr(id));
+  auto add_rules = [rule, &layer_rules](auto& tbl) {
+    for (const auto& id : rule->_layer_rules) {
+      if (id.isValid()) {
+        layer_rules.push_back((dbTechLayerRule*) tbl->getPtr(id));
+      }
     }
+  };
+
+  if (rule->_flags._block_rule == 0) {
+    add_rules(rule->getTech()->_layer_rule_tbl);
+  } else {
+    add_rules(rule->getBlock()->_layer_rule_tbl);
   }
 }
 
@@ -392,8 +390,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechNonDefaultRule* rule = tech->_non_default_rule_tbl->create();
-  rule->_name = strdup(name_);
-  ZALLOCATED(rule->_name);
+  rule->_name = safe_strdup(name_);
   rule->_layer_rules.resize(tech->_layer_cnt);
 
   int i;
@@ -415,8 +412,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
   _dbTech* tech = (_dbTech*) block->getDb()->getTech();
   _dbTechNonDefaultRule* rule = block->_non_default_rule_tbl->create();
 
-  rule->_name = strdup(name_);
-  ZALLOCATED(rule->_name);
+  rule->_name = safe_strdup(name_);
   rule->_flags._block_rule = 1;
   rule->_layer_rules.resize(tech->_layer_cnt);
 

@@ -5,6 +5,7 @@
 #include "dbModule.h"
 
 #include "dbBlock.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
@@ -363,8 +364,7 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbModule* module = _block->_module_tbl->create();
-  module->_name = strdup(name);
-  ZALLOCATED(module->_name);
+  module->_name = safe_strdup(name);
   _block->_module_hash.insert(module);
 
   if (_block->_journal) {
@@ -569,9 +569,9 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
 // Connections that span multiple modules needs to be done outside this API.
 // new_mod_inst is needed to create module instances for instance name
 // uniquification.
-void dbModule::copy(dbModule* old_module,
-                    dbModule* new_module,
-                    dbModInst* new_mod_inst)
+void _dbModule::copy(dbModule* old_module,
+                     dbModule* new_module,
+                     dbModInst* new_mod_inst)
 {
   // Copy module ports including bus members
   modBTMap mod_bt_map;  // map old mbterm to new mbterm
@@ -593,9 +593,9 @@ void dbModule::copy(dbModule* old_module,
 // A bus with N members have N+1 modbterms.  The first one is the "bus port"
 // sentinel.   The sentinel has reference to the member size, direction and
 // list of member modbterms.
-void dbModule::copyModulePorts(dbModule* old_module,
-                               dbModule* new_module,
-                               modBTMap& mod_bt_map)
+void _dbModule::copyModulePorts(dbModule* old_module,
+                                dbModule* new_module,
+                                modBTMap& mod_bt_map)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   for (dbModBTerm* old_port : old_module->getModBTerms()) {
@@ -708,10 +708,10 @@ void dbModule::copyModulePorts(dbModule* old_module,
              mod_bt_map.size());
 }
 
-void dbModule::copyModuleInsts(dbModule* old_module,
-                               dbModule* new_module,
-                               dbModInst* new_mod_inst,
-                               ITMap& it_map)
+void _dbModule::copyModuleInsts(dbModule* old_module,
+                                dbModule* new_module,
+                                dbModInst* new_mod_inst,
+                                ITMap& it_map)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   // Add insts to new module
@@ -812,10 +812,10 @@ void dbModule::copyModuleInsts(dbModule* old_module,
   }
 }
 
-void dbModule::copyModuleModNets(dbModule* old_module,
-                                 dbModule* new_module,
-                                 modBTMap& mod_bt_map,
-                                 ITMap& it_map)
+void _dbModule::copyModuleModNets(dbModule* old_module,
+                                  dbModule* new_module,
+                                  modBTMap& mod_bt_map,
+                                  ITMap& it_map)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   debugPrint(logger,
@@ -903,9 +903,9 @@ void dbModule::copyModuleModNets(dbModule* old_module,
   }
 }
 
-void dbModule::copyModuleBoundaryIO(dbModule* old_module,
-                                    dbModule* new_module,
-                                    dbModInst* new_mod_inst)
+void _dbModule::copyModuleBoundaryIO(dbModule* old_module,
+                                     dbModule* new_module,
+                                     dbModInst* new_mod_inst)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   // Establish "parent/child" port connections
@@ -948,7 +948,7 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
 // 1. It is saved for future module swap
 // 2. Optimization avoids iterating any unused instances of the old module
 // Return true if copy is successful.
-bool dbModule::copyToChildBlock(dbModule* module)
+bool _dbModule::copyToChildBlock(dbModule* module)
 {
   utl::Logger* logger = module->getImpl()->getLogger();
 
@@ -979,7 +979,7 @@ bool dbModule::copyToChildBlock(dbModule* module)
     }
 
     modBTMap mod_bt_map;
-    copyModulePorts(module, new_module, mod_bt_map);
+    _dbModule::copyModulePorts(module, new_module, mod_bt_map);
     ITMap it_map;
     copyModuleInsts(module, new_module, nullptr, it_map);
     copyModuleModNets(module, new_module, mod_bt_map, it_map);
