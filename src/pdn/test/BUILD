@@ -111,6 +111,7 @@ COMPULSORY_TESTS = [
     "report",
     "reset",
     "ripup",
+    "sky130_spm_floating_bpin",
     "sroute_test",
     "widthtable",
 ]
