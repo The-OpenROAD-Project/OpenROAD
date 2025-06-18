@@ -243,11 +243,12 @@ void FlexGRGPUDB::levelizeNodes(
   #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
   for (int i = 0; i < numNets; i++) {
     // traverse the net's GCell nodes in a pre-order manner
+    // Pay attention to the difference between netId and i here !!!
     const int netId = batches[i];
     auto& net = sortedNets[netId];
+    int& maxDepth = netDepth[netId];
     int nodeIdx = netNodePtr[i];
     int nodeEndIdx = netNodePtr[i + 1];
-    int& maxDepth = netDepth[i];
     std::queue<frNode*> nodeQ;
     nodeQ.push(net->getRootGCellNode());
 
@@ -272,7 +273,7 @@ void FlexGRGPUDB::levelizeNodes(
       gcellNode.minLayerNum = currNode->getMinPinLayerNum();
       gcellNode.maxLayerNum = currNode->getMaxPinLayerNum();    
       gcellNode.childCnt = 0;
-      gcellNode.layerNum = 0xFF; // default value
+      gcellNode.layerNum = -1; // default value
       gcellNode.x = locIdx.x();
       gcellNode.y = locIdx.y();
        
@@ -282,10 +283,13 @@ void FlexGRGPUDB::levelizeNodes(
         auto& parentNode = nodes[parentNodeIdx];
         parentNode.children[parentNode.childCnt++] = nodeIdx;
         gcellNode.parentIdx = parentNodeIdx; // set the parent index
+        if (parentNode.level > maxDepth) {
+          logger_->error(DRT, 355, "Parent node level {} exceeds the max depth {}", 
+            parentNode.level, maxDepth);
+        }
+          
         gcellNode.level = parentNode.level + 1; // increment the level from the parent node
-        maxDepth = std::max(maxDepth, static_cast<int>(gcellNode.level));
-  
-        
+        maxDepth = std::max(maxDepth, static_cast<int>(gcellNode.level)); 
         if (debugMode_ == true) {
           if (nodeIdx == 7045) {       
             std::cout << "nodeIdx " << nodeIdx << " locIdx.x() " << locIdx.x() << " locIdx.y() " << locIdx.y() << " "
@@ -309,14 +313,19 @@ void FlexGRGPUDB::levelizeNodes(
         maxDepth = 0; // root node has max depth 0
       }
 
+      if (debugMode_ == true && nodeIdx == 199) {
+        std::cout << "nodeIdx " << nodeIdx << " locIdx.x() " << locIdx.x() << " locIdx.y() " << locIdx.y() << " "
+                  << " parentNodeIdx " << gcellNode.parentIdx << " level " << gcellNode.level
+                  << " maxDepth " << maxDepth << std::endl;
+      }
+
       nodes[nodeIdx] = gcellNode; // store the node in the vector
       nodeIdx++;
       for (auto& child : currNode->getChildren()) {
         if (child->getType() == frNodeTypeEnum::frcSteiner) {
           nodeQ.push(child);
         }
-      }
-    
+      } 
     }    
   }
 
@@ -332,12 +341,24 @@ void FlexGRGPUDB::levelizeNodes(
   }  
 
   if (debugMode_) {
-    logger_->report("[INFO] Max depth for each net:");
-    for (int i = 0; i < numNets; i++) {
-      logger_->report("[INFO]   Net {}: Max Depth = {}", sortedNets[i]->getName(), netDepth[i]);
-    }
-  }
+    // logger_->report("[INFO] Max depth for each net:");
+    // for (int i = 0; i < numNets; i++) {
+    //  logger_->report("[INFO]   Net {}: Max Depth = {}", sortedNets[i]->getName(), netDepth[i]);
+    //}
+  
+    // check the level for each node under each net
+    for (auto& node : nodes) {
+      if (node.netId < 0 || node.netId >= numNets) {
+        logger_->error(DRT, 354, "Node {} has invalid netId {}", node.nodeIdx, node.netId);
+      }
 
+      auto& net = sortedNets[node.netId];
+      if (node.level < 0 || node.level > netDepth[node.netId]) {
+        logger_->error(DRT, 353, "Node {} in net {} has invalid level {} (net level : {})", 
+          node.nodeIdx, net->getName(), node.level, netDepth[node.netId]);
+      }
+    }  
+  }
 
   if (debugMode_) {
     logger_->report("[INFO] Total number of nodes: {}", totNumNodes);

@@ -286,7 +286,7 @@ void printPeakMemoryUsage();
 // -----------------------------------------------------------------------------
 
 // For a node in a routed tree, there are at most 4 children nodes
-struct __align__(16) NodeStruct 
+struct NodeStruct 
 {
   int x; // 4 bytes
   int y; // 4 bytes
@@ -297,15 +297,15 @@ struct __align__(16) NodeStruct
   int level; // 16-bit index
   //uint16_t children[4];
   
-  uint8_t childCnt;
-  uint8_t layerNum;
-  uint8_t minLayerNum;
-  uint8_t maxLayerNum;
+  int childCnt;
+  int layerNum;
+  int minLayerNum;
+  int maxLayerNum;
   
   NodeStruct()
     : x(-1), y(-1), netId(-1), nodeIdx(-1), parentIdx(-1), 
       level(-1), childCnt(0), 
-      layerNum(0xFF), minLayerNum(0xFF), maxLayerNum(0)
+      layerNum(-1), minLayerNum(100), maxLayerNum(0)
   {
     #pragma unroll
     for (int i = 0; i < 4; ++i) {

@@ -231,9 +231,12 @@ void layerAssignNodeCompute__kernel(
   // Preload children into local array (max 4)
   int children[4];  
   #pragma unroll
-  for (int i = 0; i < 4; i++)
-    children[i] = node.children[i];
-
+  for (int i = 0; i < 4; i++) {
+    if (i < numChild) {
+      children[i] = node.children[i];
+    }
+  }
+ 
   // iterate over all combinations and get the combination with lowest overall cost  
   for (int layerNum = 0; layerNum < numLayers; layerNum++) {
     unsigned currLayerBestCost = UINT_MAX;
@@ -299,7 +302,7 @@ void layerAssignNodeCompute__kernel(
     
     d_bestLayerCosts[nodeId * numLayers + layerNum] = currLayerBestCost;
     d_bestLayerCombs[nodeId * numLayers + layerNum] = currLayerBestComb;
-  } // end of layer loop     
+  } // end of layer loop  
 }
 
 
@@ -318,7 +321,10 @@ void layerAssignNodeCommit__kernel(
 
   NodeStruct& node = d_nodes[nodeId];
   if (node.level != depth) { return; }
-  
+
+  // check if all the nodes will be visited
+  // node.layerNum = 1; // Reset layer number
+
   if (node.level == 0) { // root node
     unsigned minCost = UINT_MAX;
     int bestLayerNum = -1;
@@ -369,25 +375,46 @@ void FlexGRGPUDB::layerAssign_CUDA(
   std::vector<int>& netBatchMaxDepth,
   std::vector<int>& netBatchNodePtr)
 {
-  int totNumNodes = nodes.size();
+  size_t totNumNodes = nodes.size();
 
   NodeStruct* d_nodes;
   unsigned* d_bestLayerCombs;
   unsigned* d_bestLayerCosts;
 
   cudaMalloc((void**)&d_nodes, nodes.size() * sizeof(NodeStruct));
-  cudaMalloc((void**)&d_bestLayerCombs, totNumNodes * sizeof(unsigned));
-  cudaMalloc((void**)&d_bestLayerCosts, totNumNodes * sizeof(unsigned));
+  cudaMalloc((void**)&d_bestLayerCombs, totNumNodes * zDim * sizeof(unsigned));
+  cudaMalloc((void**)&d_bestLayerCosts, totNumNodes * zDim * sizeof(unsigned));
 
   // Copy the data from the host to the device
   cudaMemcpy(d_nodes, nodes.data(), nodes.size() * sizeof(NodeStruct), cudaMemcpyHostToDevice);
-  cudaMemset(d_bestLayerCombs, 0, totNumNodes * sizeof(unsigned));
-  cudaMemset(d_bestLayerCosts, UINT_MAX, totNumNodes * sizeof(unsigned));
+  cudaMemset(d_bestLayerCombs, 0, totNumNodes * zDim * sizeof(unsigned));
+  cudaMemset(d_bestLayerCosts, UINT_MAX, totNumNodes * zDim * sizeof(unsigned));
+
+  // copy the solution from the device to the host
+  // cudaMemcpy(nodes.data(), d_nodes, nodes.size() * sizeof(NodeStruct), cudaMemcpyDeviceToHost);
+
+  // check if the initialization is correct
+  if (debugMode_) {
+    for (const auto& node : nodes) {
+      if (node.level > 100 || node.level < 0) {
+        std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                  << "Node " << node.nodeIdx << " has an invalid level: " << node.level << ".\n";
+        exit(1);
+      }
+
+      if (node.layerNum != -1) {
+        std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                  << "Node " << node.nodeIdx << " has a non-negative layer number: " << node.layerNum << ".\n";
+        exit(1);
+      }
+    }
+  }
 
   // sync CMap
   syncCMapHostToDevice();
 
   cudaCheckError();
+
 
   if (debugMode_) {
     for (auto& node : nodes) {
@@ -487,14 +514,14 @@ void FlexGRGPUDB::layerAssign_CUDA(
 
     cudaDeviceSynchronize();  // Wait for the kernel to finish
     cudaCheckError();
-   
-    for (int depth = 0; depth < maxDepth; depth++) {
+  
+    for (int depth = 0; depth <= maxDepth; depth++) {
       layerAssignNodeCommit__kernel<<<numBlocks, numThreads>>>(
         d_nodes, d_bestLayerCombs, d_bestLayerCosts,
         nodeStartIdx, nodeEndIdx, depth, 
         d_cmap_bits_3D, xDim, yDim, zDim);
     }
-  
+    
     cudaDeviceSynchronize();  // Wait for the kernel to finish
     cudaCheckError();
   }
@@ -503,6 +530,53 @@ void FlexGRGPUDB::layerAssign_CUDA(
 
   // copy the solution from the device to the host
   cudaMemcpy(nodes.data(), d_nodes, nodes.size() * sizeof(NodeStruct), cudaMemcpyDeviceToHost);
+
+  /*
+  // check if the initialization is correct
+  if (debugMode_) {
+    for (const auto& node : nodes) {
+      if (node.level > 100 || node.level < 0) {
+        std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                  << "Node " << node.nodeIdx << " has an invalid level: " << node.level << ".\n";
+        exit(1);
+      }
+
+      if (node.layerNum != -1) {
+        std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                  << "Node " << node.nodeIdx << " has a non-negative layer number: " << node.layerNum << ".\n";
+        exit(1);
+      }
+    }
+  }
+  */
+
+
+  // check the distribution of layer assignments
+  if (debugMode_) {
+    std::vector<int> layerCount(zDim, 0);
+    int totalUnsignedNodes = 0;
+    for (const auto& node : nodes) {
+      if (node.layerNum < 0 || node.layerNum >= zDim) {
+        totalUnsignedNodes++;
+        std::cout << "[ERROR] FlexGRGPUDB::layerAssign_CUDA: "
+                  << "Node " << node.nodeIdx << " "
+                  << "level : " << node.level << " "
+                  << " has an invalid layer number: " << node.layerNum << ".\n";
+      
+      } else {
+        layerCount[node.layerNum]++;
+      }
+    }
+    
+    std::cout << "[INFO] FlexGRGPUDB::layerAssign_CUDA: "
+              << "Total unsigned nodes: " << totalUnsignedNodes << "\n";
+    std::cout << "[INFO] FlexGRGPUDB::layerAssign_CUDA: Layer distribution:\n";  
+    int totalNodes = nodes.size();
+    for (int l = 0; l < zDim; l++) {
+      std::cout << "[INFO]  Layer " << l << ": " << layerCount[l] * 1.0 / totalNodes  << " %\n";
+    }
+  }
+
 
   // Free device memory
   cudaFree(d_nodes);
