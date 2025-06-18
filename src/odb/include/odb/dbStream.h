@@ -393,6 +393,7 @@ class dbIStream
   {
     uint sz;
     *this >> sz;
+    m.clear();
     for (uint i = 0; i < sz; i++) {
       T1 key;
       T2 val;
@@ -407,6 +408,7 @@ class dbIStream
   {
     uint sz;
     *this >> sz;
+    m.clear();
     for (uint i = 0; i < sz; i++) {
       T1 key;
       T2 val;
@@ -421,6 +423,7 @@ class dbIStream
   {
     uint sz;
     *this >> sz;
+    m.clear();
     for (uint i = 0; i < sz; i++) {
       T1 key;
       T2 val;
@@ -436,6 +439,7 @@ class dbIStream
   {
     uint sz;
     *this >> sz;
+    m.clear();
     m.reserve(sz);
     for (uint i = 0; i < sz; i++) {
       T1 val;

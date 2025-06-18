@@ -97,6 +97,7 @@ class GCell
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
   void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
+  void setAreaChangeType(GCellChange change) { change_ = change; }
   GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
 

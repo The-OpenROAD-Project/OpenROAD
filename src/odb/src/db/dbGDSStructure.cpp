@@ -215,8 +215,7 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
 
   _dbGDSLib* lib = (_dbGDSLib*) lib_;
   _dbGDSStructure* structure = lib->_gdsstructure_tbl->create();
-  structure->_name = strdup(name_);
-  ZALLOCATED(structure->_name);
+  structure->_name = safe_strdup(name_);
 
   // TODO: ID for structure
 

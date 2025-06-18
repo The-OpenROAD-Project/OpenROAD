@@ -3,6 +3,7 @@
 set -euo pipefail
 
 CMAKE_PACKAGE_ROOT_ARGS=""
+rhelVersion=NONE
 
 _versionCompare() {
     local a b IFS=. ; set -f
@@ -76,6 +77,8 @@ _installCommonDev() {
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
+    flexVersion=2.6.4
+    flexChecksum="2882e3179748cc9f9c23ec593d6adc8d"
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -115,6 +118,21 @@ _installCommonDev() {
         echo "bison ${bisonVersion} already installed."
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D bison_ROOT=$(realpath ${bisonPrefix}) "
+
+    # Flex
+    flexPrefix=${PREFIX:-"/usr/local"}
+    if [[ ${rhelVersion} == 9 ]] && [ ! -f ${flexPrefix}/bin/flex ]; then
+        cd "${baseDir}"
+        eval wget https://github.com/westes/flex/releases/download/v${flexVersion}/flex-${flexVersion}.tar.gz
+        md5sum -c <(echo "${flexChecksum} flex-${flexVersion}.tar.gz") || exit 1
+        tar xf flex-${flexVersion}.tar.gz
+        cd flex-${flexVersion}
+        ./configure --prefix=${flexPrefix}
+        make -j $(nproc)
+        make -j $(nproc) install
+    else
+        echo "Flex already installed."
+    fi
 
     # SWIG
     swigPrefix=${PREFIX:-"/usr/local"}
@@ -423,7 +441,7 @@ _installRHELPackages() {
     yum -y update
     yum -y install tzdata
     yum -y install redhat-rpm-config rpm-build
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhelVersion}.noarch.rpm
     yum -y install \
         autoconf \
         automake \
@@ -452,6 +470,7 @@ _installRHELPackages() {
         qt5-qtcharts-devel \
         qt5-qtimageformats \
         readline \
+        tcl-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
         tcl-thread-devel \
@@ -459,10 +478,21 @@ _installRHELPackages() {
         wget \
         zlib-devel
 
-    yum install -y \
-        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
-        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
+    if [[ ${rhelVersion} == 8 ]]; then
+        yum install -y \
+            gcc-toolset-13 \
+            python3.12 \
+            python3.12-devel \
+            python3.12-pip
+        alternatives --set python $(command -v python3.12)
+        alternatives --set python3 $(command -v python3.12)
+    fi
+    if [[ ${rhelVersion} == 9 ]]; then
+        yum install -y \
+            https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
+            https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
+            https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
+    fi
 
     eval wget https://github.com/jgm/pandoc/releases/download/${pandocVersion}/pandoc-${pandocVersion}-linux-${arch}.tar.gz
     tar xvzf pandoc-${pandocVersion}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
@@ -641,11 +671,21 @@ _installCI() {
         apt-transport-https \
         ca-certificates \
         curl \
+        default-jdk \
         gnupg \
+        python3 \
+        python3-pip \
+        python3-pandas \
         jq \
         lsb-release \
         parallel \
-        software-properties-common
+        software-properties-common \
+        time \
+        unzip zip
+
+    curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+    chmod +x bazelisk
+    mv bazelisk /usr/local/bin/bazel
 
     if command -v docker &> /dev/null; then
         # The user can uninstall docker if they want to reinstall it,
@@ -892,8 +932,8 @@ case "${os}" in
     elif  [[ "${os}" == "Rocky Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' rocky-release | cut -d. -f1)
     fi
-        if [[ "${rhelVersion}" != "9" ]]; then
-            echo "ERROR: Unsupported ${rhelVersion} version. Only '9' is supported."
+        if [[ "${rhelVersion}" != "8" ]] && [[ "${rhelVersion}" != "9" ]]; then
+            echo "ERROR: Unsupported ${rhelVersion} version. Versions '8' and '9' are supported."
             exit 1
         fi
         if [[ ${CI} == "yes" ]]; then
@@ -901,12 +941,17 @@ case "${os}" in
         fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
-            _installRHELPackages
+            _installRHELPackages "${rhelVersion}"
             _installRHELCleanUp
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            _installOrTools "rockylinux" "9" "amd64"
+            if [[ "${rhelVersion}" == "8" ]]; then
+                    _installOrTools "AlmaLinux" "8.10" "x86_64"
+            fi
+            if [[ "${rhelVersion}" == "9" ]]; then
+                    _installOrTools "rockylinux" "9" "amd64"
+            fi
         fi
         ;;
     "Darwin" )

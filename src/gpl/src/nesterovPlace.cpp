@@ -448,7 +448,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       gui->deleteLabel(label_name);
     }
 
-    // Save image if routability not needed and below routability overflow
+    // Save image once if routability not needed and below routability overflow
     if (npVars_.routability_driven_mode && !is_routability_need_
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow
         && !final_routability_image_saved) {
@@ -459,6 +459,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                         iter,
                                         routability_driven_count,
                                         timing_driven_count);
+
+        graphics_->saveLabeledImage(
+            fmt::format("{}/1_routability_final_{:05d}.png",
+                        routability_driven_dir,
+                        iter),
+            label,
+            /* select_buffers = */ false);
 
         graphics_->saveLabeledImage(
             fmt::format("{}/1_density_routability_final_{:05d}.png",
@@ -561,8 +568,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       if (graphics_ && npVars_.debug_generate_images) {
         updateDb();
-        bool select_buffers
-            = tb_->repairDesignBufferCount() > 0 && !virtual_td_iter;
+        bool select_buffers = !virtual_td_iter;
         graphics_->saveLabeledImage(
             fmt::format("{}/timing_{:05d}_1.png", timing_driven_dir, iter),
             fmt::format("Iter {} |R: {} |T: {} after TD",
@@ -627,19 +633,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               nbc_->getNewGcellsCount(),
               new_gcells_percentage);
 
-          if (tb_->repairDesignBufferCount() != nbc_->getNewGcellsCount()) {
-            log_->warn(GPL,
-                       93,
-                       "Buffer insertion count by rsz ({}) and cells created "
-                       "by gpl ({}) do not match.",
-                       tb_->repairDesignBufferCount(),
-                       nbc_->getNewGcellsCount());
-          }
-          log_->info(GPL,
-                     109,
-                     "Timing-driven: inserted buffers as reported by "
-                     "repair_design: {}",
-                     tb_->repairDesignBufferCount());
           log_->info(GPL,
                      110,
                      "Timing-driven: new target density: {}",
@@ -807,6 +800,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
             /* select_buffers = */ false,
             "Heat Maps/Estimated Congestion (RUDY)");
       }
+
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();

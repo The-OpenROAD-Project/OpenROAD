@@ -86,7 +86,7 @@ void Replace::reset()
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
-  keepResizeBelowOverflow_ = 0.3;
+  keepResizeBelowOverflow_ = 1.0;
   routabilityDrivenMode_ = true;
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
@@ -371,6 +371,13 @@ int Replace::doNesterovPlace(int threads, int start_iter)
              1,
              "NP->doNesterovPlace() runtime: {} seconds ",
              elapsed.count());
+
+  if (enable_routing_congestion_) {
+    fr_->setAllowCongestion(true);
+    fr_->setCongestionIterations(0);
+    fr_->setCriticalNetsPercentage(0);
+    fr_->globalRoute();
+  }
   return return_do_nesterov;
 }
 
@@ -488,6 +495,11 @@ void Replace::setDebug(int pause_iterations,
 void Replace::setDisableRevertIfDiverge(bool mode)
 {
   disableRevertIfDiverge_ = mode;
+}
+
+void Replace::setEnableRoutingCongestion(bool mode)
+{
+  enable_routing_congestion_ = mode;
 }
 
 void Replace::setSkipIoMode(bool mode)

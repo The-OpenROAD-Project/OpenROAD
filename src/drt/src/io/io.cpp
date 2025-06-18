@@ -879,8 +879,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             p = {beginX, beginY};
           }
           auto viaDef = getTech()->name2via_[viaName];
-          auto tmpP = std::make_unique<frVia>(viaDef);
-          tmpP->setOrigin(p);
+          auto tmpP = std::make_unique<frVia>(viaDef, p);
           tmpP->addToNet(netIn);
           netIn->addVia(std::move(tmpP));
         }

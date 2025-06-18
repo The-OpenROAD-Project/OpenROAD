@@ -22,8 +22,7 @@ _dbName::_dbName(_dbDatabase*, const _dbName& n)
     : _name(nullptr), _next_entry(n._next_entry), _ref_cnt(n._ref_cnt)
 {
   if (n._name) {
-    _name = strdup(n._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(n._name);
   }
 }
 
@@ -134,8 +133,7 @@ uint _dbNameCache::addName(const char* name)
 
   if (n == nullptr) {
     n = _name_tbl->create();
-    n->_name = strdup(name);
-    ZALLOCATED(n->_name);
+    n->_name = safe_strdup(name);
     _name_hash.insert(n);
   }
 

@@ -136,6 +136,31 @@ def getParallelTests(String image) {
             }
         },
 
+        'Build with Bazel': {
+            node {
+                withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
+                    stage('Setup Bazel Build') {
+                        echo "Build with Bazel";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('Bazel Build') {
+                        timeout(time: 120, unit: 'MINUTES') {
+                            sh label: 'Bazel Build', script: '''
+                                bazel test \
+                                --keep_going \
+                                --show_timestamps \
+                                --test_output=errors \
+                                --curses=no \
+                                --force_pic \
+                                ...
+                                ''';
+                        }
+                    }
+                }
+            }
+        },
+
         'Check message IDs': {
             dir('src') {
                 sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';

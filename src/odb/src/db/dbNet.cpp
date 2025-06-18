@@ -69,8 +69,7 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
 
 {
   if (n._name) {
-    _name = strdup(n._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(n._name);
   }
   _drivingIterm = -1;
 }
@@ -383,8 +382,7 @@ bool dbNet::rename(const char* name)
 
   block->_net_hash.remove(net);
   free((void*) net->_name);
-  net->_name = strdup(name);
-  ZALLOCATED(net->_name);
+  net->_name = safe_strdup(name);
   block->_net_hash.insert(net);
 
   return true;
@@ -2102,8 +2100,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     block->_journal->endAction();
   }
 
-  net->_name = strdup(name_);
-  ZALLOCATED(net->_name);
+  net->_name = safe_strdup(name_);
   block->_net_hash.insert(net);
 
   for (auto cb : block->_callbacks) {

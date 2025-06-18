@@ -43,7 +43,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 107;  // Current revision number
+const uint db_schema_minor = 108;  // Current revision number
+
+// Revision where dbTable's mask/shift are compile constants
+const uint db_schema_table_mask_shift = 108;
 
 // Revision where dbBTerm top layer grid was added to dbBlock
 const uint db_schema_bterm_top_layer_grid = 107;
@@ -195,8 +198,6 @@ const uint db_schema_wrongway_width = 60;
 // Revision where dbGlobalConnect was added
 const uint db_schema_add_global_connect = 58;
 
-template <class T>
-class dbTable;
 class _dbProperty;
 class dbPropertyItr;
 class _dbNameCache;
@@ -219,10 +220,10 @@ class _dbDatabase : public _dbObject
   dbId<_dbChip> _chip;
 
   // NON_PERSISTANT_MEMBERS
-  dbTable<_dbTech>* _tech_tbl;
+  dbTable<_dbTech, 2>* _tech_tbl;
   dbTable<_dbLib>* _lib_tbl;
-  dbTable<_dbChip>* _chip_tbl;
-  dbTable<_dbGDSLib>* _gds_lib_tbl;
+  dbTable<_dbChip, 2>* _chip_tbl;
+  dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
   dbTable<_dbProperty>* _prop_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
