@@ -47,6 +47,13 @@ class nesterovDbCbk;
 class GCell
 {
  public:
+  enum class GCellChange : uint8_t
+  {
+    kNone,
+    kRoutability,
+    kTimingDriven,
+  };
+
   // instance cells
   GCell(Instance* inst);
   GCell(const std::vector<Instance*>& insts);
@@ -89,7 +96,9 @@ class GCell
 
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
-  void setSize(int dx, int dy);
+  void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
+  void setAreaChangeType(GCellChange change) { change_ = change; }
+  GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
 
   void setDensityLocation(int dLx, int dLy);
@@ -129,6 +138,8 @@ class GCell
   float densityScale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
+
+  GCellChange change_ = GCellChange::kNone;
 };
 
 inline int GCell::lx() const
@@ -875,7 +886,7 @@ class NesterovBaseCommon
 
   std::vector<GCell*> nbc_gcells_;
   // For usage in routability mode, parallel to nbc_gcells_
-  std::vector<std::pair<int, int>> minRcCellSize_;
+  std::vector<odb::Rect> minRcCellSize_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
