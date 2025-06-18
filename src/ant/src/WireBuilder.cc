@@ -403,6 +403,21 @@ bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
   }
   odb::Rect guide_box(ll, ur);
   std::vector<odb::dbAccessPoint*> aps = iterm->getPrefAccessPoints();
+
+  odb::dbTechLayer* iterm_top_layer = nullptr;
+  odb::dbMTerm* mterm = iterm->getMTerm();
+  for (odb::dbMPin* mpin : mterm->getMPins()) {
+    for (odb::dbBox* box : mpin->getGeometry()) {
+      odb::dbTechLayer* tech_layer = box->getTechLayer();
+      if (tech_layer->getType() == odb::dbTechLayerType::ROUTING
+          && (iterm_top_layer == nullptr
+              || tech_layer->getRoutingLevel()
+                     > iterm_top_layer->getRoutingLevel())) {
+        iterm_top_layer = tech_layer;
+      }
+    }
+  }
+
   if (!aps.empty()) {
     for (auto ap : aps) {
       odb::Point ap_position = ap->getPoint();
@@ -413,24 +428,12 @@ bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
       xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
       xform.apply(ap_position);
       if (guide_box.intersects(ap_position)
-          && ap->getLayer() == guide_pt.layer) {
+          && (ap->getLayer() == guide_pt.layer
+              || iterm_top_layer == guide_pt.layer)) {
         return true;
       }
     }
   } else {
-    odb::dbTechLayer* iterm_top_layer = nullptr;
-    odb::dbMTerm* mterm = iterm->getMTerm();
-    for (odb::dbMPin* mpin : mterm->getMPins()) {
-      for (odb::dbBox* box : mpin->getGeometry()) {
-        odb::dbTechLayer* tech_layer = box->getTechLayer();
-        if (tech_layer->getType() == odb::dbTechLayerType::ROUTING
-            && (iterm_top_layer == nullptr
-                || tech_layer->getRoutingLevel()
-                       > iterm_top_layer->getRoutingLevel())) {
-          iterm_top_layer = tech_layer;
-        }
-      }
-    }
     odb::Rect iterm_bbox = iterm->getBBox();
     if (guide_box.overlaps(iterm_bbox) && iterm_top_layer == guide_pt.layer) {
       return true;
