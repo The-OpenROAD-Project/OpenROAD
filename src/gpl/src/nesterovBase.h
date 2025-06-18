@@ -886,7 +886,7 @@ class NesterovBaseCommon
 
   std::vector<GCell*> nbc_gcells_;
   // For usage in routability mode, parallel to nbc_gcells_
-  std::vector<std::pair<int, int>> minRcCellSize_;
+  std::vector<odb::Rect> minRcCellSize_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
