@@ -626,7 +626,8 @@ std::pair<bool, bool> RouteBase::routability()
     gCell->setSize(static_cast<int>(std::round(
                        gCell->dx() * std::sqrt(tile->inflatedRatio()))),
                    static_cast<int>(std::round(
-                       gCell->dy() * std::sqrt(tile->inflatedRatio()))));
+                       gCell->dy() * std::sqrt(tile->inflatedRatio()))),
+                   GCell::GCellChange::kRoutability);
 
     int64_t newCellArea
         = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());

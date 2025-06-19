@@ -9,6 +9,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb::lefTechLayerSpacingEol {
 
@@ -362,57 +363,53 @@ void wrongDirSpaceParser(double value,
   sc->setWrongDirSpace(l->dbdist(value));
 }
 
-template <typename Iterator>
-bool parse(Iterator first,
-           Iterator last,
-           odb::dbTechLayer* layer,
-           odb::lefinReader* l)
+bool parse(const std::string& s, odb::dbTechLayer* layer, odb::lefinReader* l)
 {
   odb::dbTechLayerSpacingEolRule* sc
       = odb::dbTechLayerSpacingEolRule::create(layer);
-  qi::rule<std::string::iterator, space_type> prlEdgeRule
+  qi::rule<std::string::const_iterator, space_type> prlEdgeRule
       = (string("PARALLELEDGE") >> -(string("SUBTRACTEOLWIDTH")) >> double_
          >> lit("WITHIN") >> double_ >> -(string("PRL") >> double_)
          >> -(string("MINLENGTH") >> double_) >> -(string("TWOEDGES"))
          >> -(string("SAMEMETAL")) >> -(string("NONEOLCORNERONLY")) >> -(string(
              "PARALLELSAMEMASK")))[boost::bind(&parallelEdgeParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> exceptexactRule
+  qi::rule<std::string::const_iterator, space_type> exceptexactRule
       = (string("EXCEPTEXACTWIDTH") >> double_
          >> double_)[boost::bind(&exceptExactParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> fillConcaveCornerRule
+  qi::rule<std::string::const_iterator, space_type> fillConcaveCornerRule
       = (string("FILLCONCAVECORNER")
          >> double_)[boost::bind(&fillConcaveParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> withCutRule
+  qi::rule<std::string::const_iterator, space_type> withCutRule
       = (string("WITHCUT") >> -(string("CUTCLASS") >> double_)
          >> -(string("ABOVE")) >> double_
          >> -(string("ENCLOSUREEND") >> double_
               >> -(string("WITHIN")
                    >> double_)))[boost::bind(&withcutParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> endprlspacingrule
+  qi::rule<std::string::const_iterator, space_type> endprlspacingrule
       = (string("ENDPRLSPACING") >> double_ >> string("PRL")
          >> double_)[boost::bind(&endprlspacingParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> endtoendspacingrule
+  qi::rule<std::string::const_iterator, space_type> endtoendspacingrule
       = (string("ENDTOEND") >> double_ >> -(double_ >> double_)
          >> -(string("EXTENSION") >> double_ >> -(double_))
          >> -(string("OTHERENDWIDTH")
               >> double_))[boost::bind(&endtoendspacingParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> maxminlengthrule
+  qi::rule<std::string::const_iterator, space_type> maxminlengthrule
       = ((string("MAXLENGTH") >> double_)
          | (string("MINLENGTH") >> double_ >> -(string(
                 "TWOSIDES"))))[boost::bind(&maxminlengthParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> enclosecutrule
+  qi::rule<std::string::const_iterator, space_type> enclosecutrule
       = (string("ENCLOSECUT") >> -(string("ABOVE") | string("BELOW")) >> double_
          >> string("CUTSPACING") >> double_
          >> -(string("ALLCUTS")))[boost::bind(&enclosecutParser, _1, sc, l)];
 
-  qi::rule<std::string::iterator, space_type> withinRule
+  qi::rule<std::string::const_iterator, space_type> withinRule
       = (-(string("OPPOSITEWIDTH")
            >> double_)[boost::bind(&oppositeWidthParser, _1, sc, l)]
          >> lit("WITHIN")[boost::bind(
@@ -429,19 +426,19 @@ bool parse(Iterator first,
              true)])
          >> -prlEdgeRule >> -enclosecutrule);
 
-  qi::rule<std::string::iterator, space_type> toconcavecornerrule
+  qi::rule<std::string::const_iterator, space_type> toconcavecornerrule
       = (string("TOCONCAVECORNER") >> -(string("MINLENGTH") >> double_)
          >> -(string("MINADJACENTLENGTH")
               >> ((double_ >> double_)
                   | double_)))[boost::bind(&concaveCornerParser, _1, sc, l)];
   ;
 
-  qi::rule<std::string::iterator, space_type> tonotchlengthrule
+  qi::rule<std::string::const_iterator, space_type> tonotchlengthrule
       = (lit("TONOTCHLENGTH")[boost::bind(
              &odb::dbTechLayerSpacingEolRule::setToNotchLengthValid, sc, true)]
          >> double_[boost::bind(&notchLengthParser, _1, sc, l)]);
 
-  qi::rule<std::string::iterator, space_type> spacingRule
+  qi::rule<std::string::const_iterator, space_type> spacingRule
       = (lit("SPACING") >> (double_[boost::bind(&eolSpaceParser, _1, sc, l)])
          >> lit("ENDOFLINE") >> double_[boost::bind(&eolwidthParser, _1, sc, l)]
          >> -(lit("EXACTWIDTH")[boost::bind(
@@ -454,6 +451,8 @@ bool parse(Iterator first,
          >> (withinRule | toconcavecornerrule | tonotchlengthrule)
          >> -lit(";"));
 
+  auto first = s.begin();
+  auto last = s.end();
   bool valid
       = qi::phrase_parse(first, last, spacingRule, space) && first == last;
 
@@ -470,28 +469,22 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
                                          dbTechLayer* layer,
                                          odb::lefinReader* l)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
+  processRules(s, [layer, l](const std::string& rule) {
     if (rule.find("ENDOFLINE") == std::string::npos) {
       l->warning(254,
                  "unsupported LEF58_SPACING property for layer {} :\"{}\"",
                  layer->getName(),
                  rule);
-      continue;
+      return;
     }
-    if (!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l)) {
+    if (!lefTechLayerSpacingEol::parse(rule, layer, l)) {
       l->warning(255,
                  "parse mismatch in layer property LEF58_SPACING ENDOFLINE for "
                  "layer {} :\"{}\"",
                  layer->getName(),
                  rule);
     }
-  }
+  });
 }
 
 }  // namespace odb

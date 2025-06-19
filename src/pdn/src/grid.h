@@ -136,9 +136,10 @@ class Grid
 
   void resetShapes();
 
-  void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                 bool do_pins,
-                 const Shape::ObstructionTreeMap& obstructions) const;
+  std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
+      const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
+      bool do_pins,
+      const Shape::ObstructionTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
   static void makeInitialObstructions(odb::dbBlock* block,
