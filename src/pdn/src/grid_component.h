@@ -70,9 +70,10 @@ class GridComponent
   // violations.
   virtual void cutShapes(const Shape::ObstructionTreeMap& obstructions);
 
-  void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                 bool add_pins,
-                 const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const;
+  std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
+      const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
+      bool add_pins,
+      const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const;
 
   virtual void report() const = 0;
   virtual Type type() const = 0;
