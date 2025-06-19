@@ -10,6 +10,19 @@ package(
 )
 
 cc_library(
+    name = "types",
+    hdrs = [
+        "include/ant/AntennaChecker.hh"
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//src/odb",
+    ],
+)
+
+cc_library(
     name = "ant",
     srcs = [
         "src/AntennaChecker.cc",
@@ -18,9 +31,6 @@ cc_library(
         "src/Polygon.hh",
         "src/WireBuilder.cc",
         "src/WireBuilder.hh",
-    ],
-    hdrs = [
-        "include/ant/AntennaChecker.hh",
     ],
     copts = [
         "-fopenmp",
