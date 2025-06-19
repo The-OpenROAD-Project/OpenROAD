@@ -4295,20 +4295,27 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     auto [y1, y2] = std::minmax({pin_pos1.getY(), pin_pos2.getY()});
     if ((vertical && dir != odb::dbTechLayerDir::VERTICAL)
         || (horizontal && dir != odb::dbTechLayerDir::HORIZONTAL)) {
-      conn_layer--;
+      if (conn_layer > getMinRoutingLayer()) {
+        conn_layer--;
+      } else {
+        conn_layer++;
+      }
     }
     connection.emplace_back(x1, y1, conn_layer, x2, y2, conn_layer);
   } else {
-    int layer_hor
-        = dir == odb::dbTechLayerDir::HORIZONTAL ? conn_layer : conn_layer - 1;
-    int layer_ver
-        = dir == odb::dbTechLayerDir::VERTICAL ? conn_layer : conn_layer - 1;
+    const int layer_fix = conn_layer <= getMinRoutingLayer() ? 1 : -1;
+    const int layer_hor = dir == odb::dbTechLayerDir::HORIZONTAL
+                              ? conn_layer
+                              : conn_layer + layer_fix;
+    const int layer_ver = dir == odb::dbTechLayerDir::VERTICAL
+                              ? conn_layer
+                              : conn_layer + layer_fix;
     int x1 = pin_pos1.getX();
     int y1 = pin_pos1.getY();
     int x2 = pin_pos2.getX();
     int y2 = pin_pos2.getY();
     connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
-    connection.emplace_back(x2, y1, conn_layer - 1, x2, y1, conn_layer);
+    connection.emplace_back(x2, y1, conn_layer + layer_fix, x2, y1, conn_layer);
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
   }
 
