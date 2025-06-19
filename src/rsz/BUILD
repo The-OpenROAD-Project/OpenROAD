@@ -63,7 +63,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//src/dbSta",
         "//src/dpl",
         "//src/grt:types",
@@ -103,7 +103,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//:ord",
         "//src/dbSta",
         "//src/dpl",
@@ -133,7 +133,7 @@ tcl_wrap_cc(
     srcs = [
         "src/Resizer.i",
         "//:error_swig",
-        "//:sta_swig_files",
+        "//src/sta:sta_swig_files",
     ],
     module = "rsz",
     namespace_prefix = "rsz",

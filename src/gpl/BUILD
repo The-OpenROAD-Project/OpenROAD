@@ -51,7 +51,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//:ord",
         "//src/dbSta",
         "//src/grt",

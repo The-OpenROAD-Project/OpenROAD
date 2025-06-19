@@ -25,7 +25,7 @@ cc_library(
         ".",
     ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//src/dbSta",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
