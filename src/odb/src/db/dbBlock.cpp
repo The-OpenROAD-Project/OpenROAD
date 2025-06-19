@@ -3193,6 +3193,16 @@ bool dbBlock::designIsRouted(bool verbose)
   return design_is_routed;
 }
 
+void dbBlock::destroyNetWires()
+{
+  for (dbNet* db_net : getNets()) {
+    dbWire* wire = db_net->getWire();
+    if (!db_net->isSpecial() && wire) {
+      dbWire::destroy(wire);
+    }
+  }
+}
+
 int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();

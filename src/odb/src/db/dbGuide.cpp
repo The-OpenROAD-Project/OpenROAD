@@ -40,6 +40,9 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (is_jumper_ != rhs.is_jumper_) {
     return false;
   }
+  if (is_connect_to_term_ != rhs.is_connect_to_term_) {
+    return false;
+  }
 
   return true;
 }
@@ -53,6 +56,7 @@ _dbGuide::_dbGuide(_dbDatabase* db)
 {
   is_congested_ = false;
   is_jumper_ = false;
+  is_connect_to_term_ = false;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -69,6 +73,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
     stream >> obj.is_jumper_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_to_term)) {
+    stream >> obj.is_connect_to_term_;
   }
   return stream;
 }
@@ -87,6 +94,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
     stream << obj.is_jumper_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_to_term)) {
+    stream << obj.is_connect_to_term_;
   }
   return stream;
 }
@@ -252,6 +262,20 @@ void dbGuide::setIsJumper(bool jumper)
   if (db->isSchema(db_schema_has_jumpers)) {
     guide->is_jumper_ = jumper;
   }
+}
+
+bool dbGuide::isConnectedToTerm()
+{
+  bool is_connected_to_term = false;
+  _dbGuide* guide = (_dbGuide*) this;
+  is_connected_to_term = guide->is_connect_to_term_;
+  return is_connected_to_term;
+}
+
+void dbGuide::setIsConnectedToTerm(bool is_connected)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  guide->is_connect_to_term_ = is_connected;
 }
 
 // User Code End dbGuidePublicMethods
