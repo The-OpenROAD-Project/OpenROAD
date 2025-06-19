@@ -2742,9 +2742,6 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     initialized_groups++;
 
     for (int j = i - 1; j >= 0 && initialized_groups > 1; --j) {
-      if (find(parent[i]) == find(parent[j])) {
-        continue;
-      }
       if (segmentsConnect(routes_[net][i], routes_[net][j])) {
         uniteGroups(i, j);
         initialized_groups--;
