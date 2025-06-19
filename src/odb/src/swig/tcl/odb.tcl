@@ -851,6 +851,99 @@ proc exclude_io_pin_region { args } {
   }
 }
 
+# Define command arguments for create_blockage (region in microns, density 0-100)
+sta::define_cmd_args "create_blockage" { \
+                [-region {x1 y1 x2 y2}]\
+                [-inst instance]\
+                [-max_density density]\
+                [-soft]}
+
+# Placement blockages with various options
+proc create_blockage {args} {
+    # Parse command line arguments using OpenROAD standard parsing
+    sta::parse_key_args "create_blockage" args keys {-region -inst -max_density} flags {-soft}
+    
+    # Check that no extra arguments remain
+    sta::check_argc_eq0 "create_blockage" $args
+    
+    # Check if coordinates are valid
+    if {![info exists keys(-region)] || [llength $keys(-region)] != 4 } {
+        utl::error ODB 1010 "Invalid coordinates. -region must be a list of 4 values {x1 y1 x2 y2}"
+    }
+    
+    set region $keys(-region)
+    set x1 [ord::microns_to_dbu [lindex $region 0]]
+    set y1 [ord::microns_to_dbu [lindex $region 1]]
+    set x2 [ord::microns_to_dbu [lindex $region 2]]
+    set y2 [ord::microns_to_dbu [lindex $region 3]]
+
+    # Validate coordinate ordering
+    if {$x1 >= $x2 || $y1 >= $y2} {
+        utl::error ODB 1011 "Invalid coordinates: x1 ($x1) must be < x2 ($x2) and y1 ($y1) must be < y2 ($y2)"
+    }
+
+    # Get database objects
+    set block [ord::get_db_block]
+
+    # Extract optional arguments
+    set inst_name ""
+    set inst_obj ""
+    if {[info exists keys(-inst)]} {
+        set inst_name $keys(-inst)
+        set inst_obj [$block findInst $inst_name]
+        if {$inst_obj == "NULL"} {
+            utl::error ODB 1012 "Instance '$inst_name' not found in design"
+        }
+    }
+    
+    set max_density 0.0
+    set is_soft [info exists flags(-soft)]
+    if {[info exists keys(-max_density)]} {
+        set max_density $keys(-max_density)
+        # If max_density is specified, automatically enable soft blockage
+        set is_soft 1
+    }
+    
+    # Validate max_density if specified
+    if {$max_density != 0.0 && ($max_density < 0.0 || $max_density > 100)} {
+        utl::error ODB 1013 "Max density must be between 0.0 and 100, got: $max_density"
+    }
+    
+    # Get die area for validation
+    set die [$block getDieArea]
+    set die_x1 [$die xMin]
+    set die_y1 [$die yMin]
+    set die_x2 [$die xMax]
+    set die_y2 [$die yMax]
+
+    # Check if coordinates are within die area
+    if {$x1 < $die_x1 || $y1 < $die_y1 || $x2 > $die_x2 || $y2 > $die_y2} {
+        utl::error ODB 1014 "Blockage coordinates ($x1, $y1, $x2, $y2) are outside die area ($die_x1, $die_y1, $die_x2, $die_y2)"
+    }
+    
+    # Create the blockage
+    if {$inst_obj ne ""} {
+        set blockage [odb::dbBlockage_create $block $x1 $y1 $x2 $y2 $inst_obj]
+    } else {
+        set blockage [odb::dbBlockage_create $block $x1 $y1 $x2 $y2]
+    }
+    
+    if {$blockage eq ""} {
+        utl::error ODB 1015 "Failed to create blockage"
+    }
+    
+    # Set soft blockage if requested
+    if {$is_soft} {
+        $blockage setSoft
+        
+        # Set max density if specified
+        if {$max_density > 0.0} {
+            $blockage setMaxDensity $max_density
+        }
+    }
+    return $blockage
+}
+
 sta::define_cmd_args "clear_io_pin_constraints" {}
 
 proc clear_io_pin_constraints { args } {
