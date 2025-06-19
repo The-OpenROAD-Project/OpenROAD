@@ -1,4 +1,3 @@
-#set_debug_level RSZ repair_setup 3
 source "helpers.tcl"
 if {[expr {![info exists repair_args]}]} { set repair_args {} }
 read_liberty Nangate45/Nangate45_typ.lib
