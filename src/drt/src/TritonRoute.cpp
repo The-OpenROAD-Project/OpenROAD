@@ -12,9 +12,9 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
-#include <thread>
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
