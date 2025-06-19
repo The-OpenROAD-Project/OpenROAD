@@ -28,8 +28,6 @@
 
 namespace ant {
 
-using utl::ANT;
-
 // Abbreviations Index:
 //   `PAR`: Partial Area Ratio
 //   `CAR`: Cumulative Area Ratio
@@ -135,7 +133,7 @@ void AntennaChecker::initAntennaRules()
       if ((PSR_ratio != 0 || !diffPSR.indices.empty())
           && layerType == odb::dbTechLayerType::ROUTING
           && wire_thickness_dbu == 0) {
-        logger_->warn(ANT,
+        logger_->warn(utl::ANT,
                       13,
                       "No THICKNESS is provided for layer {}.  Checks on this "
                       "layer will not be correct.",
@@ -884,7 +882,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
               }
               if (diode_count_per_gate > max_diode_count_per_gate) {
                 debugPrint(logger_,
-                           ANT,
+                           utl::ANT,
                            "check_gates",
                            1,
                            "Net {} requires more than {} diodes per gate to "
@@ -1117,7 +1115,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   }
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
-    logger_->error(ANT,
+    logger_->error(utl::ANT,
                    8,
                    "No detailed or global routing found. Run global_route or "
                    "detailed_route first.");
@@ -1140,8 +1138,10 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
         net_violation_count++;
       }
     } else {
-      logger_->error(
-          ANT, 14, "Skipped net {} because it is special.", net->getName());
+      logger_->error(utl::ANT,
+                     14,
+                     "Skipped net {} because it is special.",
+                     net->getName());
     }
   } else {
     nets_.clear();
@@ -1169,9 +1169,9 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     printReport(net);
   }
 
-  logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
+  logger_->info(utl::ANT, 2, "Found {} net violations.", net_violation_count);
   logger_->metric("antenna__violating__nets", net_violation_count);
-  logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
+  logger_->info(utl::ANT, 1, "Found {} pin violations.", pin_violation_count);
   logger_->metric("antenna__violating__pins", pin_violation_count);
 
   if (!report_file_name_.empty()) {

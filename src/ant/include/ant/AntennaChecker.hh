@@ -10,11 +10,12 @@
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
-#include "utl/Logger.h"
+
+namespace utl {
+class Logger;
+}
 
 namespace ant {
-
-using utl::Logger;
 
 struct PARinfo;
 struct ARinfo;
