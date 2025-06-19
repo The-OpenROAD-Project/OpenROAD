@@ -136,6 +136,38 @@ def getParallelTests(String image) {
             }
         },
 
+        'Build on RHEL8': {
+            node ('rhel8') {
+                stage('Setup RHEL8 Build') {
+                    sh label: 'Configure git', script: "git config --add safe.directory '*'";
+                    checkout scm;
+                }
+                stage('Build on RHEL8') {
+                    timeout(time: 20, unit: 'MINUTES') {
+                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                            sh label: 'Build on RHEL8', script: './etc/Build.sh -no-warnings 2>&1 | tee rhel8-build.log';
+                        }
+                    }
+                    archiveArtifacts artifacts: 'rhel8-build.log';
+                }
+                stage('Unit Tests CTest') {
+                    try {
+                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                            timeout(time: 10, unit: 'MINUTES') {
+                                sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc) --output-on-failure';
+                            }
+                        }
+                    } catch (e) {
+                        echo 'Failed regressions';
+                        currentBuild.result = 'FAILURE';
+                    }
+                    sh label: 'Save ctest results', script: 'tar zcvf results-ctest-rhel8.tgz build/Testing';
+                    sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: 'results-ctest-rhel8.tgz, **/results.tgz';
+                }
+            }
+        },
+
         'Build with Bazel': {
             node {
                 withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
