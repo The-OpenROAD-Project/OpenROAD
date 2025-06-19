@@ -190,6 +190,7 @@ class FlexGR
   void layerAssign_postprocess_node_commit(frNode* currNode, frNet* net);
   void layerAssign_postprocess_create_shape(frNet* net);
   void layerAssign_postproces(std::vector<frNet*>& sortedNets);
+  void updateCong3DMap(std::vector<frNet*>& nets);
 
   int layerAssignChunkSize_ = 1000000;
   void layerAssign_update();

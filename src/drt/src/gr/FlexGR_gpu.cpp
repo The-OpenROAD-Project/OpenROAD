@@ -120,7 +120,17 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
   auto grRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(grRuntimeEnd - grRuntimeStart);
   logger_->report("[INFO] Runtime for Global Routing : {} ms", static_cast<int>(grRuntime.count()));
 
-  exit(1);
+  // populate region query for 3D
+  getRegionQuery()->initGRObj();
+  reportCong3D();
+
+  if (db != nullptr) {
+    updateDbCongestion(db, cmap_.get());
+  }
+
+  writeToGuide();
+
+  updateDb();
 }
 
 

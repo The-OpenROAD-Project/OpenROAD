@@ -227,6 +227,36 @@ void FlexGR::addViaToNet(frNode* node)
 }
 
 
+// Be careful that we use GCell based congestion map here
+void FlexGR::updateCong3DMap(std::vector<frNet*>& nets)
+{
+  for (auto& net : nets) {
+    for (auto& uGRShape : net->getGRShapes()) {
+      const auto ps = static_cast<grPathSeg*>(uGRShape.get());
+      const auto [bp, ep] = ps->getPoints();
+      const Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
+      const Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
+      // update golden 3D congestion map
+      const unsigned zIdx = (ps->getLayerNum()) / 2 - 1;
+      if (bpIdx.y() == epIdx.y()) {
+        const int yIdx = bpIdx.y();
+        for (int xIdx = bpIdx.x(); xIdx < epIdx.x(); xIdx++) {
+          cmap_->addRawDemand(xIdx, yIdx, zIdx, frDirEnum::E);
+          cmap_->addRawDemand(xIdx + 1, yIdx, zIdx, frDirEnum::E);
+        }
+      } else {
+        const int xIdx = bpIdx.x();
+        for (int yIdx = bpIdx.y(); yIdx < epIdx.y(); yIdx++) {
+          cmap_->addRawDemand(xIdx, yIdx, zIdx, frDirEnum::N);
+          cmap_->addRawDemand(xIdx, yIdx + 1, zIdx, frDirEnum::N);
+        }
+      }
+    }
+  }
+}
+
+
+
 void FlexGR::checkNetNodeMatch()
 {
   for (auto& net : design_->getTopBlock()->getNets()) {

@@ -119,10 +119,19 @@ void addSegmentH__device(uint64_t* d_cmap_bits_3D,
   int xIdxStart, int xIdxEnd, int yIdx, int layerNum,
   int xDim, int yDim, int zDim)
 {
+  // Early return if indices are invalid
+  if (xIdxEnd <= xIdxStart) return;
+  
+  addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
+    xIdxStart, yIdx, layerNum, frDirEnum::E, 1); 
+    
+  addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
+    xIdxEnd, yIdx, layerNum, frDirEnum::E, 1);
+
   #pragma unroll
-  for (int xIdx = xIdxStart; xIdx < xIdxEnd; xIdx++) {
+  for (int xIdx = xIdxStart + 1; xIdx <= xIdxEnd - 1; xIdx++) {
     addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
-      xIdx, yIdx, layerNum, frDirEnum::E, 1);
+      xIdx, yIdx, layerNum, frDirEnum::E, 2);
   }
 }
 
@@ -131,10 +140,18 @@ void addSegmentV__device(uint64_t* d_cmap_bits_3D,
   int xIdx, int yIdxStart, int yIdxEnd, int layerNum,
   int xDim, int yDim, int zDim)
 {
+  if (yIdxEnd <= yIdxStart) return;
+
+  addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
+    xIdx, yIdxStart, layerNum, frDirEnum::N, 1);
+
+  addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
+    xIdx, yIdxEnd, layerNum, frDirEnum::N, 1);
+  
   #pragma unroll
-  for (int yIdx = yIdxStart; yIdx < yIdxEnd; yIdx++) {
+  for (int yIdx = yIdxStart + 1; yIdx <= yIdxEnd - 1; yIdx++) {
     addRawDemand__device(d_cmap_bits_3D, xDim, yDim, zDim,
-      xIdx, yIdx, layerNum, frDirEnum::N, 1);
+      xIdx, yIdx, layerNum, frDirEnum::N, 2);
   }
 } 
 

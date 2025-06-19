@@ -118,6 +118,7 @@ void FlexGR::layerAssign_gpu()
   layerAssign_postproces(sortedNets);
 
   // 4.2: update the congestion map (sequentially)
+  updateCong3DMap(sortedNets);
 }
 
 
@@ -362,7 +363,6 @@ void FlexGR::layerAssign_postproces(std::vector<frNet*>& sortedNets)
   // create the physical connection between the nodes
   // use OpenMP to parallelize the preprocessing
   int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
-  numThreads = 1;
   int numNets = static_cast<int>(sortedNets.size());
   #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
   for (int i = 0; i < numNets; i++) {
@@ -378,54 +378,6 @@ void FlexGR::layerAssign_postproces(std::vector<frNet*>& sortedNets)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 } // namespace drt
 
 
