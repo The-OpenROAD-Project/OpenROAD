@@ -23,8 +23,6 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
 ]
 
 OPENROAD_LIBRARY_HDRS_INCLUDE = [
-    #STA
-    "src/sta/include/sta/*.hh",
     #RMP
     "src/rmp/src/*.h",
     "src/rmp/include/rmp/*.h",
@@ -35,9 +33,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
 OPENROAD_LIBRARY_INCLUDES = [
     #Root OpenRoad
     "include",
-    #STA
-    "src/sta",
-    "src/sta/include/sta",
     #RMP
     "src/rmp/include",
 ]
