@@ -68,6 +68,8 @@ class FlexGR
          RouterConfiguration* router_cfg)
       : db_(nullptr),
         design_(designIn),
+        tech_(designIn->getTech()),
+        block_(designIn->getTopBlock()),
         cmap_(nullptr),
         cmap2D_(nullptr),
         logger_(logger),
@@ -96,6 +98,9 @@ class FlexGR
  private:
   odb::dbDatabase* db_;
   frDesign* design_;
+  frTechObject* tech_;
+  frBlock* block_;
+
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
   std::unique_ptr<FlexGRGPUDB> gpuDB_;

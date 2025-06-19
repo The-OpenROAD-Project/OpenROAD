@@ -81,6 +81,7 @@ set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
 
 target_sources(drt
   PRIVATE
+    src/gr/FlexGRWorker_init.cpp
     src/gr/FlexGRCMap.cpp
     src/gr/FlexGR.cpp
     src/gr/FlexGR_gpu.cpp
