@@ -189,9 +189,9 @@ void loadDesignInterface(
           auto scalarTerm = term.getScalarTerm();
           NajaIF::module2terms_[mod->getId()].push_back(scalarTerm.getName());
         } else if (term.isBusTerm()) {
-          NajaIF::module2terms_[mod->getId()].push_back("ignored_bus_term");
-          continue;
-          assert(false);
+          NajaIF::module2terms_[mod->getId()].push_back(term.getBusTerm().getName());
+          //continue;
+          //assert(false);
         }
       }
     }

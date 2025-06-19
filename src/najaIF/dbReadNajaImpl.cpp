@@ -275,11 +275,12 @@ dbSigType::Value CapnPtoODBType(
 //   SNLInstParameter::create(instance, parameter, value);
 //}
 
-void loadInstance(dbModule* design,
-                  const DBImplementation::LibraryImplementation::
-                      SNLDesignImplementation::Instance::Reader& instance,
-                  std::map<size_t, odb::dbModInst*>& instance_map,
-                  std::map<size_t, std::pair<odb::dbInst*, dbModule*>>& leaf_map)
+void loadInstance(
+    dbModule* design,
+    const DBImplementation::LibraryImplementation::SNLDesignImplementation::
+        Instance::Reader& instance,
+    std::map<size_t, odb::dbModInst*>& instance_map,
+    std::map<size_t, std::pair<odb::dbInst*, dbModule*>>& leaf_map)
 {
   auto instanceID = instance.getId();
   // NLName snlName;
@@ -415,7 +416,8 @@ void loadInstTermReference(
     // LCOV_EXCL_STOP
     dbModule* model = instance->getMaster();
     auto termID = instTermReference.getTermID();
-    dbModBTerm* term = model->getModBTerm(termID); // TODO : check if the ids are the same
+    dbModBTerm* term
+        = model->getModBTerm(termID);  // TODO : check if the ids are the same
     // LCOV_EXCL_START
     if (not term) {
       std::ostringstream reason;
@@ -448,62 +450,159 @@ void loadInstTermReference(
   }
   printf("looking for inst id %u\n", instanceID);
   dbInst* leaf = leaf_map[instanceID].first;
-  
+
   if (nullptr == leaf) {
     assert(false);
   }
 }
 
-// void loadBusNet(
-//   SNLDesign* design,
-//   const
-//   DBImplementation::LibraryImplementation::SNLDesignImplementation::BusNet::Reader&
-//   net) { NLName snlName; if (net.hasName()) {
-//     snlName = NLName(net.getName());
-//   }
-//   auto busNet = SNLBusNet::create(design, NLID::DesignObjectID(net.getId()),
-//   net.getMsb(), net.getLsb(), snlName); if (net.hasBits()) {
-//     for (auto bitNet: net.getBits()) {
-//       auto bit = bitNet.getBit();
-//       auto busNetBit = busNet->getBit(bit);
-//       //LCOV_EXCL_START
-//       if (not busNetBit) {
-//         std::ostringstream reason;
-//         reason << "cannot deserialize bus net bit: no bit found in bus term
-//         with provided reference"; throw NLException(reason.str());
-//       }
-//       //LCOV_EXCL_STOP
-//       if (bitNet.getDestroyed()) {
-//         busNetBit->destroy();
-//         continue;
-//       }
-//       busNetBit->setType(CapnPtoSNLNetType(bitNet.getType()));
-//       if (bitNet.hasComponents()) {
-//         for (auto componentReference: bitNet.getComponents()) {
-//           if (componentReference.isInstTermReference()) {
-//             loadInstTermReference(busNetBit,
-//             componentReference.getInstTermReference());
-//           } else if (componentReference.isTermReference()) {
-//             loadTermReference(busNetBit,
-//             componentReference.getTermReference());
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
-
-void loadScalarNet(dbModule* module,
-                   const DBImplementation::LibraryImplementation::
-                       SNLDesignImplementation::ScalarNet::Reader& net,
-                   std::map<size_t, odb::dbModInst*>& instance_map,
-                   std::map<size_t, std::pair<odb::dbInst*, dbModule*>>& leaf_map)
+void loadBusNet(dbModule* module,
+                const DBImplementation::LibraryImplementation::
+                    SNLDesignImplementation::BusNet::Reader& net,
+                std::map<size_t, odb::dbModInst*>& instance_map,
+                std::map<size_t, std::pair<odb::dbInst*, dbModule*>>& leaf_map)
 {
   // NLName snlName;
   // if (net.hasName()) {
   //   snlName = NLName(net.getName());
   // }
-  dbModNet* scalarNet = dbModNet::create(module, net.getName().cStr());
+  // auto busNet = SNLBusNet::create(design, NLID::DesignObjectID(net.getId()),
+  // net.getMsb(), net.getLsb(), snlName);
+  if (net.hasBits()) {
+    for (auto bitNet : net.getBits()) {
+      auto bit = bitNet.getBit();
+      std::string bitName = std::string(net.getName().cStr()) + "["
+                            + std::to_string(bit) + "]";
+      dbModNet* scalarNet = dbModNet::create(
+          module, bitName.c_str());  // TOTO - what about type?
+      // auto scalarNet = SNLScalarNet::create(design,
+      // NLID::DesignObjectID(net.getId()), snlName);
+      // scalarNet->setType(CapnPtoSNLNetType(net.getType())); TODO:: make sure
+      // to set on term
+      size_t topPorts = 0;
+      size_t leafPorts = 0;
+      if (bitNet.hasComponents()) {
+        for (auto componentReference : bitNet.getComponents()) {
+          if (componentReference.isInstTermReference()) {
+            if (leaf_map.find(
+                    componentReference.getInstTermReference().getInstanceID())
+                != leaf_map.end()) {
+              leafPorts++;
+            }
+            loadInstTermReference(scalarNet,
+                                  componentReference.getInstTermReference(),
+                                  instance_map,
+                                  leaf_map);
+          } else if (componentReference.isTermReference()) {
+            if (NajaIF::top_ == module) {
+              topPorts++;
+              continue;
+            }
+            loadTermReference(scalarNet, componentReference.getTermReference());
+          }
+        }
+      }
+      // assert that all terms connected to scalarNet are at the same hierachy
+      for (auto term : scalarNet->getModITerms()) {
+        assert(term->getParent()->getParent() == module);
+      }
+      for (auto term : scalarNet->getModBTerms()) {
+        assert(term->getParent() == module);
+      }
+      for (auto term : scalarNet->getITerms()) {
+        assert(term->getInst()->getModule() == module);
+      }
+      // Second pass for dbNet
+      if (topPorts > 0 || leafPorts > 0) {
+        dbNet* db_net = dbNet::create(NajaIF::block_, bitName.c_str());
+        // if (network_->isPower(net)) {
+        //   db_net->setSigType(odb::dbSigType::POWER);
+        // }
+        // if (network_->isGround(net)) {
+        //   db_net->setSigType(odb::dbSigType::GROUND);
+        // }
+        for (auto componentReference : bitNet.getComponents()) {
+          if (componentReference.isInstTermReference()) {
+            auto instanceID
+                = componentReference.getInstTermReference().getInstanceID();
+            if (leaf_map.find(instanceID) == leaf_map.end()) {
+              continue;
+            }
+            dbInst* leaf = leaf_map[instanceID].first;
+            dbMaster* master = leaf->getMaster();
+            dbMTerm* mterm = master->findMTerm(
+                NajaIF::block_,
+                NajaIF::module2terms_[leaf_map[instanceID].second->getId()]
+                                     [componentReference.getInstTermReference()
+                                          .getTermID()]
+                                         .c_str());
+            leaf->getITerm(mterm)->connect(db_net);
+          } else if (componentReference.isTermReference()) {
+            if (NajaIF::top_ == module) {
+              std::string termname = std::string(
+                  NajaIF::module2terms_[module->getId()]
+                                       [componentReference.getTermReference()
+                                            .getTermID()]
+                      .c_str()) + "[" + std::to_string(componentReference.getTermReference().getBit()) + "]";
+              printf("############# creating bterm %s\n",termname.c_str());
+              dbBTerm* bterm = dbBTerm::create(
+                  db_net,
+                  termname.c_str());
+              // const dbIoType io_type = CapnPtoODBDirection(termDirection);
+              // bterm->setIoType(io_type);
+              //  debugPrint(logger_,
+              //             utl::ODB,
+              //             "dbReadVerilog",
+              //             2,
+              //             "makeDbNets created bterm {}",
+              //             bterm->getName());
+              // dbIoType io_type = staToDb(network_->direction(pin));
+              // bterm->setIoType(io_type);
+            }
+          }
+        }
+      }
+      // auto busNetBit = busNet->getBit(bit);
+      // //LCOV_EXCL_START
+      // if (not busNetBit) {
+      //   std::ostringstream reason;
+      //   reason << "cannot deserialize bus net bit: no bit found in bus term
+      //   with provided reference"; throw NLException(reason.str());
+      // }
+      // //LCOV_EXCL_STOP
+      // if (bitNet.getDestroyed()) {
+      //   busNetBit->destroy();
+      //   continue;
+      // }
+      // busNetBit->setType(CapnPtoSNLNetType(bitNet.getType()));
+      // if (bitNet.hasComponents()) {
+      //   for (auto componentReference: bitNet.getComponents()) {
+      //     if (componentReference.isInstTermReference()) {
+      //       loadInstTermReference(busNetBit,
+      //       componentReference.getInstTermReference());
+      //     } else if (componentReference.isTermReference()) {
+      //       loadTermReference(busNetBit,
+      //       componentReference.getTermReference());
+      //     }
+      //   }
+      // }
+    }
+  }
+}
+
+void loadScalarNet(
+    dbModule* module,
+    const DBImplementation::LibraryImplementation::SNLDesignImplementation::
+        ScalarNet::Reader& net,
+    std::map<size_t, odb::dbModInst*>& instance_map,
+    std::map<size_t, std::pair<odb::dbInst*, dbModule*>>& leaf_map)
+{
+  // NLName snlName;
+  // if (net.hasName()) {
+  //   snlName = NLName(net.getName());
+  // }
+  dbModNet* scalarNet = dbModNet::create(
+      module, net.getName().cStr());  // TOTO - what about type?
   // auto scalarNet = SNLScalarNet::create(design,
   // NLID::DesignObjectID(net.getId()), snlName);
   // scalarNet->setType(CapnPtoSNLNetType(net.getType())); TODO:: make sure to
@@ -531,7 +630,7 @@ void loadScalarNet(dbModule* module,
       }
     }
   }
-  //assert that all terms connected to scalarNet are at the same hierachy
+  // assert that all terms connected to scalarNet are at the same hierachy
   for (auto term : scalarNet->getModITerms()) {
     assert(term->getParent()->getParent() == module);
   }
@@ -559,27 +658,36 @@ void loadScalarNet(dbModule* module,
         }
         dbInst* leaf = leaf_map[instanceID].first;
         dbMaster* master = leaf->getMaster();
-        dbMTerm* mterm = master->findMTerm(NajaIF::block_, NajaIF::module2terms_[leaf_map[instanceID].second->getId()][componentReference.getInstTermReference().getTermID()].c_str());
+        dbMTerm* mterm = master->findMTerm(
+            NajaIF::block_,
+            NajaIF::module2terms_[leaf_map[instanceID].second->getId()]
+                                 [componentReference.getInstTermReference()
+                                      .getTermID()]
+                                     .c_str());
         leaf->getITerm(mterm)->connect(db_net);
       } else if (componentReference.isTermReference()) {
         if (NajaIF::top_ == module) {
           printf("############# creating bterm %s\n",
                  NajaIF::module2terms_[module->getId()]
-                     [componentReference.getTermReference().getTermID()]
-                     .c_str());
-          dbBTerm* bterm = dbBTerm::create(db_net, NajaIF::module2terms_[module->getId()]
-                     [componentReference.getTermReference().getTermID()]
-                     .c_str());
-          //const dbIoType io_type = CapnPtoODBDirection(termDirection);
-          //bterm->setIoType(io_type);
-          // debugPrint(logger_,
-          //            utl::ODB,
-          //            "dbReadVerilog",
-          //            2,
-          //            "makeDbNets created bterm {}",
-          //            bterm->getName());
-          //dbIoType io_type = staToDb(network_->direction(pin));
-          //bterm->setIoType(io_type);
+                                      [componentReference.getTermReference()
+                                           .getTermID()]
+                                          .c_str());
+          dbBTerm* bterm = dbBTerm::create(
+              db_net,
+              NajaIF::module2terms_[module->getId()]
+                                   [componentReference.getTermReference()
+                                        .getTermID()]
+                                       .c_str());
+          // const dbIoType io_type = CapnPtoODBDirection(termDirection);
+          // bterm->setIoType(io_type);
+          //  debugPrint(logger_,
+          //             utl::ODB,
+          //             "dbReadVerilog",
+          //             2,
+          //             "makeDbNets created bterm {}",
+          //             bterm->getName());
+          // dbIoType io_type = staToDb(network_->direction(pin));
+          // bterm->setIoType(io_type);
         }
       }
     }
@@ -623,10 +731,10 @@ void loadDesignImplementation(
         auto scalarNet = net.getScalarNet();
         loadScalarNet(design, scalarNet, instance_map, leaf_map);
       }
-      // else if (net.isBusNet()) { // TODO: support bus nets after flatening
-      //    auto busNet = net.getBusNet();
-      //    loadBusNet(snlDesign, busNet);
-      // }
+      else if (net.isBusNet()) { 
+         auto busNet = net.getBusNet();
+         loadBusNet(design, busNet, instance_map, leaf_map);
+      }
     }
   }
 }
