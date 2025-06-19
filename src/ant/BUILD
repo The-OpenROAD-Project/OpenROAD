@@ -52,7 +52,6 @@ cc_library(
     includes = ["include"],
     deps = [
         "//:ord",
-        "//src/grt:types",
         "//src/odb",
         "//src/utl",
         "@tk_tcl//:tcl",
