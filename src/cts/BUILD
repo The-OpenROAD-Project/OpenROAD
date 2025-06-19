@@ -46,7 +46,7 @@ cc_library(
     includes = ["include"],
     deps = [
         ":private_hdrs",
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//src/dbSta",
         "//src/odb",
         "//src/rsz",
