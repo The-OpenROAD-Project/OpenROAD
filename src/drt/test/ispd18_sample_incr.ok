@@ -7,8 +7,6 @@
 [WARNING DRT-0160] Warning: Metal6 does not have viaDef aligned with layer direction, generating new viaDef Via6_FR.
 [WARNING DRT-0160] Warning: Metal7 does not have viaDef aligned with layer direction, generating new viaDef Via7_FR.
 [INFO DRT-0167] List of default vias:
-  Layer Via1
-    default via: VIA12_1C
   Layer Via2
     default via: VIA23_1C
   Layer Via3

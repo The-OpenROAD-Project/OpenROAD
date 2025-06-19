@@ -15,6 +15,7 @@ drt_aux.detailed_route(
     output_drc="results/ispd18_sample.output.drc.rpt",
     output_maze="results/ispd18_sample.output.maze.log",
     output_guide_coverage="results/ispd18_sample.coverage.csv",
+    bottom_routing_layer="Metal2",
     verbose=0,
 )
 

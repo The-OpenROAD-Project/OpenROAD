@@ -58,7 +58,6 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int drouteEndIter,
                         const char* viaInPinBottomLayer,
                         const char* viaInPinTopLayer,
-                        const char* viaAccessLayer,
                         int orSeed,
                         double orK,
                         const char* bottomRoutingLayer,
@@ -88,7 +87,6 @@ void detailed_route_cmd(const char* outputMazeFile,
                     drouteEndIter,
                     viaInPinBottomLayer,
                     viaInPinTopLayer,
-                    viaAccessLayer,
                     orSeed,
                     orK,
                     bottomRoutingLayer,
@@ -108,7 +106,6 @@ void detailed_route_cmd(const char* outputMazeFile,
 void pin_access_cmd(const char* dbProcessNode,
                     const char* bottomRoutingLayer,
                     const char* topRoutingLayer,
-                    const char* viaAccessLayer,
                     int verbose,
                     int minAccessPoints,
                     const char* viaInPinBottomLayer,
@@ -120,7 +117,6 @@ void pin_access_cmd(const char* dbProcessNode,
   params.bottomRoutingLayer = bottomRoutingLayer;
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
-  params.viaAccessLayer = viaAccessLayer;
   params.minAccessPoints = minAccessPoints;
   params.viaInPinBottomLayer = viaInPinBottomLayer;
   params.viaInPinTopLayer = viaInPinTopLayer;
