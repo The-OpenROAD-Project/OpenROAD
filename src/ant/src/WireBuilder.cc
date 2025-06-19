@@ -562,7 +562,7 @@ bool GuidePoint::operator<(const GuidePoint& pt) const
   if (pos != pt.pos) {
     return pos < pt.pos;
   }
-  return layer->getRoutingLevel() < pt.layer->getRoutingLevel();;
+  return layer->getRoutingLevel() < pt.layer->getRoutingLevel();
 }
 
 bool GuideSegment::operator==(const GuideSegment& segment) const
