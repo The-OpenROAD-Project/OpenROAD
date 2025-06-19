@@ -31,6 +31,7 @@ odb::dbBlock* NajaIF::block_ = nullptr;
 odb::dbBlock* NajaIF::top_block_ = nullptr;
 std::map<std::tuple<size_t, size_t, size_t>, std::pair<odb::dbModule*, bool>> NajaIF::module_map_;
 std::map<size_t, std::vector<std::string>> NajaIF::module2terms_;
+odb::dbModule* NajaIF::top_ = nullptr;
 
 // init the static variables to nullptr
 
@@ -106,19 +107,20 @@ dbIoType::Value CapnPtoODBDirection(Direction direction)
 void loadScalarTerm(dbModule* mod,
                     const SNLDesignInterface::ScalarTerm::Reader& term)
 {
+  NajaIF::module2terms_[mod->getId()].push_back(term.getName());
   auto termID = term.getId();
   auto termDirection = term.getDirection();
   dbModBTerm* modbterm = dbModBTerm::create(mod, term.getName().cStr());
   printf("Inserting scalar term %s with ID: %zu\n",
          term.getName().cStr(),
          termID);
-  NajaIF::module2terms_[mod->getId()].push_back(term.getName());
 }
 
 void loadBusTerm(
     dbModule* mod,
     const SNLDesignInterface::BusTerm::Reader& term)
 {
+  NajaIF::module2terms_[mod->getId()].push_back(term.getName());
   dbBusPort* dbbusport = nullptr;
   auto termID = term.getId();
   auto termDirection = term.getDirection();
@@ -138,7 +140,6 @@ void loadBusTerm(
          termID,
          msb,
          lsb);
-  NajaIF::module2terms_[mod->getId()].push_back(term.getName());
   // NLName snlName;
   // if (term.hasName()) {
   //   snlName = NLName(term.getName());
@@ -181,49 +182,37 @@ void loadDesignInterface(
   if (dbInterface.getTopDesignReference().getLibraryID() == libraryInterface.getId() &&
       dbInterface.getTopDesignReference().getDesignID() == designID) {
     mod = NajaIF::block_->getTopModule();
+    NajaIF::top_ = mod;
+    if (designInterface.hasTerms()) {
+      for (auto term : designInterface.getTerms()) {
+        if (term.isScalarTerm()) {
+          auto scalarTerm = term.getScalarTerm();
+          NajaIF::module2terms_[mod->getId()].push_back(scalarTerm.getName());
+        } else if (term.isBusTerm()) {
+          NajaIF::module2terms_[mod->getId()].push_back("ignored_bus_term");
+          continue;
+          assert(false);
+        }
+      }
+    }
   } else {
     mod = dbModule::create(NajaIF::block_, designInterface.getName().cStr());
+    if (designInterface.hasTerms()) {
+      for (auto term : designInterface.getTerms()) {
+        if (term.isScalarTerm()) {
+          auto scalarTerm = term.getScalarTerm();
+          loadScalarTerm(mod, scalarTerm);
+        } else if (term.isBusTerm()) {
+          auto busTerm = term.getBusTerm();
+          loadBusTerm(mod, busTerm);
+        }
+      }
+    }
+    mod->getModBTerms().reverse();
   }
   NajaIF::module_map_[std::make_tuple(
       dbInterface.getId(), libraryInterface.getId(), designID)] = std::pair<dbModule*, bool>(mod, 
         designInterface.getType() == DesignType::PRIMITIVE ? true : false);
-  // dbModule* module = dbModule::makeUniqueDbModule(
-  //       designInterface.getName().cStr(), network_->name(inst), block_);
-  /*SNLDesign* snlDesign = SNLDesign::create(library,
-                                           NLID::DesignID(designID),
-                                           CapnPtoSNLDesignType(designType),
-                                           snlName);*/
-  // if (designInterface.hasProperties()) {
-  //   auto lambda
-  //       = [](const SNLDesignInterface::Reader&
-  //                reader) { return reader.getProperties(); };
-  //   loadProperties(designInterface, snlDesign, lambda);
-  // }
-  // if (designInterface.hasParameters()) {
-  //   for (auto parameter: designInterface.getParameters()) {
-  //     loadDesignParameter(snlDesign, parameter);
-  //   }
-  // }
-  // print description of designInterface
-  printf("Design %s with ID: %zu has type: %d\n",
-         designInterface.getName().cStr(),
-         designID,
-         static_cast<int>(designType));
-  if (designInterface.hasTerms()) {
-    printf("----- Loading terms for design %s with ID: %zu -------\n",
-           designInterface.getName().cStr(),
-           designID);
-    for (auto term : designInterface.getTerms()) {
-      if (term.isScalarTerm()) {
-        auto scalarTerm = term.getScalarTerm();
-        loadScalarTerm(mod, scalarTerm);
-      } else if (term.isBusTerm()) {
-        auto busTerm = term.getBusTerm();
-        loadBusTerm(mod, busTerm);
-      }
-    }
-  }
-  mod->getModBTerms().reverse();
 }
 
 void loadLibraryInterface(

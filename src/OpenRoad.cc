@@ -525,6 +525,7 @@ void OpenRoad::linkDesign(const char* design_name,
                           bool omit_filename_prop)
 
 {
+  // Uncomment the following lines to read the design file in Verilog
   /*bool success = dbLinkDesign(design_name,
                               verilog_network_,
                               db_,

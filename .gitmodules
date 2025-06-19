@@ -7,3 +7,6 @@
 [submodule "third-party/naja-if"]
 	path = third-party/naja-if
 	url = https://github.com/najaeda/naja-if
+[submodule "third-party/naja"]
+	path = third-party/naja
+	url = https://github.com/najaeda/naja

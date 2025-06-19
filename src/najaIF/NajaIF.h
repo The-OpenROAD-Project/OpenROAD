@@ -70,6 +70,7 @@ class NajaIF {
      static odb::dbDatabase* db_;
      static odb::dbBlock* block_;
      static odb::dbBlock* top_block_;
+     static odb::dbModule* top_;
 };
 
 } // namespace odb
