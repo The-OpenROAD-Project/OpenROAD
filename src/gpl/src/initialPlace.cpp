@@ -85,12 +85,10 @@ void InitialPlace::doBicgstabPlace(int threads)
 
       gui::Gui* gui = graphics->getGuiObjectFromGraphics();
       odb::Rect region;
-      int width_px = 500;
       odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
       int max_dim = std::max(bbox.dx(), bbox.dy());
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
-      int delay = 20;
-      gui->gifAddFrame(region, width_px, dbu_per_pixel, delay);
+      gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
 
     if (error_max <= 1e-5 && iter >= 5) {
