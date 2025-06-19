@@ -947,7 +947,10 @@ int TritonRoute::main()
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
-  asio::thread_pool pa_pool;
+   asio::thread_pool pa_pool(1);
+  if (!distributed_) {
+    pa_pool.join();
+  }
   if (debug_->debugDumpDR) {
     std::string router_cfg_path
         = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);

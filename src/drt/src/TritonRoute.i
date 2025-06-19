@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
-// clang-format off
 %ignore drt::TritonRoute::init;
 
 %{
@@ -235,4 +234,3 @@ route_layer_lengths(odb::dbWire* db_wire)
 }
 
 %} // inline
-// clang-format on
