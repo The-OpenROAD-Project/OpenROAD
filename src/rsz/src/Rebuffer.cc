@@ -173,12 +173,7 @@ void characterizeChoiceTree(dbNetwork* nwk,
       if (load_iterm) {
         dbInst* load_inst = load_iterm->getInst();
         if (load_inst) {
-          auto top_module = nwk->block()->getTopModule();
-          if (load_inst->getModule() == top_module) {
-            load_modules.insert(top_module);
-          } else {
-            load_modules.insert(load_inst->getModule());
-          }
+          load_modules.insert(load_inst->getModule());
         }
       }
       load_count++;
@@ -700,15 +695,19 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
             drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
         bool propagate_mod_net = false;
-        bool many_loads_all_in_same_module = false;
+        bool all_loads_in_same_module = false;
         int buffer_count = 0;
         int load_count = 0;
         int wire_count = 0;
         int junction_count = 0;
         /*
-          We characaterize the choice tree by counting up the types
+          We characterize the choice tree by counting up the types
           of its elements to see if this something we can propagate
-          a hierarchical net through
+          a hierarchical net through. We also harvest the load modules
+          so we can see if we buffering a line which fanouts out to
+          different hierarchical modules (all_loads_in_same_module false)
+          or case when all loads in same module as driver
+          (all_loads_in_same_module true)
         */
         std::set<odb::dbModule*> load_modules;
         characterizeChoiceTree(db_network_,
@@ -739,13 +738,13 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
 
         if (drvr_iterm) {
           dbInst* drvr_inst = drvr_iterm->getInst();
-          if (drvr_inst) {
-            source_module = drvr_inst->getModule();
-          }
+          source_module = drvr_inst->getModule();
         }
+        // check to see if we have just one module in load set
+        // and that all loads in the source module.
         if (load_modules.size() == 1) {
           if (*(load_modules.begin()) == source_module) {
-            many_loads_all_in_same_module = true;
+            all_loads_in_same_module = true;
           }
         }
 
@@ -758,7 +757,7 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
         // Corner case. If all the loads are in the same module
         // then it is fine to propagate the modnet, no matter
         // how many junctions
-        if (many_loads_all_in_same_module) {
+        if (all_loads_in_same_module) {
           propagate_mod_net = true;
         }
         if (db_net && db_modnet && propagate_mod_net) {
