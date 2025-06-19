@@ -18,10 +18,10 @@ void MaxSpacingParser::setMaxSpacing(dbTechLayerMaxSpacingRule* rule,
   rule->setMaxSpacing(lefin_->dbdist(spc));
 }
 
-void MaxSpacingParser::parse(std::string s)
+void MaxSpacingParser::parse(const std::string& s)
 {
   dbTechLayerMaxSpacingRule* rule = dbTechLayerMaxSpacingRule::create(layer_);
-  qi::rule<std::string::iterator, space_type> LEF58_MAXSPACING
+  qi::rule<std::string::const_iterator, space_type> LEF58_MAXSPACING
       = (lit("MAXSPACING") >> double_[boost::bind(
              &MaxSpacingParser::setMaxSpacing, this, rule, _1)]
          >> -(lit("CUTCLASS") >> _string[boost::bind(
