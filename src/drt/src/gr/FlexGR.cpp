@@ -55,8 +55,8 @@ void FlexGR::main(odb::dbDatabase* db)
   ra();
   // cmap->print(true);
 
-  FlexGRCMap baseCMap(cmap_.get(), router_cfg_);
-  FlexGRCMap baseCMap2D(cmap2D_.get(), router_cfg_);
+  FlexGRCMap baseCMap(cmap_.get(), router_cfg_, logger_);
+  FlexGRCMap baseCMap2D(cmap2D_.get(), router_cfg_, logger_);
 
   // Reserve the nets for the batch generation
   // Only once
@@ -476,7 +476,7 @@ void FlexGR::searchRepair(int iter,
 
 void FlexGR::reportCong2DGolden(FlexGRCMap* baseCMap2D)
 {
-  FlexGRCMap goldenCMap2D(baseCMap2D, router_cfg_);
+  FlexGRCMap goldenCMap2D(baseCMap2D, router_cfg_, logger_);
 
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
@@ -692,7 +692,7 @@ void FlexGR::reportCong2D()
 
 void FlexGR::reportCong3DGolden(FlexGRCMap* baseCMap)
 {
-  FlexGRCMap goldenCMap3D(baseCMap, router_cfg_);
+  FlexGRCMap goldenCMap3D(baseCMap, router_cfg_, logger_);
 
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {

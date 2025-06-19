@@ -259,12 +259,12 @@ void FlexGR::initGCell()
 void FlexGR::initCMap()
 {
   std::cout << std::endl << "initializing congestion map...\n";
-  auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_);
+  auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_, logger_);
   cmap->setLayerTrackPitches(trackPitches_);
   cmap->setLayerLine2ViaPitches(line2ViaPitches_);
   cmap->setLayerPitches(layerPitches_);
   cmap->init();
-  auto cmap2D = std::make_unique<FlexGRCMap>(design_, router_cfg_);
+  auto cmap2D = std::make_unique<FlexGRCMap>(design_, router_cfg_, logger_);
   cmap2D->initFrom3D(cmap.get());
   // cmap->print2D(true);
   // cmap->print();

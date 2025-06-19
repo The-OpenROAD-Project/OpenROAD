@@ -43,15 +43,16 @@ class FlexGRCMap
 {
  public:
   // constructors
-  FlexGRCMap(frDesign* designIn, RouterConfiguration* router_cfg)
-      : design_(designIn), router_cfg_(router_cfg)
+  FlexGRCMap(frDesign* designIn, RouterConfiguration* router_cfg, Logger* logger)
+      : design_(designIn), router_cfg_(router_cfg), logger_(logger)
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
     numLayers_ = design_->getTech()->getLayers().size();
     xgp_ = &(gCellPatterns.at(0));
     ygp_ = &(gCellPatterns.at(1));
   }
-  FlexGRCMap(FlexGRCMap* in, RouterConfiguration* router_cfg)
+
+  FlexGRCMap(FlexGRCMap* in, RouterConfiguration* router_cfg, Logger* logger)
       : design_(in->design_),
         xgp_(in->xgp_),
         ygp_(in->ygp_),
@@ -61,7 +62,8 @@ class FlexGRCMap
         layerTrackPitches_(in->layerTrackPitches_),
         layerLine2ViaPitches_(in->layerLine2ViaPitches_),
         layerPitches_(in->layerPitches_),
-        router_cfg_(router_cfg)
+        router_cfg_(router_cfg),
+        logger_(logger)
   {
   }
   // getters
@@ -70,6 +72,16 @@ class FlexGRCMap
   frLayerNum getNumLayers() { return numLayers_; }
 
   std::map<frLayerNum, dbTechLayerDir> getZMap() { return zMap_; }
+
+  dbTechLayerDir getZDir(frLayerNum layerNum) const
+  {
+    auto it = zMap_.find(layerNum);
+    if (it != zMap_.end()) {
+      return it->second;
+    } else {
+      return dbTechLayerDir::NONE;
+    }
+  }
 
   unsigned getSupply(unsigned x,
                      unsigned y,
@@ -531,11 +543,28 @@ class FlexGRCMap
     yDim = ygp_->getCount();
     zDim = zMap_.size();
   }  
+  
+  void addRawDemand(unsigned x, unsigned y, frLayerNum layerNum, unsigned delta = 1) {
+    if (zMap_.find(layerNum) == zMap_.end()) {
+      logger_->error(utl::DRT, 219, "addRawDemand: Invalid layer number {}.", layerNum);
+      return;
+    } 
+    
+    if (zMap_[layerNum] == dbTechLayerDir::HORIZONTAL) {
+      addRawDemand(x, y, layerNum / 2 - 1, frDirEnum::E, delta);
+    } else if (zMap_[layerNum] == dbTechLayerDir::VERTICAL) {
+      addRawDemand(x, y, layerNum / 2 - 1, frDirEnum::N, delta);
+    } else {
+      logger_->error(utl::DRT, 221, "addRawDemand: Invalid layer direction for layer {}.", layerNum);
+    }
+  }
+
 
  private:
   frDesign* design_;
   const frGCellPattern* xgp_;
   const frGCellPattern* ygp_;
+  Logger* logger_ = nullptr;
   frLayerNum numLayers_;
 
   // E == horizontal, N == vertical

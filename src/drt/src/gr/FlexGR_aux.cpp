@@ -252,6 +252,16 @@ void FlexGR::updateCong3DMap(std::vector<frNet*>& nets)
         }
       }
     }
+
+    // update the via congestion map
+    for (auto& uGRVia : net->getGRVias()) {
+      const auto via = static_cast<grVia*>(uGRVia.get());
+      const auto gcellIdx = design_->getTopBlock()->getGCellIdx(via->getOrigin());
+      const frLayerNum metalLayerDown = via->getViaDef()->getLayer1Num();
+      const frLayerNum metalLayerUp = via->getViaDef()->getLayer2Num();
+      cmap_->addRawDemand(gcellIdx.x(), gcellIdx.y(), metalLayerDown);
+      cmap_->addRawDemand(gcellIdx.x(), gcellIdx.y(), metalLayerUp);
+    }
   }
 }
 
