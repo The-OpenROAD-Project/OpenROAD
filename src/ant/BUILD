@@ -16,6 +16,8 @@ cc_library(
         "src/PinType.hh",
         "src/Polygon.cc",
         "src/Polygon.hh",
+        "src/WireBuilder.cc",
+        "src/WireBuilder.hh",
     ],
     hdrs = [
         "include/ant/AntennaChecker.hh",
@@ -46,7 +48,6 @@ cc_library(
     ],
     hdrs = [
         "include/ant/AntennaChecker.hh",
-        "include/ant/GlobalRouteSource.hh",
         "include/ant/MakeAntennaChecker.hh",
     ],
     includes = ["include"],
