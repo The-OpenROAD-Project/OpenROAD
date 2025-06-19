@@ -17,7 +17,7 @@ struct GuidePoint
 {
   odb::Point pos;
   odb::dbTechLayer* layer;
-  friend bool operator<(const GuidePoint& pt1, const GuidePoint& pt2);
+  bool operator<(const GuidePoint& pt) const;
 };
 
 struct GuideSegment
@@ -32,7 +32,7 @@ struct GuidePtPins
 {
   std::vector<odb::dbBTerm*> bterms;
   std::vector<odb::dbITerm*> iterms;
-  bool connected;
+  bool connected = false;
 };
 
 using GuidePtPinsMap = std::map<GuidePoint, GuidePtPins>;

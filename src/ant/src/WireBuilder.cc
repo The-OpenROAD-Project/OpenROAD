@@ -557,14 +557,12 @@ void WireBuilder::boxToGuideSegment(
   }
 }
 
-bool operator<(const GuidePoint& pt1, const GuidePoint& pt2)
+bool GuidePoint::operator<(const GuidePoint& pt) const
 {
-  return (pt1.pos.getX() < pt2.pos.getX())
-         || (pt1.pos.getX() == pt2.pos.getX()
-             && pt1.pos.getY() < pt2.pos.getY())
-         || (pt1.pos.getX() == pt2.pos.getX()
-             && pt1.pos.getY() == pt2.pos.getY()
-             && pt1.layer->getRoutingLevel() < pt2.layer->getRoutingLevel());
+  if (pos != pt.pos) {
+    return pos < pt.pos;
+  }
+  return layer->getRoutingLevel() < pt.layer->getRoutingLevel();;
 }
 
 bool GuideSegment::operator==(const GuideSegment& segment) const

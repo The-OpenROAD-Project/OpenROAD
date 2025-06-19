@@ -268,20 +268,14 @@ bool dbGuide::isConnectedToTerm()
 {
   bool is_connected_to_term = false;
   _dbGuide* guide = (_dbGuide*) this;
-  _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(db_schema_guide_connected_to_term)) {
-    is_connected_to_term = guide->is_connect_to_term_;
-  }
+  is_connected_to_term = guide->is_connect_to_term_;
   return is_connected_to_term;
 }
 
 void dbGuide::setIsConnectedToTerm(bool is_connected)
 {
   _dbGuide* guide = (_dbGuide*) this;
-  _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(db_schema_guide_connected_to_term)) {
-    guide->is_connect_to_term_ = is_connected;
-  }
+  guide->is_connect_to_term_ = is_connected;
 }
 
 // User Code End dbGuidePublicMethods
