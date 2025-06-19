@@ -1979,7 +1979,6 @@ void ClusteringEngine::breakMixedLeaves(
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
   Cluster* parent = mixed_leaf->getParent();
-  const float macro_dominated_cluster_ratio = 0.01;
 
   mapMacroInCluster2HardMacro(mixed_leaf);
 
