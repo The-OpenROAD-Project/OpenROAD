@@ -54,6 +54,10 @@ void InitialPlace::doBicgstabPlace(int threads)
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
+  if (graphics) {
+    graphics->getGuiObjectFromGraphics()->gifStart("initPlacement.gif");
+  }
+
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
@@ -78,11 +82,22 @@ void InitialPlace::doBicgstabPlace(int threads)
 
     if (graphics) {
       graphics->cellPlot(true);
+
+      gui::Gui* gui = graphics->getGuiObjectFromGraphics();
+      odb::Rect region;
+      odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+      int max_dim = std::max(bbox.dx(), bbox.dy());
+      double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
+      gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
 
     if (error_max <= 1e-5 && iter >= 5) {
       break;
     }
+  }
+
+  if (graphics) {
+    graphics->getGuiObjectFromGraphics()->gifEnd();
   }
 }
 
