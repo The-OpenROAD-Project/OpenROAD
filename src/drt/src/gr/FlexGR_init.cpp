@@ -1,6 +1,7 @@
 /* Authors: Lutong Wang and Bangqi Xu */
+/* Updated version:  Zhiang Wang*/
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2025, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,16 +43,54 @@ void FlexGR::init()
   initCMap();
 }
 
+
+void FlexGR::initGCell()
+{
+  auto& gcellPatterns = block_->getGCellPatterns();
+  if (!gcellPatterns.empty()) { return; } // already initialized
+  // Originallly, we use M1 as the default layer for GCell
+  // We use M2 as the default layer for GCell 
+  const auto layer = design_->getTech()->getLayer(4); // 4 for M2, 2 for M1
+  const auto pitch = layer->getPitch();
+  logger_->info(utl::DRT, 83,
+      "\nGenerating GCell with size = 15 tracks, using layer {} pitch = {}",
+      layer->getName(),
+      pitch / static_cast<double>(block_->getDBUPerUU()));
+  
+  const Rect dieBox = block_->getDieBox();
+  frCoord startCoordX = dieBox.xMin() - tech_->getManufacturingGrid();
+  frCoord startCoordY = dieBox.yMin() - tech_->getManufacturingGrid();
+  frCoord gcellGridSize = pitch * 15; // 15 tracks per GCell
+  if (gcellGridSize == 0) {
+    logger_->error(utl::DRT, 224,
+        "Error: GCell grid size is zero for layer {} with pitch {}",
+        layer->getName(),
+        pitch / static_cast<double>(block_->getDBUPerUU()));
+  }
+
+  frGCellPattern xgp, ygp;
+  // set xgp
+  xgp.setHorizontal(false);
+  xgp.setStartCoord(startCoordX);
+  xgp.setSpacing(gcellGridSize);
+  xgp.setCount((dieBox.xMax() - startCoordX) / gcellGridSize);
+  // set ygp
+  ygp.setHorizontal(true);
+  ygp.setStartCoord(startCoordY);
+  ygp.setSpacing(gcellGridSize);
+  ygp.setCount((dieBox.yMax() - startCoordY) / gcellGridSize);
+  block_->setGCellPatterns({xgp, ygp});
+}
+
+
 void FlexGR::initLayerPitch()
 {
   int numRoutingLayer = 0;
-  for (unsigned lNum = 0; lNum < design_->getTech()->getLayers().size();
-       lNum++) {
-    if (design_->getTech()->getLayer(lNum)->getType()
-        != dbTechLayerType::ROUTING) {
-      continue;
+  auto& layers = tech_->getLayers();
+  for (auto& layer : layers) {
+    if (layer->getType() == dbTechLayerType::ROUTING) {
+      numRoutingLayer++;
     }
-    numRoutingLayer++;
   }
 
   // init pitches
@@ -60,19 +99,20 @@ void FlexGR::initLayerPitch()
   layerPitches_.resize(numRoutingLayer, -1);
   zHeights_.resize(numRoutingLayer, 0);
 
-  // compute pitches
-  for (int lNum = 0; lNum < (int) design_->getTech()->getLayers().size();
-       lNum++) {
-    if (design_->getTech()->getLayer(lNum)->getType()
-        != dbTechLayerType::ROUTING) {
+  int bottomRoutingLayerNum = tech_->getBottomLayerNum();
+  int topRoutingLayerNum = tech_->getTopLayerNum();
+  // Layer 0: active layer,  Layer 1: Fr_VIA layer
+  // M1 is layer 2, M2 is layer 4, etc.
+  int zIdx = 0;
+  for (auto& layer : layers) {
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
-    // zIdx  always equal to lNum / 2 - 1
-    int zIdx = lNum / 2 - 1;
-    auto layer = design_->getTech()->getLayer(lNum);
+
+    const int lNum = (zIdx + 1) * 2;
     bool isLayerHorz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-    // get track pitch
-    for (auto& tp : design_->getTopBlock()->getTrackPatterns(lNum)) {
+    // get track pitch (pick the smallest one from all the track patterns at current layer)
+    for (auto& tp : block_->getTrackPatterns(lNum)) {
       if ((isLayerHorz && !tp->isHorizontal())
           || (!isLayerHorz && tp->isHorizontal())) {
         if (trackPitches_[zIdx] == -1
@@ -83,182 +123,103 @@ void FlexGR::initLayerPitch()
     }
 
     // calculate line-2-via pitch
-    const frViaDef* downVia = nullptr;
-    const frViaDef* upVia = nullptr;
-    if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
-      downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-    }
-    if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
-    }
-
     frCoord defaultWidth = layer->getWidth();
-    frCoord line2ViaPitchDown = -1, line2ViaPitchUp = -1;
     frCoord minLine2ViaPitch = -1;
 
-    if (downVia) {
-      frVia via(downVia);
-      Rect viaBox = via.getLayer2BBox();
+    // Make sure that you are using C++17 or later
+    auto processVia = [&](const frViaDef* viaDef, bool isUpVia) -> void{
+      if (viaDef == nullptr) { return; }
+      frVia via(viaDef);
+      Rect viaBox = isUpVia ? via.getLayer1BBox() : via.getLayer2BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
       // calculate minNonOvlpDist
       frCoord minNonOvlpDist = defaultWidth / 2;
-      if (isLayerHorz) {
-        minNonOvlpDist += (viaBox.yMax() - viaBox.yMin()) / 2;
-      } else {
-        minNonOvlpDist += (viaBox.xMax() - viaBox.xMin()) / 2;
-      }
+      minNonOvlpDist += isLayerHorz ? (viaBox.yMax() - viaBox.yMin()) / 2
+                                    : (viaBox.xMax() - viaBox.xMin()) / 2;
+      
       // calculate minSpc required val
-      frCoord minReqDist = INT_MIN;
-
+      frCoord minReqDist = std::numeric_limits<int>::min();
       auto con = layer->getMinSpacing();
       if (con) {
-        if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-          minReqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-          minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-              std::max(enclosureWidth, defaultWidth), prl);
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-          minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-              enclosureWidth, defaultWidth, prl);
+        switch (con->typeId()) {
+          case frConstraintTypeEnum::frcSpacingConstraint:
+            minReqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
+            break;
+          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
+            minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
+                std::max(enclosureWidth, defaultWidth), prl);
+            break;
+          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+            minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
+                enclosureWidth, defaultWidth, prl);
+            break;
+          default:
+            break;
         }
       }
-      if (minReqDist != INT_MIN) {
+
+      if (minReqDist != std::numeric_limits<int>::min()) {
         minReqDist += minNonOvlpDist;
-        line2ViaPitchDown = minReqDist;
-        if (line2ViaPitches_[zIdx] == -1
-            || minReqDist > line2ViaPitches_[zIdx]) {
+        if (line2ViaPitches_[zIdx] == -1 || minReqDist > line2ViaPitches_[zIdx]) {
           line2ViaPitches_[zIdx] = minReqDist;
         }
+
         if (minLine2ViaPitch == -1 || minReqDist < minLine2ViaPitch) {
           minLine2ViaPitch = minReqDist;
         }
       }
+    };
+
+    // calculate line-2-via pitch
+    if (bottomRoutingLayerNum <= lNum - 1) {
+      processVia(tech_->getLayer(lNum - 1)->getDefaultViaDef(), false); // down via
+    }
+    
+    if (topRoutingLayerNum >= lNum + 1) {
+      processVia(tech_->getLayer(lNum + 1)->getDefaultViaDef(), true); // up via
     }
 
-    if (upVia) {
-      frVia via(upVia);
-      Rect viaBox = via.getLayer1BBox();
-      frCoord enclosureWidth = viaBox.minDXDY();
-      frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
-                                : (viaBox.yMax() - viaBox.yMin());
-      // calculate minNonOvlpDist
-      frCoord minNonOvlpDist = defaultWidth / 2;
-      if (isLayerHorz) {
-        minNonOvlpDist += (viaBox.yMax() - viaBox.yMin()) / 2;
-      } else {
-        minNonOvlpDist += (viaBox.xMax() - viaBox.xMin()) / 2;
-      }
-      // calculate minSpc required val
-      frCoord minReqDist = INT_MIN;
-
-      auto con = layer->getMinSpacing();
-      if (con) {
-        if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-          minReqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-          minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-              std::max(enclosureWidth, defaultWidth), prl);
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-          minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-              enclosureWidth, defaultWidth, prl);
-        }
-      }
-      if (minReqDist != INT_MIN) {
-        minReqDist += minNonOvlpDist;
-        line2ViaPitchUp = minReqDist;
-        if (line2ViaPitches_[zIdx] == -1
-            || minReqDist > line2ViaPitches_[zIdx]) {
-          line2ViaPitches_[zIdx] = minReqDist;
-        }
-        if (minLine2ViaPitch == -1 || minReqDist < minLine2ViaPitch) {
-          minLine2ViaPitch = minReqDist;
-        }
-      }
-    }
-
-    if (minLine2ViaPitch > trackPitches_[zIdx]) {
-      layerPitches_[zIdx] = std::max(line2ViaPitchDown, line2ViaPitchUp);
-    } else {
-      layerPitches_[zIdx] = trackPitches_[zIdx];
-    }
-
-    // output
-    std::cout << layer->getName();
-    if (isLayerHorz) {
-      std::cout << " H ";
-    } else {
-      std::cout << " V ";
-    }
-    std::cout << "Track-Pitch = " << std::fixed << std::setprecision(5)
-              << trackPitches_[zIdx]
-                     / (double) (design_->getTopBlock()->getDBUPerUU())
-              << "  line-2-Via Pitch = " << std::fixed << std::setprecision(5)
-              << minLine2ViaPitch
-                     / (double) (design_->getTopBlock()->getDBUPerUU())
-              << std::endl;
-    if (trackPitches_[zIdx] < minLine2ViaPitch) {
-      std::cout << "Warning: Track pitch is too small compared with line-2-via "
-                   "pitch\n";
-    }
-
-    if (zIdx == 0) {
-      zHeights_[zIdx] = layerPitches_[zIdx];
-    } else {
-      zHeights_[zIdx] = zHeights_[zIdx - 1] + layerPitches_[zIdx];
-    }
-  }
-}
-
-void FlexGR::initGCell()
-{
-  auto& gcellPatterns = design_->getTopBlock()->getGCellPatterns();
-  if (gcellPatterns.empty()) {
-    auto layer = design_->getTech()->getLayer(2);
-    auto pitch = layer->getPitch();
-    std::cout << std::endl
-              << "Generating GCell with size = 15 tracks, using layer "
-              << layer->getName() << " pitch  = "
-              << pitch / (double) (design_->getTopBlock()->getDBUPerUU())
-              << "\n";
-    Rect dieBox = design_->getTopBlock()->getDieBox();
-
-    frGCellPattern xgp, ygp;
-    // set xgp
-    xgp.setHorizontal(false);
-    frCoord startCoordX
-        = dieBox.xMin() - design_->getTech()->getManufacturingGrid();
-    xgp.setStartCoord(startCoordX);
-    frCoord GCELLGRIDX = pitch * 15;
-    xgp.setSpacing(GCELLGRIDX);
-    if (GCELLGRIDX != 0) {
-      xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
-    }
-    // set ygp
-    ygp.setHorizontal(true);
-    frCoord startCoordY
-        = dieBox.yMin() - design_->getTech()->getManufacturingGrid();
-    ygp.setStartCoord(startCoordY);
-    frCoord GCELLGRIDY = pitch * 15;
-    ygp.setSpacing(GCELLGRIDY);
-    if (GCELLGRIDY == 0) {
-      std::cout << "Pitch is zero for " << layer->getName() << "\n";
-      exit(1);
-    }
-    ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
-
-    design_->getTopBlock()->setGCellPatterns({xgp, ygp});
+    // Zhiang: I do not understand the logic here
+    // Should we use line2ViaPitches_[zIdx] instead of minLine2ViaPitch
+    // I think we should use the maximum of line2ViaPitches_[zIdx] and trackPitches_[zIdx]
+    // Original implementation:
+    // if (minLine2ViaPitch > trackPitches_[zIdx]) {
+    //  layerPitches_[zIdx] = line2ViaPitches_[zIdx];
+    // } else {
+    //  layerPitches_[zIdx] = trackPitches_[zIdx];
+    //}
+    // For the NG45, I notice that the line2ViaPitches_[zIdx] is smaller than trackPitches_[zIdx]
+    // Updated by Zhiang:
+    layerPitches_[zIdx] = std::max(line2ViaPitches_[zIdx], trackPitches_[zIdx]);
+    // Zhiang: we need to understand how the zHeights_ are used
+    zHeights_[zIdx] = zIdx == 0 ? layerPitches_[zIdx]
+                                : zHeights_[zIdx - 1] + layerPitches_[zIdx];
+    
+    // print the layer information
+    std::string orientation = isLayerHorz ? "H" : "V";
+    double layerPitchUU = layer->getPitch() / static_cast<double>(block_->getDBUPerUU());
+    double trackPitchUU = trackPitches_[zIdx] / static_cast<double>(block_->getDBUPerUU());
+    double line2ViaPitchUU = line2ViaPitches_[zIdx] / static_cast<double>(block_->getDBUPerUU());
+    std::string warningMsg = "";
+    if (trackPitches_[zIdx] < line2ViaPitches_[zIdx]) {
+      warningMsg = "(Warning: Track pitch is smaller than line-2-via pitch!)";
+    } 
+    logger_->info(utl::DRT, 77,
+                  "Layer {}: layerNum = {}, zIdx = {}, Preferred dirction = {}, "
+                  "Layer Pitch = {:0.5f}, Track Pitch = {:0.5f}, Line-2-Via Pitch = {:0.5f} "
+                  "{}",
+                  layer->getName(), lNum, zIdx, orientation, 
+                  layerPitchUU, trackPitchUU, line2ViaPitchUU, warningMsg);
+    // Move to the next layer
+    zIdx++;
   }
 }
 
 void FlexGR::initCMap()
 {
-  std::cout << std::endl << "initializing congestion map...\n";
+  logger_->info(utl::DRT, 225, "Initializing congestion map...");
   auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_, logger_);
   cmap->setLayerTrackPitches(trackPitches_);
   cmap->setLayerLine2ViaPitches(line2ViaPitches_);
@@ -266,8 +227,6 @@ void FlexGR::initCMap()
   cmap->init();
   auto cmap2D = std::make_unique<FlexGRCMap>(design_, router_cfg_, logger_);
   cmap2D->initFrom3D(cmap.get());
-  // cmap->print2D(true);
-  // cmap->print();
   setCMap(cmap);
   setCMap2D(cmap2D);
 }
