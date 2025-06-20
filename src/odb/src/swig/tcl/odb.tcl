@@ -879,7 +879,9 @@ proc create_blockage {args} {
 
     # Validate coordinate ordering
     if {$x1 >= $x2 || $y1 >= $y2} {
-        utl::error ODB 1011 "Invalid coordinates: x1 ($x1) must be < x2 ($x2) and y1 ($y1) must be < y2 ($y2)"
+        utl::error ODB 1011 "Invalid coordinates: \
+            x1 ([ord::dbu_to_microns $x1]) must be < x2 ([ord::dbu_to_microns $x2]) and \
+            y1 ([ord::dbu_to_microns $y1]) must be < y2 ([ord::dbu_to_microns $y2])"
     }
 
     # Get database objects
@@ -918,7 +920,10 @@ proc create_blockage {args} {
 
     # Check if coordinates are within die area
     if {$x1 < $die_x1 || $y1 < $die_y1 || $x2 > $die_x2 || $y2 > $die_y2} {
-        utl::error ODB 1014 "Blockage coordinates ($x1, $y1, $x2, $y2) are outside die area ($die_x1, $die_y1, $die_x2, $die_y2)"
+        utl::error ODB 1014 "Blockage coordinates \
+              ([ord::dbu_to_microns $x1], [ord::dbu_to_microns $y1], [ord::dbu_to_microns $x2], [ord::dbu_to_microns $y2]) \
+              are outside die area \
+              ([ord::dbu_to_microns $die_x1], [ord::dbu_to_microns $die_y1], [ord::dbu_to_microns $die_x2], [ord::dbu_to_microns $die_y2])"
     }
     
     # Create the blockage

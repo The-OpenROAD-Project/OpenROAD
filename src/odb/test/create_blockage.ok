@@ -7,12 +7,13 @@ Test 2: Creating soft blockage...
 Test 3: Creating blockage with max density...
 Test 4: Creating blockage with instance...
 Test 5: Testing error handling...
-[ERROR ODB-1011] Invalid coordinates: x1 (200000) must be < x2 (100000) and y1 (200000) must be < y2 (100000)
+[ERROR ODB-1011] Invalid coordinates:  x1 (200.0) must be < x2 (100.0) and  y1 (200.0) must be < y2 (100.0)
 Expected error caught: ODB-1011
-[ERROR ODB-1014] Blockage coordinates (1500000, 1500000, 1600000, 1600000) are outside die area (0, 0, 100000, 100000)
+[ERROR ODB-1014] Blockage coordinates  (1500.0, 1500.0, 1600.0, 1600.0)  are outside die area  (0.0, 0.0, 100.0, 100.0)
 Expected error caught: ODB-1014
 [ERROR ODB-1013] Max density must be between 0.0 and 100, got: 150
 Expected error caught: ODB-1013
 [ERROR ODB-1012] Instance 'non_existent' not found in design
 Expected error caught: ODB-1012
+No differences found.
 pass

@@ -71,5 +71,10 @@ if {[catch {create_blockage -region {10 10 20 20} -inst "non_existent"} msg]} {
 set final_blockages [$block getBlockages]
 check "Final blockage count" {llength $final_blockages} 4
 
+# DEF test
+set def_file [make_result_file create_blockage.def]
+write_def $def_file
+diff_files create_blockage.defok $def_file
+
 puts "pass"
 exit 0
