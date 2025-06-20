@@ -153,6 +153,48 @@ Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, em
     709	        return true;
 
 
+## Creating an ORFS issue with bazel-orfs targets
+
+Hermeticity in Bazel requires some extra steps when debugging failures.
+
+If you have a failure in `//test/orfs/mock-array:MockArray_floorplan`, look for `ERROR:` and looking for `target`, find the error:
+
+    $ bazelisk test //test/orfs/mock-array:MockArray_test
+    [deleted]
+    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
+    [deleted]
+    [ERROR MPL-0040] Failed on cluster root
+    Error: macro_place.tcl, 5 MPL-0040
+    [deleted]
+    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
+
+Use `--sandbox_debug` to keep the files around after failure:
+
+    bazelisk build //test/orfs/mock-array:MockArray_floorplan --sandbox_debug
+
+Scan the log for setting up the shell and enviornment variables without linux-sandbox.
+
+    (cd /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/sandbox/linux-sandbox/8901/execroot/_main && \
+    exec env - \
+        DESIGN_CONFIG=bazel-out/k8-fastbuild/bin/test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.mk \
+        [deleted]
+    /home/oyvind/.cache/bazel/_bazel_oyvind/install/772f324362dbeab9bc869b8fb3248094/linux-sandbox -t 15 -w /dev/shm -w /home/oyvind/.cache/bazel/_bazel_oyvind/
+    [deleted]
+    /mock-array/reports/asap7/MockArray/base/2_floorplan_final.rpt && external/bazel-orfs++orfs_repositories+docker_orfs/usr/bin/make $@' '' --file external/bazel-orfs++orfs_repositories+docker_orfs/OpenROAD-flow-scripts/flow/Makefile do-floorplan)
+
+Do a bit of suregery to remove the `linux-sandbox` and `exec env -` part, which can be a bit tempremental, to launch a bash shell. This leaves you with a) changing directory b) setting up environment variables c) launching bash shell:
+
+    (cd /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/sandbox/linux-sandbox/8901/execroot/_main && \
+        DESIGN_CONFIG=bazel-out/k8-fastbuild/bin/test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.mk \
+        [deleted]
+    bash)
+
+Now run `make issue` as usual:
+
+    $ make --file external/bazel-orfs++orfs_repositories+docker_orfs/OpenROAD-flow-scripts/flow/Makefile macro_place_issue
+    Archiving issue to macro_place_MockArray_asap7_base_2025-06-20_12-57.tar.gz
+    Using pigz to compress tar file
+
 ## Some OpenROAD and OpenSTA Bazel Specifics
 
 Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) configurations, a concept that becomes important when cross-compilation or tool usage is involved.
