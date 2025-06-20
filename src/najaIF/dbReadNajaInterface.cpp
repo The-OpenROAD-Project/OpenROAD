@@ -30,7 +30,7 @@ odb::dbDatabase* NajaIF::db_ = nullptr;
 odb::dbBlock* NajaIF::block_ = nullptr;
 odb::dbBlock* NajaIF::top_block_ = nullptr;
 std::map<std::tuple<size_t, size_t, size_t>, std::pair<odb::dbModule*, bool>> NajaIF::module_map_;
-std::map<size_t, std::vector<std::string>> NajaIF::module2terms_;
+std::map<size_t, std::vector<std::pair<std::string, bool>>> NajaIF::module2terms_;
 odb::dbModule* NajaIF::top_ = nullptr;
 
 // init the static variables to nullptr
@@ -107,7 +107,7 @@ dbIoType::Value CapnPtoODBDirection(Direction direction)
 void loadScalarTerm(dbModule* mod,
                     const SNLDesignInterface::ScalarTerm::Reader& term)
 {
-  NajaIF::module2terms_[mod->getId()].push_back(term.getName());
+  NajaIF::module2terms_[mod->getId()].push_back(std::pair<std::string, bool>(term.getName(), false));
   auto termID = term.getId();
   auto termDirection = term.getDirection();
   dbModBTerm* modbterm = dbModBTerm::create(mod, term.getName().cStr());
@@ -120,7 +120,7 @@ void loadBusTerm(
     dbModule* mod,
     const SNLDesignInterface::BusTerm::Reader& term)
 {
-  NajaIF::module2terms_[mod->getId()].push_back(term.getName());
+  NajaIF::module2terms_[mod->getId()].push_back(std::pair<std::string, bool>(term.getName(), true));
   dbBusPort* dbbusport = nullptr;
   auto termID = term.getId();
   auto termDirection = term.getDirection();
@@ -183,15 +183,15 @@ void loadDesignInterface(
       dbInterface.getTopDesignReference().getDesignID() == designID) {
     mod = NajaIF::block_->getTopModule();
     NajaIF::top_ = mod;
+    // In case of top, we do not create the terms on modules but only as flat dbTerms
+    // when iterating on nets. We do still cache their names in module2terms_.
     if (designInterface.hasTerms()) {
       for (auto term : designInterface.getTerms()) {
         if (term.isScalarTerm()) {
           auto scalarTerm = term.getScalarTerm();
-          NajaIF::module2terms_[mod->getId()].push_back(scalarTerm.getName());
+          NajaIF::module2terms_[mod->getId()].push_back(std::pair<std::string, bool>(scalarTerm.getName(), false));
         } else if (term.isBusTerm()) {
-          NajaIF::module2terms_[mod->getId()].push_back(term.getBusTerm().getName());
-          //continue;
-          //assert(false);
+          NajaIF::module2terms_[mod->getId()].push_back(std::pair<std::string, bool>(term.getBusTerm().getName(), true));
         }
       }
     }

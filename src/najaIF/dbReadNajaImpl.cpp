@@ -362,7 +362,7 @@ void loadTermReference(
          NajaIF::module2terms_[design->getId()].size());
   dbModBTerm* term = design->findModBTerm(
       NajaIF::module2terms_[design->getId()][termReference.getTermID()]
-          .c_str());
+          .first.c_str());
   // auto term =
   // design->getTerm(NLID::DesignObjectID(termReference.getTermID()));
   // LCOV_EXCL_START
@@ -471,8 +471,8 @@ void loadBusNet(dbModule* module,
   if (net.hasBits()) {
     for (auto bitNet : net.getBits()) {
       auto bit = bitNet.getBit();
-      std::string bitName = std::string(net.getName().cStr()) + "["
-                            + std::to_string(bit) + "]";
+      std::string bitName
+          = std::string(net.getName().cStr()) + "[" + std::to_string(bit) + "]";
       dbModNet* scalarNet = dbModNet::create(
           module, bitName.c_str());  // TOTO - what about type?
       // auto scalarNet = SNLScalarNet::create(design,
@@ -535,19 +535,34 @@ void loadBusNet(dbModule* module,
                 NajaIF::module2terms_[leaf_map[instanceID].second->getId()]
                                      [componentReference.getInstTermReference()
                                           .getTermID()]
-                                         .c_str());
+                                         .first.c_str());
             leaf->getITerm(mterm)->connect(db_net);
           } else if (componentReference.isTermReference()) {
             if (NajaIF::top_ == module) {
-              std::string termname = std::string(
-                  NajaIF::module2terms_[module->getId()]
+              std::string termname;
+              if (NajaIF::module2terms_[module->getId()]
                                        [componentReference.getTermReference()
                                             .getTermID()]
-                      .c_str()) + "[" + std::to_string(componentReference.getTermReference().getBit()) + "]";
-              printf("############# creating bterm %s\n",termname.c_str());
-              dbBTerm* bterm = dbBTerm::create(
-                  db_net,
-                  termname.c_str());
+                                           .second) {
+                termname
+                    = std::string(NajaIF::module2terms_[module->getId()]
+                                                       [componentReference
+                                                            .getTermReference()
+                                                            .getTermID()].first
+                                                           .c_str())
+                      + "["
+                      + std::to_string(
+                          componentReference.getTermReference().getBit())
+                      + "]";
+              } else {
+                termname = std::string(
+                    NajaIF::module2terms_[module->getId()]
+                                         [componentReference.getTermReference()
+                                              .getTermID()].first
+                                             .c_str());
+              }
+              printf("############# creating bterm %s\n", termname.c_str());
+              dbBTerm* bterm = dbBTerm::create(db_net, termname.c_str());
               // const dbIoType io_type = CapnPtoODBDirection(termDirection);
               // bterm->setIoType(io_type);
               //  debugPrint(logger_,
@@ -562,30 +577,6 @@ void loadBusNet(dbModule* module,
           }
         }
       }
-      // auto busNetBit = busNet->getBit(bit);
-      // //LCOV_EXCL_START
-      // if (not busNetBit) {
-      //   std::ostringstream reason;
-      //   reason << "cannot deserialize bus net bit: no bit found in bus term
-      //   with provided reference"; throw NLException(reason.str());
-      // }
-      // //LCOV_EXCL_STOP
-      // if (bitNet.getDestroyed()) {
-      //   busNetBit->destroy();
-      //   continue;
-      // }
-      // busNetBit->setType(CapnPtoSNLNetType(bitNet.getType()));
-      // if (bitNet.hasComponents()) {
-      //   for (auto componentReference: bitNet.getComponents()) {
-      //     if (componentReference.isInstTermReference()) {
-      //       loadInstTermReference(busNetBit,
-      //       componentReference.getInstTermReference());
-      //     } else if (componentReference.isTermReference()) {
-      //       loadTermReference(busNetBit,
-      //       componentReference.getTermReference());
-      //     }
-      //   }
-      // }
     }
   }
 }
@@ -662,22 +653,34 @@ void loadScalarNet(
             NajaIF::block_,
             NajaIF::module2terms_[leaf_map[instanceID].second->getId()]
                                  [componentReference.getInstTermReference()
-                                      .getTermID()]
+                                      .getTermID()].first
                                      .c_str());
         leaf->getITerm(mterm)->connect(db_net);
       } else if (componentReference.isTermReference()) {
         if (NajaIF::top_ == module) {
-          printf("############# creating bterm %s\n",
-                 NajaIF::module2terms_[module->getId()]
-                                      [componentReference.getTermReference()
-                                           .getTermID()]
-                                          .c_str());
-          dbBTerm* bterm = dbBTerm::create(
-              db_net,
-              NajaIF::module2terms_[module->getId()]
+          std::string termname;
+          if (NajaIF::module2terms_[module->getId()]
                                    [componentReference.getTermReference()
                                         .getTermID()]
-                                       .c_str());
+                                       .second) {
+            termname
+                = std::string(
+                      NajaIF::module2terms_
+                          [module->getId()]
+                          [componentReference.getTermReference().getTermID()].first
+                              .c_str())
+                  + "["
+                  + std::to_string(
+                      componentReference.getTermReference().getBit())
+                  + "]";
+          } else {
+            termname = std::string(
+                NajaIF::module2terms_[module->getId()]
+                                     [componentReference.getTermReference()
+                                          .getTermID()].first
+                                         .c_str());
+          }
+          dbBTerm* bterm = dbBTerm::create(db_net, termname.c_str());
           // const dbIoType io_type = CapnPtoODBDirection(termDirection);
           // bterm->setIoType(io_type);
           //  debugPrint(logger_,
@@ -730,10 +733,9 @@ void loadDesignImplementation(
       if (net.isScalarNet()) {
         auto scalarNet = net.getScalarNet();
         loadScalarNet(design, scalarNet, instance_map, leaf_map);
-      }
-      else if (net.isBusNet()) { 
-         auto busNet = net.getBusNet();
-         loadBusNet(design, busNet, instance_map, leaf_map);
+      } else if (net.isBusNet()) {
+        auto busNet = net.getBusNet();
+        loadBusNet(design, busNet, instance_map, leaf_map);
       }
     }
   }

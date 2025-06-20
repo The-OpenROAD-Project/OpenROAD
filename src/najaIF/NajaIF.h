@@ -66,7 +66,7 @@ class NajaIF {
 
 //private:
      static std::map<std::tuple<size_t,size_t,size_t>, std::pair<odb::dbModule*, bool>> module_map_;
-     static std::map<size_t, std::vector<std::string> > module2terms_; // assuming ID for DBMod is unique
+     static std::map<size_t, std::vector<std::pair<std::string, bool>>> module2terms_; // assuming ID for DBMod is unique
      static odb::dbDatabase* db_;
      static odb::dbBlock* block_;
      static odb::dbBlock* top_block_;
