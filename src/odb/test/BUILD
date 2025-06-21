@@ -23,6 +23,7 @@ COMPULSORY_TESTS = [
     "abstract_origin",
     "bterm_hier_create",
     "check_routing_tracks",
+    "create_blockage",
     "create_sboxes",
     "def_dup_net",
     "def_parser",
