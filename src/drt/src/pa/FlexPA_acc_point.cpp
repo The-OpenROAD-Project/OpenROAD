@@ -1064,15 +1064,10 @@ template <typename T>
 void FlexPA::filterMultipleAPAccesses(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
     T* pin,
-    frInstTerm* inst_term,
-    const bool& is_std_cell_pin)
+    frInstTerm* inst_term)
 {
-  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
-      pin_shapes.size());
-  for (int i = 0; i < (int) pin_shapes.size(); i++) {
-    pin_shapes[i].get_polygons(layer_polys[i]);
-  }
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
@@ -1081,31 +1076,29 @@ void FlexPA::filterMultipleAPAccesses(
                     pin_shapes[layer_num],
                     pin,
                     inst_term);
-    if (is_std_cell_pin) {
-      has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-                      && ap->hasAccess(frDirEnum::U))
-                     || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
-                         && ap->hasAccess()));
+    if (isStdCellTerm(inst_term)
+        && layer_num == router_cfg_->VIA_ACCESS_LAYERNUM) {
+      has_access |= ap->hasAccess(frDirEnum::U);
     } else {
       has_access |= ap->hasAccess();
     }
   }
-  if (!has_access) {
-    for (auto& ap : aps) {
-      const auto layer_num = ap->getLayerNum();
-      filterViaAccess(ap.get(),
-                      layer_polys[layer_num],
-                      pin_shapes[layer_num],
-                      pin,
-                      inst_term,
-                      true);
-    }
+  if (has_access) {
+    return;
+  }
+  for (auto& ap : aps) {
+    const auto layer_num = ap->getLayerNum();
+    filterViaAccess(ap.get(),
+                    layer_polys[layer_num],
+                    pin_shapes[layer_num],
+                    pin,
+                    inst_term,
+                    true);
   }
 }
 
-void FlexPA::updatePinStats(
-    const std::vector<std::unique_ptr<frAccessPoint>>& new_aps,
-    frInstTerm* inst_term)
+void FlexPA::updatePinStats(const std::vector<frAccessPoint*>& valid_aps,
+                            frInstTerm* inst_term)
 {
   if (isIOTerm(inst_term)) {
     return;
@@ -1114,7 +1107,7 @@ void FlexPA::updatePinStats(
   bool is_std_cell_pin = isStdCellTerm(inst_term);
   bool is_macro_cell_pin = isMacroCellTerm(inst_term);
 
-  if (new_aps.empty()) {
+  if (valid_aps.empty()) {
     if (is_std_cell_pin) {
       std_cell_pin_no_ap_cnt_++;
     } else if (is_macro_cell_pin) {
@@ -1122,7 +1115,7 @@ void FlexPA::updatePinStats(
     }
   }
 
-  for (auto& ap : new_aps) {
+  for (auto& ap : valid_aps) {
     if (ap->hasPlanarAccess()) {
       if (is_std_cell_pin) {
 #pragma omp atomic
@@ -1146,9 +1139,8 @@ void FlexPA::updatePinStats(
   }
 }
 
-bool FlexPA::EnoughSparsePoints(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    frInstTerm* inst_term)
+bool FlexPA::EnoughSparsePoints(std::vector<frAccessPoint*>& aps,
+                                frInstTerm* inst_term)
 {
   const bool is_std_cell_pin = isStdCellTerm(inst_term);
   const bool is_macro_cell_pin = isMacroCellTerm(inst_term);
@@ -1207,10 +1199,9 @@ bool FlexPA::EnoughPointsFarFromEdge(
   return false;
 }
 
-bool FlexPA::EnoughAccessPoints(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    frInstTerm* inst_term,
-    pa_requirements_met& reqs)
+bool FlexPA::EnoughAccessPoints(std::vector<frAccessPoint*>& aps,
+                                frInstTerm* inst_term,
+                                pa_requirements_met& reqs)
 {
   if (isIOTerm(inst_term)) {
     return !aps.empty();
@@ -1224,6 +1215,7 @@ bool FlexPA::EnoughAccessPoints(
 template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::vector<frAccessPoint*>& valid_aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
@@ -1233,7 +1225,6 @@ bool FlexPA::genPinAccessCostBounded(
     const frAccessPointEnum upper_type,
     pa_requirements_met& reqs)
 {
-  const bool is_std_cell_pin = isStdCellTerm(inst_term);
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   LayerToRectCoordsMap layer_rect_to_coords;
   genAPsFromPinShapes(
@@ -1243,27 +1234,29 @@ bool FlexPA::genPinAccessCostBounded(
   for (auto& ap : new_aps) {
     validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
   }
-  filterMultipleAPAccesses(
-      new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+  filterMultipleAPAccesses(new_aps, pin_shapes, layer_polys, pin, inst_term);
   if (graphics_) {
     graphics_->setAPs(new_aps, lower_type, upper_type);
   }
   for (auto& ap : new_aps) {
-    if (!ap->hasAccess()) {
+    auto raw_ap = ap.get();
+
+    if (!raw_ap->hasAccess()) {
       continue;
     }
     // for stdcell, add (i) planar access if layer_num != VIA_ACCESS_LAYERNUM,
     // and (ii) access if exist access for macro, allow pure planar ap
-    if (is_std_cell_pin) {
-      if (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM
-          && !ap->hasAccess(frDirEnum::U)) {
-        continue;
-      }
+    if (isStdCellTerm(inst_term)
+        && raw_ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM
+        && !raw_ap->hasAccess(frDirEnum::U)) {
+      continue;
     }
     aps.push_back(std::move(ap));
+    valid_aps.push_back(raw_ap);
+    raw_ap->setIsValid(true);
   }
 
-  return EnoughAccessPoints(aps, inst_term, reqs);
+  return EnoughAccessPoints(valid_aps, inst_term, reqs);
 }
 
 template <typename T>
@@ -1342,6 +1335,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
+  std::vector<frAccessPoint*> valid_aps;
   std::set<std::pair<Point, frLayerNum>> apset;
 
   if (graphics_) {
@@ -1385,6 +1379,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
       }
 
       enough_access_points = genPinAccessCostBounded(aps,
+                                                     valid_aps,
                                                      apset,
                                                      pin_shapes,
                                                      layer_polys,
@@ -1429,15 +1424,17 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
     ap->sortViaDefs(cost_map);
   }
 
-  updatePinStats(aps, inst_term);
-  // IO term pin always only have one access
+  updatePinStats(valid_aps, inst_term);
+  // write to pa
   const int pin_access_idx
       = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
-  // write to pa
   for (auto& ap : aps) {
+    if (!ap->isValid()) {
+      continue;
+    }
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
   }
-  return aps.size();
+  return valid_aps.size();
 }
 
 void FlexPA::genInstAccessPoints(frInst* unique_inst)
