@@ -413,23 +413,10 @@ This command provides a unified interface for creating placement blockages. The 
 
 ```tcl
 create_blockage 
-    [-region {x1 y1 x2 y2}] 
+    -region {x1 y1 x2 y2}
     [-inst instance] 
     [-max_density density] 
     [-soft]
-or
-create_blockage 
-    [-region {x1 y1 x2 y2}] 
-    [-max_density density] 
-    [-soft]
-or
-create_blockage 
-    [-region {x1 y1 x2 y2}] 
-    [-soft]
-or
-create_blockage 
-    [-region {x1 y1 x2 y2}] 
-    [-inst instance] 
 ```
 
 #### Options
