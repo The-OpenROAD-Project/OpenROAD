@@ -57,7 +57,7 @@ class Dft
   //
   // If verbose is true, then we show all the cells that are inside the scan
   // chains
-  void previewDft(bool verbose);
+  void reportDftPlan(bool verbose);
 
   // Inserts the scan chains into the design. For now this just replace the
   // cells in the design with scan equivalent. This functions mutates the
@@ -68,7 +68,14 @@ class Dft
   //
   void scanReplace();
 
-  void insertDft();
+  // Runs the complete flow for scan insertion based on the user's settings
+  //
+  // Here we do:
+  //  - Scan Replace
+  //  - Scan Architect
+  //  - Scan Insertion
+  //  - Store the inserted DFT (scan chains) into odb for later optimization
+  void executeDftPlan();
 
   // Returns a mutable version of DftConfig
   DftConfig* getMutableDftConfig();
@@ -87,7 +94,7 @@ class Dft
   void reset();
 
   // Common function to perform scan replace and scan architect. Shared between
-  // preview_dft and insert_dft
+  // report_dft_plan and execute_dft_plan
   std::vector<std::unique_ptr<ScanChain>> scanArchitect();
 
   // Global state

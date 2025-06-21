@@ -41,6 +41,7 @@ or_integration_tests(
     replace_hier_mod2
     replace_hier_mod3
     replace_hier_mod4
+    replace_hier_mod5
     rounding
     row_settings
     sky130hd_multi_patterned

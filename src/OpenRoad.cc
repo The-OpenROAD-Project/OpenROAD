@@ -243,8 +243,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initTritonRoute(
       detailed_router_, db_, logger_, distributer_, stt_builder_, tcl_interp);
   initPDNSim(pdnsim_, logger_, db_, sta_, resizer_, opendp_, tcl_interp);
-  initAntennaChecker(
-      antenna_checker_, db_, global_router_, logger_, tcl_interp);
+  initAntennaChecker(antenna_checker_, db_, logger_, tcl_interp);
   initPartitionMgr(
       partitionMgr_, db_, getDbNetwork(), sta_, logger_, tcl_interp);
   initPdnGen(pdngen_, db_, logger_, tcl_interp);
