@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
-
+// clang-format off
 %ignore drt::TritonRoute::init;
 
 %{
@@ -58,6 +58,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int drouteEndIter,
                         const char* viaInPinBottomLayer,
                         const char* viaInPinTopLayer,
+                        const char* viaAccessLayer,
                         int orSeed,
                         double orK,
                         const char* bottomRoutingLayer,
@@ -87,6 +88,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     drouteEndIter,
                     viaInPinBottomLayer,
                     viaInPinTopLayer,
+                    viaAccessLayer,
                     orSeed,
                     orK,
                     bottomRoutingLayer,
@@ -106,8 +108,11 @@ void detailed_route_cmd(const char* outputMazeFile,
 void pin_access_cmd(const char* dbProcessNode,
                     const char* bottomRoutingLayer,
                     const char* topRoutingLayer,
+                    const char* viaAccessLayer,
                     int verbose,
-                    int minAccessPoints)
+                    int minAccessPoints,
+                    const char* viaInPinBottomLayer,
+                    const char* viaInPinTopLayer)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   drt::ParamStruct params;
@@ -115,7 +120,10 @@ void pin_access_cmd(const char* dbProcessNode,
   params.bottomRoutingLayer = bottomRoutingLayer;
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
+  params.viaAccessLayer = viaAccessLayer;
   params.minAccessPoints = minAccessPoints;
+  params.viaInPinBottomLayer = viaInPinBottomLayer;
+  params.viaInPinTopLayer = viaInPinTopLayer;
   params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();
@@ -231,3 +239,4 @@ route_layer_lengths(odb::dbWire* db_wire)
 }
 
 %} // inline
+// clang-format on

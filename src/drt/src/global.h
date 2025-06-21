@@ -58,6 +58,7 @@ struct RouterConfiguration
   frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
   frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 
+  std::string VIA_ACCESS_LAYER_NAME;
   frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
   int MINNUMACCESSPOINT_MACROCELLPIN = 3;

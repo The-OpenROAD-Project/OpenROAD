@@ -396,65 +396,6 @@ void logGuidesRead(const int num_guides, utl::Logger* logger)
   }
 }
 /**
- * @brief Checks the validity of the odb guide layer
- *
- * The db_guide layer is invalid if it is any of the following conditions:
- * - Not in the DRT layer database
- * - Above the sepecified top routing layer
- * - Below the specified bottom routing layer and the via access layer
- * @note If a layer is invalid, this produces an error unless it is above the
- * top routing layer for a net that has pins above the top routing layer. In
- * the latest case, we just ignore the guide and the pin is handled by
- * io::Parser::setBTerms_addPinFig_helper
- * @param layer_num The layer_num of the guide returned by this function if it
- * is a valid layer
- * @returns True if the guide is valid by the previous criteria and False
- * if above top routing layer for a net with bterms above top routing layer
- */
-bool isValidGuideLayerNum(odb::dbGuide* db_guide,
-                          frTechObject* tech,
-                          frNet* net,
-                          utl::Logger* logger,
-                          frLayerNum& layer_num,
-                          RouterConfiguration* router_cfg)
-{
-  frLayer* layer = tech->getLayer(db_guide->getLayer()->getName());
-  if (layer == nullptr) {
-    logger->error(
-        DRT, 154, "Cannot find layer {}.", db_guide->getLayer()->getName());
-  }
-  layer_num = layer->getLayerNum();
-
-  // Ignore guide as invalid if above top routing layer for a net with bterms
-  // above top routing layer
-  const bool guide_above_top_routing_layer
-      = layer_num > router_cfg->TOP_ROUTING_LAYER;
-  if (guide_above_top_routing_layer && net->hasBTermsAboveTopLayer()) {
-    return false;
-  }
-  const bool guide_below_bottom_routing_layer
-      = layer_num < router_cfg->BOTTOM_ROUTING_LAYER
-        && layer_num != router_cfg->VIA_ACCESS_LAYERNUM;
-  if (guide_below_bottom_routing_layer || guide_above_top_routing_layer) {
-    logger->error(DRT,
-                  155,
-                  "Guide in net {} uses layer {} ({})"
-                  " that is outside the allowed routing range "
-                  "[{} ({}), {} ({})] with via access on [{} ({})].",
-                  net->getName(),
-                  layer->getName(),
-                  layer_num,
-                  tech->getLayer(router_cfg->BOTTOM_ROUTING_LAYER)->getName(),
-                  router_cfg->BOTTOM_ROUTING_LAYER,
-                  tech->getLayer(router_cfg->TOP_ROUTING_LAYER)->getName(),
-                  router_cfg->TOP_ROUTING_LAYER,
-                  tech->getLayer(router_cfg->VIA_ACCESS_LAYERNUM)->getName(),
-                  router_cfg->VIA_ACCESS_LAYERNUM);
-  }
-  return true;
-}
-
-/**
  * @brief Initializes guide intervals for genGuides_merge.
  *
  * The function iterates over all the net guides and identifies each one's
@@ -698,9 +639,93 @@ std::vector<int> getVisitedIndices(const std::set<int>& indices,
 
 }  // namespace
 
+bool GuideProcessor::isValidGuideLayerNum(odb::dbGuide* db_guide,
+                                          frNet* net,
+                                          frLayerNum& layer_num)
+{
+  bool error = false;
+  frLayer* layer = getTech()->getLayer(db_guide->getLayer()->getName());
+  if (layer == nullptr) {
+    logger_->error(
+        DRT, 154, "Cannot find layer {}.", db_guide->getLayer()->getName());
+  }
+  layer_num = layer->getLayerNum();
+
+  // Ignore guide as invalid if above top routing layer for a net with bterms
+  // above top routing layer
+  if (layer_num > router_cfg_->TOP_ROUTING_LAYER) {
+    if (net->hasBTermsAboveTopLayer()) {
+      return false;
+    }
+    error = true;
+  }
+  if (layer_num < router_cfg_->BOTTOM_ROUTING_LAYER) {
+    // check if this is a via access guide
+    if (!getDesign()->getTopBlock()->getGCellPatterns().empty()) {
+      auto guide_rect = db_guide->getBox();
+      guide_rect.bloat(-1, guide_rect);
+      const bool one_gcell_guide
+          = getDesign()->getTopBlock()->getGCellIdx(guide_rect.ll())
+            == getDesign()->getTopBlock()->getGCellIdx(guide_rect.ur());
+      if (!one_gcell_guide) {
+        // TODO: uncomment this when GRT issue is solved
+        // error = true;  // not a valid via access guide
+      }
+    }
+    // else I don't know how many gcells the guide spans
+  }
+  if (error) {
+    logger_->error(
+        DRT,
+        155,
+        "Guide in net {} uses layer {} ({})"
+        " that is outside the allowed routing range "
+        "[{} ({}), {} ({})] with via access on [{} ({})].",
+        net->getName(),
+        layer->getName(),
+        layer_num,
+        getTech()->getLayer(router_cfg_->BOTTOM_ROUTING_LAYER)->getName(),
+        router_cfg_->BOTTOM_ROUTING_LAYER,
+        getTech()->getLayer(router_cfg_->TOP_ROUTING_LAYER)->getName(),
+        router_cfg_->TOP_ROUTING_LAYER,
+        getTech()->getLayer(router_cfg_->VIA_ACCESS_LAYERNUM)->getName(),
+        router_cfg_->VIA_ACCESS_LAYERNUM);
+  }
+  return true;
+}
+
+void GuideProcessor::readGCellGrid()
+{
+  auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
+  if (gcellGrid == nullptr || gcellGrid->getNumGridPatternsX() != 1
+      || gcellGrid->getNumGridPatternsY() != 1) {
+    return;
+  }
+  frGCellPattern xgp, ygp;
+  frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
+  frCoord COUNTX, COUNTY;
+  gcellGrid->getGridPatternX(0, GCELLOFFSETX, COUNTX, GCELLGRIDX);
+  gcellGrid->getGridPatternY(0, GCELLOFFSETY, COUNTY, GCELLGRIDY);
+  xgp.setStartCoord(GCELLOFFSETX);
+  xgp.setSpacing(GCELLGRIDX);
+  xgp.setCount(COUNTX);
+  xgp.setHorizontal(false);
+
+  ygp.setStartCoord(GCELLOFFSETY);
+  ygp.setSpacing(GCELLGRIDY);
+  ygp.setCount(COUNTY);
+  ygp.setHorizontal(true);
+  getDesign()->getTopBlock()->setGCellPatterns(
+      {std::move(xgp), std::move(ygp)});
+}
+
 bool GuideProcessor::readGuides()
 {
   ProfileTask profile("IO:readGuide");
+
+  // Read GCell grid information first
+  readGCellGrid();
+
   int num_guides = 0;
   const auto block = db_->getChip()->getBlock();
   for (const auto db_net : block->getNets()) {
@@ -713,8 +738,7 @@ bool GuideProcessor::readGuides()
         logger_->error(DRT, 352, "Input route guides are congested.");
       }
       frLayerNum layer_num;
-      if (!isValidGuideLayerNum(
-              db_guide, getTech(), net, logger_, layer_num, router_cfg_)) {
+      if (!isValidGuideLayerNum(db_guide, net, layer_num)) {
         continue;
       }
       frRect rect;
@@ -855,25 +879,9 @@ void GuideProcessor::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
 void GuideProcessor::buildGCellPatterns()
 {
   // horizontal = false is gcell lines along y direction (x-grid)
-  frGCellPattern xgp, ygp;
-  frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
-  auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
-  if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
-      && gcellGrid->getNumGridPatternsY() == 1) {
-    frCoord COUNTX, COUNTY;
-    gcellGrid->getGridPatternX(0, GCELLOFFSETX, COUNTX, GCELLGRIDX);
-    gcellGrid->getGridPatternY(0, GCELLOFFSETY, COUNTY, GCELLGRIDY);
-    xgp.setStartCoord(GCELLOFFSETX);
-    xgp.setSpacing(GCELLGRIDX);
-    xgp.setCount(COUNTX);
-    xgp.setHorizontal(false);
-
-    ygp.setStartCoord(GCELLOFFSETY);
-    ygp.setSpacing(GCELLGRIDY);
-    ygp.setCount(COUNTY);
-    ygp.setHorizontal(true);
-
-  } else {
+  if (getDesign()->getTopBlock()->getGCellPatterns().empty()) {
+    frGCellPattern xgp, ygp;
+    frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
     Rect dieBox = getDesign()->getTopBlock()->getDieBox();
     buildGCellPatterns_helper(
         GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
@@ -907,8 +915,12 @@ void GuideProcessor::buildGCellPatterns()
       logger_->error(DRT, 175, "GCell cnt y < 1.");
     }
     ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
+    getDesign()->getTopBlock()->setGCellPatterns(
+        {std::move(xgp), std::move(ygp)});
   }
-
+  const auto& gcell_patterns = getDesign()->getTopBlock()->getGCellPatterns();
+  const auto& xgp = gcell_patterns[0];
+  const auto& ygp = gcell_patterns[1];
   if (router_cfg_->VERBOSE > 0 || logger_->debugCheck(DRT, "autotuner", 1)) {
     logger_->info(DRT,
                   176,
@@ -923,9 +935,6 @@ void GuideProcessor::buildGCellPatterns()
                   ygp.getCount(),
                   ygp.getSpacing());
   }
-
-  getDesign()->getTopBlock()->setGCellPatterns(
-      {std::move(xgp), std::move(ygp)});
 }
 
 void GuideProcessor::patchGuides_helper(frNet* net,
@@ -1719,7 +1728,7 @@ void GuidePathFinder::constructAdjList()
           // no M1 cross-gcell routing allowed
           // BX200307: in general VIA_ACCESS_LAYER should not be used (instead
           // of 0)
-          if (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM) {
+          if (layer_num > router_cfg_->VIA_ACCESS_LAYERNUM) {
             adj_list_[idx1].push_back(idx2);
             adj_list_[idx2].push_back(idx1);
           }
