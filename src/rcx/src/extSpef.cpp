@@ -921,7 +921,8 @@ void extSpef::writeCouplingCapsNoSort(dbSet<dbCCSeg>& capSet, const uint netId)
 void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet, const uint netId)
 {
   if (_preserveCapValues) {
-    return writeCouplingCapsNoSort(capSet, netId);
+    writeCouplingCapsNoSort(capSet, netId);
+    return;
   }
 
   std::vector<dbCCSeg*> vec_cc(capSet.begin(), capSet.end());
@@ -1429,20 +1430,20 @@ void extSpef::writeBlock(char* nodeCoord,
                          bool noBackSlash,
                          bool parallel)
 {
-  return writeBlock(nodeCoord,
-                    capUnit,
-                    resUnit,
-                    stopAfterNameMap,
-                    *tnets,
-                    wClock,
-                    wConn,
-                    wCap,
-                    wOnlyCCcap,
-                    wRes,
-                    noCnum,
-                    stopBeforeDnets,
-                    noBackSlash,
-                    parallel);
+  writeBlock(nodeCoord,
+             capUnit,
+             resUnit,
+             stopAfterNameMap,
+             *tnets,
+             wClock,
+             wConn,
+             wCap,
+             wOnlyCCcap,
+             wRes,
+             noCnum,
+             stopBeforeDnets,
+             noBackSlash,
+             parallel);
 }
 
 void extSpef::writeBlock(const char* nodeCoord,
