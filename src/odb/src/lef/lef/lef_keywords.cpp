@@ -679,9 +679,18 @@ int lefsublex()
       return 0;
 
     // Token size can change. Do preventive re-alloc.
-    lefData->uc_token = (char*) realloc(lefData->uc_token, lefData->tokenSize);
-    lefData->pv_token = (char*) realloc(lefData->pv_token, lefData->tokenSize);
+    char* new_uc_token = (char*) realloc(lefData->uc_token, lefData->tokenSize);
+    if (!new_uc_token) {
+      throw std::bad_alloc();
+    }
+    lefData->uc_token = new_uc_token;
 
+    char* new_pv_token = (char*) realloc(lefData->pv_token, lefData->tokenSize);
+    if (!new_pv_token) {
+      throw std::bad_alloc();
+    }
+    lefData->pv_token = new_pv_token;
+    
     fc = lefData->current_token[0];
 
     /* lefData->first, check for comments or &alias statements.  Comments we
