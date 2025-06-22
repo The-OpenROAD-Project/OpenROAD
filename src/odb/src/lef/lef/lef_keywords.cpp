@@ -967,31 +967,31 @@ int lefsublex()
 
 /* We have found a token beginning with '&'.  If it has been previously
    defined, substitute the definition.  Otherwise return it. */
-int lefamper_lookup(char* tkn)
+int lefamper_lookup(char* token)
 {
   double dptr;
   int result;
   const char* cptr;
 
-  // printf("Amper_lookup: %s\n", tkn);
+  // printf("Amper_lookup: %s\n", token);
 
   // &define returns a number
-  if (lefGetDoubleDefine(tkn, &dptr)) {
+  if (lefGetDoubleDefine(token, &dptr)) {
     yylval.dval = dptr;
     return NUMBER;
   }
   // &defineb returns true or false, encoded as K_TRUE or K_FALSE
-  if (lefGetIntDefine(tkn, &result))
+  if (lefGetIntDefine(token, &result))
     return result;
   // &defines returns a T_STRING
-  if (lefGetStringDefine(tkn, &cptr)) {
+  if (lefGetStringDefine(token, &cptr)) {
     if (lefGetKeyword(cptr, &result))
       return result;
     yylval.string = ringCopy(cptr);
     return (cptr[0] == '\"' ? QSTRING : T_STRING);
   }
   // if none of the above, just return the token.
-  yylval.string = ringCopy(tkn);
+  yylval.string = ringCopy(token);
   return T_STRING;
 }
 
