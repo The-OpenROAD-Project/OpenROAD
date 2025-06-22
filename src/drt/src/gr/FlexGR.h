@@ -874,7 +874,18 @@ class FlexGRWorker
                                           frNode* parent,
                                           const Point& breakPt);
 
- 
+  
+  inline frNode* addNodeToNet(
+    frNode* child, frNode* parent, frNet* net,
+    const Point& breakPt,
+    const frLayerNum& lNum,
+    frNodeTypeEnum type);
+
+  inline void addSegmentToNet(
+    frNode* child, frNode* parent, frNet* net,
+    const Point& bp, const Point& ep,
+    const frLayerNum& lNum);
+    
   void initNets();
   void initNets_roots(
       std::set<frNet*, frBlockObjectComp>& nets,

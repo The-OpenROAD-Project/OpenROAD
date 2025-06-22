@@ -232,7 +232,7 @@ void FlexGR::initCMap()
 }
 
 // FlexGRWorker related
-
+/*
 void FlexGRWorker::initBoundary()
 {
   std::vector<grBlockObject*> result;
@@ -401,6 +401,7 @@ frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
   return breakNode;
 }
 
+
 void FlexGRWorker::init()
 {
   // init gridGraph first because in case there are overlapping nodes, we need
@@ -411,6 +412,9 @@ void FlexGRWorker::init()
 
   initNets();
 }
+*/
+
+
 
 void FlexGRWorker::initNets()
 {
