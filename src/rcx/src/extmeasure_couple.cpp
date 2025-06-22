@@ -1294,7 +1294,7 @@ void extMeasureRC::DeleteTable(Ath__array1D<extSegment*>** tbl, uint n)
   for (uint ii = 0; ii < n; ii++) {
     delete tbl[ii];
   }
-  delete tbl;
+  delete[] tbl;
 }
 Ath__array1D<Wire*>** extMeasureRC::allocTable_wire(uint n)
 {
