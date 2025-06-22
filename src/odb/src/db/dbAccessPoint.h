@@ -10,7 +10,6 @@
 #include "dbVector.h"
 #include "odb/odb.h"
 // User Code Begin Includes
-#include <array>
 #include <utility>
 
 #include "odb/dbTypes.h"
