@@ -208,61 +208,80 @@ bool extConductor::readConductor(Ath__parser* parser)
   if (strcmp("distance", keyword) == 0) {
     _distance = parser->getDouble(1);
     return true;
-  } else if (strcmp("height", keyword) == 0) {
+  }
+  if (strcmp("height", keyword) == 0) {
     _height = parser->getDouble(1);
     return true;
-  } else if (strcmp("thickness", keyword) == 0) {
+  }
+  if (strcmp("thickness", keyword) == 0) {
     _thickness = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_width", keyword) == 0) {
+  }
+  if (strcmp("min_width", keyword) == 0) {
     _min_width = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_spacing", keyword) == 0) {
+  }
+  if (strcmp("min_spacing", keyword) == 0) {
     _min_spacing = parser->getDouble(1);
     return true;
-  } else if (strcmp("origin_x", keyword) == 0) {
+  }
+  if (strcmp("origin_x", keyword) == 0) {
     _origin_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("bottom_left_x", keyword) == 0) {
+  }
+  if (strcmp("bottom_left_x", keyword) == 0) {
     _bottom_left_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("bottom_right_x", keyword) == 0) {
+  }
+  if (strcmp("bottom_right_x", keyword) == 0) {
     _bottom_right_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("top_left_x", keyword) == 0) {
+  }
+  if (strcmp("top_left_x", keyword) == 0) {
     _top_left_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("top_right_x", keyword) == 0) {
+  }
+  if (strcmp("top_right_x", keyword) == 0) {
     _top_right_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("var_table", keyword) == 0) {
+  }
+  if (strcmp("var_table", keyword) == 0) {
     _var_table_index = parser->getInt(1);
     return true;
-  } else if (strcmp("resistivity", keyword) == 0) {
+  }
+  if (strcmp("resistivity", keyword) == 0) {
     _p = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_cw_del", keyword) == 0) {
+  }
+  if (strcmp("min_cw_del", keyword) == 0) {
     _min_cw_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("max_cw_del", keyword) == 0) {
+  }
+  if (strcmp("max_cw_del", keyword) == 0) {
     _max_cw_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_ct_del", keyword) == 0) {
+  }
+  if (strcmp("min_ct_del", keyword) == 0) {
     _min_ct_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("max_ct_del", keyword) == 0) {
+  }
+  if (strcmp("max_ct_del", keyword) == 0) {
     _max_ct_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_ca", keyword) == 0) {
+  }
+  if (strcmp("min_ca", keyword) == 0) {
     _min_ca = parser->getDouble(1);
     return true;
-  } else if (strcmp("max_ca", keyword) == 0) {
+  }
+  if (strcmp("max_ca", keyword) == 0) {
     _max_ca = parser->getDouble(1);
     return true;
-  } else if (strcmp("top_extension", keyword) == 0) {
+  }
+  if (strcmp("top_extension", keyword) == 0) {
     _top_ext = parser->getDouble(1);
     return true;
-  } else if (strcmp("bottom_extension", keyword) == 0) {
+  }
+  if (strcmp("bottom_extension", keyword) == 0) {
     _bot_ext = parser->getDouble(1);
     return true;
   }
@@ -965,35 +984,38 @@ bool extDielectric::readDielectric(Ath__parser* parser)
     _conformal = false;
     _trench = false;
     return true;
-  } else if (strcmp("conformal", parser->get(0)) == 0) {
+  }
+  if (strcmp("conformal", parser->get(0)) == 0) {
     _conformal = true;
     return true;
-  } else if (strcmp("trench", parser->get(0)) == 0) {
+  }
+  if (strcmp("trench", parser->get(0)) == 0) {
     _trench = true;
     return true;
-  } else if (setDoubleVal(parser, "epsilon", 1, _epsilon))
+  }
+  if (setDoubleVal(parser, "epsilon", 1, _epsilon))
     return true;
-  else if (setDoubleVal(parser, "distance", 1, _distance))
+  if (setDoubleVal(parser, "distance", 1, _distance))
     return true;
-  else if (setIntVal(parser, "met", 1, _met))
+  if (setIntVal(parser, "met", 1, _met))
     return true;
-  else if (setIntVal(parser, "next_met", 1, _nextMet))
+  if (setIntVal(parser, "next_met", 1, _nextMet))
     return true;
-  else if (setDoubleVal(parser, "height", 1, _height))
+  if (setDoubleVal(parser, "height", 1, _height))
     return true;
-  else if (setDoubleVal(parser, "thickness", 1, _thickness))
+  if (setDoubleVal(parser, "thickness", 1, _thickness))
     return true;
-  else if (setDoubleVal(parser, "bottom_thickness", 1, _bottom_thickness))
+  if (setDoubleVal(parser, "bottom_thickness", 1, _bottom_thickness))
     return true;
-  else if (setDoubleVal(parser, "top_thickness", 1, _top_thickness))
+  if (setDoubleVal(parser, "top_thickness", 1, _top_thickness))
     return true;
-  else if (setDoubleVal(parser, "left_thickness", 1, _left_thickness))
+  if (setDoubleVal(parser, "left_thickness", 1, _left_thickness))
     return true;
-  else if (setDoubleVal(parser, "right_thickness", 1, _right_thickness))
+  if (setDoubleVal(parser, "right_thickness", 1, _right_thickness))
     return true;
-  else if (setDoubleVal(parser, "bottom_ext", 1, _bottom_ext))
+  if (setDoubleVal(parser, "bottom_ext", 1, _bottom_ext))
     return true;
-  else if (setDoubleVal(parser, "slope", 1, _slope))
+  if (setDoubleVal(parser, "slope", 1, _slope))
     return true;
 
   return false;
@@ -1912,7 +1934,8 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
 
   if (strcmp("Spacing", keyword2) == 0) {
     _space = readDoubleArray(parser, keyword2);
-  } else if (strcmp("Deff", keyword2) == 0) {
+  }
+  if (strcmp("Deff", keyword2) == 0) {
     _density = readDoubleArray(parser, keyword2);
     for (uint jj = 0; jj < _density->getCnt(); jj++)
       _vTable[jj] = new Ath__array1D<double>(_width->getCnt());
@@ -1920,7 +1943,8 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
       printOneLine(stdout, _space, keyword2, "\n");
       printOneLine(stdout, _density, keyword2, "\n");
     }
-  } else if (strcmp("P", keyword2) == 0) {
+  }
+  if (strcmp("P", keyword2) == 0) {
     _p = readDoubleArray(parser, keyword2);
     _rowCnt = 1;
     if (debug > 0)
@@ -1931,7 +1955,8 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
     return -1;
   if (strcmp("}", keyword3) == 0) {
     return 1;
-  } else if (strcmp(keyword3, parser->get(0)) != 0) {
+  }
+  if (strcmp(keyword3, parser->get(0)) != 0) {
     return -1;
   }
 

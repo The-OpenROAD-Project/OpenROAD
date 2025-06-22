@@ -235,9 +235,9 @@ uint extMeasureRC::FindUpDownSegments(Ath__array1D<extSegment*>* upTable,
                           metUnder);
       down = GetNextSegment(++jj, downTable);
       continue;
-    } else if (xy1 + len1
-               < down->_xy)  // no overlap and w2 too far on the right
-    {
+    }
+    if (xy1 + len1 < down->_xy) {
+      // no overlap and w2 too far on the right
       CreateUpDownSegment(
           up->_wire, up->_up, xy1, len1, nullptr, segTable, metOver, -1);
       up = GetNext(++ii, xy1, len1, upTable);

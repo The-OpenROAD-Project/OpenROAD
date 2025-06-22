@@ -60,11 +60,13 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
 
             w->setUpNext(w2);
             break;
-          } else if (w2 != nullptr && !found) {
+          }
+          if (w2 != nullptr && !found) {
             firstWireTable.set(next_tr, w2);
             w->setUpNext(w2);
             break;
-          } else if (first_wire != nullptr) {
+          }
+          if (first_wire != nullptr) {
             firstWireTable.set(next_tr, first_wire);
             break;
           }
@@ -105,9 +107,10 @@ Wire* extMeasureRC::SetUpDown(Wire* w2,
   if (w2 != nullptr && found) {
     firstWireTable->set(next_tr, w2);
     return w2;
-  } else if (w2 != nullptr && !found)
+  }
+  if (w2 != nullptr && !found)
     firstWireTable->set(next_tr, w2);
-  else if (first_wire != nullptr)
+  if (first_wire != nullptr)
     firstWireTable->set(next_tr, first_wire);
   return nullptr;
 }
@@ -144,10 +147,12 @@ int extMeasureRC::FindCouplingNeighbors_down(uint dir,
             firstWireTable.set(next_tr, w2);
             w->setDownNext(w2);
             break;
-          } else if (w2 != nullptr && !found) {
+          }
+          if (w2 != nullptr && !found) {
             firstWireTable.set(next_tr, w2);
             break;
-          } else if (first_wire != nullptr) {
+          }
+          if (first_wire != nullptr) {
             firstWireTable.set(next_tr, first_wire);
             break;
           }
@@ -292,10 +297,9 @@ Wire* extMeasureRC::FindOverlap(Wire* w, Wire* first_wire)
     if (OverlapOnly(xy1, len1, xy2, len2)) {
       if (xy1 >= xy2)
         return w2;
-      else if (prev != nullptr)
+      if (prev != nullptr)
         return prev;
-      else
-        return w2;
+      return w2;
     }
     if (white_overlap_check && prev != nullptr
         && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))

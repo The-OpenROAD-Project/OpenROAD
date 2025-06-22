@@ -23,10 +23,9 @@ int extMeasureRC::GetDistance(Wire* w1, Wire* w2)
   if (w2->getBase() >= w1->getBase()) {
     int dx1 = w2->getBase() - (w1->getBase() + w1->getWidth());
     return dx1;
-  } else {
-    int dx1 = w1->getBase() - (w2->getBase() + w2->getWidth());
-    return dx1;
   }
+  int dx1 = w1->getBase() - (w2->getBase() + w2->getWidth());
+  return dx1;
 }
 int extMeasureRC::GetDx1Dx2(int xy1, int len1, Wire* w2, int& dx2)
 {
