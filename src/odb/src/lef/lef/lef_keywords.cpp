@@ -690,7 +690,7 @@ int lefsublex()
       throw std::bad_alloc();
     }
     lefData->pv_token = new_pv_token;
-    
+
     fc = lefData->current_token[0];
 
     /* lefData->first, check for comments or &alias statements.  Comments we

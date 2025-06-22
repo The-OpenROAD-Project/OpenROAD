@@ -143,7 +143,7 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
 _dbTech* _dbTechNonDefaultRule::getTech()
 {
   if (_flags._block_rule == 0) {
-      return (_dbTech *) getOwner();
+    return (_dbTech*) getOwner();
   }
 
   return (_dbTech*) getBlock()->getTech();
