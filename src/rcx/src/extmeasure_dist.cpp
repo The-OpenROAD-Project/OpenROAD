@@ -473,10 +473,10 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
 
   float fr = fr1 + fr2;
   if (use_weighted) {
-    int ratio = (int) ceil(fr2 / fr1);
+    int ratio = (int) std::ceil(fr2 / fr1);
     float wfr = (fr2 * ratio + fr1) / (ratio + 1);
     if (fr1 > fr2) {
-      ratio = (int) ceil(fr1 / fr2);
+      ratio = (int) std::ceil(fr1 / fr2);
       wfr = (fr1 * ratio + fr2) / (ratio + 1);
     }
     wfr *= 2;

@@ -188,10 +188,9 @@ bool extMain::couplingExtEnd_v2()
                   numOfCapNode,
                   numOfCCSeg);
     return true;
-  } else {
-    logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
-    return false;
   }
+  logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
+  return false;
 }
 void extMain::update_wireAltered_v2(std::vector<dbNet*>& inets)
 {
