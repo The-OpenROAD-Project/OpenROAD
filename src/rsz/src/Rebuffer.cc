@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
+#include "Rebuffer.hh"
+
 #include <memory>
 
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
-#include "Rebuffer.hh"
 #include "UnbufferMove.hh"
 #include "rsz/Resizer.hh"
 #include "sta/DcalcAnalysisPt.hh"
