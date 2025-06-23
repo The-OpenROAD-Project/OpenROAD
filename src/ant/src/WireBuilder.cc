@@ -4,6 +4,7 @@
 #include "WireBuilder.hh"
 
 #include <boost/functional/hash.hpp>
+#include <limits>
 
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
@@ -494,15 +495,21 @@ bool WireBuilder::checkGuideBTermConnection(const GuidePoint& guide_pt,
 
 int WireBuilder::computeGuideDimension()
 {
+  std::set<odb::Rect> dimension_boxes;
   for (odb::dbNet* db_net : block_->getNets()) {
     for (odb::dbGuide* guide : db_net->getGuides()) {
       if (guide->getBox().dx() == guide->getBox().dy()) {
-        return guide->getBox().dx();
+        dimension_boxes.insert(guide->getBox());
       }
     }
   }
 
-  return 0;
+  int dimension = std::numeric_limits<int>::max();
+  for (const odb::Rect& box : dimension_boxes) {
+    dimension = std::min(dimension, box.dx());
+  }
+
+  return dimension;
 }
 
 void WireBuilder::boxToGuideSegment(
