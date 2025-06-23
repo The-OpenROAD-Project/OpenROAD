@@ -38,11 +38,11 @@ namespace gui {
 class Gui;
 }
 
+namespace grt {
+
 using boost::multi_array;
 using boost::icl::interval;
 using boost::icl::interval_set;
-
-namespace grt {
 
 class AbstractFastRouteRenderer;
 class MakeWireParasitics;

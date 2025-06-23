@@ -139,11 +139,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 /////////
 
 TimingPath::TimingPath()
-    : path_nodes_(),
-      capture_nodes_(),
-      start_clk_(),
-      end_clk_(),
-      slack_(0),
+    : slack_(0),
       skew_(0),
       path_delay_(0),
       arr_time_(0),
