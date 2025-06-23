@@ -1354,8 +1354,7 @@ uint extRCModel::readRules_v2(Ath__parser* parser,
   if (ignore)
     delete dummy;
 
-  if (wTable != nullptr)
-    delete wTable;
+  delete wTable;
 
   return cnt;
 }

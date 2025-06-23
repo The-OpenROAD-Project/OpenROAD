@@ -18,16 +18,6 @@ definBase::definBase()
   _dist_factor = 10;
 }
 
-void definBase::init()
-{
-  _mode = defin::DEFAULT;
-  _tech = nullptr;
-  _block = nullptr;
-  _logger = nullptr;
-  _errors = 0;
-  _dist_factor = 10;
-}
-
 void definBase::units(int d)
 {
   int dbu = _tech->getDbUnitsPerMicron();

@@ -338,7 +338,7 @@ void preprocessString(std::string& s)
 {
   int ind, old_ind = -1;
 
-  while ((ind = s.find("\n", old_ind + 1)) != std::string::npos) {
+  while ((ind = s.find('\n', old_ind + 1)) != std::string::npos) {
     if (s[old_ind + 1] == '#') {
       s.erase(old_ind + 1, ind - old_ind);
     }
@@ -449,7 +449,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                       masterName.c_str());
         continue;
       }
-      auto constNetName = connections[0].substr(connections[0].find("=") + 1);
+      auto constNetName = connections[0].substr(connections[0].find('=') + 1);
       odb::dbNet* net = block->findNet(constNetName.c_str());
       if (net == nullptr) {
         std::string net_name_modified

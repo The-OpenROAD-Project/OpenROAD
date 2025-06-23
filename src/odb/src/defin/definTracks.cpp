@@ -13,19 +13,6 @@
 
 namespace odb {
 
-definTracks::definTracks()
-{
-}
-
-definTracks::~definTracks()
-{
-}
-
-void definTracks::init()
-{
-  definBase::init();
-}
-
 void definTracks::tracksBegin(defDirection dir,
                               int orig,
                               int count,

@@ -2174,14 +2174,10 @@ extVarTable::~extVarTable()
   }
   delete[] _vTable;
 
-  if (_density != nullptr)
-    delete _density;
-  if (_space != nullptr)
-    delete _space;
-  if (_width != nullptr)
-    delete _width;
-  if (_p != nullptr)
-    delete _p;
+  delete _density;
+  delete _space;
+  delete _width;
+  delete _p;
   _p = nullptr;
   _density = nullptr;
   _space = nullptr;

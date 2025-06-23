@@ -459,7 +459,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path,
 
 /////////
 
-TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_stage_()
+TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
   addDisplayControl(data_path_label_, true);
   addDisplayControl(launch_clock_label_, true);
@@ -620,7 +620,6 @@ TimingConeRenderer::TimingConeRenderer()
       term_(nullptr),
       fanin_(false),
       fanout_(false),
-      map_(),
       min_timing_(0.0),
       max_timing_(0.0),
       color_generator_(SpectrumGenerator(1.0))
