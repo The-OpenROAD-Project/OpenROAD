@@ -30,7 +30,7 @@
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 
-using namespace dst;
+namespace dst {
 
 class HelperCallBack : public dst::JobCallBack
 {
@@ -57,3 +57,5 @@ class HelperCallBack : public dst::JobCallBack
  private:
   dst::Distributed* dist_;
 };
+
+}  // namespace dst
