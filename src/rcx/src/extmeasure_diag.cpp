@@ -338,10 +338,9 @@ Wire* extMeasureRC::FindOverlap_found(Wire* w, Wire* first_wire, bool& found)
       found = true;
       if (xy1 >= xy2)
         return w2;
-      else if (prev != nullptr)
+      if (prev != nullptr)
         return prev;
-      else
-        return w2;
+      return w2;
     }
     if (white_overlap_check && prev != nullptr
         && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))
