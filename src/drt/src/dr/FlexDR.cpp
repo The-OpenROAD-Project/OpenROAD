@@ -1860,9 +1860,9 @@ int FlexDR::main()
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
 
-      db_->write(
-          utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
-              .getStream());
+      db_->write(utl::OutStreamHandler(
+                     fmt::format("drt_iter{}.odb", iter_).c_str(), true)
+                     .getStream());
     }
     if (reporter->incrementProgress()) {
       break;

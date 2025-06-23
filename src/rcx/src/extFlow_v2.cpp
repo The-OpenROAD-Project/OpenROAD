@@ -4,12 +4,12 @@
 #include <map>
 #include <vector>
 
-#include "grids.h"
 #include "gseq.h"
 #include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -209,14 +209,12 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
     // Add all shapes on a fast track based structure for quick wire coupling
     // detection
-    uint processWireCnt = addPowerNets(
-        dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
-    processWireCnt += addSignalNets(
-        dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+    addPowerNets(dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+    addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
     getPeakMemory("End WiresOnSearch Dir: ", dir);
 
-    mrc->_search = this->_search;
+    mrc->_search = this->_search.get();
 
     // Create single lists of wires on every track/level/direction
     mrc->ConnectWires(dir);
@@ -324,13 +322,12 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 
       // Add all shapes on a fast track based structure for quick wire
       // coupling detection
-      uint processWireCnt = addPowerNets(
+      addPowerNets(
           dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
-      processWireCnt += addSignalNets(
-          dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+      addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
       // TODO move up
-      mrc->_search = this->_search;
+      mrc->_search = this->_search.get();
 
       // Create single lists of wires on every track/level/direction
       // Set Boundaries for all tracks
@@ -420,11 +417,8 @@ bool extMeasure::IsDebugNet1()
   if (!(_extMain->_debug_net_id > 0))
     return false;
 
-  if (_netSrcId == _extMain->_debug_net_id
-      || _netTgtId == _extMain->_debug_net_id)
-    return true;
-  else
-    return false;
+  return _netSrcId == _extMain->_debug_net_id
+         || _netTgtId == _extMain->_debug_net_id;
 }
 void GridTable::initCouplingCapLoops_v2(uint dir,
                                         uint couplingDist,
@@ -684,6 +678,7 @@ bool extRCModel::spotModelsInRules(char* name,
                                    bool& overunder1,
                                    bool& via_res)
 {
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -763,7 +758,7 @@ bool extRCModel::readRules(char* name,
                     via_res);
 
   diag = false;
-  uint cnt = 0;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -860,139 +855,139 @@ bool extRCModel::readRules(char* name,
 
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "RESOVER",
-                              "WIDTH",
-                              over,
-                              false,
-                              bin,
-                              false,
-                              res_skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "RESOVER",
+                       "WIDTH",
+                       over,
+                       false,
+                       bin,
+                       false,
+                       res_skipModel,
+                       dbFactor);
         }
-        cnt += readRules_v2(&parser,
-                            modelIndex,
-                            ii,
-                            "OVER",
-                            "WIDTH",
-                            over,
-                            false,
-                            bin,
-                            false,
-                            skipModel,
-                            dbFactor);
+        readRules_v2(&parser,
+                     modelIndex,
+                     ii,
+                     "OVER",
+                     "WIDTH",
+                     over,
+                     false,
+                     bin,
+                     false,
+                     skipModel,
+                     dbFactor);
         if (over0)
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "OVER0",
-                              "WIDTH",
-                              over,
-                              false,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "OVER0",
+                       "WIDTH",
+                       over,
+                       false,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
         if (over1)
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "OVER1",
-                              "WIDTH",
-                              over,
-                              false,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "OVER1",
+                       "WIDTH",
+                       over,
+                       false,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
 
         if (ii < _layerCnt - 1) {
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "UNDER",
-                              "WIDTH",
-                              false,
-                              under,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "UNDER",
+                       "WIDTH",
+                       false,
+                       under,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
           if (under0)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "UNDER0",
-                                "WIDTH",
-                                false,
-                                under,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "UNDER0",
+                         "WIDTH",
+                         false,
+                         under,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
           if (under1)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "UNDER1",
-                                "WIDTH",
-                                false,
-                                under,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "UNDER1",
+                         "WIDTH",
+                         false,
+                         under,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
           if (diag)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "DIAGUNDER",
-                                "WIDTH",
-                                false,
-                                false,
-                                bin,
-                                diag,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "DIAGUNDER",
+                         "WIDTH",
+                         false,
+                         false,
+                         bin,
+                         diag,
+                         skipModel,
+                         dbFactor);
         }
         if ((ii > 1) && (ii < _layerCnt - 1)) {
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "OVERUNDER",
-                              "WIDTH",
-                              overUnder,
-                              overUnder,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "OVERUNDER",
+                       "WIDTH",
+                       overUnder,
+                       overUnder,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
           if (overunder0)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "OVERUNDER0",
-                                "WIDTH",
-                                overUnder,
-                                overUnder,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "OVERUNDER0",
+                         "WIDTH",
+                         overUnder,
+                         overUnder,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
           if (overunder1)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "OVERUNDER1",
-                                "WIDTH",
-                                overUnder,
-                                overUnder,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "OVERUNDER1",
+                         "WIDTH",
+                         overUnder,
+                         overUnder,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
         }
       }
 
@@ -1053,7 +1048,7 @@ bool extRCModel::readRules_v2(char* name,
                     via_res);
 
   diag = false;
-  uint cnt = 0;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -1097,139 +1092,139 @@ bool extRCModel::readRules_v2(char* name,
       // Loop to read all sections of the Model file per Metal Level
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "RESOVER",
-                              "WIDTH",
-                              over,
-                              false,
-                              bin,
-                              false,
-                              res_skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "RESOVER",
+                       "WIDTH",
+                       over,
+                       false,
+                       bin,
+                       false,
+                       res_skipModel,
+                       dbFactor);
         }
-        cnt += readRules_v2(&parser,
-                            modelIndex,
-                            ii,
-                            "OVER",
-                            "WIDTH",
-                            over,
-                            false,
-                            bin,
-                            false,
-                            skipModel,
-                            dbFactor);
+        readRules_v2(&parser,
+                     modelIndex,
+                     ii,
+                     "OVER",
+                     "WIDTH",
+                     over,
+                     false,
+                     bin,
+                     false,
+                     skipModel,
+                     dbFactor);
         if (over0)
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "OVER0",
-                              "WIDTH",
-                              over,
-                              false,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "OVER0",
+                       "WIDTH",
+                       over,
+                       false,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
         if (over1)
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "OVER1",
-                              "WIDTH",
-                              over,
-                              false,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "OVER1",
+                       "WIDTH",
+                       over,
+                       false,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
 
         if (ii < _layerCnt - 1) {
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "UNDER",
-                              "WIDTH",
-                              false,
-                              under,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "UNDER",
+                       "WIDTH",
+                       false,
+                       under,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
           if (under0)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "UNDER0",
-                                "WIDTH",
-                                false,
-                                under,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "UNDER0",
+                         "WIDTH",
+                         false,
+                         under,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
           if (under1)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "UNDER1",
-                                "WIDTH",
-                                false,
-                                under,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "UNDER1",
+                         "WIDTH",
+                         false,
+                         under,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
           if (diag)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "DIAGUNDER",
-                                "WIDTH",
-                                false,
-                                false,
-                                bin,
-                                diag,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "DIAGUNDER",
+                         "WIDTH",
+                         false,
+                         false,
+                         bin,
+                         diag,
+                         skipModel,
+                         dbFactor);
         }
         if ((ii > 1) && (ii < _layerCnt - 1)) {
-          cnt += readRules_v2(&parser,
-                              modelIndex,
-                              ii,
-                              "OVERUNDER",
-                              "WIDTH",
-                              overUnder,
-                              overUnder,
-                              bin,
-                              false,
-                              skipModel,
-                              dbFactor);
+          readRules_v2(&parser,
+                       modelIndex,
+                       ii,
+                       "OVERUNDER",
+                       "WIDTH",
+                       overUnder,
+                       overUnder,
+                       bin,
+                       false,
+                       skipModel,
+                       dbFactor);
           if (overunder0)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "OVERUNDER0",
-                                "WIDTH",
-                                overUnder,
-                                overUnder,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "OVERUNDER0",
+                         "WIDTH",
+                         overUnder,
+                         overUnder,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
           if (overunder1)
-            cnt += readRules_v2(&parser,
-                                modelIndex,
-                                ii,
-                                "OVERUNDER1",
-                                "WIDTH",
-                                overUnder,
-                                overUnder,
-                                bin,
-                                false,
-                                skipModel,
-                                dbFactor);
+            readRules_v2(&parser,
+                         modelIndex,
+                         ii,
+                         "OVERUNDER1",
+                         "WIDTH",
+                         overUnder,
+                         overUnder,
+                         bin,
+                         false,
+                         skipModel,
+                         dbFactor);
         }
       }
       // v1 flow can only handle single process corners and NO Via modeling

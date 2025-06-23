@@ -17,9 +17,8 @@ template <class T>
 class DListEntry
 {
  public:
-  DListEntry() : _next(nullptr), _prev(nullptr) {}
-  T* _next;
-  T* _prev;
+  T* _next{nullptr};
+  T* _prev{nullptr};
 };
 
 template <class T, DListEntry<T>*(T*)>
@@ -28,13 +27,8 @@ class DList;
 template <class T, DListEntry<T>* ENTRY(T*)>
 class DListIterator
 {
-  T* _cur;
-
-  void incr() { _cur = NEXT(_cur); }
-  T*& NEXT(T* n) { return ENTRY(n)->_next; }
-
  public:
-  DListIterator() { _cur = nullptr; }
+  DListIterator() = default;
   DListIterator(T* cur) { _cur = cur; }
   DListIterator(const DListIterator& i) { _cur = i._cur; }
   DListIterator& operator=(const DListIterator& i)
@@ -62,28 +56,20 @@ class DListIterator
     return i;
   }
 
+ private:
+  void incr() { _cur = next(_cur); }
+  T*& next(T* n) { return ENTRY(n)->_next; }
+
+  T* _cur{nullptr};
+
   friend class DList<T, ENTRY>;
 };
 
 template <class T, DListEntry<T>* ENTRY(T*)>
 class DList
 {
- private:
-  T* _head;
-  T* _tail;
-
-  T*& NEXT(T* n) { return ENTRY(n)->_next; }
-
-  T*& PREV(T* n) { return ENTRY(n)->_prev; }
-
  public:
   using iterator = DListIterator<T, ENTRY>;
-
-  DList()
-  {
-    _head = nullptr;
-    _tail = nullptr;
-  }
 
   T* front() { return _head; }
   T* back() { return _tail; }
@@ -93,12 +79,12 @@ class DList
     if (_head == nullptr) {
       _head = p;
       _tail = p;
-      NEXT(p) = nullptr;
-      PREV(p) = nullptr;
+      next(p) = nullptr;
+      prev(p) = nullptr;
     } else {
-      PREV(_head) = p;
-      NEXT(p) = _head;
-      PREV(p) = nullptr;
+      prev(_head) = p;
+      next(p) = _head;
+      prev(p) = nullptr;
       _head = p;
     }
   }
@@ -108,12 +94,12 @@ class DList
     if (_head == nullptr) {
       _head = p;
       _tail = p;
-      NEXT(p) = nullptr;
-      PREV(p) = nullptr;
+      next(p) = nullptr;
+      prev(p) = nullptr;
     } else {
-      NEXT(_tail) = p;
-      PREV(p) = _tail;
-      NEXT(p) = nullptr;
+      next(_tail) = p;
+      prev(p) = _tail;
+      next(p) = nullptr;
       _tail = p;
     }
   }
@@ -131,26 +117,27 @@ class DList
       if (*cur == _tail) {
         _head = nullptr;
         _tail = nullptr;
+      } else {
+        _head = next(*cur);
+        prev(_head) = nullptr;
       }
-
-      else {
-        _head = NEXT(*cur);
-        PREV(_head) = nullptr;
-      }
+    } else if (*cur == _tail) {
+      _tail = prev(*cur);
+      next(_tail) = nullptr;
+    } else {
+      next(prev(*cur)) = next(*cur);
+      prev(next(*cur)) = prev(*cur);
     }
 
-    else if (*cur == _tail) {
-      _tail = PREV(*cur);
-      NEXT(_tail) = nullptr;
-    }
-
-    else {
-      NEXT(PREV(*cur)) = NEXT(*cur);
-      PREV(NEXT(*cur)) = PREV(*cur);
-    }
-
-    return iterator(NEXT(*cur));
+    return iterator(next(*cur));
   }
+
+ private:
+  T*& next(T* n) { return ENTRY(n)->_next; }
+  T*& prev(T* n) { return ENTRY(n)->_prev; }
+
+  T* _head{nullptr};
+  T* _tail{nullptr};
 };
 
 }  // namespace odb

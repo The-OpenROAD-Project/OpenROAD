@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "grids.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
@@ -91,8 +91,8 @@ int extSolverGen::getLastCharInt(const char* name)
     int n = atoi(word);
 
     return n;
-  } else
-    return -1;
+  }
+  return -1;
 }
 bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
                                            extMeasure& m,
@@ -115,10 +115,7 @@ bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
     return false;  // old files; should NOT happen
 
   if (m._res) {
-    if (wire_num != 0)  // for Resistance, wire is 0
-      return false;
-    else
-      return true;
+    return wire_num == 0;  // for Resistance, wire is 0
   }
 
   // for OpenEnded patterns: Over1, Under1, etc, wire is 1
@@ -193,6 +190,7 @@ uint extRCModel::readRCvalues(const char* corner,
           corner,
           filename);
 
+  free(_ruleFileName);
   _ruleFileName = strdup(filename);
   Ath__parser p(logger_);
   Ath__parser parser(logger_);
@@ -471,15 +469,14 @@ extDistWidthRCTable*** extMetRCTable::allocTable()
 {
   extDistWidthRCTable*** table = new extDistWidthRCTable**[_layerCnt];
   if (table == nullptr) {
-    fprintf(stderr,
-            "Cannot allocate memory for oblject: extDistWidthRCTable\n");
+    fprintf(stderr, "Cannot allocate memory for object: extDistWidthRCTable\n");
     exit(0);
   }
   for (uint ii = 0; ii < _layerCnt; ii++) {
     table[ii] = new extDistWidthRCTable*[_wireCnt];
     if (table[ii] == nullptr) {
       fprintf(stderr,
-              "Cannot allocate memory for oblject: extDistWidthRCTable\n");
+              "Cannot allocate memory for object: extDistWidthRCTable\n");
       exit(0);
     }
     for (uint jj = 0; jj < _wireCnt; jj++) {

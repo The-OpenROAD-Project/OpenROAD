@@ -516,6 +516,8 @@ bool Ext::rc_estimate(const std::string& ext_model_file,
   sprintf(buff, "%s.estimate.wire.rc", out_file_prefix.c_str());
   m->calcMinMaxRC(tech, buff);
 
+  delete m;
+
   return true;
 }
 bool Ext::get_model_corners(const std::string& ext_model_file, Logger* logger)

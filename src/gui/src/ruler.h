@@ -78,10 +78,7 @@ class RulerDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  static bool editPoint(std::any value,
-                        int dbu_per_uu,
-                        odb::Point& pt,
-                        bool is_x);
+  static bool editPoint(std::any value, odb::Point& pt, bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   odb::dbDatabase* db_;

@@ -126,77 +126,76 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
 
   fprintf(fp, "\nDensityModel %d\n", mIndex);
 
-  uint cnt = 0;
   for (uint ii = 1; ii < layerCnt; ii++) {
     if (writeRes) {
-      cnt += writeRulesPattern(0,
-                               ii,
-                               m,
-                               rcTable->_resOver[ii],
-                               rcTable->_resOver[0],
-                               "RESOVER",
-                               fp,
-                               binary);
+      writeRulesPattern(0,
+                        ii,
+                        m,
+                        rcTable->_resOver[ii],
+                        rcTable->_resOver[0],
+                        "RESOVER",
+                        fp,
+                        binary);
     }
-    cnt += writeRulesPattern(0,
-                             ii,
-                             m,
-                             rcTable->_capOver[ii],
-                             rcTable->_capOver[0],
-                             "OVER",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(0,
-                             ii,
-                             m,
-                             rcTable->_capOver_open[ii][0],
-                             rcTable->_capOver_open[0][0],
-                             "OVER0",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(0,
-                             ii,
-                             m,
-                             rcTable->_capOver_open[ii][1],
-                             rcTable->_capOver_open[0][1],
-                             "OVER1",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(1,
-                             ii,
-                             m,
-                             rcTable->_capUnder[ii],
-                             rcTable->_capUnder[0],
-                             "UNDER",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(1,
-                             ii,
-                             m,
-                             rcTable->_capUnder_open[ii][0],
-                             rcTable->_capUnder_open[0][0],
-                             "UNDER0",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(1,
-                             ii,
-                             m,
-                             rcTable->_capUnder_open[ii][1],
-                             rcTable->_capUnder_open[0][1],
-                             "UNDER1",
-                             fp,
-                             binary);
+    writeRulesPattern(0,
+                      ii,
+                      m,
+                      rcTable->_capOver[ii],
+                      rcTable->_capOver[0],
+                      "OVER",
+                      fp,
+                      binary);
+    writeRulesPattern(0,
+                      ii,
+                      m,
+                      rcTable->_capOver_open[ii][0],
+                      rcTable->_capOver_open[0][0],
+                      "OVER0",
+                      fp,
+                      binary);
+    writeRulesPattern(0,
+                      ii,
+                      m,
+                      rcTable->_capOver_open[ii][1],
+                      rcTable->_capOver_open[0][1],
+                      "OVER1",
+                      fp,
+                      binary);
+    writeRulesPattern(1,
+                      ii,
+                      m,
+                      rcTable->_capUnder[ii],
+                      rcTable->_capUnder[0],
+                      "UNDER",
+                      fp,
+                      binary);
+    writeRulesPattern(1,
+                      ii,
+                      m,
+                      rcTable->_capUnder_open[ii][0],
+                      rcTable->_capUnder_open[0][0],
+                      "UNDER0",
+                      fp,
+                      binary);
+    writeRulesPattern(1,
+                      ii,
+                      m,
+                      rcTable->_capUnder_open[ii][1],
+                      rcTable->_capUnder_open[0][1],
+                      "UNDER1",
+                      fp,
+                      binary);
 
     if (rcTable->_capDiagUnder[ii] != nullptr) {
       if (diagModel == 1)
-        cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
+        rcTable->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
       if (diagModel == 2)
-        cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
+        rcTable->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
     } else if ((m > 0) && (rcTable0->_capDiagUnder[ii] != nullptr)) {
       if (diagModel == 1)
-        cnt += rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
+        rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
       if (diagModel == 2)
-        cnt += rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
+        rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
     } else if (m == 0) {
       // TODO logger_->info( RCX, 220, "Cannot write <DIAGUNDER> rules for
       // <DensityModel> {} and layer {}", m, ii);
@@ -207,30 +206,30 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
           ii);
     }
     if ((ii > 1) && (ii < layerCnt - 1)) {
-      cnt += writeRulesPattern(2,
-                               ii,
-                               m,
-                               rcTable->_capOverUnder[ii],
-                               rcTable->_capOverUnder[0],
-                               "OVERUNDER",
-                               fp,
-                               binary);
-      cnt += writeRulesPattern(2,
-                               ii,
-                               m,
-                               rcTable->_capOverUnder_open[ii][0],
-                               rcTable->_capOverUnder_open[0][0],
-                               "OVERUNDER0",
-                               fp,
-                               binary);
-      cnt += writeRulesPattern(2,
-                               ii,
-                               m,
-                               rcTable->_capOverUnder_open[ii][1],
-                               rcTable->_capOverUnder_open[0][1],
-                               "OVERUNDER1",
-                               fp,
-                               binary);
+      writeRulesPattern(2,
+                        ii,
+                        m,
+                        rcTable->_capOverUnder[ii],
+                        rcTable->_capOverUnder[0],
+                        "OVERUNDER",
+                        fp,
+                        binary);
+      writeRulesPattern(2,
+                        ii,
+                        m,
+                        rcTable->_capOverUnder_open[ii][0],
+                        rcTable->_capOverUnder_open[0][0],
+                        "OVERUNDER0",
+                        fp,
+                        binary);
+      writeRulesPattern(2,
+                        ii,
+                        m,
+                        rcTable->_capOverUnder_open[ii][1],
+                        rcTable->_capOverUnder_open[0][1],
+                        "OVERUNDER1",
+                        fp,
+                        binary);
     }
   }
   rcTable->writeViaRes(fp);

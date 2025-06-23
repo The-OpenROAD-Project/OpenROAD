@@ -913,7 +913,7 @@ extWirePattern* extPattern::MainPattern(float mw,
 }
 float extPattern::GetRoundedInt(float v, float mult, int units1)
 {
-  float v1 = lround(v * mult * units1);
+  float v1 = std::lround(v * mult * units1);
   int r1 = (int) v1;
   if (r1 % 10 > 0) {
     r1 = 10 * (r1 / 10);
@@ -923,7 +923,7 @@ float extPattern::GetRoundedInt(float v, float mult, int units1)
 }
 int extPattern::GetRoundedInt(int v, float mult, int units1)
 {
-  float v1 = lround(v * mult);
+  float v1 = std::lround(v * mult);
   int r1 = (int) v1;
   if (r1 % 10 > 0) {
     r1 = 10 * (r1 / 10);
@@ -1099,27 +1099,17 @@ int extPattern::ContextPattern(extWirePattern* main,
   int limit = main->last(dir1);
 
   int jj = 1;
-  uint ii = 1;
-  for (;; ii++) {
-    // int next_xy= wp->ll[dir1][ii-1];
-    // next_xy += w+s;
+  while (true) {
     ll[dir1] += w + s;
     ur[dir1] += w + s;
 
-    // fprintf(stdout, "ContextPattern %d %d   %d %d\n", ll[0], ur[0], ll[1],
-    // ur[1]);
     if (ur[dir1] > limit)
       break;
 
-    // jj= wp->addCoords(mw, ms, "___cntx", ii, met1);
     wp->addCoords(ll, ur, "___cntx", jj, met1);
     jj++;
-
-    // fprintf(stdout, "ContextPattern %d %d   %d %d --- \n", wp->ll[0][jj],
-    // wp->ur[0][jj], wp->ll[1][jj], wp->ur[1][jj]); wp->print(patternLog, jj);
   }
   wp->printWires(patternLog);
-  // wp->AddOrigin(origin);
   wp->AddOrigin_int(_origin);
   wp->printWires(patternLog, true);
 

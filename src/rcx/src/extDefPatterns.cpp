@@ -761,20 +761,15 @@ uint extMain::DefWires(extMainOptions* opt)
   int LL[2] = {0, 0};
   int UR[2] = {0, 0};
 
-  uint cnt = 0;
-  cnt += m->OverRulePat(
-      opt, opt->_len, LL, UR, false, false, opt->_overDist);  // over
-  cnt += m->OverRulePat(
-      opt, opt->_len, LL, UR, true, false, opt->_overDist);  // res
-  cnt += m->UnderRulePat(opt, opt->_len, LL, UR, false, opt->_overDist);
+  m->OverRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist);  // over
+  m->OverRulePat(opt, opt->_len, LL, UR, true, false, opt->_overDist);   // res
+  m->UnderRulePat(opt, opt->_len, LL, UR, false, opt->_overDist);
 
-  cnt += m->OverUnderRulePat(opt, opt->_len, LL, UR);
-  cnt += m->UnderRulePat(opt, opt->_len, LL, UR, true, opt->_overDist);  // diag
-  cnt += m->OverRulePat(
-      opt, opt->_len, LL, UR, false, true, opt->_overDist);  // diag
+  m->OverUnderRulePat(opt, opt->_len, LL, UR);
+  m->UnderRulePat(opt, opt->_len, LL, UR, true, opt->_overDist);        // diag
+  m->OverRulePat(opt, opt->_len, LL, UR, false, true, opt->_overDist);  // diag
 
-  cnt += m->ViaRulePat(
-      opt, opt->_len, LL, UR, false, false, opt->_overDist);  // over
+  m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist);  // over
 
   dbBox* bb = _block->getBBox();
   Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());

@@ -18,6 +18,7 @@ class PinDensityDataSource : public RealValueHeatMapDataSource,
 
   void onShow() override;
   void onHide() override;
+  double getGridSizeMinimumValue() const override { return 0.1; }
 
   // from dbBlockCallBackObj API
   void inDbInstCreate(odb::dbInst*) override;

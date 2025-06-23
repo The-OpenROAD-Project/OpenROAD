@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extSegment.h"
 #include "utl/Logger.h"
@@ -63,7 +63,6 @@ bool extMeasureRC::DiagCap(FILE* fp,
   uint rsegId1 = w->getRsegId();
 
   uint pitch = w->getPitch();
-  maxDist = trackLimitCnt * pitch;
   for (uint ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
     Wire* w2 = lookUp ? s->_up : s->_down;

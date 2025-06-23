@@ -54,11 +54,15 @@ class AbcLibraryFactory
  public:
   explicit AbcLibraryFactory(utl::Logger* logger) : logger_(logger) {}
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
+  AbcLibraryFactory& SetCorner(sta::Corner* corner);
   AbcLibrary Build();
 
  private:
   void PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
-                                sta::LibertyLibrary* library);
+                                std::vector<sta::LibertyCell*>& cells,
+                                sta::Units* units);
+  void PopulateLibraryDetails(abc::SC_Lib* sc_library,
+                              sta::LibertyLibrary* library);
   int ScaleAbbreviationToExponent(const std::string& scale_abbreviation);
   int StaTimeUnitToAbcInt(sta::Unit* time_unit);
   float StaCapacitanceToAbc(sta::Unit* cap_unit);
@@ -68,10 +72,12 @@ class AbcLibraryFactory
   void AbcPopulateAbcSurfaceFromSta(abc::SC_Surface* abc_table,
                                     const sta::TableModel* model,
                                     sta::Units* units);
+  std::vector<sta::LibertyCell*> GetLibertyCellsFromCorner(sta::Corner* corner);
   std::vector<abc::SC_Pin*> CreateAbcInputPins(sta::LibertyCell* cell);
 
   utl::Logger* logger_;
   sta::dbSta* db_sta_ = nullptr;
+  sta::Corner* corner_ = nullptr;
 };
 
 }  // namespace rmp

@@ -93,12 +93,32 @@ void FlexPA::init()
   initAllSkipInstTerm();
 }
 
+void FlexPA::addInst(frInst* inst)
+{
+  const bool new_unique = unique_insts_.addInst(inst);
+  if (new_unique) {
+    unique_insts_.initUniqueInstPinAccess(inst);
+    initSkipInstTerm(inst);
+    genInstAccessPoints(inst);
+    prepPatternInst(inst);
+  }
+  inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
+
+  insts_set_.insert(inst);
+  if (isSkipInst(inst)) {
+    return;
+  }
+  std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
+  genInstRowPattern(inst_row);
+}
+
 void FlexPA::deleteInst(frInst* inst)
 {
   const bool is_class_head = (inst == unique_insts_.getUnique(inst));
   // if inst is the class head the new head will be returned by deleteInst()
-  frInst* class_head = unique_insts_.deleteInst(inst);
   UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
+  frInst* class_head = unique_insts_.deleteInst(inst);
+
   // whole class has to be deleted
   if (!class_head) {
     unique_inst_patterns_.erase(inst);
@@ -111,6 +131,7 @@ void FlexPA::deleteInst(frInst* inst)
     unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
     unique_inst_patterns_.erase(inst);
   }
+  insts_set_.erase(inst);
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -285,6 +306,16 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
   return skip_unique_inst_term_.at({inst_class, in->getTerm()});
 }
 
+bool FlexPA::isSkipInst(frInst* inst)
+{
+  for (auto& inst_term : inst->getInstTerms()) {
+    if (!isSkipInstTerm(inst_term.get())) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // TODO there should be a better way to get this info by getting the master
 // terms from OpenDB
 bool FlexPA::isStdCell(frInst* inst)
@@ -297,6 +328,24 @@ bool FlexPA::isMacroCell(frInst* inst)
   dbMasterType masterType = inst->getMaster()->getMasterType();
   return (masterType.isBlock() || masterType.isPad()
           || masterType == dbMasterType::RING);
+}
+
+bool FlexPA::isStdCellTerm(frInstTerm* inst_term)
+{
+  return inst_term && isStdCell(inst_term->getInst());
+}
+
+bool FlexPA::isMacroCellTerm(frInstTerm* inst_term)
+{
+  return inst_term && isMacroCell(inst_term->getInst());
+}
+
+// It is sometimes important to understand that when PA is checking for nullptr
+// it means its checking for an io term, not a corner case with an invalid
+// inst_term. This function is made to avoid confusion
+bool FlexPA::isIOTerm(frInstTerm* inst_term)
+{
+  return inst_term == nullptr;
 }
 
 int FlexPA::main()

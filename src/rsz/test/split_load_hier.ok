@@ -35,18 +35,16 @@ delta HPWL                 6037 %
 
 worst slack max -0.70
 tns max -8.694
-[INFO RSZ-0100] Repair move sequence: SizeMove BufferMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 21 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 21 out of 21 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.701 |       -8.7 |     21 | u1/r21/D
-    final |       0 |      25 |        3 |      0 |     0 |   +11.6% |   -0.517 |       -8.3 |     21 | u1/r21/D
+    final |       0 |      11 |        3 |      0 |     0 |    +5.6% |   -0.507 |       -8.3 |     21 | u1/r21/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
-[INFO RSZ-0041] Resized 25 instances.
+[INFO RSZ-0051] Resized 11 instances, 11 sized up, 0 sized down.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Differences found at line 5.
- BUF_X1 rebuffer5 (.A(r1q),
- BUF_X1 rebuffer8 (.A(r1q),
+No differences found.

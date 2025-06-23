@@ -41,6 +41,7 @@ or_integration_tests(
     replace_hier_mod2
     replace_hier_mod3
     replace_hier_mod4
+    replace_hier_mod5
     rounding
     row_settings
     sky130hd_multi_patterned
@@ -48,6 +49,7 @@ or_integration_tests(
     transform
     wire_encoder
     write_def58
+    write_def58_gzip
     write_lef_and_def
     write_lef_polygon
     write_macro_placement

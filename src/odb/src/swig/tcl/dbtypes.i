@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+%import <std_vector.i>
+
 %template(vector_str) std::vector<std::string>;
 
 // DB specital types

@@ -384,10 +384,10 @@ void HeatMapDataSource::clearMap()
   populated_ = false;
 }
 
-void HeatMapDataSource::setupMap()
+bool HeatMapDataSource::setupMap()
 {
   if (getBlock() == nullptr || getBlock()->getDieArea().area() == 0) {
-    return;
+    return false;
   }
 
   populateXYGrid();
@@ -423,6 +423,8 @@ void HeatMapDataSource::setupMap()
       map_[x][y] = std::move(map_pt);
     }
   }
+
+  return true;
 }
 
 void HeatMapDataSource::populateXYGrid()
@@ -514,7 +516,11 @@ void HeatMapDataSource::ensureMap()
   const bool build_map = map_[0][0] == nullptr;
   if (build_map) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Setting up map", name_);
-    setupMap();
+    if (!setupMap()) {
+      debugPrint(
+          logger_, utl::GUI, "HeatMap", 1, "{} - No map available", name_);
+      return;
+    }
   }
 
   if (build_map || !isPopulated()) {

@@ -9,6 +9,9 @@ swig_lib(NAME         dpl
          NAMESPACE    dpl
          I_FILE       src/Opendp.i
          SCRIPTS      src/Opendp.tcl
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
 )
 
 add_library(dpl_lib

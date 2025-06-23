@@ -5,10 +5,9 @@
 
 namespace mpl {
 
-// Bounds of a certain cluster's dimension.
-// Used for either width or height.
 struct Interval
 {
+  Interval() = default;
   Interval(float min, float max) : min(min), max(max) {}
 
   float min{0.0f};

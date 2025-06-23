@@ -1,6 +1,5 @@
 {
     "name":"dbGDSBox",
-    "type":"dbObject",
     "fields":[
       {
         "name":"_layer",
@@ -30,4 +29,3 @@
     ],
     "cpp_includes": ["odb/dbTypes.h"]
 }
-  

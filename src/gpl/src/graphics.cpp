@@ -44,8 +44,7 @@ Graphics::Graphics(utl::Logger* logger,
                    std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                    std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                    bool draw_bins,
-                   odb::dbInst* inst,
-                   int start_iter)
+                   odb::dbInst* inst)
     : HeatMapDataSource(logger, "gpl", "gpl"),
       pbc_(std::move(pbc)),
       nbc_(std::move(nbc)),
@@ -207,20 +206,52 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   int yh = gcy + gCell->dy() / 2;
 
   gui::Painter::Color color;
-  if (gCell->isInstance()) {
-    color = gCell->isLocked() ? gui::Painter::dark_cyan
-                              : gui::Painter::dark_green;
-  } else if (gCell->isFiller()) {
-    color = gui::Painter::dark_magenta;
+  // Highlight modified instances (overrides base color, unless selected)
+  switch (gCell->changeType()) {
+    case GCell::GCellChange::kRoutability:
+      color = {255, 255, 255, 100};  // White
+      break;
+    case GCell::GCellChange::kTimingDriven:
+      color = {180, 150, 255, 100};  // Light purple
+      break;
+    default:
+      if (gCell->isInstance()) {
+        color = gCell->isLocked() ? gui::Painter::dark_cyan
+                                  : gui::Painter::dark_green;
+      } else if (gCell->isFiller()) {
+        color = gui::Painter::dark_magenta;
+      }
+      color.a = 180;
+      break;
   }
 
+  // Highlight selection (highest priority)
   if (gCell == selected_) {
     color = gui::Painter::yellow;
+    color.a = 180;
   }
 
-  color.a = 180;
   painter.setBrush(color);
   painter.drawRect({xl, yl, xh, yh});
+
+  if (gCell->isInstance()) {
+    odb::dbInst* db_inst = gCell->insts()[0]->dbInst();
+    if (db_inst != nullptr) {
+      odb::dbBox* bbox = db_inst->getBBox();
+      if (bbox != nullptr) {
+        int origLx = bbox->xMin();
+        int origLy = bbox->yMin();
+        int origUx = bbox->xMax();
+        int origUy = bbox->yMax();
+
+        gui::Painter::Color outline = gui::Painter::black;
+        outline.a = 150;  // Semi-transparent
+
+        painter.setPen(outline, /*cosmetic=*/false, /*width=*/1);
+        painter.drawRect({origLx, origLy, origUx, origUy});
+      }
+    }
+  }
 }
 
 void Graphics::drawNesterov(gui::Painter& painter)
@@ -533,6 +564,54 @@ void Graphics::combineMapData(bool base_has_value,
 bool Graphics::guiActive()
 {
   return gui::Gui::enabled();
+}
+
+void Graphics::addFrameLabel(gui::Gui* gui,
+                             const odb::Rect& bbox,
+                             const std::string& label,
+                             const std::string& label_name,
+                             int image_width_px)
+{
+  int label_x = bbox.xMin() + 300;
+  int label_y = bbox.yMin() + 300;
+
+  gui::Painter::Color color = gui::Painter::yellow;
+  gui::Painter::Anchor anchor = gui::Painter::BOTTOM_LEFT;
+
+  int font_size = std::clamp(image_width_px / 50, 15, 24);
+
+  gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
+}
+
+void Graphics::saveLabeledImage(const std::string& path,
+                                const std::string& label,
+                                bool select_buffers,
+                                const std::string& heatmap_control,
+                                int image_width_px)
+{
+  gui::Gui* gui = getGuiObjectFromGraphics();
+  odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, true);
+  }
+
+  if (select_buffers) {
+    gui->select("Inst", "", "Description", "Timing Repair Buffer", true, -1);
+  }
+
+  static int label_id = 0;
+  std::string label_name = fmt::format("auto_label_{}", label_id++);
+
+  addFrameLabel(gui, bbox, label, label_name, image_width_px);
+  gui->saveImage(path);
+  gui->deleteLabel(label_name);
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, false);
+  }
+
+  gui->clearSelections();
 }
 
 }  // namespace gpl

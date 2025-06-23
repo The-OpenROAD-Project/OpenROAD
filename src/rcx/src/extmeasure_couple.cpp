@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
 #include "gseq.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
@@ -1294,7 +1294,7 @@ void extMeasureRC::DeleteTable(Ath__array1D<extSegment*>** tbl, uint n)
   for (uint ii = 0; ii < n; ii++) {
     delete tbl[ii];
   }
-  delete tbl;
+  delete[] tbl;
 }
 Ath__array1D<Wire*>** extMeasureRC::allocTable_wire(uint n)
 {

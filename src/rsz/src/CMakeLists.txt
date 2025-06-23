@@ -21,14 +21,17 @@ add_library(rsz_lib
     RepairHold.cc
     RepairSetup.cc
     Rebuffer.cc
+    Rebuffer2.cc
     SteinerTree.cc
-    SizeMove.cc
+    SizeDownMove.cc
+    SizeUpMove.cc
     SplitLoadMove.cc
     SwapPinsMove.cc
     UnbufferMove.cc
     EstimateWireParasitics.cc
     Resizer.cc
     OdbCallBack.cc
+    ConcreteSwapArithModules.cc
 )
 
 target_sources(rsz

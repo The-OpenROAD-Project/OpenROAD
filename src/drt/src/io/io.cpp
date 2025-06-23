@@ -879,8 +879,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             p = {beginX, beginY};
           }
           auto viaDef = getTech()->name2via_[viaName];
-          auto tmpP = std::make_unique<frVia>(viaDef);
-          tmpP->setOrigin(p);
+          auto tmpP = std::make_unique<frVia>(viaDef, p);
           tmpP->addToNet(netIn);
           netIn->addVia(std::move(tmpP));
         }
@@ -1741,6 +1740,16 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         if (rule->getSecondLayer() == nullptr) {
           continue;
         }
+        if (rule->getSecondLayer()->getType()
+                == odb::dbTechLayerType::MASTERSLICE
+            && rule->getSecondLayer() != masterSliceLayer_) {
+          logger_->warn(DRT,
+                        240,
+                        "Ignoring cut spacing rule for layer {} with layer {}",
+                        layer->getName(),
+                        rule->getSecondLayer()->getName());
+          continue;
+        }
         auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
         con->setCenterToCenter(rule->isCenterToCenter());
@@ -2468,9 +2477,18 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
     bool exceptSamePGNet = rule->getSameNetPgOnly();
     bool parallelOverlap = rule->getCutParallelOverlap();
     odb::dbTechLayer* outly;
-    frString secondLayerName = std::string("");
+    frString secondLayerName;
     if (rule->getCutLayer4Spacing(outly)) {
-      secondLayerName = std::string(outly->getName());
+      secondLayerName = outly->getName();
+      if (outly->getType() == odb::dbTechLayerType::MASTERSLICE
+          && outly != masterSliceLayer_) {
+        logger_->warn(DRT,
+                      241,
+                      "Ignoring cut spacing rule for layer {} with layer {}",
+                      layer->getName(),
+                      secondLayerName);
+        continue;
+      }
     }
     frUInt4 _adjacentCuts;
     frUInt4 within;

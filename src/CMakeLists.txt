@@ -252,6 +252,7 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
+add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -308,6 +309,7 @@ target_link_libraries(openroad
   ord
   gpl
   dpl
+  exa
   fin
   rsz
   ppl
@@ -336,6 +338,7 @@ target_link_libraries(openroad
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
+  ${Boost_LIBRARIES}
 )
 
 target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
@@ -396,6 +399,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     grt_py
     gpl_py
     dpl_py
+    exa_py
     ppl_py
     tap_py
     cts_py

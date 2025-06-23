@@ -53,6 +53,22 @@ restructure
 | `-abc_logfile` | Output file to save abc logs to. |
 | `-work_dir` | Name of the working directory for temporary files. If not provided, `run` directory would be used. |
 
+### Resynth
+
+Resynthesis can be performed with the resynthesis command it will attempt to drive
+all paths to zero slack. It's an improved version of restructure. If you have multiple
+corners you need to specify witch `-corner` you want to use.
+
+```tcl
+resynth [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Specifies the library corner you intend to use in the optimization loop.
+
 ## Example scripts
 
 Example scripts on running `rmp` for a sample design of `gcd` as follows:

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -114,11 +114,13 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
 
             w->setUpNext(w2);
             break;
-          } else if (w2 != nullptr && !found) {
+          }
+          if (w2 != nullptr && !found) {
             firstWireTable.set(next_tr, w2);
             w->setUpNext(w2);
             break;
-          } else if (first_wire != nullptr) {
+          }
+          if (first_wire != nullptr) {
             firstWireTable.set(next_tr, first_wire);
             break;
           }
@@ -189,10 +191,12 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
             firstWireTable.set(next_tr, w2);
             w->setDownNext(w2);
             break;
-          } else if (w2 != nullptr && !found) {
+          }
+          if (w2 != nullptr && !found) {
             firstWireTable.set(next_tr, w2);
             break;
-          } else if (first_wire != nullptr) {
+          }
+          if (first_wire != nullptr) {
             firstWireTable.set(next_tr, first_wire);
             break;
           }

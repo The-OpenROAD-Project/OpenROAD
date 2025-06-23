@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <vector>
 
-#include "grids.h"
 #include "name.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 namespace rcx {

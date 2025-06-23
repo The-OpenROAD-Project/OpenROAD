@@ -828,7 +828,7 @@ void TritonRoute::sendDesignDist()
     std::string router_cfg_path
         = fmt::format("{}DESIGN.router_cfg", shared_volume_);
 
-    db_->write(utl::StreamHandler(design_path.c_str(), true).getStream());
+    db_->write(utl::OutStreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -934,6 +934,15 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
 
 int TritonRoute::main()
 {
+  // Just to verify that OMP support is compiled in correctly.
+  omp_set_num_threads(2);
+#pragma omp parallel
+  {
+    if (omp_get_num_threads() != 2) {
+      logger_->error(DRT, 623, "OMP threading is not working.");
+    }
+  }
+
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
@@ -1001,7 +1010,7 @@ int TritonRoute::main()
     }
   }
   if (debug_->debugDumpDR) {
-    db_->write(utl::StreamHandler(
+    db_->write(utl::OutStreamHandler(
                    fmt::format("{}/design.odb", debug_->dumpDir).c_str(), true)
                    .getStream());
   }
@@ -1043,18 +1052,33 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   clearDesign();
   router_cfg_->ENABLE_VIA_GEN = true;
   initDesign();
-  FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get());
-  pa.setTargetInstances(target_insts);
+  pa_ = std::make_unique<FlexPA>(
+      getDesign(), logger_, dist_, router_cfg_.get());
+  pa_->setTargetInstances(target_insts);
   if (debug_->debugPA) {
-    pa.setDebug(graphics_factory_->makeUniquePAGraphics());
+    pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
   }
   if (distributed_) {
-    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    pa_->setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     dist_pool_->join();
   }
-  pa.main();
+  pa_->main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get(), true);
+}
+
+void TritonRoute::deleteInstancePAData(frInst* inst)
+{
+  if (pa_) {
+    pa_->deleteInst(inst);
+  }
+}
+
+void TritonRoute::addInstancePAData(frInst* inst)
+{
+  if (pa_) {
+    pa_->addInst(inst);
+  }
 }
 
 void TritonRoute::fixMaxSpacing(int num_threads)
@@ -1383,6 +1407,26 @@ void TritonRoute::reportDRC(const std::string& file_name,
   }
 
   tool_category->writeTR(file_name);
+}
+
+std::vector<int> TritonRoute::routeLayerLengths(odb::dbWire* wire) const
+{
+  std::vector<int> lengths;
+  lengths.resize(db_->getTech()->getLayerCount());
+  odb::dbWireShapeItr shapes;
+  odb::dbShape s;
+
+  for (shapes.begin(wire); shapes.next(s);) {
+    if (!s.isVia()) {
+      lengths[s.getTechLayer()->getNumber()] += s.getLength();
+    } else {
+      if (s.getTechVia()) {
+        lengths[s.getTechVia()->getBottomLayer()->getNumber() + 1] += 1;
+      }
+    }
+  }
+
+  return lengths;
 }
 
 }  // namespace drt

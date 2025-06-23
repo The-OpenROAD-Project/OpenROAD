@@ -140,6 +140,7 @@ class FlexGCWorker::Impl
 
   // parameters
   gcNet* targetNet_;
+  drNet* targetDRNet_;
   frLayerNum minLayerNum_;
   frLayerNum maxLayerNum_;
 

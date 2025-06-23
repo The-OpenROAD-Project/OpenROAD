@@ -1,28 +1,27 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO RSZ-0058] Using max wire length 827um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       600
-    final |   +106.8% |     186 |     161 |           118 |         0
+    final |    +64.2% |     186 |     117 |            59 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0037] Found 118 long wires.
+[INFO RSZ-0034] Found 59 slew violations.
 [INFO RSZ-0039] Resized 186 instances.
-[INFO RSZ-0038] Inserted 161 buffers in 118 nets.
-worst slack max -0.279
-tns max -30.987
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0038] Inserted 117 buffers in 59 nets.
+worst slack max -0.324
+tns max -35.417
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 200 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 200 out of 200 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.279 |      -31.0 |    200 | p3-200
-    final |      35 |     751 |        0 |      0 |     0 |  +215.2% |   -0.279 |      -29.1 |    200 | p3-200
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.324 |      -35.4 |    200 | p3-200
+    final |      41 |    1094 |        0 |      0 |     0 |  +393.0% |   -0.324 |      -31.8 |    200 | p3-200
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 35 buffers.
-[INFO RSZ-0041] Resized 751 instances.
+[INFO RSZ-0059] Removed 41 buffers.
+[INFO RSZ-0051] Resized 1094 instances, 1094 sized up, 0 sized down.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
-worst slack max -0.279
-tns max -29.137
+worst slack max -0.324
+tns max -31.831
 No differences found.

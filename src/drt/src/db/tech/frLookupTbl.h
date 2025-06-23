@@ -30,7 +30,7 @@ class fr1DLookupTbl
  public:
   // constructor
   fr1DLookupTbl() = default;
-
+  fr1DLookupTbl& operator=(const fr1DLookupTbl&) = default;
   fr1DLookupTbl(const fr1DLookupTbl& in)
       : rows_(in.rows_),
         vals_(in.vals_),
@@ -117,6 +117,7 @@ class fr2DLookupTbl
   friend class frLef58SpacingTableConstraint;
   // constructor
   fr2DLookupTbl() = default;
+  fr2DLookupTbl& operator=(const fr2DLookupTbl&) = default;
   fr2DLookupTbl(const fr2DLookupTbl& in)
       : rows_(in.rows_),
         cols_(in.cols_),

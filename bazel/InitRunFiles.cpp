@@ -1,5 +1,6 @@
 #include <unistd.h>
 
+#include <climits>
 #include <iostream>
 #include <memory>
 #include <optional>

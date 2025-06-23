@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -154,6 +155,9 @@ class RouteBase
   // Functions using fastroute on grt are saved as backup.
   void updateGrtRoute();
   void getGrtResult();
+  // TODO: understand why this function is breaking RUDY.
+  // Allow for grt heatmap during gpl execution.
+  void loadGrt();
   float getGrtRC() const;
 
   void updateRudyRoute();
@@ -167,12 +171,6 @@ class RouteBase
 
   int64_t inflatedAreaDelta() const;
   int numCall() const;
-
-  void revertGCellSizeToMinRc();
-  void pushBackMinRcCellSize(int dx, int dy)
-  {
-    minRcCellSize_.emplace_back(dx, dy);
-  }
 
  private:
   RouteBaseVars rbVars_;
@@ -196,7 +194,6 @@ class RouteBase
   float minRc_ = 1e30;
   float minRcTargetDensity_ = 0;
   int minRcViolatedCnt_ = 0;
-  std::vector<std::pair<int, int>> minRcCellSize_;
 
   void init();
   void reset();

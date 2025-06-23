@@ -4,10 +4,10 @@
 #include <map>
 #include <vector>
 
-#include "grids.h"
 #include "gseq.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -318,7 +318,8 @@ uint extMain::initSearchForNets(int* X1,
   }
   const uint layerCnt = n + 1;
 
-  _search = new GridTable(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
+  _search
+      = std::make_unique<GridTable>(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
   _search->setBlock(_block);
 
   return layerCnt;
@@ -1051,7 +1052,7 @@ uint extMain::couplingFlow(Rect& extRect,
     pitchTable[ii] = 0;
     widthTable[ii] = 0;
   }
-  uint dirTable[16];
+  uint dirTable[32];
   int baseX[32];
   int baseY[32];
   uint layerCnt = initSearchForNets(

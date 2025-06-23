@@ -3,7 +3,7 @@
 
 // DELETE #include <dbRtTree.h>
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -168,23 +168,14 @@ float extMeasureRC::getOver_over1(extMetRCTable* rcModel,
   _tmpRC->Reset();
   // lenOverSub not required.
   // for now dist1==diagResDist==200
-  extDistRC* rc0 = getOverRC_Dist(rcModel, width, met, metUnder, dist1);
   extDistRC* rc = rcModel->_capOver_open[met][1]->getRC(metUnder, width, dist2);
   extDistRC* rc1 = getOverRC_Dist(rcModel, width, met, metUnder, dist2);
 
   float fr0 = 2 * rc->_fringe;
 
-  // DBG    float delta_fr= (2*rc->_fringe - (rc0->_fringe + rc1->_fringe));
-  // DBG    float fr1= rc1->_fringe;
   // wire is next to openended and no fringe was added -- no full fringe
   _tmpRC->_fringeW = 2 * rc->_fringe;
   _tmpRC->_fringe = rc1->_fringe;
-  float cc = rc->_coupling * lenOverSub;
-  // DBG  float cc0 = rc0->_coupling * lenOverSub;
-  // DBG  float cc1 = rc1->_coupling * lenOverSub;
-  float delta_cc
-      = (2 * rc->_coupling - (rc0->_coupling + rc1->_coupling)) * lenOverSub;
-  cc += delta_cc;
   _tmpRC->_coupling = rc1->_coupling;
   return fr0;
 }
@@ -196,20 +187,15 @@ float extMeasureRC::getOU_over1(extMetRCTable* rcModel,
   _tmpRC->Reset();
   // lenOverSub not required.
   // for now dist1==diagResDist==200
-  extDistRC* rc0 = nullptr;
   extDistRC* rc = nullptr;
   extDistRC* rc1 = nullptr;
   if (_overMet <= 0) {  // Over
-    rc0 = getOverRC_Dist(rcModel, _width, _met, _underMet, dist1);
     rc = rcModel->_capOver_open[_met][1]->getRC(_underMet, _width, dist2);
     rc1 = getOverRC_Dist(rcModel, _width, _met, _underMet, dist2);
   } else if (_underMet <= 0) {  // Under
-    rc0 = getUnderRC_Dist(rcModel, _width, _met, _overMet, dist1);
     rc = getUnderRC_Dist(rcModel, _width, _met, _overMet, dist2, 1);
     rc1 = getUnderRC_Dist(rcModel, _width, _met, _overMet, dist2);
   } else {  // Over Under
-    rc0 = getOverUnderRC_Dist(
-        rcModel, _width, _met, _underMet, _overMet, dist1);
     rc = getOverUnderRC_Dist(
         rcModel, _width, _met, _underMet, _overMet, dist2, 1);
     rc1 = getOverUnderRC_Dist(
@@ -217,18 +203,9 @@ float extMeasureRC::getOU_over1(extMetRCTable* rcModel,
   }
   float fr0 = 2 * rc->_fringe;
 
-  // fr= (2*rc->_fringe - rc0->_fringe) * lenOverSub;
-  // DBG float delta_fr= (2*rc->_fringe - (rc0->_fringe + rc1->_fringe));
-  // DBG float fr1= rc1->_fringe;
   // wire is next to openended and no fringe was added -- no full fringe
   _tmpRC->_fringeW = 2 * rc->_fringe;
   _tmpRC->_fringe = rc1->_fringe;
-  float cc = rc->_coupling * lenOverSub;
-  // DBG float cc0 = rc0->_coupling * lenOverSub;
-  // DBG float cc1 = rc1->_coupling * lenOverSub;
-  float delta_cc
-      = (2 * rc->_coupling - (rc0->_coupling + rc1->_coupling)) * lenOverSub;
-  cc += delta_cc;
   _tmpRC->_coupling = rc1->_coupling;
   return fr0;
 }
@@ -496,10 +473,10 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
 
   float fr = fr1 + fr2;
   if (use_weighted) {
-    int ratio = (int) ceil(fr2 / fr1);
+    int ratio = (int) std::ceil(fr2 / fr1);
     float wfr = (fr2 * ratio + fr1) / (ratio + 1);
     if (fr1 > fr2) {
-      ratio = (int) ceil(fr1 / fr2);
+      ratio = (int) std::ceil(fr1 / fr2);
       wfr = (fr1 * ratio + fr2) / (ratio + 1);
     }
     wfr *= 2;

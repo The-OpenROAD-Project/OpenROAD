@@ -22,6 +22,7 @@ enum class ParasiticsSrc;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
+using sta::Edge;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -92,6 +93,7 @@ class RepairDesign : dbStaState
 
   void checkDriverArcSlew(const Corner* corner,
                           const Instance* inst,
+                          const Edge* edge,
                           const TimingArc* arc,
                           float load_cap,
                           float limit,
@@ -217,7 +219,7 @@ class RepairDesign : dbStaState
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
-  PreChecks* pre_checks_ = nullptr;
+  std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;
   int dbu_ = 0;
   double initial_design_area_ = 0;

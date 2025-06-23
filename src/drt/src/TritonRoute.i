@@ -13,6 +13,10 @@
 
 %include "../../Exception.i"
 
+%import <stl.i>
+%import <std_vector.i>
+%template(vector_int) std::vector<int>;
+
 %inline %{
 
 int detailed_route_num_drvs()
@@ -218,4 +222,12 @@ void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const c
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->checkDRC(drc_file, x1, y1, x2, y2, marker_name, num_threads);
 }
+
+std::vector<int>
+route_layer_lengths(odb::dbWire* db_wire)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  return router->routeLayerLengths(db_wire);
+}
+
 %} // inline

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
@@ -235,9 +235,9 @@ uint extMeasureRC::FindUpDownSegments(Ath__array1D<extSegment*>* upTable,
                           metUnder);
       down = GetNextSegment(++jj, downTable);
       continue;
-    } else if (xy1 + len1
-               < down->_xy)  // no overlap and w2 too far on the right
-    {
+    }
+    if (xy1 + len1 < down->_xy) {
+      // no overlap and w2 too far on the right
       CreateUpDownSegment(
           up->_wire, up->_up, xy1, len1, nullptr, segTable, metOver, -1);
       up = GetNext(++ii, xy1, len1, upTable);
@@ -671,7 +671,6 @@ int extMeasureRC::CouplingFlow_new(uint dir,
         }
 
         // TODO: debugStart
-        uint cnt1 = 0;
         wireCnt++;
         if (upTable.getCnt() == 0 || downTable.getCnt() == 0) {
           oneEmptyTable++;
@@ -688,17 +687,16 @@ int extMeasureRC::CouplingFlow_new(uint dir,
             fprintf(stdout, "======> NOT SORTED after Buggble\n");
         }
         if (upTable.getCnt() == 0 && downTable.getCnt() > 0)  // OpenEnded Down
-          cnt1 += CopySegments(
-              false, &downTable, 0, downTable.getCnt(), &segTable);
+          CopySegments(false, &downTable, 0, downTable.getCnt(), &segTable);
         else if (upTable.getCnt() > 0
                  && downTable.getCnt() == 0)  // OpenEnded Up
-          cnt1 += CopySegments(true, &upTable, 0, upTable.getCnt(), &segTable);
+          CopySegments(true, &upTable, 0, upTable.getCnt(), &segTable);
         else if (upTable.getCnt() == 1 && downTable.getCnt() > 0)  // 1 up,
-          cnt1 += FindUpDownSegments(&upTable, &downTable, &segTable);
+          FindUpDownSegments(&upTable, &downTable, &segTable);
         else if (upTable.getCnt() > 0 && downTable.getCnt() == 1)  // 1 up,
-          cnt1 += FindUpDownSegments(&upTable, &downTable, &segTable);
+          FindUpDownSegments(&upTable, &downTable, &segTable);
         else if (upTable.getCnt() > 0 && downTable.getCnt() > 0)
-          cnt1 += FindUpDownSegments(&upTable, &downTable, &segTable);
+          FindUpDownSegments(&upTable, &downTable, &segTable);
 
         if (dbgOverlaps) {
           PrintUpDown(fp, &segTable);

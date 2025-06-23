@@ -2361,6 +2361,14 @@ void RepairChannelStraps::repairGridChannels(
   } else {
     const auto remaining_channels = findRepairChannels(grid);
     if (!remaining_channels.empty()) {
+      odb::dbMarkerCategory* tool_category
+          = grid->getBlock()->findMarkerCategory("PDN");
+      if (tool_category == nullptr) {
+        tool_category = odb::dbMarkerCategory::create(grid->getBlock(), "PDN");
+        tool_category->setSource("PDN");
+      }
+      odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Repair channels");
       // if channels remain, report them and generate error
       const double dbu_to_microns = grid->getBlock()->getDbUnitsPerMicron();
       for (const auto& channel : remaining_channels) {
@@ -2378,6 +2386,15 @@ void RepairChannelStraps::repairGridChannels(
             Shape::getRectText(channel.area, dbu_to_microns),
             channel.connect_to->getName(),
             nets);
+
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
+        marker->addShape(channel.area);
+        for (auto* net : channel.nets) {
+          marker->addSource(net);
+        }
       }
       if (!allow) {
         grid->getLogger()->error(

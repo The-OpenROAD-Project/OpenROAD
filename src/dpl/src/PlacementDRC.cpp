@@ -140,6 +140,44 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
   return true;
 }
 
+bool PlacementDRC::checkBlockedLayers(const Node* cell) const
+{
+  return checkBlockedLayers(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+}
+
+bool PlacementDRC::checkBlockedLayers(const Node* cell,
+                                      const GridX x,
+                                      const GridY y) const
+{
+  const GridX x_begin = x;
+  const GridY y_begin = y;
+  const GridX x_end = x + grid_->gridWidth(cell);
+  const GridY y_end = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+  for (GridY y1 = y_begin; y1 < y_end; y1++) {
+    for (GridX x1 = x_begin; x1 < x_end; x1++) {
+      const Pixel* pixel = grid_->gridPixel(x1, y1);
+      if (pixel != nullptr && pixel->blocked_layers_ & cell->getUsedLayers()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool PlacementDRC::checkDRC(const Node* cell) const
+{
+  return checkDRC(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), cell->getOrient());
+}
+
+bool PlacementDRC::checkDRC(const Node* cell,
+                            const GridX x,
+                            const GridY y,
+                            const dbOrientType& orient) const
+{
+  return checkEdgeSpacing(cell, x, y, orient) && checkBlockedLayers(cell, x, y);
+}
+
 // Initialize the edge spacing table from the technology
 void PlacementDRC::makeCellEdgeSpacingTable(odb::dbTech* tech)
 {

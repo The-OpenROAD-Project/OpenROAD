@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <utility>
@@ -70,6 +71,10 @@ class frAccessPoint : public frBlockObject
         return false;
     }
   }
+  bool hasHorzAccess() const { return accesses_[0] || accesses_[2]; }
+  bool hasVertAccess() const { return accesses_[1] || accesses_[3]; }
+  bool hasViaAccess() const { return accesses_[4] || accesses_[5]; }
+  bool hasPlanarAccess() const { return hasVertAccess() || hasHorzAccess(); }
   const std::vector<bool>& getAccess() const { return accesses_; }
   bool hasViaDef(int numCut = 1, int idx = 0) const
   {
@@ -100,6 +105,16 @@ class frAccessPoint : public frBlockObject
   const std::vector<std::vector<const frViaDef*>>& getAllViaDefs() const
   {
     return viaDefs_;
+  }
+  void sortViaDefs(const std::map<const frViaDef*, int> cost_map)
+  {
+    auto cmp = [&](const frViaDef* a, const frViaDef* b) {
+      return cost_map.at(a) < cost_map.at(b);
+    };
+
+    for (auto& viaDefsLayer : viaDefs_) {
+      std::sort(viaDefsLayer.begin(), viaDefsLayer.end(), cmp);
+    }
   }
   // e.g., getViaDef()     --> get best one-cut viadef
   // e.g., getViaDef(1)    --> get best one-cut viadef

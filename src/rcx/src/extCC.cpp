@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "grids.h"
 #include "gseq.h"
+#include "rcx/grids.h"
 
 namespace rcx {
 

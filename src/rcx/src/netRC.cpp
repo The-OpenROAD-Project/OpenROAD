@@ -7,10 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "grids.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/grids.h"
 #include "util.h"
 #include "utl/Logger.h"
 
@@ -1245,6 +1245,7 @@ void extMain::makeCornerMapFromExtControl()
     }
     t->_dbIndex = ii;
     _block->getExtCornerName(ii, &cName[0]);
+    free(t->_name);
     t->_name = strdup(&cName[0]);
   }
 }
@@ -1654,7 +1655,6 @@ bool extMain::setCorners(const char* rulesFileName)
                          extDbCnt,
                          cornerTable,
                          dbFactor))) {
-        delete m;
         return false;
       }
     } else {
@@ -1667,7 +1667,6 @@ bool extMain::setCorners(const char* rulesFileName)
                             extDbCnt,
                             cornerTable,
                             dbFactor))) {
-        delete m;
         return false;
       }
     }
@@ -2016,7 +2015,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
 
   */
-  _modelTable->resetCnt(0);
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
   if (_batchScaleExt) {
     genScaledExt();
   }
