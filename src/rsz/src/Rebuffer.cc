@@ -415,7 +415,7 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(LibertyCell* cell)
   const double c = r_drvr * in->capacitance() - max_slew / elmore_skew_factor_;
   const double D = b * b - 4 * a * c;
 
-  if (fuzzyLessEqual(D, 0)) {
+  if (D < 0) {
     logger_->error(RSZ,
                    2010,
                    "cannot determine wire length limit implied by load slew on "
