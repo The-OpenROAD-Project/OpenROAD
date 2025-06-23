@@ -902,8 +902,10 @@ proc create_blockage {args} {
     set is_soft [info exists flags(-soft)]
     if {[info exists keys(-max_density)]} {
         set max_density $keys(-max_density)
-        # If max_density is specified, automatically enable soft blockage
-        set is_soft 1
+
+       if {$is_soft} {
+          utl::warn ODB 1016 "Soft flag ignored as density was passed as argument."
+       }
     }
     
     # Validate max_density if specified
@@ -937,15 +939,16 @@ proc create_blockage {args} {
         utl::error ODB 1015 "Failed to create blockage"
     }
     
-    # Set soft blockage if requested
-    if {$is_soft} {
-        $blockage setSoft
-        
-        # Set max density if specified
-        if {$max_density > 0.0} {
-            $blockage setMaxDensity $max_density
-        }
+    # Set max density if specified
+    if {$max_density > 0.0} {
+        $blockage setMaxDensity $max_density
+    } else {
+      # Set soft blockage if requested
+      if {$is_soft} {
+          $blockage setSoft
+      }
     }
+
     return $blockage
 }
 

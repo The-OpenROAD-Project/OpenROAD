@@ -409,7 +409,7 @@ replace_design instance_name module_name
 
 ### Create Blockage
 
-This command provides a unified interface for creating placement blockages. The command supports both hard and soft blockages with flexible configuration options.
+This command provides a unified interface for creating placement blockages. The command supports hard, soft, and partial blockages with flexible configuration options.
 
 ```tcl
 create_blockage 
@@ -423,10 +423,10 @@ create_blockage
 
 | Switch Name | Description |
 | ----- | ----- |
-| `region` | (required) Blockage coordinates in microns  For example, '0 0 10 10' |
+| `region` | (required) Blockage coordinates in microns. For example, {0 0 10 10} |
 | `inst`   | (optional): Associate blockage with a specific instance.  |
-| `max_density`   | (optional): Maximum density for soft blockages (0-100)  |
-| `soft`   | (optional): Create a soft blockage that can be violated  |
+| `max_density`   | (optional): Maximum density for partial blockages (0-100).  |
+| `soft`   | (optional): Create a soft blockage only blocked during initial placement.  |
 
 
 ## Example scripts
