@@ -8160,6 +8160,10 @@ class dbModule : public dbObject
 
   dbBlock* getOwner();
 
+  static void copy(dbModule* old_module,
+                   dbModule* new_module,
+                   dbModInst* new_mod_inst);
+
   dbSet<dbModInst> getChildren();
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();

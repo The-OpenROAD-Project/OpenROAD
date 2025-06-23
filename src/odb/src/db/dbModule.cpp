@@ -537,6 +537,12 @@ dbBlock* dbModule::getOwner()
   return (dbBlock*) obj->getOwner();
 }
 
+void dbModule::copy(dbModule* old_module,
+                   dbModule* new_module,
+                   dbModInst* new_mod_inst) {
+  _dbModule::copy(old_module, new_module, new_mod_inst);
+}
+
 // Make a unique copy of module based on cell_name and inst_name
 dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
                                        const char* inst_name,
