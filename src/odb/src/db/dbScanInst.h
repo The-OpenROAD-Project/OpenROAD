@@ -31,6 +31,9 @@ class _dbScanInst : public _dbObject
   bool operator<(const _dbScanInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
+  template <typename Term>
+  void setScanEnable(Term* scan_enable);
+
   uint bits_;
   std::pair<dbId<dbScanPin>, dbId<dbScanPin>> access_pins_;
   dbId<dbScanPin> scan_enable_;
