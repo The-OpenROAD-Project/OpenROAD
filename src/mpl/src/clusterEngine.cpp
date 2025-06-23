@@ -1955,7 +1955,7 @@ void ClusteringEngine::createOneClusterForEachMacro(
     std::vector<Cluster*>& macro_clusters)
 {
   for (auto& hard_macro : hard_macros) {
-    const std::string cluster_name = hard_macro->getName();
+    const std::string& cluster_name = hard_macro->getName();
     auto single_macro_cluster
         = std::make_unique<Cluster>(id_, cluster_name, logger_);
     single_macro_cluster->addLeafMacro(hard_macro->getInst());

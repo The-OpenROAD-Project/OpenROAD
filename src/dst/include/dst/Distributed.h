@@ -12,11 +12,12 @@ namespace utl {
 class Logger;
 }
 
+namespace dst {
+
 namespace asio = boost::asio;
 using asio::ip::tcp;
-
-namespace dst {
 using socket = asio::basic_stream_socket<tcp>;
+
 class JobMessage;
 class JobCallBack;
 class Worker;

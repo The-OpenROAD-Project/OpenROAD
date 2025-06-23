@@ -17,7 +17,7 @@ scan_replace
 set verilog_file_before_preview [make_result_file scan_architect_clock_mix_sky130_before_preview.v]
 write_verilog -sort $verilog_file_before_preview
 
-preview_dft -verbose
+report_dft_plan -verbose
 
 # Preview should not modify the net
 set verilog_file_after_preview [make_result_file scan_architect_clock_mix_sky130_after_preview.v]
@@ -26,7 +26,7 @@ write_verilog -sort $verilog_file_after_preview
 # Before and after preview, the netlist should be the same
 diff_files $verilog_file_after_preview $verilog_file_before_preview
 
-insert_dft
+execute_dft_plan
 
 set verilog_file [make_result_file scan_architect_clock_mix_sky130.v]
 write_verilog $verilog_file

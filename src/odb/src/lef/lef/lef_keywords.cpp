@@ -679,8 +679,17 @@ int lefsublex()
       return 0;
 
     // Token size can change. Do preventive re-alloc.
-    lefData->uc_token = (char*) realloc(lefData->uc_token, lefData->tokenSize);
-    lefData->pv_token = (char*) realloc(lefData->pv_token, lefData->tokenSize);
+    char* new_uc_token = (char*) realloc(lefData->uc_token, lefData->tokenSize);
+    if (!new_uc_token) {
+      throw std::bad_alloc();
+    }
+    lefData->uc_token = new_uc_token;
+
+    char* new_pv_token = (char*) realloc(lefData->pv_token, lefData->tokenSize);
+    if (!new_pv_token) {
+      throw std::bad_alloc();
+    }
+    lefData->pv_token = new_pv_token;
 
     fc = lefData->current_token[0];
 
@@ -958,31 +967,31 @@ int lefsublex()
 
 /* We have found a token beginning with '&'.  If it has been previously
    defined, substitute the definition.  Otherwise return it. */
-int lefamper_lookup(char* tkn)
+int lefamper_lookup(char* token)
 {
   double dptr;
   int result;
   const char* cptr;
 
-  // printf("Amper_lookup: %s\n", tkn);
+  // printf("Amper_lookup: %s\n", token);
 
   // &define returns a number
-  if (lefGetDoubleDefine(tkn, &dptr)) {
+  if (lefGetDoubleDefine(token, &dptr)) {
     yylval.dval = dptr;
     return NUMBER;
   }
   // &defineb returns true or false, encoded as K_TRUE or K_FALSE
-  if (lefGetIntDefine(tkn, &result))
+  if (lefGetIntDefine(token, &result))
     return result;
   // &defines returns a T_STRING
-  if (lefGetStringDefine(tkn, &cptr)) {
+  if (lefGetStringDefine(token, &cptr)) {
     if (lefGetKeyword(cptr, &result))
       return result;
     yylval.string = ringCopy(cptr);
     return (cptr[0] == '\"' ? QSTRING : T_STRING);
   }
   // if none of the above, just return the token.
-  yylval.string = ringCopy(tkn);
+  yylval.string = ringCopy(token);
   return T_STRING;
 }
 

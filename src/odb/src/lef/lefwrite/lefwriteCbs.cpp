@@ -39,7 +39,7 @@
 // Global variables
 char defaultOut[128];
 FILE* fout;
-int userData;
+lefiUserData userData;
 
 #define CHECK_STATUS(status) \
   if (status) {              \
@@ -66,7 +66,7 @@ int versionCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData)
     dataError();
   status = lefwVersion(5, 6);
   CHECK_STATUS(status);
@@ -78,7 +78,7 @@ int busBitCharsCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData)
     dataError();
   status = lefwBusBitChars("<>");
   CHECK_STATUS(status);
@@ -90,7 +90,7 @@ int dividerCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData)
     dataError();
   status = lefwDividerChar(":");
   CHECK_STATUS(status);
@@ -105,7 +105,7 @@ int unitsCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData)
     dataError();
   status = lefwStartUnits();
   CHECK_STATUS(status);
@@ -122,7 +122,7 @@ int propDefCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData)
     dataError();
   status = lefwStartPropDef();
   CHECK_STATUS(status);
@@ -179,7 +179,7 @@ int layerCB(lefwCallbackType_e c, lefiUserData ud)
   double* current;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData)
     dataError();
   current = (double*) malloc(sizeof(double) * 15);
 
@@ -1007,7 +1007,7 @@ main(int argc, char** argv)
   lefwSetViaCbk(viaCB);
   lefwSetViaRuleCbk(viaRuleCB);
 
-  res = lefwWrite(fout, outfile, (void*) userData);
+  res = lefwWrite(fout, outfile, userData);
 
   if (encrypt) {
     // output has been written in encrypted, need to close the encrypted

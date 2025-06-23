@@ -417,11 +417,8 @@ bool extMeasure::IsDebugNet1()
   if (!(_extMain->_debug_net_id > 0))
     return false;
 
-  if (_netSrcId == _extMain->_debug_net_id
-      || _netTgtId == _extMain->_debug_net_id)
-    return true;
-  else
-    return false;
+  return _netSrcId == _extMain->_debug_net_id
+         || _netTgtId == _extMain->_debug_net_id;
 }
 void GridTable::initCouplingCapLoops_v2(uint dir,
                                         uint couplingDist,
@@ -1357,8 +1354,7 @@ uint extRCModel::readRules_v2(Ath__parser* parser,
   if (ignore)
     delete dummy;
 
-  if (wTable != nullptr)
-    delete wTable;
+  delete wTable;
 
   return cnt;
 }

@@ -2,16 +2,7 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load(
-    "//bazel:build_helper.bzl",
-    "OPENROAD_BINARY_SRCS_WITHOUT_MAIN",
-    "OPENROAD_LIBRARY_HDRS_INCLUDE",
-    "OPENROAD_LIBRARY_INCLUDES",
-    "OPENROAD_LIBRARY_SRCS_EXCLUDE",
-    "OPENROAD_LIBRARY_SRCS_INCLUDE",
-)
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
-load("//bazel:tcl_encode_sta.bzl", "tcl_encode_sta")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
@@ -122,9 +113,13 @@ OPENROAD_DEFINES = [
 
 cc_binary(
     name = "openroad",
-    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
+    srcs = [
         "src/Main.cc",
         "src/OpenRoad.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+        ":rmp_swig",
+        ":rmp_tcl",
         "//bazel:runfiles",
     ] + select({
         ":platform_cli": [],
@@ -139,9 +134,9 @@ cc_binary(
     deps = [
         ":openroad_lib_private",
         ":openroad_version",
-        "//src/sta:opensta_lib",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
@@ -150,41 +145,54 @@ cc_binary(
 
 cc_library(
     name = "openroad_lib_private",
-    srcs = glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
-    ),
-    hdrs = glob(OPENROAD_LIBRARY_HDRS_INCLUDE),
+    srcs = [
+        "src/Design.cc",
+        "src/Tech.cc",
+        "src/Timing.cc",
+    ] + glob([
+        "src/rmp/src/*.h",
+        "src/rmp/src/*.cpp",
+    ]),
+    hdrs = glob([
+        "src/rmp/include/rmp/*.h",
+    ]),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
         "BUILD_GUI=false",
     ],
     features = ["-use_header_modules"],
-    includes = OPENROAD_LIBRARY_INCLUDES,
+    includes = [
+        "include",
+        "src/rmp/include",
+    ],
     deps = OPENROAD_LIBRARY_DEPS,
 )
 
 cc_library(
     name = "openroad_lib",
-    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
-    ) + [
+    srcs = [
+        "src/Design.cc",
         "src/OpenRoad.cc",
-    ],
-    hdrs = glob(
-        include = OPENROAD_LIBRARY_HDRS_INCLUDE,
-        exclude = [
-            "src/utl/include/utl/Logger.h",
-            "src/utl/include/utl/CFileUtils.h",
-        ],
-    ),
+        "src/Tech.cc",
+        "src/Timing.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+        ":rmp_swig",
+        ":rmp_tcl",
+    ] + glob([
+        "src/rmp/src/*.cpp",
+        "src/rmp/src/*.h",
+    ]),
+    hdrs = glob(["src/rmp/include/rmp/*.h"]),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
         "BUILD_GUI=false",
     ],
     features = ["-use_header_modules"],
-    includes = OPENROAD_LIBRARY_INCLUDES,
+    includes = [
+        "include",
+        "src/rmp/include",
+    ],
     visibility = ["//visibility:public"],
     deps = OPENROAD_LIBRARY_DEPS,
 )

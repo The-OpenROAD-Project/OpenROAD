@@ -16,6 +16,7 @@ namespace odb {
 
 definRow::definRow()
 {
+  _cur_row = nullptr;
 }
 
 definRow::~definRow()
@@ -25,21 +26,6 @@ definRow::~definRow()
   for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
     free((void*) (*sitr).first);
   }
-}
-
-void definRow::init()
-{
-  definBase::init();
-  _libs.clear();
-
-  SiteMap::iterator sitr;
-
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
-    free((void*) (*sitr).first);
-  }
-
-  _sites.clear();
-  _cur_row = nullptr;
 }
 
 dbSite* definRow::getSite(const char* name)

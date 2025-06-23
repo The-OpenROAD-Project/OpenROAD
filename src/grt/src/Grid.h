@@ -12,9 +12,9 @@
 #include "RoutingTracks.h"
 #include "odb/db.h"
 
-using boost::icl::interval;
-
 namespace grt {
+
+using boost::icl::interval;
 
 class Grid
 {

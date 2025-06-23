@@ -21,7 +21,6 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/ant:types",
         "//src/odb",
     ],
 )
@@ -103,6 +102,7 @@ cc_library(
         ":abstract-fastroute",
         ":fastroute",
         ":types",
+        "//src/ant:types",
         "//src/sta:opensta_lib",
         "//src/ant",
         "//src/dbSta",
