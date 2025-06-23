@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -35,6 +36,7 @@ class RepairSetup;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
+using FixedDelay = int64_t;
 
 class Rebuffer : public sta::dbStaState
 {
@@ -53,23 +55,25 @@ class Rebuffer : public sta::dbStaState
   BufferedNetPtr bufferForTiming(const BufferedNetPtr& tree,
                                  bool allow_topology_rewrite = true);
   BufferedNetPtr recoverArea(const BufferedNetPtr& root,
-                             Delay slack_target,
+                             FixedDelay slack_target,
                              float alpha);
 
   void setPin(Pin* drvr_pin);
 
   std::tuple<Delay, Delay, Slew> drvrPinTiming(const BufferedNetPtr& bnet);
-  Slack slackAtDriverPin(const BufferedNetPtr& bnet);
-  std::optional<Slack> evaluateOption(const BufferedNetPtr& option,
-                                      // Only used for debug print.
-                                      int index);
+  FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
+  std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
+                                           // Only used for debug print.
+                                           int index);
 
   float maxSlewMargined(float max_slew);
   float maxCapMargined(float max_cap);
 
   bool loadSlewSatisfactory(LibertyPort* driver, const BufferedNetPtr& bnet);
 
-  Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
+  FixedDelay bufferDelay(LibertyCell* cell,
+                         const RiseFallBoth* rf,
+                         float load_cap);
 
   BufferedNetPtr addWire(const BufferedNetPtr& p,
                          Point wire_end,
@@ -82,7 +86,7 @@ class Rebuffer : public sta::dbStaState
                            int level,
                            int next_segment_wl = 0,
                            bool area_oriented = false,
-                           Delay slack_threshold = 0,
+                           FixedDelay slack_threshold = 0,
                            BufferedNet* exemplar = nullptr);
 
   void insertAssuredOption(BufferedNetSeq& opts,
@@ -101,8 +105,6 @@ class Rebuffer : public sta::dbStaState
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
-  Delay marginedSlackThreshold(Delay slack);
-
   int fanout(Vertex* vertex) const;
   int wireLengthLimitImpliedByLoadSlew(LibertyCell*);
   int wireLengthLimitImpliedByMaxCap(LibertyCell*);
@@ -118,7 +120,7 @@ class Rebuffer : public sta::dbStaState
   struct BufferSize
   {
     LibertyCell* cell;
-    Delay intrinsic_delay;
+    FixedDelay intrinsic_delay;
     float margined_max_cap;
   };
 
@@ -143,7 +145,6 @@ class Rebuffer : public sta::dbStaState
   const Corner* corner_ = nullptr;
   LibertyPort* drvr_port_ = nullptr;
   Path* arrival_paths_[RiseFall::index_count];
-  Delay ref_slack_;
 
   int resizer_max_wire_length_;
   int wire_length_step_;

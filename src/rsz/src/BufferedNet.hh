@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 #include "odb/geom.h"
@@ -39,6 +40,11 @@ class RepairSetup;
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using Requireds = std::array<Required, RiseFall::index_count>;
+
+using FixedDelay = int64_t;
+const double FixedDelaySecond = 1.0e15;
+// 100 seconds is an eternity
+const FixedDelay FixedDelayINF = 100 * FixedDelaySecond;
 
 enum class BufferedNetType
 {
@@ -125,14 +131,14 @@ class BufferedNet
   };
   void setSlackTransition(const sta::RiseFallBoth* transitions);
 
-  Delay slack() const { return slack_; };
-  void setSlack(Delay slack);
+  FixedDelay slack() const { return slack_; };
+  void setSlack(FixedDelay slack);
 
-  Delay delay() const { return delay_; }
-  void setDelay(Delay delay);
+  FixedDelay delay() const { return delay_; }
+  void setDelay(FixedDelay delay);
 
-  Delay arrivalDelay() const { return arrival_delay_; }
-  void setArrivalDelay(Delay delay);
+  FixedDelay arrivalDelay() const { return arrival_delay_; }
+  void setArrivalDelay(FixedDelay delay);
 
   // Downstream buffer count.
   int bufferCount() const;
@@ -144,7 +150,7 @@ class BufferedNet
   struct Metrics
   {
     int max_load_wl;
-    Delay slack;
+    FixedDelay slack;
     float cap;
     float max_load_slew;
     float fanout;
@@ -156,7 +162,7 @@ class BufferedNet
       return ret;
     }
 
-    Metrics withSlack(Delay slack)
+    Metrics withSlack(FixedDelay slack)
     {
       Metrics ret = *this;
       ret.slack = slack;
@@ -207,13 +213,13 @@ class BufferedNet
   const sta::RiseFallBoth* slack_transitions_ = nullptr;
 
   // Slack considering the buffer/wire delays downstream of here
-  Delay slack_ = 0;
+  FixedDelay slack_ = 0;
 
   // Computed delay of the buffer/wire
-  Delay delay_ = 0;
+  FixedDelay delay_ = 0;
 
   // Delay from driver pin to here
-  Delay arrival_delay_ = 0;
+  FixedDelay arrival_delay_ = 0;
 };
 
 }  // namespace rsz
