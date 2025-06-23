@@ -106,18 +106,26 @@ void Dft::executeDftPlan()
     db_part->setName(kDefaultPartition);
     odb::dbScanList* db_scanlist = odb::dbScanList::create(db_part);
 
+    std::optional<ScanDriver> sc_enable_driver = chain->getScanEnable();
+
     for (const auto& scan_cell : chain->getScanCells()) {
       std::string inst_name(scan_cell->getName());
       odb::dbInst* db_inst = db_block->findInst(inst_name.c_str());
       odb::dbScanInst* db_scaninst = db_scanlist->add(db_inst);
       db_scaninst->setBits(scan_cell->getBits());
+      if (sc_enable_driver.has_value()) {
+        std::visit(
+            [&](auto&& sc_enable_term) {
+              db_scaninst->setScanEnable(sc_enable_term);
+            },
+            sc_enable_driver.value().getValue());
+      }
       auto scan_in_term = scan_cell->getScanIn().getValue();
       auto scan_out_term = scan_cell->getScanOut().getValue();
       db_scaninst->setAccessPins(
           {.scan_in = scan_in_term, .scan_out = scan_out_term});
     }
 
-    std::optional<ScanDriver> sc_enable_driver = chain->getScanEnable();
     std::optional<ScanDriver> sc_in_driver = chain->getScanIn();
     std::optional<ScanLoad> sc_out_load = chain->getScanOut();
 
