@@ -143,7 +143,7 @@ int defrData::GETC()
 {
   // Remove '\r' symbols from Windows streams.
   for (;;) {
-    if (next > last)
+    if (last == nullptr || next > last)
       reload_buffer();
     if (next == nullptr)
       return EOF;

@@ -101,7 +101,6 @@ defrData::defrData(const defrCallbacks* pCallbacks,
   }
 
   nlines = 1;
-  last = buffer - 1;
   next = buffer;
   first_buffer = 1;
 
