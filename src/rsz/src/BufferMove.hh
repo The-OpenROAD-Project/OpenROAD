@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "BaseMove.hh"
 
 namespace rsz {
@@ -20,6 +22,8 @@ using sta::RiseFallBoth;
 using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
+
+typedef int64_t FixedDelay;
 
 class BufferMove : public BaseMove
 {
@@ -45,7 +49,7 @@ class BufferMove : public BaseMove
   void annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex);
   BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
   BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
-                             sta::Delay slack_target,
+                             FixedDelay slack_target,
                              float alpha);
 
   void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
@@ -64,10 +68,12 @@ class BufferMove : public BaseMove
   void addBuffers(BufferedNetSeq& Z1,
                   int level,
                   bool area_oriented = false,
-                  sta::Delay threshold = 0);
+                  FixedDelay threshold = 0);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
-  Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
+  FixedDelay bufferDelay(LibertyCell* cell,
+                         const RiseFallBoth* rf,
+                         float load_cap);
   std::tuple<sta::Delay, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);

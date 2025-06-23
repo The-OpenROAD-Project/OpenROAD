@@ -111,11 +111,12 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
 
             if (!arrival_path) {
               node->setSlackTransition(nullptr);
-              node->setSlack(INF);
+              node->setSlack(FixedDelayINF);
             } else {
               const RiseFall* rf = req_path->transition(sta_);
               node->setSlackTransition(rf->asRiseFallBoth());
-              node->setSlack(req_path->required() - arrival_path->arrival());
+              node->setSlack((req_path->required() - arrival_path->arrival())
+                             * FixedDelaySecond);
 
               if (arrival_paths_[rf->index()] == nullptr) {
                 arrival_paths_[rf->index()] = arrival_path;
@@ -264,21 +265,22 @@ bool Rebuffer::loadSlewSatisfactory(LibertyPort* driver, const BnetPtr& bnet)
   return load_slew <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
-Slack Rebuffer::slackAtDriverPin(const BufferedNetPtr& bnet)
+FixedDelay Rebuffer::slackAtDriverPin(const BufferedNetPtr& bnet)
 {
   Delay correction;
   std::tie(std::ignore, correction, std::ignore) = drvrPinTiming(bnet);
-  return bnet->slack() + correction;
+  return bnet->slack() + (FixedDelay) (correction * FixedDelaySecond);
 }
 
-std::optional<Slack> Rebuffer::evaluateOption(const BnetPtr& option,
-                                              // Only used for debug print.
-                                              int index)
+std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
+                                                   // Only used for debug print.
+                                                   int index)
 {
   Delay correction;
   Slew slew;
   std::tie(std::ignore, correction, slew) = drvrPinTiming(option);
-  Delay slack = option->slack() + correction;
+  FixedDelay slack
+      = option->slack() + (FixedDelay) (correction * FixedDelaySecond);
 
   if (!loadSlewSatisfactory(drvr_port_, option)) {
     return {};
@@ -305,7 +307,7 @@ std::optional<Slack> Rebuffer::evaluateOption(const BnetPtr& option,
              index,
              option->bufferCount(),
              option->area(),
-             delayAsString(slack, this, 3),
+             delayAsString((float) slack / FixedDelaySecond, this, 3),
              units_->capacitanceUnit()->asString(option->cap()));
   return slack;
 }
@@ -455,7 +457,7 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
                                          const BnetPtr& right,
                                          float best_cap)
 {
-  Delay junc_slack = std::min(left->slack(), right->slack());
+  FixedDelay junc_slack = std::min(left->slack(), right->slack());
 
   // Diversify topology and provide shortcut for critical paths.
   //
@@ -520,15 +522,15 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
         if (fuzzyGreaterEqual(in->capacitance() + in3->cap(), best_cap)
             || fuzzyGreaterEqual(in->capacitance() + in3->cap(),
                                  left->cap() + right->cap())
-            || fuzzyLess(junc1->slack() - size.intrinsic_delay, junc_slack)) {
+            || junc1->slack() - size.intrinsic_delay < junc_slack) {
           break;
         }
 
-        const Delay buffer_delay
+        const FixedDelay buffer_delay
             = bufferDelay(size.cell,
                           junc1->slackTransition(),
                           junc1->cap() + out->capacitance());
-        const Delay buffer_slack = junc1->slack() - buffer_delay;
+        const FixedDelay buffer_slack = junc1->slack() - buffer_delay;
 
         if (fuzzyGreaterEqual(buffer_slack, junc_slack)
             && bufferSizeCanDriveLoad(size, junc1)) {
@@ -707,9 +709,9 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree)
                 // increment either li or ri, whichever leads to smaller slack
                 // decrease
                 Slack next_li_slack
-                    = (li + 1 != lend) ? (*(li + 1))->slack() : -INF;
+                    = (li + 1 != lend) ? (*(li + 1))->slack() : -FixedDelayINF;
                 Slack next_ri_slack
-                    = (ri + 1 != rend) ? (*(ri + 1))->slack() : -INF;
+                    = (ri + 1 != rend) ? (*(ri + 1))->slack() : -FixedDelayINF;
 
                 if (next_li_slack > next_ri_slack) {
                   li++;
@@ -748,14 +750,14 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree)
     logger_->critical(RSZ, 2009, "buffering pin {}: no options produced");
   }
 
-  Delay best_slack = -INF;
+  FixedDelay best_slack = -FixedDelayINF;
   BufferedNetPtr best_option = nullptr;
   int best_index = 0;
   int i = 1;
   debugPrint(logger_, RSZ, "rebuffer", 2, "timing-optimized options");
   for (const BufferedNetPtr& p : top_opts) {
     // Find slack for drvr_pin into option.
-    std::optional<Slack> slack = evaluateOption(p, i);
+    std::optional<FixedDelay> slack = evaluateOption(p, i);
 
     if (!slack) {
       // ignore this option as it doesn't pass ERC
@@ -764,7 +766,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree)
 
     if (best_option == nullptr
         || p->slackTransition() == nullptr /* buffer tree unconstrained */
-        || fuzzyGreater(slack.value(), best_slack)) {
+        || slack.value() > best_slack) {
       best_slack = slack.value();
       best_option = p;
       best_index = i;
@@ -833,28 +835,35 @@ void Rebuffer::insertAssuredOption(BnetSeq& opts,
   opts.insert(it, std::move(assured_opt));
 }
 
-Delay Rebuffer::marginedSlackThreshold(Delay slack)
+FixedDelay lerp(FixedDelay a, FixedDelay b, float t)
 {
-  return slack - (ref_slack_ - slack) * 2e-6;
-}
+  if (t == 1.0f) {
+    return b;
+  }
 
-float lerp(float a, float b, float t)
-{
-  return a + (b - a) * t;
+  return a + (FixedDelay) (((float) (b - a)) * t);
 }
 
 // Recover area on a rebuffering choice without regressing timing
 BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
-                                     Delay slack_target,
+                                     FixedDelay slack_target,
                                      float alpha)
 {
   Delay slack_correction;
   std::tie(std::ignore, slack_correction, std::ignore) = drvrPinTiming(root);
 
+  if (!root->slackTransition()) {
+    // zero out correction if tree has unconstrained timing
+    // (all slacks are FixedDelayINF)
+    slack_correction = 0;
+    slack_target = -FixedDelayINF;
+  }
+
   // spread down arrival delay from the root of the tree to each
   // point on the tree
   visitTree(
-      [](auto& recurse, int level, const BnetPtr& node, Delay arrival) -> int {
+      [](auto& recurse, int level, const BnetPtr& node, FixedDelay arrival)
+          -> int {
         node->setArrivalDelay(arrival);
         switch (node->type()) {
           case BnetType::wire:
@@ -871,7 +880,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
         return 0;
       },
       root,
-      -slack_correction);
+      -slack_correction* FixedDelaySecond);
 
   BnetSeq top_opts = visitTree(
       [&](auto& recurse, int level, const BnetPtr& node, int upstream_wl)
@@ -892,8 +901,8 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
               opts = recurse(inner, 0);
             }
 
-            Delay threshold = marginedSlackThreshold(lerp(
-                node->slack(), slack_target + node->arrivalDelay(), alpha));
+            FixedDelay threshold = lerp(
+                node->slack(), slack_target + node->arrivalDelay(), alpha);
             insertBufferOptions(opts,
                                 level,
                                 /*next_segment_wl=*/upstream_wl,
@@ -906,8 +915,8 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
             const BnetSeq& left_opts = recurse(node->ref(), upstream_wl);
             const BnetSeq& right_opts = recurse(node->ref2(), upstream_wl);
 
-            Delay threshold = marginedSlackThreshold(lerp(
-                node->slack(), slack_target + node->arrivalDelay(), alpha));
+            FixedDelay threshold = lerp(
+                node->slack(), slack_target + node->arrivalDelay(), alpha);
             BnetMetrics assured_envelope = node->metrics().withSlack(threshold);
             BnetPtr assured_fallback;
 
@@ -978,7 +987,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
       root,
       0);
 
-  Delay best_slack = -INF;
+  FixedDelay best_slack = -FixedDelayINF;
   float best_area = std::numeric_limits<float>::max();
   BufferedNetPtr best_slack_option = nullptr, best_area_option = nullptr;
   int best_slack_index = 0, best_area_index = 0;
@@ -986,7 +995,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
   debugPrint(logger_, RSZ, "rebuffer", 2, "area-optimized options");
   for (const BufferedNetPtr& p : top_opts) {
     // Find slack for drvr_pin into option.
-    std::optional<Slack> slack = evaluateOption(p, i);
+    std::optional<FixedDelay> slack = evaluateOption(p, i);
 
     if (!slack) {
       // ignore this option as it doesn't pass ERC
@@ -995,12 +1004,12 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
 
     if (best_slack_option == nullptr
         || p->slackTransition() == nullptr /* buffer tree unconstrained */
-        || fuzzyGreater(slack.value(), best_slack)) {
+        || slack.value() > best_slack) {
       best_slack = slack.value();
       best_slack_option = p;
       best_slack_index = i;
     }
-    if ((slack.value() >= marginedSlackThreshold(slack_target)
+    if ((slack.value() >= slack_target
          || p->slackTransition() == nullptr /* buffer tree unconstrained */)
         && (best_area_option == nullptr || fuzzyLess(p->area(), best_area))) {
       best_area = p->area();
@@ -1024,7 +1033,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
                RSZ,
                "rebuffer",
                2,
-               "best option {} (closest to meeting timing)",
+               "best option {} (closest to meeting timing target)",
                best_slack_index);
     return best_slack_option;
   }
@@ -1057,7 +1066,8 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             double wire_length = resizer_->dbuToMeters(bnet->length());
             double wire_res = wire_length * layer_res;
             double wire_cap = wire_length * layer_cap;
-            double wire_delay = wire_res * (wire_cap / 2 + p->cap());
+            FixedDelay wire_delay
+                = wire_res * (wire_cap / 2 + p->cap()) * FixedDelaySecond;
             if (bnet->length() == 0) {
               wire_res = 0;
               wire_cap = 0;
@@ -1073,9 +1083,10 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             BnetPtr p = bnet->ref();
             LibertyPort *in, *out;
             bnet->bufferCell()->bufferPorts(in, out);
-            Delay buffer_delay = bufferDelay(bnet->bufferCell(),
-                                             p->slackTransition(),
-                                             p->cap() + out->capacitance());
+            FixedDelay buffer_delay
+                = bufferDelay(bnet->bufferCell(),
+                              p->slackTransition(),
+                              p->cap() + out->capacitance());
             bnet->setDelay(buffer_delay);
             bnet->setSlack(p->slack() - buffer_delay);
             bnet->setSlackTransition(p->slackTransition());
@@ -1088,11 +1099,11 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
       tree);
 }
 
-Delay Rebuffer::bufferDelay(LibertyCell* cell,
-                            const RiseFallBoth* rf,
-                            float load_cap)
+FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
+                                 const RiseFallBoth* rf,
+                                 float load_cap)
 {
-  Delay delay = 0;
+  FixedDelay delay = 0;
 
   if (rf) {
     for (auto rf1 : rf->range()) {
@@ -1103,10 +1114,8 @@ Delay Rebuffer::bufferDelay(LibertyCell* cell,
       ArcDelay gate_delays[RiseFall::index_count];
       Slew slews[RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-
-      if (gate_delays[rf1->index()] > delay) {
-        delay = gate_delays[rf1->index()];
-      }
+      delay = std::max<FixedDelay>(
+          delay, gate_delays[rf1->index()] * FixedDelaySecond);
     }
   }
 
@@ -1126,7 +1135,8 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
   double wire_length = resizer_->dbuToMeters(z->length());
   double wire_res = wire_length * layer_res;
   double wire_cap = wire_length * layer_cap;
-  double wire_delay = wire_res * (wire_cap / 2 + p->cap());
+  FixedDelay wire_delay
+      = wire_res * (wire_cap / 2 + p->cap()) * FixedDelaySecond;
 
   // account for wire delay
   z->setDelay(wire_delay);
@@ -1153,7 +1163,7 @@ void Rebuffer::insertBufferOptions(
     int level,
     int next_segment_wl,
     bool area_oriented /*=false*/,
-    Delay slack_threshold /*=0; used for area mode only*/,
+    FixedDelay slack_threshold /*=0; used for area mode only*/,
     BufferedNet* exemplar /*=nullptr; used for area mode only*/)
 {
   if (opts.empty()) {
@@ -1168,7 +1178,7 @@ void Rebuffer::insertBufferOptions(
   bool assured_satisfied = !area_oriented;
 
   float best_area = INF;
-  Slack best_slack = -INF;
+  FixedDelay best_slack = -FixedDelayINF;
 
   // both `opts` and `buffer_sizes_` are ordered by ascending input
   // capacitance
@@ -1184,7 +1194,7 @@ void Rebuffer::insertBufferOptions(
 
       bool keep = area_oriented ? (fuzzyLess(opt->area(), best_area)
                                    && opt->slack() >= slack_threshold)
-                                : fuzzyGreater(opt->slack(), best_slack);
+                                : (opt->slack() > best_slack);
 
       if (!bufferSizeCanDriveLoad(strong_driver, opt, next_segment_wl)) {
         keep = false;
@@ -1218,7 +1228,7 @@ void Rebuffer::insertBufferOptions(
     pass_through(in->capacitance());
 
     BnetPtr load_opt;
-    Delay load_opt_buffer_delay;
+    FixedDelay load_opt_buffer_delay;
     auto it = (new_opts.empty() && opts_iter == opts.end()
                && opts_iter > opts.begin())
                   ? (opts_iter - 1)
@@ -1233,10 +1243,11 @@ void Rebuffer::insertBufferOptions(
                                    best_slack))
           && bufferSizeCanDriveLoad(buffer_size, opt)) {
         // this is a candidate, make the detailed delay calculation
-        Delay buffer_delay = bufferDelay(buffer_cell,
-                                         opt->slackTransition(),
-                                         opt->cap() + out->capacitance());
-        Delay slack = opt->slack() - buffer_delay;
+        const FixedDelay buffer_delay
+            = bufferDelay(buffer_cell,
+                          opt->slackTransition(),
+                          opt->cap() + out->capacitance());
+        const FixedDelay slack = opt->slack() - buffer_delay;
 
         if (area_oriented ? slack >= slack_threshold
                           : fuzzyGreater(slack, best_slack)) {
@@ -1263,17 +1274,18 @@ void Rebuffer::insertBufferOptions(
         assured_satisfied = true;
       }
 
-      debugPrint(logger_,
-                 RSZ,
-                 "rebuffer",
-                 3,
-                 "{:{}s}buffer {} load {} delay {}: {}",
-                 "",
-                 level,
-                 buffer_cell->name(),
-                 units_->capacitanceUnit()->asString(load_opt->cap()),
-                 delayAsString(load_opt_buffer_delay, this),
-                 z->to_string(resizer_));
+      debugPrint(
+          logger_,
+          RSZ,
+          "rebuffer",
+          3,
+          "{:{}s}buffer {} load {} delay {}: {}",
+          "",
+          level,
+          buffer_cell->name(),
+          units_->capacitanceUnit()->asString(load_opt->cap()),
+          delayAsString((float) load_opt_buffer_delay / FixedDelaySecond, this),
+          z->to_string(resizer_));
       new_opts.push_back(std::move(z));
     }
   }
@@ -1294,9 +1306,10 @@ void Rebuffer::insertBufferOptions(
           continue;
         }
 
-        Delay buffer_delay = bufferDelay(buffer_cell,
-                                         load_opt->slackTransition(),
-                                         load_opt->cap() + out->capacitance());
+        const FixedDelay buffer_delay
+            = bufferDelay(buffer_cell,
+                          load_opt->slackTransition(),
+                          load_opt->cap() + out->capacitance());
         if (bufferSizeCanDriveLoad(*buffer_sizes_index_.at(buffer_cell),
                                    load_opt)
             && load_opt->slack() - buffer_delay >= slack_threshold) {
@@ -1335,7 +1348,8 @@ void Rebuffer::insertBufferOptions(
           RSZ,
           501,
           "buffering pin {} failed: area recovery cannot reproduce solution",
-          network_->name(pin_));
+          network_->name(pin_),
+          delayAsString((Delay) slack_threshold / FixedDelaySecond, this, 3));
     }
   }
 
@@ -1367,7 +1381,7 @@ void Rebuffer::init()
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
         cell,
-        out->intrinsicDelay(sta_),
+        static_cast<FixedDelay>(out->intrinsicDelay(sta_) * FixedDelaySecond),
         0.0f,
     });
   }
@@ -1565,9 +1579,9 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
       tree);
 }
 
-static Delay criticalPathDelay(Logger* logger, const BnetPtr& root)
+static FixedDelay criticalPathDelay(Logger* logger, const BnetPtr& root)
 {
-  Delay worst_load_slack = INF;
+  FixedDelay worst_load_slack = FixedDelayINF;
   visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
@@ -1589,9 +1603,9 @@ static Delay criticalPathDelay(Logger* logger, const BnetPtr& root)
   return worst_load_slack - root->slack();
 }
 
-static Delay maxLoadSlack(Logger* logger, const BnetPtr& root)
+static FixedDelay maxLoadSlack(Logger* logger, const BnetPtr& root)
 {
-  Delay best_load_slack = -INF;
+  FixedDelay best_load_slack = -FixedDelayINF;
   visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
@@ -1917,7 +1931,7 @@ class ScopedTimer
 
 void Rebuffer::fullyRebuffer(Pin* user_pin)
 {
-  double sta_time = 0, bft_time = 0, ra_time = 0;
+  double sta_runtime = 0, bft_runtime = 0, ra_runtime = 0;
 
   init();
   sta_->checkFanoutLimitPreamble();
@@ -1999,7 +2013,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
     {
-      ScopedTimer timer(logger_, sta_time);
+      ScopedTimer timer(logger_, sta_runtime);
       search_->findRequireds(drvr->level());
     }
 
@@ -2056,7 +2070,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     annotateLoadSlacks(original_tree, drvr);
     annotateTiming(original_tree);
 
-    Slack slack = slackAtDriverPin(original_tree);
+    Slack slack = ((float) slackAtDriverPin(original_tree)) / FixedDelaySecond;
     Path* req_path = sta_->vertexWorstSlackPath(drvr, sta::MinMax::max());
     Slack sta_slack
         = req_path ? (req_path->required() - req_path->arrival()) : INF;
@@ -2069,7 +2083,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     BnetPtr timing_tree = unbuffered_tree;
 
     {
-      ScopedTimer timer(logger_, bft_time);
+      ScopedTimer timer(logger_, bft_runtime);
       for (int i = 0; i < 3; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
@@ -2117,21 +2131,24 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     //    computation of wire load, we are using pin position for the existing
     //    buffer, but instance position for the new buffer.)
     //
-    Delay relaxation = std::max(0.0f,
-                                (slackAtDriverPin(timing_tree)
-                                 - std::min(original_tree_slack_error, 0.0f)))
-                           / 4.0f
-                       + (std::max(drvr_gate_delay, 0.0f)
-                          + criticalPathDelay(logger_, timing_tree))
-                             * relaxation_factor_;
+    Delay relaxation
+        = std::max<float>(
+              0.0f,
+              (((float) slackAtDriverPin(timing_tree) / FixedDelaySecond)
+               - std::min(original_tree_slack_error, 0.0f)))
+              / 4.0f
+          + (std::max(drvr_gate_delay, 0.0f)
+             + ((float) criticalPathDelay(logger_, timing_tree)
+                / FixedDelaySecond))
+                * relaxation_factor_;
 
-    ref_slack_ = maxLoadSlack(logger_, timing_tree);
-    Delay target = slackAtDriverPin(timing_tree) - relaxation;
+    FixedDelay target
+        = slackAtDriverPin(timing_tree) - relaxation * FixedDelaySecond;
+
     BnetPtr area_opt_tree = timing_tree;
     {
-      ScopedTimer timer(logger_, ra_time);
+      ScopedTimer timer(logger_, ra_runtime);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
-        target -= (ref_slack_ - target) * 3e-6;
         area_opt_tree
             = recoverArea(area_opt_tree, target, ((float) (1 + i)) / 5);
       }
@@ -2258,7 +2275,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     resizer_->updateParasitics();
 
     {
-      ScopedTimer timer(logger_, sta_time);
+      ScopedTimer timer(logger_, sta_runtime);
       sta_->findDelays(max_level);
       search_->findArrivals(max_level);
     }
@@ -2273,9 +2290,10 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
   debugPrint(logger_, RSZ, "rebuffer", 1, "Time spent");
   debugPrint(logger_, RSZ, "rebuffer", 1, "----------");
-  debugPrint(logger_, RSZ, "rebuffer", 1, "STA {:.2f}", sta_time);
-  debugPrint(logger_, RSZ, "rebuffer", 1, "Buffer for timing {:.2f}", bft_time);
-  debugPrint(logger_, RSZ, "rebuffer", 1, "Recover area {:.2f}", ra_time);
+  debugPrint(logger_, RSZ, "rebuffer", 1, "STA {:.2f}", sta_runtime);
+  debugPrint(
+      logger_, RSZ, "rebuffer", 1, "Buffer for timing {:.2f}", bft_runtime);
+  debugPrint(logger_, RSZ, "rebuffer", 1, "Recover area {:.2f}", ra_runtime);
 }
 
 };  // namespace rsz

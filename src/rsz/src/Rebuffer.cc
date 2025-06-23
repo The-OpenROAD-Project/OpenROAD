@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <string>
@@ -258,11 +259,12 @@ void BufferMove::annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex)
 
             if (!arrival_path) {
               bnet->setSlackTransition(nullptr);
-              bnet->setSlack(INF);
+              bnet->setSlack(FixedDelayINF);
             } else {
               const RiseFall* rf = req_path->transition(sta_);
               bnet->setSlackTransition(rf->asRiseFallBoth());
-              bnet->setSlack(req_path->required() - arrival_path->arrival());
+              bnet->setSlack((req_path->required() - arrival_path->arrival())
+                             * FixedDelaySecond);
 
               if (arrival_paths_[rf->index()] == nullptr) {
                 arrival_paths_[rf->index()] = arrival_path;
@@ -306,8 +308,7 @@ BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
             // Combine the options from both branches.
             for (const BnetPtr& p : Z1) {
               for (const BnetPtr& q : Z2) {
-                const BufferedNetPtr& min_req
-                    = fuzzyLess(p->slack(), q->slack()) ? p : q;
+                const FixedDelay min_slack = std::min(p->slack(), q->slack());
                 BufferedNetPtr junc
                     = make_shared<BufferedNet>(BufferedNetType::junction,
                                                bnet->location(),
@@ -316,7 +317,7 @@ BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
                                                resizer_);
                 junc->setSlackTransition(commonTransition(
                     p->slackTransition(), q->slackTransition()));
-                junc->setSlack(min_req->slack());
+                junc->setSlack(min_slack);
                 Z.push_back(std::move(junc));
               }
             }
@@ -373,9 +374,12 @@ BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
   return best_option;
 }
 
+// Rebuffer.cc
+FixedDelay lerp(FixedDelay a, FixedDelay b, float t);
+
 // Recover area on a rebuffering choice without regressing timing
 BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
-                                       const Delay slack_target,
+                                       const FixedDelay slack_target,
                                        const float alpha)
 {
   using BnetType = BufferedNetType;
@@ -407,7 +411,7 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
         return 0;
       },
       bnet,
-      -slack_correction);
+      -slack_correction* FixedDelaySecond);
 
   BnetSeq Z = visitTree(
       [&](auto& recurse,
@@ -423,8 +427,9 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
             addBuffers(Z,
                        level,
                        true,
-                       (slack_target + bnet->arrivalDelay()) * alpha
-                           + bnet->slack() * (1.0 - alpha));
+                       lerp(bnet->slack(),
+                            (slack_target + bnet->arrivalDelay()),
+                            alpha));
             return Z;
           }
           case BnetType::wire: {
@@ -435,8 +440,9 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
             addBuffers(Z,
                        level,
                        true,
-                       (slack_target + bnet->arrivalDelay()) * alpha
-                           + bnet->slack() * (1.0 - alpha));
+                       lerp(bnet->slack(),
+                            (slack_target + bnet->arrivalDelay()),
+                            alpha));
             return Z;
           }
           case BnetType::junction: {
@@ -445,9 +451,8 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
             BnetSeq Z;
             Z.reserve(Z1.size() * Z2.size());
 
-            const Delay threshold
-                = (slack_target + bnet->arrivalDelay()) * alpha
-                  + bnet->slack() * (1.0 - alpha);
+            const Delay threshold = lerp(
+                bnet->slack(), slack_target + bnet->arrivalDelay(), alpha);
 
             Delay last_resort_slack = -INF;
             const BnetPtr *last_resort_p, *last_resort_q;
@@ -455,15 +460,14 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
             // Combine the options from both branches.
             for (const BnetPtr& p : Z1) {
               for (const BnetPtr& q : Z2) {
-                const BnetPtr& min_req
-                    = fuzzyLess(p->slack(), q->slack()) ? p : q;
+                const FixedDelay min_slack = std::min(p->slack(), q->slack());
 
-                if (Z.empty() && min_req->slack() > last_resort_slack) {
+                if (Z.empty() && min_slack > last_resort_slack) {
                   last_resort_p = &p;
                   last_resort_q = &q;
                 }
 
-                if (fuzzyLess(min_req->slack(), threshold)) {
+                if (min_slack < threshold) {
                   // Filter out an option that doesn't meet local timing
                   // threshold
                   continue;
@@ -473,7 +477,7 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
                     BnetType::junction, bnet->location(), p, q, resizer_);
                 junc->setSlackTransition(commonTransition(
                     p->slackTransition(), q->slackTransition()));
-                junc->setSlack(min_req->slack());
+                junc->setSlack(min_slack);
 
                 debugPrint(logger_,
                            RSZ,
@@ -493,13 +497,12 @@ BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
               // errors), pick at least what came closest
               const BnetPtr& p = *last_resort_p;
               const BnetPtr& q = *last_resort_q;
-              const BnetPtr& min_req
-                  = fuzzyLess(p->slack(), q->slack()) ? p : q;
+              const FixedDelay min_slack = std::min(p->slack(), q->slack());
               auto junc = make_shared<BufferedNet>(
                   BnetType::junction, bnet->location(), p, q, resizer_);
               junc->setSlackTransition(
                   commonTransition(p->slackTransition(), q->slackTransition()));
-              junc->setSlack(min_req->slack());
+              junc->setSlack(min_slack);
 
               debugPrint(logger_,
                          RSZ,
@@ -589,7 +592,7 @@ Delay BufferMove::requiredDelay(const BufferedNetPtr& bnet)
   using BnetType = BufferedNetType;
   using BnetPtr = BufferedNetPtr;
 
-  Delay worst_load_slack = INF;
+  FixedDelay worst_load_slack = FixedDelayINF;
   visitTree(
       [&](auto& recurse, int level, const BnetPtr& bnet) -> int {
         switch (bnet->type()) {
@@ -599,9 +602,7 @@ Delay BufferMove::requiredDelay(const BufferedNetPtr& bnet)
           case BnetType::junction:
             return recurse(bnet->ref()) + recurse(bnet->ref2());
           case BnetType::load:
-            if (bnet->slack() < worst_load_slack) {
-              worst_load_slack = bnet->slack();
-            }
+            worst_load_slack = std::min(bnet->slack(), worst_load_slack);
             return 1;
           default:
             abort();
@@ -609,7 +610,7 @@ Delay BufferMove::requiredDelay(const BufferedNetPtr& bnet)
       },
       bnet);
 
-  return worst_load_slack - bnet->slack();
+  return ((float) (worst_load_slack - bnet->slack())) / FixedDelaySecond;
 }
 
 // Return inserted buffer count.
@@ -857,7 +858,8 @@ Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet,
                                    // Only used for debug print.
                                    const int index)
 {
-  const Delay slack = bnet->slack() + std::get<1>(drvrPinTiming(bnet));
+  const Delay slack = ((float) bnet->slack()) / FixedDelaySecond
+                      + std::get<1>(drvrPinTiming(bnet));
   if (index >= 0) {
     debugPrint(logger_,
                RSZ,
@@ -908,7 +910,8 @@ BufferedNetPtr BufferMove::addWire(const BufferedNetPtr& p,
   const double wire_length = resizer_->dbuToMeters(z->length());
   const double wire_res = wire_length * layer_res;
   const double wire_cap = wire_length * layer_cap;
-  const double wire_delay = wire_res * (wire_cap / 2 + p->cap());
+  const FixedDelay wire_delay
+      = wire_res * (wire_cap / 2 + p->cap()) * FixedDelaySecond;
 
   // account for wire delay
   z->setDelay(wire_delay);
@@ -928,11 +931,11 @@ BufferedNetPtr BufferMove::addWire(const BufferedNetPtr& p,
   return z;
 }
 
-Delay BufferMove::bufferDelay(LibertyCell* cell,
-                              const RiseFallBoth* rf,
-                              float load_cap)
+FixedDelay BufferMove::bufferDelay(LibertyCell* cell,
+                                   const RiseFallBoth* rf,
+                                   float load_cap)
 {
-  Delay delay = 0;
+  FixedDelay delay = 0;
 
   if (rf) {
     for (auto rf1 : rf->range()) {
@@ -944,9 +947,8 @@ Delay BufferMove::bufferDelay(LibertyCell* cell,
       Slew slews[RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
 
-      if (gate_delays[rf1->index()] > delay) {
-        delay = gate_delays[rf1->index()];
-      }
+      FixedDelay rf_delay = gate_delays[rf1->index()] * FixedDelaySecond;
+      delay = std::max(delay, rf_delay);
     }
   }
 
@@ -957,7 +959,7 @@ void BufferMove::addBuffers(
     BufferedNetSeq& Z1,
     const int level,
     const bool area_oriented /*=false*/,
-    const Delay slack_threshold /*=0; used for area mode only*/)
+    const FixedDelay slack_threshold /*=0; used for area mode only*/)
 {
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
@@ -968,17 +970,17 @@ void BufferMove::addBuffers(
       float best_area = std::numeric_limits<float>::max();
       BufferedNetPtr best_option = nullptr;
       BufferedNetPtr best_area_option = nullptr;
-      Delay best_option_delay = 0;
+      FixedDelay best_option_delay = 0;
 
       for (const BufferedNetPtr& z : Z1) {
-        const Delay buffer_delay = bufferDelay(
+        const FixedDelay buffer_delay = bufferDelay(
             buffer_cell, z->slackTransition(), z->cap() + out->capacitance());
 
-        const Delay slack = z->slack() - buffer_delay;
+        const FixedDelay slack = z->slack() - buffer_delay;
         const float buffered_area = z->area() + 1;
 
         if (!area_oriented) {
-          if (fuzzyGreater(slack, best_slack)) {
+          if (slack > best_slack) {
             best_slack = slack;
             best_option_delay = buffer_delay;
             best_option = z;
@@ -986,8 +988,7 @@ void BufferMove::addBuffers(
         } else {
           // In area-oriented mode, anything which meets the slack threshold
           // is OK timing-wise, we can select good area instead
-          if (fuzzyGreaterEqual(slack, slack_threshold)
-              && buffered_area < best_area) {
+          if (slack >= slack_threshold && buffered_area < best_area) {
             best_slack = slack;
             best_area = buffered_area;
             best_option_delay = buffer_delay;
@@ -997,7 +998,7 @@ void BufferMove::addBuffers(
       }
 
       if (best_option) {
-        const Required slack = best_option->slack() - best_option_delay;
+        const FixedDelay slack = best_option->slack() - best_option_delay;
         const float buffer_cap = in->capacitance();
 
         bool prune = false;
@@ -1006,7 +1007,7 @@ void BufferMove::addBuffers(
           // another existing buffer option.
           for (const BufferedNetPtr& buffer_option : buffered_options) {
             if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
-                && fuzzyGreaterEqual(buffer_option->slack(), slack)) {
+                && buffer_option->slack() >= slack) {
               prune = true;
               break;
             }
