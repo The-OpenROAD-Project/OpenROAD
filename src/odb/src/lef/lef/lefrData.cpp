@@ -132,10 +132,7 @@ lefrData::~lefrData()
 
 void lefrData::reset()
 {
-  if (lefData) {
-    delete lefData;
-  }
-
+  delete lefData;
   lefData = new lefrData();
 }
 
