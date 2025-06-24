@@ -2,11 +2,11 @@ module reg1 (clk);
  input clk;
 
 
- BUF_X1 place3 (.A(r1q),
+ BUF_X1 rebuffer3 (.A(r1q),
     .Z(net82));
- BUF_X4 place2 (.A(net82),
+ BUF_X4 rebuffer2 (.A(net82),
     .Z(net84));
- BUF_X2 place1 (.A(net9),
+ BUF_X2 rebuffer1 (.A(net9),
     .Z(net33));
  DFF_X1 r1 (.CK(clk),
     .Q(net83));

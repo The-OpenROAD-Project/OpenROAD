@@ -18,7 +18,7 @@ module td1 (a1,
  output y2;
 
 
- BUF_X4 place1 (.A(net1),
+ BUF_X4 rebuffer1 (.A(net1),
     .Z(net3));
  NAND2_X4 U3 (.A1(a2),
     .A2(a1),

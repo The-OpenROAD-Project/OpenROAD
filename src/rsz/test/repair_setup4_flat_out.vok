@@ -40,10 +40,10 @@ module reg1 (clk);
     .Z(u4z));
  BUF_X1 u5 (.A(u4z),
     .Z(u5z));
- BUF_X2 place1 (.A(net2),
+ BUF_X2 rebuffer1 (.A(net2),
     .Z(net1));
- BUF_X4 place2 (.A(net3),
+ BUF_X4 rebuffer2 (.A(net3),
     .Z(net2));
- BUF_X1 place3 (.A(r1q),
+ BUF_X1 rebuffer3 (.A(r1q),
     .Z(net3));
 endmodule

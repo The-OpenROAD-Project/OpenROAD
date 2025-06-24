@@ -2,19 +2,19 @@ module reg1 (clk);
  input clk;
 
 
- BUF_X1 place11 (.A(net110),
+ BUF_X1 rebuffer11 (.A(net110),
     .Z(net156));
- BUF_X4 place10 (.A(net1),
+ BUF_X4 rebuffer10 (.A(net1),
     .Z(net127));
- BUF_X8 place9 (.A(net1),
+ BUF_X8 rebuffer9 (.A(net1),
     .Z(net150));
  BUF_X8 split8 (.A(net1),
     .Z(net164));
- BUF_X1 place7 (.A(net164),
+ BUF_X1 rebuffer7 (.A(net164),
     .Z(net107));
- BUF_X1 place3 (.A(r1q),
+ BUF_X1 rebuffer3 (.A(r1q),
     .Z(net52));
- BUF_X1 place2 (.A(r1q),
+ BUF_X1 rebuffer2 (.A(r1q),
     .Z(net76));
  BUF_X8 split1 (.A(r1q),
     .Z(net162));
