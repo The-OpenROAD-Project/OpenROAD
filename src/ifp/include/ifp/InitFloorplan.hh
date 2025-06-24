@@ -33,6 +33,11 @@ enum class RowParity
 class InitFloorplan
 {
  public:
+
+  void clearPolygonData();
+  void addDiePolygonPoint(int x, int y);
+  void makePolygonDie();
+  
   InitFloorplan() = default;  // only for swig
   InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
@@ -114,6 +119,7 @@ class InitFloorplan
   odb::dbSite* findSite(const char* site_name);
 
  private:
+  // std::vector<odb::Point> die_polygon_buf_;
   using SitesByName = std::map<std::string, odb::dbSite*>;
 
   double designArea();

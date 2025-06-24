@@ -160,6 +160,22 @@ odb::dbSite* find_site(ord::Design* design,
   return site;
 }
 
+
+void clear_polygon_data(ord::Design* design)
+{
+  design->getFloorplan().clearPolygonData();
+}
+
+void add_die_polygon_point(ord::Design* design, int x, int y)
+{
+  design->getFloorplan().addDiePolygonPoint(x, y);
+}
+
+void make_polygon_die(ord::Design* design)
+{
+  design->getFloorplan().makePolygonDie();
+}
+
 } // namespace
 
 %} // inline

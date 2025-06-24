@@ -61,6 +61,11 @@ using odb::uint;
 using upf::eval_upf;
 
 namespace {
+  // for the polygoin points vector buffer
+  static std::vector<odb::Point> die_polygon_buf_;
+}
+
+namespace {
 void validateCoreSpacing(odb::dbBlock* block,
                          utl::Logger* logger,
                          int core_space_bottom,
@@ -163,6 +168,35 @@ void InitFloorplan::makeDieUtilization(double utilization,
   makeDie({die_lx, die_ly, die_ux, die_uy});
 }
 
+// // make polygonal die
+// void InitFloorplan::clearPolygonData()
+// {
+//   die_polygon_buf_.clear();
+// }
+
+// void InitFloorplan::addDiePolygonPoint(int x, int y)
+// {
+//   die_polygon_buf_.emplace_back(x, y);
+// }
+
+void InitFloorplan::clearPolygonData()
+{
+  logger_->info(IFP, 982, "InitFloorplan object: {} - Clearing polygon buffer. Current size: {}", 
+                (void*)this, die_polygon_buf_.size());
+  die_polygon_buf_.clear();
+  logger_->info(IFP, 983, "InitFloorplan object: {} - Polygon buffer cleared. New size: {}", 
+                (void*)this, die_polygon_buf_.size());
+}
+
+void InitFloorplan::addDiePolygonPoint(int x, int y)
+{
+  logger_->info(IFP, 984, "InitFloorplan object: {} - Adding point ({}, {}) to buffer. Current size: {}", 
+                (void*)this, x, y, die_polygon_buf_.size());
+  die_polygon_buf_.emplace_back(x, y);
+  logger_->info(IFP, 985, "InitFloorplan object: {} - Point added. New buffer size: {}", 
+                (void*)this, die_polygon_buf_.size());
+}
+
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
@@ -170,6 +204,52 @@ void InitFloorplan::makeDie(const odb::Rect& die)
                 snapToMfgGrid(die.xMax()),
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
+}
+
+// void InitFloorplan::makePolygonDie()
+// {
+//   if (die_polygon_buf_.empty()) {
+//     logger_->error(IFP, 80, "No polygon vertices provided. Use addDiePolygonPoint() first.");
+//     return;
+//   }
+
+//   std::vector<odb::Point> mfg_pts;
+//   mfg_pts.reserve(die_polygon_buf_.size());
+//   for (const auto& p : die_polygon_buf_) {
+//     mfg_pts.emplace_back(snapToMfgGrid(p.x()), snapToMfgGrid(p.y()));
+//   }
+  
+//   block_->setDieArea(mfg_pts);
+//   die_polygon_buf_.clear();
+  
+//   logger_->info(IFP, 81, "Created polygon die with {} vertices.", mfg_pts.size());
+// }
+
+void InitFloorplan::makePolygonDie()
+{
+  logger_->info(IFP, 986, "InitFloorplan object: {} - makePolygonDie called. Buffer size: {}", 
+                (void*)this, die_polygon_buf_.size());
+  
+  if (die_polygon_buf_.empty()) {
+    logger_->error(IFP, 987, "InitFloorplan object: {} - No polygon vertices provided. Use addDiePolygonPoint() first.", 
+                   (void*)this);
+    return;
+  }
+
+  logger_->info(IFP, 988, "InitFloorplan object: {} - Processing {} polygon vertices", 
+                (void*)this, die_polygon_buf_.size());
+  
+  std::vector<odb::Point> mfg_pts;
+  mfg_pts.reserve(die_polygon_buf_.size());
+  for (const auto& p : die_polygon_buf_) {
+    mfg_pts.emplace_back(snapToMfgGrid(p.x()), snapToMfgGrid(p.y()));
+  }
+  
+  block_->setDieArea(mfg_pts);
+  die_polygon_buf_.clear();
+  
+  logger_->info(IFP, 989, "InitFloorplan object: {} - Created polygon die with {} vertices.", 
+                (void*)this, mfg_pts.size());
 }
 
 double InitFloorplan::designArea()
