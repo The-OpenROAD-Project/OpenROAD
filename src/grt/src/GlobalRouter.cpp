@@ -661,7 +661,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
     }
-    net->setMergedNet(false);
+    net->setIsMergedNet(false);
     net->setDirtyNet(false);
     net->clearLastPinPositions();
   }
@@ -3573,7 +3573,7 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
   if (net != nullptr && net->isMergedNet()) {
-    fastroute_->mergeNet(db_net);
+    fastroute_->mergeNet(db_net, net->getMergedNet());
   } else {
     fastroute_->removeNet(db_net);
   }
@@ -4227,8 +4227,10 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   // Do not merge the routing if the survivor net is already dirty
   if (!net1->isDirtyNet()) {
     connectRouting(db_net1, db_net2);
-    net1->setMergedNet(true);
-    net2->setMergedNet(true);
+    net1->setIsMergedNet(true);
+    net1->setMergedNet(db_net2);
+    net2->setIsMergedNet(true);
+    net2->setMergedNet(db_net1);
   }
 }
 
