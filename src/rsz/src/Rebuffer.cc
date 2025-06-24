@@ -1244,7 +1244,7 @@ void Rebuffer::insertBufferOptions(
     pass_through(in->capacitance());
 
     BnetPtr load_opt;
-    FixedDelay load_opt_buffer_delay;
+    FixedDelay load_opt_buffer_delay = 0;
     auto it = (new_opts.empty() && opts_iter == opts.end()
                && opts_iter > opts.begin())
                   ? (opts_iter - 1)
