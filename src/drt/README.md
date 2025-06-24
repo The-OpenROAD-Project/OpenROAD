@@ -116,6 +116,7 @@ detailed_route_debug
     [-pa_markers]
     [-dump_dr]
     [-dump_dir dir]
+    [-snapshot_dir dir]
     [-dump_last_worker]
     [-pa_edge]
     [-pa_commit]
@@ -138,6 +139,7 @@ detailed_route_debug
 | `-pa_markers` | Enable pin access markers. |
 | `-dump_dr` | Filename for detailed routing dump. |
 | `-dump_dir` | Directory for detailed routing dump. |
+| `-snapshot_dir` | Directory for snapshots produced if the debug level of `DRT snapshot` is set to 1. |
 | `-pa_edge` | Enable visibility of pin access edges. |
 | `-pa_commit` | Enable visibility of pin access commits. |
 | `-write_net_tracks` | Enable writing of net track assigments. |

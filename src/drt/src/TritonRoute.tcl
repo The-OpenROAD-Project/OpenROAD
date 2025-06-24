@@ -186,6 +186,7 @@ sta::define_cmd_args "detailed_route_debug" {
     [-pa_markers]
     [-dump_dr]
     [-dump_dir dir]
+    [-snapshot_dir dir]
     [-pa_edge]
     [-pa_commit]
     [-write_net_tracks]
