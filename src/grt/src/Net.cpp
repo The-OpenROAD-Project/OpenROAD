@@ -18,7 +18,8 @@ Net::Net(odb::dbNet* net, bool has_wires)
     : net_(net),
       slack_(0),
       has_wires_(has_wires),
-      merged_net_(false),
+      merged_net_(nullptr),
+      is_merged_net_(false),
       is_dirty_net_(false)
 {
 }
