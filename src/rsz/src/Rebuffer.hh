@@ -101,7 +101,8 @@ class Rebuffer : public sta::dbStaState
                        int level,
                        Instance* parent_in,
                        odb::dbITerm* mod_net_drvr,
-                       odb::dbModNet* mod_net_in);
+                       odb::dbModNet* mod_net_in,
+                       const char* instance_base_name);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
