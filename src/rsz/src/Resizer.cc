@@ -3375,7 +3375,7 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
 {
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
-  return cellWireDelay(drvr_port, load_port, wire_length, sta, delay, slew);
+  cellWireDelay(drvr_port, load_port, wire_length, sta, delay, slew);
 }
 
 // Cell delay plus wire delay.

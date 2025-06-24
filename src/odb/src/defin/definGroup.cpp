@@ -12,20 +12,6 @@
 #include "utl/Logger.h"
 namespace odb {
 
-definGroup::definGroup() : cur_group_(nullptr)
-{
-  init();
-}
-
-definGroup::~definGroup()
-{
-}
-
-void definGroup::init()
-{
-  definBase::init();
-}
-
 void definGroup::begin(const char* name)
 {
   cur_group_ = _block->findGroup(name);

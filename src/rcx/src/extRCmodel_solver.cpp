@@ -91,8 +91,8 @@ int extSolverGen::getLastCharInt(const char* name)
     int n = atoi(word);
 
     return n;
-  } else
-    return -1;
+  }
+  return -1;
 }
 bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
                                            extMeasure& m,
@@ -115,10 +115,7 @@ bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
     return false;  // old files; should NOT happen
 
   if (m._res) {
-    if (wire_num != 0)  // for Resistance, wire is 0
-      return false;
-    else
-      return true;
+    return wire_num == 0;  // for Resistance, wire is 0
   }
 
   // for OpenEnded patterns: Over1, Under1, etc, wire is 1

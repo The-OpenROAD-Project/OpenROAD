@@ -188,10 +188,9 @@ bool extMain::couplingExtEnd_v2()
                   numOfCapNode,
                   numOfCCSeg);
     return true;
-  } else {
-    logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
-    return false;
   }
+  logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
+  return false;
 }
 void extMain::update_wireAltered_v2(std::vector<dbNet*>& inets)
 {
@@ -226,13 +225,13 @@ void extMain::setExtractionOptions_v2(ExtractOptions options)
   _metal_flag_22 = 0;
   // fprintf(stdout, "RC Flow Version %5.3f enabled\n", _version);
   // notice(0, "RC Flow Version %5.3f enabled\n", _version);
-  if (abs(options._version - 2.2) < 0.001) {
+  if (std::fabs(options._version - 2.2) < 0.001) {
     _metal_flag_22 = 2;
     fprintf(stdout,
             "Version %5.3f enabled new RC calc flow for lower 2 metals\n",
             options._version);
   }
-  if (abs(options._version - 2.3) < 0.001) {
+  if (std::fabs(options._version - 2.3) < 0.001) {
     _metal_flag_22 = 3;
     fprintf(stdout,
             "Version %5.3f enabled new RC calc flow for lower 2 metals\n",

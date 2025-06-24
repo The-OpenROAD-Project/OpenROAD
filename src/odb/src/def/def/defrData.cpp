@@ -53,7 +53,6 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       PinCap(),
       CannotOccupy(this),
       Canplace(this),
-      DieArea(),
       Pin(this),
       Row(this),
       Track(this),
@@ -72,7 +71,6 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       Slot(this),
       Fill(this),
       NonDefault(this),
-      Styles(),
       Geometries(this),
       session(pSession),
       settings(pSettings),
@@ -101,7 +99,6 @@ defrData::defrData(const defrCallbacks* pCallbacks,
   }
 
   nlines = 1;
-  last = buffer - 1;
   next = buffer;
   first_buffer = 1;
 
