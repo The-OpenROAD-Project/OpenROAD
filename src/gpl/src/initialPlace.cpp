@@ -110,12 +110,11 @@ void InitialPlace::placeInstsCenter()
         }
         inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin) / 2,
                                 domain_yMax - (domain_yMax - domain_yMin) / 2);
-        // } else if (ipVars_.maxIter == 0 && db_inst->isPlaced()) {
-        //   // It is helpful to pick up the placement from mpl if available,
-        //   // particularly when you are going to skip initial placement
-        //   // (eg skip_io).
-        //   const auto bbox = db_inst->getBBox()->getBox();
-        //   inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
+      } else if (pbc_->skipIoMode() && db_inst->isPlaced()) {
+        // It is helpful to pick up the placement from mpl if available,
+        // particularly when you are going to run skip_io.
+        const auto bbox = db_inst->getBBox()->getBox();
+        inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
       } else {
         inst->setCenterLocation(centerX, centerY);
       }
