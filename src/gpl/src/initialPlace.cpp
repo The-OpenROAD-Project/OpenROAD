@@ -137,6 +137,8 @@ void InitialPlace::placeInstsCenter()
                               domain_y_max - (domain_y_max - domain_y_min) / 2);
       ++count_region_center;
     } else if (pbc_->skipIoMode() && db_inst->isPlaced()) {
+      // It is helpful to pick up the placement from mpl if available,
+      // particularly when you are going to run skip_io.
       const auto bbox = db_inst->getBBox()->getBox();
       inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
       ++count_db_location;
