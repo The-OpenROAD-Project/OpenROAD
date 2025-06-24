@@ -313,6 +313,7 @@ struct frDebugSettings
   bool paEdge{false};
   bool paCommit{false};
   std::string dumpDir;
+  std::string snapshotDir{"."};
 
   int mazeEndIter{-1};
   int drcCost{-1};

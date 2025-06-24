@@ -141,6 +141,7 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool pa_edge,
                              bool pa_commit,
                              const char* dumpDir,
+                             const char* snapshotDir,
                              bool ta,
                              bool write_net_tracks,
                              bool dump_last_worker)
@@ -150,6 +151,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
   router->setDebugDumpDR(dump_dr, dumpDir);
+  router->setDebugSnapshotDir(snapshotDir);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   router->setDebugBox(x1, y1, x2, y2);

@@ -193,7 +193,7 @@ sta::define_cmd_args "detailed_route_debug" {
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-    keys {-net -iter -pin -dump_dir -box} \
+    keys {-net -iter -pin -dump_dir -snapshot_dir -box} \
     flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta \
            -write_net_tracks -dump_last_worker}
 
@@ -214,6 +214,12 @@ proc detailed_route_debug { args } {
     set net_name $keys(-net)
   } else {
     set net_name ""
+  }
+
+  if { [info exists keys(-snapshot_dir)] } {
+    set snapshot_dir $keys(-snapshot_dir)
+  } else {
+    set snapshot_dir "."
   }
 
   if { [info exists keys(-pin)] } {
@@ -252,7 +258,7 @@ proc detailed_route_debug { args } {
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
     $box_x1 $box_y1 $box_x2 $box_y2 $iter $pa_markers $pa_edge $pa_commit \
-    $dump_dir $ta $write_net_tracks $dump_last_worker
+    $dump_dir $snapshot_dir $ta $write_net_tracks $dump_last_worker
 }
 
 sta::define_cmd_args "pin_access" {
