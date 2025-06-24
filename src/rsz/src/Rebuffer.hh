@@ -36,7 +36,7 @@ class RepairSetup;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
-typedef int64_t FixedDelay;
+using FixedDelay = int64_t;
 
 class Rebuffer : public sta::dbStaState
 {

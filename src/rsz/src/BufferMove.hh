@@ -23,7 +23,7 @@ using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
 
-typedef int64_t FixedDelay;
+using FixedDelay = int64_t;
 
 class BufferMove : public BaseMove
 {

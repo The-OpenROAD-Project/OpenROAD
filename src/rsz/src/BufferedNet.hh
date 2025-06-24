@@ -41,7 +41,7 @@ class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using Requireds = std::array<Required, RiseFall::index_count>;
 
-typedef int64_t FixedDelay;
+using FixedDelay = int64_t;
 const double FixedDelaySecond = 1.0e15;
 // 100 seconds is an eternity
 const FixedDelay FixedDelayINF = 100 * FixedDelaySecond;
