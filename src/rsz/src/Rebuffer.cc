@@ -1777,13 +1777,15 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                int level,
                                Instance* parent_in,
                                odb::dbITerm* mod_net_drvr,
-                               odb::dbModNet* mod_net_in)
+                               odb::dbModNet* mod_net_in,
+                               const char* instance_base_name)
 {
   // HFix, pass in the parent
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name = resizer_->makeUniqueInstName("place");
+      std::string buffer_name
+          = resizer_->makeUniqueInstName(instance_base_name);
 
       // HFix: make net in hierarchy
       std::string net_name = resizer_->makeUniqueNetName();
@@ -1843,15 +1845,25 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         buffer_op_iterm->connect(mod_net_in);
       }
 
-      int buffer_count = exportBufferTree(
-          choice->ref(), net2, level + 1, parent, buffer_op_iterm, mod_net_in);
+      int buffer_count = exportBufferTree(choice->ref(),
+                                          net2,
+                                          level + 1,
+                                          parent,
+                                          buffer_op_iterm,
+                                          mod_net_in,
+                                          instance_base_name);
       return buffer_count + 1;
     }
 
     case BufferedNetType::wire:
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
-      return exportBufferTree(
-          choice->ref(), net, level + 1, parent, mod_net_drvr, mod_net_in);
+      return exportBufferTree(choice->ref(),
+                              net,
+                              level + 1,
+                              parent,
+                              mod_net_drvr,
+                              mod_net_in,
+                              instance_base_name);
 
     case BufferedNetType::junction: {
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
@@ -1860,13 +1872,15 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                               level + 1,
                               parent,
                               mod_net_drvr,
-                              mod_net_in)
+                              mod_net_in,
+                              instance_base_name)
              + exportBufferTree(choice->ref2(),
                                 net,
                                 level + 1,
                                 parent,
                                 mod_net_drvr,
-                                mod_net_in);
+                                mod_net_in,
+                                instance_base_name);
     }
 
     case BufferedNetType::load: {
@@ -2329,7 +2343,8 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
                             1,
                             parent,
                             drvr_op_iterm,
-                            (propagate_mod_net ? db_modnet : nullptr));
+                            (propagate_mod_net ? db_modnet : nullptr),
+                            "place");
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);
@@ -2562,7 +2577,8 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
                            1,
                            parent,
                            drvr_op_iterm,
-                           (propagate_mod_net ? db_modnet : nullptr));
+                           (propagate_mod_net ? db_modnet : nullptr),
+                           "rebuffer");
 
     if (inserted_count > 0) {
       resizer_->level_drvr_vertices_valid_ = false;
