@@ -12,6 +12,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -828,7 +829,7 @@ void TritonRoute::sendDesignDist()
     std::string router_cfg_path
         = fmt::format("{}DESIGN.router_cfg", shared_volume_);
 
-    db_->write(utl::StreamHandler(design_path.c_str(), true).getStream());
+    db_->write(utl::OutStreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -946,10 +947,8 @@ int TritonRoute::main()
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
-  asio::thread_pool pa_pool(1);
-  if (!distributed_) {
-    pa_pool.join();
-  }
+  std::unique_ptr<std::thread> pa_thread;
+
   if (debug_->debugDumpDR) {
     std::string router_cfg_path
         = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
@@ -957,7 +956,7 @@ int TritonRoute::main()
   }
   if (distributed_) {
     if (router_cfg_->DO_PA) {
-      asio::post(pa_pool, [this]() {
+      pa_thread = std::make_unique<std::thread>([this]() {
         sendDesignDist();
         dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
                             dst::JobMessage::BROADCAST),
@@ -993,7 +992,9 @@ int TritonRoute::main()
     if (debug_->debugPA) {
       pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
     }
-    pa_pool.join();
+    if (pa_thread) {
+      pa_thread->join();
+    }
     pa_->main();
     /// bookmark
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
@@ -1010,7 +1011,7 @@ int TritonRoute::main()
     }
   }
   if (debug_->debugDumpDR) {
-    db_->write(utl::StreamHandler(
+    db_->write(utl::OutStreamHandler(
                    fmt::format("{}/design.odb", debug_->dumpDir).c_str(), true)
                    .getStream());
   }

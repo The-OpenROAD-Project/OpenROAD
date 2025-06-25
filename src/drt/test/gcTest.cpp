@@ -214,9 +214,9 @@ BOOST_DATA_TEST_CASE(min_cut,
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -459,9 +459,9 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -748,10 +748,11 @@ BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
 BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {
   // Setup
-  if (lef58)
+  if (lef58) {
     makeLef58SpacingEolConstraint(2);
-  else
+  } else {
     makeSpacingEndOfLineConstraint(2);
+  }
 
   frNet* n1 = makeNet("n1");
 
@@ -858,15 +859,16 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
-    if (markers.size() == 1)
+    if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58EolExtensionConstraint,
                  Rect(500, 50, 690, 150));
+    }
   }
 }
 
@@ -923,9 +925,9 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (parOnly)
+  if (parOnly) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -943,17 +945,18 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
 
   makePathseg(n1, 2, {500, 0}, {500, 500});
   frCoord x_extra = 0;
-  if (legal)
+  if (legal) {
     x_extra = 200;
+  }
   makePathseg(n1, 2, {400 + x_extra, 700}, {700 + x_extra, 700});
 
   runGC();
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -991,19 +994,21 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
 
   makePathseg(n1, 2, {500, 0}, {500, 500});
   frCoord x_extra = 0;
-  if (concave && !legal)
+  if (concave && !legal) {
     makePathseg(n1, 2, {360, 400}, {360, 750});
-  if (!concave && !legal)
+  }
+  if (!concave && !legal) {
     x_extra = 10;
+  }
   makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
 
   runGC();
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -1017,12 +1022,13 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
 BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
-  if (lef58)
+  if (lef58) {
     makeLef58SpacingEolParEdgeConstraint(
         makeLef58SpacingEolConstraint(2), 200, 200);
-  else
+  } else {
     makeSpacingEndOfLineConstraint(
         2, /* par_space */ 200, /* par_within */ 200);
+  }
 
   frNet* n1 = makeNet("n1");
 
@@ -1047,14 +1053,15 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
-  if (lef58)
+  if (lef58) {
     makeLef58SpacingEolParEdgeConstraint(
         makeLef58SpacingEolConstraint(2), 200, 200, true);
-  else
+  } else {
     makeSpacingEndOfLineConstraint(2,
                                    /* par_space */ 200,
                                    /* par_within */ 200,
                                    /* two_edges */ true);
+  }
 
   frNet* n1 = makeNet("n1");
 
@@ -1090,18 +1097,20 @@ BOOST_DATA_TEST_CASE(eol_min_max,
                  // triggered and one of them need to violate minMax for
                  // eolSpacing to be neglected
   {
-    if (max && legal)
+    if (max && legal) {
       y += 10;  // right(510) > std::max(500) --> minMax violated --> legal
-    else if (!max && !legal)
+    } else if (!max && !legal) {
       y += 100;  // right(600) & left(500) >= std::min(500) --> minMax is met
                  // --> illegal
+    }
   } else if (legal)  // both sides need to violate minMax to have no
                      // eolSpacing violations
   {
-    if (max)
+    if (max) {
       y += 110;  // right(610) & left(510) > std::max(500)
-    else
+    } else {
       y -= 10;  // right(490) & left(390) < std::min(500)
+    }
   }
   makePathseg(n1, 2, {500, 0}, {500, y});
   makePathseg(n1, 2, {0, 700}, {1000, 700});
@@ -1111,15 +1120,16 @@ BOOST_DATA_TEST_CASE(eol_min_max,
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
-    if (markers.size() == 1)
+    if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
                  Rect(450, y, 550, 650));
+    }
   }
 }
 BOOST_DATA_TEST_CASE(eol_enclose_cut,
@@ -1138,15 +1148,16 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
   makeVia(vd, n1, {400, y});
   runGC();
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
-    if (markers.size() == 1)
+    if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  4,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
                  Rect(450, 500, 550, 650));
+    }
   }
 }
 

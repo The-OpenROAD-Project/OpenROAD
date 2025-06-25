@@ -9,11 +9,17 @@ package(
     features = ["layering_check"],
 )
 
-# Broken out due to cyclic dependency between grt and ant
 cc_library(
     name = "types",
-    hdrs = ["include/ant/GlobalRouteSource.hh"],
-    includes = ["include"],
+    hdrs = [
+        "include/ant/AntennaChecker.hh"
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//src/odb",
+    ],
 )
 
 cc_library(
@@ -23,15 +29,14 @@ cc_library(
         "src/PinType.hh",
         "src/Polygon.cc",
         "src/Polygon.hh",
-    ],
-    hdrs = [
-        "include/ant/AntennaChecker.hh",
-    ],
-    includes = [
-        "include",
+        "src/WireBuilder.cc",
+        "src/WireBuilder.hh",
     ],
     copts = [
         "-fopenmp",
+    ],
+    includes = [
+        "include",
     ],
     deps = [
         ":types",
@@ -53,13 +58,11 @@ cc_library(
     ],
     hdrs = [
         "include/ant/AntennaChecker.hh",
-        "include/ant/GlobalRouteSource.hh",
         "include/ant/MakeAntennaChecker.hh",
     ],
     includes = ["include"],
     deps = [
         "//:ord",
-        "//src/grt:types",
         "//src/odb",
         "//src/utl",
         "@tk_tcl//:tcl",

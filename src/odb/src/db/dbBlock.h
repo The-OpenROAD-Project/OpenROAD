@@ -22,8 +22,6 @@
 namespace odb {
 
 template <class T>
-class dbTable;
-template <class T>
 class dbArrayTable;
 class _dbProperty;
 class dbPropertyItr;
@@ -99,10 +97,11 @@ class dbGroupPowerNetItr;
 class dbGroupGroundNetItr;
 class dbSWireItr;
 class dbNameServer;
+template <uint page_size>
 class dbBoxItr;
 class dbSBoxItr;
-class dbCapNodeItr;  // DKF
-class dbRSegItr;     // DKF
+class dbCapNodeItr;
+class dbRSegItr;
 class dbCCSegItr;
 class dbExtControl;
 class dbIStream;
@@ -197,12 +196,12 @@ class _dbBlock : public _dbObject
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
-  dbTable<_dbITerm>* _iterm_tbl;
+  dbTable<_dbITerm, 1024>* _iterm_tbl;
   dbTable<_dbNet>* _net_tbl;
   dbTable<_dbInstHdr>* _inst_hdr_tbl;
   dbTable<_dbInst>* _inst_tbl;
-  dbTable<_dbBox>* _box_tbl;
-  dbTable<_dbVia>* _via_tbl;
+  dbTable<_dbBox, 1024>* _box_tbl;
+  dbTable<_dbVia, 1024>* _via_tbl;
   dbTable<_dbGCellGrid>* _gcell_grid_tbl;
   dbTable<_dbTrackGrid>* _track_grid_tbl;
   dbTable<_dbObstruction>* _obstruction_tbl;
@@ -212,11 +211,11 @@ class _dbBlock : public _dbObject
   dbTable<_dbSBox>* _sbox_tbl;
   dbTable<_dbRow>* _row_tbl;
   dbTable<_dbFill>* _fill_tbl;
-  dbTable<_dbRegion>* _region_tbl;
-  dbTable<_dbHier>* _hier_tbl;
+  dbTable<_dbRegion, 32>* _region_tbl;
+  dbTable<_dbHier, 16>* _hier_tbl;
   dbTable<_dbBPin>* _bpin_tbl;
-  dbTable<_dbTechNonDefaultRule>* _non_default_rule_tbl;
-  dbTable<_dbTechLayerRule>* _layer_rule_tbl;
+  dbTable<_dbTechNonDefaultRule, 16>* _non_default_rule_tbl;
+  dbTable<_dbTechLayerRule, 16>* _layer_rule_tbl;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbModule>* _module_tbl;
   dbTable<_dbPowerDomain>* _powerdomain_tbl;
@@ -231,7 +230,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbGuide>* _guide_tbl;
   dbTable<_dbNetTrack>* _net_tracks_tbl;
   _dbNameCache* _name_cache;
-  dbTable<_dbDft>* _dft_tbl;
+  dbTable<_dbDft, 4096>* _dft_tbl;
   dbTable<_dbMarkerCategory>* _marker_categories_tbl;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
@@ -243,16 +242,16 @@ class _dbBlock : public _dbObject
   dbTable<_dbModNet>* _modnet_tbl;
   dbTable<_dbBusPort>* _busport_tbl;
 
-  dbTable<_dbCapNode>* _cap_node_tbl;
-  dbTable<_dbRSeg>* _r_seg_tbl;
-  dbTable<_dbCCSeg>* _cc_seg_tbl;
+  dbTable<_dbCapNode, 4096>* _cap_node_tbl;
+  dbTable<_dbRSeg, 4096>* _r_seg_tbl;
+  dbTable<_dbCCSeg, 4096>* _cc_seg_tbl;
   dbExtControl* _extControl;
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS
   dbNetBTermItr* _net_bterm_itr;
   dbNetITermItr* _net_iterm_itr;
   dbInstITermItr* _inst_iterm_itr;
-  dbBoxItr* _box_itr;
+  dbBoxItr<1024>* _box_itr;
   dbSWireItr* _swire_itr;
   dbSBoxItr* _sbox_itr;
   dbCapNodeItr* _cap_node_itr;

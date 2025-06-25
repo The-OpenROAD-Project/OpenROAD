@@ -58,6 +58,7 @@ cc_library(
         "@boost.container",
         "@boost.fusion",
         "@boost.geometry",
+        "@boost.integer",
         "@boost.iostreams",
         "@boost.lambda",
         "@boost.optional",

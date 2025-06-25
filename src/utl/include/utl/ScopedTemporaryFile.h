@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <climits>
 #include <cstdio>
 #include <fstream>
+#include <memory>
 #include <string>
 
 #include "utl/Logger.h"
@@ -38,18 +40,37 @@ class ScopedTemporaryFile
   FILE* file_;
 };
 
-class StreamHandler
+class OutStreamHandler
 {
  public:
   // Set binary to true to open in binary mode
-  StreamHandler(const char* filename, bool binary = false);
-  ~StreamHandler();
-  std::ofstream& getStream();
+  OutStreamHandler(const char* filename, bool binary = false);
+  ~OutStreamHandler();
+  std::ostream& getStream();
 
  private:
   std::string filename_;
   std::string tmp_filename_;
   std::ofstream os_;
+
+  std::unique_ptr<boost::iostreams::filtering_ostreambuf> buf_;
+  std::unique_ptr<std::ostream> stream_;
+};
+
+class InStreamHandler
+{
+ public:
+  // Set binary to true to open in binary mode
+  InStreamHandler(const char* filename, bool binary = false);
+  ~InStreamHandler();
+  std::istream& getStream();
+
+ private:
+  std::string filename_;
+  std::ifstream is_;
+
+  std::unique_ptr<boost::iostreams::filtering_istreambuf> buf_;
+  std::unique_ptr<std::istream> stream_;
 };
 
 class FileHandler

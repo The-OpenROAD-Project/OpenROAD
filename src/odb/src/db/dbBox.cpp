@@ -994,6 +994,35 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   return (dbBox*) box;
 }
 
+void dbBox::destroy(dbBox* box)
+{
+  _dbBox* db_box = (_dbBox*) box;
+  switch (db_box->_flags._owner_type) {
+    case dbBoxOwner::BPIN: {
+      _dbBPin* pin = (_dbBPin*) box->getBoxOwner();
+      pin->removeBox(db_box);
+      _dbBlock* block = (_dbBlock*) pin->getOwner();
+      block->remove_rect(db_box->_shape._rect);
+      block->_box_tbl->destroy(db_box);
+      break;
+    }
+    case dbBoxOwner::UNKNOWN:
+    case dbBoxOwner::BLOCK:
+    case dbBoxOwner::INST:
+    case dbBoxOwner::BTERM:
+    case dbBoxOwner::VIA:
+    case dbBoxOwner::OBSTRUCTION:
+    case dbBoxOwner::SWIRE:
+    case dbBoxOwner::BLOCKAGE:
+    case dbBoxOwner::MASTER:
+    case dbBoxOwner::MPIN:
+    case dbBoxOwner::TECH_VIA:
+    case dbBoxOwner::REGION:
+    case dbBoxOwner::PBOX:
+      return;
+  }
+}
+
 dbBox* dbBox::getBox(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;

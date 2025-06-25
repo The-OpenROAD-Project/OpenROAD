@@ -61,6 +61,15 @@ if(USE_SYSTEM_OPENSTA)
   endif()
   include_directories(${OPENSTA_INCLUDE_DIR})
   message(STATUS "Using OPENSTA_INCLUDE_DIR=${OPENSTA_INCLUDE_DIR}")
+  add_library(OpenSTA STATIC IMPORTED)
+  set_target_properties(OpenSTA PROPERTIES
+    IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
+  )
+  if(CUDD_LIB)
+    set_target_properties(OpenSTA PROPERTIES 
+      INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
+    )
+  endif()
 else()
   # local build of opensta
   set(OPENSTA_LIBRARY "sta_swig")
@@ -135,7 +144,7 @@ if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
 endif()
 include(UseSWIG)
 
-find_package(Boost REQUIRED COMPONENTS iostreams)
+find_package(Boost REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
 
 if (ENABLE_TESTS)

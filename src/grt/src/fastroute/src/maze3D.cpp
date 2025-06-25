@@ -44,12 +44,14 @@ static void heapify3D(std::vector<int*>& array)
     int smallest;
     if (l < heapSize && *(array[l]) < *tmp) {
       smallest = l;
-      if (r < heapSize && *(array[r]) < *(array[l]))
+      if (r < heapSize && *(array[r]) < *(array[l])) {
         smallest = r;
+      }
     } else {
       smallest = i;
-      if (r < heapSize && *(array[r]) < *tmp)
+      if (r < heapSize && *(array[r]) < *tmp) {
         smallest = r;
+      }
     }
     if (smallest != i) {
       array[i] = array[smallest];

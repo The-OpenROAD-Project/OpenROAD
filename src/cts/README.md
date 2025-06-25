@@ -68,6 +68,7 @@ clock_tree_synthesis
     [-delay_buffer_derate derate_value]
     [-library liberty_library_name]
     [-repair_clock_nets]
+    [-no_insertion_delay]
 ```
 
 #### Options
@@ -97,6 +98,7 @@ clock_tree_synthesis
 | `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default value is `1.0`, meaning all needed delay buffers are inserted.  A value of 0.5 means only half of necessary delay buffers are inserted.  A value of 0.0 means no insertion of delay buffers. |
 | `-library` | This option specifies the name of Liberty library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
 | `-repair_clock_nets` | This option includes fixing long wires inside CTS prior to latency adjustment with delay buffers. This can lead to a more balanced clock tree.  The default is not to perform clock net repair. |
+| `-no_insertion_delay` | Ignore sink insertion delay in clock tree construction and balancing. |
 
 #### Instance Name Prefixes
 

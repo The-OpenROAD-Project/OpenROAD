@@ -1376,8 +1376,9 @@ void MainWindow::showFindDialog()
 
 void MainWindow::showGotoDialog()
 {
-  if (getBlock() == nullptr)
+  if (getBlock() == nullptr) {
     return;
+  }
 
   goto_dialog_->show_init();
 }

@@ -142,12 +142,11 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
 
 _dbTech* _dbTechNonDefaultRule::getTech()
 {
-#if 0  // dead code generates warnings -cherry
-    if (_flags._block_rule == 0)
-        (_dbTech *) getOwner();
-#endif
+  if (_flags._block_rule == 0) {
+    return (_dbTech*) getOwner();
+  }
 
-  return (_dbTech*) getDb()->getTech();
+  return (_dbTech*) getBlock()->getTech();
 }
 
 _dbBlock* _dbTechNonDefaultRule::getBlock()
@@ -221,22 +220,21 @@ void dbTechNonDefaultRule::getLayerRules(
     std::vector<dbTechLayerRule*>& layer_rules)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  dbTable<_dbTechLayerRule>* layer_rule_tbl = nullptr;
-
-  if (rule->_flags._block_rule == 0) {
-    _dbTech* tech = rule->getTech();
-    layer_rule_tbl = tech->_layer_rule_tbl;
-  } else {
-    _dbBlock* block = rule->getBlock();
-    layer_rule_tbl = block->_layer_rule_tbl;
-  }
 
   layer_rules.clear();
 
-  for (const auto& id : rule->_layer_rules) {
-    if (id.isValid()) {
-      layer_rules.push_back((dbTechLayerRule*) layer_rule_tbl->getPtr(id));
+  auto add_rules = [rule, &layer_rules](auto& tbl) {
+    for (const auto& id : rule->_layer_rules) {
+      if (id.isValid()) {
+        layer_rules.push_back((dbTechLayerRule*) tbl->getPtr(id));
+      }
     }
+  };
+
+  if (rule->_flags._block_rule == 0) {
+    add_rules(rule->getTech()->_layer_rule_tbl);
+  } else {
+    add_rules(rule->getBlock()->_layer_rule_tbl);
   }
 }
 

@@ -750,8 +750,9 @@ void FlexDR::processWorkersBatchDistributed(
   {
     ProfileTask task("DIST: SERIALIZE+SEND");
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
+    for (int i = 0; i < distWorkerBatches.size(); i++) {  // NOLINT
       sendWorkers(distWorkerBatches.at(i), workers_batch);
+    }
   }
   std::vector<std::pair<int, std::string>> workers;
   router_->getWorkerResults(workers);
@@ -1860,9 +1861,9 @@ int FlexDR::main()
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
 
-      db_->write(
-          utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
-              .getStream());
+      db_->write(utl::OutStreamHandler(
+                     fmt::format("drt_iter{}.odb", iter_).c_str(), true)
+                     .getStream());
     }
     if (reporter->incrementProgress()) {
       break;

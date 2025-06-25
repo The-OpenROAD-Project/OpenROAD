@@ -392,27 +392,37 @@ void lefiVia::Destroy()
 {
   clear();
   lefFree(name_);
-  if (layers_)
+  if (layers_) {
     lefFree(layers_);
+  }
   layers_ = nullptr;
-  if (propName_)
+  if (propName_) {
     lefFree(propName_);
-  if (propValue_)
+  }
+  if (propValue_) {
     lefFree(propValue_);
-  if (propDValue_)
+  }
+  if (propDValue_) {
     lefFree(propDValue_);
-  if (propType_)
+  }
+  if (propType_) {
     lefFree(propType_);
-  if (viaRuleName_)
+  }
+  if (viaRuleName_) {
     lefFree(viaRuleName_);
-  if (botLayer_)
+  }
+  if (botLayer_) {
     lefFree(botLayer_);
-  if (cutLayer_)
+  }
+  if (cutLayer_) {
     lefFree(cutLayer_);
-  if (topLayer_)
+  }
+  if (topLayer_) {
     lefFree(topLayer_);
-  if (cutPattern_)
+  }
+  if (cutPattern_) {
     lefFree(cutPattern_);
+  }
   propName_ = nullptr;
   propValue_ = nullptr;
   propDValue_ = nullptr;
@@ -462,8 +472,9 @@ lefiVia* lefiVia::clone()
       if (propValue_[i]) {
         v->propValue_[i] = (char*) lefMalloc(strlen(propValue_[i]) + 1);
         strcpy(v->propValue_[i], propValue_[i]);
-      } else
+      } else {
         v->propValue_[i] = nullptr;
+      }
       v->propDValue_[i] = propDValue_[i];
       v->propType_[i] = propType_[i];
     }
@@ -475,35 +486,41 @@ lefiVia* lefiVia::clone()
   }
   v->layersAllocated_ = layersAllocated_;
   v->numLayers_ = numLayers_;
-  if (numLayers_ > 0)
+  if (numLayers_ > 0) {
     v->layers_ = (lefiViaLayer**) lefMalloc(sizeof(lefiViaLayer*) * numLayers_);
-  else  // still malloc the memory because lefiVia::Init does
+  } else {  // still malloc the memory because lefiVia::Init does
     v->layers_ = (lefiViaLayer**) lefMalloc(sizeof(lefiViaLayer*) * 2);
+  }
   for (i = 0; i < numLayers_; i++) {
     l = layers_[i];
     v->layers_[i] = l->clone();
   }
   v->resistance_ = resistance_;
-  if (foreignOrient_ == 0)
+  if (foreignOrient_ == 0) {
     v->foreignOrient_ = -1;
-  else
+  } else {
     v->foreignOrient_ = foreignOrient_;
+  }
 
   v->viaRuleName_ = nullptr;
   v->botLayer_ = nullptr;
   v->cutLayer_ = nullptr;
   v->topLayer_ = nullptr;
   v->cutPattern_ = nullptr;
-  if (viaRuleName_)
+  if (viaRuleName_) {
     v->viaRuleName_ = strdup(viaRuleName_);
+  }
   v->xSize_ = xSize_;
   v->ySize_ = ySize_;
-  if (botLayer_)
+  if (botLayer_) {
     v->botLayer_ = strdup(botLayer_);
-  if (cutLayer_)
+  }
+  if (cutLayer_) {
     v->cutLayer_ = strdup(cutLayer_);
-  if (topLayer_)
+  }
+  if (topLayer_) {
     v->topLayer_ = strdup(topLayer_);
+  }
   v->xSpacing_ = xSpacing_;
   v->ySpacing_ = ySpacing_;
   v->xBotEnc_ = xBotEnc_;
@@ -518,8 +535,9 @@ lefiVia* lefiVia::clone()
   v->yBotOs_ = yBotOs_;
   v->xTopOs_ = xTopOs_;
   v->yTopOs_ = yTopOs_;
-  if (cutPattern_)
+  if (cutPattern_) {
     v->cutPattern_ = strdup(cutPattern_);
+  }
 
   return v;
 }
@@ -528,10 +546,12 @@ void lefiVia::clear()
 {
   int i;
 
-  if (name_)
+  if (name_) {
     *(name_) = '\0';
-  if (foreign_)
+  }
+  if (foreign_) {
     lefFree(foreign_);
+  }
   foreign_ = nullptr;
   hasDefault_ = 0;
   hasGenerated_ = 0;
@@ -543,8 +563,9 @@ void lefiVia::clear()
   for (i = 0; i < numProps_; i++) {
     lefFree(propName_[i]);
     propName_[i] = nullptr;
-    if (propValue_[i])
+    if (propValue_[i]) {
       lefFree(propValue_[i]);
+    }
     propValue_[i] = nullptr;
     propType_[i] = ' ';
   }
@@ -557,17 +578,21 @@ void lefiVia::clear()
   }
   numLayers_ = 0;
 
-  if (viaRuleName_)
+  if (viaRuleName_) {
     lefFree(viaRuleName_);
+  }
   viaRuleName_ = nullptr;
   xSize_ = 0;
   ySize_ = 0;
-  if (botLayer_)
+  if (botLayer_) {
     lefFree(botLayer_);
-  if (cutLayer_)
+  }
+  if (cutLayer_) {
     lefFree(cutLayer_);
-  if (topLayer_)
+  }
+  if (topLayer_) {
     lefFree(topLayer_);
+  }
   botLayer_ = nullptr;
   cutLayer_ = nullptr;
   topLayer_ = nullptr;
@@ -585,8 +610,9 @@ void lefiVia::clear()
   yBotOs_ = 0;
   xTopOs_ = 0;
   yTopOs_ = 0;
-  if (cutPattern_)
+  if (cutPattern_) {
     lefFree(cutPattern_);
+  }
   cutPattern_ = nullptr;
 }
 
@@ -629,10 +655,11 @@ void lefiVia::bumpProps()
   char** v;
   char* t;
 
-  if (propsAllocated_ == 0)
+  if (propsAllocated_ == 0) {
     propsAllocated_ = 2;
-  else
+  } else {
     propsAllocated_ *= 2;
+  }
 
   d = (double*) lefMalloc(sizeof(double) * propsAllocated_);
   n = (char**) lefMalloc(sizeof(char*) * propsAllocated_);
@@ -663,8 +690,9 @@ void lefiVia::addProp(const char* name, const char* value, const char type)
 {
   int len = strlen(name) + 1;
 
-  if (numProps_ == propsAllocated_)
+  if (numProps_ == propsAllocated_) {
     bumpProps();
+  }
 
   propName_[numProps_] = (char*) lefMalloc(len);
   strcpy(propName_[numProps_], CASE(name));
@@ -687,8 +715,9 @@ void lefiVia::addNumProp(const char* name,
 {
   int len = strlen(name) + 1;
 
-  if (numProps_ == propsAllocated_)
+  if (numProps_ == propsAllocated_) {
     bumpProps();
+  }
 
   propName_[numProps_] = (char*) lefMalloc(len);
   strcpy(propName_[numProps_], CASE(name));
@@ -733,10 +762,11 @@ void lefiVia::addLayer(const char* name)
   if (numLayers_ == layersAllocated_) {
     int i;
     lefiViaLayer** l;
-    if (layersAllocated_ == 0)
+    if (layersAllocated_ == 0) {
       layersAllocated_ = 2;
-    else
+    } else {
       layersAllocated_ *= 2;
+    }
     l = (lefiViaLayer**) lefMalloc(sizeof(lefiViaLayer*) * layersAllocated_);
     for (i = 0; i < numLayers_; i++) {
       l[i] = layers_[i];
@@ -866,24 +896,27 @@ int lefiVia::hasViaRule() const
 // 5.6
 int lefiVia::hasRowCol() const
 {
-  if (numRows_ != 0 || numCols_ != 0)
+  if (numRows_ != 0 || numCols_ != 0) {
     return 1;
+  }
   return 0;
 }
 
 // 5.6
 int lefiVia::hasOrigin() const
 {
-  if (xOffset_ != 0 || yOffset_ != 0)
+  if (xOffset_ != 0 || yOffset_ != 0) {
     return 1;
+  }
   return 0;
 }
 
 // 5.6
 int lefiVia::hasOffset() const
 {
-  if (xBotOs_ != 0 || yBotOs_ != 0 || xTopOs_ != 0 || yTopOs_ != 0)
+  if (xBotOs_ != 0 || yBotOs_ != 0 || xTopOs_ != 0 || yTopOs_ != 0) {
     return 1;
+  }
   return 0;
 }
 
@@ -1329,8 +1362,9 @@ void lefiVia::print(FILE* f) const
 
   fprintf(f, "Via %s:\n", name());
 
-  if (hasDefault())
+  if (hasDefault()) {
     fprintf(f, "  DEFAULT\n");
+  }
 
   if (hasForeign()) {
     fprintf(f, "  foreign %s", foreign());
@@ -1343,15 +1377,18 @@ void lefiVia::print(FILE* f) const
     fprintf(f, "\n");
   }
 
-  if (hasResistance())
+  if (hasResistance()) {
     fprintf(f, "  RESISTANCE %g\n", resistance());
+  }
 
   if (hasProperties()) {
-    for (i = 0; i < numProperties(); i++)
-      if (propIsString(i))
+    for (i = 0; i < numProperties(); i++) {
+      if (propIsString(i)) {
         fprintf(f, "  PROP %s %s\n", propName(i), propValue(i));
-      else
+      } else {
         fprintf(f, "  PROP %s %g\n", propName(i), propNumber(i));
+      }
+    }
   }
 
   for (i = 0; i < numLayers(); i++) {

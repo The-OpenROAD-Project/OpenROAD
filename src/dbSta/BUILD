@@ -29,7 +29,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//src/odb",
         "//src/utl",
         "@boost.json",
@@ -43,7 +43,7 @@ cc_library(
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
-        "//:StaConfig",
+        "//src/sta:StaConfig",
     ],
     hdrs = [
         "include/db_sta/MakeDbSta.hh",
@@ -60,7 +60,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//:ord",
         "//src/odb",
         "//src/utl",
@@ -74,7 +74,7 @@ tcl_encode(
     srcs = [
         "src/dbReadVerilog.tcl",
         "src/dbSta.tcl",
-        "//:tcl_scripts",
+        "//src/sta:tcl_scripts",
     ],
     char_array_name = "dbSta_tcl_inits",
     namespace = "sta",
@@ -85,7 +85,7 @@ tcl_wrap_cc(
     srcs = [
         "src/dbSta.i",
         "//:error_swig",
-        "//:sta_swig_files",
+        "//src/sta:sta_swig_files",
     ],
     module = "dbSta",
     namespace_prefix = "sta",

@@ -44,14 +44,14 @@ cc_library(
         "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
     ],
-    includes = [
-        "include",
-    ],
     copts = [
         "-fopenmp",
     ],
+    includes = [
+        "include",
+    ],
     deps = [
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//:ord",
         "//src/dbSta",
         "//src/grt",

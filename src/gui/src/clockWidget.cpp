@@ -1015,11 +1015,12 @@ void ClockTreeView::drawTimeScale(QPainter* painter,
   tick_interval = std::max(tick_interval, 1 / scale_time);
 
   sta::Delay tick = std::floor(min_time / tick_interval) * tick_interval;
-  for (; tick < max_time; tick += tick_interval) {
+  while (tick < max_time) {
     const QPoint tick_start(rect.left(), time_to_y(tick));
     const QPoint tick_end(tick_start.x() + tick_length, tick_start.y());
     painter->drawLine(tick_start, tick_end);
     painter->drawText(tick_end, time_to_string(tick, digits));
+    tick += tick_interval;
   }
 
   if (show_mouse_time_tick_) {

@@ -62,7 +62,7 @@ class definReader : public definBase
                        dbTech* tech);
 
  private:
-  void init() override;
+  void init();
   void setLibs(std::vector<dbLib*>& lib_names);
 
   void line(int line_num);

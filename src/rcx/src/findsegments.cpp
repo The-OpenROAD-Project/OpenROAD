@@ -23,10 +23,9 @@ int extMeasureRC::GetDistance(Wire* w1, Wire* w2)
   if (w2->getBase() >= w1->getBase()) {
     int dx1 = w2->getBase() - (w1->getBase() + w1->getWidth());
     return dx1;
-  } else {
-    int dx1 = w1->getBase() - (w2->getBase() + w2->getWidth());
-    return dx1;
   }
+  int dx1 = w1->getBase() - (w2->getBase() + w2->getWidth());
+  return dx1;
 }
 int extMeasureRC::GetDx1Dx2(int xy1, int len1, Wire* w2, int& dx2)
 {
@@ -42,22 +41,27 @@ int extMeasureRC::GetDx1Dx2(int xy1, int len1, extSegment* w2, int& dx2)
 }
 bool extMeasureRC::OverlapOnly(int xy1, int len1, int xy2, int len2)
 {
-  if (xy1 >= xy2 && xy1 <= xy2 + len2)
+  if (xy1 >= xy2 && xy1 <= xy2 + len2) {
     return true;
-  if (xy2 >= xy1 && xy2 <= xy1 + len1)
+  }
+  if (xy2 >= xy1 && xy2 <= xy1 + len1) {
     return true;
-  if (xy1 + len1 >= xy2 && xy1 + len1 <= xy2 + len2)
+  }
+  if (xy1 + len1 >= xy2 && xy1 + len1 <= xy2 + len2) {
     return true;
-  if (xy2 + len2 >= xy1 && xy2 + len2 <= xy1 + len1)
+  }
+  if (xy2 + len2 >= xy1 && xy2 + len2 <= xy1 + len1) {
     return true;
+  }
 
   return false;
 }
 bool extMeasureRC::Enclosed(int x1, int x2, int y1, int y2)
 {
   // segmet (x1,x2) vs. (y1,y2)
-  if (x1 >= y1 && x1 <= y2 && x2 >= y1 && x2 <= y2)
+  if (x1 >= y1 && x1 <= y2 && x2 >= y1 && x2 <= y2) {
     return true;
+  }
 
   return false;
 }
@@ -70,8 +74,9 @@ uint extMeasureRC::FindSegments(bool lookUp,
                                 Wire* w2_next,
                                 Ath__array1D<extSegment*>* segTable)
 {
-  if (w2_next == nullptr)
+  if (w2_next == nullptr) {
     return 0;
+  }
 
   int dist = GetDistance(w1, w2_next);
   if (dist > maxDist) {
@@ -91,12 +96,14 @@ uint extMeasureRC::FindSegments(bool lookUp,
   Wire* prev = nullptr;
   Wire* w2 = w2_next;
   for (; w2 != nullptr; w2 = w2->getNext()) {
-    if (OverlapOnly(xy1, len1, w2->getXY(), w2->getLen()))
+    if (OverlapOnly(xy1, len1, w2->getXY(), w2->getLen())) {
       break;
+    }
 
     if (prev != nullptr
-        && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))
+        && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY())) {
       return 0;
+    }
 
     prev = w2;
   }

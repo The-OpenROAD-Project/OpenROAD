@@ -2,18 +2,7 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load("@rules_hdl//dependency_support/com_github_westes_flex:flex.bzl", "genlex")
-load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
-load(
-    "//bazel:build_helper.bzl",
-    "OPENROAD_BINARY_SRCS_WITHOUT_MAIN",
-    "OPENROAD_LIBRARY_HDRS_INCLUDE",
-    "OPENROAD_LIBRARY_INCLUDES",
-    "OPENROAD_LIBRARY_SRCS_EXCLUDE",
-    "OPENROAD_LIBRARY_SRCS_INCLUDE",
-)
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
-load("//bazel:tcl_encode_sta.bzl", "tcl_encode_sta")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
@@ -27,7 +16,6 @@ package(
 
 exports_files([
     "LICENSE",
-    "src/sta/etc/TclEncode.tcl",
     "src/Design.i",
     "src/Exception.i",
 ])
@@ -125,9 +113,13 @@ OPENROAD_DEFINES = [
 
 cc_binary(
     name = "openroad",
-    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
+    srcs = [
         "src/Main.cc",
         "src/OpenRoad.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+        ":rmp_swig",
+        ":rmp_tcl",
         "//bazel:runfiles",
     ] + select({
         ":platform_cli": [],
@@ -142,9 +134,9 @@ cc_binary(
     deps = [
         ":openroad_lib_private",
         ":openroad_version",
-        ":opensta_lib",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
@@ -153,41 +145,54 @@ cc_binary(
 
 cc_library(
     name = "openroad_lib_private",
-    srcs = glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
-    ),
-    hdrs = glob(OPENROAD_LIBRARY_HDRS_INCLUDE),
+    srcs = [
+        "src/Design.cc",
+        "src/Tech.cc",
+        "src/Timing.cc",
+    ] + glob([
+        "src/rmp/src/*.h",
+        "src/rmp/src/*.cpp",
+    ]),
+    hdrs = glob([
+        "src/rmp/include/rmp/*.h",
+    ]),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
         "BUILD_GUI=false",
     ],
     features = ["-use_header_modules"],
-    includes = OPENROAD_LIBRARY_INCLUDES,
+    includes = [
+        "include",
+        "src/rmp/include",
+    ],
     deps = OPENROAD_LIBRARY_DEPS,
 )
 
 cc_library(
     name = "openroad_lib",
-    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
-    ) + [
+    srcs = [
+        "src/Design.cc",
         "src/OpenRoad.cc",
-    ],
-    hdrs = glob(
-        include = OPENROAD_LIBRARY_HDRS_INCLUDE,
-        exclude = [
-            "src/utl/include/utl/Logger.h",
-            "src/utl/include/utl/CFileUtils.h",
-        ],
-    ),
+        "src/Tech.cc",
+        "src/Timing.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+        ":rmp_swig",
+        ":rmp_tcl",
+    ] + glob([
+        "src/rmp/src/*.cpp",
+        "src/rmp/src/*.h",
+    ]),
+    hdrs = glob(["src/rmp/include/rmp/*.h"]),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
         "BUILD_GUI=false",
     ],
     features = ["-use_header_modules"],
-    includes = OPENROAD_LIBRARY_INCLUDES,
+    includes = [
+        "include",
+        "src/rmp/include",
+    ],
     visibility = ["//visibility:public"],
     deps = OPENROAD_LIBRARY_DEPS,
 )
@@ -229,7 +234,7 @@ genrule(
 
 tcl_encode(
     name = "openroad_tcl",
-    srcs = [":tcl_util"] + [
+    srcs = ["//src/sta:tcl_util"] + [
         "src/Metrics.tcl",
         "src/OpenRoad.tcl",
     ],
@@ -265,7 +270,7 @@ tcl_wrap_cc(
     srcs = [
         "src/rmp/src/rmp.i",
         ":error_swig",
-        "//:sta_swig_files",
+        "//src/sta:sta_swig_files",
     ],
     module = "rmp",
     namespace_prefix = "rmp",
@@ -290,400 +295,3 @@ filegroup(
         "src/Design.i",
     ],
 )
-
-## OpenSTA
-genlex(
-    name = "LibExprLex",
-    src = "src/sta/liberty/LibExprLex.ll",
-    out = "src/sta/liberty/LibExprLex.cc",
-    prefix = "LibExprLex_",
-)
-
-genyacc(
-    name = "LibExprParse",
-    src = "src/sta/liberty/LibExprParse.yy",
-    header_out = "src/sta/liberty/LibExprParse.hh",
-    prefix = "LibExprParse_",
-    source_out = "src/sta/liberty/LibExprParse.cc",
-)
-
-# Liberty Parser
-genlex(
-    name = "LibertyLex",
-    src = "src/sta/liberty/LibertyLex.ll",
-    out = "src/sta/liberty/LibertyLex.cc",
-    prefix = "LibertyLex_",
-)
-
-genyacc(
-    name = "LibertyParser",
-    src = "src/sta/liberty/LibertyParse.yy",
-    extra_outs = ["src/sta/liberty/LibertyLocation.hh"],
-    header_out = "src/sta/liberty/LibertyParse.hh",
-    prefix = "LibertyParse_",
-    source_out = "src/sta/liberty/LibertyParse.cc",
-)
-
-# Spef scan/parse.
-genlex(
-    name = "SpefLex",
-    src = "src/sta/parasitics/SpefLex.ll",
-    out = "src/sta/parasitics/SpefLex.cc",
-    prefix = "SpefLex_",
-)
-
-genyacc(
-    name = "SpefParser",
-    src = "src/sta/parasitics/SpefParse.yy",
-    extra_outs = ["src/sta/parasitics/SpefLocation.hh"],
-    header_out = "src/sta/parasitics/SpefParse.hh",
-    prefix = "SpefParse_",
-    source_out = "src/sta/parasitics/SpefParse.cc",
-)
-
-# Verilog scan/parse.
-genlex(
-    name = "VerilogLex",
-    src = "src/sta/verilog/VerilogLex.ll",
-    out = "src/sta/verilog/VerilogLex.cc",
-    prefix = "VerilogLex_",
-)
-
-genyacc(
-    name = "VerilogParser",
-    src = "src/sta/verilog/VerilogParse.yy",
-    extra_outs = ["src/sta/verilog/VerilogLocation.hh"],
-    header_out = "src/sta/verilog/VerilogParse.hh",
-    prefix = "VerilogParse_",
-    source_out = "src/sta/verilog/VerilogParse.cc",
-)
-
-# sdf scan/parse.
-genlex(
-    name = "SdfLex",
-    src = "src/sta/sdf/SdfLex.ll",
-    out = "src/sta/sdf/SdfLex.cc",
-    prefix = "SdfLex_",
-)
-
-genyacc(
-    name = "SdfParser",
-    src = "src/sta/sdf/SdfParse.yy",
-    extra_outs = ["src/sta/sdf/SdfLocation.hh"],
-    header_out = "src/sta/sdf/SdfParse.hh",
-    prefix = "SdfParse_",
-    source_out = "src/sta/sdf/SdfParse.cc",
-)
-
-genlex(
-    name = "SaifLex",
-    src = "src/sta/power/SaifLex.ll",
-    out = "src/sta/power/SaifLex.cc",
-    prefix = "SaifLex_",
-)
-
-genyacc(
-    name = "SaifParser",
-    src = "src/sta/power/SaifParse.yy",
-    extra_outs = ["src/sta/power/SaifLocation.hh"],
-    header_out = "src/sta/power/SaifParse.hh",
-    prefix = "SaifParse_",
-    source_out = "src/sta/power/SaifParse.cc",
-)
-
-# The order here is very important as the script to encode these relies on it
-tcl_srcs = [
-    "src/sta/tcl/Util.tcl",
-    "src/sta/tcl/CmdUtil.tcl",
-    "src/sta/tcl/Init.tcl",
-    "src/sta/tcl/CmdArgs.tcl",
-    "src/sta/tcl/Property.tcl",
-    "src/sta/tcl/Sta.tcl",
-    "src/sta/tcl/Variables.tcl",
-    "src/sta/tcl/Splash.tcl",
-    "src/sta/graph/Graph.tcl",
-    "src/sta/liberty/Liberty.tcl",
-    "src/sta/network/Link.tcl",
-    "src/sta/network/Network.tcl",
-    "src/sta/network/NetworkEdit.tcl",
-    "src/sta/search/Search.tcl",
-    "src/sta/dcalc/DelayCalc.tcl",
-    "src/sta/parasitics/Parasitics.tcl",
-    "src/sta/power/Power.tcl",
-    "src/sta/sdc/Sdc.tcl",
-    "src/sta/sdf/Sdf.tcl",
-    "src/sta/verilog/Verilog.tcl",
-]
-
-exported_tcl = [
-    "src/sta/tcl/Util.tcl",
-    "src/sta/tcl/CmdUtil.tcl",
-    "src/sta/tcl/CmdArgs.tcl",
-    "src/sta/tcl/Property.tcl",
-    "src/sta/tcl/Splash.tcl",
-    "src/sta/tcl/Sta.tcl",
-    "src/sta/tcl/Variables.tcl",
-    "src/sta/sdc/Sdc.tcl",
-    "src/sta/sdf/Sdf.tcl",
-    "src/sta/search/Search.tcl",
-    "src/sta/dcalc/DelayCalc.tcl",
-    "src/sta/graph/Graph.tcl",
-    "src/sta/liberty/Liberty.tcl",
-    "src/sta/network/Network.tcl",
-    "src/sta/network/NetworkEdit.tcl",
-    "src/sta/parasitics/Parasitics.tcl",
-    "src/sta/power/Power.tcl",
-]
-
-filegroup(
-    name = "tcl_scripts",
-    srcs = exported_tcl,
-    visibility = [
-        "//:__subpackages__",
-    ],
-)
-
-tcl_encode_sta(
-    name = "StaTclInitVar",
-    srcs = tcl_srcs,
-    char_array_name = "tcl_inits",
-)
-
-genrule(
-    name = "StaConfig",
-    srcs = [],
-    outs = ["src/sta/util/StaConfig.hh"],
-    cmd = """echo -e '
-    #define STA_VERSION "2.2.1"
-    #define STA_GIT_SHA1 "53d4d57cb8550d2ceed18adad75b73bba7858f4f"
-    #define CUDD 0
-    #define SSTA 0
-    #define ZLIB_FOUND' > \"$@\"
-    """,
-    visibility = ["//:__subpackages__"],
-)
-
-filegroup(
-    name = "sta_swig_files",
-    srcs = [
-        "src/sta/app/StaApp.i",
-        "src/sta/dcalc/DelayCalc.i",
-        "src/sta/graph/Graph.i",
-        "src/sta/liberty/Liberty.i",
-        "src/sta/network/Network.i",
-        "src/sta/network/NetworkEdit.i",
-        "src/sta/parasitics/Parasitics.i",
-        "src/sta/power/Power.i",
-        "src/sta/sdc/Sdc.i",
-        "src/sta/sdf/Sdf.i",
-        "src/sta/search/Property.i",
-        "src/sta/search/Search.i",
-        "src/sta/spice/WriteSpice.i",
-        "src/sta/tcl/Exception.i",
-        "src/sta/tcl/StaTclTypes.i",
-        "src/sta/util/Util.i",
-        "src/sta/verilog/Verilog.i",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
-tcl_wrap_cc(
-    name = "StaApp",
-    srcs = [
-        ":sta_swig_files",
-    ],
-    namespace_prefix = "sta",
-    root_swig_src = "src/sta/app/StaApp.i",
-    swig_includes = [
-        "src/sta",
-    ],
-)
-
-parser_cc = [
-    # Liberty Expression Parser
-    ":src/sta/liberty/LibExprParse.cc",
-    ":src/sta/liberty/LibExprLex.cc",
-    # Liberty Parser
-    ":src/sta/liberty/LibertyLex.cc",
-    ":src/sta/liberty/LibertyParse.cc",
-    # Spef scan/parse.
-    ":src/sta/parasitics/SpefLex.cc",
-    ":src/sta/parasitics/SpefParse.cc",
-    # Verilog scan/parse.
-    ":src/sta/verilog/VerilogLex.cc",
-    ":src/sta/verilog/VerilogParse.cc",
-    # sdf scan/parse.
-    ":src/sta/sdf/SdfLex.cc",
-    ":src/sta/sdf/SdfParse.cc",
-    # Saif scan/parse.
-    ":src/sta/power/SaifLex.cc",
-    ":src/sta/power/SaifParse.cc",
-]
-
-parser_headers = [
-    # Liberty Expression Parser
-    ":src/sta/liberty/LibExprParse.hh",
-    # Liberty Parser
-    ":src/sta/liberty/LibertyParse.hh",
-    ":src/sta/liberty/LibertyLocation.hh",
-    # Spef scan/parse.
-    ":src/sta/parasitics/SpefParse.hh",
-    ":src/sta/parasitics/SpefLocation.hh",
-    # Verilog scan/parse.
-    ":src/sta/verilog/VerilogParse.hh",
-    ":src/sta/verilog/VerilogLocation.hh",
-    # sdf scan/parse.
-    ":src/sta/sdf/SdfParse.hh",
-    ":src/sta/sdf/SdfLocation.hh",
-    # Saif scan/parse.
-    ":src/sta/power/SaifParse.hh",
-    ":src/sta/power/SaifLocation.hh",
-]
-
-cc_binary(
-    name = "opensta",
-    srcs = [
-        "src/sta/app/Main.cc",
-        ":StaApp",
-        ":StaTclInitVar",
-        "//bazel:runfiles",
-    ],
-    copts = [
-        "-Wno-error",
-        "-Wall",
-        "-Wextra",
-        "-pedantic",
-        "-Wno-cast-qual",  # typically from TCL swigging
-        "-Wno-missing-braces",  # typically from TCL swigging
-        "-Wredundant-decls",
-        "-Wformat-security",
-        "-Wno-unused-parameter",
-        "-Wno-sign-compare",
-    ],
-    features = ["-use_header_modules"],
-    includes = [
-        "src/sta/",
-        "src/sta/dcalc",
-        "src/sta/include/sta",
-        "src/sta/util",
-    ],
-    malloc = "@tcmalloc//tcmalloc",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":opensta_lib",
-        "@rules_cc//cc/runfiles",
-        "@tk_tcl//:tcl",
-    ],
-)
-
-cc_library(
-    name = "opensta_lib",
-    srcs = parser_cc + parser_headers + glob([
-        "src/sta/dcalc/*.hh",
-        "src/sta/util/*.hh",
-        "src/sta/parasitics/*.hh",
-        "src/sta/liberty/*.hh",
-        "src/sta/sdc/*.hh",
-        "src/sta/sdf/*.hh",
-        "src/sta/search/*.hh",
-        "src/sta/verilog/*.hh",
-        "src/sta/power/*.hh",
-        "src/sta/spice/*.hh",
-    ]) + glob(
-        include = [
-            "src/sta/app/StaMain.cc",
-            "src/sta/dcalc/*.cc",
-            "src/sta/graph/*.cc",
-            "src/sta/network/*.cc",
-            "src/sta/util/*.cc",
-            "src/sta/parasitics/*.cc",
-            "src/sta/liberty/*.cc",
-            "src/sta/sdc/*.cc",
-            "src/sta/sdf/*.cc",
-            "src/sta/search/*.cc",
-            "src/sta/verilog/*.cc",
-            "src/sta/power/*.cc",
-            "src/sta/spice/*.cc",
-            "src/sta/tcl/*.cc",
-        ],
-        exclude = [
-            "src/sta/graph/Delay.cc",
-            "src/sta/liberty/LibertyExt.cc",
-            "src/sta/util/Machine*.cc",
-        ],
-    ) + [
-        "src/sta/util/Machine.cc",
-        ":StaConfig",
-    ],
-    #+ select({
-    #        "@bazel_tools//src/conditions:windows": ["src/sta/util/MachineWin32.cc"],
-    #        "@bazel_tools//src/conditions:darwin": ["src/sta/util/MachineApple.cc"],
-    #        "@bazel_tools//src/conditions:linux": ["src/sta/util/MachineLinux.cc"],
-    #        "//conditions:default": ["src/sta/util/MachineUnknown.cc"],
-    #    })
-    hdrs = glob(
-        include = ["src/sta/include/sta/*.hh"],
-    ) + [
-        # Required for swig
-        "src/sta/search/Tag.hh",
-        "src/sta/dcalc/ArcDcalcWaveforms.hh",
-        "src/sta/power/Power.hh",
-        "src/sta/power/VcdReader.hh",
-        "src/sta/power/SaifReader.hh",
-        "src/sta/sdf/SdfReader.hh",
-        "src/sta/sdf/ReportAnnotation.hh",
-        "src/sta/sdf/SdfWriter.hh",
-        "src/sta/search/Levelize.hh",
-        "src/sta/search/ReportPath.hh",
-        "src/sta/spice/WritePathSpice.hh",
-        "src/sta/dcalc/PrimaDelayCalc.hh",
-    ],
-    copts = [
-        "-Wno-error",
-        "-Wall",
-        "-Wextra",
-        "-pedantic",
-        "-Wno-cast-qual",  # typically from TCL swigging
-        "-Wno-missing-braces",  # typically from TCL swigging
-        "-Wredundant-decls",
-        "-Wformat-security",
-        "-Wno-unused-parameter",
-        "-Wno-sign-compare",
-        "-fopenmp",
-    ],
-    features = [
-        "-use_header_modules",
-    ],
-    includes = [
-        "src/sta/",
-        "src/sta/dcalc",
-        "src/sta/include",
-        "src/sta/include/sta",
-        "src/sta/liberty",
-        "src/sta/parasitics",
-        "src/sta/power",
-        "src/sta/sdf",
-        "src/sta/util",
-        "src/sta/verilog",
-    ],
-    textual_hdrs = ["src/sta/util/MachineLinux.cc"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        "@cudd",
-        "@eigen",
-        "@openmp",
-        "@rules_flex//flex:current_flex_toolchain",
-        "@tk_tcl//:tcl",
-        "@zlib",
-    ],
-)
-
-filegroup(
-    name = "tcl_util",
-    srcs = [
-        "src/sta/tcl/Util.tcl",
-    ],
-    visibility = ["//visibility:private"],
-)
-
-## OpenSTA

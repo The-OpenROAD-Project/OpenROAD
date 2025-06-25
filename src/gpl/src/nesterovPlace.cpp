@@ -493,7 +493,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                         timing_driven_count),
             false);
       }
-
       final_routability_image_saved = true;
     }
 
@@ -501,12 +500,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
     const bool is_before_routability
-        = average_overflow_ > routability_save_snapshot_;
+        = average_overflow_unscaled_ > routability_save_snapshot_;
     const bool is_after_routability
-        = (average_overflow_ < npVars_.routability_end_overflow
+        = (average_overflow_unscaled_ < npVars_.routability_end_overflow
            && !is_routability_need_);
     if (npVars_.timingDrivenMode
-        && tb_->isTimingNetWeightOverflow(average_overflow_) &&
+        && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_) &&
         // do not execute timing-driven if routability is under execution
         (is_before_routability || is_after_routability
          || !npVars_.routability_driven_mode)) {
@@ -529,7 +528,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       //
       // See timingBase.cpp in detail
       bool virtual_td_iter
-          = (average_overflow_ > npVars_.keepResizeBelowOverflow);
+          = (average_overflow_unscaled_ > npVars_.keepResizeBelowOverflow);
 
       log_->info(GPL,
                  100,
@@ -543,7 +542,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                  "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
                  "HPWL: {}",
                  iter + 1,
-                 average_overflow_,
+                 average_overflow_unscaled_,
                  npVars_.keepResizeBelowOverflow,
                  nbc_->getHpwl());
 
@@ -569,8 +568,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       if (graphics_ && npVars_.debug_generate_images) {
         updateDb();
-        bool select_buffers
-            = tb_->repairDesignBufferCount() > 0 && !virtual_td_iter;
+        bool select_buffers = !virtual_td_iter;
         graphics_->saveLabeledImage(
             fmt::format("{}/timing_{:05d}_1.png", timing_driven_dir, iter),
             fmt::format("Iter {} |R: {} |T: {} after TD",
@@ -635,19 +633,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               nbc_->getNewGcellsCount(),
               new_gcells_percentage);
 
-          if (tb_->repairDesignBufferCount() != nbc_->getNewGcellsCount()) {
-            log_->warn(GPL,
-                       93,
-                       "Buffer insertion count by rsz ({}) and cells created "
-                       "by gpl ({}) do not match.",
-                       tb_->repairDesignBufferCount(),
-                       nbc_->getNewGcellsCount());
-          }
-          log_->info(GPL,
-                     109,
-                     "Timing-driven: inserted buffers as reported by "
-                     "repair_design: {}",
-                     tb_->repairDesignBufferCount());
           log_->info(GPL,
                      110,
                      "Timing-driven: new target density: {}",
@@ -748,7 +733,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
         }
         num_region_diverged_ = 0;
-        break;
       } else {
         divergeMsg_
             = "RePlAce divergence detected: "
@@ -756,8 +740,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               "and the HPWL has significantly worsened. "
               "Consider re-running with a smaller max_phi_cof value.";
         divergeCode_ = 307;
-        break;
       }
+      break;
     }
 
     if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
@@ -861,9 +845,22 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_ && npVars_.debug_generate_images) {
+  if (graphics_) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
+  }
+
+  if (graphics_ && npVars_.debug_generate_images) {
+    std::string label = fmt::format("Iter {} |R: {} |T: {}",
+                                    iter,
+                                    routability_driven_count,
+                                    timing_driven_count);
+
+    graphics_->saveLabeledImage(
+        fmt::format(
+            "{}/2_final_placement_{:05d}.png", routability_driven_dir, iter),
+        label,
+        /* select_buffers = */ false);
   }
 
   if (db_cbk_ != nullptr) {

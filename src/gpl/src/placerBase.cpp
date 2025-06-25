@@ -54,29 +54,20 @@ Instance::Instance() = default;
 
 // for movable real instances
 Instance::Instance(odb::dbInst* inst,
-                   int padLeft,
-                   int padRight,
-                   int site_height,
+                   PlacerBaseCommon* pbc,
                    utl::Logger* logger)
     : Instance()
 {
   inst_ = inst;
-  dbBox* bbox = inst->getBBox();
-  inst->getLocation(lx_, ly_);
-  ux_ = lx_ + bbox->getDX();
-  uy_ = ly_ + bbox->getDY();
-
-  if (isPlaceInstance()) {
-    lx_ -= padLeft;
-    ux_ += padRight;
-  }
+  copyDbLocation(pbc);
 
   // Masters more than row_limit rows tall are treated as macros
   constexpr int row_limit = 6;
+  dbBox* bbox = inst->getBBox();
 
   if (inst->getMaster()->getType().isBlock()) {
     is_macro_ = true;
-  } else if (bbox->getDY() > 6 * site_height) {
+  } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
     is_macro_ = true;
     logger->warn(GPL,
                  134,
@@ -103,6 +94,19 @@ Instance::~Instance()
   lx_ = ly_ = 0;
   ux_ = uy_ = 0;
   pins_.clear();
+}
+
+void Instance::copyDbLocation(PlacerBaseCommon* pbc)
+{
+  dbBox* bbox = inst_->getBBox();
+  inst_->getLocation(lx_, ly_);
+  ux_ = lx_ + bbox->getDX();
+  uy_ = ly_ + bbox->getDY();
+
+  if (isPlaceInstance()) {
+    lx_ -= pbc->padLeft() * pbc->siteSizeX();
+    ux_ += pbc->padRight() * pbc->siteSizeX();
+  }
 }
 
 bool Instance::isFixed() const
@@ -790,19 +794,29 @@ void PlacerBaseCommon::init()
              block->dbuToMicrons(die_.coreUy()));
 
   // insts fill with real instances
-  dbSet<dbInst> insts = block->getInsts();
-  instStor_.reserve(insts.size());
+  dbSet<dbInst> db_insts = block->getInsts();
+  instStor_.reserve(db_insts.size());
   insts_.reserve(instStor_.size());
-  for (dbInst* inst : insts) {
-    auto type = inst->getMaster()->getType();
+  for (dbInst* db_inst : db_insts) {
+    auto type = db_inst->getMaster()->getType();
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
-    Instance myInst(inst,
-                    pbVars_.padLeft * siteSizeX_,
-                    pbVars_.padRight * siteSizeX_,
-                    siteSizeY_,
-                    log_);
+
+    Instance myInst(db_inst, this, log_);
+    odb::dbBox* inst_bbox = db_inst->getBBox();
+    if (inst_bbox->getDY() > die_.coreDy()) {
+      log_->error(GPL,
+                  119,
+                  "instance {} height is larger than core.",
+                  db_inst->getName());
+    }
+    if (inst_bbox->getDX() > die_.coreDx()) {
+      log_->error(GPL,
+                  120,
+                  "instance {} width is larger than core.",
+                  db_inst->getName());
+    }
 
     // Fixed instaces need to be snapped outwards to the nearest site
     // boundary.  A partially overlapped site is unusable and this
@@ -815,16 +829,6 @@ void PlacerBaseCommon::init()
 
     if (myInst.dy() > siteSizeY_ * 6) {
       macroInstsArea_ += myInst.area();
-    }
-
-    dbBox* bbox = inst->getBBox();
-    if (bbox->getDY() > die_.coreDy()) {
-      log_->error(
-          GPL, 119, "instance {} height is larger than core.", inst->getName());
-    }
-    if (bbox->getDX() > die_.coreDx()) {
-      log_->error(
-          GPL, 120, "instance {} width is larger than core.", inst->getName());
     }
   }
 

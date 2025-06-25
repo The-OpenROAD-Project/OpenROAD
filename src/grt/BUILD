@@ -21,7 +21,6 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/ant:types",
         "//src/odb",
     ],
 )
@@ -93,17 +92,18 @@ cc_library(
     hdrs = [
         "include/grt/Rudy.h",
     ],
-    includes = [
-        "include",
-    ],
     copts = [
         "-fopenmp",
+    ],
+    includes = [
+        "include",
     ],
     deps = [
         ":abstract-fastroute",
         ":fastroute",
         ":types",
-        "//:opensta_lib",
+        "//src/ant:types",
+        "//src/sta:opensta_lib",
         "//src/ant",
         "//src/dbSta",
         "//src/dpl",
@@ -154,7 +154,7 @@ cc_library(
         ":abstract-fastroute",
         ":fastroute",
         ":types",
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//:ord",
         "//src/ant",
         "//src/dbSta",

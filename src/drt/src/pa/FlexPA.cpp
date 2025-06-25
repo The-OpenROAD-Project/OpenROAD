@@ -46,7 +46,13 @@ static inline void serializePatterns(
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
   registerTypes(ar);
-  ar << patterns;
+  int sz = patterns.size();
+  ar << sz;
+  for (auto& [inst, pattern] : patterns) {
+    frBlockObject* obj = (frBlockObject*) inst;
+    serializeBlockObject(ar, obj);
+    ar << pattern;
+  }
   file.close();
 }
 
@@ -141,7 +147,14 @@ void FlexPA::applyPatternsFile(const char* file_path)
   frIArchive ar(file);
   ar.setDesign(design_);
   registerTypes(ar);
-  ar >> unique_inst_patterns_;
+  int sz = 0;
+  ar >> sz;
+  while (sz--) {
+    frBlockObject* obj;
+    serializeBlockObject(ar, obj);
+    auto& pattern = unique_inst_patterns_[static_cast<frInst*>(obj)];
+    ar >> pattern;
+  }
   file.close();
 }
 
@@ -328,6 +341,24 @@ bool FlexPA::isMacroCell(frInst* inst)
   dbMasterType masterType = inst->getMaster()->getMasterType();
   return (masterType.isBlock() || masterType.isPad()
           || masterType == dbMasterType::RING);
+}
+
+bool FlexPA::isStdCellTerm(frInstTerm* inst_term)
+{
+  return inst_term && isStdCell(inst_term->getInst());
+}
+
+bool FlexPA::isMacroCellTerm(frInstTerm* inst_term)
+{
+  return inst_term && isMacroCell(inst_term->getInst());
+}
+
+// It is sometimes important to understand that when PA is checking for nullptr
+// it means its checking for an io term, not a corner case with an invalid
+// inst_term. This function is made to avoid confusion
+bool FlexPA::isIOTerm(frInstTerm* inst_term)
+{
+  return inst_term == nullptr;
 }
 
 int FlexPA::main()

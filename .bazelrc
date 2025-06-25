@@ -41,6 +41,9 @@ build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extensio
 build --copt "-Wno-unused-private-field"  --host_copt "-Wno-unused-private-field"
 build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
 build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
+build --copt "-Wno-deprecated-copy"  --host_copt "-Wno-deprecated-copy"
+build --copt "-Wno-deprecated-copy-with-user-provided-copy"  --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
+build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
@@ -49,25 +52,22 @@ build --host_per_file_copt=external/.*@-w
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
-build:asan --copt -fsanitize=address
-build:asan --copt -DADDRESS_SANITIZER
-build:asan --copt -O1
-build:asan --copt -g
-build:asan --copt -fno-omit-frame-pointer
-build:asan --linkopt -fsanitize=address
+build:asan --copt -fsanitize=address --host_copt -fsanitize=address
+build:asan --copt -DADDRESS_SANITIZER --host_copt -DADDRESS_SANITIZER
+build:asan --copt -O1 --host_copt -O1
+build:asan --copt -g --host_copt -g
+build:asan --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
+build:asan --linkopt -fsanitize=address --host_linkopt -fsanitize=address
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
-build:profile --copt -g
-build:profile --copt -gmlt
-build:profile --copt -fno-omit-frame-pointer
+build:profile --copt -g --host_copt -g
+build:profile --copt -gmlt --host_copt -gmlt
+build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 
 # TODO: document
 build --incompatible_strict_action_env
 
-# Without this, `bazelisk test -c opt ...` will run a `bazelisk build -c opt ...` first,
-# which will build cfg=target versions of targets and afterwards OpenROAD will be built
-# again for `bazel-orfs` and `regression.bzl` tests that use the cfg=exec configuration.
 test --build_tests_only
 
 # TODO: setup a new cache for OpenROAD

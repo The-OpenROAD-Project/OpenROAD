@@ -447,7 +447,7 @@ proc repair_design { args } {
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
@@ -466,7 +466,7 @@ proc repair_clock_nets { args } {
 
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length true]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
 
@@ -1101,7 +1101,7 @@ proc check_corner_wire_caps { } {
   return $have_rc
 }
 
-proc check_max_wire_length { max_wire_length } {
+proc check_max_wire_length { max_wire_length use_default } {
   if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
@@ -1110,9 +1110,11 @@ proc check_max_wire_length { max_wire_length } {
         utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
       }
     } else {
-      set max_wire_length $min_delay_max_wire_length
-      set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
-      utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
+      if { $use_default } {
+        set max_wire_length $min_delay_max_wire_length
+        set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
+        utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
+      }
     }
   }
   return $max_wire_length

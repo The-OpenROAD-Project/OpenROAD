@@ -15,11 +15,6 @@ class definRegion : public definBase
   dbRegion* _cur_region = nullptr;
 
  public:
-  definRegion();
-  ~definRegion() override;
-
-  void init() override;
-
   virtual void begin(const char* name);
   virtual void boundary(int x1, int y1, int x2, int y2);
   virtual void type(defRegionType type);

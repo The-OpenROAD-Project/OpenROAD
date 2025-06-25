@@ -354,13 +354,14 @@ orfs_run(
     arguments = {
         "OUTPUT": "$(location :power.txt)",
         "VCD_STIMULI": "$(location :vcd)",
-        "OPENROAD_EXE": "$(location //:opensta)",
+        "OPENROAD_EXE": "$(location //src/sta:opensta)",
         "POWER_STAGE_NAME": POWER_STAGE_NAME,
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
     },
     data = [
+               # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
+               ":opensta_runfiles",
                ":vcd",
-               "//:opensta",
            ] + ["{macro}_{stage}".format(
                macro = macro,
                stage = POWER_STAGE_NAME,
@@ -368,10 +369,11 @@ orfs_run(
            (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
     script = ":power.tcl",
     tags = ["manual"],
+    tools = ["//src/sta:opensta"],
     visibility = ["//visibility:public"],
 )
 
-# FIXME a orfs_run_test() rule would be nicer
+# FIXME an orfs_run_test() rule would be nicer
 sh_test(
     name = "MockArray_power_test",
     srcs = ["ok.sh"],
@@ -381,4 +383,15 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
+)
+
+# FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
+genrule(
+    name = "opensta_runfiles",
+    srcs = [],
+    outs = ["dummy"],
+    cmd = """
+    $(location //src/sta:opensta) >$@
+    """,
+    tools = ["//src/sta:opensta"],
 )

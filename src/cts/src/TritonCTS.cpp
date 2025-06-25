@@ -2179,9 +2179,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
-  resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
-  openSta_->ensureGraph();
-  openSta_->searchPreamble();
+  rsz::IncrementalParasiticsGuard parasitics_guard(resizer_);
   openSta_->ensureClkNetwork();
   openSta_->ensureClkArrivals();
   sta::Graph* graph = openSta_->graph();
@@ -2194,8 +2192,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
         computeAveSinkArrivals(registerBuilder, graph);
         computeAveSinkArrivals(macroBuilder, graph);
         adjustLatencies(macroBuilder, registerBuilder);
+        parasitics_guard.update();
         openSta_->updateTiming(false);
-        resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
       }
     }
   }

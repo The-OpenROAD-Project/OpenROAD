@@ -570,6 +570,13 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     remaining_runs -= run_thread;
   }
 
+  if (tilings_set.empty()) {
+    logger_->error(MPL,
+                   3,
+                   "There are no valid tilings for mixed cluster: {}",
+                   parent->getName());
+  }
+
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
   std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
 
@@ -600,12 +607,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
 
   parent->setTilings(tilings_list);
 
-  if (tilings_list.empty()) {
-    logger_->error(MPL,
-                   3,
-                   "There are no valid tilings for mixed cluster: {}",
-                   parent->getName());
-  } else {
+  if (!tilings_list.empty()) {
     std::string line
         = "The macro tiling for mixed cluster " + parent->getName() + "  ";
     for (auto& tiling : tilings_list) {
@@ -806,6 +808,13 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     remaining_runs -= run_thread;
   }
 
+  if (tilings_set.empty()) {
+    logger_->error(MPL,
+                   4,
+                   "No valid tilings for hard macro cluster: {}",
+                   cluster->getName());
+  }
+
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
   std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
 
@@ -831,13 +840,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
   tilings_list = std::move(new_tilings_list);
   cluster->setTilings(tilings_list);
-
-  if (tilings_list.empty()) {
-    logger_->error(MPL,
-                   4,
-                   "No valid tilings for hard macro cluster: {}",
-                   cluster->getName());
-  }
 
   std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
   for (auto& tiling : tilings_list) {
@@ -907,7 +909,7 @@ void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
 // extension of all edges of the die area.
 void HierRTLMP::createPinAccessBlockages()
 {
-  if (!tree_->maps.pad_to_bterm.empty()) {
+  if (!tree_->io_pads.empty()) {
     return;
   }
 

@@ -46,7 +46,7 @@ add_library(rcx_lib
   extPatterns.cpp
   extRulesVia.cpp
   extmeasure_print.cpp
-  extmeasure_res_v2.cpp
+#  extmeasure_res_v2.cpp
   extmain_v2.cpp
   extmeasure_diag_opt.cpp
   parse.cpp

@@ -84,8 +84,9 @@ void Restructure::run(char* liberty_file_name,
 {
   reset();
   block_ = db_->getChip()->getBlock();
-  if (!block_)
+  if (!block_) {
     return;
+  }
 
   logfile_ = abc_logfile;
   sta::Slack worst_slack = slack_threshold;
@@ -94,8 +95,9 @@ void Restructure::run(char* liberty_file_name,
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
 
-  if (is_area_mode_)  // Only in area mode
+  if (is_area_mode_) {  // Only in area mode
     removeConstCells();
+  }
 
   getBlob(max_depth);
 
@@ -127,8 +129,9 @@ void Restructure::getBlob(unsigned max_depth)
       odb::dbBTerm* port = nullptr;
       odb::dbModITerm* moditerm = nullptr;
       open_sta_->getDbNetwork()->staToDb(pin, term, port, moditerm);
-      if (term && !term->getInst()->getMaster()->isBlock())
+      if (term && !term->getInst()->getMaster()->isBlock()) {
         path_insts_.insert(term->getInst());
+      }
     }
     logger_->report("Found {} instances for restructuring.",
                     path_insts_.size());
@@ -187,8 +190,9 @@ void Restructure::runABC()
 
     const std::string abc_script_file
         = work_dir_name_ + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
-    if (logfile_ == "")
+    if (logfile_ == "") {
       logfile_ = work_dir_name_ + "abc.log";
+    }
 
     debugPrint(logger_,
                RMP,
@@ -277,10 +281,11 @@ void Restructure::runABC()
   }
 
   for (const auto& file_to_remove : files_to_remove) {
-    if (!logger_->debugCheck(RMP, "remap", 1))
+    if (!logger_->debugCheck(RMP, "remap", 1)) {
       if (std::remove(file_to_remove.c_str()) != 0) {
         logger_->error(RMP, 37, "Fail to remove file {}", file_to_remove);
       }
+    }
   }
 }
 
@@ -354,8 +359,9 @@ int Restructure::countConsts(odb::dbBlock* top_block)
 {
   int const_nets = 0;
   for (auto block_net : top_block->getNets()) {
-    if (block_net->getSigType().isSupply())
+    if (block_net->getSigType().isSupply()) {
       const_nets++;
+    }
   }
 
   return const_nets;
@@ -363,8 +369,9 @@ int Restructure::countConsts(odb::dbBlock* top_block)
 
 void Restructure::removeConstCells()
 {
-  if (!hicell_.size() || !locell_.size())
+  if (!hicell_.size() || !locell_.size()) {
     return;
+  }
 
   odb::dbMaster* hicell_master = nullptr;
   odb::dbMTerm* hiterm = nullptr;
@@ -375,16 +382,19 @@ void Restructure::removeConstCells()
     hicell_master = lib->findMaster(hicell_.c_str());
 
     locell_master = lib->findMaster(locell_.c_str());
-    if (locell_master && hicell_master)
+    if (locell_master && hicell_master) {
       break;
+    }
   }
-  if (!hicell_master || !locell_master)
+  if (!hicell_master || !locell_master) {
     return;
+  }
 
   hiterm = hicell_master->findMTerm(hiport_.c_str());
   loterm = locell_master->findMTerm(loport_.c_str());
-  if (!hiterm || !loterm)
+  if (!hiterm || !loterm) {
     return;
+  }
 
   open_sta_->clearLogicConstants();
   open_sta_->findLogicConstants();
@@ -396,16 +406,19 @@ void Restructure::removeConstCells()
     auto master = inst->getMaster();
     sta::LibertyCell* cell = open_sta_->getDbNetwork()->libertyCell(
         open_sta_->getDbNetwork()->dbToSta(master));
-    if (cell->hasSequentials())
+    if (cell->hasSequentials()) {
       continue;
+    }
 
     for (auto&& iterm : inst->getITerms()) {
       if (iterm->getSigType() == odb::dbSigType::POWER
-          || iterm->getSigType() == odb::dbSigType::GROUND)
+          || iterm->getSigType() == odb::dbSigType::GROUND) {
         continue;
+      }
 
-      if (iterm->getIoType() != odb::dbIoType::OUTPUT)
+      if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
         continue;
+      }
       outputs++;
       auto pin = open_sta_->getDbNetwork()->dbToSta(iterm);
       sta::LogicValue pinVal = open_sta_->simLogicValue(pin);
@@ -431,31 +444,35 @@ void Restructure::removeConstCells()
           if (new_inst) {
             iterm->disconnect();
             new_inst->getITerm(const_port)->connect(net);
-          } else
+          } else {
             logger_->warn(RMP, 35, "Could not create instance {}.", inst_name);
+          }
         }
         const_outputs++;
         const_cnt++;
       }
     }
-    if (outputs > 0 && outputs == const_outputs)
+    if (outputs > 0 && outputs == const_outputs) {
       constInsts.insert(inst);
+    }
   }
   open_sta_->clearLogicConstants();
 
   debugPrint(
       logger_, RMP, "remap", 2, "Removing {} instances...", constInsts.size());
 
-  for (auto inst : constInsts)
+  for (auto inst : constInsts) {
     removeConstCell(inst);
+  }
   logger_->report("Removed {} instances with constant outputs.",
                   constInsts.size());
 }
 
 void Restructure::removeConstCell(odb::dbInst* inst)
 {
-  for (auto iterm : inst->getITerms())
+  for (auto iterm : inst->getITerms()) {
     iterm->disconnect();
+  }
   odb::dbInst::destroy(inst);
 }
 
@@ -477,17 +494,19 @@ bool Restructure::writeAbcScript(std::string file_name)
 
   script << "read_blif -n " << input_blif_file_name_ << std::endl;
 
-  if (logger_->debugCheck(RMP, "remap", 1))
+  if (logger_->debugCheck(RMP, "remap", 1)) {
     script << "write_verilog " << input_blif_file_name_ + std::string(".v")
            << std::endl;
+  }
 
   writeOptCommands(script);
 
   script << "write_blif " << output_blif_file_name_ << std::endl;
 
-  if (logger_->debugCheck(RMP, "remap", 1))
+  if (logger_->debugCheck(RMP, "remap", 1)) {
     script << "write_verilog " << output_blif_file_name_ + std::string(".v")
            << std::endl;
+  }
 
   script.close();
 
@@ -511,10 +530,11 @@ void Restructure::writeOptCommands(std::ofstream& script)
   script << choice << std::endl;
   script << choice2 << std::endl;
 
-  if (opt_mode_ == Mode::AREA_3)
+  if (opt_mode_ == Mode::AREA_3) {
     script << "choice2" << std::endl;  // << "scleanup" << std::endl;
-  else
+  } else {
     script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
+  }
 
   switch (opt_mode_) {
     case Mode::DELAY_1: {
@@ -570,9 +590,9 @@ void Restructure::setMode(const char* mode_name)
   if (!strcmp(mode_name, "timing")) {
     is_area_mode_ = false;
     opt_mode_ = Mode::DELAY_1;
-  } else if (!strcmp(mode_name, "area"))
+  } else if (!strcmp(mode_name, "area")) {
     opt_mode_ = Mode::AREA_1;
-  else {
+  } else {
     logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
   }
 }
@@ -616,8 +636,9 @@ bool Restructure::readAbcLog(std::string abc_file_name,
     std::vector<std::string> tokens;
 
     // read the line, word by word
-    while (std::getline(ss, buf, delimiter))
+    while (std::getline(ss, buf, delimiter)) {
       tokens.push_back(buf);
+    }
 
     if (!tokens.empty() && tokens[0] == "Error:") {
       status = false;

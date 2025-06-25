@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <filesystem>
 #include <limits>
 #include <map>
 #include <vector>
@@ -2792,8 +2793,6 @@ bool extRCModel::openCapLogFile()
   }
   fclose(fp);
 
-  char cmd[4000];
-
   FILE* fp1 = nullptr;
   if (_readCapLog) {
     fp1 = openFile(buff, capLog, nullptr, "r");
@@ -2801,16 +2800,18 @@ bool extRCModel::openCapLogFile()
   } else if (_metLevel > 0) {
     _capLogFP = openFile(buff, capLog, nullptr, "a");
   } else {
-    sprintf(cmd,
-            "mv %s/%s/%s %s/%s/%s.in",
-            _topDir,
-            _patternName,
-            capLog,
-            _topDir,
-            _patternName,
-            capLog);
-    if (system(cmd) == -1) {
-      logger_->error(RCX, 489, "mv failed: {}", cmd);
+    try {
+      std::filesystem::path path0(_topDir);
+      path0 += _patternName;
+      path0 += capLog;
+      std::filesystem::path path1(_topDir);
+      path0 += _patternName;
+      path0 += std::string(capLog) + ".in";
+
+      std::filesystem::rename(path0, path1);
+    } catch (const std::filesystem::filesystem_error&) {
+      logger_->error(
+          RCX, 489, "mv failed: {}/{}/{}", _topDir, _patternName, capLog);
     }
 
     _capLogFP = openFile(buff, capLog, nullptr, "w");
@@ -2829,8 +2830,9 @@ bool extRCModel::openCapLogFile()
 
 void extRCModel::closeCapLogFile()
 {
-  if (_readCapLog)
+  if (_readCapLog) {
     fclose(_capLogFP);
+  }
 }
 
 void extRCModel::writeWires2(FILE* fp, extMeasure* measure, uint wireCnt)
@@ -3052,10 +3054,10 @@ void extRCModel::closeFiles()
 
 void extRCModel::cleanFiles()
 {
-  char cmd[4000];
-  sprintf(cmd, "rm -rf %s ", _wireDirName);
-  if (system(cmd) == -1) {
-    logger_->error(RCX, 491, "rm failed on {}", _wireDirName);
+  try {
+    std::filesystem::remove_all(_wireDirName);
+  } catch (const std::filesystem::filesystem_error& err) {
+    logger_->error(RCX, 491, "rm failed on {}: {}", _wireDirName, err.what());
   }
 }
 
@@ -3124,12 +3126,13 @@ void extMetRCTable::addRCw(extMeasure* m)
                                          _layerCnt,
                                          _capOverUnder[m->_met]->_metCnt);
     assert(n >= 0);
-    if (m->_open)
+    if (m->_open) {
       table = _capOverUnder_open[m->_met][0];
-    else if (m->_over1)
+    } else if (m->_over1) {
       table = _capOverUnder_open[m->_met][1];
-    else
+    } else {
       table = _capOverUnder[m->_met];
+    }
   } else if (m->_over) {
     n = m->_underMet;
     if (m->_res) {
@@ -3148,15 +3151,17 @@ void extMetRCTable::addRCw(extMeasure* m)
     }
   } else {
     n = m->getUnderIndex();
-    if (m->_open)
+    if (m->_open) {
       table = _capUnder_open[m->_met][0];
-    else if (m->_over1)
+    } else if (m->_over1) {
       table = _capUnder_open[m->_met][1];
-    else
+    } else {
       table = _capUnder[m->_met];
+    }
   }
-  if (table != nullptr)
+  if (table != nullptr) {
     table->addRCw(n, m->_w_nm, m->_tmpRC);
+  }
 }
 
 void extRCModel::addRC(extMeasure* m)
@@ -3400,7 +3405,7 @@ void extMetRCTable::allocateInitialTables(uint widthCnt,
       int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
       _capOverUnder[met] = new extDistWidthRCTable(
           false, met, _layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
-      for (uint jj = 0; jj < _wireCnt; jj++)
+      for (uint jj = 0; jj < _wireCnt; jj++) {
         _capOverUnder_open[met][jj] = new extDistWidthRCTable(false,
                                                               met,
                                                               _layerCnt,
@@ -3408,15 +3413,17 @@ void extMetRCTable::allocateInitialTables(uint widthCnt,
                                                               widthCnt,
                                                               _rcPoolPtr,
                                                               _OUREVERSEORDER);
+      }
     }
     if (over) {
       _capOver[met] = new extDistWidthRCTable(
           true, met, _layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
       _resOver[met] = new extDistWidthRCTable(
           true, met, _layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
-      for (uint jj = 0; jj < _wireCnt; jj++)
+      for (uint jj = 0; jj < _wireCnt; jj++) {
         _capOver_open[met][jj] = new extDistWidthRCTable(
             true, met, _layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+      }
     }
     if (under) {
       _capUnder[met] = new extDistWidthRCTable(false,
@@ -3791,9 +3798,10 @@ bool extRCModel::measurePatternVar(extMeasure* m,
                                    char* wiresNameSuffix,
                                    double res)
 {
-  if (m->_simVersion > 0)
+  if (m->_simVersion > 0) {
     return measurePatternVar_3D(
         m, top_width, bot_width, thickness, wireCnt, wiresNameSuffix, res);
+  }
 
   m->setEffParams(top_width, bot_width, thickness);
   double thicknessChange
@@ -3813,19 +3821,21 @@ bool extRCModel::measurePatternVar(extMeasure* m,
   if (_writeFiles) {
     FILE* wfp = mkPatternFile();
 
-    if (wfp == nullptr)
+    if (wfp == nullptr) {
       return false;  // should be an exception!! and return!
+    }
 
     _process->adjustMasterDielectricsForHeight(m->_met, thicknessChange);
 
-    if (_commentFlag)
+    if (_commentFlag) {
       fprintf(wfp, "%s\n", _commentLine);
+    }
 
     if (m->_benchFlag) {
       writeBenchWires(wfp, m);
-    } else
-
+    } else {
       fprintf(_filesFP, "%s/wires\n", _wireDirName);
+    }
 
     fclose(wfp);
   }

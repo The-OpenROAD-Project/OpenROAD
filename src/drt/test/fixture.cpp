@@ -741,9 +741,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
     }
   }
 
-  frViaDef* via = via_p.get();
-  tech->addVia(std::move(via_p));
-  return via;
+  return tech->addVia(std::move(via_p));
 }
 
 frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)

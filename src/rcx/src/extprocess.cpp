@@ -12,22 +12,25 @@ using utl::RCX;
 
 void printInt(FILE* fp, const char* sep, const char* key, int v, bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %d\n", sep, key, v);
 }
 void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
 void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
 {
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
     return;
+  }
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
@@ -63,8 +66,9 @@ void extConductor::printString(FILE* fp,
                                char* v,
                                bool pos)
 {
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
     return;
+  }
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
@@ -74,8 +78,9 @@ void extConductor::printInt(FILE* fp,
                             int v,
                             bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %d\n", sep, key, v);
 }
@@ -85,8 +90,9 @@ void extConductor::printDouble(FILE* fp,
                                double v,
                                bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
@@ -208,61 +214,80 @@ bool extConductor::readConductor(Ath__parser* parser)
   if (strcmp("distance", keyword) == 0) {
     _distance = parser->getDouble(1);
     return true;
-  } else if (strcmp("height", keyword) == 0) {
+  }
+  if (strcmp("height", keyword) == 0) {
     _height = parser->getDouble(1);
     return true;
-  } else if (strcmp("thickness", keyword) == 0) {
+  }
+  if (strcmp("thickness", keyword) == 0) {
     _thickness = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_width", keyword) == 0) {
+  }
+  if (strcmp("min_width", keyword) == 0) {
     _min_width = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_spacing", keyword) == 0) {
+  }
+  if (strcmp("min_spacing", keyword) == 0) {
     _min_spacing = parser->getDouble(1);
     return true;
-  } else if (strcmp("origin_x", keyword) == 0) {
+  }
+  if (strcmp("origin_x", keyword) == 0) {
     _origin_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("bottom_left_x", keyword) == 0) {
+  }
+  if (strcmp("bottom_left_x", keyword) == 0) {
     _bottom_left_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("bottom_right_x", keyword) == 0) {
+  }
+  if (strcmp("bottom_right_x", keyword) == 0) {
     _bottom_right_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("top_left_x", keyword) == 0) {
+  }
+  if (strcmp("top_left_x", keyword) == 0) {
     _top_left_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("top_right_x", keyword) == 0) {
+  }
+  if (strcmp("top_right_x", keyword) == 0) {
     _top_right_x = parser->getDouble(1);
     return true;
-  } else if (strcmp("var_table", keyword) == 0) {
+  }
+  if (strcmp("var_table", keyword) == 0) {
     _var_table_index = parser->getInt(1);
     return true;
-  } else if (strcmp("resistivity", keyword) == 0) {
+  }
+  if (strcmp("resistivity", keyword) == 0) {
     _p = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_cw_del", keyword) == 0) {
+  }
+  if (strcmp("min_cw_del", keyword) == 0) {
     _min_cw_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("max_cw_del", keyword) == 0) {
+  }
+  if (strcmp("max_cw_del", keyword) == 0) {
     _max_cw_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_ct_del", keyword) == 0) {
+  }
+  if (strcmp("min_ct_del", keyword) == 0) {
     _min_ct_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("max_ct_del", keyword) == 0) {
+  }
+  if (strcmp("max_ct_del", keyword) == 0) {
     _max_ct_del = parser->getDouble(1);
     return true;
-  } else if (strcmp("min_ca", keyword) == 0) {
+  }
+  if (strcmp("min_ca", keyword) == 0) {
     _min_ca = parser->getDouble(1);
     return true;
-  } else if (strcmp("max_ca", keyword) == 0) {
+  }
+  if (strcmp("max_ca", keyword) == 0) {
     _max_ca = parser->getDouble(1);
     return true;
-  } else if (strcmp("top_extension", keyword) == 0) {
+  }
+  if (strcmp("top_extension", keyword) == 0) {
     _top_ext = parser->getDouble(1);
     return true;
-  } else if (strcmp("bottom_extension", keyword) == 0) {
+  }
+  if (strcmp("bottom_extension", keyword) == 0) {
     _bot_ext = parser->getDouble(1);
     return true;
   }
@@ -296,8 +321,9 @@ void extDielectric::printString(FILE* fp,
                                 char* v,
                                 bool pos)
 {
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
     return;
+  }
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
@@ -307,8 +333,9 @@ void extDielectric::printInt(FILE* fp,
                              int v,
                              bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %d\n", sep, key, v);
 }
@@ -318,8 +345,9 @@ void extDielectric::printDouble(FILE* fp,
                                 double v,
                                 bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
@@ -330,8 +358,9 @@ void extDielectric::printDielectric(FILE* fp, Ath__parser* parse)
 
   printString(fp, "\t", "name", _name, false);
   printDouble(fp, "\t", "epsilon", _epsilon, false);
-  if (!_conformal && !_trench)
+  if (!_conformal && !_trench) {
     printString(fp, "\t", "non_conformal_metal", _non_conformal_metal, true);
+  }
 
   printDouble(fp, "\t", "height", _height, true);
   printDouble(fp, "\t", "thickness", _thickness, true);
@@ -418,8 +447,9 @@ void extMasterConductor::printDielBox(FILE* fp,
   // non conformal
 
   double thickness = _hiLeft[2] - _loLeft[2];
-  if (thickness == 0.0)
+  if (thickness == 0.0) {
     return;
+  }
   if (width_name != nullptr) {
     double height = _loLeft[2];
 
@@ -591,10 +621,12 @@ void extProcess::writeGround(FILE* fp,
                              double volt,
                              bool diag)
 {
-  if (met < 0)
+  if (met < 0) {
     return;
-  if (!met && diag)
+  }
+  if (!met && diag) {
     return;
+  }
 
   double y1 = -1.0;
   double th = 1.0;
@@ -629,16 +661,18 @@ void extProcess::writeGround3D(FILE* fp,
                                double volt,
                                bool diag)
 {
-  if (met < 0)
+  if (met < 0) {
     return;
+  }
 
   double y1 = -1.0;
   double th = 1.0;
   if (!met || diag) {
-    if (diag)
+    if (diag) {
       fprintf(fp, "POLY3D NAME= M0__w0; ");
-    else
+    } else {
       fprintf(fp, "POLY3D NAME= M%d__w0; ", met);
+    }
     fprintf(fp, " COORD= ");
     writeRaphaelPointXY(fp, x1, y1);
     writeRaphaelPointXY(fp, x1 + width, y1);
@@ -681,8 +715,9 @@ void extProcess::writeGround(FILE* fp,
                              double x1,
                              double volt)
 {
-  if (met < 0)
+  if (met < 0) {
     return;
+  }
 
   double y1 = -0.5;
   double th = 1.0;
@@ -745,12 +780,14 @@ double extProcess::writeProcessHeights(FILE* fp,
 
     double h1 = diel->_height;
     height += h1;
-    if (height >= height_ceiling)
+    if (height >= height_ceiling) {
       break;
+    }
 
     height += diel->_thickness;
-    if (height <= height_base)
+    if (height <= height_base) {
       continue;
+    }
 
     // if (diel->_conformal)
     m->writeDiel(fp, diel->_name, diel->_epsilon, height_base);
@@ -849,8 +886,9 @@ void extProcess::writeProcessAndGround3D(FILE* wfp,
 
   fprintf(wfp, "\n$ Ground Plane(s)\n");
 
-  if (underMet <= 0)
+  if (underMet <= 0) {
     writeGround3D(wfp, 0, gndName, wid, 0, -0.5 * wid, 0.0);
+  }
 
   double w, s, offset;
 
@@ -919,10 +957,11 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
       a->writeGround(wfp, underMet, 0, th);
     }
   } else {
-    if (apply_height_offset)
+    if (apply_height_offset) {
       fprintf(wfp, "GROUND_PLANE 0 M0_w0  HEIGHT -0.1 0.0  THICKNESS 0.1\n");
-    else
+    } else {
       fprintf(wfp, "GROUND_PLANE 0 M0_w0  HEIGHT 0.0 0.0  THICKNESS 0.0\n");
+    }
   }
   if (overMet > 0) {
     // DELETE double w = getConductor(overMet)->_min_width;
@@ -949,11 +988,13 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
   fprintf(wfp, "\n# Process Stack -- Dielectric Heights\n");
   double height = writeProcessHeights(
       wfp, 0, width, length, nullptr, height_base, height_ceiling);
-  if (overMet <= 0)
+  if (overMet <= 0) {
     height_ceiling = height;
+  }
 
-  if (!apply_height_offset)
+  if (!apply_height_offset) {
     height_ceiling = height;
+  }
 
   return height_base;
 }
@@ -965,36 +1006,51 @@ bool extDielectric::readDielectric(Ath__parser* parser)
     _conformal = false;
     _trench = false;
     return true;
-  } else if (strcmp("conformal", parser->get(0)) == 0) {
+  }
+  if (strcmp("conformal", parser->get(0)) == 0) {
     _conformal = true;
     return true;
-  } else if (strcmp("trench", parser->get(0)) == 0) {
+  }
+  if (strcmp("trench", parser->get(0)) == 0) {
     _trench = true;
     return true;
-  } else if (setDoubleVal(parser, "epsilon", 1, _epsilon))
+  }
+  if (setDoubleVal(parser, "epsilon", 1, _epsilon)) {
     return true;
-  else if (setDoubleVal(parser, "distance", 1, _distance))
+  }
+  if (setDoubleVal(parser, "distance", 1, _distance)) {
     return true;
-  else if (setIntVal(parser, "met", 1, _met))
+  }
+  if (setIntVal(parser, "met", 1, _met)) {
     return true;
-  else if (setIntVal(parser, "next_met", 1, _nextMet))
+  }
+  if (setIntVal(parser, "next_met", 1, _nextMet)) {
     return true;
-  else if (setDoubleVal(parser, "height", 1, _height))
+  }
+  if (setDoubleVal(parser, "height", 1, _height)) {
     return true;
-  else if (setDoubleVal(parser, "thickness", 1, _thickness))
+  }
+  if (setDoubleVal(parser, "thickness", 1, _thickness)) {
     return true;
-  else if (setDoubleVal(parser, "bottom_thickness", 1, _bottom_thickness))
+  }
+  if (setDoubleVal(parser, "bottom_thickness", 1, _bottom_thickness)) {
     return true;
-  else if (setDoubleVal(parser, "top_thickness", 1, _top_thickness))
+  }
+  if (setDoubleVal(parser, "top_thickness", 1, _top_thickness)) {
     return true;
-  else if (setDoubleVal(parser, "left_thickness", 1, _left_thickness))
+  }
+  if (setDoubleVal(parser, "left_thickness", 1, _left_thickness)) {
     return true;
-  else if (setDoubleVal(parser, "right_thickness", 1, _right_thickness))
+  }
+  if (setDoubleVal(parser, "right_thickness", 1, _right_thickness)) {
     return true;
-  else if (setDoubleVal(parser, "bottom_ext", 1, _bottom_ext))
+  }
+  if (setDoubleVal(parser, "bottom_ext", 1, _bottom_ext)) {
     return true;
-  else if (setDoubleVal(parser, "slope", 1, _slope))
+  }
+  if (setDoubleVal(parser, "slope", 1, _slope)) {
     return true;
+  }
 
   return false;
 }
@@ -1012,10 +1068,11 @@ extMasterConductor::extMasterConductor(uint condId,
     _loLeft[0] = cond->_bottom_left_x;
     _loRight[0] = cond->_bottom_right_x;
   } else {
-    if (cond->_bot_ext == 0.0)
+    if (cond->_bot_ext == 0.0) {
       _loLeft[0] = 0;
-    else
+    } else {
       _loLeft[0] = -cond->_bot_ext;
+    }
     if (!(min_width > 0)) {
       /*			fprintf(stdout, "Cannot determine Bottom Width
          for Conductor <%s>\n", cond->_name);
@@ -1026,10 +1083,11 @@ extMasterConductor::extMasterConductor(uint condId,
                     cond->_name);
       exit(0);
     }
-    if (cond->_bot_ext == 0.0)
+    if (cond->_bot_ext == 0.0) {
       _loRight[0] = min_width;
-    else
+    } else {
       _loRight[0] = min_width + cond->_bot_ext;
+    }
   }
   _hiLeft[0] = cond->_top_left_x;
   _hiRight[0] = cond->_top_right_x;
@@ -1038,10 +1096,11 @@ extMasterConductor::extMasterConductor(uint condId,
     _hiLeft[0] = cond->_top_left_x;
     _hiRight[0] = cond->_top_right_x;
   } else {
-    if (cond->_top_ext == 0.0)
+    if (cond->_top_ext == 0.0) {
       _hiLeft[0] = 0;
-    else
+    } else {
       _hiLeft[0] = -cond->_top_ext;
+    }
     if (!(min_width > 0)) {
       /*			fprintf(stdout, "Cannot determine Top Width for
          Conductor <%s>\n", cond->_name);
@@ -1052,10 +1111,11 @@ extMasterConductor::extMasterConductor(uint condId,
                     cond->_name);
       exit(0);
     }
-    if (cond->_top_ext == 0.0)
+    if (cond->_top_ext == 0.0) {
       _hiRight[0] = min_width;
-    else
+    } else {
       _hiRight[0] = min_width + cond->_top_ext;
+    }
   }
 
   // Y coordinates
@@ -1088,8 +1148,9 @@ extMasterConductor::extMasterConductor(uint condId,
 
   _dy = 0;
   _e = 0.0;
-  for (uint i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++) {
     _conformalId[i] = 0;
+  }
 }
 void extMasterConductor::resetThicknessHeight(double height, double thickness)
 {
@@ -1199,10 +1260,12 @@ void extMasterConductor::writeRaphaelConformalPoly(FILE* fp,
   double h = _loLeft[2];
   for (uint i = 0; i < 3; i++) {
     uint j = 2 - i;
-    if (!_conformalId[j])
+    if (!_conformalId[j]) {
       continue;
-    if (!start)
+    }
+    if (!start) {
       start = i;
+    }
     extDielectric* d = p->getDielectric(_conformalId[j]);
     // assuming conformal and trench will not show up at the same time. Also
     // height for the trench layer is negative.
@@ -1215,8 +1278,9 @@ void extMasterConductor::writeRaphaelConformalPoly(FILE* fp,
     h += d->_thickness;
     cnt++;
   }
-  if (!cnt)
+  if (!cnt) {
     return;
+  }
   if (trench) {
     for (uint j = start; j < start + cnt; j++) {
       fprintf(fp, "POLY NAME=");
@@ -1245,10 +1309,11 @@ void extMasterConductor::writeRaphaelConformalPoly(FILE* fp,
     fprintf(fp, "POLY NAME=");
     fprintf(fp, "M%d_Conformal%d;", _condId, 2 - j);
     if (width == 0.0) {
-      if (slope[j])
+      if (slope[j]) {
         dx = (height[j] - thickness[j]) / slope[j];
-      else
+      } else {
         dx = bottom_ext[j];
+      }
       writeRaphaelPointXY(fp, X + _loLeft[0] - bottom_ext[j], h);
       writeRaphaelPointXY(fp, X + _loRight[0] + bottom_ext[j], h);
       h -= thickness[j];
@@ -1258,10 +1323,11 @@ void extMasterConductor::writeRaphaelConformalPoly(FILE* fp,
           fp, X + _hiLeft[0] - bottom_ext[j] + dx, h + height[j]);
       fprintf(fp, " DIEL=%g\n", e[j]);
     } else {
-      if (slope[j])
+      if (slope[j]) {
         dx = (height[j] - thickness[j]) / slope[j];
-      else
+      } else {
         dx = bottom_ext[j];
+      }
       writeRaphaelPointXY(fp, X - bottom_ext[j], h);
       writeRaphaelPointXY(fp, X + width + bottom_ext[j], h);
       h -= thickness[j];
@@ -1285,10 +1351,12 @@ void extMasterConductor::writeRaphaelConformalGround(FILE* fp,
   double h = _loLeft[2];
   for (uint i = 0; i < 3; i++) {
     uint j = 2 - i;
-    if (!_conformalId[j])
+    if (!_conformalId[j]) {
       continue;
-    if (!start)
+    }
+    if (!start) {
       start = i;
+    }
     extDielectric* d = p->getDielectric(_conformalId[j]);
     // assuming conformal and trench will not show up at the same time. Also
     // height for the trench layer is negative.
@@ -1299,8 +1367,9 @@ void extMasterConductor::writeRaphaelConformalGround(FILE* fp,
     h += d->_thickness;
     cnt++;
   }
-  if (!cnt)
+  if (!cnt) {
     return;
+  }
   if (trench) {
     for (uint j = start; j < start + cnt; j++) {
       fprintf(fp, "POLY NAME=");
@@ -1541,8 +1610,9 @@ extMasterConductor::extMasterConductor(uint dielId,
 
   _dy = 0;
   _e = diel->_epsilon;
-  for (uint i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++) {
     _conformalId[i] = 0;
+  }
 }
 FILE* extProcess::openFile(const char* filename, const char* permissions)
 {
@@ -1567,16 +1637,18 @@ double extProcess::adjustMasterLayersForHeight(uint met, double thickness)
     extConductor* cond = _condTable->get(ii);
     extMasterConductor* m = _masterConductorTable->get(ii);
 
-    if (_thickVarFlag)
+    if (_thickVarFlag) {
       h += cond->_distance * (1 + dth);
-    else
+    } else {
       h += cond->_distance;
+    }
 
     double th = cond->_thickness;
-    if (_thickVarFlag)
+    if (_thickVarFlag) {
       th *= (1 + dth);
-    else if (ii == met)
+    } else if (ii == met) {
       th = thickness;
+    }
 
     m->resetThicknessHeight(h, th);
     h += th;
@@ -1591,10 +1663,11 @@ double extProcess::adjustMasterDielectricsForHeight(uint met, double dth)
     extMasterConductor* m = _masterDielectricTable->get(ii);
 
     double th = diel->_thickness;
-    if (_thickVarFlag)
+    if (_thickVarFlag) {
       th *= (1 + dth);
-    else if (diel->_met == (int) met)
+    } else if (diel->_met == (int) met) {
       th *= (1 + dth);
+    }
 
     m->resetThicknessHeight(h, th);
     h += th;
@@ -1713,19 +1786,22 @@ Ath__array1D<double>* extProcess::getDiagSpaceTable(uint met)
 }
 Ath__array1D<double>* extProcess::getDataRateTable(uint met)
 {
-  if (_dataRateTable)
+  if (_dataRateTable) {
     return _dataRateTable;
+  }
   Ath__array1D<double>* A = new Ath__array1D<double>(8);
   A->add(0.0);
   return A;
 }
 void extProcess::readDataRateTable(Ath__parser* parser, const char* keyword)
 {
-  if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0))
+  if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0)) {
     return;
+  }
 
-  if (parser->getWordCnt() < 1)
+  if (parser->getWordCnt() < 1) {
     return;
+  }
   Ath__array1D<double>* A = new Ath__array1D<double>(parser->getWordCnt() + 1);
   A->add(0.0);
   parser->getDoubleArray(A, 1);
@@ -1762,8 +1838,9 @@ extVariation* extProcess::getVariation(uint met)
   extConductor* m = getConductor(met);
 
   extVariation* v = nullptr;
-  if (m->_var_table_index > 0)
+  if (m->_var_table_index > 0) {
     v = _varTable->get(m->_var_table_index);
+  }
 
   return v;
 }
@@ -1771,15 +1848,17 @@ double extVariation::interpolate(double w,
                                  Ath__array1D<double>* X,
                                  Ath__array1D<double>* Y)
 {
-  if (X->getCnt() < 2)
+  if (X->getCnt() < 2) {
     return w;
+  }
 
   int jj = X->findNextBiggestIndex(w);
 
-  if (jj >= (int) X->getCnt() - 1)
+  if (jj >= (int) X->getCnt() - 1) {
     jj = X->getCnt() - 2;
-  else if (jj < 0)
+  } else if (jj < 0) {
     jj = 0;
+  }
 
   double w1 = X->get(jj);
   double w2 = X->get(jj + 1);
@@ -1831,14 +1910,16 @@ Ath__array1D<double>* extVariation::getDataRateTable()
 }
 Ath__array1D<double>* extVariation::getPTable()
 {
-  if (_p == nullptr)
+  if (_p == nullptr) {
     return nullptr;
+  }
   return _p->_p;
 }
 double extVariation::getP(double w)
 {
-  if (_p == nullptr)
+  if (_p == nullptr) {
     return 0;
+  }
   return interpolate(w, _p->_width, _p->_p);
 }
 void extProcess::writeProcess(const char* filename)
@@ -1863,16 +1944,19 @@ void extProcess::writeProcess(const char* filename)
 Ath__array1D<double>* extVarTable::readDoubleArray(Ath__parser* parser,
                                                    const char* keyword)
 {
-  if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0))
+  if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0)) {
     return nullptr;
+  }
 
-  if (parser->getWordCnt() < 1)
+  if (parser->getWordCnt() < 1) {
     return nullptr;
+  }
 
   Ath__array1D<double>* A = new Ath__array1D<double>(parser->getWordCnt());
   uint start = 0;
-  if (keyword != nullptr)
+  if (keyword != nullptr) {
     start = 1;
+  }
   parser->getDoubleArray(A, start);
   return A;
 }
@@ -1881,14 +1965,17 @@ void extVarTable::printOneLine(FILE* fp,
                                const char* header,
                                const char* trail)
 {
-  if (A == nullptr)
+  if (A == nullptr) {
     return;
+  }
 
-  if (header != nullptr)
+  if (header != nullptr) {
     fprintf(fp, "%s ", header);
+  }
 
-  for (uint ii = 0; ii < A->getCnt(); ii++)
+  for (uint ii = 0; ii < A->getCnt(); ii++) {
     fprintf(fp, "%g ", A->get(ii));
+  }
 
   fprintf(fp, "%s", trail);
 }
@@ -1900,38 +1987,47 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
 {
   uint debug = 0;
 
-  if (strcmp("}", parser->get(0)) == 0)
+  if (strcmp("}", parser->get(0)) == 0) {
     return -1;
+  }
   _width = readDoubleArray(parser, keyword1);
 
-  if (debug > 0)
+  if (debug > 0) {
     printOneLine(stdout, _width, keyword1, "\n");
+  }
 
-  if (!(parser->parseNextLine() > 0))
+  if (!(parser->parseNextLine() > 0)) {
     return -1;
+  }
 
   if (strcmp("Spacing", keyword2) == 0) {
     _space = readDoubleArray(parser, keyword2);
-  } else if (strcmp("Deff", keyword2) == 0) {
+  }
+  if (strcmp("Deff", keyword2) == 0) {
     _density = readDoubleArray(parser, keyword2);
-    for (uint jj = 0; jj < _density->getCnt(); jj++)
+    for (uint jj = 0; jj < _density->getCnt(); jj++) {
       _vTable[jj] = new Ath__array1D<double>(_width->getCnt());
+    }
     if (debug > 0) {
       printOneLine(stdout, _space, keyword2, "\n");
       printOneLine(stdout, _density, keyword2, "\n");
     }
-  } else if (strcmp("P", keyword2) == 0) {
+  }
+  if (strcmp("P", keyword2) == 0) {
     _p = readDoubleArray(parser, keyword2);
     _rowCnt = 1;
-    if (debug > 0)
+    if (debug > 0) {
       printOneLine(stdout, _p, keyword2, "\n");
+    }
   }
 
-  if (!(parser->parseNextLine() > 0))
+  if (!(parser->parseNextLine() > 0)) {
     return -1;
+  }
   if (strcmp("}", keyword3) == 0) {
     return 1;
-  } else if (strcmp(keyword3, parser->get(0)) != 0) {
+  }
+  if (strcmp(keyword3, parser->get(0)) != 0) {
     return -1;
   }
 
@@ -1940,29 +2036,34 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
     if (strcmp(key4, parser->get(0)) == 0) {
       break;
     }
-    if (strcmp("}", parser->get(0)) == 0)
+    if (strcmp("}", parser->get(0)) == 0) {
       break;
+    }
     if (_space != nullptr) {
       _vTable[ii++] = readDoubleArray(parser, nullptr);
-      if (debug > 0)
+      if (debug > 0) {
         printOneLine(stdout, _vTable[ii - 1], nullptr, "\n");
+      }
     } else {
       ii++;
-      for (int jj = 0; jj < parser->getWordCnt(); jj++)
+      for (int jj = 0; jj < parser->getWordCnt(); jj++) {
         _vTable[jj]->add(parser->getDouble(jj));
+      }
     }
   }
   if (debug > 0) {
     if (_density != nullptr) {
-      for (uint jj = 0; jj < _density->getCnt(); jj++)
+      for (uint jj = 0; jj < _density->getCnt(); jj++) {
         printOneLine(stdout, _vTable[jj], nullptr, "\n");
+      }
     }
   }
 
-  if (_space != nullptr)
+  if (_space != nullptr) {
     _rowCnt = ii;
-  else
+  } else {
     _rowCnt = _density->getCnt();
+  }
 
   return ii;
 }
@@ -1970,19 +2071,20 @@ void extVarTable::printTable(FILE* fp, const char* valKey)
 {
   printOneLine(fp, _width, "Width", "\n");
 
-  if (_space != nullptr)
+  if (_space != nullptr) {
     printOneLine(fp, _space, "Spacing", "\n");
-  else if (_density != nullptr)
+  } else if (_density != nullptr) {
     printOneLine(fp, _space, "Deff", "\n");
-  else {
+  } else {
     printOneLine(fp, _p, "P", "\n");
     return;
   }
 
   fprintf(fp, "%s\n", valKey);
 
-  for (uint ii = 0; ii < _rowCnt; ii++)
+  for (uint ii = 0; ii < _rowCnt; ii++) {
     printOneLine(fp, _vTable[ii], nullptr, "\n");
+  }
 }
 void extVariation::printVariation(FILE* fp, uint n)
 {
@@ -1995,8 +2097,9 @@ void extVariation::printVariation(FILE* fp, uint n)
   _hiWidthR->printTable(fp, "hi_rWidth_eff");
   _loWidthR->printTable(fp, "lo_rWidth_delta");
   _thicknessR->printTable(fp, "r_thickness_eff");
-  if (_p != nullptr)
+  if (_p != nullptr) {
     _p->printTable(fp, "P");
+  }
 
   fprintf(fp, "}\n");
 }
@@ -2029,8 +2132,9 @@ int extVariation::readVariation(Ath__parser* parser)
   _loWidthR = readVarTable(parser, "Width", "Deff", "lo_rWidth_delta", "Width");
   _thicknessR
       = readVarTable(parser, "Width", "Deff", "r_thickness_eff", "Width");
-  if (strcmp("}", parser->get(0)) == 0)
+  if (strcmp("}", parser->get(0)) == 0) {
     return 0;
+  }
   _p = readVarTable(parser, "Width", "P", "}", "");
 
   return 0;
@@ -2048,8 +2152,9 @@ uint extProcess::readProcess(const char* name, char* filename)
   while (parser.parseNextLine() > 0) {
     if (strcmp("PROCESS", parser.get(0)) == 0) {
       while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
+        if (strcmp("}", parser.get(0)) == 0) {
           break;
+        }
       }
     } else if (strcmp("THICKNESS_VARIATION", parser.get(0)) == 0) {
       readDataRateTable(&parser, "THICKNESS_VARIATION");
@@ -2064,8 +2169,9 @@ uint extProcess::readProcess(const char* name, char* filename)
       extVar->setLogger(logger_);
 
       while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
+        if (strcmp("}", parser.get(0)) == 0) {
           break;
+        }
         extVar->readVariation(&parser);
 
         // extParser *xp= (extParser *) &parser;
@@ -2073,8 +2179,9 @@ uint extProcess::readProcess(const char* name, char* filename)
 
         // parser.setDbg(0);
 
-        if (strcmp("}", parser.get(0)) == 0)
+        if (strcmp("}", parser.get(0)) == 0) {
           break;
+        }
       }
       _varTable->add(extVar);
     } else if (strcmp("CONDUCTOR", parser.get(0)) == 0) {
@@ -2082,20 +2189,23 @@ uint extProcess::readProcess(const char* name, char* filename)
       strcpy(cond->_name, parser.get(1));
 
       while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
+        if (strcmp("}", parser.get(0)) == 0) {
           break;
+        }
 
         cond->readConductor(&parser);
       }
       _condTable->add(cond);
     } else if (strcmp("DIELECTRIC", parser.get(0)) == 0) {
       extDielectric* diel = new extDielectric(logger_);
-      if (parser.getWordCnt() > 2)
+      if (parser.getWordCnt() > 2) {
         strcpy(diel->_name, parser.get(1));
+      }
 
       while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
+        if (strcmp("}", parser.get(0)) == 0) {
           break;
+        }
 
         diel->readDielectric(&parser);
       }
@@ -2144,19 +2254,16 @@ extVarTable::extVarTable(uint rowCnt)
 extVarTable::~extVarTable()
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
-    if (_vTable[ii] != nullptr)
+    if (_vTable[ii] != nullptr) {
       delete _vTable[ii];
+    }
   }
   delete[] _vTable;
 
-  if (_density != nullptr)
-    delete _density;
-  if (_space != nullptr)
-    delete _space;
-  if (_width != nullptr)
-    delete _width;
-  if (_p != nullptr)
-    delete _p;
+  delete _density;
+  delete _space;
+  delete _width;
+  delete _p;
   _p = nullptr;
   _density = nullptr;
   _space = nullptr;

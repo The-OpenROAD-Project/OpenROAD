@@ -59,20 +59,22 @@ extRulesPat::extRulesPat(const char* pat,
   _extMain = xt;
   _dbunit = _block->getDbUnitsPerMicron();
 
-  if (_res)
+  if (_res) {
     strcpy(_name_prefix, "R");
-  else if (_over) {
-    if (_under)
+  } else if (_over) {
+    if (_under) {
       strcpy(_name_prefix, "OU");
-    else if (_diag)
+    } else if (_diag) {
       strcpy(_name_prefix, "DO");
-    else
+    } else {
       strcpy(_name_prefix, "O");
+    }
   } else if (_under) {
-    if (_diag)
+    if (_diag) {
       strcpy(_name_prefix, "DU");
-    else
+    } else {
       strcpy(_name_prefix, "U");
+    }
   }
   PrintOrigin(stdout, _init_origin, 0, "Pattern Initial");
   _def_fp = stdout;
@@ -83,8 +85,9 @@ extRulesPat::extRulesPat(const char* pat,
 }
 void extRulesPat::PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg)
 {
-  if (!_dbg)
+  if (!_dbg) {
     return;
+  }
 
   float units = 0.001;
   fprintf(stdout,
@@ -98,10 +101,11 @@ void extRulesPat::PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg)
 void extRulesPat::UpdateOrigin_start(uint met)
 {
   _patternSep = _sepGridCnt * (_minWidth + _minSpace);
-  if (met > 1)
+  if (met > 1) {
     _origin[0] += _ur_last[0] + _patternSep;  // Grow horizontally for each met
-  else
+  } else {
     _origin[0] = _init_origin[0];
+  }
 
   _origin[1] = _init_origin[1];
 
@@ -111,8 +115,9 @@ void extRulesPat::UpdateOrigin_wires(int ll[2], int ur[2])
 {
   // called at  the end of each individual wire pattern
   _origin[1] += ur[1] + _patternSep;
-  if (_ur_last[0] < ur[0])
+  if (_ur_last[0] < ur[0]) {
     _ur_last[0] = ur[0];  // next big pattern will start
+  }
 
   PrintBbox(stdout, ll, ur);
 }
@@ -148,10 +153,11 @@ void extRulesPat::SetInitName(uint n,
 {
   char name[100];
   if (_diag) {
-    if (_under)
+    if (_under) {
       sprintf(name, "%s%d_M%duuM%d", _name_prefix, n, _met, _overMet);
-    else
+    } else {
       sprintf(name, "%s%d_M%dooM%d", _name_prefix, n, _met, _underMet);
+    }
   } else if (_res) {
     sprintf(name, "%s%d_M%doM%d", _name_prefix, n, _met, _underMet);
   } else if (_over && _under) {
@@ -162,9 +168,9 @@ void extRulesPat::SetInitName(uint n,
   } else {
     sprintf(name, "%s%d_M%duM%d", _name_prefix, n, _met, _overMet);
   }
-  if (!_diag)
+  if (!_diag) {
     sprintf(_name, "%s_W%dW%d_S%05dS%05d", name, w1, w2, s1, s2);
-  else if (_under)
+  } else if (_under) {
     sprintf(_name,
             "%s_W%dW%d_S%05dS%05d_W%05d_S%05d",
             name,
@@ -174,7 +180,7 @@ void extRulesPat::SetInitName(uint n,
             s2,
             _over_minWidthCntx,
             ds1);
-  else
+  } else {
     sprintf(_name,
             "%s_W%dW%d_S%05dS%05d_W%05d_S%05d",
             name,
@@ -184,13 +190,15 @@ void extRulesPat::SetInitName(uint n,
             s2,
             _under_minWidthCntx,
             ds1);
+  }
 }
 void extRulesPat::AddName(uint jj, uint wireIndex, const char* wire, int met)
 {
-  if (strcmp(wire, "") == 0)
+  if (strcmp(wire, "") == 0) {
     sprintf(_patName[jj], "%s_%s%d", _name, wire, wireIndex);
-  else
+  } else {
     sprintf(_patName[jj], "%s_%s_M%d_%d", _name, wire, met, wireIndex);
+  }
 }
 void extRulesPat::AddName1(uint jj,
                            uint w1,
@@ -201,7 +209,7 @@ void extRulesPat::AddName1(uint jj,
                            const char* wire,
                            int met)
 {
-  if (strcmp(wire, "cntx") == 0)
+  if (strcmp(wire, "cntx") == 0) {
     sprintf(_patName[jj],
             "%s_W%dW%d_S%05dS%05d_%s_%d_w%d",
             _name,
@@ -212,7 +220,7 @@ void extRulesPat::AddName1(uint jj,
             wire,
             met,
             wireIndex);
-  else
+  } else {
     sprintf(_patName[jj],
             "%s_W%dW%d_S%05dS%05d_%s%d",
             _name,
@@ -222,6 +230,7 @@ void extRulesPat::AddName1(uint jj,
             s2,
             wire,
             wireIndex);
+  }
 }
 uint extRulesPat::getMinWidthSpacing(dbTechLayer* layer, uint& w)
 {
@@ -230,8 +239,9 @@ uint extRulesPat::getMinWidthSpacing(dbTechLayer* layer, uint& w)
   uint p = layer->getPitch();
   int minSpace = layer->getSpacing();
   int s = p - minWidth;
-  if (s > minSpace)
+  if (s > minSpace) {
     s = minSpace;
+  }
   return s;
 }
 uint extRulesPat::setLayerInfo(dbTechLayer* layer, uint met)
@@ -271,13 +281,15 @@ void extRulesPat::setMets(int underMet,
 {
   _under_layer = under_layer;
   _underMet = underMet;
-  if (under_layer != nullptr)
+  if (under_layer != nullptr) {
     _under_minSpaceCntx = getMinWidthSpacing(under_layer, _under_minWidthCntx);
+  }
 
   _over_layer = over_layer;
   _overMet = overMet;
-  if (over_layer != nullptr)
+  if (over_layer != nullptr) {
     _over_minSpaceCntx = getMinWidthSpacing(over_layer, _over_minWidthCntx);
+  }
 }
 void extRulesPat::UpdateBBox()
 {
@@ -354,20 +366,23 @@ uint extRulesPat::CreatePatterns_diag()
 }
 uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
 {
-  if (wcnt > 5)
+  if (wcnt > 5) {
     return 0;
+  }
   bool w5 = wcnt == 5;
   uint w = _target_width[widthIndex];
   uint s = _target_spacing[spaceIndex];
-  if (wcnt == 1)
+  if (wcnt == 1) {
     s = 0;
+  }
   uint cntx_s = _target_spacing[0];
   uint cntx_w = _target_width[0];
 
-  if (w5)
+  if (w5) {
     Init(cntx_s);
-  else
+  } else {
     Init(s);
+  }
 
   SetInitName(wcnt, w, w, s, s);
   // multiple widths
@@ -396,7 +411,7 @@ uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
 
   Print(stdout);
 
-  if (_underMet > 0)
+  if (_underMet > 0) {
     CreateContext(_underMet,
                   ll,
                   ur,
@@ -405,8 +420,9 @@ uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
                   _under_minWidthCntx,
                   _under_minSpaceCntx,
                   _under_layer);
+  }
 
-  if (_overMet > 0)
+  if (_overMet > 0) {
     CreateContext(_overMet,
                   ll,
                   ur,
@@ -415,6 +431,7 @@ uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
                   _over_minWidthCntx,
                   _over_minSpaceCntx,
                   _over_layer);
+  }
 
   UpdateOrigin_wires(ll, ur);
 
@@ -455,11 +472,13 @@ uint extRulesPat::CreateContext(uint met,
   _lineCnt = jj;
   Print(stdout);
   for (uint k = 0; k < 2; k++) {
-    if (ur[k] < _UR[jj - 1][k])
+    if (ur[k] < _UR[jj - 1][k]) {
       ur[k] = _UR[jj - 1][k];
+    }
 
-    if (ll[k] > _LL[jj - 1][k])
+    if (ll[k] > _LL[jj - 1][k]) {
       ll[k] = _LL[jj - 1][k];
+    }
   }
   WriteDB(_long_dir, met, cntx_layer);
 
@@ -470,8 +489,9 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
                                   uint spaceIndex2,
                                   uint wcnt)
 {
-  if (wcnt > 5 || wcnt < 3)
+  if (wcnt > 5 || wcnt < 3) {
     return 0;
+  }
   bool wcnt5 = wcnt == 5;
   uint w = _target_width[widthIndex];
   uint s1 = _target_spacing[spaceIndex1];
@@ -480,10 +500,11 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
   uint cntx_s = _target_spacing[0];
   uint cntx_w = _target_width[0];
 
-  if (wcnt5)
+  if (wcnt5) {
     Init(cntx_s);
-  else
+  } else {
     Init(s1);
+  }
 
   uint sp5[5] = {cntx_s, cntx_s, s1, s2, cntx_s};
   uint sp3[3] = {s1, s1, s2};
@@ -520,7 +541,7 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
   PrintBbox(stdout, ll, ur);
   UpdateOrigin_wires(ll, ur);
 
-  if (_underMet > 0)
+  if (_underMet > 0) {
     CreateContext(_underMet,
                   ll,
                   ur,
@@ -529,8 +550,9 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
                   _under_minWidthCntx,
                   _under_minSpaceCntx,
                   _under_layer);
+  }
 
-  if (_overMet > 0)
+  if (_overMet > 0) {
     CreateContext(_overMet,
                   ll,
                   ur,
@@ -539,6 +561,7 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
                   _over_minWidthCntx,
                   _over_minSpaceCntx,
                   _over_layer);
+  }
 
   return ii;  // cnt of main pattern;
 }
@@ -550,8 +573,9 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
                                        uint spaceDiagIndex1,
                                        uint dcnt)
 {
-  if (wcnt > 3)
+  if (wcnt > 3) {
     return 0;
+  }
   bool wcnt5 = wcnt == 5;
   uint w = _target_width[widthIndex];
   uint s1 = _target_spacing[spaceIndex1];
@@ -562,10 +586,11 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
   uint cntx_s = _target_spacing[0];
   uint cntx_w = _target_width[0];
 
-  if (wcnt5)
+  if (wcnt5) {
     Init(cntx_s);
-  else
+  } else {
     Init(s1);
+  }
 
   uint sp5[5] = {cntx_s, cntx_s, s1, s2, cntx_s};
   uint sp3[3] = {s1, s1, s2};
@@ -621,10 +646,11 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
 
   _lineCnt = jj;
 
-  if (_under)
+  if (_under) {
     WriteDB(_dir, _overMet, _over_layer);
-  else
+  } else {
     WriteDB(_dir, _underMet, _under_layer);
+  }
 
   Print(stdout);
 
@@ -666,8 +692,9 @@ uint extRulesPat::CreatePattern2(uint wct)
 }
 void extRulesPat::Print(FILE* fp, uint jj)
 {
-  if (!_dbg)
+  if (!_dbg) {
     return;
+  }
   float units = 0.001;
   fprintf(fp,
           "%10.2f %10.2f  %10.2f %10.2f   %s\n",
@@ -679,8 +706,9 @@ void extRulesPat::Print(FILE* fp, uint jj)
 }
 void extRulesPat::PrintBbox(FILE* fp, int LL[2], int UR[2])
 {
-  if (!_dbg)
+  if (!_dbg) {
     return;
+  }
   float units = 0.001;
   fprintf(fp,
           "\n%10.2f %10.2f  %10.2f %10.2f   BBox\n",
@@ -691,17 +719,20 @@ void extRulesPat::PrintBbox(FILE* fp, int LL[2], int UR[2])
 }
 void extRulesPat::Print(FILE* fp)
 {
-  if (!_dbg)
+  if (!_dbg) {
     return;
+  }
   fprintf(stdout, "\n%s\n", _name);
-  for (uint jj = 1; jj < _lineCnt; jj++)
+  for (uint jj = 1; jj < _lineCnt; jj++) {
     Print(fp, jj);
+  }
 }
 void extRulesPat::WriteDB(uint dir, uint met, dbTechLayer* layer)
 {
   // fprintf(stdout, "DB: %s\n", _name);
-  for (uint jj = 1; jj < _lineCnt; jj++)
+  for (uint jj = 1; jj < _lineCnt; jj++) {
     WriteDB(jj, dir, met, layer, _def_fp);
+  }
 }
 void extRulesPat::WriteDB(uint jj,
                           uint dir,
@@ -721,8 +752,9 @@ void extRulesPat::WriteDB(uint jj,
 }
 void extRulesPat::WriteWire(FILE* fp, int ll[2], int ur[2], char* name)
 {
-  if (!_dbg)
+  if (!_dbg) {
     return;
+  }
   float units = 0.001;
   fprintf(fp,
           "%10.2f %10.2f  %10.2f %10.2f   %s\n",
@@ -786,8 +818,9 @@ uint extRCModel::OverRulePat(extMainOptions* opt,
                              bool diag,
                              uint overDist)
 {
-  if (opt->_met == 0)
+  if (opt->_met == 0) {
     return 0;
+  }
 
   extRulesPat* p = new extRulesPat("",
                                    true,
@@ -804,41 +837,49 @@ uint extRCModel::OverRulePat(extMainOptions* opt,
 
   uint cnt = 0;
   for (int met = 1; met <= (int) _layerCnt; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == nullptr) {
       continue;
+    }
 
     p->setLayerInfo(layer, met);
 
     for (int underMet = 0; underMet < met; underMet++) {
-      if (diag && underMet == 0)
+      if (diag && underMet == 0) {
         continue;
-      if ((opt->_underMet > 0) && (opt->_underMet != underMet))
+      }
+      if ((opt->_underMet > 0) && (opt->_underMet != underMet)) {
         continue;
+      }
 
-      if (met - underMet > (int) opt->_underDist)
+      if (met - underMet > (int) opt->_underDist) {
         continue;
+      }
 
       dbTechLayer* under_layer
           = underMet > 0 ? opt->_tech->findRoutingLayer(underMet) : nullptr;
       p->setMets(underMet, under_layer, -1, nullptr);
 
-      if (diag)
+      if (diag) {
         cnt += p->CreatePatterns_diag();
-      else if (!res)
+      } else if (!res) {
         cnt += p->CreatePatterns();
-      else
+      } else {
         cnt += p->CreatePatterns_res();
+      }
 
       p->UpdateBBox();
 
-      if (underMet == 0 && p->_res)
+      if (underMet == 0 && p->_res) {
         break;
+      }
     }
   }
   logger_->info(
@@ -854,8 +895,9 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
                               bool diag,
                               uint overDist)
 {
-  if (opt->_overMet == 0)
+  if (opt->_overMet == 0) {
     return 0;
+  }
 
   extRulesPat* p = new extRulesPat("",
                                    false,
@@ -872,35 +914,43 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
 
   uint cnt = 0;
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == nullptr) {
       continue;
+    }
 
     p->setLayerInfo(layer, met);
 
     for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
-      if (overMet > opt->_met_cnt)
+      if (overMet > opt->_met_cnt) {
         continue;
-      if (overMet - met > overDist)
+      }
+      if (overMet - met > overDist) {
         continue;
-      if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet))
+      }
+      if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet)) {
         continue;
+      }
 
       dbTechLayer* over_layer = opt->_tech->findRoutingLayer(overMet);
-      if (over_layer == nullptr)
+      if (over_layer == nullptr) {
         continue;
+      }
 
       p->setMets(-1, nullptr, overMet, over_layer);
 
-      if (!diag)
+      if (!diag) {
         cnt += p->CreatePatterns();
-      else
+      } else {
         cnt += p->CreatePatterns_diag();
+      }
 
       p->UpdateBBox();
 
@@ -920,8 +970,9 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
                                   int UR[2])
 {
   // NOT USED
-  if (opt->_overMet == 0)
+  if (opt->_overMet == 0) {
     return 0;
+  }
 
   extRulesPat* p = new extRulesPat("",
                                    false,
@@ -938,28 +989,35 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
 
   uint cnt = 0;
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == nullptr) {
       continue;
+    }
 
     p->setLayerInfo(layer, met);
 
     for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
-      if (overMet > opt->_met_cnt)
+      if (overMet > opt->_met_cnt) {
         continue;
-      if (overMet - met > opt->_overDist)
+      }
+      if (overMet - met > opt->_overDist) {
         continue;
-      if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet))
+      }
+      if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet)) {
         continue;
+      }
 
       dbTechLayer* over_layer = opt->_tech->findRoutingLayer(overMet);
-      if (over_layer == nullptr)
+      if (over_layer == nullptr) {
         continue;
+      }
 
       p->setMets(-1, nullptr, overMet, over_layer);
 
@@ -979,8 +1037,9 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
                                   int origin[2],
                                   int UR[2])
 {
-  if (opt->_overMet == 0)
+  if (opt->_overMet == 0) {
     return 0;
+  }
 
   extRulesPat* p = new extRulesPat("",
                                    true,
@@ -997,38 +1056,48 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
 
   uint cnt = 0;
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == nullptr) {
       continue;
+    }
 
     p->setLayerInfo(layer, met);
 
     for (int underMet = 1; underMet < met; underMet++) {
-      if (met - underMet > (int) opt->_underDist)
+      if (met - underMet > (int) opt->_underDist) {
         continue;
-      if ((opt->_underMet > 0) && ((int) opt->_underMet != underMet))
+      }
+      if ((opt->_underMet > 0) && ((int) opt->_underMet != underMet)) {
         continue;
+      }
 
       dbTechLayer* under_layer = opt->_tech->findRoutingLayer(underMet);
-      if (under_layer == nullptr)
+      if (under_layer == nullptr) {
         continue;
+      }
 
       for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
-        if (overMet > opt->_met_cnt)
+        if (overMet > opt->_met_cnt) {
           continue;
-        if (overMet - met > opt->_overDist)
+        }
+        if (overMet - met > opt->_overDist) {
           continue;
-        if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet))
+        }
+        if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet)) {
           continue;
+        }
 
         dbTechLayer* over_layer = opt->_tech->findRoutingLayer(overMet);
-        if (over_layer == nullptr)
+        if (over_layer == nullptr) {
           continue;
+        }
 
         p->setMets(underMet, under_layer, overMet, over_layer);
 
@@ -1066,41 +1135,44 @@ dbBTerm* extRulesPat::createBterm(bool lo,
 
   int hwidth = width / 2;
   if (lo) {
-    if (!vertical)
+    if (!vertical) {
       dbBox::create(bpin,
                     layer,
                     ll[0],
                     ll[1] - hwidth,
                     ll[0] + width,
                     ll[1] + hwidth);  // TESTED OK
-    else
+    } else {
       dbBox::create(bpin,
                     layer,
                     ll[0] - hwidth,
                     ll[1],
                     ll[0] + hwidth,
                     ll[1] + width);  // TO_TEST
+    }
   } else {
-    if (!vertical)
+    if (!vertical) {
       dbBox::create(bpin,
                     layer,
                     ur[0] - width,
                     ur[1] - width - hwidth,
                     ur[0],
                     ur[1] - hwidth);  // TESTED OK
-    else
+    } else {
       dbBox::create(bpin,
                     layer,
                     ur[0] - width,
                     ur[1] - hwidth,
                     ur[0],
                     ur[1] + hwidth);  // TO TEST
+    }
   }
   bterm->setSigType(dbSigType::SIGNAL);
-  if (io)
+  if (io) {
     bterm->setIoType(dbIoType::INPUT);
-  else
+  } else {
     bterm->setIoType(dbIoType::OUTPUT);
+  }
 
   return bterm;
 }
@@ -1146,10 +1218,11 @@ dbBTerm* extRulesPat::createBterm1(bool lo,
   dbBox::create(bpin, layer, x1, y1, x2, y2);
 
   bterm->setSigType(dbSigType::SIGNAL);
-  if (io)
+  if (io) {
     bterm->setIoType(dbIoType::INPUT);
-  else
+  } else {
     bterm->setIoType(dbIoType::OUTPUT);
+  }
 
   return bterm;
 }
@@ -1190,8 +1263,9 @@ dbNet* extRulesPat::createNetSingleWire(const char* netName,
 
   if (vertical) {
     encoder.addPoint(ll[0], ur[1], 0);
-  } else
+  } else {
     encoder.addPoint(ur[0], ll[1], 0);
+  }
 
   encoder.addBTerm(hiBTerm);
   encoder.end();

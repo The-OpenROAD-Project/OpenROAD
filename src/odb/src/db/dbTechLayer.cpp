@@ -500,29 +500,23 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingRuleObj);
 
-  _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule>(
+  _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechMinCutRuleObj,
-      8,
-      3);
+      dbTechMinCutRuleObj);
 
-  _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule>(
+  _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechMinEncRuleObj,
-      8,
-      3);
+      dbTechMinEncRuleObj);
 
-  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(
+  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechV55InfluenceEntryObj,
-      8,
-      3);
+      dbTechV55InfluenceEntryObj);
   // User Code End Constructor
 }
 

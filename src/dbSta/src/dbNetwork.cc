@@ -117,8 +117,10 @@ char* tmpStringCopy(const char* str)
 // lower 4  bits used to encode type
 //
 
-ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
+ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
 {
+  const dbObjectType typ = object->getObjectType();
+  const ObjectId db_id = object->getId();
   if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
     logger_->error(ORD, 2019, "Database id exceeds capacity");
   }
@@ -600,9 +602,8 @@ ObjectId dbNetwork::id(const Port* port) const
     if (isConcretePort(port)) {
       return ConcreteNetwork::id(port);
     }
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(port);
+    return getDbNwkObjectId(obj);
   }
   // default
   return ConcreteNetwork::id(port);
@@ -621,9 +622,8 @@ ObjectId dbNetwork::id(const Cell* cell) const
   // in hierarchical flow we use the object id for the index
   if (hierarchy_) {
     if (!isConcreteCell(cell)) {
-      dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Cell*>(cell));
-      dbObjectType type = obj->getObjectType();
-      return getDbNwkObjectId(type, obj->getId());
+      const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
+      return getDbNwkObjectId(obj);
     }
   }
   // default behaviour use the concrete cell.
@@ -639,10 +639,8 @@ ObjectId dbNetwork::id(const Instance* instance) const
     return 0;
   }
   if (hierarchy_) {
-    dbObject* obj
-        = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(instance);
+    return getDbNwkObjectId(obj);
   }
   return staToDb(instance)->getId();
 }
@@ -949,8 +947,9 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module)
+    if (db_module) {
       return false;
+    }
     return true;
   }
   return instance != top_instance_;
@@ -1154,9 +1153,8 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   if (hierarchy_) {
     // get the id for hierarchical objects using dbid.
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(pin);
+    return getDbNwkObjectId(obj);
   }
   if (iterm != nullptr) {
     return iterm->getId() << 1;
@@ -1491,9 +1489,8 @@ ObjectId dbNetwork::id(const Net* net) const
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   if (hierarchy_) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(net);
+    return getDbNwkObjectId(obj);
   }
   return dnet->getId();
 }
@@ -1623,19 +1620,13 @@ Instance* dbNetwork::instance(const Net*) const
 
 bool dbNetwork::isPower(const Net* net) const
 {
-  dbNet* dnet = staToDb(net);
-  return (dnet->getSigType() == dbSigType::POWER);
-
-  /*
-  // TODO: make this work for modnets
-  // by uncommenting code below
-
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
   if (db_net) {
     return (db_net->getSigType() == dbSigType::POWER);
   }
+
   if (db_modnet) {
     dbNet* related_net = findRelatedDbNet(db_modnet);
     if (related_net) {
@@ -1643,17 +1634,10 @@ bool dbNetwork::isPower(const Net* net) const
     }
   }
   return false;
-  */
 }
 
 bool dbNetwork::isGround(const Net* net) const
 {
-  dbNet* dnet = staToDb(net);
-  return (dnet->getSigType() == dbSigType::GROUND);
-  /*
-  // TODO: make this work for modnets
-  // by uncommenting code below
-
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1667,7 +1651,6 @@ bool dbNetwork::isGround(const Net* net) const
     }
   }
   return false;
-  */
 }
 
 NetPinIterator* dbNetwork::pinIterator(const Net* net) const
@@ -1769,9 +1752,8 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 ObjectId dbNetwork::id(const Term* term) const
 {
   if (hierarchy_) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Term*>(term));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
+    const dbObject* obj = reinterpret_cast<const dbObject*>(term);
+    return getDbNwkObjectId(obj);
   }
   return staToDb(term)->getId();
 }
@@ -2781,6 +2763,7 @@ void dbNetwork::staToDb(const Port* port,
                         dbMTerm*& mterm,
                         dbModBTerm*& modbterm) const
 {
+  bterm = nullptr;
   mterm = nullptr;
   modbterm = nullptr;
 
@@ -3897,8 +3880,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                 ->getOwningInstanceParent(const_cast<Pin*>(pin));
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
-        // TODO: uncomment error: 2030, once all cases pass.
-        /*
         logger_->error(
             ORD,
             2030,
@@ -3910,7 +3891,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),
             db_network_->name(search_net_));
-        */
       }
     }
     dbnet_ = candidate_flat_net;

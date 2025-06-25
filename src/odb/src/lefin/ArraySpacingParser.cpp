@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Parser for LEF58 array spacing rules that define spacing requirements for
+// arrays of cuts/vias
 #include <functional>
 #include <iostream>
 #include <string>
@@ -28,6 +30,7 @@ void ArraySpacingParser::setArraySpacing(
   rule_->setCutsArraySpacing(cuts, lefin_->dbdist(spacing));
 }
 
+// Set the within distance and array width constraints
 void ArraySpacingParser::setWithin(
     boost::fusion::vector<double, double>& params)
 {
@@ -49,24 +52,29 @@ void ArraySpacingParser::setViaWidth(double width)
   rule_->setViaWidthValid(true);
 }
 
-bool ArraySpacingParser::parse(std::string s)
+// Parse the array spacing rule string
+// Format: ARRAYSPACING [CUTCLASS name] [PARALLELOVERLAP] [LONGARRAY] [WIDTH
+// width]
+//         [WITHIN within ARRAYWIDTH arraywidth] CUTSPACING spacing ARRAYCUTS
+//         cuts SPACING spacing ... ;
+bool ArraySpacingParser::parse(const std::string& s)
 {
   rule_ = dbTechLayerArraySpacingRule::create(layer_);
 
-  qi::rule<std::string::iterator, space_type> CUTCLASS
+  qi::rule<std::string::const_iterator, space_type> CUTCLASS
       = (lit("CUTCLASS")
          >> _string[boost::bind(&ArraySpacingParser::setCutClass, this, _1)]);
-  qi::rule<std::string::iterator, space_type> VIA_WIDTH
+  qi::rule<std::string::const_iterator, space_type> VIA_WIDTH
       = (lit("WIDTH")
          >> double_[boost::bind(&ArraySpacingParser::setViaWidth, this, _1)]);
-  qi::rule<std::string::iterator, space_type> ARRAYCUTS
+  qi::rule<std::string::const_iterator, space_type> ARRAYCUTS
       = (lit("ARRAYCUTS") >> int_ >> lit("SPACING") >> double_)[boost::bind(
           &ArraySpacingParser::setArraySpacing, this, _1)];
-  qi::rule<std::string::iterator, space_type> WITHIN
+  qi::rule<std::string::const_iterator, space_type> WITHIN
       = (lit("WITHIN") >> double_ >> lit("ARRAYWIDTH")
          >> double_)[boost::bind(&ArraySpacingParser::setWithin, this, _1)];
 
-  qi::rule<std::string::iterator, space_type> LEF58_ARRAYSPACING
+  qi::rule<std::string::const_iterator, space_type> LEF58_ARRAYSPACING
       = (lit("ARRAYSPACING") >> -(CUTCLASS)
          >> -lit("PARALLELOVERLAP")[boost::bind(
              &dbTechLayerArraySpacingRule::setParallelOverlap, rule_, true)]

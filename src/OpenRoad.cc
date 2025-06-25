@@ -3,8 +3,6 @@
 
 #include "ord/OpenRoad.hh"
 
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -245,8 +243,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initTritonRoute(
       detailed_router_, db_, logger_, distributer_, stt_builder_, tcl_interp);
   initPDNSim(pdnsim_, logger_, db_, sta_, resizer_, opendp_, tcl_interp);
-  initAntennaChecker(
-      antenna_checker_, db_, global_router_, logger_, tcl_interp);
+  initAntennaChecker(antenna_checker_, db_, logger_, tcl_interp);
   initPartitionMgr(
       partitionMgr_, db_, getDbNetwork(), sta_, logger_, tcl_interp);
   initPdnGen(pdngen_, db_, logger_, tcl_interp);
@@ -385,7 +382,7 @@ void OpenRoad::writeAbstractLef(const char* filename,
   if (!block) {
     logger_->error(ORD, 53, "No block is loaded.");
   }
-  utl::StreamHandler stream_handler(filename);
+  utl::OutStreamHandler stream_handler(filename);
   odb::lefout writer(logger_, stream_handler.getStream());
   writer.setBloatFactor(bloat_factor);
   writer.setBloatOccupiedLayers(bloat_occupied_layers);
@@ -416,18 +413,18 @@ void OpenRoad::writeLef(const char* filename)
         } else {
           name += "_" + std::to_string(cnt);
         }
-        utl::StreamHandler stream_handler(name.c_str());
+        utl::OutStreamHandler stream_handler(name.c_str());
         odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeLib(lib);
       } else {
-        utl::StreamHandler stream_handler(filename);
+        utl::OutStreamHandler stream_handler(filename);
         odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeTechAndLib(lib);
       }
       ++cnt;
     }
   } else if (db_->getTech()) {
-    utl::StreamHandler stream_handler(filename);
+    utl::OutStreamHandler stream_handler(filename);
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeTech(db_->getTech());
   }
@@ -452,21 +449,9 @@ void OpenRoad::writeCdl(const char* outFilename,
 
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
-  std::ifstream stream;
-  stream.open(filename, std::ios::binary);
-
   try {
-    const std::string name(filename);
-    if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
-      boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
-      inbuf.push(boost::iostreams::gzip_decompressor());
-      inbuf.push(stream);
-      std::istream zstd_uncompressed(&inbuf);
-
-      readDb(zstd_uncompressed);
-    } else {
-      readDb(stream);
-    }
+    utl::InStreamHandler handler(filename, true);
+    readDb(handler.getStream());
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
@@ -500,19 +485,8 @@ void OpenRoad::writeDb(std::ostream& stream)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  utl::StreamHandler stream_handler(filename, true);
-
-  const std::string name(filename);
-  if (name.length() >= 3 && name.compare(name.length() - 3, 3, ".gz") == 0) {
-    boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
-    outbuf.push(boost::iostreams::gzip_compressor());
-    outbuf.push(stream_handler.getStream());
-    std::ostream zstd_compressed(&outbuf);
-
-    writeDb(zstd_compressed);
-  } else {
-    writeDb(stream_handler.getStream());
-  }
+  utl::OutStreamHandler stream_handler(filename, true);
+  writeDb(stream_handler.getStream());
 }
 
 void OpenRoad::readVerilog(const char* filename)

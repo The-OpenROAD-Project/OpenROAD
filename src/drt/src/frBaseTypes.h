@@ -331,7 +331,7 @@ struct frDebugSettings
 template <class Archive>
 inline bool is_loading(const Archive& ar)
 {
-  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+  return std::is_same_v<typename Archive::is_loading, boost::mpl::true_>;
 }
 
 using utl::format_as;

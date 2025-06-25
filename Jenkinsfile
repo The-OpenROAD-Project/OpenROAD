@@ -148,7 +148,6 @@ def getParallelTests(String image) {
                         timeout(time: 120, unit: 'MINUTES') {
                             sh label: 'Bazel Build', script: '''
                                 bazel test \
-                                -c opt \
                                 --keep_going \
                                 --show_timestamps \
                                 --test_output=errors \

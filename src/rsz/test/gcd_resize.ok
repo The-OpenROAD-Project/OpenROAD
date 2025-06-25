@@ -6,7 +6,6 @@
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 worst slack max 1.34
 [INFO RSZ-0028] Inserted 18 output buffers.
-[INFO RSZ-0058] Using max wire length 693um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       546

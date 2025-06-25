@@ -1556,13 +1556,14 @@ void dbNet::setTermExtIds(int capId)  // 1: capNodeId, 0: reset
                  1,
                  "ECO: set net {} term extId",
                  getId());
-    } else
+    } else {
       debugPrint(getImpl()->getLogger(),
                  utl::ODB,
                  "DB_ECO",
                  1,
                  "ECO: reset net {} term extId",
                  getId());
+    }
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
