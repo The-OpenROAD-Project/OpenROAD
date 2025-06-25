@@ -274,9 +274,9 @@ class Painter
     drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
   }
 
-  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
-  inline Options* getOptions() { return options_; }
-  inline const odb::Rect& getBounds() { return bounds_; }
+  double getPixelsPerDBU() { return pixels_per_dbu_; }
+  Options* getOptions() { return options_; }
+  const odb::Rect& getBounds() { return bounds_; }
 
  private:
   Options* options_;

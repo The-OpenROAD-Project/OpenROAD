@@ -86,8 +86,8 @@ struct boost::polygon::rectangle_traits<odb::Rect>
   using coordinate_type = int;
   using interval_type = interval_data<int>;
 
-  static inline interval_type get(const odb::Rect& rectangle,
-                                  const orientation_2d& orient)
+  static interval_type get(const odb::Rect& rectangle,
+                           const orientation_2d& orient)
   {
     if (orient == HORIZONTAL) {
       return {rectangle.xMin(), rectangle.xMax()};
@@ -100,9 +100,9 @@ template <>
 struct boost::polygon::rectangle_mutable_traits<odb::Rect>
 {
   template <typename T2>
-  static inline void set(odb::Rect& rectangle,
-                         const orientation_2d& orient,
-                         const T2& interval)
+  static void set(odb::Rect& rectangle,
+                  const orientation_2d& orient,
+                  const T2& interval)
   {
     if (orient == HORIZONTAL) {
       rectangle.set_xlo(low(interval));
@@ -114,8 +114,8 @@ struct boost::polygon::rectangle_mutable_traits<odb::Rect>
   }
 
   template <typename T2, typename T3>
-  static inline odb::Rect construct(const T2& interval_horizontal,
-                                    const T3& interval_vertical)
+  static odb::Rect construct(const T2& interval_horizontal,
+                             const T3& interval_vertical)
   {
     return odb::Rect(low(interval_horizontal),
                      low(interval_vertical),
