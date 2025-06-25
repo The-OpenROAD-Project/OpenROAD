@@ -314,6 +314,14 @@ void FastRouteCore::mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net)
           preserved_nodes.end(), removed_nodes.begin(), removed_nodes.end());
       preserved_edges.insert(
           preserved_edges.end(), removed_edges.begin(), removed_edges.end());
+    } else {
+      logger_->error(
+          utl::GRT,
+          10,
+          "Net {} is not present in FastRouteCore structures when trying to "
+          "merge with net {}",
+          preserved_net->getName(),
+          removed_net->getName());
     }
 
     removed_nodes.clear();
