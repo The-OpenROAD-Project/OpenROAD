@@ -52,7 +52,7 @@ class WireBuilder
   void makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets);
 
  private:
-  void makeNetWire(odb::dbNet* db_net, int guide_dimension);
+  void makeNetWire(odb::dbNet* db_net, int gcell_dimension);
   void addWireTerms(odb::dbNet* db_net,
                     std::vector<GuideSegment>& route,
                     int grid_x,
@@ -75,22 +75,22 @@ class WireBuilder
                 const odb::Point& end);
   std::vector<GuideSegment> makeWireFromGuides(odb::dbNet* db_net,
                                                GuidePtPinsMap& route_pt_pins,
-                                               int guide_dimension);
+                                               int gcell_dimension);
   bool checkGuideITermConnection(const GuidePoint& guide_pt,
                                  odb::dbITerm* iterm,
                                  const odb::Point& box_limit,
-                                 int guide_dimension);
+                                 int gcell_dimension);
   bool checkGuideBTermConnection(const GuidePoint& guide_pt,
                                  odb::dbBTerm* bterm,
                                  const odb::Point& box_limit,
-                                 int guide_dimension);
+                                 int gcell_dimension);
   void boxToGuideSegment(const odb::Rect& guide_box,
                          odb::dbTechLayer* layer,
                          odb::dbTechLayer* via_layer,
                          std::vector<GuideSegment>& route,
                          std::pair<GuidePoint, GuidePoint>& endpoints,
                          std::pair<odb::Point, odb::Point>& box_limits,
-                         int guide_dimension);
+                         int gcell_dimension);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const odb::dbTechLayer* pin_layer,
                            const std::vector<odb::Rect>& pin_rects,
