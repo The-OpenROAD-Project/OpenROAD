@@ -100,13 +100,15 @@ void lefVia(lefiVia* via)
 
   lefrSetCaseSensitivity(1);
   fprintf(fout, "VIA %s ", via->lefiVia::name());
-  if (via->lefiVia::hasDefault())
+  if (via->lefiVia::hasDefault()) {
     fprintf(fout, "DEFAULT");
-  else if (via->lefiVia::hasGenerated())
+  } else if (via->lefiVia::hasGenerated()) {
     fprintf(fout, "GENERATED");
+  }
   fprintf(fout, "\n");
-  if (via->lefiVia::hasTopOfStack())
+  if (via->lefiVia::hasTopOfStack()) {
     fprintf(fout, "  TOPOFSTACKONLY\n");
+  }
   if (via->lefiVia::hasForeign()) {
     fprintf(fout, "  FOREIGN %s ", via->lefiVia::foreign());
     if (via->lefiVia::hasForeignPnt()) {
@@ -114,8 +116,9 @@ void lefVia(lefiVia* via)
               "( %g %g ) ",
               via->lefiVia::foreignX(),
               via->lefiVia::foreignY());
-      if (via->lefiVia::hasForeignOrient())
+      if (via->lefiVia::hasForeignOrient()) {
         fprintf(fout, "%s ", orientStr(via->lefiVia::foreignOrient()));
+      }
     }
     fprintf(fout, ";\n");
   }
@@ -123,10 +126,12 @@ void lefVia(lefiVia* via)
     fprintf(fout, "  PROPERTY ");
     for (i = 0; i < via->lefiVia::numProperties(); i++) {
       fprintf(fout, "%s ", via->lefiVia::propName(i));
-      if (via->lefiVia::propIsNumber(i))
+      if (via->lefiVia::propIsNumber(i)) {
         fprintf(fout, "%g ", via->lefiVia::propNumber(i));
-      if (via->lefiVia::propIsString(i))
+      }
+      if (via->lefiVia::propIsString(i)) {
         fprintf(fout, "%s ", via->lefiVia::propValue(i));
+      }
       /*
       if (i+1 == via->lefiVia::numProperties())  // end of properties
       fprintf(fout, ";\n");
@@ -153,12 +158,13 @@ void lefVia(lefiVia* via)
     }
     fprintf(fout, ";\n");
   }
-  if (via->lefiVia::hasResistance())
+  if (via->lefiVia::hasResistance()) {
     fprintf(fout, "  RESISTANCE %g ;\n", via->lefiVia::resistance());
+  }
   if (via->lefiVia::numLayers() > 0) {
     for (i = 0; i < via->lefiVia::numLayers(); i++) {
       fprintf(fout, "  LAYER %s\n", via->lefiVia::layerName(i));
-      for (j = 0; j < via->lefiVia::numRects(i); j++)
+      for (j = 0; j < via->lefiVia::numRects(i); j++) {
         if (via->lefiVia::rectColorMask(i, j)) {
           fprintf(fout,
                   "    RECT MASK %d ( %f %f ) ( %f %f ) ;\n",
@@ -175,6 +181,7 @@ void lefVia(lefiVia* via)
                   via->lefiVia::xh(i, j),
                   via->lefiVia::yh(i, j));
         }
+      }
       for (j = 0; j < via->lefiVia::numPolygons(i); j++) {
         struct lefiGeomPolygon poly;
         poly = via->lefiVia::getPolygon(i, j);
@@ -184,8 +191,9 @@ void lefVia(lefiVia* via)
         } else {
           fprintf(fout, "    POLYGON ");
         }
-        for (int k = 0; k < poly.numPoints; k++)
+        for (int k = 0; k < poly.numPoints; k++) {
           fprintf(fout, " %g %g ", poly.x[k], poly.y[k]);
+        }
         fprintf(fout, ";\n");
       }
     }
@@ -211,25 +219,29 @@ void lefVia(lefiVia* via)
             via->lefiVia::yBotEnc(),
             via->lefiVia::xTopEnc(),
             via->lefiVia::yTopEnc());
-    if (via->lefiVia::hasRowCol())
+    if (via->lefiVia::hasRowCol()) {
       fprintf(fout,
               "    ROWCOL %d %d ;\n",
               via->lefiVia::numCutRows(),
               via->lefiVia::numCutCols());
-    if (via->lefiVia::hasOrigin())
+    }
+    if (via->lefiVia::hasOrigin()) {
       fprintf(fout,
               "    ORIGIN %g %g ;\n",
               via->lefiVia::xOffset(),
               via->lefiVia::yOffset());
-    if (via->lefiVia::hasOffset())
+    }
+    if (via->lefiVia::hasOffset()) {
       fprintf(fout,
               "    OFFSET %g %g %g %g ;\n",
               via->lefiVia::xBotOffset(),
               via->lefiVia::yBotOffset(),
               via->lefiVia::xTopOffset(),
               via->lefiVia::yTopOffset());
-    if (via->lefiVia::hasCutPattern())
+    }
+    if (via->lefiVia::hasCutPattern()) {
       fprintf(fout, "    PATTERN %s ;\n", via->lefiVia::cutPattern());
+    }
   }
   fprintf(fout, "END %s\n", via->lefiVia::name());
 
@@ -243,8 +255,9 @@ void lefSpacing(lefiSpacing* spacing)
           spacing->lefiSpacing::name1(),
           spacing->lefiSpacing::name2(),
           spacing->lefiSpacing::distance());
-  if (spacing->lefiSpacing::hasStack())
+  if (spacing->lefiSpacing::hasStack()) {
     fprintf(fout, "STACK ");
+  }
   fprintf(fout, ";\n");
   return;
 }
@@ -253,10 +266,12 @@ void lefViaRuleLayer(lefiViaRuleLayer* vLayer)
 {
   fprintf(fout, "  LAYER %s ;\n", vLayer->lefiViaRuleLayer::name());
   if (vLayer->lefiViaRuleLayer::hasDirection()) {
-    if (vLayer->lefiViaRuleLayer::isHorizontal())
+    if (vLayer->lefiViaRuleLayer::isHorizontal()) {
       fprintf(fout, "    DIRECTION HORIZONTAL ;\n");
-    if (vLayer->lefiViaRuleLayer::isVertical())
+    }
+    if (vLayer->lefiViaRuleLayer::isVertical()) {
       fprintf(fout, "    DIRECTION VERTICAL ;\n");
+    }
   }
   if (vLayer->lefiViaRuleLayer::hasEnclosure()) {
     fprintf(fout,
@@ -264,32 +279,38 @@ void lefViaRuleLayer(lefiViaRuleLayer* vLayer)
             vLayer->lefiViaRuleLayer::enclosureOverhang1(),
             vLayer->lefiViaRuleLayer::enclosureOverhang2());
   }
-  if (vLayer->lefiViaRuleLayer::hasWidth())
+  if (vLayer->lefiViaRuleLayer::hasWidth()) {
     fprintf(fout,
             "    WIDTH %g TO %g ;\n",
             vLayer->lefiViaRuleLayer::widthMin(),
             vLayer->lefiViaRuleLayer::widthMax());
-  if (vLayer->lefiViaRuleLayer::hasResistance())
+  }
+  if (vLayer->lefiViaRuleLayer::hasResistance()) {
     fprintf(
         fout, "    RESISTANCE %g ;\n", vLayer->lefiViaRuleLayer::resistance());
-  if (vLayer->lefiViaRuleLayer::hasOverhang())
+  }
+  if (vLayer->lefiViaRuleLayer::hasOverhang()) {
     fprintf(fout, "    OVERHANG %g ;\n", vLayer->lefiViaRuleLayer::overhang());
-  if (vLayer->lefiViaRuleLayer::hasMetalOverhang())
+  }
+  if (vLayer->lefiViaRuleLayer::hasMetalOverhang()) {
     fprintf(fout,
             "    METALOVERHANG %g ;\n",
             vLayer->lefiViaRuleLayer::metalOverhang());
-  if (vLayer->lefiViaRuleLayer::hasSpacing())
+  }
+  if (vLayer->lefiViaRuleLayer::hasSpacing()) {
     fprintf(fout,
             "    SPACING %g BY %g ;\n",
             vLayer->lefiViaRuleLayer::spacingStepX(),
             vLayer->lefiViaRuleLayer::spacingStepY());
-  if (vLayer->lefiViaRuleLayer::hasRect())
+  }
+  if (vLayer->lefiViaRuleLayer::hasRect()) {
     fprintf(fout,
             "    RECT ( %f %f ) ( %f %f ) ;\n",
             vLayer->lefiViaRuleLayer::xl(),
             vLayer->lefiViaRuleLayer::yl(),
             vLayer->lefiViaRuleLayer::xh(),
             vLayer->lefiViaRuleLayer::yh());
+  }
   return;
 }
 
@@ -340,10 +361,11 @@ void prtGeometry(lefiGeometries* geometry)
           fprintf(fout, "      PATH ");
         }
         for (j = 0; j < path->numPoints; j++) {
-          if (j + 1 == path->numPoints)  // last one on the list
+          if (j + 1 == path->numPoints) {  // last one on the list
             fprintf(fout, "      ( %g %g ) ;\n", path->x[j], path->y[j]);
-          else
+          } else {
             fprintf(fout, "      ( %g %g )\n", path->x[j], path->y[j]);
+          }
         }
         break;
       case lefiGeomPathIterE:
@@ -353,8 +375,9 @@ void prtGeometry(lefiGeometries* geometry)
         } else {
           fprintf(fout, "      PATH ITERATED ");
         }
-        for (j = 0; j < pathIter->numPoints; j++)
+        for (j = 0; j < pathIter->numPoints; j++) {
           fprintf(fout, "      ( %g %g )\n", pathIter->x[j], pathIter->y[j]);
+        }
         fprintf(fout,
                 "      DO %g BY %g STEP %g %g ;\n",
                 pathIter->xStart,
@@ -414,10 +437,11 @@ void prtGeometry(lefiGeometries* geometry)
           fprintf(fout, "      POLYGON ");
         }
         for (j = 0; j < polygon->numPoints; j++) {
-          if (j + 1 == polygon->numPoints)  // last one on the list
+          if (j + 1 == polygon->numPoints) {  // last one on the list
             fprintf(fout, "      ( %g %g ) ;\n", polygon->x[j], polygon->y[j]);
-          else
+          } else {
             fprintf(fout, "      ( %g %g )\n", polygon->x[j], polygon->y[j]);
+          }
         }
         break;
       case lefiGeomPolygonIterE:
@@ -428,9 +452,10 @@ void prtGeometry(lefiGeometries* geometry)
         } else {
           fprintf(fout, "      POLYGON ITERATE");
         }
-        for (j = 0; j < polygonIter->numPoints; j++)
+        for (j = 0; j < polygonIter->numPoints; j++) {
           fprintf(
               fout, "      ( %g %g )\n", polygonIter->x[j], polygonIter->y[j]);
+        }
         fprintf(fout,
                 "      DO %g BY %g STEP %g %g ;\n",
                 polygonIter->xStart,
@@ -528,8 +553,9 @@ int arrayBeginCB(lefrCallbackType_e c, const char* name, lefiUserData)
   // if ((long)ud != userData) dataError();
   // use the lef writer to write the data out
   status = lefwStartArray(name);
-  if (status != LEFW_OK)
+  if (status != LEFW_OK) {
     return status;
+  }
   return 0;
 }
 
@@ -554,8 +580,9 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
                              pattern->lefiSitePattern::yStart(),
                              pattern->lefiSitePattern::xStep(),
                              pattern->lefiSitePattern::yStep());
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         dataError();
+      }
     }
   }
   if (a->lefiArray::numCanPlace() > 0) {
@@ -569,8 +596,9 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
                                  pattern->lefiSitePattern::yStart(),
                                  pattern->lefiSitePattern::xStep(),
                                  pattern->lefiSitePattern::yStep());
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         dataError();
+      }
     }
   }
   if (a->lefiArray::numCannotOccupy() > 0) {
@@ -584,8 +612,9 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
                                      pattern->lefiSitePattern::yStart(),
                                      pattern->lefiSitePattern::xStep(),
                                      pattern->lefiSitePattern::yStep());
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         dataError();
+      }
     }
   }
 
@@ -600,8 +629,9 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
               track->lefiTrackPattern::space());
       if (track->lefiTrackPattern::numLayers() > 0) {
         fprintf(fout, "  LAYER ");
-        for (j = 0; j < track->lefiTrackPattern::numLayers(); j++)
+        for (j = 0; j < track->lefiTrackPattern::numLayers(); j++) {
           fprintf(fout, "%s ", track->lefiTrackPattern::layerName(j));
+        }
         fprintf(fout, ";\n");
       }
     }
@@ -622,8 +652,9 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
   if (a->lefiArray::numFloorPlans() > 0) {
     for (i = 0; i < a->lefiArray::numFloorPlans(); i++) {
       status = lefwStartArrayFloorplan(a->lefiArray::floorPlanName(i));
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         dataError();
+      }
       for (j = 0; j < a->lefiArray::numSites(i); j++) {
         pattern = a->lefiArray::site(i, j);
         status = lefwArrayFloorplan(a->lefiArray::siteType(i, j),
@@ -635,29 +666,34 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
                                     (int) pattern->lefiSitePattern::yStart(),
                                     pattern->lefiSitePattern::xStep(),
                                     pattern->lefiSitePattern::yStep());
-        if (status != LEFW_OK)
+        if (status != LEFW_OK) {
           dataError();
+        }
       }
       status = lefwEndArrayFloorplan(a->lefiArray::floorPlanName(i));
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         dataError();
+      }
     }
   }
 
   defCaps = a->lefiArray::numDefaultCaps();
   if (defCaps > 0) {
     status = lefwStartArrayDefaultCap(defCaps);
-    if (status != LEFW_OK)
+    if (status != LEFW_OK) {
       dataError();
+    }
     for (i = 0; i < defCaps; i++) {
       status = lefwArrayDefaultCap(a->lefiArray::defaultCapMinPins(i),
                                    a->lefiArray::defaultCap(i));
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         dataError();
+      }
     }
     status = lefwEndArrayDefaultCap();
-    if (status != LEFW_OK)
+    if (status != LEFW_OK) {
       dataError();
+    }
   }
   return 0;
 }
@@ -670,8 +706,9 @@ int arrayEndCB(lefrCallbackType_e c, const char* name, lefiUserData)
   // if ((long)ud != userData) dataError();
   // use the lef writer to write the data out
   status = lefwEndArray(name);
-  if (status != LEFW_OK)
+  if (status != LEFW_OK) {
     return status;
+  }
   return 0;
 }
 
@@ -683,8 +720,9 @@ int busBitCharsCB(lefrCallbackType_e c, const char* busBit, lefiUserData)
   // if ((long)ud != userData) dataError();
   // use the lef writer to write out the data
   status = lefwBusBitChars(busBit);
-  if (status != LEFW_OK)
+  if (status != LEFW_OK) {
     dataError();
+  }
   return 0;
 }
 
@@ -693,10 +731,11 @@ int caseSensCB(lefrCallbackType_e c, int caseSense, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
 
-  if (caseSense)
+  if (caseSense) {
     fprintf(fout, "NAMESCASESENSITIVE ON ;\n");
-  else
+  } else {
     fprintf(fout, "NAMESCASESENSITIVE OFF ;\n");
+  }
   return 0;
 }
 
@@ -704,8 +743,9 @@ int fixedMaskCB(lefrCallbackType_e c, int fixedMask, lefiUserData)
 {
   checkType(c);
 
-  if (fixedMask == 1)
+  if (fixedMask == 1) {
     fprintf(fout, "FIXEDMASK ;\n");
+  }
   return 0;
 }
 
@@ -809,11 +849,12 @@ int irdropCB(lefrCallbackType_e c, lefiIRDrop* irdrop, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "  TABLE %s ", irdrop->lefiIRDrop::name());
-  for (i = 0; i < irdrop->lefiIRDrop::numValues(); i++)
+  for (i = 0; i < irdrop->lefiIRDrop::numValues(); i++) {
     fprintf(fout,
             "%g %g ",
             irdrop->lefiIRDrop::value1(i),
             irdrop->lefiIRDrop::value2(i));
+  }
   fprintf(fout, ";\n");
   return 0;
 }
@@ -848,109 +889,138 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
   lefrSetCaseSensitivity(0);
 
   // Call parse65nmRules for 5.7 syntax in 5.6
-  if (parse65nm)
+  if (parse65nm) {
     layer->lefiLayer::parse65nmRules();
+  }
 
   // Call parseLef58Type for 5.8 syntax in 5.7
-  if (parseLef58Type)
+  if (parseLef58Type) {
     layer->lefiLayer::parseLEF58Layer();
+  }
 
   fprintf(fout, "LAYER %s\n", layer->lefiLayer::name());
-  if (layer->lefiLayer::hasType())
+  if (layer->lefiLayer::hasType()) {
     fprintf(fout, "  TYPE %s ;\n", layer->lefiLayer::type());
-  if (layer->lefiLayer::hasLayerType())
+  }
+  if (layer->lefiLayer::hasLayerType()) {
     fprintf(fout, "  LAYER TYPE %s ;\n", layer->lefiLayer::layerType());
-  if (layer->lefiLayer::hasMask())
+  }
+  if (layer->lefiLayer::hasMask()) {
     fprintf(fout, "  MASK %d ;\n", layer->lefiLayer::mask());
-  if (layer->lefiLayer::hasPitch())
+  }
+  if (layer->lefiLayer::hasPitch()) {
     fprintf(fout, "  PITCH %g ;\n", layer->lefiLayer::pitch());
-  else if (layer->lefiLayer::hasXYPitch())
+  } else if (layer->lefiLayer::hasXYPitch()) {
     fprintf(fout,
             "  PITCH %g %g ;\n",
             layer->lefiLayer::pitchX(),
             layer->lefiLayer::pitchY());
-  if (layer->lefiLayer::hasOffset())
+  }
+  if (layer->lefiLayer::hasOffset()) {
     fprintf(fout, "  OFFSET %g ;\n", layer->lefiLayer::offset());
-  else if (layer->lefiLayer::hasXYOffset())
+  } else if (layer->lefiLayer::hasXYOffset()) {
     fprintf(fout,
             "  OFFSET %g %g ;\n",
             layer->lefiLayer::offsetX(),
             layer->lefiLayer::offsetY());
-  if (layer->lefiLayer::hasDiagPitch())
+  }
+  if (layer->lefiLayer::hasDiagPitch()) {
     fprintf(fout, "  DIAGPITCH %g ;\n", layer->lefiLayer::diagPitch());
-  else if (layer->lefiLayer::hasXYDiagPitch())
+  } else if (layer->lefiLayer::hasXYDiagPitch()) {
     fprintf(fout,
             "  DIAGPITCH %g %g ;\n",
             layer->lefiLayer::diagPitchX(),
             layer->lefiLayer::diagPitchY());
-  if (layer->lefiLayer::hasDiagWidth())
+  }
+  if (layer->lefiLayer::hasDiagWidth()) {
     fprintf(fout, "  DIAGWIDTH %g ;\n", layer->lefiLayer::diagWidth());
-  if (layer->lefiLayer::hasDiagSpacing())
+  }
+  if (layer->lefiLayer::hasDiagSpacing()) {
     fprintf(fout, "  DIAGSPACING %g ;\n", layer->lefiLayer::diagSpacing());
-  if (layer->lefiLayer::hasWidth())
+  }
+  if (layer->lefiLayer::hasWidth()) {
     fprintf(fout, "  WIDTH %g ;\n", layer->lefiLayer::width());
-  if (layer->lefiLayer::hasArea())
+  }
+  if (layer->lefiLayer::hasArea()) {
     fprintf(fout, "  AREA %g ;\n", layer->lefiLayer::area());
-  if (layer->lefiLayer::hasSlotWireWidth())
+  }
+  if (layer->lefiLayer::hasSlotWireWidth()) {
     fprintf(fout, "  SLOTWIREWIDTH %g ;\n", layer->lefiLayer::slotWireWidth());
-  if (layer->lefiLayer::hasSlotWireLength())
+  }
+  if (layer->lefiLayer::hasSlotWireLength()) {
     fprintf(
         fout, "  SLOTWIRELENGTH %g ;\n", layer->lefiLayer::slotWireLength());
-  if (layer->lefiLayer::hasSlotWidth())
+  }
+  if (layer->lefiLayer::hasSlotWidth()) {
     fprintf(fout, "  SLOTWIDTH %g ;\n", layer->lefiLayer::slotWidth());
-  if (layer->lefiLayer::hasSlotLength())
+  }
+  if (layer->lefiLayer::hasSlotLength()) {
     fprintf(fout, "  SLOTLENGTH %g ;\n", layer->lefiLayer::slotLength());
-  if (layer->lefiLayer::hasMaxAdjacentSlotSpacing())
+  }
+  if (layer->lefiLayer::hasMaxAdjacentSlotSpacing()) {
     fprintf(fout,
             "  MAXADJACENTSLOTSPACING %g ;\n",
             layer->lefiLayer::maxAdjacentSlotSpacing());
-  if (layer->lefiLayer::hasMaxCoaxialSlotSpacing())
+  }
+  if (layer->lefiLayer::hasMaxCoaxialSlotSpacing()) {
     fprintf(fout,
             "  MAXCOAXIALSLOTSPACING %g ;\n",
             layer->lefiLayer::maxCoaxialSlotSpacing());
-  if (layer->lefiLayer::hasMaxEdgeSlotSpacing())
+  }
+  if (layer->lefiLayer::hasMaxEdgeSlotSpacing()) {
     fprintf(fout,
             "  MAXEDGESLOTSPACING %g ;\n",
             layer->lefiLayer::maxEdgeSlotSpacing());
-  if (layer->lefiLayer::hasMaxFloatingArea())  // 5.7
+  }
+  if (layer->lefiLayer::hasMaxFloatingArea()) {  // 5.7
     fprintf(
         fout, "  MAXFLOATINGAREA %g ;\n", layer->lefiLayer::maxFloatingArea());
+  }
   if (layer->lefiLayer::hasArraySpacing()) {  // 5.7
     fprintf(fout, "  ARRAYSPACING ");
-    if (layer->lefiLayer::hasLongArray())
+    if (layer->lefiLayer::hasLongArray()) {
       fprintf(fout, "LONGARRAY ");
-    if (layer->lefiLayer::hasViaWidth())
+    }
+    if (layer->lefiLayer::hasViaWidth()) {
       fprintf(fout, "WIDTH %g ", layer->lefiLayer::viaWidth());
+    }
     fprintf(fout, "CUTSPACING %g", layer->lefiLayer::cutSpacing());
-    for (i = 0; i < layer->lefiLayer::numArrayCuts(); i++)
+    for (i = 0; i < layer->lefiLayer::numArrayCuts(); i++) {
       fprintf(fout,
               "\n\tARRAYCUTS %d SPACING %g",
               layer->lefiLayer::arrayCuts(i),
               layer->lefiLayer::arraySpacing(i));
+    }
     fprintf(fout, " ;\n");
   }
-  if (layer->lefiLayer::hasSplitWireWidth())
+  if (layer->lefiLayer::hasSplitWireWidth()) {
     fprintf(
         fout, "  SPLITWIREWIDTH %g ;\n", layer->lefiLayer::splitWireWidth());
-  if (layer->lefiLayer::hasMinimumDensity())
+  }
+  if (layer->lefiLayer::hasMinimumDensity()) {
     fprintf(
         fout, "  MINIMUMDENSITY %g ;\n", layer->lefiLayer::minimumDensity());
-  if (layer->lefiLayer::hasMaximumDensity())
+  }
+  if (layer->lefiLayer::hasMaximumDensity()) {
     fprintf(
         fout, "  MAXIMUMDENSITY %g ;\n", layer->lefiLayer::maximumDensity());
-  if (layer->lefiLayer::hasDensityCheckWindow())
+  }
+  if (layer->lefiLayer::hasDensityCheckWindow()) {
     fprintf(fout,
             "  DENSITYCHECKWINDOW %g %g ;\n",
             layer->lefiLayer::densityCheckWindowLength(),
             layer->lefiLayer::densityCheckWindowWidth());
-  if (layer->lefiLayer::hasDensityCheckStep())
+  }
+  if (layer->lefiLayer::hasDensityCheckStep()) {
     fprintf(fout,
             "  DENSITYCHECKSTEP %g ;\n",
             layer->lefiLayer::densityCheckStep());
-  if (layer->lefiLayer::hasFillActiveSpacing())
+  }
+  if (layer->lefiLayer::hasFillActiveSpacing()) {
     fprintf(fout,
             "  FILLACTIVESPACING %g ;\n",
             layer->lefiLayer::fillActiveSpacing());
+  }
   // 5.4.1
   numMinCut = layer->lefiLayer::numMinimumcut();
   if (numMinCut > 0) {
@@ -959,15 +1029,18 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
               "  MINIMUMCUT %d WIDTH %g ",
               layer->lefiLayer::minimumcut(i),
               layer->lefiLayer::minimumcutWidth(i));
-      if (layer->lefiLayer::hasMinimumcutWithin(i))
+      if (layer->lefiLayer::hasMinimumcutWithin(i)) {
         fprintf(fout, "WITHIN %g ", layer->lefiLayer::minimumcutWithin(i));
-      if (layer->lefiLayer::hasMinimumcutConnection(i))
+      }
+      if (layer->lefiLayer::hasMinimumcutConnection(i)) {
         fprintf(fout, "%s ", layer->lefiLayer::minimumcutConnection(i));
-      if (layer->lefiLayer::hasMinimumcutNumCuts(i))
+      }
+      if (layer->lefiLayer::hasMinimumcutNumCuts(i)) {
         fprintf(fout,
                 "LENGTH %g WITHIN %g ",
                 layer->lefiLayer::minimumcutLength(i),
                 layer->lefiLayer::minimumcutDistance(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -985,10 +1058,11 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
     for (i = 0; i < numMinenclosed; i++) {
       fprintf(
           fout, "  MINENCLOSEDAREA %g ", layer->lefiLayer::minenclosedarea(i));
-      if (layer->lefiLayer::hasMinenclosedareaWidth(i))
+      if (layer->lefiLayer::hasMinenclosedareaWidth(i)) {
         fprintf(fout,
                 "MINENCLOSEDAREAWIDTH %g ",
                 layer->lefiLayer::minenclosedareaWidth(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -996,20 +1070,26 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
   if (layer->lefiLayer::hasMinstep()) {
     for (i = 0; i < layer->lefiLayer::numMinstep(); i++) {
       fprintf(fout, "  MINSTEP %g ", layer->lefiLayer::minstep(i));
-      if (layer->lefiLayer::hasMinstepType(i))
+      if (layer->lefiLayer::hasMinstepType(i)) {
         fprintf(fout, "%s ", layer->lefiLayer::minstepType(i));
-      if (layer->lefiLayer::hasMinstepLengthsum(i))
+      }
+      if (layer->lefiLayer::hasMinstepLengthsum(i)) {
         fprintf(fout, "LENGTHSUM %g ", layer->lefiLayer::minstepLengthsum(i));
-      if (layer->lefiLayer::hasMinstepMaxedges(i))
+      }
+      if (layer->lefiLayer::hasMinstepMaxedges(i)) {
         fprintf(fout, "MAXEDGES %d ", layer->lefiLayer::minstepMaxedges(i));
-      if (layer->lefiLayer::hasMinstepMinAdjLength(i))
+      }
+      if (layer->lefiLayer::hasMinstepMinAdjLength(i)) {
         fprintf(
             fout, "MINADJLENGTH %g ", layer->lefiLayer::minstepMinAdjLength(i));
-      if (layer->lefiLayer::hasMinstepMinBetLength(i))
+      }
+      if (layer->lefiLayer::hasMinstepMinBetLength(i)) {
         fprintf(
             fout, "MINBETLENGTH %g ", layer->lefiLayer::minstepMinBetLength(i));
-      if (layer->lefiLayer::hasMinstepXSameCorners(i))
+      }
+      if (layer->lefiLayer::hasMinstepXSameCorners(i)) {
         fprintf(fout, "XSAMECORNERS");
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1024,67 +1104,80 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
   if (layer->lefiLayer::hasSpacingNumber()) {
     for (i = 0; i < layer->lefiLayer::numSpacing(); i++) {
       fprintf(fout, "  SPACING %g ", layer->lefiLayer::spacing(i));
-      if (layer->lefiLayer::hasSpacingName(i))
+      if (layer->lefiLayer::hasSpacingName(i)) {
         fprintf(fout, "LAYER %s ", layer->lefiLayer::spacingName(i));
-      if (layer->lefiLayer::hasSpacingLayerStack(i))
+      }
+      if (layer->lefiLayer::hasSpacingLayerStack(i)) {
         fprintf(fout, "STACK ");  // 5.7
-      if (layer->lefiLayer::hasSpacingAdjacent(i))
+      }
+      if (layer->lefiLayer::hasSpacingAdjacent(i)) {
         fprintf(fout,
                 "ADJACENTCUTS %d WITHIN %g ",
                 layer->lefiLayer::spacingAdjacentCuts(i),
                 layer->lefiLayer::spacingAdjacentWithin(i));
-      if (layer->lefiLayer::hasSpacingAdjacentExcept(i))  // 5.7
+      }
+      if (layer->lefiLayer::hasSpacingAdjacentExcept(i)) {  // 5.7
         fprintf(fout, "EXCEPTSAMEPGNET ");
-      if (layer->lefiLayer::hasSpacingCenterToCenter(i))
+      }
+      if (layer->lefiLayer::hasSpacingCenterToCenter(i)) {
         fprintf(fout, "CENTERTOCENTER ");
-      if (layer->lefiLayer::hasSpacingSamenet(i))  // 5.7
+      }
+      if (layer->lefiLayer::hasSpacingSamenet(i)) {  // 5.7
         fprintf(fout, "SAMENET ");
-      if (layer->lefiLayer::hasSpacingSamenetPGonly(i))  // 5.7
+      }
+      if (layer->lefiLayer::hasSpacingSamenetPGonly(i)) {  // 5.7
         fprintf(fout, "PGONLY ");
-      if (layer->lefiLayer::hasSpacingArea(i))  // 5.7
+      }
+      if (layer->lefiLayer::hasSpacingArea(i)) {  // 5.7
         fprintf(fout, "AREA %g ", layer->lefiLayer::spacingArea(i));
+      }
       if (layer->lefiLayer::hasSpacingRange(i)) {
         fprintf(fout,
                 "RANGE %g %g ",
                 layer->lefiLayer::spacingRangeMin(i),
                 layer->lefiLayer::spacingRangeMax(i));
-        if (layer->lefiLayer::hasSpacingRangeUseLengthThreshold(i))
+        if (layer->lefiLayer::hasSpacingRangeUseLengthThreshold(i)) {
           fprintf(fout, "USELENGTHTHRESHOLD ");
-        else if (layer->lefiLayer::hasSpacingRangeInfluence(i)) {
+        } else if (layer->lefiLayer::hasSpacingRangeInfluence(i)) {
           fprintf(fout,
                   "INFLUENCE %g ",
                   layer->lefiLayer::spacingRangeInfluence(i));
-          if (layer->lefiLayer::hasSpacingRangeInfluenceRange(i))
+          if (layer->lefiLayer::hasSpacingRangeInfluenceRange(i)) {
             fprintf(fout,
                     "RANGE %g %g ",
                     layer->lefiLayer::spacingRangeInfluenceMin(i),
                     layer->lefiLayer::spacingRangeInfluenceMax(i));
-        } else if (layer->lefiLayer::hasSpacingRangeRange(i))
+          }
+        } else if (layer->lefiLayer::hasSpacingRangeRange(i)) {
           fprintf(fout,
                   "RANGE %g %g ",
                   layer->lefiLayer::spacingRangeRangeMin(i),
                   layer->lefiLayer::spacingRangeRangeMax(i));
+        }
       } else if (layer->lefiLayer::hasSpacingLengthThreshold(i)) {
         fprintf(fout,
                 "LENGTHTHRESHOLD %g ",
                 layer->lefiLayer::spacingLengthThreshold(i));
-        if (layer->lefiLayer::hasSpacingLengthThresholdRange(i))
+        if (layer->lefiLayer::hasSpacingLengthThresholdRange(i)) {
           fprintf(fout,
                   "RANGE %g %g",
                   layer->lefiLayer::spacingLengthThresholdRangeMin(i),
                   layer->lefiLayer::spacingLengthThresholdRangeMax(i));
+        }
       } else if (layer->lefiLayer::hasSpacingNotchLength(i)) {  // 5.7
         fprintf(
             fout, "NOTCHLENGTH %g", layer->lefiLayer::spacingNotchLength(i));
-      } else if (layer->lefiLayer::hasSpacingEndOfNotchWidth(i))  // 5.7
+      } else if (layer->lefiLayer::hasSpacingEndOfNotchWidth(i)) {  // 5.7
         fprintf(fout,
                 "ENDOFNOTCHWIDTH %g NOTCHSPACING %g, NOTCHLENGTH %g",
                 layer->lefiLayer::spacingEndOfNotchWidth(i),
                 layer->lefiLayer::spacingEndOfNotchSpacing(i),
                 layer->lefiLayer::spacingEndOfNotchLength(i));
+      }
 
-      if (layer->lefiLayer::hasSpacingParallelOverlap(i))  // 5.7
+      if (layer->lefiLayer::hasSpacingParallelOverlap(i)) {  // 5.7
         fprintf(fout, "PARALLELOVERLAP ");
+      }
       if (layer->lefiLayer::hasSpacingEndOfLine(i)) {  // 5.7
         fprintf(fout,
                 "ENDOFLINE %g WITHIN %g ",
@@ -1116,71 +1209,91 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
   }
   for (i = 0; i < layer->lefiLayer::numEnclosure(); i++) {
     fprintf(fout, "ENCLOSURE ");
-    if (layer->lefiLayer::hasEnclosureRule(i))
+    if (layer->lefiLayer::hasEnclosureRule(i)) {
       fprintf(fout, "%s ", layer->lefiLayer::enclosureRule(i));
+    }
     fprintf(fout,
             "%g %g ",
             layer->lefiLayer::enclosureOverhang1(i),
             layer->lefiLayer::enclosureOverhang2(i));
-    if (layer->lefiLayer::hasEnclosureWidth(i))
+    if (layer->lefiLayer::hasEnclosureWidth(i)) {
       fprintf(fout, "WIDTH %g ", layer->lefiLayer::enclosureMinWidth(i));
-    if (layer->lefiLayer::hasEnclosureExceptExtraCut(i))
+    }
+    if (layer->lefiLayer::hasEnclosureExceptExtraCut(i)) {
       fprintf(fout,
               "EXCEPTEXTRACUT %g ",
               layer->lefiLayer::enclosureExceptExtraCut(i));
-    if (layer->lefiLayer::hasEnclosureMinLength(i))
+    }
+    if (layer->lefiLayer::hasEnclosureMinLength(i)) {
       fprintf(fout, "LENGTH %g ", layer->lefiLayer::enclosureMinLength(i));
+    }
     fprintf(fout, ";\n");
   }
   for (i = 0; i < layer->lefiLayer::numPreferEnclosure(); i++) {
     fprintf(fout, "PREFERENCLOSURE ");
-    if (layer->lefiLayer::hasPreferEnclosureRule(i))
+    if (layer->lefiLayer::hasPreferEnclosureRule(i)) {
       fprintf(fout, "%s ", layer->lefiLayer::preferEnclosureRule(i));
+    }
     fprintf(fout,
             "%g %g ",
             layer->lefiLayer::preferEnclosureOverhang1(i),
             layer->lefiLayer::preferEnclosureOverhang2(i));
-    if (layer->lefiLayer::hasPreferEnclosureWidth(i))
+    if (layer->lefiLayer::hasPreferEnclosureWidth(i)) {
       fprintf(fout, "WIDTH %g ", layer->lefiLayer::preferEnclosureMinWidth(i));
+    }
     fprintf(fout, ";\n");
   }
-  if (layer->lefiLayer::hasResistancePerCut())
+  if (layer->lefiLayer::hasResistancePerCut()) {
     fprintf(fout, "  RESISTANCE %g ;\n", layer->lefiLayer::resistancePerCut());
-  if (layer->lefiLayer::hasCurrentDensityPoint())
+  }
+  if (layer->lefiLayer::hasCurrentDensityPoint()) {
     fprintf(
         fout, "  CURRENTDEN %g ;\n", layer->lefiLayer::currentDensityPoint());
+  }
   if (layer->lefiLayer::hasCurrentDensityArray()) {
     layer->lefiLayer::currentDensityArray(&numPoints, &widths, &current);
-    for (i = 0; i < numPoints; i++)
+    for (i = 0; i < numPoints; i++) {
       fprintf(fout, "  CURRENTDEN ( %g %g ) ;\n", widths[i], current[i]);
+    }
   }
-  if (layer->lefiLayer::hasDirection())
+  if (layer->lefiLayer::hasDirection()) {
     fprintf(fout, "  DIRECTION %s ;\n", layer->lefiLayer::direction());
-  if (layer->lefiLayer::hasResistance())
+  }
+  if (layer->lefiLayer::hasResistance()) {
     fprintf(fout, "  RESISTANCE RPERSQ %g ;\n", layer->lefiLayer::resistance());
-  if (layer->lefiLayer::hasCapacitance())
+  }
+  if (layer->lefiLayer::hasCapacitance()) {
     fprintf(fout,
             "  CAPACITANCE CPERSQDIST %g ;\n",
             layer->lefiLayer::capacitance());
-  if (layer->lefiLayer::hasEdgeCap())
+  }
+  if (layer->lefiLayer::hasEdgeCap()) {
     fprintf(fout, "  EDGECAPACITANCE %g ;\n", layer->lefiLayer::edgeCap());
-  if (layer->lefiLayer::hasHeight())
+  }
+  if (layer->lefiLayer::hasHeight()) {
     fprintf(fout, "  TYPE %g ;\n", layer->lefiLayer::height());
-  if (layer->lefiLayer::hasThickness())
+  }
+  if (layer->lefiLayer::hasThickness()) {
     fprintf(fout, "  THICKNESS %g ;\n", layer->lefiLayer::thickness());
-  if (layer->lefiLayer::hasWireExtension())
+  }
+  if (layer->lefiLayer::hasWireExtension()) {
     fprintf(fout, "  WIREEXTENSION %g ;\n", layer->lefiLayer::wireExtension());
-  if (layer->lefiLayer::hasShrinkage())
+  }
+  if (layer->lefiLayer::hasShrinkage()) {
     fprintf(fout, "  SHRINKAGE %g ;\n", layer->lefiLayer::shrinkage());
-  if (layer->lefiLayer::hasCapMultiplier())
+  }
+  if (layer->lefiLayer::hasCapMultiplier()) {
     fprintf(fout, "  CAPMULTIPLIER %g ;\n", layer->lefiLayer::capMultiplier());
-  if (layer->lefiLayer::hasAntennaArea())
+  }
+  if (layer->lefiLayer::hasAntennaArea()) {
     fprintf(
         fout, "  ANTENNAAREAFACTOR %g ;\n", layer->lefiLayer::antennaArea());
-  if (layer->lefiLayer::hasAntennaLength())
+  }
+  if (layer->lefiLayer::hasAntennaLength()) {
     fprintf(fout,
             "  ANTENNALENGTHFACTOR %g ;\n",
             layer->lefiLayer::antennaLength());
+  }
 
   // 5.5 AntennaModel
   for (i = 0; i < layer->lefiLayer::numAntennaModel(); i++) {
@@ -1190,112 +1303,127 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
             "  ANTENNAMODEL %s ;\n",
             aModel->lefiAntennaModel::antennaOxide());
 
-    if (aModel->lefiAntennaModel::hasAntennaAreaRatio())
+    if (aModel->lefiAntennaModel::hasAntennaAreaRatio()) {
       fprintf(fout,
               "  ANTENNAAREARATIO %g ;\n",
               aModel->lefiAntennaModel::antennaAreaRatio());
-    if (aModel->lefiAntennaModel::hasAntennaDiffAreaRatio())
+    }
+    if (aModel->lefiAntennaModel::hasAntennaDiffAreaRatio()) {
       fprintf(fout,
               "  ANTENNADIFFAREARATIO %g ;\n",
               aModel->lefiAntennaModel::antennaDiffAreaRatio());
-    else if (aModel->lefiAntennaModel::hasAntennaDiffAreaRatioPWL()) {
+    } else if (aModel->lefiAntennaModel::hasAntennaDiffAreaRatioPWL()) {
       pwl = aModel->lefiAntennaModel::antennaDiffAreaRatioPWL();
       fprintf(fout, "  ANTENNADIFFAREARATIO PWL ( ");
-      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++)
+      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++) {
         fprintf(fout,
                 "( %g %g ) ",
                 pwl->lefiAntennaPWL::PWLdiffusion(j),
                 pwl->lefiAntennaPWL::PWLratio(j));
+      }
       fprintf(fout, ") ;\n");
     }
-    if (aModel->lefiAntennaModel::hasAntennaCumAreaRatio())
+    if (aModel->lefiAntennaModel::hasAntennaCumAreaRatio()) {
       fprintf(fout,
               "  ANTENNACUMAREARATIO %g ;\n",
               aModel->lefiAntennaModel::antennaCumAreaRatio());
-    if (aModel->lefiAntennaModel::hasAntennaCumDiffAreaRatio())
+    }
+    if (aModel->lefiAntennaModel::hasAntennaCumDiffAreaRatio()) {
       fprintf(fout,
               "  ANTENNACUMDIFFAREARATIO %g\n",
               aModel->lefiAntennaModel::antennaCumDiffAreaRatio());
+    }
     if (aModel->lefiAntennaModel::hasAntennaCumDiffAreaRatioPWL()) {
       pwl = aModel->lefiAntennaModel::antennaCumDiffAreaRatioPWL();
       fprintf(fout, "  ANTENNACUMDIFFAREARATIO PWL ( ");
-      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++)
+      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++) {
         fprintf(fout,
                 "( %g %g ) ",
                 pwl->lefiAntennaPWL::PWLdiffusion(j),
                 pwl->lefiAntennaPWL::PWLratio(j));
+      }
       fprintf(fout, ") ;\n");
     }
     if (aModel->lefiAntennaModel::hasAntennaAreaFactor()) {
       fprintf(fout,
               "  ANTENNAAREAFACTOR %g ",
               aModel->lefiAntennaModel::antennaAreaFactor());
-      if (aModel->lefiAntennaModel::hasAntennaAreaFactorDUO())
+      if (aModel->lefiAntennaModel::hasAntennaAreaFactorDUO()) {
         fprintf(fout, "  DIFFUSEONLY ");
+      }
       fprintf(fout, ";\n");
     }
-    if (aModel->lefiAntennaModel::hasAntennaSideAreaRatio())
+    if (aModel->lefiAntennaModel::hasAntennaSideAreaRatio()) {
       fprintf(fout,
               "  ANTENNASIDEAREARATIO %g ;\n",
               aModel->lefiAntennaModel::antennaSideAreaRatio());
-    if (aModel->lefiAntennaModel::hasAntennaDiffSideAreaRatio())
+    }
+    if (aModel->lefiAntennaModel::hasAntennaDiffSideAreaRatio()) {
       fprintf(fout,
               "  ANTENNADIFFSIDEAREARATIO %g\n",
               aModel->lefiAntennaModel::antennaDiffSideAreaRatio());
-    else if (aModel->lefiAntennaModel::hasAntennaDiffSideAreaRatioPWL()) {
+    } else if (aModel->lefiAntennaModel::hasAntennaDiffSideAreaRatioPWL()) {
       pwl = aModel->lefiAntennaModel::antennaDiffSideAreaRatioPWL();
       fprintf(fout, "  ANTENNADIFFSIDEAREARATIO PWL ( ");
-      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++)
+      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++) {
         fprintf(fout,
                 "( %g %g ) ",
                 pwl->lefiAntennaPWL::PWLdiffusion(j),
                 pwl->lefiAntennaPWL::PWLratio(j));
+      }
       fprintf(fout, ") ;\n");
     }
-    if (aModel->lefiAntennaModel::hasAntennaCumSideAreaRatio())
+    if (aModel->lefiAntennaModel::hasAntennaCumSideAreaRatio()) {
       fprintf(fout,
               "  ANTENNACUMSIDEAREARATIO %g ;\n",
               aModel->lefiAntennaModel::antennaCumSideAreaRatio());
-    if (aModel->lefiAntennaModel::hasAntennaCumDiffSideAreaRatio())
+    }
+    if (aModel->lefiAntennaModel::hasAntennaCumDiffSideAreaRatio()) {
       fprintf(fout,
               "  ANTENNACUMDIFFSIDEAREARATIO %g\n",
               aModel->lefiAntennaModel::antennaCumDiffSideAreaRatio());
-    else if (aModel->lefiAntennaModel::hasAntennaCumDiffSideAreaRatioPWL()) {
+    } else if (aModel->lefiAntennaModel::hasAntennaCumDiffSideAreaRatioPWL()) {
       pwl = aModel->lefiAntennaModel::antennaCumDiffSideAreaRatioPWL();
       fprintf(fout, "  ANTENNACUMDIFFSIDEAREARATIO PWL ( ");
-      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++)
+      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++) {
         fprintf(fout,
                 "( %g %g ) ",
                 pwl->lefiAntennaPWL::PWLdiffusion(j),
                 pwl->lefiAntennaPWL::PWLratio(j));
+      }
       fprintf(fout, ") ;\n");
     }
     if (aModel->lefiAntennaModel::hasAntennaSideAreaFactor()) {
       fprintf(fout,
               "  ANTENNASIDEAREAFACTOR %g ",
               aModel->lefiAntennaModel::antennaSideAreaFactor());
-      if (aModel->lefiAntennaModel::hasAntennaSideAreaFactorDUO())
+      if (aModel->lefiAntennaModel::hasAntennaSideAreaFactorDUO()) {
         fprintf(fout, "  DIFFUSEONLY ");
+      }
       fprintf(fout, ";\n");
     }
-    if (aModel->lefiAntennaModel::hasAntennaCumRoutingPlusCut())
+    if (aModel->lefiAntennaModel::hasAntennaCumRoutingPlusCut()) {
       fprintf(fout, "  ANTENNACUMROUTINGPLUSCUT ;\n");
-    if (aModel->lefiAntennaModel::hasAntennaGatePlusDiff())
+    }
+    if (aModel->lefiAntennaModel::hasAntennaGatePlusDiff()) {
       fprintf(fout,
               "  ANTENNAGATEPLUSDIFF %g ;\n",
               aModel->lefiAntennaModel::antennaGatePlusDiff());
-    if (aModel->lefiAntennaModel::hasAntennaAreaMinusDiff())
+    }
+    if (aModel->lefiAntennaModel::hasAntennaAreaMinusDiff()) {
       fprintf(fout,
               "  ANTENNAAREAMINUSDIFF %g ;\n",
               aModel->lefiAntennaModel::antennaAreaMinusDiff());
+    }
     if (aModel->lefiAntennaModel::hasAntennaAreaDiffReducePWL()) {
       pwl = aModel->lefiAntennaModel::antennaAreaDiffReducePWL();
       fprintf(fout, "  ANTENNAAREADIFFREDUCEPWL ( ");
-      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++)
+      for (j = 0; j < pwl->lefiAntennaPWL::numPWL(); j++) {
         fprintf(fout,
                 "( %g %g ) ",
                 pwl->lefiAntennaPWL::PWLdiffusion(j),
                 pwl->lefiAntennaPWL::PWLratio(j));
+      }
       fprintf(fout, ") ;\n");
     }
   }
@@ -1304,32 +1432,35 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
     for (i = 0; i < layer->lefiLayer::numAccurrentDensity(); i++) {
       density = layer->lefiLayer::accurrent(i);
       fprintf(fout, "  ACCURRENTDENSITY %s", density->type());
-      if (density->hasOneEntry())
+      if (density->hasOneEntry()) {
         fprintf(fout, " %g ;\n", density->oneEntry());
-      else {
+      } else {
         fprintf(fout, "\n");
         if (density->numFrequency()) {
           fprintf(fout, "    FREQUENCY");
-          for (j = 0; j < density->numFrequency(); j++)
+          for (j = 0; j < density->numFrequency(); j++) {
             fprintf(fout, " %g", density->frequency(j));
+          }
           fprintf(fout, " ;\n");
         }
         if (density->numCutareas()) {
           fprintf(fout, "    CUTAREA");
-          for (j = 0; j < density->numCutareas(); j++)
+          for (j = 0; j < density->numCutareas(); j++) {
             fprintf(fout, " %g", density->cutArea(j));
+          }
           fprintf(fout, " ;\n");
         }
         if (density->numWidths()) {
           fprintf(fout, "    WIDTH");
-          for (j = 0; j < density->numWidths(); j++)
+          for (j = 0; j < density->numWidths(); j++) {
             fprintf(fout, " %g", density->width(j));
+          }
           fprintf(fout, " ;\n");
         }
         if (density->numTableEntries()) {
           k = 5;
           fprintf(fout, "    TABLEENTRIES");
-          for (j = 0; j < density->numTableEntries(); j++)
+          for (j = 0; j < density->numTableEntries(); j++) {
             if (k > 4) {
               fprintf(fout, "\n     %g", density->tableEntry(j));
               k = 1;
@@ -1337,6 +1468,7 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
               fprintf(fout, " %g", density->tableEntry(j));
               k++;
             }
+          }
           fprintf(fout, " ;\n");
         }
       }
@@ -1346,26 +1478,29 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
     for (i = 0; i < layer->lefiLayer::numDccurrentDensity(); i++) {
       density = layer->lefiLayer::dccurrent(i);
       fprintf(fout, "  DCCURRENTDENSITY %s", density->type());
-      if (density->hasOneEntry())
+      if (density->hasOneEntry()) {
         fprintf(fout, " %g ;\n", density->oneEntry());
-      else {
+      } else {
         fprintf(fout, "\n");
         if (density->numCutareas()) {
           fprintf(fout, "    CUTAREA");
-          for (j = 0; j < density->numCutareas(); j++)
+          for (j = 0; j < density->numCutareas(); j++) {
             fprintf(fout, " %g", density->cutArea(j));
+          }
           fprintf(fout, " ;\n");
         }
         if (density->numWidths()) {
           fprintf(fout, "    WIDTH");
-          for (j = 0; j < density->numWidths(); j++)
+          for (j = 0; j < density->numWidths(); j++) {
             fprintf(fout, " %g", density->width(j));
+          }
           fprintf(fout, " ;\n");
         }
         if (density->numTableEntries()) {
           fprintf(fout, "    TABLEENTRIES");
-          for (j = 0; j < density->numTableEntries(); j++)
+          for (j = 0; j < density->numTableEntries(); j++) {
             fprintf(fout, " %g", density->tableEntry(j));
+          }
           fprintf(fout, " ;\n");
         }
       }
@@ -1405,10 +1540,12 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
       for (j = 0; j < twoWidths->lefiTwoWidths::numWidth(); j++) {
         fprintf(
             fout, "\n          WIDTH %g ", twoWidths->lefiTwoWidths::width(j));
-        if (twoWidths->lefiTwoWidths::hasWidthPRL(j))
+        if (twoWidths->lefiTwoWidths::hasWidthPRL(j)) {
           fprintf(fout, "PRL %g ", twoWidths->lefiTwoWidths::widthPRL(j));
-        for (k = 0; k < twoWidths->lefiTwoWidths::numWidthSpacing(j); k++)
+        }
+        for (k = 0; k < twoWidths->lefiTwoWidths::numWidthSpacing(j); k++) {
           fprintf(fout, "%g ", twoWidths->lefiTwoWidths::widthSpacing(j, k));
+        }
       }
       fprintf(fout, " ;\n");
     }
@@ -1420,10 +1557,12 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
     for (i = 0; i < propNum; i++) {
       // value can either be a string or number
       fprintf(fout, "%s ", layer->lefiLayer::propName(i));
-      if (layer->lefiLayer::propIsNumber(i))
+      if (layer->lefiLayer::propIsNumber(i)) {
         fprintf(fout, "%g ", layer->lefiLayer::propNumber(i));
-      if (layer->lefiLayer::propIsString(i))
+      }
+      if (layer->lefiLayer::propIsString(i)) {
         fprintf(fout, "%s ", layer->lefiLayer::propValue(i));
+      }
       pType = layer->lefiLayer::propType(i);
       switch (pType) {
         case 'R':
@@ -1445,10 +1584,11 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
     }
     fprintf(fout, ";\n");
   }
-  if (layer->lefiLayer::hasDiagMinEdgeLength())
+  if (layer->lefiLayer::hasDiagMinEdgeLength()) {
     fprintf(fout,
             "  DIAGMINEDGELENGTH %g ;\n",
             layer->lefiLayer::diagMinEdgeLength());
+  }
   if (layer->lefiLayer::numMinSize()) {
     fprintf(fout, "  MINSIZE ");
     for (i = 0; i < layer->lefiLayer::numMinSize(); i++) {
@@ -1516,16 +1656,21 @@ int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
 
   checkType(c);
   // if ((long)ud != userData) dataError();
-  if (macro->lefiMacro::hasClass())
+  if (macro->lefiMacro::hasClass()) {
     fprintf(fout, "  CLASS %s ;\n", macro->lefiMacro::macroClass());
-  if (macro->lefiMacro::isFixedMask())
+  }
+  if (macro->lefiMacro::isFixedMask()) {
     fprintf(fout, "  FIXEDMASK ;\n");
-  if (macro->lefiMacro::hasEEQ())
+  }
+  if (macro->lefiMacro::hasEEQ()) {
     fprintf(fout, "  EEQ %s ;\n", macro->lefiMacro::EEQ());
-  if (macro->lefiMacro::hasLEQ())
+  }
+  if (macro->lefiMacro::hasLEQ()) {
     fprintf(fout, "  LEQ %s ;\n", macro->lefiMacro::LEQ());
-  if (macro->lefiMacro::hasSource())
+  }
+  if (macro->lefiMacro::hasSource()) {
     fprintf(fout, "  SOURCE %s ;\n", macro->lefiMacro::source());
+  }
   if (macro->lefiMacro::hasXSymmetry()) {
     fprintf(fout, "  SYMMETRY X ");
     hasPrtSym = 1;
@@ -1534,22 +1679,25 @@ int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
     if (!hasPrtSym) {
       fprintf(fout, "  SYMMETRY Y ");
       hasPrtSym = 1;
-    } else
+    } else {
       fprintf(fout, "Y ");
+    }
   }
   if (macro->lefiMacro::has90Symmetry()) {
     if (!hasPrtSym) {
       fprintf(fout, "  SYMMETRY R90 ");
       hasPrtSym = 1;
-    } else
+    } else {
       fprintf(fout, "R90 ");
+    }
   }
   if (hasPrtSym) {
     fprintf(fout, ";\n");
     hasPrtSym = 0;
   }
-  if (macro->lefiMacro::hasSiteName())
+  if (macro->lefiMacro::hasSiteName()) {
     fprintf(fout, "  SITE %s ;\n", macro->lefiMacro::siteName());
+  }
   if (macro->lefiMacro::hasSitePattern()) {
     for (i = 0; i < macro->lefiMacro::numSitePattern(); i++) {
       pattern = macro->lefiMacro::sitePattern(i);
@@ -1574,11 +1722,12 @@ int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
       }
     }
   }
-  if (macro->lefiMacro::hasSize())
+  if (macro->lefiMacro::hasSize()) {
     fprintf(fout,
             "  SIZE %g BY %g ;\n",
             macro->lefiMacro::sizeX(),
             macro->lefiMacro::sizeY());
+  }
 
   if (macro->lefiMacro::hasForeign()) {
     for (i = 0; i < macro->lefiMacro::numForeigns(); i++) {
@@ -1588,19 +1737,22 @@ int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
                 "( %g %g ) ",
                 macro->lefiMacro::foreignX(i),
                 macro->lefiMacro::foreignY(i));
-        if (macro->lefiMacro::hasForeignOrient(i))
+        if (macro->lefiMacro::hasForeignOrient(i)) {
           fprintf(fout, "%s ", macro->lefiMacro::foreignOrientStr(i));
+        }
       }
       fprintf(fout, ";\n");
     }
   }
-  if (macro->lefiMacro::hasOrigin())
+  if (macro->lefiMacro::hasOrigin()) {
     fprintf(fout,
             "  ORIGIN ( %g %g ) ;\n",
             macro->lefiMacro::originX(),
             macro->lefiMacro::originY());
-  if (macro->lefiMacro::hasPower())
+  }
+  if (macro->lefiMacro::hasPower()) {
     fprintf(fout, "  POWER %g ;\n", macro->lefiMacro::power());
+  }
   propNum = macro->lefiMacro::numProperties();
   if (propNum > 0) {
     fprintf(fout, "  PROPERTY ");
@@ -1611,11 +1763,12 @@ int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
                 "%s %s ",
                 macro->lefiMacro::propName(i),
                 macro->lefiMacro::propValue(i));
-      } else
+      } else {
         fprintf(fout,
                 "%s %g ",
                 macro->lefiMacro::propName(i),
                 macro->lefiMacro::propNum(i));
+      }
 
       switch (macro->lefiMacro::propType(i)) {
         case 'R':
@@ -1662,11 +1815,12 @@ int maxStackViaCB(lefrCallbackType_e c, lefiMaxStackVia* maxStack, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "MAXVIASTACK %d ", maxStack->lefiMaxStackVia::maxStackVia());
-  if (maxStack->lefiMaxStackVia::hasMaxStackViaRange())
+  if (maxStack->lefiMaxStackVia::hasMaxStackViaRange()) {
     fprintf(fout,
             "RANGE %s %s ",
             maxStack->lefiMaxStackVia::maxStackViaBottomLayer(),
             maxStack->lefiMaxStackVia::maxStackViaTopLayer());
+  }
   fprintf(fout, ";\n");
   return 0;
 }
@@ -1691,33 +1845,41 @@ int nonDefaultCB(lefrCallbackType_e c, lefiNonDefault* def, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "NONDEFAULTRULE %s\n", def->lefiNonDefault::name());
-  if (def->lefiNonDefault::hasHardspacing())
+  if (def->lefiNonDefault::hasHardspacing()) {
     fprintf(fout, "  HARDSPACING ;\n");
+  }
   for (i = 0; i < def->lefiNonDefault::numLayers(); i++) {
     fprintf(fout, "  LAYER %s\n", def->lefiNonDefault::layerName(i));
-    if (def->lefiNonDefault::hasLayerWidth(i))
+    if (def->lefiNonDefault::hasLayerWidth(i)) {
       fprintf(fout, "    WIDTH %g ;\n", def->lefiNonDefault::layerWidth(i));
-    if (def->lefiNonDefault::hasLayerSpacing(i))
+    }
+    if (def->lefiNonDefault::hasLayerSpacing(i)) {
       fprintf(fout, "    SPACING %g ;\n", def->lefiNonDefault::layerSpacing(i));
-    if (def->lefiNonDefault::hasLayerDiagWidth(i))
+    }
+    if (def->lefiNonDefault::hasLayerDiagWidth(i)) {
       fprintf(
           fout, "    DIAGWIDTH %g ;\n", def->lefiNonDefault::layerDiagWidth(i));
-    if (def->lefiNonDefault::hasLayerWireExtension(i))
+    }
+    if (def->lefiNonDefault::hasLayerWireExtension(i)) {
       fprintf(fout,
               "    WIREEXTENSION %g ;\n",
               def->lefiNonDefault::layerWireExtension(i));
-    if (def->lefiNonDefault::hasLayerResistance(i))
+    }
+    if (def->lefiNonDefault::hasLayerResistance(i)) {
       fprintf(fout,
               "    RESISTANCE RPERSQ %g ;\n",
               def->lefiNonDefault::layerResistance(i));
-    if (def->lefiNonDefault::hasLayerCapacitance(i))
+    }
+    if (def->lefiNonDefault::hasLayerCapacitance(i)) {
       fprintf(fout,
               "    CAPACITANCE CPERSQDIST %g ;\n",
               def->lefiNonDefault::layerCapacitance(i));
-    if (def->lefiNonDefault::hasLayerEdgeCap(i))
+    }
+    if (def->lefiNonDefault::hasLayerEdgeCap(i)) {
       fprintf(fout,
               "    EDGECAPACITANCE %g ;\n",
               def->lefiNonDefault::layerEdgeCap(i));
+    }
     fprintf(fout, "  END %s\n", def->lefiNonDefault::layerName(i));
   }
 
@@ -1734,12 +1896,14 @@ int nonDefaultCB(lefrCallbackType_e c, lefiNonDefault* def, lefiUserData)
   }
 
   // handle usevia
-  for (i = 0; i < def->lefiNonDefault::numUseVia(); i++)
+  for (i = 0; i < def->lefiNonDefault::numUseVia(); i++) {
     fprintf(fout, "    USEVIA %s ;\n", def->lefiNonDefault::viaName(i));
+  }
 
   // handle useviarule
-  for (i = 0; i < def->lefiNonDefault::numUseViaRule(); i++)
+  for (i = 0; i < def->lefiNonDefault::numUseViaRule(); i++) {
     fprintf(fout, "    USEVIARULE %s ;\n", def->lefiNonDefault::viaRuleName(i));
+  }
 
   // handle mincuts
   for (i = 0; i < def->lefiNonDefault::numMinCuts(); i++) {
@@ -1754,10 +1918,12 @@ int nonDefaultCB(lefrCallbackType_e c, lefiNonDefault* def, lefiUserData)
     fprintf(fout, "   PROPERTY ");
     for (i = 0; i < def->lefiNonDefault::numProps(); i++) {
       fprintf(fout, "%s ", def->lefiNonDefault::propName(i));
-      if (def->lefiNonDefault::propIsNumber(i))
+      if (def->lefiNonDefault::propIsNumber(i)) {
         fprintf(fout, "%g ", def->lefiNonDefault::propNumber(i));
-      if (def->lefiNonDefault::propIsString(i))
+      }
+      if (def->lefiNonDefault::propIsString(i)) {
         fprintf(fout, "%s ", def->lefiNonDefault::propValue(i));
+      }
       switch (def->lefiNonDefault::propType(i)) {
         case 'R':
           fprintf(fout, "REAL ");
@@ -1807,108 +1973,141 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
   fprintf(fout, "  PIN %s\n", pin->lefiPin::name());
   if (pin->lefiPin::hasForeign()) {
     for (i = 0; i < pin->lefiPin::numForeigns(); i++) {
-      if (pin->lefiPin::hasForeignOrient(i))
+      if (pin->lefiPin::hasForeignOrient(i)) {
         fprintf(fout,
                 "    FOREIGN %s STRUCTURE ( %g %g ) %s ;\n",
                 pin->lefiPin::foreignName(i),
                 pin->lefiPin::foreignX(i),
                 pin->lefiPin::foreignY(i),
                 pin->lefiPin::foreignOrientStr(i));
-      else if (pin->lefiPin::hasForeignPoint(i))
+      } else if (pin->lefiPin::hasForeignPoint(i)) {
         fprintf(fout,
                 "    FOREIGN %s STRUCTURE ( %g %g ) ;\n",
                 pin->lefiPin::foreignName(i),
                 pin->lefiPin::foreignX(i),
                 pin->lefiPin::foreignY(i));
-      else
+      } else {
         fprintf(fout, "    FOREIGN %s ;\n", pin->lefiPin::foreignName(i));
+      }
     }
   }
-  if (pin->lefiPin::hasLEQ())
+  if (pin->lefiPin::hasLEQ()) {
     fprintf(fout, "    LEQ %s ;\n", pin->lefiPin::LEQ());
-  if (pin->lefiPin::hasDirection())
+  }
+  if (pin->lefiPin::hasDirection()) {
     fprintf(fout, "    DIRECTION %s ;\n", pin->lefiPin::direction());
-  if (pin->lefiPin::hasUse())
+  }
+  if (pin->lefiPin::hasUse()) {
     fprintf(fout, "    USE %s ;\n", pin->lefiPin::use());
-  if (pin->lefiPin::hasShape())
+  }
+  if (pin->lefiPin::hasShape()) {
     fprintf(fout, "    SHAPE %s ;\n", pin->lefiPin::shape());
-  if (pin->lefiPin::hasMustjoin())
+  }
+  if (pin->lefiPin::hasMustjoin()) {
     fprintf(fout, "    MUSTJOIN %s ;\n", pin->lefiPin::mustjoin());
-  if (pin->lefiPin::hasOutMargin())
+  }
+  if (pin->lefiPin::hasOutMargin()) {
     fprintf(fout,
             "    OUTPUTNOISEMARGIN %g %g ;\n",
             pin->lefiPin::outMarginHigh(),
             pin->lefiPin::outMarginLow());
-  if (pin->lefiPin::hasOutResistance())
+  }
+  if (pin->lefiPin::hasOutResistance()) {
     fprintf(fout,
             "    OUTPUTRESISTANCE %g %g ;\n",
             pin->lefiPin::outResistanceHigh(),
             pin->lefiPin::outResistanceLow());
-  if (pin->lefiPin::hasInMargin())
+  }
+  if (pin->lefiPin::hasInMargin()) {
     fprintf(fout,
             "    INPUTNOISEMARGIN %g %g ;\n",
             pin->lefiPin::inMarginHigh(),
             pin->lefiPin::inMarginLow());
-  if (pin->lefiPin::hasPower())
+  }
+  if (pin->lefiPin::hasPower()) {
     fprintf(fout, "    POWER %g ;\n", pin->lefiPin::power());
-  if (pin->lefiPin::hasLeakage())
+  }
+  if (pin->lefiPin::hasLeakage()) {
     fprintf(fout, "    LEAKAGE %g ;\n", pin->lefiPin::leakage());
-  if (pin->lefiPin::hasMaxload())
+  }
+  if (pin->lefiPin::hasMaxload()) {
     fprintf(fout, "    MAXLOAD %g ;\n", pin->lefiPin::maxload());
-  if (pin->lefiPin::hasCapacitance())
+  }
+  if (pin->lefiPin::hasCapacitance()) {
     fprintf(fout, "    CAPACITANCE %g ;\n", pin->lefiPin::capacitance());
-  if (pin->lefiPin::hasResistance())
+  }
+  if (pin->lefiPin::hasResistance()) {
     fprintf(fout, "    RESISTANCE %g ;\n", pin->lefiPin::resistance());
-  if (pin->lefiPin::hasPulldownres())
+  }
+  if (pin->lefiPin::hasPulldownres()) {
     fprintf(fout, "    PULLDOWNRES %g ;\n", pin->lefiPin::pulldownres());
-  if (pin->lefiPin::hasTieoffr())
+  }
+  if (pin->lefiPin::hasTieoffr()) {
     fprintf(fout, "    TIEOFFR %g ;\n", pin->lefiPin::tieoffr());
-  if (pin->lefiPin::hasVHI())
+  }
+  if (pin->lefiPin::hasVHI()) {
     fprintf(fout, "    VHI %g ;\n", pin->lefiPin::VHI());
-  if (pin->lefiPin::hasVLO())
+  }
+  if (pin->lefiPin::hasVLO()) {
     fprintf(fout, "    VLO %g ;\n", pin->lefiPin::VLO());
-  if (pin->lefiPin::hasRiseVoltage())
+  }
+  if (pin->lefiPin::hasRiseVoltage()) {
     fprintf(
         fout, "    RISEVOLTAGETHRESHOLD %g ;\n", pin->lefiPin::riseVoltage());
-  if (pin->lefiPin::hasFallVoltage())
+  }
+  if (pin->lefiPin::hasFallVoltage()) {
     fprintf(
         fout, "    FALLVOLTAGETHRESHOLD %g ;\n", pin->lefiPin::fallVoltage());
-  if (pin->lefiPin::hasRiseThresh())
+  }
+  if (pin->lefiPin::hasRiseThresh()) {
     fprintf(fout, "    RISETHRESH %g ;\n", pin->lefiPin::riseThresh());
-  if (pin->lefiPin::hasFallThresh())
+  }
+  if (pin->lefiPin::hasFallThresh()) {
     fprintf(fout, "    FALLTHRESH %g ;\n", pin->lefiPin::fallThresh());
-  if (pin->lefiPin::hasRiseSatcur())
+  }
+  if (pin->lefiPin::hasRiseSatcur()) {
     fprintf(fout, "    RISESATCUR %g ;\n", pin->lefiPin::riseSatcur());
-  if (pin->lefiPin::hasFallSatcur())
+  }
+  if (pin->lefiPin::hasFallSatcur()) {
     fprintf(fout, "    FALLSATCUR %g ;\n", pin->lefiPin::fallSatcur());
-  if (pin->lefiPin::hasRiseSlewLimit())
+  }
+  if (pin->lefiPin::hasRiseSlewLimit()) {
     fprintf(fout, "    RISESLEWLIMIT %g ;\n", pin->lefiPin::riseSlewLimit());
-  if (pin->lefiPin::hasFallSlewLimit())
+  }
+  if (pin->lefiPin::hasFallSlewLimit()) {
     fprintf(fout, "    FALLSLEWLIMIT %g ;\n", pin->lefiPin::fallSlewLimit());
-  if (pin->lefiPin::hasCurrentSource())
+  }
+  if (pin->lefiPin::hasCurrentSource()) {
     fprintf(fout, "    CURRENTSOURCE %s ;\n", pin->lefiPin::currentSource());
-  if (pin->lefiPin::hasTables())
+  }
+  if (pin->lefiPin::hasTables()) {
     fprintf(fout,
             "    IV_TABLES %s %s ;\n",
             pin->lefiPin::tableHighName(),
             pin->lefiPin::tableLowName());
-  if (pin->lefiPin::hasTaperRule())
+  }
+  if (pin->lefiPin::hasTaperRule()) {
     fprintf(fout, "    TAPERRULE %s ;\n", pin->lefiPin::taperRule());
-  if (pin->lefiPin::hasNetExpr())
+  }
+  if (pin->lefiPin::hasNetExpr()) {
     fprintf(fout, "    NETEXPR \"%s\" ;\n", pin->lefiPin::netExpr());
-  if (pin->lefiPin::hasSupplySensitivity())
+  }
+  if (pin->lefiPin::hasSupplySensitivity()) {
     fprintf(fout,
             "    SUPPLYSENSITIVITY %s ;\n",
             pin->lefiPin::supplySensitivity());
-  if (pin->lefiPin::hasGroundSensitivity())
+  }
+  if (pin->lefiPin::hasGroundSensitivity()) {
     fprintf(fout,
             "    GROUNDSENSITIVITY %s ;\n",
             pin->lefiPin::groundSensitivity());
+  }
   if (pin->lefiPin::hasAntennaSize()) {
     for (i = 0; i < pin->lefiPin::numAntennaSize(); i++) {
       fprintf(fout, "    ANTENNASIZE %g ", pin->lefiPin::antennaSize(i));
-      if (pin->lefiPin::antennaSizeLayer(i))
+      if (pin->lefiPin::antennaSizeLayer(i)) {
         fprintf(fout, "LAYER %s ", pin->lefiPin::antennaSizeLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1916,8 +2115,9 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
     for (i = 0; i < pin->lefiPin::numAntennaMetalArea(); i++) {
       fprintf(
           fout, "    ANTENNAMETALAREA %g ", pin->lefiPin::antennaMetalArea(i));
-      if (pin->lefiPin::antennaMetalAreaLayer(i))
+      if (pin->lefiPin::antennaMetalAreaLayer(i)) {
         fprintf(fout, "LAYER %s ", pin->lefiPin::antennaMetalAreaLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1926,8 +2126,9 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
       fprintf(fout,
               "    ANTENNAMETALLENGTH %g ",
               pin->lefiPin::antennaMetalLength(i));
-      if (pin->lefiPin::antennaMetalLengthLayer(i))
+      if (pin->lefiPin::antennaMetalLengthLayer(i)) {
         fprintf(fout, "LAYER %s ", pin->lefiPin::antennaMetalLengthLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1937,9 +2138,10 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
       fprintf(fout,
               "    ANTENNAPARTIALMETALAREA %g ",
               pin->lefiPin::antennaPartialMetalArea(i));
-      if (pin->lefiPin::antennaPartialMetalAreaLayer(i))
+      if (pin->lefiPin::antennaPartialMetalAreaLayer(i)) {
         fprintf(
             fout, "LAYER %s ", pin->lefiPin::antennaPartialMetalAreaLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1949,10 +2151,11 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
       fprintf(fout,
               "    ANTENNAPARTIALMETALSIDEAREA %g ",
               pin->lefiPin::antennaPartialMetalSideArea(i));
-      if (pin->lefiPin::antennaPartialMetalSideAreaLayer(i))
+      if (pin->lefiPin::antennaPartialMetalSideAreaLayer(i)) {
         fprintf(fout,
                 "LAYER %s ",
                 pin->lefiPin::antennaPartialMetalSideAreaLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1962,8 +2165,9 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
       fprintf(fout,
               "    ANTENNAPARTIALCUTAREA %g ",
               pin->lefiPin::antennaPartialCutArea(i));
-      if (pin->lefiPin::antennaPartialCutAreaLayer(i))
+      if (pin->lefiPin::antennaPartialCutAreaLayer(i)) {
         fprintf(fout, "LAYER %s ", pin->lefiPin::antennaPartialCutAreaLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1972,8 +2176,9 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
     for (i = 0; i < pin->lefiPin::numAntennaDiffArea(); i++) {
       fprintf(
           fout, "    ANTENNADIFFAREA %g ", pin->lefiPin::antennaDiffArea(i));
-      if (pin->lefiPin::antennaDiffAreaLayer(i))
+      if (pin->lefiPin::antennaDiffAreaLayer(i)) {
         fprintf(fout, "LAYER %s ", pin->lefiPin::antennaDiffAreaLayer(i));
+      }
       fprintf(fout, ";\n");
     }
   }
@@ -1990,10 +2195,11 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
         fprintf(fout,
                 "    ANTENNAGATEAREA %g ",
                 aModel->lefiPinAntennaModel::antennaGateArea(i));
-        if (aModel->lefiPinAntennaModel::antennaGateAreaLayer(i))
+        if (aModel->lefiPinAntennaModel::antennaGateAreaLayer(i)) {
           fprintf(fout,
                   "LAYER %s ",
                   aModel->lefiPinAntennaModel::antennaGateAreaLayer(i));
+        }
         fprintf(fout, ";\n");
       }
     }
@@ -2004,10 +2210,11 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
         fprintf(fout,
                 "    ANTENNAMAXAREACAR %g ",
                 aModel->lefiPinAntennaModel::antennaMaxAreaCar(i));
-        if (aModel->lefiPinAntennaModel::antennaMaxAreaCarLayer(i))
+        if (aModel->lefiPinAntennaModel::antennaMaxAreaCarLayer(i)) {
           fprintf(fout,
                   "LAYER %s ",
                   aModel->lefiPinAntennaModel::antennaMaxAreaCarLayer(i));
+        }
         fprintf(fout, ";\n");
       }
     }
@@ -2018,10 +2225,11 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
         fprintf(fout,
                 "    ANTENNAMAXSIDEAREACAR %g ",
                 aModel->lefiPinAntennaModel::antennaMaxSideAreaCar(i));
-        if (aModel->lefiPinAntennaModel::antennaMaxSideAreaCarLayer(i))
+        if (aModel->lefiPinAntennaModel::antennaMaxSideAreaCarLayer(i)) {
           fprintf(fout,
                   "LAYER %s ",
                   aModel->lefiPinAntennaModel::antennaMaxSideAreaCarLayer(i));
+        }
         fprintf(fout, ";\n");
       }
     }
@@ -2031,10 +2239,11 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
         fprintf(fout,
                 "    ANTENNAMAXCUTCAR %g ",
                 aModel->lefiPinAntennaModel::antennaMaxCutCar(i));
-        if (aModel->lefiPinAntennaModel::antennaMaxCutCarLayer(i))
+        if (aModel->lefiPinAntennaModel::antennaMaxCutCarLayer(i)) {
           fprintf(fout,
                   "LAYER %s ",
                   aModel->lefiPinAntennaModel::antennaMaxCutCarLayer(i));
+        }
         fprintf(fout, ";\n");
       }
     }
@@ -2049,11 +2258,12 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
                 "%s %s ",
                 pin->lefiPin::propName(i),
                 pin->lefiPin::propValue(i));
-      } else
+      } else {
         fprintf(fout,
                 "%s %g ",
                 pin->lefiPin::propName(i),
                 pin->lefiPin::propNum(i));
+      }
       switch (pin->lefiPin::propType(i)) {
         case 'R':
           fprintf(fout, "REAL ");
@@ -2131,13 +2341,16 @@ int propDefCB(lefrCallbackType_e c, lefiProp* prop, lefiUserData)
       fprintf(fout, " STRING");
       break;
   }
-  if (prop->lefiProp::hasNumber())
+  if (prop->lefiProp::hasNumber()) {
     fprintf(fout, " %g", prop->lefiProp::number());
-  if (prop->lefiProp::hasRange())
+  }
+  if (prop->lefiProp::hasRange()) {
     fprintf(
         fout, " RANGE %g %g", prop->lefiProp::left(), prop->lefiProp::right());
-  if (prop->lefiProp::hasString())
+  }
+  if (prop->lefiProp::hasString()) {
     fprintf(fout, " %s", prop->lefiProp::string());
+  }
   fprintf(fout, "\n");
   return 0;
 }
@@ -2158,43 +2371,47 @@ int siteCB(lefrCallbackType_e c, lefiSite* site, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "SITE %s\n", site->lefiSite::name());
-  if (site->lefiSite::hasClass())
+  if (site->lefiSite::hasClass()) {
     fprintf(fout, "  CLASS %s ;\n", site->lefiSite::siteClass());
+  }
   if (site->lefiSite::hasXSymmetry()) {
     fprintf(fout, "  SYMMETRY X ");
     hasPrtSym = 1;
   }
   if (site->lefiSite::hasYSymmetry()) {
-    if (hasPrtSym)
+    if (hasPrtSym) {
       fprintf(fout, "Y ");
-    else {
+    } else {
       fprintf(fout, "  SYMMETRY Y ");
       hasPrtSym = 1;
     }
   }
   if (site->lefiSite::has90Symmetry()) {
-    if (hasPrtSym)
+    if (hasPrtSym) {
       fprintf(fout, "R90 ");
-    else {
+    } else {
       fprintf(fout, "  SYMMETRY R90 ");
       hasPrtSym = 1;
     }
   }
-  if (hasPrtSym)
+  if (hasPrtSym) {
     fprintf(fout, ";\n");
-  if (site->lefiSite::hasSize())
+  }
+  if (site->lefiSite::hasSize()) {
     fprintf(fout,
             "  SIZE %g BY %g ;\n",
             site->lefiSite::sizeX(),
             site->lefiSite::sizeY());
+  }
 
   if (site->hasRowPattern()) {
     fprintf(fout, "  ROWPATTERN ");
-    for (i = 0; i < site->lefiSite::numSites(); i++)
+    for (i = 0; i < site->lefiSite::numSites(); i++) {
       fprintf(fout,
               "  %s %s ",
               site->lefiSite::siteName(i),
               site->lefiSite::siteOrientStr(i));
+    }
     fprintf(fout, ";\n");
   }
 
@@ -2232,35 +2449,40 @@ int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "TIMING\n");
-  for (i = 0; i < timing->numFromPins(); i++)
+  for (i = 0; i < timing->numFromPins(); i++) {
     fprintf(fout, " FROMPIN %s ;\n", timing->fromPin(i));
-  for (i = 0; i < timing->numToPins(); i++)
+  }
+  for (i = 0; i < timing->numToPins(); i++) {
     fprintf(fout, " TOPIN %s ;\n", timing->toPin(i));
+  }
   fprintf(fout,
           " RISE SLEW1 %g %g %g %g ;\n",
           timing->riseSlewOne(),
           timing->riseSlewTwo(),
           timing->riseSlewThree(),
           timing->riseSlewFour());
-  if (timing->hasRiseSlew2())
+  if (timing->hasRiseSlew2()) {
     fprintf(fout,
             " RISE SLEW2 %g %g %g ;\n",
             timing->riseSlewFive(),
             timing->riseSlewSix(),
             timing->riseSlewSeven());
-  if (timing->hasFallSlew())
+  }
+  if (timing->hasFallSlew()) {
     fprintf(fout,
             " FALL SLEW1 %g %g %g %g ;\n",
             timing->fallSlewOne(),
             timing->fallSlewTwo(),
             timing->fallSlewThree(),
             timing->fallSlewFour());
-  if (timing->hasFallSlew2())
+  }
+  if (timing->hasFallSlew2()) {
     fprintf(fout,
             " FALL SLEW2 %g %g %g ;\n",
             timing->fallSlewFive(),
             timing->fallSlewSix(),
             timing->riseSlewSeven());
+  }
   if (timing->hasRiseIntrinsic()) {
     fprintf(fout,
             "TIMING RISE INTRINSIC %g %g ;\n",
@@ -2281,56 +2503,66 @@ int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData)
             timing->fallIntrinsicThree(),
             timing->fallIntrinsicFour());
   }
-  if (timing->hasRiseRS())
+  if (timing->hasRiseRS()) {
     fprintf(fout,
             "TIMING RISERS %g %g ;\n",
             timing->riseRSOne(),
             timing->riseRSTwo());
-  if (timing->hasRiseCS())
+  }
+  if (timing->hasRiseCS()) {
     fprintf(fout,
             "TIMING RISECS %g %g ;\n",
             timing->riseCSOne(),
             timing->riseCSTwo());
-  if (timing->hasFallRS())
+  }
+  if (timing->hasFallRS()) {
     fprintf(fout,
             "TIMING FALLRS %g %g ;\n",
             timing->fallRSOne(),
             timing->fallRSTwo());
-  if (timing->hasFallCS())
+  }
+  if (timing->hasFallCS()) {
     fprintf(fout,
             "TIMING FALLCS %g %g ;\n",
             timing->fallCSOne(),
             timing->fallCSTwo());
-  if (timing->hasUnateness())
+  }
+  if (timing->hasUnateness()) {
     fprintf(fout, "TIMING UNATENESS %s ;\n", timing->unateness());
-  if (timing->hasRiseAtt1())
+  }
+  if (timing->hasRiseAtt1()) {
     fprintf(fout,
             "TIMING RISESATT1 %g %g ;\n",
             timing->riseAtt1One(),
             timing->riseAtt1Two());
-  if (timing->hasFallAtt1())
+  }
+  if (timing->hasFallAtt1()) {
     fprintf(fout,
             "TIMING FALLSATT1 %g %g ;\n",
             timing->fallAtt1One(),
             timing->fallAtt1Two());
-  if (timing->hasRiseTo())
+  }
+  if (timing->hasRiseTo()) {
     fprintf(fout,
             "TIMING RISET0 %g %g ;\n",
             timing->riseToOne(),
             timing->riseToTwo());
-  if (timing->hasFallTo())
+  }
+  if (timing->hasFallTo()) {
     fprintf(fout,
             "TIMING FALLT0 %g %g ;\n",
             timing->fallToOne(),
             timing->fallToTwo());
-  if (timing->hasSDFonePinTrigger())
+  }
+  if (timing->hasSDFonePinTrigger()) {
     fprintf(fout,
             " %s TABLEDIMENSION %g %g %g ;\n",
             timing->SDFonePinTriggerType(),
             timing->SDFtriggerOne(),
             timing->SDFtriggerTwo(),
             timing->SDFtriggerThree());
-  if (timing->hasSDFtwoPinTrigger())
+  }
+  if (timing->hasSDFtwoPinTrigger()) {
     fprintf(fout,
             " %s %s %s TABLEDIMENSION %g %g %g ;\n",
             timing->SDFtwoPinTriggerType(),
@@ -2339,6 +2571,7 @@ int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData)
             timing->SDFtriggerOne(),
             timing->SDFtriggerTwo(),
             timing->SDFtriggerThree());
+  }
   fprintf(fout, "END TIMING\n");
   return 0;
 }
@@ -2348,25 +2581,32 @@ int unitsCB(lefrCallbackType_e c, lefiUnits* unit, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "UNITS\n");
-  if (unit->lefiUnits::hasDatabase())
+  if (unit->lefiUnits::hasDatabase()) {
     fprintf(fout,
             "  DATABASE %s %g ;\n",
             unit->lefiUnits::databaseName(),
             unit->lefiUnits::databaseNumber());
-  if (unit->lefiUnits::hasCapacitance())
+  }
+  if (unit->lefiUnits::hasCapacitance()) {
     fprintf(fout,
             "  CAPACITANCE PICOFARADS %g ;\n",
             unit->lefiUnits::capacitance());
-  if (unit->lefiUnits::hasResistance())
+  }
+  if (unit->lefiUnits::hasResistance()) {
     fprintf(fout, "  RESISTANCE OHMS %g ;\n", unit->lefiUnits::resistance());
-  if (unit->lefiUnits::hasPower())
+  }
+  if (unit->lefiUnits::hasPower()) {
     fprintf(fout, "  POWER MILLIWATTS %g ;\n", unit->lefiUnits::power());
-  if (unit->lefiUnits::hasCurrent())
+  }
+  if (unit->lefiUnits::hasCurrent()) {
     fprintf(fout, "  CURRENT MILLIAMPS %g ;\n", unit->lefiUnits::current());
-  if (unit->lefiUnits::hasVoltage())
+  }
+  if (unit->lefiUnits::hasVoltage()) {
     fprintf(fout, "  VOLTAGE VOLTS %g ;\n", unit->lefiUnits::voltage());
-  if (unit->lefiUnits::hasFrequency())
+  }
+  if (unit->lefiUnits::hasFrequency()) {
     fprintf(fout, "  FREQUENCY MEGAHERTZ %g ;\n", unit->lefiUnits::frequency());
+  }
   fprintf(fout, "END UNITS\n");
   return 0;
 }
@@ -2378,10 +2618,11 @@ int useMinSpacingCB(lefrCallbackType_e c,
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "USEMINSPACING %s ", spacing->lefiUseMinSpacing::name());
-  if (spacing->lefiUseMinSpacing::value())
+  if (spacing->lefiUseMinSpacing::value()) {
     fprintf(fout, "ON ;\n");
-  else
+  } else {
     fprintf(fout, "OFF ;\n");
+  }
   return 0;
 }
 
@@ -2417,10 +2658,12 @@ int viaRuleCB(lefrCallbackType_e c, lefiViaRule* viaRule, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
   fprintf(fout, "VIARULE %s", viaRule->lefiViaRule::name());
-  if (viaRule->lefiViaRule::hasGenerate())
+  if (viaRule->lefiViaRule::hasGenerate()) {
     fprintf(fout, " GENERATE");
-  if (viaRule->lefiViaRule::hasDefault())
+  }
+  if (viaRule->lefiViaRule::hasDefault()) {
     fprintf(fout, " DEFAULT");
+  }
   fprintf(fout, "\n");
 
   numLayers = viaRule->lefiViaRule::numLayers();
@@ -2434,19 +2677,21 @@ int viaRuleCB(lefrCallbackType_e c, lefiViaRule* viaRule, lefiUserData)
   if (numLayers == 2 && !(viaRule->lefiViaRule::hasGenerate())) {
     // should have vianames
     numVias = viaRule->lefiViaRule::numVias();
-    if (numVias == 0)
+    if (numVias == 0) {
       fprintf(fout, "Should have via names in VIARULE.\n");
-    else {
-      for (i = 0; i < numVias; i++)
+    } else {
+      for (i = 0; i < numVias; i++) {
         fprintf(fout, "  VIA %s ;\n", viaRule->lefiViaRule::viaName(i));
+      }
     }
   }
   if (viaRule->lefiViaRule::numProps() > 0) {
     fprintf(fout, "  PROPERTY ");
     for (i = 0; i < viaRule->lefiViaRule::numProps(); i++) {
       fprintf(fout, "%s ", viaRule->lefiViaRule::propName(i));
-      if (viaRule->lefiViaRule::propValue(i))
+      if (viaRule->lefiViaRule::propValue(i)) {
         fprintf(fout, "%s ", viaRule->lefiViaRule::propValue(i));
+      }
       switch (viaRule->lefiViaRule::propType(i)) {
         case 'R':
           fprintf(fout, "REAL ");
@@ -2698,10 +2943,11 @@ int main(int argc, char** argv)
     lefrSetUnitsCbk(unitsCB);
     lefrSetUseMinSpacingCbk(useMinSpacingCB);
     lefrSetUserData((void*) 3);
-    if (!retStr)
+    if (!retStr) {
       lefrSetVersionCbk(versionCB);
-    else
+    } else {
       lefrSetVersionStrCbk(versionStrCB);
+    }
     lefrSetViaCbk(viaCB);
     lefrSetViaRuleCbk(viaRuleCB);
     lefrSetInputAntennaCbk(antennaCB);
@@ -2722,11 +2968,13 @@ int main(int argc, char** argv)
 
     lefrSetRegisterUnusedCallbacks();
 
-    if (relax)
+    if (relax) {
       lefrSetRelaxMode();
+    }
 
-    if (setVer)
+    if (setVer) {
       (void) lefrSetVersionValue(version);
+    }
 
     lefrSetAntennaInoutWarnings(30);
     lefrSetAntennaInputWarnings(30);
@@ -2789,13 +3037,15 @@ int main(int argc, char** argv)
 
       status = lefwInit(fout);  // initialize the lef writer,
                                 // need to be called 1st
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         return 1;
+      }
 
       res = lefrRead(f, inFile[fileCt], (void*) userData);
 
-      if (res)
+      if (res) {
         fprintf(stderr, "Reader returns bad status.\n");
+      }
 
       (void) lefrPrintUnusedCallbacks(fout);
       (void) lefrReleaseNResetMemory();
@@ -2849,13 +3099,15 @@ int main(int argc, char** argv)
 
       status = lefwInit(fout);  // initialize the lef writer,
                                 // need to be called 1st
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         return 1;
+      }
 
       res = lefrRead(f, inFile[fileCt], (void*) userData);
 
-      if (res)
+      if (res) {
         fprintf(stderr, "Reader returns bad status.\n");
+      }
 
       (void) lefrPrintUnusedCallbacks(fout);
       (void) lefrReleaseNResetMemory();
@@ -2877,8 +3129,9 @@ int main(int argc, char** argv)
 
       status = lefwInit(fout);  // initialize the lef writer,
                                 // need to be called 1st
-      if (status != LEFW_OK)
+      if (status != LEFW_OK) {
         return 1;
+      }
 
       if (ccr1709089) {
         // CCR 1709089 test.
@@ -2894,8 +3147,9 @@ int main(int argc, char** argv)
         lefrSetLimitPerMsg(10000, 10000);
       }
 
-      if (res)
+      if (res) {
         fprintf(stderr, "Reader returns bad status.\n");
+      }
 
       (void) lefrPrintUnusedCallbacks(fout);
       (void) lefrReleaseNResetMemory();

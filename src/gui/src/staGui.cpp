@@ -378,8 +378,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case Slew:
           return convertDelay(node->getSlew(), time_units);
         case Load: {
-          if (node->getLoad() == 0)
+          if (node->getLoad() == 0) {
             return "";
+          }
           const auto cap_units = sta_->units()->capacitanceUnit();
           return cap_units->asString(node->getLoad());
         }

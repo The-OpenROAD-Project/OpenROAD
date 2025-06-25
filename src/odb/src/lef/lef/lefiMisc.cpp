@@ -136,10 +136,11 @@ void lefiGeometries::add(void* v, lefiGeomEnum e)
     int i;
     void** newi;
     lefiGeomEnum* newe;
-    if (itemsAllocated_ == 0)  // 9/12/2002 - for C version
+    if (itemsAllocated_ == 0) {  // 9/12/2002 - for C version
       itemsAllocated_ = 2;
-    else
+    } else {
       itemsAllocated_ *= 2;
+    }
     newe = (lefiGeomEnum*) lefMalloc(sizeof(lefiGeomEnum) * itemsAllocated_);
     newi = (void**) lefMalloc(sizeof(void*) * itemsAllocated_);
     for (i = 0; i < numItems_; i++) {
@@ -416,10 +417,11 @@ void lefiGeometries::addToList(double x, double y)
     int i;
     double* nx;
     double* ny;
-    if (pointsAllocated_ == 0)
+    if (pointsAllocated_ == 0) {
       pointsAllocated_ = 2;
-    else
+    } else {
       pointsAllocated_ *= 2;
+    }
     nx = (double*) lefMalloc(sizeof(double) * pointsAllocated_);
     ny = (double*) lefMalloc(sizeof(double) * pointsAllocated_);
     for (i = 0; i < numPoints_; i++) {
@@ -685,8 +687,9 @@ void lefiGeometries::print(FILE* f) const
         break;
 
       case lefiGeomLayerExceptPgNetE:
-        if (getLayerMinSpacing(i))
+        if (getLayerMinSpacing(i)) {
           fprintf(f, "EXCEPTPGNET \n");
+        }
         break;
 
       case lefiGeomLayerMinSpacingE:
@@ -708,8 +711,9 @@ void lefiGeometries::print(FILE* f) const
         if (path->colorMask) {
           fprintf(f, " MASK %d", path->colorMask);
         }
-        for (l = 0; l < path->numPoints; l++)
+        for (l = 0; l < path->numPoints; l++) {
           fprintf(f, " %g,%g", path->x[l], path->y[l]);
+        }
         fprintf(f, "\n");
         break;
 
@@ -862,10 +866,12 @@ void lefiSpacing::Init()
 
 void lefiSpacing::Destroy()
 {
-  if (name1_)
+  if (name1_) {
     lefFree(name1_);
-  if (name2_)
+  }
+  if (name2_) {
     lefFree(name2_);
+  }
 }
 
 lefiSpacing::~lefiSpacing()
@@ -933,8 +939,9 @@ void lefiSpacing::print(FILE* f) const
 {
   fprintf(f, "SPACING %s %s %g", name1(), name2(), distance());
 
-  if (hasStack())
+  if (hasStack()) {
     fprintf(f, "  STACK");
+  }
 
   fprintf(f, "\n");
 }
@@ -1143,8 +1150,9 @@ void lefiSite::Destroy()
 
   lefFree(name_);
   if (numRowPattern_) {
-    for (i = 0; i < numRowPattern_; i++)
+    for (i = 0; i < numRowPattern_; i++) {
       lefFree(siteNames_[i]);
+    }
     lefFree(siteNames_);
     lefFree(siteOrients_);
     numRowPattern_ = 0;
@@ -1171,8 +1179,9 @@ void lefiSite::setName(const char* name)
   hasSize_ = 0;
   symmetry_ = 0;
   if (numRowPattern_) {
-    for (i = 0; i < numRowPattern_; i++)
+    for (i = 0; i < numRowPattern_; i++) {
       lefFree(siteNames_[i]);
+    }
     numRowPattern_ = 0;
   }
 }
@@ -1316,20 +1325,25 @@ void lefiSite::print(FILE* f) const
 {
   fprintf(f, "SITE %s", name());
 
-  if (hasClass())
+  if (hasClass()) {
     fprintf(f, " CLASS %s", siteClass());
+  }
 
-  if (hasSize())
+  if (hasSize()) {
     fprintf(f, " SIZE %g %g", sizeX(), sizeY());
+  }
 
-  if (hasXSymmetry())
+  if (hasXSymmetry()) {
     fprintf(f, " SYMMETRY X");
+  }
 
-  if (hasYSymmetry())
+  if (hasYSymmetry()) {
     fprintf(f, " SYMMETRY Y");
+  }
 
-  if (has90Symmetry())
+  if (has90Symmetry()) {
     fprintf(f, " SYMMETRY R90");
+  }
 
   fprintf(f, "\n");
 }
@@ -1412,8 +1426,9 @@ double lefiSitePattern::y() const
 
 int lefiSitePattern::hasStepPattern() const
 {
-  if (xStart_ == -1 && yStart_ == -1 && xStep_ == -1 && yStep_ == -1)
+  if (xStart_ == -1 && yStart_ == -1 && xStep_ == -1 && yStep_ == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -1467,8 +1482,9 @@ void lefiTrackPattern::Init()
 
 void lefiTrackPattern::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
   clear();
   name_ = nullptr;
   start_ = 0;
@@ -1515,13 +1531,15 @@ void lefiTrackPattern::addLayer(const char* name)
     int i;
     char** nn;
 
-    if (layerAllocated_ == 0)
+    if (layerAllocated_ == 0) {
       layerAllocated_ = 2;
-    else
+    } else {
       layerAllocated_ *= 2;
+    }
     nn = (char**) lefMalloc(sizeof(char*) * layerAllocated_);
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       nn[i] = layerNames_[i];
+    }
     lefFree(layerNames_);
     layerNames_ = nn;
   }
@@ -1582,8 +1600,9 @@ void lefiTrackPattern::print(FILE* f) const
           space());
   if (numLayers() > 0) {
     fprintf(f, "    LAYER ");
-    for (i = 0; i < numLayers(); i++)
+    for (i = 0; i < numLayers(); i++) {
       fprintf(f, "%s ", layerName(i));
+    }
     fprintf(f, "\n");
   }
 }
@@ -1608,8 +1627,9 @@ void lefiGcellPattern::Init()
 
 void lefiGcellPattern::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
   name_ = nullptr;
   start_ = 0;
   numCRs_ = 0;
@@ -1686,8 +1706,9 @@ void lefiUseMinSpacing::Init()
 
 void lefiUseMinSpacing::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
 }
 
 lefiUseMinSpacing::~lefiUseMinSpacing()
@@ -1733,20 +1754,24 @@ void lefiMaxStackVia::Init()
 {
   value_ = 0;
   hasRange_ = 0;
-  if (bottomLayer_)         // This is for C version, since C will
+  if (bottomLayer_) {       // This is for C version, since C will
     lefFree(bottomLayer_);  // call this function before calling
-  if (topLayer_)            // setMaxStackViaRange when more than 1 lef
-    lefFree(topLayer_);     // files are parse. C++ skips this function
+  }
+  if (topLayer_) {       // setMaxStackViaRange when more than 1 lef
+    lefFree(topLayer_);  // files are parse. C++ skips this function
+  }
   bottomLayer_ = nullptr;
   topLayer_ = nullptr;
 }
 
 void lefiMaxStackVia::Destroy()
 {
-  if (bottomLayer_)
+  if (bottomLayer_) {
     lefFree(bottomLayer_);
-  if (topLayer_)
+  }
+  if (topLayer_) {
     lefFree(topLayer_);
+  }
   bottomLayer_ = nullptr;
   topLayer_ = nullptr;
   hasRange_ = 0;
@@ -1767,10 +1792,12 @@ void lefiMaxStackVia::setMaxStackViaRange(const char* bottomLayer,
                                           const char* topLayer)
 {
   hasRange_ = 1;
-  if (bottomLayer_)         // May be lefrReset is called and
+  if (bottomLayer_) {       // May be lefrReset is called and
     lefFree(bottomLayer_);  // bottomLayer_ and/or topLayer_ have
-  if (topLayer_)            // value malloc on them
+  }
+  if (topLayer_) {  // value malloc on them
     lefFree(topLayer_);
+  }
   bottomLayer_ = (char*) lefMalloc(strlen(bottomLayer) + 1);
   strcpy(bottomLayer_, CASE(bottomLayer));
   topLayer_ = (char*) lefMalloc(strlen(topLayer) + 1);
@@ -1802,8 +1829,9 @@ const char* lefiMaxStackVia::maxStackViaTopLayer() const
 void lefiMaxStackVia::print(FILE* f) const
 {
   fprintf(f, "MAXVIASTACK %d", maxStackVia());
-  if (hasMaxStackViaRange())
+  if (hasMaxStackViaRange()) {
     fprintf(f, " RANGE %s %s", maxStackViaBottomLayer(), maxStackViaTopLayer());
+  }
   fprintf(f, "\n");
 }
 END_LEF_PARSER_NAMESPACE

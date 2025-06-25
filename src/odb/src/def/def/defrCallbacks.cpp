@@ -33,206 +33,302 @@ BEGIN_DEF_PARSER_NAMESPACE
 
 void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
 {
-  if (!DesignCbk)
+  if (!DesignCbk) {
     DesignCbk = (defrStringCbkFnType) f;
-  if (!TechnologyCbk)
+  }
+  if (!TechnologyCbk) {
     TechnologyCbk = (defrStringCbkFnType) f;
-  if (!DesignEndCbk)
+  }
+  if (!DesignEndCbk) {
     DesignEndCbk = (defrVoidCbkFnType) f;
-  if (!PropCbk)
+  }
+  if (!PropCbk) {
     PropCbk = (defrPropCbkFnType) f;
-  if (!PropDefEndCbk)
+  }
+  if (!PropDefEndCbk) {
     PropDefEndCbk = (defrVoidCbkFnType) f;
-  if (!PropDefStartCbk)
+  }
+  if (!PropDefStartCbk) {
     PropDefStartCbk = (defrVoidCbkFnType) f;
-  if (!ArrayNameCbk)
+  }
+  if (!ArrayNameCbk) {
     ArrayNameCbk = (defrStringCbkFnType) f;
-  if (!FloorPlanNameCbk)
+  }
+  if (!FloorPlanNameCbk) {
     FloorPlanNameCbk = (defrStringCbkFnType) f;
-  if (!UnitsCbk)
+  }
+  if (!UnitsCbk) {
     UnitsCbk = (defrDoubleCbkFnType) f;
-  if (!DividerCbk)
+  }
+  if (!DividerCbk) {
     DividerCbk = (defrStringCbkFnType) f;
-  if (!BusBitCbk)
+  }
+  if (!BusBitCbk) {
     BusBitCbk = (defrStringCbkFnType) f;
-  if (!SiteCbk)
+  }
+  if (!SiteCbk) {
     SiteCbk = (defrSiteCbkFnType) f;
-  if (!CanplaceCbk)
+  }
+  if (!CanplaceCbk) {
     CanplaceCbk = (defrSiteCbkFnType) f;
-  if (!CannotOccupyCbk)
+  }
+  if (!CannotOccupyCbk) {
     CannotOccupyCbk = (defrSiteCbkFnType) f;
-  if (!ComponentStartCbk)
+  }
+  if (!ComponentStartCbk) {
     ComponentStartCbk = (defrIntegerCbkFnType) f;
-  if (!ComponentEndCbk)
+  }
+  if (!ComponentEndCbk) {
     ComponentEndCbk = (defrVoidCbkFnType) f;
-  if (!ComponentCbk)
+  }
+  if (!ComponentCbk) {
     ComponentCbk = (defrComponentCbkFnType) f;
-  if (!NetStartCbk)
+  }
+  if (!NetStartCbk) {
     NetStartCbk = (defrIntegerCbkFnType) f;
-  if (!NetEndCbk)
+  }
+  if (!NetEndCbk) {
     NetEndCbk = (defrVoidCbkFnType) f;
-  if (!NetCbk)
+  }
+  if (!NetCbk) {
     NetCbk = (defrNetCbkFnType) f;
+  }
   //  if (! defrNetPartialPathCbk) defrNetPartialPathCbk = (defrNetCbkFnType)f;
-  if (!PathCbk)
+  if (!PathCbk) {
     PathCbk = (defrPathCbkFnType) f;
+  }
   if ((!VersionCbk) && (!VersionStrCbk)) {
     // both version callbacks weren't set, if either one is set, it is ok
     VersionCbk = (defrDoubleCbkFnType) f;
     VersionStrCbk = (defrStringCbkFnType) f;
   }
-  if (!PinExtCbk)
+  if (!PinExtCbk) {
     PinExtCbk = (defrStringCbkFnType) f;
-  if (!ComponentExtCbk)
+  }
+  if (!ComponentExtCbk) {
     ComponentExtCbk = (defrStringCbkFnType) f;
-  if (!ViaExtCbk)
+  }
+  if (!ViaExtCbk) {
     ViaExtCbk = (defrStringCbkFnType) f;
-  if (!NetConnectionExtCbk)
+  }
+  if (!NetConnectionExtCbk) {
     NetConnectionExtCbk = (defrStringCbkFnType) f;
-  if (!NetExtCbk)
+  }
+  if (!NetExtCbk) {
     NetExtCbk = (defrStringCbkFnType) f;
-  if (!GroupExtCbk)
+  }
+  if (!GroupExtCbk) {
     GroupExtCbk = (defrStringCbkFnType) f;
-  if (!ScanChainExtCbk)
+  }
+  if (!ScanChainExtCbk) {
     ScanChainExtCbk = (defrStringCbkFnType) f;
-  if (!IoTimingsExtCbk)
+  }
+  if (!IoTimingsExtCbk) {
     IoTimingsExtCbk = (defrStringCbkFnType) f;
-  if (!PartitionsExtCbk)
+  }
+  if (!PartitionsExtCbk) {
     PartitionsExtCbk = (defrStringCbkFnType) f;
-  if (!HistoryCbk)
+  }
+  if (!HistoryCbk) {
     HistoryCbk = (defrStringCbkFnType) f;
-  if (!DieAreaCbk)
+  }
+  if (!DieAreaCbk) {
     DieAreaCbk = (defrBoxCbkFnType) f;
-  if (!PinCapCbk)
+  }
+  if (!PinCapCbk) {
     PinCapCbk = (defrPinCapCbkFnType) f;
-  if (!PinCbk)
+  }
+  if (!PinCbk) {
     PinCbk = (defrPinCbkFnType) f;
-  if (!StartPinsCbk)
+  }
+  if (!StartPinsCbk) {
     StartPinsCbk = (defrIntegerCbkFnType) f;
-  if (!PinEndCbk)
+  }
+  if (!PinEndCbk) {
     PinEndCbk = (defrVoidCbkFnType) f;
-  if (!DefaultCapCbk)
+  }
+  if (!DefaultCapCbk) {
     DefaultCapCbk = (defrIntegerCbkFnType) f;
-  if (!RowCbk)
+  }
+  if (!RowCbk) {
     RowCbk = (defrRowCbkFnType) f;
-  if (!TrackCbk)
+  }
+  if (!TrackCbk) {
     TrackCbk = (defrTrackCbkFnType) f;
-  if (!GcellGridCbk)
+  }
+  if (!GcellGridCbk) {
     GcellGridCbk = (defrGcellGridCbkFnType) f;
-  if (!ViaStartCbk)
+  }
+  if (!ViaStartCbk) {
     ViaStartCbk = (defrIntegerCbkFnType) f;
-  if (!ViaEndCbk)
+  }
+  if (!ViaEndCbk) {
     ViaEndCbk = (defrVoidCbkFnType) f;
-  if (!ViaCbk)
+  }
+  if (!ViaCbk) {
     ViaCbk = (defrViaCbkFnType) f;
-  if (!RegionStartCbk)
+  }
+  if (!RegionStartCbk) {
     RegionStartCbk = (defrIntegerCbkFnType) f;
-  if (!RegionEndCbk)
+  }
+  if (!RegionEndCbk) {
     RegionEndCbk = (defrVoidCbkFnType) f;
-  if (!RegionCbk)
+  }
+  if (!RegionCbk) {
     RegionCbk = (defrRegionCbkFnType) f;
-  if (!SNetStartCbk)
+  }
+  if (!SNetStartCbk) {
     SNetStartCbk = (defrIntegerCbkFnType) f;
-  if (!SNetEndCbk)
+  }
+  if (!SNetEndCbk) {
     SNetEndCbk = (defrVoidCbkFnType) f;
-  if (!SNetCbk)
+  }
+  if (!SNetCbk) {
     SNetCbk = (defrNetCbkFnType) f;
+  }
   //  if(! defrSNetPartialPathCbk) defrSNetPartialPathCbk = (defrNetCbkFnType)f;
   //  if(! defrSNetWireCbk) defrSNetWireCbk = (defrNetCbkFnType)f;
-  if (!GroupsStartCbk)
+  if (!GroupsStartCbk) {
     GroupsStartCbk = (defrIntegerCbkFnType) f;
-  if (!GroupsEndCbk)
+  }
+  if (!GroupsEndCbk) {
     GroupsEndCbk = (defrVoidCbkFnType) f;
-  if (!GroupNameCbk)
+  }
+  if (!GroupNameCbk) {
     GroupNameCbk = (defrStringCbkFnType) f;
-  if (!GroupMemberCbk)
+  }
+  if (!GroupMemberCbk) {
     GroupMemberCbk = (defrStringCbkFnType) f;
-  if (!ComponentMaskShiftLayerCbk)
+  }
+  if (!ComponentMaskShiftLayerCbk) {
     ComponentMaskShiftLayerCbk = (defrComponentMaskShiftLayerCbkFnType) f;
-  if (!GroupCbk)
+  }
+  if (!GroupCbk) {
     GroupCbk = (defrGroupCbkFnType) f;
-  if (!AssertionsStartCbk)
+  }
+  if (!AssertionsStartCbk) {
     AssertionsStartCbk = (defrIntegerCbkFnType) f;
-  if (!AssertionsEndCbk)
+  }
+  if (!AssertionsEndCbk) {
     AssertionsEndCbk = (defrVoidCbkFnType) f;
-  if (!AssertionCbk)
+  }
+  if (!AssertionCbk) {
     AssertionCbk = (defrAssertionCbkFnType) f;
-  if (!ConstraintsStartCbk)
+  }
+  if (!ConstraintsStartCbk) {
     ConstraintsStartCbk = (defrIntegerCbkFnType) f;
-  if (!ConstraintsEndCbk)
+  }
+  if (!ConstraintsEndCbk) {
     ConstraintsEndCbk = (defrVoidCbkFnType) f;
-  if (!ConstraintCbk)
+  }
+  if (!ConstraintCbk) {
     ConstraintCbk = (defrAssertionCbkFnType) f;
-  if (!ScanchainsStartCbk)
+  }
+  if (!ScanchainsStartCbk) {
     ScanchainsStartCbk = (defrIntegerCbkFnType) f;
-  if (!ScanchainsEndCbk)
+  }
+  if (!ScanchainsEndCbk) {
     ScanchainsEndCbk = (defrVoidCbkFnType) f;
-  if (!ScanchainCbk)
+  }
+  if (!ScanchainCbk) {
     ScanchainCbk = (defrScanchainCbkFnType) f;
-  if (!IOTimingsStartCbk)
+  }
+  if (!IOTimingsStartCbk) {
     IOTimingsStartCbk = (defrIntegerCbkFnType) f;
-  if (!IOTimingsEndCbk)
+  }
+  if (!IOTimingsEndCbk) {
     IOTimingsEndCbk = (defrVoidCbkFnType) f;
-  if (!IOTimingCbk)
+  }
+  if (!IOTimingCbk) {
     IOTimingCbk = (defrIOTimingCbkFnType) f;
-  if (!FPCStartCbk)
+  }
+  if (!FPCStartCbk) {
     FPCStartCbk = (defrIntegerCbkFnType) f;
-  if (!FPCEndCbk)
+  }
+  if (!FPCEndCbk) {
     FPCEndCbk = (defrVoidCbkFnType) f;
-  if (!FPCCbk)
+  }
+  if (!FPCCbk) {
     FPCCbk = (defrFPCCbkFnType) f;
-  if (!TimingDisablesStartCbk)
+  }
+  if (!TimingDisablesStartCbk) {
     TimingDisablesStartCbk = (defrIntegerCbkFnType) f;
-  if (!TimingDisablesEndCbk)
+  }
+  if (!TimingDisablesEndCbk) {
     TimingDisablesEndCbk = (defrVoidCbkFnType) f;
-  if (!TimingDisableCbk)
+  }
+  if (!TimingDisableCbk) {
     TimingDisableCbk = (defrTimingDisableCbkFnType) f;
-  if (!PartitionsStartCbk)
+  }
+  if (!PartitionsStartCbk) {
     PartitionsStartCbk = (defrIntegerCbkFnType) f;
-  if (!PartitionsEndCbk)
+  }
+  if (!PartitionsEndCbk) {
     PartitionsEndCbk = (defrVoidCbkFnType) f;
-  if (!PartitionCbk)
+  }
+  if (!PartitionCbk) {
     PartitionCbk = (defrPartitionCbkFnType) f;
-  if (!PinPropStartCbk)
+  }
+  if (!PinPropStartCbk) {
     PinPropStartCbk = (defrIntegerCbkFnType) f;
-  if (!PinPropEndCbk)
+  }
+  if (!PinPropEndCbk) {
     PinPropEndCbk = (defrVoidCbkFnType) f;
-  if (!PinPropCbk)
+  }
+  if (!PinPropCbk) {
     PinPropCbk = (defrPinPropCbkFnType) f;
-  if (!CaseSensitiveCbk)
+  }
+  if (!CaseSensitiveCbk) {
     CaseSensitiveCbk = (defrIntegerCbkFnType) f;
-  if (!BlockageStartCbk)
+  }
+  if (!BlockageStartCbk) {
     BlockageStartCbk = (defrIntegerCbkFnType) f;
-  if (!BlockageEndCbk)
+  }
+  if (!BlockageEndCbk) {
     BlockageEndCbk = (defrVoidCbkFnType) f;
-  if (!BlockageCbk)
+  }
+  if (!BlockageCbk) {
     BlockageCbk = (defrBlockageCbkFnType) f;
-  if (!SlotStartCbk)
+  }
+  if (!SlotStartCbk) {
     SlotStartCbk = (defrIntegerCbkFnType) f;
-  if (!SlotEndCbk)
+  }
+  if (!SlotEndCbk) {
     SlotEndCbk = (defrVoidCbkFnType) f;
-  if (!SlotCbk)
+  }
+  if (!SlotCbk) {
     SlotCbk = (defrSlotCbkFnType) f;
-  if (!FillStartCbk)
+  }
+  if (!FillStartCbk) {
     FillStartCbk = (defrIntegerCbkFnType) f;
-  if (!FillEndCbk)
+  }
+  if (!FillEndCbk) {
     FillEndCbk = (defrVoidCbkFnType) f;
-  if (!FillCbk)
+  }
+  if (!FillCbk) {
     FillCbk = (defrFillCbkFnType) f;
-  if (!NonDefaultStartCbk)
+  }
+  if (!NonDefaultStartCbk) {
     NonDefaultStartCbk = (defrIntegerCbkFnType) f;
-  if (!NonDefaultEndCbk)
+  }
+  if (!NonDefaultEndCbk) {
     NonDefaultEndCbk = (defrVoidCbkFnType) f;
-  if (!NonDefaultCbk)
+  }
+  if (!NonDefaultCbk) {
     NonDefaultCbk = (defrNonDefaultCbkFnType) f;
-  if (!StylesStartCbk)
+  }
+  if (!StylesStartCbk) {
     StylesStartCbk = (defrIntegerCbkFnType) f;
-  if (!StylesEndCbk)
+  }
+  if (!StylesEndCbk) {
     StylesEndCbk = (defrVoidCbkFnType) f;
-  if (!StylesCbk)
+  }
+  if (!StylesCbk) {
     StylesCbk = (defrStylesCbkFnType) f;
-  if (!ExtensionCbk)
+  }
+  if (!ExtensionCbk) {
     ExtensionCbk = (defrStringCbkFnType) f;
+  }
 
   /* NEW CALLBACK - Each new callback must have an entry here. */
 }

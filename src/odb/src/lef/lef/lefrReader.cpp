@@ -95,16 +95,19 @@ double convert_name2num(const char* versionName)
   }
   major = atof(majorNm);
   minor = atof(minorNm);
-  if (subMinorNm)
+  if (subMinorNm) {
     subMinor = atof(subMinorNm);
+  }
 
   version = major;
 
-  if (minor > 0)
+  if (minor > 0) {
     version = major + minor / 10;
+  }
 
-  if (subMinor > 0)
+  if (subMinor > 0) {
     version = version + subMinor / 1000;
+  }
 
   lefFree(versionNm);
 
@@ -154,8 +157,9 @@ bool validateMaskNumber(int num)
 void lefrDisableParserMsgs(int nMsg, int* msgs)
 {
   LEF_INIT;
-  if (nMsg <= 0)
+  if (nMsg <= 0) {
     return;
+  }
 
   for (int i = 0; i < nMsg; i++) {
     lefSettings->disableMsg(msgs[i]);
@@ -305,138 +309,200 @@ void lefrSetUnusedCallbacks(lefrVoidCbkFnType func)
   // the given function.
   LEF_INIT;
 
-  if (lefCallbacks->ArrayBeginCbk == nullptr)
+  if (lefCallbacks->ArrayBeginCbk == nullptr) {
     lefCallbacks->ArrayBeginCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->ArrayCbk == nullptr)
+  }
+  if (lefCallbacks->ArrayCbk == nullptr) {
     lefCallbacks->ArrayCbk = (lefrArrayCbkFnType) func;
-  if (lefCallbacks->ArrayEndCbk == nullptr)
+  }
+  if (lefCallbacks->ArrayEndCbk == nullptr) {
     lefCallbacks->ArrayEndCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->DividerCharCbk == nullptr)
+  }
+  if (lefCallbacks->DividerCharCbk == nullptr) {
     lefCallbacks->DividerCharCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->BusBitCharsCbk == nullptr)
+  }
+  if (lefCallbacks->BusBitCharsCbk == nullptr) {
     lefCallbacks->BusBitCharsCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->CaseSensitiveCbk == nullptr)
+  }
+  if (lefCallbacks->CaseSensitiveCbk == nullptr) {
     lefCallbacks->CaseSensitiveCbk = (lefrIntegerCbkFnType) func;
-  if (lefCallbacks->NoWireExtensionCbk == nullptr)
+  }
+  if (lefCallbacks->NoWireExtensionCbk == nullptr) {
     lefCallbacks->NoWireExtensionCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->CorrectionTableCbk == nullptr)
+  }
+  if (lefCallbacks->CorrectionTableCbk == nullptr) {
     lefCallbacks->CorrectionTableCbk = (lefrCorrectionTableCbkFnType) func;
-  if (lefCallbacks->DielectricCbk == nullptr)
+  }
+  if (lefCallbacks->DielectricCbk == nullptr) {
     lefCallbacks->DielectricCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->EdgeRateScaleFactorCbk == nullptr)
+  }
+  if (lefCallbacks->EdgeRateScaleFactorCbk == nullptr) {
     lefCallbacks->EdgeRateScaleFactorCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->EdgeRateThreshold1Cbk == nullptr)
+  }
+  if (lefCallbacks->EdgeRateThreshold1Cbk == nullptr) {
     lefCallbacks->EdgeRateThreshold1Cbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->EdgeRateThreshold2Cbk == nullptr)
+  }
+  if (lefCallbacks->EdgeRateThreshold2Cbk == nullptr) {
     lefCallbacks->EdgeRateThreshold2Cbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->IRDropBeginCbk == nullptr)
+  }
+  if (lefCallbacks->IRDropBeginCbk == nullptr) {
     lefCallbacks->IRDropBeginCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->IRDropCbk == nullptr)
+  }
+  if (lefCallbacks->IRDropCbk == nullptr) {
     lefCallbacks->IRDropCbk = (lefrIRDropCbkFnType) func;
-  if (lefCallbacks->IRDropEndCbk == nullptr)
+  }
+  if (lefCallbacks->IRDropEndCbk == nullptr) {
     lefCallbacks->IRDropEndCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->LayerCbk == nullptr)
+  }
+  if (lefCallbacks->LayerCbk == nullptr) {
     lefCallbacks->LayerCbk = (lefrLayerCbkFnType) func;
-  if (lefCallbacks->LibraryEndCbk == nullptr)
+  }
+  if (lefCallbacks->LibraryEndCbk == nullptr) {
     lefCallbacks->LibraryEndCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->MacroBeginCbk == nullptr)
+  }
+  if (lefCallbacks->MacroBeginCbk == nullptr) {
     lefCallbacks->MacroBeginCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->MacroCbk == nullptr)
+  }
+  if (lefCallbacks->MacroCbk == nullptr) {
     lefCallbacks->MacroCbk = (lefrMacroCbkFnType) func;
-  if (lefCallbacks->MacroClassTypeCbk == nullptr)
+  }
+  if (lefCallbacks->MacroClassTypeCbk == nullptr) {
     lefCallbacks->MacroClassTypeCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->MacroOriginCbk == nullptr)
+  }
+  if (lefCallbacks->MacroOriginCbk == nullptr) {
     lefCallbacks->MacroOriginCbk = (lefrMacroNumCbkFnType) func;
-  if (lefCallbacks->MacroSiteCbk == nullptr)
+  }
+  if (lefCallbacks->MacroSiteCbk == nullptr) {
     lefCallbacks->MacroSiteCbk = (lefrMacroSiteCbkFnType) func;
-  if (lefCallbacks->MacroForeignCbk == nullptr)
+  }
+  if (lefCallbacks->MacroForeignCbk == nullptr) {
     lefCallbacks->MacroForeignCbk = (lefrMacroForeignCbkFnType) func;
-  if (lefCallbacks->MacroSizeCbk == nullptr)
+  }
+  if (lefCallbacks->MacroSizeCbk == nullptr) {
     lefCallbacks->MacroSizeCbk = (lefrMacroNumCbkFnType) func;
-  if (lefCallbacks->MacroFixedMaskCbk == nullptr)
+  }
+  if (lefCallbacks->MacroFixedMaskCbk == nullptr) {
     lefCallbacks->MacroFixedMaskCbk = (lefrIntegerCbkFnType) func;
-  if (lefCallbacks->TimingCbk == nullptr)
+  }
+  if (lefCallbacks->TimingCbk == nullptr) {
     lefCallbacks->TimingCbk = (lefrTimingCbkFnType) func;
-  if (lefCallbacks->MinFeatureCbk == nullptr)
+  }
+  if (lefCallbacks->MinFeatureCbk == nullptr) {
     lefCallbacks->MinFeatureCbk = (lefrMinFeatureCbkFnType) func;
-  if (lefCallbacks->NoiseMarginCbk == nullptr)
+  }
+  if (lefCallbacks->NoiseMarginCbk == nullptr) {
     lefCallbacks->NoiseMarginCbk = (lefrNoiseMarginCbkFnType) func;
-  if (lefCallbacks->NoiseTableCbk == nullptr)
+  }
+  if (lefCallbacks->NoiseTableCbk == nullptr) {
     lefCallbacks->NoiseTableCbk = (lefrNoiseTableCbkFnType) func;
-  if (lefCallbacks->NonDefaultCbk == nullptr)
+  }
+  if (lefCallbacks->NonDefaultCbk == nullptr) {
     lefCallbacks->NonDefaultCbk = (lefrNonDefaultCbkFnType) func;
-  if (lefCallbacks->ObstructionCbk == nullptr)
+  }
+  if (lefCallbacks->ObstructionCbk == nullptr) {
     lefCallbacks->ObstructionCbk = (lefrObstructionCbkFnType) func;
-  if (lefCallbacks->PinCbk == nullptr)
+  }
+  if (lefCallbacks->PinCbk == nullptr) {
     lefCallbacks->PinCbk = (lefrPinCbkFnType) func;
-  if (lefCallbacks->PropBeginCbk == nullptr)
+  }
+  if (lefCallbacks->PropBeginCbk == nullptr) {
     lefCallbacks->PropBeginCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->PropCbk == nullptr)
+  }
+  if (lefCallbacks->PropCbk == nullptr) {
     lefCallbacks->PropCbk = (lefrPropCbkFnType) func;
-  if (lefCallbacks->PropEndCbk == nullptr)
+  }
+  if (lefCallbacks->PropEndCbk == nullptr) {
     lefCallbacks->PropEndCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->SiteCbk == nullptr)
+  }
+  if (lefCallbacks->SiteCbk == nullptr) {
     lefCallbacks->SiteCbk = (lefrSiteCbkFnType) func;
-  if (lefCallbacks->SpacingBeginCbk == nullptr)
+  }
+  if (lefCallbacks->SpacingBeginCbk == nullptr) {
     lefCallbacks->SpacingBeginCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->SpacingCbk == nullptr)
+  }
+  if (lefCallbacks->SpacingCbk == nullptr) {
     lefCallbacks->SpacingCbk = (lefrSpacingCbkFnType) func;
-  if (lefCallbacks->SpacingEndCbk == nullptr)
+  }
+  if (lefCallbacks->SpacingEndCbk == nullptr) {
     lefCallbacks->SpacingEndCbk = (lefrVoidCbkFnType) func;
-  if (lefCallbacks->UnitsCbk == nullptr)
+  }
+  if (lefCallbacks->UnitsCbk == nullptr) {
     lefCallbacks->UnitsCbk = (lefrUnitsCbkFnType) func;
+  }
   if ((lefCallbacks->VersionCbk == nullptr)
       && (lefCallbacks->VersionStrCbk == nullptr)) {
     // both version callbacks weren't set, if either one is set, it is ok
     lefCallbacks->VersionCbk = (lefrDoubleCbkFnType) func;
     lefCallbacks->VersionStrCbk = (lefrStringCbkFnType) func;
   }
-  if (lefCallbacks->ViaCbk == nullptr)
+  if (lefCallbacks->ViaCbk == nullptr) {
     lefCallbacks->ViaCbk = (lefrViaCbkFnType) func;
-  if (lefCallbacks->ViaRuleCbk == nullptr)
+  }
+  if (lefCallbacks->ViaRuleCbk == nullptr) {
     lefCallbacks->ViaRuleCbk = (lefrViaRuleCbkFnType) func;
-  if (lefCallbacks->InputAntennaCbk == nullptr)
+  }
+  if (lefCallbacks->InputAntennaCbk == nullptr) {
     lefCallbacks->InputAntennaCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->OutputAntennaCbk == nullptr)
+  }
+  if (lefCallbacks->OutputAntennaCbk == nullptr) {
     lefCallbacks->OutputAntennaCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->InoutAntennaCbk == nullptr)
+  }
+  if (lefCallbacks->InoutAntennaCbk == nullptr) {
     lefCallbacks->InoutAntennaCbk = (lefrDoubleCbkFnType) func;
+  }
 
   // NEW CALLBACK - Add a line here for each new callback routine
-  if (lefCallbacks->AntennaInputCbk == nullptr)
+  if (lefCallbacks->AntennaInputCbk == nullptr) {
     lefCallbacks->AntennaInputCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->AntennaInoutCbk == nullptr)
+  }
+  if (lefCallbacks->AntennaInoutCbk == nullptr) {
     lefCallbacks->AntennaInoutCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->AntennaOutputCbk == nullptr)
+  }
+  if (lefCallbacks->AntennaOutputCbk == nullptr) {
     lefCallbacks->AntennaOutputCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->ManufacturingCbk == nullptr)
+  }
+  if (lefCallbacks->ManufacturingCbk == nullptr) {
     lefCallbacks->ManufacturingCbk = (lefrDoubleCbkFnType) func;
-  if (lefCallbacks->UseMinSpacingCbk == nullptr)
+  }
+  if (lefCallbacks->UseMinSpacingCbk == nullptr) {
     lefCallbacks->UseMinSpacingCbk = (lefrUseMinSpacingCbkFnType) func;
-  if (lefCallbacks->ClearanceMeasureCbk == nullptr)
+  }
+  if (lefCallbacks->ClearanceMeasureCbk == nullptr) {
     lefCallbacks->ClearanceMeasureCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->MacroClassTypeCbk == nullptr)
+  }
+  if (lefCallbacks->MacroClassTypeCbk == nullptr) {
     lefCallbacks->MacroClassTypeCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->MacroOriginCbk == nullptr)
+  }
+  if (lefCallbacks->MacroOriginCbk == nullptr) {
     lefCallbacks->MacroOriginCbk = (lefrMacroNumCbkFnType) func;
-  if (lefCallbacks->MacroSiteCbk == nullptr)
+  }
+  if (lefCallbacks->MacroSiteCbk == nullptr) {
     lefCallbacks->MacroSiteCbk = (lefrMacroSiteCbkFnType) func;
-  if (lefCallbacks->MacroForeignCbk == nullptr)
+  }
+  if (lefCallbacks->MacroForeignCbk == nullptr) {
     lefCallbacks->MacroForeignCbk = (lefrMacroForeignCbkFnType) func;
-  if (lefCallbacks->MacroSizeCbk == nullptr)
+  }
+  if (lefCallbacks->MacroSizeCbk == nullptr) {
     lefCallbacks->MacroSizeCbk = (lefrMacroNumCbkFnType) func;
-  if (lefCallbacks->MacroFixedMaskCbk == nullptr)
+  }
+  if (lefCallbacks->MacroFixedMaskCbk == nullptr) {
     lefCallbacks->MacroFixedMaskCbk = (lefrIntegerCbkFnType) func;
-  if (lefCallbacks->MacroEndCbk == nullptr)
+  }
+  if (lefCallbacks->MacroEndCbk == nullptr) {
     lefCallbacks->MacroEndCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->MaxStackViaCbk == nullptr)
+  }
+  if (lefCallbacks->MaxStackViaCbk == nullptr) {
     lefCallbacks->MaxStackViaCbk = (lefrMaxStackViaCbkFnType) func;
-  if (lefCallbacks->ExtensionCbk == nullptr)
+  }
+  if (lefCallbacks->ExtensionCbk == nullptr) {
     lefCallbacks->ExtensionCbk = (lefrStringCbkFnType) func;
-  if (lefCallbacks->DensityCbk == nullptr)
+  }
+  if (lefCallbacks->DensityCbk == nullptr) {
     lefCallbacks->DensityCbk = (lefrDensityCbkFnType) func;
-  if (lefCallbacks->FixedMaskCbk == nullptr)
+  }
+  if (lefCallbacks->FixedMaskCbk == nullptr) {
     lefCallbacks->FixedMaskCbk = (lefrIntegerCbkFnType) func;
+  }
 }
 
 // These count up the number of times an unset callback is called...
@@ -446,8 +512,9 @@ int lefrCountFunc(lefrCallbackType_e e, void* v, lefiUserData d)
 {
   LEF_INIT;
   int i = (int) e;
-  if (lefiDebug(23))
+  if (lefiDebug(23)) {
     printf("count %d 0x%p 0x%p\n", (int) e, v, d);
+  }
   if (i >= 0 && i < NOCBK) {
     lefrUnusedCount[i] += 1;
     return 0;
@@ -461,8 +528,9 @@ void lefrSetRegisterUnusedCallbacks()
   int i;
   lefSettings->RegisterUnused = 1;
   lefrSetUnusedCallbacks(lefrCountFunc);
-  for (i = 0; i < NOCBK; i++)
+  for (i = 0; i < NOCBK; i++) {
     lefrUnusedCount[i] = 0;
+  }
 }
 
 void lefrPrintUnusedCallbacks(FILE* f)
@@ -673,10 +741,11 @@ void lefrPrintUnusedCallbacks(FILE* f)
           fprintf(f, "BOGUS ENTRY");
           break;
       }
-      if (trueCB)
+      if (trueCB) {
         fprintf(f, " %d\n", lefrUnusedCount[i]);
-      else
+      } else {
         trueCB = 1;
+      }
     }
   }
 }

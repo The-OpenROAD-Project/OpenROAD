@@ -92,12 +92,14 @@ int main(int argc, char** argv)
   // def files
   printf("Reading file: %s\n", fileName1);
   if (diffDefReadFile(fileName1, defOut1, argv[5], argv[6], argv[7], argv[8])
-      != 0)
+      != 0) {
     return (1);
+  }
   printf("Reading file: %s\n", fileName2);
   if (diffDefReadFile(fileName2, defOut2, argv[5], argv[6], argv[7], argv[8])
-      != 0)
+      != 0) {
     return (1);
+  }
 
   return (0);
 }

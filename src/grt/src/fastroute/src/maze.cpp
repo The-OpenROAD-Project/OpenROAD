@@ -437,12 +437,14 @@ static void heapify(std::vector<double*>& array)
     int smallest;
     if (l < heapSize && *(array[l]) < *tmp) {
       smallest = l;
-      if (r < heapSize && *(array[r]) < *(array[l]))
+      if (r < heapSize && *(array[r]) < *(array[l])) {
         smallest = r;
+      }
     } else {
       smallest = i;
-      if (r < heapSize && *(array[r]) < *tmp)
+      if (r < heapSize && *(array[r]) < *tmp) {
         smallest = r;
+      }
     }
     if (smallest != i) {
       array[i] = array[smallest];
@@ -535,8 +537,9 @@ void FastRouteCore::setupHeap(const int netID,
                               const int regionY2)
 {
   for (int i = regionY1; i <= regionY2; i++) {
-    for (int j = regionX1; j <= regionX2; j++)
+    for (int j = regionX1; j <= regionX2; j++) {
       in_region_[i][j] = true;
+    }
   }
 
   const auto& treeedges = sttrees_[netID].edges;
@@ -706,8 +709,9 @@ void FastRouteCore::setupHeap(const int netID,
   }  // net with more than two pins
 
   for (int i = regionY1; i <= regionY2; i++) {
-    for (int j = regionX1; j <= regionX2; j++)
+    for (int j = regionX1; j <= regionX2; j++) {
       in_region_[i][j] = false;
+    }
   }
 }
 
@@ -811,7 +815,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   if (E1_pos == -1) {
     int x_pos = tile_size_ * (E1x + 0.5) + x_corner_;
     int y_pos = tile_size_ * (E1y + 0.5) + y_corner_;
-    if (verbose_)
+    if (verbose_) {
       logger_->error(
           GRT,
           169,
@@ -820,6 +824,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
           x_pos,
           y_pos,
           nets_[net_id]->getNumPins());
+    }
     return false;
   }
 
@@ -1121,8 +1126,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   }
 
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_; j++)
+    for (int j = 0; j < x_grid_; j++) {
       in_region_[i][j] = false;
+    }
   }
 
   if (ordering) {
@@ -1327,8 +1333,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       // while loop to find shortest path
       int ind1 = (src_heap[0] - &d1[0][0]);
-      for (int i = 0; i < dest_heap.size(); i++)
+      for (int i = 0; i < dest_heap.size(); i++) {
         pop_heap2[(dest_heap[i] - &d2[0][0])] = true;
+      }
 
       // stop when the grid position been popped out from both src_heap and
       // dest_heap
@@ -1371,8 +1378,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       }  // while loop
 
-      for (int i = 0; i < dest_heap.size(); i++)
+      for (int i = 0; i < dest_heap.size(); i++) {
         pop_heap2[(dest_heap[i] - &d2[0][0])] = false;
+      }
 
       const int crossX = ind1 % x_range_;
       const int crossY = ind1 / x_range_;
@@ -1483,11 +1491,12 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A1,
                                            edge_n1A2);
           if (!route_ok) {
-            if (verbose_)
+            if (verbose_) {
               logger_->error(GRT,
                              150,
                              "Net {} has errors during updateRouteType1.",
                              nets_[netID]->getName());
+            }
             reInitTree(netID);
             nidRPC--;
             break;
