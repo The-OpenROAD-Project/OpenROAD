@@ -1141,29 +1141,13 @@ bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
   return false;
 }
 
-bool GlobalRouter::makeFastrouteNet(Net* net)
+void GlobalRouter::makeFastrouteNet(Net* net)
 {
   std::vector<RoutePt> pins_on_grid;
   int root_idx;
   findFastRoutePins(net, pins_on_grid, root_idx);
 
-  if (pins_on_grid.size() <= 1) {
-    return false;
-  }
-
-  // check if net is local in the global routing grid position
-  // the (x,y) pin positions here may be different from the original
-  // (x,y) pin positions because of findFakePinPosition function
-  bool on_grid_local = true;
-  RoutePt position = pins_on_grid[0];
-  for (RoutePt& pin_pos : pins_on_grid) {
-    if (pin_pos.x() != position.x() || pin_pos.y() != position.y()) {
-      on_grid_local = false;
-      break;
-    }
-  }
-
-  if (!on_grid_local) {
+  if (pins_on_grid.size() > 1) {
     bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
     std::vector<int>* edge_cost_per_layer;
     int edge_cost_for_net;
@@ -1197,9 +1181,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
         && net->getDbNet() == fastroute_->getDebugNet()) {
       saveSttInputFile(net);
     }
-    return true;
   }
-  return false;
 }
 
 void GlobalRouter::saveSttInputFile(Net* net)
