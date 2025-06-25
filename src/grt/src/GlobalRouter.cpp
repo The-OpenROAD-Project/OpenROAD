@@ -4206,8 +4206,11 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Do not merge the routing if the survivor net is already dirty
-  if (!net1->isDirtyNet()) {
+  // Do not merge the routing if the survivor net is already dirty.
+  // Also, do not merge if the survivor net is a local net, since it doesn't
+  // have routes inside FastRouteCore.
+  // TODO: properly handle local nets when merging global routes.
+  if (!net1->isDirtyNet() && !net1->isLocal()) {
     connectRouting(db_net1, db_net2);
     net1->setIsMergedNet(true);
     net1->setMergedNet(db_net2);
