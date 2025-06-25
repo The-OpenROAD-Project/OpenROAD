@@ -291,13 +291,29 @@ void FastRouteCore::removeNet(odb::dbNet* db_net)
   }
 }
 
-void FastRouteCore::mergeNet(odb::dbNet* db_net)
+void FastRouteCore::mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net)
 {
-  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
-    const int net_id = db_net_id_map_[db_net];
-    sttrees_[net_id].nodes.clear();
-    sttrees_[net_id].edges.clear();
-    deleteNet(db_net);
+  if (db_net_id_map_.find(removed_net) != db_net_id_map_.end()) {
+    const int removed_net_id = db_net_id_map_[removed_net];
+    auto& removed_nodes = sttrees_[removed_net_id].nodes;
+    auto& removed_edges = sttrees_[removed_net_id].edges;
+
+    if (db_net_id_map_.find(preserved_net) != db_net_id_map_.end()) {
+      const int preserved_net_id = db_net_id_map_[preserved_net];
+      sttrees_[preserved_net_id].num_terminals
+          += sttrees_[removed_net_id].num_terminals;
+      auto& preserved_nodes = sttrees_[preserved_net_id].nodes;
+      auto& preserved_edges = sttrees_[preserved_net_id].edges;
+
+      preserved_nodes.insert(
+          preserved_nodes.end(), removed_nodes.begin(), removed_nodes.end());
+      preserved_edges.insert(
+          preserved_edges.end(), removed_edges.begin(), removed_edges.end());
+    }
+
+    removed_nodes.clear();
+    removed_edges.clear();
+    deleteNet(removed_net);
   }
 }
 

@@ -109,7 +109,7 @@ class FastRouteCore
                 std::vector<int>* edge_cost_per_layer);
   void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
-  void mergeNet(odb::dbNet* db_net);
+  void mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net);
   void clearNetRoute(odb::dbNet* db_net);
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
