@@ -28,7 +28,8 @@ void WireBuilder::makeNetWiresFromGuides()
         = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
 
     if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && !dbNetIsLocal(db_net) && !is_detailed_routed) {
+        && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
+        && !is_detailed_routed) {
       makeNetWire(db_net, gcell_dimension);
     }
   }
@@ -43,7 +44,8 @@ void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
         = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
 
     if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && !dbNetIsLocal(db_net) && !is_detailed_routed) {
+        && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
+        && !is_detailed_routed) {
       makeNetWire(db_net, gcell_dimension);
     }
   }
