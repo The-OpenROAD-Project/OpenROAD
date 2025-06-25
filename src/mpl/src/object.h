@@ -404,7 +404,7 @@ class HardMacro
   float halo_height_ = 0.0;  // halo height
   float width_ = 0.0;        // width_ = macro_width + 2 * halo_width
   float height_ = 0.0;       // height_ = macro_height + 2 * halo_width
-  std::string name_ = "";    // macro name
+  std::string name_;         // macro name
   odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
   // we assume all the pins locate at the center of all pins
@@ -494,12 +494,12 @@ class SoftMacro
 
   // We define x_, y_ and orientation_ here
   // Also enable the multi-threading
-  float x_ = 0.0;          // lower left corner
-  float y_ = 0.0;          // lower left corner
-  float width_ = 0.0;      // width_
-  float height_ = 0.0;     // height_
-  float area_ = 0.0;       // area of the standard cell cluster
-  std::string name_ = "";  // macro name
+  float x_ = 0.0;       // lower left corner
+  float y_ = 0.0;       // lower left corner
+  float width_ = 0.0;   // width_
+  float height_ = 0.0;  // height_
+  float area_ = 0.0;    // area of the standard cell cluster
+  std::string name_;    // macro name
 
   // The shape curve (discrete or piecewise) of a cluster is the
   // combination of its width/height intervals.
