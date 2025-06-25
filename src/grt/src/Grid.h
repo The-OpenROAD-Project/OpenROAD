@@ -54,13 +54,6 @@ class Grid
 
   int getNumLayers() const { return num_layers_; }
 
-  void setPitchesInTile(const int pitches_in_tile)
-  {
-    pitches_in_tile_ = pitches_in_tile;
-  }
-
-  int getPitchesInTile() const { return pitches_in_tile_; }
-
   const std::vector<int>& getTrackPitches() const { return track_pitches_; }
 
   void addTrackPitch(int value, int layer) { track_pitches_[layer] = value; }
@@ -118,7 +111,6 @@ class Grid
   bool perfect_regular_x_;
   bool perfect_regular_y_;
   int num_layers_;
-  int pitches_in_tile_ = 15;
   std::vector<int> track_pitches_;
   std::vector<int> horizontal_edges_capacities_;
   std::vector<int> vertical_edges_capacities_;
