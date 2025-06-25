@@ -13,22 +13,6 @@
 
 namespace odb {
 
-definVia::definVia()
-{
-  init();
-}
-
-definVia::~definVia()
-{
-}
-
-void definVia::init()
-{
-  definBase::init();
-  _cur_via = nullptr;
-  _params = nullptr;
-}
-
 void definVia::viaBegin(const char* name)
 {
   assert(_cur_via == nullptr);

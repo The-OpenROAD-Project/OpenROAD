@@ -27,7 +27,6 @@ namespace blif_parser {
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
-namespace phoenix = boost::phoenix;
 
 using namespace boost::placeholders;
 

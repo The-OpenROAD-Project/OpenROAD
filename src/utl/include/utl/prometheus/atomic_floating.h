@@ -42,7 +42,7 @@ inline std::atomic<FloatingType>& atomic_add_for_floating_types(
 
 template <typename FloatingType,
           class = typename std::
-              enable_if<std::is_floating_point<FloatingType>::value, int>::type>
+              enable_if_t<std::is_floating_point<FloatingType>::value, int>>
 inline std::atomic<FloatingType>& operator++(std::atomic<FloatingType>& value)
 {
   return atomic_add_for_floating_types(value, 1.0);
@@ -50,7 +50,7 @@ inline std::atomic<FloatingType>& operator++(std::atomic<FloatingType>& value)
 
 template <typename FloatingType,
           class = typename std::
-              enable_if<std::is_floating_point<FloatingType>::value, int>::type>
+              enable_if_t<std::is_floating_point<FloatingType>::value, int>>
 inline std::atomic<FloatingType>& operator+=(std::atomic<FloatingType>& value,
                                              const FloatingType& val)
 {
@@ -59,7 +59,7 @@ inline std::atomic<FloatingType>& operator+=(std::atomic<FloatingType>& value,
 
 template <typename FloatingType,
           class = typename std::
-              enable_if<std::is_floating_point<FloatingType>::value, int>::type>
+              enable_if_t<std::is_floating_point<FloatingType>::value, int>>
 inline std::atomic<FloatingType>& operator--(std::atomic<FloatingType>& value)
 {
   return atomic_add_for_floating_types(value, -1.0);
@@ -67,7 +67,7 @@ inline std::atomic<FloatingType>& operator--(std::atomic<FloatingType>& value)
 
 template <typename FloatingType,
           class = typename std::
-              enable_if<std::is_floating_point<FloatingType>::value, int>::type>
+              enable_if_t<std::is_floating_point<FloatingType>::value, int>>
 inline std::atomic<FloatingType>& operator-=(std::atomic<FloatingType>& value,
                                              const FloatingType& val)
 {

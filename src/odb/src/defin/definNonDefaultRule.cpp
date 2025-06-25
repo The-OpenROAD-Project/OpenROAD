@@ -12,21 +12,6 @@
 
 namespace odb {
 
-definNonDefaultRule::definNonDefaultRule()
-    : _cur_rule(nullptr), _cur_layer_rule(nullptr)
-{
-  init();
-}
-
-definNonDefaultRule::~definNonDefaultRule()
-{
-}
-
-void definNonDefaultRule::init()
-{
-  definBase::init();
-}
-
 void definNonDefaultRule::beginRule(const char* name)
 {
   _cur_layer_rule = nullptr;

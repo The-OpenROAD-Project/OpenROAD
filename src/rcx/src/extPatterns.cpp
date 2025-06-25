@@ -913,7 +913,7 @@ extWirePattern* extPattern::MainPattern(float mw,
 }
 float extPattern::GetRoundedInt(float v, float mult, int units1)
 {
-  float v1 = lround(v * mult * units1);
+  float v1 = std::lround(v * mult * units1);
   int r1 = (int) v1;
   if (r1 % 10 > 0) {
     r1 = 10 * (r1 / 10);
@@ -923,7 +923,7 @@ float extPattern::GetRoundedInt(float v, float mult, int units1)
 }
 int extPattern::GetRoundedInt(int v, float mult, int units1)
 {
-  float v1 = lround(v * mult);
+  float v1 = std::lround(v * mult);
   int r1 = (int) v1;
   if (r1 % 10 > 0) {
     r1 = 10 * (r1 / 10);
