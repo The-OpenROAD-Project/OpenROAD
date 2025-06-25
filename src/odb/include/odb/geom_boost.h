@@ -222,7 +222,7 @@ template <>
 struct exterior_ring<odb::Oct>
 {
   static std::vector<odb::Point> get(odb::Oct& o) { return o.getPoints(); }
-  static const std::vector<odb::Point> get(const odb::Oct& o)
+  static std::vector<odb::Point> get(const odb::Oct& o)
   {
     return o.getPoints();
   }
@@ -232,7 +232,7 @@ template <>
 struct interior_rings<odb::Oct>
 {
   static std::vector<std::vector<odb::Point>> get(odb::Oct& o) { return {}; }
-  static const std::vector<std::vector<odb::Point>> get(const odb::Oct& o)
+  static std::vector<std::vector<odb::Point>> get(const odb::Oct& o)
   {
     return {};
   }
@@ -276,7 +276,7 @@ template <>
 struct exterior_ring<odb::Polygon>
 {
   static std::vector<odb::Point> get(odb::Polygon& p) { return p.getPoints(); }
-  static const std::vector<odb::Point> get(const odb::Polygon& p)
+  static std::vector<odb::Point> get(const odb::Polygon& p)
   {
     return p.getPoints();
   }

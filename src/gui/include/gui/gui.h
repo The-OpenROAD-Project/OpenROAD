@@ -359,12 +359,12 @@ class Descriptor
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
 
-  static const Editor makeEditor(const EditorCallback& func,
-                                 const std::vector<EditorOption>& options)
+  static Editor makeEditor(const EditorCallback& func,
+                           const std::vector<EditorOption>& options)
   {
     return {func, options};
   }
-  static const Editor makeEditor(const EditorCallback& func)
+  static Editor makeEditor(const EditorCallback& func)
   {
     return makeEditor(func, {});
   }
