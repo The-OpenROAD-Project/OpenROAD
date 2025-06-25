@@ -317,7 +317,7 @@ void FastRouteCore::mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net)
     } else {
       logger_->error(
           utl::GRT,
-          10,
+          13,
           "Net {} is not present in FastRouteCore structures when trying to "
           "merge with net {}",
           preserved_net->getName(),
