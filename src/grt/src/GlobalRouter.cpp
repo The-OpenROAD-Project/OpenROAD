@@ -2755,9 +2755,6 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     initialized_groups++;
 
     for (int j = i - 1; j >= 0 && initialized_groups > 1; --j) {
-      if (find(parent[i]) == find(parent[j])) {
-        continue;
-      }
       if (segmentsConnect(routes_[net][i], routes_[net][j])) {
         uniteGroups(i, j);
         initialized_groups--;
@@ -3061,9 +3058,12 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
 
     // both segments are not vias
     if (segment0.init_layer == segment0.final_layer
-        && segment1.init_layer == segment1.final_layer &&
+        && segment1.init_layer == segment1.final_layer
         // segments are on the same layer
-        segment0.init_layer == segment1.init_layer) {
+        && segment0.init_layer == segment1.init_layer
+        // prevent merging guides below the min routing layer (guides for pin
+        // access)
+        && segment0.init_layer >= getMinRoutingLayer()) {
       // if segment 0 connects to the end of segment 1
       if (!segmentsConnect(segment0, segment1, segment1, segs_at_point)) {
         segments[write++] = segment0;
@@ -4327,20 +4327,27 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     auto [y1, y2] = std::minmax({pin_pos1.getY(), pin_pos2.getY()});
     if ((vertical && dir != odb::dbTechLayerDir::VERTICAL)
         || (horizontal && dir != odb::dbTechLayerDir::HORIZONTAL)) {
-      conn_layer--;
+      if (conn_layer > getMinRoutingLayer()) {
+        conn_layer--;
+      } else {
+        conn_layer++;
+      }
     }
     connection.emplace_back(x1, y1, conn_layer, x2, y2, conn_layer);
   } else {
-    int layer_hor
-        = dir == odb::dbTechLayerDir::HORIZONTAL ? conn_layer : conn_layer - 1;
-    int layer_ver
-        = dir == odb::dbTechLayerDir::VERTICAL ? conn_layer : conn_layer - 1;
+    const int layer_fix = conn_layer <= getMinRoutingLayer() ? 1 : -1;
+    const int layer_hor = dir == odb::dbTechLayerDir::HORIZONTAL
+                              ? conn_layer
+                              : conn_layer + layer_fix;
+    const int layer_ver = dir == odb::dbTechLayerDir::VERTICAL
+                              ? conn_layer
+                              : conn_layer + layer_fix;
     int x1 = pin_pos1.getX();
     int y1 = pin_pos1.getY();
     int x2 = pin_pos2.getX();
     int y2 = pin_pos2.getY();
     connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
-    connection.emplace_back(x2, y1, conn_layer - 1, x2, y1, conn_layer);
+    connection.emplace_back(x2, y1, conn_layer + layer_fix, x2, y1, conn_layer);
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
   }
 
