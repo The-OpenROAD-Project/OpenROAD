@@ -195,10 +195,7 @@ bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
     if (p->get(0)[1] == 'O')
       return true;
     targetWire = p->getInt(0, 2);
-    if (targetWire < 3)
-      return true;
-    else
-      return false;
+    return targetWire < 3;
   }
   if (p->getFirstChar() == 'U' || p->getFirstChar() == 'R') {
     targetWire = p->getInt(0, 1);

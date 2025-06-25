@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: test
+[INFO ODB-0131]     Created 1 components and 8 component-terminals.
+Test 1: Creating hard blockage...
+Test 2: Creating soft blockage...
+Test 3: Creating blockage with max density...
+Test 4: Creating blockage with instance...
+Test 5: Warning when creating a partial blockage with soft flag enabled
+[WARNING ODB-1016] Soft flag ignored as density was passed as argument.
+Test 6: Testing error handling...
+[ERROR ODB-1011] Invalid coordinates:  x1 (200.0) must be < x2 (100.0) and  y1 (200.0) must be < y2 (100.0)
+Expected error caught: ODB-1011
+[ERROR ODB-1014] Blockage coordinates  (1500.0, 1500.0, 1600.0, 1600.0)  are outside die area  (0.0, 0.0, 100.0, 100.0)
+Expected error caught: ODB-1014
+[ERROR ODB-1013] Max density must be between 0.0 and 100, got: 150
+Expected error caught: ODB-1013
+[ERROR ODB-1012] Instance 'non_existent' not found in design
+Expected error caught: ODB-1012
+No differences found.
+pass

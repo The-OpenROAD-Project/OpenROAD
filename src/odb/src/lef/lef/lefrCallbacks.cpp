@@ -37,10 +37,7 @@ lefrCallbacks* lefCallbacks = nullptr;
 
 void lefrCallbacks::reset()
 {
-  if (lefCallbacks) {
-    delete lefCallbacks;
-  }
-
+  delete lefCallbacks;
   lefCallbacks = new lefrCallbacks();
 }
 

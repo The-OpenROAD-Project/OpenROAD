@@ -27,7 +27,7 @@ std::ostream& operator<<(std::ostream& os, const Timer& t)
 
 DebugScopedTimer::DebugScopedTimer(utl::Logger* logger,
                                    ToolId tool,
-                                   const std::string& group,
+                                   const char* group,
                                    int level,
                                    const std::string& msg)
     : Timer(),
@@ -41,7 +41,7 @@ DebugScopedTimer::DebugScopedTimer(utl::Logger* logger,
 
 DebugScopedTimer::~DebugScopedTimer()
 {
-  debugPrint(logger_, tool_, group_.c_str(), level_, msg_, *this);
+  debugPrint(logger_, tool_, group_, level_, msg_, *this);
 }
 
 }  // namespace utl

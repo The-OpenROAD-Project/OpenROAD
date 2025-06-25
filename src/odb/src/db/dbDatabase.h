@@ -43,7 +43,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 108;  // Current revision number
+const uint db_schema_minor = 109;  // Current revision number
+
+// Revision where is_connect_to_term_ flag was added to dbGuide
+const uint db_schema_guide_connected_to_term = 109;
 
 // Revision where dbTable's mask/shift are compile constants
 const uint db_schema_table_mask_shift = 108;

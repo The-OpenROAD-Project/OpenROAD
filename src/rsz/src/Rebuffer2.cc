@@ -37,6 +37,16 @@ using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
+// from Rebuffer.cc
+void characterizeChoiceTree(dbNetwork* nwk,
+                            int level,
+                            const BufferedNetPtr& choice,
+                            int& buffer_count,
+                            int& load_count,
+                            int& wire_count,
+                            int& junction_count,
+                            std::set<odb::dbModule*>& load_modules);
+
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
 // lambda calling and it keeps track of the level number which is important
@@ -1661,6 +1671,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
 
 // Martin (2024-04-18): This is copied over from original RepairSetup
 // buffering mostly unchanged and is ripe for clean-up/rewrite later.
+
 int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                Net* net,  // output of buffer.
                                int level,
@@ -1759,54 +1770,75 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
     }
 
     case BufferedNetType::load: {
-      odb::dbNet* db_net = nullptr;
-      odb::dbModNet* db_modnet = nullptr;
-      db_network_->staToDb(net, db_net, db_modnet);
-
       const Pin* load_pin = choice->loadPin();
 
-      // only access at dbnet level
-      Net* load_net = network_->isTopLevelPort(load_pin)
-                          ? network_->net(network_->term(load_pin))
-                          // original code, could retrun a mod net  :
-                          // network_->net(drvr_pin);
-                          : db_network_->net(load_pin);
-
-      if (network_->isTopLevelPort(load_pin)) {
+      if (resizer_->dontTouch(load_pin)) {
+        debugPrint(logger_,
+                   RSZ,
+                   "rebuffer",
+                   3,
+                   "{:{}s}connect load: skipped on {} due to dont touch",
+                   "",
+                   level,
+                   sdc_network_->pathName(load_pin));
         return 0;
       }
 
-      dbNet* db_load_net;
-      odb::dbModNet* db_mod_load_net;
-      db_network_->staToDb(load_net, db_load_net, db_mod_load_net);
-      (void) db_load_net;
-
-      if (load_net != net) {
+      dbNet* db_load_net = db_network_->flatNet(load_pin);
+      odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
+      if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
         odb::dbModITerm* load_moditerm = nullptr;
         db_network_->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
 
-        debugPrint(logger_,
-                   RSZ,
-                   "rebuffer",
-                   3,
-                   "{:{}s}connect load {} to {}",
-                   "",
-                   level,
-                   sdc_network_->pathName(load_pin),
-                   sdc_network_->pathName(load_net));
+        Instance* load_parent_inst = nullptr;
+        if (load_iterm) {
+          dbInst* load_inst = load_iterm->getInst();
+          if (load_inst) {
+            auto top_module = db_network_->block()->getTopModule();
+            if (load_inst->getModule() == top_module) {
+              load_parent_inst = db_network_->topInstance();
+            } else {
+              load_parent_inst
+                  = (Instance*) (load_inst->getModule()->getModInst());
+            }
+          }
 
-        // disconnect removes everything.
-        sta_->disconnectPin(const_cast<Pin*>(load_pin));
-        // prepare for hierarchy
-        load_iterm->connect(db_net);
-        // preserve the mod net.
-        if (db_mod_load_net) {
-          load_iterm->connect(db_mod_load_net);
+          debugPrint(logger_,
+                     RSZ,
+                     "rebuffer",
+                     3,
+                     "{:{}s}connect load {} to {} modnet {}",
+                     "",
+                     level,
+                     sdc_network_->pathName(load_pin),
+                     sdc_network_->pathName((Net*) db_load_net),
+                     (mod_net_in ? mod_net_in->getName() : " none "));
+
+          // disconnect removes everything.
+          sta_->disconnectPin(const_cast<Pin*>(load_pin));
+
+          if (load_parent_inst && parent_in
+              && db_network_->hasHierarchicalElements()
+              && load_parent_inst != parent_in) {
+            // make the flat connection
+            db_network_->connectPin(const_cast<Pin*>(load_pin), net);
+            std::string preferred_connection_name;
+            // always make a unique name to avoid name clashes
+            preferred_connection_name = resizer_->makeUniqueNetName();
+            db_network_->hierarchicalConnect(
+                mod_net_drvr, load_iterm, preferred_connection_name.c_str());
+          } else if (mod_net_in) {  // input hierarchical net
+            db_network_->connectPin(
+                const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) mod_net_in);
+          } else {  // flat case
+            load_iterm->connect(db_net);
+          }
+          // sta_->connectPin(load_inst, load_port, net);
         }
+        return 0;
       }
-      return 0;
     }
   }
   return 0;
@@ -1894,11 +1926,17 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   std::vector<Pin*> filtered_pins;
   for (auto drvr : resizer_->level_drvr_vertices_) {
     Pin* drvr_pin = drvr->pin();
-    Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? network_->net(network_->term(drvr_pin))
-                   // hier fix
-                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-    dbNet* net_db = db_network_->staToDb(net);
+    Net* net = nullptr;
+    dbNet* net_db = nullptr;
+
+    // Get the flat net safely
+    if (network_->isTopLevelPort(drvr_pin)) {
+      net = network_->net(network_->term(drvr_pin));
+      net_db = db_network_->flatNet(network_->term(drvr_pin));
+    } else {
+      net_db = db_network_->flatNet(drvr_pin);
+      net = db_network_->dbToSta(net_db);
+    }
 
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
@@ -1915,6 +1953,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       }
     }
   }
+
   std::reverse(filtered_pins.begin(), filtered_pins.end());
 
   if (user_pin) {
@@ -1946,13 +1985,17 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
     Pin* drvr_pin = filtered_pins[iter];
-    Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? network_->net(network_->term(drvr_pin))
-                   // hier fixπ
-                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+
     odb::dbNet* db_net = nullptr;
     odb::dbModNet* db_modnet = nullptr;
-    db_network_->staToDb(net, db_net, db_modnet);
+    if (network_->isTopLevelPort(drvr_pin)) {
+      db_net = db_network_->flatNet(network_->term(drvr_pin));
+      db_modnet = nullptr;
+    } else {
+      db_net = db_network_->flatNet(drvr_pin);
+      db_modnet = db_network_->hierNet(drvr_pin);
+    }
+
     Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
     {
@@ -2085,7 +2128,6 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     ref_slack_ = maxLoadSlack(logger_, timing_tree);
     Delay target = slackAtDriverPin(timing_tree) - relaxation;
     BnetPtr area_opt_tree = timing_tree;
-
     {
       ScopedTimer timer(logger_, ra_time);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
@@ -2115,12 +2157,76 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     }
 
     auto insts = collectImportedTreeBufferInstances(drvr_pin, unbuffered_tree);
-    inserted_count_ += exportBufferTree(area_opt_tree,
-                                        db_network_->dbToSta(db_net),
-                                        1,
-                                        parent,
-                                        drvr_op_iterm,
-                                        db_modnet);
+
+    //
+    // characterize the buffer tree here
+    //
+    bool propagate_mod_net = false;
+    bool all_loads_in_same_module = false;
+    int buffer_count = 0;
+    int load_count = 0;
+    int wire_count = 0;
+    int junction_count = 0;
+    std::set<odb::dbModule*> load_modules;
+
+    characterizeChoiceTree(db_network_,
+                           1,
+                           area_opt_tree,
+                           buffer_count,
+                           load_count,
+                           wire_count,
+                           junction_count,
+                           load_modules);
+
+    /*
+      Propagating a hierarchicial through a single buffer or serial chain
+      of buffers is fine.
+
+      However, normally we cannot propagate a hierarchical net through a
+      junction, because we cannot discriminate between the two outputs.
+
+      Specifically if there is a junction with loads or buffers we
+      cannot do the propagation. However, if there is a
+      junction which is just doing wiring (no buffers or loads) then fine.
+     */
+    odb::dbModule* source_module = nullptr;
+    odb::dbITerm* drvr_iterm = nullptr;
+    odb::dbBTerm* drvr_bterm = nullptr;
+    odb::dbModITerm* drvr_moditerm = nullptr;
+    db_network_->staToDb(drvr_pin, drvr_iterm, drvr_bterm, drvr_moditerm);
+
+    if (drvr_iterm) {
+      dbInst* drvr_inst = drvr_iterm->getInst();
+      source_module = drvr_inst->getModule();
+    }
+    // check to see if we have just one module in load set
+    // and that all loads in the source module.
+    if (load_modules.size() == 1) {
+      if (*(load_modules.begin()) == source_module) {
+        all_loads_in_same_module = true;
+      }
+    }
+
+    if (junction_count != 0 && (!(buffer_count == 0 && load_count == 0))) {
+      propagate_mod_net = false;
+    } else {
+      propagate_mod_net = true;
+    }
+    // Corner case. If all the loads are in the same module
+    // then it is fine to propagate the modnet, no matter
+    // how many junctions
+
+    if (all_loads_in_same_module) {
+      propagate_mod_net = true;
+    }
+
+    inserted_count_
+        += exportBufferTree(area_opt_tree,
+                            db_network_->dbToSta(db_net),
+                            1,
+                            parent,
+                            drvr_op_iterm,
+                            (propagate_mod_net ? db_modnet : nullptr));
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);

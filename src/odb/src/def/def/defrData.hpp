@@ -247,7 +247,7 @@ class defrData
   int defaultCapWarnings{0};
   FILE* defrLog{nullptr};
   int input_level{-1};
-  char* last{nullptr};
+  char* last{nullptr};  // points to the last valid char in the buffer, or null
   int new_is_keyword{0};
   long long nlines{1};
   char* rowName{nullptr};  // to hold the rowName for message

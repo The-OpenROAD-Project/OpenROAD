@@ -1772,7 +1772,7 @@ main(int argc, char** argv)
   defwSetUnitsCbk(unitsCB);
   defwSetViaCbk(viaCB);
 
-  res = defwWrite(fout, outfile, (void*) userData);
+  res = defwWrite(fout, outfile, userData);
 
   fclose(fout);
   return 0;

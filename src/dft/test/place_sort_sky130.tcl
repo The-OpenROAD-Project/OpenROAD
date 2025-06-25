@@ -31,8 +31,8 @@ place_inst ff8_clk1_rising  4000 3000
 place_inst ff9_clk1_rising  8000 8000
 place_inst ff10_clk1_rising 3000 3000
 
-preview_dft -verbose
-insert_dft
+report_dft_plan -verbose
+execute_dft_plan
 
 set verilog_file [make_result_file place_sort_sky130.v]
 write_verilog $verilog_file
