@@ -1079,7 +1079,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
     getNetLayerRange(net->getDbNet(), min_layer, max_layer);
     odb::dbTechLayer* max_routing_layer
         = db_->getTech()->findRoutingLayer(max_layer);
-    if (pin_count > 1 && !net->isLocal()
+    if (pin_count > 1
         && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
@@ -1147,40 +1147,39 @@ void GlobalRouter::makeFastrouteNet(Net* net)
   int root_idx;
   findFastRoutePins(net, pins_on_grid, root_idx);
 
-  if (pins_on_grid.size() > 1) {
-    bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-    std::vector<int>* edge_cost_per_layer;
-    int edge_cost_for_net;
-    computeTrackConsumption(net, edge_cost_for_net, edge_cost_per_layer);
+  bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+  std::vector<int>* edge_cost_per_layer;
+  int edge_cost_for_net;
+  computeTrackConsumption(net, edge_cost_for_net, edge_cost_per_layer);
 
-    // set layer restriction only to clock nets that are not connected to
-    // leaf iterms
-    int min_layer, max_layer;
-    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
+  // set layer restriction only to clock nets that are not connected to
+  // leaf iterms
+  int min_layer, max_layer;
+  getNetLayerRange(net->getDbNet(), min_layer, max_layer);
 
-    FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
-                                       is_clock,
-                                       root_idx,
-                                       edge_cost_for_net,
-                                       min_layer - 1,
-                                       max_layer - 1,
-                                       net->getSlack(),
-                                       edge_cost_per_layer);
-    // TODO: improve net layer range with more dynamic layer restrictions
-    // when there's no room in the specified range
-    // See https://github.com/The-OpenROAD-Project/OpenROAD/pull/2893 and
-    // https://github.com/The-OpenROAD-Project/OpenROAD/discussions/2870
-    // for a detailed discussion
+  FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
+                                     is_clock,
+                                     net->isLocal(),
+                                     root_idx,
+                                     edge_cost_for_net,
+                                     min_layer - 1,
+                                     max_layer - 1,
+                                     net->getSlack(),
+                                     edge_cost_per_layer);
+  // TODO: improve net layer range with more dynamic layer restrictions
+  // when there's no room in the specified range
+  // See https://github.com/The-OpenROAD-Project/OpenROAD/pull/2893 and
+  // https://github.com/The-OpenROAD-Project/OpenROAD/discussions/2870
+  // for a detailed discussion
 
-    for (RoutePt& pin_pos : pins_on_grid) {
-      fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
-    }
+  for (RoutePt& pin_pos : pins_on_grid) {
+    fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
+  }
 
-    // Save stt input on debug file
-    if (fastroute_->hasSaveSttInput()
-        && net->getDbNet() == fastroute_->getDebugNet()) {
-      saveSttInputFile(net);
-    }
+  // Save stt input on debug file
+  if (fastroute_->hasSaveSttInput()
+      && net->getDbNet() == fastroute_->getDebugNet()) {
+    saveSttInputFile(net);
   }
 }
 

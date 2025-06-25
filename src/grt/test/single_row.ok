@@ -15,8 +15,8 @@
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 11
 [INFO GRT-0019] Found 0 clock nets.
-[INFO GRT-0001] Minimum degree: 2147483647
-[INFO GRT-0002] Maximum degree: 1
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 2
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource

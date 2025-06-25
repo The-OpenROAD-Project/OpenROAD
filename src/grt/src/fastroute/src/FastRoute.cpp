@@ -233,6 +233,7 @@ void FastRouteCore::addLayerDirection(int layer_idx,
 
 FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              bool is_clock,
+                             bool is_local,
                              int driver_idx,
                              int cost,
                              int min_layer,
@@ -268,7 +269,11 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              max_layer,
              slack,
              edge_cost_per_layer);
-  net_ids_.push_back(netID);
+  // Don't add local nets to the list of ids that will be routed. It is only
+  // necessary to add them to make mergeNet work with local nets.
+  if (!is_local) {
+    net_ids_.push_back(netID);
+  }
 
   return net;
 }
