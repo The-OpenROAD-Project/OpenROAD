@@ -2351,6 +2351,25 @@ void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
   block->_max_layer_for_clock = max_layer_for_clock;
 }
 
+int dbBlock::getGCellTileSize()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  // Use the pitch of the third routing layer to compute the gcell tile size.
+  int layer_for_gcell_size = 3;
+  if (block->_max_routing_layer < layer_for_gcell_size) {
+    layer_for_gcell_size = block->_max_routing_layer;
+  }
+  const int pitches_in_tile = 15;
+
+  dbTech* tech = getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_gcell_size);
+  odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+  int track_spacing, track_init, num_tracks;
+  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+
+  return pitches_in_tile * track_spacing;
+}
+
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
