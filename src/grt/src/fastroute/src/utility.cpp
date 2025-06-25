@@ -847,7 +847,7 @@ void FastRouteCore::layerAssignmentV4()
       edgeQueue.pop();
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treenodes[treeedge->n1a].assigned) {
-        assignEdge(netID, edgeID, 1);
+        assignEdge(netID, edgeID, true);
         treeedge->assigned = true;
         if (!treenodes[treeedge->n2a].assigned) {
           for (int k = 0; k < treenodes[treeedge->n2a].conCNT; k++) {
@@ -860,7 +860,7 @@ void FastRouteCore::layerAssignmentV4()
           treenodes[treeedge->n2a].assigned = true;
         }
       } else {
-        assignEdge(netID, edgeID, 0);
+        assignEdge(netID, edgeID, false);
         treeedge->assigned = true;
         if (!treenodes[treeedge->n1a].assigned) {
           for (int k = 0; k < treenodes[treeedge->n1a].conCNT; k++) {

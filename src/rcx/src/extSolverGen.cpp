@@ -34,7 +34,7 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
   _layerCnt = getConductorCnt();
 
   _3dFlag = true;
-  _diag = 0;
+  _diag = false;
 
   setDiagModel(0);  // to initialize _diagModel;
 
