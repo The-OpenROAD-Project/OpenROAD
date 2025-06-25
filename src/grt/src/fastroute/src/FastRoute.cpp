@@ -423,12 +423,13 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (cap - reducedCap < 0) {
       if (isReduce) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(GRT,
                         113,
                         "Underflow in reduce: cap, reducedCap: {}, {}",
                         cap,
                         reducedCap);
+        }
       }
       reduce = 0;
     } else {
@@ -461,12 +462,13 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (cap - reducedCap < 0) {
       if (isReduce) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(GRT,
                         114,
                         "Underflow in reduce: cap, reducedCap: {}, {}",
                         cap,
                         reducedCap);
+        }
       }
       reduce = 0;
     } else {
@@ -559,8 +561,9 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0)
+      if (edge_cap < 0) {
         edge_cap = 0;
+      }
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
@@ -581,8 +584,9 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0)
+      if (edge_cap < 0) {
         edge_cap = 0;
+      }
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
@@ -864,10 +868,11 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
   }
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
-  if (db_gcell)
+  if (db_gcell) {
     db_gcell->resetGrid();
-  else
+  } else {
     db_gcell = odb::dbGCellGrid::create(block);
+  }
 
   db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
@@ -1352,12 +1357,13 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (overflow_increases > max_overflow_increases) {
-    if (verbose_)
+    if (verbose_) {
       logger_->warn(
           GRT,
           230,
           "Congestion iterations cannot increase overflow, reached the "
           "maximum number of times the total overflow can be increased.");
+    }
   }
 
   freeRR();
@@ -1598,8 +1604,9 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 int FrNet::getLayerEdgeCost(int layer) const
 {
-  if (edge_cost_per_layer_)
+  if (edge_cost_per_layer_) {
     return (*edge_cost_per_layer_)[layer];
+  }
 
   return 1;
 }

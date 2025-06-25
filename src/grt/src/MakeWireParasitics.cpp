@@ -144,8 +144,9 @@ void MakeWireParasitics::clearParasitics()
 
 sta::Pin* MakeWireParasitics::staPin(Pin& pin) const
 {
-  if (pin.isPort())
+  if (pin.isPort()) {
     return network_->dbToSta(pin.getBTerm());
+  }
 
   return network_->dbToSta(pin.getITerm());
 }
@@ -222,11 +223,12 @@ void MakeWireParasitics::makeRouteParasitics(
                  segment.init_layer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
-    } else
+    } else {
       logger_->warn(GRT,
                     25,
                     "Non wire or via route found on net {}.",
                     net->getConstName());
+    }
     parasitics_->incrCap(n1, cap / 2.0);
     parasitics_->makeResistor(parasitic, resistor_id_++, res, n1, n2);
     parasitics_->incrCap(n2, cap / 2.0);
@@ -536,8 +538,9 @@ std::vector<int> MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net) const
 
       RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
       auto pt_itr = route_pts.find(grid_route);
-      if (pt_itr == route_pts.end())
+      if (pt_itr == route_pts.end()) {
         layer--;
+      }
       int wire_length_dbu
           = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
       layer_lengths[tech_->findRoutingLayer(layer)->getNumber()]

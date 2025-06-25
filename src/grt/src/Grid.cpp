@@ -44,11 +44,13 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
   int gcell_id_x = (x - die_area_.xMin()) / tile_size_;
   int gcell_id_y = (y - die_area_.yMin()) / tile_size_;
 
-  if (gcell_id_x >= x_grids_)
+  if (gcell_id_x >= x_grids_) {
     gcell_id_x--;
+  }
 
-  if (gcell_id_y >= y_grids_)
+  if (gcell_id_y >= y_grids_) {
     gcell_id_y--;
+  }
 
   int center_x
       = (gcell_id_x * tile_size_) + (tile_size_ / 2) + die_area_.xMin();

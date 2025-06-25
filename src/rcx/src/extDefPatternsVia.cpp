@@ -40,10 +40,11 @@ uint extRulesPat::setLayerInfoVia(dbTechLayer* layer,
   // UpdateOrigin_start(_met);
   _sepGridCnt = 10;
   _patternSep = _sepGridCnt * (_minWidth + _minSpace);
-  if (!startPatternGroup)
+  if (!startPatternGroup) {
     _origin[1] += _ur_last[1] + _patternSep;  // Grow vertically
-  else
+  } else {
     _origin[1] += _ur_last[1];
+  }
 
   _origin[0] = _init_origin[0];
 
@@ -71,8 +72,9 @@ uint extRulesPat::GetViaCutCount(dbTechVia* tvia)
   for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
     dbBox* box = *bitr;
     dbTechLayer* layer1 = box->getTechLayer();
-    if (layer1->getType() == dbTechLayerType::CUT)
+    if (layer1->getType() == dbTechLayerType::CUT) {
       cnt++;
+    }
   }
   return cnt;
 }
@@ -162,8 +164,9 @@ uint extRCModel::ViaRulePat(extMainOptions* opt,
                             uint overDist)
 {
   bool dbg = false;
-  if (opt->_met == 0)
+  if (opt->_met == 0) {
     return 0;
+  }
 
   extRulesPat* p = new extRulesPat("",
                                    true,
@@ -186,20 +189,24 @@ uint extRCModel::ViaRulePat(extMainOptions* opt,
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
 
-    if (via->getNonDefaultRule() != nullptr)
+    if (via->getNonDefaultRule() != nullptr) {
       continue;
-    if (via->getViaGenerateRule() != nullptr)
+    }
+    if (via->getViaGenerateRule() != nullptr) {
       continue;
+    }
 
     const char* viaName = via->getConstName();
     cnt++;
 
     dbTechLayer* top_layer = via->getTopLayer();
-    if (top_layer == nullptr)
+    if (top_layer == nullptr) {
       continue;
+    }
     dbTechLayer* bot_layer = via->getBottomLayer();
-    if (bot_layer == nullptr)
+    if (bot_layer == nullptr) {
       continue;
+    }
     uint met = top_layer->getRoutingLevel();
     int underMet = bot_layer->getRoutingLevel();
     if (dbg) {
@@ -214,8 +221,9 @@ uint extRCModel::ViaRulePat(extMainOptions* opt,
 
     p->setLayerInfoVia(top_layer, met, startPatterns);
 
-    if (startPatterns)
+    if (startPatterns) {
       startPatterns = false;
+    }
 
     p->setMets(underMet, bot_layer, -1, nullptr);
 
@@ -265,10 +273,11 @@ dbNet* extRulesPat::createNetSingleWireAndVia(const char* netName,
   encoder.addPoint(ll[0], ll[1], 0);
   encoder.addBTerm(loBTerm);
 
-  if (vertical)
+  if (vertical) {
     encoder.addPoint(ll[0], ur[1], 0);
-  else
+  } else {
     encoder.addPoint(ur[0], ll[1], 0);
+  }
 
   encoder.addTechVia(via);
   encoder.addBTerm(hiBTerm);
