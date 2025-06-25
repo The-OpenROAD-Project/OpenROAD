@@ -2364,6 +2364,14 @@ int dbBlock::getGCellTileSize()
   dbTech* tech = getTech();
   odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_gcell_size);
   odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+
+  if (track_grid == nullptr) {
+    getImpl()->getLogger()->error(utl::ODB,
+                                  358,
+                                  "Track grid for routing layer {} not found.",
+                                  tech_layer->getName());
+  }
+
   int track_spacing, track_init, num_tracks;
   track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
 
