@@ -21,7 +21,7 @@ WireBuilder::~WireBuilder() = default;
 
 void WireBuilder::makeNetWiresFromGuides()
 {
-  const int guide_dimension = computeGuideDimension();
+  const int guide_dimension = block_->getGCellTileSize();
   default_vias_ = block_->getDefaultVias();
   for (odb::dbNet* db_net : block_->getNets()) {
     const bool is_detailed_routed
@@ -36,7 +36,7 @@ void WireBuilder::makeNetWiresFromGuides()
 
 void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
 {
-  const int guide_dimension = computeGuideDimension();
+  const int guide_dimension = block_->getGCellTileSize();
   default_vias_ = block_->getDefaultVias();
   for (odb::dbNet* db_net : nets) {
     const bool is_detailed_routed
@@ -491,25 +491,6 @@ bool WireBuilder::checkGuideBTermConnection(const GuidePoint& guide_pt,
   }
 
   return false;
-}
-
-int WireBuilder::computeGuideDimension()
-{
-  std::set<odb::Rect> dimension_boxes;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    for (odb::dbGuide* guide : db_net->getGuides()) {
-      if (guide->getBox().dx() == guide->getBox().dy()) {
-        dimension_boxes.insert(guide->getBox());
-      }
-    }
-  }
-
-  int dimension = std::numeric_limits<int>::max();
-  for (const odb::Rect& box : dimension_boxes) {
-    dimension = std::min(dimension, box.dx());
-  }
-
-  return dimension;
 }
 
 void WireBuilder::boxToGuideSegment(

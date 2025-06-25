@@ -84,7 +84,6 @@ class WireBuilder
                                  odb::dbBTerm* bterm,
                                  const odb::Point& box_limit,
                                  int guide_dimension);
-  int computeGuideDimension();
   void boxToGuideSegment(const odb::Rect& guide_box,
                          odb::dbTechLayer* layer,
                          odb::dbTechLayer* via_layer,
