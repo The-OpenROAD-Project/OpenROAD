@@ -55,8 +55,9 @@ size_t getPeakRSS()
   /* AIX and Solaris ------------------------------------------ */
   struct psinfo psinfo;
   int fd = -1;
-  if ((fd = open("/proc/self/psinfo", O_RDONLY)) == -1)
+  if ((fd = open("/proc/self/psinfo", O_RDONLY)) == -1) {
     return (size_t) 0L; /* Can't open? */
+  }
   if (read(fd, &psinfo, sizeof(psinfo)) != sizeof(psinfo)) {
     close(fd);
     return (size_t) 0L; /* Can't read? */
@@ -101,8 +102,9 @@ size_t getCurrentRSS()
                 MACH_TASK_BASIC_INFO,
                 (task_info_t) &info,
                 &infoCount)
-      != KERN_SUCCESS)
+      != KERN_SUCCESS) {
     return (size_t) 0L; /* Can't access? */
+  }
   return (size_t) info.resident_size;
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) \

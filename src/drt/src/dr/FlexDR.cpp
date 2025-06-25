@@ -750,8 +750,9 @@ void FlexDR::processWorkersBatchDistributed(
   {
     ProfileTask task("DIST: SERIALIZE+SEND");
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
+    for (int i = 0; i < distWorkerBatches.size(); i++) {  // NOLINT
       sendWorkers(distWorkerBatches.at(i), workers_batch);
+    }
   }
   std::vector<std::pair<int, std::string>> workers;
   router_->getWorkerResults(workers);

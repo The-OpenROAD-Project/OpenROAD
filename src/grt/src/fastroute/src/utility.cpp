@@ -572,8 +572,9 @@ void FastRouteCore::assignEdge(const int netID,
         gridD[l][0] = 0;
       }
     } else {
-      if (verbose_)
+      if (verbose_) {
         logger_->warn(GRT, 200, "Start point not assigned.");
+      }
       fflush(stdout);
     }
 
@@ -1692,26 +1693,28 @@ bool FastRouteCore::checkRoute2DTree(const int netID)
     const std::vector<short>& gridsY = treeedge->route.gridsY;
 
     if (treeedge->len < 0) {
-      if (verbose_)
+      if (verbose_) {
         logger_->warn(
             GRT, 207, "Ripped up edge without edge length reassignment.");
+      }
       STHwrong = true;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(GRT,
                         208,
                         "Route length {}, tree length {}.",
                         treeedge->route.routelen,
                         treeedge->len);
+        }
         STHwrong = true;
         return true;
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(
               GRT,
               164,
@@ -1722,10 +1725,11 @@ bool FastRouteCore::checkRoute2DTree(const int netID)
               gridsY[0],
               gridsX[0],
               treeedge->route.routelen);
+        }
         STHwrong = true;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(
               GRT,
               165,
@@ -1735,13 +1739,14 @@ bool FastRouteCore::checkRoute2DTree(const int netID)
               gridsY[edgelength],
               gridsX[edgelength],
               treeedge->route.routelen);
+        }
         STHwrong = true;
       }
       for (int i = 0; i < treeedge->route.routelen; i++) {
         const int distance
             = abs(gridsX[i + 1] - gridsX[i]) + abs(gridsY[i + 1] - gridsY[i]);
         if (distance != 1) {
-          if (verbose_)
+          if (verbose_) {
             logger_->warn(
                 GRT,
                 166,
@@ -1750,14 +1755,16 @@ bool FastRouteCore::checkRoute2DTree(const int netID)
                 edgeID,
                 distance,
                 i);
+          }
           STHwrong = true;
         }
       }
 
       if (STHwrong) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(
               GRT, 167, "Invalid 2D tree for net {}.", nets_[netID]->getName());
+        }
         return true;
       }
     }
@@ -2180,19 +2187,21 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
         int maxX1 = minX1;
         for (int j = 0; j < 3; j++) {
           const int x = t.branch[nbr[n1][j]].x;
-          if (x > maxX1)
+          if (x > maxX1) {
             maxX1 = x;
-          else if (x < minX1)
+          } else if (x < minX1) {
             minX1 = x;
+          }
         }
         int minX2 = t.branch[n2].x;
         int maxX2 = minX2;
         for (int j = 0; j < 3; j++) {
           const int x = t.branch[nbr[n2][j]].x;
-          if (x > maxX2)
+          if (x > maxX2) {
             maxX2 = x;
-          else if (x < minX2)
+          } else if (x < minX2) {
             minX2 = x;
+          }
         }
         const int minX = std::max(minX1, minX2);
         const int maxX = std::min(maxX1, maxX2);
@@ -2367,18 +2376,20 @@ int FastRouteCore::edgeShiftNew(Tree& t, const int net)
           const int n = t.branch[j].n;
           if (n == cur_pairN1) {
             if (t.branch[j].x == t.branch[cur_pairN1].x
-                && t.branch[j].y != t.branch[cur_pairN1].y)
+                && t.branch[j].y != t.branch[cur_pairN1].y) {
               N1nbrV = j;
-            else if (t.branch[j].y == t.branch[cur_pairN1].y
-                     && t.branch[j].x != t.branch[cur_pairN1].x)
+            } else if (t.branch[j].y == t.branch[cur_pairN1].y
+                       && t.branch[j].x != t.branch[cur_pairN1].x) {
               N1nbrH = j;
+            }
           } else if (n == cur_pairN2) {
             if (t.branch[j].x == t.branch[cur_pairN2].x
-                && t.branch[j].y != t.branch[cur_pairN2].y)
+                && t.branch[j].y != t.branch[cur_pairN2].y) {
               N2nbrV = j;
-            else if (t.branch[j].y == t.branch[cur_pairN2].y
-                     && t.branch[j].x != t.branch[cur_pairN2].x)
+            } else if (t.branch[j].y == t.branch[cur_pairN2].y
+                       && t.branch[j].x != t.branch[cur_pairN2].x) {
               N2nbrH = j;
+            }
           }
         }
         // find the node cur_pairN2 directed to

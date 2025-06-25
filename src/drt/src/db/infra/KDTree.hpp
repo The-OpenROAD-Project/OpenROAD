@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <utility>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "frBaseTypes.h"
