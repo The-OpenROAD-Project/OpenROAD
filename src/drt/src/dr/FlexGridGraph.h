@@ -989,7 +989,7 @@ class FlexGridGraph
   FlexDRWorker* drWorker_ = nullptr;
   RouterConfiguration* router_cfg_ = nullptr;
   AbstractDRGraphics* graphics_ = nullptr;  // owned by FlexDR
-                                            //
+
 #ifdef DEBUG_DRT_UNDERFLOW
   static constexpr int cost_bits = 16;
 #else
