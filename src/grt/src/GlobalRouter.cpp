@@ -3211,17 +3211,12 @@ odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect)
 
 void GlobalRouter::initGrid(int max_layer)
 {
-  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
-  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-  int track_spacing, track_init, num_tracks;
-  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
-
   odb::Rect rect = block_->getDieArea();
 
   int dx = rect.dx();
   int dy = rect.dy();
 
-  int tile_size = grid_->getPitchesInTile() * track_spacing;
+  int tile_size = block_->getGCellTileSize();
 
   int x_grids = std::max(1, dx / tile_size);
   int y_grids = std::max(1, dy / tile_size);
