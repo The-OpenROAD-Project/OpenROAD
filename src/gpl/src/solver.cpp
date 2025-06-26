@@ -23,17 +23,25 @@ ResidualError cpuSparseSolve(int maxSolverIter,
   ResidualError residual_error;
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
   solver.setMaxIterations(maxSolverIter);
+
   solver.compute(placeInstForceMatrixX);
   instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
   if (solver.info() == Eigen::Success) {
     residual_error.x = solver.error();
+  } else {
+    logger->error(utl::GPL, 154, "Eigen solver failed on X at iter {}.", iter);
+    residual_error.x = std::numeric_limits<float>::quiet_NaN();
   }
 
   solver.compute(placeInstForceMatrixY);
   instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
   if (solver.info() == Eigen::Success) {
     residual_error.y = solver.error();
+  } else {
+    logger->error(utl::GPL, 155, "Eigen solver failed on Y at iter {}.", iter);
+    residual_error.y = std::numeric_limits<float>::quiet_NaN();
   }
+
   return residual_error;
 }
 }  // namespace gpl
