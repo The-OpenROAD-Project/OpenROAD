@@ -33,6 +33,9 @@ Developer arguments
 Distributed arguments
 - `-distributed` , `-remote_host`, `-remote_port`, `-shared_volume`, `-cloud_size`
 
+Pin Access arguments
+- `-via_in_pin_bottom_layer`, `-via_in_pin_top_layer`, `-via_access_layer`, `-min_access_points`
+
 ```tcl
 detailed_route 
     [-output_maze filename]
@@ -76,9 +79,10 @@ detailed_route
 | `-db_process_node` | Specify the process node. |
 | `-disable_via_gen` | Option to diable via generation with bottom and top routing layer. The default value is disabled. | 
 | `-droute_end_iter` | Number of detailed routing iterations. The default value is `-1`, and the allowed values are integers `[1, 64]`. |
-| `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. |
-| `-via_in_pin_top_layer` | Via-in pin top layer name. |
-| `-via_access_layer` | Layer name for via access. |
+| `-via_in_pin_bottom_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
+| `-via_in_pin_top_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
+| `-via_access_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
+| `-min_access_points` | Refer to pin access arguments [here](#pin-access-arguments). |
 | `-or_seed` | Refer to developer arguments [here](#developer-arguments). |
 | `-or_k` | Refer to developer arguments [here](#developer-arguments). |
 | `-bottom_routing_layer` | Bottommost routing layer name. |
@@ -91,7 +95,6 @@ detailed_route
 | `-cloud_size` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-clean_patches` | Clean unneeded patches during detailed routing. | 
 | `-no_pin_access` | Disables pin access for routing. |
-| `-min_access_points` | Minimum access points for standard cell and macro cell pins. | 
 | `-save_guide_updates` | Flag to save guides updates. |
 | `-repair_pdn_vias` | This option is used for PDKs where M1 and M2 power rails run in parallel. |
 
@@ -176,16 +179,27 @@ pin_access
 | `-db_process_node` | Specify process node. |
 | `-bottom_routing_layer` | Bottommost routing layer. |
 | `-top_routing_layer` | Topmost routing layer name. |
-| `-via_access_layer` | Layer name for via access. |
-| `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. |
-| `-via_in_pin_top_layer` | Via-in pin top layer name. |
-| `-min_access_points` | Minimum number of access points per pin. |
+| `-via_access_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
+| `-via_in_pin_bottom_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
+| `-via_in_pin_top_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
+| `-min_access_points` | Refer to pin access arguments [here](#pin-access-arguments). |
 | `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-remote_host` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-remote_port` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-shared_volume` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-cloud_size` | Refer to distributed arguments [here](#distributed-arguments). |
+
+#### Pin Access Arguments
+
+We have compiled all pin access related arguments in this section.
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-via_access_layer` | Top via access layer name. Any pin on this layer or below can only be accessed through a via, disallowing planar access. |
+| `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. Used in conjunction with via_in_pin_top_layer to specify the layer range for via-in-pin rules. |
+| `-via_in_pin_top_layer` | Via-in pin top layer name. Used in conjunction with via_in_pin_bottom_layer to specify the layer range for via-in-pin rules. For pins within this layer range, any via enclosure must be fully contained within the pin boundary and cannot extend beyond the pin edges. |
+| `-min_access_points` | Minimum number of access points per pin. |
 
 #### Distributed Arguments
 

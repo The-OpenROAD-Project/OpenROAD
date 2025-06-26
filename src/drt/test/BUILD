@@ -16,6 +16,7 @@ COMPULSORY_TESTS = [
     "ta_pin_aligned",
     "top_level_term",
     "top_level_term2",
+    "via_access_layer"
 ]
 
 # Disabled in CMakeLists.txt
@@ -42,6 +43,9 @@ filegroup(
         "gcd_nangate45_test_worker.tcl",
         "gcd_sky130hd.def",
         "gcd_sky130hd.guide",
+        "via_access_layer.lef",
+        "via_access_layer.def",
+        "via_access_layer.guide",
         "helpers.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
