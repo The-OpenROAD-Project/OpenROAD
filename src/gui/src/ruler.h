@@ -31,9 +31,9 @@ class Ruler
   odb::Point getManhattanJoinPt() const;
   static odb::Point getManhattanJoinPt(const odb::Point& pt0,
                                        const odb::Point& pt1);
-  const std::string getName() const { return name_; }
+  const std::string& getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
-  const std::string getLabel() const { return label_; }
+  const std::string& getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
   bool isEuclidian() const { return euclidian_; }
   void setEuclidian(bool euclidian) { euclidian_ = euclidian; }

@@ -24,7 +24,7 @@ Net::Net(odb::dbNet* net, bool has_wires)
 {
 }
 
-const std::string Net::getName() const
+std::string Net::getName() const
 {
   return net_->getName();
 }

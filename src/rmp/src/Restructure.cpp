@@ -653,7 +653,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
       level.emplace_back(std::stoi(tokens[tokens.size() - 1]));
     }
     if (tokens.size() > 7) {
-      std::string prev_token = "";
+      std::string prev_token;
       for (std::string token : tokens) {
         if (prev_token == "delay" && token.at(0) == '=') {
           std::string delay_str = token;
