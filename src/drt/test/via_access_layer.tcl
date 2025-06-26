@@ -8,6 +8,7 @@ read_guides "via_access_layer.guides"
 
 detailed_route -bottom_routing_layer met3 \
                -top_routing_layer met5 \
+               -via_access_layer met2 \
                -verbose 0
 
 set def_file [make_result_file via_access_layer.def]

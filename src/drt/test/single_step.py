@@ -14,7 +14,6 @@ drt_aux.detailed_route(
     design,
     output_drc="results/single_step.output.drc.rpt",
     output_maze="results/single_step.output.maze.log",
-    bottom_routing_layer="Metal2",
     verbose=0,
     single_step_dr=True,
 )

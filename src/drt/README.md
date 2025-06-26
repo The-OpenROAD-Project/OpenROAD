@@ -45,6 +45,7 @@ detailed_route
     [-droute_end_iter iter]
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
+    [-via_access_layer layer]
     [-or_seed seed]
     [-or_k k]
     [-bottom_routing_layer layer]
@@ -77,6 +78,7 @@ detailed_route
 | `-droute_end_iter` | Number of detailed routing iterations. The default value is `-1`, and the allowed values are integers `[1, 64]`. |
 | `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. |
 | `-via_in_pin_top_layer` | Via-in pin top layer name. |
+| `-via_access_layer` | Layer name for via access. |
 | `-or_seed` | Refer to developer arguments [here](#developer-arguments). |
 | `-or_k` | Refer to developer arguments [here](#developer-arguments). |
 | `-bottom_routing_layer` | Bottommost routing layer name. |
@@ -155,6 +157,7 @@ pin_access
     [-db_process_node name]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
+    [-via_access_layer layer]
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
     [-min_access_points count]
@@ -173,6 +176,7 @@ pin_access
 | `-db_process_node` | Specify process node. |
 | `-bottom_routing_layer` | Bottommost routing layer. |
 | `-top_routing_layer` | Topmost routing layer name. |
+| `-via_access_layer` | Layer name for via access. |
 | `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. |
 | `-via_in_pin_top_layer` | Via-in pin top layer name. |
 | `-min_access_points` | Minimum number of access points per pin. |

@@ -6,14 +6,12 @@ read_guides testcase/ispd18_sample/ispd18_sample.input.guide
 detailed_route -output_drc results/ispd18_sample.output.drc.rpt \
                -output_maze results/ispd18_sample.output.maze.log \
                -output_guide_coverage results/ispd18_sample.coverage.csv \
-               -bottom_routing_layer Metal2 \
                -verbose 0
 set net [[ord::get_db_block] findNet "net1231"]
 odb::dbWire_destroy [$net getWire]
 detailed_route -output_drc results/ispd18_sample.output.drc.rpt \
                -output_maze results/ispd18_sample.output.maze.log \
                -output_guide_coverage results/ispd18_sample.coverage.csv \
-               -bottom_routing_layer Metal2 \
                -verbose 0
 set def_file [make_result_file ispd18_sample.def]
 write_def $def_file

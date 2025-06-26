@@ -3050,7 +3050,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
                     router_cfg_->BOTTOM_ROUTING_LAYER_NAME);
     }
   }
-  router_cfg_->VIA_ACCESS_LAYERNUM = router_cfg_->BOTTOM_ROUTING_LAYER - 2;
+
   if (!router_cfg_->TOP_ROUTING_LAYER_NAME.empty()) {
     frLayer* layer = fr_tech->getLayer(router_cfg_->TOP_ROUTING_LAYER_NAME);
     if (layer) {

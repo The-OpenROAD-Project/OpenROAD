@@ -582,6 +582,18 @@ void TritonRoute::initDesign()
     }
   }
 
+  if (!router_cfg_->VIA_ACCESS_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(router_cfg_->VIA_ACCESS_LAYER_NAME);
+    if (layer) {
+      router_cfg_->VIA_ACCESS_LAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    609,
+                    "via access layer {} not found.",
+                    router_cfg_->VIA_ACCESS_LAYER_NAME);
+    }
+  }
+
   if (!router_cfg_->REPAIR_PDN_LAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(router_cfg_->REPAIR_PDN_LAYER_NAME);
     if (layer) {
@@ -1248,6 +1260,9 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
   if (!params.viaInPinTopLayer.empty()) {
     router_cfg_->VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
+  }
+  if (!params.viaAccessLayer.empty()) {
+    router_cfg_->VIA_ACCESS_LAYER_NAME = params.viaAccessLayer;
   }
   if (params.drouteEndIter >= 0) {
     router_cfg_->END_ITERATION = params.drouteEndIter;
