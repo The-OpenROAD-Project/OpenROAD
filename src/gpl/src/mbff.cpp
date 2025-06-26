@@ -828,9 +828,13 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
         if (IsSupplyPin(iterm)) {
           if (iterm->getSigType() == odb::dbSigType::GROUND) {
-            ground->connect(net);
+            if (ground) {
+              ground->connect(net);
+            }
           } else {
-            power->connect(net);
+            if (power) {
+              power->connect(net);
+            }
           }
         }
         if (IsClockPin(iterm)) {
