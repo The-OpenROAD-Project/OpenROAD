@@ -668,8 +668,7 @@ bool GuideProcessor::isValidGuideLayerNum(odb::dbGuide* db_guide,
           = getDesign()->getTopBlock()->getGCellIdx(guide_rect.ll())
             == getDesign()->getTopBlock()->getGCellIdx(guide_rect.ur());
       if (!one_gcell_guide) {
-        // TODO: uncomment this when GRT issue is solved
-        // error = true;  // not a valid via access guide
+        error = true;  // not a valid via access guide
       }
     }
     // else I don't know how many gcells the guide spans
