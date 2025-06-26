@@ -2132,8 +2132,9 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
 
   lineNum = lefwCurrentLineNumber();
-  if (lineNum == 0)
+  if (lineNum == 0) {
     fprintf(stderr, "ERROR: Nothing has been written!!!\n");
+  }
 
   fclose(fout);
 

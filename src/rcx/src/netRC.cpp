@@ -328,10 +328,11 @@ void extMain::getShapeRC(dbNet* net,
       } else {
         getViaCapacitance(s, net);
         for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-          if (viaModelFound)
+          if (viaModelFound) {
             _tmpResTable[ii] = viaResTable[ii];
-          else
+          } else {
             _tmpResTable[ii] = res;
+          }
         }
       }
     }
@@ -485,8 +486,9 @@ uint extMain::getCapNodeId(dbNet* net,
     uint capId = _itermTable->geti(id);
     if (capId > 0) {
 #ifdef DEBUG_NET_ID
-      if (iterm->getNet()->getId() == DEBUG_NET_ID)
+      if (iterm->getNet()->getId() == DEBUG_NET_ID) {
         fprintf(fp, "\tOLD I_TERM %d  capNode %d\n", id, capId);
+      }
 #endif
 
       return capId;
@@ -502,8 +504,9 @@ uint extMain::getCapNodeId(dbNet* net,
     int tcapId = _nodeTable->geti(junction) == -1 ? -capId : capId;
     _nodeTable->set(junction, tcapId);  // allow get capId using junction
 #ifdef DEBUG_NET_ID
-    if (iterm->getNet()->getId() == DEBUG_NET_ID)
+    if (iterm->getNet()->getId() == DEBUG_NET_ID) {
       fprintf(fp, "\tNEW I_TERM %d capNode %d\n", id, capId);
+    }
 #endif
     return capId;
   }
@@ -512,8 +515,9 @@ uint extMain::getCapNodeId(dbNet* net,
     uint capId = _btermTable->geti(id);
     if (capId > 0) {
 #ifdef DEBUG_NET_ID
-      if (bterm->getNet()->getId() == DEBUG_NET_ID)
+      if (bterm->getNet()->getId() == DEBUG_NET_ID) {
         fprintf(fp, "\tOLD B_TERM %d  capNode %d\n", id, capId);
+      }
 #endif
       return capId;
     }
@@ -530,8 +534,9 @@ uint extMain::getCapNodeId(dbNet* net,
     _nodeTable->set(junction, tcapId);  // allow get capId using junction
 
 #ifdef DEBUG_NET_ID
-    if (bterm->getNet()->getId() == DEBUG_NET_ID)
+    if (bterm->getNet()->getId() == DEBUG_NET_ID) {
       fprintf(fp, "\tNEW B_TERM %d  capNode %d\n", id, capId);
+    }
 #endif
     return capId;
   }
@@ -583,7 +588,7 @@ uint extMain::getCapNodeId(dbNet* net,
                  "RCSEG:C NEW BRANCH {}  capNode {}",
                  junction,
                  cap->getId());
-    } else
+    } else {
       debugPrint(logger_,
                  RCX,
                  "rcseg",
@@ -591,6 +596,7 @@ uint extMain::getCapNodeId(dbNet* net,
                  "RCSEG:C NEW INTERNAL {}  capNode {}",
                  junction,
                  cap->getId());
+    }
   }
 
   uint ncapId = cap->getId();
@@ -1705,8 +1711,9 @@ bool extMain::setCorners(const char* rulesFileName)
 
 #ifndef NDEBUG
   uint scaleCornerCnt = 0;
-  if (_scaledCornerTable != nullptr)
+  if (_scaledCornerTable != nullptr) {
     scaleCornerCnt = _scaledCornerTable->getCnt();
+  }
   assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
 #endif
 
@@ -1784,8 +1791,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
                               int contextDepth,
                               const char* extRules)
 {
-  if (!modelExists(extRules))
+  if (!modelExists(extRules)) {
     return;
+  }
 
   uint debugNetId = 0;
 
@@ -1957,10 +1965,11 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
     getPeakMemory("Start CouplingFlow");
     Rect maxRect = _block->getDieArea();
-    if (_v2)
+    if (_v2) {
       couplingFlow_v2(maxRect, _couplingFlag, &m);
-    else
+    } else {
       couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
+    }
 
     getPeakMemory("End CouplingFlow");
 

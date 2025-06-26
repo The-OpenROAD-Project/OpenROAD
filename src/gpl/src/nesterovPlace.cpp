@@ -733,7 +733,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
         }
         num_region_diverged_ = 0;
-        break;
       } else {
         divergeMsg_
             = "RePlAce divergence detected: "
@@ -741,8 +740,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               "and the HPWL has significantly worsened. "
               "Consider re-running with a smaller max_phi_cof value.";
         divergeCode_ = 307;
-        break;
       }
+      break;
     }
 
     if (!is_routability_snapshot_saved && npVars_.routability_driven_mode

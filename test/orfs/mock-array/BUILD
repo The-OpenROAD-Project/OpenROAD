@@ -354,7 +354,7 @@ orfs_run(
     arguments = {
         "OUTPUT": "$(location :power.txt)",
         "VCD_STIMULI": "$(location :vcd)",
-        "OPENROAD_EXE": "$(location //:opensta)",
+        "OPENROAD_EXE": "$(location //src/sta:opensta)",
         "POWER_STAGE_NAME": POWER_STAGE_NAME,
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
     },
@@ -369,7 +369,7 @@ orfs_run(
            (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
     script = ":power.tcl",
     tags = ["manual"],
-    tools = ["//:opensta"],
+    tools = ["//src/sta:opensta"],
     visibility = ["//visibility:public"],
 )
 
@@ -391,7 +391,7 @@ genrule(
     srcs = [],
     outs = ["dummy"],
     cmd = """
-    $(location //:opensta) >$@
+    $(location //src/sta:opensta) >$@
     """,
-    tools = ["//:opensta"],
+    tools = ["//src/sta:opensta"],
 )

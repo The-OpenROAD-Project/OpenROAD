@@ -15,18 +15,18 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "Polygon.hh"
+#include "WireBuilder.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace ant {
-
-using utl::ANT;
 
 // Abbreviations Index:
 //   `PAR`: Partial Area Ratio
@@ -57,12 +57,9 @@ struct AntennaModel
 AntennaChecker::AntennaChecker() = default;
 AntennaChecker::~AntennaChecker() = default;
 
-void AntennaChecker::init(odb::dbDatabase* db,
-                          GlobalRouteSource* global_route_source,
-                          utl::Logger* logger)
+void AntennaChecker::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
-  global_route_source_ = global_route_source;
   logger_ = logger;
 }
 
@@ -136,7 +133,7 @@ void AntennaChecker::initAntennaRules()
       if ((PSR_ratio != 0 || !diffPSR.indices.empty())
           && layerType == odb::dbTechLayerType::ROUTING
           && wire_thickness_dbu == 0) {
-        logger_->warn(ANT,
+        logger_->warn(utl::ANT,
                       13,
                       "No THICKNESS is provided for layer {}.  Checks on this "
                       "layer will not be correct.",
@@ -885,7 +882,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
               }
               if (diode_count_per_gate > max_diode_count_per_gate) {
                 debugPrint(logger_,
-                           ANT,
+                           utl::ANT,
                            "check_gates",
                            1,
                            "Net {} requires more than {} diodes per gate to "
@@ -1062,6 +1059,40 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
   return antenna_violations;
 }
 
+bool AntennaChecker::designIsPlaced()
+{
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getFirstPinPlacementStatus() == odb::dbPlacementStatus::NONE) {
+      return false;
+    }
+  }
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isPlaced()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool AntennaChecker::haveGuides()
+{
+  if (!designIsPlaced()) {
+    return false;
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    // check term count due to 1-pin nets in multiple designs.
+    if (!net->isSpecial() && net->getGuides().empty() && net->getTermCount() > 1
+        && !net->isConnectedByAbutment()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
@@ -1080,18 +1111,19 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   bool drt_routes = haveRoutedNets();
   bool grt_routes = false;
   if (!drt_routes) {
-    grt_routes = global_route_source_->haveRoutes();
+    grt_routes = haveGuides();
   }
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
-    logger_->error(ANT,
+    logger_->error(utl::ANT,
                    8,
                    "No detailed or global routing found. Run global_route or "
                    "detailed_route first.");
   }
 
   if (use_grt_routes) {
-    global_route_source_->makeNetWires();
+    wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
+    wire_builder_->makeNetWiresFromGuides();
   }
 
   int net_violation_count = 0;
@@ -1106,8 +1138,10 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
         net_violation_count++;
       }
     } else {
-      logger_->error(
-          ANT, 14, "Skipped net {} because it is special.", net->getName());
+      logger_->error(utl::ANT,
+                     14,
+                     "Skipped net {} because it is special.",
+                     net->getName());
     }
   } else {
     nets_.clear();
@@ -1135,9 +1169,9 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     printReport(net);
   }
 
-  logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
+  logger_->info(utl::ANT, 2, "Found {} net violations.", net_violation_count);
   logger_->metric("antenna__violating__nets", net_violation_count);
-  logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
+  logger_->info(utl::ANT, 1, "Found {} pin violations.", pin_violation_count);
   logger_->metric("antenna__violating__pins", pin_violation_count);
 
   if (!report_file_name_.empty()) {
@@ -1146,7 +1180,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   }
 
   if (use_grt_routes) {
-    global_route_source_->destroyNetWires();
+    block_->destroyNetWires();
   }
 
   net_violation_count_ = net_violation_count;
@@ -1183,6 +1217,16 @@ double AntennaChecker::diffArea(odb::dbMTerm* mterm)
 void AntennaChecker::setReportFileName(const char* file_name)
 {
   report_file_name_ = file_name;
+}
+
+void AntennaChecker::makeNetWiresFromGuides(
+    const std::vector<odb::dbNet*>& nets)
+{
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
+  wire_builder_->makeNetWiresFromGuides(nets);
 }
 
 }  // namespace ant

@@ -43,7 +43,7 @@ cc_library(
     ],
     deps = [
         ":munkres",
-        "//:opensta_lib",
+        "//src/sta:opensta_lib",
         "//:ord",
         "//src/dbSta",
         "//src/gui",
