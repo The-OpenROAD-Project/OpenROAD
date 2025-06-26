@@ -1773,6 +1773,10 @@ float MBFF::GetKSilh(const std::vector<std::vector<Flop>>& clusters,
       tot += ((b_j - a_j) / std::max(a_j, b_j));
     }
   }
+
+  if (num_flops == 0) {
+    return 0.0f;
+  }
   return tot / num_flops;
 }
 
