@@ -637,9 +637,9 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
 
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
   const sta::LibertyCell* lib_cell = getLibertyCell(cell);
-  for (const sta::Sequential* seq : lib_cell->sequentials()) {
-    ret.func_idx = GetMatchingFunc(seq->data(), inst, isTray);
-    break;
+  const auto& seqs = lib_cell->sequentials();
+  if (!seqs.empty()) {
+    ret.func_idx = GetMatchingFunc(seqs.front()->data(), inst, isTray);
   }
 
   ret.is_scan_cell = IsScanCell(inst);
