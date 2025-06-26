@@ -233,6 +233,7 @@ void FastRouteCore::addLayerDirection(int layer_idx,
 
 FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              bool is_clock,
+                             bool is_local,
                              int driver_idx,
                              int cost,
                              int min_layer,
@@ -268,7 +269,11 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              max_layer,
              slack,
              edge_cost_per_layer);
-  net_ids_.push_back(netID);
+  // Don't add local nets to the list of ids that will be routed. It is only
+  // necessary to add them to make mergeNet work with local nets.
+  if (!is_local) {
+    net_ids_.push_back(netID);
+  }
 
   return net;
 }
@@ -309,6 +314,14 @@ void FastRouteCore::mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net)
           preserved_nodes.end(), removed_nodes.begin(), removed_nodes.end());
       preserved_edges.insert(
           preserved_edges.end(), removed_edges.begin(), removed_edges.end());
+    } else {
+      logger_->error(
+          utl::GRT,
+          13,
+          "Net {} is not present in FastRouteCore structures when trying to "
+          "merge with net {}",
+          preserved_net->getName(),
+          removed_net->getName());
     }
 
     removed_nodes.clear();
