@@ -57,7 +57,7 @@ void FlexTAWorker::initTracks()
   auto die_center = die_box.center();
   for (int lNum = 0; lNum < (int) numLayers; lNum++) {
     auto layer = getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     if (layer->getDir() != getDir()) {
@@ -555,7 +555,7 @@ void FlexTAWorker::initIroutes()
   auto regionQuery = getRegionQuery();
   for (int lNum = 0; lNum < (int) getTech()->getLayers().size(); lNum++) {
     auto layer = getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     if (layer->getDir() != getDir()) {
@@ -704,8 +704,7 @@ void FlexTAWorker::initFixedObjs()
        ++layerNum) {
     result.clear();
     frLayer* layer = getLayer(layerNum);
-    if (layer->getType() != dbTechLayerType::ROUTING
-        || layer->getDir() != getDir()) {
+    if (!layer->isRouting() || layer->getDir() != getDir()) {
       continue;
     }
     width = layer->getWidth();
@@ -733,11 +732,10 @@ void FlexTAWorker::initFixedObjs()
           netPtr = static_cast<frVia*>(obj)->getNet();
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
-        if (getLayer(layerNum)->getType() == dbTechLayerType::ROUTING) {
+        if (getLayer(layerNum)->isRouting()) {
           // down-via
           if (layerNum - 2 >= getTech()->getBottomLayerNum()
-              && getLayer(layerNum - 2)->getType()
-                     == dbTechLayerType::ROUTING) {
+              && getLayer(layerNum - 2)->isRouting()) {
             auto cutLayer = getLayer(layerNum - 1);
             auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
             Rect viaBox = via->getLayer2BBox();
@@ -751,8 +749,7 @@ void FlexTAWorker::initFixedObjs()
           }
           // up-via
           if (layerNum + 2 < (int) design_->getTech()->getLayers().size()
-              && getLayer(layerNum + 2)->getType()
-                     == dbTechLayerType::ROUTING) {
+              && getLayer(layerNum + 2)->isRouting()) {
             auto cutLayer = getLayer(layerNum + 1);
             auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
             Rect viaBox = via->getLayer1BBox();
@@ -820,13 +817,13 @@ void FlexTAWorker::initFixedObjs()
 
     result.clear();
     if (layerNum - 2 >= getTech()->getBottomLayerNum()
-        && getLayer(layerNum - 2)->getType() == dbTechLayerType::ROUTING) {
+        && getLayer(layerNum - 2)->isRouting()) {
       getRegionQuery()->query(getExtBox(), layerNum - 2, result);
     }
     costResults(false, result);
     result.clear();
     if (layerNum + 2 < getTech()->getLayers().size()
-        && getLayer(layerNum + 2)->getType() == dbTechLayerType::ROUTING) {
+        && getLayer(layerNum + 2)->isRouting()) {
       getRegionQuery()->query(getExtBox(), layerNum + 2, result);
     }
     costResults(true, result);

@@ -150,11 +150,11 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
   if (cutLNum - 1 >= getTech()->getBottomLayerNum()
-      && getLayer(cutLNum - 1)->getType() == dbTechLayerType::ROUTING
+      && getLayer(cutLNum - 1)->isRouting()
       && getLayer(cutLNum - 1)->getDir() == getDir()) {
     followTrackLNum = cutLNum - 1;
   } else if (cutLNum + 1 <= getTech()->getTopLayerNum()
-             && getLayer(cutLNum + 1)->getType() == dbTechLayerType::ROUTING
+             && getLayer(cutLNum + 1)->isRouting()
              && getLayer(cutLNum + 1)->getDir() == getDir()) {
     followTrackLNum = cutLNum + 1;
   } else {
@@ -305,11 +305,11 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
   if (lNum - 1 >= getTech()->getBottomLayerNum()
-      && getLayer(lNum - 1)->getType() == dbTechLayerType::ROUTING
+      && getLayer(lNum - 1)->isRouting()
       && getLayer(lNum - 1)->getDir() == getDir()) {
     followTrackLNum = lNum - 1;
   } else if (lNum + 1 <= getTech()->getTopLayerNum()
-             && getLayer(lNum + 1)->getType() == dbTechLayerType::ROUTING
+             && getLayer(lNum + 1)->isRouting()
              && getLayer(lNum + 1)->getDir() == getDir()) {
     followTrackLNum = lNum + 1;
   } else {
@@ -793,15 +793,15 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     }
   }
   frCoord pitch = 0;
-  if (getLayer(lNum)->getType() == dbTechLayerType::ROUTING) {
+  if (getLayer(lNum)->isRouting()) {
     pitch = getLayer(lNum)->getPitch();
     isCut = false;
   } else if (getTech()->getTopLayerNum() >= lNum + 1
-             && getLayer(lNum + 1)->getType() == dbTechLayerType::ROUTING) {
+             && getLayer(lNum + 1)->isRouting()) {
     pitch = getLayer(lNum + 1)->getPitch();
     isCut = true;
   } else if (getTech()->getBottomLayerNum() <= lNum - 1
-             && getLayer(lNum - 1)->getType() == dbTechLayerType::ROUTING) {
+             && getLayer(lNum - 1)->isRouting()) {
     pitch = getLayer(lNum - 1)->getPitch();
     isCut = true;
   } else {

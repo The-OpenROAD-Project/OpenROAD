@@ -2880,8 +2880,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
             } else if (getLayer(layerNum)->getType() == dbTechLayerType::CUT) {
               isRoutingLayer = false;
               if (getTech()->getBottomLayerNum() <= layerNum - 1
-                  && getLayer(layerNum - 1)->getType()
-                         == dbTechLayerType::ROUTING) {
+                  && getLayer(layerNum - 1)->isRouting()) {
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -2949,7 +2948,7 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
        ++layerNum) {
     result.clear();
     const frLayer* layer = getLayer(layerNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     const frMIdx zIdx = gridGraph_.getMazeZIdx(layerNum);

@@ -1323,7 +1323,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -1338,7 +1338,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& net : getNets()) {

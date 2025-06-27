@@ -39,7 +39,7 @@ void FlexGRGridGraph::initCoords()
   // z
   if (!is2DRouting_) {
     for (auto& layer : getTech()->getLayers()) {
-      if (layer->getType() != dbTechLayerType::ROUTING) {
+      if (!layer->isRouting()) {
         continue;
       }
       frLayerNum lNum = layer->getLayerNum();

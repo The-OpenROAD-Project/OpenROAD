@@ -190,7 +190,7 @@ void FlexTA::initTA(int size)
 
   auto bottomLNum = getTech()->getBottomLayerNum();
   auto bottomLayer = getLayer(bottomLNum);
-  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
+  if (!bottomLayer->isRouting()) {
     bottomLNum++;
     bottomLayer = getLayer(bottomLNum);
   }
@@ -256,7 +256,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   }
   auto bottomLNum = getTech()->getBottomLayerNum();
   auto bottomLayer = getLayer(bottomLNum);
-  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
+  if (!bottomLayer->isRouting()) {
     bottomLNum++;
     bottomLayer = getLayer(bottomLNum);
   }

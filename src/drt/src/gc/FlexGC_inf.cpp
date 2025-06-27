@@ -202,7 +202,7 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       if (!currLayer->hasSpacingTableInfluence()) {
@@ -220,7 +220,7 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       if (!currLayer->hasSpacingTableInfluence()) {

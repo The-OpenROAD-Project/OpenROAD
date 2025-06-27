@@ -866,7 +866,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -903,7 +903,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1362,7 +1362,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING
+      if (!currLayer->isRouting()
           || (!currLayer->hasLef58CornerSpacingConstraint()
               && currLayer->getWidthTblOrthCon() == nullptr)) {
         continue;
@@ -1389,7 +1389,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING
+      if (!currLayer->isRouting()
           || (!currLayer->hasLef58CornerSpacingConstraint()
               && currLayer->getWidthTblOrthCon() == nullptr)) {
         continue;
@@ -2392,7 +2392,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -2407,7 +2407,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -4004,7 +4004,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       if (!currLayer->hasMinimumcut()) {
@@ -4024,7 +4024,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      if (!currLayer->isRouting()) {
         continue;
       }
       if (!currLayer->hasMinimumcut()) {

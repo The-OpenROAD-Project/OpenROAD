@@ -2168,7 +2168,7 @@ void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
        lNum <= getTech()->getTopLayerNum();
        lNum++) {
     auto layer = getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     for (auto& pin : net->getPins(lNum)) {

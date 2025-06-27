@@ -42,7 +42,7 @@ void FlexRP::prep_minStepViasCheck()
   const auto topLayerNum = tech_->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     frLayer* layer = tech_->getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum) {
@@ -138,7 +138,7 @@ void FlexRP::prep_viaForbiddenThrough()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!tech_->getLayer(lNum)->isRouting()) {
       continue;
     }
     const frViaDef* downVia = nullptr;
@@ -258,7 +258,7 @@ void FlexRP::prep_eolForbiddenLen()
 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     const auto layer = tech_->getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     frCoord eolSpace = 0;
@@ -270,7 +270,7 @@ void FlexRP::prep_eolForbiddenLen()
   for (const auto& ndr : tech_->getNondefaultRules()) {
     for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
       const auto layer = tech_->getLayer(lNum);
-      if (layer->getType() != dbTechLayerType::ROUTING) {
+      if (!layer->isRouting()) {
         continue;
       }
       const auto z = lNum / 2 - 1;
@@ -365,7 +365,7 @@ void FlexRP::prep_lineForbiddenLen()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!tech_->getLayer(lNum)->isRouting()) {
       continue;
     }
     prep_lineForbiddenLen_helper(lNum, i, 0, true, true);
@@ -445,7 +445,7 @@ void FlexRP::prep_viaForbiddenPlanarLen()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!tech_->getLayer(lNum)->isRouting()) {
       continue;
     }
     const frViaDef* downVia = nullptr;
@@ -511,7 +511,7 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
   const int bottom = router_cfg_->BOTTOM_ROUTING_LAYER;
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!tech_->getLayer(lNum)->isRouting()) {
       continue;
     }
     const frViaDef* downVia = nullptr;
@@ -643,7 +643,7 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
   const int bottom = router_cfg_->BOTTOM_ROUTING_LAYER;
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!tech_->getLayer(lNum)->isRouting()) {
       continue;
     }
     const frViaDef* downVia = nullptr;

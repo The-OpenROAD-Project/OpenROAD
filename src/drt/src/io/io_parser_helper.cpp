@@ -664,7 +664,7 @@ void io::Parser::convertLef58MinCutConstraints()
   auto topLayerNum = getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     frLayer* layer = getTech()->getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     if (!layer->hasLef58Minimumcut()) {

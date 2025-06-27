@@ -414,7 +414,7 @@ void FlexDR::init_halfViaEncArea()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& halfViaEncArea = via_data_.halfViaEncArea;
   for (int i = bottomLayerNum; i <= topLayerNum; i++) {
-    if (getLayer(i)->getType() != dbTechLayerType::ROUTING) {
+    if (!getLayer(i)->isRouting()) {
       continue;
     }
     if (i + 1 <= topLayerNum
@@ -1352,7 +1352,7 @@ void FlexDR::end(bool done)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getLayer(i)->getType() == dbTechLayerType::ROUTING) {
+      if (getLayer(i)->isRouting()) {
         logger_->report("Total wire length on LAYER {} = {} um.",
                         getLayer(i)->getName(),
                         wlen[i] / topBlock->getDBUPerUU());
@@ -1575,7 +1575,7 @@ void FlexDR::reportGuideCoverage()
     }
 
     for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
-      if (getLayer(lNum)->getType() != dbTechLayerType::ROUTING
+      if (!getLayer(lNum)->isRouting()
           || lNum > router_cfg_->TOP_ROUTING_LAYER) {
         continue;
       }
@@ -1605,7 +1605,7 @@ void FlexDR::reportGuideCoverage()
   std::ofstream file(router_cfg_->GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
-    if (layer->getType() == dbTechLayerType::ROUTING
+    if (layer->isRouting()
         && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       file << layer->getName() << ",";
     }
@@ -1626,7 +1626,7 @@ void FlexDR::reportGuideCoverage()
   uint64_t totalArea = 0;
   uint64_t totalCoveredArea = 0;
   for (const auto& layer : getTech()->getLayers()) {
-    if (layer->getType() == dbTechLayerType::ROUTING
+    if (layer->isRouting()
         && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       if (totalAreaByLayerNum[layer->getLayerNum()] == 0) {
         file << "NA,";

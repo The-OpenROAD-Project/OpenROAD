@@ -26,7 +26,7 @@ void FlexGR::initLayerPitch()
   int numRoutingLayer = 0;
   for (unsigned lNum = 0; lNum < design_->getTech()->getLayers().size();
        lNum++) {
-    if (getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!getLayer(lNum)->isRouting()) {
       continue;
     }
     numRoutingLayer++;
@@ -41,7 +41,7 @@ void FlexGR::initLayerPitch()
   // compute pitches
   for (int lNum = 0; lNum < (int) design_->getTech()->getLayers().size();
        lNum++) {
-    if (getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!getLayer(lNum)->isRouting()) {
       continue;
     }
     // zIdx  always equal to lNum / 2 - 1
