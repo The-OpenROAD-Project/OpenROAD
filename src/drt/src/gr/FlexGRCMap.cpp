@@ -362,9 +362,8 @@ frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
   // use width if minSpc does not exist
   frCoord bloatDist = width;
   frCoord objWidth = std::min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
-  frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
-                    ? (box.xMax() - box.xMin())
-                    : (box.yMax() - box.yMin());
+  frCoord prl = (layer->isHorizontal()) ? (box.xMax() - box.xMin())
+                                        : (box.yMax() - box.yMin());
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
     if (isOBS && router_cfg_->USEMINSPACING_OBS) {
       objWidth = width;

@@ -50,12 +50,11 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
       = std::min((gtl::xh(layer1_rect) - gtl::xl(layer1_rect)),
                  (gtl::yh(layer1_rect) - gtl::yl(layer1_rect)));
 
-  const auto layer1_num = via_def->getLayer1Num();
-  const auto dir1 = getLayer(layer1_num)->getDir();
+  const auto layer1 = getLayer(via_def->getLayer1Num());
 
   const bool is_not_lower_align
-      = (is_layer1_horz && (dir1 == dbTechLayerDir::VERTICAL))
-        || (!is_layer1_horz && (dir1 == dbTechLayerDir::HORIZONTAL));
+      = (is_layer1_horz && layer1->isVertical())
+        || (!is_layer1_horz && layer1->isHorizontal());
 
   gtl::polygon_90_set_data<frCoord> via_layer_PS2;
   for (auto& fig : via_def->getLayer2Figs()) {
@@ -73,12 +72,11 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
       = std::min((gtl::xh(layer2_rect) - gtl::xl(layer2_rect)),
                  (gtl::yh(layer2_rect) - gtl::yl(layer2_rect)));
 
-  const auto layer2_num = via_def->getLayer2Num();
-  const auto dir2 = getLayer(layer2_num)->getDir();
+  const auto layer2 = getLayer(via_def->getLayer2Num());
 
   const bool is_not_upper_align
-      = (is_layer2_horz && (dir2 == dbTechLayerDir::VERTICAL))
-        || (!is_layer2_horz && (dir2 == dbTechLayerDir::HORIZONTAL));
+      = (is_layer2_horz && layer2->isVertical())
+        || (!is_layer2_horz && layer2->isHorizontal());
 
   const frCoord layer1_area = gtl::area(via_layer_ps1);
   const frCoord layer2_area = gtl::area(via_layer_PS2);
@@ -102,8 +100,7 @@ void FlexPA::initTrackCoords()
   track_coords_.resize(num_layers);
   for (auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
     const auto layer_num = track_pattern->getLayerNum();
-    const auto is_vert_layer
-        = (getLayer(layer_num)->getDir() == dbTechLayerDir::VERTICAL);
+    const auto is_vert_layer = (getLayer(layer_num)->isVertical());
     const auto is_vert_track
         = track_pattern->isHorizontal();  // true = vertical track
     if ((!is_vert_layer && !is_vert_track)

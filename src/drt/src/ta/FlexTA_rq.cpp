@@ -99,7 +99,6 @@ void FlexTAWorkerRegionQuery::query(const Rect& box,
 
 void FlexTAWorkerRegionQuery::init()
 {
-  getDesign();
   int numLayers = getTech()->getLayers().size();
   impl_->shapes_.clear();
   impl_->shapes_.resize(numLayers);

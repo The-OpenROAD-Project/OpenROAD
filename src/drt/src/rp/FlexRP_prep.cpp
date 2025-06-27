@@ -1222,8 +1222,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     return;
   }
 
-  const bool isH
-      = (tech_->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
+  const bool isH = tech_->getLayer(lNum)->isHorizontal();
 
   bool isVia1Above = false;
   const frVia via1(viaDef1);

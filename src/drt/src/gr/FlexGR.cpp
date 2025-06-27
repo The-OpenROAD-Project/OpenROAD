@@ -730,7 +730,7 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+        if (layer->isHorizontal()) {
           auto supply
               = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -804,7 +804,7 @@ void FlexGR::reportCong3D()
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+        if (layer->isHorizontal()) {
           auto supply
               = cmap_->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -2191,8 +2191,7 @@ void FlexGR::layerAssign_node_compute(
             }
           }
         } else {
-          if (getLayer((layerNum + 1) * 2)->getDir()
-              == dbTechLayerDir::HORIZONTAL) {
+          if (getLayer((layerNum + 1) * 2)->isHorizontal()) {
             isLayerBlocked = true;
           }
           int xIdx = beginIdx.x();

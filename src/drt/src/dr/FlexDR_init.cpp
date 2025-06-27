@@ -1604,7 +1604,7 @@ void FlexDRWorker::initTrackCoords_route(drNet* net,
       // vertical
       if (bp.x() == ep.x()) {
         // non pref dir
-        if (getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+        if (getLayer(lNum)->isHorizontal()) {
           xMap[lNum2][bp.x()] = nullptr;
           yMap[lNum][bp.y()] = nullptr;
           yMap[lNum][ep.y()] = nullptr;
@@ -1617,7 +1617,7 @@ void FlexDRWorker::initTrackCoords_route(drNet* net,
         // horizontal
       } else {
         // non pref dir
-        if (getLayer(lNum)->getDir() == dbTechLayerDir::VERTICAL) {
+        if (getLayer(lNum)->isVertical()) {
           xMap[lNum][bp.x()] = nullptr;
           xMap[lNum][ep.x()] = nullptr;
           yMap[lNum2][bp.y()] = nullptr;
@@ -1633,14 +1633,14 @@ void FlexDRWorker::initTrackCoords_route(drNet* net,
       const Point pt = obj->getOrigin();
       // add pref dir track to layer1
       auto layer1Num = obj->getViaDef()->getLayer1Num();
-      if (getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL) {
+      if (getLayer(layer1Num)->isHorizontal()) {
         yMap[layer1Num][pt.y()] = nullptr;
       } else {
         xMap[layer1Num][pt.x()] = nullptr;
       }
       // add pref dir track to layer2
       auto layer2Num = obj->getViaDef()->getLayer2Num();
-      if (getLayer(layer2Num)->getDir() == dbTechLayerDir::HORIZONTAL) {
+      if (getLayer(layer2Num)->isHorizontal()) {
         yMap[layer2Num][pt.y()] = nullptr;
       } else {
         xMap[layer2Num][pt.x()] = nullptr;
@@ -1666,7 +1666,7 @@ void FlexDRWorker::initTrackCoords_pin(drNet* net,
       gridGraph_.addAccessPointLocation(lNum, pt.x(), pt.y());
       gridGraph_.addAccessPointLocation(lNum2, pt.x(), pt.y());
 
-      if (getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+      if (getLayer(lNum)->isHorizontal()) {
         xMap[lNum2][pt.x()] = nullptr;
         yMap[lNum][pt.y()] = nullptr;
       } else {
@@ -1770,7 +1770,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     gridGraph_.getMazeIdx(bi, bp, lNum);
     ap->setMazeIdx(bi);
     // set curr layer on track status
-    if (getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (getLayer(lNum)->isHorizontal()) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -1790,7 +1790,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     FlexMazeIdx bi;
     gridGraph_.getMazeIdx(bi, bp, lNum + 2);
     // set curr layer on track status
-    if (getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (getLayer(lNum + 2)->isHorizontal()) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -1903,13 +1903,11 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
           if (lNum + 2 > getTech()->getTopLayerNum()) {
             continue;
           }
-          if (getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL
-              && ap->isOnTrack(true)) {
+          if (getLayer(lNum + 2)->isHorizontal() && ap->isOnTrack(true)) {
             hasUpperOnTrackAP = true;
             break;
           }
-          if (getLayer(lNum + 2)->getDir() == dbTechLayerDir::VERTICAL
-              && ap->isOnTrack(false)) {
+          if (getLayer(lNum + 2)->isVertical() && ap->isOnTrack(false)) {
             hasUpperOnTrackAP = true;
             break;
           }
@@ -1924,8 +1922,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
       if (ap->hasValidAccess(frDirEnum::U)) {
         if (lNum + 2 <= getTech()->getTopLayerNum()) {
           const auto upperDefaultWidth = getLayer(lNum + 2)->getWidth();
-          if (getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL
-              && !ap->isOnTrack(true)) {
+          if (getLayer(lNum + 2)->isHorizontal() && !ap->isOnTrack(true)) {
             if (!hasUpperOnTrackAP) {
               const auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
               initMazeCost_ap_planarGrid_helper(
@@ -1940,8 +1937,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
                   isAddPathCost);
             }
           }
-          if (getLayer(lNum + 2)->getDir() == dbTechLayerDir::VERTICAL
-              && !ap->isOnTrack(false)) {
+          if (getLayer(lNum + 2)->isVertical() && !ap->isOnTrack(false)) {
             if (!hasUpperOnTrackAP) {
               const auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
               initMazeCost_ap_planarGrid_helper(

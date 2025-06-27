@@ -709,7 +709,7 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
 
   // via prl should check min area patch metal if not fat via
   auto lNum = gridGraph_.getLayerNum(z);
-  bool isH = (getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isH = (getLayer(lNum)->isHorizontal());
   bool isFatVia = (isH) ? (viaBox.dy() > width) : (viaBox.dx() > width);
 
   frCoord length2_mar = length2;
@@ -1479,8 +1479,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     if (modEol) {
       // wrong way wire cannot have eol problem: (1) with via at end, then via
       // will add eol cost; (2) with pref-dir wire, then not eol edge
-      bool isHLayer = (getLayer(gridGraph_.getLayerNum(bi.z()))->getDir()
-                       == dbTechLayerDir::HORIZONTAL);
+      bool isHLayer = getLayer(gridGraph_.getLayerNum(bi.z()))->isHorizontal();
       if (isHLayer == (bi.y() == ei.y())) {
         modEolSpacingRulesCost(box, bi.z(), type, false, ndr);
       }
@@ -2603,7 +2602,6 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         frLayerNum startLayerNum = gridGraph_.getLayerNum(currZ);
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
-        getDesign();
         auto via = getLayer(startLayerNum + 1)->getDefaultViaDef();
         auto it = apSVia_.find(mi);
         if (gridGraph_.isSVia(startX, startY, currZ) && it != apSVia_.end()) {
@@ -3454,7 +3452,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio_helper(
     end_point = points[point_idx - 1];
     FlexMazeIdx begin_point_successor = points[prev_point_idx + 1],
                 end_point_predecessor = points[point_idx - 2];
-    if (curr_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (curr_layer->isHorizontal()) {
       is_bp_patch_style_left
           = (begin_point.x() == begin_point_successor.x())
                 ? (begin_point.x() < end_point.x())
@@ -3646,7 +3644,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  if (getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+  if (getLayer(layerNum)->isHorizontal()) {
     isPatchHorz = true;
   } else {
     isPatchHorz = false;

@@ -879,8 +879,7 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   auto layer = getLayer(lNum);
   frCoord width = layer->getWidth();
   frCoord objWidth = box.minDXDY();
-  frCoord prl
-      = (layer->getDir() == dbTechLayerDir::HORIZONTAL) ? box.dx() : box.dy();
+  frCoord prl = (layer->isHorizontal()) ? box.dx() : box.dy();
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
     if (router_cfg_->USEMINSPACING_OBS) {
       objWidth = width;

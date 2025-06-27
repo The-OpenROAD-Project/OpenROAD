@@ -47,7 +47,7 @@ void FlexGR::initLayerPitch()
     // zIdx  always equal to lNum / 2 - 1
     int zIdx = lNum / 2 - 1;
     auto layer = getLayer(lNum);
-    bool isLayerHorz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+    bool isLayerHorz = (layer->isHorizontal());
     // get track pitch
     for (auto& tp : design_->getTopBlock()->getTrackPatterns(lNum)) {
       if ((isLayerHorz && !tp->isHorizontal())

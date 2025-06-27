@@ -752,16 +752,15 @@ void GuideProcessor::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
       Rect guideBBox = rect.getBBox();
-      frCoord guideWidth
-          = (getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
-                ? guideBBox.dy()
-                : guideBBox.dx();
-      if (getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+      frCoord guideWidth = (getLayer(layerNum)->isHorizontal())
+                               ? guideBBox.dy()
+                               : guideBBox.dx();
+      if (getLayer(layerNum)->isHorizontal()) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
         }
         guideGridYMap[guideWidth]++;
-      } else if (getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL) {
+      } else if (getLayer(layerNum)->isVertical()) {
         if (guideGridXMap.find(guideWidth) == guideGridXMap.end()) {
           guideGridXMap[guideWidth] = 0;
         }
@@ -1157,7 +1156,7 @@ void GuideProcessor::genGuides_split(
   std::vector<std::map<frCoord, std::map<frCoord, frBlockObjectSet>>>
       pin_helper(getTech()->getLayers().size());
   for (const auto& [point, pins] : gcell_pin_map) {
-    if (getLayer(point.z())->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (getLayer(point.z())->isHorizontal()) {
       pin_helper[point.z()][point.y()][point.x()] = pins;
     } else {
       pin_helper[point.z()][point.x()][point.y()] = pins;
@@ -1165,8 +1164,7 @@ void GuideProcessor::genGuides_split(
   }
 
   for (int layer_num = 0; layer_num < (int) intvs.size(); layer_num++) {
-    auto dir = getLayer(layer_num)->getDir();
-    const bool is_horizontal = dir == dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal = getLayer(layer_num)->isHorizontal();
     for (auto& [track_idx, curr_intvs] : intvs[layer_num]) {
       // split by lower/upper seg
       for (const auto& intv : curr_intvs) {

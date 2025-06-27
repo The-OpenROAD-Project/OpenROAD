@@ -224,7 +224,7 @@ void FlexPA::createSingleAccessPoint(
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
-    if (lower_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (lower_layer->isHorizontal()) {
       if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
@@ -234,7 +234,7 @@ void FlexPA::createSingleAccessPoint(
       }
     }
     // vert layer
-    if (lower_layer->getDir() == dbTechLayerDir::VERTICAL) {
+    if (lower_layer->isVertical()) {
       if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
@@ -635,9 +635,8 @@ bool FlexPA::filterPlanarAccess(
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool wrong_dir
-      = (layer->getDir() == dbTechLayerDir::HORIZONTAL && vert_dir)
-        || (layer->getDir() == dbTechLayerDir::VERTICAL && !vert_dir);
+  const bool wrong_dir = (layer->isHorizontal() && vert_dir)
+                         || (layer->isVertical() && !vert_dir);
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -1293,7 +1292,6 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       auto obj = static_cast<frRect*>(shape.get());
       auto layer_num = obj->getLayerNum();
       auto layer = tech->getLayer(layer_num);
-      dbTechLayerDir dir = layer->getDir();
       if (!layer->isRouting()) {
         continue;
       }
@@ -1302,9 +1300,9 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       gtl::rectangle_data<frCoord> rect(
           box.xMin(), box.yMin(), box.xMax(), box.yMax());
       if (is_shrink) {
-        if (dir == dbTechLayerDir::HORIZONTAL) {
+        if (layer->isHorizontal()) {
           gtl::shrink(rect, gtl::VERTICAL, layer_widths[layer_num] / 2);
-        } else if (dir == dbTechLayerDir::VERTICAL) {
+        } else if (layer->isVertical()) {
           gtl::shrink(rect, gtl::HORIZONTAL, layer_widths[layer_num] / 2);
         }
       }

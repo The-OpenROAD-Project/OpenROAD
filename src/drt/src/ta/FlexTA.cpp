@@ -194,7 +194,7 @@ void FlexTA::initTA(int size)
     bottomLNum++;
     bottomLayer = getLayer(bottomLNum);
   }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isBottomLayerH = (bottomLayer->isHorizontal());
 
   // H first
   if (isBottomLayerH) {
@@ -260,7 +260,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
     bottomLNum++;
     bottomLayer = getLayer(bottomLNum);
   }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isBottomLayerH = (bottomLayer->isHorizontal());
 
   // H first
   if (isBottomLayerH) {
