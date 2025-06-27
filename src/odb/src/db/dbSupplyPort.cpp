@@ -134,6 +134,33 @@ dbSupplyPort* dbSupplyPort::create(dbBlock* block,
   _block->_supplyport_hash.insert(sp);
   return (dbSupplyPort*) sp;
 }
+
+bool dbSupplyPort::connectPort(dbSupplyNet* supply_net)
+{
+  _dbSupplyNet* sn = (_dbSupplyNet*) supply_net;
+  _dbSupplyPort* sp = (_dbSupplyPort*) this;
+
+  // if (sn->_in.isValid()) {
+  if (!sn->_in.isValid()) {
+    sn->_in = sp->getImpl()->getOID();
+  } else {
+    return false;  // already connected
+  }
+  sp->_supplynet = sn->getImpl()->getOID();
+
+  return true;
+}
+
+dbSupplyNet* dbSupplyPort::getConnectedSupplyNet() const
+{
+  _dbSupplyPort* obj = (_dbSupplyPort*) this;
+  if (!obj->_supplynet.isValid()) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  return (odb::dbSupplyNet*) par->_supplynet_tbl->getPtr(obj->_supplynet);
+}
 // User Code End dbSupplyPortPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

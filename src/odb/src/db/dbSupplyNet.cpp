@@ -165,23 +165,6 @@ dbSupplyNet* dbSupplyNet::create(dbBlock* block,
   return (dbSupplyNet*) sn;
 }
 
-bool dbSupplyNet::connectPort(dbSupplyNet* supply_net,
-                              dbSupplyPort* supply_port)
-{
-  _dbSupplyNet* sn = (_dbSupplyNet*) supply_net;
-  _dbSupplyPort* sp = (_dbSupplyPort*) supply_port;
-
-  // if (sn->_in.isValid()) {
-  //   sn->_in = sp->getImpl()->getOID();
-  // } else if (sn->_out == 0) {
-  //   sn->_out = sp->getImpl()->getOID();
-  // } else {
-  //   return nullptr;  // already connected
-  // }
-
-  return true;
-}
-
 // User Code End dbSupplyNetPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
