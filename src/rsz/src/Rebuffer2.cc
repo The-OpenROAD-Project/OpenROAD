@@ -1525,7 +1525,8 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
 
             Instance* inst = network_->instance(pin);
             if (!resizer_->isLogicStdCell(inst)
-                || isPortBuffer(db_network_, inst)) {
+                || isPortBuffer(db_network_, inst)
+                || !resizer_->unbuffer_move_->canRemoveBuffer(inst, true)) {
               return node;
             }
 
