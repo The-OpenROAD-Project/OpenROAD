@@ -58,7 +58,7 @@ class FlexTAWorkerRegionQuery
   ~FlexTAWorkerRegionQuery();
   frDesign* getDesign() const;
   frTechObject* getTech() const;
-  frLayer* getLayer(const frLayerNum layer_num) const;
+  frLayer* getLayer(frLayerNum layer_num) const;
   FlexTAWorker* getTAWorker() const;
 
   void add(taPinFig* fig);
