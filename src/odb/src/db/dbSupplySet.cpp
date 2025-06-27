@@ -10,6 +10,7 @@
 #include "dbHashTable.hpp"
 #include "dbModInst.h"
 #include "dbNet.h"
+#include "dbSupplyNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
@@ -25,13 +26,16 @@ bool _dbSupplySet::operator==(const _dbSupplySet& rhs) const
   if (_next_entry != rhs._next_entry) {
     return false;
   }
-  if (_power_nets != rhs._power_nets) {
+  if (_power_net != rhs._power_net) {
     return false;
   }
-  if (_nwellnets != rhs._nwellnets) {
+  if (_ground_net != rhs._ground_net) {
     return false;
   }
-  if (_pwellnets != rhs._pwellnets) {
+  if (_nwell_net != rhs._nwell_net) {
+    return false;
+  }
+  if (_pwell_net != rhs._pwell_net) {
     return false;
   }
   if (_group != rhs._group) {
@@ -55,10 +59,10 @@ dbIStream& operator>>(dbIStream& stream, _dbSupplySet& obj)
 {
   stream >> obj._name;
   stream >> obj._next_entry;
-  stream >> obj._power_nets;
-  stream >> obj._ground_nets;
-  stream >> obj._nwellnets;
-  stream >> obj._pwellnets;
+  stream >> obj._power_net;
+  stream >> obj._ground_net;
+  stream >> obj._nwell_net;
+  stream >> obj._pwell_net;
   stream >> obj._group;
   return stream;
 }
@@ -67,10 +71,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbSupplySet& obj)
 {
   stream << obj._name;
   stream << obj._next_entry;
-  stream << obj._power_nets;
-  stream << obj._ground_nets;
-  stream << obj._nwellnets;
-  stream << obj._pwellnets;
+  stream << obj._power_net;
+  stream << obj._ground_net;
+  stream << obj._nwell_net;
+  stream << obj._pwell_net;
   stream << obj._group;
   return stream;
 }
@@ -125,6 +129,72 @@ dbSupplySet* dbSupplySet::create(dbBlock* block, const char* name)
 
   _block->_supplyset_hash.insert(obj);
   return (dbSupplySet*) obj;
+}
+
+void dbSupplySet::SetsupplyPwrNet(dbSupplyNet* net)
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  obj->_power_net = net->getImpl()->getOID();
+}
+
+dbSupplyNet* dbSupplySet::getsupplyPwrNet() const
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  if (obj->_power_net == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  return (dbSupplyNet*) par->_supplynet_tbl->getPtr(obj->_power_net);
+}
+
+void dbSupplySet::SetsupplyGndNet(dbSupplyNet* net)
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  obj->_ground_net = net->getImpl()->getOID();
+}
+
+dbSupplyNet* dbSupplySet::getsupplyGndNet() const
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  if (obj->_ground_net == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  return (dbSupplyNet*) par->_supplynet_tbl->getPtr(obj->_ground_net);
+}
+void dbSupplySet::SetsupplyNwellNet(dbSupplyNet* net)
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  obj->_nwell_net = net->getImpl()->getOID();
+}
+
+dbSupplyNet* dbSupplySet::getsupplyNwellNet() const
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  if (obj->_nwell_net == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  return (dbSupplyNet*) par->_supplynet_tbl->getPtr(obj->_nwell_net);
+}
+void dbSupplySet::SetsupplyPwellNet(dbSupplyNet* net)
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  obj->_pwell_net = net->getImpl()->getOID();
+}
+
+dbSupplyNet* dbSupplySet::getsupplyPwellNet() const
+{
+  _dbSupplySet* obj = (_dbSupplySet*) this;
+  if (obj->_pwell_net == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  return (dbSupplyNet*) par->_supplynet_tbl->getPtr(obj->_pwell_net);
 }
 
 // User Code End dbSupplySetPublicMethods

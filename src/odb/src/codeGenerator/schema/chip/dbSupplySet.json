@@ -14,23 +14,23 @@
             "flags":["no-set","no-get"]
         },
         {
-            "name":"_power_nets",
+            "name":"_power_net",
             "type":"dbId<_dbSupplyNet>",
             "flags":["no-set","no-get"]
         },
         {
-            "name":"_ground_nets",
-            "type":"dbVector<std::string>",
+            "name":"_ground_net",
+            "type":"dbId<_dbSupplyNet>",
             "flags":["no-set","no-get"]
         },
         {
-            "name":"_nwellnets",
+            "name":"_nwell_net",
             "type":"dbId<_dbSupplyNet>",
             "flags":["no-set","no-get"]
             
         },
         {
-            "name":"_pwellnets",
+            "name":"_pwell_net",
             "type":"dbId<_dbSupplyNet>",
             "flags":["no-set","no-get"]
         },
@@ -46,7 +46,8 @@
                     "dbVector.h",
                     "dbModInst.h",
                     "dbGroup.h",
-                    "dbNet.h"
+                    "dbNet.h",
+                    "dbSupplyNet.h"
     ],
     "h_includes": [
         "dbVector.h"
