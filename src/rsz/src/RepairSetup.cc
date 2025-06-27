@@ -14,6 +14,7 @@
 #include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
+#include "Rebuffer.hh"
 #include "SizeDownMove.hh"
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
@@ -31,6 +32,7 @@
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
@@ -84,6 +86,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 {
   bool repaired = false;
   init();
+  resizer_->rebuffer_->init();
+  // IMPROVE ME: rebuffering always looks at cmd corner
+  resizer_->rebuffer_->initOnCorner(sta_->cmdCorner());
   constexpr int digits = 3;
   max_repairs_per_pass_ = max_repairs_per_pass;
   resizer_->buffer_moved_into_core_ = false;
