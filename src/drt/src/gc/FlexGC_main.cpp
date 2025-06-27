@@ -115,7 +115,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
                                                            bool checkNDRs)
 {
   frCoord maxSpcVal = 0;
-  auto currLayer = getTech()->getLayer(layerNum);
+  auto currLayer = getLayer(layerNum);
   if (currLayer->hasMinSpacing()) {
     auto con = currLayer->getMinSpacing();
     switch (con->typeId()) {
@@ -146,7 +146,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_getMaxSpcVal(
 {
   maxSpcValX = 0;
   maxSpcValY = 0;
-  auto currLayer = getTech()->getLayer(layerNum);
+  auto currLayer = getLayer(layerNum);
   auto& lef58CornerSpacingCons = currLayer->getLef58CornerSpacingConstraints();
   if (!lef58CornerSpacingCons.empty()) {
     for (auto& con : lef58CornerSpacingCons) {
@@ -242,7 +242,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
   isSpcRange = false;
   auto layerNum = rect1->getLayerNum();
   frCoord reqSpcVal = 0;
-  auto currLayer = getTech()->getLayer(layerNum);
+  auto currLayer = getLayer(layerNum);
   bool isObs = false;
   auto width1 = rect1->width();
   auto width2 = rect2->width();
@@ -524,9 +524,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   marker->setLayerNum(layerNum);
   if (isSpcRange) {
     marker->setConstraint(
-        getTech()->getLayer(layerNum)->getSpacingRangeConstraints().at(0));
+        getLayer(layerNum)->getSpacingRangeConstraints().at(0));
   } else {
-    marker->setConstraint(getTech()->getLayer(layerNum)->getMinSpacing());
+    marker->setConstraint(getLayer(layerNum)->getMinSpacing());
   }
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
@@ -660,7 +660,7 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
   auto net2 = rect2->getNet();
   if (net1 == net2) {
     // skip if good
-    int64_t minWidth = getTech()->getLayer(layerNum)->getMinWidth();
+    int64_t minWidth = getLayer(layerNum)->getMinWidth();
     auto xLen = gtl::delta(markerRect, gtl::HORIZONTAL);
     auto yLen = gtl::delta(markerRect, gtl::VERTICAL);
     if (xLen * xLen + yLen * yLen >= minWidth * minWidth) {
@@ -748,9 +748,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
   marker->setLayerNum(layerNum);
   if (net1 == net2) {
     marker->setConstraint(
-        getTech()->getLayer(layerNum)->getNonSufficientMetalConstraint());
+        getLayer(layerNum)->getNonSufficientMetalConstraint());
   } else {
-    marker->setConstraint(getTech()->getLayer(layerNum)->getShortConstraint());
+    marker->setConstraint(getLayer(layerNum)->getShortConstraint());
   }
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
@@ -831,8 +831,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect,
 {
   auto layerNum = rect->getLayerNum();
   auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, checkNDRs);
-  for (const auto& con :
-       getTech()->getLayer(layerNum)->getSpacingRangeConstraints()) {
+  for (const auto& con : getLayer(layerNum)->getSpacingRangeConstraints()) {
     if (con->inRange(rect->width())) {
       maxSpcVal = std::max(maxSpcVal, con->getMinSpacing());
     }
@@ -866,7 +865,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
@@ -903,7 +902,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
@@ -1342,8 +1341,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(gcCorner* corner)
   std::vector<rq_box_value_t<gcRect*>> result;
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
   // LEF58CornerSpacing
-  auto& cons
-      = getTech()->getLayer(layerNum)->getLef58CornerSpacingConstraints();
+  auto& cons = getLayer(layerNum)->getLef58CornerSpacingConstraints();
   for (auto& [objBox, ptr] : result) {
     for (auto& con : cons) {
       checkMetalCornerSpacing_main(corner, ptr, con);
@@ -1363,7 +1361,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING
           || (!currLayer->hasLef58CornerSpacingConstraint()
               && currLayer->getWidthTblOrthCon() == nullptr)) {
@@ -1390,7 +1388,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING
           || (!currLayer->hasLef58CornerSpacingConstraint()
               && currLayer->getWidthTblOrthCon() == nullptr)) {
@@ -1431,7 +1429,7 @@ void FlexGCWorker::Impl::checkWidthTableOrth_main(gcCorner* corner1,
     return;
   }
   const auto layer_num = corner1->getLayerNum();
-  const auto layer = getTech()->getLayer(layer_num);
+  const auto layer = getLayer(layer_num);
   const auto con = layer->getWidthTblOrthCon();
   const frCoord horz_spc = con->getHorzSpc();
   const frCoord vert_spc = con->getVertSpc();
@@ -1468,7 +1466,7 @@ void FlexGCWorker::Impl::checkWidthTableOrth(gcCorner* corner)
     return;
   }
   auto layer_num = corner->getLayerNum();
-  auto layer = getTech()->getLayer(layer_num);
+  auto layer = getLayer(layer_num);
   auto con = layer->getWidthTblOrthCon();
   const frCoord horz_spc = con->getHorzSpc();
   const frCoord vert_spc = con->getVertSpc();
@@ -1494,7 +1492,7 @@ void FlexGCWorker::Impl::checkMetalShape_minWidth(
     bool isH)
 {
   // skip enough width
-  auto minWidth = getTech()->getLayer(layerNum)->getMinWidth();
+  auto minWidth = getLayer(layerNum)->getMinWidth();
   auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
   auto yLen = gtl::delta(rect, gtl::VERTICAL);
   if (isH && xLen >= minWidth) {
@@ -1517,7 +1515,7 @@ void FlexGCWorker::Impl::checkMetalShape_minWidth(
   Rect box(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
-  marker->setConstraint(getTech()->getLayer(layerNum)->getMinWidthConstraint());
+  marker->setConstraint(getLayer(layerNum)->getMinWidthConstraint());
   marker->addSrc(net->getOwner());
   marker->addVictim(net->getOwner(), std::make_tuple(layerNum, box, false));
   marker->addAggressor(net->getOwner(), std::make_tuple(layerNum, box, false));
@@ -1608,7 +1606,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
 
-  auto con = getTech()->getLayer(layerNum)->getAreaConstraint();
+  auto con = getLayer(layerNum)->getAreaConstraint();
 
   if (!con) {
     return;
@@ -1813,7 +1811,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();
 
-  for (auto con : getTech()->getLayer(layerNum)->getLef58MinStepConstraints()) {
+  for (auto con : getLayer(layerNum)->getLef58MinStepConstraints()) {
     if (con->hasEolWidth()) {
       checkMetalShape_lef58MinStep_noBetweenEol(pin, con);
     }
@@ -1829,7 +1827,7 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
   auto layerNum = poly->getLayerNum();
   auto net = poly->getNet();
 
-  auto con = getTech()->getLayer(layerNum)->getMinStepConstraint();
+  auto con = getLayer(layerNum)->getMinStepConstraint();
 
   if (!con) {
     return;
@@ -1923,10 +1921,10 @@ void FlexGCWorker::Impl::checkMetalShape_rectOnly(gcPin* pin)
 {
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
-  auto layerMinWidth = getTech()->getLayer(layerNum)->getMinWidth();
+  auto layerMinWidth = getLayer(layerNum)->getMinWidth();
   auto net = poly->getNet();
 
-  auto con = getTech()->getLayer(layerNum)->getLef58RectOnlyConstraint();
+  auto con = getLayer(layerNum)->getLef58RectOnlyConstraint();
 
   if (!con) {
     return;
@@ -2021,8 +2019,7 @@ void FlexGCWorker::Impl::checkMetalShape_offGrid(gcPin* pin)
                gtl::yh(markerRect));
       marker->setBBox(box);
       marker->setLayerNum(layerNum);
-      marker->setConstraint(
-          getTech()->getLayer(layerNum)->getOffGridConstraint());
+      marker->setConstraint(getLayer(layerNum)->getOffGridConstraint());
       marker->addSrc(net->getOwner());
       marker->addVictim(net->getOwner(), std::make_tuple(layerNum, box, false));
       marker->addAggressor(net->getOwner(),
@@ -2037,12 +2034,11 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
   auto net = pin->getNet();
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
-  if (getTech()->getLayer(layerNum)->hasMinEnclosedArea()) {
+  if (getLayer(layerNum)->hasMinEnclosedArea()) {
     for (auto holeIt = poly->begin_holes(); holeIt != poly->end_holes();
          holeIt++) {
       auto& hole_poly = *holeIt;
-      for (auto con :
-           getTech()->getLayer(layerNum)->getMinEnclosedAreaConstraints()) {
+      for (auto con : getLayer(layerNum)->getMinEnclosedAreaConstraints()) {
         auto reqArea = con->getArea();
         if (gtl::area(hole_poly) < reqArea) {
           auto& polys = net->getPolygons(layerNum, false);
@@ -2083,7 +2079,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
 
   auto poly = pin->getPolygon();
   auto layer_idx = poly->getLayerNum();
-  auto layer = getTech()->getLayer(layer_idx);
+  auto layer = getLayer(layer_idx);
 
   if (!layer->hasLef58AreaConstraint()) {
     return;
@@ -2395,7 +2391,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
@@ -2410,7 +2406,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
@@ -2473,7 +2469,7 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
            gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
-  marker->setConstraint(getTech()->getLayer(layerNum)->getShortConstraint());
+  marker->setConstraint(getLayer(layerNum)->getShortConstraint());
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     std::make_tuple(rect1->getLayerNum(),
@@ -2819,7 +2815,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
     frLef58CutSpacingConstraint* con)
 {
   auto layerNum = rect->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layer = getLayer(layerNum);
 
   auto conCutClassIdx = con->getCutClassIdx();
 
@@ -2887,7 +2883,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasTwoCuts_helper(
     frLef58CutSpacingConstraint* con)
 {
   auto layerNum = rect->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layer = getLayer(layerNum);
 
   auto conCutClassIdx = con->getCutClassIdx();
 
@@ -3152,8 +3148,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     ;
   } else if (con->hasCutClass()) {
     auto conCutClassIdx = con->getCutClassIdx();
-    auto cutClassIdx = getTech()->getLayer(layerNum)->getCutClassIdx(
-        rect1->width(), rect1->length());
+    auto cutClassIdx
+        = getLayer(layerNum)->getCutClassIdx(rect1->width(), rect1->length());
     if (cutClassIdx != conCutClassIdx) {
       return;
     }
@@ -3374,7 +3370,7 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* ptr1,
   if (!con->hasSameNet() && ptr1->getNet() == ptr2->getNet()) {
     // same layer same net
     if (!(con->hasSecondLayer())) {
-      if (getTech()->getLayer(ptr1->getLayerNum())->hasCutSpacing(true)) {
+      if (getLayer(ptr1->getLayerNum())->hasCutSpacing(true)) {
         return;
       }
       // diff layer same net
@@ -3425,7 +3421,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
     return true;
   }
   auto layerNum = rect->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layer = getLayer(layerNum);
 
   // rect is obs larger than min. size cut, must check against cutWithin
   if (rect->getNet()->isBlockage() && rect->width() > int(layer->getWidth())) {
@@ -3534,7 +3530,7 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect,
 void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
 {
   auto layerNum = rect->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layer = getLayer(layerNum);
   // CShort
   // diff net same layer
   for (auto con : layer->getCutSpacing(false)) {
@@ -3593,7 +3589,7 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   }
   if (layer->getLayerNum() + 2 < router_cfg_->TOP_ROUTING_LAYER
       && layer->getLayerNum() + 2 < getTech()->getLayers().size()) {
-    auto aboveLayer = getTech()->getLayer(layer->getLayerNum() + 2);
+    auto aboveLayer = getLayer(layer->getLayerNum() + 2);
     if (aboveLayer->hasLef58SameNetInterCutSpcTblConstraint()) {
       checkLef58CutSpacingTbl(
           rect, aboveLayer->getLef58SameNetInterCutSpcTblConstraint());
@@ -3621,7 +3617,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
@@ -3639,7 +3635,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
@@ -3932,7 +3928,7 @@ void FlexGCWorker::Impl::checkMinimumCut_marker(gcRect* wideRect,
 void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
 {
   auto layerNum = rect->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layer = getLayer(layerNum);
   auto width = rect->width();
   auto length = rect->length();
   for (auto con : layer->getMinimumcutConstraints()) {
@@ -4007,7 +4003,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
@@ -4027,7 +4023,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
@@ -4049,7 +4045,7 @@ void FlexGCWorker::Impl::checkTwoWiresForbiddenSpc_main(
     gcRect* rect,
     frLef58TwoWiresForbiddenSpcConstraint* con)
 {
-  bool isH = getTech()->getLayer(rect->getLayerNum())->getDir()
+  bool isH = getLayer(rect->getLayerNum())->getDir()
              == odb::dbTechLayerDir::HORIZONTAL;
   auto width1 = rect->width();
   bool validMinSpanLength1 = con->isValidForMinSpanLength(width1);

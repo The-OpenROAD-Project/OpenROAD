@@ -169,6 +169,7 @@ class FlexDRConnectivityChecker
 
   frRegionQuery* getRegionQuery() const;
   frTechObject* getTech() const;
+  frLayer* getLayer(const frLayerNum layer_num) const;
   frDesign* getDesign() const;
   drt::TritonRoute* router_;
   Logger* logger_;

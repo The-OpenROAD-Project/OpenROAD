@@ -86,7 +86,7 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
   }
 
   // If there are less than 3 coords OnGrid will create a Centered Access Point
-  frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
+  frCoord manu_grid = getTech()->getManufacturingGrid();
   frCoord coord = (low + high) / 2 / manu_grid * manu_grid;
 
   if (coords.find(coord) == coords.end()) {
@@ -135,7 +135,7 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const frLayerNum layer_num,
                                    const bool is_curr_layer_horz)
 {
-  if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
+  if (layer_num + 1 > getTech()->getTopLayerNum()) {
     return;
   }
   // hardcode first two single vias
@@ -159,7 +159,7 @@ void FlexPA::genAPCosted(
     const gtl::rectangle_data<frCoord>& rect,
     const int offset)
 {
-  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  auto layer = getLayer(layer_num);
   const bool is_curr_layer_horz = layer->isHorizontal();
   const auto min_width_layer = layer->getMinWidth();
   const int rect_min = is_curr_layer_horz ? gtl::yl(rect) : gtl::xl(rect);
@@ -220,7 +220,7 @@ void FlexPA::createSingleAccessPoint(
   ap->setMultipleAccesses(frDirEnumPlanar, allow_planar);
 
   if (allow_planar) {
-    const auto lower_layer = getDesign()->getTech()->getLayer(layer_num);
+    const auto lower_layer = getLayer(layer_num);
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
@@ -251,8 +251,7 @@ void FlexPA::createSingleAccessPoint(
   if ((lower_type == frAccessPointEnum::NearbyGrid
        || upper_type == frAccessPointEnum::NearbyGrid)) {
     Point end;
-    const int hwidth
-        = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth() / 2;
+    const int hwidth = getLayer(ap->getLayerNum())->getMinWidth() / 2;
 
     end.setX(std::clamp(
         fpt.x(), gtl::xl(maxrect) + hwidth, gtl::xh(maxrect) - hwidth));
@@ -301,7 +300,7 @@ void FlexPA::createMultipleAccessPoints(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  auto layer = getLayer(layer_num);
   bool allow_via = !isIOTerm(inst_term);
   bool allow_planar = true;
   //  only VIA_ACCESS_LAYERNUM layer can have via access
@@ -360,7 +359,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
       && upper_type != frAccessPointEnum::OnGrid) {
     return;
   }
-  frLayer* layer = getDesign()->getTech()->getLayer(layer_num);
+  frLayer* layer = getLayer(layer_num);
   const auto min_width_layer1 = layer->getMinWidth();
   if (std::min(gtl::delta(rect, gtl::HORIZONTAL),
                gtl::delta(rect, gtl::VERTICAL))
@@ -368,9 +367,9 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
     return;
   }
   frLayerNum second_layer_num = 0;
-  if (layer_num + 2 <= getDesign()->getTech()->getTopLayerNum()) {
+  if (layer_num + 2 <= getTech()->getTopLayerNum()) {
     second_layer_num = layer_num + 2;
-  } else if (layer_num - 2 >= getDesign()->getTech()->getBottomLayerNum()) {
+  } else if (layer_num - 2 >= getTech()->getBottomLayerNum()) {
     second_layer_num = layer_num - 2;
   } else {
     logger_->error(DRT, 68, "genAPsFromRect cannot find second_layer_num.");
@@ -446,10 +445,9 @@ bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
 {
   // lower layer is current layer
   // rightway on grid only forbid off track up via access on upper layer
-  const auto upper_layer
-      = (layer_num + 2 <= getDesign()->getTech()->getTopLayerNum())
-            ? getDesign()->getTech()->getLayer(layer_num + 2)
-            : nullptr;
+  const auto upper_layer = (layer_num + 2 <= getTech()->getTopLayerNum())
+                               ? getLayer(layer_num + 2)
+                               : nullptr;
   if (!is_macro_cell_pin && upper_layer
       && upper_layer->getLef58RightWayOnGridOnlyConstraint()) {
     return true;
@@ -527,8 +525,7 @@ void FlexPA::genAPsFromPinShapes(
   //  only VIA_ACCESS_LAYERNUM layer can have via access
   frLayerNum layer_num = 0;
   for (const auto& layer_shapes : pin_shapes) {
-    if (!layer_shapes.empty()
-        && getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
+    if (!layer_shapes.empty() && getLayer(layer_num)->isRouting()) {
       genAPsFromLayerShapes(layer_rect_to_coords,
                             inst_term,
                             layer_shapes,
@@ -550,9 +547,9 @@ Point FlexPA::genEndPoint(
   const int step_size_multiplier = 3;
   frCoord x = begin_point.x();
   frCoord y = begin_point.y();
-  const frCoord width = getDesign()->getTech()->getLayer(layer_num)->getWidth();
+  const frCoord width = getLayer(layer_num)->getWidth();
   const frCoord step_size = step_size_multiplier * width;
-  const frCoord pitch = getDesign()->getTech()->getLayer(layer_num)->getPitch();
+  const frCoord pitch = getLayer(layer_num)->getPitch();
   gtl::rectangle_data<frCoord> rect;
   if (is_block) {
     gtl::extents(rect, layer_polys[0]);
@@ -634,7 +631,7 @@ bool FlexPA::filterPlanarAccess(
     return false;
   }
   // TODO: EDIT HERE Wrongdirection segments
-  frLayer* layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
+  frLayer* layer = getLayer(ap->getLayerNum());
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
@@ -796,7 +793,7 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   bool is_side_bound = false;
   if (inst_term) {
     boundary_bbox = inst_term->getInst()->getBoundaryBBox();
-    frCoord width = getDesign()->getTech()->getLayer(layer_num)->getWidth();
+    frCoord width = getLayer(layer_num)->getWidth();
     if (begin_point.x() <= boundary_bbox.xMin() + 3 * width
         || begin_point.x() >= boundary_bbox.xMax() - 3 * width) {
       is_side_bound = true;
@@ -948,7 +945,7 @@ bool FlexPA::checkDirectionalViaAccess(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir)
 {
-  auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  auto upper_layer = getLayer(via->getViaDef()->getLayer2Num());
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
   const bool wrong_dir = (upper_layer->isHorizontal() && vert_dir)
                          || (upper_layer->isVertical() && !vert_dir);
@@ -1008,7 +1005,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreLongSideEOL();
   design_rule_checker.setIgnoreCornerSpacing();
-  const auto pitch = getTech()->getLayer(ap->getLayerNum())->getPitch();
+  const auto pitch = getLayer(ap->getLayerNum())->getPitch();
   const auto extension = 5 * pitch;
   Rect tmp_box(point, point);
   Rect ext_box;
@@ -1159,8 +1156,7 @@ bool FlexPA::EnoughSparsePoints(
    */
   int n_sparse_access_points = (int) aps.size();
   for (int i = 0; i < (int) aps.size(); i++) {
-    const int colision_dist
-        = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
+    const int colision_dist = getLayer(aps[i]->getLayerNum())->getWidth() / 2;
     Rect ap_colision_box;
     Rect(aps[i]->getPoint(), aps[i]->getPoint())
         .bloat(colision_dist, ap_colision_box);
@@ -1193,8 +1189,7 @@ bool FlexPA::EnoughPointsFarFromEdge(
   Rect cell_box = inst_term->getInst()->getBBox();
   int total_far_from_edge = 0;
   for (auto& ap : aps) {
-    const int colision_dist
-        = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
+    const int colision_dist = getLayer(ap->getLayerNum())->getWidth() * 2;
     Rect ap_colision_box;
     Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
     if (cell_box.contains(ap_colision_box)) {
@@ -1280,7 +1275,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
     xform = inst->getDBTransform();
   }
 
-  frTechObject* tech = getDesign()->getTech();
+  frTechObject* tech = getTech();
   std::size_t num_layers = tech->getLayers().size();
 
   std::vector<frCoord> layer_widths;
@@ -1299,7 +1294,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       auto layer_num = obj->getLayerNum();
       auto layer = tech->getLayer(layer_num);
       dbTechLayerDir dir = layer->getDir();
-      if (!layer->isRoutable()) {
+      if (!layer->isRouting()) {
         continue;
       }
       Rect box = obj->getBBox();

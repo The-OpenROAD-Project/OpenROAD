@@ -33,7 +33,10 @@ class FlexGRGridGraph
   }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
-
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   frDesign* getDesign() const { return design_; }
 
   FlexGRWorker* getGRWorker() const { return grWorker_; }

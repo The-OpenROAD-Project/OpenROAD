@@ -414,12 +414,12 @@ void FlexDR::init_halfViaEncArea()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& halfViaEncArea = via_data_.halfViaEncArea;
   for (int i = bottomLayerNum; i <= topLayerNum; i++) {
-    if (getTech()->getLayer(i)->getType() != dbTechLayerType::ROUTING) {
+    if (getLayer(i)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     if (i + 1 <= topLayerNum
-        && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
-      auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
+        && getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
+      auto viaDef = getLayer(i + 1)->getDefaultViaDef();
       if (viaDef) {
         frVia via(viaDef);
         Rect layer1Box = via.getLayer1BBox();
@@ -654,7 +654,7 @@ void FlexDR::reportIterationViolations() const
       }
       std::string line = fmt::format("{:<15}", "Viol/Layer");
       for (auto lNum : layers) {
-        std::string lName = getTech()->getLayer(lNum)->getName();
+        std::string lName = getLayer(lNum)->getName();
         if (lName.size() >= 7) {
           lName = lName.substr(0, 2) + ".." + lName.substr(lName.size() - 2, 2);
         }
@@ -1352,9 +1352,9 @@ void FlexDR::end(bool done)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == dbTechLayerType::ROUTING) {
+      if (getLayer(i)->getType() == dbTechLayerType::ROUTING) {
         logger_->report("Total wire length on LAYER {} = {} um.",
-                        getTech()->getLayer(i)->getName(),
+                        getLayer(i)->getName(),
                         wlen[i] / topBlock->getDBUPerUU());
       }
     }
@@ -1372,9 +1372,8 @@ void FlexDR::end(bool done)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
-        nameLen = std::max(nameLen,
-                           (int) getTech()->getLayer(i - 1)->getName().size());
+      if (getLayer(i)->getType() == dbTechLayerType::CUT) {
+        nameLen = std::max(nameLen, (int) getLayer(i - 1)->getName().size());
       }
     }
     int maxL = 1 + nameLen + 4 + (int) std::to_string(totSCut).length();
@@ -1400,9 +1399,8 @@ void FlexDR::end(bool done)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
-        msg << " " << std::setw(nameLen)
-            << getTech()->getLayer(i - 1)->getName() << "    "
+      if (getLayer(i)->getType() == dbTechLayerType::CUT) {
+        msg << " " << std::setw(nameLen) << getLayer(i - 1)->getName() << "    "
             << std::setw((int) std::to_string(totSCut).length()) << sCut[i];
         if (totMCut) {
           msg << " (" << std::setw(5)
@@ -1577,7 +1575,7 @@ void FlexDR::reportGuideCoverage()
     }
 
     for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
-      if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
+      if (getLayer(lNum)->getType() != dbTechLayerType::ROUTING
           || lNum > router_cfg_->TOP_ROUTING_LAYER) {
         continue;
       }
@@ -1675,7 +1673,7 @@ void FlexDR::fixMaxSpacing()
     // Create LEF58_MAXSPACING Markers for the lonely vias
     auto marker = std::make_unique<frMarker>();
     marker->setBBox(via->getBBox());
-    auto layer = getTech()->getLayer(via->getViaDef()->getCutLayerNum());
+    auto layer = getLayer(via->getViaDef()->getCutLayerNum());
     marker->setLayerNum(layer->getLayerNum());
     marker->setConstraint(layer->getLef58MaxSpacingConstraints().at(0));
     marker->addSrc(via->getNet());

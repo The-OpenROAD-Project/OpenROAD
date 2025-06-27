@@ -202,9 +202,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 {
   auto dbRule = con->getODBRule();
   auto layerNum1 = viaRect1->getLayerNum();
-  auto layer1 = getTech()->getLayer(layerNum1);
+  auto layer1 = getLayer(layerNum1);
   auto layerNum2 = viaRect2->getLayerNum();
-  auto layer2 = getTech()->getLayer(layerNum2);
+  auto layer2 = getLayer(layerNum2);
   bool viol = false;
   if (dbRule->isLayerValid()) {
     if (dbRule->isSameNet()) {
@@ -379,7 +379,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     frLef58CutSpacingTableConstraint* con)
 {
   auto layerNum1 = viaRect->getLayerNum();
-  auto layer1 = getTech()->getLayer(layerNum1);
+  auto layer1 = getLayer(layerNum1);
   auto width = viaRect->width();
   auto length = viaRect->length();
   auto cutClassIdx = layer1->getCutClassIdx(width, length);
@@ -445,7 +445,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
 void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
                                               frLef58KeepOutZoneConstraint* con)
 {
-  auto layer = getTech()->getLayer(rect->getLayerNum());
+  auto layer = getLayer(rect->getLayerNum());
   if (isSkipVia(rect, router_cfg_)) {
     return;
   }
@@ -637,7 +637,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
@@ -654,7 +654,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
+      auto currLayer = getLayer(i);
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
@@ -677,7 +677,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
 void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
                                                   gcRect* encRect)
 {
-  auto layer = getTech()->getLayer(viaRect->getLayerNum());
+  auto layer = getLayer(viaRect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(viaRect->width(), viaRect->length());
   bool above = encRect->getLayerNum() > viaRect->getLayerNum();
   frCoord sideOverhang = 0;
@@ -732,7 +732,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
   if (rect->isFixed()) {
     return;
   }
-  auto layer = getTech()->getLayer(rect->getLayerNum());
+  auto layer = getLayer(rect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(rect->width(), rect->length());
   bool hasAboveConstraints
       = layer->hasLef58EnclosureConstraint(cutClassIdx, true);
@@ -891,7 +891,7 @@ void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
 
 void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal(gcRect* rect)
 {
-  auto layer = getTech()->getLayer(rect->getLayerNum());
+  auto layer = getLayer(rect->getLayerNum());
   auto con = layer->getOrthSpacingTableConstraint();
   for (const auto& [within, spacing] : con->getSpacingTable()) {
     box_t query_box;

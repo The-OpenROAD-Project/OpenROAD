@@ -28,6 +28,10 @@ class FlexTA
   // getters
   frTechObject* getTech() const { return tech_; }
   frDesign* getDesign() const { return design_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   // others
   int main();
   void setDebug(std::unique_ptr<AbstractTAGraphics> ta_graphics);
@@ -53,6 +57,8 @@ class FlexTAWorkerRegionQuery
   FlexTAWorkerRegionQuery(FlexTAWorker* in);
   ~FlexTAWorkerRegionQuery();
   frDesign* getDesign() const;
+  frTechObject* getTech() const;
+  frLayer* getLayer(const frLayerNum layer_num) const;
   FlexTAWorker* getTAWorker() const;
 
   void add(taPinFig* fig);
@@ -151,6 +157,10 @@ class FlexTAWorker
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   const Rect& getRouteBox() const { return routeBox_; }
   const Rect& getExtBox() const { return extBox_; }
   dbTechLayerDir getDir() const { return dir_; }

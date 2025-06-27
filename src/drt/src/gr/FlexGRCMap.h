@@ -45,6 +45,11 @@ class FlexGRCMap
   }
   // getters
   frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
 
   frLayerNum getNumLayers() { return numLayers_; }
 

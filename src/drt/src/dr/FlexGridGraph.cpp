@@ -68,7 +68,7 @@ void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
   zCoords_.reserve(zMap.size());
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
-    zHeight += getTech()->getLayer(k)->getPitch() * router_cfg_->VIACOST;
+    zHeight += getLayer(k)->getPitch() * router_cfg_->VIACOST;
     zHeights_.push_back(zHeight);
     layerRouteDirections_.push_back(v);
   }
@@ -104,7 +104,7 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
   if (lNum > getTech()->getTopLayerNum()) {
     return false;
   }
-  const frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* via = getLayer(lNum)->getDefaultViaDef();
   if (!via) {
     return true;
   }
@@ -116,12 +116,12 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
 bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
 {
   const frLayerNum lNum = getLayerNum(z);
-  if (!getTech()->getLayer(lNum)->isUnidirectional()) {
+  if (!getLayer(lNum)->isUnidirectional()) {
     return false;
   }
   Rect testBoxUp;
   if (lNum + 1 <= getTech()->getTopLayerNum()) {
-    const frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    const frViaDef* via = getLayer(lNum + 1)->getDefaultViaDef();
     if (via) {
       testBoxUp = via->getLayer1ShapeBox();
       testBoxUp.merge(via->getLayer2ShapeBox());
@@ -133,7 +133,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
   }
   Rect testBoxDown;
   if (lNum - 1 >= getTech()->getBottomLayerNum()) {
-    const frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    const frViaDef* via = getLayer(lNum - 1)->getDefaultViaDef();
     if (via) {
       testBoxDown = via->getLayer1ShapeBox();
       testBoxDown.merge(via->getLayer2ShapeBox());
@@ -143,7 +143,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
       dieBox_.bloat(1, testBoxDown);
     }
   }
-  if (getTech()->getLayer(lNum)->isVertical()) {
+  if (getLayer(lNum)->isVertical()) {
     return (testBoxUp.xMax() > dieBox_.xMax()
             || testBoxUp.xMin() < dieBox_.xMin())
            && (testBoxDown.xMax() > dieBox_.xMax()
@@ -203,7 +203,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
   dieBox_ = design->getTopBlock()->getDieBox();
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
-    const auto layer = getTech()->getLayer(layerNum);
+    const auto layer = getLayer(layerNum);
     if (layerNum + 2 <= getTech()->getTopLayerNum()) {
       nonPrefLayerNum = layerNum + 2;
     } else if (layerNum - 2 >= getTech()->getBottomLayerNum()) {
@@ -368,7 +368,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
       for (int zIdx = startZ; zIdx >= 0 && zIdx < (int) zCoords_.size() - 1;
            zIdx += inc, nextLNum += inc * 2) {
         addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-        frLayer* nextLayer = getTech()->getLayer(nextLNum);
+        frLayer* nextLayer = getLayer(nextLNum);
         const bool restrictedRouting
             = nextLayer->isUnidirectional()
               || nextLNum < router_cfg_->BOTTOM_ROUTING_LAYER
@@ -390,8 +390,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
         // didn't find default track, then create tracks if possible
         if (!restrictedRouting
             && nextLNum >= router_cfg_->VIA_ACCESS_LAYERNUM) {
-          dbTechLayerDir prefDir
-              = design->getTech()->getLayer(nextLNum)->getDir();
+          dbTechLayerDir prefDir = getLayer(nextLNum)->getDir();
           xMap[nextLNum][apPt.x()] = nullptr;  // to keep coherence
           yMap[nextLNum][apPt.y()] = nullptr;
           frMIdx nextZ = up ? zIdx + 1 : zIdx;

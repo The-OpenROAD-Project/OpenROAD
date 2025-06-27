@@ -26,8 +26,7 @@ void FlexGR::initLayerPitch()
   int numRoutingLayer = 0;
   for (unsigned lNum = 0; lNum < design_->getTech()->getLayers().size();
        lNum++) {
-    if (design_->getTech()->getLayer(lNum)->getType()
-        != dbTechLayerType::ROUTING) {
+    if (getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     numRoutingLayer++;
@@ -42,13 +41,12 @@ void FlexGR::initLayerPitch()
   // compute pitches
   for (int lNum = 0; lNum < (int) design_->getTech()->getLayers().size();
        lNum++) {
-    if (design_->getTech()->getLayer(lNum)->getType()
-        != dbTechLayerType::ROUTING) {
+    if (getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     // zIdx  always equal to lNum / 2 - 1
     int zIdx = lNum / 2 - 1;
-    auto layer = design_->getTech()->getLayer(lNum);
+    auto layer = getLayer(lNum);
     bool isLayerHorz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
     // get track pitch
     for (auto& tp : design_->getTopBlock()->getTrackPatterns(lNum)) {
@@ -64,11 +62,11 @@ void FlexGR::initLayerPitch()
     // calculate line-2-via pitch
     const frViaDef* downVia = nullptr;
     const frViaDef* upVia = nullptr;
-    if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
-      downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    if (getTech()->getBottomLayerNum() <= lNum - 1) {
+      downVia = getLayer(lNum - 1)->getDefaultViaDef();
     }
-    if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    if (getTech()->getTopLayerNum() >= lNum + 1) {
+      upVia = getLayer(lNum + 1)->getDefaultViaDef();
     }
 
     frCoord defaultWidth = layer->getWidth();
@@ -198,7 +196,7 @@ void FlexGR::initGCell()
 {
   auto& gcellPatterns = design_->getTopBlock()->getGCellPatterns();
   if (gcellPatterns.empty()) {
-    auto layer = design_->getTech()->getLayer(2);
+    auto layer = getLayer(2);
     auto pitch = layer->getPitch();
     std::cout << std::endl
               << "Generating GCell with size = 15 tracks, using layer "

@@ -19,12 +19,10 @@ void FlexPA::initViaRawPriority()
   for (int layer_num = design_->getTech()->getBottomLayerNum();
        layer_num <= design_->getTech()->getTopLayerNum();
        ++layer_num) {
-    if (design_->getTech()->getLayer(layer_num)->getType()
-        != dbTechLayerType::CUT) {
+    if (getLayer(layer_num)->getType() != dbTechLayerType::CUT) {
       continue;
     }
-    for (const auto& via_def :
-         design_->getTech()->getLayer(layer_num)->getViaDefs()) {
+    for (const auto& via_def : getLayer(layer_num)->getViaDefs()) {
       const int cutNum = int(via_def->getCutFigs().size());
       const ViaRawPriorityTuple priority = getViaRawPriority(via_def);
       layer_num_to_via_defs_[layer_num][cutNum][priority] = via_def;
@@ -53,7 +51,7 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
                  (gtl::yh(layer1_rect) - gtl::yl(layer1_rect)));
 
   const auto layer1_num = via_def->getLayer1Num();
-  const auto dir1 = getDesign()->getTech()->getLayer(layer1_num)->getDir();
+  const auto dir1 = getLayer(layer1_num)->getDir();
 
   const bool is_not_lower_align
       = (is_layer1_horz && (dir1 == dbTechLayerDir::VERTICAL))
@@ -76,7 +74,7 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
                  (gtl::yh(layer2_rect) - gtl::yl(layer2_rect)));
 
   const auto layer2_num = via_def->getLayer2Num();
-  const auto dir2 = getDesign()->getTech()->getLayer(layer2_num)->getDir();
+  const auto dir2 = getLayer(layer2_num)->getDir();
 
   const bool is_not_upper_align
       = (is_layer2_horz && (dir2 == dbTechLayerDir::VERTICAL))
@@ -96,8 +94,8 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
 
 void FlexPA::initTrackCoords()
 {
-  const int num_layers = getDesign()->getTech()->getLayers().size();
-  const frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
+  const int num_layers = getTech()->getLayers().size();
+  const frCoord manu_grid = getTech()->getManufacturingGrid();
 
   // full coords
   track_coords_.clear();
@@ -105,8 +103,7 @@ void FlexPA::initTrackCoords()
   for (auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
     const auto layer_num = track_pattern->getLayerNum();
     const auto is_vert_layer
-        = (design_->getTech()->getLayer(layer_num)->getDir()
-           == dbTechLayerDir::VERTICAL);
+        = (getLayer(layer_num)->getDir() == dbTechLayerDir::VERTICAL);
     const auto is_vert_track
         = track_pattern->isHorizontal();  // true = vertical track
     if ((!is_vert_layer && !is_vert_track)

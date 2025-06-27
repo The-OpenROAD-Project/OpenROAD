@@ -115,7 +115,7 @@ void FlexGCWorker::Impl::initObj(const Rect& box,
                                  bool isFixed)
 {
   auto currNet = getNet(obj);
-  if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::CUT) {
+  if (getLayer(layerNum)->getType() == dbTechLayerType::CUT) {
     currNet->addRectangle(box, layerNum, isFixed);
   } else {
     currNet->addPolygon(box, layerNum, isFixed);
@@ -773,8 +773,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                      && nextEdge->getDir() == frDirEnum::E)) {
         currCorner->setDir(frCornerDirEnum::SE);
       }
-      if (getTech()->getLayer(layerNum)->getType()
-          == odb::dbTechLayerType::CUT) {
+      if (getLayer(layerNum)->getType() == odb::dbTechLayerType::CUT) {
         if (currCorner->getType() == frCornerTypeEnum::CONVEX) {
           currCorner->setFixed(false);
           for (auto& rect : net->getRectangles(true)[layerNum]) {

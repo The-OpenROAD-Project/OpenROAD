@@ -74,7 +74,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         // change boundary style to ext if orig pathSeg crosses boundary
         if (end.y() > routeBox.yMin()) {
           frSegStyle style = pathSeg->getStyle();
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
         if (save_updates_) {
@@ -105,7 +105,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (begin.y() < routeBox.yMax()) {
           frSegStyle style = pathSeg->getStyle();
           style
-              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
         if (save_updates_) {
@@ -155,7 +155,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         // change boundary style to ext if orig pathSeg crosses boundary
         if (end.x() > routeBox.xMin()) {
           frSegStyle style = pathSeg->getStyle();
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
         if (save_updates_) {
@@ -186,7 +186,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (begin.x() < routeBox.xMax()) {
           frSegStyle style = pathSeg->getStyle();
           style
-              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
         if (save_updates_) {

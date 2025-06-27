@@ -29,7 +29,7 @@ void UniqueInsts::computePrefTrackPatterns()
   for (const auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
     const bool is_vertical_track = track_pattern->isHorizontal();
     const frLayerNum layer_num = track_pattern->getLayerNum();
-    const frLayer* layer = getTech()->getLayer(layer_num);
+    const frLayer* layer = getLayer(layer_num);
     if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (!is_vertical_track) {
         pref_track_patterns_.push_back(track_pattern);

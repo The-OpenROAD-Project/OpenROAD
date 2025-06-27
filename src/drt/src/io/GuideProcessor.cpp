@@ -485,8 +485,8 @@ void initGuideIntervals(const std::vector<frRect>& rects,
     const frCoord x2 = idx2.x();
     const frCoord y2 = idx2.y();
     const frLayerNum layer_num = rect.getLayerNum();
-    const bool is_horizontal = design->getTech()->getLayer(layer_num)->getDir()
-                               == dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal
+        = design->getTech()->getLayer(layer_num)->isHorizontal();
     if (is_horizontal) {
       for (auto track_idx = y1; track_idx <= y2; track_idx++) {
         intvs[layer_num][track_idx].insert(Interval::closed(x1, x2));
@@ -752,18 +752,16 @@ void GuideProcessor::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
       Rect guideBBox = rect.getBBox();
-      frCoord guideWidth = (getTech()->getLayer(layerNum)->getDir()
-                            == dbTechLayerDir::HORIZONTAL)
-                               ? guideBBox.dy()
-                               : guideBBox.dx();
-      if (getTech()->getLayer(layerNum)->getDir()
-          == dbTechLayerDir::HORIZONTAL) {
+      frCoord guideWidth
+          = (getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
+                ? guideBBox.dy()
+                : guideBBox.dx();
+      if (getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
         }
         guideGridYMap[guideWidth]++;
-      } else if (getTech()->getLayer(layerNum)->getDir()
-                 == dbTechLayerDir::VERTICAL) {
+      } else if (getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL) {
         if (guideGridXMap.find(guideWidth) == guideGridXMap.end()) {
           guideGridXMap[guideWidth] = 0;
         }
@@ -1159,8 +1157,7 @@ void GuideProcessor::genGuides_split(
   std::vector<std::map<frCoord, std::map<frCoord, frBlockObjectSet>>>
       pin_helper(getTech()->getLayers().size());
   for (const auto& [point, pins] : gcell_pin_map) {
-    if (getTech()->getLayer(point.z())->getDir()
-        == dbTechLayerDir::HORIZONTAL) {
+    if (getLayer(point.z())->getDir() == dbTechLayerDir::HORIZONTAL) {
       pin_helper[point.z()][point.y()][point.x()] = pins;
     } else {
       pin_helper[point.z()][point.x()][point.y()] = pins;
@@ -1168,7 +1165,7 @@ void GuideProcessor::genGuides_split(
   }
 
   for (int layer_num = 0; layer_num < (int) intvs.size(); layer_num++) {
-    auto dir = getTech()->getLayer(layer_num)->getDir();
+    auto dir = getLayer(layer_num)->getDir();
     const bool is_horizontal = dir == dbTechLayerDir::HORIZONTAL;
     for (auto& [track_idx, curr_intvs] : intvs[layer_num]) {
       // split by lower/upper seg
@@ -1222,7 +1219,7 @@ void GuideProcessor::genGuides_split(
             logger_->error(DRT,
                            229,
                            "genGuides_split split_indices is empty on {}.",
-                           getTech()->getLayer(layer_num)->getName());
+                           getLayer(layer_num)->getName());
           }
           if (split_indices.size() == 1) {
             auto split_idx = *(split_indices.begin());
@@ -1884,7 +1881,7 @@ void GuidePathFinder::connectDisconnectedComponents(
         continue;
       }
       const auto layer_num = rects[idx1].getLayerNum();
-      const bool is_horizontal = getTech()->getLayer(layer_num)->isHorizontal();
+      const bool is_horizontal = getLayer(layer_num)->isHorizontal();
       const frCoord track_idx1 = is_horizontal ? rects[idx1].getBBox().yMin()
                                                : rects[idx1].getBBox().xMin();
       const frCoord track_idx2 = is_horizontal ? rects[idx2].getBBox().yMin()
@@ -1933,7 +1930,7 @@ void GuideProcessor::saveGuidesUpdates()
       if (bNum != eNum) {
         for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
              lNum += 2) {
-          auto layer = getTech()->getLayer(lNum);
+          auto layer = getLayer(lNum);
           auto dbLayer = dbTech->findLayer(layer->getName().c_str());
           odb::dbGuide::create(
               dbNet,
@@ -1943,7 +1940,7 @@ void GuideProcessor::saveGuidesUpdates()
               false);
         }
       } else {
-        auto layerName = getTech()->getLayer(bNum)->getName();
+        auto layerName = getLayer(bNum)->getName();
         auto dbLayer = dbTech->findLayer(layerName.c_str());
         odb::dbGuide::create(
             dbNet,

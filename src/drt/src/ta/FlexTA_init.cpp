@@ -17,13 +17,12 @@ bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
                                const Rect& die_box) const
 {
   if (router_cfg_->USENONPREFTRACKS
-      && !getTech()->getLayer(layer_num)->isUnidirectional()) {
+      && !getLayer(layer_num)->isUnidirectional()) {
     return false;
   }
   Rect test_box_up;
   if (layer_num + 1 <= getTech()->getTopLayerNum()) {
-    const frViaDef* via
-        = getTech()->getLayer(layer_num + 1)->getDefaultViaDef();
+    const frViaDef* via = getLayer(layer_num + 1)->getDefaultViaDef();
     if (via) {
       test_box_up = via->getLayer1ShapeBox();
       test_box_up.merge(via->getLayer2ShapeBox());
@@ -35,8 +34,7 @@ bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
   }
   Rect test_box_down;
   if (layer_num - 1 >= getTech()->getBottomLayerNum()) {
-    const frViaDef* via
-        = getTech()->getLayer(layer_num - 1)->getDefaultViaDef();
+    const frViaDef* via = getLayer(layer_num - 1)->getDefaultViaDef();
     if (via) {
       test_box_down = via->getLayer1ShapeBox();
       test_box_down.merge(via->getLayer2ShapeBox());
@@ -51,14 +49,14 @@ bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
 void FlexTAWorker::initTracks()
 {
   trackLocs_.clear();
-  const int numLayers = getDesign()->getTech()->getLayers().size();
+  const int numLayers = getTech()->getLayers().size();
   trackLocs_.resize(numLayers);
   std::vector<std::set<frCoord>> trackCoordSets(numLayers);
   // uPtr for tp
   auto die_box = getDesign()->getTopBlock()->getDieBox();
   auto die_center = die_box.center();
   for (int lNum = 0; lNum < (int) numLayers; lNum++) {
-    auto layer = getDesign()->getTech()->getLayer(lNum);
+    auto layer = getLayer(lNum);
     if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
@@ -505,14 +503,12 @@ void FlexTAWorker::initIroute(frGuide* guide)
   rptr->setLayerNum(layerNum);
   if (guide->getNet() && guide->getNet()->getNondefaultRule()) {
     frNonDefaultRule* ndr = guide->getNet()->getNondefaultRule();
-    auto style
-        = getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle();
+    auto style = getLayer(layerNum)->getDefaultSegStyle();
     style.setWidth(
         std::max((int) style.getWidth(), ndr->getWidth(layerNum / 2 - 1)));
     rptr->setStyle(style);
   } else {
-    rptr->setStyle(
-        getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle());
+    rptr->setStyle(getLayer(layerNum)->getDefaultSegStyle());
   }
   // owner set when add to taPin
   iroute->addPinFig(std::move(ps));
@@ -523,8 +519,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
       viaDef
           = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
     } else {
-      viaDef
-          = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
+      viaDef = getLayer(layerNum + 1)->getDefaultViaDef();
     }
     std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
@@ -539,8 +534,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
       viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
           (layerNum - 2) / 2 - 1);
     } else {
-      viaDef
-          = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
+      viaDef = getLayer(layerNum - 1)->getDefaultViaDef();
     }
     std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
@@ -559,9 +553,8 @@ void FlexTAWorker::initIroutes()
 {
   frRegionQuery::Objects<frGuide> result;
   auto regionQuery = getRegionQuery();
-  for (int lNum = 0; lNum < (int) getDesign()->getTech()->getLayers().size();
-       lNum++) {
-    auto layer = getDesign()->getTech()->getLayer(lNum);
+  for (int lNum = 0; lNum < (int) getTech()->getLayers().size(); lNum++) {
+    auto layer = getLayer(lNum);
     if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
@@ -667,7 +660,7 @@ void FlexTAWorker::initFixedObjs_helper(const Rect& box,
 {
   Rect bloatBox;
   box.bloat(bloatDist, bloatBox);
-  auto con = getDesign()->getTech()->getLayer(lNum)->getShortConstraint();
+  auto con = getLayer(lNum)->getShortConstraint();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   int idx1, idx2;
   // frCoord x1, x2;
@@ -710,7 +703,7 @@ void FlexTAWorker::initFixedObjs()
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    frLayer* layer = getTech()->getLayer(layerNum);
+    frLayer* layer = getLayer(layerNum);
     if (layer->getType() != dbTechLayerType::ROUTING
         || layer->getDir() != getDir()) {
       continue;
@@ -740,13 +733,12 @@ void FlexTAWorker::initFixedObjs()
           netPtr = static_cast<frVia*>(obj)->getNet();
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
-        if (getTech()->getLayer(layerNum)->getType()
-            == dbTechLayerType::ROUTING) {
+        if (getLayer(layerNum)->getType() == dbTechLayerType::ROUTING) {
           // down-via
-          if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
-              && getTech()->getLayer(layerNum - 2)->getType()
+          if (layerNum - 2 >= getTech()->getBottomLayerNum()
+              && getLayer(layerNum - 2)->getType()
                      == dbTechLayerType::ROUTING) {
-            auto cutLayer = getTech()->getLayer(layerNum - 1);
+            auto cutLayer = getLayer(layerNum - 1);
             auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
             Rect viaBox = via->getLayer2BBox();
             frCoord viaWidth = viaBox.minDXDY();
@@ -759,9 +751,9 @@ void FlexTAWorker::initFixedObjs()
           }
           // up-via
           if (layerNum + 2 < (int) design_->getTech()->getLayers().size()
-              && getTech()->getLayer(layerNum + 2)->getType()
+              && getLayer(layerNum + 2)->getType()
                      == dbTechLayerType::ROUTING) {
-            auto cutLayer = getTech()->getLayer(layerNum + 1);
+            auto cutLayer = getLayer(layerNum + 1);
             auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
             Rect viaBox = via->getLayer1BBox();
             frCoord viaWidth = viaBox.minDXDY();
@@ -800,8 +792,7 @@ void FlexTAWorker::initFixedObjs()
             if (bounds.minDXDY() <= 2 * width) {
               continue;
             }
-            auto cutLayer
-                = getTech()->getLayer(upper ? layerNum + 1 : layerNum - 1);
+            auto cutLayer = getLayer(upper ? layerNum + 1 : layerNum - 1);
             auto bloatDist = initFixedObjs_calcOBSBloatDistVia(
                 cutLayer->getDefaultViaDef(), layerNum, bounds);
             Rect bloatBox;
@@ -828,16 +819,14 @@ void FlexTAWorker::initFixedObjs()
     };
 
     result.clear();
-    if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
-        && getTech()->getLayer(layerNum - 2)->getType()
-               == dbTechLayerType::ROUTING) {
+    if (layerNum - 2 >= getTech()->getBottomLayerNum()
+        && getLayer(layerNum - 2)->getType() == dbTechLayerType::ROUTING) {
       getRegionQuery()->query(getExtBox(), layerNum - 2, result);
     }
     costResults(false, result);
     result.clear();
-    if (layerNum + 2 < getDesign()->getTech()->getLayers().size()
-        && getTech()->getLayer(layerNum + 2)->getType()
-               == dbTechLayerType::ROUTING) {
+    if (layerNum + 2 < getTech()->getLayers().size()
+        && getLayer(layerNum + 2)->getType() == dbTechLayerType::ROUTING) {
       getRegionQuery()->query(getExtBox(), layerNum + 2, result);
     }
     costResults(true, result);
@@ -849,7 +838,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                                         const Rect& box,
                                                         bool isOBS)
 {
-  auto layer = getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   Rect viaBox;
   auto via = std::make_unique<frVia>(viaDef);
   if (viaDef->getLayer1Num() == lNum) {
@@ -890,7 +879,7 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
                                                   const frLayerNum lNum,
                                                   const Rect& box)
 {
-  auto layer = getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   frCoord width = layer->getWidth();
   frCoord objWidth = box.minDXDY();
   frCoord prl
