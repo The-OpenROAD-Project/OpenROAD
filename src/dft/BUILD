@@ -62,6 +62,7 @@ cc_library(
         "//src/dft/src/stitch",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )
