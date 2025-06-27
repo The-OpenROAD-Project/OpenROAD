@@ -106,7 +106,15 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
 
             while (req_path && arrival_path->vertex(sta_) != root_vertex) {
               arrival_path = arrival_path->prevPath();
-              assert(arrival_path);
+              if (!arrival_path) {
+                logger_->warn(
+                    RSZ,
+                    2006,
+                    "failed to trace timing path for load {} when buffering {}",
+                    network_->name(load_pin),
+                    network_->name(pin_));
+                break;
+              }
             }
 
             if (!arrival_path) {
