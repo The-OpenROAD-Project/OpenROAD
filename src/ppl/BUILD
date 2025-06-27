@@ -43,14 +43,15 @@ cc_library(
     ],
     deps = [
         ":munkres",
-        "//src/sta:opensta_lib",
         "//:ord",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.container_hash",
         "@boost.random",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

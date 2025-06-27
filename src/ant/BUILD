@@ -12,7 +12,7 @@ package(
 cc_library(
     name = "types",
     hdrs = [
-        "include/ant/AntennaChecker.hh"
+        "include/ant/AntennaChecker.hh",
     ],
     includes = [
         "include",
@@ -65,6 +65,7 @@ cc_library(
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

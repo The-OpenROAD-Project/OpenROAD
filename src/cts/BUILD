@@ -46,10 +46,10 @@ cc_library(
     includes = ["include"],
     deps = [
         ":private_hdrs",
-        "//src/sta:opensta_lib",
         "//src/dbSta",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.container_hash",
@@ -84,6 +84,7 @@ cc_library(
         "//src/odb",
         "//src/rsz",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

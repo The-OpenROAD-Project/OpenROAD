@@ -60,6 +60,7 @@ cc_library(
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )
