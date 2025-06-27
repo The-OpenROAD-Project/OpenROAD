@@ -4216,4 +4216,94 @@ void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
   }
 }
 
+//////////////////////////////////////////////////
+
+DbScanInstDescriptor::DbScanInstDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanInst>(db)
+{
+}
+
+std::string DbScanInstDescriptor::getName(std::any object) const
+{
+  auto* scan_inst = std::any_cast<odb::dbScanInst*>(object);
+  auto* inst = scan_inst->getInst();
+  return "(Scan) " + inst->getName();
+}
+
+std::string DbScanInstDescriptor::getTypeName() const
+{
+  return "Scan Inst";
+}
+
+bool DbScanInstDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* scan_inst = std::any_cast<odb::dbScanInst*>(object);
+  auto* inst = scan_inst->getInst();
+  bbox = inst->getBBox()->getBox();
+  return true;
+}
+
+void DbScanInstDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto* scan_inst = std::any_cast<odb::dbScanInst*>(object);
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  inst_descriptor->highlight(scan_inst->getInst(), painter);
+}
+
+bool DbScanInstDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    for (auto* scan_partition : scan_chain->getScanPartitions()) {
+      for (auto* scan_list : scan_partition->getScanLists()) {
+        for (auto* scan_inst : scan_list->getScanInsts()) {
+          objects.insert(makeSelected(scan_inst));
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanInstDescriptor::getDBProperties(
+    odb::dbScanInst* scan_inst) const
+{
+  Properties props;
+
+  props.push_back({"Scan Clock", scan_inst->getScanClock()});
+  props.push_back({"Clock Edge", scan_inst->getClockEdgeString()});
+  props.push_back(getScanPinProperty("Enable", scan_inst->getScanEnable()));
+
+  PropertyList access_pins_props;
+  odb::dbScanInst::AccessPins access_pins = scan_inst->getAccessPins();
+  Property scan_in_prop = getScanPinProperty("In", access_pins.scan_in);
+  access_pins_props.push_back({scan_in_prop.name, scan_in_prop.value});
+  Property scan_out_prop = getScanPinProperty("Out", access_pins.scan_out);
+  access_pins_props.push_back({scan_out_prop.name, scan_out_prop.value});
+  props.push_back({"Access Pins", access_pins_props});
+
+  auto gui = Gui::get();
+  props.push_back({"Inst", gui->makeSelected(scan_inst->getInst())});
+
+  return props;
+}
+
+/* static */
+Descriptor::Property DbScanInstDescriptor::getScanPinProperty(
+    const std::string& name,
+    const std::variant<odb::dbBTerm*, odb::dbITerm*>& pin)
+{
+  Descriptor::Property property;
+  property.name = name;
+
+  auto gui = Gui::get();
+  std::visit([&](auto* term) { property.value = gui->makeSelected(term); },
+             pin);
+
+  return property;
+}
+
 }  // namespace gui
