@@ -79,16 +79,6 @@ void _dbScanInst::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 }
 
-template <typename Term>
-void _dbScanInst::setScanEnable(Term* scan_enable)
-{
-  _dbScanList* scan_list = (_dbScanList*) getOwner();
-  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_enable_ = dbScanPin::create(dft, scan_enable);
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbScanInst - Methods
@@ -135,13 +125,19 @@ uint dbScanInst::getBits() const
 void dbScanInst::setScanEnable(dbBTerm* scan_enable)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  scan_inst->setScanEnable(scan_enable);
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
+  dbDft* dft = (dbDft*) scan_chain->getOwner();
+  scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
 }
 
 void dbScanInst::setScanEnable(dbITerm* scan_enable)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  scan_inst->setScanEnable(scan_enable);
+  _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
+  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  dbDft* dft = (dbDft*) scan_chain->getOwner();
+  scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
 }
 
 std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
