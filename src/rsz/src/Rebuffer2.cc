@@ -1941,6 +1941,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
         && !sta_->isClock(drvr_pin)
+        && !sta_->isClockSrc(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant() && !resizer_->isTristateDriver(drvr_pin)) {
       Instance* inst = network_->instance(drvr_pin);
