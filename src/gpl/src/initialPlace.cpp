@@ -71,14 +71,6 @@ void InitialPlace::doBicgstabPlace(int threads)
                            instLocVecY_,
                            log_,
                            threads);
-    float error_max = std::max(error.x, error.y);
-    log_->report(
-        "[InitialPlace]  Iter: {} conjugate gradient residual: {:0.8f} HPWL: "
-        "{}",
-        iter,
-        error_max,
-        pbc_->hpwl());
-    updateCoordi();
 
     if (graphics) {
       graphics->cellPlot(true);
@@ -90,6 +82,26 @@ void InitialPlace::doBicgstabPlace(int threads)
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
       gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
+
+    if (std::isnan(error.x) || std::isnan(error.y)) {
+      log_->warn(
+          GPL,
+          154,
+          "Conjugate gradient initial placement solver failed at iteration {}. "
+          "Positioning all movable instances at core center.",
+          iter);
+      placeInstsCenter();
+      break;
+    }
+
+    float error_max = std::max(error.x, error.y);
+    log_->report(
+        "[InitialPlace]  Iter: {} conjugate gradient residual: {:0.8f} HPWL: "
+        "{}",
+        iter,
+        error_max,
+        pbc_->hpwl());
+    updateCoordi();
 
     if (error_max <= 1e-5 && iter >= 5) {
       break;
