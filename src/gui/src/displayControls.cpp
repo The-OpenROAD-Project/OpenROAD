@@ -1017,15 +1017,18 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     const QModelIndex name_index
         = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
-    QVariant tech_layer_data = name_item->data(user_data_item_idx_);
-    if (!tech_layer_data.isValid()) {
+    QVariant user_data = name_item->data(user_data_item_idx_);
+    if (!user_data.isValid()) {
       continue;
     }
-    auto* tech_layer = tech_layer_data.value<dbTechLayer*>();
-    if (tech_layer == nullptr) {
+
+    if (auto* tech_layer = user_data.value<dbTechLayer*>()) {
+      emit selected(Gui::get()->makeSelected(tech_layer));
+    } else if (auto* site = user_data.value<odb::dbSite*>()) {
+      emit selected(Gui::get()->makeSelected(site));
+    } else {
       continue;
     }
-    emit selected(Gui::get()->makeSelected(tech_layer));
     return;
   }
 }
@@ -1125,6 +1128,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
             = model_->sibling(index.row() + 1, index.column(), index);
         if (cut_layer_index.isValid()) {
           auto cut_color_item = model_->itemFromIndex(cut_layer_index);
+          auto* cut_layer
+              = cut_color_item->data(user_data_item_idx_).value<dbTechLayer*>();
+          layer_color_[cut_layer] = chosen_color;
           cut_color_item->setIcon(makeSwatchIcon(chosen_color));
         }
       }
