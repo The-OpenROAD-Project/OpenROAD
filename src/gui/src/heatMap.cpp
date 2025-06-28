@@ -352,6 +352,10 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
 {
   for (const auto& map_col : getMapView(region)) {
     for (const auto& map_pt : map_col) {
+      if (map_pt == nullptr) {
+        continue;
+      }
+
       odb::Rect intersection;
       map_pt->rect.intersection(region, intersection);
 
