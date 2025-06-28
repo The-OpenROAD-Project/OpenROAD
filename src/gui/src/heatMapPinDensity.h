@@ -16,6 +16,8 @@ class PinDensityDataSource : public RealValueHeatMapDataSource,
  public:
   PinDensityDataSource(utl::Logger* logger);
 
+  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+
   void onShow() override;
   void onHide() override;
   double getGridSizeMinimumValue() const override { return 0.1; }
