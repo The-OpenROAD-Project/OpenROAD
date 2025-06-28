@@ -1017,15 +1017,21 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     const QModelIndex name_index
         = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
-    QVariant tech_layer_data = name_item->data(user_data_item_idx_);
-    if (!tech_layer_data.isValid()) {
+    QVariant user_data = name_item->data(user_data_item_idx_);
+    if (!user_data.isValid()) {
       continue;
     }
-    auto* tech_layer = tech_layer_data.value<dbTechLayer*>();
-    if (tech_layer == nullptr) {
-      continue;
+    auto* tech_layer = user_data.value<dbTechLayer*>();
+    if (tech_layer != nullptr) {
+      emit selected(Gui::get()->makeSelected(tech_layer));
+    } else {
+      auto* site = user_data.value<odb::dbSite*>();
+      if (site != nullptr) {
+        emit selected(Gui::get()->makeSelected(site));
+      } else {
+        continue;
+      }
     }
-    emit selected(Gui::get()->makeSelected(tech_layer));
     return;
   }
 }
