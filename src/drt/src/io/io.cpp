@@ -3983,7 +3983,8 @@ void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,
   std::map<int, odb::dbTechVia*> default_vias;
 
   for (auto layer : tech->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
+    if (layer->getType() == odb::dbTechLayerType::CUT
+        && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::MIMCAP) {
       frLayer* fr_layer = fr_tech->getLayer(layer->getName());
       const frViaDef* via_def = fr_layer->getDefaultViaDef();
       if (via_def == nullptr) {
