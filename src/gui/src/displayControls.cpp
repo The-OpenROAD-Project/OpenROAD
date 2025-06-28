@@ -1021,16 +1021,13 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     if (!user_data.isValid()) {
       continue;
     }
-    auto* tech_layer = user_data.value<dbTechLayer*>();
-    if (tech_layer != nullptr) {
+
+    if (auto* tech_layer = user_data.value<dbTechLayer*>()) {
       emit selected(Gui::get()->makeSelected(tech_layer));
+    } else if (auto* site = user_data.value<odb::dbSite*>()) {
+      emit selected(Gui::get()->makeSelected(site));
     } else {
-      auto* site = user_data.value<odb::dbSite*>();
-      if (site != nullptr) {
-        emit selected(Gui::get()->makeSelected(site));
-      } else {
-        continue;
-      }
+      continue;
     }
     return;
   }
