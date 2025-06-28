@@ -3061,6 +3061,15 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
                     "topRoutingLayer {} not found.",
                     router_cfg_->TOP_ROUTING_LAYER_NAME);
     }
+  } else {
+    for (frLayerNum layer_num = fr_tech->getTopLayerNum();
+         layer_num >= fr_tech->getBottomLayerNum();
+         layer_num--) {
+      if (fr_tech->getLayer(layer_num)->getType() == dbTechLayerType::ROUTING) {
+        router_cfg_->TOP_ROUTING_LAYER = layer_num;
+        break;
+      }
+    }
   }
 
   setTechVias(db->getTech());
