@@ -1125,6 +1125,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
             = model_->sibling(index.row() + 1, index.column(), index);
         if (cut_layer_index.isValid()) {
           auto cut_color_item = model_->itemFromIndex(cut_layer_index);
+          auto* cut_layer
+              = cut_color_item->data(user_data_item_idx_).value<dbTechLayer*>();
+          layer_color_[cut_layer] = chosen_color;
           cut_color_item->setIcon(makeSwatchIcon(chosen_color));
         }
       }
