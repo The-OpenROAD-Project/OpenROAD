@@ -2052,64 +2052,44 @@ void DisplayControls::techInit(odb::dbTech* tech)
   misc_.manufacturing_grid.name->setEnabled(tech->hasManufacturingGrid());
   misc_.manufacturing_grid.visible->setEnabled(tech->hasManufacturingGrid());
 
-  // Default colors
-  // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
-  const QColor colors[] = {QColor(0, 0, 254),
-                           QColor(254, 0, 0),
-                           QColor(9, 221, 0),
-                           QColor(190, 244, 81),
-                           QColor(222, 33, 96),  // Metal 5
-                           QColor(32, 216, 253),
-                           QColor(253, 108, 160),
-                           QColor(117, 63, 194),
-                           QColor(128, 155, 49),
-                           QColor(234, 63, 252),
-                           QColor(9, 96, 19),
-                           QColor(214, 120, 239),
-                           QColor(192, 222, 164),
-                           QColor(110, 68, 107)};
-  const int num_colors = sizeof(colors) / sizeof(QColor);
   int metal = 0;
   int via = 0;
 
   // ensure if random colors are used they are consistent
   std::mt19937 gen_color(1);
 
+  auto generate_next_color = [&gen_color]() -> QColor {
+    return QColor(
+        50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+  };
+
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     QColor color;
     if (type == dbTechLayerType::ROUTING) {
-      if (metal < num_colors) {
-        color = colors[metal++];
+      if (metal < default_metal_colors_.size()) {
+        color = default_metal_colors_[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + gen_color() % 200,
-                       50 + gen_color() % 200,
-                       50 + gen_color() % 200);
+        color = generate_next_color();
       }
     } else if (type == dbTechLayerType::CUT) {
-      if (via < num_colors) {
+      if (via < default_metal_colors_.size()) {
         if (metal != 0) {
-          color = colors[via++];
+          color = default_metal_colors_[via++];
         } else {
           // via came first, so pick random color
-          color = QColor(50 + gen_color() % 200,
-                         50 + gen_color() % 200,
-                         50 + gen_color() % 200);
+          color = generate_next_color();
         }
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + gen_color() % 200,
-                       50 + gen_color() % 200,
-                       50 + gen_color() % 200);
+        color = generate_next_color();
       }
     } else {
       // Do not draw from the existing palette so the metal layers can claim
       // those colors.
-      color = QColor(50 + gen_color() % 200,
-                     50 + gen_color() % 200,
-                     50 + gen_color() % 200);
+      color = generate_next_color();
     }
     color.setAlpha(180);
     layer_color_[layer] = std::move(color);
