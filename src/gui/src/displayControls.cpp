@@ -1033,50 +1033,43 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
   }
 }
 
-std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
+std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
     QStandardItem* item,
     const QModelIndex* index)
 {
   if (item == misc_.background.swatch) {
-    return {&background_color_, nullptr, false};
+    return {&background_color_, nullptr};
   }
   if (item == blockages_.blockages.swatch) {
-    return {&placement_blockage_color_, &placement_blockage_pattern_, false};
+    return {&placement_blockage_color_, &placement_blockage_pattern_};
   }
   if (item == misc_.regions.swatch) {
-    return {&region_color_, &region_pattern_, false};
+    return {&region_color_, &region_pattern_};
   }
   if (item == instance_shapes_.names.swatch) {
-    return {&instance_name_color_, nullptr, false};
+    return {&instance_name_color_, nullptr};
   }
   if (item == instance_shapes_.iterm_labels.swatch) {
-    return {&iterm_label_color_, nullptr, false};
+    return {&iterm_label_color_, nullptr};
   }
   if (item == rulers_.swatch) {
-    return {&ruler_color_, nullptr, false};
+    return {&ruler_color_, nullptr};
   }
   QVariant tech_layer_data = item->data(user_data_item_idx_);
   if (!tech_layer_data.isValid()) {
-    return {nullptr, nullptr, false};
+    return {nullptr, nullptr};
   }
   auto tech_layer = tech_layer_data.value<dbTechLayer*>();
   auto site = tech_layer_data.value<odb::dbSite*>();
   if (tech_layer != nullptr) {
     QColor* item_color = &layer_color_[tech_layer];
     Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
-    if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-      if (index && index->row() != 0) {
-        // ensure if a via is the first layer, it can still be modified
-        return {item_color, item_pattern, false};
-      }
-    } else {
-      return {item_color, item_pattern, true};
-    }
+    return {item_color, item_pattern};
   } else if (site != nullptr) {
-    return {&site_color_[site], nullptr, false};
+    return {&site_color_[site], nullptr};
   }
 
-  return {nullptr, nullptr, false};
+  return {nullptr, nullptr};
 }
 
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
@@ -1100,12 +1093,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 
     QColor* item_color = nullptr;
     Qt::BrushStyle* item_pattern = nullptr;
-    bool has_sibling = false;
 
     const auto lookup = lookupColor(color_item, &index);
     item_color = std::get<0>(lookup);
     item_pattern = std::get<1>(lookup);
-    has_sibling = std::get<2>(lookup);
 
     if (item_color == nullptr) {
       return;
@@ -1122,18 +1113,6 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     QColor chosen_color = display_dialog->getSelectedColor();
     if (chosen_color.isValid()) {
       color_item->setIcon(makeSwatchIcon(chosen_color));
-
-      if (has_sibling) {
-        auto cut_layer_index
-            = model_->sibling(index.row() + 1, index.column(), index);
-        if (cut_layer_index.isValid()) {
-          auto cut_color_item = model_->itemFromIndex(cut_layer_index);
-          auto* cut_layer
-              = cut_color_item->data(user_data_item_idx_).value<dbTechLayer*>();
-          layer_color_[cut_layer] = chosen_color;
-          cut_color_item->setIcon(makeSwatchIcon(chosen_color));
-        }
-      }
       *item_color = std::move(chosen_color);
       if (item_pattern != nullptr) {
         *item_pattern = display_dialog->getSelectedPattern();
@@ -1178,8 +1157,8 @@ void DisplayControls::setControlByPath(const std::string& path,
     logger_->error(utl::GUI, 40, "Unable to find {} display control", path);
   } else {
     for (auto* item : items) {
-      const auto& [item_color, item_style, sibling] = lookupColor(item);
-      if (sibling || item_color == nullptr) {
+      const auto& [item_color, item_style] = lookupColor(item);
+      if (item_color == nullptr) {
         continue;
       }
       *item_color = color;

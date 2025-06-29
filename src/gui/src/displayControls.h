@@ -24,7 +24,6 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -494,9 +493,9 @@ class DisplayControls : public QDockWidget,
 
   void checkLiberty(bool assume_loaded = false);
 
-  std::tuple<QColor*, Qt::BrushStyle*, bool> lookupColor(
-      QStandardItem* item,
-      const QModelIndex* index = nullptr);
+  std::pair<QColor*, Qt::BrushStyle*> lookupColor(QStandardItem* item,
+                                                  const QModelIndex* index
+                                                  = nullptr);
 
   QTreeView* view_;
   DisplayControlModel* model_;
