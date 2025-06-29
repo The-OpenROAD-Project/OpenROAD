@@ -7,6 +7,7 @@
 or_integration_tests(
   "cts"
   TESTS
+    hier_insertion_delay  
     array
     array_ins_delay
     array_no_blockages

@@ -2493,6 +2493,8 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
   std::string newBufName
       = "delaybuf_" + std::to_string(delayBufIndex_++) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
+  // TODO: check this out for hierarchy
+  // need  to be scoped to be in same module as driver
   odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
 
   newBuf->setSourceType(odb::dbSourceType::TIMING);
@@ -2502,6 +2504,10 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
   // connect driver output with new buffer input
   odb::dbITerm* driverOutTerm = driver->getFirstOutput();
   odb::dbITerm* newBufInTerm = getFirstInput(newBuf);
+  //
+  // TODO: make this work with hierarchy
+  // Allow for buffer connected to hierarchical nets
+  //
   driverOutTerm->disconnect();
   driverOutTerm->connect(newNet);
   newBufInTerm->connect(newNet);
@@ -2517,5 +2523,4 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
 
   return newBuf;
 }
-
 }  // namespace cts
