@@ -53,6 +53,11 @@ void OneBitScanCell::connectScanOut(const ScanLoad& load) const
           /*preserve=*/true);
 }
 
+ScanLoad OneBitScanCell::getScanEnable() const
+{
+  return ScanLoad(findITerm(getLibertyScanEnable(test_cell_)));
+}
+
 ScanDriver OneBitScanCell::getScanOut() const
 {
   return ScanDriver(findITerm(getLibertyScanOut(test_cell_)));
