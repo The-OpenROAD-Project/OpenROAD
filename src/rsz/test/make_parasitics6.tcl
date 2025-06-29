@@ -22,6 +22,12 @@ set_layer_rc -layer metal1 -corner ss \
 set_wire_rc -corner ff -layer metal1
 set_wire_rc -corner ss -layer metal1
 
+puts "Corner: ff"
+report_layer_rc -corner ff
+
+puts "Corner: ss"
+report_layer_rc -corner ss
+
 estimate_parasitics -placement -spef_file results/make_parasitics6.spef
 
 report_net r1/Q -corner ff
