@@ -12,6 +12,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <array>
 #include <functional>
 #include <random>
 #include <string>
@@ -2031,6 +2032,38 @@ void DisplayControls::techInit(odb::dbTech* tech)
   misc_.manufacturing_grid.name->setEnabled(tech->hasManufacturingGrid());
   misc_.manufacturing_grid.visible->setEnabled(tech->hasManufacturingGrid());
 
+  // Default colors
+  // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
+  const std::array<QColor, 14> default_metal_colors
+      = {QColor(0, 0, 254),
+         QColor(254, 0, 0),
+         QColor(9, 221, 0),
+         QColor(190, 244, 81),
+         QColor(222, 33, 96),  // Metal 5
+         QColor(32, 216, 253),
+         QColor(253, 108, 160),
+         QColor(117, 63, 194),
+         QColor(128, 155, 49),
+         QColor(234, 63, 252),  // Metal 10
+         QColor(9, 96, 19),
+         QColor(214, 120, 239),
+         QColor(192, 222, 164),
+         QColor(110, 68, 107)};  // Metal 14
+  const std::array<QColor, 14> default_cut_colors
+      = {QColor(126, 126, 255),
+         QColor(255, 126, 126),
+         QColor(4, 110, 0),
+         QColor(95, 122, 40),
+         QColor(111, 17, 48),  // Metal 5
+         QColor(16, 108, 126),
+         QColor(126, 54, 80),
+         QColor(58, 32, 97),
+         QColor(225, 255, 136),
+         QColor(117, 32, 126),  // Metal 10
+         QColor(18, 192, 38),
+         QColor(107, 60, 119),
+         QColor(96, 111, 82),
+         QColor(220, 136, 214)};  // Metal 14
   int metal = 0;
   int via = 0;
 
@@ -2047,16 +2080,16 @@ void DisplayControls::techInit(odb::dbTech* tech)
     dbTechLayerType type = layer->getType();
     QColor color;
     if (type == dbTechLayerType::ROUTING) {
-      if (metal < default_metal_colors_.size()) {
-        color = default_metal_colors_[metal++];
+      if (metal < default_metal_colors.size()) {
+        color = default_metal_colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
         color = generate_next_color();
       }
     } else if (type == dbTechLayerType::CUT) {
-      if (via < default_cut_colors_.size()) {
+      if (via < default_cut_colors.size()) {
         if (metal != 0) {
-          color = default_cut_colors_[via++];
+          color = default_cut_colors[via++];
         } else {
           // via came first, so pick random color
           color = generate_next_color();

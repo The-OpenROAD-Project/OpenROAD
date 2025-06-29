@@ -18,7 +18,6 @@
 #include <QTextEdit>
 #include <QTreeView>
 #include <QVBoxLayout>
-#include <array>
 #include <functional>
 #include <map>
 #include <optional>
@@ -579,39 +578,6 @@ class DisplayControls : public QDockWidget,
   static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
   static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
   static constexpr int disable_row_item_idx_ = Qt::UserRole + 4;
-
-  // Default colors
-  // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
-  static constexpr std::array<QColor, 14> default_metal_colors_
-      = {QColor(0, 0, 254),
-         QColor(254, 0, 0),
-         QColor(9, 221, 0),
-         QColor(190, 244, 81),
-         QColor(222, 33, 96),  // Metal 5
-         QColor(32, 216, 253),
-         QColor(253, 108, 160),
-         QColor(117, 63, 194),
-         QColor(128, 155, 49),
-         QColor(234, 63, 252),  // Metal 10
-         QColor(9, 96, 19),
-         QColor(214, 120, 239),
-         QColor(192, 222, 164),
-         QColor(110, 68, 107)};  // Metal 14
-  static constexpr std::array<QColor, 14> default_cut_colors_
-      = {QColor(126, 126, 255),
-         QColor(255, 126, 126),
-         QColor(4, 110, 0),
-         QColor(95, 122, 40),
-         QColor(111, 17, 48),  // Metal 5
-         QColor(16, 108, 126),
-         QColor(126, 54, 80),
-         QColor(58, 32, 97),
-         QColor(225, 255, 136),
-         QColor(117, 32, 126),  // Metal 10
-         QColor(18, 192, 38),
-         QColor(107, 60, 119),
-         QColor(96, 111, 82),
-         QColor(220, 136, 214)};  // Metal 14
 };
 
 }  // namespace gui
