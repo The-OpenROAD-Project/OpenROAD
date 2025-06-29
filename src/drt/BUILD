@@ -216,6 +216,8 @@ cc_library(
         "@boost.bind",
         "@boost.container",
         "@boost.geometry",
+        "@boost.graph",
+        "@boost.icl",
         "@boost.io",
         "@boost.polygon",
         "@boost.serialization",
@@ -278,6 +280,7 @@ cc_library(
         "@boost.geometry",
         "@boost.polygon",
         "@boost.serialization",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

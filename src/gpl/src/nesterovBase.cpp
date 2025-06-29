@@ -159,7 +159,7 @@ void GCell::setCenterLocation(int cx, int cy)
 }
 
 // changing size and preserve center coordinates
-void GCell::setSize(int dx, int dy)
+void GCell::setSize(int dx, int dy, GCellChange change)
 {
   const int centerX = cx();
   const int centerY = cy();
@@ -168,6 +168,8 @@ void GCell::setSize(int dx, int dy)
   ly_ = centerY - dy / 2;
   ux_ = centerX + dx / 2;
   uy_ = centerY + dy / 2;
+
+  change_ = change;
 }
 
 // Used for initialization
@@ -1465,7 +1467,7 @@ void NesterovBaseCommon::resetMinRcCellSize()
 
 void NesterovBaseCommon::resizeMinRcCellSize()
 {
-  minRcCellSize_.resize(nbc_gcells_.size(), std::make_pair(0, 0));
+  minRcCellSize_.resize(nbc_gcells_.size(), odb::Rect(0, 0, 0, 0));
 }
 
 void NesterovBaseCommon::updateMinRcCellSize()
@@ -1475,22 +1477,28 @@ void NesterovBaseCommon::updateMinRcCellSize()
       continue;
     }
 
-    minRcCellSize_[&gCell - nbc_gcells_.data()]
-        = std::make_pair(gCell->dx(), gCell->dy());
+    int idx = &gCell - nbc_gcells_.data();
+    minRcCellSize_[idx] = odb::Rect(0, 0, gCell->dx(), gCell->dy());
   }
 }
 
 void NesterovBaseCommon::revertGCellSizeToMinRc()
 {
-  // revert back the gcell sizes
   for (auto& gCell : nbc_gcells_) {
     if (!gCell->isStdInstance()) {
       continue;
     }
 
     int idx = &gCell - nbc_gcells_.data();
+    const odb::Rect& rect = minRcCellSize_[idx];
+    int dx = rect.dx();
+    int dy = rect.dy();
 
-    gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
+    if (rect.area() > gCell->insts()[0]->area()) {
+      gCell->setSize(dx, dy, GCell::GCellChange::kRoutability);
+    } else {
+      gCell->setSize(dx, dy, GCell::GCellChange::kNone);
+    }
   }
 }
 
@@ -2931,6 +2939,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   }
   // update gcell
   gcell->updateLocations();
+  gcell->setAreaChangeType(GCell::GCellChange::kTimingDriven);
 
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
@@ -3072,7 +3081,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
-  minRcCellSize_.emplace_back(gcell.dx(), gcell.dy());
+  minRcCellSize_.emplace_back(gcell.lx(), gcell.ly(), gcell.ux(), gcell.uy());
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;
@@ -3400,7 +3409,7 @@ void NesterovBaseCommon::printGCellsToFile(const std::string& filename,
     for (size_t i = 0; i < minRcCellSize_.size(); ++i) {
       const auto& min_rc = minRcCellSize_[i];
       minrc_out << fmt::format(
-          "idx:{} minRc: {} {}\n", i, min_rc.first, min_rc.second);
+          "idx:{} minRc: {} {}\n", i, min_rc.dx(), min_rc.dy());
     }
 
     minrc_out.close();

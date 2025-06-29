@@ -14,8 +14,8 @@ class dbTechLayerRule;
 
 class definNonDefaultRule : public definBase
 {
-  dbTechNonDefaultRule* _cur_rule;
-  dbTechLayerRule* _cur_layer_rule;
+  dbTechNonDefaultRule* _cur_rule{nullptr};
+  dbTechLayerRule* _cur_layer_rule{nullptr};
 
  public:
   virtual void beginRule(const char* name);
@@ -31,10 +31,6 @@ class definNonDefaultRule : public definBase
   virtual void property(const char* name, int value);
   virtual void property(const char* name, double value);
   virtual void endRule();
-
-  definNonDefaultRule();
-  ~definNonDefaultRule() override;
-  void init() override;
 };
 
 }  // namespace odb

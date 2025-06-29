@@ -206,20 +206,52 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   int yh = gcy + gCell->dy() / 2;
 
   gui::Painter::Color color;
-  if (gCell->isInstance()) {
-    color = gCell->isLocked() ? gui::Painter::dark_cyan
-                              : gui::Painter::dark_green;
-  } else if (gCell->isFiller()) {
-    color = gui::Painter::dark_magenta;
+  // Highlight modified instances (overrides base color, unless selected)
+  switch (gCell->changeType()) {
+    case GCell::GCellChange::kRoutability:
+      color = {255, 255, 255, 100};  // White
+      break;
+    case GCell::GCellChange::kTimingDriven:
+      color = {180, 150, 255, 100};  // Light purple
+      break;
+    default:
+      if (gCell->isInstance()) {
+        color = gCell->isLocked() ? gui::Painter::dark_cyan
+                                  : gui::Painter::dark_green;
+      } else if (gCell->isFiller()) {
+        color = gui::Painter::dark_magenta;
+      }
+      color.a = 180;
+      break;
   }
 
+  // Highlight selection (highest priority)
   if (gCell == selected_) {
     color = gui::Painter::yellow;
+    color.a = 180;
   }
 
-  color.a = 180;
   painter.setBrush(color);
   painter.drawRect({xl, yl, xh, yh});
+
+  if (gCell->isInstance()) {
+    odb::dbInst* db_inst = gCell->insts()[0]->dbInst();
+    if (db_inst != nullptr) {
+      odb::dbBox* bbox = db_inst->getBBox();
+      if (bbox != nullptr) {
+        int origLx = bbox->xMin();
+        int origLy = bbox->yMin();
+        int origUx = bbox->xMax();
+        int origUy = bbox->yMax();
+
+        gui::Painter::Color outline = gui::Painter::black;
+        outline.a = 150;  // Semi-transparent
+
+        painter.setPen(outline, /*cosmetic=*/false, /*width=*/1);
+        painter.drawRect({origLx, origLy, origUx, origUy});
+      }
+    }
+  }
 }
 
 void Graphics::drawNesterov(gui::Painter& painter)

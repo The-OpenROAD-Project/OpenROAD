@@ -701,6 +701,9 @@ class dbBox : public dbObject
   ///
   static dbBox* create(dbInst* inst, int x1, int y1, int x2, int y2);
 
+  // Destroy box
+  static void destroy(dbBox* box);
+
   ///
   /// Translate a database-id back to a pointer.
   /// This function translates any dbBox which is part of a block.
@@ -1532,6 +1535,11 @@ class dbBlock : public dbObject
   void setMaxLayerForClock(int max_layer_for_clock);
 
   ///
+  /// Get the gcell tile size
+  ///
+  int getGCellTileSize();
+
+  ///
   /// Get the extraction corner names
   ///
   void getExtCornerNames(std::list<std::string>& ecl);
@@ -1587,6 +1595,11 @@ class dbBlock : public dbObject
   /// check if signal, clock and special nets are routed
   ///
   bool designIsRouted(bool verbose);
+
+  ///
+  /// Destroy wires of nets
+  ///
+  void destroyNetWires();
 
   ///
   /// clear
@@ -7655,6 +7668,10 @@ class dbGuide : public dbObject
   bool isJumper();
 
   void setIsJumper(bool jumper);
+
+  bool isConnectedToTerm();
+
+  void setIsConnectedToTerm(bool is_connected);
 
   // User Code End dbGuide
 };

@@ -235,9 +235,10 @@ void createSBoxes(odb::dbSWire* swire,
                   std::vector<odb::Rect> rects,
                   odb::dbWireShapeType type)
 {
-  for (odb::Rect rect : rects)
+  for (odb::Rect rect : rects) {
     odb::dbSBox::create(
         swire, layer, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), type);
+  }
 }
 
 void createSBoxes(odb::dbSWire* swire,
@@ -245,8 +246,9 @@ void createSBoxes(odb::dbSWire* swire,
                   std::vector<odb::Point> points,
                   odb::dbWireShapeType type)
 {
-  for (odb::Point point : points)
+  for (odb::Point point : points) {
     odb::dbSBox::create(swire, via, point.getX(), point.getY(), type);
+  }
 }
 
 void dumpAPs(odb::dbBlock* block, const std::string file_name)

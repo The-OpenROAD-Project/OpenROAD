@@ -444,10 +444,7 @@ class FlexDRWorker
 
   void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
 
-  const std::vector<Point3D> getSpecialAccessAPs() const
-  {
-    return specialAccessAPs;
-  }
+  std::vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
   bool isSkipRouting() const { return skipRouting_; }
 

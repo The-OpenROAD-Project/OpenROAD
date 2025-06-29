@@ -13,8 +13,8 @@ create_clock -name clk2 -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk
 set_dft_config -max_length 20000 -clock_mixing no_mix
 
 scan_replace
-preview_dft -verbose
-insert_dft
+report_dft_plan -verbose
+execute_dft_plan
 
 set verilog_file [make_result_file scan_architect_register_bank_no_clock_mix_sky130.v]
 write_verilog $verilog_file

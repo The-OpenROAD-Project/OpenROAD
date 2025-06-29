@@ -303,7 +303,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
              getShapeCount());
 }
 
-void GridComponent::writeToDb(
+std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
     const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
     bool add_pins,
     const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const
@@ -314,6 +314,8 @@ void GridComponent::writeToDb(
       all_shapes.push_back(shape);
     }
   }
+
+  std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
 
   // sort shapes so they get written to db in the same order
   std::sort(
@@ -334,8 +336,11 @@ void GridComponent::writeToDb(
     }
     const bool is_pin_layer = convert_layer_to_pin.find(shape->getLayer())
                               != convert_layer_to_pin.end();
-    shape->writeToDb(net->second, add_pins, is_pin_layer);
+    shape_map[shape.get()]
+        = shape->writeToDb(net->second, add_pins, is_pin_layer);
   }
+
+  return shape_map;
 }
 
 void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,

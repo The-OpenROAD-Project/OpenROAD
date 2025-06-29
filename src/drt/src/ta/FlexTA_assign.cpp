@@ -822,8 +822,10 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     exit(1);
   }
   // always penalize two pitch per cut, regardless of cnts
-  return (overlap == 0) ? 0
-                        : (isCut ? pitch * 2 : std::max(pitch * 2, overlap));
+  if (overlap == 0) {
+    return 0;
+  }
+  return isCut ? pitch * 2 : std::max(pitch * 2, overlap);
 }
 
 frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)

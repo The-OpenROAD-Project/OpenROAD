@@ -2014,8 +2014,9 @@ void Resizer::resizeSlackPreamble()
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   IncrementalParasiticsGuard guard(this);
-  if (run_journal_restore)
+  if (run_journal_restore) {
     journalBegin();
+  }
   ensureLevelDrvrVertices();
   estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
@@ -3375,7 +3376,7 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
 {
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
-  return cellWireDelay(drvr_port, load_port, wire_length, sta, delay, slew);
+  cellWireDelay(drvr_port, load_port, wire_length, sta, delay, slew);
 }
 
 // Cell delay plus wire delay.

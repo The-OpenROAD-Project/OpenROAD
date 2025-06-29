@@ -754,10 +754,29 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
+  std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
-      grid->writeToDb(net_map, add_pins, obstructions);
+      const auto db_shapes = grid->writeToDb(net_map, add_pins, obstructions);
+      shape_map.insert(db_shapes.begin(), db_shapes.end());
+
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
+    }
+  }
+
+  // Cleanup floating shapes due to failed vias
+  for (const auto& [shape, db_shapes] : shape_map) {
+    if (!shape->isLocked() && !shape->hasInternalConnections()) {
+      for (odb::dbBox* db_box : db_shapes) {
+        if (db_box == nullptr) {
+          continue;
+        }
+        if (db_box->getObjectType() == odb::dbObjectType::dbSBoxObj) {
+          odb::dbSBox::destroy((odb::dbSBox*) db_box);
+        } else {
+          odb::dbBox::destroy(db_box);
+        }
+      }
     }
   }
 

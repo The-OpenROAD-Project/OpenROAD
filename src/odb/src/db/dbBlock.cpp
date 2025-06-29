@@ -2351,6 +2351,33 @@ void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
   block->_max_layer_for_clock = max_layer_for_clock;
 }
 
+int dbBlock::getGCellTileSize()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  // Use the pitch of the third routing layer to compute the gcell tile size.
+  int layer_for_gcell_size = 3;
+  if (block->_max_routing_layer < layer_for_gcell_size) {
+    layer_for_gcell_size = block->_max_routing_layer;
+  }
+  const int pitches_in_tile = 15;
+
+  dbTech* tech = getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_gcell_size);
+  odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+
+  if (track_grid == nullptr) {
+    getImpl()->getLogger()->error(utl::ODB,
+                                  358,
+                                  "Track grid for routing layer {} not found.",
+                                  tech_layer->getName());
+  }
+
+  int track_spacing, track_init, num_tracks;
+  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+
+  return pitches_in_tile * track_spacing;
+}
+
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -3191,6 +3218,16 @@ bool dbBlock::designIsRouted(bool verbose)
     }
   }
   return design_is_routed;
+}
+
+void dbBlock::destroyNetWires()
+{
+  for (dbNet* db_net : getNets()) {
+    dbWire* wire = db_net->getWire();
+    if (!db_net->isSpecial() && wire) {
+      dbWire::destroy(wire);
+    }
+  }
 }
 
 int dbBlock::globalConnect()

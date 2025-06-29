@@ -332,6 +332,8 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
  public:
   PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
 
+  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+
  protected:
   bool populateMap() override;
   void combineMapData(bool base_has_value,

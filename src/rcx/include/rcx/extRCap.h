@@ -1699,8 +1699,9 @@ struct BoundaryData
     maxExtractBuffer = ccTrackDist * pitch2;
 
     iterationIncrement = iterationTrackCount * minPitch;
-    if (maxWidth > maxCouplingTracks * maxPitch)
+    if (maxWidth > maxCouplingTracks * maxPitch) {
       iterationIncrement = std::max(ur[1] - ll[1], ur[0] - ll[0]);
+    }
 
     for (uint dir = 0; dir < 2; dir++) {
       lo_gs[dir] = ll[dir];

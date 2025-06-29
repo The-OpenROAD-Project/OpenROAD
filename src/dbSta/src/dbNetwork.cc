@@ -947,8 +947,9 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module)
+    if (db_module) {
       return false;
+    }
     return true;
   }
   return instance != top_instance_;
@@ -1619,19 +1620,13 @@ Instance* dbNetwork::instance(const Net*) const
 
 bool dbNetwork::isPower(const Net* net) const
 {
-  dbNet* dnet = staToDb(net);
-  return (dnet->getSigType() == dbSigType::POWER);
-
-  /*
-  // TODO: make this work for modnets
-  // by uncommenting code below
-
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
   if (db_net) {
     return (db_net->getSigType() == dbSigType::POWER);
   }
+
   if (db_modnet) {
     dbNet* related_net = findRelatedDbNet(db_modnet);
     if (related_net) {
@@ -1639,17 +1634,10 @@ bool dbNetwork::isPower(const Net* net) const
     }
   }
   return false;
-  */
 }
 
 bool dbNetwork::isGround(const Net* net) const
 {
-  dbNet* dnet = staToDb(net);
-  return (dnet->getSigType() == dbSigType::GROUND);
-  /*
-  // TODO: make this work for modnets
-  // by uncommenting code below
-
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1663,7 +1651,6 @@ bool dbNetwork::isGround(const Net* net) const
     }
   }
   return false;
-  */
 }
 
 NetPinIterator* dbNetwork::pinIterator(const Net* net) const
@@ -3893,8 +3880,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                 ->getOwningInstanceParent(const_cast<Pin*>(pin));
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
-        // TODO: uncomment error: 2030, once all cases pass.
-        /*
         logger_->error(
             ORD,
             2030,
@@ -3906,7 +3891,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),
             db_network_->name(search_net_));
-        */
       }
     }
     dbnet_ = candidate_flat_net;

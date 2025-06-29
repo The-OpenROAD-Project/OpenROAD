@@ -8,22 +8,22 @@ violation type: Short
 	srcs: net:req_msg[18] net:_232_
 	bbox = (47.7500, 32.9350) - (47.8200, 33.0050) on Layer metal2
 violation type: Short
-	srcs: net:_278_ net:_160_
+	srcs: net:_160_ net:_278_
 	bbox = (57.8200, 44.1000) - (57.8900, 44.1350) on Layer metal2
 violation type: Short
-	srcs: net:_278_ net:_160_
+	srcs: net:_160_ net:_278_
 	bbox = (57.8200, 44.1345) - (57.8900, 44.1355) on Layer metal2
 violation type: Short
-	srcs: net:_278_ net:_160_
+	srcs: net:_160_ net:_278_
 	bbox = (58.0100, 44.1350) - (58.0800, 44.2050) on Layer metal2
 violation type: Short
-	srcs: net:_278_ net:_160_
+	srcs: net:_160_ net:_278_
 	bbox = (57.8200, 44.1345) - (58.0800, 44.1355) on Layer metal2
 violation type: Short
-	srcs: net:_269_ net:_077_
+	srcs: net:_077_ net:_269_
 	bbox = (48.5100, 73.4645) - (48.5800, 73.4655) on Layer metal2
 violation type: Short
-	srcs: net:_269_ net:_077_
+	srcs: net:_077_ net:_269_
 	bbox = (48.5100, 73.4650) - (48.5800, 73.5000) on Layer metal2
 violation type: Short
 	srcs: net:_017_ net:_188_
@@ -59,7 +59,7 @@ violation type: Short
 	srcs: net:_103_ net:_147_
 	bbox = (74.5400, 44.1345) - (74.6100, 44.1355) on Layer metal2
 violation type: Short
-	srcs: net:_283_ net:_188_
+	srcs: net:_188_ net:_283_
 	bbox = (82.1400, 44.1000) - (82.2100, 44.1350) on Layer metal2
 violation type: Short
 	srcs: net:_283_ net:_284_

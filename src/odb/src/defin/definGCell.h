@@ -11,12 +11,7 @@ namespace odb {
 class definGCell : public definBase
 {
  public:
-  /// GCell interface methods
   virtual void gcell(defDirection dir, int orig, int count, int step);
-
-  definGCell();
-  ~definGCell() override;
-  void init() override;
 };
 
 }  // namespace odb

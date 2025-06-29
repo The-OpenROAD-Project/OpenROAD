@@ -493,8 +493,9 @@ void TimingWidget::clearPathDetails()
 
 void TimingWidget::showPathDetails(const QModelIndex& index)
 {
-  if (!index.isValid())
+  if (!index.isValid()) {
     return;
+  }
 
   if (index.model() == setup_timing_paths_model_) {
     hold_timing_table_view_->clearSelection();
@@ -678,8 +679,9 @@ void TimingWidget::copy()
   QItemSelectionModel* selection = focus_view->selectionModel();
   QModelIndexList indexes = selection->selectedIndexes();
 
-  if (indexes.size() < 1)
+  if (indexes.size() < 1) {
     return;
+  }
   auto& sel_index = indexes.first();
   if (focus_view == setup_timing_table_view_
       || focus_view == hold_timing_table_view_) {
