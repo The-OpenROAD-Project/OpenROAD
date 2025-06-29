@@ -1533,6 +1533,115 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
 }
 
+// Function to extract level number from clock net name
+int extractClockTreeLevelFromNetName(const std::string& netName)
+{
+  // Pattern to find number between underscores (e.g., "clknet_2_clk_i")
+  std::regex pattern("_([0-9]+)_");
+  std::smatch match;
+
+  if (std::regex_search(netName, match, pattern)) {
+    return std::stoi(match[1]);
+  }
+
+  // If no number found between underscores, it's level 0
+  return 0;
+}
+
+// Utility function to get all unique clock tree levels in the design
+std::vector<int> getAllClockTreeLevels(odb::dbBlock* block_,
+                                       const std::set<odb::dbNet*>& clkLeafNets)
+{
+  std::set<int> uniqueLevels;
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->getSigType() == odb::dbSigType::CLOCK
+        && (clkLeafNets.find(net) == clkLeafNets.end())) {
+      int level = extractClockTreeLevelFromNetName(net->getConstName());
+      uniqueLevels.insert(level);
+    }
+  }
+
+  return std::vector<int>(uniqueLevels.begin(), uniqueLevels.end());
+  ;
+}
+
+// Function to apply NDR to specific clock tree levels and return the number of
+// NDR applied nets
+int applyNDRToClockLevels(odb::dbBlock* block_,
+                          odb::dbTechNonDefaultRule* clockNDR,
+                          const std::set<odb::dbNet*>& clkLeafNets,
+                          const std::vector<int>& targetLevels)
+{
+  int totalClkNets = 0;
+  int ndrAppliedNets = 0;
+
+  std::cout << "\n=== Applying NDR to clock tree levels: ";
+  for (int level : targetLevels) {
+    std::cout << level << " ";
+  }
+  std::cout << "===" << std::endl;
+
+  // Single pass: check clock nets and apply NDR if level matches
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->getSigType() == odb::dbSigType::CLOCK
+        && (clkLeafNets.find(net) == clkLeafNets.end())) {
+      totalClkNets++;
+      std::string netName = net->getConstName();
+      int level = extractClockTreeLevelFromNetName(netName);
+
+      // Apply NDR if this level is in the target list
+      if (std::find(targetLevels.begin(), targetLevels.end(), level)
+          != targetLevels.end()) {
+        net->setNonDefaultRule(clockNDR);
+        ndrAppliedNets++;
+        std::cout << "Applied NDR to: " << netName << " (level " << level << ")"
+                  << std::endl;
+      }
+    }
+  }
+
+  return ndrAppliedNets;
+}
+
+// Alternative function to apply NDR to a range of clock tree levels
+int applyNDRToClockLevelRange(odb::dbBlock* block_,
+                              odb::dbTechNonDefaultRule* clockNDR,
+                              const std::set<odb::dbNet*>& clkLeafNets,
+                              int minLevel,
+                              int maxLevel)
+{
+  std::vector<int> targetLevels;
+  for (int i = minLevel; i <= maxLevel; i++) {
+    targetLevels.push_back(i);
+  }
+
+  return applyNDRToClockLevels(block_, clockNDR, clkLeafNets, targetLevels);
+}
+
+// Function to apply NDR to the first half of clock tree levels
+int applyNDRToFirstHalfLevels(odb::dbBlock* block_,
+                              odb::dbTechNonDefaultRule* clockNDR,
+                              const std::set<odb::dbNet*>& clkLeafNets)
+{
+  // Get all unique levels in the design
+  std::vector<int> allLevels = getAllClockTreeLevels(block_, clkLeafNets);
+
+  // Calculate first half (rounding up if odd number of levels)
+  size_t halfCount = (allLevels.size() + 1) / 2;
+
+  // Create vector with first half of levels
+  std::vector<int> firstHalfLevels(allLevels.begin(),
+                                   allLevels.begin() + halfCount);
+
+  std::cout << "Total clock tree levels found: " << allLevels.size()
+            << std::endl;
+  std::cout << "Applying NDR to first " << halfCount << " levels" << std::endl;
+
+  // Apply NDR to the first half
+  return applyNDRToClockLevels(block_, clockNDR, clkLeafNets, firstHalfLevels);
+}
+
 void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
 {
   char ruleName[64];
@@ -1571,15 +1680,32 @@ void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
     // clang-format on
   }
 
-  // apply NDR to all non-leaf clock nets
   int clkNets = 0;
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType() == odb::dbSigType::CLOCK
-        && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      net->setNonDefaultRule(clockNDR);
-      clkNets++;
-    }
-  }
+
+  // std::vector<int> levels = getAllClockTreeLevels(block_, clkLeafNets);
+
+  // Option 1: Apply NDR to specific levels
+  // std::vector<int> specificLevels = {0, 1, 2};  // Apply to levels 0, 1, and
+  // 2 clkNets = applyNDRToClockLevels(block_, clockNDR, clkLeafNets,
+  // specificLevels);
+
+  // Option 2: Apply NDR to a range of levels (e.g., Levels 0-3)
+  // clkNets = applyNDRToClockLevelRange(block_, clockNDR, clkLeafNets, 0, 3);
+
+  // Option 3: Apply NDR to the first half of the clk tree levels (higher
+  // levels)
+  clkNets = applyNDRToFirstHalfLevels(block_, clockNDR, clkLeafNets);
+
+  // apply NDR to all non-leaf clock nets
+  // int clkNets = 0;
+  // for (odb::dbNet* net : block_->getNets()) {
+  //   if (net->getSigType() == odb::dbSigType::CLOCK
+  //       && (clkLeafNets.find(net) == clkLeafNets.end())) {
+  //     net->setNonDefaultRule(clockNDR);
+  //     std::cout << net->getName() << std::endl;
+  //     clkNets++;
+  //   }
+  // }
 
   logger_->info(CTS,
                 202,
