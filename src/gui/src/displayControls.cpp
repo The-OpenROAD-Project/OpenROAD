@@ -2075,9 +2075,9 @@ void DisplayControls::techInit(odb::dbTech* tech)
         color = generate_next_color();
       }
     } else if (type == dbTechLayerType::CUT) {
-      if (via < default_metal_colors_.size()) {
+      if (via < default_cut_colors_.size()) {
         if (metal != 0) {
-          color = default_metal_colors_[via++];
+          color = default_cut_colors_[via++];
         } else {
           // via came first, so pick random color
           color = generate_next_color();

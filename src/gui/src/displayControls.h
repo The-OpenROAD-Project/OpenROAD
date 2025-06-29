@@ -598,6 +598,21 @@ class DisplayControls : public QDockWidget,
          QColor(214, 120, 239),
          QColor(192, 222, 164),
          QColor(110, 68, 107)};  // Metal 14
+  static constexpr std::array<QColor, 14> default_cut_colors_
+      = {QColor(126, 126, 255),
+         QColor(255, 126, 126),
+         QColor(4, 110, 0),
+         QColor(95, 122, 40),
+         QColor(111, 17, 48),  // Metal 5
+         QColor(16, 108, 126),
+         QColor(126, 54, 80),
+         QColor(58, 32, 97),
+         QColor(225, 255, 136),
+         QColor(117, 32, 126),  // Metal 10
+         QColor(18, 192, 38),
+         QColor(107, 60, 119),
+         QColor(96, 111, 82),
+         QColor(220, 136, 214)};  // Metal 14
 };
 
 }  // namespace gui
