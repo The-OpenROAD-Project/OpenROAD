@@ -320,9 +320,19 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
     for (const Pin* pin : *clk_pins) {
       dbNet* db_net = nullptr;
       sta::dbNetwork* db_network = getDbNetwork();
-      db_net = db_network->flatNet(pin);
-      if (db_net) {
-        clk_nets.insert(db_net);
+      // hierarchical fix
+      if (db_network->hasHierarchy()) {
+        db_net = db_network_->flatNet(pin);
+        if (db_net) {
+          clk_nets.insert(db_net);
+        }
+      }
+      // for backward compatibility with jpeg regression case.
+      else {
+        Net* net = network_->net(pin);
+        if (net) {
+          clk_nets.insert(db_network_->staToDb(net));
+        }
       }
     }
   }

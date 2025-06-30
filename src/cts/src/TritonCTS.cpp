@@ -2409,7 +2409,9 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   // hierarchy support:
   // Get the hierarchical net if any and propagate to end of chain
   sta::Pin* op_pin = network_->dbToSta(driverOutputTerm);
-  odb::dbModNet* candidate_hier_net = network_->hierNet(op_pin);
+  odb::dbModNet* candidate_hier_net = network_->hasHierarchicalElements()
+                                          ? network_->hierNet(op_pin)
+                                          : nullptr;
   odb::dbNet* orig_flat_net = network_->flatNet(op_pin);
   (void) orig_flat_net;
   (void) candidate_hier_net;
@@ -2442,8 +2444,8 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   // driver is now the last delay buffer
   driverOutputTerm = driver->getFirstOutput();
   driverOutputTerm->disconnect();
-  // hierarchical fix.
-  if (candidate_hier_net) {
+  // hierarchical fix. guarded by network has hierarchy
+  if (candidate_hier_net && network_->hasHierarchy()) {
     driverOutputTerm->connect(orig_flat_net, candidate_hier_net);
   } else {
     driverOutputTerm->connect(outputNet);
