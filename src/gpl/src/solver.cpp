@@ -26,7 +26,7 @@ ResidualError cpuSparseSolve(int maxSolverIter,
 
   solver.compute(placeInstForceMatrixX);
   instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
-  if (solver.info() == Eigen::Success) {
+  if (solver.info() == Eigen::NoConvergence || solver.info() == Eigen::Success) {
     residual_error.x = solver.error();
   } else {
     residual_error.x = std::numeric_limits<float>::quiet_NaN();
@@ -34,7 +34,7 @@ ResidualError cpuSparseSolve(int maxSolverIter,
 
   solver.compute(placeInstForceMatrixY);
   instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
-  if (solver.info() == Eigen::Success) {
+  if (solver.info() == Eigen::NoConvergence || solver.info() == Eigen::Success) {
     residual_error.y = solver.error();
   } else {
     residual_error.y = std::numeric_limits<float>::quiet_NaN();
