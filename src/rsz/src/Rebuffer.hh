@@ -31,6 +31,7 @@ using sta::Vertex;
 
 class Resizer;
 class BufferedNet;
+class RepairSetup;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
@@ -43,15 +44,19 @@ class Rebuffer : public sta::dbStaState
 
  protected:
   void init();
+  void initOnCorner(sta::Corner* corner);
 
   void annotateLoadSlacks(BufferedNetPtr& tree, Vertex* root_vertex);
   void annotateTiming(const BufferedNetPtr& tree);
   BufferedNetPtr stripTreeBuffers(const BufferedNetPtr& tree);
   BufferedNetPtr resteiner(const BufferedNetPtr& tree);
-  BufferedNetPtr bufferForTiming(const BufferedNetPtr& tree);
+  BufferedNetPtr bufferForTiming(const BufferedNetPtr& tree,
+                                 bool allow_topology_rewrite = true);
   BufferedNetPtr recoverArea(const BufferedNetPtr& root,
                              Delay slack_target,
                              float alpha);
+
+  void setPin(Pin* drvr_pin);
 
   std::tuple<Delay, Delay, Slew> drvrPinTiming(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet);
@@ -121,6 +126,9 @@ class Rebuffer : public sta::dbStaState
                               const BufferedNetPtr& bnet,
                               int extra_wire_length = 0);
 
+  bool hasTopLevelOutputPort(Net* net);
+  int rebufferPin(const Pin* drvr_pin);
+
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
@@ -155,6 +163,9 @@ class Rebuffer : public sta::dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
+
+  friend class RepairSetup;
+  friend class BufferMove;
 };
 
 };  // namespace rsz
