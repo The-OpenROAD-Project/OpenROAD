@@ -30,7 +30,7 @@
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 
-using namespace dst;
+namespace dst {
 
 class HelperCallBack : public dst::JobCallBack
 {
@@ -39,10 +39,11 @@ class HelperCallBack : public dst::JobCallBack
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
     JobMessage replyMsg;
-    if (msg.getJobType() == JobMessage::JobType::ROUTING)
+    if (msg.getJobType() == JobMessage::JobType::ROUTING) {
       replyMsg.setJobType(JobMessage::JobType::SUCCESS);
-    else
+    } else {
       replyMsg.setJobType(JobMessage::JobType::ERROR);
+    }
     dist_->sendResult(replyMsg, sock);
   }
 
@@ -57,3 +58,5 @@ class HelperCallBack : public dst::JobCallBack
  private:
   dst::Distributed* dist_;
 };
+
+}  // namespace dst

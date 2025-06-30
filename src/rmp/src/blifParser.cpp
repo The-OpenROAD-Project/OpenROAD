@@ -27,7 +27,6 @@ namespace blif_parser {
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
-namespace phoenix = boost::phoenix;
 
 using namespace boost::placeholders;
 
@@ -41,20 +40,23 @@ using ascii::space;
 
 void setNewInput(std::string input, rmp::BlifParser* parser)
 {
-  if (input != "\\")
+  if (input != "\\") {
     parser->addInput(input);
+  }
 }
 
 void setNewOutput(std::string output, rmp::BlifParser* parser)
 {
-  if (output != "\\")
+  if (output != "\\") {
     parser->addOutput(output);
+  }
 }
 
 void setNewClock(std::string clock, rmp::BlifParser* parser)
 {
-  if (clock != "\\")
+  if (clock != "\\") {
     parser->addClock(clock);
+  }
 }
 
 void setNewInstanceType(std::string type, rmp::BlifParser* parser)
@@ -139,10 +141,11 @@ void BlifParser::addNewInstanceType(const std::string& type)
   if (type != "mlatch") {
     currentInstanceType_ = (type == "gate") ? GateType::Gate : GateType::None;
   }
-  if (currentInstanceType_ == GateType::Mlatch)
+  if (currentInstanceType_ == GateType::Mlatch) {
     flopCount_++;
-  else if (currentInstanceType_ == GateType::Gate)
+  } else if (currentInstanceType_ == GateType::Gate) {
     combCount_++;
+  }
   currentConnections_.clear();
 }
 void BlifParser::addNewGate(const std::string& cell_name)

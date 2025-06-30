@@ -94,7 +94,7 @@ void TimingPathNode::copyData(TimingPathNode* other) const
   other->fanout_ = fanout_;
 }
 
-const odb::Rect TimingPathNode::getPinBBox() const
+odb::Rect TimingPathNode::getPinBBox() const
 {
   if (isPinITerm()) {
     return getPinAsITerm()->getBBox();
@@ -102,7 +102,7 @@ const odb::Rect TimingPathNode::getPinBBox() const
   return getPinAsBTerm()->getBBox();
 }
 
-const odb::Rect TimingPathNode::getPinLargestBox() const
+odb::Rect TimingPathNode::getPinLargestBox() const
 {
   if (isPinITerm()) {
     auto* iterm = getPinAsITerm();
@@ -139,11 +139,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 /////////
 
 TimingPath::TimingPath()
-    : path_nodes_(),
-      capture_nodes_(),
-      start_clk_(),
-      end_clk_(),
-      slack_(0),
+    : slack_(0),
       skew_(0),
       path_delay_(0),
       arr_time_(0),

@@ -743,7 +743,7 @@ double lefiPin_propNum(const ::lefiPin* obj, int index)
   return ((LefParser::lefiPin*) obj)->propNum(index);
 }
 
-const char lefiPin_propType(const ::lefiPin* obj, int index)
+char lefiPin_propType(const ::lefiPin* obj, int index)
 {
   return ((const LefParser::lefiPin*) obj)->propType(index);
 }
@@ -934,7 +934,7 @@ double lefiMacro_propNum(const ::lefiMacro* obj, int index)
   return ((LefParser::lefiMacro*) obj)->propNum(index);
 }
 
-const char lefiMacro_propType(const ::lefiMacro* obj, int index)
+char lefiMacro_propType(const ::lefiMacro* obj, int index)
 {
   return ((const LefParser::lefiMacro*) obj)->propType(index);
 }

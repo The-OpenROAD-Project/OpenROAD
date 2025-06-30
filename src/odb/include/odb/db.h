@@ -1535,6 +1535,11 @@ class dbBlock : public dbObject
   void setMaxLayerForClock(int max_layer_for_clock);
 
   ///
+  /// Get the gcell tile size
+  ///
+  int getGCellTileSize();
+
+  ///
   /// Get the extraction corner names
   ///
   void getExtCornerNames(std::list<std::string>& ecl);

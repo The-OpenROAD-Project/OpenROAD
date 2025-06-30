@@ -66,8 +66,9 @@ int versionCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwVersion(5, 6);
   CHECK_STATUS(status);
   return 0;
@@ -78,8 +79,9 @@ int dividerCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwDividerChar("/");
   CHECK_STATUS(status);
   return 0;
@@ -90,8 +92,9 @@ int busbitCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwBusBitChars("[]");
   CHECK_STATUS(status);
   return 0;
@@ -102,8 +105,9 @@ int designCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwDesignName("muk");
   CHECK_STATUS(status);
   return 0;
@@ -114,8 +118,9 @@ int technologyCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwTechnology("muk");
   CHECK_STATUS(status);
   return 0;
@@ -126,8 +131,9 @@ int arrayCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwArray("core_array");
   CHECK_STATUS(status);
   return 0;
@@ -138,8 +144,9 @@ int floorplanCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwFloorplan("DEFAULT");
   CHECK_STATUS(status);
   return 0;
@@ -150,8 +157,9 @@ int unitsCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwUnits(100);
   CHECK_STATUS(status);
   status = defwNewLine();
@@ -165,8 +173,9 @@ int historyCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwHistory(
       "Corrected STEP for ROW_9 and added ROW_10 of SITE CORE1 (def)");
   CHECK_STATUS(status);
@@ -185,8 +194,9 @@ int propdefCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartPropDef();
   CHECK_STATUS(status);
   defwAddComment("defwPropDef is broken into 3 routines, defwStringPropDef");
@@ -258,8 +268,9 @@ int dieareaCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwDieArea(-190000, -120000, 190000, 70000);
   CHECK_STATUS(status);
   status = defwNewLine();
@@ -273,8 +284,9 @@ int rowCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwRow("ROW_9", "CORE", -177320, -111250, 5, 911, 1, 360, 0);
   CHECK_STATUS(status);
   status = defwRealProperty("minlength", 50.5);
@@ -295,8 +307,9 @@ int trackCB(defwCallbackType_e c, defiUserData ud)
   const char** layers;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   layers = (const char**) malloc(sizeof(char*) * 1);
   layers[0] = strdup("M1");
   status = defwTracks("X", 3000, 40, 120, 1, layers);
@@ -318,8 +331,9 @@ int gcellgridCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwGcellGrid("X", 0, 100, 600);
   CHECK_STATUS(status);
   status = defwGcellGrid("Y", 10, 120, 400);
@@ -335,8 +349,9 @@ int viaCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartVias(2);
   CHECK_STATUS(status);
   status = defwViaName("VIA_ARRAY");
@@ -370,8 +385,9 @@ int regionCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartRegions(2);
   CHECK_STATUS(status);
   status = defwRegionName("region1");
@@ -405,8 +421,9 @@ int componentCB(defwCallbackType_e c, defiUserData ud)
   int *foreignX, *foreignY, *foreignOrient;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   foreigns = (const char**) malloc(sizeof(char*) * 1);
   foreignX = (int*) malloc(sizeof(int) * 1);
   foreignY = (int*) malloc(sizeof(int) * 1);
@@ -703,8 +720,9 @@ int pinCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartPins(6);
   CHECK_STATUS(status);
   status = defwPin("scanpin",
@@ -808,8 +826,9 @@ int pinpropCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartPinProperties(2);
   CHECK_STATUS(status);
   status = defwPinProperty("cell1", "PB1");
@@ -834,8 +853,9 @@ int snetCB(defwCallbackType_e c, defiUserData ud)
   const char **coorX, **coorY;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartSpecialNets(2);
   CHECK_STATUS(status);
   status = defwSpecialNet("net1");
@@ -997,8 +1017,9 @@ int netCB(defwCallbackType_e c, defiUserData ud)
   const char** coorValue;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartNets(11);
   CHECK_STATUS(status);
   status = defwNet("net1");
@@ -1630,8 +1651,9 @@ int groupCB(defwCallbackType_e c, defiUserData ud)
   const char** groupExpr;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   groupExpr = (const char**) malloc(sizeof(char*) * 2);
   status = defwStartGroups(2);
   CHECK_STATUS(status);
@@ -1674,8 +1696,9 @@ int extensionCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwStartBeginext("tag");
   CHECK_STATUS(status);
   status = defwBeginextCreator("CADENCE");
@@ -1698,8 +1721,9 @@ static int designendCB(defwCallbackType_e c, defiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if ((int) ud != userData) {
     dataError();
+  }
   status = defwEnd();
   CHECK_STATUS(status);
   return 0;
@@ -1772,7 +1796,7 @@ main(int argc, char** argv)
   defwSetUnitsCbk(unitsCB);
   defwSetViaCbk(viaCB);
 
-  res = defwWrite(fout, outfile, (void*) userData);
+  res = defwWrite(fout, outfile, userData);
 
   fclose(fout);
   return 0;

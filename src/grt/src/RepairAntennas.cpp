@@ -197,8 +197,9 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
             inserted_diodes = true;
           }
         }
-      } else
+      } else {
         repair_failures = true;
+      }
     }
     if (inserted_diodes) {
       // Diode insertion deletes the jumpers in guides
@@ -255,8 +256,9 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
-  if (!legally_placed)
+  if (!legally_placed) {
     illegal_diode_placement_count_++;
+  }
 
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
@@ -545,8 +547,9 @@ odb::dbMTerm* RepairAntennas::findDiodeMTerm()
     for (auto master : lib->getMasters()) {
       if (master->getType() == odb::dbMasterType::CORE_ANTENNACELL) {
         for (odb::dbMTerm* mterm : master->getMTerms()) {
-          if (diffArea(mterm) > 0.0)
+          if (diffArea(mterm) > 0.0) {
             return mterm;
+          }
         }
       }
     }

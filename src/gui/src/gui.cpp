@@ -321,23 +321,22 @@ bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 
 void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
 {
-  return main_window->selectHighlightConnectedInsts(select_flag,
-                                                    highlight_group);
+  main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 void Gui::selectHighlightConnectedNets(bool select_flag,
                                        bool output,
                                        bool input,
                                        int highlight_group)
 {
-  return main_window->selectHighlightConnectedNets(
+  main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
 }
 
 void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
                                               int highlight_group)
 {
-  return main_window->selectHighlightConnectedBufferTrees(select_flag,
-                                                          highlight_group);
+  main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                   highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
@@ -1067,9 +1066,10 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
   const std::string& group_name = getDisplayControlGroupName();
 
   if (group_name.empty()) {
-    return Gui::get()->setDisplayControlsVisible(name, value);
+    Gui::get()->setDisplayControlsVisible(name, value);
+  } else {
+    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
   }
-  return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
 }
 
 void Renderer::addDisplayControl(
@@ -1684,7 +1684,7 @@ void Selected::highlight(Painter& painter,
   painter.setPen(pen, true, pen_width);
   painter.setBrush(brush, brush_style);
 
-  return descriptor_->highlight(object_, painter);
+  descriptor_->highlight(object_, painter);
 }
 
 Descriptor::Properties Selected::getProperties() const

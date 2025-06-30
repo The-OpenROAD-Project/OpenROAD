@@ -26,7 +26,7 @@ class PinAccessJobDescription : public dst::JobDescription
   void setPath(const std::string& path) { path_ = path; }
   void setType(JobType in) { type_ = in; }
   JobType getType() const { return type_; }
-  const std::string getPath() const { return path_; }
+  const std::string& getPath() const { return path_; }
 
  private:
   std::string path_;

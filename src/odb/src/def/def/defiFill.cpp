@@ -117,10 +117,12 @@ void defiFill::clearPts()
 
 void defiFill::Destroy()
 {
-  if (layerName_)
+  if (layerName_) {
     free(layerName_);
-  if (viaName_)
+  }
+  if (viaName_) {
     free(viaName_);
+  }
   free((char*) (xl_));
   free((char*) (yl_));
   free((char*) (xh_));
@@ -131,12 +133,14 @@ void defiFill::Destroy()
   xh_ = nullptr;
   yh_ = nullptr;
   clearPoly();
-  if (polygons_)
+  if (polygons_) {
     free((char*) (polygons_));
+  }
   polygons_ = nullptr;
   clearPts();
-  if (viaPts_)
+  if (viaPts_) {
     free((char*) (viaPts_));
+  }
   viaPts_ = nullptr;
   clear();
 }
@@ -145,8 +149,9 @@ void defiFill::setLayer(const char* name)
 {
   int len = strlen(name) + 1;
   if (layerNameLength_ < len) {
-    if (layerName_)
+    if (layerName_) {
       free(layerName_);
+    }
     layerName_ = (char*) malloc(len);
     layerNameLength_ = len;
   }
@@ -203,10 +208,12 @@ void defiFill::addPolygon(defiGeometries* geom)
     polysAllocated_ = (polysAllocated_ == 0) ? 2 : polysAllocated_ * 2;
     poly = (struct defiPoints**) malloc(sizeof(struct defiPoints*)
                                         * polysAllocated_);
-    for (i = 0; i < numPolys_; i++)
+    for (i = 0; i < numPolys_; i++) {
       poly[i] = polygons_[i];
-    if (polygons_)
+    }
+    if (polygons_) {
       free((char*) (polygons_));
+    }
     polygons_ = poly;
   }
   p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
@@ -296,8 +303,9 @@ void defiFill::setVia(const char* name)
 {
   int len = strlen(name) + 1;
   if (viaNameLength_ < len) {
-    if (viaName_)
+    if (viaName_) {
       free(viaName_);
+    }
     viaName_ = (char*) malloc(len);
     viaNameLength_ = len;
   }
@@ -329,10 +337,12 @@ void defiFill::addPts(defiGeometries* geom)
     ptsAllocated_ = (ptsAllocated_ == 0) ? 2 : ptsAllocated_ * 2;
     pts = (struct defiPoints**) malloc(sizeof(struct defiPoints*)
                                        * ptsAllocated_);
-    for (i = 0; i < numPts_; i++)
+    for (i = 0; i < numPts_; i++) {
       pts[i] = viaPts_[i];
-    if (viaPts_)
+    }
+    if (viaPts_) {
       free((char*) (viaPts_));
+    }
     viaPts_ = pts;
   }
   p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
@@ -407,14 +417,17 @@ void defiFill::print(FILE* f) const
   int i, j;
   struct defiPoints points;
 
-  if (hasLayer())
+  if (hasLayer()) {
     fprintf(f, "- LAYER %s", layerName());
+  }
 
-  if (layerMask())
+  if (layerMask()) {
     fprintf(f, " + Mask %d", layerMask());
+  }
 
-  if (hasLayerOpc())
+  if (hasLayerOpc()) {
     fprintf(f, " + OPC");
+  }
   fprintf(f, "\n");
 
   for (i = 0; i < numRectangles(); i++) {
@@ -424,28 +437,32 @@ void defiFill::print(FILE* f) const
   for (i = 0; i < numPolygons(); i++) {
     fprintf(f, "   POLYGON ");
     points = getPolygon(i);
-    for (j = 0; j < points.numPoints; j++)
+    for (j = 0; j < points.numPoints; j++) {
       fprintf(f, "%d %d ", points.x[j], points.y[j]);
+    }
     fprintf(f, "\n");
   }
   fprintf(f, "\n");
 
-  if (hasVia())
+  if (hasVia()) {
     fprintf(f, "- VIA %s", viaName());
+  }
 
   if (mask_) {
     fprintf(f, " + MASK %d%d%d", viaTopMask(), viaCutMask(), viaBottomMask());
   }
 
-  if (hasViaOpc())
+  if (hasViaOpc()) {
     fprintf(f, " + OPC");
+  }
   fprintf(f, "\n");
 
   for (i = 0; i < numViaPts(); i++) {
     fprintf(f, "   ");
     points = getViaPts(i);
-    for (j = 0; j < points.numPoints; j++)
+    for (j = 0; j < points.numPoints; j++) {
       fprintf(f, "%d %d ", points.x[j], points.y[j]);
+    }
     fprintf(f, "\n");
   }
   fprintf(f, "\n");

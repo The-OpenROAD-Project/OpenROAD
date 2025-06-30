@@ -17,12 +17,13 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
                                      const char* w_list,
                                      const char* s_list)
 {
-  if (!setWidthSpaceMultipliers(w_list, s_list))
+  if (!setWidthSpaceMultipliers(w_list, s_list)) {
     logger_->warn(RCX,
                   235,
                   "Width {} and Space {} multiplier lists are NOT correct\n",
                   w_list,
                   s_list);
+  }
 
   initLogFiles(process_name);
   _len = len;
@@ -33,7 +34,7 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
   _layerCnt = getConductorCnt();
 
   _3dFlag = true;
-  _diag = 0;
+  _diag = false;
 
   setDiagModel(0);  // to initialize _diagModel;
 
@@ -118,8 +119,9 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
         if (jj == 0 && _overMet <= 0 && _underMet == 0) {
           calcResistance(ro, w, s, _len * w, top_width, bot_width, thickness);
         }
-        if (_wireCnt == 1)
+        if (_wireCnt == 1) {
           break;
+        }
       }
     } else {
       uint scnt = 3;  // First 3 spacings from the spacing table
@@ -135,11 +137,13 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
           measurePatternVar_3D(
               _met, top_width, bot_width, thickness, _wireCnt, nullptr);
           cnt++;
-          if (_wireCnt == 1)
+          if (_wireCnt == 1) {
             break;
+          }
         }
-        if (_wireCnt == 1)
+        if (_wireCnt == 1) {
           break;
+        }
       }
     }
     return cnt;
@@ -172,13 +176,15 @@ uint extSolverGen::linesOver(uint metLevel)
   uint cnt = 0;
 
   for (uint met = 1; met < _layerCnt; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     _met = met;
     for (uint underMet = 0; underMet < met; underMet++) {
-      if (underMet > 0 && met - underMet > _maxUnderDist && underMet > 0)
+      if (underMet > 0 && met - underMet > _maxUnderDist && underMet > 0) {
         continue;
+      }
 
       setMets(met, underMet, -1);
       uint cnt1 = widthsSpacingsLoop();
@@ -202,12 +208,14 @@ uint extSolverGen::linesUnder(uint metLevel)
   uint cnt = 0;
 
   for (uint met = 1; met < _layerCnt; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
-      if (overMet - met > _maxOverDist)
+      if (overMet - met > _maxOverDist) {
         continue;
+      }
 
       setMets(met, 0, overMet);
       uint cnt1 = widthsSpacingsLoop();
@@ -232,12 +240,14 @@ uint extSolverGen::linesDiagUnder(uint metLevel)
 
   uint cnt = 0;
   for (uint met = 1; met < _layerCnt; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
-      if (overMet - met > _maxOverDist)
+      if (overMet - met > _maxOverDist) {
         continue;
+      }
 
       setMets(met, 0, overMet);
       uint cnt1 = widthsSpacingsLoop(overMet);
@@ -261,15 +271,18 @@ uint extSolverGen::linesOverUnder(uint metLevel)
   uint cnt = 0;
 
   for (uint met = 1; met < _layerCnt - 1; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     for (uint underMet = 1; underMet < met; underMet++) {
-      if (met - underMet > _maxUnderDist)
+      if (met - underMet > _maxUnderDist) {
         continue;
+      }
       for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
-        if (overMet - met > _maxOverDist)
+        if (overMet - met > _maxOverDist) {
           continue;
+        }
 
         setMets(met, underMet, overMet);
 
@@ -370,15 +383,17 @@ bool extSolverGen::measurePatternVar_3D(int met,
 
   FILE* wfp = mkPatternFile();
 
-  if (wfp == nullptr)
+  if (wfp == nullptr) {
     return false;  // should be an exception!! and return!
+  }
 
   double maxHeight = adjustMasterDielectricsForHeight(met, thicknessChange);
   maxHeight *= 1.2;
 
   double len = top_width * _len;
-  if (len <= 0)
+  if (len <= 0) {
     len = top_width * 10 * 0.001;
+  }
   //                        double W = (m->_ur[m->_dir] -
   // m->_ll[m->_dir])*10;
   double W = 40;
@@ -412,19 +427,22 @@ bool extSolverGen::measurePatternVar_3D(int met,
                                              apply_height_offset,
                                              height_ceiling);
   }
-  if (_simVersion < 2)
+  if (_simVersion < 2) {
     height_low = 0;
+  }
 
-  if (_commentFlag)
+  if (_commentFlag) {
     fprintf(wfp, "%s\n", _commentLine);
+  }
 
   double len1;
   double X1;
   double X0 = 0;
-  if (wireCnt >= 5)
+  if (wireCnt >= 5) {
     X0 = writeWirePatterns(wfp, height_low, len1, X1);
-  else
+  } else {
     X0 = writeWirePatterns_w3(wfp, height_low, len1, X1);
+  }
 
   fprintf(wfp,
           "\nWINDOW_BBOX  LL %6.3f %6.3f UR %6.3f %6.3f LENGTH %6.3f\n",
@@ -456,8 +474,9 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   // assume _wireCnt>=5
   extMasterConductor* m = getMasterConductor(_met);
   extMasterConductor* mOver = nullptr;
-  if (_diagModel > 0)
+  if (_diagModel > 0) {
     mOver = getMasterConductor(_overMet);
+  }
 
   double targetWidth = _topWidth;
   double targetPitch = _topWidth + _seff;
@@ -469,10 +488,12 @@ double extSolverGen::writeWirePatterns(FILE* fp,
 
   // Assumption -- odd wireCnt, >1
   int wireCnt = _wireCnt;
-  if (wireCnt == 0)
+  if (wireCnt == 0) {
     return 0.0;
-  if (wireCnt % 2 > 0)  // should be odd
+  }
+  if (wireCnt % 2 > 0) {  // should be odd
     wireCnt--;
+  }
 
   int n = wireCnt / 2;
   double orig = 0.0;
@@ -487,15 +508,17 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   double min_x = xd[1];
   for (int ii = 2; ii < n; ii++) {
     xd[ii] = xd[ii - 1] - min_pitch;  // next over neighbor spacing
-    if (min_x > xd[ii])
+    if (min_x > xd[ii]) {
       min_x = xd[ii];
+    }
   }
   for (int ii = 2; ii > 0; ii--) {
     m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
     max_x = xd[ii] + minWidth;
   }
-  if (min_x > x)
+  if (min_x > x) {
     min_x = x;
+  }
 
   m->writeWire3D(
       fp, cnt++, x, targetWidth, len, height_offset, 1.0);  // Wire on focus
@@ -538,8 +561,9 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp,
 {
   extMasterConductor* m = getMasterConductor(_met);
   extMasterConductor* mOver = nullptr;
-  if (_diagModel > 0)
+  if (_diagModel > 0) {
     mOver = getMasterConductor(_overMet);
+  }
 
   double targetWidth = _topWidth;
   double targetPitch = _topWidth + _seff;
@@ -548,17 +572,20 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp,
   // double min_pitch = minWidth + minSpace;
 
   len = _len * minWidth;  // HEIGHT param
-  if (len <= 0)
+  if (len <= 0) {
     len = 10 * minWidth;
+  }
 
   // len *= 0.001;
 
   // Assumption -- odd wireCnt, >1
   int wireCnt = _wireCnt;
-  if (wireCnt == 0)
+  if (wireCnt == 0) {
     return 0.0;
-  if (wireCnt % 2 > 0)  // should be odd
+  }
+  if (wireCnt % 2 > 0) {  // should be odd
     wireCnt--;
+  }
 
   // DELETE int n = wireCnt / 2;
   double orig = 0.0;
@@ -574,8 +601,9 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp,
   } else {
     m->writeWire3D(
         fp, cnt++, x, targetWidth, len, height_offset, 1.0);  // Wire on focues
-    if (_wireCnt > 1)
+    if (_wireCnt > 1) {
       m->writeWire3D(fp, cnt++, X1, targetWidth, len, height_offset, 0);
+    }
   }
   double min_x = X0;
   double center_diag_x = orig;
@@ -752,15 +780,18 @@ void extSolverGen::closeFiles()
 {
   fflush(_logFP);
 
-  if (_logFP != nullptr)
+  if (_logFP != nullptr) {
     fclose(_logFP);
+  }
 
   fflush(_filesFP);
-  if (_filesFP != nullptr)
+  if (_filesFP != nullptr) {
     fclose(_filesFP);
+  }
 
   fflush(_resFP);
-  if (_resFP != nullptr)
+  if (_resFP != nullptr) {
     fclose(_resFP);
+  }
 }
 }  // namespace rcx

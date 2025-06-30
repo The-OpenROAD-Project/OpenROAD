@@ -225,7 +225,7 @@ void FlexPA::createSingleAccessPoint(
     // rightway on grid only forbid off track rightway planar access
     // horz layer
     if (lower_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
-      if (lower_layer->isUnidirectional()) {
+      if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
@@ -235,7 +235,7 @@ void FlexPA::createSingleAccessPoint(
     }
     // vert layer
     if (lower_layer->getDir() == dbTechLayerDir::VERTICAL) {
-      if (lower_layer->isUnidirectional()) {
+      if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()

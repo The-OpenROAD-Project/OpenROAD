@@ -4,6 +4,7 @@
 #include "WireBuilder.hh"
 
 #include <boost/functional/hash.hpp>
+#include <limits>
 
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
@@ -20,35 +21,37 @@ WireBuilder::~WireBuilder() = default;
 
 void WireBuilder::makeNetWiresFromGuides()
 {
-  const int guide_dimension = computeGuideDimension();
+  const int gcell_dimension = block_->getGCellTileSize();
   default_vias_ = block_->getDefaultVias();
   for (odb::dbNet* db_net : block_->getNets()) {
     const bool is_detailed_routed
         = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
 
     if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && !dbNetIsLocal(db_net) && !is_detailed_routed) {
-      makeNetWire(db_net, guide_dimension);
+        && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
+        && !is_detailed_routed) {
+      makeNetWire(db_net, gcell_dimension);
     }
   }
 }
 
 void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
 {
-  const int guide_dimension = computeGuideDimension();
+  const int gcell_dimension = block_->getGCellTileSize();
   default_vias_ = block_->getDefaultVias();
   for (odb::dbNet* db_net : nets) {
     const bool is_detailed_routed
         = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
 
     if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && !dbNetIsLocal(db_net) && !is_detailed_routed) {
-      makeNetWire(db_net, guide_dimension);
+        && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
+        && !is_detailed_routed) {
+      makeNetWire(db_net, gcell_dimension);
     }
   }
 }
 
-void WireBuilder::makeNetWire(odb::dbNet* db_net, const int guide_dimension)
+void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
 {
   odb::dbWire* wire = odb::dbWire::create(db_net);
   if (wire) {
@@ -57,7 +60,7 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int guide_dimension)
     wire_encoder.begin(wire);
     GuidePtPinsMap route_pt_pins;
     std::vector<GuideSegment> route
-        = makeWireFromGuides(db_net, route_pt_pins, guide_dimension);
+        = makeWireFromGuides(db_net, route_pt_pins, gcell_dimension);
     std::unordered_set<GuideSegment, GuideSegmentHash> wire_segments;
     int prev_conn_layer = -1;
     for (GuideSegment& seg : route) {
@@ -345,7 +348,7 @@ bool WireBuilder::pinOverlapsGSegment(const odb::Point& pin_position,
 std::vector<GuideSegment> WireBuilder::makeWireFromGuides(
     odb::dbNet* db_net,
     GuidePtPinsMap& route_pt_pins,
-    const int guide_dimension)
+    const int gcell_dimension)
 {
   std::vector<GuideSegment> route;
   for (odb::dbGuide* guide : db_net->getGuides()) {
@@ -359,27 +362,27 @@ std::vector<GuideSegment> WireBuilder::makeWireFromGuides(
                       route,
                       endpoints,
                       box_limits,
-                      guide_dimension);
+                      gcell_dimension);
 
     if (guide->isConnectedToTerm()) {
       for (odb::dbITerm* iterm : db_net->getITerms()) {
         if (checkGuideITermConnection(
-                endpoints.first, iterm, box_limits.first, guide_dimension)) {
+                endpoints.first, iterm, box_limits.first, gcell_dimension)) {
           route_pt_pins[endpoints.first].iterms.push_back(iterm);
         }
         if (checkGuideITermConnection(
-                endpoints.second, iterm, box_limits.second, guide_dimension)) {
+                endpoints.second, iterm, box_limits.second, gcell_dimension)) {
           route_pt_pins[endpoints.second].iterms.push_back(iterm);
         }
       }
 
       for (odb::dbBTerm* bterm : db_net->getBTerms()) {
         if (checkGuideBTermConnection(
-                endpoints.first, bterm, box_limits.first, guide_dimension)) {
+                endpoints.first, bterm, box_limits.first, gcell_dimension)) {
           route_pt_pins[endpoints.first].bterms.push_back(bterm);
         }
         if (checkGuideBTermConnection(
-                endpoints.second, bterm, box_limits.second, guide_dimension)) {
+                endpoints.second, bterm, box_limits.second, gcell_dimension)) {
           route_pt_pins[endpoints.second].bterms.push_back(bterm);
         }
       }
@@ -392,12 +395,12 @@ std::vector<GuideSegment> WireBuilder::makeWireFromGuides(
 bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
                                             odb::dbITerm* iterm,
                                             const odb::Point& box_limit,
-                                            const int guide_dimension)
+                                            const int gcell_dimension)
 {
-  odb::Point ll(guide_pt.pos.getX() - guide_dimension / 2,
-                guide_pt.pos.getY() - guide_dimension / 2);
-  odb::Point ur(guide_pt.pos.getX() + guide_dimension / 2,
-                guide_pt.pos.getY() + guide_dimension / 2);
+  odb::Point ll(guide_pt.pos.getX() - gcell_dimension / 2,
+                guide_pt.pos.getY() - gcell_dimension / 2);
+  odb::Point ur(guide_pt.pos.getX() + gcell_dimension / 2,
+                guide_pt.pos.getY() + gcell_dimension / 2);
   if (ll != box_limit && ur != box_limit) {
     ur = box_limit;
   }
@@ -445,12 +448,12 @@ bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
 bool WireBuilder::checkGuideBTermConnection(const GuidePoint& guide_pt,
                                             odb::dbBTerm* bterm,
                                             const odb::Point& box_limit,
-                                            const int guide_dimension)
+                                            const int gcell_dimension)
 {
-  odb::Point ll(guide_pt.pos.getX() - guide_dimension / 2,
-                guide_pt.pos.getY() - guide_dimension / 2);
-  odb::Point ur(guide_pt.pos.getX() + guide_dimension / 2,
-                guide_pt.pos.getY() + guide_dimension / 2);
+  odb::Point ll(guide_pt.pos.getX() - gcell_dimension / 2,
+                guide_pt.pos.getY() - gcell_dimension / 2);
+  odb::Point ur(guide_pt.pos.getX() + gcell_dimension / 2,
+                guide_pt.pos.getY() + gcell_dimension / 2);
   if (ll != box_limit && ur != box_limit) {
     ur = box_limit;
   } else {
@@ -492,19 +495,6 @@ bool WireBuilder::checkGuideBTermConnection(const GuidePoint& guide_pt,
   return false;
 }
 
-int WireBuilder::computeGuideDimension()
-{
-  for (odb::dbNet* db_net : block_->getNets()) {
-    for (odb::dbGuide* guide : db_net->getGuides()) {
-      if (guide->getBox().dx() == guide->getBox().dy()) {
-        return guide->getBox().dx();
-      }
-    }
-  }
-
-  return 0;
-}
-
 void WireBuilder::boxToGuideSegment(
     const odb::Rect& guide_box,
     odb::dbTechLayer* layer,
@@ -512,17 +502,17 @@ void WireBuilder::boxToGuideSegment(
     std::vector<GuideSegment>& route,
     std::pair<GuidePoint, GuidePoint>& endpoints,
     std::pair<odb::Point, odb::Point>& box_limits,
-    const int guide_dimension)
+    const int gcell_dimension)
 {
-  int x0 = (guide_dimension * (guide_box.xMin() / guide_dimension))
-           + (guide_dimension / 2);
-  int y0 = (guide_dimension * (guide_box.yMin() / guide_dimension))
-           + (guide_dimension / 2);
+  int x0 = (gcell_dimension * (guide_box.xMin() / gcell_dimension))
+           + (gcell_dimension / 2);
+  int y0 = (gcell_dimension * (guide_box.yMin() / gcell_dimension))
+           + (gcell_dimension / 2);
 
-  const int x1 = (guide_dimension * (guide_box.xMax() / guide_dimension))
-                 - (guide_dimension / 2);
-  const int y1 = (guide_dimension * (guide_box.yMax() / guide_dimension))
-                 - (guide_dimension / 2);
+  const int x1 = (gcell_dimension * (guide_box.xMax() / gcell_dimension))
+                 - (gcell_dimension / 2);
+  const int y1 = (gcell_dimension * (guide_box.yMax() / gcell_dimension))
+                 - (gcell_dimension / 2);
 
   if (x0 == x1 && y0 == y1) {
     const GuideSegment seg
@@ -540,20 +530,20 @@ void WireBuilder::boxToGuideSegment(
     box_limits.second = guide_box.ur();
   }
 
-  while (y0 == y1 && (x0 + guide_dimension) <= x1) {
+  while (y0 == y1 && (x0 + gcell_dimension) <= x1) {
     const GuideSegment seg
         = GuideSegment{GuidePoint{odb::Point(x0, y0), layer},
-                       GuidePoint{odb::Point(x0 + guide_dimension, y0), layer}};
+                       GuidePoint{odb::Point(x0 + gcell_dimension, y0), layer}};
     route.push_back(seg);
-    x0 += guide_dimension;
+    x0 += gcell_dimension;
   }
 
-  while (x0 == x1 && (y0 + guide_dimension) <= y1) {
+  while (x0 == x1 && (y0 + gcell_dimension) <= y1) {
     const GuideSegment seg
         = GuideSegment{GuidePoint{odb::Point(x0, y0), layer},
-                       GuidePoint{odb::Point(x0, y0 + guide_dimension), layer}};
+                       GuidePoint{odb::Point(x0, y0 + gcell_dimension), layer}};
     route.push_back(seg);
-    y0 += guide_dimension;
+    y0 += gcell_dimension;
   }
 }
 
