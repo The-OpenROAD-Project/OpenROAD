@@ -39,6 +39,6 @@ foreach buf [get_cells clkbuf_*] {
 }
 
 puts "Found $unconnected_buffers unconnected buffers."
-set vout_file [make_result_file hier_insertion_delay_out.v]
+set vout_file [make_result_file hier_insertion_delay.v]
 write_verilog $vout_file
-diff_files hier_insertion_delay_out.vok $vout_file
+diff_files hier_insertion_delay.vok $vout_file
