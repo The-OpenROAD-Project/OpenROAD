@@ -1,8 +1,8 @@
 # fanout 8000 max_fanout 20 stress test
 # modified to use large default max_transition, max_capacitance
 source "helpers.tcl"
-if {![info exists repair_args]} {
-    set repair_args {}
+if { ![info exists repair_args] } {
+  set repair_args {}
 }
 read_liberty repair_fanout6.lib
 read_lef sky130hd/sky130hd.tlef

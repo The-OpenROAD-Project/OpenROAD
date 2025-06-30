@@ -12,5 +12,5 @@ set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
 
-catch {add_pdn_stripe -layer M8 -width 2.0 -spacing 2.0 -pitch 20.0 -offset 10.0} err
+catch { add_pdn_stripe -layer M8 -width 2.0 -spacing 2.0 -pitch 20.0 -offset 10.0 } err
 puts $err

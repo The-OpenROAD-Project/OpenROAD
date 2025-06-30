@@ -7,13 +7,13 @@ read_verilog buffer_ports8.v
 link_design top
 
 initialize_floorplan -site $site \
-    -die_area {0 0 100 100} \
-    -core_area {10 10 90 90}
+  -die_area {0 0 100 100} \
+  -core_area {10 10 90 90}
 
 source $tracks_file
 
 place_pins -random -hor_layers $io_placer_hor_layer \
-    -ver_layers $io_placer_ver_layer
+  -ver_layers $io_placer_ver_layer
 
 global_placement
 

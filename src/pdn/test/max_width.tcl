@@ -11,5 +11,5 @@ add_global_connection -net VSS -pin_pattern {^VSS$} -ground
 set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
-catch {add_pdn_stripe -layer M8 -width 4.0 -spacing 2.688 -pitch 56.32 -offset 6.408} err
+catch { add_pdn_stripe -layer M8 -width 4.0 -spacing 2.688 -pitch 56.32 -offset 6.408 } err
 puts $err

@@ -59,7 +59,7 @@ set openroad_test_dir [file join $openroad_dir "test"]
 source [file join $openroad_test_dir "regression_vars.tcl"]
 source [file join $openroad_test_dir "flow_metrics.tcl"]
 
-proc regression_main {} {
+proc regression_main { } {
   global argv
   exit [regression_body $argv]
 }
@@ -72,8 +72,8 @@ proc regression_body { cmd_argv } {
   return [found_errors]
 }
 
-proc setup {} {
-  global result_dir diff_file failure_file errors 
+proc setup { } {
+  global result_dir diff_file failure_file errors
   global use_valgrind valgrind_shared_lib_failure
 
   set use_valgrind 0
@@ -112,8 +112,8 @@ proc parse_args { cmd_argv } {
     } elseif { $arg == "-threads" } {
       set threads [lindex $cmd_argv 1]
       if { !([string is integer $threads] || $threads == "max") } {
-	puts "Error: -threads arg $threads is not an integer or max."
-	exit 0
+        puts "Error: -threads arg $threads is not an integer or max."
+        exit 0
       }
       lappend app_options "-threads"
       lappend app_options $threads
@@ -140,11 +140,13 @@ proc expand_tests { tests_arg } {
   foreach arg $tests_arg {
     if { [info exists test_groups($arg)] } {
       set tests [concat $tests $test_groups($arg)]
-    } elseif { [string first "*" $arg] != -1 \
-	       || [string first "?" $arg] != -1 } {
+    } elseif {
+      [string first "*" $arg] != -1
+      || [string first "?" $arg] != -1
+    } {
       # Find wildcard matches.
       foreach test [group_tests "all"] {
-	if [string match $arg $test] {
+        if [string match $arg $test] {
 	  lappend tests $test
 	}
       }
@@ -157,9 +159,9 @@ proc expand_tests { tests_arg } {
   return $tests
 }
 
-proc run_tests {} {
+proc run_tests { } {
   global tests errors app_path
-  
+
   foreach test $tests {
     run_test $test
   }
@@ -171,7 +173,7 @@ proc run_test { test } {
   global test_langs
 
   set langs $test_langs($test)
-  if {[llength $langs] == 0} {
+  if { [llength $langs] == 0 } {
     puts "$test *NO CMD FILE*"
     incr errors(no_cmd)
   }
@@ -182,7 +184,7 @@ proc run_test { test } {
 
 proc run_test_lang { test lang } {
   global result_dir diff_file errors diff_options
-  
+
   set cmd_file [test_cmd_file $test $lang]
   if [file exists $cmd_file] {
     set ok_file [test_ok_file $test]
@@ -308,7 +310,7 @@ proc run_test_app { test cmd_file log_file lang } {
 
 proc run_test_plain { test cmd_file log_file lang } {
   global app_path app_options result_dir errorCode
-  
+
   if { ![file exists $app_path] } {
     return "ERROR $app_path not found."
   } elseif { ![file executable $app_path] } {
@@ -316,10 +318,12 @@ proc run_test_plain { test cmd_file log_file lang } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
-    if { [catch [concat exec $app_path $app_options \
-                   [lang_flag $lang] \
-                   -metrics [test_metrics_result_file $test $lang]\
-                   [file tail $cmd_file] >& $log_file]] } {
+    if {
+      [catch [concat exec $app_path $app_options \
+        [lang_flag $lang] \
+        -metrics [test_metrics_result_file $test $lang] \
+        [file tail $cmd_file] >& $log_file]]
+    } {
       cd $save_dir
       set signal [lindex $errorCode 2]
       set error [lindex $errorCode 3]
@@ -344,16 +348,16 @@ proc run_test_plain { test cmd_file log_file lang } {
 
 proc run_test_valgrind { test cmd_file log_file lang } {
   global app_path app_options valgrind_options result_dir errorCode
-  
+
   set vg_cmd_file [test_valgrind_cmd_file $test $lang]
   set vg_stream [open $vg_cmd_file "w"]
   puts $vg_stream "cd [file dirname $cmd_file]"
   puts $vg_stream "source [file tail $cmd_file]"
   close $vg_stream
-  
+
   set cmd [concat exec valgrind $valgrind_options \
-               $app_path [lang_flag $lang] $app_options \
-               $vg_cmd_file >& $log_file]
+    $app_path [lang_flag $lang] $app_options \
+    $vg_cmd_file >& $log_file]
   set error_msg ""
   if { [catch $cmd] } {
     set error_msg "ERROR [lindex $errorCode 3]"
@@ -392,7 +396,7 @@ proc cleanse_valgrind_logfile { test log_file lang } {
   global valgrind_mem_regexp valgrind_leak_regexp
   global valgrind_shared_lib_failure_regexp
   global valgrind_shared_lib_failure
-  
+
   set tmp_file [test_tmp_file $test]
   set valgrind_log_file [test_valgrind_file $test $lang]
   file copy -force $log_file $tmp_file
@@ -403,18 +407,18 @@ proc cleanse_valgrind_logfile { test log_file lang } {
   set mem_errors 0
   gets $tmp line
   while { ![eof $tmp] } {
-    if {[regexp "^==" $line]} {
+    if { [regexp "^==" $line] } {
       puts $valgrind $line
-      if {[regexp $valgrind_leak_regexp $line]} {
+      if { [regexp $valgrind_leak_regexp $line] } {
         set leaks 1
       }
-      if {[regexp $valgrind_mem_regexp $line]} {
+      if { [regexp $valgrind_mem_regexp $line] } {
         set mem_errors 1
       }
-      if {[regexp $valgrind_shared_lib_failure_regexp $line]} {
+      if { [regexp $valgrind_shared_lib_failure_regexp $line] } {
         set valgrind_shared_lib_failure 1
       }
-    } elseif {[regexp {^--[0-9]+} $line]} {
+    } elseif { [regexp {^--[0-9]+} $line] } {
       # Valgrind notification line.
     } else {
       puts $log $line
@@ -425,23 +429,23 @@ proc cleanse_valgrind_logfile { test log_file lang } {
   close $tmp
   close $valgrind
   file delete $tmp_file
-  
+
   set errors {}
   if { $mem_errors } {
     lappend errors "MEMORY"
-  } 
+  }
   if { $leaks } {
     lappend errors "LEAK"
-  } 
+  }
   return $errors
 }
 
 ################################################################
 
-proc show_summary {} {
+proc show_summary { } {
   global errors tests diff_file result_dir valgrind_shared_lib_failure
   global app_path app
-  
+
   puts "------------------------------------------------------"
   set test_count [llength $tests]
   if { [found_errors] } {
@@ -475,17 +479,17 @@ proc show_summary {} {
   puts "See $result_dir for log files"
 }
 
-proc found_errors {} {
+proc found_errors { } {
   global errors
-  
+
   return [expr $errors(error) != 0 || $errors(fail) != 0 \
-            || $errors(no_cmd) != 0 || $errors(no_ok) != 0 \
-            || $errors(memory) != 0 || $errors(leak) != 0 ]
+    || $errors(no_cmd) != 0 || $errors(no_ok) != 0 \
+    || $errors(memory) != 0 || $errors(leak) != 0]
 }
 
 ################################################################
 
-proc save_ok_main {} {
+proc save_ok_main { } {
   global argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_ok [failures] test1 [test2]...}
@@ -505,7 +509,7 @@ proc save_ok_main {} {
   }
 }
 
-proc failed_tests {} {
+proc failed_tests { } {
   global failure_file
 
   set failures {}
@@ -525,7 +529,7 @@ proc failed_tests {} {
 proc save_ok { test } {
   set ok_file [test_ok_file $test]
   set log_file [test_log_file $test [result_lang $test]]
-  if { ! [file exists $log_file] } {
+  if { ![file exists $log_file] } {
     puts "Error: log file $log_file not found."
   } else {
     file copy -force $log_file $ok_file
@@ -534,7 +538,7 @@ proc save_ok { test } {
 
 ################################################################
 
-proc save_defok_main {} {
+proc save_defok_main { } {
   global argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_defok [failures] test1 [test2]...}
@@ -567,7 +571,7 @@ proc save_defok { test } {
 proc result_lang { test } {
   global test_langs
 
-  if {[lsearch $test_langs($test) tcl] != -1} {
+  if { [lsearch $test_langs($test) tcl] != -1 } {
     return tcl
   }
   return [lindex $test_langs($test) 0]
@@ -575,8 +579,8 @@ proc result_lang { test } {
 
 proc test_cmd_dir { test } {
   global cmd_dirs
-  
-  if {[info exists cmd_dirs($test)]} {
+
+  if { [info exists cmd_dirs($test)] } {
     return $cmd_dirs($test)
   } else {
     return ""
@@ -608,7 +612,7 @@ proc test_def_result_file { test lang } {
 }
 
 proc lang_flag { lang } {
-  if {$lang == "py"} {
+  if { $lang == "py" } {
     return "-python"
   }
   return ""
@@ -636,10 +640,10 @@ proc test_core_file { test lang } {
 
 proc test_sys_core_file { test pid } {
   global cmd_dirs
-  
+
   # macos
   # return [file join "/cores" "core.$pid"]
-  
+
   # Suse
   return [file join [test_cmd_dir $test] "core"]
 }

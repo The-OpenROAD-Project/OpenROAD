@@ -1,12 +1,11 @@
 create_power_domain PD_TOP \
-  -elements {.}  \
+  -elements {.}
 
 create_power_domain PD_D1 \
-  -elements {d1} \
+  -elements {d1}
 
 create_power_domain PD_D2 \
-  -elements {d2} \
-
+  -elements {d2}
 
 
 create_logic_port d1_iso_control
@@ -47,8 +46,7 @@ set_isolation iso_d_2 \
   -location self
 
 
-
-use_interface_cell iso_d_1\
+use_interface_cell iso_d_1 \
   -domain PD_D1 \
   -strategy iso_d_1 \
   -lib_cells {
@@ -59,7 +57,7 @@ use_interface_cell iso_d_1\
   }
 
 
-use_interface_cell iso_d_2\
+use_interface_cell iso_d_2 \
   -domain PD_D2 \
   -strategy iso_d_2 \
   -lib_cells {

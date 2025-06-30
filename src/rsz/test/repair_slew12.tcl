@@ -16,7 +16,7 @@ lassign [$u1z getAvgXY] ignore u1z_x u1z_y
 lassign [$u1a getAvgXY] ignore u1a_x u1a_y
 set u2 [[ord::get_db_block] findInst "u2"]
 lassign [$u1 getOrigin] u1x u1y
-$u2 setOrigin [expr {$u1x + $u1z_x - $u1a_x}] [expr {$u1y + $u1z_y - $u1a_y}]
+$u2 setOrigin [expr { $u1x + $u1z_x - $u1a_x }] [expr { $u1y + $u1z_y - $u1a_y }]
 
 set u2a [$u2 findITerm "A"]
 lassign [$u2a getAvgXY] u2a_x u2a_y

@@ -20,4 +20,4 @@ rmp::blif_dump $blif "./results/blif_writer_sequential.blif"
 
 write_def "./results/design_seq.def"
 diff_files "./results/blif_writer_sequential.blif" \
-    "blif_writer_sequential.blif.ok"
+  "blif_writer_sequential.blif.ok"

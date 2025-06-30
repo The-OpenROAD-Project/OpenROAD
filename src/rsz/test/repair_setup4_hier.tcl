@@ -9,7 +9,7 @@ link_design reg1 -hier
 
 #place the design
 initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-    -site FreePDK45_38x28_10R_NP_162NW_34O
+  -site FreePDK45_38x28_10R_NP_162NW_34O
 global_placement -skip_nesterov_place
 detailed_placement
 
@@ -26,7 +26,7 @@ report_tns -digits 3
 
 
 repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning \
-    -skip_buffer_removal -max_passes 10
+  -skip_buffer_removal -max_passes 10
 
 set verilog_file [make_result_file repair_setup4_hier_out.v]
 write_verilog $verilog_file

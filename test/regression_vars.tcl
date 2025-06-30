@@ -72,7 +72,7 @@ proc record_flow_tests { tests } {
 
 proc record_tests1 { tests cmp_logfile } {
   global test_dir
-  if { [info exist ::env(CTEST_TESTNAME)]} {
+  if { [info exist ::env(CTEST_TESTNAME)] } {
     set tests "$::env(CTEST_TESTNAME)"
     set cmp_logfile "$::env(TEST_TYPE)"
   }
@@ -91,11 +91,11 @@ proc record_test { test cmd_dir pass_criteria } {
   lappend test_groups(all) $test
   set test_pass_criteria($test) $pass_criteria
   set test_langs($test) [list]
-  if {[file exists [file join $cmd_dir "$test.tcl"]]} {
+  if { [file exists [file join $cmd_dir "$test.tcl"]] } {
     lappend test_langs($test) tcl
   }
 
-  if {[file exists [file join $cmd_dir "$test.py"]]} {
+  if { [file exists [file join $cmd_dir "$test.py"]] } {
     lappend test_langs($test) py
   }
   return $test
@@ -118,7 +118,7 @@ proc group_tests { group } {
 }
 
 # Clear the test lists.
-proc clear_tests {} {
+proc clear_tests { } {
   global test_groups
   unset test_groups
 }

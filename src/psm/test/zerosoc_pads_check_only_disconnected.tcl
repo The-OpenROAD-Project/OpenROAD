@@ -13,5 +13,5 @@ source sky130hd/sky130hd.rc
 odb::dbInst_destroy [[ord::get_db_block] findInst IO_FILL_IO_EAST_13_47]
 odb::dbInst_destroy [[ord::get_db_block] findInst IO_FILL_IO_EAST_13_57]
 
-catch {check_power_grid -net vdd} err
+catch { check_power_grid -net vdd } err
 puts $err

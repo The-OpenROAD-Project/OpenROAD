@@ -20,8 +20,8 @@ set inst [$block findInst U4]
 odb::dbInst_destroy $inst
 
 # handle the case where we are not really running the equivalence checks.
-if {[info exists ::env(EQUIVALENCE_CHECK)]} {
-    run_equivalence_test eqy_repair_setup2 ./Nangate45/work_around_yosys/ "None"
+if { [info exists ::env(EQUIVALENCE_CHECK)] } {
+  run_equivalence_test eqy_repair_setup2 ./Nangate45/work_around_yosys/ "None"
 } else {
-    puts "Repair timing output failed equivalence test"
+  puts "Repair timing output failed equivalence test"
 }

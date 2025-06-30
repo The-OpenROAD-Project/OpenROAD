@@ -14,8 +14,8 @@ report_worst_slack -min
 report_worst_slack -max
 
 catch {
-    repair_timing -max_buffer_percent 80 -hold -hold_margin .4 \
-        -max_utilization 13
+  repair_timing -max_buffer_percent 80 -hold -hold_margin .4 \
+    -max_utilization 13
 } error
 puts $error
 

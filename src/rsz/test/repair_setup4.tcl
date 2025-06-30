@@ -1,7 +1,7 @@
 # repair_timing -setup 2 corners
 source "helpers.tcl"
-if {![info exists repair_args]} {
-    set repair_args {}
+if { ![info exists repair_args] } {
+  set repair_args {}
 }
 define_corners fast slow
 read_liberty -corner slow Nangate45/Nangate45_slow.lib
