@@ -127,6 +127,7 @@ cc_library(
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",
+        "@boost.stacktrace",
         "@boost.utility",
         "@tk_tcl//:tcl",
     ],

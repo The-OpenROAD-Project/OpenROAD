@@ -1,13 +1,15 @@
 # Testing local changes with Bazel
 
-The main use-case for Bazel is to make modifications to OpenROAD and run local tests before creating a PR.
+First [install Baselisk](https://bazel.build/install/bazelisk), then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
-After [installing Baselisk](https://bazel.build/install/bazelisk), the command line below will discover all tests starting in the current working directory and build all dependencies, including openroad and opensta:
-
-    bazelisk test --jobs=4 ...
+    bazelisk test --jobs=4 src/...
 
 - `...` means everything below this folder, so use `src/gpl/...` to run a smaller set of tests.
 - `--jobs=4` limits parallel builds to 4 cores, default is use all cores.
+
+For more comprehensive testing locally, includes longer OpenROAD integration tests and some ORFS smoke tests, install either [podman](https://podman.io/), which works without root permissions or Docker, then run:
+
+    bazelisk test ...
 
 Note! You'll see `bazel` in examples and documentation as well as `bazelisk`. The latter is a wafer thin layer on top of `bazel` that reads in the `.bazelversion` file to decide which version of Bazel to use in bazel.
 

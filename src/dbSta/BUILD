@@ -29,8 +29,8 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/sta:opensta_lib",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
         "@tk_tcl//:tcl",
@@ -60,11 +60,12 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/sta:opensta_lib",
         "//:ord",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

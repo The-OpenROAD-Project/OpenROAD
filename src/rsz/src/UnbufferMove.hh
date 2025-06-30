@@ -31,10 +31,10 @@ class UnbufferMove : public BaseMove
   const char* name() override { return "UnbufferMove"; }
 
   bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
+  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
   void removeBuffer(Instance* buffer);
 
  private:
-  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
   bool bufferBetweenPorts(Instance* buffer);
 
   static constexpr int buffer_removal_max_fanout_ = 10;
