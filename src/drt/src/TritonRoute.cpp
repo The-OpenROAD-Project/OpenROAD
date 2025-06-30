@@ -583,6 +583,18 @@ void TritonRoute::initDesign()
     }
   }
 
+  if (!router_cfg_->VIA_ACCESS_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(router_cfg_->VIA_ACCESS_LAYER_NAME);
+    if (layer) {
+      router_cfg_->VIA_ACCESS_LAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    609,
+                    "via access layer {} not found.",
+                    router_cfg_->VIA_ACCESS_LAYER_NAME);
+    }
+  }
+
   if (!router_cfg_->REPAIR_PDN_LAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(router_cfg_->REPAIR_PDN_LAYER_NAME);
     if (layer) {
@@ -625,6 +637,10 @@ void TritonRoute::ta()
     ta->setDebug(graphics_factory_->makeUniqueTAGraphics());
   }
   ta->main();
+  if (debug_->writeNetTracks) {
+    io::Writer writer(getDesign(), logger_);
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
+  }
 }
 
 void TritonRoute::dr()
@@ -676,9 +692,6 @@ void TritonRoute::endFR()
   dr_.reset();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get());
-  if (debug_->writeNetTracks) {
-    writer.updateTrackAssignment(db_->getChip()->getBlock());
-  }
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -1038,6 +1051,9 @@ int TritonRoute::main()
 
 void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
 {
+  if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    router_cfg_->USENONPREFTRACKS = false;
+  }
   if (distributed_) {
     asio::post(*dist_pool_, [this]() {
       sendDesignDist();
@@ -1245,6 +1261,9 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
   if (!params.viaInPinTopLayer.empty()) {
     router_cfg_->VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
+  }
+  if (!params.viaAccessLayer.empty()) {
+    router_cfg_->VIA_ACCESS_LAYER_NAME = params.viaAccessLayer;
   }
   if (params.drouteEndIter >= 0) {
     router_cfg_->END_ITERATION = params.drouteEndIter;

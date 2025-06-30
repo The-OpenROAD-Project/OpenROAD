@@ -119,6 +119,7 @@ cc_library(
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

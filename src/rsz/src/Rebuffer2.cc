@@ -106,7 +106,15 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
 
             while (req_path && arrival_path->vertex(sta_) != root_vertex) {
               arrival_path = arrival_path->prevPath();
-              assert(arrival_path);
+              if (!arrival_path) {
+                logger_->warn(
+                    RSZ,
+                    2006,
+                    "failed to trace timing path for load {} when buffering {}",
+                    network_->name(load_pin),
+                    network_->name(pin_));
+                break;
+              }
             }
 
             if (!arrival_path) {
@@ -1525,7 +1533,8 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
 
             Instance* inst = network_->instance(pin);
             if (!resizer_->isLogicStdCell(inst)
-                || isPortBuffer(db_network_, inst)) {
+                || isPortBuffer(db_network_, inst)
+                || !resizer_->unbuffer_move_->canRemoveBuffer(inst, true)) {
               return node;
             }
 
@@ -1941,6 +1950,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
         && !sta_->isClock(drvr_pin)
+        && !sta_->isClockSrc(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant() && !resizer_->isTristateDriver(drvr_pin)) {
       Instance* inst = network_->instance(drvr_pin);
