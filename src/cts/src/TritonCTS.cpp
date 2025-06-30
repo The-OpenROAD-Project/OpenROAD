@@ -2413,8 +2413,6 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
                                           ? network_->hierNet(op_pin)
                                           : nullptr;
   odb::dbNet* orig_flat_net = network_->flatNet(op_pin);
-  (void) orig_flat_net;
-  (void) candidate_hier_net;
 
   // get bbox of current load pins without driver output pin
   driverOutputTerm->disconnect();
