@@ -4832,15 +4832,17 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
+    fastroute_->setVerbose(true);
+    fastroute_->clearNetsToRoute();
+
+    updateDirtyNets(dirty_nets);
+
     std::vector<odb::dbNet*> modified_nets;
     modified_nets.reserve(dirty_nets.size());
     for (const Net* net : dirty_nets) {
       modified_nets.push_back(net->getDbNet());
     }
-    fastroute_->setVerbose(false);
-    fastroute_->clearNetsToRoute();
 
-    updateDirtyNets(dirty_nets);
     if (verbose_) {
       logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets.size());
     }
