@@ -188,13 +188,13 @@ void FlexTA::initTA(int size)
     std::cout << std::endl << "start initial track assignment ..." << std::endl;
   }
 
-  auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
-  auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
+  auto bottomLNum = getTech()->getBottomLayerNum();
+  auto bottomLayer = getLayer(bottomLNum);
+  if (!bottomLayer->isRouting()) {
     bottomLNum++;
-    bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
+    bottomLayer = getLayer(bottomLNum);
   }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isBottomLayerH = (bottomLayer->isHorizontal());
 
   // H first
   if (isBottomLayerH) {
@@ -254,13 +254,13 @@ void FlexTA::searchRepair(int iter, int size, int offset)
     }
     std::cout << suffix << " optimization iteration ..." << std::endl;
   }
-  auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
-  auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
+  auto bottomLNum = getTech()->getBottomLayerNum();
+  auto bottomLayer = getLayer(bottomLNum);
+  if (!bottomLayer->isRouting()) {
     bottomLNum++;
-    bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
+    bottomLayer = getLayer(bottomLNum);
   }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isBottomLayerH = (bottomLayer->isHorizontal());
 
   // H first
   if (isBottomLayerH) {

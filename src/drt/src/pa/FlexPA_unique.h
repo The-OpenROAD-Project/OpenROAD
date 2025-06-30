@@ -95,6 +95,10 @@ class UniqueInsts
 
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
 
   /**
    * @brief Checks if any net related to the instance has a NonDefaultRule.

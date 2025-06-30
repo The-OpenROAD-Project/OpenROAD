@@ -163,7 +163,7 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
   if (!con->isWidthValid(rect->width()) || !con->isPrlValid(rect->length())) {
     return;
   }
-  bool isH = getTech()->getLayer(rect->getLayerNum())->getDir()
+  bool isH = getLayer(rect->getLayerNum())->getDir()
              == odb::dbTechLayerDir::HORIZONTAL;
   if (rect->width() != rect->length()) {
     isH = gtl::delta(*rect, gtl::orientation_2d_enum::HORIZONTAL)
