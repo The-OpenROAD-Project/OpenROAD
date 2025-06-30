@@ -20,17 +20,6 @@
     "src/par/examples/",
     "src/par/test/",
     "src/ppl/test/",
-    "src/rcx/calibration/",
-    "src/rcx/example/",
-    "src/rcx/rule_scripts/",
-    "src/rcx/test/",
-    "src/rmp/test/",
-    "src/rsz/test/",
-    "src/stt/test/",
-    "src/tap/etc/scripts/",
-    "src/tap/test/",
-    "src/upf/test/",
-    "src/utl/test/"
 ]
 
 ignore = [

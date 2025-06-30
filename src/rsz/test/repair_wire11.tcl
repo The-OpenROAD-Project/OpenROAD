@@ -7,8 +7,8 @@ read_lef pad.lef
 read_def repair_wire11.def
 
 initialize_floorplan -die_area "0 0 1200 1200" \
-  -core_area "10 10 390 390" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
+    -core_area "10 10 390 390" \
+    -site FreePDK45_38x28_10R_NP_162NW_34O
 
 source Nangate45/Nangate45.vars
 source $tracks_file

@@ -19,23 +19,24 @@ set levelshifters [$pd getLevelShifters]
 
 foreach ls $levelshifters {
     puts "LevelShifter: [$ls getName], Source: [$ls getSource]"
-    puts "Sink: [$ls getSink], Functional: [$ls isUseFunctionalEquivalence], AppliesTo: [$ls getAppliesTo], AppliesToBoundary: [$ls getAppliesToBoundary]"
-    puts "Rule: [$ls getRule], Threshold: [$ls getThreshold], NoShift: [$ls isNoShift], ForceShift: [$ls isForceShift], Location: [$ls getLocation]"
-    puts "InputSupply: [$ls getInputSupply], OutputSupply: [$ls getOutputSupply], InternalSupply: [$ls getInternalSupply]"
+    puts "Sink: [$ls getSink], Functional: [$ls isUseFunctionalEquivalence],\
+          AppliesTo: [$ls getAppliesTo],\
+          AppliesToBoundary: [$ls getAppliesToBoundary]"
+    puts "Rule: [$ls getRule], Threshold: [$ls getThreshold],\
+          NoShift: [$ls isNoShift], ForceShift: [$ls isForceShift],\
+          Location: [$ls getLocation]"
+    puts "InputSupply: [$ls getInputSupply],\
+          OutputSupply: [$ls getOutputSupply],\
+          InternalSupply: [$ls getInternalSupply]"
     puts "NamePrefix: [$ls getNamePrefix], NameSuffix: [$ls getNameSuffix]"
 
     set els [$ls getElements]
     foreach el $els {
-      puts "Included Element: $el"
+        puts "Included Element: $el"
     }
 
     set excluded [$ls getExcludeElements]
     foreach ex $excluded {
-      puts "Excluded Element: $ex"
+        puts "Excluded Element: $ex"
     }
-
 }
-
-
-
-
