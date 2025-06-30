@@ -7,7 +7,6 @@
 or_integration_tests(
   "cts"
   TESTS
-    hier_insertion_delay  
     array
     array_ins_delay
     array_no_blockages
@@ -26,6 +25,7 @@ or_integration_tests(
     dummy_load
     find_clock
     find_clock_pad
+    hier_insertion_delay
     insertion_delay
     lvt_lib
     max_cap
