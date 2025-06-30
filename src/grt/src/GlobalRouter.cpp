@@ -812,7 +812,11 @@ void GlobalRouter::removeWireUsage(odb::dbWire* wire)
         odb::dbShape::getViaBoxes(shape, via_boxes);
         for (const odb::dbShape& box : via_boxes) {
           odb::dbTechLayer* tech_layer = box.getTechLayer();
-          if (tech_layer->getRoutingLevel() == 0) {
+          const int layer_routing_level = tech_layer->getRoutingLevel();
+          int min_layer, max_layer;
+          getMinMaxLayer(min_layer, max_layer);
+          if (layer_routing_level == 0 || layer_routing_level < min_layer
+              || layer_routing_level > max_layer) {
             continue;
           }
           odb::Rect via_rect = box.getBox();
