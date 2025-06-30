@@ -31,7 +31,8 @@ link_design jpeg_encoder -hier
 read_sdc jpeg.sdc
 
 #place the design
-#initialize_floorplan -die_area "0 0 40 1200"   -core_area "0 0 40 1200" -site FreePDK45_38x28_10R_NP_162NW_34O
+#initialize_floorplan -die_area "0 0 40 1200"   -core_area "0 0 40 1200" \
+#   -site FreePDK45_38x28_10R_NP_162NW_34O
 #global_placement -skip_nesterov_place
 #detailed_placement
 

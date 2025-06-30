@@ -10,7 +10,7 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 
 foreach net_name {in1 n2 n2} {
-  [sta::sta_to_db_net [get_net $net_name]] setSigType CLOCK
+    [sta::sta_to_db_net [get_net $net_name]] setSigType CLOCK
 }
 
 # wire length = 1500u -> 2 buffers required

@@ -7,8 +7,8 @@ read_lef Nangate45/Nangate45.lef
 read_def repair_wire1.def
 
 initialize_floorplan -die_area "0 0 2100 200" \
-  -core_area "0 0 2100 200" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
+    -core_area "0 0 2100 200" \
+    -site FreePDK45_38x28_10R_NP_162NW_34O
 
 source Nangate45/Nangate45.vars
 source Nangate45/Nangate45.rc

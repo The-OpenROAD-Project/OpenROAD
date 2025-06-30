@@ -9,8 +9,8 @@ write_hi_fanout_def $def_file 20
 read_def $def_file
 
 initialize_floorplan -die_area "0 0 88 88" \
-  -core_area "0 0 88 88" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
+    -core_area "0 0 88 88" \
+    -site FreePDK45_38x28_10R_NP_162NW_34O
 
 source Nangate45/Nangate45.vars
 source Nangate45/Nangate45.rc

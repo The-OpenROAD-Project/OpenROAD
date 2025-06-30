@@ -23,11 +23,11 @@ for {set i 1} {$i <= 200} {incr i} {
     $bt3 setIoType OUTPUT
     $bt1 connect $n1
     $bt3 connect $n3
-    set pos [expr $i * 10 * 2000]
+    set pos [expr {$i * 10 * 2000}]
     set bp1 [odb::dbBPin_create $bt1]
     set bp3 [odb::dbBPin_create $bt3]
-    odb::dbBox_create $bp1 $m1 0 $pos 100 [expr $pos + 100]
-    odb::dbBox_create $bp3 $m1 $pos $pos [expr $pos + 100] [expr $pos + 100]
+    odb::dbBox_create $bp1 $m1 0 $pos 100 [expr {$pos + 100}]
+    odb::dbBox_create $bp3 $m1 $pos $pos [expr {$pos + 100}] [expr {$pos + 100}]
     $bp1 setPlacementStatus PLACED
     $bp3 setPlacementStatus PLACED
     set i1 [odb::dbInst_create $block $buf i1-$i]
@@ -44,8 +44,8 @@ for {set i 1} {$i <= 200} {incr i} {
 ord::design_created
 
 create_clock -period 1 -name clk
-set_input_delay -clock clk  1.0  [all_inputs]
-set_output_delay -clock clk  0.0  [all_outputs]
+set_input_delay -clock clk 1.0 [all_inputs]
+set_output_delay -clock clk 0.0 [all_outputs]
 
 set_wire_rc -layer metal2
 estimate_parasitics -placement

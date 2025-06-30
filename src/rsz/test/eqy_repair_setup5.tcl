@@ -17,7 +17,7 @@ set inst [$block findInst u4]
 set iterm [$block findITerm u4/A]
 $iterm disconnect
 
-# handle the case where we are not really running the equivalence checks. 
+# handle the case where we are not really running the equivalence checks.
 if {[info exists ::env(EQUIVALENCE_CHECK)]} {
     run_equivalence_test eqy_repair_setup5 ./sky130hd/work_around_yosys/ "None"
 } else {

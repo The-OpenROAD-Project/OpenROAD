@@ -1,10 +1,10 @@
 source "helpers.tcl"
 
-proc test_tee { args } {
+proc test_tee {args} {
     puts "FILE TEE: ${args}"
 }
 
-proc test_tee_utl { args } {
+proc test_tee_utl {args} {
     utl::info FLW 3 "LOGGER TEE: ${args}"
 }
 
@@ -60,8 +60,10 @@ puts "LOGGER: $logger_redirect_append"
 puts "string redirect start - quiet"
 tee -quiet -variable puts_redirect {puts "PUTS REDIRECT"}
 tee -quiet -variable logger_redirect {utl::info FLW 7 "LOGGER REDIRECT"}
-tee -quiet -append -variable logger_redirect_append {utl::info FLW 8 "LOGGER REDIRECT"}
-tee -quiet -append -variable logger_redirect_append {utl::info FLW 9 "LOGGER REDIRECT"}
+tee -quiet -append -variable logger_redirect_append \
+    {utl::info FLW 8 "LOGGER REDIRECT"}
+tee -quiet -append -variable logger_redirect_append \
+    {utl::info FLW 9 "LOGGER REDIRECT"}
 puts "string redirect end - quiet"
 
 puts "PUTS: $puts_redirect"
