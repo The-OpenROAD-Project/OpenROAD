@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
@@ -36,7 +37,6 @@ class RepairSetup;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
-using FixedDelay = int64_t;
 
 class Rebuffer : public sta::dbStaState
 {
@@ -86,7 +86,7 @@ class Rebuffer : public sta::dbStaState
                            int level,
                            int next_segment_wl = 0,
                            bool area_oriented = false,
-                           FixedDelay slack_threshold = 0,
+                           FixedDelay slack_threshold = FixedDelay::ZERO,
                            BufferedNet* exemplar = nullptr);
 
   void insertAssuredOption(BufferedNetSeq& opts,

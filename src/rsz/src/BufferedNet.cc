@@ -35,10 +35,10 @@ namespace rsz {
 using std::make_shared;
 using std::max;
 using std::min;
-
-using sta::INF;
-
 using utl::RSZ;
+
+const FixedDelay FixedDelay::INF = FixedDelay(100.0f);
+const FixedDelay FixedDelay::ZERO = FixedDelay(0.0f);
 
 static const char* to_string(BufferedNetType type);
 
@@ -178,23 +178,21 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
   switch (type_) {
     case BufferedNetType::load:
       // {:{}s} format indents level spaces.
-      return fmt::format(
-          "load {} ({}, {}) cap {} slack {} load sl {}",
-          sdc_network->pathName(load_pin_),
-          x,
-          y,
-          cap,
-          delayAsString((float) slack() / FixedDelaySecond, resizer),
-          delayAsString(maxLoadSlew(), resizer));
+      return fmt::format("load {} ({}, {}) cap {} slack {} load sl {}",
+                         sdc_network->pathName(load_pin_),
+                         x,
+                         y,
+                         cap,
+                         delayAsString(slack().toSeconds(), resizer),
+                         delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::wire:
-      return fmt::format(
-          "wire ({}, {}) cap {} slack {} buffers {} load sl {}",
-          x,
-          y,
-          cap,
-          delayAsString((float) slack() / FixedDelaySecond, resizer),
-          bufferCount(),
-          delayAsString(maxLoadSlew(), resizer));
+      return fmt::format("wire ({}, {}) cap {} slack {} buffers {} load sl {}",
+                         x,
+                         y,
+                         cap,
+                         delayAsString(slack().toSeconds(), resizer),
+                         bufferCount(),
+                         delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::buffer:
       return fmt::format(
           "buffer ({}, {}) {} cap {} slack {} buffers {} load sl {}",
@@ -202,7 +200,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
           y,
           buffer_cell_->name(),
           cap,
-          delayAsString((float) slack() / FixedDelaySecond, resizer),
+          delayAsString(slack().toSeconds(), resizer),
           bufferCount(),
           delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::junction:
@@ -211,7 +209,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
           x,
           y,
           cap,
-          delayAsString((float) slack() / FixedDelaySecond, resizer),
+          delayAsString(slack().toSeconds(), resizer),
           bufferCount(),
           delayAsString(maxLoadSlew(), resizer));
   }
