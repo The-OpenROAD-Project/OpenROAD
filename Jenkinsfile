@@ -167,20 +167,24 @@ def getParallelTests(String image) {
                 withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
                     stage('Setup Bazel Build') {
                         echo "Build with Bazel";
-                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'"
                         checkout scm;
                     }
                     stage('Bazel Build') {
-                        timeout(time: 120, unit: 'MINUTES') {
-                            sh label: 'Bazel Build', script: '''
-                                bazel test \
-                                --keep_going \
-                                --show_timestamps \
-                                --test_output=errors \
-                                --curses=no \
-                                --force_pic \
-                                ...
-                                ''';
+                        withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                            timeout(time: 120, unit: 'MINUTES') {
+                                sh label: 'Bazel Build', script: """
+                                    bazel test \
+                                    --config=ci \
+                                    --keep_going \
+                                    --show_timestamps \
+                                    --test_output=errors \
+                                    --curses=no \
+                                    --force_pic \
+                                    --google_credentials=\${GCS_SA_KEY} \
+                                    ...
+                                    """
+                            }
                         }
                     }
                 }
