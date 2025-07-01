@@ -3140,7 +3140,6 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
       return;
     }
 
-    log_->report("destroy: {}", db_inst->getName());
     if (gcell_index != last_index) {
       std::swap(nb_gcells_[gcell_index], nb_gcells_[last_index]);
     }
