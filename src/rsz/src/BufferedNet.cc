@@ -35,10 +35,10 @@ namespace rsz {
 using std::make_shared;
 using std::max;
 using std::min;
-
-using sta::INF;
-
 using utl::RSZ;
+
+const FixedDelay FixedDelay::INF = FixedDelay(100.0f);
+const FixedDelay FixedDelay::ZERO = FixedDelay(0.0f);
 
 static const char* to_string(BufferedNetType type);
 
@@ -183,14 +183,14 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
                          x,
                          y,
                          cap,
-                         delayAsString(slack(), resizer),
+                         delayAsString(slack().toSeconds(), resizer),
                          delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::wire:
       return fmt::format("wire ({}, {}) cap {} slack {} buffers {} load sl {}",
                          x,
                          y,
                          cap,
-                         delayAsString(slack(), resizer),
+                         delayAsString(slack().toSeconds(), resizer),
                          bufferCount(),
                          delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::buffer:
@@ -200,7 +200,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
           y,
           buffer_cell_->name(),
           cap,
-          delayAsString(slack(), resizer),
+          delayAsString(slack().toSeconds(), resizer),
           bufferCount(),
           delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::junction:
@@ -209,7 +209,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
           x,
           y,
           cap,
-          delayAsString(slack(), resizer),
+          delayAsString(slack().toSeconds(), resizer),
           bufferCount(),
           delayAsString(maxLoadSlew(), resizer));
   }
@@ -242,17 +242,17 @@ void BufferedNet::setSlackTransition(const sta::RiseFallBoth* transitions)
   slack_transitions_ = transitions;
 }
 
-void BufferedNet::setSlack(Delay slack)
+void BufferedNet::setSlack(FixedDelay slack)
 {
   slack_ = slack;
 }
 
-void BufferedNet::setDelay(Delay delay)
+void BufferedNet::setDelay(FixedDelay delay)
 {
   delay_ = delay;
 }
 
-void BufferedNet::setArrivalDelay(Delay delay)
+void BufferedNet::setArrivalDelay(FixedDelay delay)
 {
   arrival_delay_ = delay;
 }
