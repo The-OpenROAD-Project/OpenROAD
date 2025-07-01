@@ -173,6 +173,18 @@ def getParallelTests(String image) {
                     stage('Bazel Build') {
                         timeout(time: 120, unit: 'MINUTES') {
                             sh label: 'Bazel Build', script: '''
+                                bazel build \
+                                --keep_going \
+                                --show_timestamps \
+                                --curses=no \
+                                --force_pic \
+                                ...
+                                ''';
+                        }
+                    }
+                    stage('Bazel Test') {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh label: 'Bazel Build', script: '''
                                 bazel test \
                                 --keep_going \
                                 --show_timestamps \
