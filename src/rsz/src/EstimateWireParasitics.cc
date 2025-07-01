@@ -6,7 +6,7 @@
 #include <map>
 #include <memory>
 
-#include "SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"

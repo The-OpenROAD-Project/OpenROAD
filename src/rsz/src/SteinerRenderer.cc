@@ -3,7 +3,7 @@
 
 #include "SteinerRenderer.h"
 
-#include "SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 
 namespace rsz {
 

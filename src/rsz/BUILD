@@ -46,7 +46,6 @@ cc_library(
         "src/SplitLoadMove.cc",
         "src/SplitLoadMove.hh",
         "src/SteinerTree.cc",
-        "src/SteinerTree.hh",
         "src/SwapArithModules.hh",
         "src/SwapPinsMove.cc",
         "src/SwapPinsMove.hh",
@@ -57,6 +56,7 @@ cc_library(
         "include/rsz/MakeResizer.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
+        "include/rsz/SteinerTree.hh",
     ],
     includes = [
         "include",
@@ -86,7 +86,6 @@ cc_library(
         "src/ResizerObserver.hh",
         "src/SteinerRenderer.cc",
         "src/SteinerRenderer.h",
-        "src/SteinerTree.hh",
         ":swig",
         ":tcl",
     ],
@@ -94,6 +93,7 @@ cc_library(
         "include/rsz/MakeResizer.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
+        "include/rsz/SteinerTree.hh",
     ],
     copts = [
         "-Isrc/rsz/src",

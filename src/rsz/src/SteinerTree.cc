@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 
 #include <cmath>
 #include <cstddef>

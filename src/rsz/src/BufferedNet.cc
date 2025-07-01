@@ -21,7 +21,7 @@
 #include "utl/Logger.h"
 
 // Resizer::makeBufferedNetSteiner
-#include "SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 
 // Resizer::makeBufferedNetGroute
 #include "db_sta/dbNetwork.hh"
