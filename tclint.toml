@@ -8,8 +8,6 @@
     "src/dft/test/",
     "src/dpl/test/",
     "src/drt/test/",
-    "src/dst/test/",
-    "src/fin/test/",
 ]
 
 ignore = [
