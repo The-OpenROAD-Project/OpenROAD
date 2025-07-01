@@ -441,6 +441,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(Pin* pin);
 
+  ////////////////////////////////////////////////////////////////
+  // Returns nullptr if net has less than 2 pins or any pin is not placed.
+  SteinerTree* makeSteinerTree(Point drvr_location,
+                               const std::vector<Point>& sink_locations);
+  SteinerTree* makeSteinerTree(const Pin* drvr_pin);
+
  protected:
   void init();
   double computeDesignArea();
@@ -662,10 +668,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,
                               bool revisiting_inst);
-  // Returns nullptr if net has less than 2 pins or any pin is not placed.
-  SteinerTree* makeSteinerTree(Point drvr_location,
-                               const std::vector<Point>& sink_locations);
-  SteinerTree* makeSteinerTree(const Pin* drvr_pin);
   BufferedNetPtr makeBufferedNet(const Pin* drvr_pin, const Corner* corner);
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
                                         const Corner* corner);
