@@ -183,7 +183,7 @@ void Graphics::drawCells(const std::vector<GCellHandle>& cells,
 {
   for (const auto& handle : cells) {
     const GCell* gCell
-        = handle;  // Uses the conversion operator to get a GCell*
+        = handle;
     drawSingleGCell(gCell, painter);
   }
 }
@@ -414,14 +414,12 @@ void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
                                    const odb::Rect& region)
 {
-  // selected_ = nullptr;
   size_t selected_ = kInvalidIndex;
 
   if (layer || !nbc_) {
     return gui::SelectionSet();
   }
 
-  // for (GCell* cell : nbc_->getGCells()) {
   for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
     auto cell = nbc_->getGCellByIndex(idx);
     const int gcx = cell->dCx();
@@ -437,7 +435,6 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
       continue;
     }
 
-    // selected_ = cell;
     selected_ = idx;
     gui::Gui::get()->redraw();
     if (cell->isInstance()) {
