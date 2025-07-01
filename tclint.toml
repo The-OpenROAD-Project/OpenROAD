@@ -11,8 +11,6 @@
     "src/dst/test/",
     "src/fin/test/",
     "src/gpl/test/",
-    "src/grt/etc/scripts/",
-    "src/grt/test/",
 ]
 
 ignore = [
