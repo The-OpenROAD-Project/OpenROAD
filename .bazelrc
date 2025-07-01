@@ -83,7 +83,6 @@ build:ci --remote_cache_compression=true
 build:ci --remote_upload_local_results=true
 build:ci --remote_download_minimal
 build:ci --remote_download_toplevel
-build:ci --google_default_credentials=true
 
 # --- OpenROAD Developer Settings (read-only access) ---
 build:openroad-dev --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
