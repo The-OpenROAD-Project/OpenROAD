@@ -6,7 +6,6 @@
     "src/cts/test/",
     "src/dbSta/test/",
     "src/dft/test/",
-    "src/dpl/test/",
 ]
 
 ignore = [
