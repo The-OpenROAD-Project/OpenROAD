@@ -5,5 +5,5 @@ read_lef "sky130hs/sky130hs_std_cell.lef"
 
 read_def "unplaced_inst.def"
 
-catch {global_route -verbose} error
+catch { global_route -verbose } error
 puts $error

@@ -21,7 +21,7 @@ set wire_encoder [odb::dbWireEncoder]
 # Encoding
 $wire_encoder begin $wire
 # void newPath( dbTechLayer * layer, dbWireType type )
-$wire_encoder newPath $layer1 "ROUTED" 
+$wire_encoder newPath $layer1 "ROUTED"
 # int addPoint( int x, int y, uint property = 0 );
 $wire_encoder addPoint 2000 2000
 set jid1 [$wire_encoder addPoint 10000 2000]

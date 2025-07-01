@@ -6,9 +6,9 @@ read_def "data/design58.def"
 set via [odb::dbVia_create [ord::get_db_block] "testing_via"]
 
 foreach viagen [[ord::get_db_tech] getViaGenerateRules] {
-    if {[$viagen getName] == "M2_M1"} {
-        break
-    }
+  if { [$viagen getName] == "M2_M1" } {
+    break
+  }
 }
 
 $via setViaGenerateRule $viagen

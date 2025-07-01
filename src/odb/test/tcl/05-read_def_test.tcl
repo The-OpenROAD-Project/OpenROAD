@@ -6,8 +6,8 @@ source [file join $tcl_dir "test_helpers.tcl"]
 set db [odb::dbDatabase_create]
 odb::read_lef $db [file join $data_dir "gscl45nm.lef"]
 odb::read_def $db [file join $data_dir "design.def"]
-if {[$db getChip] == "NULL"} {
-    puts "Read DEF Failed"
-    exit 1
+if { [$db getChip] == "NULL" } {
+  puts "Read DEF Failed"
+  exit 1
 }
 exit 0
