@@ -10,13 +10,13 @@ set_wire_rc -clock -layer metal5
 set_debug_level CTS legalizer 2
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
-                     -buf_list CLKBUF_X3 \
-                     -wire_unit 20 \
-                     -sink_clustering_enable \
-                     -distance_between_buffers 100 \
-                     -sink_clustering_size 10 \
-                     -sink_clustering_max_diameter 60 \
-                     -num_static_layers 1
+  -buf_list CLKBUF_X3 \
+  -wire_unit 20 \
+  -sink_clustering_enable \
+  -distance_between_buffers 100 \
+  -sink_clustering_size 10 \
+  -sink_clustering_max_diameter 60 \
+  -num_static_layers 1
 
 set unconnected_buffers 0
 foreach buf [get_cells clkbuf_*_clk] {
