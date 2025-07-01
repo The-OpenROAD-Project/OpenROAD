@@ -18,7 +18,6 @@
     "src/odb/",
     "src/par/examples/",
     "src/par/test/",
-    "src/ppl/test/",
 ]
 
 ignore = [
