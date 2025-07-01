@@ -167,7 +167,7 @@ def getParallelTests(String image) {
                 withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
                     stage('Setup Bazel Build') {
                         echo "Build with Bazel";
-                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'"
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
                     }
                     stage('Bazel Build') {
