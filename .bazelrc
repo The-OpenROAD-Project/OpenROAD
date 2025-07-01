@@ -1,5 +1,5 @@
 common --enable_bzlmod
-common --enable_workspace  # explicitly currently still needing this
+common --enable_workspace # explicitly currently still needing this
 
 # suppress distracting warning about newer module
 # versions found in dependency graph.
@@ -12,25 +12,25 @@ test --test_timeout=300,1800,1800,9600
 # match, but bazel 8 will be strict. So start now.
 common --incompatible_disallow_empty_glob
 
-build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
-build --cxxopt "-xc++"             --host_cxxopt "-xc++"
+build --cxxopt "-std=c++17" --host_cxxopt "-std=c++17"
+build --cxxopt "-xc++" --host_cxxopt "-xc++"
 
 # Needed for floating point stability in FFT (fft_test will check this).
 # See also https://kristerw.github.io/2021/11/09/fp-contract/
 build --cxxopt "-ffp-contract=off" --host_cxxopt "-ffp-contract=off"
 
 # allow exceptions.
-build  --cxxopt=-fexceptions    --host_cxxopt=-fexceptions
+build --cxxopt=-fexceptions --host_cxxopt=-fexceptions
 
 # Turn warnings on...
-build --copt "-Wall"               --host_copt "-Wall"
-build --copt "-Wextra"             --host_copt "-Wextra"
+build --copt "-Wall" --host_copt "-Wall"
+build --copt "-Wextra" --host_copt "-Wextra"
 
 # ... and disable the warnings we're not interested in.
-build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
-build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
-build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
-build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
+build --copt "-Wno-sign-compare" --host_copt "-Wno-sign-compare"
+build --copt "-Wno-unused-parameter" --host_copt "-Wno-unused-parameter"
+build --copt "-Wno-c++20-designator" --host_copt "-Wno-c++20-designator"
+build --copt "-Wno-gcc-compat" --host_copt "-Wno-gcc-compat"
 build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
 
 # The warning acceptance bar in CI for PRs is set by -Werror of a specific
@@ -38,12 +38,12 @@ build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extensio
 # they are fixed and under CI -Werror acceptance critera as there is nothing the
 # developers can(they can't be reproduced locally or in CI) or should do about
 # these warnings in code they are not working on.
-build --copt "-Wno-unused-private-field"  --host_copt "-Wno-unused-private-field"
-build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
-build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
-build --copt "-Wno-deprecated-copy"  --host_copt "-Wno-deprecated-copy"
-build --copt "-Wno-deprecated-copy-with-user-provided-copy"  --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
-build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
+build --copt "-Wno-unused-private-field" --host_copt "-Wno-unused-private-field"
+build --copt "-Wno-cast-function-type-mismatch" --host_copt "-Wno-cast-function-type-mismatch"
+build --copt "-Wno-unused-but-set-variable" --host_copt "-Wno-unused-but-set-variable"
+build --copt "-Wno-deprecated-copy" --host_copt "-Wno-deprecated-copy"
+build --copt "-Wno-deprecated-copy-with-user-provided-copy" --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
+build --copt "-Wno-dangling" --host_copt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
@@ -70,27 +70,27 @@ build --incompatible_strict_action_env
 
 test --build_tests_only
 
-# Read only remote cache, only writeable by OpenROAD CI.
-build --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
-build --remote_cache_compression=true
-
 # --- Performance Optimizations ---
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
 
-# Reduce network traffic by only downloading necessary outputs
-build --remote_download_minimal
-build --remote_download_toplevel
-
 # Enable local disk caching to supplement the remote cache
 build --disk_cache=~/.cache/bazel-disk-cache
 
-# --- Developer Settings (default) ---
-# By default, developers only read from the cache and do not upload
-build --remote_upload_local_results=false
-
-# --- CI Settings ---
-# The CI server will use this configuration to enable uploads
+# --- CI Settings (write access) ---
+build:ci --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
+build:ci --remote_cache_compression=true
 build:ci --remote_upload_local_results=true
+build:ci --remote_download_minimal
+build:ci --remote_download_toplevel
+build:ci --google_default_credentials=true
+
+# --- OpenROAD Developer Settings (read-only access) ---
+build:openroad-dev --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
+build:openroad-dev --remote_cache_compression=true
+build:openroad-dev --remote_upload_local_results=false
+build:openroad-dev --remote_download_minimal
+build:openroad-dev --remote_download_toplevel
+build:openroad-dev --google_default_credentials=true
 
 try-import %workspace%/user.bazelrc
