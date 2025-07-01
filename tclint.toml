@@ -15,7 +15,6 @@
     "src/grt/test/",
     "src/ifp/test/",
     "src/mpl/test/",
-    "src/odb/",
 ]
 
 ignore = [

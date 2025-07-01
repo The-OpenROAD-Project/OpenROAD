@@ -20,6 +20,5 @@ $wire_decoder next
 check "color is not null" {$wire_decoder getColor} 1
 
 
-
 puts "pass"
 exit 0

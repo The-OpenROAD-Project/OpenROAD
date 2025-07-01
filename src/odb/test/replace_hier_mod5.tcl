@@ -38,14 +38,13 @@ set_max_delay -to carry_out 1.0
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
 report_cell_usage gcd_1/_552_
 
-set result [catch { replace_hier_module gcd_1/_552_ LCU_16_BRENT_KUNG } ]
+set result [catch { replace_hier_module gcd_1/_552_ LCU_16_BRENT_KUNG }]
 if { $result == 0 } {
-    puts "Successfully replaced hier module"
-    report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
-    report_cell_usage gcd_1/_552_
+  puts "Successfully replaced hier module"
+  report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
+  report_cell_usage gcd_1/_552_
 
-    run_equivalence_test replace_hier_mod4 ./Nangate45/work_around_yosys/ "None"
+  run_equivalence_test replace_hier_mod4 ./Nangate45/work_around_yosys/ "None"
 } else {
-    puts "Failed to replaced hier module"
+  puts "Failed to replaced hier module"
 }
-
