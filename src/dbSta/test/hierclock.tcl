@@ -15,4 +15,3 @@ report_checks -path_delay min -fields {slew cap input net fanout} -format full_c
 set v_file [make_result_file hierclock_out.v]
 write_verilog $v_file
 diff_files $v_file hierclock_out.vok
-

@@ -13,7 +13,7 @@ set graph_file [make_result_file partition_gcd.graph]
 set paths_file [make_result_file partition_gcd.paths]
 set part_v [make_result_file partition_gcd.v]
 
-triton_part_design -solution_file $part_file 
+triton_part_design -solution_file $part_file
 #    -hypergraph_file $graph_file \
 #    -paths_file $paths_file
 

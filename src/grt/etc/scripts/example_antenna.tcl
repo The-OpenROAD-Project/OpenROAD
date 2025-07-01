@@ -2,10 +2,10 @@ read_lef "input.lef"
 read_def "input.def"
 
 fastroute -output_file "route.guide" \
-	  -max_routing_layer 10 \
-	  -unidirectional_routing \
-	  -max_routing_length 10.0 \
-	  -max_length_per_layer {{1 12.0} {2 30.0} {3 50.0} {7 100.0}} \
+  -max_routing_layer 10 \
+  -unidirectional_routing \
+  -max_routing_length 10.0 \
+  -max_length_per_layer {{1 12.0} {2 30.0} {3 50.0} {7 100.0}}
 
 exit
 

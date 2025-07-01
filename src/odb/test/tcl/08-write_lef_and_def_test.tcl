@@ -10,11 +10,11 @@ odb::read_def $db [file join $data_dir "design.def"]
 set chip [$db getChip]
 set block [$chip getBlock]
 set lef_write_result [odb::write_lef $lib [file join $opendb_dir "build" "test.lef"]]
-if {$lef_write_result != 1} {
-    exit 1
+if { $lef_write_result != 1 } {
+  exit 1
 }
 set def_write_result [odb::write_def $block [file join $opendb_dir "build" "test.def"]]
-if {$def_write_result != 1} {
-    exit 1
+if { $def_write_result != 1 } {
+  exit 1
 }
 exit 0

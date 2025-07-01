@@ -21,57 +21,51 @@ set block [$chip getBlock]
 
 set insts [$block getInsts]
 foreach inst $insts {
-    puts "Instance: [$inst getName] - "
-    set iterms [$inst getITerms]
-    foreach iterm $iterms {
-        set net [$iterm getNet]
-        set io_type [$iterm getIoType]
-        if { $net != "NULL" && $io_type == "OUTPUT" } {
-            set connected_iterms [$net getITerms]
-            foreach conn $connected_iterms {
-                set connected_inst [$conn getInst]
-                if {[$inst getName] != [$connected_inst getName]} {
-                    puts " -> [$net getName] -> [$connected_inst getName]"
-                }
-            }
+  puts "Instance: [$inst getName] - "
+  set iterms [$inst getITerms]
+  foreach iterm $iterms {
+    set net [$iterm getNet]
+    set io_type [$iterm getIoType]
+    if { $net != "NULL" && $io_type == "OUTPUT" } {
+      set connected_iterms [$net getITerms]
+      foreach conn $connected_iterms {
+        set connected_inst [$conn getInst]
+        if { [$inst getName] != [$connected_inst getName] } {
+          puts " -> [$net getName] -> [$connected_inst getName]"
         }
-
+      }
     }
+  }
 }
 
 
 initialize_floorplan -die_area { 0 0 500 500 } \
-    -core_area { 100 100 400 400 } \
-    -site unithd
+  -core_area { 100 100 400 400 } \
+  -site unithd
 
 
 set insts [$block getInsts]
 foreach inst $insts {
-    set group [$inst getGroup]
-    set group_name ""
-    if { $group != "NULL" } {
-        set group_name [$group getName] 
-    }
-    set dbMaster [$inst getMaster]
-    puts "Instance: [$inst getName] - ($group_name) : [$dbMaster getName] "
-    set iterms [$inst getITerms]
-    foreach iterm $iterms {
-        set net [$iterm getNet]
-        set io_type [$iterm getIoType]
-        if { $net != "NULL" && $io_type == "OUTPUT" } {
-            set connected_iterms [$net getITerms]
-            foreach conn $connected_iterms {
-                set connected_inst [$conn getInst]
-                # puts " -> [$connected_inst getName] through [$net getName]"
-                if {[$inst getName] != [$connected_inst getName]} {
-                    puts " -> [$net getName] -> [$connected_inst getName] "
-                }
-            }
+  set group [$inst getGroup]
+  set group_name ""
+  if { $group != "NULL" } {
+    set group_name [$group getName]
+  }
+  set dbMaster [$inst getMaster]
+  puts "Instance: [$inst getName] - ($group_name) : [$dbMaster getName] "
+  set iterms [$inst getITerms]
+  foreach iterm $iterms {
+    set net [$iterm getNet]
+    set io_type [$iterm getIoType]
+    if { $net != "NULL" && $io_type == "OUTPUT" } {
+      set connected_iterms [$net getITerms]
+      foreach conn $connected_iterms {
+        set connected_inst [$conn getInst]
+        # puts " -> [$connected_inst getName] through [$net getName]"
+        if { [$inst getName] != [$connected_inst getName] } {
+          puts " -> [$net getName] -> [$connected_inst getName] "
         }
-
+      }
     }
+  }
 }
-
-
-
-

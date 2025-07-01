@@ -7,11 +7,11 @@ read_def "via_access_layer.def"
 read_guides "via_access_layer.guides"
 
 detailed_route -bottom_routing_layer met3 \
-               -top_routing_layer met5 \
-               -via_access_layer met2 \
-               -verbose 0
+  -top_routing_layer met5 \
+  -via_access_layer met2 \
+  -verbose 0
 
 set def_file [make_result_file via_access_layer.def]
 
 write_def $def_file
-diff_files via_access_layer.defok $def_file 
+diff_files via_access_layer.defok $def_file
