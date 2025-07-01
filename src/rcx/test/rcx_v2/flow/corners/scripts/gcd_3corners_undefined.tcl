@@ -19,6 +19,6 @@ source $test_dir/sky130hs/sky130hs.rc
 # define_rcx_corners -corner_list "max typ min"
 
 extract_parasitics -ext_model_file $model_v2 -max_res 0 \
-    -coupling_threshold 0.001 -version 2.0 -skip_over_cell
+  -coupling_threshold 0.001 -version 2.0 -skip_over_cell
 
 write_spef $test_case.spef

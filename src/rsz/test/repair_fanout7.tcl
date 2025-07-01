@@ -2,11 +2,11 @@
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
-if {![info exists def_filename]} {
-    set def_filename [make_result_file "repair_fanout7.def"]
+if { ![info exists def_filename] } {
+  set def_filename [make_result_file "repair_fanout7.def"]
 }
-if {![info exists repair_args]} {
-    set repair_args {}
+if { ![info exists repair_args] } {
+  set repair_args {}
 }
 # Gates we want to eventually NAND2_X4, NAND3_X4, NAND4_X4
 

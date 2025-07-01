@@ -1,11 +1,11 @@
 create_power_domain PD_TOP \
-  -elements {.}  \
+  -elements {.}
 
 create_power_domain PD_AES_1 \
-  -elements {u_aes_1} \
+  -elements {u_aes_1}
 
 create_power_domain PD_AES_2 \
-  -elements {u_aes_2} \
+  -elements {u_aes_2}
 
 create_logic_port power_down_aes_1 -direction in
 create_logic_port power_down_aes_2 -direction in
@@ -60,7 +60,7 @@ set_isolation iso_aes_2 \
   -location parent
 
 
-use_interface_cell iso_aes_1\
+use_interface_cell iso_aes_1 \
   -domain PD_AES_1 \
   -strategy iso_aes_1 \
   -lib_cells {
@@ -71,7 +71,7 @@ use_interface_cell iso_aes_1\
   }
 
 
-use_interface_cell iso_aes_2\
+use_interface_cell iso_aes_2 \
   -domain PD_AES_2 \
   -strategy iso_aes_2 \
   -lib_cells {

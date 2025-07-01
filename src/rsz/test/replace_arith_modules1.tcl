@@ -9,16 +9,17 @@ set ECHO_COMMANDS {
 
 # Save and wrap each command
 foreach cmd $ECHO_COMMANDS {
-    if {[info commands $cmd] != ""} {
-        set orig_cmd "orig_$cmd"
-        if {[info commands $orig_cmd] == ""} {
-            rename $cmd $orig_cmd
-            proc $cmd {args} "
+  if { [info commands $cmd] != "" } {
+    set orig_cmd "orig_$cmd"
+    if { [info commands $orig_cmd] == "" } {
+      rename $cmd $orig_cmd
+      # tclint-disable-next-line command-args
+      proc $cmd {args} "
                 puts \">> $cmd \$args\"
                 ${orig_cmd} {*}\$args
             "
-        }
     }
+  }
 }
 
 source "helpers.tcl"

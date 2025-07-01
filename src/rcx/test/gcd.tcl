@@ -13,7 +13,7 @@ source sky130hs/sky130hs.rc
 
 define_process_corner -ext_model_index 0 X
 extract_parasitics -ext_model_file ext_pattern.rules -max_res 0 \
-    -coupling_threshold 0.1
+  -coupling_threshold 0.1
 
 set spef_file [make_result_file gcd.spef]
 write_spef $spef_file -nets $test_nets

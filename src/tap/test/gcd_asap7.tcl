@@ -6,9 +6,9 @@ read_def asap7_data/gcd.def
 set def_file [make_result_file gcd_asap7.def]
 
 tapcell \
-    -distance 25 \
-    -tapcell_master TAPCELL_ASAP7_75t_R \
-    -endcap_master TAPCELL_ASAP7_75t_R
+  -distance 25 \
+  -tapcell_master TAPCELL_ASAP7_75t_R \
+  -endcap_master TAPCELL_ASAP7_75t_R
 
 write_def $def_file
 

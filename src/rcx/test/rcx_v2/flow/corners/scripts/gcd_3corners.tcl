@@ -15,6 +15,6 @@ define_process_corner -ext_model_index 0 min
 define_process_corner -ext_model_index 1 typ
 define_process_corner -ext_model_index 2 max
 extract_parasitics -ext_model_file $model_v2 -max_res 0 \
-    -coupling_threshold 0.001 -version 2.0 -skip_over_cell
+  -coupling_threshold 0.001 -version 2.0 -skip_over_cell
 
 write_spef $test_case.spef

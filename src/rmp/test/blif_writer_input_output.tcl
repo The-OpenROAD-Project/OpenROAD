@@ -18,4 +18,4 @@ rmp::blif_add_instance $blif "_i7_"
 rmp::blif_dump $blif "./results/blif_writer_input_output.blif"
 
 diff_files "./results/blif_writer_input_output.blif" \
-    "blif_writer_input_output.blif.ok"
+  "blif_writer_input_output.blif.ok"

@@ -24,4 +24,4 @@ rmp::blif_read $blif "./blif_reader_sequential.blif"
 
 write_def "./results/blif_reader_sequential.def"
 diff_files "./results/blif_reader_sequential.def" \
-    "blif_reader_sequential.def.ok"
+  "blif_reader_sequential.def.ok"

@@ -22,7 +22,7 @@ set_output_delay -clock clk 0.01 [get_ports y2]
 
 #place the design
 initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-    -site FreePDK45_38x28_10R_NP_162NW_34O
+  -site FreePDK45_38x28_10R_NP_162NW_34O
 global_placement -skip_nesterov_place
 detailed_placement
 

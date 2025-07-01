@@ -24,5 +24,5 @@ add_global_connection -net VDD_SW -pin_pattern "^VPWR$"
 add_global_connection -net VSS -power -pin_pattern "^VGND$"
 add_global_connection -net VSS -power -pin_pattern "^VNB$"
 
-catch {set_voltage_domain -power VDD -ground VSS -switched_power VDD_SW} err
+catch { set_voltage_domain -power VDD -ground VSS -switched_power VDD_SW } err
 puts $err

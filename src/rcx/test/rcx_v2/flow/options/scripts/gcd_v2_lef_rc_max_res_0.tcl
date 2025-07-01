@@ -15,6 +15,6 @@ source $test_dir/sky130hs/sky130hs.rc
 
 define_process_corner -ext_model_index 0 X
 extract_parasitics -coupling_threshold 0.1 -version 2.0 -skip_over_cell \
-    -no_merge_via_res -max_res 0 -lef_rc
+  -no_merge_via_res -max_res 0 -lef_rc
 
 write_spef $test_case.spef

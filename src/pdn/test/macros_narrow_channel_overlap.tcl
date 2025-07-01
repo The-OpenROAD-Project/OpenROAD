@@ -7,7 +7,8 @@ read_lef nangate_macros/fakeram45_64x32.lef
 read_def nangate_macros/floorplan_narrow.def
 
 # Create via obstruction
-odb::dbObstruction_create [ord::get_db_block] [[ord::get_db_tech] findLayer metal4] 76000 99000 80000 210000
+odb::dbObstruction_create [ord::get_db_block] [[ord::get_db_tech] findLayer metal4] \
+  76000 99000 80000 210000
 
 add_global_connection -net VDD -pin_pattern {^VDD$} -power
 add_global_connection -net VDD -pin_pattern {^VDDPE$}

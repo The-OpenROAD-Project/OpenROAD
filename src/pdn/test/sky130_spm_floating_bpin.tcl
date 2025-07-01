@@ -11,53 +11,53 @@ read_def sky130_spm/floorplan.def
 set_voltage_domain -name CORE -power VPWR -ground VGND
 
 define_pdn_grid \
-    -name stdcell_grid \
-    -starts_with POWER \
-    -voltage_domain CORE \
-    -pins "met4 met5"
+  -name stdcell_grid \
+  -starts_with POWER \
+  -voltage_domain CORE \
+  -pins "met4 met5"
 
 add_pdn_stripe \
-    -grid stdcell_grid \
-    -layer met4 \
-    -width 2 \
-    -pitch 15 \
-    -offset 5 \
-    -spacing 1.7 \
-    -starts_with POWER -extend_to_core_ring
+  -grid stdcell_grid \
+  -layer met4 \
+  -width 2 \
+  -pitch 15 \
+  -offset 5 \
+  -spacing 1.7 \
+  -starts_with POWER -extend_to_core_ring
 
 add_pdn_stripe \
-    -grid stdcell_grid \
-    -layer met5 \
-    -width 2 \
-    -pitch 15 \
-    -offset 5 \
-    -spacing 1.7 \
-    -starts_with POWER -extend_to_core_ring
+  -grid stdcell_grid \
+  -layer met5 \
+  -width 2 \
+  -pitch 15 \
+  -offset 5 \
+  -spacing 1.7 \
+  -starts_with POWER -extend_to_core_ring
 
 add_pdn_connect \
-    -grid stdcell_grid \
-    -layers "met4 met5"
+  -grid stdcell_grid \
+  -layers "met4 met5"
 
 add_pdn_stripe \
-    -grid stdcell_grid \
-    -layer met1 \
-    -width 0.48 \
-    -followpins
+  -grid stdcell_grid \
+  -layer met1 \
+  -width 0.48 \
+  -followpins
 
 add_pdn_connect \
-    -grid stdcell_grid \
-    -layers "met1 met4"
+  -grid stdcell_grid \
+  -layers "met1 met4"
 
 define_pdn_grid \
-    -macro \
-    -default \
-    -name macro \
-    -starts_with POWER \
-    -halo "10 10"
+  -macro \
+  -default \
+  -name macro \
+  -starts_with POWER \
+  -halo "10 10"
 
 add_pdn_connect \
-    -grid macro \
-    -layers "met4 met5"
+  -grid macro \
+  -layers "met4 met5"
 
 pdngen
 

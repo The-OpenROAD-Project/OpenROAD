@@ -1,7 +1,7 @@
 # repair_timing -setup combinational path
 source "helpers.tcl"
-if {![info exists repair_args]} {
-    set repair_args {}
+if { ![info exists repair_args] } {
+  set repair_args {}
 }
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
