@@ -1,5 +1,3 @@
-# hardcoded list of paths to exclude while we incrementally lint codebase
-# See issue #4347 for tracking
  exclude = [
     "src/sta/",
 ]
