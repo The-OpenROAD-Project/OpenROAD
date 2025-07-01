@@ -204,7 +204,7 @@ proc create_ndr { args } {
         continue
       }
     }
-    utl::warn ODB 1003 "([$layer getName]) layer's width from (${name}) NDR is not defined. \
+    utl::warn ODB 1003 "([$layer getName]) layer's width from (${name}) NDR is not defined.\
       Using the default value [ord::dbu_to_microns [$layer getWidth]]"
     set_ndr_layer_rule $tech $ndr [$layer getName] "*1" 0
   }
@@ -931,11 +931,11 @@ proc create_blockage { args } {
 
   # Check if coordinates are within die area
   if { $x1 < $die_x1 || $y1 < $die_y1 || $x2 > $die_x2 || $y2 > $die_y2 } {
-    utl::error ODB 1014 "Blockage coordinates \
-              ([ord::dbu_to_microns $x1], [ord::dbu_to_microns $y1], \
-               [ord::dbu_to_microns $x2], [ord::dbu_to_microns $y2]) \
-              are outside die area \
-              ([ord::dbu_to_microns $die_x1], [ord::dbu_to_microns $die_y1], \
+    utl::error ODB 1014 "Blockage coordinates\
+              ([ord::dbu_to_microns $x1], [ord::dbu_to_microns $y1],\
+               [ord::dbu_to_microns $x2], [ord::dbu_to_microns $y2])\
+              are outside die area\
+              ([ord::dbu_to_microns $die_x1], [ord::dbu_to_microns $die_y1],\
                [ord::dbu_to_microns $die_x2], [ord::dbu_to_microns $die_y2])"
   }
 
