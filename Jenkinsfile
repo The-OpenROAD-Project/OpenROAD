@@ -171,11 +171,12 @@ def getParallelTests(String image) {
                         checkout scm;
                     }
                     stage('Bazel Build') {
+                        def bazel_config = (env.BRANCH_NAME == 'master') ? 'ci' : 'openroad-dev'
                         withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
                             timeout(time: 120, unit: 'MINUTES') {
                                 sh label: 'Bazel Build', script: """
                                     bazel test \
-                                    --config=ci \
+                                    --config=${bazel_config} \
                                     --keep_going \
                                     --show_timestamps \
                                     --test_output=errors \
