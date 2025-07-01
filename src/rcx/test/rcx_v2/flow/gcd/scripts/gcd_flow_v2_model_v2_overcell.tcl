@@ -1,6 +1,6 @@
 set test_case gcd_flow_v2_model_v2_overcell
 set test_dir ../../../../
-set model_v2 /home/dimitris-ic/icb/icbrcx/src/rcx/test/via_res/corners.0322/data.m3/3corners.rcx.model
+set model_v2 data.m3/3corners.rcx.model
 
 set test_nets ""
 

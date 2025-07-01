@@ -16,7 +16,8 @@ log_cmd read_spef $::env(RESULTS_DIR)/$::env(POWER_STAGE_STEM).spef
 puts "read_spef for ces_*_* macros"
 for { set x 0 } { $x < 8 } { incr x } {
   for { set y 0 } { $y < 8 } { incr y } {
-    log_cmd read_spef -path ces_${x}_${y} $::env(RESULTS_DIR)/../../Element/base/$::env(POWER_STAGE_STEM).spef
+    log_cmd read_spef -path ces_${x}_${y} \
+      $::env(RESULTS_DIR)/../../Element/base/$::env(POWER_STAGE_STEM).spef
   }
 }
 
@@ -115,7 +116,8 @@ if { $total_power_vcd == $total_power_user_activity } {
 }
 
 if { abs($total_power_vcd - $total_power_user_activity) > 1e-3 } {
-  puts "Error: Total power mismatch between VCD and user activity: $total_power_vcd vs $total_power_user_activity"
+  puts "Error: Total power mismatch between VCD and user activity:\
+          $total_power_vcd vs $total_power_user_activity"
   exit 1
 }
 

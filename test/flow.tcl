@@ -53,7 +53,7 @@ initialize_floorplan -site $site \
 
 source $tracks_file
 
-# remove buffers inserted by synthesis 
+# remove buffers inserted by synthesis
 remove_buffers
 
 ################################################################
@@ -71,7 +71,7 @@ if { [have_macros] } {
 
 ################################################################
 # Tapcell insertion
-eval tapcell $tapcell_args
+eval tapcell $tapcell_args ;# tclint-disable command-args
 
 ################################################################
 # Power distribution network insertion

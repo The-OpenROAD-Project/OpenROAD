@@ -119,7 +119,8 @@ define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {min(0, $v
 
 define_metric "RSZ::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
 define_metric "RSZ::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
-define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" \
+  {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "RSZ::hold_buffer_count" "hold" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
 
 define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
@@ -127,7 +128,8 @@ define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
 define_metric "DRT::drv" "" "drv" 3 "%3d" "<=" {$value}
 define_metric "DRT::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
 define_metric "DRT::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
-define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" \
+  {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "DRT::clock_skew" "clk" "skew" 5 "%5.2f" "<=" {$value * 1.2}
 define_metric "DRT::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
 define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
@@ -173,8 +175,10 @@ proc check_test_metrics { test lang } {
       set value [dict get $metrics_dict $json_key]
       if { [dict exists $metrics_limits_dict $json_key] } {
         set limit [dict get $metrics_limits_dict $json_key]
+        # tclint-disable-next-line redundant-expr
         if { ![expr $value $cmp_op $limit] } {
-          fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+          fail "$name [format [metric_format $name] $value]\
+                [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
         }
       } else {
         fail "missing $name in metric limits"

@@ -20,6 +20,11 @@ for { set i 0 } { $i < 8 } { incr i } {
     set macro_name [format "ces_%d_%d" $i $j]
     set x_location [expr { $j * $x_pitch + $x_offset }]
     set y_location [expr { $i * $y_pitch + $y_offset }]
-    place_macro -macro_name $macro_name -location [list [expr [ord::dbu_to_microns 1] * $x_location] [expr [ord::dbu_to_microns 1] * $y_location]] -orientation R0
+    place_macro -macro_name $macro_name \
+      -location [
+        list [expr [ord::dbu_to_microns 1] * $x_location]
+        [expr [ord::dbu_to_microns 1] * $y_location]
+      ] \
+      -orientation R0
   }
 }

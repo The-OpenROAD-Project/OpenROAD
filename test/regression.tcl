@@ -1,24 +1,24 @@
 # Copied from OpenSTA/test/regression.tcl
 # Copyright (c) 2021, Parallax Software, Inc.
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #  regression -help | [-threads threads] [-valgrind] [-report_stats] test1 [test2...]
 
-# This is a generic regression test script used to compare application 
+# This is a generic regression test script used to compare application
 # output to a known good "ok" file.
-# 
+#
 # Use the "regression" command to run the regressions.
 #
 #  regression -help | [-valgrind] test1 [test2...]
@@ -28,7 +28,7 @@
 # shell globbing. For example,
 #
 #  regression "init_floorplan*"
-# 
+#
 # will run all tests with names that begin with "init_floorplan".
 # Each test name is printed before it runs. Once it finishes pass,
 # fail, *NO OK FILE* or *SEG FAULT* is printed after the test name.
@@ -146,9 +146,9 @@ proc expand_tests { tests_arg } {
     } {
       # Find wildcard matches.
       foreach test [group_tests "all"] {
-        if [string match $arg $test] {
-	  lappend tests $test
-	}
+        if { [string match $arg $test] } {
+          lappend tests $test
+        }
       }
     } elseif { [lsearch [group_tests "all"] $arg] != -1 } {
       lappend tests $arg
@@ -186,7 +186,7 @@ proc run_test_lang { test lang } {
   global result_dir diff_file errors diff_options
 
   set cmd_file [test_cmd_file $test $lang]
-  if [file exists $cmd_file] {
+  if { [file exists $cmd_file] } {
     set ok_file [test_ok_file $test]
     set log_file [test_log_file $test $lang]
     foreach file [glob -nocomplain [file join $result_dir $test-$lang.*]] {
@@ -199,30 +199,31 @@ proc run_test_lang { test lang } {
       puts " *ERROR* [lrange $test_errors 1 end]"
       append_failure $test
       incr errors(error)
-	
+
       # For some reason seg faults aren't echoed in the log - add them.
-      if [file exists $log_file] {
-	set log_ch [open $log_file "a"]
-	puts $log_ch "$test_errors"
-	close $log_ch
+      if { [file exists $log_file] } {
+        set log_ch [open $log_file "a"]
+        puts $log_ch "$test_errors"
+        close $log_ch
       }
-      
+
       # Report partial log diff anyway.
-      if [file exists $ok_file] {
-	catch [concat exec diff $diff_options $ok_file $log_file \
-		 >> $diff_file]
+      if { [file exists $ok_file] } {
+        # tclint-disable-next-line command-args
+        catch [concat exec diff $diff_options $ok_file $log_file \
+          >> $diff_file]
       }
     } else {
       set error_msg ""
       if { [lsearch $test_errors "MEMORY"] != -1 } {
-	append error_msg " *MEMORY*"
-	append_failure $test
-	incr errors(memory)
+        append error_msg " *MEMORY*"
+        append_failure $test
+        incr errors(memory)
       }
       if { [lsearch $test_errors "LEAK"] != -1 } {
-	append error_msg " *LEAK*"
-	append_failure $test
-	incr errors(leak)
+        append error_msg " *LEAK*"
+        append_failure $test
+        incr errors(leak)
       }
 
       switch [test_pass_criteria $test] {
@@ -232,8 +233,9 @@ proc run_test_lang { test lang } {
             set tmp_file [file join $result_dir $test.tmp]
             exec tr -d "\r" < $log_file > $tmp_file
             file rename -force $tmp_file $log_file
+            # tclint-disable-next-line command-args
             if [catch [concat exec diff $diff_options $ok_file $log_file \
-                         >> $diff_file]] {
+              >> $diff_file]] {
               puts " *FAIL*$error_msg"
               append_failure $test
               incr errors(fail)
@@ -318,12 +320,14 @@ proc run_test_plain { test cmd_file log_file lang } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
+    # tclint-disable command-args
     if {
       [catch [concat exec $app_path $app_options \
         [lang_flag $lang] \
         -metrics [test_metrics_result_file $test $lang] \
         [file tail $cmd_file] >& $log_file]]
     } {
+      # tclint-enable command-args
       cd $save_dir
       set signal [lindex $errorCode 2]
       set error [lindex $errorCode 3]
@@ -359,7 +363,7 @@ proc run_test_valgrind { test cmd_file log_file lang } {
     $app_path [lang_flag $lang] $app_options \
     $vg_cmd_file >& $log_file]
   set error_msg ""
-  if { [catch $cmd] } {
+  if { [catch { $cmd }] } {
     set error_msg "ERROR [lindex $errorCode 3]"
   }
   file delete $vg_cmd_file
@@ -380,7 +384,24 @@ proc run_test_valgrind { test cmd_file log_file lang } {
 # "Uninitialised or unaddressable byte(s) found during client check request"
 # "Invalid free() / delete / delete[]"
 # "Mismatched free() / delete / delete []"
-set valgrind_mem_regexp "(depends on uninitialised value)|(contains unaddressable)|(contains uninitialised)|(Use of uninitialised value)|(Invalid read)|(Unaddressable byte)|(Uninitialised or unaddressable)|(Invalid free)|(Mismatched free)"
+set parts {
+    "This is the first part"
+    "This is the second part"
+    "This is the final part"
+}
+set parts {
+  "(depends on uninitialised value)"
+  "(contains unaddressable)"
+  "(contains uninitialised)"
+  "(Use of uninitialised value)"
+  "(Invalid read)"
+  "(Unaddressable byte)"
+  "(Uninitialised or unaddressable)"
+  "(Invalid free)"
+  "(Mismatched free)"
+}
+set valgrind_mem_regexp [join $parts "|"]
+
 
 # "%d bytes in %d blocks are definitely lost in loss record %d of %d"
 # "%d bytes in %d blocks are possibly lost in loss record %d of %d"

@@ -47,7 +47,7 @@ proc match_pins { regex { direction .* } { is_clock 0 } } {
     if { ![regexp $direction [get_property $pin direction]] } {
       continue
     }
-    if { [expr $is_clock != [sta::is_clock_src [sta::get_port_pin $pin]]] } {
+    if { $is_clock != [sta::is_clock_src [sta::get_port_pin $pin]] } {
       continue
     }
     lappend pins [get_property $pin name]
