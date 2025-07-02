@@ -171,16 +171,22 @@ def getParallelTests(String image) {
                         checkout scm;
                     }
                     stage('Bazel Build') {
-                        timeout(time: 120, unit: 'MINUTES') {
-                            sh label: 'Bazel Build', script: '''
-                                bazel test \
-                                --keep_going \
-                                --show_timestamps \
-                                --test_output=errors \
-                                --curses=no \
-                                --force_pic \
-                                ...
-                                ''';
+                        def upload_flag = (env.BRANCH_NAME == 'master') ? '' : '--remote_upload_local_results=false'
+                        withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                            timeout(time: 120, unit: 'MINUTES') {
+                                sh label: 'Bazel Build', script: """
+                                    bazel test \
+                                    --config=ci \
+                                    --keep_going \
+                                    ${upload_flag} \
+                                    --show_timestamps \
+                                    --test_output=errors \
+                                    --curses=no \
+                                    --force_pic \
+                                    --google_credentials=\${GCS_SA_KEY} \
+                                    ...
+                                    """
+                            }
                         }
                     }
                 }
