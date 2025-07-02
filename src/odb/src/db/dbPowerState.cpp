@@ -147,6 +147,52 @@ dbPowerState* dbPowerState::create(dbBlock* block, const char* name)
   return (dbPowerState*) obj;
 }
 
+bool dbPowerState::addState(const std::string& state,
+                            const std::string& supply,
+                            const std::string& mode,
+                            const std::vector<float> voltages,
+                            const std::string& simstate)
+{
+  _dbPowerState* obj = (_dbPowerState*) this;
+
+  auto setSupply = [&](odb::dbPowerState::SupplyExpr& expr) {
+    if (supply == "power") {
+      expr._power._mode = mode;
+      expr._power._voltages = voltages;
+    } else if (supply == "ground") {
+      expr._ground._mode = mode;
+      expr._ground._voltages = voltages;
+    } else if (supply == "nwell") {
+      expr._nwell._mode = mode;
+      expr._nwell._voltages = voltages;
+    } else if (supply == "pwell") {
+      expr._pwell._mode = mode;
+      expr._pwell._voltages = voltages;
+    } else {
+      return false;  // Unknown supply
+    }
+    return true;
+  };
+
+  // Try updating existing state
+  for (auto& entry : obj->_states) {
+    if (entry._name == state) {
+      return setSupply(entry._supply_expr);
+    }
+  }
+
+  // Create new state
+  PowerStateEntry new_entry;
+  new_entry._name = state;
+  new_entry._simstate = simstate;
+  if (!setSupply(new_entry._supply_expr)) {
+    return false;
+  }
+
+  obj->_states.push_back(new_entry);
+  return true;
+}
+
 // User Code End dbPowerStatePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

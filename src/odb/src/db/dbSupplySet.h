@@ -29,10 +29,10 @@ class _dbSupplySet : public _dbObject
 
   char* _name;
   dbId<_dbSupplySet> _next_entry;
-  dbId<_dbSupplyNet> _power_nets;
-  dbVector<std::string> _ground_nets;
-  dbId<_dbSupplyNet> _nwellnets;
-  dbId<_dbSupplyNet> _pwellnets;
+  dbId<_dbSupplyNet> _power_net;
+  dbId<_dbSupplyNet> _ground_net;
+  dbId<_dbSupplyNet> _nwell_net;
+  dbId<_dbSupplyNet> _pwell_net;
   dbId<_dbGroup> _group;
 };
 dbIStream& operator>>(dbIStream& stream, _dbSupplySet& obj);

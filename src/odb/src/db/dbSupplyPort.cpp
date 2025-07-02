@@ -117,7 +117,6 @@ dbPowerDomain* dbSupplyPort::getDomain() const
 // User Code Begin dbSupplyPortPublicMethods
 dbSupplyPort* dbSupplyPort::create(dbBlock* block,
                                    const char* direction,
-                                   dbPowerDomain* pd,
                                    const char* supplyport)
 {
   _dbBlock* _block = (_dbBlock*) block;
@@ -128,11 +127,38 @@ dbSupplyPort* dbSupplyPort::create(dbBlock* block,
   _dbSupplyPort* sp = _block->_supplyport_tbl->create();
   sp->_name = strdup(supplyport);
   ZALLOCATED(sp->_name);
-  sp->_domain = pd->getImpl()->getOID();
+  // sp->_domain = pd->getImpl()->getOID();
   sp->_direction = strdup(direction);
   // ZALLOCATED(sp->_direction);
   _block->_supplyport_hash.insert(sp);
   return (dbSupplyPort*) sp;
+}
+
+bool dbSupplyPort::connectPort(dbSupplyNet* supply_net)
+{
+  _dbSupplyNet* sn = (_dbSupplyNet*) supply_net;
+  _dbSupplyPort* sp = (_dbSupplyPort*) this;
+
+  // if (sn->_in.isValid()) {
+  if (!sn->_in.isValid()) {
+    sn->_in = sp->getImpl()->getOID();
+  } else {
+    return false;  // already connected
+  }
+  sp->_supplynet = sn->getImpl()->getOID();
+
+  return true;
+}
+
+dbSupplyNet* dbSupplyPort::getConnectedSupplyNet() const
+{
+  _dbSupplyPort* obj = (_dbSupplyPort*) this;
+  if (!obj->_supplynet.isValid()) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  return (odb::dbSupplyNet*) par->_supplynet_tbl->getPtr(obj->_supplynet);
 }
 // User Code End dbSupplyPortPublicMethods
 }  // namespace odb
