@@ -182,8 +182,7 @@ void Graphics::drawCells(const std::vector<GCellHandle>& cells,
                          gui::Painter& painter)
 {
   for (const auto& handle : cells) {
-    const GCell* gCell
-        = handle;
+    const GCell* gCell = handle;
     drawSingleGCell(gCell, painter);
   }
 }
