@@ -897,6 +897,7 @@ class NesterovBaseCommon
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
   std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
+  std::unordered_map<odb::dbBTerm*, size_t> db_bterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
