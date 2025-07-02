@@ -11,7 +11,7 @@ Test 5: Warning when creating a partial blockage with soft flag enabled
 Test 6: Testing error handling...
 [ERROR ODB-1011] Invalid coordinates:  x1 (200.0) must be < x2 (100.0) and  y1 (200.0) must be < y2 (100.0)
 Expected error caught: ODB-1011
-[ERROR ODB-1014] Blockage coordinates  (1500.0, 1500.0, 1600.0, 1600.0)  are outside die area  (0.0, 0.0, 100.0, 100.0)
+[ERROR ODB-1014] Blockage coordinates (1500.0, 1500.0, 1600.0, 1600.0) are outside die area (0.0, 0.0, 100.0, 100.0)
 Expected error caught: ODB-1014
 [ERROR ODB-1013] Max density must be between 0.0 and 100, got: 150
 Expected error caught: ODB-1013

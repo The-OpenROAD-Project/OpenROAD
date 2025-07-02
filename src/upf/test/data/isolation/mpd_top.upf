@@ -1,17 +1,17 @@
 create_power_domain PD_TOP \
-  -elements {.}  \
+  -elements {.}
 
 create_power_domain PD_D1 \
-  -elements {d1} \
+  -elements {d1}
 
 create_power_domain PD_D2 \
-  -elements {d2} \
+  -elements {d2}
 
 create_power_domain PD_D3 \
-  -elements {d3} \
+  -elements {d3}
 
 create_power_domain PD_D4 \
-  -elements {d4} \
+  -elements {d4}
 
 create_logic_port d1_iso_control
 create_logic_port d2_iso_control
@@ -83,25 +83,25 @@ set_isolation iso_d_4 \
   -update \
   -location parent
 
-use_interface_cell PD_D1\
+use_interface_cell PD_D1 \
   -domain PD_D1 \
   -strategy iso_d_1 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
 
 
-use_interface_cell PD_D2\
+use_interface_cell PD_D2 \
   -domain PD_D2 \
   -strategy iso_d_2 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
 
 
-use_interface_cell PD_D3\
+use_interface_cell PD_D3 \
   -domain PD_D3 \
   -strategy iso_d_3 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
 
 
-use_interface_cell PD_D4\
+use_interface_cell PD_D4 \
   -domain PD_D4 \
   -strategy iso_d_4 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}

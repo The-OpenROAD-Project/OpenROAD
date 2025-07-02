@@ -3,7 +3,8 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def gcd.def
 
-place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 -min_distance 3 -min_distance_in_tracks
+place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
+  -min_distance 3 -min_distance_in_tracks
 
 set def_file [make_result_file min_dist_in_tracks2.def]
 

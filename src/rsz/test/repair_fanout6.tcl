@@ -1,7 +1,9 @@
 # fanout 8000 max_fanout 20 stress test
 # modified to use large default max_transition, max_capacitance
 source "helpers.tcl"
-if {[expr {![info exists repair_args]}]} { set repair_args {} }
+if { ![info exists repair_args] } {
+  set repair_args {}
+}
 read_liberty repair_fanout6.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
@@ -13,7 +15,7 @@ set_max_fanout 20 [current_design]
 source sky130hd/sky130hd.vars
 source sky130hd/sky130hd.rc
 set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_wire_rc -clock -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
 estimate_parasitics -placement
@@ -24,7 +26,7 @@ report_worst_slack -max
 
 report_check_types -max_fanout
 
-# It is possible to get better timing resuilts with repair_design 
+# It is possible to get better timing resuilts with repair_design
 # but there is no point in inserting extra buffers to fix non critical
 # paths. What matters is repair_timning's ability to optimize the timing
 # when it matters.

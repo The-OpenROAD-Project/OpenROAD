@@ -20,7 +20,50 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[ERROR GPL-0302] Consider increasing the target density or re-floorplanning with a larger core area.
-Given target density: 0.00
-Suggested target density: 0.60 (uniform density)
-GPL-0302
+[WARNING GPL-0302] Target density 0.0010 is too low for the available free area.
+Automatically adjusting to uniform density 0.6000.
+[INFO GPL-0023] Placement target density:       0.6000
+[INFO GPL-0024] Movable insts average area:      1.938 um^2
+[INFO GPL-0025] Ideal bin area:                  3.230 um^2
+[INFO GPL-0026] Ideal bin count:                   295
+[INFO GPL-0027] Total bin area:                953.876 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.8641 |  3.842435e+06 |   +0.00% |  1.03e-11 |      
+       10 |   0.7711 |  4.226587e+06 |  +10.00% |  1.60e-11 |      
+       20 |   0.7691 |  4.211785e+06 |   -0.35% |  2.60e-11 |      
+       30 |   0.7680 |  4.219729e+06 |   +0.19% |  4.23e-11 |      
+       40 |   0.7648 |  4.231382e+06 |   +0.28% |  6.89e-11 |      
+       50 |   0.7604 |  4.248938e+06 |   +0.41% |  1.12e-10 |      
+       60 |   0.7527 |  4.275355e+06 |   +0.62% |  1.83e-10 |      
+       70 |   0.7387 |  4.311395e+06 |   +0.84% |  2.98e-10 |      
+       80 |   0.7207 |  4.363233e+06 |   +1.20% |  4.85e-10 |      
+       90 |   0.7034 |  4.436034e+06 |   +1.67% |  7.91e-10 |      
+      100 |   0.6755 |  4.524743e+06 |   +2.00% |  1.29e-09 |      
+      110 |   0.6395 |  4.603788e+06 |   +1.75% |  2.10e-09 |      
+      120 |   0.6024 |  4.711120e+06 |   +2.33% |  3.42e-09 |      
+      130 |   0.5558 |  4.800844e+06 |   +1.90% |  5.57e-09 |      
+      140 |   0.4988 |  4.833285e+06 |   +0.68% |  9.07e-09 |      
+      150 |   0.4480 |  4.876776e+06 |   +0.90% |  1.48e-08 |      
+      160 |   0.3817 |  4.863149e+06 |   -0.28% |  2.41e-08 |      
+      170 |   0.3380 |  4.883087e+06 |   +0.41% |  3.84e-08 |      
+      180 |   0.3191 |  4.966999e+06 |   +1.72% |  5.66e-08 |      
+      190 |   0.2790 |  4.999709e+06 |   +0.66% |  8.33e-08 |      
+      200 |   0.2444 |  5.043198e+06 |   +0.87% |  1.23e-07 |      
+      210 |   0.2151 |  5.084794e+06 |   +0.82% |  1.81e-07 |      
+      220 |   0.1845 |  5.134850e+06 |   +0.98% |  2.66e-07 |      
+      230 |   0.1579 |  5.173280e+06 |   +0.75% |  3.92e-07 |      
+      240 |   0.1312 |  5.200272e+06 |   +0.52% |  5.78e-07 |      
+      250 |   0.1110 |  5.231110e+06 |   +0.59% |  8.52e-07 |      
+[INFO GPL-1001] Finished with Overflow: 0.098859
+[INFO GPL-1002] Placed Cell Area              569.7720
+[INFO GPL-1003] Available Free Area           953.8760
+[INFO GPL-1004] Minimum Feasible Density        0.6000 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.6637
+[INFO GPL-1008]     - For 80% usage of free space: 0.7467
+[INFO GPL-1009]     - For 50% usage of free space: 1.1946

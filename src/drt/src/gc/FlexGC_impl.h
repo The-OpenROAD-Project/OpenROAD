@@ -310,7 +310,7 @@ class FlexGCWorker::Impl
                                       frCoord currLength,
                                       bool hasRoute);
   void checkMetalShape_rectOnly(gcPin* pin);
-  void checkMetalShape_minArea(gcPin* pin);
+  void checkMetalShape_minArea(gcPin* pin, bool allow_patching);
 
   void checkMetalEndOfLine();
   void checkMetalEndOfLine_main(gcPin* pin);

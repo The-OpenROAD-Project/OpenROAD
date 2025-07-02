@@ -67,9 +67,9 @@ proc create_child_physical_clusters { args } {
   }
 }
 
-sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing};# checker off
+sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing} ;# checker off
 
-proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
+proc set_ndr_layer_rule { tech ndr layerName input isSpacing } {
   set layer [$tech findLayer $layerName]
   if { $layer == "NULL" } {
     utl::warn ODB 1000 "Layer ${layerName} not found, skipping NDR for this layer"
@@ -102,7 +102,7 @@ proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
   }
 }
 
-sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing};#checker off
+sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing} ;#checker off
 
 proc set_ndr_rules { tech ndr values isSpacing } {
   if { [llength $values] == 1 } {
@@ -116,13 +116,13 @@ proc set_ndr_rules { tech ndr values isSpacing } {
     }
     return
   }
-  for {set i 0} {$i < [llength $values]} {incr i 2} {
+  for { set i 0 } { $i < [llength $values] } { incr i 2 } {
     set layers [lindex $values $i]
     set value [lindex $values [expr $i + 1]]
     if { [string first ":" $layers] == -1 } {
       set_ndr_layer_rule $tech $ndr $layers $value $isSpacing
     } else {
-      lassign [split $layers ":" ] firstLayer lastLayer
+      lassign [split $layers ":"] firstLayer lastLayer
       set foundFirst 0
       set foundLast 0
       foreach layer [$tech getLayers] {
@@ -149,7 +149,6 @@ proc set_ndr_rules { tech ndr values isSpacing } {
         utl::warn ODB 1002 "Layer ${lastLayer} not found"
       }
     }
-
   }
 }
 
@@ -172,14 +171,14 @@ proc create_ndr { args } {
   }
   if { [info exists keys(-spacing)] } {
     set spacings $keys(-spacing)
-    if { [llength $spacings] != 1 && [expr [llength $spacings] % 2] == 1 } {
+    if { [llength $spacings] != 1 && [llength $spacings] % 2 == 1 } {
       utl::error ODB 1006 "Spacing values \[$spacings\] are malformed"
     }
     set_ndr_rules $tech $ndr $spacings 1
   }
   if { [info exists keys(-width)] } {
     set widths $keys(-width)
-    if { [llength $widths] != 1 &&  [expr [llength $widths] % 2] == 1 } {
+    if { [llength $widths] != 1 && [llength $widths] % 2 == 1 } {
       utl::error ODB 1007 "Width values \[$widths\] are malformed"
     }
     set_ndr_rules $tech $ndr $widths 0
@@ -205,10 +204,10 @@ proc create_ndr { args } {
         continue
       }
     }
-    utl::warn ODB 1003 "([$layer getName]) layer's width from (${name}) NDR is not defined. Using the default value [ord::dbu_to_microns [$layer getWidth]]"
+    utl::warn ODB 1003 "([$layer getName]) layer's width from (${name}) NDR is not defined.\
+      Using the default value [ord::dbu_to_microns [$layer getWidth]]"
     set_ndr_layer_rule $tech $ndr [$layer getName] "*1" 0
   }
-
 }
 
 sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
@@ -242,8 +241,8 @@ proc create_voltage_domain { args } {
     utl::error ODB 318 "duplicate region name"
   }
   set box [odb::dbBox_create $region \
-		[ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
-		[ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
+    [ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
+    [ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
   set group [odb::dbGroup_create $region $domain_name]
   if { $group == "NULL" } {
     utl::error ODB 319 "duplicate group name"
@@ -251,7 +250,7 @@ proc create_voltage_domain { args } {
   $group setType VOLTAGE_DOMAIN
 }
 
-sta::define_cmd_args "delete_physical_cluster" {cluster_name};# checker off
+sta::define_cmd_args "delete_physical_cluster" {cluster_name} ;# checker off
 
 proc delete_physical_cluster { args } {
   sta::check_argc_eq1 "delete_physical_cluster" $args
@@ -362,10 +361,13 @@ proc assign_ground_net { args } {
   $group addGroundNet $net
 }
 
-sta::define_cmd_args "add_to_physical_cluster" { [-modinst path | -inst inst_name | -physical_cluster cluster_name]  cluster_name }
+sta::define_cmd_args "add_to_physical_cluster" {
+  [-modinst path | -inst inst_name | -physical_cluster cluster_name]  cluster_name
+}
 
 proc add_to_physical_cluster { args } {
-  sta::parse_key_args "add_to_physical_cluster" args keys {-modinst -inst -physical_cluster} flags {}
+  sta::parse_key_args "add_to_physical_cluster" args \
+    keys {-modinst -inst -physical_cluster} flags {}
   sta::check_argc_eq1 "add_to_physical_cluster" $args
   set cluster_name $args
   set db [ord::get_db]
@@ -407,10 +409,14 @@ proc add_to_physical_cluster { args } {
   }
 }
 
-sta::define_cmd_args "remove_from_physical_cluster" { [-parent_module module_name -modinst modinst_name | -inst inst_name | -physical_cluster cluster_name]  cluster_name }
+sta::define_cmd_args "remove_from_physical_cluster" {
+  [-parent_module module_name -modinst modinst_name |\
+   -inst inst_name | -physical_cluster cluster_name]  cluster_name
+}
 
 proc remove_from_physical_cluster { args } {
-  sta::parse_key_args "remove_from_physical_cluster" args keys {-parent_module -modinst -inst -physical_cluster} flags {}
+  sta::parse_key_args "remove_from_physical_cluster" args \
+    keys {-parent_module -modinst -inst -physical_cluster} flags {}
   sta::check_argc_eq1 "remove_from_physical_cluster" $args
   set cluster_name $args
   set db [ord::get_db]
@@ -494,9 +500,10 @@ proc report_voltage_domains { args } {
   }
 }
 
-sta::define_cmd_args "report_group" {group};# checker off
+sta::define_cmd_args "report_group" {group} ;# checker off
 proc report_group { group } {
-  utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
+  utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \
+  \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
     set rect [$group getBox]
     utl::report "  * Box : ([$rect xMin],[$rect yMin]) ([$rect xMax],[$rect yMax])"
@@ -557,7 +564,7 @@ sta::define_cmd_args "write_macro_placement" { file_name }
 
 proc write_macro_placement { args } {
   sta::parse_key_args "write_macro_placement" args keys {} flags {}
-  sta::check_argc_eq1  "write_macro_placement" $args
+  sta::check_argc_eq1 "write_macro_placement" $args
   set file_name $args
   set db [ord::get_db]
   set chip [$db getChip]
@@ -572,7 +579,7 @@ proc write_macro_placement { args } {
   close $file
 }
 
-sta::define_cmd_args "define_layer_range" { layers };# checker off
+sta::define_cmd_args "define_layer_range" { layers } ;# checker off
 
 proc define_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-layers" $layers]
@@ -584,17 +591,19 @@ proc define_layer_range { layers } {
   set_max_layer $max_layer
 
   set tech [ord::get_db_tech]
-  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
+  for { set layer 1 } { $layer <= $max_layer } { set layer [expr $layer+1] } {
     set db_layer [$tech findRoutingLayer $layer]
-    if { !([ord::db_layer_has_hor_tracks $db_layer] && \
-         [ord::db_layer_has_ver_tracks $db_layer]) } {
+    if {
+      !([ord::db_layer_has_hor_tracks $db_layer] &&
+        [ord::db_layer_has_ver_tracks $db_layer])
+    } {
       set layer_name [$db_layer getName]
       utl::error GRT 57 "Missing track structure for layer $layer_name."
     }
   }
 }
 
-sta::define_cmd_args "define_clock_layer_range" { layers };# checker off
+sta::define_cmd_args "define_clock_layer_range" { layers } ;# checker off
 
 proc define_clock_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-clock_layers" $layers]
@@ -609,7 +618,7 @@ proc define_clock_layer_range { layers } {
       utl::error ODB 363 "please load the design before trying to use this command"
     }
     set block [$chip getBlock]
-    
+
     $block setMinLayerForClock $min_clock_layer
     $block setMaxLayerForClock $max_clock_layer
   } else {
@@ -620,10 +629,10 @@ proc define_clock_layer_range { layers } {
 
 sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
                                             [-clock min-max] \
-};# checker off
+} ;# checker off
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock} flags {};# checker off
+    keys {-signal -clock} flags {} ;# checker off
 
   sta::check_argc_eq0 "set_routing_layers" $args
 
@@ -636,7 +645,7 @@ proc set_routing_layers { args } {
   }
 }
 
-sta::define_cmd_args "set_min_layer" { minLayer };# checker off
+sta::define_cmd_args "set_min_layer" { minLayer } ;# checker off
 
 proc set_min_layer { args } {
   sta::parse_key_args "set_min_layer" args keys {} flags {}
@@ -651,7 +660,7 @@ proc set_min_layer { args } {
   $block setMinRoutingLayer $minLayer
 }
 
-sta::define_cmd_args "set_max_layer" { maxLayer };# checker off
+sta::define_cmd_args "set_max_layer" { maxLayer } ;# checker off
 
 proc set_max_layer { args } {
   sta::parse_key_args "set_max_layer" args keys {} flags {}
@@ -829,7 +838,7 @@ proc exclude_io_pin_region { args } {
           }
           set begin [expr { int($begin * $lef_units) }]
           set end [expr { int($end * $lef_units) }]
-          
+
           set excluded_region [$block findConstraintRegion $edge $begin $end]
           $block addBlockedRegionForPins $excluded_region
         } elseif { $interval == "*" } {
@@ -859,97 +868,99 @@ sta::define_cmd_args "create_blockage" { \
                 [-soft]}
 
 # Placement blockages with various options
-proc create_blockage {args} {
-    # Parse command line arguments using OpenROAD standard parsing
-    sta::parse_key_args "create_blockage" args keys {-region -inst -max_density} flags {-soft}
-    
-    # Check that no extra arguments remain
-    sta::check_argc_eq0 "create_blockage" $args
-    
-    # Check if coordinates are valid
-    if {![info exists keys(-region)] || [llength $keys(-region)] != 4 } {
-        utl::error ODB 1010 "Invalid coordinates. -region must be a list of 4 values {x1 y1 x2 y2}"
-    }
-    
-    set region $keys(-region)
-    set x1 [ord::microns_to_dbu [lindex $region 0]]
-    set y1 [ord::microns_to_dbu [lindex $region 1]]
-    set x2 [ord::microns_to_dbu [lindex $region 2]]
-    set y2 [ord::microns_to_dbu [lindex $region 3]]
+proc create_blockage { args } {
+  # Parse command line arguments using OpenROAD standard parsing
+  sta::parse_key_args "create_blockage" args keys {-region -inst -max_density} flags {-soft}
 
-    # Validate coordinate ordering
-    if {$x1 >= $x2 || $y1 >= $y2} {
-        utl::error ODB 1011 "Invalid coordinates: \
+  # Check that no extra arguments remain
+  sta::check_argc_eq0 "create_blockage" $args
+
+  # Check if coordinates are valid
+  if { ![info exists keys(-region)] || [llength $keys(-region)] != 4 } {
+    utl::error ODB 1010 "Invalid coordinates. -region must be a list of 4 values {x1 y1 x2 y2}"
+  }
+
+  set region $keys(-region)
+  set x1 [ord::microns_to_dbu [lindex $region 0]]
+  set y1 [ord::microns_to_dbu [lindex $region 1]]
+  set x2 [ord::microns_to_dbu [lindex $region 2]]
+  set y2 [ord::microns_to_dbu [lindex $region 3]]
+
+  # Validate coordinate ordering
+  if { $x1 >= $x2 || $y1 >= $y2 } {
+    utl::error ODB 1011 "Invalid coordinates: \
             x1 ([ord::dbu_to_microns $x1]) must be < x2 ([ord::dbu_to_microns $x2]) and \
             y1 ([ord::dbu_to_microns $y1]) must be < y2 ([ord::dbu_to_microns $y2])"
-    }
+  }
 
-    # Get database objects
-    set block [ord::get_db_block]
+  # Get database objects
+  set block [ord::get_db_block]
 
-    # Extract optional arguments
-    set inst_name ""
-    set inst_obj ""
-    if {[info exists keys(-inst)]} {
-        set inst_name $keys(-inst)
-        set inst_obj [$block findInst $inst_name]
-        if {$inst_obj == "NULL"} {
-            utl::error ODB 1012 "Instance '$inst_name' not found in design"
-        }
+  # Extract optional arguments
+  set inst_name ""
+  set inst_obj ""
+  if { [info exists keys(-inst)] } {
+    set inst_name $keys(-inst)
+    set inst_obj [$block findInst $inst_name]
+    if { $inst_obj == "NULL" } {
+      utl::error ODB 1012 "Instance '$inst_name' not found in design"
     }
-    
-    set max_density 0.0
-    set is_soft [info exists flags(-soft)]
-    if {[info exists keys(-max_density)]} {
-        set max_density $keys(-max_density)
+  }
 
-       if {$is_soft} {
-          utl::warn ODB 1016 "Soft flag ignored as density was passed as argument."
-       }
-    }
-    
-    # Validate max_density if specified
-    if {$max_density != 0.0 && ($max_density < 0.0 || $max_density > 100)} {
-        utl::error ODB 1013 "Max density must be between 0.0 and 100, got: $max_density"
-    }
-    
-    # Get die area for validation
-    set die [$block getDieArea]
-    set die_x1 [$die xMin]
-    set die_y1 [$die yMin]
-    set die_x2 [$die xMax]
-    set die_y2 [$die yMax]
+  set max_density 0.0
+  set is_soft [info exists flags(-soft)]
+  if { [info exists keys(-max_density)] } {
+    set max_density $keys(-max_density)
 
-    # Check if coordinates are within die area
-    if {$x1 < $die_x1 || $y1 < $die_y1 || $x2 > $die_x2 || $y2 > $die_y2} {
-        utl::error ODB 1014 "Blockage coordinates \
-              ([ord::dbu_to_microns $x1], [ord::dbu_to_microns $y1], [ord::dbu_to_microns $x2], [ord::dbu_to_microns $y2]) \
-              are outside die area \
-              ([ord::dbu_to_microns $die_x1], [ord::dbu_to_microns $die_y1], [ord::dbu_to_microns $die_x2], [ord::dbu_to_microns $die_y2])"
+    if { $is_soft } {
+      utl::warn ODB 1016 "Soft flag ignored as density was passed as argument."
     }
-    
-    # Create the blockage
-    if {$inst_obj ne ""} {
-        set blockage [odb::dbBlockage_create $block $x1 $y1 $x2 $y2 $inst_obj]
-    } else {
-        set blockage [odb::dbBlockage_create $block $x1 $y1 $x2 $y2]
-    }
-    
-    if {$blockage eq ""} {
-        utl::error ODB 1015 "Failed to create blockage"
-    }
-    
-    # Set max density if specified
-    if {$max_density > 0.0} {
-        $blockage setMaxDensity $max_density
-    } else {
-      # Set soft blockage if requested
-      if {$is_soft} {
-          $blockage setSoft
-      }
-    }
+  }
 
-    return $blockage
+  # Validate max_density if specified
+  if { $max_density != 0.0 && ($max_density < 0.0 || $max_density > 100) } {
+    utl::error ODB 1013 "Max density must be between 0.0 and 100, got: $max_density"
+  }
+
+  # Get die area for validation
+  set die [$block getDieArea]
+  set die_x1 [$die xMin]
+  set die_y1 [$die yMin]
+  set die_x2 [$die xMax]
+  set die_y2 [$die yMax]
+
+  # Check if coordinates are within die area
+  if { $x1 < $die_x1 || $y1 < $die_y1 || $x2 > $die_x2 || $y2 > $die_y2 } {
+    utl::error ODB 1014 "Blockage coordinates\
+              ([ord::dbu_to_microns $x1], [ord::dbu_to_microns $y1],\
+               [ord::dbu_to_microns $x2], [ord::dbu_to_microns $y2])\
+              are outside die area\
+              ([ord::dbu_to_microns $die_x1], [ord::dbu_to_microns $die_y1],\
+               [ord::dbu_to_microns $die_x2], [ord::dbu_to_microns $die_y2])"
+  }
+
+  # Create the blockage
+  if { $inst_obj ne "" } {
+    set blockage [odb::dbBlockage_create $block $x1 $y1 $x2 $y2 $inst_obj]
+  } else {
+    set blockage [odb::dbBlockage_create $block $x1 $y1 $x2 $y2]
+  }
+
+  if { $blockage eq "" } {
+    utl::error ODB 1015 "Failed to create blockage"
+  }
+
+  # Set max density if specified
+  if { $max_density > 0.0 } {
+    $blockage setMaxDensity $max_density
+  } else {
+    # Set soft blockage if requested
+    if { $is_soft } {
+      $blockage setSoft
+    }
+  }
+
+  return $blockage
 }
 
 sta::define_cmd_args "clear_io_pin_constraints" {}
@@ -1043,7 +1054,6 @@ proc define_pin_shape_pattern { args } {
 }
 
 namespace eval odb {
-
 proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
 
@@ -1067,23 +1077,23 @@ proc add_pins_to_top_layer { names llx lly urx ury } {
   $region init $llx $lly $urx $ury
 
   set pin_list [ppl::parse_pin_names "set_io_pin_constraint" $names]
-  
+
   $block addBTermsToConstraint $pin_list $region
 }
 
-proc add_pin_group {pin_list order} {
+proc add_pin_group { pin_list order } {
   set block [get_block]
 
   $block addBTermGroup $pin_list $order
 }
 
-proc add_mirrored_pins {bterm1 bterm2} {
-  if {$bterm1 != "NULL" && $bterm2 != "NULL"} {
+proc add_mirrored_pins { bterm1 bterm2 } {
+  if { $bterm1 != "NULL" && $bterm2 != "NULL" } {
     $bterm1 setMirroredBTerm $bterm2
   }
 }
 
-proc get_block {} {
+proc get_block { } {
   set db [ord::get_db]
   set chip [$db getChip]
   return [$chip getBlock]

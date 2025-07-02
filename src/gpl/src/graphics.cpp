@@ -58,9 +58,10 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nbc_->getGCells()) {
+    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+      auto cell = nbc_->getGCellByIndex(idx);
       if (cell->contains(inst)) {
-        selected_ = cell;
+        selected_ = idx;
         break;
       }
     }
@@ -181,8 +182,7 @@ void Graphics::drawCells(const std::vector<GCellHandle>& cells,
                          gui::Painter& painter)
 {
   for (const auto& handle : cells) {
-    const GCell* gCell
-        = handle;  // Uses the conversion operator to get a GCell*
+    const GCell* gCell = handle;
     drawSingleGCell(gCell, painter);
   }
 }
@@ -226,7 +226,7 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   }
 
   // Highlight selection (highest priority)
-  if (gCell == selected_) {
+  if (gCell == nbc_->getGCellByIndex(selected_)) {
     color = gui::Painter::yellow;
     color.a = 180;
   }
@@ -293,16 +293,16 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw lines to neighbors
-  if (selected_) {
+  if (nbc_->getGCellByIndex(selected_)) {
     painter.setPen(gui::Painter::yellow, true);
-    for (GPin* pin : selected_->gPins()) {
+    for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->gNet();
       if (!net) {
         continue;
       }
       for (GPin* other_pin : net->gPins()) {
         GCell* neighbor = other_pin->gCell();
-        if (neighbor == selected_) {
+        if (neighbor == nbc_->getGCellByIndex(selected_)) {
           continue;
         }
         painter.drawLine(
@@ -347,17 +347,17 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 void Graphics::reportSelected()
 {  // TODO: PD_FIX
-  if (!selected_) {
+  if (selected_ == kInvalidIndex) {
     return;
   }
-  logger_->report("Inst: {}", selected_->name());
+  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->name());
 
   if (np_) {
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
 
     logger_->report("  Wire Length Gradient");
-    for (auto& gPin : selected_->gPins()) {
+    for (auto& gPin : nbc_->getGCellByIndex(selected_)->gPins()) {
       FloatPoint wlGrad
           = nbc_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
       const float weight = gPin->gNet()->totalWeight();
@@ -368,11 +368,12 @@ void Graphics::reportSelected()
                       gPin->pin()->name());
     }
 
-    FloatPoint wlGrad
-        = nbc_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+    FloatPoint wlGrad = nbc_->getWireLengthGradientWA(
+        nbc_->getGCellByIndex(selected_), wlCoeffX, wlCoeffY);
     logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    auto densityGrad = nbVec_[0]->getDensityGradient(selected_);
+    auto densityGrad
+        = nbVec_[0]->getDensityGradient(nbc_->getGCellByIndex(selected_));
     float densityPenalty = nbVec_[0]->getDensityPenalty();
     logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
                     densityPenalty * densityGrad.x,
@@ -412,13 +413,14 @@ void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
                                    const odb::Rect& region)
 {
-  selected_ = nullptr;
+  selected_ = kInvalidIndex;
 
   if (layer || !nbc_) {
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nbc_->getGCells()) {
+  for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+    auto cell = nbc_->getGCellByIndex(idx);
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -432,7 +434,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
       continue;
     }
 
-    selected_ = cell;
+    selected_ = idx;
     gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();

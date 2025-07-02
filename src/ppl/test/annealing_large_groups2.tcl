@@ -4,8 +4,8 @@ read_lef Nangate45/Nangate45.lef
 read_def large_groups1.def
 
 set group {}
-for {set i 0} {$i < 400} {incr i} {
- lappend group "pin$i"
+for { set i 0 } { $i < 400 } { incr i } {
+  lappend group "pin$i"
 }
 
 set_io_pin_constraint -group -order -pin_names $group

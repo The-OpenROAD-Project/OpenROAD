@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
+#include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
@@ -31,6 +33,7 @@ using sta::Vertex;
 
 class Resizer;
 class BufferedNet;
+class RepairSetup;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
@@ -43,28 +46,34 @@ class Rebuffer : public sta::dbStaState
 
  protected:
   void init();
+  void initOnCorner(sta::Corner* corner);
 
   void annotateLoadSlacks(BufferedNetPtr& tree, Vertex* root_vertex);
   void annotateTiming(const BufferedNetPtr& tree);
   BufferedNetPtr stripTreeBuffers(const BufferedNetPtr& tree);
   BufferedNetPtr resteiner(const BufferedNetPtr& tree);
-  BufferedNetPtr bufferForTiming(const BufferedNetPtr& tree);
+  BufferedNetPtr bufferForTiming(const BufferedNetPtr& tree,
+                                 bool allow_topology_rewrite = true);
   BufferedNetPtr recoverArea(const BufferedNetPtr& root,
-                             Delay slack_target,
+                             FixedDelay slack_target,
                              float alpha);
 
+  void setPin(Pin* drvr_pin);
+
   std::tuple<Delay, Delay, Slew> drvrPinTiming(const BufferedNetPtr& bnet);
-  Slack slackAtDriverPin(const BufferedNetPtr& bnet);
-  std::optional<Slack> evaluateOption(const BufferedNetPtr& option,
-                                      // Only used for debug print.
-                                      int index);
+  FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
+  std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
+                                           // Only used for debug print.
+                                           int index);
 
   float maxSlewMargined(float max_slew);
   float maxCapMargined(float max_cap);
 
   bool loadSlewSatisfactory(LibertyPort* driver, const BufferedNetPtr& bnet);
 
-  Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
+  FixedDelay bufferDelay(LibertyCell* cell,
+                         const RiseFallBoth* rf,
+                         float load_cap);
 
   BufferedNetPtr addWire(const BufferedNetPtr& p,
                          Point wire_end,
@@ -77,7 +86,7 @@ class Rebuffer : public sta::dbStaState
                            int level,
                            int next_segment_wl = 0,
                            bool area_oriented = false,
-                           Delay slack_threshold = 0,
+                           FixedDelay slack_threshold = FixedDelay::ZERO,
                            BufferedNet* exemplar = nullptr);
 
   void insertAssuredOption(BufferedNetSeq& opts,
@@ -92,11 +101,10 @@ class Rebuffer : public sta::dbStaState
                        int level,
                        Instance* parent_in,
                        odb::dbITerm* mod_net_drvr,
-                       odb::dbModNet* mod_net_in);
+                       odb::dbModNet* mod_net_in,
+                       const char* instance_base_name);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
-
-  Delay marginedSlackThreshold(Delay slack);
 
   int fanout(Vertex* vertex) const;
   int wireLengthLimitImpliedByLoadSlew(LibertyCell*);
@@ -113,13 +121,16 @@ class Rebuffer : public sta::dbStaState
   struct BufferSize
   {
     LibertyCell* cell;
-    Delay intrinsic_delay;
+    FixedDelay intrinsic_delay;
     float margined_max_cap;
   };
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
                               const BufferedNetPtr& bnet,
                               int extra_wire_length = 0);
+
+  bool hasTopLevelOutputPort(Net* net);
+  int rebufferPin(const Pin* drvr_pin);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
@@ -135,7 +146,6 @@ class Rebuffer : public sta::dbStaState
   const Corner* corner_ = nullptr;
   LibertyPort* drvr_port_ = nullptr;
   Path* arrival_paths_[RiseFall::index_count];
-  Delay ref_slack_;
 
   int resizer_max_wire_length_;
   int wire_length_step_;
@@ -155,6 +165,9 @@ class Rebuffer : public sta::dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
+
+  friend class RepairSetup;
+  friend class BufferMove;
 };
 
 };  // namespace rsz
