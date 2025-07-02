@@ -3021,11 +3021,6 @@ std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
   return result;
 }
 
-bool HierRTLMP::isVertical(Boundary boundary) const
-{
-  return boundary == Boundary::L || boundary == Boundary::R;
-}
-
 odb::Rect HierRTLMP::getRect(Boundary boundary) const
 {
   odb::Rect boundary_rect = block_->getDieArea();

@@ -233,7 +233,6 @@ class HierRTLMP
                            std::vector<Macro>& macros);
 
   odb::Rect getRect(Boundary boundary) const;
-  bool isVertical(Boundary boundary) const;
 
   std::vector<odb::Rect> subtractOverlapRegion(const odb::Rect& base,
                                                const odb::Rect& overlay) const;

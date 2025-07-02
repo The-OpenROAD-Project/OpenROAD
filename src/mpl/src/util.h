@@ -53,6 +53,11 @@ inline std::string toString(const Boundary& boundary)
   return string;
 }
 
+inline bool isVertical(Boundary boundary)
+{
+  return boundary == Boundary::L || boundary == Boundary::R;
+}
+
 struct SACoreWeights
 {
   float area{0.0f};
