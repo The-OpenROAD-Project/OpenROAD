@@ -182,11 +182,9 @@ def getParallelTests(String image) {
                                     --test_output=errors \
                                     --curses=no \
                                     --force_pic \
-                                    --execution_log_json_file=execution_log.json \
                                     --google_credentials=\${GCS_SA_KEY} \
                                     ...
                                     """
-                                archiveArtifacts artifacts: 'execution_log.json'
                             }
                         }
                     }
