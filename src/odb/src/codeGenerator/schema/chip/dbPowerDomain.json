@@ -66,16 +66,16 @@
     },
     {
       "name": "_primarysupply",
-      "type": "dbVector<std::string>",
-      "flags": ["no-set"]
+      "type": "dbId<_dbSupplySet>",
+      "flags": ["no-set","no-get"]
     },
     {
       "name":"_availablesupply",
-      "type":"dbVector<std::string>",
-      "flags":["no-set"]
+      "type":"dbId<_dbSupplySet>",
+      "flags":["no-set","no-get"]
     }
   ],
-  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
+  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h", "dbSupplySet.h"],
   "h_includes": [
     "dbVector.h"
   ]

@@ -8306,10 +8306,6 @@ class dbPowerDomain : public dbObject
 
   float getVoltage() const;
 
-  void getPrimarysupply(std::vector<std::string>& tbl) const;
-
-  void getAvailablesupply(std::vector<std::string>& tbl) const;
-
   // User Code Begin dbPowerDomain
   void setGroup(dbGroup* group);
   static dbPowerDomain* create(dbBlock* block, const char* name);
@@ -8330,11 +8326,11 @@ class dbPowerDomain : public dbObject
   bool getArea(Rect& area);
 
   // p2f custom
-  void addPrimarysupply(const std::string& primary_supply);
-  void addAvailablesupply(const std::string& available_supply);
+  void addPrimarysupply(dbSupplySet* primary_supply);
+  void addAvailablesupply(dbSupplySet* available_supply);
 
-  std::vector<std::string> getPrimarysupply();
-  std::vector<std::string> getAvailablesupply();
+  dbSupplySet* getPrimarysupply();
+  dbSupplySet* getAvailablesupply();
   // std::vector<std::string> getSupplyNet();
 
   // void addSupplyNet(const std::string& element);
@@ -8372,10 +8368,10 @@ class dbPowerState : public dbObject
 
   static dbPowerState* create(dbBlock* block, const char* name);
   bool addState(const std::string& state,
-              const std::string& supply,
-              const std::string& mode,
-              const std::vector<float> voltages,
-              const std::string& simstate);
+                const std::string& supply,
+                const std::string& mode,
+                const std::vector<float> voltages,
+                const std::string& simstate);
 
   // std::string format_supply_expr(const odb::dbPowerState::SupplyExpr& expr);
   // void report_power_states(odb::dbBlock* block);
@@ -8622,7 +8618,6 @@ class dbSupplyPort : public dbObject
   // User Code Begin dbSupplyPort
   static dbSupplyPort* create(dbBlock* block,
                               const char* direction,
-                              dbPowerDomain* pd,
                               const char* supplyport);
 
   bool connectPort(dbSupplyNet* supply_net);

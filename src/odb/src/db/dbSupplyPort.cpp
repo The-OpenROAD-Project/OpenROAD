@@ -117,7 +117,6 @@ dbPowerDomain* dbSupplyPort::getDomain() const
 // User Code Begin dbSupplyPortPublicMethods
 dbSupplyPort* dbSupplyPort::create(dbBlock* block,
                                    const char* direction,
-                                   dbPowerDomain* pd,
                                    const char* supplyport)
 {
   _dbBlock* _block = (_dbBlock*) block;
@@ -128,7 +127,7 @@ dbSupplyPort* dbSupplyPort::create(dbBlock* block,
   _dbSupplyPort* sp = _block->_supplyport_tbl->create();
   sp->_name = strdup(supplyport);
   ZALLOCATED(sp->_name);
-  sp->_domain = pd->getImpl()->getOID();
+  // sp->_domain = pd->getImpl()->getOID();
   sp->_direction = strdup(direction);
   // ZALLOCATED(sp->_direction);
   _block->_supplyport_hash.insert(sp);

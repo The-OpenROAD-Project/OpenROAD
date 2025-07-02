@@ -10,6 +10,7 @@
 #include "dbIsolation.h"
 #include "dbModInst.h"
 #include "dbPowerSwitch.h"
+#include "dbSupplySet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
@@ -46,6 +47,12 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
     return false;
   }
   if (_voltage != rhs._voltage) {
+    return false;
+  }
+  if (_primarysupply != rhs._primarysupply) {
+    return false;
+  }
+  if (_availablesupply != rhs._availablesupply) {
     return false;
   }
 
@@ -198,18 +205,6 @@ float dbPowerDomain::getVoltage() const
   return obj->_voltage;
 }
 
-void dbPowerDomain::getPrimarysupply(std::vector<std::string>& tbl) const
-{
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  tbl = obj->_primarysupply;
-}
-
-void dbPowerDomain::getAvailablesupply(std::vector<std::string>& tbl) const
-{
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  tbl = obj->_availablesupply;
-}
-
 // User Code Begin dbPowerDomainPublicMethods
 dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
 {
@@ -234,28 +229,38 @@ void dbPowerDomain::destroy(dbPowerDomain* pd)
 //
 /////////
 
-void dbPowerDomain::addPrimarysupply(const std::string& primary_supply)
+void dbPowerDomain::addPrimarysupply(dbSupplySet* primary_supply)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  obj->_primarysupply.push_back(primary_supply);
+  obj->_primarysupply = primary_supply->getImpl()->getOID();
 }
 
-void dbPowerDomain::addAvailablesupply(const std::string& available_supply)
+void dbPowerDomain::addAvailablesupply(dbSupplySet* available_supply)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  obj->_availablesupply.push_back(available_supply);
+  obj->_availablesupply = available_supply->getImpl()->getOID();
 }
 
-std::vector<std::string> dbPowerDomain::getPrimarysupply()
+dbSupplySet* dbPowerDomain::getPrimarysupply()
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  return obj->_primarysupply;
+  if(!obj->_primarysupply.isValid())
+  {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (odb::dbSupplySet*) par->_supplyset_tbl->getPtr(obj->_primarysupply);
 }
 
-std::vector<std::string> dbPowerDomain::getAvailablesupply()
+dbSupplySet* dbPowerDomain::getAvailablesupply()
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  return obj->_availablesupply;
+   if(!obj->_availablesupply.isValid())
+  {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (odb::dbSupplySet*) par->_supplyset_tbl->getPtr(obj->_availablesupply);
 }
 
 ///////////////////////
