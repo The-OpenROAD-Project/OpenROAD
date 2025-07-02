@@ -254,7 +254,7 @@ void TclCmdHighlighter::initOther()
   addRuleGroup(syntax_rules_, rules, &comment_format_);
 }
 
-const std::string TclCmdHighlighter::escape(const std::string& preregex)
+std::string TclCmdHighlighter::escape(const std::string& preregex)
 {
   QString escaped = QRegularExpression::escape(preregex.c_str());
 

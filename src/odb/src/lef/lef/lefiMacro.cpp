@@ -339,8 +339,9 @@ void lefiPinAntennaModel::clear()
 
   if (antennaGateAreaLayer_) {
     for (i = 0; i < numAntennaGateArea_; i++) {
-      if (antennaGateAreaLayer_[i])
+      if (antennaGateAreaLayer_[i]) {
         lefFree(antennaGateAreaLayer_[i]);
+      }
     }
 
     numAntennaGateArea_ = 0;
@@ -350,8 +351,9 @@ void lefiPinAntennaModel::clear()
 
   if (antennaMaxAreaCarLayer_) {
     for (i = 0; i < numAntennaMaxAreaCar_; i++) {
-      if (antennaMaxAreaCarLayer_[i])
+      if (antennaMaxAreaCarLayer_[i]) {
         lefFree(antennaMaxAreaCarLayer_[i]);
+      }
     }
     numAntennaMaxAreaCar_ = 0;
     lefFree(antennaMaxAreaCarLayer_);
@@ -360,8 +362,9 @@ void lefiPinAntennaModel::clear()
 
   if (antennaMaxSideAreaCarLayer_) {
     for (i = 0; i < numAntennaMaxSideAreaCar_; i++) {
-      if (antennaMaxSideAreaCarLayer_[i])
+      if (antennaMaxSideAreaCarLayer_[i]) {
         lefFree(antennaMaxSideAreaCarLayer_[i]);
+      }
     }
     numAntennaMaxSideAreaCar_ = 0;
     lefFree(antennaMaxSideAreaCarLayer_);
@@ -370,8 +373,9 @@ void lefiPinAntennaModel::clear()
 
   if (antennaMaxCutCarLayer_) {
     for (i = 0; i < numAntennaMaxCutCar_; i++) {
-      if (antennaMaxCutCarLayer_[i])
+      if (antennaMaxCutCarLayer_[i]) {
         lefFree(antennaMaxCutCarLayer_[i]);
+      }
     }
     numAntennaMaxCutCar_ = 0;
     lefFree(antennaMaxCutCarLayer_);
@@ -415,10 +419,11 @@ void lefiPinAntennaModel::addAntennaGateArea(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaGateAreaAllocated_ == 0)
+    if (antennaGateAreaAllocated_ == 0) {
       max = antennaGateAreaAllocated_ = 2;
-    else
+    } else {
       max = antennaGateAreaAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -435,8 +440,9 @@ void lefiPinAntennaModel::addAntennaGateArea(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaGateAreaLayer_[numAntennaGateArea_] = (char*) lefMalloc(len);
     strcpy(antennaGateAreaLayer_[numAntennaGateArea_], layer);
-  } else
+  } else {
     antennaGateAreaLayer_[numAntennaGateArea_] = nullptr;
+  }
   numAntennaGateArea_ += 1;
 }
 
@@ -450,10 +456,11 @@ void lefiPinAntennaModel::addAntennaMaxAreaCar(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaMaxAreaCarAllocated_ == 0)
+    if (antennaMaxAreaCarAllocated_ == 0) {
       max = antennaMaxAreaCarAllocated_ = 2;
-    else
+    } else {
       max = antennaMaxAreaCarAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -470,8 +477,9 @@ void lefiPinAntennaModel::addAntennaMaxAreaCar(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaMaxAreaCarLayer_[numAntennaMaxAreaCar_] = (char*) lefMalloc(len);
     strcpy(antennaMaxAreaCarLayer_[numAntennaMaxAreaCar_], layer);
-  } else
+  } else {
     antennaMaxAreaCarLayer_[numAntennaMaxAreaCar_] = nullptr;
+  }
   numAntennaMaxAreaCar_ += 1;
 }
 
@@ -486,10 +494,11 @@ void lefiPinAntennaModel::addAntennaMaxSideAreaCar(double val,
     double* nd;
     char** nl;
 
-    if (antennaMaxSideAreaCarAllocated_ == 0)
+    if (antennaMaxSideAreaCarAllocated_ == 0) {
       max = antennaMaxSideAreaCarAllocated_ = 2;
-    else
+    } else {
       max = antennaMaxSideAreaCarAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -507,8 +516,9 @@ void lefiPinAntennaModel::addAntennaMaxSideAreaCar(double val,
     antennaMaxSideAreaCarLayer_[numAntennaMaxSideAreaCar_]
         = (char*) lefMalloc(len);
     strcpy(antennaMaxSideAreaCarLayer_[numAntennaMaxSideAreaCar_], layer);
-  } else
+  } else {
     antennaMaxSideAreaCarLayer_[numAntennaMaxSideAreaCar_] = nullptr;
+  }
   numAntennaMaxSideAreaCar_ += 1;
 }
 
@@ -522,10 +532,11 @@ void lefiPinAntennaModel::addAntennaMaxCutCar(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaMaxCutCarAllocated_ == 0)
+    if (antennaMaxCutCarAllocated_ == 0) {
       max = antennaMaxCutCarAllocated_ = 2;
-    else
+    } else {
       max = antennaMaxCutCarAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -542,8 +553,9 @@ void lefiPinAntennaModel::addAntennaMaxCutCar(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaMaxCutCarLayer_[numAntennaMaxCutCar_] = (char*) lefMalloc(len);
     strcpy(antennaMaxCutCarLayer_[numAntennaMaxCutCar_], layer);
-  } else
+  } else {
     antennaMaxCutCarLayer_[numAntennaMaxCutCar_] = nullptr;
+  }
   numAntennaMaxCutCar_ += 1;
 }
 
@@ -732,17 +744,21 @@ void lefiPin::Destroy()
   lefFree(mustjoin_);
   lefFree(lowTable_);
   lefFree(highTable_);
-  if (propNames_)
+  if (propNames_) {
     lefFree(propNames_);
+  }
   propNames_ = nullptr;
-  if (propValues_)
+  if (propValues_) {
     lefFree(propValues_);
+  }
   propValues_ = nullptr;
-  if (propNums_)
+  if (propNums_) {
     lefFree(propNums_);
+  }
   propNums_ = nullptr;
-  if (propTypes_)
+  if (propTypes_) {
     lefFree(propTypes_);
+  }
   propTypes_ = nullptr;
   lefFree(antennaSize_);
   lefFree(antennaSizeLayer_);
@@ -821,44 +837,51 @@ void lefiPin::clear()
   numForeigns_ = 0;
 
   for (i = 0; i < numAntennaSize_; i++) {
-    if (antennaSizeLayer_[i])
+    if (antennaSizeLayer_[i]) {
       lefFree(antennaSizeLayer_[i]);
+    }
   }
   numAntennaSize_ = 0;
 
   for (i = 0; i < numAntennaMetalLength_; i++) {
-    if (antennaMetalLengthLayer_[i])
+    if (antennaMetalLengthLayer_[i]) {
       lefFree(antennaMetalLengthLayer_[i]);
+    }
   }
   numAntennaMetalLength_ = 0;
 
   for (i = 0; i < numAntennaMetalArea_; i++) {
-    if (antennaMetalAreaLayer_[i])
+    if (antennaMetalAreaLayer_[i]) {
       lefFree(antennaMetalAreaLayer_[i]);
+    }
   }
   numAntennaMetalArea_ = 0;
 
   for (i = 0; i < numAntennaPartialMetalArea_; i++) {
-    if (antennaPartialMetalAreaLayer_[i])
+    if (antennaPartialMetalAreaLayer_[i]) {
       lefFree(antennaPartialMetalAreaLayer_[i]);
+    }
   }
   numAntennaPartialMetalArea_ = 0;
 
   for (i = 0; i < numAntennaPartialMetalSideArea_; i++) {
-    if (antennaPartialMetalSideAreaLayer_[i])
+    if (antennaPartialMetalSideAreaLayer_[i]) {
       lefFree(antennaPartialMetalSideAreaLayer_[i]);
+    }
   }
   numAntennaPartialMetalSideArea_ = 0;
 
   for (i = 0; i < numAntennaPartialCutArea_; i++) {
-    if (antennaPartialCutAreaLayer_[i])
+    if (antennaPartialCutAreaLayer_[i]) {
       lefFree(antennaPartialCutAreaLayer_[i]);
+    }
   }
   numAntennaPartialCutArea_ = 0;
 
   for (i = 0; i < numAntennaDiffArea_; i++) {
-    if (antennaDiffAreaLayer_[i])
+    if (antennaDiffAreaLayer_[i]) {
       lefFree(antennaDiffAreaLayer_[i]);
+    }
   }
   numAntennaDiffArea_ = 0;
 
@@ -901,12 +924,14 @@ void lefiPin::clear()
 
 void lefiPin::bump(char** array, int len, int* size)
 {
-  if (*array)
+  if (*array) {
     lefFree(*array);
-  if (len > 0)
+  }
+  if (len > 0) {
     *array = (char*) lefMalloc(len);
-  else
+  } else {
     *array = nullptr;
+  }
   *size = len;
 }
 
@@ -927,14 +952,16 @@ void lefiPin::addPort(lefiGeometries* g)
   if (numPorts_ == portsAllocated_) {
     int i;
     lefiGeometries** ng;
-    if (portsAllocated_ == 0)
+    if (portsAllocated_ == 0) {
       portsAllocated_ = 2;
-    else
+    } else {
       portsAllocated_ *= 2;
+    }
     ng = (lefiGeometries**) lefMalloc(sizeof(lefiGeometries*)
                                       * portsAllocated_);
-    for (i = 0; i < numPorts_; i++)
+    for (i = 0; i < numPorts_; i++) {
       ng[i] = ports_[i];
+    }
     lefFree(ports_);
     ports_ = ng;
   }
@@ -956,11 +983,12 @@ void lefiPin::addForeign(const char* name,
   char** f;
 
   if (foreignAllocated_ == numForeigns_) {
-    if (foreignAllocated_ == 0)
+    if (foreignAllocated_ == 0) {
       foreignAllocated_ = 16;  // since it involves char*, it will
                                // costly in the number is too small
-    else
+    } else {
       foreignAllocated_ *= 2;
+    }
     hfo = (int*) lefMalloc(sizeof(int) * foreignAllocated_);
     hfp = (int*) lefMalloc(sizeof(int) * foreignAllocated_);
     fo = (int*) lefMalloc(sizeof(int) * foreignAllocated_);
@@ -992,10 +1020,11 @@ void lefiPin::addForeign(const char* name,
   }
 
   // orient=-1 means no orient was specified.
-  if (orient != -1)
+  if (orient != -1) {
     hasForeignOrient_[numForeigns_] = 1;
-  else
+  } else {
     hasForeignOrient_[numForeigns_] = -1;
+  }
 
   hasForeignPoint_[numForeigns_] = hasPnt;
   foreignOrient_[numForeigns_] = orient;
@@ -1009,8 +1038,9 @@ void lefiPin::addForeign(const char* name,
 void lefiPin::setLEQ(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > LEQSize_)
+  if (len > LEQSize_) {
     bump(&(LEQ_), len, &(LEQSize_));
+  }
   strcpy(LEQ_, CASE(name));
   hasLEQ_ = 1;
 }
@@ -1036,8 +1066,9 @@ void lefiPin::setShape(const char* name)
 void lefiPin::setMustjoin(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > mustjoinSize_)
+  if (len > mustjoinSize_) {
     bump(&(mustjoin_), len, &(mustjoinSize_));
+  }
   strcpy(mustjoin_, CASE(name));
   hasMustjoin_ = 1;
 }
@@ -1202,12 +1233,14 @@ void lefiPin::setCurrentSource(const char* name)
 void lefiPin::setTables(const char* highName, const char* lowName)
 {
   int len = strlen(highName) + 1;
-  if (len > highTableSize_)
+  if (len > highTableSize_) {
     bump(&(highTable_), len, &(highTableSize_));
+  }
   strcpy(highTable_, CASE(highName));
   len = strlen(lowName) + 1;
-  if (len > lowTableSize_)
+  if (len > lowTableSize_) {
     bump(&(lowTable_), len, &(lowTableSize_));
+  }
   strcpy(lowTable_, CASE(lowName));
   hasTables_ = 1;
 }
@@ -1215,8 +1248,9 @@ void lefiPin::setTables(const char* highName, const char* lowName)
 void lefiPin::setProperty(const char* name, const char* value, const char type)
 {
   int len;
-  if (numProperties_ == propertiesAllocated_)
+  if (numProperties_ == propertiesAllocated_) {
     bumpProps();
+  }
   len = strlen(name) + 1;
   propNames_[numProperties_] = (char*) lefMalloc(len);
   strcpy(propNames_[numProperties_], CASE(name));
@@ -1235,8 +1269,9 @@ void lefiPin::setNumProperty(const char* name,
 {
   int len;
 
-  if (numProperties_ == propertiesAllocated_)
+  if (numProperties_ == propertiesAllocated_) {
     bumpProps();
+  }
   len = strlen(name) + 1;
   propNames_[numProperties_] = (char*) lefMalloc(len);
   strcpy(propNames_[numProperties_], CASE(name));
@@ -1275,14 +1310,18 @@ void lefiPin::bumpProps()
       newt[i] = propTypes_[i];
     }
   }
-  if (propNames_)
+  if (propNames_) {
     lefFree(propNames_);
-  if (propValues_)
+  }
+  if (propValues_) {
     lefFree(propValues_);
-  if (propNums_)
+  }
+  if (propNums_) {
     lefFree(propNums_);
-  if (propTypes_)
+  }
+  if (propTypes_) {
     lefFree(propTypes_);
+  }
   propNames_ = newpn;
   propValues_ = newpv;
   propNums_ = newd;
@@ -1854,10 +1893,11 @@ void lefiPin::addAntennaMetalLength(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaMetalLengthAllocated_ == 0)
+    if (antennaMetalLengthAllocated_ == 0) {
       max = antennaMetalLengthAllocated_ = 2;
-    else
+    } else {
       max = antennaMetalLengthAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -1874,8 +1914,9 @@ void lefiPin::addAntennaMetalLength(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaMetalLengthLayer_[numAntennaMetalLength_] = (char*) lefMalloc(len);
     strcpy(antennaMetalLengthLayer_[numAntennaMetalLength_], layer);
-  } else
+  } else {
     antennaMetalLengthLayer_[numAntennaMetalLength_] = nullptr;
+  }
   numAntennaMetalLength_ += 1;
 }
 
@@ -1967,10 +2008,11 @@ void lefiPin::addAntennaSize(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaSizeAllocated_ == 0)
+    if (antennaSizeAllocated_ == 0) {
       max = antennaSizeAllocated_ = 2;
-    else
+    } else {
       max = antennaSizeAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -1987,8 +2029,9 @@ void lefiPin::addAntennaSize(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaSizeLayer_[numAntennaSize_] = (char*) lefMalloc(len);
     strcpy(antennaSizeLayer_[numAntennaSize_], layer);
-  } else
+  } else {
     antennaSizeLayer_[numAntennaSize_] = nullptr;
+  }
   numAntennaSize_ += 1;
 }
 
@@ -2002,10 +2045,11 @@ void lefiPin::addAntennaMetalArea(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaMetalAreaAllocated_ == 0)
+    if (antennaMetalAreaAllocated_ == 0) {
       max = antennaMetalAreaAllocated_ = 2;
-    else
+    } else {
       max = antennaMetalAreaAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -2022,8 +2066,9 @@ void lefiPin::addAntennaMetalArea(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaMetalAreaLayer_[numAntennaMetalArea_] = (char*) lefMalloc(len);
     strcpy(antennaMetalAreaLayer_[numAntennaMetalArea_], layer);
-  } else
+  } else {
     antennaMetalAreaLayer_[numAntennaMetalArea_] = nullptr;
+  }
   numAntennaMetalArea_ += 1;
 }
 
@@ -2037,10 +2082,11 @@ void lefiPin::addAntennaPartialMetalArea(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaPartialMetalAreaAllocated_ == 0)
+    if (antennaPartialMetalAreaAllocated_ == 0) {
       max = antennaPartialMetalAreaAllocated_ = 2;
-    else
+    } else {
       max = antennaPartialMetalAreaAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -2058,8 +2104,9 @@ void lefiPin::addAntennaPartialMetalArea(double val, const char* layer)
     antennaPartialMetalAreaLayer_[numAntennaPartialMetalArea_]
         = (char*) lefMalloc(len);
     strcpy(antennaPartialMetalAreaLayer_[numAntennaPartialMetalArea_], layer);
-  } else
+  } else {
     antennaPartialMetalAreaLayer_[numAntennaPartialMetalArea_] = nullptr;
+  }
   numAntennaPartialMetalArea_ += 1;
 }
 
@@ -2074,10 +2121,11 @@ void lefiPin::addAntennaPartialMetalSideArea(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaPartialMetalSideAreaAllocated_ == 0)
+    if (antennaPartialMetalSideAreaAllocated_ == 0) {
       max = antennaPartialMetalSideAreaAllocated_ = 2;
-    else
+    } else {
       max = antennaPartialMetalSideAreaAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -2096,9 +2144,10 @@ void lefiPin::addAntennaPartialMetalSideArea(double val, const char* layer)
         = (char*) lefMalloc(len);
     strcpy(antennaPartialMetalSideAreaLayer_[numAntennaPartialMetalSideArea_],
            layer);
-  } else
+  } else {
     antennaPartialMetalSideAreaLayer_[numAntennaPartialMetalSideArea_]
         = nullptr;
+  }
   numAntennaPartialMetalSideArea_ += 1;
 }
 
@@ -2112,10 +2161,11 @@ void lefiPin::addAntennaPartialCutArea(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaPartialCutAreaAllocated_ == 0)
+    if (antennaPartialCutAreaAllocated_ == 0) {
       max = antennaPartialCutAreaAllocated_ = 2;
-    else
+    } else {
       max = antennaPartialCutAreaAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -2133,8 +2183,9 @@ void lefiPin::addAntennaPartialCutArea(double val, const char* layer)
     antennaPartialCutAreaLayer_[numAntennaPartialCutArea_]
         = (char*) lefMalloc(len);
     strcpy(antennaPartialCutAreaLayer_[numAntennaPartialCutArea_], layer);
-  } else
+  } else {
     antennaPartialCutAreaLayer_[numAntennaPartialCutArea_] = nullptr;
+  }
   numAntennaPartialCutArea_ += 1;
 }
 
@@ -2148,10 +2199,11 @@ void lefiPin::addAntennaDiffArea(double val, const char* layer)
     double* nd;
     char** nl;
 
-    if (antennaDiffAreaAllocated_ == 0)
+    if (antennaDiffAreaAllocated_ == 0) {
       max = antennaDiffAreaAllocated_ = 2;
-    else
+    } else {
       max = antennaDiffAreaAllocated_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * max);
     nl = (char**) lefMalloc(sizeof(double) * max);
     for (i = 0; i < lim; i++) {
@@ -2168,36 +2220,41 @@ void lefiPin::addAntennaDiffArea(double val, const char* layer)
     len = strlen(layer) + 1;
     antennaDiffAreaLayer_[numAntennaDiffArea_] = (char*) lefMalloc(len);
     strcpy(antennaDiffAreaLayer_[numAntennaDiffArea_], layer);
-  } else
+  } else {
     antennaDiffAreaLayer_[numAntennaDiffArea_] = nullptr;
+  }
   numAntennaDiffArea_ += 1;
 }
 
 void lefiPin::addAntennaGateArea(double val, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   pinAntennaModel_[curAntennaModelIndex_]->addAntennaGateArea(val, layer);
 }
 
 void lefiPin::addAntennaMaxAreaCar(double val, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   pinAntennaModel_[curAntennaModelIndex_]->addAntennaMaxAreaCar(val, layer);
 }
 
 void lefiPin::addAntennaMaxSideAreaCar(double val, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   pinAntennaModel_[curAntennaModelIndex_]->addAntennaMaxSideAreaCar(val, layer);
 }
 
 void lefiPin::addAntennaMaxCutCar(double val, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   pinAntennaModel_[curAntennaModelIndex_]->addAntennaMaxCutCar(val, layer);
 }
 
@@ -2440,40 +2497,46 @@ void lefiMacro::clear()
 
 void lefiMacro::bump(char** array, int len, int* size)
 {
-  if (*array)
+  if (*array) {
     lefFree(*array);
-  if (len)
+  }
+  if (len) {
     *array = (char*) lefMalloc(len);
-  else
+  } else {
     *array = nullptr;
+  }
   *size = len;
 }
 
 void lefiMacro::setName(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > nameSize_)
+  if (len > nameSize_) {
     bump(&(name_), len, &(nameSize_));
+  }
   strcpy(name_, CASE(name));
 }
 
 void lefiMacro::setGenerate(const char* name, const char* n2)
 {
   int len = strlen(name) + 1;
-  if (len > gen1Size_)
+  if (len > gen1Size_) {
     bump(&(gen1_), len, &(gen1Size_));
+  }
   strcpy(gen1_, CASE(name));
   len = strlen(n2) + 1;
-  if (len > gen2Size_)
+  if (len > gen2Size_) {
     bump(&(gen2_), len, &(gen2Size_));
+  }
   strcpy(gen2_, n2);
 }
 
 void lefiMacro::setGenerator(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > generatorSize_)
+  if (len > generatorSize_) {
     bump(&(generator_), len, &(generatorSize_));
+  }
   strcpy(generator_, CASE(name));
   hasGenerator_ = 1;
 }
@@ -2516,8 +2579,9 @@ void lefiMacro::setPower(double p)
 void lefiMacro::setEEQ(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > EEQSize_)
+  if (len > EEQSize_) {
     bump(&(EEQ_), len, &(EEQSize_));
+  }
   strcpy(EEQ_, CASE(name));
   hasEEQ_ = 1;
 }
@@ -2525,8 +2589,9 @@ void lefiMacro::setEEQ(const char* name)
 void lefiMacro::setLEQ(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > LEQSize_)
+  if (len > LEQSize_) {
     bump(&(LEQ_), len, &(LEQSize_));
+  }
   strcpy(LEQ_, CASE(name));
   hasLEQ_ = 1;
 }
@@ -2536,8 +2601,9 @@ void lefiMacro::setProperty(const char* name,
                             const char type)
 {
   int len;
-  if (numProperties_ == propertiesAllocated_)
+  if (numProperties_ == propertiesAllocated_) {
     bumpProps();
+  }
   len = strlen(name) + 1;
   propNames_[numProperties_] = (char*) lefMalloc(len);
   strcpy(propNames_[numProperties_], CASE(name));
@@ -2556,8 +2622,9 @@ void lefiMacro::setNumProperty(const char* name,
 {
   int len;
 
-  if (numProperties_ == propertiesAllocated_)
+  if (numProperties_ == propertiesAllocated_) {
     bumpProps();
+  }
   len = strlen(name) + 1;
   propNames_[numProperties_] = (char*) lefMalloc(len);
   strcpy(propNames_[numProperties_], CASE(name));
@@ -2579,10 +2646,11 @@ void lefiMacro::bumpProps()
   char* newt;
   int i;
 
-  if (propertiesAllocated_ <= 0)
+  if (propertiesAllocated_ <= 0) {
     lim = 2;  // starts with 4
-  else
+  } else {
     lim = propertiesAllocated_;
+  }
   news = lim + lim;
   newpn = (char**) lefMalloc(sizeof(char*) * news);
   newpv = (char**) lefMalloc(sizeof(char*) * news);
@@ -2632,11 +2700,12 @@ void lefiMacro::addForeign(const char* name,
   char** f;
 
   if (foreignAllocated_ == numForeigns_) {
-    if (foreignAllocated_ == 0)
+    if (foreignAllocated_ == 0) {
       foreignAllocated_ = 16;  // since it involves char*, it will
                                // costly in the number is too small
-    else
+    } else {
       foreignAllocated_ *= 2;
+    }
     hfo = (int*) lefMalloc(sizeof(int) * foreignAllocated_);
     hfp = (int*) lefMalloc(sizeof(int) * foreignAllocated_);
     fo = (int*) lefMalloc(sizeof(int) * foreignAllocated_);
@@ -2696,8 +2765,9 @@ void lefiMacro::set90Symmetry()
 void lefiMacro::setSiteName(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > siteNameSize_)
+  if (len > siteNameSize_) {
     bump(&(siteName_), len, &(siteNameSize_));
+  }
   strcpy(siteName_, CASE(name));
   hasSiteName_ = 1;
 }
@@ -2705,8 +2775,9 @@ void lefiMacro::setSiteName(const char* name)
 void lefiMacro::setClockType(const char* name)
 {
   int len = strlen(name) + 1;
-  if (len > clockTypeSize_)
+  if (len > clockTypeSize_) {
     bump(&(clockType_), len, &(clockTypeSize_));
+  }
   strcpy(clockType_, CASE(name));
   hasClockType_ = 1;
 }
@@ -2724,8 +2795,9 @@ void lefiMacro::setSitePattern(lefiSitePattern* p)
       sitesAllocated_ = lim;
       np = (lefiSitePattern**) lefMalloc(sizeof(lefiSitePattern*) * lim);
       lim /= 2;
-      for (i = 0; i < lim; i++)
+      for (i = 0; i < lim; i++) {
         np[i] = pattern_[i];
+      }
       lefFree(pattern_);
     }
     pattern_ = np;
@@ -2983,10 +3055,12 @@ double lefiMacro::power() const
 
 void lefiMacro::generate(char** name1, char** name2) const
 {
-  if (name1)
+  if (name1) {
     *name1 = gen1_;
-  if (name2)
+  }
+  if (name2) {
     *name2 = gen2_;
+  }
 }
 
 lefiSitePattern* lefiMacro::sitePattern(int index) const
@@ -3063,43 +3137,54 @@ void lefiMacro::print(FILE* f) const
 
   fprintf(f, "MACRO %s\n", name());
 
-  if (hasClass())
+  if (hasClass()) {
     fprintf(f, "  Class %s\n", macroClass());
+  }
 
-  if (hasGenerator())
+  if (hasGenerator()) {
     fprintf(f, "  Generator %s\n", generator());
+  }
 
   if (hasGenerator()) {
     generate(&c1, &c2);
     fprintf(f, "  Generate %s %s\n", c1, c2);
   }
 
-  if (hasPower())
+  if (hasPower()) {
     fprintf(f, "  Power %g\n", power());
+  }
 
-  if (hasOrigin())
+  if (hasOrigin()) {
     fprintf(f, "  Origin %g,%g\n", originX(), originY());
+  }
 
-  if (hasEEQ())
+  if (hasEEQ()) {
     fprintf(f, "  EEQ %s\n", EEQ());
+  }
 
-  if (hasLEQ())
+  if (hasLEQ()) {
     fprintf(f, "  LEQ %s\n", LEQ());
+  }
 
-  if (hasSource())
+  if (hasSource()) {
     fprintf(f, "  Source %s\n", source());
+  }
 
-  if (hasXSymmetry())
+  if (hasXSymmetry()) {
     fprintf(f, "  Symmetry X\n");
+  }
 
-  if (hasYSymmetry())
+  if (hasYSymmetry()) {
     fprintf(f, "  Symmetry Y\n");
+  }
 
-  if (has90Symmetry())
+  if (has90Symmetry()) {
     fprintf(f, "  Symmetry R90\n");
+  }
 
-  if (hasSiteName())
+  if (hasSiteName()) {
     fprintf(f, "  Site name %s\n", siteName());
+  }
 
   if (hasSitePattern()) {
     for (i = 0; i < numSitePattern(); i++) {
@@ -3109,22 +3194,26 @@ void lefiMacro::print(FILE* f) const
     }
   }
 
-  if (hasSize())
+  if (hasSize()) {
     fprintf(f, "  Size %g,%g\n", sizeX(), sizeY());
+  }
 
   if (hasForeign()) {
     for (i = 0; i < numForeigns(); i++) {
       fprintf(f, "  Foreign %s", foreignName(i));
-      if (hasForeignOrigin(i))
+      if (hasForeignOrigin(i)) {
         fprintf(f, "  %g,%g", foreignX(i), foreignY(i));
-      if (hasForeignOrient(i))
+      }
+      if (hasForeignOrient(i)) {
         fprintf(f, "  orient %s", foreignOrientStr(i));
+      }
       fprintf(f, "\n");
     }
   }
 
-  if (hasClockType())
+  if (hasClockType()) {
     fprintf(f, "  Clock type %s\n", clockType());
+  }
 
   fprintf(f, "END MACRO %s\n", name());
 }
@@ -3275,10 +3364,11 @@ void lefiTiming::addTableEntry(double one, double two, double three)
   if (numOfTableEntries_ >= tableEntriesAllocated_) {
     int lim;
 
-    if (tableEntriesAllocated_ == 0)
+    if (tableEntriesAllocated_ == 0) {
       lim = tableEntriesAllocated_ = 2;
-    else
+    } else {
       lim = tableEntriesAllocated_ *= 2;
+    }
     n = (double*) lefMalloc(sizeof(double) * 3 * lim);
     lim = numOfTableEntries_ * 3;
     for (i = 0; i < lim; i++) {
@@ -3301,16 +3391,19 @@ void lefiTiming::addTableAxisNumber(double one)
     int lim;
     double* n;
 
-    if (axisNumbersAllocated_ == 0)
+    if (axisNumbersAllocated_ == 0) {
       lim = axisNumbersAllocated_ = 2;
-    else
+    } else {
       lim = axisNumbersAllocated_ *= 2;
+    }
     n = (double*) lefMalloc(sizeof(double) * lim);
     lim = numOfAxisNumbers_;
-    for (i = 0; i < lim; i++)
+    for (i = 0; i < lim; i++) {
       n[i] = axisNumbers_[i];
-    if (axisNumbersAllocated_ > 2)
+    }
+    if (axisNumbersAllocated_ > 2) {
       lefFree(axisNumbers_);
+    }
     axisNumbers_ = n;
   }
   axisNumbers_[(numOfAxisNumbers_)++] = one;
@@ -3358,14 +3451,16 @@ void lefiTiming::addFromPin(const char* name)
     int i;
     char** n;
 
-    if (fromAllocated_ == 0)
+    if (fromAllocated_ == 0) {
       lim = fromAllocated_ = 2;
-    else
+    } else {
       lim = fromAllocated_ *= 2;
+    }
     n = (char**) lefMalloc(sizeof(char*) * lim);
     lim = numFrom_;
-    for (i = 0; i < lim; i++)
+    for (i = 0; i < lim; i++) {
       n[i] = from_[i];
+    }
     lefFree(from_);
     from_ = n;
   }
@@ -3379,14 +3474,16 @@ void lefiTiming::addToPin(const char* name)
     int i;
     char** n;
 
-    if (toAllocated_ == 0)
+    if (toAllocated_ == 0) {
       lim = toAllocated_ = 2;
-    else
+    } else {
       lim = toAllocated_ *= 2;
+    }
     n = (char**) lefMalloc(sizeof(char*) * lim);
     lim = numTo_;
-    for (i = 0; i < lim; i++)
+    for (i = 0; i < lim; i++) {
       n[i] = to_[i];
+    }
     lefFree(to_);
     to_ = n;
   }

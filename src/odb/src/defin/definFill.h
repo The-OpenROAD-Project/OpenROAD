@@ -14,7 +14,7 @@ class dbTechLayer;
 
 class definFill : public definBase
 {
-  dbTechLayer* _cur_layer;
+  dbTechLayer* _cur_layer{nullptr};
   uint _mask_number;
   bool _needs_opc;
 
@@ -24,10 +24,6 @@ class definFill : public definBase
   virtual void fillRect(int x1, int y1, int x2, int y2);
   virtual void fillPolygon(std::vector<Point>& points);
   virtual void fillEnd();
-
-  definFill();
-  ~definFill() override;
-  void init() override;
 };
 
 }  // namespace odb

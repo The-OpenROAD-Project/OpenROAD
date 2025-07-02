@@ -17,11 +17,11 @@ set solution_file "${design}.hgr.part.${num_parts}"
 ### TritonPart with placement information
 ### Here we recommend using a small placement_wt_factors
 puts "Start TritonPart for hypergraph partitioning with placement"
-triton_part_hypergraph  -hypergraph_file $hypergraph_file -num_parts $num_parts \
-                        -balance_constraint $balance_constraint \
-                        -seed $seed  \
-                        -placement_file ${placement_file} -placement_wt_factors { 0.00005 0.00005 } \
-                        -placement_dimension 2
+triton_part_hypergraph -hypergraph_file $hypergraph_file -num_parts $num_parts \
+  -balance_constraint $balance_constraint \
+  -seed $seed \
+  -placement_file ${placement_file} -placement_wt_factors { 0.00005 0.00005 } \
+  -placement_dimension 2
 
 exit
-### Finish 
+### Finish

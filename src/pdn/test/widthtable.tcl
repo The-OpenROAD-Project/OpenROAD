@@ -12,5 +12,5 @@ set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
 add_pdn_stripe -followpins -layer M1 -width 0.072
-catch {add_pdn_stripe -followpins -layer M2 -width 0.072} err
+catch { add_pdn_stripe -followpins -layer M2 -width 0.072 } err
 puts $err

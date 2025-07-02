@@ -40,6 +40,15 @@ class PlacementDRC
                         GridX x,
                         GridY y,
                         const odb::dbOrientType& orient) const;
+  bool checkBlockedLayers(const Node* cell) const;
+  bool checkBlockedLayers(const Node* cell, GridX x, GridY y) const;
+
+  // aggregate function to check against all DRC types
+  bool checkDRC(const Node* cell) const;
+  bool checkDRC(const Node* cell,
+                GridX x,
+                GridY y,
+                const odb::dbOrientType& orient) const;
 
   int getEdgeTypeIdx(const std::string& edge_type) const;
   bool hasCellEdgeSpacingTable() const;

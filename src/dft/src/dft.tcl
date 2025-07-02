@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023-2025, The OpenROAD Authors
 
-sta::define_cmd_args "preview_dft" {[-verbose]}
+sta::define_cmd_args "report_dft_plan" {[-verbose]}
 
-proc preview_dft { args } {
-  sta::parse_key_args "preview_dft" args \
+proc report_dft_plan { args } {
+  sta::parse_key_args "report_dft_plan" args \
     keys {} \
     flags {-verbose}
 
-  sta::check_argc_eq0 "preview_dft" $args
+  sta::check_argc_eq0 "report_dft_plan" $args
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 1 "No design block found."
@@ -16,7 +16,7 @@ proc preview_dft { args } {
 
   set verbose [info exists flags(-verbose)]
 
-  dft::preview_dft $verbose
+  dft::report_dft_plan $verbose
 }
 
 sta::define_cmd_args "scan_replace" { }
@@ -30,16 +30,16 @@ proc scan_replace { args } {
   dft::scan_replace
 }
 
-sta::define_cmd_args "insert_dft" {}
-proc insert_dft { args } {
-  sta::parse_key_args "insert_dft" args \
+sta::define_cmd_args "execute_dft_plan" {}
+proc execute_dft_plan { args } {
+  sta::parse_key_args "execute_dft_plan" args \
     keys {} \
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 9 "No design block found."
   }
-  dft::insert_dft
+  dft::execute_dft_plan
 }
 
 sta::define_cmd_args "set_dft_config" { [-max_length max_length]

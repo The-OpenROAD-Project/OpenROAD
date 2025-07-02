@@ -12,6 +12,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <array>
 #include <functional>
 #include <random>
 #include <string>
@@ -27,6 +28,7 @@
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 Q_DECLARE_METATYPE(odb::dbSite*);
 Q_DECLARE_METATYPE(std::function<void()>);
+Q_DECLARE_METATYPE(gui::DisplayControls::ModelRow*);
 
 namespace gui {
 
@@ -267,6 +269,8 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   auto* root = model_->invisibleRootItem();
 
+  custom_controls_start_ = -1;
+
   auto layers
       = makeParentItem(layers_group_, "Layers", root, Qt::Checked, true);
   view_->expand(layers->index());
@@ -442,8 +446,11 @@ DisplayControls::DisplayControls(QWidget* parent)
                shape_types_srouting,
                Qt::Checked);
   makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
+  shape_types_.pins.visible->setData(
+      QVariant::fromValue(&shape_types_.pin_names), disable_row_item_idx_);
   pin_markers_font_ = QApplication::font();  // use default font
-  setNameItemDoubleClickAction(shape_types_.pins, [this]() {
+  setNameItemDoubleClickAction(shape_types_.pin_names, [this]() {
     pin_markers_font_ = QFontDialog::getFont(
         nullptr, pin_markers_font_, this, "Pin marker font");
   });
@@ -458,6 +465,8 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   iterm_label_font_ = QApplication::font();  // use default font
   iterm_label_color_ = Qt::yellow;
+
+  label_font_ = QApplication::font();  // use default font
 
   auto instance_shape
       = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
@@ -475,6 +484,9 @@ DisplayControls::DisplayControls(QWidget* parent)
                Qt::Unchecked,
                false,
                iterm_label_color_);
+  instance_shapes_.pins.visible->setData(
+      QVariant::fromValue(&instance_shapes_.iterm_labels),
+      disable_row_item_idx_);
   makeLeafItem(
       instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
   toggleParent(misc_.instances);
@@ -500,6 +512,11 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
+  setNameItemDoubleClickAction(misc_.labels, [this]() {
+    label_font_
+        = QFontDialog::getFont(nullptr, label_font_, this, "User label font");
+  });
   makeLeafItem(
       misc_.background, "Background", misc, {}, false, background_color_);
   toggleParent(misc_group_);
@@ -528,6 +545,9 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   connect(
       this, &DisplayControls::colorChanged, this, &DisplayControls::changed);
+
+  custom_controls_start_ = root->rowCount();
+
   // register renderers
   if (gui::Gui::get() != nullptr) {
     for (auto renderer : gui::Gui::get()->renderers()) {
@@ -704,6 +724,7 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("font");
   getFont(pin_markers_font_, "pin_markers");
   getFont(ruler_font_, "ruler");
+  getFont(label_font_, "label");
   getFont(instance_name_font_, "instance_name");
   getFont(iterm_label_font_, "iterm_label");
   settings->endGroup();
@@ -779,6 +800,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->beginGroup("font");
   settings->setValue("pin_markers", pin_markers_font_);
   settings->setValue("ruler", ruler_font_);
+  settings->setValue("label", label_font_);
   settings->setValue("instance_name", instance_name_font_);
   settings->setValue("iterm_label", iterm_label_font_);
   settings->endGroup();
@@ -969,6 +991,20 @@ void DisplayControls::itemChanged(QStandardItem* item)
     }
   }
 
+  // check disabled pair
+  auto disabled_row_pair = item->data(disable_row_item_idx_);
+  if (disabled_row_pair.isValid()) {
+    const ModelRow* row = disabled_row_pair.value<ModelRow*>();
+    row->name->setEnabled(checked);
+    row->swatch->setEnabled(checked);
+    if (row->visible) {
+      row->visible->setEnabled(checked);
+    }
+    if (row->selectable) {
+      row->selectable->setEnabled(checked);
+    }
+  }
+
   emit changed();
 }
 
@@ -982,67 +1018,68 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     const QModelIndex name_index
         = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
-    QVariant tech_layer_data = name_item->data(user_data_item_idx_);
-    if (!tech_layer_data.isValid()) {
+    QVariant user_data = name_item->data(user_data_item_idx_);
+    if (!user_data.isValid()) {
       continue;
     }
-    auto* tech_layer = tech_layer_data.value<dbTechLayer*>();
-    if (tech_layer == nullptr) {
+
+    if (auto* tech_layer = user_data.value<dbTechLayer*>()) {
+      emit selected(Gui::get()->makeSelected(tech_layer));
+    } else if (auto* site = user_data.value<odb::dbSite*>()) {
+      emit selected(Gui::get()->makeSelected(site));
+    } else {
       continue;
     }
-    emit selected(Gui::get()->makeSelected(tech_layer));
     return;
   }
 }
 
-std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
+std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
     QStandardItem* item,
     const QModelIndex* index)
 {
   if (item == misc_.background.swatch) {
-    return {&background_color_, nullptr, false};
+    return {&background_color_, nullptr};
   }
   if (item == blockages_.blockages.swatch) {
-    return {&placement_blockage_color_, &placement_blockage_pattern_, false};
+    return {&placement_blockage_color_, &placement_blockage_pattern_};
   }
   if (item == misc_.regions.swatch) {
-    return {&region_color_, &region_pattern_, false};
+    return {&region_color_, &region_pattern_};
   }
   if (item == instance_shapes_.names.swatch) {
-    return {&instance_name_color_, nullptr, false};
+    return {&instance_name_color_, nullptr};
   }
   if (item == instance_shapes_.iterm_labels.swatch) {
-    return {&iterm_label_color_, nullptr, false};
+    return {&iterm_label_color_, nullptr};
   }
   if (item == rulers_.swatch) {
-    return {&ruler_color_, nullptr, false};
+    return {&ruler_color_, nullptr};
   }
   QVariant tech_layer_data = item->data(user_data_item_idx_);
   if (!tech_layer_data.isValid()) {
-    return {nullptr, nullptr, false};
+    return {nullptr, nullptr};
   }
   auto tech_layer = tech_layer_data.value<dbTechLayer*>();
   auto site = tech_layer_data.value<odb::dbSite*>();
   if (tech_layer != nullptr) {
     QColor* item_color = &layer_color_[tech_layer];
     Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
-    if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-      if (index && index->row() != 0) {
-        // ensure if a via is the first layer, it can still be modified
-        return {item_color, item_pattern, false};
-      }
-    } else {
-      return {item_color, item_pattern, true};
-    }
+    return {item_color, item_pattern};
   } else if (site != nullptr) {
-    return {&site_color_[site], nullptr, false};
+    return {&site_color_[site], nullptr};
   }
 
-  return {nullptr, nullptr, false};
+  return {nullptr, nullptr};
 }
 
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
+  if (!model_->itemFromIndex(index)->isEnabled()) {
+    // ignore disabled items
+    return;
+  }
+
   if (index.column() == 0) {
     auto name_item = model_->itemFromIndex(index);
 
@@ -1057,12 +1094,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 
     QColor* item_color = nullptr;
     Qt::BrushStyle* item_pattern = nullptr;
-    bool has_sibling = false;
 
     const auto lookup = lookupColor(color_item, &index);
     item_color = std::get<0>(lookup);
     item_pattern = std::get<1>(lookup);
-    has_sibling = std::get<2>(lookup);
 
     if (item_color == nullptr) {
       return;
@@ -1079,15 +1114,6 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     QColor chosen_color = display_dialog->getSelectedColor();
     if (chosen_color.isValid()) {
       color_item->setIcon(makeSwatchIcon(chosen_color));
-
-      if (has_sibling) {
-        auto cut_layer_index
-            = model_->sibling(index.row() + 1, index.column(), index);
-        if (cut_layer_index.isValid()) {
-          auto cut_color_item = model_->itemFromIndex(cut_layer_index);
-          cut_color_item->setIcon(makeSwatchIcon(chosen_color));
-        }
-      }
       *item_color = std::move(chosen_color);
       if (item_pattern != nullptr) {
         *item_pattern = display_dialog->getSelectedPattern();
@@ -1132,8 +1158,8 @@ void DisplayControls::setControlByPath(const std::string& path,
     logger_->error(utl::GUI, 40, "Unable to find {} display control", path);
   } else {
     for (auto* item : items) {
-      const auto& [item_color, item_style, sibling] = lookupColor(item);
-      if (sibling || item_color == nullptr) {
+      const auto& [item_color, item_style] = lookupColor(item);
+      if (item_color == nullptr) {
         continue;
       }
       *item_color = color;
@@ -1232,8 +1258,20 @@ void DisplayControls::save()
 
 void DisplayControls::restore()
 {
+  // Collect current controls in case some were removed after save was called.
+  std::map<std::string, QStandardItem*> all_controls;
+  collectControls(model_->invisibleRootItem(), Visible, all_controls);
+  collectControls(model_->invisibleRootItem(), Selectable, all_controls);
+  std::set<QStandardItem*> controls;
+
+  for (auto& [control_name, control] : all_controls) {
+    controls.insert(control);
+  }
+
   for (auto& [control, state] : saved_state_) {
-    control->setCheckState(state);
+    if (controls.find(control) != controls.end()) {
+      control->setCheckState(state);
+    }
   }
 }
 
@@ -1684,6 +1722,21 @@ QFont DisplayControls::rulerFont()
   return ruler_font_;
 }
 
+bool DisplayControls::areLabelsVisible()
+{
+  return isModelRowVisible(&misc_.labels);
+}
+
+bool DisplayControls::areLabelsSelectable()
+{
+  return isModelRowSelectable(&misc_.labels);
+}
+
+QFont DisplayControls::labelFont()
+{
+  return label_font_;
+}
+
 bool DisplayControls::areBlockagesVisible()
 {
   return isModelRowVisible(&blockages_.blockages);
@@ -1789,6 +1842,11 @@ bool DisplayControls::areIOPinsVisible() const
   return isModelRowVisible(&shape_types_.pins);
 }
 
+bool DisplayControls::areIOPinNamesVisible() const
+{
+  return isModelRowVisible(&shape_types_.pin_names);
+}
+
 bool DisplayControls::areRoutingSegmentsVisible() const
 {
   return isModelRowVisible(&shape_types_.routing.segments);
@@ -1814,7 +1872,7 @@ bool DisplayControls::areFillsVisible() const
   return isModelRowVisible(&shape_types_.fill);
 }
 
-QFont DisplayControls::pinMarkersFont() const
+QFont DisplayControls::ioPinMarkersFont() const
 {
   return pin_markers_font_;
 }
@@ -1888,6 +1946,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     }
 
     auto& add_rows = custom_controls_[renderer];
+
     add_rows.insert(add_rows.begin(), rows.begin(), rows.end());
   }
 
@@ -1898,6 +1957,22 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     if (setting != custom_controls_settings_.end()) {
       renderer->setSettings(setting->second);
     }
+  }
+
+  // Sort custom_controls
+  std::vector<QList<QStandardItem*>> custom_controls;
+  while (model_->invisibleRootItem()->rowCount() > custom_controls_start_) {
+    custom_controls.push_back(
+        model_->takeRow(model_->invisibleRootItem()->rowCount() - 1));
+  }
+  std::stable_sort(custom_controls.begin(),
+                   custom_controls.end(),
+                   [](const QList<QStandardItem*>& list0,
+                      const QList<QStandardItem*>& list1) {
+                     return list0[Name]->text() < list1[Name]->text();
+                   });
+  for (const auto& row : custom_controls) {
+    model_->appendRow(row);
   }
 }
 
@@ -1959,62 +2034,74 @@ void DisplayControls::techInit(odb::dbTech* tech)
 
   // Default colors
   // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
-  const QColor colors[] = {QColor(0, 0, 254),
-                           QColor(254, 0, 0),
-                           QColor(9, 221, 0),
-                           QColor(190, 244, 81),
-                           QColor(222, 33, 96),  // Metal 5
-                           QColor(32, 216, 253),
-                           QColor(253, 108, 160),
-                           QColor(117, 63, 194),
-                           QColor(128, 155, 49),
-                           QColor(234, 63, 252),
-                           QColor(9, 96, 19),
-                           QColor(214, 120, 239),
-                           QColor(192, 222, 164),
-                           QColor(110, 68, 107)};
-  const int num_colors = sizeof(colors) / sizeof(QColor);
+  const std::array<QColor, 14> default_metal_colors
+      = {QColor(0, 0, 254),
+         QColor(254, 0, 0),
+         QColor(9, 221, 0),
+         QColor(190, 244, 81),
+         QColor(222, 33, 96),  // Metal 5
+         QColor(32, 216, 253),
+         QColor(253, 108, 160),
+         QColor(117, 63, 194),
+         QColor(128, 155, 49),
+         QColor(234, 63, 252),  // Metal 10
+         QColor(9, 96, 19),
+         QColor(214, 120, 239),
+         QColor(192, 222, 164),
+         QColor(110, 68, 107)};  // Metal 14
+  const std::array<QColor, 14> default_cut_colors
+      = {QColor(126, 126, 255),
+         QColor(255, 126, 126),
+         QColor(4, 110, 0),
+         QColor(95, 122, 40),
+         QColor(111, 17, 48),  // Metal 5
+         QColor(16, 108, 126),
+         QColor(126, 54, 80),
+         QColor(58, 32, 97),
+         QColor(225, 255, 136),
+         QColor(117, 32, 126),  // Metal 10
+         QColor(18, 192, 38),
+         QColor(107, 60, 119),
+         QColor(96, 111, 82),
+         QColor(220, 136, 214)};  // Metal 14
   int metal = 0;
   int via = 0;
 
   // ensure if random colors are used they are consistent
   std::mt19937 gen_color(1);
 
+  auto generate_next_color = [&gen_color]() -> QColor {
+    return QColor(
+        50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+  };
+
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     QColor color;
     if (type == dbTechLayerType::ROUTING) {
-      if (metal < num_colors) {
-        color = colors[metal++];
+      if (metal < default_metal_colors.size()) {
+        color = default_metal_colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + gen_color() % 200,
-                       50 + gen_color() % 200,
-                       50 + gen_color() % 200);
+        color = generate_next_color();
       }
     } else if (type == dbTechLayerType::CUT) {
-      if (via < num_colors) {
+      if (via < default_cut_colors.size()) {
         if (metal != 0) {
-          color = colors[via++];
+          color = default_cut_colors[via++];
         } else {
           // via came first, so pick random color
-          color = QColor(50 + gen_color() % 200,
-                         50 + gen_color() % 200,
-                         50 + gen_color() % 200);
+          color = generate_next_color();
         }
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + gen_color() % 200,
-                       50 + gen_color() % 200,
-                       50 + gen_color() % 200);
+        color = generate_next_color();
       }
     } else {
       // Do not draw from the existing palette so the metal layers can claim
       // those colors.
-      color = QColor(50 + gen_color() % 200,
-                     50 + gen_color() % 200,
-                     50 + gen_color() % 200);
+      color = generate_next_color();
     }
     color.setAlpha(180);
     layer_color_[layer] = std::move(color);

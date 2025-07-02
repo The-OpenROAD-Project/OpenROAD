@@ -2,6 +2,7 @@ or_integration_tests(
   "dbSta"
   TESTS
     block_sta1
+    clock_pin
     constant1
     find_clks1
     find_clks2

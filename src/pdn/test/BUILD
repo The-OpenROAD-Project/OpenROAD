@@ -17,6 +17,7 @@ COMPULSORY_TESTS = [
     "asap7_vias_dont_use",
     "asap7_vias_fixed_vias",
     "asap7_vias_max_rows_columns",
+    "asap7_M1_M3_followpins",
     "bpin_removal",
     "core_grid",
     "core_grid_adjacentcuts",
@@ -60,6 +61,7 @@ COMPULSORY_TESTS = [
     "macros",
     "macros_add_twice",
     "macro_channel_with_secondary_repair",
+    "macros_channel_recursive_repair",
     "macros_cells",
     "macros_cells_dont_touch",
     "macros_cells_extend_boundary",
@@ -109,6 +111,7 @@ COMPULSORY_TESTS = [
     "report",
     "reset",
     "ripup",
+    "sky130_spm_floating_bpin",
     "sroute_test",
     "widthtable",
 ]
@@ -210,6 +213,8 @@ filegroup(
         "sky130_secondary_nets/capacitor_test_nf.lef",
         "sky130_secondary_nets/floorplan.def",
         "sky130_secondary_nets/vref_gen_nmos_with_trim.lef",
+        "sky130_spm/delayed_serial_adder.lef",
+        "sky130_spm/floorplan.def",
         "sky130_temp_sensor/4_cts.def",
         "sky130_temp_sensor/HEADER.lef",
         "sky130_temp_sensor/SLC.lef",
@@ -233,7 +238,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
         "sky130hvl/sky130_fd_sc_hvl.tlef",
-        "sky130hvl/sky130_fd_sc_hvl_merged.lef",
+        "sky130hvl/sky130_fd_sc_hvl_merged.lef"
     ],
 )
 
@@ -247,6 +252,12 @@ filegroup(
         ) + {
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
+            "macros_channel_recursive_repair": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
+                "ihp_ethmac/floorplan.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS

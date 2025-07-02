@@ -102,8 +102,7 @@ _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
       _next_entry(s._next_entry)
 {
   if (s._name) {
-    _name = strdup(s._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(s._name);
   }
 }
 
@@ -224,7 +223,6 @@ void dbSite::setRowPattern(const RowPattern& row_pattern)
   site->_row_pattern.reserve(row_pattern.size());
   for (auto& row : row_pattern) {
     auto child_site = (_dbSite*) row.site;
-    child_site->_flags._is_hybrid = true;
     site->_row_pattern.push_back({child_site->getOwner()->getId(),
                                   child_site->getId(),
                                   row.orientation});
@@ -273,8 +271,7 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();
-  site->_name = strdup(name_);
-  ZALLOCATED(site->_name);
+  site->_name = safe_strdup(name_);
   lib->_site_hash.insert(site);
   return (dbSite*) site;
 }

@@ -29,10 +29,6 @@ class dbMap
   std::map<T*, D>* _map;    // map used if set is not sequential
   std::vector<D>* _vector;  // vector used if set is sequential
 
-  // Map cannot be assigned or copied!
-  dbMap(const dbMap&) = delete;
-  dbMap& operator=(const dbMap&) = delete;
-
  public:
   ///
   /// Create a new map from the set. The data-objects are initialized
@@ -44,6 +40,10 @@ class dbMap
   /// Destructor.
   ///
   ~dbMap();
+
+  // Map cannot be assigned or copied!
+  dbMap(const dbMap&) = delete;
+  dbMap& operator=(const dbMap&) = delete;
 
   ///
   /// D & operator[T *] const

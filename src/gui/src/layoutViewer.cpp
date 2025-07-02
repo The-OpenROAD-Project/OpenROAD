@@ -35,6 +35,7 @@
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "highlightGroupDialog.h"
+#include "label.h"
 #include "mainWindow.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -87,6 +88,7 @@ LayoutViewer::LayoutViewer(
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
+    const std::vector<std::unique_ptr<Label>>& labels,
     const std::map<odb::dbModule*, ModuleSettings>& module_settings,
     const std::set<odb::dbNet*>& focus_nets,
     const std::set<odb::dbNet*>& route_guides,
@@ -103,6 +105,7 @@ LayoutViewer::LayoutViewer(
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
+      labels_(labels),
       scroller_(nullptr),
       pixels_per_dbu_(1.0),
       fit_pixels_per_dbu_(1.0),
@@ -961,6 +964,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
+  if (options_->areLabelsVisible() && options_->areLabelsSelectable()) {
+    for (auto& label : labels_) {
+      if (label->getOutline().intersects(region)) {
+        selections.push_back(gui_->makeSelected(label.get()));
+      }
+    }
+  }
+
   if (options_->areRegionsVisible() && options_->areRegionsSelectable()) {
     for (auto db_region : block_->getRegions()) {
       for (auto box : db_region->getBoundaries()) {
@@ -1792,6 +1803,28 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   const QRect draw_bounds = event->rect();
 
+  GuiPainter gui_painter(&painter,
+                         options_,
+                         screenToDBU(draw_bounds),
+                         pixels_per_dbu_,
+                         block_->getDbUnitsPerMicron());
+
+  // update label outlines
+  for (const auto& label : labels_) {
+    painter.save();
+    const auto size = label->getSize();
+    QFont font = options_->labelFont();
+    if (size) {
+      font.setPixelSize(size.value());
+    }
+    painter.setFont(font);
+    label->setOutline(gui_painter.stringBoundaries(label->getPt().x(),
+                                                   label->getPt().y(),
+                                                   label->getAnchor(),
+                                                   label->getText()));
+    painter.restore();
+  }
+
   if (viewer_thread_.isRendering()) {
     drawLoadingIndicator(&painter, draw_bounds);
   } else {
@@ -1813,12 +1846,6 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   painter.translate(centering_shift_);
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
-
-  GuiPainter gui_painter(&painter,
-                         options_,
-                         screenToDBU(draw_bounds),
-                         pixels_per_dbu_,
-                         block_->getDbUnitsPerMicron());
 
   if (animate_selection_ != nullptr) {
     auto brush = Painter::transparent;
@@ -1880,7 +1907,7 @@ void LayoutViewer::fullRepaint()
     rect.translate(scroller_->horizontalScrollBar()->value(),
                    scroller_->verticalScrollBar()->value());
     setLoadingState();
-    viewer_thread_.render(rect, selected_, highlighted_, rulers_);
+    viewer_thread_.render(rect, selected_, highlighted_, rulers_, labels_);
   }
 }
 
@@ -2013,25 +2040,13 @@ void LayoutViewer::viewportUpdated()
   fullRepaint();
 }
 
-void LayoutViewer::saveImage(const QString& filepath,
-                             const Rect& region,
-                             int width_px,
-                             double dbu_per_pixel)
+QImage LayoutViewer::createImage(const Rect& region,
+                                 int width_px,
+                                 double dbu_per_pixel)
 {
   if (!hasDesign()) {
-    return;
+    return QImage();
   }
-
-  QString save_filepath = filepath;
-  if (filepath.isEmpty()) {
-    save_filepath = Utils::requestImageSavePath(this, "Save layout");
-  }
-
-  if (save_filepath.isEmpty()) {
-    return;
-  }
-
-  save_filepath = Utils::fixImagePath(save_filepath, logger_);
 
   Rect save_area = region;
   if (region.dx() == 0 || region.dy() == 0) {
@@ -2100,9 +2115,34 @@ void LayoutViewer::saveImage(const QString& filepath,
                       selected_,
                       highlighted_,
                       rulers_,
+                      labels_,
                       render_ratio,
                       options_->background());
   pixels_per_dbu_ = old_pixels_per_dbu;
+
+  return img;
+}
+
+void LayoutViewer::saveImage(const QString& filepath,
+                             const Rect& region,
+                             int width_px,
+                             double dbu_per_pixel)
+{
+  if (!hasDesign()) {
+    return;
+  }
+
+  QString save_filepath = filepath;
+  if (filepath.isEmpty()) {
+    save_filepath = Utils::requestImageSavePath(this, "Save layout");
+  }
+
+  if (save_filepath.isEmpty()) {
+    return;
+  }
+  save_filepath = Utils::fixImagePath(save_filepath, logger_);
+
+  QImage img = createImage(region, width_px, dbu_per_pixel);
 
   if (!img.save(save_filepath)) {
     logger_->warn(
@@ -2179,6 +2219,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
+  menu_actions_[CLEAR_LABELS_ACT] = clear_menu->addAction(tr("Labels"));
   menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
   menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
   menu_actions_[CLEAR_NET_TRACKS_ACT] = clear_menu->addAction(tr("Net Tracks"));
@@ -2254,6 +2295,9 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
+  connect(menu_actions_[CLEAR_LABELS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearLabels();
+  });
   connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
@@ -2267,6 +2311,7 @@ void LayoutViewer::addMenuAndActions()
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
+    menu_actions_[CLEAR_LABELS_ACT]->trigger();
     menu_actions_[CLEAR_FOCUS_ACT]->trigger();
     menu_actions_[CLEAR_GUIDES_ACT]->trigger();
     menu_actions_[CLEAR_NET_TRACKS_ACT]->trigger();

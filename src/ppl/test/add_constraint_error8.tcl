@@ -5,6 +5,6 @@ read_def gcd.def
 
 set_io_pin_constraint -region top:80-100 -pin_names {*}
 
-catch {place_pins -hor_layers metal3 -ver_layers metal2} error
+catch { place_pins -hor_layers metal3 -ver_layers metal2 } error
 
 puts $error

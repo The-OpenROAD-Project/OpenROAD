@@ -772,6 +772,29 @@ _dbTechAntennaPinModel::_dbTechAntennaPinModel(_dbDatabase*,
   }
 }
 
+_dbTechAntennaPinModel::~_dbTechAntennaPinModel()
+{
+  for (auto elem : _gate_area) {
+    delete elem;
+  }
+  _gate_area.clear();
+
+  for (auto elem : _max_area_car) {
+    delete elem;
+  }
+  _max_area_car.clear();
+
+  for (auto elem : _max_sidearea_car) {
+    delete elem;
+  }
+  _max_sidearea_car.clear();
+
+  for (auto elem : _max_cut_car) {
+    delete elem;
+  }
+  _max_cut_car.clear();
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechAntennaPinModel& inmod)
 {
   stream << inmod._mterm;

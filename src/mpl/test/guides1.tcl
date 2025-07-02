@@ -1,5 +1,5 @@
 # Test if the guidance region is moving the macro
-# to the left side (without a guide, the macro ends 
+# to the left side (without a guide, the macro ends
 # up on the right side)
 source "helpers.tcl"
 

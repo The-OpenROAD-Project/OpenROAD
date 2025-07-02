@@ -3,16 +3,15 @@
 
 #pragma once
 
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbNetwork.hh"
+#include "rmp/unique_name.h"
 #include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
-#include "unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -22,7 +21,7 @@ class LogicCut
  public:
   LogicCut(std::vector<sta::Net*>& primary_inputs,
            std::vector<sta::Net*>& primary_outputs,
-           std::unordered_set<sta::Instance*>& cut_instances)
+           sta::InstanceSet& cut_instances)
       : primary_inputs_(std::move(primary_inputs)),
         primary_outputs_(std::move(primary_outputs)),
         cut_instances_(std::move(cut_instances))
@@ -38,10 +37,7 @@ class LogicCut
   {
     return primary_outputs_;
   }
-  const std::unordered_set<sta::Instance*>& cut_instances() const
-  {
-    return cut_instances_;
-  }
+  const sta::InstanceSet& cut_instances() const { return cut_instances_; }
 
   bool IsEmpty() const
   {
@@ -63,6 +59,6 @@ class LogicCut
  private:
   std::vector<sta::Net*> primary_inputs_;
   std::vector<sta::Net*> primary_outputs_;
-  std::unordered_set<sta::Instance*> cut_instances_;
+  sta::InstanceSet cut_instances_;
 };
 }  // namespace rmp

@@ -98,9 +98,10 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     // if (cnt == 1)
     //    out = "2.model";
     extRulesModel->ReadRCDB(_block, widthCnt, diagOption, out);
-    if (outFP == nullptr)
+    if (outFP == nullptr) {
       outFP = extRulesModel->InitWriteRules(
           out_file, corner_list, comment, binary, fileCnt);
+    }
 
     extRulesModel->writeRules(outFP, binary, cnt);  // always first model
     cnt++;
@@ -116,87 +117,91 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
   extMetRCTable* rcTable0 = getMetRCTable(0);  // orig call
 
   extMetRCTable* rcTable;
-  if (corner >= 0)
+  if (corner >= 0) {
     rcTable = getMetRCTable(corner);
-  else
+  } else {
     rcTable = getMetRCTable(m);
+  }
 
   uint layerCnt = getLayerCnt();
   uint diagModel = getDiagModel();
 
   fprintf(fp, "\nDensityModel %d\n", mIndex);
 
-  uint cnt = 0;
   for (uint ii = 1; ii < layerCnt; ii++) {
     if (writeRes) {
-      cnt += writeRulesPattern(0,
-                               ii,
-                               m,
-                               rcTable->_resOver[ii],
-                               rcTable->_resOver[0],
-                               "RESOVER",
-                               fp,
-                               binary);
+      writeRulesPattern(0,
+                        ii,
+                        m,
+                        rcTable->_resOver[ii],
+                        rcTable->_resOver[0],
+                        "RESOVER",
+                        fp,
+                        binary);
     }
-    cnt += writeRulesPattern(0,
-                             ii,
-                             m,
-                             rcTable->_capOver[ii],
-                             rcTable->_capOver[0],
-                             "OVER",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(0,
-                             ii,
-                             m,
-                             rcTable->_capOver_open[ii][0],
-                             rcTable->_capOver_open[0][0],
-                             "OVER0",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(0,
-                             ii,
-                             m,
-                             rcTable->_capOver_open[ii][1],
-                             rcTable->_capOver_open[0][1],
-                             "OVER1",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(1,
-                             ii,
-                             m,
-                             rcTable->_capUnder[ii],
-                             rcTable->_capUnder[0],
-                             "UNDER",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(1,
-                             ii,
-                             m,
-                             rcTable->_capUnder_open[ii][0],
-                             rcTable->_capUnder_open[0][0],
-                             "UNDER0",
-                             fp,
-                             binary);
-    cnt += writeRulesPattern(1,
-                             ii,
-                             m,
-                             rcTable->_capUnder_open[ii][1],
-                             rcTable->_capUnder_open[0][1],
-                             "UNDER1",
-                             fp,
-                             binary);
+    writeRulesPattern(0,
+                      ii,
+                      m,
+                      rcTable->_capOver[ii],
+                      rcTable->_capOver[0],
+                      "OVER",
+                      fp,
+                      binary);
+    writeRulesPattern(0,
+                      ii,
+                      m,
+                      rcTable->_capOver_open[ii][0],
+                      rcTable->_capOver_open[0][0],
+                      "OVER0",
+                      fp,
+                      binary);
+    writeRulesPattern(0,
+                      ii,
+                      m,
+                      rcTable->_capOver_open[ii][1],
+                      rcTable->_capOver_open[0][1],
+                      "OVER1",
+                      fp,
+                      binary);
+    writeRulesPattern(1,
+                      ii,
+                      m,
+                      rcTable->_capUnder[ii],
+                      rcTable->_capUnder[0],
+                      "UNDER",
+                      fp,
+                      binary);
+    writeRulesPattern(1,
+                      ii,
+                      m,
+                      rcTable->_capUnder_open[ii][0],
+                      rcTable->_capUnder_open[0][0],
+                      "UNDER0",
+                      fp,
+                      binary);
+    writeRulesPattern(1,
+                      ii,
+                      m,
+                      rcTable->_capUnder_open[ii][1],
+                      rcTable->_capUnder_open[0][1],
+                      "UNDER1",
+                      fp,
+                      binary);
 
     if (rcTable->_capDiagUnder[ii] != nullptr) {
-      if (diagModel == 1)
-        cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
-      if (diagModel == 2)
-        cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
+      if (diagModel == 1) {
+        rcTable->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
+      }
+      if (diagModel == 2) {
+        rcTable->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
+      }
     } else if ((m > 0) && (rcTable0->_capDiagUnder[ii] != nullptr)) {
-      if (diagModel == 1)
-        cnt += rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
-      if (diagModel == 2)
-        cnt += rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
+      if (diagModel == 1) {
+        rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
+      }
+      if (diagModel == 2) {
+        rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
+      }
     } else if (m == 0) {
       // TODO logger_->info( RCX, 220, "Cannot write <DIAGUNDER> rules for
       // <DensityModel> {} and layer {}", m, ii);
@@ -207,30 +212,30 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
           ii);
     }
     if ((ii > 1) && (ii < layerCnt - 1)) {
-      cnt += writeRulesPattern(2,
-                               ii,
-                               m,
-                               rcTable->_capOverUnder[ii],
-                               rcTable->_capOverUnder[0],
-                               "OVERUNDER",
-                               fp,
-                               binary);
-      cnt += writeRulesPattern(2,
-                               ii,
-                               m,
-                               rcTable->_capOverUnder_open[ii][0],
-                               rcTable->_capOverUnder_open[0][0],
-                               "OVERUNDER0",
-                               fp,
-                               binary);
-      cnt += writeRulesPattern(2,
-                               ii,
-                               m,
-                               rcTable->_capOverUnder_open[ii][1],
-                               rcTable->_capOverUnder_open[0][1],
-                               "OVERUNDER1",
-                               fp,
-                               binary);
+      writeRulesPattern(2,
+                        ii,
+                        m,
+                        rcTable->_capOverUnder[ii],
+                        rcTable->_capOverUnder[0],
+                        "OVERUNDER",
+                        fp,
+                        binary);
+      writeRulesPattern(2,
+                        ii,
+                        m,
+                        rcTable->_capOverUnder_open[ii][0],
+                        rcTable->_capOverUnder_open[0][0],
+                        "OVERUNDER0",
+                        fp,
+                        binary);
+      writeRulesPattern(2,
+                        ii,
+                        m,
+                        rcTable->_capOverUnder_open[ii][1],
+                        rcTable->_capOverUnder_open[0][1],
+                        "OVERUNDER1",
+                        fp,
+                        binary);
     }
   }
   rcTable->writeViaRes(fp);
@@ -247,11 +252,11 @@ uint extRCModel::writeRulesPattern(uint ou,
 {
   uint cnt = 0;
   extDistWidthRCTable* table = nullptr;
-  if (table_m != nullptr)
+  if (table_m != nullptr) {
     table = table_m;
-  else if ((modelIndex > 0) && (table_0 != nullptr))
+  } else if ((modelIndex > 0) && (table_0 != nullptr)) {
     table = table_0;
-  else if (modelIndex == 0) {
+  } else if (modelIndex == 0) {
     fprintf(stdout,
             "Cannot write %s rules for <DensityModel> %d and layer %d\n",
             patternKeyword,
@@ -261,12 +266,13 @@ uint extRCModel::writeRulesPattern(uint ou,
     // {} and layer {}", patternKeyword, modelIndex, layer);
     return 0;
   }
-  if (ou == 0)
+  if (ou == 0) {
     cnt = table->writeRulesOver(fp, patternKeyword, binary);
-  else if (ou == 1)
+  } else if (ou == 1) {
     cnt = table->writeRulesUnder(fp, patternKeyword, binary);
-  else if (ou == 2)
+  } else if (ou == 2) {
     cnt = table->writeRulesOverUnder(fp, patternKeyword, binary);
+  }
 
   return cnt;
 }
@@ -445,16 +451,18 @@ FILE* extModelGen::InitWriteRules(const char* name,
   fprintf(fp, "Extraction Rules for rcx\n\n");
   fprintf(fp, "Version 1.2\n\n");
   if (diag || diagModel > 0) {
-    if (diagModel == 1)
+    if (diagModel == 1) {
       fprintf(fp, "DIAGMODEL ON\n\n");
-    else if (diagModel == 2)
+    } else if (diagModel == 2) {
       fprintf(fp, "DIAGMODEL TRUE\n\n");
+    }
   }
   fprintf(fp, "LayerCount %d\n", layerCnt - 1);
 
   fprintf(fp, "\nDensityRate %d ", modelCnt);
-  for (uint kk = 0; kk < modelCnt; kk++)
+  for (uint kk = 0; kk < modelCnt; kk++) {
     fprintf(fp, " %d", kk);
+  }
   fprintf(fp, "\n");
 
   fprintf(fp, "\nCorners %ld : ", corner_list.size());
@@ -465,8 +473,9 @@ FILE* extModelGen::InitWriteRules(const char* name,
   }
   fprintf(fp, "\n");
 
-  if (comment != nullptr && strlen(comment) > 0)
+  if (comment != nullptr && strlen(comment) > 0) {
     fprintf(fp, "\nCOMMENT : %s \n\n", comment);
+  }
 
   return fp;
 }
@@ -518,31 +527,36 @@ uint extModelGen::ReadRCDB(dbBlock* block,
     // Read Via patterns - dkf 12262023
     // via pattern: V2.W2.M5.M6.DX520.DY1320.C2.V56_1x2_VH_S
     if (p->getFirstChar() == 'V') {
-      if (!rcModel->GetViaRes(p, w, net, logFP))
+      if (!rcModel->GetViaRes(p, w, net, logFP)) {
         break;
+      }
       continue;
     }
-    if (wcnt < 5)
+    if (wcnt < 5) {
       continue;
+    }
 
     // dkf 12302023 -- NOTE Original Patterns start with: O6_ U6_ OU6_ DU6_ R6_
     // example:
 
-    if (rcModel->SkipPattern(p, net, logFP))
+    if (rcModel->SkipPattern(p, net, logFP)) {
       continue;
+    }
 
     int targetWire = 0;
     if (p->getFirstChar() == 'U') {
       targetWire = p->getInt(0, 1);
     } else {
       char* w1 = p->get(0);
-      if (w1[1] == 'U')  // OU
+      if (w1[1] == 'U') {  // OU
         targetWire = p->getInt(0, 2);
-      else
+      } else {
         targetWire = p->getInt(0, 1);
+      }
     }
-    if (targetWire <= 0)
+    if (targetWire <= 0) {
       continue;
+    }
 
     uint wireNum = p->getInt(wcnt - 1);
     // if (wireNum != targetWire / 2)
@@ -565,8 +579,9 @@ uint extModelGen::ReadRCDB(dbBlock* block,
 
     char* overUnderToken = strdup(p->get(1));  // M2oM1uM3
     int wCnt = w->mkWords(overUnderToken, "ou");
-    if (wCnt < 2)
+    if (wCnt < 2) {
       continue;
+    }
 
     if (wCnt == 3) {  // M2oM1uM3
       met = w->getInt(0, 1);
@@ -609,16 +624,18 @@ uint extModelGen::ReadRCDB(dbBlock* block,
     // TODO DIAGUNDER
     m._met = met;
 
-    if (w->mkWords(p->get(2), "W") <= 0)
+    if (w->mkWords(p->get(2), "W") <= 0) {
       continue;
+    }
 
     double w1 = w->getDouble(0) / 1000;
 
     m._w_m = w1;
     m._w_nm = ceil(m._w_m * 1000);
 
-    if (w->mkWords(p->get(3), "S") <= 0)
+    if (w->mkWords(p->get(3), "S") <= 0) {
       continue;
+    }
 
     double s1 = w->getDouble(0) / 1000;
     double s2 = w->getDouble(1) / 1000;
@@ -641,8 +658,9 @@ uint extModelGen::ReadRCDB(dbBlock* block,
     double cc = totCC / wLen / 2;
     double gnd = totGnd / wLen / 2;
     double R = res / wLen / 2;
-    if (ResModel)
+    if (ResModel) {
       R *= 2;
+    }
 
     if (ResModel) {
       fprintf(
@@ -676,18 +694,20 @@ uint extModelGen::ReadRCDB(dbBlock* block,
           wLen,
           netName);
     }
-    if (strstr(netName, "cntxM") != nullptr)
+    if (strstr(netName, "cntxM") != nullptr) {
       continue;
+    }
 
     extDistRC* rc = rcPool->alloc();
     if (ResModel) {
       rc->set(m._s_nm, m._s2_m, 0.0, 0.0, R);
     } else {
-      if (diag)
+      if (diag) {
         rc->set(m._s_nm, 0.0, cc, cc, R);
-      else {
-        if (m._s_nm == 0)
+      } else {
+        if (m._s_nm == 0) {
           m._s_nm = prev_sep + prev_width;
+        }
         rc->set(m._s_nm, cc, gnd, 0.0, R);
       }
     }
@@ -695,15 +715,18 @@ uint extModelGen::ReadRCDB(dbBlock* block,
     m._open = false;
     m._over1 = false;
     if (wireNum == openWireNumber) {  // default openWireNumber=1
-      if (ResModel || m._diag)
+      if (ResModel || m._diag) {
         continue;
+      }
       m._open = true;
     } else if (wireNum == wireNum2) {
-      if (ResModel || m._diag)
+      if (ResModel || m._diag) {
         continue;
+      }
       m._over1 = true;
-    } else if (wireNum != 3)
+    } else if (wireNum != 3) {
       continue;
+    }
 
     /* TODO
   if (ResModel) {
@@ -774,20 +797,23 @@ std::list<std::string> extModelGen::GetCornerNames(const char* filename,
   while (parser.parseNextLine() > 0) {
     if (parser.isKeyword(0, "Version")) {
       version = parser.getDouble(1);
-      if (dbg)
+      if (dbg) {
         fprintf(stdout, "Version %g\n", version);
+      }
       continue;
     }
     if (parser.isKeyword(0, "Corners")) {
-      if (dbg)
+      if (dbg) {
         parser.printWords(stdout);
+      }
 
       int cnt = parser.getInt(1);
       for (int ii = 0; ii < cnt; ii++) {
         std::string str(parser.get(ii + 3));
         corner_list.push_back(str);
-        if (dbg)
+        if (dbg) {
           fprintf(stdout, "corner %d %s\n", ii, str.c_str());
+        }
       }
       break;
     }

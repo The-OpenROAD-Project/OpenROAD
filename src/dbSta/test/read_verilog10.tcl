@@ -1,4 +1,4 @@
-# 
+#
 source "helpers.tcl"
 read_lef liberty1.lef
 read_liberty liberty1.lib
@@ -9,25 +9,23 @@ set block [ord::get_db_block]
 set top [$block getTopModule]
 puts [$top getName]
 foreach i [$top getChildren] {
-    set master [$i getMaster]
-    puts "[$i getName] [$master getName]"
-    foreach ii [$master getInsts] {
-        puts "[$ii getName] [[$ii getMaster] getName]"
-    }
+  set master [$i getMaster]
+  puts "[$i getName] [$master getName]"
+  foreach ii [$master getInsts] {
+    puts "[$ii getName] [[$ii getMaster] getName]"
+  }
 }
 
 # Verify that the prop exists on the block
 set found_prop 0
 set block [ord::get_db_block]
 foreach prop [odb::dbProperty_getProperties $block] {
-    if {[string first [$prop getName] "src_file_"]} {
-        set found_prop $prop
-    }
+  if { [string first [$prop getName] "src_file_"] } {
+    set found_prop $prop
+  }
 }
-if {$found_prop != 0} {
-    puts [format "Found filename prop %s on block" [$prop getName]]
+if { $found_prop != 0 } {
+  puts [format "Found filename prop %s on block" [$prop getName]]
 } else {
-    error "Didn't find filename prop on block"
+  error "Didn't find filename prop on block"
 }
-    
-

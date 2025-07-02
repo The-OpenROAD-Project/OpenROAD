@@ -109,9 +109,19 @@ extMain::extMain()
 }
 extMain::~extMain()
 {
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
+
   delete _modelTable;
+  delete _btermTable;
+  delete _itermTable;
+  delete _nodeTable;
+  delete[] _tmpResTable;
+  delete[] _tmpSumResTable;
   removeDgContextArray();
   removeContextArray();
+  cleanCornerTables();
 }
 
 void extMain::initDgContextArray()
@@ -139,7 +149,7 @@ void extMain::initDgContextArray()
 
 void extMain::removeDgContextArray()
 {
-  if (!_dgContextPlanes || !_dgContextArray) {
+  if (!_dgContextArray) {
     return;
   }
   delete[] _dgContextBaseTrack;
@@ -178,11 +188,11 @@ void extMain::initContextArray()
 
 void extMain::removeContextArray()
 {
-  if (!_ccContextPlanes || !_ccContextArray) {
+  if (!_ccContextArray) {
     return;
   }
 
-  for (uint i = 0; i < _ccContextPlanes; i++) {
+  for (uint i = 0; i <= _ccContextPlanes; i++) {
     delete _ccContextArray[i];
     delete _ccMergedContextArray[i];
   }

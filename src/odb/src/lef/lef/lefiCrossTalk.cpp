@@ -82,12 +82,14 @@ void lefiNoiseVictim::addVictimNoise(double d)
     if (noisesAllocated_ == 0) {
       max = noisesAllocated_ = 2;
       numNoises_ = 0;
-    } else
+    } else {
       max = noisesAllocated_ = numNoises_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = noises_[i];
+    }
     lefFree(noises_);
     noises_ = ne;
   }
@@ -167,12 +169,14 @@ void lefiNoiseResistance::addResistanceNumber(double d)
     if (numsAllocated_ == 0) {
       max = numsAllocated_ = 2;
       numNums_ = 0;
-    } else
+    } else {
       max = numsAllocated_ = numNums_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = nums_[i];
+    }
     lefFree(nums_);
     nums_ = ne;
   }
@@ -197,13 +201,15 @@ void lefiNoiseResistance::addVictimLength(double d)
     if (victimsAllocated_ == 0) {
       max = victimsAllocated_ = 2;
       numVictims_ = 0;
-    } else
+    } else {
       max = victimsAllocated_ = numVictims_ * 2;
+    }
 
     ne = (lefiNoiseVictim**) lefMalloc(sizeof(lefiNoiseVictim*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = victims_[i];
+    }
     lefFree(victims_);
     victims_ = ne;
   }
@@ -301,12 +307,14 @@ void lefiNoiseEdge::addResistance()
     if (resistancesAllocated_ == 0) {
       max = resistancesAllocated_ = 2;
       numResistances_ = 0;
-    } else
+    } else {
       max = resistancesAllocated_ = numResistances_ * 2;
+    }
     ne = (lefiNoiseResistance**) lefMalloc(sizeof(lefiNoiseResistance*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = resistances_[i];
+    }
     lefFree(resistances_);
     resistances_ = ne;
   }
@@ -401,12 +409,14 @@ void lefiNoiseTable::newEdge()
     if (edgesAllocated_ == 0) {
       max = edgesAllocated_ = 2;
       numEdges_ = 0;
-    } else
+    } else {
       max = edgesAllocated_ = numEdges_ * 2;
+    }
     ne = (lefiNoiseEdge**) lefMalloc(sizeof(lefiNoiseEdge*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = edges_[i];
+    }
     lefFree(edges_);
     edges_ = ne;
   }
@@ -505,12 +515,14 @@ void lefiCorrectionVictim::addVictimCorrection(double d)
     if (correctionsAllocated_ == 0) {
       max = correctionsAllocated_ = 2;
       numCorrections_ = 0;
-    } else
+    } else {
       max = correctionsAllocated_ = numCorrections_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = corrections_[i];
+    }
     lefFree(corrections_);
     corrections_ = ne;
   }
@@ -591,12 +603,14 @@ void lefiCorrectionResistance::addResistanceNumber(double d)
     if (numsAllocated_) {
       max = numsAllocated_ = 2;
       numNums_ = 0;
-    } else
+    } else {
       max = numsAllocated_ = numNums_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = nums_[i];
+    }
     lefFree(nums_);
     nums_ = ne;
   }
@@ -621,13 +635,15 @@ void lefiCorrectionResistance::addVictimLength(double d)
     if (victimsAllocated_ == 0) {
       max = victimsAllocated_ = 2;
       numVictims_ = 0;
-    } else
+    } else {
       max = victimsAllocated_ = numVictims_ * 2;
+    }
     ne = (lefiCorrectionVictim**) lefMalloc(sizeof(lefiCorrectionVictim*)
                                             * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = victims_[i];
+    }
     lefFree(victims_);
     victims_ = ne;
   }
@@ -725,13 +741,15 @@ void lefiCorrectionEdge::addResistance()
     if (resistancesAllocated_ == 0) {
       max = resistancesAllocated_ = 2;
       numResistances_ = 0;
-    } else
+    } else {
       max = resistancesAllocated_ = numResistances_ * 2;
+    }
     ne = (lefiCorrectionResistance**) lefMalloc(
         sizeof(lefiCorrectionResistance*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = resistances_[i];
+    }
     lefFree(resistances_);
     resistances_ = ne;
   }
@@ -826,12 +844,14 @@ void lefiCorrectionTable::newEdge()
     if (edgesAllocated_ == 0) {
       max = edgesAllocated_ = 2;
       numEdges_ = 0;
-    } else
+    } else {
       max = edgesAllocated_ = numEdges_ * 2;
+    }
     ne = (lefiCorrectionEdge**) lefMalloc(sizeof(lefiCorrectionEdge*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = edges_[i];
+    }
     lefFree(edges_);
     edges_ = ne;
   }

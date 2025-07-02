@@ -37,7 +37,7 @@ class frTerm : public frBlockObject
   }
   // fills outShapes with copies of the pinFigs
   virtual void getShapes(std::vector<frRect>& outShapes) const = 0;
-  const Rect getBBox() const { return bbox_; }
+  Rect getBBox() const { return bbox_; }
 
  protected:
   // constructors

@@ -303,27 +303,52 @@ int64_t WireLengthEvaluator::hpwl() const
 {
   int64_t hpwl_sum = 0;
   for (dbNet* net : block_->getNets()) {
-    hpwl_sum += hpwl(net);
+    int64_t net_hpwl_x, net_hpwl_y;
+    hpwl_sum += hpwl(net, net_hpwl_x, net_hpwl_y);
   }
   return hpwl_sum;
 }
 
-int64_t WireLengthEvaluator::hpwl(dbNet* net) const
+int64_t WireLengthEvaluator::hpwl(int64_t& hpwl_x, int64_t& hpwl_y) const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    int64_t net_hpwl_x = 0;
+    int64_t net_hpwl_y = 0;
+    hpwl_sum += hpwl(net, net_hpwl_x, net_hpwl_y);
+    hpwl_x += net_hpwl_x;
+    hpwl_y += net_hpwl_y;
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(dbNet* net,
+                                  int64_t& hpwl_x,
+                                  int64_t& hpwl_y) const
 {
   if (net->getSigType().isSupply() || net->isSpecial()) {
     return 0;
   }
 
   Rect bbox = net->getTermBBox();
-  return bbox.dx() + bbox.dy();
+  hpwl_x = bbox.dx();
+  hpwl_y = bbox.dy();
+  return hpwl_x + hpwl_y;
 }
 
-void WireLengthEvaluator::report(utl::Logger* logger) const
+void WireLengthEvaluator::reportEachNetHpwl(utl::Logger* logger) const
 {
   for (dbNet* net : block_->getNets()) {
-    logger->report(
-        "{} {}", net->getConstName(), block_->dbuToMicrons(hpwl(net)));
+    int64_t tmp;
+    logger->report("{} {}",
+                   net->getConstName(),
+                   block_->dbuToMicrons(hpwl(net, tmp, tmp)));
   }
+}
+
+void WireLengthEvaluator::reportHpwl(utl::Logger* logger) const
+{
+  logger->report("{}", block_->dbuToMicrons(hpwl()));
 }
 
 }  // namespace odb

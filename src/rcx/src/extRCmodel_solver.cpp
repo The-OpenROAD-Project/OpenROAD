@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "grids.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
@@ -52,8 +52,9 @@ uint extRCModel::defineCorners(std::list<std::string>& corners)
   uint cnt = 0;
   clear_corners();
   for (const auto& w : corners) {
-    if (addCorner(w, cnt))
+    if (addCorner(w, cnt)) {
       cnt++;
+    }
   }
   return cnt;
 }
@@ -91,8 +92,8 @@ int extSolverGen::getLastCharInt(const char* name)
     int n = atoi(word);
 
     return n;
-  } else
-    return -1;
+  }
+  return -1;
 }
 bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
                                            extMeasure& m,
@@ -111,14 +112,12 @@ bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
   const char* pattern = p.get(n2 - 5);
   pattern_num = extSolverGen::getLastCharInt(pattern);
 
-  if (pattern_num < 0)
+  if (pattern_num < 0) {
     return false;  // old files; should NOT happen
+  }
 
   if (m._res) {
-    if (wire_num != 0)  // for Resistance, wire is 0
-      return false;
-    else
-      return true;
+    return wire_num == 0;  // for Resistance, wire is 0
   }
 
   // for OpenEnded patterns: Over1, Under1, etc, wire is 1
@@ -131,15 +130,18 @@ bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
              || (pattern_num > 2 && pattern_num < 6 && wire_num == 1
                  && input_target_wire == 1);  // OpenEnded on one  side
 
-  if (m._open || m._over1)
+  if (m._open || m._over1) {
     return true;
+  }
 
   // for fully coupled patterns: Over3, Under3, wire is 2
   // for fully coupled patterns: Over5, Under5, wire is 3
-  if (pattern_num == 3 && wire_num == 2)
+  if (pattern_num == 3 && wire_num == 2) {
     return true;
-  if (pattern_num == 5 && wire_num == 3)
+  }
+  if (pattern_num == 5 && wire_num == 3) {
     return true;
+  }
 
   return false;
 }
@@ -193,6 +195,7 @@ uint extRCModel::readRCvalues(const char* corner,
           corner,
           filename);
 
+  free(_ruleFileName);
   _ruleFileName = strdup(filename);
   Ath__parser p(logger_);
   Ath__parser parser(logger_);
@@ -227,8 +230,9 @@ uint extRCModel::readRCvalues(const char* corner,
     }
 
     double totCC = parser.getDouble(13);
-    if (m._open)
+    if (m._open) {
       totCC = 0;
+    }
     double totGnd = parser.getDouble(15);
     double contextCoupling = parser.getDouble(19);
     if (m._open && contextCoupling > 0) {
@@ -240,8 +244,9 @@ uint extRCModel::readRCvalues(const char* corner,
     double gnd = totGnd / wLen / 2;
     double res = !m._res ? 0.0 : parser.getDouble(21);
     double R = res / wLen / 2;
-    if (m._res)
+    if (m._res) {
       R *= 2;
+    }
 
     if (m._res) {
       fprintf(
@@ -278,11 +283,11 @@ uint extRCModel::readRCvalues(const char* corner,
     //  continue;
 
     extDistRC* rc = rcPool->alloc();
-    if (m._res)
+    if (m._res) {
       rc->set(m._s_nm, m._s2_m, 0.0, 0.0, R);
-    else if (m._diag)
+    } else if (m._diag) {
       rc->set(m._s_nm, 0.0, cc, cc, R);
-    else {
+    } else {
       // if (m._s_nm == 0)
       //  m._s_nm = prev_sep + prev_width;
       rc->set(m._s_nm, cc, gnd, 0.0, R);
@@ -358,8 +363,9 @@ double extRCModel::parseWidthDistLen(Ath__parser& parser, extMeasure& m)
   m._w_nm = ceil(m._w_m * 1000);
 
   double s1 = parser.getDouble(7);
-  if (m._open)
+  if (m._open) {
     s1 = 0;
+  }
   double s2 = s1;
 
   m._s_m = s1;
@@ -378,11 +384,12 @@ void extMetRCTable::allocOverUnderTable(uint met,
                                         Ath__array1D<double>* wTable,
                                         double dbFactor)
 {
-  if (met < 2)
+  if (met < 2) {
     return;
+  }
 
   int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
-  if (!open)
+  if (!open) {
     _capOverUnder[met] = new extDistWidthRCTable(false,
                                                  met,
                                                  _layerCnt,
@@ -391,8 +398,8 @@ void extMetRCTable::allocOverUnderTable(uint met,
                                                  _rcPoolPtr,
                                                  _OUREVERSEORDER,
                                                  dbFactor);
-  else {
-    for (uint ii = 0; ii < _wireCnt; ii++)
+  } else {
+    for (uint ii = 0; ii < _wireCnt; ii++) {
       _capOverUnder_open[met][ii] = new extDistWidthRCTable(false,
                                                             met,
                                                             _layerCnt,
@@ -401,6 +408,7 @@ void extMetRCTable::allocOverUnderTable(uint met,
                                                             _rcPoolPtr,
                                                             _OUREVERSEORDER,
                                                             dbFactor);
+    }
   }
 }
 void extMetRCTable::allocOverTable(uint met,
@@ -411,7 +419,7 @@ void extMetRCTable::allocOverTable(uint met,
       true, met, _layerCnt, met, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
   _resOver[met] = new extDistWidthRCTable(
       true, met, _layerCnt, met, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
-  for (uint ii = 0; ii < _wireCnt; ii++)
+  for (uint ii = 0; ii < _wireCnt; ii++) {
     _capOver_open[met][ii] = new extDistWidthRCTable(true,
                                                      met,
                                                      _layerCnt,
@@ -420,6 +428,7 @@ void extMetRCTable::allocOverTable(uint met,
                                                      _rcPoolPtr,
                                                      _OUREVERSEORDER,
                                                      dbFactor);
+  }
 }
 void extMetRCTable::allocUnderTable(uint met,
                                     bool open,
@@ -436,7 +445,7 @@ void extMetRCTable::allocUnderTable(uint met,
                                              _OUREVERSEORDER,
                                              dbFactor);
   } else {
-    for (uint ii = 0; ii < _wireCnt; ii++)
+    for (uint ii = 0; ii < _wireCnt; ii++) {
       _capUnder_open[met][ii] = new extDistWidthRCTable(false,
                                                         met,
                                                         _layerCnt,
@@ -445,6 +454,7 @@ void extMetRCTable::allocUnderTable(uint met,
                                                         _rcPoolPtr,
                                                         _OUREVERSEORDER,
                                                         dbFactor);
+    }
   }
 }
 uint extRCModel::allocateTables(uint m, uint met, uint diagModel)
@@ -471,15 +481,14 @@ extDistWidthRCTable*** extMetRCTable::allocTable()
 {
   extDistWidthRCTable*** table = new extDistWidthRCTable**[_layerCnt];
   if (table == nullptr) {
-    fprintf(stderr,
-            "Cannot allocate memory for oblject: extDistWidthRCTable\n");
+    fprintf(stderr, "Cannot allocate memory for object: extDistWidthRCTable\n");
     exit(0);
   }
   for (uint ii = 0; ii < _layerCnt; ii++) {
     table[ii] = new extDistWidthRCTable*[_wireCnt];
     if (table[ii] == nullptr) {
       fprintf(stderr,
-              "Cannot allocate memory for oblject: extDistWidthRCTable\n");
+              "Cannot allocate memory for object: extDistWidthRCTable\n");
       exit(0);
     }
     for (uint jj = 0; jj < _wireCnt; jj++) {
@@ -490,16 +499,19 @@ extDistWidthRCTable*** extMetRCTable::allocTable()
 }
 void extMetRCTable::deleteTable(extDistWidthRCTable*** table)
 {
-  if (table == nullptr)
+  if (table == nullptr) {
     return;
+  }
 
   for (uint ii = 0; ii < _layerCnt; ii++) {
-    if (table[ii] == nullptr)
+    if (table[ii] == nullptr) {
       continue;
+    }
 
     for (uint jj = 0; jj < _wireCnt; jj++) {
-      if (table[ii][jj] != nullptr)
+      if (table[ii][jj] != nullptr) {
         delete table[ii][jj];
+      }
     }
     delete table[ii];
   }

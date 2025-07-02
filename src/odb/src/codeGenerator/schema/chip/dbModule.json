@@ -1,7 +1,6 @@
 {
     "name":"dbModule",
-    "type":"dbObject",
-    "needs_non_default_destructor" : "true",    
+    "needs_non_default_destructor" : "true",
     "fields":[
 	{
 	    "name":"_name",
@@ -34,17 +33,17 @@
 	    "name":"_modnets",
 	    "type":"dbId<_dbModNet>",
 	    "flags":["no-set","no-get"],
-	    "schema":"db_schema_update_hierarchy",	    	    
+	    "schema":"db_schema_update_hierarchy",	    	
 	    "parent":"dbBlock"
 	},
 	{
 	    "name":"_modbterms",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["no-set","no-get"],            
-	    "schema":"db_schema_update_hierarchy"	    	    	    
+	    "flags":["no-set","no-get"],
+	    "schema":"db_schema_update_hierarchy"	    	    	
 	}
     ],
-    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h","dbJournal.h"],
+    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h","dbJournal.h", "dbCommon.h"],
     "h_includes": [
 	"dbVector.h",
 	"odb/dbSet.h"
