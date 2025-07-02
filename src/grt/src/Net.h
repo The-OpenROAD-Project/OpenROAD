@@ -19,7 +19,7 @@ class Net
  public:
   Net(odb::dbNet* net, bool has_wires);
   odb::dbNet* getDbNet() const { return net_; }
-  const std::string getName() const;
+  std::string getName() const;
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);

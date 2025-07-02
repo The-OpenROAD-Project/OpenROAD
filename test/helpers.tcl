@@ -1,6 +1,6 @@
 # Helper functions common to multiple regressions.
 
-if {[info exists ::env(TEST_TMPDIR)]} {
+if { [info exists ::env(TEST_TMPDIR)] } {
   set test_dir $::env(TEST_TMPDIR)
 } else {
   set test_dir [file dirname [file normalize [info script]]]
@@ -28,9 +28,9 @@ proc report_file { file } {
   close $stream
 }
 
-#===========================================================================================
+#==============================================================================
 # Routines to run equivalence tests when they are enabled.
-proc write_verilog_for_eqy {test stage remove_cells} {
+proc write_verilog_for_eqy { test stage remove_cells } {
   set netlist [make_result_file "${test}_$stage.v"]
   if { [string equal $remove_cells "None"] } {
     write_verilog $netlist
@@ -39,7 +39,7 @@ proc write_verilog_for_eqy {test stage remove_cells} {
   }
 }
 
-proc run_equivalence_test {test lib remove_cells} {
+proc run_equivalence_test { test lib remove_cells } {
   write_verilog_for_eqy $test after $remove_cells
   # eqy config file for test
   set test_script [make_result_file "${test}.eqy"]
@@ -65,12 +65,15 @@ proc run_equivalence_test {test lib remove_cells} {
   puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
   close $outfile
 
-  if {[info exists ::env(EQUIVALENCE_CHECK)]} {
+  if { [info exists ::env(EQUIVALENCE_CHECK)] } {
     exec rm -rf $run_dir
     catch { exec eqy -d $run_dir $test_script > /dev/null }
     set count 0
     catch {
-      set count [exec grep -c "Successfully proved designs equivalent" $run_dir/logfile.txt]
+      set count [
+        exec grep -c "Successfully proved designs equivalent"
+        $run_dir/logfile.txt
+      ]
     }
     if { $count == 0 } {
       puts "Repair timing output failed equivalence test"
@@ -81,9 +84,9 @@ proc run_equivalence_test {test lib remove_cells} {
     puts "Repair timing output passed/skipped equivalence test"
   }
 }
-#===========================================================================================
+#==============================================================================
 
-proc diff_files { file1 file2 {ignore ""}} {
+proc diff_files { file1 file2 { ignore "" } } {
   set stream1 [open $file1 r]
   set stream2 [open $file2 r]
 
@@ -93,7 +96,7 @@ proc diff_files { file1 file2 {ignore ""}} {
   set line1_length [gets $stream1 line1]
   set line2_length [gets $stream2 line2]
   while { $line1_length >= 0 && $line2_length >= 0 } {
-    if {$ignore ne ""} {
+    if { $ignore ne "" } {
       set skip [regexp $ignore $line1 || regexp $ignore $line2]
     }
     if { !$skip && $line1 != $line2 } {
@@ -106,7 +109,7 @@ proc diff_files { file1 file2 {ignore ""}} {
   }
   close $stream1
   close $stream2
-  if { $found_diff || $line1_length != $line2_length} {
+  if { $found_diff || $line1_length != $line2_length } {
     puts "Differences found at line $line."
     puts "$line1"
     puts "$line2"
@@ -149,9 +152,9 @@ proc run_unit_test_and_exit { relative_path } {
 }
 
 # Note: required e.g. in CentOS 7 environment.
-if {[package vcompare [package present Tcl] 8.6] == -1} {
+if { [package vcompare [package present Tcl] 8.6] == -1 } {
   # tclint-disable-next-line redefined-builtin
-  proc lmap {args} {
+  proc lmap { args } {
     set result {}
     set var [lindex $args 0]
     foreach item [lindex $args 1] {
@@ -165,11 +168,11 @@ if {[package vcompare [package present Tcl] 8.6] == -1} {
 set ::failing_checks 0
 set ::passing_checks 0
 
-proc check {description test expected_value} {
-  if {[catch {set return_value [uplevel 1 $test]} msg]} {
+proc check { description test expected_value } {
+  if { [catch { set return_value [uplevel 1 $test] } msg] } {
     incr ::failing_checks
     error "FAIL: $description: Command \{$test\}\n$msg"
-  } elseif {$return_value != $expected_value} {
+  } elseif { $return_value != $expected_value } {
     incr ::failing_checks
     error "FAIL: $description: Expected $expected_value, got $return_value"
   } else {
@@ -177,13 +180,13 @@ proc check {description test expected_value} {
   }
 }
 
-proc exit_summary {} {
-  set total_checks [expr $::passing_checks + $::failing_checks]
-  if {$total_checks > 0} {
-    set pass_per [expr round(100.0 * $::passing_checks / $total_checks)]
+proc exit_summary { } {
+  set total_checks [expr { $::passing_checks + $::failing_checks }]
+  if { $total_checks > 0 } {
+    set pass_per [expr { round(100.0 * $::passing_checks / $total_checks) }]
     puts "Summary $::passing_checks / $total_checks (${pass_per}% pass)"
 
-    if {$total_checks == $::passing_checks} {
+    if { $total_checks == $::passing_checks } {
       puts "pass"
     }
   } else {

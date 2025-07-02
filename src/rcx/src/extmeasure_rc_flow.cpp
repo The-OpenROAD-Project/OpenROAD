@@ -21,8 +21,9 @@ using namespace odb;
 
 bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
 {
-  if (!measure_init(s))  // power net/via
+  if (!measure_init(s)) {  // power net/via
     return false;
+  }
 
   // Resistance -------------------------------------------------
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
@@ -47,9 +48,9 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
     dbRSeg* rseg2 = dbRSeg::getRSeg(_block, _rsegTgtId);
 
     dbRSeg* rseg1 = nullptr;
-    if (s->_down->isPower())
+    if (s->_down->isPower()) {
       _rsegSrcId = -1;
-    else {
+    } else {
       _rsegSrcId = s->_down->getRsegId();
       rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
     }
@@ -71,12 +72,13 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
 
     _netTgtId = s->_up->getNet()->getId();
     dbRSeg* rseg2 = nullptr;
-    if (s->_up->isPower())
+    if (s->_up->isPower()) {
       _rsegTgtId = -1;
-    else {
+    } else {
       _rsegTgtId = s->_up->getRsegId();
-      if (_rsegTgtId > 0)
+      if (_rsegTgtId > 0) {
         rseg2 = dbRSeg::getRSeg(_block, _rsegTgtId);
+      }
     }
     computeAndStoreRC_new(rseg1, rseg2, 0);
   } else if (s->_down != nullptr) {
@@ -120,8 +122,9 @@ bool extMeasureRC::measure_init(extSegment* s)
     _netTgtId = s->_up->getNet()->getId();
     _rsegTgtId = s->_up->getRsegId();
   }
-  if (_rsegSrcId <= 0)  // cannot happen
+  if (_rsegSrcId <= 0) {  // cannot happen
     return false;
+  }
 
   _diagResDist = -1;
   _diagResLen = 0;
@@ -174,16 +177,18 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
     DebugStart_res(_debugFP);
     DebugStart_res(stdout);
   }
-  if (rsegId == 0)
+  if (rsegId == 0) {
     return false;
+  }
 
   _rsegSrcId = rsegId;
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
 
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
 
-  if (!(!rvia1 && rseg1 != nullptr))
+  if (!(!rvia1 && rseg1 != nullptr)) {
     return false;
+  }
 
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
     double totR1 = rseg1->getResistance(jj);
@@ -196,10 +201,12 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
 
 uint extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
 {
-  if (dw == nullptr)
+  if (dw == nullptr) {
     return 0;
-  if (!dw->isPower())
+  }
+  if (!dw->isPower()) {
     return 0;
+  }
   uint overMet = _met;
   // int rsegId=  dw->getRsegId();
   int rsegId = -1;
@@ -263,23 +270,26 @@ uint extMeasureRC::CalcDiag(uint targetMet,
     }
     // TO_OPTIMIZE
     else if (_diagModel == 2) {
-      if (_verticalDiag)
+      if (_verticalDiag) {
         verticalCap(_rsegSrcId, rsegId, len1, tgWidth, diagDist, targetMet);
-      else
+      } else {
         calcDiagRC(_rsegSrcId, rsegId, len1, tgWidth, diagDist, targetMet);
+      }
     }
     return len1;
   }
 #endif
   int DIAG_MAX_DIST_FORCE = 10000000;
   // int DIAG_MAX_DIST_FORCE= 500;
-  if (_diagModel == 2)
+  if (_diagModel == 2) {
     calcDiagRC(_rsegSrcId, rsegId, len1, tgWidth, diagDist, targetMet);
+  }
   if (_diagModel == 1 && diagDist < DIAG_MAX_DIST_FORCE) {
-    if (rsegId < 0)
+    if (rsegId < 0) {
       calcDiagRC(rsegId, _rsegSrcId, len1, diagDist, targetMet);
-    else
+    } else {
       calcDiagRC(_rsegSrcId, rsegId, len1, diagDist, targetMet);
+    }
   }
   return len1;
 }

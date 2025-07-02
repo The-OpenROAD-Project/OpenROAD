@@ -378,8 +378,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case Slew:
           return convertDelay(node->getSlew(), time_units);
         case Load: {
-          if (node->getLoad() == 0)
+          if (node->getLoad() == 0) {
             return "";
+          }
           const auto cap_units = sta_->units()->capacitanceUnit();
           return cap_units->asString(node->getLoad());
         }
@@ -975,10 +976,9 @@ void PinSetWidget::setPins(const std::set<const sta::Pin*>& pins)
   updatePins();
 }
 
-const std::set<const sta::Pin*> PinSetWidget::getPins() const
+std::set<const sta::Pin*> PinSetWidget::getPins() const
 {
-  std::set<const sta::Pin*> pins(pins_.begin(), pins_.end());
-  return pins;
+  return {pins_.begin(), pins_.end()};
 }
 
 void PinSetWidget::addPin(const sta::Pin* pin)
@@ -1311,8 +1311,7 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   }
 }
 
-const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
-    const
+std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
 {
   std::vector<std::set<const sta::Pin*>> pins;
   pins.reserve(thru_.size());

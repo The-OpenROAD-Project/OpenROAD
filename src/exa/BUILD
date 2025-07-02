@@ -55,6 +55,7 @@ cc_library(
         "//src/gui",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

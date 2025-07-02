@@ -33,9 +33,9 @@ read_verilog skywater130_caravel/chip.v
 link_design chip_io
 
 initialize_floorplan \
-  -die_area  "0 0 3588 5188" \
+  -die_area "0 0 3588 5188" \
   -core_area "250 250 3338 4938" \
-  -site      unithd
+  -site unithd
 
 make_tracks
 

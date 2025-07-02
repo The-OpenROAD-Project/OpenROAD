@@ -121,7 +121,7 @@ _installCommonDev() {
 
     # Flex
     flexPrefix=${PREFIX:-"/usr/local"}
-    if [[ ${rhelVersion} == 9 ]] && [ ! -f ${flexPrefix}/bin/flex ]; then
+    if [[ ${rhelVersion} == 8 ]] && [ ! -f ${flexPrefix}/bin/flex ]; then
         cd "${baseDir}"
         eval wget https://github.com/westes/flex/releases/download/v${flexVersion}/flex-${flexVersion}.tar.gz
         md5sum -c <(echo "${flexChecksum} flex-${flexVersion}.tar.gz") || exit 1
@@ -479,13 +479,16 @@ _installRHELPackages() {
         zlib-devel
 
     if [[ ${rhelVersion} == 8 ]]; then
+        pythonVersion=3.12
         yum install -y \
             gcc-toolset-13 \
-            python3.12 \
-            python3.12-devel \
-            python3.12-pip
-        alternatives --set python $(command -v python3.12)
-        alternatives --set python3 $(command -v python3.12)
+            python${pythonVersion} \
+            python${pythonVersion}-devel \
+            python${pythonVersion}-pip
+        update-alternatives --install /usr/bin/unversioned-python \
+            python $(command -v python${pythonVersion}) 50
+        update-alternatives --install /usr/bin/python3 \
+            python3 $(command -v python${pythonVersion}) 50
     fi
     if [[ ${rhelVersion} == 9 ]]; then
         yum install -y \

@@ -1,8 +1,8 @@
-# 
+#
 # Examples for Non Timing-driven RePlAce with TCL usage
 #
 
-set design ispd18_test1.input 
+set design ispd18_test1.input
 
 replace_external rep
 
@@ -15,7 +15,7 @@ rep set_verbose_level 0
 # Initialize RePlAce
 rep init_replace
 
-# place_cell with BiCGSTAB 
+# place_cell with BiCGSTAB
 rep place_cell_init_place
 
 

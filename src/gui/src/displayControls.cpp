@@ -12,6 +12,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <array>
 #include <functional>
 #include <random>
 #include <string>
@@ -1017,63 +1018,59 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     const QModelIndex name_index
         = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
-    QVariant tech_layer_data = name_item->data(user_data_item_idx_);
-    if (!tech_layer_data.isValid()) {
+    QVariant user_data = name_item->data(user_data_item_idx_);
+    if (!user_data.isValid()) {
       continue;
     }
-    auto* tech_layer = tech_layer_data.value<dbTechLayer*>();
-    if (tech_layer == nullptr) {
+
+    if (auto* tech_layer = user_data.value<dbTechLayer*>()) {
+      emit selected(Gui::get()->makeSelected(tech_layer));
+    } else if (auto* site = user_data.value<odb::dbSite*>()) {
+      emit selected(Gui::get()->makeSelected(site));
+    } else {
       continue;
     }
-    emit selected(Gui::get()->makeSelected(tech_layer));
     return;
   }
 }
 
-std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
+std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
     QStandardItem* item,
     const QModelIndex* index)
 {
   if (item == misc_.background.swatch) {
-    return {&background_color_, nullptr, false};
+    return {&background_color_, nullptr};
   }
   if (item == blockages_.blockages.swatch) {
-    return {&placement_blockage_color_, &placement_blockage_pattern_, false};
+    return {&placement_blockage_color_, &placement_blockage_pattern_};
   }
   if (item == misc_.regions.swatch) {
-    return {&region_color_, &region_pattern_, false};
+    return {&region_color_, &region_pattern_};
   }
   if (item == instance_shapes_.names.swatch) {
-    return {&instance_name_color_, nullptr, false};
+    return {&instance_name_color_, nullptr};
   }
   if (item == instance_shapes_.iterm_labels.swatch) {
-    return {&iterm_label_color_, nullptr, false};
+    return {&iterm_label_color_, nullptr};
   }
   if (item == rulers_.swatch) {
-    return {&ruler_color_, nullptr, false};
+    return {&ruler_color_, nullptr};
   }
   QVariant tech_layer_data = item->data(user_data_item_idx_);
   if (!tech_layer_data.isValid()) {
-    return {nullptr, nullptr, false};
+    return {nullptr, nullptr};
   }
   auto tech_layer = tech_layer_data.value<dbTechLayer*>();
   auto site = tech_layer_data.value<odb::dbSite*>();
   if (tech_layer != nullptr) {
     QColor* item_color = &layer_color_[tech_layer];
     Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
-    if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-      if (index && index->row() != 0) {
-        // ensure if a via is the first layer, it can still be modified
-        return {item_color, item_pattern, false};
-      }
-    } else {
-      return {item_color, item_pattern, true};
-    }
+    return {item_color, item_pattern};
   } else if (site != nullptr) {
-    return {&site_color_[site], nullptr, false};
+    return {&site_color_[site], nullptr};
   }
 
-  return {nullptr, nullptr, false};
+  return {nullptr, nullptr};
 }
 
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
@@ -1097,12 +1094,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 
     QColor* item_color = nullptr;
     Qt::BrushStyle* item_pattern = nullptr;
-    bool has_sibling = false;
 
     const auto lookup = lookupColor(color_item, &index);
     item_color = std::get<0>(lookup);
     item_pattern = std::get<1>(lookup);
-    has_sibling = std::get<2>(lookup);
 
     if (item_color == nullptr) {
       return;
@@ -1119,15 +1114,6 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     QColor chosen_color = display_dialog->getSelectedColor();
     if (chosen_color.isValid()) {
       color_item->setIcon(makeSwatchIcon(chosen_color));
-
-      if (has_sibling) {
-        auto cut_layer_index
-            = model_->sibling(index.row() + 1, index.column(), index);
-        if (cut_layer_index.isValid()) {
-          auto cut_color_item = model_->itemFromIndex(cut_layer_index);
-          cut_color_item->setIcon(makeSwatchIcon(chosen_color));
-        }
-      }
       *item_color = std::move(chosen_color);
       if (item_pattern != nullptr) {
         *item_pattern = display_dialog->getSelectedPattern();
@@ -1172,8 +1158,8 @@ void DisplayControls::setControlByPath(const std::string& path,
     logger_->error(utl::GUI, 40, "Unable to find {} display control", path);
   } else {
     for (auto* item : items) {
-      const auto& [item_color, item_style, sibling] = lookupColor(item);
-      if (sibling || item_color == nullptr) {
+      const auto& [item_color, item_style] = lookupColor(item);
+      if (item_color == nullptr) {
         continue;
       }
       *item_color = color;
@@ -2048,62 +2034,74 @@ void DisplayControls::techInit(odb::dbTech* tech)
 
   // Default colors
   // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
-  const QColor colors[] = {QColor(0, 0, 254),
-                           QColor(254, 0, 0),
-                           QColor(9, 221, 0),
-                           QColor(190, 244, 81),
-                           QColor(222, 33, 96),  // Metal 5
-                           QColor(32, 216, 253),
-                           QColor(253, 108, 160),
-                           QColor(117, 63, 194),
-                           QColor(128, 155, 49),
-                           QColor(234, 63, 252),
-                           QColor(9, 96, 19),
-                           QColor(214, 120, 239),
-                           QColor(192, 222, 164),
-                           QColor(110, 68, 107)};
-  const int num_colors = sizeof(colors) / sizeof(QColor);
+  const std::array<QColor, 14> default_metal_colors
+      = {QColor(0, 0, 254),
+         QColor(254, 0, 0),
+         QColor(9, 221, 0),
+         QColor(190, 244, 81),
+         QColor(222, 33, 96),  // Metal 5
+         QColor(32, 216, 253),
+         QColor(253, 108, 160),
+         QColor(117, 63, 194),
+         QColor(128, 155, 49),
+         QColor(234, 63, 252),  // Metal 10
+         QColor(9, 96, 19),
+         QColor(214, 120, 239),
+         QColor(192, 222, 164),
+         QColor(110, 68, 107)};  // Metal 14
+  const std::array<QColor, 14> default_cut_colors
+      = {QColor(126, 126, 255),
+         QColor(255, 126, 126),
+         QColor(4, 110, 0),
+         QColor(95, 122, 40),
+         QColor(111, 17, 48),  // Metal 5
+         QColor(16, 108, 126),
+         QColor(126, 54, 80),
+         QColor(58, 32, 97),
+         QColor(225, 255, 136),
+         QColor(117, 32, 126),  // Metal 10
+         QColor(18, 192, 38),
+         QColor(107, 60, 119),
+         QColor(96, 111, 82),
+         QColor(220, 136, 214)};  // Metal 14
   int metal = 0;
   int via = 0;
 
   // ensure if random colors are used they are consistent
   std::mt19937 gen_color(1);
 
+  auto generate_next_color = [&gen_color]() -> QColor {
+    return QColor(
+        50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+  };
+
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     QColor color;
     if (type == dbTechLayerType::ROUTING) {
-      if (metal < num_colors) {
-        color = colors[metal++];
+      if (metal < default_metal_colors.size()) {
+        color = default_metal_colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + gen_color() % 200,
-                       50 + gen_color() % 200,
-                       50 + gen_color() % 200);
+        color = generate_next_color();
       }
     } else if (type == dbTechLayerType::CUT) {
-      if (via < num_colors) {
+      if (via < default_cut_colors.size()) {
         if (metal != 0) {
-          color = colors[via++];
+          color = default_cut_colors[via++];
         } else {
           // via came first, so pick random color
-          color = QColor(50 + gen_color() % 200,
-                         50 + gen_color() % 200,
-                         50 + gen_color() % 200);
+          color = generate_next_color();
         }
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + gen_color() % 200,
-                       50 + gen_color() % 200,
-                       50 + gen_color() % 200);
+        color = generate_next_color();
       }
     } else {
       // Do not draw from the existing palette so the metal layers can claim
       // those colors.
-      color = QColor(50 + gen_color() % 200,
-                     50 + gen_color() % 200,
-                     50 + gen_color() % 200);
+      color = generate_next_color();
     }
     color.setAlpha(180);
     layer_color_[layer] = std::move(color);

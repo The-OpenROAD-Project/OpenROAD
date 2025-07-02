@@ -947,8 +947,9 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module)
+    if (db_module) {
       return false;
+    }
     return true;
   }
   return instance != top_instance_;

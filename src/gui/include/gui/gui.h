@@ -274,9 +274,9 @@ class Painter
     drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
   }
 
-  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
-  inline Options* getOptions() { return options_; }
-  inline const odb::Rect& getBounds() { return bounds_; }
+  double getPixelsPerDBU() { return pixels_per_dbu_; }
+  Options* getOptions() { return options_; }
+  const odb::Rect& getBounds() { return bounds_; }
 
  private:
   Options* options_;
@@ -359,12 +359,12 @@ class Descriptor
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
 
-  static const Editor makeEditor(const EditorCallback& func,
-                                 const std::vector<EditorOption>& options)
+  static Editor makeEditor(const EditorCallback& func,
+                           const std::vector<EditorOption>& options)
   {
     return {func, options};
   }
-  static const Editor makeEditor(const EditorCallback& func)
+  static Editor makeEditor(const EditorCallback& func)
   {
     return makeEditor(func, {});
   }

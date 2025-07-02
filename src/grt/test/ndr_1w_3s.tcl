@@ -15,8 +15,8 @@ set block [[$db getChip] getBlock]
 set clk [$block findNet clk]
 
 create_ndr -name NDR \
-  	 	   	 -spacing { li1 0.51 met1 0.42 met2 0.42 met3 0.9 met4 0.9 met5 4.8 } \
-		   		 -width { li1 0.17 met1 0.14 met2 0.14 met3 0.3 met4 0.3 met5 1.6 }
+  -spacing { li1 0.51 met1 0.42 met2 0.42 met3 0.9 met4 0.9 met5 4.8 } \
+  -width { li1 0.17 met1 0.14 met2 0.14 met3 0.3 met4 0.3 met5 1.6 }
 
 assign_ndr -ndr NDR -net clk
 assign_ndr -ndr NDR -net clknet_0_clk

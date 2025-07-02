@@ -64,6 +64,7 @@ struct ParamStruct
   int drouteEndIter = -1;
   std::string viaInPinBottomLayer;
   std::string viaInPinTopLayer;
+  std::string viaAccessLayer;
   int orSeed = 0;
   double orK = 0;
   std::string bottomRoutingLayer;
@@ -114,6 +115,7 @@ class TritonRoute
 
   void setDebugDR(bool on = true);
   void setDebugDumpDR(bool on, const std::string& dumpDir);
+  void setDebugSnapshotDir(const std::string& snapshotDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugTA(bool on = true);

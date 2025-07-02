@@ -10,9 +10,9 @@ odb::read_def $db [file join $data_dir "design.def"]
 
 set db_file [file join $opendb_dir "build" "export.db"]
 set write_result [odb::write_db $db $db_file]
-if {!$write_result} {
-    puts "Write DB failed"
-    exit 1
+if { !$write_result } {
+  puts "Write DB failed"
+  exit 1
 }
 
 set new_db [odb::dbDatabase_create]

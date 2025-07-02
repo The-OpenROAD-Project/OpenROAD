@@ -1,8 +1,8 @@
 source "helpers.tcl"
 
 set db [odb::dbDatabase_create]
-if {$db == "NULL"} {
-    puts "FAIL: Create DB Failed"    
+if { $db == "NULL" } {
+  puts "FAIL: Create DB Failed"
 }
-puts "pass"    
+puts "pass"
 exit 0

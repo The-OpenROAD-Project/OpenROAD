@@ -233,6 +233,7 @@ void FastRouteCore::addLayerDirection(int layer_idx,
 
 FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              bool is_clock,
+                             bool is_local,
                              int driver_idx,
                              int cost,
                              int min_layer,
@@ -268,7 +269,11 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              max_layer,
              slack,
              edge_cost_per_layer);
-  net_ids_.push_back(netID);
+  // Don't add local nets to the list of ids that will be routed. It is only
+  // necessary to add them to make mergeNet work with local nets.
+  if (!is_local) {
+    net_ids_.push_back(netID);
+  }
 
   return net;
 }
@@ -309,6 +314,14 @@ void FastRouteCore::mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net)
           preserved_nodes.end(), removed_nodes.begin(), removed_nodes.end());
       preserved_edges.insert(
           preserved_edges.end(), removed_edges.begin(), removed_edges.end());
+    } else {
+      logger_->error(
+          utl::GRT,
+          13,
+          "Net {} is not present in FastRouteCore structures when trying to "
+          "merge with net {}",
+          preserved_net->getName(),
+          removed_net->getName());
     }
 
     removed_nodes.clear();
@@ -423,12 +436,13 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (cap - reducedCap < 0) {
       if (isReduce) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(GRT,
                         113,
                         "Underflow in reduce: cap, reducedCap: {}, {}",
                         cap,
                         reducedCap);
+        }
       }
       reduce = 0;
     } else {
@@ -461,12 +475,13 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (cap - reducedCap < 0) {
       if (isReduce) {
-        if (verbose_)
+        if (verbose_) {
           logger_->warn(GRT,
                         114,
                         "Underflow in reduce: cap, reducedCap: {}, {}",
                         cap,
                         reducedCap);
+        }
       }
       reduce = 0;
     } else {
@@ -559,8 +574,9 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0)
+      if (edge_cap < 0) {
         edge_cap = 0;
+      }
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
@@ -581,8 +597,9 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0)
+      if (edge_cap < 0) {
         edge_cap = 0;
+      }
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
@@ -864,10 +881,11 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
   }
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
-  if (db_gcell)
+  if (db_gcell) {
     db_gcell->resetGrid();
-  else
+  } else {
     db_gcell = odb::dbGCellGrid::create(block);
+  }
 
   db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
@@ -1352,12 +1370,13 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (overflow_increases > max_overflow_increases) {
-    if (verbose_)
+    if (verbose_) {
       logger_->warn(
           GRT,
           230,
           "Congestion iterations cannot increase overflow, reached the "
           "maximum number of times the total overflow can be increased.");
+    }
   }
 
   freeRR();
@@ -1598,8 +1617,9 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 int FrNet::getLayerEdgeCost(int layer) const
 {
-  if (edge_cost_per_layer_)
+  if (edge_cost_per_layer_) {
     return (*edge_cost_per_layer_)[layer];
+  }
 
   return 1;
 }
