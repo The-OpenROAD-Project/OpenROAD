@@ -922,6 +922,8 @@ void HierRTLMP::createPinAccessBlockages()
   }
 
   computePinAccessDepthLimits();
+
+  createBlockagesForIOBundles();
   createBlockagesForAvailableRegions();
   createBlockagesForConstraintRegions();
 }
@@ -948,6 +950,51 @@ void HierRTLMP::computePinAccessDepthLimits()
                     pin_access_depth_limits_.y.min,
                     pin_access_depth_limits_.y.max);
   }
+}
+
+void HierRTLMP::createBlockagesForIOBundles()
+{
+  const std::vector<Cluster*> io_bundles = getIOBundles();
+  if (io_bundles.empty()) {
+    return;
+  }
+
+  float io_bundles_span = 0.0f;
+  for (Cluster* io_bundle : io_bundles) {
+    // The shape of an IO bundle is just a line.
+    io_bundles_span += io_bundle->getBBox().getPerimeter() / 2;
+  }
+
+  int total_fixed_ios = 0;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getFirstPinPlacementStatus().isFixed()) {
+      ++total_fixed_ios;
+    }
+  }
+
+  const float base_depth = computePinAccessBaseDepth(io_bundles_span);
+
+  for (Cluster* io_bundle : io_bundles) {
+    const float number_of_ios
+        = static_cast<float>(clustering_engine_->getNumberOfIOs(io_bundle));
+    const float io_density_factor = number_of_ios / total_fixed_ios;
+    const float depth = base_depth * io_density_factor;
+    const odb::Rect rect = micronsToDbu(io_bundle->getBBox());
+    const odb::Line line = rectToLine(block_, rect, logger_);
+    const BoundaryRegion region(line, getBoundary(block_, rect));
+    createPinAccessBlockage(region, depth);
+  }
+}
+
+std::vector<Cluster*> HierRTLMP::getIOBundles() const
+{
+  std::vector<Cluster*> io_bundles;
+  for (const auto& child : tree_->root->getChildren()) {
+    if (child->isIOBundle()) {
+      io_bundles.push_back(child.get());
+    }
+  }
+  return io_bundles;
 }
 
 bool HierRTLMP::treeHasUnconstrainedIOs() const
