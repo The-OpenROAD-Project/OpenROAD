@@ -414,7 +414,7 @@ void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
                                    const odb::Rect& region)
 {
-  size_t selected_ = kInvalidIndex;
+  selected_ = kInvalidIndex;
 
   if (layer || !nbc_) {
     return gui::SelectionSet();
