@@ -299,14 +299,14 @@ Pin::Pin()
 Pin::Pin(odb::dbITerm* iTerm) : Pin()
 {
   setITerm();
-  term_ = (void*) iTerm;
+  term_ = iTerm;
   updateCoordi(iTerm);
 }
 
 Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger) : Pin()
 {
   setBTerm();
-  term_ = (void*) bTerm;
+  term_ = bTerm;
   updateCoordi(bTerm, logger);
 }
 
@@ -877,9 +877,9 @@ void PlacerBaseCommon::init()
   pins_.reserve(pinStor_.size());
   for (auto& pin : pinStor_) {
     if (pin.isITerm()) {
-      pinMap_[(void*) pin.dbITerm()] = &pin;
+      pinMap_[pin.dbITerm()] = &pin;
     } else if (pin.isBTerm()) {
-      pinMap_[(void*) pin.dbBTerm()] = &pin;
+      pinMap_[pin.dbBTerm()] = &pin;
     }
     pins_.push_back(&pin);
   }
@@ -952,13 +952,13 @@ Instance* PlacerBaseCommon::dbToPb(odb::dbInst* inst) const
 
 Pin* PlacerBaseCommon::dbToPb(odb::dbITerm* term) const
 {
-  auto pinPtr = pinMap_.find((void*) term);
+  auto pinPtr = pinMap_.find(term);
   return (pinPtr == pinMap_.end()) ? nullptr : pinPtr->second;
 }
 
 Pin* PlacerBaseCommon::dbToPb(odb::dbBTerm* term) const
 {
-  auto pinPtr = pinMap_.find((void*) term);
+  auto pinPtr = pinMap_.find(term);
   return (pinPtr == pinMap_.end()) ? nullptr : pinPtr->second;
 }
 
