@@ -350,7 +350,7 @@ void Graphics::reportSelected()
   if (selected_ == kInvalidIndex) {
     return;
   }
-  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->name());
+  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->getName());
 
   if (np_) {
     auto wlCoeffX = np_->getWireLengthCoefX();
