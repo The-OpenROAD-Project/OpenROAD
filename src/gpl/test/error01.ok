@@ -20,7 +20,7 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[WARNING GPL-0302] Target density 0.0010 is too low for the available whitespace.
+[WARNING GPL-0302] Target density 0.0010 is too low for the available free area.
 Automatically adjusting to uniform density 0.6000.
 [INFO GPL-0023] Placement target density:       0.6000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2

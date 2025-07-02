@@ -1814,7 +1814,7 @@ void NesterovBase::initFillerGCells()
     log_->warn(
         GPL,
         302,
-        "Target density {:.4f} is too low for the available whitespace.\n"
+        "Target density {:.4f} is too low for the available free area.\n"
         "Automatically adjusting to uniform density {:.4f}.",
         targetDensity_,
         uniformTargetDensity_);
