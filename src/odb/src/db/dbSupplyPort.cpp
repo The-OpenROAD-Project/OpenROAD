@@ -125,8 +125,8 @@ dbSupplyPort* dbSupplyPort::create(dbBlock* block,
   }
 
   _dbSupplyPort* sp = _block->_supplyport_tbl->create();
-  sp->_name = strdup(supplyport);
-  ZALLOCATED(sp->_name);
+  sp->_name = safe_strdup(supplyport);
+  
   // sp->_domain = pd->getImpl()->getOID();
   sp->_direction = strdup(direction);
   // ZALLOCATED(sp->_direction);

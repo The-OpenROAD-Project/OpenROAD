@@ -140,8 +140,8 @@ dbPowerState* dbPowerState::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbPowerState* obj = _block->_powerstate_tbl->create();
-  obj->_name = strdup(name);
-  ZALLOCATED(obj->_name);
+  obj->_name = safe_strdup(name);
+ 
 
   _block->_powerstate_hash.insert(obj);
   return (dbPowerState*) obj;

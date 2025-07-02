@@ -157,8 +157,8 @@ dbSupplyNet* dbSupplyNet::create(dbBlock* block,
     return nullptr;
   }
   _dbSupplyNet* sn = _block->_supplynet_tbl->create();
-  sn->_name = strdup(name);
-  ZALLOCATED(sn->_name);
+  sn->_name = safe_strdup(name);
+ 
 
   _block->_supplynet_hash.insert(sn);
 

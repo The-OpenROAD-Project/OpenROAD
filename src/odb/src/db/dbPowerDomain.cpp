@@ -228,19 +228,19 @@ void dbPowerDomain::destroy(dbPowerDomain* pd)
 //
 /////////
 
-void dbPowerDomain::addPrimarysupply(dbSupplySet* primary_supply)
+void dbPowerDomain::addPrimarySupply(dbSupplySet* primary_supply)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
   obj->_primarysupply = primary_supply->getImpl()->getOID();
 }
 
-void dbPowerDomain::addAvailablesupply(dbSupplySet* available_supply)
+void dbPowerDomain::addAvailableSupply(dbSupplySet* available_supply)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
   obj->_availablesupply = available_supply->getImpl()->getOID();
 }
 
-dbSupplySet* dbPowerDomain::getPrimarysupply()
+dbSupplySet* dbPowerDomain::getPrimarySupply()
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
   if(!obj->_primarysupply.isValid())
@@ -251,7 +251,7 @@ dbSupplySet* dbPowerDomain::getPrimarysupply()
   return (odb::dbSupplySet*) par->_supplyset_tbl->getPtr(obj->_primarysupply);
 }
 
-dbSupplySet* dbPowerDomain::getAvailablesupply()
+dbSupplySet* dbPowerDomain::getAvailableSupply()
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
    if(!obj->_availablesupply.isValid())

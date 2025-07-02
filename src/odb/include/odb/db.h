@@ -8325,11 +8325,11 @@ class dbPowerDomain : public dbObject
   bool getArea(Rect& area);
 
   // p2f custom
-  void addPrimarysupply(dbSupplySet* primary_supply);
-  void addAvailablesupply(dbSupplySet* available_supply);
+  void addPrimarySupply(dbSupplySet* primary_supply);
+  void addAvailableSupply(dbSupplySet* available_supply);
 
-  dbSupplySet* getPrimarysupply();
-  dbSupplySet* getAvailablesupply();
+  dbSupplySet* getPrimarySupply();
+  dbSupplySet* getAvailableSupply();
   // std::vector<std::string> getSupplyNet();
 
   // void addSupplyNet(const std::string& element);

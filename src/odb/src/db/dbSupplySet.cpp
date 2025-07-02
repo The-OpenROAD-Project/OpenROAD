@@ -123,9 +123,9 @@ dbSupplySet* dbSupplySet::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbSupplySet* obj = _block->_supplyset_tbl->create();
-  obj->_name = strdup(name);
+  obj->_name = safe_strdup(name);
   obj->_group = 0;
-  ZALLOCATED(obj->_name);
+ 
 
   _block->_supplyset_hash.insert(obj);
   return (dbSupplySet*) obj;

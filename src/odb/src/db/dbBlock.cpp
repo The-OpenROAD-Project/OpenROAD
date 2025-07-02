@@ -224,7 +224,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   
   _powerstate_tbl = new dbTable<_dbPowerState>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerStateObj,  4096, 12);
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerStateObj);
 
   // custom p2f end/////////////////////////////////////////////////////////////////////
 
