@@ -44,8 +44,7 @@ Graphics::Graphics(utl::Logger* logger,
                    std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                    std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                    bool draw_bins,
-                   odb::dbInst* inst,
-                   int start_iter)
+                   odb::dbInst* inst)
     : HeatMapDataSource(logger, "gpl", "gpl"),
       pbc_(std::move(pbc)),
       nbc_(std::move(nbc)),
@@ -59,9 +58,10 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nbc_->getGCells()) {
+    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+      auto cell = nbc_->getGCellByIndex(idx);
       if (cell->contains(inst)) {
-        selected_ = cell;
+        selected_ = idx;
         break;
       }
     }
@@ -182,8 +182,7 @@ void Graphics::drawCells(const std::vector<GCellHandle>& cells,
                          gui::Painter& painter)
 {
   for (const auto& handle : cells) {
-    const GCell* gCell
-        = handle;  // Uses the conversion operator to get a GCell*
+    const GCell* gCell = handle;
     drawSingleGCell(gCell, painter);
   }
 }
@@ -207,20 +206,52 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   int yh = gcy + gCell->dy() / 2;
 
   gui::Painter::Color color;
-  if (gCell->isInstance()) {
-    color = gCell->isLocked() ? gui::Painter::dark_cyan
-                              : gui::Painter::dark_green;
-  } else if (gCell->isFiller()) {
-    color = gui::Painter::dark_magenta;
+  // Highlight modified instances (overrides base color, unless selected)
+  switch (gCell->changeType()) {
+    case GCell::GCellChange::kRoutability:
+      color = {255, 255, 255, 100};  // White
+      break;
+    case GCell::GCellChange::kTimingDriven:
+      color = {180, 150, 255, 100};  // Light purple
+      break;
+    default:
+      if (gCell->isInstance()) {
+        color = gCell->isLocked() ? gui::Painter::dark_cyan
+                                  : gui::Painter::dark_green;
+      } else if (gCell->isFiller()) {
+        color = gui::Painter::dark_magenta;
+      }
+      color.a = 180;
+      break;
   }
 
-  if (gCell == selected_) {
+  // Highlight selection (highest priority)
+  if (gCell == nbc_->getGCellByIndex(selected_)) {
     color = gui::Painter::yellow;
+    color.a = 180;
   }
 
-  color.a = 180;
   painter.setBrush(color);
   painter.drawRect({xl, yl, xh, yh});
+
+  if (gCell->isInstance()) {
+    odb::dbInst* db_inst = gCell->insts()[0]->dbInst();
+    if (db_inst != nullptr) {
+      odb::dbBox* bbox = db_inst->getBBox();
+      if (bbox != nullptr) {
+        int origLx = bbox->xMin();
+        int origLy = bbox->yMin();
+        int origUx = bbox->xMax();
+        int origUy = bbox->yMax();
+
+        gui::Painter::Color outline = gui::Painter::black;
+        outline.a = 150;  // Semi-transparent
+
+        painter.setPen(outline, /*cosmetic=*/false, /*width=*/1);
+        painter.drawRect({origLx, origLy, origUx, origUy});
+      }
+    }
+  }
 }
 
 void Graphics::drawNesterov(gui::Painter& painter)
@@ -262,16 +293,16 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw lines to neighbors
-  if (selected_) {
+  if (nbc_->getGCellByIndex(selected_)) {
     painter.setPen(gui::Painter::yellow, true);
-    for (GPin* pin : selected_->gPins()) {
+    for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->gNet();
       if (!net) {
         continue;
       }
       for (GPin* other_pin : net->gPins()) {
         GCell* neighbor = other_pin->gCell();
-        if (neighbor == selected_) {
+        if (neighbor == nbc_->getGCellByIndex(selected_)) {
           continue;
         }
         painter.drawLine(
@@ -316,17 +347,17 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 void Graphics::reportSelected()
 {  // TODO: PD_FIX
-  if (!selected_) {
+  if (selected_ == kInvalidIndex) {
     return;
   }
-  logger_->report("Inst: {}", selected_->name());
+  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->name());
 
   if (np_) {
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
 
     logger_->report("  Wire Length Gradient");
-    for (auto& gPin : selected_->gPins()) {
+    for (auto& gPin : nbc_->getGCellByIndex(selected_)->gPins()) {
       FloatPoint wlGrad
           = nbc_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
       const float weight = gPin->gNet()->totalWeight();
@@ -337,11 +368,12 @@ void Graphics::reportSelected()
                       gPin->pin()->name());
     }
 
-    FloatPoint wlGrad
-        = nbc_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+    FloatPoint wlGrad = nbc_->getWireLengthGradientWA(
+        nbc_->getGCellByIndex(selected_), wlCoeffX, wlCoeffY);
     logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    auto densityGrad = nbVec_[0]->getDensityGradient(selected_);
+    auto densityGrad
+        = nbVec_[0]->getDensityGradient(nbc_->getGCellByIndex(selected_));
     float densityPenalty = nbVec_[0]->getDensityPenalty();
     logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
                     densityPenalty * densityGrad.x,
@@ -381,13 +413,14 @@ void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
                                    const odb::Rect& region)
 {
-  selected_ = nullptr;
+  selected_ = kInvalidIndex;
 
   if (layer || !nbc_) {
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nbc_->getGCells()) {
+  for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+    auto cell = nbc_->getGCellByIndex(idx);
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -401,7 +434,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
       continue;
     }
 
-    selected_ = cell;
+    selected_ = idx;
     gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
@@ -533,6 +566,54 @@ void Graphics::combineMapData(bool base_has_value,
 bool Graphics::guiActive()
 {
   return gui::Gui::enabled();
+}
+
+void Graphics::addFrameLabel(gui::Gui* gui,
+                             const odb::Rect& bbox,
+                             const std::string& label,
+                             const std::string& label_name,
+                             int image_width_px)
+{
+  int label_x = bbox.xMin() + 300;
+  int label_y = bbox.yMin() + 300;
+
+  gui::Painter::Color color = gui::Painter::yellow;
+  gui::Painter::Anchor anchor = gui::Painter::BOTTOM_LEFT;
+
+  int font_size = std::clamp(image_width_px / 50, 15, 24);
+
+  gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
+}
+
+void Graphics::saveLabeledImage(const std::string& path,
+                                const std::string& label,
+                                bool select_buffers,
+                                const std::string& heatmap_control,
+                                int image_width_px)
+{
+  gui::Gui* gui = getGuiObjectFromGraphics();
+  odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, true);
+  }
+
+  if (select_buffers) {
+    gui->select("Inst", "", "Description", "Timing Repair Buffer", true, -1);
+  }
+
+  static int label_id = 0;
+  std::string label_name = fmt::format("auto_label_{}", label_id++);
+
+  addFrameLabel(gui, bbox, label, label_name, image_width_px);
+  gui->saveImage(path);
+  gui->deleteLabel(label_name);
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, false);
+  }
+
+  gui->clearSelections();
 }
 
 }  // namespace gpl

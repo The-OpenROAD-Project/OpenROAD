@@ -10,8 +10,8 @@ write_cdl -masters NangateOpenCellLibrary.cdl "results/gcd.cdl"
 
 set isDiff [diff_files "results/gcd.cdl" "dump_netlists_cdl.ok"]
 
-if {$isDiff != 0} {
-    exit 1
+if { $isDiff != 0 } {
+  exit 1
 }
 
 puts "pass"

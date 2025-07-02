@@ -287,7 +287,7 @@ void dbWireGraph::decode(dbWire* wire)
 
           // And check for the colinear cancelation of a extension.
           if ((x == prev_x) && (y == prev_y)) {
-            if (prev_style._type == EndStyle::VARIABLE) {
+            if (prev_style.getType() == EndStyle::VARIABLE) {
               prev_style.setExtended();
               _junction_map[decoder.getJunctionId()] = prev;
               break;
@@ -534,11 +534,11 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
         }
 
-        if (s->_src_style._type == EndStyle::EXTENDED) {
+        if (s->_src_style.getType() == EndStyle::EXTENDED) {
           e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
         } else {
-          e->_src->_jct_id
-              = encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style._ext);
+          e->_src->_jct_id = encoder.addPoint(
+              e->_src->_x, e->_src->_y, s->_src_style.getExt());
         }
 
         if (e->_src->_object != nullptr) {
@@ -546,19 +546,19 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
         }
       } else {
         if (e->_non_default_rule == nullptr) {
-          if (s->_src_style._type == EndStyle::EXTENDED) {
+          if (s->_src_style.getType() == EndStyle::EXTENDED) {
             encoder.newPath(e->_src->_jct_id, e->_wire_type);
           } else {
             encoder.newPathExt(
-                e->_src->_jct_id, s->_src_style._ext, e->_wire_type);
+                e->_src->_jct_id, s->_src_style.getExt(), e->_wire_type);
           }
         } else {
-          if (s->_src_style._type == EndStyle::EXTENDED) {
+          if (s->_src_style.getType() == EndStyle::EXTENDED) {
             encoder.newPath(
                 e->_src->_jct_id, e->_wire_type, e->_non_default_rule);
           } else {
             encoder.newPathExt(e->_src->_jct_id,
-                               s->_src_style._ext,
+                               s->_src_style.getExt(),
                                e->_wire_type,
                                e->_non_default_rule);
           }
@@ -569,11 +569,11 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
         }
       }
 
-      if (s->_tgt_style._type == EndStyle::EXTENDED) {
+      if (s->_tgt_style.getType() == EndStyle::EXTENDED) {
         e->_tgt->_jct_id = encoder.addPoint(e->_tgt->_x, e->_tgt->_y);
       } else {
-        e->_tgt->_jct_id
-            = encoder.addPoint(e->_tgt->_x, e->_tgt->_y, s->_tgt_style._ext);
+        e->_tgt->_jct_id = encoder.addPoint(
+            e->_tgt->_x, e->_tgt->_y, s->_tgt_style.getExt());
       }
 
       if (e->_tgt->_object != nullptr) {
@@ -696,11 +696,11 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
         Segment* s = (Segment*) e;
 
         if (is_short_or_vwire_path) {
-          if (s->_src_style._type == EndStyle::EXTENDED) {
+          if (s->_src_style.getType() == EndStyle::EXTENDED) {
             e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
           } else {
             e->_src->_jct_id = encoder.addPoint(
-                e->_src->_x, e->_src->_y, s->_src_style._ext);
+                e->_src->_x, e->_src->_y, s->_src_style.getExt());
           }
 
           if (e->_src->_object != nullptr) {
@@ -709,31 +709,31 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
           is_short_or_vwire_path = false;
         }
 
-        else if (prev_style._type != s->_src_style._type) {
+        else if (prev_style.getType() != s->_src_style.getType()) {
           // reset: default ext
-          if (prev_style._type == EndStyle::VARIABLE
-              && s->_src_style._type == EndStyle::EXTENDED) {
+          if (prev_style.getType() == EndStyle::VARIABLE
+              && s->_src_style.getType() == EndStyle::EXTENDED) {
             encoder.addPoint(e->_src->_x, e->_src->_y);
 
             // reset: variable ext
-          } else if (prev_style._type == EndStyle::EXTENDED
-                     && s->_src_style._type == EndStyle::VARIABLE) {
-            encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style._ext);
+          } else if (prev_style.getType() == EndStyle::EXTENDED
+                     && s->_src_style.getType() == EndStyle::VARIABLE) {
+            encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style.getExt());
 
             // Reset: variable ext
-          } else if (prev_style._type == EndStyle::VARIABLE
-                     && s->_src_style._type == EndStyle::VARIABLE) {
-            encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style._ext);
+          } else if (prev_style.getType() == EndStyle::VARIABLE
+                     && s->_src_style.getType() == EndStyle::VARIABLE) {
+            encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style.getExt());
           }
         }
 
         assert(e->_src->_jct_id != -1);
 
-        if (s->_tgt_style._type == EndStyle::EXTENDED) {
+        if (s->_tgt_style.getType() == EndStyle::EXTENDED) {
           e->_tgt->_jct_id = encoder.addPoint(e->_tgt->_x, e->_tgt->_y);
         } else {
-          e->_tgt->_jct_id
-              = encoder.addPoint(e->_tgt->_x, e->_tgt->_y, s->_tgt_style._ext);
+          e->_tgt->_jct_id = encoder.addPoint(
+              e->_tgt->_x, e->_tgt->_y, s->_tgt_style.getExt());
         }
 
         if (e->_tgt->_object != nullptr) {

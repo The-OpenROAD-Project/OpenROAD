@@ -1549,6 +1549,38 @@ void FlexDRWorker::initNets(const frDesign* design)
   }
 }
 
+frLayerNum FlexDRWorker::initTrackCoords_getNonPref(frLayerNum lNum)
+{
+  const auto lDir = getTech()->getLayer(lNum)->getDir();
+  auto lDir2 = dbTechLayerDir::NONE;
+
+  switch (lDir) {
+    case dbTechLayerDir::HORIZONTAL:
+      lDir2 = dbTechLayerDir::VERTICAL;
+      break;
+    case dbTechLayerDir::VERTICAL:
+      lDir2 = dbTechLayerDir::HORIZONTAL;
+      break;
+    case dbTechLayerDir::NONE:
+      logger_->error(DRT, 49, "initTrackCoords invalid routing direction");
+      return -1;
+  }
+
+  if ((lNum + 2 <= router_cfg_->TOP_ROUTING_LAYER)
+      && (getTech()->getLayer(lNum + 2)->getDir() == lDir2)) {
+    return lNum + 2;
+  }
+
+  if ((lNum - 2 >= router_cfg_->BOTTOM_ROUTING_LAYER)
+      && (getTech()->getLayer(lNum - 2)->getDir() == lDir2)) {
+    return lNum - 2;
+  }
+
+  logger_->error(DRT, 64, "initTrackCoords cannot add non-pref track");
+
+  return -1;
+}
+
 void FlexDRWorker::initTrackCoords_route(drNet* net,
                                          frLayerCoordTrackPatternMap& xMap,
                                          frLayerCoordTrackPatternMap& yMap)
@@ -1566,69 +1598,32 @@ void FlexDRWorker::initTrackCoords_route(drNet* net,
       auto obj = static_cast<drPathSeg*>(uConnFig);
       const auto [bp, ep] = obj->getPoints();
       const auto lNum = obj->getLayerNum();
+      const auto lNum2 = initTrackCoords_getNonPref(lNum);
       // vertical
       if (bp.x() == ep.x()) {
         // non pref dir
         if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-          if (lNum + 2 <= getTech()->getTopLayerNum()) {
-            xMap[lNum + 2][bp.x()]
-                = nullptr;  // default add track to upper layer
-          } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
-            xMap[lNum - 2][bp.x()] = nullptr;
-          } else {
-            std::cout << "Error: initTrackCoords cannot add non-pref track"
-                      << std::endl;
-          }
-          // add bp, ep
+          xMap[lNum2][bp.x()] = nullptr;
           yMap[lNum][bp.y()] = nullptr;
           yMap[lNum][ep.y()] = nullptr;
           // pref dir
         } else {
           xMap[lNum][bp.x()] = nullptr;
-          // add bp, ep
-          if (lNum + 2 <= getTech()->getTopLayerNum()) {
-            yMap[lNum + 2][bp.y()]
-                = nullptr;  // default add track to upper layer
-            yMap[lNum + 2][ep.y()]
-                = nullptr;  // default add track to upper layer
-          } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
-            yMap[lNum - 2][bp.y()] = nullptr;
-            yMap[lNum - 2][ep.y()] = nullptr;
-          } else {
-            std::cout << "Error: initTrackCoords cannot add non-pref track"
-                      << std::endl;
-          }
+          yMap[lNum2][bp.y()] = nullptr;
+          yMap[lNum2][ep.y()] = nullptr;
         }
         // horizontal
       } else {
         // non pref dir
         if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::VERTICAL) {
-          if (lNum + 2 <= getTech()->getTopLayerNum()) {
-            yMap[lNum + 2][bp.y()] = nullptr;
-          } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
-            yMap[lNum - 2][bp.y()] = nullptr;
-          } else {
-            std::cout << "Error: initTrackCoords cannot add non-pref track"
-                      << std::endl;
-          }
-          // add bp, ep
           xMap[lNum][bp.x()] = nullptr;
           xMap[lNum][ep.x()] = nullptr;
+          yMap[lNum2][bp.y()] = nullptr;
+          // pref dir
         } else {
+          xMap[lNum2][bp.x()] = nullptr;
+          xMap[lNum2][ep.x()] = nullptr;
           yMap[lNum][bp.y()] = nullptr;
-          // add bp, ep
-          if (lNum + 2 <= getTech()->getTopLayerNum()) {
-            xMap[lNum + 2][bp.x()]
-                = nullptr;  // default add track to upper layer
-            xMap[lNum + 2][ep.x()]
-                = nullptr;  // default add track to upper layer
-          } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
-            xMap[lNum - 2][bp.x()] = nullptr;
-            xMap[lNum - 2][ep.x()] = nullptr;
-          } else {
-            std::cout << "Error: initTrackCoords cannot add non-pref track"
-                      << std::endl;
-          }
         }
       }
     } else if (uConnFig->typeId() == drcVia) {
@@ -1665,28 +1660,31 @@ void FlexDRWorker::initTrackCoords_pin(drNet* net,
   for (auto& pin : net->getPins()) {
     for (auto& ap : pin->getAccessPatterns()) {
       const Point pt = ap->getPoint();
-      const auto lNum = ap->getBeginLayerNum();
-      frLayerNum lNum2 = 0;
-      if (lNum + 2 <= getTech()->getTopLayerNum()) {
-        lNum2 = lNum + 2;
-      } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
-        lNum2 = lNum - 2;
+      auto lNum = ap->getBeginLayerNum();
+      frLayerNum end_lnum;
+      if (lNum < router_cfg_->BOTTOM_ROUTING_LAYER) {
+        end_lnum = router_cfg_->BOTTOM_ROUTING_LAYER;
+      } else if (lNum > router_cfg_->TOP_ROUTING_LAYER) {
+        end_lnum = router_cfg_->TOP_ROUTING_LAYER;
       } else {
-        std::cout << "Error: initTrackCoords cannot add non-pref track"
-                  << std::endl;
+        end_lnum = initTrackCoords_getNonPref(lNum);
       }
-      gridGraph_.addAccessPointLocation(lNum, pt.x(), pt.y());
-      gridGraph_.addAccessPointLocation(lNum2, pt.x(), pt.y());
-      if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-        yMap[lNum][pt.y()] = nullptr;
-      } else {
-        xMap[lNum][pt.x()] = nullptr;
-      }
-      if (getTech()->getLayer(lNum2)->getDir() == dbTechLayerDir::HORIZONTAL) {
-        yMap[lNum2][pt.y()] = nullptr;
-      } else {
-        xMap[lNum2][pt.x()] = nullptr;
-      }
+      while (true) {
+        gridGraph_.addAccessPointLocation(lNum, pt.x(), pt.y());
+        if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+          yMap[lNum][pt.y()] = nullptr;
+        } else {
+          xMap[lNum][pt.x()] = nullptr;
+        }
+
+        if (end_lnum > lNum) {
+          lNum += 2;
+        } else if (end_lnum < lNum) {
+          lNum -= 2;
+        } else {
+          break;
+        }
+      };
     }
   }
 }
@@ -2877,12 +2875,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
           }
           for (auto& ap :
                pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints()) {
-            if (ap->hasAccess(frDirEnum::E) || ap->hasAccess(frDirEnum::W)) {
-              accessHorz = true;
-            }
-            if (ap->hasAccess(frDirEnum::N) || ap->hasAccess(frDirEnum::S)) {
-              accessVert = true;
-            }
+            accessHorz = ap->hasHorzAccess();
+            accessVert = ap->hasVertAccess();
           }
         }
       } else {
@@ -3002,10 +2996,8 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
                 if (ap->getLayerNum() != layerNum) {
                   continue;
                 }
-                hasVerticalAccess |= ap->hasAccess(frDirEnum::N);
-                hasVerticalAccess |= ap->hasAccess(frDirEnum::S);
-                hasHorizontalAccess |= ap->hasAccess(frDirEnum::W);
-                hasHorizontalAccess |= ap->hasAccess(frDirEnum::E);
+                hasVerticalAccess |= ap->hasVertAccess();
+                hasHorizontalAccess |= ap->hasHorzAccess();
               }
             }
           }

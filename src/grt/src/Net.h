@@ -19,7 +19,7 @@ class Net
  public:
   Net(odb::dbNet* net, bool has_wires);
   odb::dbNet* getDbNet() const { return net_; }
-  const std::string getName() const;
+  std::string getName() const;
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);
@@ -50,8 +50,10 @@ class Net
   {
     return last_pin_positions_;
   }
-  void setMergedNet(bool merged_net) { merged_net_ = merged_net; }
-  bool isMergedNet() const { return merged_net_; }
+  void setMergedNet(odb::dbNet* merged_net) { merged_net_ = merged_net; }
+  odb::dbNet* getMergedNet() const { return merged_net_; }
+  void setIsMergedNet(bool merged_net) { is_merged_net_ = merged_net; }
+  bool isMergedNet() const { return is_merged_net_; }
   void setDirtyNet(bool is_dirty_net) { is_dirty_net_ = is_dirty_net; }
   bool isDirtyNet() const { return is_dirty_net_; }
 
@@ -64,7 +66,8 @@ class Net
   bool has_wires_;
   std::vector<SegmentIndex> parent_segment_indices_;
   std::multiset<RoutePt> last_pin_positions_;
-  bool merged_net_;
+  odb::dbNet* merged_net_;
+  bool is_merged_net_;
   bool is_dirty_net_;
 };
 

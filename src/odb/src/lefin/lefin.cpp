@@ -130,10 +130,11 @@ static void create_path_box(dbObject* obj,
     x2 = cur_x + dw;
     y2 = cur_y + dw;
     dbBox* box;
-    if (is_pin)
+    if (is_pin) {
       box = dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
-    else
+    } else {
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+    }
     box->setDesignRuleWidth(designRuleWidth);
   } else if (cur_x == prev_x) {  // vert. path
     x1 = cur_x - dw;
@@ -147,10 +148,11 @@ static void create_path_box(dbObject* obj,
       y2 = prev_y + dw;
     }
     dbBox* box;
-    if (is_pin)
+    if (is_pin) {
       box = dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
-    else
+    } else {
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+    }
     box->setDesignRuleWidth(designRuleWidth);
   } else if (cur_y == prev_y) {  // horiz. path
     y1 = cur_y - dw;
@@ -164,10 +166,11 @@ static void create_path_box(dbObject* obj,
       x2 = prev_x + dw;
     }
     dbBox* box;
-    if (is_pin)
+    if (is_pin) {
       box = dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
-    else
+    } else {
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+    }
     box->setDesignRuleWidth(designRuleWidth);
   } else {
     logger->warn(utl::ODB, 175, "illegal: non-orthogonal-path at Pin");
@@ -312,10 +315,11 @@ bool lefinReader::addGeoms(dbObject* object,
         int y2 = dbdist(rect->yh);
 
         dbBox* box;
-        if (is_pin)
+        if (is_pin) {
           box = dbBox::create((dbMPin*) object, layer, x1, y1, x2, y2);
-        else
+        } else {
           box = dbBox::create((dbMaster*) object, layer, x1, y1, x2, y2);
+        }
         box->setDesignRuleWidth(designRuleWidth);
         break;
       }
@@ -334,16 +338,17 @@ bool lefinReader::addGeoms(dbObject* object,
         for (dx = 0, x_idx = 0; x_idx < numX; ++x_idx, dx += stepX) {
           for (dy = 0, y_idx = 0; y_idx < numY; ++y_idx, dy += stepY) {
             dbBox* box;
-            if (is_pin)
+            if (is_pin) {
               box = dbBox::create(
                   (dbMPin*) object, layer, x1 + dx, y1 + dy, x2 + dx, y2 + dy);
-            else
+            } else {
               box = dbBox::create((dbMaster*) object,
                                   layer,
                                   x1 + dx,
                                   y1 + dy,
                                   x2 + dx,
                                   y2 + dy);
+            }
             box->setDesignRuleWidth(designRuleWidth);
           }
         }
@@ -393,10 +398,11 @@ bool lefinReader::addGeoms(dbObject* object,
         int x = dbdist(via->x);
         int y = dbdist(via->y);
 
-        if (is_pin)
+        if (is_pin) {
           dbBox::create((dbMPin*) object, dbvia, x, y);
-        else
+        } else {
           dbBox::create((dbMaster*) object, dbvia, x, y);
+        }
 
         break;
       }
@@ -422,10 +428,11 @@ bool lefinReader::addGeoms(dbObject* object,
 
         for (dx = 0, x_idx = 0; x_idx < numX; ++x_idx, dx += stepX) {
           for (dy = 0, y_idx = 0; y_idx < numY; ++y_idx, dy += stepY) {
-            if (is_pin)
+            if (is_pin) {
               dbBox::create((dbMPin*) object, dbvia, x + dx, y + dy);
-            else
+            } else {
               dbBox::create((dbMaster*) object, dbvia, x + dx, y + dy);
+            }
           }
         }
         break;
@@ -498,8 +505,9 @@ void lefinReader::arrayEnd(const char* /* unused: name */)
 
 int lefinReader::busBitChars(const char* busBit)
 {
-  if (busBit[0] == '\0' || busBit[1] == '\0')
+  if (busBit[0] == '\0' || busBit[1] == '\0') {
     _logger->error(utl::ODB, 179, "invalid BUSBITCHARS ({})\n", busBit);
+  }
 
   _left_bus_delimiter = busBit[0];
   _right_bus_delimiter = busBit[1];
@@ -573,8 +581,9 @@ void lefinReader::irdropEnd(void* /* unused: ptr */)
 
 void lefinReader::layer(LefParser::lefiLayer* layer)
 {
-  if (!_create_tech)
+  if (!_create_tech) {
     return;
+  }
 
   if (_tech->findLayer(layer->name())) {
     _logger->warn(utl::ODB, 180, "duplicate LAYER ({}) ignored", layer->name());
@@ -591,8 +600,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
 
   dbTechLayerType type(dbTechLayerType::ROUTING);
 
-  if (layer->hasType())
+  if (layer->hasType()) {
     type = dbTechLayerType(layer->type());
+  }
 
   if (_ignore_non_routing_layers
       && ((type != dbTechLayerType::ROUTING) && (type != dbTechLayerType::CUT)
@@ -614,10 +624,11 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
     return;
   }
 
-  if (layer->hasPitch())
+  if (layer->hasPitch()) {
     l->setPitch(dbdist(layer->pitch()));
-  else if (layer->hasXYPitch())
+  } else if (layer->hasXYPitch()) {
     l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
+  }
 
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
@@ -636,30 +647,30 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
                  || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
-      } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
+      } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING")) {
         valid = lefTechLayerCornerSpacingParser::parse(
             layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
+      } else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         if (std::string(layer->propValue(iii)).find("PARALLELRUNLENGTH")
-            == std::string::npos)
+            == std::string::npos) {
           warning(256,
                   "unsupported {} property for layer {} :\"{}\"",
                   layer->propName(iii),
                   layer->name(),
                   layer->propValue(iii));
-        else {
+        } else {
           lefTechLayerSpacingTablePrlParser parser;
           valid = parser.parse(layer->propValue(iii), l, this);
         }
-      } else if (!strcmp(layer->propName(iii), "LEF58_RIGHTWAYONGRIDONLY"))
+      } else if (!strcmp(layer->propName(iii), "LEF58_RIGHTWAYONGRIDONLY")) {
         valid = lefTechLayerRightWayOnGridOnlyParser::parse(
             layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_RECTONLY"))
+      } else if (!strcmp(layer->propName(iii), "LEF58_RECTONLY")) {
         valid
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
+      } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
+      } else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
         lefTechLayerEolExtensionRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
@@ -684,18 +695,19 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
                          "LEF58_TWOWIRESFORBIDDENSPACING")) {
         lefTechLayerTwoWiresForbiddenSpcRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
-      } else
+      } else {
         supported = false;
+      }
     } else if (type.getValue() == dbTechLayerType::CUT) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING")
           || !strcmp(layer->propName(iii), "LEF57_SPACING")) {
         lefTechLayerCutSpacingParser cutSpacingParser;
         valid = cutSpacingParser.parse(
             layer->propValue(iii), l, this, _incomplete_props);
-      } else if (!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
+      } else if (!strcmp(layer->propName(iii), "LEF58_CUTCLASS")) {
         valid
             = lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")) {
+      } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")) {
         lefTechLayerCutEnclosureRuleParser encParser(this);
         encParser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
@@ -713,22 +725,26 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
         MaxSpacingParser parser(l, this);
         parser.parse(layer->propValue(iii));
-      } else
+      } else {
         supported = false;
+      }
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {
-      if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
+      if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
-      else
+      } else {
         supported = false;
-    } else
+      }
+    } else {
       supported = false;
-    if (supported && !valid)
+    }
+    if (supported && !valid) {
       _logger->warn(utl::ODB,
                     279,
                     "parse mismatch in layer property {} for layer {} : \"{}\"",
                     layer->propName(iii),
                     layer->name(),
                     layer->propValue(iii));
+    }
     if (!supported) {
       _logger->info(utl::ODB,
                     388,
@@ -745,18 +761,21 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       break;
     }
   }
-  if (layer->hasWidth())
+  if (layer->hasWidth()) {
     l->setWidth(dbdist(layer->width()));
+  }
 
-  if (layer->hasMinwidth())
+  if (layer->hasMinwidth()) {
     l->setMinWidth(dbdist(layer->minwidth()));
-  else if (type == dbTechLayerType::ROUTING)
+  } else if (type == dbTechLayerType::ROUTING) {
     l->setMinWidth(l->getWidth());
+  }
 
-  if (layer->hasOffset())
+  if (layer->hasOffset()) {
     l->setOffset(dbdist(layer->offset()));
-  else if (layer->hasXYOffset())
+  } else if (layer->hasXYOffset()) {
     l->setOffsetXY(dbdist(layer->offsetX()), dbdist(layer->offsetY()));
+  }
 
   int j;
   dbTechLayerSpacingRule* cur_rule;
@@ -781,23 +800,26 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       if (layer->hasSpacingRange(j)) {
         cur_rule->setRange(dbdist(layer->spacingRangeMin(j)),
                            dbdist(layer->spacingRangeMax(j)));
-        if (layer->hasSpacingRangeUseLengthThreshold(j))
+        if (layer->hasSpacingRangeUseLengthThreshold(j)) {
           cur_rule->setUseLengthThreshold();
-        else if (layer->hasSpacingRangeInfluence(j)) {
+        } else if (layer->hasSpacingRangeInfluence(j)) {
           cur_rule->setInfluence(dbdist(layer->spacingRangeInfluence(j)));
-          if (layer->hasSpacingRangeInfluenceRange(j))
+          if (layer->hasSpacingRangeInfluenceRange(j)) {
             cur_rule->setInfluenceRange(
                 dbdist(layer->spacingRangeInfluenceMin(j)),
                 dbdist(layer->spacingRangeInfluenceMax(j)));
-        } else if (layer->hasSpacingRangeRange(j))
+          }
+        } else if (layer->hasSpacingRangeRange(j)) {
           cur_rule->setRangeRange(dbdist(layer->spacingRangeRangeMin(j)),
                                   dbdist(layer->spacingRangeRangeMax(j)));
+        }
       } else if (layer->hasSpacingLengthThreshold(j)) {
         cur_rule->setLengthThreshold(dbdist(layer->spacingLengthThreshold(j)));
-        if (layer->hasSpacingLengthThresholdRange(j))
+        if (layer->hasSpacingLengthThresholdRange(j)) {
           cur_rule->setLengthThresholdRange(
               dbdist(layer->spacingLengthThresholdRangeMin(j)),
               dbdist(layer->spacingLengthThresholdRangeMax(j)));
+        }
       } else if (layer->hasSpacingAdjacent(j)) {
         cur_rule->setAdjacentCuts(layer->spacingAdjacentCuts(j),
                                   dbdist(layer->spacingAdjacentWithin(j)),
@@ -825,8 +847,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
                          layer->spacingName(j));
         }
         cur_rule->setCutLayer4Spacing(tmply);
-      } else
+      } else {
         l->setSpacing(dbdist(layer->spacing(j)));
+      }
     }
   }
 
@@ -867,8 +890,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       int wddx, lndx;
 
       l->initV55LengthIndex(cur_ipl->numLength());
-      for (lndx = 0; lndx < cur_ipl->numLength(); lndx++)
+      for (lndx = 0; lndx < cur_ipl->numLength(); lndx++) {
         l->addV55LengthEntry(dbdist(cur_ipl->length(lndx)));
+      }
 
       l->initV55WidthIndex(cur_ipl->numWidth());
       l->initV55SpacingTable(cur_ipl->numWidth(), cur_ipl->numLength());
@@ -877,8 +901,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         for (lndx = 0; lndx < cur_ipl->numLength(); lndx++) {
           l->addV55SpacingTableEntry(
               wddx, lndx, dbdist(cur_ipl->widthSpacing(wddx, lndx)));
-          if ((wddx == 0) && (lndx == 0))
+          if ((wddx == 0) && (lndx == 0)) {
             l->setSpacing(dbdist(cur_ipl->widthSpacing(wddx, lndx)));
+          }
         }
       }
     } else {  // two width spacing rule
@@ -929,17 +954,19 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       cur_cut_rule->setCutDistance(dbdist(layer->minimumcutWithin(j)));
     }
 
-    if (layer->hasMinimumcutNumCuts(j))
+    if (layer->hasMinimumcutNumCuts(j)) {
       cur_cut_rule->setLengthForCuts(dbdist(layer->minimumcutLength(j)),
                                      dbdist(layer->minimumcutDistance(j)));
+    }
   }
 
   dbTechMinEncRule* cur_enc_rule;
   for (j = 0; j < layer->numMinenclosedarea(); j++) {
     cur_enc_rule = dbTechMinEncRule::create(l);
     cur_enc_rule->setEnclosure(dbarea(layer->minenclosedarea(j)));
-    if (layer->hasMinenclosedareaWidth(j))
+    if (layer->hasMinenclosedareaWidth(j)) {
       cur_enc_rule->setEnclosureWidth(dbdist(layer->minenclosedareaWidth(j)));
+    }
   }
 
   dbTechLayerAntennaRule* cur_ant_rule;
@@ -1059,17 +1086,21 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
     }
   }
 
-  if (layer->hasArea())
+  if (layer->hasArea()) {
     l->setArea(layer->area());
+  }
 
-  if (layer->hasThickness())
+  if (layer->hasThickness()) {
     l->setThickness(dbdist(layer->thickness()));
+  }
 
-  if (layer->hasMaxwidth())
+  if (layer->hasMaxwidth()) {
     l->setMaxWidth(dbdist(layer->maxwidth()));
+  }
 
-  if (layer->hasMask())
+  if (layer->hasMask()) {
     l->setNumMasks(layer->mask());
+  }
 
   if (layer->hasMinstep()) {
     l->setMinStep(dbdist(layer->minstep(0)));
@@ -1084,29 +1115,34 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
     }
   }
 
-  if (layer->hasProtrusion())
+  if (layer->hasProtrusion()) {
     l->setProtrusion(dbdist(layer->protrusionWidth1()),
                      dbdist(layer->protrusionLength()),
                      dbdist(layer->protrusionWidth2()));
+  }
 
   if (layer->hasDirection()) {
     dbTechLayerDir direction(layer->direction());
     l->setDirection(direction);
   }
 
-  if (layer->hasResistance())  // routing layers
+  if (layer->hasResistance()) {  // routing layers
     l->setResistance(layer->resistance());
-  else if (layer->hasResistancePerCut())  // via layers
+  } else if (layer->hasResistancePerCut()) {  // via layers
     l->setResistance(layer->resistancePerCut());
+  }
 
-  if (layer->hasCapacitance())
+  if (layer->hasCapacitance()) {
     l->setCapacitance(layer->capacitance());
+  }
 
-  if (layer->hasEdgeCap())
+  if (layer->hasEdgeCap()) {
     l->setEdgeCapacitance(layer->edgeCap());
+  }
 
-  if (layer->hasWireExtension())
+  if (layer->hasWireExtension()) {
     l->setWireExtension(dbdist(layer->wireExtension()));
+  }
 
   for (int i = 0; i < layer->numEnclosure(); ++i) {
     auto* rule = odb::dbTechLayerCutEnclosureRule::create(l);
@@ -1138,8 +1174,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   }
 
   dbSet<dbProperty> props = dbProperty::getProperties(l);
-  if (!props.empty() && props.orderReversed())
+  if (!props.empty() && props.orderReversed()) {
     props.reverse();
+  }
 
   _layer_cnt++;
 }
@@ -1149,13 +1186,15 @@ void lefinReader::macroBegin(const char* name)
   _master = nullptr;
 
   if (_create_lib) {
-    if (_lib == nullptr)
+    if (_lib == nullptr) {
       createLibrary();
+    }
 
     _master = _lib->findMaster(name);
 
-    if (_master == nullptr)
+    if (_master == nullptr) {
       _master = dbMaster::create(_lib, name);
+    }
   }
 
   _master_modified = false;
@@ -1163,8 +1202,9 @@ void lefinReader::macroBegin(const char* name)
 
 void lefinReader::macro(LefParser::lefiMacro* macro)
 {
-  if (_master == nullptr)
+  if (_master == nullptr) {
     return;
+  }
 
   if (macro->hasClass()) {
     dbMasterType type(macro->macroClass());
@@ -1193,20 +1233,22 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
 
   if (macro->hasEEQ()) {
     dbMaster* eeq = _lib->findMaster(macro->EEQ());
-    if (eeq == nullptr)
+    if (eeq == nullptr) {
       _logger->warn(
           utl::ODB, 184, "cannot find EEQ for macro {}", macro->name());
-    else
+    } else {
       _master->setEEQ(eeq);
+    }
   }
 
   if (macro->hasLEQ()) {
     dbMaster* leq = _lib->findMaster(macro->LEQ());
-    if (leq == nullptr)
+    if (leq == nullptr) {
       _logger->warn(
           utl::ODB, 185, "cannot find LEQ for macro {}", macro->name());
-    else
+    } else {
       _master->setLEQ(leq);
+    }
   }
 
   if (macro->hasSize()) {
@@ -1236,14 +1278,17 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
     }
   }
 
-  if (macro->hasXSymmetry())
+  if (macro->hasXSymmetry()) {
     _master->setSymmetryX();
+  }
 
-  if (macro->hasYSymmetry())
+  if (macro->hasYSymmetry()) {
     _master->setSymmetryY();
+  }
 
-  if (macro->has90Symmetry())
+  if (macro->has90Symmetry()) {
     _master->setSymmetryR90();
+  }
 }
 
 void lefinReader::macroEnd(const char* /* unused: macroName */)
@@ -1271,8 +1316,9 @@ void lefinReader::minFeature(LefParser::lefiMinFeature* /* unused: min */)
 
 void lefinReader::nonDefault(LefParser::lefiNonDefault* rule)
 {
-  if (!_create_tech)
+  if (!_create_tech) {
     return;
+  }
 
   dbTechNonDefaultRule* dbrule
       = dbTechNonDefaultRule::create(_tech, rule->name());
@@ -1299,23 +1345,29 @@ void lefinReader::nonDefault(LefParser::lefiNonDefault* rule)
 
     dbTechLayerRule* lr = dbTechLayerRule::create(dbrule, dblayer);
 
-    if (rule->hasLayerWidth(i))
+    if (rule->hasLayerWidth(i)) {
       lr->setWidth(dbdist(rule->layerWidth(i)));
+    }
 
-    if (rule->hasLayerSpacing(i))
+    if (rule->hasLayerSpacing(i)) {
       lr->setSpacing(dbdist(rule->layerSpacing(i)));
+    }
 
-    if (rule->hasLayerWireExtension(i))
+    if (rule->hasLayerWireExtension(i)) {
       lr->setWireExtension(dbdist(rule->layerWireExtension(i)));
+    }
 
-    if (rule->hasLayerResistance(i))
+    if (rule->hasLayerResistance(i)) {
       lr->setResistance(rule->layerResistance(i));
+    }
 
-    if (rule->hasLayerCapacitance(i))
+    if (rule->hasLayerCapacitance(i)) {
       lr->setCapacitance(rule->layerCapacitance(i));
+    }
 
-    if (rule->hasLayerEdgeCap(i))
+    if (rule->hasLayerEdgeCap(i)) {
       lr->setEdgeCapacitance(rule->layerEdgeCap(i));
+    }
   }
 
   for (i = 0; i < rule->numVias(); ++i) {
@@ -1342,15 +1394,17 @@ void lefinReader::nonDefault(LefParser::lefiNonDefault* rule)
     }
     dbTechSameNetRule* srule = dbTechSameNetRule::create(dbrule, l1, l2);
 
-    if (spacing->hasStack())
+    if (spacing->hasStack()) {
       srule->setAllowStackedVias(true);
+    }
 
     srule->setSpacing(dbdist(spacing->distance()));
   }
 
   // 5.6 additions
-  if (rule->hasHardspacing())
+  if (rule->hasHardspacing()) {
     dbrule->setHardSpacing(true);
+  }
 
   for (i = 0; i < rule->numUseVia(); ++i) {
     const char* vname = rule->viaName(i);
@@ -1395,8 +1449,9 @@ void lefinReader::nonDefault(LefParser::lefiNonDefault* rule)
 
 void lefinReader::obstruction(LefParser::lefiObstruction* obs)
 {
-  if ((_master == nullptr) || (_skip_obstructions == true))
+  if ((_master == nullptr) || (_skip_obstructions == true)) {
     return;
+  }
 
   LefParser::lefiGeometries* geometries = obs->geometries();
 
@@ -1412,33 +1467,38 @@ void lefinReader::obstruction(LefParser::lefiObstruction* obs)
     dbSet<dbBox> obstructions = _master->getObstructions();
 
     // Reverse the stored order to match the created order.
-    if (obstructions.reversible() && obstructions.orderReversed())
+    if (obstructions.reversible() && obstructions.orderReversed()) {
       obstructions.reverse();
+    }
   }
 }
 
 void lefinReader::pin(LefParser::lefiPin* pin)
 {
-  if (_master == nullptr)
+  if (_master == nullptr) {
     return;
+  }
 
   dbIoType io_type;
 
   if (pin->hasDirection()) {
-    if (strcasecmp(pin->direction(), "OUTPUT TRISTATE") == 0)
+    if (strcasecmp(pin->direction(), "OUTPUT TRISTATE") == 0) {
       io_type = dbIoType(dbIoType::OUTPUT);
-    else
+    } else {
       io_type = dbIoType(pin->direction());
+    }
   }
 
   dbSigType sig_type;
   dbMTermShapeType shape_type;
 
-  if (pin->LefParser::lefiPin::hasUse())
+  if (pin->LefParser::lefiPin::hasUse()) {
     sig_type = dbSigType(pin->use());
+  }
 
-  if (pin->LefParser::lefiPin::hasShape())
+  if (pin->LefParser::lefiPin::hasShape()) {
     shape_type = dbMTermShapeType(pin->shape());
+  }
 
   dbMTerm* term = _master->findMTerm(pin->name());
 
@@ -1464,79 +1524,87 @@ void lefinReader::pin(LefParser::lefiPin* pin)
   int i;
   dbTechLayer* tply;
 
-  if (pin->LefParser::lefiPin::hasAntennaPartialMetalArea())
+  if (pin->LefParser::lefiPin::hasAntennaPartialMetalArea()) {
     for (i = 0; i < pin->LefParser::lefiPin::numAntennaPartialMetalArea();
          i++) {
       tply = nullptr;
       if (pin->LefParser::lefiPin::antennaPartialMetalAreaLayer(i)) {
         tply = _tech->findLayer(
             pin->LefParser::lefiPin::antennaPartialMetalAreaLayer(i));
-        if (!tply)
+        if (!tply) {
           _logger->warn(
               utl::ODB,
               195,
               "Invalid layer name {} in antenna info for term {}",
               pin->LefParser::lefiPin::antennaPartialMetalAreaLayer(i),
               term->getName());
+        }
       }
       term->addPartialMetalAreaEntry(
           pin->LefParser::lefiPin::antennaPartialMetalArea(i), tply);
     }
+  }
 
-  if (pin->LefParser::lefiPin::hasAntennaPartialMetalSideArea())
+  if (pin->LefParser::lefiPin::hasAntennaPartialMetalSideArea()) {
     for (i = 0; i < pin->LefParser::lefiPin::numAntennaPartialMetalSideArea();
          i++) {
       tply = nullptr;
       if (pin->LefParser::lefiPin::antennaPartialMetalSideAreaLayer(i)) {
         tply = _tech->findLayer(
             pin->LefParser::lefiPin::antennaPartialMetalSideAreaLayer(i));
-        if (!tply)
+        if (!tply) {
           _logger->warn(
               utl::ODB,
               196,
               "Invalid layer name {} in antenna info for term {}",
               pin->LefParser::lefiPin::antennaPartialMetalSideAreaLayer(i),
               term->getName());
+        }
       }
 
       term->addPartialMetalSideAreaEntry(
           pin->LefParser::lefiPin::antennaPartialMetalSideArea(i), tply);
     }
+  }
 
-  if (pin->LefParser::lefiPin::hasAntennaPartialCutArea())
+  if (pin->LefParser::lefiPin::hasAntennaPartialCutArea()) {
     for (i = 0; i < pin->LefParser::lefiPin::numAntennaPartialCutArea(); i++) {
       tply = nullptr;
       if (pin->LefParser::lefiPin::antennaPartialCutAreaLayer(i)) {
         tply = _tech->findLayer(
             pin->LefParser::lefiPin::antennaPartialCutAreaLayer(i));
-        if (!tply)
+        if (!tply) {
           _logger->warn(utl::ODB,
                         197,
                         "Invalid layer name {} in antenna info for term {}",
                         pin->LefParser::lefiPin::antennaPartialCutAreaLayer(i),
                         term->getName());
+        }
       }
 
       term->addPartialCutAreaEntry(
           pin->LefParser::lefiPin::antennaPartialCutArea(i), tply);
     }
+  }
 
-  if (pin->LefParser::lefiPin::hasAntennaDiffArea())
+  if (pin->LefParser::lefiPin::hasAntennaDiffArea()) {
     for (i = 0; i < pin->LefParser::lefiPin::numAntennaDiffArea(); i++) {
       tply = nullptr;
       if (pin->LefParser::lefiPin::antennaDiffAreaLayer(i)) {
         tply = _tech->findLayer(
             pin->LefParser::lefiPin::antennaDiffAreaLayer(i));
-        if (!tply)
+        if (!tply) {
           _logger->warn(utl::ODB,
                         198,
                         "Invalid layer name {} in antenna info for term {}",
                         pin->LefParser::lefiPin::antennaDiffAreaLayer(i),
                         term->getName());
+        }
       }
 
       term->addDiffAreaEntry(pin->LefParser::lefiPin::antennaDiffArea(i), tply);
     }
+  }
 
   int j;
   dbTechAntennaPinModel* curmodel;
@@ -1554,12 +1622,13 @@ void lefinReader::pin(LefParser::lefiPin* pin)
           tply = nullptr;
           if (curlefmodel->antennaGateAreaLayer(j)) {
             tply = _tech->findLayer(curlefmodel->antennaGateAreaLayer(j));
-            if (!tply)
+            if (!tply) {
               _logger->warn(utl::ODB,
                             199,
                             "Invalid layer name {} in antenna info for term {}",
                             curlefmodel->antennaGateAreaLayer(j),
                             term->getName());
+            }
           }
           curmodel->addGateAreaEntry(curlefmodel->antennaGateArea(j), tply);
         }
@@ -1570,12 +1639,13 @@ void lefinReader::pin(LefParser::lefiPin* pin)
           tply = nullptr;
           if (curlefmodel->antennaMaxAreaCarLayer(j)) {
             tply = _tech->findLayer(curlefmodel->antennaMaxAreaCarLayer(j));
-            if (!tply)
+            if (!tply) {
               _logger->warn(utl::ODB,
                             200,
                             "Invalid layer name {} in antenna info for term {}",
                             curlefmodel->antennaMaxAreaCarLayer(j),
                             term->getName().c_str());
+            }
           }
           curmodel->addMaxAreaCAREntry(curlefmodel->antennaMaxAreaCar(j), tply);
         }
@@ -1586,12 +1656,13 @@ void lefinReader::pin(LefParser::lefiPin* pin)
           tply = nullptr;
           if (curlefmodel->antennaMaxSideAreaCarLayer(j)) {
             tply = _tech->findLayer(curlefmodel->antennaMaxSideAreaCarLayer(j));
-            if (!tply)
+            if (!tply) {
               _logger->warn(utl::ODB,
                             201,
                             "Invalid layer name {} in antenna info for term {}",
                             curlefmodel->antennaMaxSideAreaCarLayer(j),
                             term->getName());
+            }
           }
           curmodel->addMaxSideAreaCAREntry(
               curlefmodel->antennaMaxSideAreaCar(j), tply);
@@ -1603,12 +1674,13 @@ void lefinReader::pin(LefParser::lefiPin* pin)
           tply = nullptr;
           if (curlefmodel->antennaMaxCutCarLayer(j)) {
             tply = _tech->findLayer(curlefmodel->antennaMaxCutCarLayer(j));
-            if (!tply)
+            if (!tply) {
               _logger->warn(utl::ODB,
                             202,
                             "Invalid layer name {} in antenna info for term {}",
                             curlefmodel->antennaMaxCutCarLayer(j),
                             term->getName());
+            }
           }
           curmodel->addMaxCutCAREntry(curlefmodel->antennaMaxCutCar(j), tply);
         }
@@ -1631,16 +1703,18 @@ void lefinReader::pin(LefParser::lefiPin* pin)
       }
 
       dbSet<dbBox> geoms = dbpin->getGeometry();
-      if (geoms.reversible() && geoms.orderReversed())
+      if (geoms.reversible() && geoms.orderReversed()) {
         geoms.reverse();
+      }
     }
   }
 
   if (created_mpins)  // created pins
   {
     dbSet<dbMPin> pins = term->getMPins();
-    if (pins.reversible() && pins.orderReversed())
+    if (pins.reversible() && pins.orderReversed()) {
       pins.reverse();
+    }
   }
 }
 
@@ -1665,16 +1739,19 @@ void lefinReader::propDefEnd(void* /* unused: ptr */)
 
 void lefinReader::site(LefParser::lefiSite* lefsite)
 {
-  if (!_create_lib)
+  if (!_create_lib) {
     return;
+  }
 
-  if (_lib == nullptr)
+  if (_lib == nullptr) {
     createLibrary();
+  }
 
   dbSite* site = _lib->findSite(lefsite->name());
 
-  if (site)
+  if (site) {
     return;
+  }
 
   for (dbLib* lib : _db->getLibs()) {
     if ((site = lib->findSite(lefsite->name()))) {
@@ -1695,17 +1772,21 @@ void lefinReader::site(LefParser::lefiSite* lefsite)
     site->setHeight(dbdist(lefsite->sizeY()));
   }
 
-  if (lefsite->hasXSymmetry())
+  if (lefsite->hasXSymmetry()) {
     site->setSymmetryX();
+  }
 
-  if (lefsite->hasYSymmetry())
+  if (lefsite->hasYSymmetry()) {
     site->setSymmetryY();
+  }
 
-  if (lefsite->has90Symmetry())
+  if (lefsite->has90Symmetry()) {
     site->setSymmetryR90();
+  }
 
-  if (lefsite->hasClass())
+  if (lefsite->hasClass()) {
     site->setClass(dbSiteClass(lefsite->siteClass()));
+  }
 
   if (lefsite->hasRowPattern()) {
     auto row_pattern = lefsite->getRowPatterns();
@@ -1732,8 +1813,9 @@ void lefinReader::spacingBegin(void* /* unused: ptr */)
 
 void lefinReader::spacing(LefParser::lefiSpacing* spacing)
 {
-  if (_create_tech == false)
+  if (_create_tech == false) {
     return;
+  }
 
   dbTechLayer* l1 = _tech->findLayer(spacing->name1());
   if (l1 == nullptr) {
@@ -1749,11 +1831,13 @@ void lefinReader::spacing(LefParser::lefiSpacing* spacing)
   }
   dbTechSameNetRule* rule = dbTechSameNetRule::create(l1, l2);
 
-  if (rule == nullptr)
+  if (rule == nullptr) {
     return;
+  }
 
-  if (spacing->hasStack())
+  if (spacing->hasStack()) {
     rule->setAllowStackedVias(true);
+  }
 
   rule->setSpacing(dbdist(spacing->distance()));
 }
@@ -1774,10 +1858,11 @@ void lefinReader::units(LefParser::lefiUnits* unit)
     if (_override_lef_dbu == false) {
       if (_create_tech) {
         if (_lef_units
-            < 1000)  // historically the database was always stored in nm
+            < 1000) {  // historically the database was always stored in nm
           setDBUPerMicron(1000);
-        else
+        } else {
           setDBUPerMicron(_lef_units);
+        }
 
         _tech->setDbUnitsPerMicron(_dbu_per_micron);
         _tech->setLefUnits(_lef_units);
@@ -1859,23 +1944,27 @@ void lefinReader::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
 
   dbTechVia* v;
 
-  if (rule)
+  if (rule) {
     v = dbTechVia::create(rule, via->name());
-  else
+  } else {
     v = dbTechVia::create(_tech, via->name());
+  }
 
   for (int iii = 0; iii < via->numProperties(); iii++) {
     dbStringProperty::create(v, via->propName(iii), via->propValue(iii));
   }
 
-  if (via->hasDefault())
+  if (via->hasDefault()) {
     v->setDefault();
+  }
 
-  if (via->hasTopOfStack())
+  if (via->hasTopOfStack()) {
     v->setTopOfStack();
+  }
 
-  if (via->hasResistance())
+  if (via->hasResistance()) {
     v->setResistance(via->resistance());
+  }
 
   if (via->numLayers() > 0) {
     int i;
@@ -1905,8 +1994,9 @@ void lefinReader::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
 
     dbSet<dbBox> boxes = v->getBoxes();
     // Reverse the stored order to match the created order.
-    if (boxes.reversible() && boxes.orderReversed())
+    if (boxes.reversible() && boxes.orderReversed()) {
       boxes.reverse();
+    }
   }
 
   // 5.6 VIA RULE
@@ -1983,8 +2073,9 @@ void lefinReader::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
 
     v->setViaParams(P);
 
-    if (via->hasCutPattern())
+    if (via->hasCutPattern()) {
       v->setPattern(via->cutPattern());
+    }
   }
 
   _via_cnt++;
@@ -2025,10 +2116,11 @@ void lefinReader::viaRule(LefParser::lefiViaRule* viaRule)
         = dbTechViaLayerRule::create(_tech, rule, layer);
 
     if (viaRule->layer(idx)->hasDirection()) {
-      if (viaRule->layer(idx)->isVertical())
+      if (viaRule->layer(idx)->isVertical()) {
         layrule->setDirection(dbTechLayerDir::VERTICAL);
-      else if (viaRule->layer(idx)->isHorizontal())
+      } else if (viaRule->layer(idx)->isHorizontal()) {
         layrule->setDirection(dbTechLayerDir::HORIZONTAL);
+      }
     }
 
     if (viaRule->layer(idx)->hasWidth()) {
@@ -2084,10 +2176,11 @@ void lefinReader::viaGenerateRule(LefParser::lefiViaRule* viaRule)
         = dbTechViaLayerRule::create(_tech, rule, layer);
 
     if (viaRule->layer(idx)->hasDirection()) {
-      if (viaRule->layer(idx)->isVertical())
+      if (viaRule->layer(idx)->isVertical()) {
         layrule->setDirection(dbTechLayerDir::VERTICAL);
-      else if (viaRule->layer(idx)->isHorizontal())
+      } else if (viaRule->layer(idx)->isHorizontal()) {
         layrule->setDirection(dbTechLayerDir::HORIZONTAL);
+      }
     }
 
     if (viaRule->layer(idx)->hasEnclosure()) {
@@ -2355,8 +2448,9 @@ dbLib* lefinReader::createTechAndLib(const char* tech_name,
 
   dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();
 
-  if (rules.orderReversed())
+  if (rules.orderReversed()) {
     rules.reverse();
+  }
 
   _db->triggerPostReadLef(_tech, _lib);
 
@@ -2372,8 +2466,9 @@ bool lefinReader::updateLib(dbLib* lib, const char* lef_file)
   _create_lib = true;
   setDBUPerMicron(_tech->getDbUnitsPerMicron());
 
-  if (!readLef(lef_file))
+  if (!readLef(lef_file)) {
     return false;
+  }
 
   return _errors == 0;
 }
@@ -2393,8 +2488,9 @@ bool lefinReader::updateTechAndLib(dbLib* lib, const char* lef_file)
   dbu_per_micron(_tech->getDbUnitsPerMicron());  // set override-flag, because
                                                  // the tech is being updated.
 
-  if (!readLef(lef_file))
+  if (!readLef(lef_file)) {
     return false;
+  }
 
   return _errors == 0;
 }
@@ -2408,8 +2504,9 @@ bool lefinReader::updateTech(dbTech* tech, const char* lef_file)
   dbu_per_micron(_tech->getDbUnitsPerMicron());  // set override-flag, because
                                                  // the tech is being updated.
 
-  if (!readLef(lef_file))
+  if (!readLef(lef_file)) {
     return false;
+  }
 
   return _errors == 0;
 }

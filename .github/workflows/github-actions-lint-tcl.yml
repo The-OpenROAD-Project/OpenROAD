@@ -10,18 +10,20 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Install Dependencies
         run: |
-          python3 -m pip install -U --user tclint==0.4.2
+          python3 -m venv venv
+          venv/bin/pip install tclint==0.4.2
 
       - name: Lint
         run: |
+          source venv/bin/activate
           tclfmt --version
           tclfmt --in-place .
           git diff --exit-code
           tclint --no-check-style .
+

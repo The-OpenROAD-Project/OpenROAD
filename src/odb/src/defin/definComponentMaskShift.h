@@ -14,10 +14,6 @@ class dbTechLayer;
 class definComponentMaskShift : public definBase
 {
  public:
-  definComponentMaskShift();
-
-  void init() override;
-
   void addLayer(const char* layer_name);
   void setLayers();
 

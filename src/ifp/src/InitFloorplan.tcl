@@ -241,6 +241,8 @@ proc insert_tiecells { args } {
     utl::error "IFP" 32 "Unable to find master pin: $args"
   }
 
+  ord::ensure_linked
+
   ifp::insert_tiecells_cmd $mterm $prefix
 }
 

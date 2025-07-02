@@ -10,8 +10,8 @@ link_design sub_modules
 create_clock -name main_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clock}]
 
 scan_replace
-preview_dft -verbose
-insert_dft
+report_dft_plan -verbose
+execute_dft_plan
 
 set verilog_file [make_result_file sub_modules_sky130.v]
 write_verilog $verilog_file

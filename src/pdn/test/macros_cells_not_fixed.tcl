@@ -34,5 +34,5 @@ add_pdn_connect -grid "sram" -layers {metal4 metal5}
 add_pdn_connect -grid "sram" -layers {metal5 metal6}
 add_pdn_connect -grid "sram" -layers {metal6 metal7}
 
-catch {pdngen} err
+catch { pdngen } err
 puts $err

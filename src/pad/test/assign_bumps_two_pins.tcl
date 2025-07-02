@@ -268,7 +268,8 @@ place_io_fill -row IO_WEST PAD_FILL5_V PAD_FILL1_V
 connect_by_abutment
 
 # Make bump array
-make_io_bump_array -bump DUMMY_BUMP_TWO_PORTS -origin "210.0 215.0" -pitch "160 160" -rows 17 -columns 17
+make_io_bump_array -bump DUMMY_BUMP_TWO_PORTS -origin "210.0 215.0" \
+  -pitch "160 160" -rows 17 -columns 17
 remove_io_bump BUMP_5_8
 remove_io_bump BUMP_6_8
 remove_io_bump BUMP_7_8

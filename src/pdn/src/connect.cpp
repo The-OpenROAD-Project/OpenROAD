@@ -920,6 +920,8 @@ void Connect::recordFailedVias() const
     tool_category = odb::dbMarkerCategory::create(grid_->getBlock(), "PDN");
     tool_category->setSource("PDN");
   }
+  odb::dbMarkerCategory* via_category
+      = odb::dbMarkerCategory::createOrGet(tool_category, "Via");
 
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
@@ -937,8 +939,8 @@ void Connect::recordFailedVias() const
         reason_str = "Ripup";
         break;
       case failedViaReason::RECHECK:
-        reason_str = "Recheck";
-        break;
+        // Do not report recheck vias
+        continue;
       case failedViaReason::OTHER:
         reason_str = "Other";
         break;
@@ -948,7 +950,7 @@ void Connect::recordFailedVias() const
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
 
     odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::createOrGet(tool_category, reason_str.c_str());
+        = odb::dbMarkerCategory::createOrGet(via_category, reason_str.c_str());
 
     for (const auto& [net, shape] : shapes) {
       odb::dbMarker* marker = odb::dbMarker::create(category);

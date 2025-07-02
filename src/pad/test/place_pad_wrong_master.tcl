@@ -11,5 +11,5 @@ read_def Nangate45_blackparrot/floorplan.def
 make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 15
 
 place_pad -master PADCELL_SIG_V -row IO_EAST -location 500 "u_ddr_ck_p_o"
-catch {place_pad -master PADCELL_SIG_H -row IO_WEST -location 600 "u_ddr_cke_o"} err
+catch { place_pad -master PADCELL_SIG_H -row IO_WEST -location 600 "u_ddr_cke_o" } err
 puts $err

@@ -133,8 +133,7 @@ void SpefWriter::writePorts()
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
       odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+      network_->staToDb(pin, iterm, bterm, moditerm);
 
       if (iterm != nullptr) {
         stream << escapeSpecial(iterm->getName()) << " ";
@@ -179,8 +178,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
       odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+      network_->staToDb(pin, iterm, bterm, moditerm);
 
       if (iterm != nullptr) {
         stream << "*I "
@@ -246,12 +244,11 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     odb::dbITerm* iterm = nullptr;
     odb::dbBTerm* bterm = nullptr;
     odb::dbModITerm* moditerm = nullptr;
-    odb::dbModBTerm* modbterm = nullptr;
 
     std::string node1_name = parasitics_->name(n1);
     auto pin1 = parasitics_->pin(n1);
     if (pin1 != nullptr) {
-      network_->staToDb(pin1, iterm, bterm, moditerm, modbterm);
+      network_->staToDb(pin1, iterm, bterm, moditerm);
       if (iterm != nullptr) {
         node1_name = fixPinDelimiter(node1_name);
       }
@@ -261,7 +258,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     std::string node2_name = parasitics_->name(n2);
     auto pin2 = parasitics_->pin(n2);
     if (pin2 != nullptr) {
-      network_->staToDb(pin2, iterm, bterm, moditerm, modbterm);
+      network_->staToDb(pin2, iterm, bterm, moditerm);
       if (iterm != nullptr) {
         node2_name = fixPinDelimiter(node2_name);
       }

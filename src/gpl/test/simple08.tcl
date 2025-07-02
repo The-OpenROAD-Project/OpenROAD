@@ -1,5 +1,5 @@
 source helpers.tcl
-set test_name simple08 
+set test_name simple08
 read_lef ./sky130hd.lef
 read_def ./$test_name.def
 

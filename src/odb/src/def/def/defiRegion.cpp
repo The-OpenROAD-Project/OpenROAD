@@ -115,15 +115,17 @@ void defiRegion::clear()
   }
   numProps_ = 0;
   numRectangles_ = 0;
-  if (type_)
+  if (type_) {
     free(type_);
+  }
   type_ = nullptr;
 }
 
 void defiRegion::Destroy()
 {
-  if (name_)
+  if (name_) {
     free(name_);
+  }
   clear();
   name_ = nullptr;
   nameLength_ = 0;
@@ -175,8 +177,9 @@ void defiRegion::setup(const char* name)
   clear();
 
   if (len > nameLength_) {
-    if (name_)
+    if (name_) {
       free(name_);
+    }
     nameLength_ = len;
     name_ = (char*) malloc(len);
   }
@@ -274,8 +277,9 @@ void defiRegion::addNumProperty(const char* name,
 void defiRegion::setType(const char* type)
 {
   int len;
-  if (type_)
+  if (type_) {
     free(type_);
+  }
   len = strlen(type) + 1;
   type_ = (char*) malloc(len);
   strcpy(type_, defData->DEFCASE(type));

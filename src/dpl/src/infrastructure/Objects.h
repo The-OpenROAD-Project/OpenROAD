@@ -9,8 +9,19 @@
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
 
+namespace odb {
+class dbBox;
+class dbBTerm;
+class dbInst;
+class dbMaster;
+class dbOrientType;
+class dbSite;
+}  // namespace odb
 namespace dpl {
 
+using odb::dbBTerm;
+using odb::dbInst;
+using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbSite;
 using odb::Rect;
@@ -41,10 +52,13 @@ class Master
   void setBBox(Rect box);
   void setBottomPowerType(int bottom_pwr);
   void setTopPowerType(int top_pwr);
+  void setDbMaster(dbMaster* db_master);
+  dbMaster* getDbMaster() const;
 
  private:
+  dbMaster* db_master_{nullptr};
   Rect boundary_box_;
-  bool is_multi_row_ = false;
+  bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;
   int bottom_pwr_{0};
   int top_pwr_{0};
@@ -86,7 +100,7 @@ class Node
   bool isHybrid() const;
   bool isHybridParent() const;
   int64_t area() const;
-  const char* name() const;
+  std::string name() const;
   int getBottomPower() const;
   int getTopPower() const;
   Type getType() const;
@@ -101,11 +115,15 @@ class Node
   int getNumPins() const;
   const std::vector<Pin*>& getPins() const;
   int getGroupId() const;
+  Rect getBBox() const;
+  dbBTerm* getBTerm() const;
+  uint8_t getUsedLayers() const;
 
   // setters
   void setId(int id);
   void setFixed(bool in);
   void setDbInst(dbInst* inst);
+  void setBTerm(dbBTerm* term);
   void setLeft(DbuX x);
   void setBottom(DbuY y);
   void setOrient(const dbOrientType& in);
@@ -123,12 +141,13 @@ class Node
   void setMaster(Master* in);
   void addPin(Pin* pin);
   void setGroupId(int id);
+  void addUsedLayer(int layer);
 
   bool adjustCurrOrient(const dbOrientType& newOrient);
 
  protected:
-  int id_ = 0;
-  odb::dbInst* db_inst_{nullptr};
+  int id_{0};
+  void* db_owner_{nullptr};
   // Current position; bottom corner.
   DbuX left_{0};
   DbuY bottom_{0};
@@ -156,6 +175,8 @@ class Node
   int group_id_{-1};
   // Pins.
   std::vector<Pin*> pins_;
+  // used layers
+  uint8_t used_layers_{0};
 };
 
 class Group
@@ -177,7 +198,7 @@ class Group
   void setUtil(double in);
 
  private:
-  int id_;
+  int id_{0};
   std::string name_;
   std::vector<Rect> region_boundaries_;
   std::vector<Node*> cells_;
@@ -193,10 +214,11 @@ class Edge
   int getNumPins() const;
   const std::vector<Pin*>& getPins() const;
   void addPin(Pin* pin);
+  void removePin(Pin* pin);
   uint64_t hpwl() const;
 
  private:
-  int id_ = 0;
+  int id_{0};
   std::vector<Pin*> pins_;
 };
 
@@ -234,12 +256,12 @@ class Pin
   DbuX pinWidth_{0};
   DbuY pinHeight_{0};
   // Direction.
-  int dir_ = Dir_INOUT;
+  int dir_{Dir_INOUT};
   // Layer.
-  int pinLayer_ = 0;
+  int pinLayer_{0};
   // Node and edge for pin.
-  Node* node_ = nullptr;
-  Edge* edge_ = nullptr;
+  Node* node_{nullptr};
+  Edge* edge_{nullptr};
   // Offsets from cell center.
   DbuX offsetX_{0};
   DbuY offsetY_{0};

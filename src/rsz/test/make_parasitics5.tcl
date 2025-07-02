@@ -14,8 +14,10 @@ set r 5.43e-3
 # fF/micron
 set c 6.013e-2
 
-set_wire_rc -corner ff -resistance [expr $r * 0.8] -capacitance [expr $c * 0.8]
-set_wire_rc -corner ss -resistance [expr $r * 1.2] -capacitance [expr $c * 1.2]
+set_wire_rc -corner ff -resistance [expr { $r * 0.8 }] \
+  -capacitance [expr { $c * 0.8 }]
+set_wire_rc -corner ss -resistance [expr { $r * 1.2 }] \
+  -capacitance [expr { $c * 1.2 }]
 estimate_parasitics -placement
 
 report_net r1/Q -corner ff

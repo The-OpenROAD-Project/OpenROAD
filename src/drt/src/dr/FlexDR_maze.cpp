@@ -1940,7 +1940,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       net->addNumReroutes();
       didRoute = true;
       // gc
-      if (gcWorker_->setTargetNet(net->getFrNet())) {
+      if (gcWorker_->setTargetNet(net)) {
         gcWorker_->updateDRNet(net);
         gcWorker_->setEnableSurgicalFix(true);
         gcWorker_->main();
@@ -3265,7 +3265,7 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
   }
   if (searchSuccess) {
     if (router_cfg_->CLEAN_PATCHES) {
-      gcWorker_->setTargetNet(net->getFrNet());
+      gcWorker_->setTargetNet(net);
       gcWorker_->updateDRNet(net);
       gcWorker_->setEnableSurgicalFix(true);
       gcWorker_->updateGCWorker();

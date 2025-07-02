@@ -136,6 +136,57 @@ def getParallelTests(String image) {
             }
         },
 
+        'Build on RHEL8': {
+            node ('rhel8') {
+                stage('Setup RHEL8 Build') {
+                    checkout scm;
+                }
+                stage('Build on RHEL8') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            sh label: 'Build on RHEL8', script: './etc/Build.sh 2>&1 | tee rhel8-build.log';
+                        }
+                    }
+                    archiveArtifacts artifacts: 'rhel8-build.log';
+                }
+                stage('Unit Tests CTest') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc) --output-on-failure';
+                        }
+                    }
+                    sh label: 'Save ctest results', script: 'tar zcvf results-ctest-rhel8.tgz build/Testing';
+                    sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: 'results-ctest-rhel8.tgz, **/results.tgz';
+                }
+            }
+        },
+
+        'Build with Bazel': {
+            node {
+                withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
+                    stage('Setup Bazel Build') {
+                        echo "Build with Bazel";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('Bazel Build') {
+                        timeout(time: 120, unit: 'MINUTES') {
+                            sh label: 'Bazel Build', script: '''
+                                bazel test \
+                                --keep_going \
+                                --show_timestamps \
+                                --test_output=errors \
+                                --curses=no \
+                                --force_pic \
+                                ...
+                                ''';
+                        }
+                    }
+                }
+            }
+        },
+
         'Check message IDs': {
             dir('src') {
                 sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';
@@ -256,7 +307,7 @@ node {
                 node {
                     checkout scm;
                     sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
-                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image}";
+                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image} -smoke";
                     dockerPush("${os.image}", 'openroad');
                 }
             }

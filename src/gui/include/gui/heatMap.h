@@ -175,7 +175,7 @@ class HeatMapDataSource
       const std::function<std::string()>& getter,
       const std::function<void(std::string)>& setter);
 
-  void setupMap();
+  bool setupMap();
   void clearMap();
   virtual bool populateMap() = 0;
   void addToMap(const odb::Rect& region, double value);
@@ -331,6 +331,8 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
 {
  public:
   PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
+
+  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
 
  protected:
   bool populateMap() override;

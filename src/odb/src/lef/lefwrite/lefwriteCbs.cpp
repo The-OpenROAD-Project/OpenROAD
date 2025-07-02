@@ -39,7 +39,7 @@
 // Global variables
 char defaultOut[128];
 FILE* fout;
-int userData;
+lefiUserData userData;
 
 #define CHECK_STATUS(status) \
   if (status) {              \
@@ -66,8 +66,9 @@ int versionCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData) {
     dataError();
+  }
   status = lefwVersion(5, 6);
   CHECK_STATUS(status);
   return 0;
@@ -78,8 +79,9 @@ int busBitCharsCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData) {
     dataError();
+  }
   status = lefwBusBitChars("<>");
   CHECK_STATUS(status);
   return 0;
@@ -90,8 +92,9 @@ int dividerCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData) {
     dataError();
+  }
   status = lefwDividerChar(":");
   CHECK_STATUS(status);
   status = lefwNewLine();
@@ -105,8 +108,9 @@ int unitsCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData) {
     dataError();
+  }
   status = lefwStartUnits();
   CHECK_STATUS(status);
   status = lefwUnits(100, 10, 10000, 10000, 10000, 1000, 0);
@@ -122,8 +126,9 @@ int propDefCB(lefwCallbackType_e c, lefiUserData ud)
   int status;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData) {
     dataError();
+  }
   status = lefwStartPropDef();
   CHECK_STATUS(status);
   status = lefwStringPropDef("LIBRARY", "NAME", 0, 0, "Cadence96");
@@ -179,8 +184,9 @@ int layerCB(lefwCallbackType_e c, lefiUserData ud)
   double* current;
 
   checkType(c);
-  if ((int) ud != userData)
+  if (ud != userData) {
     dataError();
+  }
   current = (double*) malloc(sizeof(double) * 15);
 
   status = lefwStartLayer("POLYS", "MASTERSLICE");
@@ -1007,7 +1013,7 @@ main(int argc, char** argv)
   lefwSetViaCbk(viaCB);
   lefwSetViaRuleCbk(viaRuleCB);
 
-  res = lefwWrite(fout, outfile, (void*) userData);
+  res = lefwWrite(fout, outfile, userData);
 
   if (encrypt) {
     // output has been written in encrypted, need to close the encrypted

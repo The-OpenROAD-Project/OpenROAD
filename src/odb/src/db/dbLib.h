@@ -9,8 +9,6 @@
 
 namespace odb {
 
-template <class T>
-class dbTable;
 class _dbProperty;
 class dbPropertyItr;
 class _dbNameCache;

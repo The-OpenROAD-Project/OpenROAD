@@ -15,12 +15,7 @@ class ExtProgressTracker
  public:
   // Constructor with optional custom progress interval (default 5%)
   explicit ExtProgressTracker(int totalWires, float progressInterval = 5.0f)
-      : totalWireCount_(totalWires),
-        extractedWireCount_(0),
-        previousProgressPercent_(0.0f),
-        progressInterval_(progressInterval),
-        wire_extracted_progress_count(500000),
-        enabled_(true)
+      : totalWireCount_(totalWires), progressInterval_(progressInterval)
   {
   }
 
@@ -66,18 +61,17 @@ class ExtProgressTracker
 
  private:
   int totalWireCount_;
-  int extractedWireCount_;
-  float previousProgressPercent_;
+  int extractedWireCount_{0};
+  float previousProgressPercent_{0.0f};
   float progressInterval_;
-  bool enabled_;
-  int wire_extracted_progress_count;
+  bool enabled_{true};
+  int wire_extracted_progress_count{500000};
   std::string progressFormat_
       = "{:.1f}% completion -- {} wires have been extracted\n";
 
   float calculateCurrentPercent() const
   {
-    return ceil(100.0f * static_cast<float>(extractedWireCount_)
-                / totalWireCount_);
+    return std::ceil(100.0f * extractedWireCount_ / totalWireCount_);
   }
 
   bool shouldPrintProgress(float currentPercent) const

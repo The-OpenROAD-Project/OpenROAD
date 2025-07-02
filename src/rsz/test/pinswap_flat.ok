@@ -50,27 +50,27 @@ legalized HPWL              7.4 u
 delta HPWL                  470 %
 
 worst slack max -0.04
-[INFO RSZ-0058] Using max wire length 693um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        11
     final |     +3.8% |       1 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.029 |       -0.0 |      1 | y2
-       10 |       0 |       5 |        2 |      0 |     3 |   +77.8% |   -0.012 |       -0.0 |      1 | y1
-       11 |       0 |       6 |        2 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      1 | y2
-      12* |       0 |       6 |        2 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      2 | y2
-      13* |       0 |       6 |        2 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      2 | y2
-    final |       0 |       6 |        2 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      2 | y2
+       10 |       0 |       5 |        1 |      0 |     3 |   +77.8% |   -0.012 |       -0.0 |      1 | y1
+       11 |       0 |       6 |        1 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      1 | y2
+      12* |       0 |       6 |        1 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      2 | y2
+      13* |       0 |       6 |        1 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      2 | y2
+    final |       0 |       6 |        1 |      0 |     3 |   +88.9% |   -0.009 |       -0.0 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 1 buffers.
-[INFO RSZ-0041] Resized 6 instances.
+[INFO RSZ-0051] Resized 6 instances, 6 sized up, 0 sized down.
 [INFO RSZ-0043] Swapped pins on 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

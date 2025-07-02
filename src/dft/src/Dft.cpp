@@ -56,7 +56,7 @@ void Dft::pre_dft()
   need_to_run_pre_dft_ = false;
 }
 
-void Dft::previewDft(bool verbose)
+void Dft::reportDftPlan(bool verbose)
 {
   if (need_to_run_pre_dft_) {
     pre_dft();
@@ -65,7 +65,7 @@ void Dft::previewDft(bool verbose)
   std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
 
   logger_->report("***************************");
-  logger_->report("Preview DFT Report");
+  logger_->report("Report DFT Plan");
   logger_->report("Number of chains: {:d}", scan_chains.size());
   logger_->report("Clock domain: {:s}",
                   ScanArchitectConfig::ClockMixingName(
@@ -85,7 +85,7 @@ void Dft::scanReplace()
   scan_replace_->scanReplace();
 }
 
-void Dft::insertDft()
+void Dft::executeDftPlan()
 {
   if (need_to_run_pre_dft_) {
     pre_dft();
@@ -111,6 +111,9 @@ void Dft::insertDft()
       odb::dbInst* db_inst = db_block->findInst(inst_name.c_str());
       odb::dbScanInst* db_scaninst = db_scanlist->add(db_inst);
       db_scaninst->setBits(scan_cell->getBits());
+      ScanLoad scan_enable = scan_cell->getScanEnable();
+      std::visit([&](auto&& pin) { db_scaninst->setScanEnable(pin); },
+                 scan_enable.getValue());
       auto scan_in_term = scan_cell->getScanIn().getValue();
       auto scan_out_term = scan_cell->getScanOut().getValue();
       db_scaninst->setAccessPins(

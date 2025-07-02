@@ -14,61 +14,8 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+
 namespace odb {
-
-inline uint get_net_dbid(const char* name)
-{
-  if (*name != 'N') {
-    return 0;
-  }
-
-  ++name;
-
-  if (*name == '\0') {
-    return 0;
-  }
-
-  char* end;
-  uint dbid = strtoul(name, &end, 10);
-
-  if (*end != '\0') {
-    return 0;
-  }
-
-  return dbid;
-}
-
-definSNet::definSNet()
-{
-  init();
-  _skip_special_wires = false;
-  _skip_shields = false;
-  _skip_block_wires = false;
-  _skip_fill_wires = false;
-}
-
-definSNet::~definSNet()
-{
-}
-
-void definSNet::init()
-{
-  definBase::init();
-  _snet_cnt = 0;
-  _snet_iterm_cnt = 0;
-  _cur_net = nullptr;
-  _cur_layer = nullptr;
-  _swire = nullptr;
-  _wire_type = dbWireType::NONE;
-  _wire_shape_type = dbWireShapeType::NONE;
-  _shield_net = nullptr;
-  _prev_x = 0;
-  _prev_y = 0;
-  _prev_ext = 0;
-  _has_prev_ext = false;
-  _width = 0;
-  _point_cnt = 0;
-}
 
 void definSNet::begin(const char* name)
 {

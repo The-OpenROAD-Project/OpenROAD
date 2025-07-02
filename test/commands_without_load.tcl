@@ -13,14 +13,14 @@ set skip {
 set arg [make_result_file commands_without_load]
 
 foreach command [info commands] {
-  if {[lsearch $skip $command] != -1} {
+  if { [lsearch $skip $command] != -1 } {
     puts "skip $command"
   } else {
     puts "TEST: $command"
-    catch {$command} msg
-    catch {$command $arg} msg
-    catch {$command $arg $arg} msg
-    catch {$command $arg $arg $arg} msg
+    catch { $command } msg
+    catch { $command $arg } msg
+    catch { $command $arg $arg } msg
+    catch { $command $arg $arg $arg } msg
     file delete $arg
   }
 }

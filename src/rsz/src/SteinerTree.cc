@@ -32,6 +32,40 @@ static void connectedPins(const Net* net,
                           // Return value.
                           Vector<PinLoc>& pins);
 
+SteinerTree* Resizer::makeSteinerTree(Point drvr_location,
+                                      const std::vector<Point>& sink_locations)
+{
+  SteinerTree* tree = new SteinerTree(drvr_location, this);
+  Vector<PinLoc>& pinlocs = tree->pinlocs();
+  for (auto loc : sink_locations) {
+    pinlocs.push_back(PinLoc{nullptr, loc});
+  }
+  // Sort pins by location
+  sort(pinlocs, [=](const PinLoc& pin1, const PinLoc& pin2) {
+    return pin1.loc.getX() < pin2.loc.getX()
+           || (pin1.loc.getX() == pin2.loc.getX()
+               && pin1.loc.getY() < pin2.loc.getY());
+  });
+  int pin_count = pinlocs.size();
+  if (pin_count >= 1) {
+    // Two separate vectors of coordinates needed by flute.
+    std::vector<int> x, y;
+    int drvr_idx = pinlocs.size();
+    pinlocs.push_back(PinLoc{nullptr, drvr_location});
+    for (int i = 0; i < pin_count + 1; i++) {
+      const PinLoc& pinloc = pinlocs[i];
+      x.push_back(pinloc.loc.x());
+      y.push_back(pinloc.loc.y());
+    }
+    stt::Tree ftree = stt_builder_->makeSteinerTree(x, y, drvr_idx);
+    tree->setTree(ftree, db_network_);
+    tree->populateSides();
+    return tree;
+  }
+  delete tree;
+  return nullptr;
+}
+
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
 {
@@ -113,8 +147,7 @@ static void connectedPins(const Net* net,
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+    db_network->staToDb(pin, iterm, bterm, moditerm);
     //
     // only accumuate the flat pins (in hierarchical mode we may
     // hit moditerms/modbterms).
@@ -133,7 +166,7 @@ void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
 
   // Find driver steiner point.
   drvr_steiner_pt_ = null_pt;
-  const Point drvr_loc = network->location(drvr_pin_);
+  const Point drvr_loc = drvr_location_;
   const int drvr_x = drvr_loc.getX();
   const int drvr_y = drvr_loc.getY();
   const int branch_count = tree_.branchCount();
@@ -147,7 +180,16 @@ void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
 }
 
 SteinerTree::SteinerTree(const Pin* drvr_pin, Resizer* resizer)
-    : drvr_pin_(drvr_pin), resizer_(resizer), logger_(resizer->logger())
+    : drvr_location_(resizer->getDbNetwork()->location(drvr_pin)),
+      resizer_(resizer),
+      logger_(resizer->logger())
+{
+}
+
+SteinerTree::SteinerTree(Point drvr_location, Resizer* resizer)
+    : drvr_location_(drvr_location),
+      resizer_(resizer),
+      logger_(resizer->logger())
 {
 }
 

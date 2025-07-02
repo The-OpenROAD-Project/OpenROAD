@@ -10,10 +10,14 @@ or_integration_tests(
     array
     array_ins_delay
     array_no_blockages
+    array_repair_clock_nets
     balance_levels
     check_buffers
     check_buffers_blockages
     check_buffers_blockages_merge
+    check_buffer_inference1
+    check_buffer_inference2
+    check_buffer_inference3
     check_charBuf
     check_max_fanout1
     check_max_fanout2
@@ -21,6 +25,7 @@ or_integration_tests(
     dummy_load
     find_clock
     find_clock_pad
+    hier_insertion_delay
     insertion_delay
     lvt_lib
     max_cap

@@ -15,8 +15,6 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbScanList;
-template <class T>
-class dbTable;
 
 class _dbScanPartition : public _dbObject
 {

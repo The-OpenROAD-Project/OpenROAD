@@ -79,7 +79,7 @@ class TclCmdInputWidget : public CmdInputWidget
   void collectNamespaces(std::set<std::string>& namespaces);
   void collectSWIGArguments();
 
-  const QString wordUnderCursor();
+  QString wordUnderCursor();
   const swig_class* swigBeforeCursor();
 
   void setCompleterCommands();

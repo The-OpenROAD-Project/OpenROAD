@@ -360,7 +360,7 @@ void Architecture::flipCellPadding(const Node* ndi)
 {
   GridX left_padding = padding_->padLeft(ndi);
   GridX right_padding = padding_->padLeft(ndi);
-  padding_->setPadding(ndi->getDbInst(), right_padding, left_padding);
+  padding_->setPadding(ndi->getDbInst(), left_padding, right_padding);
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

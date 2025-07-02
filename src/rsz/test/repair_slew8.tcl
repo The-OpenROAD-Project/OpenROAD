@@ -16,7 +16,7 @@ create_clock -period 1 clk1
 
 source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_wire_rc -clock -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
 estimate_parasitics -placement
