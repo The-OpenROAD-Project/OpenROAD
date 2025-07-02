@@ -3017,13 +3017,12 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
     } else {
-      debugPrint(log_,
-                 GPL,
-                 "callbacks",
-                 1,
-                 "warning: updateGCellState, db_inst not found in "
-                 "db_inst_index_map_ for instance: {}",
-                 db_inst->getName());
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
+          "warning: updateGCellState, db_inst not found in db_inst_index_map_");
     }
   }
   new_instances.clear();
@@ -3034,7 +3033,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
   debugPrint(log_,
              GPL,
              "callbacks",
-             1,
+             2,
              "NesterovBase: createGCell {}",
              db_inst->getName());
   auto gcell = nbc_->getGCellByIndex(stor_index);
@@ -3246,7 +3245,7 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 {
-  debugPrint(log_, GPL, "callbacks", 2, "NBC::destroyGNet");
+  debugPrint(log_, GPL, "callbacks", 3, "NBC destroyGNet");
   auto db_it = db_net_to_index_map_.find(db_net);
   if (db_it == db_net_to_index_map_.end()) {
     log_->error(GPL,
@@ -3283,7 +3282,7 @@ void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
 
 {
-  debugPrint(log_, GPL, "callbacks", 3, "NBC::destroyITerm");
+  debugPrint(log_, GPL, "callbacks", 3, "NBC destroyITerm");
   auto db_it = db_iterm_to_index_map_.find(db_iterm);
   if (db_it != db_iterm_to_index_map_.end()) {
     size_t last_index = gPinStor_.size() - 1;
