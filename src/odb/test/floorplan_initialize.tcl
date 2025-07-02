@@ -6,9 +6,9 @@ read_verilog data/floorplan_initialize.v
 link_design counter
 read_def -floorplan_initialize "data/floorplan_initialize.def"
 set chip [$db getChip]
-if {$chip == "NULL"} {
-    puts "FAIL: Read DEF Failed"
-    exit 1
+if { $chip == "NULL" } {
+  puts "FAIL: Read DEF Failed"
+  exit 1
 }
 
 set block [$chip getBlock]

@@ -433,19 +433,18 @@ double DetailedABU::delta(const Journal& journal)
 
   // Compute changed bins and changed occupancy.
   ++abuChangedBinsCounter_;
-  const auto& actions = journal.getActions();
-  for (const auto& action : actions) {
-    auto node = action.getNode();
-    updateBins(action.getNode(),
-               action.getOrigLeft().v + 0.5 * node->getWidth().v,
-               action.getOrigBottom().v + 0.5 * node->getHeight().v,
+  journal.undo(true);
+  for (const auto& node : journal.getAffectedNodes()) {
+    updateBins(node,
+               node->getLeft().v + 0.5 * node->getWidth().v,
+               node->getBottom().v + 0.5 * node->getHeight().v,
                -1);
   }
-  for (const auto& action : actions) {
-    auto node = action.getNode();
-    updateBins(action.getNode(),
-               action.getNewLeft().v + 0.5 * node->getWidth().v,
-               action.getNewBottom().v + 0.5 * node->getHeight().v,
+  journal.redo(true);
+  for (const auto& node : journal.getAffectedNodes()) {
+    updateBins(node,
+               node->getLeft().v + 0.5 * node->getWidth().v,
+               node->getBottom().v + 0.5 * node->getHeight().v,
                +1);
   }
 

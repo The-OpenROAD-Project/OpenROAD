@@ -72,14 +72,10 @@ class Network
   Node* getNode(odb::dbInst* inst);
   Node* getNode(odb::dbBTerm* term);
   Master* getMaster(odb::dbMaster*);
-  void setNodeName(int i, const std::string& name) { nodeNames_[i] = name; }
-  void setNodeName(int i, const char* name) { nodeNames_[i] = name; }
-  const std::string& getNodeName(int i) const { return nodeNames_.at(i); }
-
   int getNumEdges() const { return (int) edges_.size(); }
+  Edge* getEdge(odb::dbNet* net) const;
   Edge* getEdge(int i) const { return edges_[i].get(); }
-  void setEdgeName(int i, std::string& name) { edgeNames_[i] = name; }
-  void setEdgeName(int i, const char* name) { edgeNames_[i] = name; }
+  void setEdgeName(int i, const std::string& name) { edgeNames_[i] = name; }
   const std::string& getEdgeName(int i) const { return edgeNames_.at(i); }
 
   int getNumPins() const { return (int) pins_.size(); }
@@ -124,7 +120,6 @@ class Network
   std::vector<odb::Rect> blockages_;          // The placement blockages ..
 
   std::unordered_map<int, std::string> edgeNames_;  // Names of edges...
-  std::unordered_map<int, std::string> nodeNames_;  // Names of nodes...
 
   std::unordered_map<odb::dbInst*, int> inst_to_node_idx_;
   std::unordered_map<odb::dbBTerm*, int> term_to_node_idx_;
@@ -132,7 +127,6 @@ class Network
   std::unordered_map<odb::dbNet*, int> net_to_edge_idx_;
   uint cells_cnt_{0};
   uint terminals_cnt_{0};
-  uint filler_cnt_{0};
 };
 
 }  // namespace dpl

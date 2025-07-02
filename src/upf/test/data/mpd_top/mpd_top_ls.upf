@@ -1,13 +1,13 @@
 create_power_domain PD_TOP \
-  -elements {.}  \
+  -elements {.}
 
 create_power_domain PD_AES_1 \
-  -elements {u_aes_1} \
+  -elements {u_aes_1}
 
 set_level_shifter ls_2 \
   -update \
   -domain "PD_AES_1" \
-  -threshold 2.1 \
+  -threshold 2.1
 
 set_level_shifter ls_1 \
   -domain "PD_AES_1" \
@@ -28,10 +28,9 @@ set_level_shifter ls_1 \
   -name_prefix "LS_" \
   -name_suffix "_01" \
   -instance {"Instance1 Port1" "Instance2 Port2"} \
-  -use_equivalence FALSE \
+  -use_equivalence FALSE
 
 set_level_shifter ls_1 \
   -update \
   -domain "PD_AES_1" \
-  -threshold 2.1 
-
+  -threshold 2.1

@@ -31,9 +31,9 @@ class Ruler
   odb::Point getManhattanJoinPt() const;
   static odb::Point getManhattanJoinPt(const odb::Point& pt0,
                                        const odb::Point& pt1);
-  const std::string getName() const { return name_; }
+  const std::string& getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
-  const std::string getLabel() const { return label_; }
+  const std::string& getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
   bool isEuclidian() const { return euclidian_; }
   void setEuclidian(bool euclidian) { euclidian_ = euclidian; }
@@ -78,10 +78,7 @@ class RulerDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  static bool editPoint(std::any value,
-                        int dbu_per_uu,
-                        odb::Point& pt,
-                        bool is_x);
+  static bool editPoint(std::any value, odb::Point& pt, bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   odb::dbDatabase* db_;

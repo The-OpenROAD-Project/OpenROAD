@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
 #include "sta/Network.hh"
 #include "sta/Corner.hh"
 #include "rsz/Resizer.hh"
@@ -103,6 +104,13 @@ using rsz::ParasiticsSrc;
   }
 }
 
+%typemap(in) std::vector<rsz::MoveType> {
+  const char* str = Tcl_GetString($input);
+  $1 = Resizer::parseMoveSequence(std::string(str));
+}
+
+
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ functions visible as TCL functions.
@@ -110,10 +118,41 @@ using rsz::ParasiticsSrc;
 ////////////////////////////////////////////////////////////////
 
 %include "../../Exception.i"
+%include "std_string.i"
 
 %inline %{
 
 namespace rsz {
+
+void
+report_net_parasitic(Net *net)
+{
+  Resizer *resizer = getResizer();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    resizer->parasitics()->report(parasitic);
+  }
+}
+
+float
+sum_parasitic_network_resist(Net *net)
+{
+  Resizer *resizer = getResizer();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    float ret = 0.0;
+    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
+      ret += resizer->parasitics()->value(resist);
+    }
+    return ret;
+  } else {
+    return 0.0f;
+  }
+}
 
 void
 set_layer_rc_cmd(odb::dbTechLayer *layer,
@@ -510,8 +549,10 @@ repair_setup(double setup_margin,
              int max_repairs_per_pass,
              bool match_cell_footprint,
              bool verbose,
+             std::vector<rsz::MoveType> sequence,
              bool skip_pin_swap,
              bool skip_gate_cloning,
+             bool skip_size_down,
              bool skip_buffering,
              bool skip_buffer_removal,
              bool skip_last_gasp)
@@ -521,7 +562,9 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_repairs_per_pass,
                        match_cell_footprint, verbose,
+                       sequence,
                        skip_pin_swap, skip_gate_cloning,
+                       skip_size_down,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);
 }
@@ -628,11 +671,13 @@ find_resize_slacks()
   resizer->findResizeSlacks(true);
 }
 
-NetSeq *
+TmpNetSeq *
 resize_worst_slack_nets()
 {
   Resizer *resizer = getResizer();
-  return &resizer->resizeWorstSlackNets();
+  TmpNetSeq *seq = new TmpNetSeq;
+  *seq = resizer->resizeWorstSlackNets();
+  return seq;
 }
 
 float
@@ -778,6 +823,23 @@ void set_debug_cmd(const char* net_name,
   graphics->setNet(net);
   graphics->stopOnSubdivideStep(subdivide_step);
   resizer->setDebugGraphics(std::move(graphics));
+}
+
+void swap_arith_modules_cmd(int path_count,
+                            const std::string& target,
+                            float slack_margin)
+{
+  Resizer* resizer = getResizer();
+  resizer->swapArithModules(path_count, target, slack_margin);
+}
+
+// Test stub
+void
+fully_rebuffer(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->fullyRebuffer(pin);
 }
 
 } // namespace

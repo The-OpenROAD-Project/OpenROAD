@@ -28,7 +28,7 @@ Instance ff1
   Q output output1
   Q_N output (unconnected)
 ***************************
-Preview DFT Report
+Report DFT Plan
 Number of chains: 1
 Clock domain: No Mix
 ***************************

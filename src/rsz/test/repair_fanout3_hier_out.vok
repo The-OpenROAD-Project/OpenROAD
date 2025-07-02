@@ -4,11 +4,11 @@ module hi_fanout (clk1,
  output net0;
 
 
- BUF_X2 fanout10 (.A(net2),
+ BUF_X2 fanout10 (.A(net1),
     .Z(net126));
  BUF_X2 fanout9 (.A(net126),
     .Z(net115));
- BUF_X2 fanout8 (.A(net2),
+ BUF_X2 fanout8 (.A(net1),
     .Z(net113));
  BUF_X2 fanout7 (.A(net113),
     .Z(net107));
@@ -25,13 +25,12 @@ module hi_fanout (clk1,
  BUF_X2 fanout1 (.A(net113),
     .Z(net0));
  DFF_X1 drvr (.CK(clk1),
-    .Q(net2));
+    .Q(net1));
  hi_fanout_child hi_fanout_inst1 (.net115_i(net115),
     .net90_i(net90),
     .net83_i(net83),
     .net72_i(net72),
     .net64_i(net64),
-    .net36_i(net2),
     .net0(net0),
     .clk1(clk1));
  hi_fanout_child_hi_fanout_inst2 hi_fanout_inst2 (.net126_i(net126),
@@ -40,7 +39,6 @@ module hi_fanout (clk1,
     .net101_i(net101),
     .net95_i(net90),
     .net85_i(net83),
-    .net2_i(net2),
     .net0(net0),
     .clk1(clk1));
 endmodule
@@ -49,7 +47,6 @@ module hi_fanout_child (net115_i,
     net83_i,
     net72_i,
     net64_i,
-    net36_i,
     net0,
     clk1);
  input net115_i;
@@ -57,7 +54,6 @@ module hi_fanout_child (net115_i,
  input net83_i;
  input net72_i;
  input net64_i;
- input net36_i;
  input net0;
  input clk1;
 
@@ -139,7 +135,6 @@ module hi_fanout_child_hi_fanout_inst2 (net126_i,
     net101_i,
     net95_i,
     net85_i,
-    net2_i,
     net0,
     clk1);
  input net126_i;
@@ -148,7 +143,6 @@ module hi_fanout_child_hi_fanout_inst2 (net126_i,
  input net101_i;
  input net95_i;
  input net85_i;
- input net2_i;
  input net0;
  input clk1;
 

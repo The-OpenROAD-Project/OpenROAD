@@ -76,21 +76,24 @@ void lefiError(int check, int msgNum, const char* str)
 
   if (!check) {
     if ((lefSettings->TotalMsgLimit > 0)
-        && (lefData->lefErrMsgPrinted >= lefSettings->TotalMsgLimit))
+        && (lefData->lefErrMsgPrinted >= lefSettings->TotalMsgLimit)) {
       return;
+    }
     if (lefSettings->MsgLimit[msgNum] > 0) {
       if (lefData->msgLimit[0][msgNum]
-          >= lefSettings->MsgLimit[msgNum])  // over the limit
+          >= lefSettings->MsgLimit[msgNum]) {  // over the limit
         return;
+      }
       lefData->msgLimit[0][msgNum] = lefData->msgLimit[0][msgNum] + 1;
     }
     lefData->lefErrMsgPrinted++;
   }
 
-  if (lefSettings->ErrorLogFunction)
+  if (lefSettings->ErrorLogFunction) {
     (*lefSettings->ErrorLogFunction)(str);
-  else
+  } else {
     fprintf(stderr, "%s", str);
+  }
 }
 
 static const char lefiShift[]

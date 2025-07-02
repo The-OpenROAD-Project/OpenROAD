@@ -12,11 +12,12 @@
 namespace odb {
 class dbDatabase;
 
-class dbInst;
-class dbITerm;
 class dbBTerm;
-class dbNet;
 class dbGroup;
+class dbITerm;
+class dbInst;
+class dbNet;
+class dbObject;
 
 class dbPlacementStatus;
 class dbSigType;
@@ -37,16 +38,13 @@ namespace gpl {
 class Pin;
 class Net;
 class GCell;
+class PlacerBaseCommon;
 
 class Instance
 {
  public:
   Instance();
-  Instance(odb::dbInst* inst,
-           int padLeft,
-           int padRight,
-           int site_height,
-           utl::Logger* logger);
+  Instance(odb::dbInst* inst, PlacerBaseCommon* pbc, utl::Logger* logger);
   Instance(int lx, int ly, int ux, int uy);  // dummy instance
   ~Instance();
 
@@ -73,6 +71,7 @@ class Instance
   // unusable sites.  It will have inst_ as nullptr
   bool isDummy() const;
 
+  void copyDbLocation(PlacerBaseCommon* pbc);
   void setLocation(int x, int y);
   void setCenterLocation(int x, int y);
 
@@ -160,7 +159,7 @@ class Pin
   void updateCoordi(odb::dbITerm* iTerm);
 
  private:
-  void* term_ = nullptr;
+  odb::dbObject* term_ = nullptr;
   Instance* inst_ = nullptr;
   Net* net_ = nullptr;
 
@@ -334,7 +333,8 @@ class PlacerBaseCommon
   std::vector<Instance*> placeInsts_;
 
   std::unordered_map<odb::dbInst*, Instance*> instMap_;
-  std::unordered_map<void*, Pin*> pinMap_;
+  // The key is a dbITerm or a dbBTerm
+  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
   std::unordered_map<odb::dbNet*, Net*> netMap_;
 
   int siteSizeX_ = 0;

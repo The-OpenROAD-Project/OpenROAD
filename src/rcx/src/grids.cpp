@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "grids.h"
+#include "rcx/grids.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -1296,6 +1296,7 @@ void Grid::getBbox(Box* bb)
 
 void Grid::freeTracksAndTables()
 {
+  free(_subTrackCnt);
   delete[] _trackTable;
   delete[] _blockedTrackTable;
 }
@@ -2356,7 +2357,7 @@ GridTable::~GridTable()
   delete _wirePool;
 
   for (uint ii = 0; ii < _rowCnt; ii++) {
-    for (uint jj = 0; jj < _rowCnt; jj++) {
+    for (uint jj = 0; jj < _colCnt; jj++) {
       delete _gridTable[ii][jj];
     }
     delete[] _gridTable[ii];

@@ -190,6 +190,16 @@ Polygon90Set* subtractSet(const Polygon90Set* set1, const Polygon90Set* set2)
   return new Polygon90Set(*set1 - *set2);
 }
 
+void destroySet(Polygon90Set* set)
+{
+  delete set;
+}
+
+void destroyPolygon(Polygon90* polygon)
+{
+  delete polygon;
+}
+
 std::vector<Polygon90> getPolygons(const Polygon90Set* set)
 {
   std::vector<Polygon90> s;
@@ -225,9 +235,10 @@ void createSBoxes(odb::dbSWire* swire,
                   std::vector<odb::Rect> rects,
                   odb::dbWireShapeType type)
 {
-  for (odb::Rect rect : rects)
+  for (odb::Rect rect : rects) {
     odb::dbSBox::create(
         swire, layer, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), type);
+  }
 }
 
 void createSBoxes(odb::dbSWire* swire,
@@ -235,8 +246,9 @@ void createSBoxes(odb::dbSWire* swire,
                   std::vector<odb::Point> points,
                   odb::dbWireShapeType type)
 {
-  for (odb::Point point : points)
+  for (odb::Point point : points) {
     odb::dbSBox::create(swire, via, point.getX(), point.getY(), type);
+  }
 }
 
 void dumpAPs(odb::dbBlock* block, const std::string file_name)

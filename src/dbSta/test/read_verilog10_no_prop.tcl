@@ -9,18 +9,18 @@ set block [ord::get_db_block]
 set top [$block getTopModule]
 puts [$top getName]
 foreach i [$top getChildren] {
-    set master [$i getMaster]
-    puts "[$i getName] [$master getName]"
-    foreach ii [$master getInsts] {
-        puts "[$ii getName] [[$ii getMaster] getName]"
-    }
+  set master [$i getMaster]
+  puts "[$i getName] [$master getName]"
+  foreach ii [$master getInsts] {
+    puts "[$ii getName] [[$ii getMaster] getName]"
+  }
 }
 
 # Verify that the prop doesn't exist on the block
 set found_prop 0
 set block [ord::get_db_block]
 foreach prop [odb::dbProperty_getProperties $block] {
-    if {[string first [$prop getName] "src_file_"]} {
-        error [format "Found filename prop %s on block" [$prop getName]]
-    }
+  if { [string first [$prop getName] "src_file_"] } {
+    error [format "Found filename prop %s on block" [$prop getName]]
+  }
 }

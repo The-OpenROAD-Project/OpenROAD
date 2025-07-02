@@ -9,9 +9,9 @@ set block [$chip getBlock]
 
 set out_lef [make_result_file "write_lef_and_def.lef"]
 set lef_write_result [odb::write_lef $lib $out_lef]
-if {$lef_write_result != 1} {
-    puts "FAIL: lef write error"
-    exit 1
+if { $lef_write_result != 1 } {
+  puts "FAIL: lef write error"
+  exit 1
 }
 
 diff_files $out_lef "write_lef_and_def.lefok"

@@ -10,6 +10,6 @@ set chip [$db getChip]
 set block [$chip getBlock]
 set nets [$block getNets]
 foreach net $nets {
-    puts "Net: [$net getName]"
+  puts "Net: [$net getName]"
 }
 exit [expr [llength $nets] != 24]

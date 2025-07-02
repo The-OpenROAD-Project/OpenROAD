@@ -5,6 +5,8 @@
 
 #include "db_sta/dbSta.hh"
 #include "resynthesis_strategy.h"
+#include "rmp/unique_name.h"
+#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 namespace rmp {
@@ -12,7 +14,13 @@ namespace rmp {
 class ZeroSlackStrategy : public ResynthesisStrategy
 {
  public:
-  void OptimizeDesign(sta::dbSta* sta, utl::Logger* logger) override;
+  explicit ZeroSlackStrategy(sta::Corner* corner = nullptr) : corner_(corner) {}
+  void OptimizeDesign(sta::dbSta* sta,
+                      UniqueName& name_generator,
+                      utl::Logger* logger) override;
+
+ private:
+  sta::Corner* corner_;
 };
 
 }  // namespace rmp

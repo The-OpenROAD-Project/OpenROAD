@@ -26,10 +26,8 @@
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
@@ -231,7 +229,6 @@ void dbSta::unregisterStaState(dbStaState* state)
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 {
   auto clone = std::make_unique<dbSta>();
-  clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
   clone->getDbNetwork()->setDefaultLibertyLibrary(
@@ -302,9 +299,11 @@ std::set<dbNet*> dbSta::findClkNets()
     const PinSet* clk_pins = pins(clk);
     if (clk_pins) {
       for (const Pin* pin : *clk_pins) {
-        Net* net = network_->net(pin);
-        if (net) {
-          clk_nets.insert(db_network_->staToDb(net));
+        dbNet* db_net = nullptr;
+        sta::dbNetwork* db_network = getDbNetwork();
+        db_net = db_network->flatNet(pin);
+        if (db_net) {
+          clk_nets.insert(db_net);
         }
       }
     }
@@ -319,9 +318,21 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   const PinSet* clk_pins = pins(clk);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
-      Net* net = network_->net(pin);
-      if (net) {
-        clk_nets.insert(db_network_->staToDb(net));
+      dbNet* db_net = nullptr;
+      sta::dbNetwork* db_network = getDbNetwork();
+      // hierarchical fix
+      if (db_network->hasHierarchy()) {
+        db_net = db_network_->flatNet(pin);
+        if (db_net) {
+          clk_nets.insert(db_net);
+        }
+      }
+      // for backward compatibility with jpeg regression case.
+      else {
+        Net* net = network_->net(pin);
+        if (net) {
+          clk_nets.insert(db_network_->staToDb(net));
+        }
       }
     }
   }

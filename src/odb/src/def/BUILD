@@ -8,6 +8,58 @@ package(
     features = ["layering_check"],
 )
 
+DEF_HEADERS = [
+    "def/defiAlias.hpp",
+    "def/defiAssertion.hpp",
+    "def/defiBlockage.hpp",
+    "def/defiComponent.hpp",
+    "def/defiDebug.hpp",
+    "def/defiDefs.hpp",
+    "def/defiFPC.hpp",
+    "def/defiFill.hpp",
+    "def/defiGroup.hpp",
+    "def/defiIOTiming.hpp",
+    "def/defiKRDefs.hpp",
+    "def/defiMisc.hpp",
+    "def/defiNet.hpp",
+    "def/defiNonDefault.hpp",
+    "def/defiPartition.hpp",
+    "def/defiPath.hpp",
+    "def/defiPinCap.hpp",
+    "def/defiPinProp.hpp",
+    "def/defiProp.hpp",
+    "def/defiPropType.hpp",
+    "def/defiRegion.hpp",
+    "def/defiRowTrack.hpp",
+    "def/defiScanchain.hpp",
+    "def/defiSite.hpp",
+    "def/defiSlot.hpp",
+    "def/defiTimingDisable.hpp",
+    "def/defiUser.hpp",
+    "def/defiUtil.hpp",
+    "def/defiVia.hpp",
+    "def/defrCallBacks.hpp",
+    "def/defrData.hpp",
+    "def/defrReader.hpp",
+    "def/defrSettings.hpp",
+    "def/defwWriter.hpp",
+    "def/defwWriterCalls.hpp",
+]
+
+cc_library(
+    name = "def_bison_lib",
+    srcs = [
+        ":def_bison",
+    ],
+    hdrs = DEF_HEADERS + ["def/def_parser.hpp"],
+    # Ignore warnings in generated code
+    copts = [
+        "-Wno-unused-but-set-variable",
+        "-Wno-modules-import-nested-redundant",
+    ],
+    includes = ["def"],
+)
+
 # TODO: This can probably be broken into smaller, more specific parts.
 # TODO: once we establish src/odb as package, make aliases so that we
 #  don't need the awkward long path with double src
@@ -16,7 +68,6 @@ cc_library(
     name = "def",
     srcs = [
         "def/def_keywords.cpp",
-        "def/def_parser.cpp",
         "def/defiAlias.cpp",
         "def/defiAssertion.cpp",
         "def/defiBlockage.cpp",
@@ -50,45 +101,11 @@ cc_library(
         "def/defwWriter.cpp",
         "def/defwWriterCalls.cpp",
     ],
-    hdrs = [
-        "def/def_parser.hpp",
-        "def/defiAlias.hpp",
-        "def/defiAssertion.hpp",
-        "def/defiBlockage.hpp",
-        "def/defiComponent.hpp",
-        "def/defiDebug.hpp",
-        "def/defiDefs.hpp",
-        "def/defiFPC.hpp",
-        "def/defiFill.hpp",
-        "def/defiGroup.hpp",
-        "def/defiIOTiming.hpp",
-        "def/defiKRDefs.hpp",
-        "def/defiMisc.hpp",
-        "def/defiNet.hpp",
-        "def/defiNonDefault.hpp",
-        "def/defiPartition.hpp",
-        "def/defiPath.hpp",
-        "def/defiPinCap.hpp",
-        "def/defiPinProp.hpp",
-        "def/defiProp.hpp",
-        "def/defiPropType.hpp",
-        "def/defiRegion.hpp",
-        "def/defiRowTrack.hpp",
-        "def/defiScanchain.hpp",
-        "def/defiSite.hpp",
-        "def/defiSlot.hpp",
-        "def/defiTimingDisable.hpp",
-        "def/defiUser.hpp",
-        "def/defiUtil.hpp",
-        "def/defiVia.hpp",
-        "def/defrCallBacks.hpp",
-        "def/defrData.hpp",
-        "def/defrReader.hpp",
-        "def/defrSettings.hpp",
-        "def/defwWriter.hpp",
-        "def/defwWriterCalls.hpp",
-    ],
+    hdrs = DEF_HEADERS,
     includes = ["def"],
+    deps = [
+        ":def_bison_lib",
+    ],
 )
 
 genyacc(
@@ -110,6 +127,7 @@ cc_library(
     includes = ["defzlib"],
     deps = [
         ":def",
+        ":def_bison_lib",
         "@zlib",
     ],
 )

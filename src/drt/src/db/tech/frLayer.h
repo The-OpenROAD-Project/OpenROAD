@@ -101,6 +101,12 @@ class frLayer
                ? false
                : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL;
   }
+  bool isRoutable() const
+  {
+    return (fakeCut_ || fakeMasterslice_)
+               ? false
+               : db_layer_->getType() == dbTechLayerType::ROUTING;
+  }
   bool isUnidirectional() const
   {
     // We don't handle coloring so any multiple patterned

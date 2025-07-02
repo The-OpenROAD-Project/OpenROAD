@@ -9,7 +9,9 @@ read_def "sky130hd_data/insert_decap_gcd.def"
 source sky130hd/sky130hd.rc
 
 analyze_power_grid -net {VDD}
-insert_decap -target_cap 1000.5 -cells {"sky130_fd_sc_hd__decap_3" 0.93 "sky130_fd_sc_hd__decap_4" 0.124 "sky130_fd_sc_hd__decap_6" 0.186 "sky130_fd_sc_hd__decap_8" 0.248 "sky130_fd_sc_hd__decap_12" 0.362}
+insert_decap -target_cap 1000.5 -cells {"sky130_fd_sc_hd__decap_3" 0.93
+  "sky130_fd_sc_hd__decap_4" 0.124 "sky130_fd_sc_hd__decap_6" 0.186
+  "sky130_fd_sc_hd__decap_8" 0.248 "sky130_fd_sc_hd__decap_12" 0.362}
 
 check_placement
 

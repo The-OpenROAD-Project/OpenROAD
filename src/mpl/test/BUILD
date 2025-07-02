@@ -10,6 +10,14 @@ COMPULSORY_TESTS = [
     "guides2",
     "io_constraints1",
     "io_constraints2",
+    "io_constraints3",
+    "io_constraints4",
+    "io_constraints5",
+    "io_constraints6",
+    "io_constraints7",
+    "io_constraints8",
+    "io_constraints9",
+    "io_constraints10",
     "io_pads1",
     "orientation_improve1",
     "orientation_improve2",
@@ -96,7 +104,11 @@ filegroup(
         srcs = [":regression_resources"] + glob(
             [
                 test_name + ".*",
-            ],
+            ] + {
+                "io_constraints6": ["testcases/io_constraints6.def"],
+                "io_constraints7": ["testcases/io_constraints6.def"],
+                "io_constraints8": ["testcases/io_constraints6.def"],
+            }.get(test_name, []),
         ),
     )
     for test_name in ALL_TESTS

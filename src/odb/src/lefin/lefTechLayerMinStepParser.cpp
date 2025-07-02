@@ -77,16 +77,16 @@ void lefTechLayerMinStepParser::setExceptSameCorners()
   curRule->setExceptSameCorners(true);
 }
 
-bool lefTechLayerMinStepParser::parse(std::string s,
+bool lefTechLayerMinStepParser::parse(const std::string& s,
                                       dbTechLayer* layer,
                                       odb::lefinReader* l)
 {
-  qi::rule<std::string::iterator, space_type> convexConcaveRule
+  qi::rule<std::string::const_iterator, space_type> convexConcaveRule
       = (string("CONVEXCORNER")[boost::bind(
              &lefTechLayerMinStepParser::setConvexCorner, this)]
          | string("CONCAVECORNER")[boost::bind(
              &lefTechLayerMinStepParser::setConcaveCorner, this)]);
-  qi::rule<std::string::iterator, space_type> minAdjacentRule
+  qi::rule<std::string::const_iterator, space_type> minAdjacentRule
       = (lit("MINADJACENTLENGTH") >> double_[boost::bind(
              &lefTechLayerMinStepParser::setMinAdjacentLength1, this, _1, l)]
          >> -(convexConcaveRule
@@ -96,15 +96,15 @@ bool lefTechLayerMinStepParser::parse(std::string s,
                   _1,
                   l)]));
 
-  qi::rule<std::string::iterator, space_type> minBetweenLengthRule
+  qi::rule<std::string::const_iterator, space_type> minBetweenLengthRule
       = (lit("MINBETWEENLENGTH") >> (double_[boost::bind(
              &lefTechLayerMinStepParser::minBetweenLengthParser, this, _1, l)])
          >> -(lit("EXCEPTSAMECORNERS")[boost::bind(
              &lefTechLayerMinStepParser::setExceptSameCorners, this)]));
-  qi::rule<std::string::iterator, space_type> noBetweenEolRule
+  qi::rule<std::string::const_iterator, space_type> noBetweenEolRule
       = (lit("NOBETWEENEOL") >> double_)[boost::bind(
           &lefTechLayerMinStepParser::noBetweenEolParser, this, _1, l)];
-  qi::rule<std::string::iterator, space_type> noAdjacentEolRule
+  qi::rule<std::string::const_iterator, space_type> noAdjacentEolRule
       = (lit("NOADJACENTEOL") >> double_)[boost::bind(
             &lefTechLayerMinStepParser::noAdjacentEolParser, this, _1, l)]
         >> -(lit("MINADJACENTLENGTH") >> double_[boost::bind(
@@ -112,7 +112,7 @@ bool lefTechLayerMinStepParser::parse(std::string s,
                  this,
                  _1,
                  l)]);
-  qi::rule<std::string::iterator, space_type> minstepRule
+  qi::rule<std::string::const_iterator, space_type> minstepRule
       = (+(lit("MINSTEP")[boost::bind(
                &lefTechLayerMinStepParser::createSubRule, this, layer)]
            >> double_[boost::bind(

@@ -15,16 +15,18 @@ legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
 worst slack max -0.39
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.385 |       -0.5 |      4 | r2/D
-    final |       4 |       2 |        0 |      0 |     0 |    -4.1% |    0.090 |        0.0 |      0 | r2/D
+    final |       3 |      10 |        1 |      0 |     0 |   +13.7% |    0.006 |        0.0 |      0 | r7/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 4 buffers.
-[INFO RSZ-0041] Resized 2 instances.
+[INFO RSZ-0059] Removed 3 buffers.
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 10 instances, 10 sized up, 0 sized down.
 Repair timing output passed/skipped equivalence test
-worst slack max 0.09
 worst slack max 0.01
+worst slack max 0.00

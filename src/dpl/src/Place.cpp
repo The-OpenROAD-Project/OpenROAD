@@ -2,10 +2,12 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
 #include <memory>
+#include <random>
 #include <set>
 #include <string>
 #include <vector>
@@ -18,8 +20,8 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/dbTransform.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
-
 // #define ODP_DEBUG
 
 namespace dpl {
@@ -489,13 +491,17 @@ int Opendp::groupRefine(const Group* group)
 // This is NOT annealing. It is random swapping. -cherry
 int Opendp::anneal(Group* group)
 {
-  srand(rand_seed_);
+  std::mt19937 rand_gen(rand_seed_);
   int count = 0;
 
   // magic number alert
-  for (int i = 0; i < 100 * group->getCells().size(); i++) {
-    Node* cell1 = group->getCells()[rand() % group->getCells().size()];
-    Node* cell2 = group->getCells()[rand() % group->getCells().size()];
+  using idx_range = boost::random::uniform_int_distribution<int>;
+  const size_t num_cells = group->getCells().size();
+  for (int i = 0; i < 100 * num_cells; i++) {
+    const auto cell1_idx = idx_range(0, num_cells - 1)(rand_gen);
+    const auto cell2_idx = idx_range(0, num_cells - 1)(rand_gen);
+    Node* cell1 = group->getCells()[cell1_idx];
+    Node* cell2 = group->getCells()[cell2_idx];
     if (swapCells(cell1, cell2)) {
       count++;
     }
@@ -574,7 +580,7 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
   return false;
 }
 
-void Opendp::shiftMove(Node* cell)
+bool Opendp::shiftMove(Node* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, true);
   // magic number alert
@@ -612,6 +618,7 @@ void Opendp::shiftMove(Node* cell)
       placement_failures_.push_back(cell);
     }
   }
+  return placement_failures_.empty();
 }
 
 bool Opendp::swapCells(Node* cell1, Node* cell2)
@@ -793,7 +800,8 @@ bool Opendp::canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const
   }
 
   const GridX x_end = bin_x + grid_->gridPaddedWidth(cell);
-  const GridY y_end = bin_y + grid_->gridHeight(cell);
+  const GridY y_end
+      = grid_->gridEndY(grid_->gridYToDbu(bin_y) + cell->getHeight());
 
   if (debug_observer_) {
     debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
@@ -902,7 +910,7 @@ bool Opendp::checkPixels(const Node* cell,
   }
   const auto& orient = grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite());
-  return drc_engine_->checkEdgeSpacing(cell, x, y, orient);
+  return drc_engine_->checkDRC(cell, x + padding_->padLeft(cell), y, orient);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1040,6 +1048,7 @@ void Opendp::initMacrosAndGrid()
 
 void Opendp::convertDbToCell(dbInst* db_inst, Node& cell)
 {
+  cell.setType(Node::CELL);
   cell.setDbInst(db_inst);
   Rect bbox = getBbox(db_inst);
   cell.setWidth(DbuX{bbox.dx()});
@@ -1185,15 +1194,34 @@ void Opendp::setGridPaddedLoc(Node* cell, const GridX x, const GridY y)
 }
 void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
 {
+  const DbuX original_x = cell->getLeft();
+  const DbuY original_y = cell->getBottom();
+  const bool was_placed = cell->isPlaced();
   grid_->paintPixel(cell, x, y);
   setGridPaddedLoc(cell, x, y);
   cell->setPlaced(true);
   cell->setOrient(grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite()));
+  if (journal_) {
+    MoveCellAction action(cell,
+                          original_x,
+                          original_y,
+                          cell->getLeft(),
+                          cell->getBottom(),
+                          was_placed);
+    journal_->addAction(action);
+  }
 }
 
 void Opendp::unplaceCell(Node* cell)
 {
+  if (cell->isFixed() || !cell->isPlaced()) {
+    return;
+  }
+  if (journal_) {
+    UnplaceCellAction action(cell, cell->isHold());
+    journal_->addAction(action);
+  }
   grid_->erasePixel(cell);
   cell->setPlaced(false);
   cell->setHold(false);

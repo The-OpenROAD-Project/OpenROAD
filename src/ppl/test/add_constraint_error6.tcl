@@ -6,5 +6,8 @@ read_lef blocked_region.lef
 
 read_def blocked_region.def
 
-catch {set_io_pin_constraint -pin_names {clk resp_val req_val resp_rdy reset req_rdy} -region "up:*"} error
+catch {
+  set_io_pin_constraint -pin_names {clk resp_val req_val resp_rdy
+  reset req_rdy} -region "up:*"
+} error
 puts $error

@@ -18,4 +18,3 @@ rmp::blif_add_instance $blif "_i3_"
 rmp::blif_dump $blif "./results/blif_writer.blif"
 
 diff_files "./results/blif_writer.blif" "blif_writer.blif.ok"
-

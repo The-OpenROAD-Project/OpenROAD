@@ -24,15 +24,19 @@ void FastRouteCore::ripupSegL(const Segment* seg)
 
   // remove L routing
   if (seg->xFirst) {
-    for (int i = seg->x1; i < seg->x2; i++)
+    for (int i = seg->x1; i < seg->x2; i++) {
       h_edges_[seg->y1][i].est_usage -= edgeCost;
-    for (int i = ymin; i < ymax; i++)
+    }
+    for (int i = ymin; i < ymax; i++) {
       v_edges_[i][seg->x2].est_usage -= edgeCost;
+    }
   } else {
-    for (int i = ymin; i < ymax; i++)
+    for (int i = ymin; i < ymax; i++) {
       v_edges_[i][seg->x1].est_usage -= edgeCost;
-    for (int i = seg->x1; i < seg->x2; i++)
+    }
+    for (int i = seg->x1; i < seg->x2; i++) {
       h_edges_[seg->y2][i].est_usage -= edgeCost;
+    }
   }
 }
 
@@ -55,41 +59,54 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
   if (ripuptype == RouteType::LRoute)  // remove L routing
   {
     if (treeedge->route.xFirst) {
-      for (int i = x1; i < x2; i++)
+      for (int i = x1; i < x2; i++) {
         h_edges_[y1][i].est_usage -= edgeCost;
-      for (int i = ymin; i < ymax; i++)
+      }
+      for (int i = ymin; i < ymax; i++) {
         v_edges_[i][x2].est_usage -= edgeCost;
+      }
     } else {
-      for (int i = ymin; i < ymax; i++)
+      for (int i = ymin; i < ymax; i++) {
         v_edges_[i][x1].est_usage -= edgeCost;
-      for (int i = x1; i < x2; i++)
+      }
+      for (int i = x1; i < x2; i++) {
         h_edges_[y2][i].est_usage -= edgeCost;
+      }
     }
   } else if (ripuptype == RouteType::ZRoute) {
     // remove Z routing
     const int Zpoint = treeedge->route.Zpoint;
     if (treeedge->route.HVH) {
-      for (int i = x1; i < Zpoint; i++)
+      for (int i = x1; i < Zpoint; i++) {
         h_edges_[y1][i].est_usage -= edgeCost;
-      for (int i = Zpoint; i < x2; i++)
+      }
+      for (int i = Zpoint; i < x2; i++) {
         h_edges_[y2][i].est_usage -= edgeCost;
-      for (int i = ymin; i < ymax; i++)
+      }
+      for (int i = ymin; i < ymax; i++) {
         v_edges_[i][Zpoint].est_usage -= edgeCost;
+      }
     } else {
       if (y1 < y2) {
-        for (int i = y1; i < Zpoint; i++)
+        for (int i = y1; i < Zpoint; i++) {
           v_edges_[i][x1].est_usage -= edgeCost;
-        for (int i = Zpoint; i < y2; i++)
+        }
+        for (int i = Zpoint; i < y2; i++) {
           v_edges_[i][x2].est_usage -= edgeCost;
-        for (int i = x1; i < x2; i++)
+        }
+        for (int i = x1; i < x2; i++) {
           h_edges_[Zpoint][i].est_usage -= edgeCost;
+        }
       } else {
-        for (int i = y2; i < Zpoint; i++)
+        for (int i = y2; i < Zpoint; i++) {
           v_edges_[i][x2].est_usage -= edgeCost;
-        for (int i = Zpoint; i < y1; i++)
+        }
+        for (int i = Zpoint; i < y1; i++) {
           v_edges_[i][x1].est_usage -= edgeCost;
-        for (int i = x1; i < x2; i++)
+        }
+        for (int i = x1; i < x2; i++) {
           h_edges_[Zpoint][i].est_usage -= edgeCost;
+        }
       }
     }
   } else if (ripuptype == RouteType::MazeRoute) {
@@ -176,20 +193,24 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
         }
         treenodes[n2].status -= 1;
 
-        for (int i = x1; i < x2; i++)
+        for (int i = x1; i < x2; i++) {
           h_edges_[y1][i].est_usage -= edgeCost;
-        for (int i = ymin; i < ymax; i++)
+        }
+        for (int i = ymin; i < ymax; i++) {
           v_edges_[i][x2].est_usage -= edgeCost;
+        }
       } else {
         if (n2 >= deg) {
           treenodes[n2].status -= 2;
         }
         treenodes[n1].status -= 1;
 
-        for (int i = ymin; i < ymax; i++)
+        for (int i = ymin; i < ymax; i++) {
           v_edges_[i][x1].est_usage -= edgeCost;
-        for (int i = x1; i < x2; i++)
+        }
+        for (int i = x1; i < x2; i++) {
           h_edges_[y2][i].est_usage -= edgeCost;
+        }
       }
     }
     return needRipup;
@@ -405,8 +426,9 @@ void FastRouteCore::releaseNetResources(const int netID)
       Edge3D* edge_3D;
 
       for (int i = 0; i < routeLen; i++) {
-        if (gridsL[i] != gridsL[i + 1])
+        if (gridsL[i] != gridsL[i + 1]) {
           continue;
+        }
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           edge = &v_edges_[ymin][gridsX[i]];
@@ -450,41 +472,54 @@ void FastRouteCore::newRipupNet(const int netID)
       if (ripuptype == RouteType::LRoute)  // remove L routing
       {
         if (treeedge->route.xFirst) {
-          for (int i = x1; i < x2; i++)
+          for (int i = x1; i < x2; i++) {
             h_edges_[y1][i].est_usage -= edgeCost;
-          for (int i = ymin; i < ymax; i++)
+          }
+          for (int i = ymin; i < ymax; i++) {
             v_edges_[i][x2].est_usage -= edgeCost;
+          }
         } else {
-          for (int i = ymin; i < ymax; i++)
+          for (int i = ymin; i < ymax; i++) {
             v_edges_[i][x1].est_usage -= edgeCost;
-          for (int i = x1; i < x2; i++)
+          }
+          for (int i = x1; i < x2; i++) {
             h_edges_[y2][i].est_usage -= edgeCost;
+          }
         }
       } else if (ripuptype == RouteType::ZRoute) {
         // remove Z routing
         const int Zpoint = treeedge->route.Zpoint;
         if (treeedge->route.HVH) {
-          for (int i = x1; i < Zpoint; i++)
+          for (int i = x1; i < Zpoint; i++) {
             h_edges_[y1][i].est_usage -= edgeCost;
-          for (int i = Zpoint; i < x2; i++)
+          }
+          for (int i = Zpoint; i < x2; i++) {
             h_edges_[y2][i].est_usage -= edgeCost;
-          for (int i = ymin; i < ymax; i++)
+          }
+          for (int i = ymin; i < ymax; i++) {
             v_edges_[i][Zpoint].est_usage -= edgeCost;
+          }
         } else {
           if (y1 < y2) {
-            for (int i = y1; i < Zpoint; i++)
+            for (int i = y1; i < Zpoint; i++) {
               v_edges_[i][x1].est_usage -= edgeCost;
-            for (int i = Zpoint; i < y2; i++)
+            }
+            for (int i = Zpoint; i < y2; i++) {
               v_edges_[i][x2].est_usage -= edgeCost;
-            for (int i = x1; i < x2; i++)
+            }
+            for (int i = x1; i < x2; i++) {
               h_edges_[Zpoint][i].est_usage -= edgeCost;
+            }
           } else {
-            for (int i = y2; i < Zpoint; i++)
+            for (int i = y2; i < Zpoint; i++) {
               v_edges_[i][x2].est_usage -= edgeCost;
-            for (int i = Zpoint; i < y1; i++)
+            }
+            for (int i = Zpoint; i < y1; i++) {
               v_edges_[i][x1].est_usage -= edgeCost;
-            for (int i = x1; i < x2; i++)
+            }
+            for (int i = x1; i < x2; i++) {
               h_edges_[Zpoint][i].est_usage -= edgeCost;
+            }
           }
         }
       } else if (ripuptype == RouteType::MazeRoute) {

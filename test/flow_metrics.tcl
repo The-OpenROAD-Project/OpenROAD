@@ -40,7 +40,7 @@ proc define_metric { name header1 header2 field_width fmt cmp_op limit_expr } {
   dict set metrics $name [list $header1 $header2 $field_width $fmt $cmp_op $limit_expr]
 }
 
-proc metric_names {} {
+proc metric_names { } {
   variable metrics
   return [dict keys $metrics]
 }
@@ -119,7 +119,8 @@ define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {min(0, $v
 
 define_metric "RSZ::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
 define_metric "RSZ::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
-define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" \
+  {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "RSZ::hold_buffer_count" "hold" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
 
 define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
@@ -127,7 +128,8 @@ define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
 define_metric "DRT::drv" "" "drv" 3 "%3d" "<=" {$value}
 define_metric "DRT::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
 define_metric "DRT::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
-define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" \
+  {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "DRT::clock_skew" "clk" "skew" 5 "%5.2f" "<=" {$value * 1.2}
 define_metric "DRT::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
 define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
@@ -151,7 +153,7 @@ proc check_test_metrics { test lang } {
   set stream [open $metrics_file r]
   set json_string [read $stream]
   close $stream
-  if { [catch {json::json2dict $json_string} metrics_dict] } {
+  if { [catch { json::json2dict $json_string } metrics_dict] } {
     return "error parsing metrics json"
   }
 
@@ -161,7 +163,7 @@ proc check_test_metrics { test lang } {
   set stream [open $metrics_limits_file r]
   set json_string [read $stream]
   close $stream
-  if { [catch {json::json2dict $json_string} metrics_limits_dict] } {
+  if { [catch { json::json2dict $json_string } metrics_limits_dict] } {
     return "error parsing metrics limits json"
   }
 
@@ -173,8 +175,10 @@ proc check_test_metrics { test lang } {
       set value [dict get $metrics_dict $json_key]
       if { [dict exists $metrics_limits_dict $json_key] } {
         set limit [dict get $metrics_limits_dict $json_key]
+        # tclint-disable-next-line redundant-expr
         if { ![expr $value $cmp_op $limit] } {
-          fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+          fail "$name [format [metric_format $name] $value]\
+                [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
         }
       } else {
         fail "missing $name in metric limits"
@@ -202,7 +206,7 @@ proc fail { msg } {
 
 ################################################################
 
-proc report_flow_metrics_main {} {
+proc report_flow_metrics_main { } {
   global argc argv test_groups test_langs
   if { $argc == 0 } {
     set tests $test_groups(flow)
@@ -216,7 +220,7 @@ proc report_flow_metrics_main {} {
   }
 }
 
-proc report_metrics_header {} {
+proc report_metrics_header { } {
   puts -nonewline [format "%20s" ""]
   foreach name [metric_names] {
     set tool_name [metric_tool_name $name]
@@ -258,7 +262,7 @@ proc report_test_metrics { test $lang } {
     set json_string [read $stream]
     close $stream
     puts -nonewline [format "%-20s" $test]
-    if { ![catch {json::json2dict $json_string} metrics_dict] } {
+    if { ![catch { json::json2dict $json_string } metrics_dict] } {
       foreach name [metric_names] {
         set field_width [metric_field_width $name]
         if { $field_width != 0 } {
@@ -282,7 +286,7 @@ proc report_test_metrics { test $lang } {
 
 ################################################################
 
-proc report_flow_metric_limits_main {} {
+proc report_flow_metric_limits_main { } {
   global argc argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: report_flow_metric_limits test1 [test2]...}
@@ -310,7 +314,7 @@ proc report_test_metric_limits { test } {
   set stream [open $metrics_limits_file r]
   set json_string [read $stream]
   close $stream
-  if { [catch {json::json2dict $json_string} metrics_limits_dict] } {
+  if { [catch { json::json2dict $json_string } metrics_limits_dict] } {
     return "error parsing metrics limits json"
   }
 
@@ -337,7 +341,7 @@ proc report_test_metric_limits { test } {
 
 ################################################################
 
-proc compare_flow_metrics_main {} {
+proc compare_flow_metrics_main { } {
   global argc argv test_groups test_langs
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_flow_metrics [test1]...}
@@ -367,8 +371,10 @@ proc compare_test_metrics { test relative lang } {
 
   set metrics_file [test_metrics_file $test]
   set result_file [test_metrics_result_file $test $lang]
-  if { [file exists $metrics_file] \
-         && [file exists $result_file] } {
+  if {
+    [file exists $metrics_file]
+    && [file exists $result_file]
+  } {
     set metrics_stream [open $metrics_file r]
     set results_stream [open $result_file r]
     set metrics_json [read $metrics_stream]
@@ -376,14 +382,18 @@ proc compare_test_metrics { test relative lang } {
     close $metrics_stream
     close $results_stream
     puts -nonewline [format "%-20s" $test]
-    if { ![catch {json::json2dict $metrics_json} metrics_dict] \
-         && ![catch {json::json2dict $results_json} results_dict]} {
+    if {
+      ![catch { json::json2dict $metrics_json } metrics_dict]
+      && ![catch { json::json2dict $results_json } results_dict]
+    } {
       foreach name [metric_names] {
         set field_width [metric_field_width $name]
         if { $field_width != 0 } {
           set key [metric_json_key $name]
-          if { [dict exists $metrics_dict $key] \
-               && [dict exists $results_dict $key]} {
+          if {
+            [dict exists $metrics_dict $key]
+            && [dict exists $results_dict $key]
+          } {
             set metrics_value [dict get $metrics_dict $key]
             set result_value [dict get $results_dict $key]
             if { $metrics_value != 0 && $relative } {
@@ -408,7 +418,7 @@ proc compare_test_metrics { test relative lang } {
 ################################################################
 
 # Copy result metrics to test results saved in the repository.
-proc save_flow_metrics_main {} {
+proc save_flow_metrics_main { } {
   global argc argv
 
   if { $argv == "help" || $argv == "-help" } {
@@ -430,7 +440,7 @@ proc save_metrics { test } {
     puts "Error: test $test not found."
   } else {
     set metrics_result_file [test_metrics_result_file $test \
-                                 [result_lang $test]]
+      [result_lang $test]]
     set metrics_file [test_metrics_file $test]
     file copy -force $metrics_result_file $metrics_file
   }
@@ -439,7 +449,7 @@ proc save_metrics { test } {
 ################################################################
 
 # Save result metrics + margins as metric limits.
-proc save_flow_metric_limits_main {} {
+proc save_flow_metric_limits_main { } {
   global argc argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_flow_metric_limits [failures] test1 [test2]...}
@@ -462,13 +472,13 @@ proc save_metric_limits { test lang } {
 
   set metrics_file [test_metrics_result_file $test $test_langs($test)]
   set metrics_limits [test_metrics_limits_file $test]
-  if { ! [file exists $metrics_file] } {
+  if { ![file exists $metrics_file] } {
     puts "Error: metrics file $metrics_file not found."
   } else {
     set stream [open $metrics_file r]
     set json_string [read $stream]
     close $stream
-    if { ![catch {json::json2dict $json_string} metrics_dict] } {
+    if { ![catch { json::json2dict $json_string } metrics_dict] } {
       set limits_stream [open $metrics_limits w]
       puts $limits_stream "{"
       set first 1
@@ -499,7 +509,7 @@ proc save_metric_limits { test lang } {
           set first 0
         }
       }
-      
+
       puts $limits_stream "}"
       close $limits_stream
     } else {

@@ -396,6 +396,19 @@ void Verilog2db::makeDbModule(
 
     inst_pairs.emplace_back(inst, modinst);
 
+    // Verilog attribute is on a cell not an instance
+    std::string impl_oper = network_->getAttribute(cell, "implements_operator");
+    if (!impl_oper.empty()) {
+      odb::dbStringProperty::create(
+          modinst, "implements_operator", impl_oper.c_str());
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 1,
+                 "Added implements_operator attribute to mod inst {}",
+                 module_inst_name);
+    }
+
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -486,7 +499,7 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
   // make the instance iterms and set up their reference
   // to the child ports (dbModBTerms).
 
-  InstancePinIterator* ip_iter = network_->pinIterator(inst);
+  std::unique_ptr<InstancePinIterator> ip_iter(network_->pinIterator(inst));
   while (ip_iter->hasNext()) {
     Pin* cur_pin = ip_iter->next();
     const std::string pin_name_string = network_->portName(cur_pin);
@@ -1043,7 +1056,8 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
         lib->cellIterator()};
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
-      if (!block_->findModule(curr_cell->name())
+      std::string impl_oper = curr_cell->getAttribute("implements_operator");
+      if (!impl_oper.empty() && !block_->findModule(curr_cell->name())
           && !verilog_network->isBlackBox(curr_cell)) {
         unused_cells_.emplace_back(curr_cell);
         debugPrint(logger_,

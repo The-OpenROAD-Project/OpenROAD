@@ -199,42 +199,19 @@ Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
-The patch file "AddTool.patch" illustrates how to add a tool to
-OpenROAD. Use the following commands to add a sample tool:
-
-``` shell
-# first, update existing config files
-patch -p1 < docs/misc/AddTool.patch
-
-# next, create the additional source files of the tool using this command
-patch -p1 < docs/misc/AddToolFiles.patch
-
-# finally, create the regression tests as follows
-cd src/tool/test
-ln -s ../../../test/regression.tcl regression.tcl
-```
-
-This adds a directory `OpenRoad/src/tool` that
-illustrates a tool named "Tool" that uses the file structure described above
-and defines a command to run the tool with keyword and flag arguments as
-illustrated below:
+The directory `OpenRoad/src/example` 
+illustrates a tool named "Example" that uses the file structure described above.
+ It defines a command to run the tool as illustrated below:
 
 ```tcl
-> toolize foo
-Helping 23/6
-Gotta positional_argument1 foo
-Gotta param1 0.000000
-Gotta flag1 false
+> example_instance -name test
+[INFO EXA-0001] Making an example instance named test
 
-> toolize -flag1 -key1 2.0 bar
-Helping 23/6
-Gotta positional_argument2 bar
-Gotta param1 2.000000
-Gotta flag1 true
-
-> help toolize
-toolize [-key1 key1] [-flag1] positional_argument1
+> help example_instance
+example_instance [-name name] 
 ```
+
+The example include TCL & Python APIs with unit tests.  Also demonstrated is how to create debug graphics for algorithm visualization.  Running `openroad -gui basic.tcl` in `src/exa/test` will demonstrate the capability.
 
 ## Documentation
 
@@ -274,6 +251,7 @@ Tool namespaces are usually three-lettered lowercase letters.
 - OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md))
 - Graphical User Interface ([gui](../main/src/gui/README.md))
 - Static IR analyzer ([psm](../main/src/psm/README.md))
+- Example tool ([exa](../main/src/exa/README.md))
 
 ## Tool Checklist
 

@@ -5,5 +5,5 @@ read_lef Nangate45_io/dummy_pads.lef
 
 read_def Nangate45_blackparrot/floorplan_flipchip.def
 
-catch {rdl_route -layer metal10 -width 4 -spacing 4 ""} err
+catch { rdl_route -layer metal10 -width 4 -spacing 4 "" } err
 puts $err

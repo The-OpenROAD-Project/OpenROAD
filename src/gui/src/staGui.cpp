@@ -378,8 +378,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case Slew:
           return convertDelay(node->getSlew(), time_units);
         case Load: {
-          if (node->getLoad() == 0)
+          if (node->getLoad() == 0) {
             return "";
+          }
           const auto cap_units = sta_->units()->capacitanceUnit();
           return cap_units->asString(node->getLoad());
         }
@@ -459,7 +460,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path,
 
 /////////
 
-TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_stage_()
+TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
   addDisplayControl(data_path_label_, true);
   addDisplayControl(launch_clock_label_, true);
@@ -620,7 +621,6 @@ TimingConeRenderer::TimingConeRenderer()
       term_(nullptr),
       fanin_(false),
       fanout_(false),
-      map_(),
       min_timing_(0.0),
       max_timing_(0.0),
       color_generator_(SpectrumGenerator(1.0))
@@ -725,8 +725,7 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
   odb::dbModITerm* moditerm;
-  odb::dbModBTerm* modbterm;
-  network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+  network->staToDb(pin, iterm, bterm, moditerm);
   if (iterm != nullptr) {
     if (iterm->getSigType().isSupply()) {
       return true;
@@ -977,10 +976,9 @@ void PinSetWidget::setPins(const std::set<const sta::Pin*>& pins)
   updatePins();
 }
 
-const std::set<const sta::Pin*> PinSetWidget::getPins() const
+std::set<const sta::Pin*> PinSetWidget::getPins() const
 {
-  std::set<const sta::Pin*> pins(pins_.begin(), pins_.end());
-  return pins;
+  return {pins_.begin(), pins_.end()};
 }
 
 void PinSetWidget::addPin(const sta::Pin* pin)
@@ -1087,8 +1085,7 @@ void PinSetWidget::showMenu(const QPoint& point)
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    sta_->getDbNetwork()->staToDb(pin, iterm, bterm, moditerm, modbterm);
+    sta_->getDbNetwork()->staToDb(pin, iterm, bterm, moditerm);
     if (iterm != nullptr) {
       emit inspect(gui->makeSelected(iterm));
     } else {
@@ -1314,8 +1311,7 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   }
 }
 
-const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
-    const
+std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
 {
   std::vector<std::set<const sta::Pin*>> pins;
   pins.reserve(thru_.size());

@@ -46,8 +46,8 @@ set layer [$tech findLayer "metal5"]
 odb::dbBox_create $clk_bpin $layer 0 0 2000 2000
 
 # tile array
-for {set x 0} {$x < $array_size} {incr x} {
-  for {set y 0} {$y < $array_size} {incr y} {
+for { set x 0 } { $x < $array_size } { incr x } {
+  for { set y 0 } { $y < $array_size } { incr y } {
     set inst [odb::dbInst_create $block $tile "inst_${x}_${y}"]
     set lx [expr $x * $x_pitch + $core_margin]
     set ly [expr $y * $y_pitch + $core_margin]
@@ -64,10 +64,10 @@ for {set x 0} {$x < $array_size} {incr x} {
     odb::dbBlockage_create $block $lx $ly $ux $uy
 
     # connect east/west pins skipping every fifth column
-    if {[expr $x > 0]} {
-      if {[expr ($x + 1) % 5 == 0]} {
+    if { $x > 0 } {
+      if { ($x + 1) % 5 == 0 } {
         continue
-      } elseif {[expr $x % 5 == 0]} {
+      } elseif { $x % 5 == 0 } {
         set offset 2
       } else {
         set offset 1
@@ -81,7 +81,7 @@ for {set x 0} {$x < $array_size} {incr x} {
       [$inst findITerm "w_out"] connect $net
       [$l_inst findITerm "e_in"] connect $net
     }
-  }  
+  }
 }
 
 # FF array on every 5th column
@@ -89,15 +89,15 @@ set dff [$db findMaster "DFF_X1"]
 set dff_height [$dff getHeight]
 set dff_width [$dff getWidth]
 
-for {set x 4} {$x < $array_size} {incr x 5} {
-  for {set y 0} {$y < $array_size} {incr y} {
-    for {set i 0} {$i < 50} {incr i} {
+for { set x 4 } { $x < $array_size } { incr x 5 } {
+  for { set y 0 } { $y < $array_size } { incr y } {
+    for { set i 0 } { $i < 50 } { incr i } {
       set inst [odb::dbInst_create $block $dff "dff_${x}_${y}_${i}"]
       set lx [expr $x * $x_pitch + $core_margin]
       set ly [expr $y * $y_pitch + $core_margin]
       $inst setLocation \
-          [expr $lx - $dff_width - $halo] \
-          [expr $ly + $i * $dff_height]
+        [expr $lx - $dff_width - $halo] \
+        [expr $ly + $i * $dff_height]
       $inst setPlacementStatus PLACED
       set clk_iterm [$inst findITerm "CK"]
       $clk_iterm connect $clk
@@ -110,14 +110,14 @@ ord::design_created
 set overall_width [expr ($array_size - 1) * $x_pitch + $width + 2 * $core_margin]
 set overall_height [expr ($array_size - 1) * $y_pitch + $height + 2 * $core_margin]
 
-set overall_width [expr $overall_width / $dbu] 
-set overall_height [expr $overall_height / $dbu] 
+set overall_width [expr $overall_width / $dbu]
+set overall_height [expr $overall_height / $dbu]
 
 # setup rows
 initialize_floorplan \
-    -die_area [list 0 0 $overall_width $overall_height] \
-    -core_area [list 0 0 $overall_width $overall_height] \
-    -site $site
+  -die_area [list 0 0 $overall_width $overall_height] \
+  -core_area [list 0 0 $overall_width $overall_height] \
+  -site $site
 
 source $tracks_file
 
@@ -127,16 +127,16 @@ create_clock -period 5 clk
 
 source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_wire_rc -clock -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
 #set_debug_level CTS clustering 1
 
-clock_tree_synthesis  -root_buf $cts_buffer \
-    -buf_list $cts_buffer \
-    -sink_clustering_enable \
-    -sink_clustering_max_diameter $cts_cluster_diameter \
-    -balance_levels
+clock_tree_synthesis -root_buf $cts_buffer \
+  -buf_list $cts_buffer \
+  -sink_clustering_enable \
+  -sink_clustering_max_diameter $cts_cluster_diameter \
+  -balance_levels
 
 report_cts
 
