@@ -1811,13 +1811,12 @@ void NesterovBase::initFillerGCells()
   uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
 
   if (totalFillerArea_ < 0) {
-    log_->warn(
-        GPL,
-        302,
-        "Target density {:.4f} is too low for the available free area.\n"
-        "Automatically adjusting to uniform density {:.4f}.",
-        targetDensity_,
-        uniformTargetDensity_);
+    log_->warn(GPL,
+               302,
+               "Target density {:.4f} is too low for the available free area.\n"
+               "Automatically adjusting to uniform density {:.4f}.",
+               targetDensity_,
+               uniformTargetDensity_);
     targetDensity_ = uniformTargetDensity_;
     movableArea_ = whiteSpaceArea_ * targetDensity_;
     totalFillerArea_ = movableArea_ - nesterovInstanceArea;
