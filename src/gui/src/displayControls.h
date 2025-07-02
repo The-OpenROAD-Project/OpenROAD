@@ -23,7 +23,6 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -141,6 +140,15 @@ class DisplayControls : public QDockWidget,
   Q_OBJECT
 
  public:
+  // One leaf (non-group) row in the model
+  struct ModelRow
+  {
+    QStandardItem* name = nullptr;
+    QStandardItem* swatch = nullptr;
+    QStandardItem* visible = nullptr;
+    QStandardItem* selectable = nullptr;  // may be null
+  };
+
   DisplayControls(QWidget* parent = nullptr);
   ~DisplayControls() override;
 
@@ -204,17 +212,23 @@ class DisplayControls : public QDockWidget,
   bool areNonPrefTracksVisible() override;
 
   bool areIOPinsVisible() const override;
+  bool areIOPinNamesVisible() const override;
+  QFont ioPinMarkersFont() const override;
+
   bool areRoutingSegmentsVisible() const override;
   bool areRoutingViasVisible() const override;
   bool areSpecialRoutingSegmentsVisible() const override;
   bool areSpecialRoutingViasVisible() const override;
   bool areFillsVisible() const override;
-  QFont pinMarkersFont() const override;
 
   QColor rulerColor() override;
   QFont rulerFont() override;
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
+
+  QFont labelFont() override;
+  bool areLabelsVisible() override;
+  bool areLabelsSelectable() override;
 
   bool isDetailedVisibility() override;
 
@@ -268,15 +282,6 @@ class DisplayControls : public QDockWidget,
     Swatch,
     Visible,
     Selectable
-  };
-
-  // One leaf (non-group) row in the model
-  struct ModelRow
-  {
-    QStandardItem* name = nullptr;
-    QStandardItem* swatch = nullptr;
-    QStandardItem* visible = nullptr;
-    QStandardItem* selectable = nullptr;  // may be null
   };
 
   // The *Models are groups in the tree
@@ -373,6 +378,7 @@ class DisplayControls : public QDockWidget,
     ModelRow module;
     ModelRow manufacturing_grid;
     ModelRow gcell_grid;
+    ModelRow labels;
     ModelRow background;
   };
 
@@ -390,6 +396,11 @@ class DisplayControls : public QDockWidget,
     ModelRow vias;
   };
 
+  struct IOPinModels
+  {
+    ModelRow names;
+  };
+
   struct ShapeTypeModels
   {
     ModelRow routing_group;
@@ -397,6 +408,7 @@ class DisplayControls : public QDockWidget,
     ModelRow special_routing_group;
     RoutingModels special_routing;
     ModelRow pins;
+    ModelRow pin_names;
     ModelRow fill;
   };
 
@@ -480,9 +492,9 @@ class DisplayControls : public QDockWidget,
 
   void checkLiberty(bool assume_loaded = false);
 
-  std::tuple<QColor*, Qt::BrushStyle*, bool> lookupColor(
-      QStandardItem* item,
-      const QModelIndex* index = nullptr);
+  std::pair<QColor*, Qt::BrushStyle*> lookupColor(QStandardItem* item,
+                                                  const QModelIndex* index
+                                                  = nullptr);
 
   QTreeView* view_;
   DisplayControlModel* model_;
@@ -526,6 +538,7 @@ class DisplayControls : public QDockWidget,
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<const odb::dbSite*, ModelRow> site_controls_;
+  int custom_controls_start_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
@@ -553,6 +566,8 @@ class DisplayControls : public QDockWidget,
   QColor ruler_color_;
   QFont ruler_font_;
 
+  QFont label_font_;
+
   QColor region_color_;
   Qt::BrushStyle region_pattern_;
 
@@ -562,6 +577,7 @@ class DisplayControls : public QDockWidget,
   static constexpr int callback_item_idx_ = Qt::UserRole + 1;
   static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
   static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
+  static constexpr int disable_row_item_idx_ = Qt::UserRole + 4;
 };
 
 }  // namespace gui

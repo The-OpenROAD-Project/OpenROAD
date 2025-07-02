@@ -16,15 +16,15 @@ add_pdn_stripe -followpins -layer metal2
 add_pdn_connect -layers {metal1 metal3}
 
 ## error due to incorrect connect statement
-catch {pdngen} err
+catch { pdngen } err
 puts $err
 
 ## error due to missing connect statement
 add_pdn_stripe -followpins -layer metal3
-catch {pdngen} err
+catch { pdngen } err
 puts $err
 
 ## error due to overlapping connect statements
 add_pdn_connect -layers {metal1 metal2}
-catch {pdngen} err
+catch { pdngen } err
 puts $err

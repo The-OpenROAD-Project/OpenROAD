@@ -249,7 +249,7 @@ void Opendp::createArchitecture()
     }
   }
   // PADDING
-  arch_->setUsePadding(padding_.get() != nullptr);
+  arch_->setUsePadding(padding_ != nullptr);
   arch_->setPadding(padding_.get());
   arch_->setSiteWidth(grid_->getSiteWidth());
 

@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "dbCommon.h"
+
 namespace odb {
 
 dbJournalLog::dbJournalLog(utl::Logger* logger)
@@ -203,7 +205,7 @@ void dbJournalLog::pop(char*& value)
     return;
   }
 
-  value = (char*) malloc(len + 1);
+  value = (char*) safe_malloc(len + 1);
 
   int i;
   for (i = 0; i < len; ++i) {

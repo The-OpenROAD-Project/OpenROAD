@@ -55,57 +55,59 @@ assert {[lequal $point [list 10000 2000]]} "point list doesn't match"
 
 # Check third point
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_POINT} [format  "nextop isn't point: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_POINT} [format "nextop isn't point: %d" $nextOp]
 set point [$decoder getPoint]
 assert {[lequal $point [list 18000 2000]]} "point list doesn't match"
 
 # Check first junction id
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_JUNCTION} [format   "nextop isn't jun: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_JUNCTION} [format "nextop isn't jun: %d" $nextOp]
 set jid [$decoder getJunctionValue]
 assert {$jid == $j1} "jun value doesn't match"
 
 # Check junction point
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_POINT} [format  "nextop isn't point: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_POINT} [format "nextop isn't point: %d" $nextOp]
 set point [$decoder getPoint]
 assert {[lequal $point [list 10000 2000]]} "point list doesn't match"
 
 # Check tech via
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format  "nextop isn't via: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
+assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" \
+  [$tchVia getName] [$v12 getName]]
 
 # Check next point
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_POINT} [format  "nextop isn't point: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_POINT} [format "nextop isn't point: %d" $nextOp]
 set point [$decoder getPoint]
 assert {[lequal $point [list 10000 10000]]} "point list doesn't match"
 
 # Check next point
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_POINT} [format  "nextop isn't point: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_POINT} [format "nextop isn't point: %d" $nextOp]
 set point [$decoder getPoint]
 assert {[lequal $point [list 10000 18000]]} "point list doesn't match"
 
 # Check second junction id
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_JUNCTION} [format   "nextop isn't jun: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_JUNCTION} [format "nextop isn't jun: %d" $nextOp]
 set jid [$decoder getJunctionValue]
 assert {$jid == $j2} "jun value doesn't match"
 
 # Check junction point
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_POINT} [format  "nextop isn't point: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_POINT} [format "nextop isn't point: %d" $nextOp]
 set point [$decoder getPoint]
 assert {[lequal $point [list 10000 10000]]} "point list doesn't match"
 
 # Check tech via
 set nextOp [$decoder next]
-assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format  "nextop isn't via: %d" $nextOp]
+assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
+assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" \
+  [$tchVia getName] [$v12 getName]]
 
 # Check next point
 set nextOp [$decoder next]
@@ -135,13 +137,15 @@ assert {[lequal $point [list 3000 10000]]} "point list doesn't match"
 set nextOp [$decoder next]
 assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
+assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" \
+  [$tchVia getName] [$v12 getName]]
 
 # Check tech via
 set nextOp [$decoder next]
 assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assertStringEq [$tchVia getName] [$v23 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v23 getName]]
+assertStringEq [$tchVia getName] [$v23 getName] [format "techvia name doesn't match: %s %s" \
+  [$tchVia getName] [$v23 getName]]
 
 # Check next point
 set nextOp [$decoder next]

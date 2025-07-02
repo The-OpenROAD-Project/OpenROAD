@@ -167,39 +167,6 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
   definBase::setLogger(logger);
   definBase::setMode(mode);
 
-  _blockageR = std::make_unique<definBlockage>();
-  _componentR = std::make_unique<definComponent>();
-  _componentMaskShift = std::make_unique<definComponentMaskShift>();
-  _fillR = std::make_unique<definFill>();
-  _gcellR = std::make_unique<definGCell>();
-  _netR = std::make_unique<definNet>();
-  _pinR = std::make_unique<definPin>();
-  _rowR = std::make_unique<definRow>();
-  _snetR = std::make_unique<definSNet>();
-  _tracksR = std::make_unique<definTracks>();
-  _viaR = std::make_unique<definVia>();
-  _regionR = std::make_unique<definRegion>();
-  _groupR = std::make_unique<definGroup>();
-  _non_default_ruleR = std::make_unique<definNonDefaultRule>();
-  _prop_defsR = std::make_unique<definPropDefs>();
-  _pin_propsR = std::make_unique<definPinProps>();
-
-  _interfaces.push_back(_blockageR.get());
-  _interfaces.push_back(_componentR.get());
-  _interfaces.push_back(_componentMaskShift.get());
-  _interfaces.push_back(_fillR.get());
-  _interfaces.push_back(_gcellR.get());
-  _interfaces.push_back(_netR.get());
-  _interfaces.push_back(_pinR.get());
-  _interfaces.push_back(_rowR.get());
-  _interfaces.push_back(_snetR.get());
-  _interfaces.push_back(_tracksR.get());
-  _interfaces.push_back(_viaR.get());
-  _interfaces.push_back(_regionR.get());
-  _interfaces.push_back(_groupR.get());
-  _interfaces.push_back(_non_default_ruleR.get());
-  _interfaces.push_back(_prop_defsR.get());
-  _interfaces.push_back(_pin_propsR.get());
   init();
 }
 
@@ -257,12 +224,33 @@ void definReader::useBlockName(const char* name)
 
 void definReader::init()
 {
-  std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
-    (*itr)->init();
-    (*itr)->setLogger(_logger);
-    (*itr)->setMode(_mode);
-  }
+  auto make = [this](auto& interface) {
+    using PtrType = std::remove_reference_t<decltype(interface)>;
+    using Type = typename PtrType::element_type;
+    interface = std::make_unique<Type>();
+    interface->setLogger(_logger);
+    interface->setMode(_mode);
+    _interfaces.push_back(interface.get());
+  };
+
+  _interfaces.clear();
+  make(_blockageR);
+  make(_componentR);
+  make(_componentMaskShift);
+  make(_fillR);
+  make(_gcellR);
+  make(_netR);
+  make(_pinR);
+  make(_rowR);
+  make(_snetR);
+  make(_tracksR);
+  make(_viaR);
+  make(_regionR);
+  make(_groupR);
+  make(_non_default_ruleR);
+  make(_prop_defsR);
+  make(_pin_propsR);
+
   _update = false;
 }
 
@@ -1923,7 +1911,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
 
-  _db->triggerPostReadDef(_block);
+  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
 
   return chip;
 }
@@ -1975,7 +1963,7 @@ dbBlock* definReader::createBlock(dbBlock* parent,
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
 
-  _db->triggerPostReadDef(_block);
+  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
 
   return _block;
 }

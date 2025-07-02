@@ -285,4 +285,32 @@ void _dbBPin::collectMemInfo(MemInfo& info)
   info.children_["ap"].add(aps_);
 }
 
+void _dbBPin::removeBox(_dbBox* box)
+{
+  _dbBlock* block = (_dbBlock*) getOwner();
+
+  dbId<_dbBox> boxid = box->getOID();
+  if (boxid == _boxes) {
+    // at head of list, need to move head
+    _boxes = box->_next_box;
+  } else {
+    // in the middle of the list, need to iterate and relink
+    dbId<_dbBox> id = _boxes;
+    if (id == 0) {
+      return;
+    }
+    while (id != 0) {
+      _dbBox* nbox = block->_box_tbl->getPtr(id);
+      dbId<_dbBox> nid = nbox->_next_box;
+
+      if (nid == boxid) {
+        nbox->_next_box = box->_next_box;
+        break;
+      }
+
+      id = nid;
+    }
+  }
+}
+
 }  // namespace odb

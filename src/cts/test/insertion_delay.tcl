@@ -10,7 +10,7 @@ read_def insertion_delay.def
 source Nangate45/Nangate45.rc
 source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_wire_rc -clock -layer $wire_rc_layer_clk
 
 create_clock -name core -period 5 clk
 
@@ -19,13 +19,13 @@ create_clock -name core -period 5 clk
 #set_debug_level CTS Stree 4
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
-                     -buf_list CLKBUF_X3 \
-                     -wire_unit 20 \
-                     -sink_clustering_enable \
-                     -distance_between_buffers 100 \
-                     -sink_clustering_size 10 \
-                     -sink_clustering_max_diameter 60 \
-                     -num_static_layers 1
+  -buf_list CLKBUF_X3 \
+  -wire_unit 20 \
+  -sink_clustering_enable \
+  -distance_between_buffers 100 \
+  -sink_clustering_size 10 \
+  -sink_clustering_max_diameter 60 \
+  -num_static_layers 1
 
 set unconnected_buffers 0
 foreach buf [get_cells clkbuf_*] {

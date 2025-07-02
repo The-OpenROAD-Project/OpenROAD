@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Parser for LEF58 keep-out zone rules that define restricted areas around
+// cuts/vias
 #include <functional>
 #include <iostream>
 #include <string>
@@ -10,6 +12,7 @@
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 using namespace odb;
 
@@ -20,16 +23,10 @@ void KeepOutZoneParser::setInt(
   (rule_->*func)(lefin_->dbdist(val));
 }
 
+// Parse input string containing keep-out zone rules
 void KeepOutZoneParser::parse(const std::string& s)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty()) {
-      continue;
-    }
-    rule += " ; ";
+  processRules(s, [this](const std::string& rule) {
     if (!parseSubRule(rule)) {
       lefin_->warning(388,
                       "parse mismatch in layer property LEF58_KEEPOUTZONE for "
@@ -37,13 +34,18 @@ void KeepOutZoneParser::parse(const std::string& s)
                       layer_->getName(),
                       rule);
     }
-  }
+  });
 }
 
-bool KeepOutZoneParser::parseSubRule(std::string s)
+// Parse a single keep-out zone rule
+// Format: KEEPOUTZONE CUTCLASS name [TO name] [EXCEPTEXACTALIGNED [SIDE|END]
+// spacing]
+//         EXTENSION side forward [ENDEXTENSION endside endforward SIDEEXTENSION
+//         sideside sideforward] SPIRALEXTENSION spacing ;
+bool KeepOutZoneParser::parseSubRule(const std::string& s)
 {
   rule_ = dbTechLayerKeepOutZoneRule::create(layer_);
-  qi::rule<std::string::iterator, space_type> EXCEPTEXACTALIGNED
+  qi::rule<std::string::const_iterator, space_type> EXCEPTEXACTALIGNED
       = (lit("EXCEPTEXACTALIGNED")
          >> -(lit("SIDE")[boost::bind(
                   &dbTechLayerKeepOutZoneRule::setExceptAlignedSide,
@@ -58,7 +60,7 @@ bool KeepOutZoneParser::parseSubRule(std::string s)
              this,
              _1,
              &odb::dbTechLayerKeepOutZoneRule::setAlignedSpacing)]);
-  qi::rule<std::string::iterator, space_type> EXTENSION
+  qi::rule<std::string::const_iterator, space_type> EXTENSION
       = ((lit("EXTENSION") >> double_[boost::bind(
               &KeepOutZoneParser::setInt,
               this,
@@ -89,14 +91,14 @@ bool KeepOutZoneParser::parseSubRule(std::string s)
                 this,
                 _1,
                 &odb::dbTechLayerKeepOutZoneRule::setSideForwardExtension)]));
-  qi::rule<std::string::iterator, space_type> SPIRALEXTENSION
+  qi::rule<std::string::const_iterator, space_type> SPIRALEXTENSION
       = ((lit("SPIRALEXTENSION") >> double_[boost::bind(
               &KeepOutZoneParser::setInt,
               this,
               _1,
               &odb::dbTechLayerKeepOutZoneRule::setSpiralExtension)]));
 
-  qi::rule<std::string::iterator, space_type> LEF58_KEEPOUTZONE
+  qi::rule<std::string::const_iterator, space_type> LEF58_KEEPOUTZONE
       = (lit("KEEPOUTZONE") >> lit("CUTCLASS") >> _string[boost::bind(
              &dbTechLayerKeepOutZoneRule::setFirstCutClass, rule_, _1)]
          >> -(lit("TO") >> _string[boost::bind(

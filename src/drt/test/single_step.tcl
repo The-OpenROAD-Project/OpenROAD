@@ -5,11 +5,11 @@ read_def testcase/ispd18_sample/ispd18_sample.input.def
 read_guides testcase/ispd18_sample/ispd18_sample.input.guide
 
 detailed_route -output_drc results/single_step.output.drc.rpt \
-               -output_maze results/single_step.output.maze.log \
-               -verbose 0 \
-               -single_step_dr
+  -output_maze results/single_step.output.maze.log \
+  -verbose 0 \
+  -single_step_dr
 
-drt::step_dr 7  0 3 8 0 8 0.95 1 true
+drt::step_dr 7 0 3 8 0 8 0.95 1 true
 drt::step_dr 7 -2 3 8 8 8 0.95 1 true
 drt::step_dr 7 -5 3 8 8 8 0.95 1 true
 drt::step_end

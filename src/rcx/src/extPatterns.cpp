@@ -56,12 +56,15 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
   bool all = !opt.over && !opt.under && !opt.over_under;
 
   uint cnt = 0;
-  if (opt.over || all)
+  if (opt.over || all) {
     cnt += overPatterns(opt, origin, db_net_util);
-  if (opt.under || all)
+  }
+  if (opt.under || all) {
     cnt += UnderPatterns(opt, origin, db_net_util);
-  if (opt.over_under || all)
+  }
+  if (opt.over_under || all) {
     cnt += OverUnderPatterns(opt, origin, db_net_util);
+  }
 
   fprintf(stdout, "\n       %d Total Patterns\n", cnt);
 
@@ -83,16 +86,18 @@ uint extMain::overPatterns(const PatternOptions& opt,
   int start[2] = {origin[0], origin[1]};
   uint cnt = 0;
   for (int met = 1; met <= opt.met_cnt; met++) {
-    if ((opt.met > 0) && (opt.met != met))  // TODO change to list
+    if ((opt.met > 0) && (opt.met != met)) {  // TODO change to list
       continue;
+    }
 
     FILE* fp = extPattern::OpenLog(met, "o");
 
     int pattern_separation = 0;
     int max_ur[2] = {0, 0};
     for (int under = 0; under < met; under++) {
-      if (under > 0 && met - under > opt.under_dist)
+      if (under > 0 && met - under > opt.under_dist) {
         continue;
+      }
 
       extPattern p(
           wireCnt, -1, -1, met, under, under - 1, opt, fp, start, db_net_util);
@@ -116,20 +121,23 @@ uint extMain::UnderPatterns(const PatternOptions& opt,
 
   uint cnt = 0;
   for (int met = 1; met < opt.met_cnt; met++) {
-    if ((opt.met > 0) && (opt.met != met))  // change to list
+    if ((opt.met > 0) && (opt.met != met)) {  // change to list
       continue;
+    }
 
     FILE* fp = extPattern::OpenLog(met, "u");
 
     int pattern_separation = 0;
     int max_ur[2] = {0, 0};
     for (int over = met + 1; over <= opt.met_cnt; over++) {
-      if (over < opt.met_cnt && over - met > opt.over_dist)
+      if (over < opt.met_cnt && over - met > opt.over_dist) {
         continue;
+      }
 
       int over2 = over + 1;
-      if (over2 > opt.met_cnt)
+      if (over2 > opt.met_cnt) {
         over2 = -1;
+      }
       extPattern p(
           wireCnt, over2, over, met, -1, -1, opt, fp, start, db_net_util);
       cnt += p.CreatePattern_over(start, max_ur);
@@ -150,24 +158,28 @@ uint extMain::OverUnderPatterns(const PatternOptions& opt,
 
   uint cnt = 0;
   for (int met = 1; met < opt.met_cnt; met++) {
-    if ((opt.met > 0) && (opt.met != met))  // change to list
+    if ((opt.met > 0) && (opt.met != met)) {  // change to list
       continue;
+    }
 
     FILE* fp = extPattern::OpenLog(met, "ou");
 
     int pattern_separation = 0;
     int max_ur[2] = {0, 0};
     for (int over = met + 1; over <= opt.met_cnt; over++) {
-      if (over - met > opt.over_dist)
+      if (over - met > opt.over_dist) {
         continue;
+      }
 
       for (int under = 1; under < met; under++) {
-        if (met - under > opt.under_dist)
+        if (met - under > opt.under_dist) {
           continue;
+        }
 
         int over2 = over + 1;
-        if (over2 > opt.met_cnt)
+        if (over2 > opt.met_cnt) {
           over2 = -1;
+        }
         extPattern p(wireCnt,
                      over2,
                      over,
@@ -234,10 +246,12 @@ extPattern::extPattern(int cnt,
   } else {
     sprintf(patternName_buff, "U%d_M%duM%d", wireCnt, met, over);
   }
-  if (over > 0 && over1 > 0)
+  if (over > 0 && over1 > 0) {
     sprintf(patternName, "%s__uM%d", patternName_buff, over1);
-  if (under > 0 && under1 > 0)
+  }
+  if (under > 0 && under1 > 0) {
     sprintf(patternName, "%s__oM%d", patternName_buff, under1);
+  }
 
   mWidth = getMultipliers(opt.width);
   mSpacing = getMultipliers(opt.spacing);
@@ -282,8 +296,9 @@ float extPattern::init(dbCreateNetUtil* net_util)
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
   int s = pitch - _minWidth;
-  if (s > minSpace)
+  if (s > minSpace) {
     s = minSpace;
+  }
 
   _minSpacing = s;
   minSpacing = s * uu;
@@ -382,8 +397,9 @@ uint extPattern::CreatePattern(int org[2],
                                         createContextName_over(
                                             ow, os, offsetOver, ow2, os2);
 
-                                        if (SetPatternName())
+                                        if (SetPatternName()) {
                                           continue;
+                                        }
 
                                         extWirePattern* mainp = MainPattern(
                                             mw,
@@ -396,8 +412,9 @@ uint extPattern::CreatePattern(int org[2],
                                             cwr,
                                             csr);  // this->origin does NOT
                                                    // change
-                                        if (mainp == nullptr)
+                                        if (mainp == nullptr) {
                                           continue;
+                                        }
 
                                         contextPatterns_under(mainp,
                                                               uw,
@@ -490,12 +507,14 @@ uint extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
                         if (over_met2 <= 0) {
                           sprintf(contextName, "%s", "");
                           createContextName_over(ow, os, 0, 0, 0);
-                          if (SetPatternName())
+                          if (SetPatternName()) {
                             continue;
+                          }
                           extWirePattern* mainp = MainPattern(
                               mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                          if (mainp == nullptr)
+                          if (mainp == nullptr) {
                             continue;
+                          }
                           contextPatterns_over(mainp, ow, os, 0, 0, 0);
                           PatternEnd(mainp, max_ur, 10);
                         }
@@ -510,12 +529,14 @@ uint extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
                                 sprintf(contextName, "%s", "");
                                 createContextName_over(
                                     ow, os, offsetOver, ow2, os2);
-                                if (SetPatternName())
+                                if (SetPatternName()) {
                                   continue;
+                                }
                                 extWirePattern* mainp = MainPattern(
                                     mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                                if (mainp == nullptr)
+                                if (mainp == nullptr) {
                                   continue;
+                                }
                                 contextPatterns_over(
                                     mainp, ow, os, offsetOver, ow2, os2);
                                 PatternEnd(mainp, max_ur, 10);
@@ -593,12 +614,14 @@ uint extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
                         if (under_met2 <= 0) {
                           sprintf(contextName, "%s", "");
                           createContextName_under(uw, us, 0, 0, 0);
-                          if (SetPatternName())
+                          if (SetPatternName()) {
                             continue;
+                          }
                           extWirePattern* mainp = MainPattern(
                               mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                          if (mainp == nullptr)
+                          if (mainp == nullptr) {
                             continue;
+                          }
                           contextPatterns_under(mainp, uw, us, 0, 0, 0);
                           PatternEnd(mainp, max_ur, 10);
                         }
@@ -613,12 +636,14 @@ uint extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
                                 sprintf(contextName, "%s", "");
                                 createContextName_under(
                                     uw, us, offsetUnder, uw2, us2);
-                                if (SetPatternName())
+                                if (SetPatternName()) {
                                   continue;
+                                }
                                 extWirePattern* mainp = MainPattern(
                                     mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                                if (mainp == nullptr)
+                                if (mainp == nullptr) {
                                   continue;
+                                }
                                 contextPatterns_under(
                                     mainp, uw, us, offsetUnder, uw2, us2);
                                 PatternEnd(mainp, max_ur, 10);
@@ -662,11 +687,13 @@ bool extPattern::createContextName_under(float uw,
                                          float us2)
 {
   if (under_met > 0) {
-    if (uw > 0 && us > 0)
+    if (uw > 0 && us > 0) {
       sprintf(contextName, "__M%d_w%g_s%g", under_met, uw, us);
-    if (under_met2 > 0 && (uw2 > 0 && us2 > 0))
+    }
+    if (under_met2 > 0 && (uw2 > 0 && us2 > 0)) {
       sprintf(
           contextName, "__f%g_M%d_w%g_s%g", offsetUnder, under_met2, uw2, us2);
+    }
   }
   return false;
 }
@@ -677,11 +704,13 @@ bool extPattern::createContextName_over(float ow,
                                         float os2)
 {
   if (over_met > 0) {
-    if (ow > 0 && os > 0)
+    if (ow > 0 && os > 0) {
       sprintf(contextName, "__M%d_w%g_s%g", over_met, ow, os);
-    if ((over_met2 > 0) && (ow2 > 0 && os2 > 0))
+    }
+    if ((over_met2 > 0) && (ow2 > 0 && os2 > 0)) {
       sprintf(
           contextName, "__f%g_M%d_w%g_s%g", offsetOver, over_met2, ow2, os2);
+    }
   }
   return false;
 }
@@ -693,10 +722,12 @@ uint extPattern::contextPatterns_under(extWirePattern* mainp,
                                        float us2)
 {
   if (under_met > 0) {
-    if (uw > 0 && us > 0)
+    if (uw > 0 && us > 0) {
       ContextPattern(mainp, !dir, under_met, uw, us, offsetUnder);
-    if ((under_met2 > 0) && (uw2 > 0 && us2 > 0))
+    }
+    if ((under_met2 > 0) && (uw2 > 0 && us2 > 0)) {
       ContextPatternParallel(mainp, dir, under_met2, uw2, us2, offsetUnder);
+    }
   }
   return 0;
 }
@@ -708,10 +739,12 @@ uint extPattern::contextPatterns_over(extWirePattern* mainp,
                                       float os2)
 {
   if (over_met > 0) {
-    if (ow > 0 && os > 0)
+    if (ow > 0 && os > 0) {
       ContextPattern(mainp, !dir, over_met, ow, os, offsetOver);
-    if ((over_met2 > 0) && (ow2 > 0 && os2 > 0))
+    }
+    if ((over_met2 > 0) && (ow2 > 0 && os2 > 0)) {
       ContextPatternParallel(mainp, dir, over_met2, ow2, os2, offsetOver);
+    }
   }
   return 0;
 }
@@ -896,8 +929,9 @@ extWirePattern* extPattern::MainPattern(float mw,
   for (uint ii = 2; ii <= n; ii++) {
     jj = wp->addCoords(cwl, csl, "MR", ii);
   }
-  if (dbg_p)
+  if (dbg_p) {
     wp->printWires(patternLog);
+  }
 
   // wp->AddOrigin(origin);
   wp->AddOrigin_int(_origin);
@@ -906,14 +940,15 @@ extWirePattern* extPattern::MainPattern(float mw,
   max_ur[0] = wp->last_trans(0);
   max_ur[1] = wp->last_trans(1);
 
-  if (!printWiresDEF(wp, met))
+  if (!printWiresDEF(wp, met)) {
     return nullptr;
+  }
 
   return wp;
 }
 float extPattern::GetRoundedInt(float v, float mult, int units1)
 {
-  float v1 = lround(v * mult * units1);
+  float v1 = std::lround(v * mult * units1);
   int r1 = (int) v1;
   if (r1 % 10 > 0) {
     r1 = 10 * (r1 / 10);
@@ -923,7 +958,7 @@ float extPattern::GetRoundedInt(float v, float mult, int units1)
 }
 int extPattern::GetRoundedInt(int v, float mult, int units1)
 {
-  float v1 = lround(v * mult);
+  float v1 = std::lround(v * mult);
   int r1 = (int) v1;
   if (r1 % 10 > 0) {
     r1 = 10 * (r1 / 10);
@@ -957,20 +992,23 @@ bool extPattern::printWiresDEF(extWirePattern* wp, int level)
     }
     wp->gen_trans_name(ii);
     char* netName = strdup(wp->tmp_pattern_name);
-    if (createNetSingleWire(netName, ll, ur, level) == 0)
+    if (createNetSingleWire(netName, ll, ur, level) == 0) {
       return false;
+    }
   }
   return true;
 }
 void extWirePattern::printWires(FILE* fp, bool trans)
 {
-  if (trans)
+  if (trans) {
     fprintf(fp, "\n");
+  }
   for (uint ii = 1; ii < cnt; ii++) {
-    if (trans)
+    if (trans) {
       print_trans2(fp, ii);
-    else
+    } else {
       print(fp, ii);
+    }
   }
 }
 void extWirePattern::AddOrigin(float org[2])
@@ -1007,16 +1045,18 @@ int extWirePattern::length(uint dir)
 void extPattern::set_max(int ur[2])
 {
   for (uint ii = 0; ii < 2; ii++) {
-    if (ur[ii] < max_ur[ii])
+    if (ur[ii] < max_ur[ii]) {
       ur[ii] = max_ur[ii];
+    }
   }
 }
 int extPattern::max_last(extWirePattern* wp)
 {
   for (uint ii = 0; ii < 2; ii++) {
     int xy = wp->last(ii);
-    if (max_ur[ii] < xy)
+    if (max_ur[ii] < xy) {
       max_ur[ii] = xy;
+    }
   }
   return max_ur[dir];
 }
@@ -1053,8 +1093,9 @@ extWirePattern* extPattern::GetWireParttern(extPattern* main,
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
   int minS = pitch - minW;
-  if (minS > minSpace)
+  if (minS > minSpace) {
     minS = minSpace;
+  }
 
   extWirePattern* wp = new extWirePattern(main, dir, minW, minS, opt);
   s = extPattern::GetRoundedInt(minS, ms, this->units);
@@ -1099,27 +1140,18 @@ int extPattern::ContextPattern(extWirePattern* main,
   int limit = main->last(dir1);
 
   int jj = 1;
-  uint ii = 1;
-  for (;; ii++) {
-    // int next_xy= wp->ll[dir1][ii-1];
-    // next_xy += w+s;
+  while (true) {
     ll[dir1] += w + s;
     ur[dir1] += w + s;
 
-    // fprintf(stdout, "ContextPattern %d %d   %d %d\n", ll[0], ur[0], ll[1],
-    // ur[1]);
-    if (ur[dir1] > limit)
+    if (ur[dir1] > limit) {
       break;
+    }
 
-    // jj= wp->addCoords(mw, ms, "___cntx", ii, met1);
     wp->addCoords(ll, ur, "___cntx", jj, met1);
     jj++;
-
-    // fprintf(stdout, "ContextPattern %d %d   %d %d --- \n", wp->ll[0][jj],
-    // wp->ur[0][jj], wp->ll[1][jj], wp->ur[1][jj]); wp->print(patternLog, jj);
   }
   wp->printWires(patternLog);
-  // wp->AddOrigin(origin);
   wp->AddOrigin_int(_origin);
   wp->printWires(patternLog, true);
 
@@ -1181,8 +1213,9 @@ int extPattern::ContextPatternParallel(extWirePattern* main,
     ur[short_dir] = ll[short_dir] - s;
     ll[short_dir] = ur[short_dir] - w;
 
-    if (ll[short_dir] < lo_limit)
+    if (ll[short_dir] < lo_limit) {
       break;
+    }
 
     wp->addCoords_temp(ii, ll, ur);
   }
@@ -1200,8 +1233,9 @@ int extPattern::ContextPatternParallel(extWirePattern* main,
   for (;; jj++) {
     ll[short_dir] = ur[short_dir] + s;
     ur[short_dir] = ll[short_dir] + w;
-    if (ur[short_dir] > hi_limit)
+    if (ur[short_dir] > hi_limit) {
       break;
+    }
 
     wp->addCoords(ll, ur, "___cntx", jj, met1);
   }
@@ -1359,8 +1393,9 @@ uint extWirePattern::addCoords(float mw,
 {
   uint d = dir;
   uint jj = cnt;
-  if (jj >= 1000)
+  if (jj >= 1000) {
     return jj;
+  }
 
   // float s = extPattern::GetRoundedInt(minSpacing, ms, pattern->units);
   // float w = extPattern::GetRoundedInt(minWidth, mw, pattern->units);
@@ -1373,12 +1408,14 @@ uint extWirePattern::addCoords(float mw,
   ur[!d][jj] = ll[!d][jj] + _len;
 
   if (ii > 0) {
-    if (met < 0)
+    if (met < 0) {
       sprintf(name[jj], "%s%d", buff, ii);
-    else
+    } else {
       sprintf(name[jj], "%sM%d_%d", buff, met, ii);
-  } else
+    }
+  } else {
     sprintf(name[jj], "%s", buff);
+  }
 
   cnt++;
   return jj;
@@ -1412,8 +1449,9 @@ uint extPattern::createNetSingleWire(char* netName,
 {
   dbNet* net = db_net_util->createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], level);
-  if (net == nullptr)
+  if (net == nullptr) {
     return 0;
+  }
 
   bool rename_all_bterms = true;
   if (rename_all_bterms) {
@@ -1434,8 +1472,9 @@ bool extPattern::RenameBterm1stInput(dbNet* net)
   dbSet<dbBTerm> bterms = net->getBTerms();
   for (dbBTerm* bterm : bterms) {
     bterm1 = bterm->getConstName();
-    if (bterm->getIoType() != dbIoType::INPUT)  // TODO create a flag
+    if (bterm->getIoType() != dbIoType::INPUT) {  // TODO create a flag
       continue;
+    }
 
     // printf("BTERM %s %s\n", bterm1, bterm->getIoType().getString());
 
@@ -1461,8 +1500,9 @@ bool extPattern::RenameAllBterms(dbNet* net)
   for (dbBTerm* bterm : bterms) {
     bterm1 = bterm->getConstName();
     const char* io = "_in";
-    if (bterm->getIoType() != dbIoType::INPUT)
+    if (bterm->getIoType() != dbIoType::INPUT) {
       io = "_out";
+    }
 
     // printf("BTERM %s %s\n", bterm1, bterm->getIoType().getString());
 
@@ -1484,11 +1524,13 @@ std::vector<float> extPattern::getMultipliers(const char* s)
   char* tmp = strdup(s);
   uint jj = 0;
   uint ii = 0;
-  if (s[0] == del)
+  if (s[0] == del) {
     ii = 1;
+  }
   for (; s[ii] != '\0'; ii++) {
-    if (s[ii] == ' ')
+    if (s[ii] == ' ') {
       continue;
+    }
 
     if (s[ii] != del) {
       tmp[jj++] = s[ii];

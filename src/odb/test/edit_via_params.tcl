@@ -26,7 +26,7 @@ $params setTopLayer [$tech findLayer metal2]
 $params setXCutSize 140
 $params setYCutSize 140
 $params setXCutSpacing 160
-$params setYCutSpacing 160 
+$params setYCutSpacing 160
 $params setXBottomEnclosure 110
 $params setYBottomEnclosure 100
 $params setXTopEnclosure 110
@@ -53,8 +53,8 @@ set boxes [$via getBoxes]
 
 set layer_boxes {}
 foreach box $boxes {
-    set layerName [[$box getTechLayer] getName]
-    dict lappend layer_boxes $layerName $box
+  set layerName [[$box getTechLayer] getName]
+  dict lappend layer_boxes $layerName $box
 }
 
 check "num metal1 shapes" {llength [dict get $layer_boxes metal1]} 1
@@ -67,14 +67,17 @@ set via1_shape [lindex [dict get $layer_boxes via1] 0]
 
 set w_expected [expr 3 * 140 + (3 - 1) * 160 + 2 * 110]
 set h_expected [expr 1 * 140 + (1 - 1) * 160 + 2 * 100]
-check "metal1 size" {list [expr [$metal1_shape xMax] - [$metal1_shape xMin]] [expr [$metal1_shape yMax] - [$metal1_shape yMin]]} "$w_expected $h_expected" 
+check "metal1 size" {list [expr [$metal1_shape xMax] - [$metal1_shape xMin]] \
+        [expr [$metal1_shape yMax] - [$metal1_shape yMin]]} "$w_expected $h_expected"
 
 set w_expected [expr 3 * 140 + (3 - 1) * 160 + 2 * 110]
 set h_expected [expr 1 * 140 + (1 - 1) * 160 + 2 * 100]
-check "metal2 size" {list [expr [$metal2_shape xMax] - [$metal2_shape xMin]] [expr [$metal2_shape yMax] - [$metal2_shape yMin]]} "$w_expected $h_expected" 
+check "metal2 size" {list [expr [$metal2_shape xMax] - [$metal2_shape xMin]] \
+        [expr [$metal2_shape yMax] - [$metal2_shape yMin]]} "$w_expected $h_expected"
 
 set w_expected 140
 set h_expected 140
-check "via1 size" {list [expr [$via1_shape xMax] - [$via1_shape xMin]] [expr [$via1_shape yMax] - [$via1_shape yMin]]} "$w_expected $h_expected" 
+check "via1 size" {list [expr [$via1_shape xMax] - [$via1_shape xMin]] \
+        [expr [$via1_shape yMax] - [$via1_shape yMin]]} "$w_expected $h_expected"
 
 exit_summary

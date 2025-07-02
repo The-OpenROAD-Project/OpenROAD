@@ -161,6 +161,33 @@ save_histogram_image
 |`-height`| height of the image in pixels, defaults to 500px. |
 |`-width`| width of the image in pixels, defaults to 500px. |
 
+### Generate animated images
+
+This command can be used to generate an animated gif.
+
+```tcl
+save_animated_gif
+    -start|-add|-end
+    [-resolution microns_per_pixel]
+    [-area {x0 y0 x1 y1}]
+    [-width width]
+    [-delay delay]
+    [filename]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-start` | start a new animation. |
+| `-add` | add a new frame to the animation. |
+| `-end` | terminate the animtion and save file. |
+| `filename` | path to save the animation to. |
+| `-area` | x0, y0 - first corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block. x1, y1 - second corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.|
+| `-resolution`| resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.|
+| `-width`| width of the output image in pixels, default will be computed from the resolution. Cannot be used with ``-resolution``.|
+| `-delay`| delay between frames in the GIF.|
+
 ### Select Objects
 
 This command selects object based on options.
@@ -642,6 +669,55 @@ To remove all the rulers:
 
 ```tcl
 gui::clear_rulers
+```
+
+### Add Label to Layout
+
+To add a label to the layout use the following command:
+
+Returns: name of the newly created label.
+
+```tcl
+add_label -position {x y}
+          [-anchor anchor]
+          [-color color]
+          [-size size]
+          [-name name]
+          text
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-position` | point of the label in microns. |
+| `-anchor` | anchor point for text, default is center. |
+| `-color` | color to use for the label, default is white. |
+| `size` | size of the label, default is determined by the default GUI font. |
+| `name` | name of the label, one will be generated if not provided. |
+| `text` | text for the label. |
+
+### Delete a single label
+
+To remove a single label:
+
+```tcl
+gui::delete_label
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` | name of the label. |
+
+### Clear All Labels
+
+To remove all the labels:
+
+```tcl
+gui::clear_labels
 ```
 
 ### Display help

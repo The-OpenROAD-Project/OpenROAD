@@ -33,13 +33,12 @@ class definBase
   int _dist_factor;
 
   definBase();
-  virtual ~definBase() {}
+  virtual ~definBase() = default;
   void setTech(dbTech* tech);
   void setBlock(dbBlock* block);
   void setLogger(utl::Logger* logger);
   void units(int d);
   void setMode(defin::MODE mode);
-  virtual void init();
 
   int dbdist(int value) { return value * _dist_factor; }
 

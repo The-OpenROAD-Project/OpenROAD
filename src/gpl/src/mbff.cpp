@@ -975,10 +975,10 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   const int inf = std::numeric_limits<int>::max();
 
   // cand_tray[i] = tray indices that have a slot which contains flop i
-  std::vector<int> cand_tray[num_flops];
+  std::vector<std::vector<int>> cand_tray(num_flops);
 
   // cand_slot[i] = slot indices that are mapped to flop i
-  std::vector<int> cand_slot[num_flops];
+  std::vector<std::vector<int>> cand_slot(num_flops);
 
   for (int i = 0; i < num_trays; i++) {
     for (int j = 0; j < trays[i].slots.size(); j++) {
@@ -990,11 +990,11 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   }
 
   // has a flop been mapped to a slot?
-  std::vector<sat::BoolVar> mapped[num_flops];
+  std::vector<std::vector<sat::BoolVar>> mapped(num_flops);
 
   // displacement from flop to slot
-  std::vector<sat::IntVar> disp_x[num_flops];
-  std::vector<sat::IntVar> disp_y[num_flops];
+  std::vector<std::vector<sat::IntVar>> disp_x(num_flops);
+  std::vector<std::vector<sat::IntVar>> disp_y(num_flops);
 
   /*
   NOTE: CP-SAT constraints only work with INTEGERS
@@ -1510,7 +1510,7 @@ void MBFF::RunMultistart(
     trays[0][i] = std::move(one_bit);
   }
 
-  std::vector<float> res[num_sizes_];
+  std::vector<std::vector<float>> res(num_sizes_);
   std::vector<std::pair<int, int>> ind;
 
   for (int i = 1; i < num_sizes_; i++) {
@@ -1817,7 +1817,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     }
   }
 
-  std::vector<std::vector<Flop>> tmp_clusters[multistart_];
+  std::vector<std::vector<std::vector<Flop>>> tmp_clusters(multistart_);
   std::vector<float> tmp_costs(multistart_);
 
 #pragma omp parallel for
@@ -1958,7 +1958,8 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
   // all_start_trays[t][i][j]: start trays of size 2^i, multistart = j for
   // pointset[t]
   const int num_pointsets = pointsets.size();
-  std::vector<std::vector<std::vector<Tray>>> all_start_trays[num_pointsets];
+  std::vector<std::vector<std::vector<std::vector<Tray>>>> all_start_trays(
+      num_pointsets);
   for (int t = 0; t < num_pointsets; t++) {
     all_start_trays[t].resize(num_sizes_);
     for (int i = 1; i < num_sizes_; i++) {
@@ -1979,8 +1980,8 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
   }
 
   float ans = 0;
-  std::vector<std::pair<int, int>> all_mappings[num_pointsets];
-  std::vector<Tray> all_final_trays[num_pointsets];
+  std::vector<std::vector<std::pair<int, int>>> all_mappings(num_pointsets);
+  std::vector<std::vector<Tray>> all_final_trays(num_pointsets);
 
 #pragma omp parallel for num_threads(num_threads_)
   for (int t = 0; t < num_pointsets; t++) {
@@ -2252,6 +2253,8 @@ void MBFF::ReadLibs()
       dbInst* tmp_tray = dbInst::create(block_, master, tray_name.c_str());
 
       if (!IsValidTray(tmp_tray)) {
+        dbInst::destroy(tmp_tray);
+        --test_idx_;
         continue;
       }
 

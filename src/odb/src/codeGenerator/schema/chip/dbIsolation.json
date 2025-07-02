@@ -39,7 +39,7 @@
       "flags":["no-set"]
     },
     {
-      "name": "_isolation_cells", 
+      "name": "_isolation_cells",
       "type": "dbVector<std::string>",
       "flags": ["no-get", "no-set"]
     },

@@ -248,6 +248,11 @@ dpl::Opendp* Design::getOpendp()
   return getOpenRoad()->getOpendp();
 }
 
+exa::Example* Design::getExample()
+{
+  return getOpenRoad()->getExample();
+}
+
 mpl::MacroPlacer* Design::getMacroPlacer()
 {
   return getOpenRoad()->getMacroPlacer();

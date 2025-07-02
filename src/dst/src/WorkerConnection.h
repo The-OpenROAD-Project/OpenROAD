@@ -8,14 +8,19 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
 #include <cstddef>
-namespace asio = boost::asio;
-using asio::ip::tcp;
+
 namespace utl {
 class Logger;
 }
+
 namespace dst {
+
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 class Distributed;
 class Worker;
+
 class WorkerConnection : public boost::enable_shared_from_this<WorkerConnection>
 {
  public:

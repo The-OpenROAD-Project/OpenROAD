@@ -52,24 +52,24 @@ class definPin : public definBase
   };
 
  public:
-  int _bterm_cnt;
-  int _update_cnt;
+  int _bterm_cnt{0};
+  int _update_cnt{0};
 
  private:
-  dbBTerm* _cur_bterm;
-  dbPlacementStatus::Value _status;
-  dbOrientType::Value _orient;
-  int _orig_x;
-  int _orig_y;
-  int _min_spacing;
-  int _effective_width;
-  char _left_bus;
-  char _right_bus;
+  dbBTerm* _cur_bterm{nullptr};
+  dbPlacementStatus::Value _status{dbPlacementStatus::NONE};
+  dbOrientType::Value _orient{dbOrientType::R0};
+  int _orig_x{0};
+  int _orig_y{0};
+  int _min_spacing{0};
+  int _effective_width{0};
+  char _left_bus{'['};
+  char _right_bus{']'};
   Rect _rect;
-  dbTechLayer* _layer;
-  bool _has_min_spacing;
-  bool _has_effective_width;
-  bool _has_placement;
+  dbTechLayer* _layer{nullptr};
+  bool _has_min_spacing{false};
+  bool _has_effective_width{false};
+  bool _has_placement{false};
   std::vector<PinRect> _rects;
   std::vector<Polygon> _polygons;
   std::vector<Pin> _ground_pins;
@@ -106,10 +106,6 @@ class definPin : public definBase
   virtual void pinsEnd();
   virtual void portBegin();
   virtual void portEnd();
-
-  definPin();
-  ~definPin() override;
-  void init() override;
 };
 
 }  // namespace odb

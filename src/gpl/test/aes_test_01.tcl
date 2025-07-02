@@ -17,4 +17,3 @@ read_sdc ${design_dir}/${design}.sdc
 global_placement -verbose 5 -density 1.0 -init_density_penalty 0.0001
 
 write_def ${design}_output_mac.def
-

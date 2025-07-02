@@ -6,9 +6,11 @@ read_def "no_sinks.def"
 create_clock -period 5 clk
 set_wire_rc -clock -layer metal5
 
-catch {clock_tree_synthesis -root_buf CLKBUF_X3 \
-         -buf_list CLKBUF_X3 \
-         -wire_unit 20 \
-         -clk_nets "clk"} error
-      
+catch {
+  clock_tree_synthesis -root_buf CLKBUF_X3 \
+    -buf_list CLKBUF_X3 \
+    -wire_unit 20 \
+    -clk_nets "clk"
+} error
+
 puts $error

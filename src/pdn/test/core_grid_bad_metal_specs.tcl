@@ -11,11 +11,11 @@ add_global_connection -net VSS -pin_pattern VSS -ground
 set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
-catch {add_pdn_stripe -layer metal1 -width 0.075 -pitch 4} err
+catch { add_pdn_stripe -layer metal1 -width 0.075 -pitch 4 } err
 puts $err
 
-catch {add_pdn_stripe -layer metal1 -width 0.07 -pitch 4.004} err
+catch { add_pdn_stripe -layer metal1 -width 0.07 -pitch 4.004 } err
 puts $err
 
-catch {add_pdn_stripe -layer metal1 -width 0.07 -spacing 0.504 -pitch 4} err
+catch { add_pdn_stripe -layer metal1 -width 0.07 -spacing 0.504 -pitch 4 } err
 puts $err

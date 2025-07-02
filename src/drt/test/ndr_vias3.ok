@@ -44,7 +44,6 @@
 [INFO DRT-0033] met4 shape region query size = 0.
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] met5 shape region query size = 0.
-[WARNING DRT-0088] Exhaustive access point generation for _279_/A (sky130_fd_sc_hd__nand2_1) is unsatisfactory.
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] FR_MASTERSLICE guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.

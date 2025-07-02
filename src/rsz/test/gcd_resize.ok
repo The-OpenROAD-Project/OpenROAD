@@ -6,13 +6,13 @@
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 worst slack max 1.34
 [INFO RSZ-0028] Inserted 18 output buffers.
-[INFO RSZ-0058] Using max wire length 693um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       546
     final |     -1.4% |      60 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 60 instances.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0098] No setup violations found
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint

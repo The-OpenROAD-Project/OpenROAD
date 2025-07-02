@@ -4,6 +4,7 @@ load("//test:regression.bzl", "regression_test")
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
     "blif_reader_sequential",
@@ -14,6 +15,8 @@ COMPULSORY_TESTS = [
     "blif_writer_sequential",
     "const_cell_removal",
     "gcd_restructure",
+    "aes_asap7",
+    "gcd_asap7",
 ]
 
 # Disabled in CMakeLists.txt
@@ -90,7 +93,21 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ),
+        ) + ([
+            "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+            "asap7/asap7sc7p5t_AO_RVT_SS_nldm_211120.lib.gz",
+            "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+            "asap7/asap7sc7p5t_INVBUF_RVT_SS_nldm_220122.lib.gz",
+            "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+            "asap7/asap7sc7p5t_OA_RVT_SS_nldm_211120.lib.gz",
+            "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+            "asap7/asap7sc7p5t_SEQ_RVT_SS_nldm_220123.lib",
+            "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+            "asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz",
+            "asap7/asap7_tech_1x_201209.lef",
+            "asap7/setRC.tcl",
+        ] if "asap7" in test_name else []),
     )
     for test_name in ALL_TESTS
 ]

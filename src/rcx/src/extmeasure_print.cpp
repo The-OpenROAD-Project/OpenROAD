@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
@@ -20,14 +20,15 @@ using namespace odb;
 
 void extMeasureRC::GetOUname(char buf[200], int met, int metOver, int metUnder)
 {
-  if (metUnder > 0 && metOver > 0)
+  if (metUnder > 0 && metOver > 0) {
     sprintf(buf, "M%doM%duM%d", met, metUnder, metOver);
-  else if (metUnder > 0)
+  } else if (metUnder > 0) {
     sprintf(buf, "M%doM%d", met, metUnder);
-  else if (metOver > 0)
+  } else if (metOver > 0) {
     sprintf(buf, "M%duM%d", met, metOver);
-  else
+  } else {
     sprintf(buf, "M%d", met);
+  }
 }
 void extMeasureRC::PrintCrossSeg(FILE* fp,
                                  int x1,
@@ -37,8 +38,9 @@ void extMeasureRC::PrintCrossSeg(FILE* fp,
                                  int metUnder,
                                  const char* prefix)
 {
-  if (fp == nullptr)
+  if (fp == nullptr) {
     return;
+  }
   char buf[200];
   GetOUname(buf, met, metOver, metUnder);
   fprintf(fp,
@@ -59,8 +61,9 @@ void extMeasureRC::PrintOUSeg(FILE* fp,
                               int up_dist,
                               int down_dist)
 {
-  if (fp == nullptr)
+  if (fp == nullptr) {
     return;
+  }
   char buf[200];
   GetOUname(buf, met, metOver, metUnder);
   fprintf(fp,
@@ -104,13 +107,14 @@ void extMeasureRC::PrintOverlapSeg(FILE* fp,
                                    int tgt_met,
                                    const char* prefix)
 {
-  if (fp != nullptr)
+  if (fp != nullptr) {
     fprintf(fp,
             "%s%7.3f %7.3f  %dL\n",
             prefix,
             GetDBcoords(s->_xy),
             GetDBcoords(s->_xy + s->_len),
             s->_len);
+  }
 }
 
 void extMeasureRC::PrintOvelaps(extSegment* w,
@@ -148,9 +152,10 @@ void extMeasureRC::PrintCrossOvelapsOU(Wire* w,
   if (_segFP != nullptr && segTable->getCnt() > 0) {
     for (uint ii = 0; ii < segTable->getCnt(); ii++) {
       extSegment* s = segTable->get(ii);
-      if (s->_metOver == metOver && s->_metUnder == metUnder)
+      if (s->_metOver == metOver && s->_metUnder == metUnder) {
         PrintCrossSeg(
             _segFP, s->_xy, s->_len, tgt_met, s->_metOver, s->_metUnder, "\t");
+      }
     }
   }
 }
@@ -174,8 +179,9 @@ void extMeasureRC::printCaps(FILE* fp,
 }
 void extMeasureRC::printNetCaps(FILE* fp, const char* msg)
 {
-  if (_netId <= 0)
+  if (_netId <= 0) {
     return;
+  }
   dbNet* net = dbNet::getNet(_block, _netId);
   double gndCap = net->getTotalCapacitance(0, false);
   double ccCap = net->getTotalCouplingCap(0);
@@ -190,15 +196,16 @@ const char* extMeasureRC::srcWord(int& rsegId)
 {
   rsegId = _netSrcId;
   if (_netTgtId == _netId) {
-    rsegId = rsegId;
+    rsegId = _netTgtId;
     return "TGT";
   }
   return "SRC";
 }
 const char* extMeasureRC::GetSrcWord(int rsegId)
 {
-  if (_rsegTgtId == rsegId)
+  if (_rsegTgtId == rsegId) {
     return "TGT";
+  }
 
   return "SRC";
 }
@@ -241,8 +248,9 @@ FILE* extMeasureRC::OpenDebugFile()
 }
 bool extMeasureRC::DebugStart(FILE* fp, bool allNets)
 {
-  if (!IsDebugNet() && !allNets)
+  if (!IsDebugNet() && !allNets) {
     return false;
+  }
 
   // DELETE uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
   dbNet* net1 = dbNet::getNet(_block, _netId);
@@ -272,8 +280,9 @@ bool extMeasureRC::DebugStart(FILE* fp, bool allNets)
 }
 bool extMeasureRC::DebugEnd(FILE* fp, int OU_covered)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   // DELETE uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
   dbNet* net1 = dbNet::getNet(_block, _netId);
@@ -330,7 +339,7 @@ void extMeasureRC::DebugRes_calc(FILE* fp,
                                  double prev)
 {
   fprintf(fp,
-          "\t\%s tot %g addR %g unit %g prevR %g -- M%d %s %d d1 %d d2 %d rseg "
+          "\t%s tot %g addR %g unit %g prevR %g -- M%d %s %d d1 %d d2 %d rseg "
           "%d\n",
           msg,
           tot,
@@ -353,8 +362,9 @@ bool extMeasureRC::DebugDiagCoords(FILE* fp,
                                    int ur[2],
                                    const char* msg)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
   fprintf(fp,
           "%s M%d M%d L%d dist %d %.3f ",
           msg,
@@ -375,8 +385,9 @@ bool extMeasureRC::DebugCoords(FILE* fp,
                                int ur[2],
                                const char* msg)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   uint dx = ur[0] - ll[0];
   uint dy = ur[1] - ll[1];
@@ -498,14 +509,15 @@ void extMeasureRC::segInfo(FILE* fp, const char* msg, uint netId, int rsegId)
 }
 void extMeasureRC::GetPatName(int met, int overMet, int underMet, char tmp[50])
 {
-  if (overMet > 0 && underMet > 0)
+  if (overMet > 0 && underMet > 0) {
     sprintf(tmp, "M%doM%duM%d ", met, underMet, overMet);
-  else if (underMet > 0)
+  } else if (underMet > 0) {
     sprintf(tmp, "M%doM%d ", met, underMet);
-  else if (overMet > 0)
+  } else if (overMet > 0) {
     sprintf(tmp, "M%duM%d", met, overMet);
-  else
+  } else {
     sprintf(tmp, "M%doM%d", met, 0);
+  }
 }
 void extMeasureRC::printDebugRC(FILE* fp,
                                 extDistRC* rc,
@@ -577,8 +589,9 @@ void extMeasureRC::DebugPrintNetids(FILE* fp,
                                     int rsegId,
                                     const char* eol)
 {
-  if (rsegId <= 0)
+  if (rsegId <= 0) {
     return;
+  }
 
   const char* src = rsegId == _rsegSrcId ? "SRC" : "DST";
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
@@ -605,8 +618,9 @@ void extMeasureRC::DebugUpdateValue(FILE* fp,
                                     double v,
                                     double tot)
 {
-  if (rsegId <= 0)
+  if (rsegId <= 0) {
     return;
+  }
   const char* new_val = (tot - v) * 100000 > 0 ? "NEW" : "";
   fprintf(fp, "%s %s %.4f tot %.5f %s ", msg, cap_type, v, tot, new_val);
   DebugPrintNetids(fp, "", rsegId);

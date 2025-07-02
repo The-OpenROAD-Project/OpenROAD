@@ -2250,6 +2250,10 @@ void RepairChannelStraps::repairGridChannels(
     renderer->pause();
   }
 
+  if (channels.empty()) {
+    return;
+  }
+
   // check for recurring channels
   for (const auto& channel : channels) {
     for (const auto& strap : grid->getStraps()) {
@@ -2351,12 +2355,20 @@ void RepairChannelStraps::repairGridChannels(
     grid->makeVias(global_shapes, obstructions);
   }
 
-  if (channels.size() != areas_repaired.size() && !areas_repaired.empty()) {
-    // channels were skipped so, try again
+  if (!areas_repaired.empty()) {
+    // channels changed so try again
     repairGridChannels(grid, global_shapes, obstructions, allow, renderer);
   } else {
     const auto remaining_channels = findRepairChannels(grid);
     if (!remaining_channels.empty()) {
+      odb::dbMarkerCategory* tool_category
+          = grid->getBlock()->findMarkerCategory("PDN");
+      if (tool_category == nullptr) {
+        tool_category = odb::dbMarkerCategory::create(grid->getBlock(), "PDN");
+        tool_category->setSource("PDN");
+      }
+      odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Repair channels");
       // if channels remain, report them and generate error
       const double dbu_to_microns = grid->getBlock()->getDbUnitsPerMicron();
       for (const auto& channel : remaining_channels) {
@@ -2374,6 +2386,15 @@ void RepairChannelStraps::repairGridChannels(
             Shape::getRectText(channel.area, dbu_to_microns),
             channel.connect_to->getName(),
             nets);
+
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
+        marker->addShape(channel.area);
+        for (auto* net : channel.nets) {
+          marker->addSource(net);
+        }
       }
       if (!allow) {
         grid->getLogger()->error(

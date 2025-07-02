@@ -13,8 +13,8 @@ class dbVia;
 
 class definVia : public definBase
 {
-  dbVia* _cur_via;
-  dbViaParams* _params;
+  dbVia* _cur_via{nullptr};
+  dbViaParams* _params{nullptr};
 
  public:
   // Via interface methods
@@ -31,10 +31,6 @@ class definVia : public definBase
   virtual void viaPattern(const char* pattern);
   virtual void viaRect(const char* layer, int x1, int y1, int x2, int y2);
   virtual void viaEnd();
-
-  definVia();
-  ~definVia() override;
-  void init() override;
 };
 
 }  // namespace odb

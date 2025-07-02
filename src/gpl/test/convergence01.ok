@@ -50,23 +50,69 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.1267 |  3.978990e+05 |   +0.00% |  8.30e-11 |      
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
-[INFO GPL-0101]    Iter: 1, overflow: 0.127, keep resizer changes at: 0.3, HPWL: 397899
+[INFO GPL-0101]    Iter: 1, overflow: 0.127, keep resizer changes at: 1, HPWL: 397899
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
     final |     -8.0% |      32 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 32 instances.
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |        64
+        6 |     +0.0% |       0 |        0 |        58
+       12 |     +0.0% |       0 |        0 |        52
+       18 |     +0.0% |       0 |        0 |        46
+       24 |     +0.0% |       0 |        0 |        40
+       30 |     +0.0% |       0 |        0 |        34
+       36 |     +0.0% |       0 |        0 |        28
+       42 |     +0.0% |       0 |        0 |        22
+       48 |     +0.0% |       0 |        0 |        16
+       54 |     +0.0% |       0 |        0 |        10
+       60 |     +0.0% |       0 |        0 |         4
+    final |     +0.0% |       0 |        0 |         0
+-------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09
-[INFO GPL-0107] Timing-driven: repair_design delta area: -2.799 um^2 (-18.03%)
+[INFO GPL-0107] Timing-driven: repair_design delta area: -0.933 um^2 (-6.01%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
-[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
-[INFO GPL-0110] Timing-driven: new target density: 0.476
-[INFO GPL-1001] Finished with Overflow: 0.093288
-[INFO GPL-1002] Placed Cell Area               12.7283
+[INFO GPL-0110] Timing-driven: new target density: 0.492
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+       10 |   0.3150 |  1.838600e+04 |  -95.38% |  1.18e-10 |      
+       20 |   0.4069 |  1.093400e+04 |  -40.53% |  1.73e-10 |      
+       30 |   0.4588 |  6.429000e+03 |  -41.20% |  2.55e-10 |      
+       40 |   0.7298 |  1.900000e+03 |  -70.45% |  3.76e-10 |      
+       50 |   0.7220 |  1.761000e+03 |   -7.32% |  5.54e-10 |      
+       60 |   0.6869 |  2.253000e+03 |  +27.94% |  8.17e-10 |      
+       70 |   0.7345 |  1.504000e+03 |  -33.24% |  1.20e-09 |      
+       80 |   0.7461 |  5.080000e+02 |  -66.22% |  1.77e-09 |      
+       90 |   0.7427 |  1.071000e+03 | +110.83% |  2.61e-09 |      
+      100 |   0.7389 |  1.308000e+03 |  +22.13% |  3.85e-09 |      
+      110 |   0.7377 |  9.970000e+02 |  -23.78% |  5.67e-09 |      
+      120 |   0.7308 |  6.830000e+02 |  -31.49% |  8.35e-09 |      
+      130 |   0.7223 |  8.200000e+02 |  +20.06% |  1.23e-08 |      
+      140 |   0.6872 |  1.081000e+03 |  +31.83% |  1.81e-08 |      
+      150 |   0.6705 |  1.399000e+03 |  +29.42% |  2.67e-08 |      
+      160 |   0.6624 |  1.775000e+03 |  +26.88% |  3.93e-08 |      
+      170 |   0.6300 |  2.615000e+03 |  +47.32% |  5.79e-08 |      
+      180 |   0.5934 |  4.233000e+03 |  +61.87% |  8.53e-08 |      
+      190 |   0.4704 |  5.945000e+03 |  +40.44% |  1.26e-07 |      
+      200 |   0.4904 |  5.878000e+03 |   -1.13% |  1.85e-07 |      
+      210 |   0.4622 |  6.146000e+03 |   +4.56% |  2.73e-07 |      
+      220 |   0.3148 |  8.130000e+03 |  +32.28% |  4.02e-07 |      
+      230 |   0.2894 |  7.669000e+03 |   -5.67% |  5.92e-07 |      
+      240 |   0.2919 |  6.825000e+03 |  -11.01% |  8.72e-07 |      
+      250 |   0.2164 |  7.684000e+03 |  +12.59% |  1.28e-06 |      
+      260 |   0.1782 |  7.785000e+03 |   +1.31% |  1.89e-06 |      
+      270 |   0.1532 |  7.620000e+03 |   -2.12% |  2.79e-06 |      
+      280 |   0.1257 |  7.782000e+03 |   +2.13% |  4.11e-06 |      
+      290 |   0.1164 |  7.974000e+03 |   +2.47% |  6.05e-06 |      
+[INFO GPL-1001] Finished with Overflow: 0.094168
+[INFO GPL-1002] Placed Cell Area               14.5946
 [INFO GPL-1003] Available Free Area           116.6400
-[INFO GPL-1004] Minimum Feasible Density        0.1091 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.1251 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.1212
-[INFO GPL-1008]     - For 80% usage of free space: 0.1364
+[INFO GPL-1007]     - For 90% usage of free space: 0.1390
+[INFO GPL-1008]     - For 80% usage of free space: 0.1564
 No differences found.

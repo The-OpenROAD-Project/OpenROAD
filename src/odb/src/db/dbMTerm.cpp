@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dbDatabase.h"
+#include "dbHashTable.hpp"
 #include "dbLib.h"
 #include "dbMPinItr.h"
 #include "dbMaster.h"
@@ -433,30 +434,37 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
   }
 }
 
-dbMTerm* dbMTerm::create(dbMaster* master_,
-                         const char* name_,
-                         dbIoType io_type_,
-                         dbSigType sig_type_,
-                         dbMTermShapeType shape_type_)
+dbMTerm* dbMTerm::create(dbMaster* master,
+                         const char* name,
+                         dbIoType io_type,
+                         dbSigType sig_type,
+                         dbMTermShapeType shape_type)
 {
-  _dbMaster* master = (_dbMaster*) master_;
+  _dbMaster* master_impl = (_dbMaster*) master;
 
-  if (master->_flags._frozen || master->_mterm_hash.hasMember(name_)) {
+  if (master_impl->_flags._frozen || master_impl->_mterm_hash.hasMember(name)) {
     return nullptr;
   }
 
-  _dbMTerm* mterm = master->_mterm_tbl->create();
-  mterm->_name = strdup(name_);
-  ZALLOCATED(mterm->_name);
-  mterm->_flags._io_type = io_type_.getValue();
-  mterm->_flags._sig_type = sig_type_.getValue();
-  mterm->_flags._shape_type = shape_type_;
-  if (sig_type_ == dbSigType::CLOCK) {
-    master_->setSequential(1);
+  _dbMTerm* impl = master_impl->_mterm_tbl->create();
+  impl->_name = strdup(name);
+  impl->_flags._io_type = io_type.getValue();
+  impl->_flags._shape_type = shape_type;
+  master_impl->_mterm_hash.insert(impl);
+  master_impl->_mterm_cnt++;
+
+  dbMTerm* mterm = (dbMTerm*) impl;
+  mterm->setSigType(sig_type);
+  return mterm;
+}
+
+void dbMTerm::setSigType(dbSigType type)
+{
+  _dbMTerm* mterm = (_dbMTerm*) this;
+  mterm->_flags._sig_type = type.getValue();
+  if (type == dbSigType::CLOCK) {
+    getMaster()->setSequential(true);
   }
-  master->_mterm_hash.insert(mterm);
-  master->_mterm_cnt++;
-  return (dbMTerm*) mterm;
 }
 
 dbMTerm* dbMTerm::getMTerm(dbMaster* master_, uint dbid_)
