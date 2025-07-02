@@ -2044,6 +2044,44 @@ void Rebuffer::setPin(Pin* drvr_pin)
   }
 }
 
+Point Rebuffer::findBufferPlacement(const BufferedNetPtr& tree, Point drvr_loc)
+{
+  bool first = true;
+  Point loc;
+  visitTree(
+      [&](auto& recurse, int level, const BnetPtr& bnet) -> int {
+        switch (bnet->type()) {
+          case BnetType::wire:
+            return recurse(bnet->ref());
+          case BnetType::junction:
+            return recurse(bnet->ref()) + recurse(bnet->ref2());
+          case BnetType::buffer: {
+            Point loc = findBufferPlacement(bnet->ref(), drvr_loc);
+            bnet->setLocation(loc);
+            bnet->ref()->setLocation(loc);
+          }
+            [[fallthrough]];
+          case BnetType::load:
+            if (first
+                || abs(bnet->location().x() - drvr_loc.x())
+                       < abs(loc.x() - drvr_loc.x())) {
+              loc.setX(bnet->location().x());
+            }
+            if (first
+                || abs(bnet->location().y() - drvr_loc.y())
+                       < abs(loc.y() - drvr_loc.y())) {
+              loc.setY(bnet->location().y());
+            }
+            first = false;
+            return 1;
+          default:
+            abort();
+        }
+      },
+      tree);
+  return loc;
+}
+
 void Rebuffer::fullyRebuffer(Pin* user_pin)
 {
   double sta_runtime = 0, bft_runtime = 0, ra_runtime = 0;
@@ -2172,7 +2210,14 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     {
       ScopedTimer timer(logger_, bft_runtime);
       for (int i = 0; i < 3; i++) {
-        timing_tree = bufferForTiming(timing_tree);
+        if (i == 1) {
+          // Tuning indicates one pass of clean-slate placement at
+          // iteration #1 leads to slightly better results
+          findBufferPlacement(timing_tree, db_network_->location(pin_));
+          timing_tree = resteiner(timing_tree);
+        }
+        timing_tree = bufferForTiming(timing_tree, true);
+
         if (!timing_tree) {
           logger_->warn(
               RSZ,

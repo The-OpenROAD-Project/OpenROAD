@@ -118,6 +118,8 @@ class Rebuffer : public sta::dbStaState
   float findBufferLoadLimitImpliedByDriverSlew(LibertyCell* cell);
   void characterizeBufferLimits();
 
+  Point findBufferPlacement(const BufferedNetPtr& tree, Point drvr_loc);
+
   struct BufferSize
   {
     LibertyCell* cell;
