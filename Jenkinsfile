@@ -171,13 +171,14 @@ def getParallelTests(String image) {
                         checkout scm;
                     }
                     stage('Bazel Build') {
-                        def bazel_config = (env.BRANCH_NAME == 'master') ? 'ci' : 'openroad-dev'
+                        def upload_flag = (env.BRANCH_NAME == 'master') ? '' : '--remote_upload_local_results=false'
                         withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
                             timeout(time: 120, unit: 'MINUTES') {
                                 sh label: 'Bazel Build', script: """
                                     bazel test \
-                                    --config=${bazel_config} \
+                                    --config=ci \
                                     --keep_going \
+                                    ${upload_flag} \
                                     --show_timestamps \
                                     --test_output=errors \
                                     --curses=no \

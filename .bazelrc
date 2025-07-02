@@ -83,6 +83,8 @@ build:ci --remote_cache_compression=true
 build:ci --remote_upload_local_results=true
 build:ci --remote_download_minimal
 build:ci --remote_download_toplevel
+# Disable disk cache for CI builds
+build:ci --disk_cache=
 
 # --- OpenROAD Developer Settings (read-only access) ---
 build:openroad-dev --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
