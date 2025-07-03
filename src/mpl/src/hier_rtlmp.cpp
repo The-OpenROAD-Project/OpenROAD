@@ -2825,22 +2825,28 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
       }
 
       for (odb::dbBTerm* bterm : net->getBTerms()) {
-        const auto& constraint_region = bterm->getConstraintRegion();
-        odb::Point nearest_point;
-        if (constraint_region) {
-          BoundaryRegion constraint(
-              rectToLine(block_, *constraint_region, logger_),
-              getBoundary(block_, *constraint_region));
-          computeDistToNearestRegion(
-              macro_pin->getBBox().center(), {constraint}, &nearest_point);
+        if (bterm->getFirstPinPlacementStatus().isFixed()) {
+          const odb::Rect pin_bbox = bterm->getBBox();
+          const odb::Rect center_rect(pin_bbox.center(), pin_bbox.center());
+          net_box.merge(center_rect);
         } else {
-          computeDistToNearestRegion(
-              macro_pin->getBBox().center(),
-              tree_->available_regions_for_unconstrained_pins,
-              &nearest_point);
+          const auto& constraint_region = bterm->getConstraintRegion();
+          odb::Point nearest_point;
+          if (constraint_region) {
+            BoundaryRegion constraint(
+                rectToLine(block_, *constraint_region, logger_),
+                getBoundary(block_, *constraint_region));
+            computeDistToNearestRegion(
+                macro_pin->getBBox().center(), {constraint}, &nearest_point);
+          } else {
+            computeDistToNearestRegion(
+                macro_pin->getBBox().center(),
+                tree_->available_regions_for_unconstrained_pins,
+                &nearest_point);
+          }
+          odb::Rect point_rect(nearest_point, nearest_point);
+          net_box.merge(point_rect);
         }
-        odb::Rect point_rect(nearest_point, nearest_point);
-        net_box.merge(point_rect);
       }
 
       wirelength += block_->dbuToMicrons(net_box.dx() + net_box.dy());

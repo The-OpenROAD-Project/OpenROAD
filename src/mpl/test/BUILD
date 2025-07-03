@@ -23,6 +23,7 @@ COMPULSORY_TESTS = [
     "io_pads1",
     "orientation_improve1",
     "orientation_improve2",
+    "orientation_improve3",
     "boundary_push1",
     "boundary_push2",
     "boundary_push3",
