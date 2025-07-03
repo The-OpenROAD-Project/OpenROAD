@@ -74,8 +74,9 @@ test --build_tests_only
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
 
-# Enable local disk caching to supplement the remote cache
-build --disk_cache=~/.cache/bazel-disk-cache
+# Enable local disk caching to supplement the remote cache.
+# The location can be overridden by setting the OPENROAD_BAZEL_CACHE env variable.
+build --disk_cache=$(OPENROAD_BAZEL_CACHE:-~/.cache/bazel-disk-cache)
 
 # --- CI Settings (write access) ---
 build:ci --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
