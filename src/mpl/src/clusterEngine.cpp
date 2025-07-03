@@ -2358,15 +2358,8 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
                       parent->getId(),
                       parent->getClusterTypeString());
 
-  if (parent->isClusterOfUnplacedIOPins()) {
-    int number_of_pins = 0;
-    for (const auto [pin, cluster_id] : tree_->maps.bterm_to_cluster_id) {
-      if (cluster_id == parent->getId()) {
-        ++number_of_pins;
-      }
-    }
-
-    line += fmt::format(" Pins: {}", number_of_pins);
+  if (parent->isClusterOfUnplacedIOPins() || parent->isIOBundle()) {
+    line += fmt::format(" Pins: {}", getNumberOfIOs(parent));
   } else if (!parent->isIOPadCluster()) {
     line += fmt::format(" {}", parent->getIsLeafString());
 
