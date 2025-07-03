@@ -1694,18 +1694,18 @@ void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
 
   // Option 3: Apply NDR to the first half of the clk tree levels (higher
   // levels)
-  // clkNets = applyNDRToFirstHalfLevels(block_, clockNDR, clkLeafNets);
+  clkNets = applyNDRToFirstHalfLevels(block_, clockNDR, clkLeafNets);
 
   // apply NDR to all non-leaf clock nets
   // int clkNets = 0;
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType() == odb::dbSigType::CLOCK
-        && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      net->setNonDefaultRule(clockNDR);
-      //std::cout << net->getName() << std::endl;
-      clkNets++;
-    }
-  }
+  // for (odb::dbNet* net : block_->getNets()) {
+  //   if (net->getSigType() == odb::dbSigType::CLOCK
+  //       && (clkLeafNets.find(net) == clkLeafNets.end())) {
+  //     net->setNonDefaultRule(clockNDR);
+  //     //std::cout << net->getName() << std::endl;
+  //     clkNets++;
+  //   }
+  // }
 
   logger_->info(CTS,
                 202,
