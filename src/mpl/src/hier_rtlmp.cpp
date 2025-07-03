@@ -1062,7 +1062,12 @@ void HierRTLMP::createBlockagesForConstraintRegions()
   }
 
   const float base_depth = computePinAccessBaseDepth(io_span);
-  const int total_ios = static_cast<int>(block_->getBTerms().size());
+  int total_ios = 0;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
+      ++total_ios;
+    }
+  }
 
   for (Cluster* cluster_of_unplaced_ios : clusters_of_unplaced_ios) {
     if (cluster_of_unplaced_ios->isClusterOfUnconstrainedIOPins()) {
