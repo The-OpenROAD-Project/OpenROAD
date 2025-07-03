@@ -24,7 +24,7 @@
 
 namespace est {
 
-using utl::RSZ;
+using utl::EST;
 
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
@@ -264,6 +264,19 @@ double EstimateParasitics::wireClkVCapacitance(const Corner* corner) const
 
 ////////////////////////////////////////////////////////////////
 
+// block_ indicates core_, design_area_, db_network_ etc valid.
+void EstimateParasitics::initBlock()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(EST, 162, "Database does not have a loaded design");
+  }
+  block_ = db_->getChip()->getBlock();
+  if (block_ == nullptr) {
+    logger_->error(EST, 163, "Database has no block");
+  }
+  dbu_ = db_->getTech()->getDbUnitsPerMicron();
+}
+
 void EstimateParasitics::ensureParasitics()
 {
   estimateParasitics(global_router_->haveRoutes()
@@ -311,7 +324,7 @@ void EstimateParasitics::updateParasitics(bool save_guides)
 {
   if (!incremental_parasitics_enabled_) {
     logger_->error(
-        RSZ,
+        EST,
         109,
         "updateParasitics() called with incremental parasitics disabled");
   }
@@ -392,7 +405,7 @@ void EstimateParasitics::ensureWireParasitic(const Pin* drvr_pin, const Net* net
 
 void EstimateParasitics::estimateWireParasitics(SpefWriter* spef_writer)
 {
-  resizer_->initBlock();
+  initBlock();
   if (!wire_signal_cap_.empty()) {
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
@@ -490,8 +503,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
   rsz::SteinerTree* tree = resizer_->makeSteinerTree(drvr_pin);
   if (tree) {
     debugPrint(logger_,
-               RSZ,
-               "resizer_parasitics",
+               EST,
+               "estimate_parasitics",
                1,
                "estimate wire {}",
                sdc_network_->pathName(net));
@@ -546,8 +559,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
           double res = length * wire_res;
           // Make pi model for the wire.
           debugPrint(logger_,
-                     RSZ,
-                     "resizer_parasitics",
+                     EST,
+                     "estimate_parasitics",
                      2,
                      " pi {} l={} c2={} rpi={} c1={} {}",
                      parasitics_->name(n1),
@@ -609,7 +622,7 @@ float EstimateParasitics::totalLoad(rsz::SteinerTree* tree) const
 
   float load = 0.0, max_load = 0.0;
 
-  debugPrint(logger_, RSZ, "resizer_parasitics", 1, "Steiner totalLoad ");
+  debugPrint(logger_, EST, "estimate_parasitics", 1, "Steiner totalLoad ");
   // For now we will just look at the worst corner for totalLoad
   for (Corner* corner : *sta_->corners()) {
     double wire_cap = dx * wireSignalHCapacitance(corner)
@@ -753,8 +766,8 @@ void EstimateParasitics::parasiticsInvalid(const Net* net)
   dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
-               RSZ,
-               "resizer_parasitics",
+               EST,
+               "estimate_parasitics",
                2,
                "parasitics invalid {}",
                network_->pathName(net));

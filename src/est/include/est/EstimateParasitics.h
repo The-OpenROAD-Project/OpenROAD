@@ -186,8 +186,7 @@ class EstimateParasitics : public dbStaState
   bool parasiticsValid() const;
   
  private:
-  void incrementalParasiticsBegin();
-  void incrementalParasiticsEnd();
+  void initBlock();
   void ensureParasitics();
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
