@@ -109,12 +109,11 @@ class SteinerTree
   void setHasInputPort(bool input_port);
   stt::Tree& fluteTree() { return tree_; }
   void createSteinerPtToPinMap();
+  void locAddPin(const Point& loc, const Pin* pin);
 
   static constexpr SteinerPt null_pt = -1;
 
- protected:
-  void locAddPin(const Point& loc, const Pin* pin);
-
+ private:
   stt::Tree tree_;
   const Point drvr_location_;
   int drvr_steiner_pt_ = 0;  // index into tree_.branch
@@ -125,9 +124,6 @@ class SteinerTree
   std::vector<const Pin*> point_pin_array_;
   Resizer* resizer_;
   Logger* logger_;
-
-  friend class Resizer;
-  friend class GateCloner;
 };
 
 }  // namespace rsz

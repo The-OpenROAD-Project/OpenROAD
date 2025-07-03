@@ -840,7 +840,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
-  friend class SteinerTree;
   friend class BaseMove;
   friend class BufferMove;
   friend class SizeDownMove;
