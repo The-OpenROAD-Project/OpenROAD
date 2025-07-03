@@ -504,9 +504,10 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   double xd[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   double X0 = x - targetPitch;  // next neighbor spacing
   // double W0= targetWidth; // next neighbor width
-  xd[1] = X0 - min_pitch;
+  xd[1] = X0;
   double min_x = xd[1];
-  for (int ii = 2; ii < n; ii++) {
+
+  for (int ii = 2; ii > 1; ii--) {
     xd[ii] = xd[ii - 1] - min_pitch;  // next over neighbor spacing
     if (min_x > xd[ii]) {
       min_x = xd[ii];
