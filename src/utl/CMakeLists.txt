@@ -3,7 +3,7 @@
 
 include("openroad")
 
-find_package(Boost 1.78 REQUIRED COMPONENTS iostreams)
+find_package(Boost CONFIG 1.78 REQUIRED COMPONENTS iostreams)
 
 swig_lib(NAME      utl
          NAMESPACE utl
