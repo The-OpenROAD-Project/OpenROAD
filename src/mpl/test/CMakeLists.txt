@@ -16,6 +16,7 @@ or_integration_tests(
     io_constraints8
     io_constraints9
     io_constraints10
+    mixed_ios1
     io_pads1
     orientation_improve1
     orientation_improve2
