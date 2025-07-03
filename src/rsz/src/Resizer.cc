@@ -2,7 +2,6 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "rsz/Resizer.hh"
-#include "rsz/SteinerTree.hh"
 
 #include <algorithm>
 #include <boost/functional/hash.hpp>
@@ -35,6 +34,7 @@
 #include "UnbufferMove.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
+#include "rsz/SteinerTree.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
@@ -4474,7 +4474,7 @@ static void connectedPins(const Net* net,
 SteinerTree* Resizer::makeSteinerTree(Point drvr_location,
                                       const std::vector<Point>& sink_locations)
 {
-  SteinerTree* tree = new SteinerTree(drvr_location, this);
+  SteinerTree* tree = new SteinerTree(drvr_location, logger_);
   Vector<PinLoc>& pinlocs = tree->pinlocs();
   for (auto loc : sink_locations) {
     pinlocs.push_back(PinLoc{nullptr, loc});
@@ -4497,7 +4497,7 @@ SteinerTree* Resizer::makeSteinerTree(Point drvr_location,
       y.push_back(pinloc.loc.y());
     }
     stt::Tree ftree = stt_builder_->makeSteinerTree(x, y, drvr_idx);
-    tree->setTree(ftree, db_network_);
+    tree->setTree(ftree);
     tree->populateSides();
     return tree;
   }
@@ -4522,7 +4522,7 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
             : db_network_->dbToSta(db_net);
 
   debugPrint(logger_, RSZ, "steiner", 1, "Net {}", sdc_network->pathName(net));
-  SteinerTree* tree = new SteinerTree(drvr_pin, this);
+  SteinerTree* tree = new SteinerTree(drvr_pin, db_network_, logger_);
   Vector<PinLoc>& pinlocs = tree->pinlocs();
   // Find all the connected pins
   connectedPins(net, network_, db_network_, pinlocs);
@@ -4565,7 +4565,7 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
       stt::Tree ftree = stt_builder_->makeSteinerTree(
           db_network_->staToDb(net), x, y, drvr_idx);
 
-      tree->setTree(ftree, db_network_);
+      tree->setTree(ftree);
       tree->createSteinerPtToPinMap();
       return tree;
     }
@@ -4573,6 +4573,19 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
   delete tree;
   return nullptr;
 }
+
+void Resizer::highlightSteiner(const Pin* drvr)
+{
+  if (steiner_renderer_) {
+    SteinerTree* tree = nullptr;
+    if (drvr) {
+      tree = makeSteinerTree(drvr);
+    }
+    steiner_renderer_->highlight(tree);
+  }
+}
+
+////////////////////////////////////////////////////////////////
 
 void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
 {

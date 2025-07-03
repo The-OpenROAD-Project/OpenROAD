@@ -5,8 +5,9 @@
 
 #include <string>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/geom.h"
-#include "rsz/Resizer.hh"
 #include "sta/Hash.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/flute.h"
@@ -49,6 +50,7 @@ class PinLoc
 };
 
 using LocPinMap = std::unordered_map<Point, PinSeq, PointHash, PointEqual>;
+using SteinerPt = int;
 
 class SteinerTree;
 
@@ -64,9 +66,9 @@ class SteinerTree;
 class SteinerTree
 {
  public:
-  SteinerTree(const Pin* drvr_pin, Resizer* resizer);
-  SteinerTree(Point drvr_location, Resizer* resizer);
-  Vector<PinLoc>& pinlocs() { return pinlocs_; }
+  SteinerTree(const Pin* drvr_pin, sta::dbNetwork* db_network, Logger* logger);
+  SteinerTree(Point drvr_location, Logger* logger);
+  sta::Vector<PinLoc>& pinlocs() { return pinlocs_; }
   int pinCount() const { return pinlocs_.size(); }
   int branchCount() const;
   void branch(int index,
@@ -105,7 +107,7 @@ class SteinerTree
   const PinSeq* pins(SteinerPt pt) const;
   const Pin* pin(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
-  void setTree(const stt::Tree& tree, const dbNetwork* network);
+  void setTree(const stt::Tree& tree);
   void setHasInputPort(bool input_port);
   stt::Tree& fluteTree() { return tree_; }
   void createSteinerPtToPinMap();
@@ -117,12 +119,11 @@ class SteinerTree
   stt::Tree tree_;
   const Point drvr_location_;
   int drvr_steiner_pt_ = 0;  // index into tree_.branch
-  Vector<PinLoc> pinlocs_;   // Initial input
+  sta::Vector<PinLoc> pinlocs_;   // Initial input
   LocPinMap loc_pin_map_;    // location -> pins map
   std::vector<SteinerPt> left_;
   std::vector<SteinerPt> right_;
   std::vector<const Pin*> point_pin_array_;
-  Resizer* resizer_;
   Logger* logger_;
 };
 

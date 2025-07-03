@@ -11,7 +11,6 @@
 
 #include "AbstractSteinerRenderer.h"
 #include "db_sta/dbNetwork.hh"
-#include "rsz/Resizer.hh"
 #include "sta/NetworkCmp.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -26,7 +25,7 @@ using utl::RSZ;
 using sta::NetConnectedPinIterator;
 using sta::stringPrintTmp;
 
-void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
+void SteinerTree::setTree(const stt::Tree& tree)
 {
   tree_ = tree;
 
@@ -45,17 +44,15 @@ void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
   }
 }
 
-SteinerTree::SteinerTree(const Pin* drvr_pin, Resizer* resizer)
-    : drvr_location_(resizer->getDbNetwork()->location(drvr_pin)),
-      resizer_(resizer),
-      logger_(resizer->logger())
+SteinerTree::SteinerTree(const Pin* drvr_pin,
+                         sta::dbNetwork* db_network,
+                         Logger* logger)
+    : drvr_location_(db_network->location(drvr_pin)), logger_(logger)
 {
 }
 
-SteinerTree::SteinerTree(Point drvr_location, Resizer* resizer)
-    : drvr_location_(drvr_location),
-      resizer_(resizer),
-      logger_(resizer->logger())
+SteinerTree::SteinerTree(Point drvr_location, Logger* logger)
+    : drvr_location_(drvr_location), logger_(logger)
 {
 }
 
@@ -314,19 +311,6 @@ const Pin* SteinerTree::pin(const SteinerPt pt) const
     return point_pin_array_[pt];
   }
   return nullptr;
-}
-
-////////////////////////////////////////////////////////////////
-
-void Resizer::highlightSteiner(const Pin* drvr)
-{
-  if (steiner_renderer_) {
-    SteinerTree* tree = nullptr;
-    if (drvr) {
-      tree = makeSteinerTree(drvr);
-    }
-    steiner_renderer_->highlight(tree);
-  }
 }
 
 ////////////////////////////////////////////////////////////////
