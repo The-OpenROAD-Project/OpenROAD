@@ -79,10 +79,12 @@ defiGroup::~defiGroup()
 
 void defiGroup::Destroy()
 {
-  if (name_)
+  if (name_) {
     free(name_);
-  if (region_)
+  }
+  if (region_) {
     free(region_);
+  }
   name_ = nullptr;
   nameLength_ = 0;
   region_ = nullptr;
@@ -119,8 +121,9 @@ void defiGroup::setup(const char* name)
 {
   int len = strlen(name) + 1;
   if (len > nameLength_) {
-    if (name_)
+    if (name_) {
       free(name_);
+    }
     nameLength_ = len;
     name_ = (char*) malloc(len);
   }
@@ -180,8 +183,9 @@ void defiGroup::setRegionName(const char* region)
 {
   int len = strlen(region) + 1;
   if (len > regionLength_) {
-    if (region_)
+    if (region_) {
       free(region_);
+    }
     regionLength_ = len;
     region_ = (char*) malloc(len);
   }
@@ -455,8 +459,9 @@ void defiGroup::print(FILE* f) const
     int* yl = yl_;
     int* xh = xh_;
     int* yh = yh_;
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
       fprintf(f, "  region box %d,%d %d,%d\n", xl[i], yl[i], xh[i], yh[i]);
+    }
   }
 
   if (hasMaxX()) {

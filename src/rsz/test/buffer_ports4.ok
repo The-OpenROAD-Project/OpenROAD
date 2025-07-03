@@ -11,19 +11,18 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 input1/Z                                0.20    1.15   -0.95 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 833um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       503
-    final |     +0.3% |       2 |       2 |             1 |         0
+    final |     +0.7% |       2 |       6 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 2 instances.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 6 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-max_cap3/Z                              0.20    0.13    0.07 (MET)
+load_slew3/Z                            0.20    0.06    0.14 (MET)
 

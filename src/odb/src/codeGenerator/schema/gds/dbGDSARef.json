@@ -1,6 +1,5 @@
 {
     "name":"dbGDSARef",
-    "type":"dbObject",
     "fields":[
       {
         "name":"_origin",
@@ -45,5 +44,4 @@
       "dbGDSStructure.h"
     ],
     "cpp_includes": ["odb/dbTypes.h"]
-  }
-  
+}

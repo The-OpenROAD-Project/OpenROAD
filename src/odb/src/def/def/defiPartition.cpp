@@ -73,23 +73,27 @@ defiPartition::~defiPartition()
 
 void defiPartition::Destroy()
 {
-  if (name_)
+  if (name_) {
     free(name_);
+  }
   name_ = nullptr;
   nameLength_ = 0;
-  if (pin_)
+  if (pin_) {
     free(pin_);
+  }
   pin_ = nullptr;
   pinLength_ = 0;
-  if (inst_)
+  if (inst_) {
     free(inst_);
+  }
   inst_ = nullptr;
   instLength_ = 0;
 
   clear();
 
-  if (pins_)
+  if (pins_) {
     free((char*) (pins_));
+  }
   pins_ = nullptr;
   pinsAllocated_ = 0;
 }
@@ -102,12 +106,15 @@ void defiPartition::clear()
   hold_ = ' ';
   direction_ = ' ';
   type_ = ' ';
-  if (name_)
+  if (name_) {
     *(name_) = '\0';
-  if (pin_)
+  }
+  if (pin_) {
     *(pin_) = '\0';
-  if (inst_)
+  }
+  if (inst_) {
     *(inst_) = '\0';
+  }
   hasMin_ = 0;
   hasMax_ = 0;
 
@@ -135,8 +142,9 @@ void defiPartition::setName(const char* name)
   clear();
 
   if (len > nameLength_) {
-    if (name_)
+    if (name_) {
       free(name_);
+    }
     nameLength_ = len;
     name_ = (char*) malloc(len);
   }
@@ -150,50 +158,65 @@ void defiPartition::print(FILE* f) const
   fprintf(f, "Partition '%s' %c\n", name(), direction());
   fprintf(f, "  inst %s  pin %s  type %s\n", instName(), pinName(), itemType());
 
-  for (i = 0; i < numPins(); i++)
+  for (i = 0; i < numPins(); i++) {
     fprintf(f, "  %s\n", pin(i));
+  }
 
-  if (isSetupRise())
+  if (isSetupRise()) {
     fprintf(f, "  SETUP RISE\n");
+  }
 
-  if (isSetupFall())
+  if (isSetupFall()) {
     fprintf(f, "  SETUP FALL\n");
+  }
 
-  if (isHoldRise())
+  if (isHoldRise()) {
     fprintf(f, "  HOLD RISE\n");
+  }
 
-  if (isHoldFall())
+  if (isHoldFall()) {
     fprintf(f, "  HOLD FALL\n");
+  }
 
-  if (hasMin())
+  if (hasMin()) {
     fprintf(f, "  MIN %g\n", partitionMin());
+  }
 
-  if (hasMax())
+  if (hasMax()) {
     fprintf(f, "  MAX %g\n", partitionMax());
+  }
 
-  if (hasRiseMin())
+  if (hasRiseMin()) {
     fprintf(f, "  RISE MIN %g\n", riseMin());
+  }
 
-  if (hasFallMin())
+  if (hasFallMin()) {
     fprintf(f, "  FALL MIN %g\n", fallMin());
+  }
 
-  if (hasRiseMax())
+  if (hasRiseMax()) {
     fprintf(f, "  RISE MAX %g\n", riseMax());
+  }
 
-  if (hasFallMax())
+  if (hasFallMax()) {
     fprintf(f, "  FALL MAX %g\n", fallMax());
+  }
 
-  if (hasFallMinRange())
+  if (hasFallMinRange()) {
     fprintf(f, "  FALL MIN %g %g\n", fallMinLeft(), fallMinRight());
+  }
 
-  if (hasRiseMinRange())
+  if (hasRiseMinRange()) {
     fprintf(f, "  RISE MIN %g %g\n", riseMinLeft(), riseMinRight());
+  }
 
-  if (hasFallMaxRange())
+  if (hasFallMaxRange()) {
     fprintf(f, "  FALL MAX %g %g\n", fallMaxLeft(), fallMaxRight());
+  }
 
-  if (hasRiseMaxRange())
+  if (hasRiseMaxRange()) {
     fprintf(f, "  RISE MAX %g %g\n", riseMaxLeft(), riseMaxRight());
+  }
 }
 
 const char* defiPartition::name() const
@@ -229,14 +252,15 @@ static char* ad(const char* in)
 const char* defiPartition::itemType() const
 {
   char* c;
-  if (type_ == 'L')
+  if (type_ == 'L') {
     c = ad("CLOCK");
-  else if (type_ == 'I')
+  } else if (type_ == 'I') {
     c = ad("IO");
-  else if (type_ == 'C')
+  } else if (type_ == 'C') {
     c = ad("COMP");
-  else
+  } else {
     c = ad("BOGUS");
+  }
   return c;
 }
 
@@ -320,8 +344,9 @@ void defiPartition::set(char dir, char typ, const char* inst, const char* pin)
   type_ = typ;
 
   if (pinLength_ <= len) {
-    if (pin_)
+    if (pin_) {
       free(pin_);
+    }
     pin_ = (char*) malloc(len);
     pinLength_ = len;
   }
@@ -330,8 +355,9 @@ void defiPartition::set(char dir, char typ, const char* inst, const char* pin)
 
   len = strlen(inst) + 1;
   if (instLength_ <= len) {
-    if (inst_)
+    if (inst_) {
       free(inst_);
+    }
     inst_ = (char*) malloc(len);
     instLength_ = len;
   }
@@ -377,10 +403,12 @@ void defiPartition::addPin(const char* name)
   if (numPins_ >= pinsAllocated_) {
     pinsAllocated_ = pinsAllocated_ ? 2 * pinsAllocated_ : 8;
     newp = (char**) malloc(sizeof(char*) * pinsAllocated_);
-    for (i = 0; i < numPins_; i++)
+    for (i = 0; i < numPins_; i++) {
       newp[i] = pins_[i];
-    if (pins_)
+    }
+    if (pins_) {
       free((char*) (pins_));
+    }
     pins_ = newp;
   }
 

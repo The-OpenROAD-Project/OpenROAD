@@ -95,8 +95,7 @@ class dbNetwork : public ConcreteNetwork
   void staToDb(const Pin* pin,
                dbITerm*& iterm,
                dbBTerm*& bterm,
-               dbModITerm*& moditerm,
-               dbModBTerm*& modbterm) const;
+               dbModITerm*& moditerm) const;
 
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
@@ -105,7 +104,6 @@ class dbNetwork : public ConcreteNetwork
   void staToDb(const Term* term,
                dbITerm*& iterm,
                dbBTerm*& bterm,
-               dbModITerm*& moditerm,
                dbModBTerm*& modbterm) const;
   dbMaster* staToDb(const Cell* cell) const;
   void staToDb(const Cell* cell, dbMaster*& master, dbModule*& module) const;
@@ -134,10 +132,8 @@ class dbNetwork : public ConcreteNetwork
   Instance* dbToSta(dbModInst* inst) const;
   Cell* dbToSta(dbModule* master) const;
   Pin* dbToSta(dbModITerm* mod_iterm) const;
-  Pin* dbToStaPin(dbModBTerm* mod_bterm) const;
   Net* dbToSta(dbModNet* net) const;
   Port* dbToSta(dbModBTerm* modbterm) const;
-  Term* dbToStaTerm(dbModITerm* moditerm) const;
   Term* dbToStaTerm(dbModBTerm* modbterm) const;
 
   PortDirection* dbToSta(const dbSigType& sig_type,
@@ -363,7 +359,7 @@ class dbNetwork : public ConcreteNetwork
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
-  ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const;
+  ObjectId getDbNwkObjectId(const dbObject* object) const;
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;

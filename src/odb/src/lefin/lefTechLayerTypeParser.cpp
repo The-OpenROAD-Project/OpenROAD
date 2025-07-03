@@ -17,7 +17,7 @@ bool parse(Iterator first,
            odb::dbTechLayer* layer,
            odb::lefinReader* lefinReader)
 {
-  qi::rule<std::string::iterator, space_type> TypeRule
+  qi::rule<std::string::const_iterator, space_type> TypeRule
       = (lit("TYPE")
          >> (lit("NWELL")[boost::bind(&odb::dbTechLayer::setLef58Type,
                                       layer,
@@ -97,7 +97,7 @@ bool parse(Iterator first,
 
 namespace odb {
 
-bool lefTechLayerTypeParser::parse(std::string s,
+bool lefTechLayerTypeParser::parse(const std::string& s,
                                    dbTechLayer* layer,
                                    odb::lefinReader* l)
 {

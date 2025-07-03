@@ -57,7 +57,8 @@ void RenderThread::setLogger(utl::Logger* logger)
 void RenderThread::render(const QRect& draw_rect,
                           const SelectionSet& selected,
                           const HighlightSet& highlighted,
-                          const Rulers& rulers)
+                          const Rulers& rulers,
+                          const Labels& labels)
 {
   if (abort_) {
     return;
@@ -73,6 +74,11 @@ void RenderThread::render(const QRect& draw_rect,
   rulers_.reserve(rulers.size());
   for (const auto& ruler : rulers) {
     rulers_.emplace_back(new Ruler(*ruler));
+  }
+  labels_.clear();
+  labels_.reserve(labels.size());
+  for (const auto& label : labels) {
+    labels_.emplace_back(new Label(*label));
   }
 
   if (!isRunning()) {
@@ -90,11 +96,13 @@ void RenderThread::run()
     SelectionSet selected;
     HighlightSet highlighted;
     Rulers rulers;
+    Labels labels;
     mutex_.lock();
     const QRect draw_bounds = draw_rect_;
     selected.swap(selected_);
     highlighted.swap(highlighted_);
     rulers.swap(rulers_);
+    labels.swap(labels_);
     mutex_.unlock();
     QImage image(draw_bounds.width(),
                  draw_bounds.height(),
@@ -106,6 +114,7 @@ void RenderThread::run()
            selected,
            highlighted,
            rulers,
+           labels,
            1.0,
            Qt::transparent);
     } catch (const std::exception& e) {
@@ -160,6 +169,7 @@ void RenderThread::draw(QImage& image,
                         const SelectionSet& selected,
                         const HighlightSet& highlighted,
                         const Rulers& rulers,
+                        const Labels& labels,
                         qreal render_ratio,
                         const QColor& background)
 {
@@ -205,6 +215,7 @@ void RenderThread::draw(QImage& image,
   // Always last so on top
   drawHighlighted(gui_painter, highlighted);
   drawRulers(gui_painter, rulers);
+  drawLabels(gui_painter, labels);
 }
 
 QColor RenderThread::getColor(dbTechLayer* layer)
@@ -429,6 +440,35 @@ void RenderThread::drawRulers(Painter& painter, const Rulers& rulers)
                       ruler->isEuclidian(),
                       ruler->getLabel());
   }
+}
+
+void RenderThread::drawLabels(Painter& painter, const Labels& labels)
+{
+  if (!viewer_->options_->areLabelsVisible()) {
+    return;
+  }
+
+  painter.saveState();
+
+  const QFont qfont = viewer_->options_->labelFont();
+  for (auto& label : labels) {
+    const Painter::Color color = label->getColor();
+
+    painter.setPen(color, true);
+    painter.setBrush(color);
+
+    const auto size = label->getSize();
+    const Painter::Font font(qfont.family().toStdString(),
+                             size.value_or(qfont.pointSize()));
+    painter.setFont(font);
+
+    painter.drawString(label->getPt().x(),
+                       label->getPt().y(),
+                       label->getAnchor(),
+                       label->getText());
+  }
+
+  painter.restoreState();
 }
 
 // Draw the instances bounds
@@ -1436,58 +1476,62 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   const auto die_width = die_area.dx();
   const auto die_height = die_area.dy();
 
-  const double scale_factor
-      = 0.02;  // 4 Percent of bounds is used to draw pin-markers
-  const int die_max_dim
-      = std::min(std::max(die_width, die_height), bounds.maxDXDY());
-  const double abs_min_dim = 8.0;  // prevent markers from falling apart
-  pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
+  if (viewer_->options_->areIOPinNamesVisible()) {
+    const double scale_factor
+        = 0.02;  // 4 Percent of bounds is used to draw pin-markers
+    const int die_max_dim
+        = std::min(std::max(die_width, die_height), bounds.maxDXDY());
+    const double abs_min_dim = 8.0;  // prevent markers from falling apart
+    pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
 
-  pin_font_ = viewer_->options_->pinMarkersFont();
-  const QFontMetrics font_metrics(pin_font_);
+    pin_font_ = viewer_->options_->ioPinMarkersFont();
+    const QFontMetrics font_metrics(pin_font_);
 
-  QString largest_text;
-  for (auto pin : block->getBTerms()) {
-    QString current_text = QString::fromStdString(pin->getName());
-    if (font_metrics.boundingRect(current_text).width()
-        > font_metrics.boundingRect(largest_text).width()) {
-      largest_text = std::move(current_text);
+    QString largest_text;
+    for (auto pin : block->getBTerms()) {
+      QString current_text = QString::fromStdString(pin->getName());
+      if (font_metrics.boundingRect(current_text).width()
+          > font_metrics.boundingRect(largest_text).width()) {
+        largest_text = std::move(current_text);
+      }
     }
-  }
 
-  const int vertical_gap
-      = (viewer_->geometry().height()
-         - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
-        / 2;
-  const int horizontal_gap
-      = (viewer_->geometry().width()
-         - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
-        / 2;
+    const int vertical_gap
+        = (viewer_->geometry().height()
+           - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
+          / 2;
+    const int horizontal_gap
+        = (viewer_->geometry().width()
+           - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
+          / 2;
 
-  const int available_space
-      = std::min(vertical_gap, horizontal_gap)
-        - std::ceil(pin_max_size_) * viewer_->pixels_per_dbu_;  // in pixels
+    const int available_space
+        = std::min(vertical_gap, horizontal_gap)
+          - std::ceil(pin_max_size_) * viewer_->pixels_per_dbu_;  // in pixels
 
-  int font_size = pin_font_.pointSize();
-  int largest_text_width = font_metrics.boundingRect(largest_text).width();
-  const int drawing_font_size = 6;  // in points
+    int font_size = pin_font_.pointSize();
+    int largest_text_width = font_metrics.boundingRect(largest_text).width();
+    const int drawing_font_size = 6;  // in points
 
-  // when the size is minimum the text won't be drawn
-  const int minimum_font_size = drawing_font_size - 1;
+    // when the size is minimum the text won't be drawn
+    const int minimum_font_size = drawing_font_size - 1;
 
-  while (largest_text_width > available_space) {
-    if (font_size == minimum_font_size) {
-      break;
+    while (largest_text_width > available_space) {
+      if (font_size == minimum_font_size) {
+        break;
+      }
+      font_size -= 1;
+      pin_font_.setPointSize(font_size);
+      QFontMetrics current_font_metrics(pin_font_);
+      largest_text_width
+          = current_font_metrics.boundingRect(largest_text).width();
     }
-    font_size -= 1;
-    pin_font_.setPointSize(font_size);
-    QFontMetrics current_font_metrics(pin_font_);
-    largest_text_width
-        = current_font_metrics.boundingRect(largest_text).width();
-  }
 
-  // draw names of pins when text height is at least 6 pts
-  pin_draw_names_ = font_size >= drawing_font_size;
+    // draw names of pins when text height is at least 6 pts
+    pin_draw_names_ = font_size >= drawing_font_size;
+  } else {
+    pin_draw_names_ = false;
+  }
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     if (restart_) {

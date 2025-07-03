@@ -60,7 +60,7 @@ set_wire_rc
 | Switch Name | Description |
 | ----- | ----- |
 | `-clock` | Enable setting of RC for clock nets. |
-| `-signal` | Enable setting of RC for signal nets. | 
+| `-signal` | Enable setting of RC for signal nets. |
 | `-layers` | Use the LEF technology resistance and area/edge capacitance values for the layers. The values for each layers will be used for wires with the prefered layer direction, if 2 or more layers have the same prefered direction the avarege value is used for wires with that direction. This is used for a default width wire on the layer. |
 | `-layer` | Use the LEF technology resistance and area/edge capacitance values for the layer. This is used for a default width wire on the layer. |
 | `-resistance` | Resistance per unit length, units are from the first Liberty file read. |
@@ -69,7 +69,6 @@ set_wire_rc
 | `-h_capacitance` | Capacitance per unit length for horizontal wires, units are from the first Liberty file read. |
 | `-v_resistance` | Resistance per unit length for vertical wires, units are from the first Liberty file read. |
 | `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
-
 
 ### Set Layer RC
 
@@ -110,7 +109,7 @@ After the `global_route` command has been called, the global routing topology
 and layers can be used to estimate parasitics  with the `-global_routing`
 flag.
 
-The optional argument `-spef_file` can be used to write the estimated parasitics using 
+The optional argument `-spef_file` can be used to write the estimated parasitics using
 Standard Parasitic Exchange Format.
 
 ```tcl
@@ -249,7 +248,7 @@ the wire. It also resizes gates to normalize slews.  Use `estimate_parasitics
 -placement` before `repair_design` to estimate parasitics considered
 during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
-to compensate. 
+to compensate.
 
 ```tcl
 repair_design 
@@ -318,7 +317,7 @@ Setup repair is done before hold repair so that hold repair does not
 cause setup checks to fail.
 
 The worst setup path is always repaired.  Next, violating paths to
-endpoints are repaired to reduced the total negative slack. 
+endpoints are repaired to reduced the total negative slack.
 
 ```tcl
 repair_timing 
@@ -333,6 +332,7 @@ repair_timing
     [-sequence]
     [-skip_pin_swap]
     [-skip_gate_cloning]
+    [-skip_size_down]
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_last_gasp]
@@ -355,9 +355,10 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,buffer,swap,size,clone,split". Ignores skip flags when used. |
+| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
+| `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
@@ -370,7 +371,7 @@ repair_timing
 
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that
-this option be used with global routing based parasitics. 
+this option be used with global routing based parasitics.
 
 #### Instance Name Prefixes
 
@@ -568,6 +569,111 @@ report_equiv_cells
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 | `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
 
+### Optimizing Arithmetic Modules
+
+The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing models.
+This command analyzes critical timing paths and replaces arithmetic modules with equivalent but architecturally different implementations to
+improve Quality of Results (QoR) for the specified target.
+
+#### Arithmetic Module Types
+
+Yosys and OpenROAD support the following arithmetic module variants with different timing/area trade-offs.
+
+ALU (Arithmetic Logic Unit) Variants
+
+Han-Carlson (default)
+: Balanced delay and area.  Best for general purpose applications.
+
+Kogge-Stone
+: Fastest, largest area.  Best for timing-constrained designs.
+
+Brent-Kung
+: Slower, smaller area.  Best for area-constrained designs.
+
+Sklansky
+: Moderate delay/area.  Best for balanced optimization.
+
+MACC (Multiply-Accumulate) Variants
+
+Booth (default)
+: Balanced delay and area.  Best for general purpose applications.
+
+Base (Han-Carlson)
+: Fastest, potentially larger area.  Best for timing-constrained designs.
+
+#### Requirements for Arithmetic Module Swap
+
+1. Hierarchical netlist with arithmetic operators.  Yosys can produce such designs by enabling "wrapped operator synthesis".
+In OpenROAD-flow-scripts, this can be done as follows:
+
+cd OpenROAD-flow-scripts/flow
+
+make SYNTH_WRAPPED_OPERATORS=1
+
+This requires a Verilog netlist.  DEF netlist alone is not sufficient for hierarchical optimization.
+
+2. Hierarchically linked design.  The design needs to be linked to preserve hierarchical boundaries.  For example,
+
+link_design top -hier
+
+read_db -hier
+
+```tcl
+replace_arith_modules 
+    [-path_count num_critical_paths]
+    [-slack_threshold float]
+    [-target setup | hold | power | area]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ---------- |
+| `-path_count`           | Number of critical paths to analyze to identify candidate arithmetic modules to swap. The default value is `1000`, and the allowed values are integers. |
+| `-slack_threshold`      | Slack threshold in library time units.  Use positive values to include paths with small positive slack. The default value is `0.0`, and the allowed values are floats. |
+| `-target`               | Optimization target. Valid types are `setup`, `hold`, `power`, `area`. Default type is `setup`, and the allowed value is string. |
+
+#### Arguments
+
+Setup
+ALU: replace all candidate modules with Kogge-Stone (fastest)
+MACC: replace all candidate modules with Base (fastest)
+
+Hold
+Not available yet
+
+Power
+Not available yet
+
+Area
+Not available yet
+
+#### SEE ALSO
+
+replace_hier_modules
+
+#### EXAMPLES
+
+Arithmetic modules follow this naming convention per Yosys:
+
+ALU_\<io_config\>_\<width\>_\<config\>_\<architecture\>
+
+MACC_\<io_config\>_\<width\>_\<architecture\>
+
+Examples:
+
+ALU_20_0_25_0_25_unused_CO_X_HAN_CARLSON
+
+ALU_20_0_25_0_25_unused_CO_X_KOGGE_STONE
+
+ALU_20_0_25_0_25_unused_CO_X_BRENT_KUNG
+
+ALU_25_0_20_0_25_unused_CO_X_SKLANSKY
+
+\\MACC_14'10001011010100_19_BOOTH
+
+\\MACC_14'10001011010100_19_BASE
+
 ## Example scripts
 
 A typical `resizer` command file (after a design and Liberty libraries have
@@ -607,9 +713,9 @@ report_wns
 
 ## Regression tests
 
-There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script: 
+Simply run the following script:
 
 ```shell
 ./test/regression

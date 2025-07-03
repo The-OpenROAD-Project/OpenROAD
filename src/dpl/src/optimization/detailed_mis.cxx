@@ -131,10 +131,16 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   uint64_t hpwl_x, hpwl_y;
   int64_t curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   const int64_t init_hpwl = curr_hpwl;
+  if (obj_ == DetailedMis::Hpwl && init_hpwl == 0) {
+    return;
+  }
 
   double tot_disp, max_disp, avg_disp;
   double curr_disp = Utility::disp_l1(network_, tot_disp, max_disp, avg_disp);
   const double init_disp = curr_disp;
+  if (obj_ == DetailedMis::Disp && init_disp == 0.0) {
+    return;
+  }
 
   // Do some things that only need to be done once regardless
   // of the number of passes.
@@ -158,13 +164,15 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     const int64_t last_hpwl = curr_hpwl;
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
     if (obj_ == DetailedMis::Hpwl
-        && std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
+        && (last_hpwl == 0
+            || std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol)) {
       break;
     }
     const double last_disp = curr_disp;
     curr_disp = Utility::disp_l1(network_, tot_disp, max_disp, avg_disp);
     if (obj_ == DetailedMis::Disp
-        && std::fabs(curr_disp - last_disp) / last_disp <= tol) {
+        && (last_disp == 0
+            || std::fabs(curr_disp - last_disp) / last_disp <= tol)) {
       break;
     }
   }
@@ -691,7 +699,7 @@ void DetailedMis::solveMatch()
   }
   bool viol = false;
   for (const auto node : nodes) {
-    if (mgrPtr_->hasEdgeSpacingViolation(node)) {
+    if (mgrPtr_->hasPlacementViolation(node)) {
       viol = true;
       break;
     }

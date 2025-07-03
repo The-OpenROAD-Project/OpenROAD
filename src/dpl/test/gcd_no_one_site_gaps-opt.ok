@@ -52,8 +52,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL             7709.2 u
-Final HPWL                7324.5 u
-Delta HPWL                  -5.0 %
+Original HPWL             7709.2 u (    3935.1,     3774.1)
+Final HPWL                7324.5 u (    3639.8,     3684.7)
+Delta HPWL                  -5.0 % (      -7.5,       -2.4)
 
 No differences found.

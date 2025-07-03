@@ -29,6 +29,7 @@
 
 #include <tcl.h>
 
+#include <cstdlib>
 #include <string>
 
 namespace utl {

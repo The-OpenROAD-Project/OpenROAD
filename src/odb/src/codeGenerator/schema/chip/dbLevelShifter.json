@@ -109,7 +109,7 @@
       "flags": []
     },
     {
-      "name": "_instances", 
+      "name": "_instances",
       "type": "dbVector<std::pair<std::string, std::string>>",
       "flags": ["no-set", "no-get","no-template"]
     },

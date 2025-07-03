@@ -85,10 +85,12 @@ lefiAntennaPWL::~lefiAntennaPWL()
 
 void lefiAntennaPWL::Destroy()
 {
-  if (d_)
+  if (d_) {
     lefFree(d_);
-  if (r_)
+  }
+  if (r_) {
     lefFree(r_);
+  }
 }
 
 // Clear will reset the numPWL_ to zero but keep array allocated
@@ -104,10 +106,11 @@ void lefiAntennaPWL::addAntennaPWL(double d, double r)
     double* nd;
     double* nr;
 
-    if (numAlloc_ == 0)
+    if (numAlloc_ == 0) {
       len = numAlloc_ = 2;
-    else
+    } else {
       len = numAlloc_ *= 2;
+    }
     nd = (double*) lefMalloc(sizeof(double) * len);
     nr = (double*) lefMalloc(sizeof(double) * len);
 
@@ -132,15 +135,17 @@ int lefiAntennaPWL::numPWL() const
 
 double lefiAntennaPWL::PWLdiffusion(int index)
 {
-  if (index < 0 || index >= numPWL_)
+  if (index < 0 || index >= numPWL_) {
     return 0;
+  }
   return d_[index];
 }
 
 double lefiAntennaPWL::PWLratio(int index)
 {
-  if (index < 0 || index >= numPWL_)
+  if (index < 0 || index >= numPWL_) {
     return 0;
+  }
   return r_[index];
 }
 
@@ -169,16 +174,21 @@ void lefiLayerDensity::Init(const char* type)
 
 void lefiLayerDensity::Destroy()
 {
-  if (type_)
+  if (type_) {
     lefFree(type_);
-  if (frequency_)
+  }
+  if (frequency_) {
     lefFree(frequency_);
-  if (widths_)
+  }
+  if (widths_) {
     lefFree(widths_);
-  if (tableEntries_)
+  }
+  if (tableEntries_) {
     lefFree(tableEntries_);
-  if (cutareas_)
+  }
+  if (cutareas_) {
     lefFree(cutareas_);
+  }
 }
 
 lefiLayerDensity::~lefiLayerDensity()
@@ -288,8 +298,9 @@ void lefiParallel::Init()
 
 void lefiParallel::Destroy()
 {
-  if (numLength_)
+  if (numLength_) {
     lefFree(length_);
+  }
   if (numWidth_) {
     lefFree(width_);
     lefFree(widthSpacing_);
@@ -318,19 +329,21 @@ void lefiParallel::addParallelWidth(double width)
     numWidthAllocated_ = numWidthAllocated_ ? numWidthAllocated_ * 2 : 2;
     nw = (double*) lefMalloc(sizeof(double) * numWidthAllocated_);
     numLength = numLength_;
-    if (numLength > 0)
+    if (numLength > 0) {
       nws = (double*) lefMalloc(sizeof(double)
                                 * (numWidthAllocated_ * numLength_));
-    else {
+    } else {
       // still want to move anything already there
       nws = (double*) lefMalloc(sizeof(double) * numWidthAllocated_);
       numLength = 1;
     }
 
-    for (i = 0; i < numWidth_; i++)
+    for (i = 0; i < numWidth_; i++) {
       nw[i] = width_[i];
-    for (i = 0; i < (numWidth_ * numLength); i++)
+    }
+    for (i = 0; i < (numWidth_ * numLength); i++) {
       nws[i] = widthSpacing_[i];
+    }
     if (numWidth_) {
       lefFree(width_);
       lefFree(widthSpacing_);
@@ -345,8 +358,9 @@ void lefiParallel::addParallelWidth(double width)
 void lefiParallel::addParallelWidthSpacing(int numSpacing, double* spacings)
 {
   int i;
-  for (i = 0; i < numSpacing; i++)
+  for (i = 0; i < numSpacing; i++) {
     widthSpacing_[(numWidth_ - 1) * numLength_ + i] = spacings[i];
+  }
 }
 
 int lefiParallel::numLength() const
@@ -530,8 +544,9 @@ void lefiTwoWidths::addTwoWidths(double width,
       for (i = 0; i < atNsp_[numWidth_ - 1]; i++) {
         nws[i] = widthSpacing_[i];
       }
-    } else
+    } else {
       nws = (double*) lefMalloc(sizeof(double) * numSpacing);
+    }
 
     if (numWidth_) {
       lefFree(width_);
@@ -562,12 +577,14 @@ void lefiTwoWidths::addTwoWidths(double width,
   hasPRL_[numWidth_] = hasPRL;
   numWidthSpacing_[numWidth_] = numSpacing;
   if (numWidth_ == 0) {
-    for (i = 0; i < numSpacing; i++)
+    for (i = 0; i < numSpacing; i++) {
       widthSpacing_[i] = spacings[i];
+    }
     atNsp_[0] = numSpacing;
   } else {
-    for (i = 0; i < numSpacing; i++)
+    for (i = 0; i < numSpacing; i++) {
       widthSpacing_[atNsp_[numWidth_ - 1] + i] = spacings[i];
+    }
     atNsp_[numWidth_] = atNsp_[numWidth_ - 1] + numSpacing;
   }
   numWidth_ += 1;
@@ -585,8 +602,9 @@ double lefiTwoWidths::width(int index) const
 
 int lefiTwoWidths::hasWidthPRL(int index) const
 {
-  if (hasPRL_[index])
+  if (hasPRL_[index]) {
     return 1;
+  }
   return 0;
 }
 
@@ -602,8 +620,9 @@ int lefiTwoWidths::numWidthSpacing(int index) const
 
 double lefiTwoWidths::widthSpacing(int iWidth, int iWidthSpacing) const
 {
-  if (iWidth == 0)
+  if (iWidth == 0) {
     return widthSpacing_[iWidthSpacing];
+  }
   return widthSpacing_[atNsp_[iWidth - 1] + iWidthSpacing];
 }
 
@@ -626,14 +645,15 @@ void lefiSpacingTable::Init()
 
 void lefiSpacingTable::Destroy()
 {
-  if ((hasInfluence_) && (influence_))
+  if ((hasInfluence_) && (influence_)) {
     influence_->Destroy();
-  else if (parallel_) {
+  } else if (parallel_) {
     parallel_->Destroy();
     lefFree(parallel_);
   }
-  if (influence_)
+  if (influence_) {
     lefFree(influence_);
+  }
   if (twoWidths_) {
     twoWidths_->Destroy();
     lefFree(twoWidths_);
@@ -654,8 +674,9 @@ void lefiSpacingTable::addParallelLength(int numLength, double* lengths)
     parallel = (lefiParallel*) lefMalloc(sizeof(lefiParallel));
     parallel->Init();
     parallel_ = parallel;
-  } else
+  } else {
     parallel = parallel_;
+  }
   parallel->addParallelLength(numLength, lengths);
 }
 
@@ -733,8 +754,9 @@ void lefiSpacingTable::addTwoWidths(double width,
     twoWidths = (lefiTwoWidths*) lefMalloc(sizeof(lefiTwoWidths));
     twoWidths->Init();
     twoWidths_ = twoWidths;
-  } else
+  } else {
     twoWidths = twoWidths_;
+  }
   twoWidths->addTwoWidths(width, runLength, numSpacing, spacings, hasPRL);
 }
 
@@ -762,10 +784,12 @@ lefiOrthogonal::~lefiOrthogonal()
 
 void lefiOrthogonal::Destroy()
 {
-  if (cutWithin_)
+  if (cutWithin_) {
     lefFree(cutWithin_);
-  if (ortho_)
+  }
+  if (ortho_) {
     lefFree(ortho_);
+  }
   numAllocated_ = 0;
   numCutOrtho_ = 0;
 }
@@ -777,10 +801,11 @@ void lefiOrthogonal::addOrthogonal(double cutWithin, double ortho)
   double* ot;
 
   if (numAllocated_ == numCutOrtho_) {
-    if (numAllocated_ == 0)
+    if (numAllocated_ == 0) {
       len = numAllocated_ = 2;
-    else
+    } else {
       len = numAllocated_ *= 2;
+    }
     cw = (double*) lefMalloc(sizeof(double) * len);
     ot = (double*) lefMalloc(sizeof(double) * len);
 
@@ -788,10 +813,12 @@ void lefiOrthogonal::addOrthogonal(double cutWithin, double ortho)
       cw[i] = cutWithin_[i];
       ot[i] = ortho_[i];
     }
-    if (cutWithin_)
+    if (cutWithin_) {
       lefFree(cutWithin_);
-    if (ortho_)
+    }
+    if (ortho_) {
       lefFree(ortho_);
+    }
     cutWithin_ = cw;
     ortho_ = ot;
   }
@@ -807,15 +834,17 @@ int lefiOrthogonal::numOrthogonal() const
 
 double lefiOrthogonal::cutWithin(int index) const
 {
-  if (index < 0 || index >= numCutOrtho_)
+  if (index < 0 || index >= numCutOrtho_) {
     return 0;
+  }
   return cutWithin_[index];
 }
 
 double lefiOrthogonal::orthoSpacing(int index) const
 {
-  if (index < 0 || index >= numCutOrtho_)
+  if (index < 0 || index >= numCutOrtho_) {
     return 0;
+  }
   return ortho_[index];
 }
 
@@ -1376,122 +1405,161 @@ void lefiLayer::Destroy()
   nameSize_ = 0;
   lefFree(type_);
   typeSize_ = 0;
-  if (spacing_)
+  if (spacing_) {
     lefFree(spacing_);
+  }
   spacing_ = nullptr;
-  if (spacingTable_)
+  if (spacingTable_) {
     lefFree(spacingTable_);
+  }
   spacingTable_ = nullptr;
-  if (spacingName_)
+  if (spacingName_) {
     lefFree(spacingName_);
+  }
   spacingName_ = nullptr;
-  if (spacingAdjacentCuts_)
+  if (spacingAdjacentCuts_) {
     lefFree(spacingAdjacentCuts_);
+  }
   spacingAdjacentCuts_ = nullptr;
-  if (spacingAdjacentWithin_)
+  if (spacingAdjacentWithin_) {
     lefFree(spacingAdjacentWithin_);
+  }
   spacingAdjacentWithin_ = nullptr;
-  if (hasSpacingName_)
+  if (hasSpacingName_) {
     lefFree(hasSpacingName_);
+  }
   hasSpacingName_ = nullptr;
-  if (hasSpacingLayerStack_)
+  if (hasSpacingLayerStack_) {
     lefFree(hasSpacingLayerStack_);
+  }
   hasSpacingLayerStack_ = nullptr;
-  if (hasSpacingAdjacent_)
+  if (hasSpacingAdjacent_) {
     lefFree(hasSpacingAdjacent_);
+  }
   hasSpacingAdjacent_ = nullptr;
-  if (hasSpacingCenterToCenter_)
+  if (hasSpacingCenterToCenter_) {
     lefFree(hasSpacingCenterToCenter_);
+  }
   hasSpacingCenterToCenter_ = nullptr;
-  if (hasSpacingParallelOverlap_)
+  if (hasSpacingParallelOverlap_) {
     lefFree(hasSpacingParallelOverlap_);
+  }
   hasSpacingParallelOverlap_ = nullptr;
-  if (hasSpacingEndOfLine_)
+  if (hasSpacingEndOfLine_) {
     lefFree(hasSpacingEndOfLine_);
+  }
   hasSpacingEndOfLine_ = nullptr;
-  if (eolWidth_)
+  if (eolWidth_) {
     lefFree(eolWidth_);
+  }
   eolWidth_ = nullptr;
-  if (eolWithin_)
+  if (eolWithin_) {
     lefFree(eolWithin_);
+  }
   eolWithin_ = nullptr;
-  if (hasSpacingParellelEdge_)
+  if (hasSpacingParellelEdge_) {
     lefFree(hasSpacingParellelEdge_);
+  }
   hasSpacingParellelEdge_ = nullptr;
-  if (parSpace_)
+  if (parSpace_) {
     lefFree(parSpace_);
+  }
   parSpace_ = nullptr;
-  if (parWithin_)
+  if (parWithin_) {
     lefFree(parWithin_);
+  }
   parWithin_ = nullptr;
-  if (hasSpacingTwoEdges_)
+  if (hasSpacingTwoEdges_) {
     lefFree(hasSpacingTwoEdges_);
+  }
   hasSpacingTwoEdges_ = nullptr;
-  if (hasSpacingAdjacentExcept_)
+  if (hasSpacingAdjacentExcept_) {
     lefFree(hasSpacingAdjacentExcept_);
+  }
   hasSpacingAdjacentExcept_ = nullptr;
-  if (hasSpacingSamenet_)
+  if (hasSpacingSamenet_) {
     lefFree(hasSpacingSamenet_);
+  }
   hasSpacingSamenet_ = nullptr;
-  if (hasSpacingSamenetPGonly_)
+  if (hasSpacingSamenetPGonly_) {
     lefFree(hasSpacingSamenetPGonly_);
+  }
   hasSpacingSamenetPGonly_ = nullptr;
-  if (hasSpacingCutArea_)
+  if (hasSpacingCutArea_) {
     lefFree(hasSpacingCutArea_);
+  }
   hasSpacingCutArea_ = nullptr;
-  if (spacingCutArea_)
+  if (spacingCutArea_) {
     lefFree(spacingCutArea_);
+  }
   spacingCutArea_ = nullptr;
-  if (notchLength_)
+  if (notchLength_) {
     lefFree(notchLength_);
+  }
   notchLength_ = nullptr;
-  if (endOfNotchWidth_)
+  if (endOfNotchWidth_) {
     lefFree(endOfNotchWidth_);
+  }
   endOfNotchWidth_ = nullptr;
-  if (minNotchSpacing_)
+  if (minNotchSpacing_) {
     lefFree(minNotchSpacing_);
+  }
   minNotchSpacing_ = nullptr;
-  if (eonotchLength_)
+  if (eonotchLength_) {
     lefFree(eonotchLength_);
+  }
   eonotchLength_ = nullptr;
-  if (rangeMin_)
+  if (rangeMin_) {
     lefFree(rangeMin_);
+  }
   rangeMin_ = nullptr;
-  if (rangeMax_)
+  if (rangeMax_) {
     lefFree(rangeMax_);
+  }
   rangeMax_ = nullptr;
-  if (rangeInfluence_)
+  if (rangeInfluence_) {
     lefFree(rangeInfluence_);
+  }
   rangeInfluence_ = nullptr;
-  if (rangeInfluenceRangeMin_)
+  if (rangeInfluenceRangeMin_) {
     lefFree(rangeInfluenceRangeMin_);
+  }
   rangeInfluenceRangeMin_ = nullptr;
-  if (rangeInfluenceRangeMax_)
+  if (rangeInfluenceRangeMax_) {
     lefFree(rangeInfluenceRangeMax_);
+  }
   rangeInfluenceRangeMax_ = nullptr;
-  if (rangeRangeMin_)
+  if (rangeRangeMin_) {
     lefFree(rangeRangeMin_);
+  }
   rangeRangeMin_ = nullptr;
-  if (rangeRangeMax_)
+  if (rangeRangeMax_) {
     lefFree(rangeRangeMax_);
+  }
   rangeRangeMax_ = nullptr;
-  if (lengthThreshold_)
+  if (lengthThreshold_) {
     lefFree(lengthThreshold_);
+  }
   lengthThreshold_ = nullptr;
-  if (lengthThresholdRangeMin_)
+  if (lengthThresholdRangeMin_) {
     lefFree(lengthThresholdRangeMin_);
+  }
   lengthThresholdRangeMin_ = nullptr;
-  if (lengthThresholdRangeMax_)
+  if (lengthThresholdRangeMax_) {
     lefFree(lengthThresholdRangeMax_);
+  }
   lengthThresholdRangeMax_ = nullptr;
-  if (hasSpacingRange_)
+  if (hasSpacingRange_) {
     lefFree(hasSpacingRange_);
+  }
   hasSpacingRange_ = nullptr;
-  if (hasSpacingUseLengthThreshold_)
+  if (hasSpacingUseLengthThreshold_) {
     lefFree(hasSpacingUseLengthThreshold_);
+  }
   hasSpacingUseLengthThreshold_ = nullptr;
-  if (hasSpacingLengthThreshold_)
+  if (hasSpacingLengthThreshold_) {
     lefFree(hasSpacingLengthThreshold_);
+  }
   hasSpacingLengthThreshold_ = nullptr;
   lefFree(currentWidths_);
   lefFree(current_);
@@ -1520,10 +1588,12 @@ void lefiLayer::clear()
   lefiLayerDensity* p;
   lefiSpacingTable* sp;
 
-  if (name_)
+  if (name_) {
     *(name_) = 0;
-  if (type_)
+  }
+  if (type_) {
     *(type_) = 0;
+  }
   if (layerType_) {
     lefFree(layerType_);
     layerType_ = nullptr;
@@ -1549,14 +1619,18 @@ void lefiLayer::clear()
   hasAntennaArea_ = 0;
   hasAntennaLength_ = 0;
   hasCurrentDensityPoint_ = 0;
-  for (i = 0; i < numSpacings_; i++)
-    if (spacingName_[i])
+  for (i = 0; i < numSpacings_; i++) {
+    if (spacingName_[i]) {
       lefFree(spacingName_[i]);
+    }
+  }
   for (i = 0; i < numProps_; i++) {
-    if (names_[i])
+    if (names_[i]) {
       lefFree(names_[i]);
-    if (values_[i])
+    }
+    if (values_[i]) {
       lefFree(values_[i]);
+    }
     dvalues_[i] = 0;
   }
   numProps_ = 0;
@@ -1611,8 +1685,9 @@ void lefiLayer::clear()
     lefFree(minimumcutLength_);
     lefFree(minimumcutDistance_);
     for (i = 0; i < numMinimumcut_; i++) {
-      if (minimumcutConnection_[i])
+      if (minimumcutConnection_[i]) {
         lefFree(minimumcutConnection_[i]);
+      }
     }
     lefFree(minimumcutConnection_);
     numMinimumcut_ = 0;
@@ -1666,14 +1741,16 @@ void lefiLayer::clear()
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
 
-  if (nums_)
+  if (nums_) {
     lefFree(nums_);
+  }
 
   // 5.6
   if (numEnclosure_) {
     for (i = 0; i < numEnclosure_; i++) {
-      if (enclosureRules_[i])
+      if (enclosureRules_[i]) {
         lefFree(enclosureRules_[i]);
+      }
     }
     lefFree(enclosureRules_);
     lefFree(overhang1_);
@@ -1686,8 +1763,9 @@ void lefiLayer::clear()
   }
   if (numPreferEnclosure_) {
     for (i = 0; i < numPreferEnclosure_; i++) {
-      if (preferEnclosureRules_[i])
+      if (preferEnclosureRules_[i]) {
         lefFree(preferEnclosureRules_[i]);
+      }
     }
     lefFree(preferEnclosureRules_);
     lefFree(preferOverhang1_);
@@ -1750,8 +1828,9 @@ void lefiLayer::setType(const char* typ)
 // 5.8
 void lefiLayer::setLayerType(const char* layerType)
 {
-  if (layerType_)
+  if (layerType_) {
     lefFree(layerType_);
+  }
   layerType_ = strdup(layerType);
 }
 
@@ -2232,10 +2311,11 @@ void lefiLayer::setSpacingMin(double dist)
       lim /= 2;
       for (i = 0; i < lim; i++) {
         nd[i] = spacing_[i];
-        if (spacingName_[i])  // is null if is not CUT layer
+        if (spacingName_[i]) {  // is null if is not CUT layer
           nn[i] = spacingName_[i];
-        else
+        } else {
           nn[i] = nullptr;
+        }
         nac[i] = spacingAdjacentCuts_[i];
         naw[i] = spacingAdjacentWithin_[i];
         nsn[i] = hasSpacingName_[i];
@@ -2577,10 +2657,11 @@ void lefiLayer::addArraySpacingArray(int arrayCut, double arraySpacing)
   double* as;
 
   if (numArrayCuts_ == arrayCutsAllocated_) {
-    if (arrayCutsAllocated_ == 0)
+    if (arrayCutsAllocated_ == 0) {
       len = arrayCutsAllocated_ = 2;
-    else
+    } else {
       len = arrayCutsAllocated_ *= 2;
+    }
     ac = (int*) lefMalloc(sizeof(int) * len);
     as = (double*) lefMalloc(sizeof(double) * len);
 
@@ -2675,10 +2756,11 @@ void lefiLayer::setCurrentPoint(double width, double current)
     double* nc;
     double* nw;
 
-    if (currentPointsAllocated_ == 0)
+    if (currentPointsAllocated_ == 0) {
       len = currentPointsAllocated_ = 2;
-    else
+    } else {
       len = currentPointsAllocated_ *= 2;
+    }
     nc = (double*) lefMalloc(sizeof(double) * len);
     nw = (double*) lefMalloc(sizeof(double) * len);
 
@@ -2705,10 +2787,11 @@ void lefiLayer::setResistancePoint(double width, double resistance)
     double* nc;
     double* nw;
 
-    if (resistancePointsAllocated_ == 0)
+    if (resistancePointsAllocated_ == 0) {
       len = resistancePointsAllocated_ = 2;
-    else
+    } else {
       len = resistancePointsAllocated_ *= 2;
+    }
     nc = (double*) lefMalloc(sizeof(double) * len);
     nw = (double*) lefMalloc(sizeof(double) * len);
     for (i = 0; i < max; i++) {
@@ -2734,10 +2817,11 @@ void lefiLayer::setCapacitancePoint(double width, double capacitance)
     double* nc;
     double* nw;
 
-    if (capacitancePointsAllocated_ == 0)
+    if (capacitancePointsAllocated_ == 0) {
       len = capacitancePointsAllocated_ = 2;
-    else
+    } else {
       len = capacitancePointsAllocated_ *= 2;
+    }
     nc = (double*) lefMalloc(sizeof(double) * len);
     nw = (double*) lefMalloc(sizeof(double) * len);
     for (i = 0; i < max; i++) {
@@ -2762,8 +2846,9 @@ int lefiLayer::hasType() const
 // 5.8
 int lefiLayer::hasLayerType() const
 {
-  if (layerType_)
+  if (layerType_) {
     return 1;
+  }
   return 0;
 }
 
@@ -3528,87 +3613,108 @@ void lefiLayer::print(FILE* f) const
   double* j;
   double* k;
   fprintf(f, "Layer %s:\n", name());
-  if (hasType())
+  if (hasType()) {
     fprintf(f, "  type %s\n", type());
-  if (hasMask())
+  }
+  if (hasMask()) {
     fprintf(f, "  mask %d\n", mask());
-  if (hasPitch())
+  }
+  if (hasPitch()) {
     fprintf(f, "  pitch %g\n", pitch());
-  if (hasWireExtension())
+  }
+  if (hasWireExtension()) {
     fprintf(f, "  wireextension %g\n", wireExtension());
-  if (hasWidth())
+  }
+  if (hasWidth()) {
     fprintf(f, "  width %g\n", width());
-  if (hasArea())
+  }
+  if (hasArea()) {
     fprintf(f, "  area %g\n", area());
+  }
   if (hasSpacingNumber()) {
     for (i = 0; i < numSpacing(); i++) {
       fprintf(f, "  spacing %g\n", spacing(i));
       if (hasSpacingRange(i)) {
         fprintf(f, "  range %g %g\n", spacingRangeMin(i), spacingRangeMax(i));
-        if (hasSpacingRangeUseLengthThreshold(i))
+        if (hasSpacingRangeUseLengthThreshold(i)) {
           fprintf(f, "    uselengththreshold\n");
-        else if (hasSpacingRangeInfluence(i)) {
+        } else if (hasSpacingRangeInfluence(i)) {
           fprintf(f, "    influence %g\n", spacingRangeInfluence(i));
-          if (hasSpacingRangeInfluenceRange(i))
+          if (hasSpacingRangeInfluenceRange(i)) {
             fprintf(f,
                     "      Range %g %g\n",
                     spacingRangeInfluenceMin(i),
                     spacingRangeInfluenceMax(i));
-        } else if (hasSpacingRangeRange(i))
+          }
+        } else if (hasSpacingRangeRange(i)) {
           fprintf(f,
                   "    range %g %g\n",
                   spacingRangeRangeMin(i),
                   spacingRangeRangeMax(i));
+        }
       } else if (hasSpacingLengthThreshold(i)) {
         fprintf(f, "  lengththreshold %g\n", spacingLengthThreshold(i));
-        if (hasSpacingLengthThresholdRange(i))
+        if (hasSpacingLengthThresholdRange(i)) {
           fprintf(f,
                   "  range %g %g\n",
                   spacingLengthThresholdRangeMin(i),
                   spacingLengthThresholdRangeMax(i));
+        }
       }
     }
   }
-  if (hasDirection())
+  if (hasDirection()) {
     fprintf(f, "  direction %s\n", direction());
+  }
 
-  if (hasResistance())
+  if (hasResistance()) {
     fprintf(f, "  resistance %g\n", resistance());
+  }
   if (hasResistanceArray()) {
     resistanceArray(&max, &j, &k);
     fprintf(f, "  resistance PWL");
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       fprintf(f, " %g %g", j[i], k[i]);
+    }
     fprintf(f, "\n");
   }
-  if (hasCapacitance())
+  if (hasCapacitance()) {
     fprintf(f, "  capacitance %g\n", capacitance());
+  }
   if (hasCapacitanceArray()) {
     capacitanceArray(&max, &j, &k);
     fprintf(f, "  capacitance PWL");
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       fprintf(f, " %g %g", j[i], k[i]);
+    }
     fprintf(f, "\n");
   }
 
-  if (hasHeight())
+  if (hasHeight()) {
     fprintf(f, "  height %g\n", height());
-  if (hasThickness())
+  }
+  if (hasThickness()) {
     fprintf(f, "  thickness %g\n", thickness());
-  if (hasShrinkage())
+  }
+  if (hasShrinkage()) {
     fprintf(f, "  shrinkage %g\n", shrinkage());
-  if (hasCapMultiplier())
+  }
+  if (hasCapMultiplier()) {
     fprintf(f, "  cap muptiplier %g\n", capMultiplier());
-  if (hasEdgeCap())
+  }
+  if (hasEdgeCap()) {
     fprintf(f, "  edge cap %g\n", edgeCap());
+  }
 
-  if (hasCurrentDensityPoint())
+  if (hasCurrentDensityPoint()) {
     fprintf(f, "  currentden %g\n", currentDensityPoint());
+  }
   if (hasCurrentDensityArray()) {
     currentDensityArray(&max, &j, &k);
     fprintf(f, "  currentden PWL");
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       fprintf(f, " %g %g", j[i], k[i]);
+    }
     fprintf(f, "\n");
   }
 }
@@ -3627,10 +3733,11 @@ void lefiLayer::addProp(const char* name, const char* value, const char type)
     double* nd;
     char* nt;
 
-    if (propsAllocated_ == 0)
+    if (propsAllocated_ == 0) {
       max = propsAllocated_ = 2;
-    else
+    } else {
       max = propsAllocated_ *= 2;
+    }
     nn = (char**) lefMalloc(sizeof(char*) * max);
     nv = (char**) lefMalloc(sizeof(char*) * max);
     nd = (double*) lefMalloc(sizeof(double) * max);
@@ -3689,10 +3796,11 @@ void lefiLayer::addNumProp(const char* name,
     double* nd;
     char* nt;
 
-    if (propsAllocated_ == 0)
+    if (propsAllocated_ == 0) {
       max = propsAllocated_ = 2;
-    else
+    } else {
       max = propsAllocated_ *= 2;
+    }
     nn = (char**) lefMalloc(sizeof(char*) * max);
     nv = (char**) lefMalloc(sizeof(char*) * max);
     nd = (double*) lefMalloc(sizeof(double) * max);
@@ -3826,10 +3934,12 @@ void lefiLayer::addAccurrentDensity(const char* type)
     accurrentAllocated_ = accurrentAllocated_ ? accurrentAllocated_ * 2 : 2;
     array = (lefiLayerDensity**) lefMalloc(sizeof(lefiLayerDensity*)
                                            * accurrentAllocated_);
-    for (i = 0; i < numAccurrents_; i++)
+    for (i = 0; i < numAccurrents_; i++) {
       array[i] = accurrents_[i];
-    if (accurrents_)
+    }
+    if (accurrents_) {
       lefFree(accurrents_);
+    }
     accurrents_ = array;
   }
   density = accurrents_[numAccurrents_]
@@ -3901,10 +4011,12 @@ void lefiLayer::addDccurrentDensity(const char* type)
     dccurrentAllocated_ = dccurrentAllocated_ ? dccurrentAllocated_ * 2 : 2;
     array = (lefiLayerDensity**) lefMalloc(sizeof(lefiLayerDensity*)
                                            * dccurrentAllocated_);
-    for (i = 0; i < numDccurrents_; i++)
+    for (i = 0; i < numDccurrents_; i++) {
       array[i] = dccurrents_[i];
-    if (dccurrents_)
+    }
+    if (dccurrents_) {
       lefFree(dccurrents_);
+    }
     dccurrents_ = array;
   }
   density = dccurrents_[numDccurrents_]
@@ -3950,10 +4062,12 @@ void lefiLayer::addNumber(double num)
     int i;
     numAllocated_ = numAllocated_ ? numAllocated_ * 2 : 2;
     array = (double*) lefMalloc(sizeof(double) * numAllocated_);
-    for (i = 0; i < numNums_; i++)
+    for (i = 0; i < numNums_; i++) {
       array[i] = nums_[i];
-    if (nums_)
+    }
+    if (nums_) {
       lefFree(nums_);
+    }
     nums_ = array;
   }
   nums_[numNums_++] = num;
@@ -3986,15 +4100,17 @@ int lefiLayer::numDccurrentDensity() const
 
 lefiLayerDensity* lefiLayer::accurrent(int index) const
 {
-  if (index >= numAccurrents_)
+  if (index >= numAccurrents_) {
     return nullptr;
+  }
   return (accurrents_[index]);
 }
 
 lefiLayerDensity* lefiLayer::dccurrent(int index) const
 {
-  if (index >= numDccurrents_)
+  if (index >= numDccurrents_) {
     return nullptr;
+  }
   return (dccurrents_[index]);
 }
 
@@ -4060,88 +4176,100 @@ lefiAntennaModel* lefiLayer::antennaModel(int index) const
 // 3/23/2000 -- Wanda da Rosa.  The following are for 5.4 syntax
 void lefiLayer::setAntennaAreaRatio(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaAreaRatio(value);
 }
 
 void lefiLayer::setAntennaCumAreaRatio(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaCumAreaRatio(value);
 }
 
 void lefiLayer::setAntennaAreaFactor(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaAreaFactor(value);
 }
 
 void lefiLayer::setAntennaSideAreaRatio(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaSideAreaRatio(value);
 }
 
 void lefiLayer::setAntennaCumSideAreaRatio(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaCumSideAreaRatio(value);
 }
 
 void lefiLayer::setAntennaSideAreaFactor(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaSideAreaFactor(value);
 }
 
 void lefiLayer::setAntennaValue(lefiAntennaEnum antennaType, double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaValue(antennaType, value);
 }
 
 void lefiLayer::setAntennaDUO(lefiAntennaEnum antennaType)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaDUO(antennaType);
 }
 
 void lefiLayer::setAntennaPWL(lefiAntennaEnum antennaType, lefiAntennaPWL* pwl)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaPWL(antennaType, pwl);
 }
 
 // 5.7
 void lefiLayer::setAntennaCumRoutingPlusCut()
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaCumRoutingPlusCut();
 }
 
 // 5.7
 void lefiLayer::setAntennaGatePlusDiff(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaGatePlusDiff(value);
 }
 
 // 5.7
 void lefiLayer::setAntennaAreaMinusDiff(double value)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antannaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
     addAntennaModel(1);
+  }
   currentAntennaModel_->setAntennaAreaMinusDiff(value);
 }
 
@@ -4373,10 +4501,12 @@ void lefiLayer::addSpacingTable()
         = spacingTableAllocated_ ? spacingTableAllocated_ * 2 : 2;
     array = (lefiSpacingTable**) lefMalloc(sizeof(lefiSpacingTable*)
                                            * spacingTableAllocated_);
-    for (i = 0; i < numSpacingTable_; i++)
+    for (i = 0; i < numSpacingTable_; i++) {
       array[i] = spacingTable_[i];
-    if (spacingTable_)
+    }
+    if (spacingTable_) {
       lefFree(spacingTable_);
+    }
     spacingTable_ = array;
   }
   sp = spacingTable_[numSpacingTable_]
@@ -4479,10 +4609,11 @@ void lefiLayer::addEnclosure(char* enclRule, double overhang1, double overhang2)
     double* ct;
     double* ml;
 
-    if (enclosureAllocated_ == 0)
+    if (enclosureAllocated_ == 0) {
       len = enclosureAllocated_ = 2;
-    else
+    } else {
       len = enclosureAllocated_ *= 2;
+    }
     er = (char**) lefMalloc(sizeof(char*) * len);
     o1 = (double*) lefMalloc(sizeof(double) * len);
     o2 = (double*) lefMalloc(sizeof(double) * len);
@@ -4514,12 +4645,14 @@ void lefiLayer::addEnclosure(char* enclRule, double overhang1, double overhang2)
     minLength_ = ml;
   }
   if (enclRule) {
-    if (strcmp(enclRule, "NULL") == 0)
+    if (strcmp(enclRule, "NULL") == 0) {
       enclosureRules_[numEnclosure_] = nullptr;
-    else
+    } else {
       enclosureRules_[numEnclosure_] = strdup(enclRule);
-  } else
+    }
+  } else {
     enclosureRules_[numEnclosure_] = nullptr;
+  }
   overhang1_[numEnclosure_] = overhang1;
   overhang2_[numEnclosure_] = overhang2;
   encminWidth_[numEnclosure_] = 0;
@@ -4609,10 +4742,11 @@ void lefiLayer::addPreferEnclosure(char* enclRule,
     double* o2;
     double* mw;
 
-    if (preferEnclosureAllocated_ == 0)
+    if (preferEnclosureAllocated_ == 0) {
       len = preferEnclosureAllocated_ = 2;
-    else
+    } else {
       len = preferEnclosureAllocated_ *= 2;
+    }
     er = (char**) lefMalloc(sizeof(char*) * len);
     o1 = (double*) lefMalloc(sizeof(double) * len);
     o2 = (double*) lefMalloc(sizeof(double) * len);
@@ -4635,10 +4769,11 @@ void lefiLayer::addPreferEnclosure(char* enclRule,
     preferOverhang2_ = o2;
     preferMinWidth_ = mw;
   }
-  if (strcmp(enclRule, "NULL") == 0)
+  if (strcmp(enclRule, "NULL") == 0) {
     preferEnclosureRules_[numPreferEnclosure_] = nullptr;
-  else
+  } else {
     preferEnclosureRules_[numPreferEnclosure_] = strdup(enclRule);
+  }
   preferOverhang1_[numPreferEnclosure_] = overhang1;
   preferOverhang2_[numPreferEnclosure_] = overhang2;
   preferMinWidth_[numPreferEnclosure_] = 0;
@@ -5380,14 +5515,16 @@ void lefiLayer::parseSpacing(int index)
                     setSpacingMin(spValue);
                     setSpacingEol(width, within);
                     setSpacingParSW(pValue, pWithin);
-                    if (twoEdges)
+                    if (twoEdges) {
                       setSpacingParTwoEdges();
+                    }
                     value = strtok(nullptr, " ");
                     continue;  // with the while loop
                   }
                   // More rules, skip to ;
-                  while ((value) && (*value != ';') && (*value != '\n'))
+                  while ((value) && (*value != ';') && (*value != '\n')) {
                     value = strtok(nullptr, " ");
+                  }
                   if ((value) && (*value == ';')) {
                     value = strtok(nullptr, " ");
                     continue;
@@ -5400,8 +5537,9 @@ void lefiLayer::parseSpacing(int index)
                   continue;  // statement with the while loop
                 } else {
                   // More rules, skip to ;
-                  while ((value) && (*value != ';') && (*value != '\n'))
+                  while ((value) && (*value != ';') && (*value != '\n')) {
                     value = strtok(nullptr, " ");
+                  }
                   if ((value) && (*value == ';')) {
                     value = strtok(nullptr, " ");
                     continue;
@@ -5463,8 +5601,9 @@ void lefiLayer::parseSpacing(int index)
             value = strtok(nullptr, " ");  // done with this
             continue;
           } else {
-            while ((value) && (*value != ';') && (*value != '\n'))
+            while ((value) && (*value != ';') && (*value != '\n')) {
               value = strtok(nullptr, " ");
+            }
             if ((value) && (*value == ';')) {
               value = strtok(nullptr, " ");
               continue;
@@ -5644,8 +5783,9 @@ void lefiLayer::parseArraySpacing(int index)
       /*
                setArraySpacing(hasLongArray, viaWidth, cutSpacing);
       */
-      if (hasLongArray)
+      if (hasLongArray) {
         setArraySpacingLongArray();
+      }
       setArraySpacingWidth(viaWidth);
       setArraySpacingCut(cutSpacing);
       value = strtok(nullptr, " ");
@@ -5918,8 +6058,9 @@ void lefiLayer::parseMinstep(int index)
         lefError(1315, msg);
         free(wrkingStr);  // done parsing
         return;
-      } else
+      } else {
         done = 1;
+      }
     } else {
       // done parsing without ;
       /*
@@ -5941,16 +6082,21 @@ void lefiLayer::parseMinstep(int index)
     }
   }
 
-  if (minStepLength)
+  if (minStepLength) {
     addMinstep(minStepLength);
-  if (maxEdges)
+  }
+  if (maxEdges) {
     addMinstepMaxedges(maxEdges);
-  if (minAdjLength)
+  }
+  if (minAdjLength) {
     addMinstepMinAdjLength(minAdjLength);
-  if (minBetLength)
+  }
+  if (minBetLength) {
     addMinstepMinBetLength(minBetLength);
-  if (xSameCorners)
+  }
+  if (xSameCorners) {
     addMinstepXSameCorners();
+  }
   free(wrkingStr);
   return;
 }
@@ -6231,8 +6377,9 @@ void lefiLayer::parseLayerEnclosure(int index)
                 values_[index]);
         lefError(1330, msg);
         free(wrkingStr);
-        if (enclRule)
+        if (enclRule) {
           free(enclRule);
+        }
         return;
       }
       enclRule = strdup(value);
@@ -6254,8 +6401,9 @@ void lefiLayer::parseLayerEnclosure(int index)
                 values_[index]);
         lefError(1330, msg);
         free(wrkingStr);
-        if (enclRule)
+        if (enclRule) {
           free(enclRule);
+        }
         return;
       }
       minWidth = strtod(strtok(nullptr, " "), nullptr);
@@ -6269,8 +6417,9 @@ void lefiLayer::parseLayerEnclosure(int index)
         if (strcmp(value, "NOSHAREDEDGE") == 0) {
           // 5.8 syntax but not in OA data model
           free(wrkingStr);
-          if (enclRule)
+          if (enclRule) {
             free(enclRule);
+          }
           return;
         }
       }
@@ -6291,8 +6440,9 @@ void lefiLayer::parseLayerEnclosure(int index)
                 values_[index]);
         lefError(1330, msg);
         free(wrkingStr);
-        if (enclRule)
+        if (enclRule) {
           free(enclRule);
+        }
         return;
       }
       minLength = strtod(strtok(nullptr, " "), nullptr);
@@ -6315,8 +6465,9 @@ void lefiLayer::parseLayerEnclosure(int index)
                 values_[index]);
         lefError(1330, msg);
         free(wrkingStr);
-        if (enclRule)
+        if (enclRule) {
           free(enclRule);
+        }
         return;
       }
       overhang1 = strtod(value, nullptr);
@@ -6344,14 +6495,17 @@ void lefiLayer::parseLayerEnclosure(int index)
 
     if (width) {
       addEnclosureWidth(minWidth);
-      if (except)
+      if (except) {
         addEnclosureExceptEC(cutWithin);
+      }
     }
-    if (length)
+    if (length) {
       addEnclosureLength(minLength);
+    }
   }
-  if (enclRule)
+  if (enclRule) {
     free(enclRule);
+  }
 
   free(wrkingStr);
   return;
@@ -6366,8 +6520,9 @@ void lefiLayer::parse65nmRules()
 {
   int i;
 
-  if (lefData->versionNum < 5.6)
+  if (lefData->versionNum < 5.6) {
     return;
+  }
 
   for (i = 0; i < numProps_; i++) {
     if ((strlen(names_[i]) > 6) && (types_[i] == 'S')) {
@@ -6455,13 +6610,15 @@ void lefiLayer::parseLEF58Layer()
 {
   int i;
 
-  if (lefData->versionNum < 5.7)
+  if (lefData->versionNum < 5.7) {
     return;
+  }
 
   for (i = 0; i < numProps_; i++) {
     if (strlen(names_[i]) == 10) {
-      if (strcmp(names_[i], "LEF58_TYPE") == 0)
+      if (strcmp(names_[i], "LEF58_TYPE") == 0) {
         parseLayerType(i);
+      }
     }
   }
 }

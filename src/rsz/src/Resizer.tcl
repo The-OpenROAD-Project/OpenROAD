@@ -447,7 +447,7 @@ proc repair_design { args } {
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
@@ -466,7 +466,7 @@ proc repair_clock_nets { args } {
 
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length true]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
 
@@ -522,6 +522,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-sequence move_string]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
+                                        [-skip_size_down]\
                                         [-skip_buffering]\
                                         [-skip_buffer_removal]\
                                         [-skip_last_gasp]\
@@ -539,8 +540,8 @@ proc repair_timing { args } {
             -libraries -max_utilization -max_buffer_percent -sequence \
             -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-           -skip_buffering -skip_buffer_removal -skip_last_gasp -match_cell_footprint \
-           -verbose}
+           -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
+            -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -573,6 +574,7 @@ proc repair_timing { args } {
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   set skip_pin_swap [info exists flags(-skip_pin_swap)]
   set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
+  set skip_size_down [info exists flags(-skip_size_down)]
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
@@ -632,7 +634,7 @@ proc repair_timing { args } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_repairs_per_pass $match_cell_footprint $verbose \
         $sequence \
-        $skip_pin_swap $skip_gate_cloning $skip_buffering \
+        $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
         $skip_buffer_removal $skip_last_gasp]
     }
     if { $hold } {
@@ -976,6 +978,38 @@ proc report_equiv_cells { args } {
   rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells
 }
 
+sta::define_cmd_args "replace_arith_modules" { [-path_count num_critical_paths] \
+                                      [-slack_threshold float] \
+                                      [-target opto_goal] }
+
+proc replace_arith_modules { args } {
+  sta::parse_key_args "replace_arith_modules" args \
+    keys {-path_count -slack_threshold -target} \
+    flags {}
+
+  if { [info exists keys(-path_count)] } {
+    set path_count $keys(-path_count)
+  } else {
+    set path_count 1000
+  }
+  if { [info exists keys(-target)] } {
+    set target $keys(-target)
+    if { [lsearch -exact {setup hold power area} $target] == -1 } {
+      util::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
+    }
+  } else {
+    set target "setup"
+  }
+  if { [info exists keys(-slack_margin)] } {
+    set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  } else {
+    set slack_margin 0.0
+  }
+
+  puts "replace_arith_module -path_count $path_count -target $target -slack_margin $slack_margin"
+  rsz::swap_arith_modules_cmd $path_count $target $slack_margin
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
@@ -1067,7 +1101,7 @@ proc check_corner_wire_caps { } {
   return $have_rc
 }
 
-proc check_max_wire_length { max_wire_length } {
+proc check_max_wire_length { max_wire_length use_default } {
   if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
@@ -1076,9 +1110,11 @@ proc check_max_wire_length { max_wire_length } {
         utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
       }
     } else {
-      set max_wire_length $min_delay_max_wire_length
-      set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
-      utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
+      if { $use_default } {
+        set max_wire_length $min_delay_max_wire_length
+        set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
+        utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
+      }
     }
   }
   return $max_wire_length

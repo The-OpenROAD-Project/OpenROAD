@@ -31,17 +31,19 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
   progress_ = std::make_unique<CommandLineProgress>(this);
 
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-  if (log_filename)
+  if (log_filename) {
     sinks_.push_back(
         std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename));
+  }
 
   logger_ = std::make_shared<spdlog::logger>(
       "logger", sinks_.begin(), sinks_.end());
   setFormatter();
   logger_->set_level(spdlog::level::level_enum::debug);
 
-  if (metrics_filename)
+  if (metrics_filename) {
     addMetricsSink(metrics_filename);
+  }
 
   metrics_policies_ = MetricsPolicy::makeDefaultPolicies();
 
@@ -80,8 +82,9 @@ ToolId Logger::findToolId(const char* tool_name)
 {
   int tool_id = 0;
   for (const char* tool : tool_names_) {
-    if (strcmp(tool_name, tool) == 0)
+    if (strcmp(tool_name, tool) == 0) {
       return static_cast<ToolId>(tool_id);
+    }
     tool_id++;
   }
   return UKN;
@@ -128,10 +131,11 @@ void Logger::removeSink(spdlog::sink_ptr sink)
 
 void Logger::setMetricsStage(std::string_view format)
 {
-  if (metrics_stages_.empty())
+  if (metrics_stages_.empty()) {
     metrics_stages_.push(std::string(format));
-  else
+  } else {
     metrics_stages_.top() = format;
+  }
 }
 
 void Logger::clearMetricsStage()

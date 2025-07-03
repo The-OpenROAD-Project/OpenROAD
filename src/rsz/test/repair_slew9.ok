@@ -7,7 +7,6 @@
 [INFO ODB-0133]     Created 2 nets and 105 connections.
 Found 105 slew violations
 Found 1 cap violations
-[INFO RSZ-0058] Using max wire length 2406um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       106

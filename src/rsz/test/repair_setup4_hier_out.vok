@@ -2,102 +2,40 @@ module reg1 (clk);
  input clk;
 
 
- BUF_X1 rebuffer32 (.A(r1q),
-    .Z(net43));
- BUF_X1 rebuffer31 (.A(net43),
-    .Z(net42));
- BUF_X1 rebuffer30 (.A(net42),
-    .Z(net41));
- BUF_X1 rebuffer29 (.A(net41),
-    .Z(net40));
- BUF_X1 rebuffer28 (.A(net40),
-    .Z(net39));
- BUF_X1 rebuffer27 (.A(net39),
-    .Z(net38));
- BUF_X1 rebuffer26 (.A(net38),
-    .Z(net37));
- BUF_X1 rebuffer25 (.A(net37),
-    .Z(net36));
- BUF_X1 rebuffer24 (.A(net36),
-    .Z(net35));
- BUF_X1 rebuffer23 (.A(net35),
-    .Z(net34));
- BUF_X1 rebuffer22 (.A(net34),
-    .Z(net33));
- BUF_X1 rebuffer21 (.A(net33),
-    .Z(net32));
- BUF_X1 rebuffer20 (.A(net32),
-    .Z(net31));
- BUF_X1 rebuffer19 (.A(net31),
-    .Z(net30));
- BUF_X1 rebuffer18 (.A(net30),
-    .Z(net29));
- BUF_X1 rebuffer17 (.A(net29),
-    .Z(net28));
- BUF_X1 rebuffer16 (.A(net28),
-    .Z(net27));
- BUF_X1 rebuffer15 (.A(net27),
-    .Z(net26));
- BUF_X1 rebuffer14 (.A(net26),
-    .Z(net25));
- BUF_X1 rebuffer13 (.A(net25),
-    .Z(net24));
- BUF_X1 rebuffer12 (.A(net24),
-    .Z(net23));
- BUF_X1 rebuffer11 (.A(net23),
-    .Z(net22));
- BUF_X1 rebuffer10 (.A(net22),
-    .Z(net21));
- BUF_X1 rebuffer9 (.A(net21),
-    .Z(net20));
- BUF_X1 rebuffer8 (.A(net20),
-    .Z(net19));
- BUF_X1 rebuffer7 (.A(net19),
-    .Z(net18));
- BUF_X1 rebuffer6 (.A(net18),
-    .Z(net17));
- BUF_X1 rebuffer5 (.A(net17),
-    .Z(net16));
- BUF_X1 rebuffer4 (.A(net16),
-    .Z(net15));
- BUF_X1 rebuffer3 (.A(net15),
-    .Z(net14));
- BUF_X1 rebuffer2 (.A(net14),
-    .Z(net12));
- BUF_X4 rebuffer1 (.A(net12),
-    .Z(net1));
+ BUF_X1 rebuffer1 (.A(r1q),
+    .Z(net2));
  DFF_X1 r1 (.CK(clk),
     .Q(r1q));
- submodule u1 (.r1q_i(net12),
-    .r1q(net1),
+ submodule u1 (.net2_i(net2),
+    .r1q(r1q),
     .clk(clk));
 endmodule
-module submodule (r1q_i,
+module submodule (net2_i,
     r1q,
     clk);
- input r1q_i;
+ input net2_i;
  input r1q;
  input clk;
 
 
- DFF_X1 r10 (.D(r1q));
- DFF_X1 r11 (.D(r1q));
- DFF_X1 r12 (.D(r1q));
+ DFF_X1 r10 (.D(net2_i));
+ DFF_X1 r11 (.D(net2_i));
+ DFF_X1 r12 (.D(net2_i));
  DFF_X1 r2 (.D(u5z),
     .CK(clk));
- DFF_X1 r3 (.D(r1q_i),
+ DFF_X1 r3 (.D(r1q),
     .CK(clk));
  DFF_X1 r4 (.D(r1q),
     .CK(clk));
- DFF_X1 r5 (.D(r1q),
+ DFF_X1 r5 (.D(net2_i),
     .CK(clk));
- DFF_X1 r6 (.D(r1q_i),
+ DFF_X1 r6 (.D(r1q),
     .CK(clk));
- DFF_X1 r7 (.D(r1q_i),
+ DFF_X1 r7 (.D(r1q),
     .CK(clk));
  DFF_X1 r8 (.D(r1q));
- DFF_X1 r9 (.D(r1q));
- BUF_X2 u1 (.A(r1q_i),
+ DFF_X1 r9 (.D(net2_i));
+ BUF_X2 u1 (.A(r1q),
     .Z(u1z));
  BUF_X4 u2 (.A(u1z),
     .Z(u2z));

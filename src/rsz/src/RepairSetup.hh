@@ -77,6 +77,7 @@ class RepairSetup : public sta::dbStaState
                    const std::vector<MoveType>& sequence,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
+                   bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp);

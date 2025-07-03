@@ -98,6 +98,7 @@ global_placement
     [-timing_driven_nets_percentage]
     [-keep_resize_below_overflow]
     [-disable_revert_if_diverge]
+    [-enable_routing_congestion]
 ```
 
 #### Options
@@ -121,6 +122,7 @@ global_placement
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
+| `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
 
 #### Routability-Driven Arguments
 
@@ -187,7 +189,7 @@ global_placement_debug
     [-draw_bins]
     [-initial]
     [-start_iter]
-    [-update_db]
+    [-generate_images]
 ```
 
 #### Options
@@ -200,7 +202,7 @@ global_placement_debug
 | `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
 | `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
 | `-start_iter` | Start debug mode from such iteration. |
-| `-update_db` | Updates OpenROAD db during every gpl iteration, allowing for up to date location of instances. |
+| `-generate_images` | Generates a GIF animation showing the placement progression. Also generates snapshot images at the end of each routability and timing-driven iteration, including heatmaps. |
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
 This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.

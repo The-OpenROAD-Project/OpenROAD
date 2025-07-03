@@ -229,7 +229,7 @@ EXTERN int lefiPin_numProperties(const lefiPin* obj);
 EXTERN const char* lefiPin_propName(const lefiPin* obj, int index);
 EXTERN const char* lefiPin_propValue(const lefiPin* obj, int index);
 EXTERN double lefiPin_propNum(const lefiPin* obj, int index);
-EXTERN const char lefiPin_propType(const lefiPin* obj, int index);
+EXTERN char lefiPin_propType(const lefiPin* obj, int index);
 EXTERN int lefiPin_propIsNumber(const lefiPin* obj, int index);
 EXTERN int lefiPin_propIsString(const lefiPin* obj, int index);
 
@@ -281,7 +281,7 @@ EXTERN int lefiMacro_numProperties(const lefiMacro* obj);
 EXTERN const char* lefiMacro_propName(const lefiMacro* obj, int index);
 EXTERN const char* lefiMacro_propValue(const lefiMacro* obj, int index);
 EXTERN double lefiMacro_propNum(const lefiMacro* obj, int index);
-EXTERN const char lefiMacro_propType(const lefiMacro* obj, int index);
+EXTERN char lefiMacro_propType(const lefiMacro* obj, int index);
 EXTERN int lefiMacro_propIsNumber(const lefiMacro* obj, int index);
 EXTERN int lefiMacro_propIsString(const lefiMacro* obj, int index);
 

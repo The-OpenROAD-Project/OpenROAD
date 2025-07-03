@@ -47,7 +47,7 @@ tcl_encode_sta = rule(
             doc = "Tcl files to be wrapped.",
         ),
         "_encode_script": attr.label(
-            default = "//:src/sta/etc/TclEncode.tcl",
+            default = "//src/sta:etc/TclEncode.tcl",
             allow_single_file = True,
         ),
         "_tclsh": attr.label(

@@ -26,10 +26,8 @@
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
@@ -231,7 +229,6 @@ void dbSta::unregisterStaState(dbStaState* state)
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 {
   auto clone = std::make_unique<dbSta>();
-  clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
   clone->getDbNetwork()->setDefaultLibertyLibrary(

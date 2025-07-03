@@ -2719,8 +2719,9 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
 
   lineNumber = defwCurrentLineNumber();
-  if (lineNumber == 0)
+  if (lineNumber == 0) {
     fprintf(stderr, "ERROR: nothing has been read.\n");
+  }
 
   fclose(fout);
 

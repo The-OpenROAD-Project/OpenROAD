@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Parser for LEF58 wrong-direction spacing rules that define spacing
+// requirements for non-preferred direction shapes
 #include <iostream>
 #include <string>
 
@@ -11,6 +13,7 @@
 
 namespace odb::lefTechLayerWrongDirSpacing {
 
+// Set the base wrong-direction spacing value (converts to database units)
 void wrongDirParser(double value,
                     odb::dbTechLayerWrongDirSpacingRule* sc,
                     odb::lefinReader* l)
@@ -18,6 +21,7 @@ void wrongDirParser(double value,
   sc->setWrongdirSpace(l->dbdist(value));
 }
 
+// Set the non-end-of-line width parameter
 void noneolWidthParser(double value,
                        odb::dbTechLayerWrongDirSpacingRule* sc,
                        odb::lefinReader* l)
@@ -25,6 +29,7 @@ void noneolWidthParser(double value,
   sc->setNoneolWidth(l->dbdist(value));
 }
 
+// Set the parallel run length parameter
 void prlLengthParser(double value,
                      odb::dbTechLayerWrongDirSpacingRule* sc,
                      odb::lefinReader* l)
@@ -32,6 +37,7 @@ void prlLengthParser(double value,
   sc->setPrlLength(l->dbdist(value));
 }
 
+// Set the length parameter
 void lengthParser(double value,
                   odb::dbTechLayerWrongDirSpacingRule* sc,
                   odb::lefinReader* l)
@@ -39,6 +45,9 @@ void lengthParser(double value,
   sc->setLength(l->dbdist(value));
 }
 
+// Parse a single wrong-direction spacing rule
+// Format: SPACING value WRONGDIRECTION [NONEOL width] [PRL length] [LENGTH
+// length] ;
 template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
@@ -47,7 +56,7 @@ bool parse(Iterator first,
 {
   odb::dbTechLayerWrongDirSpacingRule* sc
       = odb::dbTechLayerWrongDirSpacingRule::create(layer);
-  qi::rule<std::string::iterator, space_type> wrongDirSpacingRule
+  qi::rule<std::string::const_iterator, space_type> wrongDirSpacingRule
       = (lit("SPACING") >> (double_[boost::bind(&wrongDirParser, _1, sc, l)])
          >> lit("WRONGDIRECTION")
          >> -(lit("NONEOL")[boost::bind(
@@ -75,7 +84,8 @@ bool parse(Iterator first,
 
 namespace odb {
 
-void lefTechLayerWrongDirSpacingParser::parse(std::string s,
+// Parse input string containing wrong-direction spacing rules for a layer
+void lefTechLayerWrongDirSpacingParser::parse(const std::string& s,
                                               dbTechLayer* layer,
                                               odb::lefinReader* l)
 {

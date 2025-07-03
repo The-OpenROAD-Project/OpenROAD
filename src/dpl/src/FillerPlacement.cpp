@@ -37,17 +37,18 @@ static dbTechLayer* getImplant(dbMaster* master)
   return nullptr;
 }
 
-Opendp::MasterByImplant Opendp::splitByImplant(dbMasterSeq* filler_masters)
+Opendp::MasterByImplant Opendp::splitByImplant(
+    const dbMasterSeq& filler_masters)
 {
   MasterByImplant mapping;
-  for (auto master : *filler_masters) {
+  for (auto master : filler_masters) {
     mapping[getImplant(master)].emplace_back(master);
   }
 
   return mapping;
 }
 
-void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
+void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
                              const char* prefix,
                              bool verbose)
 {

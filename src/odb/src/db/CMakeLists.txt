@@ -168,6 +168,8 @@ target_include_directories(db
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
         ${TCL_INCLUDE_PATH}
+    PRIVATE
+        ${Boost_INCLUDE_DIRS}
 )
 
 set_target_properties(db
@@ -181,4 +183,5 @@ target_link_libraries(db
         zutil
         utl_lib
         ${TCL_LIBRARY}
+
 )

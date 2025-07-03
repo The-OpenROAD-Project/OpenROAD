@@ -224,6 +224,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
  public:
   // constructors
   gcRect() = default;
+  gcRect& operator=(const gcRect&) = default;
   gcRect(const gcRect& in) = default;
   gcRect(const gtl::rectangle_data<frCoord>& shapeIn,
          frLayerNum layerIn,

@@ -19,17 +19,20 @@
 
 namespace odb {
 
-bool dbBoxItr::reversible()
+template <uint page_size>
+bool dbBoxItr<page_size>::reversible()
 {
   return true;
 }
 
-bool dbBoxItr::orderReversed()
+template <uint page_size>
+bool dbBoxItr<page_size>::orderReversed()
 {
   return true;
 }
 
-void dbBoxItr::reverse(dbObject* parent)
+template <uint page_size>
+void dbBoxItr<page_size>::reverse(dbObject* parent)
 {
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
@@ -159,12 +162,14 @@ void dbBoxItr::reverse(dbObject* parent)
   }
 }
 
-uint dbBoxItr::sequential()
+template <uint page_size>
+uint dbBoxItr<page_size>::sequential()
 {
   return 0;
 }
 
-uint dbBoxItr::size(dbObject* parent)
+template <uint page_size>
+uint dbBoxItr<page_size>::size(dbObject* parent)
 {
   uint id;
   uint cnt = 0;
@@ -177,7 +182,8 @@ uint dbBoxItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbBoxItr::begin(dbObject* parent)
+template <uint page_size>
+uint dbBoxItr<page_size>::begin(dbObject* parent)
 {
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
@@ -246,12 +252,14 @@ uint dbBoxItr::begin(dbObject* parent)
   return 0;
 }
 
-uint dbBoxItr::end(dbObject* /* unused: parent */)
+template <uint page_size>
+uint dbBoxItr<page_size>::end(dbObject* /* unused: parent */)
 {
   return 0;
 }
 
-uint dbBoxItr::next(uint id, ...)
+template <uint page_size>
+uint dbBoxItr<page_size>::next(uint id, ...)
 {
   _dbBox* box = _box_tbl->getPtr(id);
 
@@ -299,9 +307,14 @@ uint dbBoxItr::next(uint id, ...)
   return 0;
 }
 
-dbObject* dbBoxItr::getObject(uint id, ...)
+template <uint page_size>
+dbObject* dbBoxItr<page_size>::getObject(uint id, ...)
 {
   return _box_tbl->getPtr(id);
 }
+
+template class dbBoxItr<8>;
+template class dbBoxItr<128>;
+template class dbBoxItr<1024>;
 
 }  // namespace odb

@@ -10,6 +10,7 @@ or_integration_tests(
     array
     array_ins_delay
     array_no_blockages
+    array_repair_clock_nets
     balance_levels
     check_buffers
     check_buffers_blockages
