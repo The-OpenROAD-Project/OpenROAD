@@ -1113,7 +1113,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     } else if (gPin.pin()->isBTerm()) {
       db_bterm_to_index_map_[gPin.pin()->dbBTerm()] = i;
     } else {
-      log_->report("gPin neither bterm or iterm!");
+      debugPrint(log_, GPL, "callbacks", 1, "gPin neither bterm or iterm!");
     }
   }
 
@@ -1405,18 +1405,16 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
           / (waExpMaxSumY * waExpMaxSumY);
   }
 
-  if (gradientMinX - gradientMaxX == 0 && gradientMinY - gradientMaxY == 0) {
-    debugPrint(log_,
-               GPL,
-               "getGradientWAPin",
-               1,
-               "{}, X[{:g} {:g}]  Y[{:g} {:g}]",
-               gPin->gCell()->name(),
-               gradientMinX,
-               gradientMaxX,
-               gradientMinY,
-               gradientMaxY);
-  }
+  debugPrint(log_,
+             GPL,
+             "getGradientWAPin",
+             1,
+             "{}, X[{:g} {:g}]  Y[{:g} {:g}]",
+             gPin->gCell()->name(),
+             gradientMinX,
+             gradientMaxX,
+             gradientMinY,
+             gradientMaxY);
 
   return FloatPoint(gradientMinX - gradientMaxX, gradientMinY - gradientMaxY);
 }
@@ -1554,7 +1552,7 @@ void NesterovBaseCommon::fixPointers()
     } else if (gPin.pin()->isBTerm()) {
       db_bterm_to_index_map_[gPin.pin()->dbBTerm()] = i;
     } else {
-      log_->report("gPin neither bterm or iterm!");
+      debugPrint(log_, GPL, "callbacks", 1, "gPin neither bterm or iterm!");
     }
   }
 
@@ -3329,7 +3327,6 @@ void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
     }
     gPinStor_.pop_back();
     db_iterm_to_index_map_.erase(db_it);
-    // TODO erase from gPinMap_!
 
   } else {
     log_->error(GPL,
