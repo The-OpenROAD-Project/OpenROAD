@@ -95,6 +95,23 @@ set_layer_rc
 | `-capacitance` | Capacitance per unit length, same convention as `set_wire_rc`. |
 | `-corner` | Process corner to use. |
 
+### Report Layer RC
+
+The `report_layer_rc` command reports the layer resistance and capacitance values used
+for parasitics estimation. These values were previously set with the `set_layer_rc`
+command or they originate from the LEF.
+
+```tcl
+report_layer_rc
+    [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to report. |
+
 ### Estimate Parasitics
 
 Estimate RC parasitics based on placed component pin locations. If there are
