@@ -506,14 +506,13 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   // double W0= targetWidth; // next neighbor width
   xd[1] = X0;
   double min_x = xd[1];
-
-  for (int ii = 2; ii > 1; ii--) {
+  for (int ii = 2; ii < (n+1); ii++) {
     xd[ii] = xd[ii - 1] - min_pitch;  // next over neighbor spacing
     if (min_x > xd[ii]) {
       min_x = xd[ii];
     }
   }
-  for (int ii = 2; ii > 0; ii--) {
+  for (int ii = n; ii > 0; ii--) {
     m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
     max_x = xd[ii] + minWidth;
   }
@@ -530,10 +529,10 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   xu[0] = x + targetPitch;  // next neighbor spacing
   m->writeWire3D(fp, cnt++, xu[0], targetWidth, len, height_offset, 0.0);
   xu[1] += xu[0] + targetWidth + minSpace;
-  for (int ii = 2; ii < n; ii++) {
+  for (int ii = 2; ii < (_wireCnt - n); ii++) {
     xu[ii] = xu[ii - 1] + min_pitch;  // context: next over neighbor spacing
   }
-  for (int ii = 1; ii < n; ii++) {
+  for (int ii = 1; ii < (_wireCnt - n - 1); ii++) {
     m->writeWire3D(fp, cnt++, xu[ii], minWidth, len, height_offset, 0.0);
     max_x = xu[ii] + minWidth;
   }
