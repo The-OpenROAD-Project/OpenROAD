@@ -54,6 +54,32 @@ static utl::Logger* getLogger() {
   }
 }
 
+// Typemap to convert TCL list of coordinates to std::vector<odb::Point>
+%typemap(in) std::vector<odb::Point>& (std::vector<odb::Point> temp_vector) {
+  Tcl_Obj **listobjv;
+  int nitems;
+  
+  if (Tcl_ListObjGetElements(interp, $input, &nitems, &listobjv) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+  
+  temp_vector.clear();
+  temp_vector.reserve(nitems / 2);
+  
+  for (int i = 0; i < nitems; i += 2) {
+    double x, y;
+    if (Tcl_GetDoubleFromObj(interp, listobjv[i], &x) != TCL_OK) {
+      return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, listobjv[i+1], &y) != TCL_OK) {
+      return TCL_ERROR;
+    }
+    temp_vector.emplace_back(static_cast<int>(x), static_cast<int>(y));
+  }
+  
+  $1 = &temp_vector;
+}
+
 %inline %{
 
 namespace ifp {
@@ -171,9 +197,9 @@ void add_die_polygon_point(ord::Design* design, int x, int y)
   design->getFloorplan().addDiePolygonPoint(x, y);
 }
 
-void make_polygon_die(ord::Design* design)
+void make_polygon_die(ord::Design* design, std::vector<odb::Point>& points)
 {
-  design->getFloorplan().makePolygonDie();
+  design->getFloorplan().makePolygonDie(points);
 }
 
 } // namespace

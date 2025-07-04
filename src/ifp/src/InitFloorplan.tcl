@@ -365,6 +365,9 @@ proc make_polygon_die_helper { key_array } {
   # Clear any previous polygon data
   ord::ensure_linked
   ifp::clear_polygon_data
+
+  # list of vertices of the polygon
+  set polygon_vertices {}
   
   # Add die polygon points
   set point_count 0
@@ -379,13 +382,18 @@ proc make_polygon_die_helper { key_array } {
     # }
     
       # Convert micron input to DBU, then add point
-      ifp::add_die_polygon_point \
-        [ord::microns_to_dbu $x] [ord::microns_to_dbu $y]
+      # ifp::add_die_polygon_point \
+      #   [ord::microns_to_dbu $x] [ord::microns_to_dbu $y]
+
+      lappend polygon_vertices [ord::microns_to_dbu $x]
+      lappend polygon_vertices [ord::microns_to_dbu $y]
+
     incr point_count
   }
   
-  utl::info IFP 5 "Added $point_count die polygon vertices."
-  ifp::make_polygon_die 
+  utl::info IFP 5 "Added $point_count die polygon vertices to the list."
+  utl::info IFP 6 "Received the following vertices - $polygon_vertices"
+  ifp::make_polygon_die $polygon_vertices
   return
 }
 
