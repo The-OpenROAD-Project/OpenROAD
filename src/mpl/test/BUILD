@@ -98,6 +98,8 @@ filegroup(
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",
         "testcases/orientation_improve1.lef",
+        "testcases/fixed_ios1.def",
+        "testcases/mixed_ios1.def",
     ],
 )
 
