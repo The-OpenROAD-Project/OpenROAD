@@ -36,7 +36,7 @@ class InitFloorplan
 
   void clearPolygonData();
   void addDiePolygonPoint(int x, int y);
-  void makePolygonDie();
+  void makePolygonDie(std::vector<odb::Point>& points);
   
   InitFloorplan() = default;  // only for swig
   InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
