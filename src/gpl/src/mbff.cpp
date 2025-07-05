@@ -637,9 +637,9 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
 
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
   const sta::LibertyCell* lib_cell = getLibertyCell(cell);
-  for (const sta::Sequential* seq : lib_cell->sequentials()) {
-    ret.func_idx = GetMatchingFunc(seq->data(), inst, isTray);
-    break;
+  const auto& seqs = lib_cell->sequentials();
+  if (!seqs.empty()) {
+    ret.func_idx = GetMatchingFunc(seqs.front()->data(), inst, isTray);
   }
 
   ret.is_scan_cell = IsScanCell(inst);
@@ -828,9 +828,13 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
         if (IsSupplyPin(iterm)) {
           if (iterm->getSigType() == odb::dbSigType::GROUND) {
-            ground->connect(net);
+            if (ground) {
+              ground->connect(net);
+            }
           } else {
-            power->connect(net);
+            if (power) {
+              power->connect(net);
+            }
           }
         }
         if (IsClockPin(iterm)) {
@@ -1772,6 +1776,10 @@ float MBFF::GetKSilh(const std::vector<std::vector<Flop>>& clusters,
       a_j /= (cur_sz - 1);
       tot += ((b_j - a_j) / std::max(a_j, b_j));
     }
+  }
+
+  if (num_flops == 0) {
+    return 0.0f;
   }
   return tot / num_flops;
 }
