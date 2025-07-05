@@ -173,7 +173,7 @@ def getParallelTests(String image) {
                     stage('Bazel Build') {
                         withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
                             timeout(time: 120, unit: 'MINUTES') {
-                                def bazelCommand = 'bazel test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic'
+                                def bazelCommand = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic'
 
                                 if (env.BRANCH_NAME != 'master') {
                                     bazelCommand += ' --remote_upload_local_results=false'
