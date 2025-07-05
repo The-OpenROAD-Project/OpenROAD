@@ -110,6 +110,18 @@ dbScanInst::ClockEdge dbScanInst::getClockEdge() const
   return static_cast<ClockEdge>(scan_inst->clock_edge_);
 }
 
+std::string dbScanInst::getClockEdgeString() const
+{
+  switch (getClockEdge()) {
+    case ClockEdge::Rising:
+      return "Rising";
+    case ClockEdge::Falling:
+      return "Falling";
+  }
+
+  return "Unknown";
+}
+
 void dbScanInst::setBits(uint bits)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;

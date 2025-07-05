@@ -8424,6 +8424,7 @@ class dbScanInst : public dbObject
 
   void setClockEdge(ClockEdge clock_edge);
   ClockEdge getClockEdge() const;
+  std::string getClockEdgeString() const;
 
   // The number of bits that are in this scan inst from the scan in to the scan
   // out. For simple flops this is just 1.
