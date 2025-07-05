@@ -72,6 +72,7 @@ class Parser
   frDesign* getDesign() const;
   frBlock* getBlock() const;
   frTechObject* getTech() const;
+  frLayer* getLayer(std::string) const;
   void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);

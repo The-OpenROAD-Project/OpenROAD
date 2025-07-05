@@ -49,6 +49,10 @@ class FlexGridGraph
   }
   // getters
   frTechObject* getTech() const { return tech_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
 
   // unsafe access, no check

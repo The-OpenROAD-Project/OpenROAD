@@ -258,9 +258,9 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   bool isForbidden = false;
   if (dstMazeIdx1.z() == dstMazeIdx2.z() && gridZ == dstMazeIdx1.z()) {
     auto layerNum = (gridZ + 1) * 2;
-    auto layer = getTech()->getLayer(layerNum);
+    auto layer = getLayer(layerNum);
     if (!router_cfg_->USENONPREFTRACKS || layer->isUnidirectional()) {
-      bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+      bool isH = (layer->isHorizontal());
       if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
@@ -373,7 +373,7 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
   // bending cost
   auto currDir = currGrid.getLastDir();
   auto lNum = getLayerNum(currGrid.z());
-  auto layer = getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
 
   if (currDir != dir && currDir != frDirEnum::UNKNOWN) {
     // original
@@ -620,8 +620,7 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
   }
   if (ndr_) {
     frCoord halfWidth
-        = (frCoord) getTech()->getLayer(getLayerNum(currGrid.z()))->getWidth()
-          / 2;
+        = (frCoord) getLayer(getLayerNum(currGrid.z()))->getWidth() / 2;
     if (ndr_->getWidth(currGrid.z()) > 2 * halfWidth
         && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
       halfWidth = ndr_->getWidth(currGrid.z()) / 2;

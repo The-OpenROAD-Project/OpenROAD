@@ -13,6 +13,11 @@ frDesign* FlexGRWorkerRegionQuery::getDesign() const
   return grWorker_->getDesign();
 }
 
+frTechObject* FlexGRWorkerRegionQuery::getTech() const
+{
+  return grWorker_->getTech();
+}
+
 void FlexGRWorkerRegionQuery::add(grConnFig* connFig)
 {
   if (connFig->typeId() == grcPathSeg) {
@@ -182,7 +187,7 @@ void FlexGRWorkerRegionQuery::query(
 
 void FlexGRWorkerRegionQuery::init(bool includeExt)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   shapes_.clear();
   shapes_.resize(numLayers);
   std::vector<std::vector<rq_box_value_t<grConnFig*>>> allShapes(numLayers);
