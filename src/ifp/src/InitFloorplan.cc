@@ -580,7 +580,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
       logger_->error(
           IFP,
           54,
-          "Site {} height {}um of  is not a multiple of site {} height {}um.",
+          "Site {} height {}um is not a multiple of site {} height {}um.",
           site->getName(),
           block_->dbuToMicrons(site->getHeight()),
           base_site->getName(),

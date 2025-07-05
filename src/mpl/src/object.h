@@ -172,6 +172,8 @@ class Cluster
   void setAsIOPadCluster(const std::pair<float, float>& pos,
                          float width,
                          float height);
+  bool isIOBundle() const { return is_io_bundle_; }
+  void setAsIOBundle(const Point& pos, float width, float height);
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -261,6 +263,7 @@ class Cluster
   bool is_cluster_of_unplaced_io_pins_{false};
   bool is_cluster_of_unconstrained_io_pins_{false};
   bool is_io_pad_cluster_{false};
+  bool is_io_bundle_{false};
 
   bool is_array_of_interconnected_macros = false;
 
