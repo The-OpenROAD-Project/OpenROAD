@@ -170,10 +170,10 @@ def getParallelTests(String image) {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
                     }
-                    stage('Bazel Build') {
+                    stage('bazelisk -c opt test ...') {
                         withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
                             timeout(time: 120, unit: 'MINUTES') {
-                                def bazelCommand = 'bazel test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic'
+                                def bazelCommand = 'bazelisk test -c opt --config=ci --show_timestamps --test_output=errors --curses=no --force_pic'
 
                                 if (env.BRANCH_NAME != 'master') {
                                     bazelCommand += ' --remote_upload_local_results=false'
