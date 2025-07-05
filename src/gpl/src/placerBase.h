@@ -154,7 +154,7 @@ class Pin
 
   Instance* instance() const { return inst_; }
   Net* net() const { return net_; }
-  std::string name() const;
+  std::string getName() const;
 
   void updateCoordi(odb::dbITerm* iTerm);
 

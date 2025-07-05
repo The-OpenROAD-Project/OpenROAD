@@ -58,7 +58,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       190 |   0.6826 |  4.375246e+06 |   +1.25% |  8.06e-10 |      
       200 |   0.6606 |  4.447333e+06 |   +1.65% |  1.31e-09 |      
       210 |   0.6252 |  4.516619e+06 |   +1.56% |  2.14e-09 |      
-[INFO GPL-0088] Routability snapshot saved at iter = 216
+[INFO GPL-0038] Routability snapshot saved at iter = 216
       220 |   0.5861 |  4.589898e+06 |   +1.62% |  3.48e-09 |      
       230 |   0.5467 |  4.672054e+06 |   +1.79% |  5.67e-09 |      
       240 |   0.4940 |  4.711391e+06 |   +0.84% |  9.24e-09 |      
@@ -75,6 +75,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-0046] Average top 5.0% routing congestion: 0.4777
 [INFO GPL-0047] Routability iteration weighted routing congestion: 0.5491
 [INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(0.6700), end routability optimization.
+[INFO GPL-0090] Routability finished. Target routing congestion achieved succesfully.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
       290 |   0.2677 |  4.777239e+06 |   +0.83% |  8.41e-08 |      
@@ -91,5 +92,8 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.6637
 [INFO GPL-1008]     - For 80% usage of free space: 0.7467
-[INFO GPL-1009]     - For 50% usage of free space: 1.1946
+[INFO GPL-1010] Original area (um^2): 569.77
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 569.77 (+0.00%)
 No differences found.
