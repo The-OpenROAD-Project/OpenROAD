@@ -4,6 +4,11 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 #include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <optional>
@@ -442,10 +447,25 @@ int Gui::select(const std::string& type,
           std::vector<Selected> selected_vector(selected_set.begin(),
                                                 selected_set.end());
           // remove elements
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+          // Define case sensitivity options for QRegularExpression
+          QRegularExpression::PatternOptions options
+              = filter_case_sensitive
+                    ? QRegularExpression::NoPatternOption
+                    : QRegularExpression::CaseInsensitiveOption;
+
+          // Convert the wildcard string to a regex pattern and create the
+          // object
+          QRegularExpression reg_filter(
+              QRegularExpression::wildcardToRegularExpression(
+                  QString::fromStdString(name_filter)),
+              options);
+#else
           QRegExp reg_filter(
               QString::fromStdString(name_filter),
               filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
               QRegExp::WildcardUnix);
+#endif
           auto remove_if = std::remove_if(
               selected_vector.begin(),
               selected_vector.end(),
@@ -455,7 +475,13 @@ int Gui::select(const std::string& type,
                   // direct match, so don't remove
                   return false;
                 }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                return !reg_filter.match(QString::fromStdString(sel_name))
+                            .hasMatch();
+
+#else
                 return !reg_filter.exactMatch(QString::fromStdString(sel_name));
+#endif
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset

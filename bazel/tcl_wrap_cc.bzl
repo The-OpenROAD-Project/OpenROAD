@@ -86,8 +86,27 @@ def _tcl_wrap_cc_impl(ctx):
         tools = ctx.files._swig,
         executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
     )
+
+    output_files = [output_file]
+
+    if ctx.attr.runtime_header:
+        runtime_header = ctx.actions.declare_file(ctx.attr.runtime_header)
+        runtime_args = ctx.actions.args()
+        runtime_args.add("-tcl8")
+        runtime_args.add("-external-runtime")
+        runtime_args.add(runtime_header)
+        ctx.actions.run(
+            outputs = [runtime_header],
+            inputs = [],
+            arguments = [runtime_args],
+            tools = [ctx.attr._swig.files_to_run],
+            executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
+            toolchain = None,
+        )
+        output_files.append(runtime_header)
+
     return [
-        DefaultInfo(files = depset([output_file])),
+        DefaultInfo(files = depset(output_files)),
         TclSwigInfo(
             transitive_srcs = src_inputs,
             includes = includes_paths,
@@ -133,6 +152,7 @@ tcl_wrap_cc = rule(
         "swig_options": attr.string_list(
             doc = "args to pass directly to the swig binary",
         ),
+        "runtime_header": attr.string(),
         "_swig": attr.label(
             default = "@org_swig//:swig_stable",
             allow_files = True,

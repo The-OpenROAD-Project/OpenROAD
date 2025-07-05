@@ -4,7 +4,6 @@
 #include "mainWindow.h"
 
 #include <QDesktopServices>
-#include <QDesktopWidget>
 #include <QFileDialog>
 #include <QFontDialog>
 #include <QInputDialog>
@@ -91,7 +90,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
   // Size and position the window
-  QSize size = QDesktopWidget().availableGeometry(this).size();
+  QSize size = this->screen()->availableGeometry().size();
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
 
@@ -877,7 +876,12 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
 
   auto cleanupText = [](const QString& text) -> QString {
     QString text_cpy = text;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    text_cpy.replace(QRegularExpression("&(?!&)"),
+                     "");  // remove single &, but keep &&
+#else
     text_cpy.replace(QRegExp("&(?!&)"), "");  // remove single &, but keep &&
+#endif
     return text_cpy;
   };
 

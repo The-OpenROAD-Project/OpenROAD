@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, The OpenROAD Authors
+
+# This file only currently supports the gui disabled.  More work
+# is needed to handle Qt and build a working gui.
+
+cc_library(
+    name = "gif_h",
+    hdrs = ["gif.h"],
+    visibility = ["//visibility:public"],
+    alwayslink = True,
+    includes = ["."],
+)
