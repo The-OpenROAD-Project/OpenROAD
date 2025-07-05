@@ -624,7 +624,7 @@
     },
     "@@aspect_bazel_lib+//lib:extensions.bzl%toolchains": {
       "general": {
-        "bzlTransitiveDigest": "QYzNsxOEydJ+3EvC2QMD9H0UjNzWD4r3AZ3bgke1PYY=",
+        "bzlTransitiveDigest": "UfKjxMAQ94cuKIbBsDE6MbwA27mO+4CW4lZ1JQ10fLc=",
         "usagesDigest": "CQSbuAOddmyCsl1NaCgpKVbIYqIFVYnDbsWnUHzJNuE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1034,7 +1034,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "iyNJmQefNHFxk2IZ05Ws8xMhCV33ensoUHYLn+DsXWA=",
-        "usagesDigest": "yBzH8UbATwBWHngAeRhExmmE5SkqEtMcYWDhcAzMATI=",
+        "usagesDigest": "btyeaT6+lCEv+0bAxJVNmBrVPHNK1DzsYlsmBXAk6N8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1052,8 +1052,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-3299-gb81e0302",
-              "sha256": "67535ca2091d7f760b765c0e85a74ca5fd5868aa415f042bbb9fd86bc0a7dc53",
+              "image": "docker.io/openroad/orfs:v3.0-3365-g10570d04",
+              "sha256": "68c08dfe850aef23b166cc14eddffafc1bce5fa7031f9ca5cd682cf0e404fe92",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -1158,7 +1158,7 @@
     },
     "@@rules_foreign_cc+//foreign_cc:extensions.bzl%tools": {
       "general": {
-        "bzlTransitiveDigest": "FApcIcVN43WOEs7g8eg7Cy1hrfRbVNEoUu8IiF+8WOc=",
+        "bzlTransitiveDigest": "ginC3lIGOKKivBi0nyv2igKvSiz42Thm8yaX2RwVaHg=",
         "usagesDigest": "9LXdVp01HkdYQT8gYPjYLO6VLVJHo9uFfxWaU1ymiRE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1472,7 +1472,7 @@
     },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
-        "bzlTransitiveDigest": "sFhcgPbDQehmbD1EOXzX4H1q/CD5df8zwG4kp4jbvr8=",
+        "bzlTransitiveDigest": "hUTp2w+RUVdL7ma5esCXZJAFnX7vLbVfLd7FwnQI6bU=",
         "usagesDigest": "QI2z8ZUR+mqtbwsf2fLqYdJAkPOHdOV+tF2yVAUgRzw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -12477,7 +12477,7 @@
     },
     "@@rules_rust+//rust:extensions.bzl%rust": {
       "general": {
-        "bzlTransitiveDigest": "hfiBnJmYsuIWEgj4lCklAaddiXg9IibnbsTJriGpdrY=",
+        "bzlTransitiveDigest": "sGTrsYBeVW9iRu1UmA2upoQzEnxNdDE6WUk5ml8a+aE=",
         "usagesDigest": "ozx08ZbgRXTJw0zCaO/xtMUzgGLvwaQkZGnUo6tlyHM=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
