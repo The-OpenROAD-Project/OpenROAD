@@ -95,6 +95,7 @@ cc_library(
         ":hdrs",
         "//src/odb",
         "//src/utl",
+        "@cudd",
     ],
 )
 
@@ -116,6 +117,7 @@ cc_library(
     ],
     deps = [
         ":hdrs",
+        ":rcx",
         "//:ord",
         "//src/odb",
         "//src/utl",
