@@ -166,7 +166,6 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/cts",
-        "//src/grt",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

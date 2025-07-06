@@ -24,6 +24,7 @@ cc_library(
         "src/Util.h",
     ],
     visibility = ["//visibility:private"],
+    deps = ["//src/sta:opensta_lib"],
 )
 
 cc_library(
@@ -51,6 +52,7 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
+        "//src/stt:ui",
         "//src/utl",
         "@boost.container_hash",
         "@boost.polygon",
@@ -77,6 +79,7 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
+        ":cts",
         ":private_hdrs",
         "//:ord",
         "//src/dbSta",
