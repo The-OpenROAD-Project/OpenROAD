@@ -211,6 +211,7 @@ cc_library(
         "//src/dst",
         "//src/odb",
         "//src/stt",
+        "//src/stt:ui",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
@@ -270,6 +271,7 @@ cc_library(
     ],
     deps = [
         ":db_hdrs",
+        ":drt",
         "//:ord",
         "//src/dst",
         "//src/gui",
