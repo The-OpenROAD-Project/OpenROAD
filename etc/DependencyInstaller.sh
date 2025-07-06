@@ -688,7 +688,7 @@ _installCI() {
 
     curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
     chmod +x bazelisk
-    mv bazelisk /usr/local/bin/bazel
+    mv bazelisk /usr/local/bin/bazelisk
 
     if command -v docker &> /dev/null; then
         # The user can uninstall docker if they want to reinstall it,
