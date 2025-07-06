@@ -37,7 +37,7 @@ void WorkerConnection::start()
   async_read_until(
       sock_,
       in_packet_,
-      JobMessage::EOP,
+      JobMessage::kEop,
       [me = shared_from_this()](boost::system::error_code const& ec,
                                 std::size_t bytes_xfer) {
         me->handle_read(ec, bytes_xfer);

@@ -51,7 +51,7 @@ class RoutingCallBack : public dst::JobCallBack
             router->getRouterConfiguration())
   {
   }
-  void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  void onRoutingJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::ROUTING) {
       return;
@@ -96,7 +96,7 @@ class RoutingCallBack : public dst::JobCallBack
     sendResult(results, sock, true, cnt);
   }
 
-  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
+  void onFrDesignUpdated(dst::JobMessage& msg, dst::Socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::UPDATE_DESIGN) {
       return;
@@ -134,7 +134,7 @@ class RoutingCallBack : public dst::JobCallBack
     sock.close();
   }
 
-  void onPinAccessJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  void onPinAccessJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::PIN_ACCESS) {
       return;
@@ -191,7 +191,7 @@ class RoutingCallBack : public dst::JobCallBack
     dist_->sendResult(result, sock);
     sock.close();
   }
-  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::GRDR_INIT) {
       return;
@@ -206,7 +206,7 @@ class RoutingCallBack : public dst::JobCallBack
 
  private:
   void sendResult(const std::vector<std::pair<int, std::string>>& results,
-                  dst::socket& sock,
+                  dst::Socket& sock,
                   bool finish,
                   int cnt)
   {

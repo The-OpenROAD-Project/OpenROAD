@@ -77,7 +77,7 @@ class JobMessage
   std::unique_ptr<JobDescription> desc_;
   std::vector<std::unique_ptr<JobDescription>> descs_;
 
-  static constexpr const char* EOP
+  static constexpr const char* kEop
       = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>

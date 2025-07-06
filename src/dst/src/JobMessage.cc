@@ -27,7 +27,7 @@ void JobMessage::serialize(Archive& ar, const unsigned int version)
   (ar) & job_type_;
   (ar) & desc_;
   if (!is_loading(ar)) {
-    std::string eop = EOP;
+    std::string eop = kEop;
     (ar) & eop;
   }
 }
