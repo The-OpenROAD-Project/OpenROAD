@@ -77,7 +77,6 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
-        "@cudd",
         "@tk_tcl//:tcl",
     ],
 )

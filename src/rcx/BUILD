@@ -95,7 +95,6 @@ cc_library(
         ":hdrs",
         "//src/odb",
         "//src/utl",
-        "@cudd",
     ],
 )
 
