@@ -43,7 +43,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.random",
-        "@cudd",
     ],
 )
 
