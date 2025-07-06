@@ -113,9 +113,7 @@ class GuiPainter : public Painter
     std::vector<odb::Point> points = oct.getPoints();
     drawPolygon(points);
   }
-  void drawRect(const odb::Rect& rect,
-                int round_x = 0,
-                int round_y = 0) override
+  void drawRect(const odb::Rect& rect, int round_x, int round_y) override
   {
     if (round_x > 0 || round_y > 0) {
       painter_->drawRoundedRect(

@@ -213,8 +213,10 @@ class Painter
 
   // Draw a rect with coordinates in DBU with the current pen/brush; draws a
   // round rect if roundX > 0 or roundY > 0
-  virtual void drawRect(const odb::Rect& rect, int round_x = 0, int round_y = 0)
-      = 0;
+  virtual void drawRect(const odb::Rect& rect, int round_x, int round_y) = 0;
+
+  // Draw a rect with coordinates in DBU with the current pen/brush
+  void drawRect(const odb::Rect& rect) { drawRect(rect, 0, 0); }
 
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
