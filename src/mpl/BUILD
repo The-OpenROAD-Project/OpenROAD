@@ -43,6 +43,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.random",
+        "@cudd",
     ],
 )
 
@@ -71,11 +72,13 @@ cc_library(
         "include",
     ],
     deps = [
+        ":mpl",
         "//:ord",
         "//src/gui",
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
+        "@cudd",
         "@tk_tcl//:tcl",
     ],
 )
