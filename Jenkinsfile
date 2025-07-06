@@ -260,12 +260,14 @@ def bazelTest = {
                 stage('Bazel Build') {
                     withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
                         timeout(time: 120, unit: 'MINUTES') {
-                            def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic'
-                                if (env.BRANCH_NAME != 'master') {
-                                    cmd += ' --remote_upload_local_results=false'
-                                }
-                            sh label: 'Bazel Build', script: cmd + ' --google_credentials=$GCS_SA_KEY ...'
+                            def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
+                            if (env.BRANCH_NAME != 'master') {
+                                cmd += ' --remote_upload_local_results=false';
+                            }
+                            sh label: 'Bazel Build', script: cmd + ' --google_credentials=$GCS_SA_KEY ...';
                         }
+                        sh label: 'Archive logs', script:  'tar zcvf bazel-logs.tgz bazel-testlogs/.';
+                        archiveArtifacts artifacts: 'bazel-logs.tgz';
                     }
                 }
             }
