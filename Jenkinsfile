@@ -252,12 +252,11 @@ def getParallelTests(String image) {
 def bazelTest = {
     stage ('Build with Bazel') {
         node {
-            withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
-                stage('Setup Bazel Build') {
-                    echo "Build with Bazel";
-                    sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                    checkout scm;
-                }
+            stage('Setup Bazel Build') {
+                checkout scm;
+                sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
+            }
+            withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
                 stage('Bazel Build') {
                     withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
                         timeout(time: 120, unit: 'MINUTES') {
