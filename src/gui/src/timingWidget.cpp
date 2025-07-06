@@ -161,7 +161,7 @@ void TimingWidget::init(sta::dbSta* sta)
   path_details_model_ = new TimingPathDetailModel(false, sta, this);
   capture_details_model_ = new TimingPathDetailModel(true, sta, this);
 
-  auto setupTableView = [](QTableView* view, QAbstractTableModel* model) {
+  auto setup_table_view = [](QTableView* view, QAbstractTableModel* model) {
     view->setModel(model);
     view->setContextMenuPolicy(Qt::CustomContextMenu);
     view->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -170,10 +170,10 @@ void TimingWidget::init(sta::dbSta* sta)
     view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   };
 
-  setupTableView(setup_timing_table_view_, setup_timing_paths_model_);
-  setupTableView(hold_timing_table_view_, hold_timing_paths_model_);
-  setupTableView(path_details_table_view_, path_details_model_);
-  setupTableView(capture_details_table_view_, capture_details_model_);
+  setup_table_view(setup_timing_table_view_, setup_timing_paths_model_);
+  setup_table_view(hold_timing_table_view_, hold_timing_paths_model_);
+  setup_table_view(path_details_table_view_, path_details_model_);
+  setup_table_view(capture_details_table_view_, capture_details_model_);
 
   // default to sorting by slack
   setup_timing_table_view_->setSortingEnabled(true);
@@ -542,7 +542,7 @@ void TimingWidget::updateClockRows()
 
   const bool show = settings_->getExpandClock();
 
-  auto toggleModelView
+  auto toggle_model_view
       = [show](TimingPathDetailModel* model, QTableView* view) {
           model->setExpandClock(show);
 
@@ -555,8 +555,8 @@ void TimingWidget::updateClockRows()
           }
         };
 
-  toggleModelView(path_details_model_, path_details_table_view_);
-  toggleModelView(capture_details_model_, capture_details_table_view_);
+  toggle_model_view(path_details_model_, path_details_table_view_);
+  toggle_model_view(capture_details_model_, capture_details_table_view_);
 }
 
 void TimingWidget::highlightPathStage(TimingPathDetailModel* model,

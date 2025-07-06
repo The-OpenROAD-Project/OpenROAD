@@ -875,14 +875,14 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
     return parent;
   }
 
-  auto cleanupText = [](const QString& text) -> QString {
+  auto cleanup_text = [](const QString& text) -> QString {
     QString text_cpy = text;
     text_cpy.replace(QRegExp("&(?!&)"), "");  // remove single &, but keep &&
     return text_cpy;
   };
 
   const QString top_name = path[0];
-  const QString compare_name = cleanupText(top_name);
+  const QString compare_name = cleanup_text(top_name);
   path.pop_front();
 
   QList<QAction*> actions;
@@ -894,7 +894,7 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
 
   QMenu* menu = nullptr;
   for (auto* action : actions) {
-    if (cleanupText(action->text()) == compare_name) {
+    if (cleanup_text(action->text()) == compare_name) {
       menu = action->menu();
     }
   }
@@ -1145,7 +1145,7 @@ std::string MainWindow::addLabel(int x,
       = std::make_unique<Label>(odb::Point(x, y),
                                 text,
                                 anchor.value_or(Painter::Anchor::CENTER),
-                                color.value_or(gui::Painter::white),
+                                color.value_or(gui::Painter::kWhite),
                                 size,
                                 std::move(name));
   std::string new_name = new_label->getName();

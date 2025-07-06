@@ -33,8 +33,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     return;
   }
 
-  painter.setPen(gui::Painter::red);
-  painter.setBrush(gui::Painter::red, gui::Painter::Brush::DIAGONAL);
+  painter.setPen(gui::Painter::kRed);
+  painter.setBrush(gui::Painter::kRed, gui::Painter::Brush::DIAGONAL);
   painter.drawRect(instance_->getBBox()->getBox());
 }
 

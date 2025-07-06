@@ -39,7 +39,7 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::ForegroundRole) {
     const bool has_selected
-        = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+        = itemFromIndex(index)->data(EditorItemDelegate::kSelected).isValid();
 
     if (has_selected) {
       return QBrush(selectable_item_);
@@ -48,7 +48,7 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
     if (index.column() == 1) {
       if (role == Qt::BackgroundRole) {
         const bool has_editor
-            = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+            = itemFromIndex(index)->data(EditorItemDelegate::kEditor).isValid();
 
         if (has_editor) {
           return QBrush(editable_item_);
@@ -148,7 +148,7 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item,
       item = makeItem(QString::fromStdString(selected->getName()));
     }
     item->setData(QVariant::fromValue(*selected),
-                  EditorItemDelegate::selected_);
+                  EditorItemDelegate::kSelected);
     return item;
   }
   return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
@@ -193,8 +193,8 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
                                        const Descriptor::Editor& editor)
 {
   item->setData(QVariant::fromValue(selected),
-                EditorItemDelegate::editor_select_);
-  item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
+                EditorItemDelegate::kEditorSelect);
+  item->setData(QVariant::fromValue(name), EditorItemDelegate::kEditorName);
 
   Descriptor::Editor used_editor = editor;
   if (type == EditorItemDelegate::BOOL) {
@@ -202,14 +202,14 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
     used_editor.options = {{"True", true}, {"False", false}};
   }
 
-  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::editor_);
+  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::kEditor);
   if (used_editor.options.empty()) {
     // options are empty so use selected type
-    item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
+    item->setData(QVariant::fromValue(type), EditorItemDelegate::kEditorType);
   } else {
     // options are not empty so use list type
     item->setData(QVariant::fromValue(EditorItemDelegate::LIST),
-                  EditorItemDelegate::editor_type_);
+                  EditorItemDelegate::kEditorType);
   }
 }
 
@@ -229,7 +229,7 @@ QWidget* EditorItemDelegate::createEditor(
     const QModelIndex& index) const
 {
   auto type = index.model()
-                  ->data(index, editor_type_)
+                  ->data(index, kEditorType)
                   .value<EditorItemDelegate::EditType>();
   QWidget* editor;
   if (type == LIST) {
@@ -245,10 +245,10 @@ void EditorItemDelegate::setEditorData(QWidget* editor,
                                        const QModelIndex& index) const
 {
   auto type = index.model()
-                  ->data(index, editor_type_)
+                  ->data(index, kEditorType)
                   .value<EditorItemDelegate::EditType>();
   auto [callback, values]
-      = index.model()->data(index, editor_).value<Descriptor::Editor>();
+      = index.model()->data(index, kEditor).value<Descriptor::Editor>();
   QString value = index.model()->data(index, Qt::EditRole).toString();
 
   if (type != LIST) {
@@ -278,9 +278,9 @@ void EditorItemDelegate::setModelData(QWidget* editor,
                                       const QModelIndex& index) const
 {
   auto type
-      = model->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+      = model->data(index, kEditorType).value<EditorItemDelegate::EditType>();
   auto [callback, values]
-      = model->data(index, editor_).value<Descriptor::Editor>();
+      = model->data(index, kEditor).value<Descriptor::Editor>();
 
   const QString old_value = index.model()->data(index, Qt::EditRole).toString();
 
@@ -315,13 +315,13 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   QString edit_save = old_value;  // default to set to old value
   if (accepted) {
     // retrieve property again
-    auto selected = model->data(index, editor_select_).value<Selected>();
-    auto item_name = model->data(index, editor_name_).value<std::string>();
+    auto selected = model->data(index, kEditorSelect).value<Selected>();
+    auto item_name = model->data(index, kEditorName).value<std::string>();
 
     auto new_property = selected.getProperty(item_name);
-    if (model->data(index, selected_).isValid()) {
+    if (model->data(index, kSelected).isValid()) {
       auto new_selected = std::any_cast<Selected>(new_property);
-      model->setData(index, QVariant::fromValue(new_selected), selected_);
+      model->setData(index, QVariant::fromValue(new_selected), kSelected);
     }
     edit_save
         = QString::fromStdString(Descriptor::Property::toString(new_property));
@@ -660,7 +660,7 @@ Inspector::Inspector(const SelectionSet& selected,
   connect(view_, &ObjectTree::viewportEntered, this, &Inspector::defocus);
   connect(view_, &ObjectTree::mouseExited, this, &Inspector::defocus);
 
-  mouse_timer_.setInterval(mouse_double_click_scale_
+  mouse_timer_.setInterval(kMouseDoubleClickScale
                            * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
   connect(&mouse_timer_, &QTimer::timeout, this, &Inspector::indexClicked);
@@ -690,7 +690,7 @@ void Inspector::showCommandsMenu(const QPoint& pos)
   }
 
   Selected selected
-      = item->data(EditorItemDelegate::selected_).value<Selected>();
+      = item->data(EditorItemDelegate::kSelected).value<Selected>();
 
   if (selected) {
     if (selected.getTypeName() == "ITerm") {
@@ -864,7 +864,7 @@ void Inspector::loadActions()
 
   // add action buttons
   for (const auto& action : selection_.getActions()) {
-    if (action.name == Descriptor::deselect_action_) {
+    if (action.name == Descriptor::kDeselectAction) {
       deselect_action_ = action.callback;
     } else {
       makeAction(action);
@@ -949,7 +949,7 @@ void Inspector::clicked(const QModelIndex& index)
     // Bypass the timer for those items for which there's
     // no double click handling
     QStandardItem* item = model_->itemFromIndex(index);
-    QVariant edit_data = item->data(EditorItemDelegate::editor_);
+    QVariant edit_data = item->data(EditorItemDelegate::kEditor);
     if (!edit_data.isValid()) {
       indexClicked();
       return;
@@ -970,7 +970,7 @@ void Inspector::indexClicked()
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(clicked_index_);
   auto new_selected
-      = item->data(EditorItemDelegate::selected_).value<Selected>();
+      = item->data(EditorItemDelegate::kSelected).value<Selected>();
   if (new_selected) {
     if (navigation_history_.empty()) {
       // add starting object
@@ -991,7 +991,7 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
 {
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(index);
-  QVariant item_data = item->data(EditorItemDelegate::editor_);
+  QVariant item_data = item->data(EditorItemDelegate::kEditor);
 
   if (!readonly_ && item_data.isValid()) {
     // set editable
@@ -1006,7 +1006,7 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
   defocus();
 
   QStandardItem* item = model_->itemFromIndex(focus_index);
-  QVariant item_data = item->data(EditorItemDelegate::selected_);
+  QVariant item_data = item->data(EditorItemDelegate::kSelected);
 
   if (item_data.isValid()) {
     Selected sel = item_data.value<Selected>();

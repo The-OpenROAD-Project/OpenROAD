@@ -34,7 +34,7 @@ class RDLGui : public gui::Renderer
   RDLRouter* router_ = nullptr;
 
   std::set<std::pair<odb::Point, odb::Point>> snap_;
-  gui::Painter::Color snap_color_ = gui::Painter::white;
+  gui::Painter::Color snap_color_ = gui::Painter::kWhite;
 
   static constexpr const char* draw_vertex_ = "Vertices";
   static constexpr const char* draw_edge_ = "Edges";

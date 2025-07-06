@@ -31,18 +31,18 @@ Q_DECLARE_METATYPE(sta::Corner*);
 
 namespace gui {
 
-const Painter::Color TimingPathRenderer::inst_highlight_color_
-    = Painter::Color(gui::Painter::highlight, 100);
-const Painter::Color TimingPathRenderer::path_inst_color_
-    = Painter::Color(gui::Painter::magenta, 100);
-const Painter::Color TimingPathRenderer::term_color_
-    = Painter::Color(gui::Painter::blue, 100);
-const Painter::Color TimingPathRenderer::signal_color_
-    = Painter::Color(gui::Painter::red, 100);
-const Painter::Color TimingPathRenderer::clock_color_
-    = Painter::Color(gui::Painter::cyan, 100);
-const Painter::Color TimingPathRenderer::capture_clock_color_
-    = Painter::Color(gui::Painter::green, 100);
+const Painter::Color TimingPathRenderer::kInstHighlightColor
+    = Painter::Color(gui::Painter::kHighlight, 100);
+const Painter::Color TimingPathRenderer::kPathInstColor
+    = Painter::Color(gui::Painter::kMagenta, 100);
+const Painter::Color TimingPathRenderer::kTermColor
+    = Painter::Color(gui::Painter::kBlue, 100);
+const Painter::Color TimingPathRenderer::kSignalColor
+    = Painter::Color(gui::Painter::kRed, 100);
+const Painter::Color TimingPathRenderer::kClockColor
+    = Painter::Color(gui::Painter::kCyan, 100);
+const Painter::Color TimingPathRenderer::kCaptureClockColor
+    = Painter::Color(gui::Painter::kGreen, 100);
 
 static QString convertDelay(float time, sta::Unit* convert)
 {
@@ -314,7 +314,7 @@ const TimingPathNode* TimingPathDetailModel::getNodeAt(
 {
   int node_idx = index.row();
 
-  if (node_idx > clock_summary_row_) {
+  if (node_idx > kClockSummaryRow) {
     // account for collapsed clock entry
     node_idx--;
   }
@@ -345,7 +345,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
   } else if (role == Qt::DisplayRole) {
     const auto time_units = sta_->units()->timeUnit();
 
-    if (index.row() == clock_summary_row_) {
+    if (index.row() == kClockSummaryRow) {
       int start_idx = getClockEndIndex();
       if (start_idx < 0) {
         start_idx = 0;
@@ -370,7 +370,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
           return QString::fromStdString(
               node->getNodeName(/* include_master */ true));
         case RiseFall:
-          return node->isRisingEdge() ? up_arrow_ : down_arrow_;
+          return node->isRisingEdge() ? kUpArrow : kDownArrow;
         case Time:
           return convertDelay(node->getArrival(), time_units);
         case Delay:
@@ -406,7 +406,7 @@ bool TimingPathDetailModel::shouldHide(const QModelIndex& index) const
     return false;
   }
 
-  if (row == clock_summary_row_) {
+  if (row == kClockSummaryRow) {
     return expand_clock_;
   }
 
@@ -433,7 +433,7 @@ QVariant TimingPathDetailModel::headerData(int section,
       case Pin:
         return "Pin";
       case RiseFall:
-        return up_down_arrows_;
+        return kUpDownArrows;
       case Time:
         return "Time";
       case Delay:
@@ -462,9 +462,9 @@ void TimingPathDetailModel::populateModel(TimingPath* path,
 
 TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
-  addDisplayControl(data_path_label_, true);
-  addDisplayControl(launch_clock_label_, true);
-  addDisplayControl(capture_clock_label_, true);
+  addDisplayControl(kDataPathLabel, true);
+  addDisplayControl(kLaunchClockLabel, true);
+  addDisplayControl(kCaptureClockLabel, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
@@ -533,12 +533,12 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
     odb::dbInst* db_inst = node->getInstance();
     if (db_inst != nullptr) {
-      painter.setPenAndBrush(TimingPathRenderer::path_inst_color_, true);
+      painter.setPenAndBrush(TimingPathRenderer::kPathInstColor, true);
       inst_descriptor->highlight(db_inst, painter);
     }
 
     if (node->isPinBTerm()) {
-      painter.setPenAndBrush(TimingPathRenderer::term_color_, true);
+      painter.setPenAndBrush(TimingPathRenderer::kTermColor, true);
       bterm_descriptor->highlight(node->getPinAsBTerm(), painter);
     }
 
@@ -547,7 +547,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
         if (sink_node != nullptr) {
           gui::Painter::Color wire_color
               = node->isClock() ? clock_color
-                                : TimingPathRenderer::signal_color_;
+                                : TimingPathRenderer::kSignalColor;
           painter.setPenAndBrush(wire_color, true);
           net_descriptor->highlight(
               DbNetDescriptor::NetWithSink{node->getNet(), sink_node->getPin()},
@@ -569,13 +569,13 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
-  const bool capture_path = checkDisplayControl(capture_clock_label_);
+  const bool capture_path = checkDisplayControl(kCaptureClockLabel);
   drawNodesList(&path_->getCaptureNodes(),
                 painter,
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
-                capture_clock_color_,
+                kCaptureClockColor,
                 capture_path,
                 capture_path);
   drawNodesList(&path_->getPathNodes(),
@@ -583,9 +583,9 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
-                clock_color_,
-                checkDisplayControl(launch_clock_label_),
-                checkDisplayControl(data_path_label_));
+                kClockColor,
+                checkDisplayControl(kLaunchClockLabel),
+                checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
 }
@@ -598,7 +598,7 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
     return;
   }
 
-  painter.setPenAndBrush(TimingPathRenderer::inst_highlight_color_, true);
+  painter.setPenAndBrush(TimingPathRenderer::kInstHighlightColor, true);
   for (const auto& highlight : highlight_stage_) {
     if (highlight->inst != nullptr) {
       inst_descriptor->highlight(highlight->inst, painter);
@@ -749,11 +749,11 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   const double timing_range = max_timing_ - min_timing_;
   const bool cone_unconstrained = max_timing_ < min_timing_;
 
-  std::function<double(const TimingPathNode* node)> timingToRatio;
+  std::function<double(const TimingPathNode* node)> timing_to_ratio;
   if (timing_range == 0.0 || cone_unconstrained) {
-    timingToRatio = [](const TimingPathNode* node) { return 0.5; };
+    timing_to_ratio = [](const TimingPathNode* node) { return 0.5; };
   } else {
-    timingToRatio = [this, timing_range](const TimingPathNode* node) {
+    timing_to_ratio = [this, timing_range](const TimingPathNode* node) {
       double value = 0.0;
       if (node->hasValues()) {
         value = 1.0 - (node->getPathSlack() - min_timing_) / timing_range;
@@ -788,7 +788,8 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   for (const auto& [inst, slack_pin] : instances) {
-    const auto color = color_generator_.getColor(timingToRatio(slack_pin), 150);
+    const auto color
+        = color_generator_.getColor(timing_to_ratio(slack_pin), 150);
     painter.setPenAndBrush(color, true);
     inst_descriptor->highlight(inst, painter);
   }
@@ -799,7 +800,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       const auto color
-          = color_generator_.getColor(timingToRatio(pin.get()), 255);
+          = color_generator_.getColor(timing_to_ratio(pin.get()), 255);
       painter.setPenAndBrush(color, true);
 
       if (pin->isPinITerm()) {
@@ -819,7 +820,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
             0.5 * (source_rect.xMin() + source_rect.xMax()),
             0.5 * (source_rect.yMin() + source_rect.yMax()));
         const auto source_color
-            = color_generator_.getColor(timingToRatio(source_node), 255);
+            = color_generator_.getColor(timing_to_ratio(source_node), 255);
         painter.setPen(source_color, true, line_width);
         painter.drawLine(
             source_pt.x(), source_pt.y(), sink_pt.x(), sink_pt.y());
@@ -830,7 +831,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   // annotate with depth
   const auto text_anchor = gui::Painter::Anchor::CENTER;
   const double text_margin = 2.0;
-  painter.setPen(gui::Painter::white, true);
+  painter.setPen(gui::Painter::kWhite, true);
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       const odb::Rect pin_rect = pin->getPinLargestBox();
@@ -1263,7 +1264,7 @@ void TimingControlsDialog::setThruPin(
     const std::vector<std::set<const sta::Pin*>>& pins)
 {
   for (size_t i = 0; i < thru_.size(); i++) {
-    layout_->removeRow(thru_start_row_);
+    layout_->removeRow(kThruStartRow);
   }
   thru_.clear();
   adjustSize();
@@ -1282,7 +1283,7 @@ void TimingControlsDialog::addThruRow(const std::set<const sta::Pin*>& pins)
 {
   auto* row = new PinSetWidget(true, this);
 
-  setupPinRow("Through:", row, thru_start_row_ + thru_.size());
+  setupPinRow("Through:", row, kThruStartRow + thru_.size());
   row->setPins(pins);
 
   connect(row,
@@ -1304,7 +1305,7 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
     auto find_row = std::find(thru_.begin(), thru_.end(), row);
     const int row_index = std::distance(thru_.begin(), find_row);
 
-    layout_->removeRow(thru_start_row_ + row_index);
+    layout_->removeRow(kThruStartRow + row_index);
     thru_.erase(thru_.begin() + row_index);
     thru_.back()->setAddMode();
     adjustSize();

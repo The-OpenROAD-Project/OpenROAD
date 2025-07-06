@@ -83,7 +83,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     DbuX lx{core.xMin() + cell->getLeft()};
     DbuY ly{core.yMin() + cell->getBottom()};
 
-    auto color = cell->getDbInst() ? gui::Painter::gray : gui::Painter::red;
+    auto color = cell->getDbInst() ? gui::Painter::kGray : gui::Painter::kRed;
     painter.setPen(color);
     painter.setBrush(color);
     painter.drawRect(Rect(
@@ -101,7 +101,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+    painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
     painter.drawLine(initial_location.x(),
                      initial_location.y(),
                      final_location.x(),
@@ -109,7 +109,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
-  auto color = gui::Painter::cyan;
+  auto color = gui::Painter::kCyan;
   painter.setPen(color);
   painter.setBrush(color);
   for (auto& rect : searched_) {

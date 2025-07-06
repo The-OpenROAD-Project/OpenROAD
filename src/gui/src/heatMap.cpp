@@ -411,15 +411,15 @@ bool HeatMapDataSource::setupMap()
 
   const Painter::Color default_color = getColor(0);
   for (size_t x = 0; x < x_grid_size; x++) {
-    const int xMin = map_x_grid_[x];
-    const int xMax = map_x_grid_[x + 1];
+    const int x_min = map_x_grid_[x];
+    const int x_max = map_x_grid_[x + 1];
 
     for (size_t y = 0; y < y_grid_size; y++) {
-      const int yMin = map_y_grid_[y];
-      const int yMax = map_y_grid_[y + 1];
+      const int y_min = map_y_grid_[y];
+      const int y_max = map_y_grid_[y + 1];
 
       auto map_pt = std::make_shared<MapColor>();
-      map_pt->rect = odb::Rect(xMin, yMin, xMax, yMax);
+      map_pt->rect = odb::Rect(x_min, y_min, x_max, y_max);
       map_pt->has_value = false;
       map_pt->value = 0.0;
       map_pt->color = default_color;
@@ -443,20 +443,20 @@ void HeatMapDataSource::populateXYGrid()
 
   std::vector<int> x_grid_set, y_grid_set;
   for (int x = 0; x < x_grid; x++) {
-    const int xMin = bounds.xMin() + x * dx;
-    const int xMax = std::min(xMin + dx, bounds.xMax());
+    const int x_min = bounds.xMin() + x * dx;
+    const int x_max = std::min(x_min + dx, bounds.xMax());
     if (x == 0) {
-      x_grid_set.push_back(xMin);
+      x_grid_set.push_back(x_min);
     }
-    x_grid_set.push_back(xMax);
+    x_grid_set.push_back(x_max);
   }
   for (int y = 0; y < y_grid; y++) {
-    const int yMin = bounds.yMin() + y * dy;
-    const int yMax = std::min(yMin + dy, bounds.yMax());
+    const int y_min = bounds.yMin() + y * dy;
+    const int y_max = std::min(y_min + dy, bounds.yMax());
     if (y == 0) {
-      y_grid_set.push_back(yMin);
+      y_grid_set.push_back(y_min);
     }
-    y_grid_set.push_back(yMax);
+    y_grid_set.push_back(y_max);
   }
 
   setXYMapGrid(x_grid_set, y_grid_set);
@@ -786,7 +786,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
         }
 
         if (draw) {
-          painter.setPen(Painter::white, true);
+          painter.setPen(Painter::kWhite, true);
           painter.drawString(x, y, text_anchor, text);
         }
       }
@@ -808,14 +808,14 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
 std::string HeatMapRenderer::getSettingsGroupName()
 {
-  return groupname_prefix_ + datasource_.getSettingsGroupName();
+  return kGroupnamePrefix + datasource_.getSettingsGroupName();
 }
 
 Renderer::Settings HeatMapRenderer::getSettings()
 {
   Renderer::Settings settings = Renderer::getSettings();
   for (const auto& [name, value] : datasource_.getSettings()) {
-    settings[datasource_prefix_ + name] = value;
+    settings[kDatasourcePrefix + name] = value;
   }
   return settings;
 }
@@ -825,8 +825,8 @@ void HeatMapRenderer::setSettings(const Settings& settings)
   Renderer::setSettings(settings);
   Renderer::Settings data_settings;
   for (const auto& [name, value] : settings) {
-    if (name.find(datasource_prefix_) == 0) {
-      data_settings[name.substr(strlen(datasource_prefix_))] = value;
+    if (name.find(kDatasourcePrefix) == 0) {
+      data_settings[name.substr(strlen(kDatasourcePrefix))] = value;
     }
   }
   datasource_.setSettings(data_settings);
@@ -975,26 +975,26 @@ GlobalRoutingDataSource::GlobalRoutingDataSource(
 std::pair<double, double> GlobalRoutingDataSource::getReportableXYGrid() const
 {
   if (getBlock() == nullptr) {
-    return {default_grid_, default_grid_};
+    return {kDefaultGrid, kDefaultGrid};
   }
 
-  auto* gCellGrid = getBlock()->getGCellGrid();
-  if (gCellGrid == nullptr) {
-    return {default_grid_, default_grid_};
+  auto* gcell_grid = getBlock()->getGCellGrid();
+  if (gcell_grid == nullptr) {
+    return {kDefaultGrid, kDefaultGrid};
   }
 
-  auto grid_mode = [gCellGrid](int num_grids,
-                               void (odb::dbGCellGrid::*get_grid)(
-                                   int, int&, int&, int&)) -> int {
+  auto grid_mode = [gcell_grid](int num_grids,
+                                void (odb::dbGCellGrid::*get_grid)(
+                                    int, int&, int&, int&)) -> int {
     std::map<int, int> grid_pitch_count;
     for (int i = 0; i < num_grids; i++) {
       int origin, count, step;
-      (gCellGrid->*get_grid)(i, origin, count, step);
+      (gcell_grid->*get_grid)(i, origin, count, step);
       grid_pitch_count[step] += count;
     }
 
     if (grid_pitch_count.empty()) {
-      return default_grid_;
+      return kDefaultGrid;
     }
 
     auto mode = grid_pitch_count.begin();
@@ -1008,9 +1008,9 @@ std::pair<double, double> GlobalRoutingDataSource::getReportableXYGrid() const
     return mode->first;
   };
 
-  const double x_grid = grid_mode(gCellGrid->getNumGridPatternsX(),
+  const double x_grid = grid_mode(gcell_grid->getNumGridPatternsX(),
                                   &odb::dbGCellGrid::getGridPatternX);
-  const double y_grid = grid_mode(gCellGrid->getNumGridPatternsY(),
+  const double y_grid = grid_mode(gcell_grid->getNumGridPatternsY(),
                                   &odb::dbGCellGrid::getGridPatternY);
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
@@ -1036,15 +1036,15 @@ void GlobalRoutingDataSource::populateXYGrid()
     return;
   }
 
-  auto* gCellGrid = getBlock()->getGCellGrid();
-  if (gCellGrid == nullptr) {
+  auto* gcell_grid = getBlock()->getGCellGrid();
+  if (gcell_grid == nullptr) {
     HeatMapDataSource::populateXYGrid();
     return;
   }
 
   std::vector<int> gcell_xgrid, gcell_ygrid;
-  gCellGrid->getGridX(gcell_xgrid);
-  gCellGrid->getGridY(gcell_ygrid);
+  gcell_grid->getGridX(gcell_xgrid);
+  gcell_grid->getGridY(gcell_ygrid);
 
   const auto die_area = getBlock()->getDieArea();
   gcell_xgrid.push_back(die_area.xMax());

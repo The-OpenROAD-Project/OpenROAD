@@ -56,7 +56,7 @@ class TimingPathsModel : public QAbstractTableModel
  public:
   static const std::map<Column, const char*>& getColumnNames()
   {
-    static const std::map<Column, const char*> column_names
+    static const std::map<Column, const char*> kColumnNames
         = {{Clock, "Capture Clock"},
            {Required, "Required"},
            {Arrival, "Arrival"},
@@ -67,7 +67,7 @@ class TimingPathsModel : public QAbstractTableModel
            {Fanout, "Fanout"},
            {Start, "Start"},
            {End, "End"}};
-    return column_names;
+    return kColumnNames;
   }
 
   TimingPathsModel(bool is_setup,
@@ -123,7 +123,7 @@ class TimingPathDetailModel : public QAbstractTableModel
  public:
   static const std::map<Column, const char*>& getColumnNames()
   {
-    static const std::map<Column, const char*> column_names
+    static const std::map<Column, const char*> kColumnNames
         = {{Pin, "Pin"},
            {Fanout, "Fanout"},
            {RiseFall, "RiseFall"},
@@ -131,7 +131,7 @@ class TimingPathDetailModel : public QAbstractTableModel
            {Delay, "Delay"},
            {Slew, "Slew"},
            {Load, "Load"}};
-    return column_names;
+    return kColumnNames;
   }
 
   TimingPathDetailModel(bool is_capture,
@@ -164,7 +164,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 
   bool isClockSummaryRow(const QModelIndex& index) const
   {
-    return index.row() == clock_summary_row_;
+    return index.row() == kClockSummaryRow;
   }
 
   void populateModel(TimingPath* path, TimingNodeList* nodes);
@@ -178,10 +178,10 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingNodeList* nodes_;
 
   // Unicode symbols
-  static constexpr char up_down_arrows_[] = "⇅";
-  static constexpr char up_arrow_[] = "↑";
-  static constexpr char down_arrow_[] = "↓";
-  static constexpr int clock_summary_row_ = 1;
+  static constexpr char kUpDownArrows[] = "⇅";
+  static constexpr char kUpArrow[] = "↑";
+  static constexpr char kDownArrow[] = "↓";
+  static constexpr int kClockSummaryRow = 1;
 };
 
 class TimingPathRenderer : public gui::Renderer
@@ -224,16 +224,16 @@ class TimingPathRenderer : public gui::Renderer
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
   std::mutex rendering_;
 
-  static const gui::Painter::Color inst_highlight_color_;
-  static const gui::Painter::Color path_inst_color_;
-  static const gui::Painter::Color term_color_;
-  static const gui::Painter::Color signal_color_;
-  static const gui::Painter::Color clock_color_;
-  static const gui::Painter::Color capture_clock_color_;
+  static const gui::Painter::Color kInstHighlightColor;
+  static const gui::Painter::Color kPathInstColor;
+  static const gui::Painter::Color kTermColor;
+  static const gui::Painter::Color kSignalColor;
+  static const gui::Painter::Color kClockColor;
+  static const gui::Painter::Color kCaptureClockColor;
 
-  static constexpr const char* data_path_label_ = "Data path";
-  static constexpr const char* launch_clock_label_ = "Launch clock";
-  static constexpr const char* capture_clock_label_ = "Capture clock";
+  static constexpr const char* kDataPathLabel = "Data path";
+  static constexpr const char* kLaunchClockLabel = "Launch clock";
+  static constexpr const char* kCaptureClockLabel = "Capture clock";
 };
 
 class TimingConeRenderer : public gui::Renderer
@@ -429,7 +429,7 @@ class TimingControlsDialog : public QDialog
   std::vector<PinSetWidget*> thru_;
   PinSetWidget* to_;
 
-  static constexpr int thru_start_row_ = 3;
+  static constexpr int kThruStartRow = 3;
 
   void setPinSelections();
 

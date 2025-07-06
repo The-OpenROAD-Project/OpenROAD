@@ -108,7 +108,7 @@ void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
   auto& die = pbc_->die();
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
   painter.drawLine(die.coreUx(), die.coreUy(), die.coreLx(), die.coreUy());
@@ -119,14 +119,14 @@ void Graphics::drawInitial(gui::Painter& painter)
 {
   drawBounds(painter);
 
-  painter.setPen(gui::Painter::white, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kWhite, /* cosmetic */ true);
   for (auto& inst : pbc_->placeInsts()) {
     int lx = inst->lx();
     int ly = inst->ly();
     int ux = inst->ux();
     int uy = inst->uy();
 
-    gui::Painter::Color color = gui::Painter::dark_green;
+    gui::Painter::Color color = gui::Painter::kDarkGreen;
     color.a = 180;
     painter.setBrush(color);
     painter.drawRect({lx, ly, ux, uy});
@@ -164,7 +164,7 @@ void Graphics::drawForce(gui::Painter& painter)
       int cx = bin.cx();
       int cy = bin.cy();
 
-      painter.setPen(gui::Painter::red, true);
+      painter.setPen(gui::Painter::kRed, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
 
       // Draw a circle at the outer end of the line
@@ -172,7 +172,7 @@ void Graphics::drawForce(gui::Painter& painter)
       int circle_y = static_cast<int>(cy + dy);
       float bin_area = bin.dx() * bin.dy();
       int circle_radius = static_cast<int>(0.05 * std::sqrt(bin_area / M_PI));
-      painter.setPen(gui::Painter::red, true);
+      painter.setPen(gui::Painter::kRed, true);
       painter.drawCircle(circle_x, circle_y, circle_radius);
     }
   }
@@ -216,10 +216,10 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
       break;
     default:
       if (gCell->isInstance()) {
-        color = gCell->isLocked() ? gui::Painter::dark_cyan
-                                  : gui::Painter::dark_green;
+        color = gCell->isLocked() ? gui::Painter::kDarkCyan
+                                  : gui::Painter::kDarkGreen;
       } else if (gCell->isFiller()) {
-        color = gui::Painter::dark_magenta;
+        color = gui::Painter::kDarkMagenta;
       }
       color.a = 180;
       break;
@@ -227,7 +227,7 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
 
   // Highlight selection (highest priority)
   if (gCell == nbc_->getGCellByIndex(selected_)) {
-    color = gui::Painter::yellow;
+    color = gui::Painter::kYellow;
     color.a = 180;
   }
 
@@ -244,7 +244,7 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
         int origUx = bbox->xMax();
         int origUy = bbox->yMax();
 
-        gui::Painter::Color outline = gui::Painter::black;
+        gui::Painter::Color outline = gui::Painter::kBlack;
         outline.a = 150;  // Semi-transparent
 
         painter.setPen(outline, /*cosmetic=*/false, /*width=*/1);
@@ -259,7 +259,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   drawBounds(painter);
   if (draw_bins_) {
     // Draw the bins
-    painter.setPen(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kTransparent);
 
     for (const auto& nb : nbVec_) {
       for (auto& bin : nb->bins()) {
@@ -279,13 +279,13 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw the placeable objects
-  painter.setPen(gui::Painter::white);
+  painter.setPen(gui::Painter::kWhite);
   drawCells(nbc_->getGCells(), painter);
   for (const auto& nb : nbVec_) {
     drawCells(nb->getGCells(), painter);
   }
 
-  painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
+  painter.setBrush(gui::Painter::Color(gui::Painter::kLightGray, 50));
   for (const auto& pb : pbVec_) {
     for (auto& inst : pb->nonPlaceInsts()) {
       painter.drawRect({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
@@ -294,7 +294,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw lines to neighbors
   if (nbc_->getGCellByIndex(selected_)) {
-    painter.setPen(gui::Painter::yellow, true);
+    painter.setPen(gui::Painter::kYellow, true);
     for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->gNet();
       if (!net) {
@@ -319,7 +319,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
 void Graphics::drawMBFF(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (const auto& [start, end] : mbff_edges_) {
     painter.drawLine(start, end);
   }
@@ -577,7 +577,7 @@ void Graphics::addFrameLabel(gui::Gui* gui,
   int label_x = bbox.xMin() + 300;
   int label_y = bbox.yMin() + 300;
 
-  gui::Painter::Color color = gui::Painter::yellow;
+  gui::Painter::Color color = gui::Painter::kYellow;
   gui::Painter::Anchor anchor = gui::Painter::BOTTOM_LEFT;
 
   int font_size = std::clamp(image_width_px / 50, 15, 24);

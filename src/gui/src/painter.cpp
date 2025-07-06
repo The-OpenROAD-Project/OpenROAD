@@ -11,32 +11,32 @@ namespace gui {
 
 std::map<std::string, Painter::Color> Painter::colors()
 {
-  return {{"black", Painter::black},
-          {"white", Painter::white},
-          {"dark_gray", Painter::dark_gray},
-          {"gray", Painter::gray},
-          {"light_gray", Painter::light_gray},
-          {"red", Painter::red},
-          {"green", Painter::green},
-          {"blue", Painter::blue},
-          {"cyan", Painter::cyan},
-          {"magenta", Painter::magenta},
-          {"yellow", Painter::yellow},
-          {"dark_red", Painter::dark_red},
-          {"dark_green", Painter::dark_green},
-          {"dark_blue", Painter::dark_blue},
-          {"dark_cyan", Painter::dark_cyan},
-          {"dark_magenta", Painter::dark_magenta},
-          {"dark_yellow", Painter::dark_yellow},
-          {"orange", Painter::orange},
-          {"purple", Painter::purple},
-          {"lime", Painter::lime},
-          {"teal", Painter::teal},
-          {"pink", Painter::pink},
-          {"brown", Painter::brown},
-          {"indigo", Painter::indigo},
-          {"turquoise", Painter::turquoise},
-          {"transparent", Painter::transparent}};
+  return {{"black", Painter::kBlack},
+          {"white", Painter::kWhite},
+          {"dark_gray", Painter::kDarkGray},
+          {"gray", Painter::kGray},
+          {"light_gray", Painter::kLightGray},
+          {"red", Painter::kRed},
+          {"green", Painter::kGreen},
+          {"blue", Painter::kBlue},
+          {"cyan", Painter::kCyan},
+          {"magenta", Painter::kMagenta},
+          {"yellow", Painter::kYellow},
+          {"dark_red", Painter::kDarkRed},
+          {"dark_green", Painter::kDarkGreen},
+          {"dark_blue", Painter::kDarkBlue},
+          {"dark_cyan", Painter::kDarkCyan},
+          {"dark_magenta", Painter::kDarkMagenta},
+          {"dark_yellow", Painter::kDarkYellow},
+          {"orange", Painter::kOrange},
+          {"purple", Painter::kPurple},
+          {"lime", Painter::kLime},
+          {"teal", Painter::kTeal},
+          {"pink", Painter::kPink},
+          {"brown", Painter::kBrown},
+          {"indigo", Painter::kIndigo},
+          {"turquoise", Painter::kTurquoise},
+          {"transparent", Painter::kTransparent}};
 }
 
 Painter::Color Painter::stringToColor(const std::string& color,
@@ -75,7 +75,7 @@ Painter::Color Painter::stringToColor(const std::string& color,
   }
   logger->error(utl::GUI, 42, "Color not recognized: {}", color);
 
-  return Painter::black;
+  return Painter::kBlack;
 }
 
 std::string Painter::colorToString(const Color& color)
@@ -307,7 +307,7 @@ void GuiPainter::drawRuler(int x0,
     }
   }
 
-  setPen(white);
+  setPen(kWhite);
   painter_->setFont(ruler_font);
   painter_->translate(len / 2, 0);
   if (flip_direction) {

@@ -208,17 +208,15 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
   const int all_endpoints_count = end_points.size();
 
   int unconstrained_count = 0;
-  sta::Unit* time_unit = sta_->units()->timeUnit();
 
   auto network = sta_->getDbNetwork();
   for (StaPins::iterator pin_iter = end_points.begin();
        pin_iter != end_points.end();) {
     const sta::Pin* pin = *pin_iter;
 
-    float slack = stagui_->getPinSlack(pin);
+    const float slack = stagui_->getPinSlack(pin);
 
     if (slack != sta::INF && slack != -sta::INF) {
-      slack = time_unit->staToUser(slack);
       ++pin_iter;
     } else {
       const bool is_input = network->direction(pin)->isAnyInput();
@@ -493,16 +491,16 @@ float HistogramView::computeBucketInterval()
   }
 
   const float exact_interval
-      = (max_slack - min_slack) / default_number_of_buckets_;
+      = (max_slack - min_slack) / kDefaultNumberOfBuckets;
 
   const float snap_interval = computeSnapBucketInterval(exact_interval);
 
   // We compute a new number of buckets based on the snap interval.
   const int new_number_of_buckets = (max_slack - min_slack) / snap_interval;
 
-  if (new_number_of_buckets < minimum_number_of_buckets_) {
+  if (new_number_of_buckets < kMinimumNumberOfBuckets) {
     const float minimum_interval
-        = (max_slack - min_slack) / minimum_number_of_buckets_;
+        = (max_slack - min_slack) / kMinimumNumberOfBuckets;
 
     float decimal_snap_interval
         = computeSnapBucketDecimalInterval(minimum_interval);
@@ -615,10 +613,10 @@ void HistogramView::emitEndPointsInBucket(const int bar_index)
     return;
   }
 
-  auto compareSlack = [=](const sta::Pin* a, const sta::Pin* b) {
+  auto compare_slack = [=](const sta::Pin* a, const sta::Pin* b) {
     return sta_->getPinSlack(a) < sta_->getPinSlack(b);
   };
-  std::sort(end_points.begin(), end_points.end(), compareSlack);
+  std::sort(end_points.begin(), end_points.end(), compare_slack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.

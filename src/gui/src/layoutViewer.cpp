@@ -94,9 +94,9 @@ LayoutViewer::LayoutViewer(
     const std::set<odb::dbNet*>& route_guides,
     const std::set<odb::dbNet*>& net_tracks,
     Gui* gui,
-    const std::function<bool()>& usingDBU,
-    const std::function<bool()>& showRulerAsEuclidian,
-    const std::function<bool()>& showDBView,
+    const std::function<bool()>& using_dbu,
+    const std::function<bool()>& show_ruler_as_euclidian,
+    const std::function<bool()>& show_db_view,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -114,9 +114,9 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       is_view_dragging_(false),
       gui_(gui),
-      usingDBU_(usingDBU),
-      showRulerAsEuclidian_(showRulerAsEuclidian),
-      showDBView_(showDBView),
+      using_dbu_(using_dbu),
+      show_ruler_as_euclidian_(show_ruler_as_euclidian),
+      show_db_view_(show_db_view),
       modules_(module_settings),
       building_ruler_(false),
       ruler_start_(nullptr),
@@ -258,14 +258,14 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
                             this->size().height() / pixels_per_dbu_);
 
   // ensure max size is not exceeded
-  qreal maximum_pixels_per_dbu_
+  qreal maximum_pixels_per_dbu
       = 0.98
         * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
                               current_viewer);
   qreal target_pixels_per_dbu
-      = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
+      = std::min(pixels_per_dbu, maximum_pixels_per_dbu);
 
-  if (target_pixels_per_dbu == maximum_pixels_per_dbu_) {
+  if (target_pixels_per_dbu == maximum_pixels_per_dbu) {
     return;
   }
 
@@ -310,7 +310,7 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   // returns 0 if the value was possible
   // return the actual value of the center if the set point
   // was outside the range of the scrollbar
-  auto setScrollBar = [](QScrollBar* bar, int value) -> int {
+  auto set_scroll_bar = [](QScrollBar* bar, int value) -> int {
     const int max_value = bar->maximum();
     const int min_value = bar->minimum();
     if (value > max_value) {
@@ -325,13 +325,13 @@ void LayoutViewer::centerAt(const odb::Point& focus)
     return 0;
   };
 
-  const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
-  const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
+  const int x_val = set_scroll_bar(scroller_->horizontalScrollBar(), pt.x());
+  const int y_val = set_scroll_bar(scroller_->verticalScrollBar(), pt.y());
   // set the center now, since center is modified by the updateCenter
   // we only care of the focus point
   center_ = focus;
 
-  // account for layout window edges from setScrollBar
+  // account for layout window edges from set_scroll_bar
   odb::Point adjusted_pt = screenToDBU(QPointF(x_val, y_val));
   if (x_val != 0) {
     center_.setX(adjusted_pt.x());
@@ -366,7 +366,7 @@ void LayoutViewer::zoomIn()
 
 void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
 {
-  zoom(focus, 1 * zoom_scale_factor_, do_delta_focus);
+  zoom(focus, 1 * kZoomScaleFactor, do_delta_focus);
 }
 
 void LayoutViewer::zoomOut()
@@ -376,7 +376,7 @@ void LayoutViewer::zoomOut()
 
 void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
 {
-  zoom(focus, 1 / zoom_scale_factor_, do_delta_focus);
+  zoom(focus, 1 / kZoomScaleFactor, do_delta_focus);
 }
 
 void LayoutViewer::zoom(const odb::Point& focus,
@@ -1313,7 +1313,7 @@ void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
 // drawing performance
 void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 {
-  const bool is_db_view = showDBView_();
+  const bool is_db_view = show_db_view_();
   auto box_to_qpolygon = [](odb::dbBox* box) -> QPolygon {
     QPolygon poly;
     for (const auto& pt : box->getBox().getPoints()) {
@@ -1631,7 +1631,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
 
   double scale_unit;
   QString unit_text;
-  if (usingDBU_()) {
+  if (using_dbu_()) {
     scale_unit = block_->getDbUnitsPerMicron();
     unit_text = "";
   } else {
@@ -1848,19 +1848,19 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   if (animate_selection_ != nullptr) {
-    auto brush = Painter::transparent;
+    auto brush = Painter::kTransparent;
 
     const int pen_width
         = animate_selection_->state_count % animate_selection_->state_modulo
           + 1;
     if (pen_width == 1) {
       // flash with brush, since pen width is the same as normal
-      brush = Painter::highlight;
+      brush = Painter::kHighlight;
       brush.a = 100;
     }
 
     animate_selection_->selection.highlight(
-        gui_painter, Painter::highlight, pen_width, brush);
+        gui_painter, Painter::kHighlight, pen_width, brush);
   }
 
   // draw partial ruler if present
@@ -1871,7 +1871,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
                           ruler_start_->y(),
                           snapped_mouse_pos.x(),
                           snapped_mouse_pos.y(),
-                          showRulerAsEuclidian_());
+                          show_ruler_as_euclidian_());
   }
 
   // draw edge currently considered snapped to
@@ -1966,7 +1966,7 @@ void LayoutViewer::updateContextMenuItems()
     menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
-    highlight_color_menu->setDisabled(true);
+    highlight_color_menu_->setDisabled(true);
   } else {
     menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
@@ -1976,7 +1976,7 @@ void LayoutViewer::updateContextMenuItems()
     menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
-    highlight_color_menu->setDisabled(false);
+    highlight_color_menu_->setDisabled(false);
   }
 
   if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
@@ -2087,7 +2087,7 @@ QImage LayoutViewer::createImage(const Rect& region,
                   94,
                   "Resolution results in illegal size (max width/height "
                   "is {} pixels). Saving image with dimensions = {} x {}.",
-                  Utils::MAX_IMAGE_SIZE,
+                  Utils::kMaxImageSize,
                   img_size.width(),
                   img_size.height());
 
@@ -2181,27 +2181,27 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
       = highlight_menu->addAction(tr("All Nets"));
 
-  highlight_color_menu = highlight_menu->addMenu(tr("All buffer trees"));
+  highlight_color_menu_ = highlight_menu->addMenu(tr("All buffer trees"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0]
-      = highlight_color_menu->addAction(tr("green"));
+      = highlight_color_menu_->addAction(tr("green"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1]
-      = highlight_color_menu->addAction(tr("yellow"));
+      = highlight_color_menu_->addAction(tr("yellow"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2]
-      = highlight_color_menu->addAction(tr("cyan"));
+      = highlight_color_menu_->addAction(tr("cyan"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3]
-      = highlight_color_menu->addAction(tr("magenta"));
+      = highlight_color_menu_->addAction(tr("magenta"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_4]
-      = highlight_color_menu->addAction(tr("red"));
+      = highlight_color_menu_->addAction(tr("red"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_5]
-      = highlight_color_menu->addAction(tr("dark_green"));
+      = highlight_color_menu_->addAction(tr("dark_green"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_6]
-      = highlight_color_menu->addAction(tr("dark_magenta"));
+      = highlight_color_menu_->addAction(tr("dark_magenta"));
   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
-      = highlight_color_menu->addAction(tr("blue"));
+      = highlight_color_menu_->addAction(tr("blue"));
 
   // for { highlightColor : Painter::highlightColors[highlight_group]} {
   //   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
-  //       = highlight_color_menu->addAction(tr("blue"));
+  //       = highlight_color_menu_->addAction(tr("blue"));
   // }
 
   // View Actions

@@ -355,13 +355,13 @@ void ConnectionDescriptor::highlight(std::any object,
 DebugGui::DebugGui(IRNetwork* network)
     : network_(network),
       control_group_("PSM: " + network_->getNet()->getName()),
-      shape_color_(gui::Painter::white),
-      node_color_(gui::Painter::cyan),
-      src_node_color_(gui::Painter::magenta),
-      iterm_node_color_(gui::Painter::red),
-      bpin_node_color_(gui::Painter::blue),
-      connection_color_(gui::Painter::yellow),
-      term_connection_color_(gui::Painter::red),
+      shape_color_(gui::Painter::kWhite),
+      node_color_(gui::Painter::kCyan),
+      src_node_color_(gui::Painter::kMagenta),
+      iterm_node_color_(gui::Painter::kRed),
+      bpin_node_color_(gui::Painter::kBlue),
+      connection_color_(gui::Painter::kYellow),
+      term_connection_color_(gui::Painter::kRed),
       found_select_(false)
 {
   addDisplayControl(shapes_text_, true);

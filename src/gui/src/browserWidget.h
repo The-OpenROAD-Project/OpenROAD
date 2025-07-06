@@ -119,7 +119,7 @@ class BrowserWidget : public QDockWidget,
 
   QMenu* menu_;
   Selected menu_item_;
-  static const int sort_role;
+  static const int kSortRole;
 
   std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
   std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
@@ -163,7 +163,7 @@ class BrowserWidget : public QDockWidget,
   };
 
   // Limit number of visible physical instances
-  static constexpr int max_visible_leafs_ = 1000;
+  static constexpr int kMaxVisibleLeafs = 1000;
 };
 
 }  // namespace gui
