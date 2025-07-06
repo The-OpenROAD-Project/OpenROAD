@@ -84,8 +84,8 @@ class SelectHighlightWindow : public QDockWidget
   Q_OBJECT
 
  public:
-  explicit SelectHighlightWindow(const SelectionSet& selSet,
-                                 const HighlightSet& hltSet,
+  explicit SelectHighlightWindow(const SelectionSet& sel_set,
+                                 const HighlightSet& hlt_set,
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow() override;
 

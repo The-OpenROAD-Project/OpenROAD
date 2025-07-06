@@ -47,7 +47,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   const bool draw_obs = draw_detail && checkDisplayControl(draw_obs_);
   if (draw_obs) {
-    gui::Painter::Color obs_color = gui::Painter::cyan;
+    gui::Painter::Color obs_color = gui::Painter::kCyan;
     obs_color.a = 127;
     painter.setPenAndBrush(obs_color, true);
 
@@ -76,7 +76,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   }
 
   if (draw_vertex) {
-    painter.setPenAndBrush(gui::Painter::red, true);
+    painter.setPenAndBrush(gui::Painter::kRed, true);
 
     for (const auto& v : vertex) {
       const odb::Point& pt = vertex_map.at(v);
@@ -85,7 +85,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   }
 
   if (draw_edge) {
-    gui::Painter::Color edge_color = gui::Painter::green;
+    gui::Painter::Color edge_color = gui::Painter::kGreen;
     edge_color.a = 127;
     painter.setPenAndBrush(edge_color, true);
 
@@ -103,7 +103,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   const bool draw_flywires = checkDisplayControl(draw_fly_wires_);
   if (draw_flywires) {
     painter.setPenAndBrush(
-        gui::Painter::yellow, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kYellow, true, gui::Painter::Brush::SOLID, 3);
 
     const auto& targets = router_->getRoutingTargets();
 
@@ -121,7 +121,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
 
     painter.setPenAndBrush(
-        gui::Painter::red, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kRed, true, gui::Painter::Brush::SOLID, 3);
     for (const auto& route : router_->getFailedRoutes()) {
       for (auto* dst : route->getTerminals()) {
         painter.drawLine(route->getTerminal()->getBBox().center(),
@@ -132,7 +132,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   if (checkDisplayControl(draw_routes_)) {
     painter.setPenAndBrush(
-        gui::Painter::green, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kGreen, true, gui::Painter::Brush::SOLID, 3);
 
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
@@ -154,9 +154,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
         for (const auto& target : targets) {
           if (box.intersects(target.shape)) {
             painter.setPenAndBrush(
-                gui::Painter::blue, true, gui::Painter::Brush::DIAGONAL);
+                gui::Painter::kBlue, true, gui::Painter::Brush::DIAGONAL);
             painter.drawRect(target.shape);
-            painter.setPenAndBrush(gui::Painter::blue, true);
+            painter.setPenAndBrush(gui::Painter::kBlue, true);
             painter.drawCircle(target.center.x(),
                                target.center.y(),
                                0.05 * target.shape.minDXDY());
@@ -168,7 +168,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   if (checkDisplayControl(draw_routes_)) {
     painter.setPenAndBrush(
-        gui::Painter::green, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kGreen, true, gui::Painter::Brush::SOLID, 3);
 
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
@@ -195,7 +195,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
         const odb::Point& dst = route_pts[i];
 
         painter.setPenAndBrush(
-            gui::Painter::green, true, gui::Painter::Brush::NONE, 2);
+            gui::Painter::kGreen, true, gui::Painter::Brush::NONE, 2);
         if (i == 1) {
           painter.drawRect(router_->getPointObstruction(src));
         }
@@ -231,9 +231,9 @@ void RDLGui::zoomToSnap(bool preview)
   }
 
   if (preview) {
-    snap_color_ = gui::Painter::gray;
+    snap_color_ = gui::Painter::kGray;
   } else {
-    snap_color_ = gui::Painter::white;
+    snap_color_ = gui::Painter::kWhite;
   }
 
   odb::Rect zoomto;

@@ -129,7 +129,7 @@ class ScriptWidget : public QDockWidget
   // Interval in ms between every flush of the report buffer to
   // the output. Testing with many lines of log showed that lower
   // frequencies don't make much more impact.
-  static constexpr int report_display_interval = 50;
+  static constexpr int kReportDisplayInterval = 50;
 
   const QColor cmd_msg_ = Qt::black;
   const QColor error_msg_ = Qt::red;

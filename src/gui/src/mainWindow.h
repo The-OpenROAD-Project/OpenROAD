@@ -121,7 +121,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // Label Requested on the Layout
   void labelsChanged();
 
-  void displayUnitsChanged(int dbu_per_micron, bool useDBU);
+  void displayUnitsChanged(int dbu_per_micron, bool use_dbu);
 
   // Find selection in the CTS Viewer
   void findInCts(const Selected& selection);

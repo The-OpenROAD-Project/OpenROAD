@@ -116,8 +116,8 @@ utl::Logger* Design::getLogger()
 
 int Design::micronToDBU(double coord)
 {
-  const int dbuPerMicron = getBlock()->getDbUnitsPerMicron();
-  return round(coord * dbuPerMicron);
+  const int dbu_per_micron = getBlock()->getDbUnitsPerMicron();
+  return round(coord * dbu_per_micron);
 }
 
 ant::AntennaChecker* Design::getAntennaChecker()
