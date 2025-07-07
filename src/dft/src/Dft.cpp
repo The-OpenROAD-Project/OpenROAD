@@ -177,4 +177,8 @@ std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
   return scan_architect->getScanChains();
 }
 
+void Dft::scanOpt() {
+  logger_->warn(utl::DFT, 14, "Scan Opt is not currently implemented");
+}
+
 }  // namespace dft
