@@ -414,7 +414,7 @@ void HistogramView::populateBuckets(
   for (int bin = 0; bin < histogram_->getBinsCount(); bin++) {
     const auto& [bin_start, bin_end] = histogram_->getBinRange(bin);
     if ((bin_start + bin_end) / 2 < 0) {
-      buckets_.negative.push_front(pin_bins[bin]);
+      buckets_.negative.push_back(pin_bins[bin]);
     } else {
       buckets_.positive.push_back(pin_bins[bin]);
     }
