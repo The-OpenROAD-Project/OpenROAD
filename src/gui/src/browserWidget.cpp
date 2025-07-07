@@ -133,12 +133,12 @@ BrowserWidget::BrowserWidget(
   QHeaderView* header = view_->header();
   header->setSectionsMovable(true);
   header->setStretchLastSection(false);
-  header->setSectionResizeMode(Instance, QHeaderView::Interactive);
-  header->setSectionResizeMode(Master, QHeaderView::Interactive);
-  header->setSectionResizeMode(Instances, QHeaderView::Interactive);
-  header->setSectionResizeMode(Macros, QHeaderView::Interactive);
-  header->setSectionResizeMode(Modules, QHeaderView::Interactive);
-  header->setSectionResizeMode(Area, QHeaderView::Interactive);
+  header->setSectionResizeMode(kInstance, QHeaderView::Interactive);
+  header->setSectionResizeMode(kMaster, QHeaderView::Interactive);
+  header->setSectionResizeMode(kInstances, QHeaderView::Interactive);
+  header->setSectionResizeMode(kMacros, QHeaderView::Interactive);
+  header->setSectionResizeMode(kModules, QHeaderView::Interactive);
+  header->setSectionResizeMode(kArea, QHeaderView::Interactive);
 
   setWidget(widget);
 
@@ -660,7 +660,7 @@ void BrowserWidget::itemChanged(QStandardItem* item)
   // toggle children
   if (state != Qt::PartiallyChecked) {
     for (int r = 0; r < item->rowCount(); r++) {
-      QStandardItem* child = item->child(r, Instance);
+      QStandardItem* child = item->child(r, kInstance);
       if (child->isCheckable()) {
         child->setCheckState(state);
       }
@@ -680,7 +680,7 @@ void BrowserWidget::toggleParent(QStandardItem* item)
 
   std::vector<Qt::CheckState> childstates;
   for (int r = 0; r < parent->rowCount(); r++) {
-    QStandardItem* child = parent->child(r, Instance);
+    QStandardItem* child = parent->child(r, kInstance);
     if (child->isCheckable()) {
       childstates.push_back(child->checkState());
     }

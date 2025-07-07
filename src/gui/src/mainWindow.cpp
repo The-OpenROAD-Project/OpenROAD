@@ -1144,7 +1144,7 @@ std::string MainWindow::addLabel(int x,
   auto new_label
       = std::make_unique<Label>(odb::Point(x, y),
                                 text,
-                                anchor.value_or(Painter::Anchor::CENTER),
+                                anchor.value_or(Painter::Anchor::kCenter),
                                 color.value_or(gui::Painter::kWhite),
                                 size,
                                 std::move(name));
@@ -1712,7 +1712,7 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   return new_value.toDouble(ok) * dbu_per_micron;
 }
 
-void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
+void MainWindow::timingCone(Gui::Term term, bool fanin, bool fanout)
 {
   auto* renderer = timing_widget_->getConeRenderer();
 
@@ -1723,7 +1723,7 @@ void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
   }
 }
 
-void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
+void MainWindow::timingPathsThrough(const std::set<Gui::Term>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});

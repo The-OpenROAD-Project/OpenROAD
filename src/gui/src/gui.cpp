@@ -1139,7 +1139,7 @@ void SpectrumGenerator::drawLegend(
   const int legend_top = bounds.yMax() - legend_offset;
   const int legend_right = bounds.xMax() - legend_offset;
   const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
 
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
@@ -1217,12 +1217,12 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
+void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
 }
 
-void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
   main_window->timingPathsThrough(terms);
 }

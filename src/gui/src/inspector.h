@@ -35,10 +35,10 @@ class EditorItemDelegate : public QItemDelegate
 
   enum EditType
   {
-    NUMBER,
-    STRING,
-    BOOL,
-    LIST
+    kNumber,
+    kString,
+    kBool,
+    kList
   };
 
   EditorItemDelegate(SelectedItemModel* model, QObject* parent = nullptr);
@@ -236,8 +236,8 @@ class Inspector : public QDockWidget
   // The columns in the tree view
   enum Column
   {
-    Name,
-    Value
+    kName,
+    kValue
   };
 
   ObjectTree* view_;

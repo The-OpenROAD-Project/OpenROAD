@@ -201,8 +201,8 @@ class IRNetwork
 
   std::map<odb::dbTechLayer*, int> min_node_pitch_;
 
-  static constexpr int min_node_pitch_multiplier_ = 10;
-  static constexpr double min_node_pitch_um_ = 10.0;
+  static constexpr int kMinNodePitchMultiplier = 10;
+  static constexpr double kMinNodePitchInUm = 10.0;
 };
 
 }  // namespace psm

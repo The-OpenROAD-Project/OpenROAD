@@ -317,7 +317,7 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
 {
   if (!macro_blockages_.empty()) {
     painter.setPen(gui::Painter::kGray, true);
-    painter.setBrush(gui::Painter::kGray, gui::Painter::DIAGONAL);
+    painter.setBrush(gui::Painter::kGray, gui::Painter::kDiagonal);
 
     for (const auto& blockage : macro_blockages_) {
       drawOffsetRect(blockage, "", painter);
@@ -326,7 +326,7 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
 
   if (!placement_blockages_.empty()) {
     painter.setPen(gui::Painter::kGreen, true);
-    painter.setBrush(gui::Painter::kGreen, gui::Painter::DIAGONAL);
+    painter.setBrush(gui::Painter::kGreen, gui::Painter::kDiagonal);
 
     for (const auto& blockage : placement_blockages_) {
       drawOffsetRect(blockage, "", painter);
@@ -342,7 +342,7 @@ void Graphics::drawFences(gui::Painter& painter)
 
   // slightly transparent dark yellow
   painter.setBrush(gui::Painter::Color(0x80, 0x80, 0x00, 150),
-                   gui::Painter::DIAGONAL);
+                   gui::Painter::kDiagonal);
   painter.setPen(gui::Painter::kDarkYellow, true);
 
   for (const auto& [macro_id, fence] : fences_) {
@@ -366,7 +366,7 @@ void Graphics::drawOffsetRect(const Rect& rect,
   if (!center_text.empty()) {
     painter.drawString(rect_bbox.xCenter(),
                        rect_bbox.yCenter(),
-                       gui::Painter::CENTER,
+                       gui::Painter::kCenter,
                        center_text);
   }
 }
@@ -416,7 +416,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
-                       gui::Painter::CENTER,
+                       gui::Painter::kCenter,
                        cluster_id_string);
   }
 
@@ -442,7 +442,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
-                       gui::Painter::CENTER,
+                       gui::Painter::kCenter,
                        std::to_string(i++));
     switch (macro.getOrientation()) {
       case odb::dbOrientType::R0: {
@@ -541,7 +541,7 @@ void Graphics::drawGuides(gui::Painter& painter)
     painter.drawRect(guide);
     painter.drawString(guide.xCenter(),
                        guide.yCenter(),
-                       gui::Painter::Anchor::CENTER,
+                       gui::Painter::Anchor::kCenter,
                        std::to_string(macro_id),
                        false /* rotate 90 */);
   }
@@ -607,7 +607,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
   }
 
   painter.drawLine(from, to);
-  painter.drawString(to.getX(), to.getY(), gui::Painter::CENTER, io.getName());
+  painter.drawString(to.getX(), to.getY(), gui::Painter::kCenter, io.getName());
 }
 
 template <typename T>

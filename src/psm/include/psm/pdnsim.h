@@ -38,9 +38,9 @@ class IRSolver;
 
 enum class GeneratedSourceType
 {
-  FULL,
-  STRAPS,
-  BUMPS
+  kFull,
+  kStraps,
+  kBumps
 };
 
 using odb::dbMaster;

@@ -41,32 +41,32 @@ class TimingPathsModel : public QAbstractTableModel
  private:
   enum Column
   {
-    Clock,
-    Required,
-    Arrival,
-    Slack,
-    Skew,
-    LogicDelay,
-    LogicDepth,
-    Fanout,
-    Start,
-    End
+    kClock,
+    kRequired,
+    kArrival,
+    kSlack,
+    kSkew,
+    kLogicDelay,
+    kLogicDepth,
+    kFanout,
+    kStart,
+    kEnd
   };
 
  public:
   static const std::map<Column, const char*>& getColumnNames()
   {
     static const std::map<Column, const char*> kColumnNames
-        = {{Clock, "Capture Clock"},
-           {Required, "Required"},
-           {Arrival, "Arrival"},
-           {Slack, "Slack"},
-           {Skew, "Skew"},
-           {LogicDelay, "Logic Delay"},
-           {LogicDepth, "Logic Depth"},
-           {Fanout, "Fanout"},
-           {Start, "Start"},
-           {End, "End"}};
+        = {{kClock, "Capture Clock"},
+           {kRequired, "Required"},
+           {kArrival, "Arrival"},
+           {kSlack, "Slack"},
+           {kSkew, "Skew"},
+           {kLogicDelay, "Logic Delay"},
+           {kLogicDepth, "Logic Depth"},
+           {kFanout, "Fanout"},
+           {kStart, "Start"},
+           {kEnd, "End"}};
     return kColumnNames;
   }
 
@@ -111,26 +111,26 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   enum Column
   {
-    Pin,
-    Fanout,
-    RiseFall,
-    Time,
-    Delay,
-    Slew,
-    Load
+    kPin,
+    kFanout,
+    kRiseFall,
+    kTime,
+    kDelay,
+    kSlew,
+    kLoad
   };
 
  public:
   static const std::map<Column, const char*>& getColumnNames()
   {
     static const std::map<Column, const char*> kColumnNames
-        = {{Pin, "Pin"},
-           {Fanout, "Fanout"},
-           {RiseFall, "RiseFall"},
-           {Time, "Time"},
-           {Delay, "Delay"},
-           {Slew, "Slew"},
-           {Load, "Load"}};
+        = {{kPin, "Pin"},
+           {kFanout, "Fanout"},
+           {kRiseFall, "RiseFall"},
+           {kTime, "Time"},
+           {kDelay, "Delay"},
+           {kSlew, "Slew"},
+           {kLoad, "Load"}};
     return kColumnNames;
   }
 
@@ -398,7 +398,7 @@ class TimingControlsDialog : public QDialog
   std::vector<std::set<const sta::Pin*>> getThruPins() const;
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
 
-  const sta::Pin* convertTerm(Gui::odbTerm term) const;
+  const sta::Pin* convertTerm(Gui::Term term) const;
 
   sta::Corner* getCorner() const { return sta_->getCorner(); }
   void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }

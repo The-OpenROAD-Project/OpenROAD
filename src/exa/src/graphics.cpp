@@ -34,7 +34,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   painter.setPen(gui::Painter::kRed);
-  painter.setBrush(gui::Painter::kRed, gui::Painter::Brush::DIAGONAL);
+  painter.setBrush(gui::Painter::kRed, gui::Painter::Brush::kDiagonal);
   painter.drawRect(instance_->getBBox()->getBox());
 }
 

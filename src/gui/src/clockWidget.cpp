@@ -115,7 +115,7 @@ void ClockTreeRenderer::drawTree(Painter& painter,
 
 void ClockTreeRenderer::setPen(Painter& painter, const Painter::Color& color)
 {
-  painter.setPenAndBrush(color, true, Painter::SOLID, kPenWidth);
+  painter.setPenAndBrush(color, true, Painter::kSolid, kPenWidth);
 }
 
 void ClockTreeRenderer::setPathTo(odb::dbITerm* term)
@@ -680,13 +680,13 @@ ClockTreeScene::ClockTreeScene(QWidget* parent)
   QWidgetAction* renderer_widget = new QWidgetAction(menu_);
   QGroupBox* renderer_group = new QGroupBox("Draw tree", menu_);
   QVBoxLayout* renderer_layout = new QVBoxLayout;
-  renderer_state_[RendererState::OnlyShowOnActiveWidget]
+  renderer_state_[RendererState::kOnlyShowOnActiveWidget]
       = new QRadioButton("Only show when clock is selected", menu_);
-  renderer_state_[RendererState::AlwaysShow]
+  renderer_state_[RendererState::kAlwaysShow]
       = new QRadioButton("Always show", menu_);
-  renderer_state_[RendererState::NeverShow]
+  renderer_state_[RendererState::kNeverShow]
       = new QRadioButton("Never show", menu_);
-  renderer_state_[RendererState::OnlyShowOnActiveWidget]->setChecked(true);
+  renderer_state_[RendererState::kOnlyShowOnActiveWidget]->setChecked(true);
   for (const auto& [state, button] : renderer_state_) {
     renderer_layout->addWidget(button);
     connect(button,
@@ -764,7 +764,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
       tree_(std::move(tree)),
       sta_(sta),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
-      renderer_state_(RendererState::OnlyShowOnActiveWidget),
+      renderer_state_(RendererState::kOnlyShowOnActiveWidget),
       scene_(nullptr),
       logger_(logger),
       show_mouse_time_tick_(true),
@@ -1105,13 +1105,13 @@ void ClockTreeView::updateRendererState() const
 {
   bool enable = false;
   switch (renderer_state_) {
-    case RendererState::AlwaysShow:
+    case RendererState::kAlwaysShow:
       enable = true;
       break;
-    case RendererState::NeverShow:
+    case RendererState::kNeverShow:
       enable = false;
       break;
-    case RendererState::OnlyShowOnActiveWidget:
+    case RendererState::kOnlyShowOnActiveWidget:
       enable = isVisible();
       break;
   }
@@ -1467,9 +1467,9 @@ void ClockTreeView::addNode(qreal x,
 
 void ClockTreeView::highlightTo(odb::dbITerm* term)
 {
-  if (renderer_state_ == RendererState::NeverShow) {
+  if (renderer_state_ == RendererState::kNeverShow) {
     // need to enable the renderer
-    scene_->setRendererState(RendererState::OnlyShowOnActiveWidget);
+    scene_->setRendererState(RendererState::kOnlyShowOnActiveWidget);
   }
   renderer_->setPathTo(term);
 }

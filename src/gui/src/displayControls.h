@@ -278,10 +278,10 @@ class DisplayControls : public QDockWidget,
   // The columns in the tree view
   enum Column
   {
-    Name,
-    Swatch,
-    Visible,
-    Selectable
+    kName,
+    kSwatch,
+    kVisible,
+    kSelectable
   };
 
   // The *Models are groups in the tree

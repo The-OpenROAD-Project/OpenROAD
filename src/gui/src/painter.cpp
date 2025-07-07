@@ -92,15 +92,15 @@ std::string Painter::colorToString(const Color& color)
 
 std::map<std::string, Painter::Anchor> Painter::anchors()
 {
-  return {{"bottom left", Painter::Anchor::BOTTOM_LEFT},
-          {"bottom right", Painter::Anchor::BOTTOM_RIGHT},
-          {"top left", Painter::Anchor::TOP_LEFT},
-          {"top right", Painter::Anchor::TOP_RIGHT},
-          {"center", Painter::Anchor::CENTER},
-          {"bottom center", Painter::Anchor::BOTTOM_CENTER},
-          {"top center", Painter::Anchor::TOP_CENTER},
-          {"left center", Painter::Anchor::LEFT_CENTER},
-          {"right center", Painter::Anchor::RIGHT_CENTER}};
+  return {{"bottom left", Painter::Anchor::kBottomLeft},
+          {"bottom right", Painter::Anchor::kBottomRight},
+          {"top left", Painter::Anchor::kTopLeft},
+          {"top right", Painter::Anchor::kTopRight},
+          {"center", Painter::Anchor::kCenter},
+          {"bottom center", Painter::Anchor::kBottomCenter},
+          {"top center", Painter::Anchor::kTopCenter},
+          {"left center", Painter::Anchor::kLeftCenter},
+          {"right center", Painter::Anchor::kRightCenter}};
 }
 
 Painter::Anchor Painter::stringToAnchor(const std::string& anchor,
@@ -114,7 +114,7 @@ Painter::Anchor Painter::stringToAnchor(const std::string& anchor,
 
   logger->error(utl::GUI, 45, "Anchor not recognized: {}", anchor);
 
-  return Anchor::CENTER;
+  return Anchor::kCenter;
 }
 
 std::string Painter::anchorToString(const Anchor& anchor)
@@ -141,24 +141,24 @@ odb::Point GuiPainter::determineStringOrigin(int x,
   const qreal scale_adjust = 1.0 / getPixelsPerDBU();
   int sx = 0;
   int sy = 0;
-  if (anchor == BOTTOM_LEFT) {
+  if (anchor == kBottomLeft) {
     // default for Qt
-  } else if (anchor == BOTTOM_RIGHT) {
+  } else if (anchor == kBottomRight) {
     sx -= text_bbox.right();
-  } else if (anchor == TOP_LEFT) {
+  } else if (anchor == kTopLeft) {
     sy += text_bbox.top();
-  } else if (anchor == TOP_RIGHT) {
+  } else if (anchor == kTopRight) {
     sx -= text_bbox.right();
     sy += text_bbox.top();
-  } else if (anchor == CENTER) {
+  } else if (anchor == kCenter) {
     sx -= text_bbox_center.x();
     sy += text_bbox_center.y();
-  } else if (anchor == BOTTOM_CENTER) {
+  } else if (anchor == kBottomCenter) {
     sx -= text_bbox_center.x();
-  } else if (anchor == TOP_CENTER) {
+  } else if (anchor == kTopCenter) {
     sx -= text_bbox_center.x();
     sy += text_bbox.top();
-  } else if (anchor == LEFT_CENTER) {
+  } else if (anchor == kLeftCenter) {
     sy += text_bbox_center.y();
   } else {
     // RIGHT_CENTER
@@ -317,9 +317,9 @@ void GuiPainter::drawRuler(int x0,
   std::string text_length = Descriptor::Property::convert_dbu(len, false);
   if (!label.empty()) {
     // label on next to length
-    drawString(0, 0, BOTTOM_CENTER, label + ": " + text_length);
+    drawString(0, 0, kBottomCenter, label + ": " + text_length);
   } else {
-    drawString(0, 0, BOTTOM_CENTER, text_length);
+    drawString(0, 0, kBottomCenter, text_length);
   }
   painter_->setFont(restore_font);
 

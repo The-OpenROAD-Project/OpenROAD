@@ -578,7 +578,7 @@ void Graphics::addFrameLabel(gui::Gui* gui,
   int label_y = bbox.yMin() + 300;
 
   gui::Painter::Color color = gui::Painter::kYellow;
-  gui::Painter::Anchor anchor = gui::Painter::BOTTOM_LEFT;
+  gui::Painter::Anchor anchor = gui::Painter::kBottomLeft;
 
   int font_size = std::clamp(image_width_px / 50, 15, 24);
 

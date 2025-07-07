@@ -154,12 +154,12 @@ class BrowserWidget : public QDockWidget,
 
   enum Columns
   {
-    Instance,
-    Master,
-    Instances,
-    Macros,
-    Modules,
-    Area
+    kInstance,
+    kMaster,
+    kInstances,
+    kMacros,
+    kModules,
+    kArea
   };
 
   // Limit number of visible physical instances

@@ -70,7 +70,7 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(color, brush_pattern));
   }
 
-  void setBrush(const Color& color, const Brush& style = Brush::SOLID) override
+  void setBrush(const Color& color, const Brush& style = Brush::kSolid) override
   {
     const QColor qcolor(color.r, color.g, color.b, color.a);
 
@@ -80,19 +80,19 @@ class GuiPainter : public Painter
       brush_pattern = Qt::NoBrush;
     } else {
       switch (style) {
-        case NONE:
+        case kNone:
           brush_pattern = Qt::NoBrush;
           break;
-        case DIAGONAL:
+        case kDiagonal:
           brush_pattern = Qt::DiagCrossPattern;
           break;
-        case CROSS:
+        case kCross:
           brush_pattern = Qt::CrossPattern;
           break;
-        case DOTS:
+        case kDots:
           brush_pattern = Qt::Dense6Pattern;
           break;
-        case SOLID:
+        case kSolid:
         default:
           brush_pattern = Qt::SolidPattern;
           break;

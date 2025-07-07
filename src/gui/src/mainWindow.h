@@ -254,8 +254,8 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void selectHighlightConnectedBufferTrees(bool select_flag,
                                            int highlight_group = 0);
 
-  void timingCone(Gui::odbTerm term, bool fanin, bool fanout);
-  void timingPathsThrough(const std::set<Gui::odbTerm>& terms);
+  void timingCone(Gui::Term term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<Gui::Term>& terms);
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);

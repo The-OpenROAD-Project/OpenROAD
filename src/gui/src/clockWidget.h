@@ -40,9 +40,9 @@ class ColorGenerator;
 
 enum class RendererState
 {
-  OnlyShowOnActiveWidget,
-  AlwaysShow,
-  NeverShow
+  kOnlyShowOnActiveWidget,
+  kAlwaysShow,
+  kNeverShow
 };
 
 class ClockTreeRenderer : public Renderer

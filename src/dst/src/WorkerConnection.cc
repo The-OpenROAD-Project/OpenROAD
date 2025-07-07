@@ -22,7 +22,7 @@ WorkerConnection::WorkerConnection(asio::io_context& service,
     : sock_(service),
       dist_(dist),
       logger_(logger),
-      msg_(JobMessage::NONE),
+      msg_(JobMessage::kNone),
       worker_(worker)
 {
 }
@@ -37,7 +37,7 @@ void WorkerConnection::start()
   async_read_until(
       sock_,
       in_packet_,
-      JobMessage::EOP,
+      JobMessage::kEop,
       [me = shared_from_this()](boost::system::error_code const& ec,
                                 std::size_t bytes_xfer) {
         me->handle_read(ec, bytes_xfer);
@@ -51,7 +51,7 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
     std::string data{buffers_begin(in_packet_.data()),
                      buffers_begin(in_packet_.data()) + bytes_transferred};
     boost::system::error_code error;
-    if (!JobMessage::serializeMsg(JobMessage::READ, msg_, data)) {
+    if (!JobMessage::serializeMsg(JobMessage::kRead, msg_, data)) {
       logger_->warn(utl::DST,
                     41,
                     "Received malformed msg {} from port {}",
@@ -62,24 +62,24 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
       return;
     }
     switch (msg_.getJobType()) {
-      case JobMessage::ROUTING:
+      case JobMessage::kRouting:
         for (auto& cb : dist_->getCallBacks()) {
           cb->onRoutingJobReceived(msg_, sock_);
         }
         break;
-      case JobMessage::UPDATE_DESIGN: {
+      case JobMessage::kUpdateDesign: {
         for (auto& cb : dist_->getCallBacks()) {
           cb->onFrDesignUpdated(msg_, sock_);
         }
         break;
       }
-      case JobMessage::PIN_ACCESS: {
+      case JobMessage::kPinAccess: {
         for (auto& cb : dist_->getCallBacks()) {
           cb->onPinAccessJobReceived(msg_, sock_);
         }
         break;
       }
-      case JobMessage::GRDR_INIT: {
+      case JobMessage::kGrdrInit: {
         for (auto& cb : dist_->getCallBacks()) {
           cb->onGRDRInitJobReceived(msg_, sock_);
         }

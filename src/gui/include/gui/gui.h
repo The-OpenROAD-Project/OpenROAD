@@ -182,20 +182,20 @@ class Painter
   // Set the brush to whatever the user has chosen for this layer
   enum Brush
   {
-    NONE,
-    SOLID,
-    DIAGONAL,
-    CROSS,
-    DOTS
+    kNone,
+    kSolid,
+    kDiagonal,
+    kCross,
+    kDots
   };
-  virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
+  virtual void setBrush(const Color& color, const Brush& style = kSolid) = 0;
 
   virtual void setFont(const Font& font) = 0;
 
   // Set the pen to an RGBA value and the brush
   void setPenAndBrush(const Color& color,
                       bool cosmetic = false,
-                      const Brush& style = SOLID,
+                      const Brush& style = kSolid,
                       int width = 1)
   {
     setPen(color, cosmetic, width);
@@ -235,17 +235,17 @@ class Painter
   enum Anchor
   {
     // four corners
-    BOTTOM_LEFT,
-    BOTTOM_RIGHT,
-    TOP_LEFT,
-    TOP_RIGHT,
+    kBottomLeft,
+    kBottomRight,
+    kTopLeft,
+    kTopRight,
 
     // centers
-    CENTER,
-    BOTTOM_CENTER,
-    TOP_CENTER,
-    LEFT_CENTER,
-    RIGHT_CENTER
+    kCenter,
+    kBottomCenter,
+    kTopCenter,
+    kLeftCenter,
+    kRightCenter
   };
   static std::map<std::string, Anchor> anchors();
   static Anchor stringToAnchor(const std::string& anchor, utl::Logger* logger);
@@ -419,7 +419,7 @@ class Selected
                  int pen_width = 0,
                  const Painter::Color& brush = Painter::kTransparent,
                  const Painter::Brush& brush_style
-                 = Painter::Brush::SOLID) const;
+                 = Painter::Brush::kSolid) const;
   bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_); }
 
   Descriptor::Properties getProperties() const;
@@ -729,9 +729,9 @@ class Gui
   std::string requestUserInput(const std::string& title,
                                const std::string& question);
 
-  using odbTerm = std::variant<odb::dbITerm*, odb::dbBTerm*>;
-  void timingCone(odbTerm term, bool fanin, bool fanout);
-  void timingPathsThrough(const std::set<odbTerm>& terms);
+  using Term = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+  void timingCone(Term term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<Term>& terms);
 
   // open markers
   void selectMarkers(odb::dbMarkerCategory* markers);

@@ -91,23 +91,23 @@ void ChartsWidget::changeMode()
   const Mode mode = static_cast<Mode>(mode_menu_->currentIndex());
 
   switch (mode) {
-    case SETUP_SLACK:
+    case kSetupSlack:
       stagui_->setUseMax(true);
       break;
-    case HOLD_SLACK:
+    case kHoldSlack:
       stagui_->setUseMax(false);
       break;
-    case SELECT:
+    case kSelect:
       break;
   }
 
   setSlackHistogramLayout();
 
   switch (mode) {
-    case SELECT:
+    case kSelect:
       break;
-    case SETUP_SLACK:
-    case HOLD_SLACK:
+    case kSetupSlack:
+    case kHoldSlack:
       setSlackHistogram();
       break;
   }
@@ -118,18 +118,18 @@ void ChartsWidget::changeMode()
 ChartsWidget::Mode ChartsWidget::modeFromString(const std::string& mode) const
 {
   if (mode == "setup" || mode == "Endpoint Slack" || mode == "Setup Slack") {
-    return SETUP_SLACK;
+    return kSetupSlack;
   }
   if (mode == "hold" || mode == "Hold Slack") {
-    return HOLD_SLACK;
+    return kHoldSlack;
   }
   if (mode == "Select Mode") {
-    return SELECT;
+    return kSelect;
   }
 
   logger_->error(utl::GUI, 4, "{} is not a recognized mode", mode);
 
-  return SELECT;
+  return kSelect;
 }
 
 void ChartsWidget::setMode(Mode mode)
