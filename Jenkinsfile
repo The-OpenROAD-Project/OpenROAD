@@ -266,8 +266,6 @@ def bazelTest = {
                             }
                             sh label: 'Bazel Build', script: cmd + ' --google_credentials=$GCS_SA_KEY ...';
                         }
-                        sh label: 'Archive logs', script:  'tar zcvf bazel-logs.tgz bazel-testlogs/.';
-                        archiveArtifacts artifacts: 'bazel-logs.tgz';
                     }
                 }
             }
