@@ -1144,7 +1144,7 @@ std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
             subtraction_result.end());
       }
 
-      boundary_available_regions = new_boundary_available_regions;
+      boundary_available_regions = std::move(new_boundary_available_regions);
     }
 
     available_regions.insert(available_regions.end(),
