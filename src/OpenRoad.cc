@@ -433,16 +433,16 @@ void OpenRoad::writeLef(const char* filename)
   }
 }
 
-void OpenRoad::writeCdl(const char* outFilename,
-                        const std::vector<const char*>& mastersFilenames,
-                        bool includeFillers)
+void OpenRoad::writeCdl(const char* out_filename,
+                        const std::vector<const char*>& masters_filenames,
+                        bool include_fillers)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     odb::dbBlock* block = chip->getBlock();
     if (block) {
       odb::cdl::writeCdl(
-          getLogger(), block, outFilename, mastersFilenames, includeFillers);
+          getLogger(), block, out_filename, masters_filenames, include_fillers);
     }
   }
 }
@@ -540,7 +540,7 @@ odb::Rect OpenRoad::getCore()
   return db_->getChip()->getBlock()->getCoreArea();
 }
 
-void OpenRoad::setThreadCount(int threads, bool printInfo)
+void OpenRoad::setThreadCount(int threads, bool print_info)
 {
   int max_threads = std::thread::hardware_concurrency();
   if (max_threads == 0) {
@@ -557,7 +557,7 @@ void OpenRoad::setThreadCount(int threads, bool printInfo)
   }
   threads_ = threads;
 
-  if (printInfo) {
+  if (print_info) {
     logger_->info(ORD, 30, "Using {} thread(s).", threads_);
   }
 
@@ -565,7 +565,7 @@ void OpenRoad::setThreadCount(int threads, bool printInfo)
   sta_->setThreadCount(threads_);
 }
 
-void OpenRoad::setThreadCount(const char* threads, bool printInfo)
+void OpenRoad::setThreadCount(const char* threads, bool print_info)
 {
   int max_threads = threads_;  // default, make no changes
 
@@ -580,7 +580,7 @@ void OpenRoad::setThreadCount(const char* threads, bool printInfo)
     }
   }
 
-  setThreadCount(max_threads, printInfo);
+  setThreadCount(max_threads, print_info);
 }
 
 int OpenRoad::getThreadCount()

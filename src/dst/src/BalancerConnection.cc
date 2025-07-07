@@ -47,7 +47,7 @@ void BalancerConnection::start()
   async_read_until(
       sock_,
       in_packet_,
-      JobMessage::EOP,
+      JobMessage::kEop,
       [me = shared_from_this()](boost::system::error_code const& ec,
                                 std::size_t bytes_xfer) {
         boost::thread t(&BalancerConnection::handle_read, me, ec, bytes_xfer);
@@ -62,8 +62,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
     boost::system::error_code error;
     std::string data{buffers_begin(in_packet_.data()),
                      buffers_begin(in_packet_.data()) + bytes_transferred};
-    JobMessage msg(JobMessage::NONE);
-    if (!JobMessage::serializeMsg(JobMessage::READ, msg, data)) {
+    JobMessage msg(JobMessage::kNone);
+    if (!JobMessage::serializeMsg(JobMessage::kRead, msg, data)) {
       logger_->warn(utl::DST,
                     42,
                     "Received malformed msg {} from port {}",
@@ -74,21 +74,21 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
       return;
     }
     switch (msg.getMessageType()) {
-      case JobMessage::UNICAST: {
-        ip::address workerAddress;
+      case JobMessage::kUnicast: {
+        ip::address worker_address;
         unsigned short port;
-        owner_->getNextWorker(workerAddress, port);
-        if (workerAddress.is_unspecified()) {
+        owner_->getNextWorker(worker_address, port);
+        if (worker_address.is_unspecified()) {
           logger_->warn(utl::DST, 6, "No workers available");
           sock_.close();
         } else {
-          if (msg.getJobType() == JobMessage::BALANCER) {
-            JobMessage reply(JobMessage::SUCCESS);
-            auto uDesc = std::make_unique<BalancerJobDescription>();
-            auto desc = uDesc.get();
-            desc->setWorkerIP(workerAddress.to_string());
+          if (msg.getJobType() == JobMessage::kBalancer) {
+            JobMessage reply(JobMessage::kSuccess);
+            auto u_desc = std::make_unique<BalancerJobDescription>();
+            auto desc = u_desc.get();
+            desc->setWorkerIP(worker_address.to_string());
             desc->setWorkerPort(port);
-            reply.setJobDescription(std::move(uDesc));
+            reply.setJobDescription(std::move(u_desc));
             owner_->dist_->sendResult(reply, sock_);
             sock_.close();
           } else {
@@ -99,7 +99,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
             bool failure = true;
             while (failure) {
               try {
-                socket.connect(tcp::endpoint(workerAddress, port));
+                socket.connect(tcp::endpoint(worker_address, port));
                 asio::write(socket, in_packet_);
                 asio::read(socket, receive_buffer, asio::transfer_all());
                 failure = false;
@@ -119,11 +119,11 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                               "Exception thrown: {}. worker with ip \"{}\" and "
                               "port \"{}\" will be pushed back the queue.",
                               ex.what(),
-                              workerAddress,
+                              worker_address,
                               port);
-                owner_->punishWorker(workerAddress, port);
+                owner_->punishWorker(worker_address, port);
                 failed_workers_trials++;
-                if (failed_workers_trials == MAX_FAILED_WORKERS_TRIALS) {
+                if (failed_workers_trials == kMaxFailedWorkersTrials) {
                   logger_->warn(utl::DST,
                                 205,
                                 "Maximum of {} failing workers reached, "
@@ -131,14 +131,14 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                                 failed_workers_trials);
                   break;
                 }
-                owner_->getNextWorker(workerAddress, port);
+                owner_->getNextWorker(worker_address, port);
               }
             }
             if (failure) {
-              JobMessage result(JobMessage::ERROR);
-              std::string msgStr;
-              JobMessage::serializeMsg(JobMessage::WRITE, result, msgStr);
-              asio::write(sock_, asio::buffer(msgStr), error);
+              JobMessage result(JobMessage::kError);
+              std::string msg_str;
+              JobMessage::serializeMsg(JobMessage::kWrite, result, msg_str);
+              asio::write(sock_, asio::buffer(msg_str), error);
             } else {
               asio::write(sock_, receive_buffer, error);
             }
@@ -147,9 +147,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         }
         break;
       }
-      case JobMessage::BROADCAST: {
+      case JobMessage::kBroadcast: {
         std::lock_guard<std::mutex> lock(owner_->workers_mutex_);
-        owner_->broadcastData.push_back(data);
+        owner_->broadcastData_.push_back(data);
         asio::thread_pool pool(owner_->workers_.size());
         auto workers_copy = owner_->workers_;
         std::mutex broadcast_failure_mutex;
@@ -179,9 +179,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
               });
         }
         pool.join();
-        JobMessage result(JobMessage::SUCCESS);
-        std::string msgStr;
-        unsigned short successBroadcast
+        JobMessage result(JobMessage::kSuccess);
+        std::string msg_str;
+        unsigned short success_broadcast
             = owner_->workers_.size() - failed_workers.size();
         if (!failed_workers.empty()) {
           for (const auto& worker : failed_workers) {
@@ -192,17 +192,17 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                         "{} workers failed to receive the broadcast message "
                         "and have been removed.",
                         failed_workers.size());
-          if (failed_workers.size() > MAX_BROADCAST_FAILED_NODES
+          if (failed_workers.size() > kMaxBroadcastFailedNodes
               || failed_workers.size() == owner_->workers_.size()) {
-            result.setJobType(JobMessage::JobType::ERROR);
+            result.setJobType(JobMessage::JobType::kError);
           }
         }
-        auto uDesc = std::make_unique<BroadcastJobDescription>();
-        auto desc = uDesc.get();
-        desc->setWorkersCount(successBroadcast);
-        result.setJobDescription(std::move(uDesc));
-        JobMessage::serializeMsg(JobMessage::WRITE, result, msgStr);
-        asio::write(sock_, asio::buffer(msgStr), error);
+        auto u_desc = std::make_unique<BroadcastJobDescription>();
+        auto desc = u_desc.get();
+        desc->setWorkersCount(success_broadcast);
+        result.setJobDescription(std::move(u_desc));
+        JobMessage::serializeMsg(JobMessage::kWrite, result, msg_str);
+        asio::write(sock_, asio::buffer(msg_str), error);
         sock_.close();
         break;
       }

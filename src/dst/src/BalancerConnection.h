@@ -21,11 +21,11 @@ class BalancerConnection
     : public boost::enable_shared_from_this<BalancerConnection>
 {
  public:
-  using pointer = boost::shared_ptr<BalancerConnection>;
+  using Pointer = boost::shared_ptr<BalancerConnection>;
   BalancerConnection(asio::io_context& service,
                      LoadBalancer* owner,
                      utl::Logger* logger);
-  static pointer create(asio::io_context& service,
+  static Pointer create(asio::io_context& service,
                         LoadBalancer* owner,
                         utl::Logger* logger)
   {
@@ -42,7 +42,7 @@ class BalancerConnection
   asio::streambuf in_packet_;
   utl::Logger* logger_;
   LoadBalancer* owner_;
-  const int MAX_FAILED_WORKERS_TRIALS = 3;
-  const int MAX_BROADCAST_FAILED_NODES = 2;
+  static const int kMaxFailedWorkersTrials = 3;
+  static const int kMaxBroadcastFailedNodes = 2;
 };
 }  // namespace dst

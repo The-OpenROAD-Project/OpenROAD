@@ -3,7 +3,7 @@
 
 include("openroad")
 find_package(TCL)
-find_package(Boost)
+find_package(Boost CONFIG)
 find_package(LEMON NAMES LEMON lemon REQUIRED)
 swig_lib(NAME         dpl
          NAMESPACE    dpl

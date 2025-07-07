@@ -101,7 +101,7 @@ class DisplayColorDialog : public QDialog
 
   void buildUI();
 
-  static inline std::vector<std::vector<Qt::BrushStyle>> brush_patterns_{
+  static inline const std::vector<std::vector<Qt::BrushStyle>> kBrushPatterns{
       {Qt::NoBrush, Qt::SolidPattern},
       {Qt::HorPattern, Qt::VerPattern},
       {Qt::CrossPattern, Qt::DiagCrossPattern},
@@ -278,10 +278,10 @@ class DisplayControls : public QDockWidget,
   // The columns in the tree view
   enum Column
   {
-    Name,
-    Swatch,
-    Visible,
-    Selectable
+    kName,
+    kSwatch,
+    kVisible,
+    kSelectable
   };
 
   // The *Models are groups in the tree
@@ -573,11 +573,11 @@ class DisplayControls : public QDockWidget,
 
   QFont pin_markers_font_;
 
-  static constexpr int user_data_item_idx_ = Qt::UserRole;
-  static constexpr int callback_item_idx_ = Qt::UserRole + 1;
-  static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
-  static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
-  static constexpr int disable_row_item_idx_ = Qt::UserRole + 4;
+  static constexpr int kUserDataItemIdx = Qt::UserRole;
+  static constexpr int kCallbackItemIdx = Qt::UserRole + 1;
+  static constexpr int kDoubleclickItemIdx = Qt::UserRole + 2;
+  static constexpr int kExclusivityItemIdx = Qt::UserRole + 3;
+  static constexpr int kDisableRowItemIdx = Qt::UserRole + 4;
 };
 
 }  // namespace gui

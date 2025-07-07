@@ -23,7 +23,7 @@ Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
 
-const int BrowserWidget::sort_role = Qt::UserRole + 2;
+const int BrowserWidget::kSortRole = Qt::UserRole + 2;
 
 struct BrowserWidget::ModuleStats
 {
@@ -122,7 +122,7 @@ BrowserWidget::BrowserWidget(
                                      "Local Instances",
                                      "Local Macros",
                                      "Local Modules"});
-  model_->setSortRole(sort_role);
+  model_->setSortRole(kSortRole);
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -133,12 +133,12 @@ BrowserWidget::BrowserWidget(
   QHeaderView* header = view_->header();
   header->setSectionsMovable(true);
   header->setStretchLastSection(false);
-  header->setSectionResizeMode(Instance, QHeaderView::Interactive);
-  header->setSectionResizeMode(Master, QHeaderView::Interactive);
-  header->setSectionResizeMode(Instances, QHeaderView::Interactive);
-  header->setSectionResizeMode(Macros, QHeaderView::Interactive);
-  header->setSectionResizeMode(Modules, QHeaderView::Interactive);
-  header->setSectionResizeMode(Area, QHeaderView::Interactive);
+  header->setSectionResizeMode(kInstance, QHeaderView::Interactive);
+  header->setSectionResizeMode(kMaster, QHeaderView::Interactive);
+  header->setSectionResizeMode(kInstances, QHeaderView::Interactive);
+  header->setSectionResizeMode(kMacros, QHeaderView::Interactive);
+  header->setSectionResizeMode(kModules, QHeaderView::Interactive);
+  header->setSectionResizeMode(kArea, QHeaderView::Interactive);
 
   setWidget(widget);
 
@@ -478,7 +478,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
     item->setEditable(false);
     item->setSelectable(true);
     item->setData(QVariant::fromValue(inst));
-    item->setData(inst->getConstName(), sort_role);
+    item->setData(inst->getConstName(), kSortRole);
 
     makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
   }
@@ -501,7 +501,7 @@ BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module,
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
-  item->setData(item_name, sort_role);
+  item->setData(item_name, kSortRole);
 
   item->setCheckable(true);
   auto& settings = modulesettings_.at(module);
@@ -542,39 +542,40 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
 
   QString text = QString::number(disp_area, 'f', 3) + " " + units + "m²";
 
-  auto makeDataItem
+  auto make_data_item
       = [item](const QString& text,
                std::optional<int64_t> sort_value) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
     data_item->setEditable(false);
     data_item->setData(QVariant::fromValue(item));
     if (sort_value) {
-      data_item->setData(qint64(sort_value.value()), sort_role);
+      data_item->setData(qint64(sort_value.value()), kSortRole);
       data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
     } else {
-      data_item->setData(text, sort_role);
+      data_item->setData(text, kSortRole);
     }
     return data_item;
   };
 
-  QStandardItem* master_item = makeDataItem(QString::fromStdString(master), {});
+  QStandardItem* master_item
+      = make_data_item(QString::fromStdString(master), {});
 
-  QStandardItem* area = makeDataItem(text, stats.area);
+  QStandardItem* area = make_data_item(text, stats.area);
 
   QStandardItem* local_insts
-      = makeDataItem(QString::number(stats.hier_insts), stats.hier_insts);
+      = make_data_item(QString::number(stats.hier_insts), stats.hier_insts);
   QStandardItem* insts
-      = makeDataItem(QString::number(stats.insts), stats.insts);
+      = make_data_item(QString::number(stats.insts), stats.insts);
 
   QStandardItem* local_macros
-      = makeDataItem(QString::number(stats.hier_macros), stats.hier_macros);
+      = make_data_item(QString::number(stats.hier_macros), stats.hier_macros);
   QStandardItem* macros
-      = makeDataItem(QString::number(stats.macros), stats.macros);
+      = make_data_item(QString::number(stats.macros), stats.macros);
 
   QStandardItem* modules
-      = makeDataItem(QString::number(stats.hier_modules), stats.hier_modules);
+      = make_data_item(QString::number(stats.hier_modules), stats.hier_modules);
   QStandardItem* local_modules
-      = makeDataItem(QString::number(stats.modules), stats.modules);
+      = make_data_item(QString::number(stats.modules), stats.modules);
 
   parent->appendRow({item,
                      master_item,
@@ -659,7 +660,7 @@ void BrowserWidget::itemChanged(QStandardItem* item)
   // toggle children
   if (state != Qt::PartiallyChecked) {
     for (int r = 0; r < item->rowCount(); r++) {
-      QStandardItem* child = item->child(r, Instance);
+      QStandardItem* child = item->child(r, kInstance);
       if (child->isCheckable()) {
         child->setCheckState(state);
       }
@@ -679,7 +680,7 @@ void BrowserWidget::toggleParent(QStandardItem* item)
 
   std::vector<Qt::CheckState> childstates;
   for (int r = 0; r < parent->rowCount(); r++) {
-    QStandardItem* child = parent->child(r, Instance);
+    QStandardItem* child = parent->child(r, kInstance);
     if (child->isCheckable()) {
       childstates.push_back(child->checkState());
     }

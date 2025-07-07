@@ -159,8 +159,10 @@ class HierRTLMP
   bool treeHasConstrainedIOs() const;
   bool treeHasUnconstrainedIOs() const;
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
+  std::vector<Cluster*> getIOBundles() const;
   void createPinAccessBlockage(const BoundaryRegion& region, float depth);
   float computePinAccessBaseDepth(double io_span) const;
+  void createBlockagesForIOBundles();
   void createBlockagesForAvailableRegions();
   void createBlockagesForConstraintRegions();
   void setPlacementBlockages();
@@ -233,7 +235,6 @@ class HierRTLMP
                            std::vector<Macro>& macros);
 
   odb::Rect getRect(Boundary boundary) const;
-  bool isVertical(Boundary boundary) const;
 
   std::vector<odb::Rect> subtractOverlapRegion(const odb::Rect& base,
                                                const odb::Rect& overlay) const;

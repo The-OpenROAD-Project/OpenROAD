@@ -316,8 +316,8 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
 void Graphics::drawAllBlockages(gui::Painter& painter)
 {
   if (!macro_blockages_.empty()) {
-    painter.setPen(gui::Painter::gray, true);
-    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+    painter.setPen(gui::Painter::kGray, true);
+    painter.setBrush(gui::Painter::kGray, gui::Painter::kDiagonal);
 
     for (const auto& blockage : macro_blockages_) {
       drawOffsetRect(blockage, "", painter);
@@ -325,8 +325,8 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
   }
 
   if (!placement_blockages_.empty()) {
-    painter.setPen(gui::Painter::green, true);
-    painter.setBrush(gui::Painter::green, gui::Painter::DIAGONAL);
+    painter.setPen(gui::Painter::kGreen, true);
+    painter.setBrush(gui::Painter::kGreen, gui::Painter::kDiagonal);
 
     for (const auto& blockage : placement_blockages_) {
       drawOffsetRect(blockage, "", painter);
@@ -342,8 +342,8 @@ void Graphics::drawFences(gui::Painter& painter)
 
   // slightly transparent dark yellow
   painter.setBrush(gui::Painter::Color(0x80, 0x80, 0x00, 150),
-                   gui::Painter::DIAGONAL);
-  painter.setPen(gui::Painter::dark_yellow, true);
+                   gui::Painter::kDiagonal);
+  painter.setPen(gui::Painter::kDarkYellow, true);
 
   for (const auto& [macro_id, fence] : fences_) {
     drawOffsetRect(fence, std::to_string(macro_id), painter);
@@ -366,7 +366,7 @@ void Graphics::drawOffsetRect(const Rect& rect,
   if (!center_text.empty()) {
     painter.drawString(rect_bbox.xCenter(),
                        rect_bbox.yCenter(),
-                       gui::Painter::CENTER,
+                       gui::Painter::kCenter,
                        center_text);
   }
 }
@@ -376,8 +376,8 @@ void Graphics::drawOffsetRect(const Rect& rect,
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_ && !only_final_result_) {
-    painter.setPen(gui::Painter::red, true);
-    painter.setBrush(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kRed, true);
+    painter.setBrush(gui::Painter::kTransparent);
     drawCluster(root_, painter);
   }
 
@@ -386,7 +386,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawAllBlockages(painter);
   }
 
-  painter.setPen(gui::Painter::white, true);
+  painter.setPen(gui::Painter::kWhite, true);
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
@@ -416,12 +416,12 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
-                       gui::Painter::CENTER,
+                       gui::Painter::kCenter,
                        cluster_id_string);
   }
 
-  painter.setPen(gui::Painter::white, true);
-  painter.setBrush(gui::Painter::dark_red);
+  painter.setPen(gui::Painter::kWhite, true);
+  painter.setBrush(gui::Painter::kDarkRed);
 
   i = 0;
   for (const auto& macro : hard_macros_) {
@@ -442,7 +442,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
-                       gui::Painter::CENTER,
+                       gui::Painter::kCenter,
                        std::to_string(i++));
     switch (macro.getOrientation()) {
       case odb::dbOrientType::R0: {
@@ -483,7 +483,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   if (show_bundled_nets_) {
-    painter.setPen(gui::Painter::yellow, true);
+    painter.setPen(gui::Painter::kYellow, true);
 
     if (!hard_macros_.empty()) {
       drawBundledNets(painter, hard_macros_);
@@ -495,11 +495,11 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   drawBlockedRegionsIndication(painter);
 
-  painter.setBrush(gui::Painter::transparent);
+  painter.setBrush(gui::Painter::kTransparent);
   if (only_final_result_) {
     // Draw all outlines. Same level outlines have the same color.
     for (int level = 0; level < outlines_.size(); ++level) {
-      gui::Painter::Color level_color = gui::Painter::highlightColors[level];
+      gui::Painter::Color level_color = gui::Painter::kHighlightColors[level];
       // Remove transparency
       level_color.a = 255;
 
@@ -510,7 +510,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   } else {
     // Hightlight current outline so we see where SA is working
-    painter.setPen(gui::Painter::cyan, true);
+    painter.setPen(gui::Painter::kCyan, true);
     painter.drawRect(outline_);
 
     drawGuides(painter);
@@ -529,7 +529,7 @@ bool Graphics::isSkippable(const T& macro)
 // Draw guidance regions for macros.
 void Graphics::drawGuides(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::green, true);
+  painter.setPen(gui::Painter::kGreen, true);
 
   for (const auto& [macro_id, guidance_region] : guides_) {
     odb::Rect guide(block_->micronsToDbu(guidance_region.xMin()),
@@ -541,7 +541,7 @@ void Graphics::drawGuides(gui::Painter& painter)
     painter.drawRect(guide);
     painter.drawString(guide.xCenter(),
                        guide.yCenter(),
-                       gui::Painter::Anchor::CENTER,
+                       gui::Painter::Anchor::kCenter,
                        std::to_string(macro_id),
                        false /* rotate 90 */);
   }
@@ -549,8 +549,8 @@ void Graphics::drawGuides(gui::Painter& painter)
 
 void Graphics::drawBlockedRegionsIndication(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::red, true);
-  painter.setBrush(gui::Painter::transparent);
+  painter.setPen(gui::Painter::kRed, true);
+  painter.setBrush(gui::Painter::kTransparent);
 
   for (const odb::Rect& region : blocked_regions_for_pins_) {
     painter.drawX(region.xCenter(), region.yCenter(), x_mark_size_);
@@ -607,7 +607,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
   }
 
   painter.drawLine(from, to);
-  painter.drawString(to.getX(), to.getY(), gui::Painter::CENTER, io.getName());
+  painter.drawString(to.getX(), to.getY(), gui::Painter::kCenter, io.getName());
 }
 
 template <typename T>
@@ -631,7 +631,7 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
-    painter.setBrush(gui::Painter::dark_blue);
+    painter.setBrush(gui::Painter::kDarkBlue);
   } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));

@@ -193,7 +193,7 @@ static void addTimingActions(T obj,
   auto* gui = Gui::get();
 
   actions.push_back(
-      {std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
+      {std::string(Descriptor::kDeselectAction), [obj, desc, gui]() {
          gui->timingCone(static_cast<T>(nullptr), false, false);
          return desc->makeSelected(obj);
        }});
@@ -1488,7 +1488,7 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
                     {"Dont Touch", net->isDoNotTouch()}});
   int iterm_size = net->getITerms().size();
   std::any iterm_item;
-  if (iterm_size > max_iterms_) {
+  if (iterm_size > kMaxIterms) {
     iterm_item = std::to_string(iterm_size) + " items";
   } else {
     SelectionSet iterms;
@@ -1569,7 +1569,7 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
                              = network->drivers(network->dbToSta(net));
 
                          if (!drivers->empty()) {
-                           std::set<Gui::odbTerm> terms;
+                           std::set<Gui::Term> terms;
 
                            for (auto* driver : *drivers) {
                              odb::dbITerm* iterm = nullptr;
@@ -1669,10 +1669,11 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
-                                     std::function<bool()> usingPolyDecompView)
+DbITermDescriptor::DbITermDescriptor(
+    odb::dbDatabase* db,
+    std::function<bool()> using_poly_decomp_view)
     : BaseDbDescriptor<odb::dbITerm>(db),
-      usingPolyDecompView_(std::move(usingPolyDecompView))
+      using_poly_decomp_view_(std::move(using_poly_decomp_view))
 {
 }
 
@@ -1715,7 +1716,7 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
 
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
-    if (usingPolyDecompView_()) {
+    if (using_poly_decomp_view_()) {
       for (auto box : mpin->getGeometry()) {
         odb::Rect rect = box->getBox();
         inst_xfm.apply(rect);
@@ -1987,10 +1988,11 @@ bool DbBPinDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
-                                     std::function<bool()> usingPolyDecompView)
+DbMTermDescriptor::DbMTermDescriptor(
+    odb::dbDatabase* db,
+    std::function<bool()> using_poly_decomp_view)
     : BaseDbDescriptor<odb::dbMTerm>(db),
-      usingPolyDecompView_(std::move(usingPolyDecompView))
+      using_poly_decomp_view_(std::move(using_poly_decomp_view))
 {
 }
 
@@ -2034,7 +2036,7 @@ void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
   std::vector<odb::Polygon> mterm_polys;
 
   for (auto mpin : mterm->getMPins()) {
-    if (usingPolyDecompView_()) {
+    if (using_poly_decomp_view_()) {
       for (auto box : mpin->getGeometry()) {
         mterm_polys.emplace_back(box->getBox());
       }
@@ -3390,15 +3392,15 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getDBProperties(
                     {"Direction", via_layer_rule->getDirection().getString()}});
 
   if (via_layer_rule->hasWidth()) {
-    int minWidth = 0;
-    int maxWidth = 0;
+    int min_width = 0;
+    int max_width = 0;
 
-    via_layer_rule->getWidth(minWidth, maxWidth);
+    via_layer_rule->getWidth(min_width, max_width);
 
     std::string width_range
         = fmt::format("{} to {}",
-                      Property::convert_dbu(minWidth, true),
-                      Property::convert_dbu(maxWidth, true));
+                      Property::convert_dbu(min_width, true),
+                      Property::convert_dbu(max_width, true));
 
     props.push_back({"Width", width_range});
   }
