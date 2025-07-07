@@ -7,6 +7,7 @@ module(
 
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
@@ -15,17 +16,6 @@ git_override(
     module_name = "rules_scala",
     commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
     remote = "https://github.com/bazelbuild/rules_scala",
-)
-
-# The current rules_cc 0.1.1 hardcodes script locations to `#!/bin/bash`
-# instead of using `#!/usr/bin/env bash`.
-# This is fixed by https://github.com/bazelbuild/rules_cc/pull/306 but
-# is not released yet. Use rules_cc from that commit.
-bazel_dep(name = "rules_cc", version = "0.1.1")
-git_override(
-    module_name = "rules_cc",
-    commit = "d74915024017250e46d95e91a3defc34174effe0",
-    remote = "https://github.com/bazelbuild/rules_cc",
 )
 
 bazel_dep(name = "rules_verilator", version = "5.034")
