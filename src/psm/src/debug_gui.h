@@ -207,19 +207,19 @@ class DebugGui : public gui::Renderer
   std::set<const Node*> selected_nodes_;
   std::set<const Connection*> selected_connections_;
 
-  static constexpr const char* shapes_text_ = "Shapes";
-  static constexpr const char* nodes_text_ = "Nodes";
-  static constexpr const char* iterm_nodes_text_ = "ITerm nodes";
-  static constexpr const char* bpin_nodes_text_ = "BPin nodes";
-  static constexpr const char* connectivity_text_ = "Node connectivity";
-  static constexpr const char* source_text_ = "Source nodes";
-  static constexpr const char* source_shape_text_ = "Source shapes";
+  static constexpr const char* kShapesText = "Shapes";
+  static constexpr const char* kNodesText = "Nodes";
+  static constexpr const char* kItermNodesText = "ITerm nodes";
+  static constexpr const char* kBpinNodesText = "BPin nodes";
+  static constexpr const char* kConnectivityText = "Node connectivity";
+  static constexpr const char* kSourceText = "Source nodes";
+  static constexpr const char* kSourceShapeText = "Source shapes";
 
-  static constexpr int bold_multiplier_ = 2;
-  static constexpr int node_pen_width_ = 2;
-  static constexpr int node_size_ = 10;
-  static constexpr int via_size_ = 10;
-  static constexpr int src_node_max_size_ = 25;
+  static constexpr int kBoldMultiplier = 2;
+  static constexpr int kNodePenWidth = 2;
+  static constexpr int kNodeSize = 10;
+  static constexpr int kViaSize = 10;
+  static constexpr int kSrcNodeMaxSize = 25;
 };
 
 }  // namespace psm
