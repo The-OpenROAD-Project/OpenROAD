@@ -112,7 +112,7 @@ class TclCmdHighlighter : public QSyntaxHighlighter
   std::vector<CommandRuleGroup> syntax_rules_;
   // string formatting, needs to be handled separately since it can span
   // multiple lines
-  CommandRuleGroup string_rule;
+  CommandRuleGroup string_rule_;
 
   std::map<int, ArgumentRulePtr> argument_rules_;
 

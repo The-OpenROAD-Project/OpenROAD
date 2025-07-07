@@ -88,7 +88,7 @@ void DisplayColorDialog::buildUI()
     grid_layout_->setColumnStretch(2, 4);
 
     int row_index = 0;
-    for (auto& pattern_group : DisplayColorDialog::brush_patterns_) {
+    for (auto& pattern_group : DisplayColorDialog::kBrushPatterns) {
       int col_index = 0;
       for (auto pattern : pattern_group) {
         PatternButton* pattern_button = new PatternButton(pattern, this);
@@ -238,7 +238,7 @@ QVariant DisplayControlModel::headerData(int section,
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
-      model_(new DisplayControlModel(user_data_item_idx_, this)),
+      model_(new DisplayControlModel(kUserDataItemIdx, this)),
       routing_layers_menu_(new QMenu(this)),
       layers_menu_(new QMenu(this)),
       layers_menu_layer_(nullptr),
@@ -448,7 +448,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
   makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
   shape_types_.pins.visible->setData(
-      QVariant::fromValue(&shape_types_.pin_names), disable_row_item_idx_);
+      QVariant::fromValue(&shape_types_.pin_names), kDisableRowItemIdx);
   pin_markers_font_ = QApplication::font();  // use default font
   setNameItemDoubleClickAction(shape_types_.pin_names, [this]() {
     pin_markers_font_ = QFontDialog::getFont(
@@ -485,8 +485,7 @@ DisplayControls::DisplayControls(QWidget* parent)
                false,
                iterm_label_color_);
   instance_shapes_.pins.visible->setData(
-      QVariant::fromValue(&instance_shapes_.iterm_labels),
-      disable_row_item_idx_);
+      QVariant::fromValue(&instance_shapes_.iterm_labels), kDisableRowItemIdx);
   makeLeafItem(
       instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
   toggleParent(misc_.instances);
@@ -616,7 +615,7 @@ void DisplayControls::writeSettingsForRow(QSettings* settings,
                                           const QStandardItem* selectable,
                                           bool include_children)
 {
-  auto asBool = [](const QStandardItem* item) {
+  auto as_bool = [](const QStandardItem* item) {
     return item->checkState() != Qt::Unchecked;
   };
 
@@ -630,10 +629,10 @@ void DisplayControls::writeSettingsForRow(QSettings* settings,
     }
   } else {
     if (visible != nullptr) {
-      settings->setValue("visible", asBool(visible));
+      settings->setValue("visible", as_bool(visible));
     }
     if (selectable != nullptr) {
-      settings->setValue("selectable", asBool(selectable));
+      settings->setValue("selectable", as_bool(selectable));
     }
   }
   settings->endGroup();
@@ -653,9 +652,9 @@ void DisplayControls::readSettingsForRow(QSettings* settings,
                                          QStandardItem* selectable,
                                          bool include_children)
 {
-  auto getChecked = [](QSettings* settings,
-                       const QString& name,
-                       const QStandardItem* item) {
+  auto get_checked = [](QSettings* settings,
+                        const QString& name,
+                        const QStandardItem* item) {
     return settings->value(name, item->checkState() != Qt::Unchecked).toBool()
                ? Qt::Checked
                : Qt::Unchecked;
@@ -671,10 +670,11 @@ void DisplayControls::readSettingsForRow(QSettings* settings,
     }
   } else {
     if (visible != nullptr) {
-      visible->setCheckState(getChecked(settings, "visible", visible));
+      visible->setCheckState(get_checked(settings, "visible", visible));
     }
     if (selectable != nullptr) {
-      selectable->setCheckState(getChecked(settings, "selectable", selectable));
+      selectable->setCheckState(
+          get_checked(settings, "selectable", selectable));
     }
   }
   settings->endGroup();
@@ -682,16 +682,16 @@ void DisplayControls::readSettingsForRow(QSettings* settings,
 
 void DisplayControls::readSettings(QSettings* settings)
 {
-  auto getColor
+  auto get_color
       = [this, settings](const ModelRow& row, QColor& color, const char* key) {
           color = settings->value(key, color).value<QColor>();
           row.swatch->setIcon(makeSwatchIcon(color));
         };
-  auto getPattern = [settings](Qt::BrushStyle& style, const char* key) {
+  auto get_pattern = [settings](Qt::BrushStyle& style, const char* key) {
     style = static_cast<Qt::BrushStyle>(
         settings->value(key, static_cast<int>(style)).toInt());
   };
-  auto getFont = [settings](QFont& font, const char* key) {
+  auto get_font = [settings](QFont& font, const char* key) {
     font = settings->value(key, font).value<QFont>();
   };
 
@@ -709,24 +709,24 @@ void DisplayControls::readSettings(QSettings* settings)
 
   settings->beginGroup("other");
   settings->beginGroup("color");
-  getColor(misc_.background, background_color_, "background");
-  getColor(
+  get_color(misc_.background, background_color_, "background");
+  get_color(
       blockages_.blockages, placement_blockage_color_, "blockages_placement");
-  getColor(rulers_, ruler_color_, "ruler");
-  getColor(instance_shapes_.names, instance_name_color_, "instance_name");
-  getColor(instance_shapes_.iterm_labels, iterm_label_color_, "iterm_label");
-  getColor(misc_.regions, region_color_, "region");
+  get_color(rulers_, ruler_color_, "ruler");
+  get_color(instance_shapes_.names, instance_name_color_, "instance_name");
+  get_color(instance_shapes_.iterm_labels, iterm_label_color_, "iterm_label");
+  get_color(misc_.regions, region_color_, "region");
   settings->endGroup();
   settings->beginGroup("pattern");
-  getPattern(placement_blockage_pattern_, "blockages_placement");
-  getPattern(region_pattern_, "region");
+  get_pattern(placement_blockage_pattern_, "blockages_placement");
+  get_pattern(region_pattern_, "region");
   settings->endGroup();
   settings->beginGroup("font");
-  getFont(pin_markers_font_, "pin_markers");
-  getFont(ruler_font_, "ruler");
-  getFont(label_font_, "label");
-  getFont(instance_name_font_, "instance_name");
-  getFont(iterm_label_font_, "iterm_label");
+  get_font(pin_markers_font_, "pin_markers");
+  get_font(ruler_font_, "ruler");
+  get_font(label_font_, "label");
+  get_font(instance_name_font_, "instance_name");
+  get_font(iterm_label_font_, "iterm_label");
   settings->endGroup();
   settings->endGroup();
 
@@ -924,7 +924,7 @@ void DisplayControls::itemChanged(QStandardItem* item)
     return;
   }
   bool checked = item->checkState() == Qt::Checked;
-  Callback callback = item->data(callback_item_idx_).value<Callback>();
+  Callback callback = item->data(kCallbackItemIdx).value<Callback>();
   if (callback.action && !ignore_callback_) {
     callback.action(checked);
   }
@@ -956,7 +956,7 @@ void DisplayControls::itemChanged(QStandardItem* item)
   }
 
   // check if item has exclusivity set
-  auto exclusive = item->data(exclusivity_item_idx_);
+  auto exclusive = item->data(kExclusivityItemIdx);
   if (exclusive.isValid() && checked) {
     QStandardItem* parent = model_->itemFromIndex(item_index.parent());
 
@@ -992,7 +992,7 @@ void DisplayControls::itemChanged(QStandardItem* item)
   }
 
   // check disabled pair
-  auto disabled_row_pair = item->data(disable_row_item_idx_);
+  auto disabled_row_pair = item->data(kDisableRowItemIdx);
   if (disabled_row_pair.isValid()) {
     const ModelRow* row = disabled_row_pair.value<ModelRow*>();
     row->name->setEnabled(checked);
@@ -1018,7 +1018,7 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     const QModelIndex name_index
         = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
-    QVariant user_data = name_item->data(user_data_item_idx_);
+    QVariant user_data = name_item->data(kUserDataItemIdx);
     if (!user_data.isValid()) {
       continue;
     }
@@ -1056,7 +1056,7 @@ std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
   if (item == rulers_.swatch) {
     return {&ruler_color_, nullptr};
   }
-  QVariant tech_layer_data = item->data(user_data_item_idx_);
+  QVariant tech_layer_data = item->data(kUserDataItemIdx);
   if (!tech_layer_data.isValid()) {
     return {nullptr, nullptr};
   }
@@ -1083,7 +1083,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
   if (index.column() == 0) {
     auto name_item = model_->itemFromIndex(index);
 
-    auto data = name_item->data(doubleclick_item_idx_);
+    auto data = name_item->data(kDoubleclickItemIdx);
     if (data.isValid()) {
       auto callback = data.value<std::function<void()>>();
       callback();
@@ -1367,13 +1367,13 @@ QStandardItem* DisplayControls::makeParentItem(ModelRow& row,
   row.visible->setData(QVariant::fromValue(Callback({[this, row](bool visible) {
                          toggleAllChildren(visible, row.name, Visible);
                        }})),
-                       callback_item_idx_);
+                       kCallbackItemIdx);
   if (add_selectable) {
     row.selectable->setData(
         QVariant::fromValue(Callback({[this, row](bool selectable) {
           toggleAllChildren(selectable, row.name, Selectable);
         }})),
-        callback_item_idx_);
+        kCallbackItemIdx);
   }
 
   return row.name;
@@ -1390,14 +1390,14 @@ void DisplayControls::makeLeafItem(ModelRow& row,
   row.name = new QStandardItem(text);
   row.name->setEditable(false);
   if (user_data.isValid()) {
-    row.name->setData(user_data, user_data_item_idx_);
+    row.name->setData(user_data, kUserDataItemIdx);
   }
 
   row.swatch = new QStandardItem(makeSwatchIcon(color), "");
   row.swatch->setEditable(false);
   row.swatch->setCheckable(false);
   if (user_data.isValid()) {
-    row.swatch->setData(user_data, user_data_item_idx_);
+    row.swatch->setData(user_data, kUserDataItemIdx);
   }
 
   if (checked.has_value()) {
@@ -1421,7 +1421,7 @@ void DisplayControls::setNameItemDoubleClickAction(
     ModelRow& row,
     const std::function<void()>& callback)
 {
-  row.name->setData(QVariant::fromValue(callback), doubleclick_item_idx_);
+  row.name->setData(QVariant::fromValue(callback), kDoubleclickItemIdx);
 
   QFont current_font = row.name->data(Qt::FontRole).value<QFont>();
   current_font.setUnderline(true);
@@ -1436,7 +1436,7 @@ void DisplayControls::setItemExclusivity(
   for (const auto& name : exclusivity) {
     names.insert(QString::fromStdString(name));
   }
-  row.visible->setData(QVariant::fromValue(names), exclusivity_item_idx_);
+  row.visible->setData(QVariant::fromValue(names), kExclusivityItemIdx);
 }
 
 QIcon DisplayControls::makeSwatchIcon(const QColor& color)
@@ -2189,8 +2189,7 @@ void DisplayControls::itemContextMenu(const QPoint& point)
 
   const QModelIndex name_index = model_->index(index.row(), Name, parent);
   auto* name_item = model_->itemFromIndex(name_index);
-  layers_menu_layer_
-      = name_item->data(user_data_item_idx_).value<dbTechLayer*>();
+  layers_menu_layer_ = name_item->data(kUserDataItemIdx).value<dbTechLayer*>();
 
   if (layers_menu_layer_ != nullptr) {
     switch (layers_menu_layer_->getType()) {

@@ -76,8 +76,8 @@ void FastRouteRenderer::drawLineObject(int x1,
       painter.setPen(layer);
       painter.setBrush(layer);
     } else {
-      painter.setPen(gui::Painter::cyan);
-      painter.setBrush(gui::Painter::cyan);
+      painter.setPen(gui::Painter::kCyan);
+      painter.setBrush(gui::Painter::kCyan);
     }
     painter.setPenWidth(700);
     painter.drawLine(x1, y1, x2, y2);
@@ -136,8 +136,8 @@ void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 void FastRouteRenderer::drawObjects(gui::Painter& painter)
 {
   if (treeStructure_ == TreeStructure::steinerTreeByStt) {
-    painter.setPen(gui::Painter::white);
-    painter.setBrush(gui::Painter::white);
+    painter.setPen(gui::Painter::kWhite);
+    painter.setBrush(gui::Painter::kWhite);
     painter.setPenWidth(700);
 
     for (int i = 0; i < stree_.branchCount(); i++) {

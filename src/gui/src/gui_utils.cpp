@@ -52,15 +52,15 @@ QSize Utils::adjustMaxImageSize(const QSize& size)
   int width_px = size.width();
   int height_px = size.height();
 
-  if (std::max(width_px, height_px) >= MAX_IMAGE_SIZE) {
+  if (std::max(width_px, height_px) >= kMaxImageSize) {
     if (width_px > height_px) {
       const double ratio = static_cast<double>(height_px) / width_px;
-      width_px = MAX_IMAGE_SIZE;
-      height_px = ratio * MAX_IMAGE_SIZE;
+      width_px = kMaxImageSize;
+      height_px = ratio * kMaxImageSize;
     } else {
       const double ratio = static_cast<double>(width_px) / height_px;
-      height_px = MAX_IMAGE_SIZE;
-      width_px = ratio * MAX_IMAGE_SIZE;
+      height_px = kMaxImageSize;
+      width_px = ratio * kMaxImageSize;
     }
   }
   return QSize(width_px, height_px);
