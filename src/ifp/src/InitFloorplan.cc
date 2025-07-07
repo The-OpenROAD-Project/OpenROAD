@@ -16,11 +16,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#include "odb/geom_boost.h"
-#include <boost/polygon/polygon.hpp>
-#pragma GCC diagnostic pop
 #include "odb/util.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -32,8 +27,6 @@
 #include "utl/validation.h"
 
 namespace ifp {
-
-using namespace boost::polygon::operators;
 
 using std::ceil;
 using std::map;
@@ -263,7 +256,7 @@ void InitFloorplan::makePolygonRows(const std::vector<odb::Point>& core_polygon,
     return;
   }
 
-  logger_->info(IFP, 994, "Creating polygon rows with {} core vertices using Boost.Polygon", core_polygon.size());
+  logger_->info(IFP, 994, "Creating polygon rows with {} core vertices using scanline intersection", core_polygon.size());
 
   // Snap all coordinates to manufacturing grid
   std::vector<odb::Point> mfg_pts;
@@ -309,8 +302,8 @@ void InitFloorplan::makePolygonRows(const std::vector<odb::Point>& core_polygon,
     row_itr = dbRow::destroy(row_itr);
   }
 
-  // Use the new Boost.Polygon-based approach
-  makePolygonRowsBoost(mfg_pts, base_site, sites_by_name, row_parity, flipped_sites);
+  // Use the new scanline-based approach
+  makePolygonRowsScanline(mfg_pts, base_site, sites_by_name, row_parity, flipped_sites);
   
   logger_->info(IFP, 997, "Completed polygon-aware row generation using {} vertices", core_polygon.size());
 }
@@ -1095,12 +1088,12 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
 }
 
-// Boost.Polygon-based polygon-aware row generation methods
-void InitFloorplan::makePolygonRowsBoost(const std::vector<odb::Point>& core_polygon,
-                                         odb::dbSite* base_site,
-                                         const SitesByName& sites_by_name,
-                                         RowParity row_parity,
-                                         const std::set<odb::dbSite*>& flipped_sites)
+// Scanline-based polygon-aware row generation methods
+void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_polygon,
+                                             odb::dbSite* base_site,
+                                             const SitesByName& sites_by_name,
+                                             RowParity row_parity,
+                                             const std::set<odb::dbSite*>& flipped_sites)
 {
   if (core_polygon.empty()) {
     logger_->error(IFP, 998, "No core polygon vertices provided to Boost method.");
@@ -1111,7 +1104,7 @@ void InitFloorplan::makePolygonRowsBoost(const std::vector<odb::Point>& core_pol
   odb::Polygon core_poly(core_polygon);
   odb::Rect core_bbox = core_poly.getEnclosingRect();
 
-  logger_->info(IFP, 999, "Using Boost.Polygon for polygon-aware row generation");
+  logger_->info(IFP, 999, "Using scanline intersection for polygon-aware row generation");
 
   if (base_site->hasRowPattern()) {
     logger_->error(IFP, 1000, "Hybrid rows not yet supported with polygon-aware generation.");
@@ -1182,104 +1175,51 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(const odb::Rect& r
 {
   std::vector<odb::Rect> result;
   
-  // Use scanline intersection for better continuity at inflection points
-  int row_y_min = row.yMin();
-  int row_y_max = row.yMax();
+  // Simple scanline intersection approach - more robust for inflection points
+  const int row_y = row.yMin();
+  const int row_height = row.dy();
   
-  // Find intersection using a more precise scanline approach
-  std::vector<int> x_intersections;
+  // Find all intersections of polygon edges with the row's horizontal strip
+  std::vector<int> intersections;
   
-  // For each edge of the polygon, find intersections with the row
-  for (size_t i = 0; i < polygon.size(); i++) {
-    size_t next = (i + 1) % polygon.size();
-    const auto& p1 = polygon[i];
-    const auto& p2 = polygon[next];
+  for (size_t i = 0; i < polygon.size(); ++i) {
+    const odb::Point& p1 = polygon[i];
+    const odb::Point& p2 = polygon[(i + 1) % polygon.size()];
     
-    int y1 = p1.y();
-    int y2 = p2.y();
-    int x1 = p1.x();
-    int x2 = p2.x();
+    const int y1 = p1.y();
+    const int y2 = p2.y();
+    const int x1 = p1.x();
+    const int x2 = p2.x();
     
-    // Skip horizontal edges that are outside our row
+    // Skip horizontal edges
     if (y1 == y2) {
       continue;
     }
     
-    // Ensure y1 < y2 for easier computation
-    if (y1 > y2) {
-      std::swap(y1, y2);
-      std::swap(x1, x2);
-    }
-    
-    // Check if edge intersects with row
-    if (y2 <= row_y_min || y1 >= row_y_max) {
-      continue;
-    }
-    
-    // Calculate intersection at the middle of the row for consistency
-    int test_y = (row_y_min + row_y_max) / 2;
-    
-    if (test_y >= y1 && test_y < y2) {
-      // Linear interpolation to find x coordinate
-      int x_intersect = x1 + (int)((double)(x2 - x1) * (test_y - y1) / (y2 - y1));
-      x_intersections.push_back(x_intersect);
+    // Check if edge crosses the scanline at row_y
+    if ((y1 <= row_y && y2 > row_y) || (y1 > row_y && y2 <= row_y)) {
+      // Calculate intersection point
+      const int x_intersect = x1 + (x2 - x1) * (row_y - y1) / (y2 - y1);
+      intersections.push_back(x_intersect);
     }
   }
   
-  // Sort intersection points
-  std::sort(x_intersections.begin(), x_intersections.end());
+  // Sort intersections by x-coordinate
+  std::sort(intersections.begin(), intersections.end());
   
-  // Create rectangles from pairs of intersections (inside polygon)
-  for (size_t i = 0; i + 1 < x_intersections.size(); i += 2) {
-    int x_start = x_intersections[i];
-    int x_end = x_intersections[i + 1];
+  // Create segments from pairs of intersections (polygon uses even-odd rule)
+  for (size_t i = 0; i + 1 < intersections.size(); i += 2) {
+    const int x_start = intersections[i];
+    const int x_end = intersections[i + 1];
     
     if (x_end > x_start) {
-      // Clamp to row bounds
-      x_start = std::max(x_start, row.xMin());
-      x_end = std::min(x_end, row.xMax());
+      // Clip to row bounds
+      const int clipped_x1 = std::max(x_start, row.xMin());
+      const int clipped_x2 = std::min(x_end, row.xMax());
       
-      if (x_end > x_start) {
-        result.emplace_back(x_start, row_y_min, x_end, row_y_max);
+      if (clipped_x2 > clipped_x1) {
+        result.emplace_back(clipped_x1, row_y, clipped_x2, row_y + row_height);
       }
-    }
-  }
-  
-  // Fallback to Boost.Polygon method if scanline approach produces no results
-  if (result.empty()) {
-    // Create a polygon set from the core polygon using Boost.Polygon
-    BoostPolygonSet polygon_set;
-    
-    // Convert the odb polygon to boost polygon format
-    std::vector<BoostPoint> boost_points;
-    for (const auto& pt : polygon) {
-      boost_points.emplace_back(pt.x(), pt.y());
-    }
-    
-    // Create a polygon from the points
-    BoostPolygon boost_polygon;
-    boost_polygon.set(boost_points.begin(), boost_points.end());
-    
-    // Insert the polygon into the set
-    polygon_set.insert(boost_polygon);
-    
-    // Create a polygon set from the row rectangle
-    BoostPolygonSet row_set;
-    BoostRect boost_rect(row.xMin(), row.yMin(), row.xMax(), row.yMax());
-    row_set.insert(boost_rect);
-    
-    // Find intersection using the &= operator
-    BoostPolygonSet intersection_set = polygon_set;
-    intersection_set &= row_set;
-    
-    // Extract rectangles from the intersection
-    std::vector<BoostRect> boost_rectangles;
-    boost::polygon::get_rectangles(boost_rectangles, intersection_set);
-    
-    // Convert back to odb::Rect
-    for (const auto& rect : boost_rectangles) {
-      result.emplace_back(boost::polygon::xl(rect), boost::polygon::yl(rect), 
-                          boost::polygon::xh(rect), boost::polygon::yh(rect));
     }
   }
   
