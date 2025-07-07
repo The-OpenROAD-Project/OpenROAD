@@ -36,7 +36,7 @@ bool JobMessage::serializeMsg(SerializeType type,
                               JobMessage& msg,
                               std::string& str)
 {
-  if (type == WRITE) {
+  if (type == kWrite) {
     try {
       std::ostringstream oarchive_stream;
       boost::archive::text_oarchive archive(oarchive_stream);

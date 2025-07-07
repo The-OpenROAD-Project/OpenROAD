@@ -849,9 +849,9 @@ void TritonRoute::sendDesignDist()
 
     db_->write(utl::OutStreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
-    dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                        dst::JobMessage::BROADCAST),
-        result(dst::JobMessage::NONE);
+    dst::JobMessage msg(dst::JobMessage::kUpdateDesign,
+                        dst::JobMessage::kBroadcast),
+        result(dst::JobMessage::kNone);
     std::unique_ptr<dst::JobDescription> desc
         = std::make_unique<RoutingJobDescription>();
     RoutingJobDescription* rjd
@@ -885,9 +885,9 @@ void TritonRoute::sendGlobalsUpdates(const std::string& router_cfg_path,
     return;
   }
   ProfileTask task("DIST: SENDING GLOBALS");
-  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                      dst::JobMessage::BROADCAST),
-      result(dst::JobMessage::NONE);
+  dst::JobMessage msg(dst::JobMessage::kUpdateDesign,
+                      dst::JobMessage::kBroadcast),
+      result(dst::JobMessage::kNone);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
@@ -931,9 +931,9 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
   } else {
     task = std::make_unique<ProfileTask>("DIST: SENDING_UDPATES");
   }
-  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                      dst::JobMessage::BROADCAST),
-      result(dst::JobMessage::NONE);
+  dst::JobMessage msg(dst::JobMessage::kUpdateDesign,
+                      dst::JobMessage::kBroadcast),
+      result(dst::JobMessage::kNone);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
@@ -976,8 +976,8 @@ int TritonRoute::main()
     if (router_cfg_->DO_PA) {
       pa_thread = std::make_unique<std::thread>([this]() {
         sendDesignDist();
-        dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                            dst::JobMessage::BROADCAST),
+        dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                            dst::JobMessage::kBroadcast),
             result;
         auto uDesc = std::make_unique<PinAccessJobDescription>();
         uDesc->setType(PinAccessJobDescription::INIT_PA);
@@ -1021,8 +1021,8 @@ int TritonRoute::main()
     }
     if (distributed_) {
       asio::post(*dist_pool_, [this]() {
-        dst::JobMessage msg(dst::JobMessage::GRDR_INIT,
-                            dst::JobMessage::BROADCAST),
+        dst::JobMessage msg(dst::JobMessage::kGrdrInit,
+                            dst::JobMessage::kBroadcast),
             result;
         dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
       });
@@ -1062,8 +1062,8 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   if (distributed_) {
     asio::post(*dist_pool_, [this]() {
       sendDesignDist();
-      dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                          dst::JobMessage::BROADCAST),
+      dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                          dst::JobMessage::kBroadcast),
           result;
       auto uDesc = std::make_unique<PinAccessJobDescription>();
       uDesc->setType(PinAccessJobDescription::INIT_PA);

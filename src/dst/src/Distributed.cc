@@ -126,7 +126,7 @@ bool Distributed::sendJob(JobMessage& msg,
 {
   int tries = 0;
   std::string msg_str;
-  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msg_str)) {
+  if (!JobMessage::serializeMsg(JobMessage::kWrite, msg, msg_str)) {
     logger_->warn(utl::DST, 112, "Serializing JobMessage failed");
     return false;
   }
@@ -152,7 +152,7 @@ bool Distributed::sendJob(JobMessage& msg,
     if (!ok) {
       continue;
     }
-    if (!JobMessage::serializeMsg(JobMessage::READ, result, result_str)) {
+    if (!JobMessage::serializeMsg(JobMessage::kRead, result, result_str)) {
       continue;
     }
     if (sock.is_open()) {
@@ -187,7 +187,7 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
 {
   int tries = 0;
   std::string msg_str;
-  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msg_str)) {
+  if (!JobMessage::serializeMsg(JobMessage::kWrite, msg, msg_str)) {
     logger_->warn(utl::DST, 12, "Serializing JobMessage failed");
     return false;
   }
@@ -217,13 +217,13 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
     std::string split;
     while (getNextMsg(result_str, JobMessage::kEop, split)) {
       JobMessage tmp;
-      if (!JobMessage::serializeMsg(JobMessage::READ, tmp, split)) {
+      if (!JobMessage::serializeMsg(JobMessage::kRead, tmp, split)) {
         logger_->error(utl::DST, 9999, "Problem in deserialize {}", split);
       } else {
         result.addJobDescription(std::move(tmp.getJobDescriptionRef()));
       }
     }
-    result.setJobType(JobMessage::SUCCESS);
+    result.setJobType(JobMessage::kSuccess);
     if (sock.is_open()) {
       sock.close();
     }
@@ -240,7 +240,7 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
 bool Distributed::sendResult(JobMessage& msg, dst::Socket& sock)
 {
   std::string msg_str;
-  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msg_str)) {
+  if (!JobMessage::serializeMsg(JobMessage::kWrite, msg, msg_str)) {
     logger_->warn(utl::DST, 20, "Serializing result JobMessage failed");
     return false;
   }

@@ -140,8 +140,8 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
         std::vector<std::vector<frInst*>> batch(start, end);
         std::string path = fmt::format("{}/batch_{}.bin", shared_vol_, i);
         serializeInstRows(batch, path);
-        dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                            dst::JobMessage::UNICAST),
+        dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                            dst::JobMessage::kUnicast),
             result;
         std::unique_ptr<PinAccessJobDescription> uDesc
             = std::make_unique<PinAccessJobDescription>();
@@ -179,8 +179,8 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
       }
     }
     // send updates back to workers
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
+    dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                        dst::JobMessage::kBroadcast),
         result;
     const std::string updates_path
         = fmt::format("{}/final_updates.bin", shared_vol_);

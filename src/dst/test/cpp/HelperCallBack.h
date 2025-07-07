@@ -39,10 +39,10 @@ class HelperCallBack : public dst::JobCallBack
   void onRoutingJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
     JobMessage reply_msg;
-    if (msg.getJobType() == JobMessage::JobType::ROUTING) {
-      reply_msg.setJobType(JobMessage::JobType::SUCCESS);
+    if (msg.getJobType() == JobMessage::JobType::kRouting) {
+      reply_msg.setJobType(JobMessage::JobType::kSuccess);
     } else {
-      reply_msg.setJobType(JobMessage::JobType::ERROR);
+      reply_msg.setJobType(JobMessage::JobType::kError);
     }
     dist_->sendResult(reply_msg, sock);
   }

@@ -62,8 +62,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
     boost::system::error_code error;
     std::string data{buffers_begin(in_packet_.data()),
                      buffers_begin(in_packet_.data()) + bytes_transferred};
-    JobMessage msg(JobMessage::NONE);
-    if (!JobMessage::serializeMsg(JobMessage::READ, msg, data)) {
+    JobMessage msg(JobMessage::kNone);
+    if (!JobMessage::serializeMsg(JobMessage::kRead, msg, data)) {
       logger_->warn(utl::DST,
                     42,
                     "Received malformed msg {} from port {}",
@@ -74,7 +74,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
       return;
     }
     switch (msg.getMessageType()) {
-      case JobMessage::UNICAST: {
+      case JobMessage::kUnicast: {
         ip::address worker_address;
         unsigned short port;
         owner_->getNextWorker(worker_address, port);
@@ -82,8 +82,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
           logger_->warn(utl::DST, 6, "No workers available");
           sock_.close();
         } else {
-          if (msg.getJobType() == JobMessage::BALANCER) {
-            JobMessage reply(JobMessage::SUCCESS);
+          if (msg.getJobType() == JobMessage::kBalancer) {
+            JobMessage reply(JobMessage::kSuccess);
             auto u_desc = std::make_unique<BalancerJobDescription>();
             auto desc = u_desc.get();
             desc->setWorkerIP(worker_address.to_string());
@@ -135,9 +135,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
               }
             }
             if (failure) {
-              JobMessage result(JobMessage::ERROR);
+              JobMessage result(JobMessage::kError);
               std::string msg_str;
-              JobMessage::serializeMsg(JobMessage::WRITE, result, msg_str);
+              JobMessage::serializeMsg(JobMessage::kWrite, result, msg_str);
               asio::write(sock_, asio::buffer(msg_str), error);
             } else {
               asio::write(sock_, receive_buffer, error);
@@ -147,7 +147,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         }
         break;
       }
-      case JobMessage::BROADCAST: {
+      case JobMessage::kBroadcast: {
         std::lock_guard<std::mutex> lock(owner_->workers_mutex_);
         owner_->broadcastData_.push_back(data);
         asio::thread_pool pool(owner_->workers_.size());
@@ -179,7 +179,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
               });
         }
         pool.join();
-        JobMessage result(JobMessage::SUCCESS);
+        JobMessage result(JobMessage::kSuccess);
         std::string msg_str;
         unsigned short success_broadcast
             = owner_->workers_.size() - failed_workers.size();
@@ -194,14 +194,14 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                         failed_workers.size());
           if (failed_workers.size() > kMaxBroadcastFailedNodes
               || failed_workers.size() == owner_->workers_.size()) {
-            result.setJobType(JobMessage::JobType::ERROR);
+            result.setJobType(JobMessage::JobType::kError);
           }
         }
         auto u_desc = std::make_unique<BroadcastJobDescription>();
         auto desc = u_desc.get();
         desc->setWorkersCount(success_broadcast);
         result.setJobDescription(std::move(u_desc));
-        JobMessage::serializeMsg(JobMessage::WRITE, result, msg_str);
+        JobMessage::serializeMsg(JobMessage::kWrite, result, msg_str);
         asio::write(sock_, asio::buffer(msg_str), error);
         sock_.close();
         break;
