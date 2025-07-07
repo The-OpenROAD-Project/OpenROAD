@@ -120,9 +120,9 @@ class ChartsWidget : public QDockWidget
  public:
   enum Mode
   {
-    SELECT,
-    SETUP_SLACK,
-    HOLD_SLACK
+    kSelect,
+    kSetupSlack,
+    kHoldSlack
   };
 
   ChartsWidget(QWidget* parent = nullptr);

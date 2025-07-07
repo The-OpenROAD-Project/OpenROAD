@@ -65,42 +65,42 @@ class LayoutViewer : public QWidget
   Q_OBJECT
 
  public:
-  enum CONTEXT_MENU_ACTIONS
+  enum ContextMenuActions
   {
-    SELECT_CONNECTED_INST_ACT,
-    SELECT_OUTPUT_NETS_ACT,
-    SELECT_INPUT_NETS_ACT,
-    SELECT_ALL_NETS_ACT,
-    SELECT_ALL_BUFFER_TREES_ACT,
+    kSelectConnectedInstAct,
+    kSelectOutputNetsAct,
+    kSelectInputNetsAct,
+    kSelectAllNetsAct,
+    kSelectAllBufferTreesAct,
 
-    HIGHLIGHT_CONNECTED_INST_ACT,
-    HIGHLIGHT_OUTPUT_NETS_ACT,
-    HIGHLIGHT_INPUT_NETS_ACT,
-    HIGHLIGHT_ALL_NETS_ACT,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_0,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_1,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_2,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_3,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_4,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_5,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_6,
-    HIGHLIGHT_ALL_BUFFER_TREES_ACT_7,
+    kHighlightConnectedInstAct,
+    kHighlightOutputNetsAct,
+    kHighlightInputNetsAct,
+    kHighlightAllNetsAct,
+    kHighlightAllBufferTreesAct0,
+    kHighlightAllBufferTreesAct1,
+    kHighlightAllBufferTreesAct2,
+    kHighlightAllBufferTreesAct3,
+    kHighlightAllBufferTreesAct4,
+    kHighlightAllBufferTreesAct5,
+    kHighlightAllBufferTreesAct6,
+    kHighlightAllBufferTreesAct7,
 
-    VIEW_ZOOMIN_ACT,
-    VIEW_ZOOMOUT_ACT,
-    VIEW_ZOOMFIT_ACT,
+    kViewZoominAct,
+    kViewZoomoutAct,
+    kViewZoomfitAct,
 
-    SAVE_WHOLE_IMAGE_ACT,
-    SAVE_VISIBLE_IMAGE_ACT,
+    kSaveWholeImageAct,
+    kSaveVisibleImageAct,
 
-    CLEAR_SELECTIONS_ACT,
-    CLEAR_HIGHLIGHTS_ACT,
-    CLEAR_RULERS_ACT,
-    CLEAR_LABELS_ACT,
-    CLEAR_FOCUS_ACT,
-    CLEAR_GUIDES_ACT,
-    CLEAR_NET_TRACKS_ACT,
-    CLEAR_ALL_ACT
+    kClearSelectionsAct,
+    kClearHighlightsAct,
+    kClearRulersAct,
+    kClearLabelsAct,
+    kClearFocusAct,
+    kClearGuidesAct,
+    kClearNetTracksAct,
+    kClearAllAct
   };
 
   struct ModuleSettings
@@ -405,7 +405,7 @@ class LayoutViewer : public QWidget
 
   QMenu* layout_context_menu_;
   QMenu* highlight_color_menu_;
-  QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
+  QMap<ContextMenuActions, QAction*> menu_actions_;
 
   // shift required when drawing the layout to center the layout in the window
   // (units: pixels)

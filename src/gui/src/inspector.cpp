@@ -197,7 +197,7 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
   item->setData(QVariant::fromValue(name), EditorItemDelegate::kEditorName);
 
   Descriptor::Editor used_editor = editor;
-  if (type == EditorItemDelegate::BOOL) {
+  if (type == EditorItemDelegate::kBool) {
     // for BOOL, replace options with true/false options
     used_editor.options = {{"True", true}, {"False", false}};
   }
@@ -208,7 +208,7 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
     item->setData(QVariant::fromValue(type), EditorItemDelegate::kEditorType);
   } else {
     // options are not empty so use list type
-    item->setData(QVariant::fromValue(EditorItemDelegate::LIST),
+    item->setData(QVariant::fromValue(EditorItemDelegate::kList),
                   EditorItemDelegate::kEditorType);
   }
 }
@@ -232,7 +232,7 @@ QWidget* EditorItemDelegate::createEditor(
                   ->data(index, kEditorType)
                   .value<EditorItemDelegate::EditType>();
   QWidget* editor;
-  if (type == LIST) {
+  if (type == kList) {
     editor = new QComboBox(parent);
   } else {
     editor = new QLineEdit(parent);
@@ -251,7 +251,7 @@ void EditorItemDelegate::setEditorData(QWidget* editor,
       = index.model()->data(index, kEditor).value<Descriptor::Editor>();
   QString value = index.model()->data(index, Qt::EditRole).toString();
 
-  if (type != LIST) {
+  if (type != kList) {
     QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
     line_edit->setText(value);
   } else {
@@ -288,12 +288,12 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   QString value;
   std::any callback_value;
   bool value_valid = false;
-  if (type != LIST) {
+  if (type != kList) {
     QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
     value = line_edit->text();
-    if (type == NUMBER) {
+    if (type == kNumber) {
       callback_value = value.toDouble(&value_valid);
-    } else if (type == STRING) {
+    } else if (type == kString) {
       callback_value = value.toStdString();
       value_valid = true;
     }
@@ -337,27 +337,27 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(
     const std::any& value)
 {
   if (std::any_cast<const char*>(&value)) {
-    return EditorItemDelegate::STRING;
+    return EditorItemDelegate::kString;
   }
   if (std::any_cast<const std::string>(&value)) {
-    return EditorItemDelegate::STRING;
+    return EditorItemDelegate::kString;
   }
   if (std::any_cast<int>(&value)) {
-    return EditorItemDelegate::NUMBER;
+    return EditorItemDelegate::kNumber;
   }
   if (std::any_cast<unsigned int>(&value)) {
-    return EditorItemDelegate::NUMBER;
+    return EditorItemDelegate::kNumber;
   }
   if (std::any_cast<double>(&value)) {
-    return EditorItemDelegate::NUMBER;
+    return EditorItemDelegate::kNumber;
   }
   if (std::any_cast<float>(&value)) {
-    return EditorItemDelegate::NUMBER;
+    return EditorItemDelegate::kNumber;
   }
   if (std::any_cast<bool>(&value)) {
-    return EditorItemDelegate::BOOL;
+    return EditorItemDelegate::kBool;
   }
-  return EditorItemDelegate::STRING;
+  return EditorItemDelegate::kString;
 }
 
 ////////
@@ -614,7 +614,7 @@ Inspector::Inspector(const SelectionSet& selected,
   view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
   QHeaderView* header = view_->header();
-  header->setSectionResizeMode(Name, QHeaderView::Interactive);
+  header->setSectionResizeMode(kName, QHeaderView::Interactive);
 
   QWidget* container = new QWidget(this);
 
@@ -712,13 +712,13 @@ void Inspector::adjustHeaders()
 {
   if (selection_) {
     // resize to fit the contents
-    view_->resizeColumnToContents(Name);
-    view_->resizeColumnToContents(Value);
+    view_->resizeColumnToContents(kName);
+    view_->resizeColumnToContents(kValue);
 
     const auto margins = view_->contentsMargins();
     const int width = view_->size().width() - margins.left() - margins.right();
-    const int name_width = view_->columnWidth(Name);
-    const int value_width = view_->columnWidth(Value);
+    const int name_width = view_->columnWidth(kName);
+    const int value_width = view_->columnWidth(kValue);
 
     const int max_name_width = width - value_width;
 
@@ -728,7 +728,7 @@ void Inspector::adjustHeaders()
       // check if using a smaller name column will be useful,
       // otherwise keep full width column.
       if (min_name_width <= max_name_width) {
-        view_->setColumnWidth(Name, max_name_width);
+        view_->setColumnWidth(kName, max_name_width);
       }
     }
   }

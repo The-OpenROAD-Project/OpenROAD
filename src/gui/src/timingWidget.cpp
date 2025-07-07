@@ -319,20 +319,19 @@ void TimingWidget::addCommandsMenuActions()
 {
   QMenu* closest_match_menu = new QMenu("Closest Match", this);
   connect(closest_match_menu->addAction("Exact"), &QAction::triggered, [this] {
-    writePathReportCommand(timing_paths_table_index_, EXACT);
+    writePathReportCommand(timing_paths_table_index_, kExact);
   });
   connect(closest_match_menu->addAction("No Buffering"),
           &QAction::triggered,
           [this] {
-            writePathReportCommand(timing_paths_table_index_, NO_BUFFERING);
+            writePathReportCommand(timing_paths_table_index_, kNoBuffering);
           });
   commands_menu_->addMenu(closest_match_menu);
 
   connect(commands_menu_->addAction("From Start to End"),
           &QAction::triggered,
           [this] {
-            writePathReportCommand(timing_paths_table_index_,
-                                   FROM_START_TO_END);
+            writePathReportCommand(timing_paths_table_index_, kFromStartToEnd);
           });
 }
 
@@ -359,16 +358,16 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
   QString command = "report_checks ";
 
   switch (type) {
-    case FROM_START_TO_END: {
+    case kFromStartToEnd: {
       command += generateFromStartToEndString(selected_path);
       break;
     }
-    case NO_BUFFERING: {
-      command += generateClosestMatchString(NO_BUFFERING, selected_path);
+    case kNoBuffering: {
+      command += generateClosestMatchString(kNoBuffering, selected_path);
       break;
     }
-    case EXACT: {
-      command += generateClosestMatchString(EXACT, selected_path);
+    case kExact: {
+      command += generateClosestMatchString(kExact, selected_path);
       break;
     }
   }
@@ -419,7 +418,7 @@ QString TimingWidget::generateClosestMatchString(CommandType type,
     for (int i = (start_idx + 1); i < (node_list->size() - 1); i++) {
       TimingPathNode* curr_node = (*node_list)[i].get();
       odb::dbInst* curr_node_inst = curr_node->getInstance();
-      if (type == NO_BUFFERING
+      if (type == kNoBuffering
           && network->libertyCell(curr_node_inst)->isBuffer()) {
         continue;
       }
@@ -448,7 +447,7 @@ QString TimingWidget::generateClosestMatchString(CommandType type,
           continue;
         }
 
-        if (type == NO_BUFFERING
+        if (type == kNoBuffering
             && network->libertyCell(curr_node_inst)->isInverter()
             && network->libertyCell(prev_node_inst)->isInverter()) {
           // Remove previously inserted inverter fields.

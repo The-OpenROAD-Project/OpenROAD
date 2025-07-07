@@ -1569,7 +1569,7 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
                              = network->drivers(network->dbToSta(net));
 
                          if (!drivers->empty()) {
-                           std::set<Gui::odbTerm> terms;
+                           std::set<Gui::Term> terms;
 
                            for (auto* driver : *drivers) {
                              odb::dbITerm* iterm = nullptr;

@@ -195,7 +195,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
       const std::string net_name = shape->getDisplayText();
       const odb::Rect name_box = painter.stringBoundaries(
-          0, 0, gui::Painter::Anchor::BOTTOM_LEFT, net_name);
+          0, 0, gui::Painter::Anchor::kBottomLeft, net_name);
 
       if (shape_rect.dx() * net_name_margin > name_box.dx()
           && shape_rect.dy() * net_name_margin > name_box.dy()) {
@@ -209,7 +209,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                x < shape_rect.xMax() - name_offset;
                x += net_name_increment * name_box.dx()) {
             if (paint_rect.intersects(odb::Point(x, y))) {
-              painter.drawString(x, y, gui::Painter::Anchor::CENTER, net_name);
+              painter.drawString(x, y, gui::Painter::Anchor::kCenter, net_name);
             }
           }
         } else {
@@ -220,7 +220,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                y < shape_rect.yMax() - name_offset;
                y += net_name_increment * name_box.dy()) {
             if (paint_rect.intersects(odb::Point(x, y))) {
-              painter.drawString(x, y, gui::Painter::Anchor::CENTER, net_name);
+              painter.drawString(x, y, gui::Painter::Anchor::kCenter, net_name);
             }
           }
         }
@@ -248,13 +248,13 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
       const std::string via_name = via->getDisplayText();
       const odb::Rect name_box = painter.stringBoundaries(
-          0, 0, gui::Painter::Anchor::BOTTOM_LEFT, via_name);
+          0, 0, gui::Painter::Anchor::kBottomLeft, via_name);
       if (area.dx() * net_name_margin > name_box.dx()
           && area.dy() * net_name_margin > name_box.dy()) {
         painter.setPen(gui::Painter::kWhite, true);
         const int x = 0.5 * (area.xMin() + area.xMax());
         const int y = 0.5 * (area.yMin() + area.yMax());
-        painter.drawString(x, y, gui::Painter::Anchor::CENTER, via_name);
+        painter.drawString(x, y, gui::Painter::Anchor::kCenter, via_name);
       }
     }
   }
@@ -264,17 +264,18 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (layer == repair.source || layer == repair.target) {
         painter.setPenAndBrush(repair_color_, true);
         painter.drawRect(repair.rect);
-        painter.setPenAndBrush(repair_outline_color_, true, gui::Painter::NONE);
+        painter.setPenAndBrush(
+            repair_outline_color_, true, gui::Painter::kNone);
         painter.drawRect(repair.available_rect);
 
         const odb::Rect name_box = painter.stringBoundaries(
-            0, 0, gui::Painter::Anchor::BOTTOM_LEFT, repair.text);
+            0, 0, gui::Painter::Anchor::kBottomLeft, repair.text);
         if (repair.rect.dx() * net_name_margin > name_box.dx()
             && repair.rect.dy() * net_name_margin > name_box.dy()) {
           painter.setPen(gui::Painter::kWhite, true);
           const int x = 0.5 * (repair.rect.xMin() + repair.rect.xMax());
           const int y = 0.5 * (repair.rect.yMin() + repair.rect.yMax());
-          painter.drawString(x, y, gui::Painter::Anchor::CENTER, repair.text);
+          painter.drawString(x, y, gui::Painter::Anchor::kCenter, repair.text);
         }
       }
     }

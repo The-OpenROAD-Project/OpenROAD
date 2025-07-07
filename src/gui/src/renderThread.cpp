@@ -159,7 +159,7 @@ void RenderThread::drawDesignLoadingMessage(Painter& painter,
   std::string message = "Design loading...";
   painter.setPen(gui::Painter::kWhite, true);
   painter.drawString(
-      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, message);
+      bounds.xCenter(), bounds.yCenter(), Painter::kCenter, message);
 
   qpainter->setFont(initial_font);
 }
@@ -407,7 +407,7 @@ void RenderThread::drawSelected(Painter& painter, const SelectionSet& selected)
                               Painter::kHighlight,
                               1,
                               Painter::kHighlight,
-                              Painter::Brush::DIAGONAL);
+                              Painter::Brush::kDiagonal);
   }
 }
 
@@ -1675,18 +1675,18 @@ void RenderThread::drawIOPins(Painter& painter,
     if (pin_draw_names_) {
       Point text_anchor_pt = xfm.getOffset();
 
-      auto text_anchor = Painter::BOTTOM_CENTER;
+      auto text_anchor = Painter::kBottomCenter;
       if (arg_min == 0) {  // left
-        text_anchor = Painter::RIGHT_CENTER;
+        text_anchor = Painter::kRightCenter;
         text_anchor_pt.setX(text_anchor_pt.x() - pin_max_size_ - text_margin);
       } else if (arg_min == 1) {  // right
-        text_anchor = Painter::LEFT_CENTER;
+        text_anchor = Painter::kLeftCenter;
         text_anchor_pt.setX(text_anchor_pt.x() + pin_max_size_ + text_margin);
       } else if (arg_min == 2) {  // top
-        text_anchor = Painter::BOTTOM_CENTER;
+        text_anchor = Painter::kBottomCenter;
         text_anchor_pt.setY(text_anchor_pt.y() + pin_max_size_ + text_margin);
       } else {  // bottom
-        text_anchor = Painter::TOP_CENTER;
+        text_anchor = Painter::kTopCenter;
         text_anchor_pt.setY(text_anchor_pt.y() - pin_max_size_ - text_margin);
       }
 
@@ -1731,10 +1731,10 @@ void RenderThread::drawIOPins(Painter& painter,
                                          }))
           != pin_text_spec_shapes.qend()) {
         // adjust anchor
-        if (pin.anchor == Painter::BOTTOM_CENTER) {
-          anchor = Painter::RIGHT_CENTER;
-        } else if (pin.anchor == Painter::TOP_CENTER) {
-          anchor = Painter::LEFT_CENTER;
+        if (pin.anchor == Painter::kBottomCenter) {
+          anchor = Painter::kRightCenter;
+        } else if (pin.anchor == Painter::kTopCenter) {
+          anchor = Painter::kLeftCenter;
         }
         do_rotate = true;
       }

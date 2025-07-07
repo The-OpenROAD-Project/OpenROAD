@@ -470,7 +470,7 @@ void DRCRenderer::drawObjects(Painter& painter)
   brush_color.a = 50;
 
   painter.setPen(pen_color, true, 0);
-  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
+  painter.setBrush(brush_color, Painter::Brush::kDiagonal);
   for (odb::dbMarker* marker : category_->getAllMarkers()) {
     if (!marker->isVisible()) {
       continue;

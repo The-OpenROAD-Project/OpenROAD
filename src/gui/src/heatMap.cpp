@@ -772,7 +772,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
       if (show_numbers) {
         const int x = draw_pt.rect.xCenter();
         const int y = draw_pt.rect.yCenter();
-        const Painter::Anchor text_anchor = Painter::Anchor::CENTER;
+        const Painter::Anchor text_anchor = Painter::Anchor::kCenter;
         const double text_rect_margin = 0.8;
 
         const std::string text = datasource_.formatValue(draw_pt.value, false);

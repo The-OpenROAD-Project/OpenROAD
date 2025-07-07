@@ -1958,34 +1958,34 @@ void LayoutViewer::updateContextMenuItems()
   if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
       == false)  // No Instance in selected set
   {
-    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
-    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(true);
+    menu_actions_[kSelectOutputNetsAct]->setDisabled(true);
+    menu_actions_[kSelectInputNetsAct]->setDisabled(true);
+    menu_actions_[kSelectAllNetsAct]->setDisabled(true);
+    menu_actions_[kSelectAllBufferTreesAct]->setDisabled(true);
 
-    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
+    menu_actions_[kHighlightOutputNetsAct]->setDisabled(true);
+    menu_actions_[kHighlightInputNetsAct]->setDisabled(true);
+    menu_actions_[kHighlightAllNetsAct]->setDisabled(true);
     highlight_color_menu_->setDisabled(true);
   } else {
-    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
-    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(false);
+    menu_actions_[kSelectOutputNetsAct]->setDisabled(false);
+    menu_actions_[kSelectInputNetsAct]->setDisabled(false);
+    menu_actions_[kSelectAllNetsAct]->setDisabled(false);
+    menu_actions_[kSelectAllBufferTreesAct]->setDisabled(false);
 
-    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
+    menu_actions_[kHighlightOutputNetsAct]->setDisabled(false);
+    menu_actions_[kHighlightInputNetsAct]->setDisabled(false);
+    menu_actions_[kHighlightAllNetsAct]->setDisabled(false);
     highlight_color_menu_->setDisabled(false);
   }
 
   if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
       == false) {  // No Net in selected set
-    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(true);
-    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(true);
+    menu_actions_[kSelectConnectedInstAct]->setDisabled(true);
+    menu_actions_[kHighlightConnectedInstAct]->setDisabled(true);
   } else {
-    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(false);
-    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(false);
+    menu_actions_[kSelectConnectedInstAct]->setDisabled(false);
+    menu_actions_[kHighlightConnectedInstAct]->setDisabled(false);
   }
 }
 
@@ -2161,160 +2161,157 @@ void LayoutViewer::addMenuAndActions()
   // Create Actions
 
   // Select Actions
-  menu_actions_[SELECT_CONNECTED_INST_ACT]
+  menu_actions_[kSelectConnectedInstAct]
       = select_menu->addAction(tr("Connected Insts"));
-  menu_actions_[SELECT_OUTPUT_NETS_ACT]
+  menu_actions_[kSelectOutputNetsAct]
       = select_menu->addAction(tr("Output Nets"));
-  menu_actions_[SELECT_INPUT_NETS_ACT]
-      = select_menu->addAction(tr("Input Nets"));
-  menu_actions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
-  menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]
+  menu_actions_[kSelectInputNetsAct] = select_menu->addAction(tr("Input Nets"));
+  menu_actions_[kSelectAllNetsAct] = select_menu->addAction(tr("All Nets"));
+  menu_actions_[kSelectAllBufferTreesAct]
       = select_menu->addAction(tr("All buffer trees"));
 
   // Highlight Actions
-  menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]
+  menu_actions_[kHighlightConnectedInstAct]
       = highlight_menu->addAction(tr("Connected Insts"));
-  menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]
+  menu_actions_[kHighlightOutputNetsAct]
       = highlight_menu->addAction(tr("Output Nets"));
-  menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]
+  menu_actions_[kHighlightInputNetsAct]
       = highlight_menu->addAction(tr("Input Nets"));
-  menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
+  menu_actions_[kHighlightAllNetsAct]
       = highlight_menu->addAction(tr("All Nets"));
 
   highlight_color_menu_ = highlight_menu->addMenu(tr("All buffer trees"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0]
+  menu_actions_[kHighlightAllBufferTreesAct0]
       = highlight_color_menu_->addAction(tr("green"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1]
+  menu_actions_[kHighlightAllBufferTreesAct1]
       = highlight_color_menu_->addAction(tr("yellow"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2]
+  menu_actions_[kHighlightAllBufferTreesAct2]
       = highlight_color_menu_->addAction(tr("cyan"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3]
+  menu_actions_[kHighlightAllBufferTreesAct3]
       = highlight_color_menu_->addAction(tr("magenta"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_4]
+  menu_actions_[kHighlightAllBufferTreesAct4]
       = highlight_color_menu_->addAction(tr("red"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_5]
+  menu_actions_[kHighlightAllBufferTreesAct5]
       = highlight_color_menu_->addAction(tr("dark_green"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_6]
+  menu_actions_[kHighlightAllBufferTreesAct6]
       = highlight_color_menu_->addAction(tr("dark_magenta"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
+  menu_actions_[kHighlightAllBufferTreesAct7]
       = highlight_color_menu_->addAction(tr("blue"));
 
   // for { highlightColor : Painter::highlightColors[highlight_group]} {
-  //   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
+  //   menu_actions_[kHighlightAllBufferTreesAct7]
   //       = highlight_color_menu_->addAction(tr("blue"));
   // }
 
   // View Actions
-  menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
-  menu_actions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
-  menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
+  menu_actions_[kViewZoominAct] = view_menu->addAction(tr("Zoom In"));
+  menu_actions_[kViewZoomoutAct] = view_menu->addAction(tr("Zoom Out"));
+  menu_actions_[kViewZoomfitAct] = view_menu->addAction(tr("Fit"));
 
   // Save actions
-  menu_actions_[SAVE_VISIBLE_IMAGE_ACT]
+  menu_actions_[kSaveVisibleImageAct]
       = save_menu->addAction(tr("Visible layout"));
-  menu_actions_[SAVE_WHOLE_IMAGE_ACT]
-      = save_menu->addAction(tr("Entire layout"));
+  menu_actions_[kSaveWholeImageAct] = save_menu->addAction(tr("Entire layout"));
 
   // Clear Actions
-  menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
-  menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
-  menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
-  menu_actions_[CLEAR_LABELS_ACT] = clear_menu->addAction(tr("Labels"));
-  menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
-  menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
-  menu_actions_[CLEAR_NET_TRACKS_ACT] = clear_menu->addAction(tr("Net Tracks"));
-  menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
+  menu_actions_[kClearSelectionsAct] = clear_menu->addAction(tr("Selections"));
+  menu_actions_[kClearHighlightsAct] = clear_menu->addAction(tr("Highlights"));
+  menu_actions_[kClearRulersAct] = clear_menu->addAction(tr("Rulers"));
+  menu_actions_[kClearLabelsAct] = clear_menu->addAction(tr("Labels"));
+  menu_actions_[kClearFocusAct] = clear_menu->addAction(tr("Focus nets"));
+  menu_actions_[kClearGuidesAct] = clear_menu->addAction(tr("Route Guides"));
+  menu_actions_[kClearNetTracksAct] = clear_menu->addAction(tr("Net Tracks"));
+  menu_actions_[kClearAllAct] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
-  connect(menu_actions_[SELECT_CONNECTED_INST_ACT],
+  connect(menu_actions_[kSelectConnectedInstAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedInst(true); });
-  connect(menu_actions_[SELECT_OUTPUT_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSelectOutputNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(true, true, false);
   });
-  connect(menu_actions_[SELECT_INPUT_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSelectInputNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(true, false, true);
   });
-  connect(menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSelectAllNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(true, true, true);
   });
-  connect(menu_actions_[SELECT_ALL_BUFFER_TREES_ACT],
+  connect(menu_actions_[kSelectAllBufferTreesAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(true); });
 
-  connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
+  connect(menu_actions_[kHighlightConnectedInstAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedInst(false); });
-  connect(menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT],
+  connect(menu_actions_[kHighlightOutputNetsAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedNets(false, true, false); });
-  connect(menu_actions_[HIGHLIGHT_INPUT_NETS_ACT],
-          &QAction::triggered,
-          [this]() { this->selectHighlightConnectedNets(false, false, true); });
-  connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kHighlightInputNetsAct], &QAction::triggered, [this]() {
+    this->selectHighlightConnectedNets(false, false, true);
+  });
+  connect(menu_actions_[kHighlightAllNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(false, true, true);
   });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0],
+  connect(menu_actions_[kHighlightAllBufferTreesAct0],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 0); });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1],
+  connect(menu_actions_[kHighlightAllBufferTreesAct1],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 1); });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2],
+  connect(menu_actions_[kHighlightAllBufferTreesAct2],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 2); });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3],
+  connect(menu_actions_[kHighlightAllBufferTreesAct3],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 3); });
 
-  connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kViewZoominAct], &QAction::triggered, [this]() {
     zoomIn();
   });
-  connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kViewZoomoutAct], &QAction::triggered, [this]() {
     zoomOut();
   });
-  connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, [this]() {
-    fit();
-  });
+  connect(
+      menu_actions_[kViewZoomfitAct], &QAction::triggered, [this]() { fit(); });
 
-  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSaveVisibleImageAct], &QAction::triggered, [this]() {
     saveImage("");
   });
-  connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSaveWholeImageAct], &QAction::triggered, [this]() {
     const QSize whole_size = size();
     saveImage(
         "", screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
   });
 
-  connect(menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearSelectionsAct], &QAction::triggered, this, []() {
     Gui::get()->clearSelections();
   });
-  connect(menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearHighlightsAct], &QAction::triggered, this, []() {
     Gui::get()->clearHighlights(-1);
   });
-  connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearRulersAct], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
-  connect(menu_actions_[CLEAR_LABELS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearLabelsAct], &QAction::triggered, this, []() {
     Gui::get()->clearLabels();
   });
-  connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearFocusAct], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
-  connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearGuidesAct], &QAction::triggered, this, []() {
     Gui::get()->clearRouteGuides();
   });
-  connect(menu_actions_[CLEAR_NET_TRACKS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearNetTracksAct], &QAction::triggered, this, []() {
     Gui::get()->clearNetTracks();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, [this]() {
-    menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
-    menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
-    menu_actions_[CLEAR_RULERS_ACT]->trigger();
-    menu_actions_[CLEAR_LABELS_ACT]->trigger();
-    menu_actions_[CLEAR_FOCUS_ACT]->trigger();
-    menu_actions_[CLEAR_GUIDES_ACT]->trigger();
-    menu_actions_[CLEAR_NET_TRACKS_ACT]->trigger();
+  connect(menu_actions_[kClearAllAct], &QAction::triggered, [this]() {
+    menu_actions_[kClearSelectionsAct]->trigger();
+    menu_actions_[kClearHighlightsAct]->trigger();
+    menu_actions_[kClearRulersAct]->trigger();
+    menu_actions_[kClearLabelsAct]->trigger();
+    menu_actions_[kClearFocusAct]->trigger();
+    menu_actions_[kClearGuidesAct]->trigger();
+    menu_actions_[kClearNetTracksAct]->trigger();
   });
 }
 

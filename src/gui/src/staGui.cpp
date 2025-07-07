@@ -87,42 +87,42 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
 
   if (role == Qt::TextAlignmentRole) {
     switch (col_index) {
-      case Clock:
-      case Start:
-      case End:
+      case kClock:
+      case kStart:
+      case kEnd:
         return Qt::AlignLeft;
-      case Required:
-      case Arrival:
-      case LogicDelay:
-      case LogicDepth:
-      case Fanout:
-      case Slack:
-      case Skew:
+      case kRequired:
+      case kArrival:
+      case kLogicDelay:
+      case kLogicDepth:
+      case kFanout:
+      case kSlack:
+      case kSkew:
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
     auto time_units = sta_->getSTA()->units()->timeUnit();
     auto* timing_path = getPathAt(index);
     switch (col_index) {
-      case Clock:
+      case kClock:
         return QString::fromStdString(timing_path->getEndClock());
-      case Required:
+      case kRequired:
         return convertDelay(timing_path->getPathRequiredTime(), time_units);
-      case Arrival:
+      case kArrival:
         return convertDelay(timing_path->getPathArrivalTime(), time_units);
-      case Slack:
+      case kSlack:
         return convertDelay(timing_path->getSlack(), time_units);
-      case Skew:
+      case kSkew:
         return convertDelay(timing_path->getSkew(), time_units);
-      case LogicDelay:
+      case kLogicDelay:
         return convertDelay(timing_path->getLogicDelay(), time_units);
-      case LogicDepth:
+      case kLogicDepth:
         return timing_path->getLogicDepth();
-      case Fanout:
+      case kFanout:
         return timing_path->getFanout();
-      case Start:
+      case kStart:
         return QString::fromStdString(timing_path->getStartStageName());
-      case End:
+      case kEnd:
         return QString::fromStdString(timing_path->getEndStageName());
     }
   }
@@ -137,18 +137,18 @@ QVariant TimingPathsModel::headerData(int section,
 
   if (role == Qt::ToolTipRole) {
     switch (column) {
-      case Clock:
-      case Required:
-      case Arrival:
-      case Slack:
-      case Fanout:
-      case Start:
-      case End:
+      case kClock:
+      case kRequired:
+      case kArrival:
+      case kSlack:
+      case kFanout:
+      case kStart:
+      case kEnd:
         // return empty string so that the tooltip goes away
         // when switching from a header item that has a tooltip
         // to a header item that doesn't.
         return "";
-      case Skew:
+      case kSkew:
         // A rather verbose tooltip, move some of this to a help/documentation
         // file when one is introduced into OpenROAD. Meanwhile, this is the
         // best that can be done.
@@ -156,10 +156,10 @@ QVariant TimingPathsModel::headerData(int section,
                "source and destination clock pins of a macro/register,\n"
                "adjusted for CRPR and subtracting a clock period.\n"
                "Setup and hold times account for internal clock delays.";
-      case LogicDelay:
+      case kLogicDelay:
         return "Path delay from instances (excluding buffers and consecutive "
                "inverter pairs)";
-      case LogicDepth:
+      case kLogicDepth:
         return "Path instances (excluding buffers and consecutive inverter "
                "pairs)";
     }
@@ -184,52 +184,52 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   std::function<bool(const std::unique_ptr<TimingPath>& path1,
                      const std::unique_ptr<TimingPath>& path2)>
       sort_func;
-  if (col_index == Clock) {
+  if (col_index == kClock) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getEndClock() < path2->getEndClock();
     };
-  } else if (col_index == Required) {
+  } else if (col_index == kRequired) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getPathRequiredTime() < path2->getPathRequiredTime();
     };
-  } else if (col_index == Arrival) {
+  } else if (col_index == kArrival) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getPathArrivalTime() < path2->getPathArrivalTime();
     };
-  } else if (col_index == Slack) {
+  } else if (col_index == kSlack) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
     };
-  } else if (col_index == Skew) {
+  } else if (col_index == kSkew) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSkew() < path2->getSkew();
     };
-  } else if (col_index == LogicDelay) {
+  } else if (col_index == kLogicDelay) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getLogicDelay() < path2->getLogicDelay();
     };
-  } else if (col_index == LogicDepth) {
+  } else if (col_index == kLogicDepth) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getLogicDepth() < path2->getLogicDepth();
     };
-  } else if (col_index == Fanout) {
+  } else if (col_index == kFanout) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getFanout() < path2->getFanout();
     };
-  } else if (col_index == Start) {
+  } else if (col_index == kStart) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getStartStageName() < path2->getStartStageName();
     };
-  } else if (col_index == End) {
+  } else if (col_index == kEnd) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getEndStageName() < path2->getEndStageName();
@@ -331,15 +331,15 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
   const Column col_index = static_cast<Column>(index.column());
   if (role == Qt::TextAlignmentRole) {
     switch (col_index) {
-      case Pin:
+      case kPin:
         return Qt::AlignLeft;
-      case Time:
-      case Delay:
-      case Slew:
-      case Load:
-      case Fanout:
+      case kTime:
+      case kDelay:
+      case kSlew:
+      case kLoad:
+      case kFanout:
         return Qt::AlignRight;
-      case RiseFall:
+      case kRiseFall:
         return Qt::AlignCenter;
     }
   } else if (role == Qt::DisplayRole) {
@@ -353,11 +353,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       const auto& node = nodes_->at(start_idx);
 
       switch (col_index) {
-        case Pin:
+        case kPin:
           return "clock network delay";
-        case Time:
+        case kTime:
           return convertDelay(node->getArrival(), time_units);
-        case Delay:
+        case kDelay:
           return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(),
                               time_units);
         default:
@@ -366,25 +366,25 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     } else {
       const auto* node = getNodeAt(index);
       switch (col_index) {
-        case Pin:
+        case kPin:
           return QString::fromStdString(
               node->getNodeName(/* include_master */ true));
-        case RiseFall:
+        case kRiseFall:
           return node->isRisingEdge() ? kUpArrow : kDownArrow;
-        case Time:
+        case kTime:
           return convertDelay(node->getArrival(), time_units);
-        case Delay:
+        case kDelay:
           return convertDelay(node->getDelay(), time_units);
-        case Slew:
+        case kSlew:
           return convertDelay(node->getSlew(), time_units);
-        case Load: {
+        case kLoad: {
           if (node->getLoad() == 0) {
             return "";
           }
           const auto cap_units = sta_->units()->capacitanceUnit();
           return cap_units->asString(node->getLoad());
         }
-        case Fanout: {
+        case kFanout: {
           if (node->getFanout() == 0) {
             return "";
           }
@@ -430,19 +430,19 @@ QVariant TimingPathDetailModel::headerData(int section,
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     switch (static_cast<Column>(section)) {
-      case Pin:
+      case kPin:
         return "Pin";
-      case RiseFall:
+      case kRiseFall:
         return kUpDownArrows;
-      case Time:
+      case kTime:
         return "Time";
-      case Delay:
+      case kDelay:
         return "Delay";
-      case Slew:
+      case kSlew:
         return "Slew";
-      case Load:
+      case kLoad:
         return "Load";
-      case Fanout:
+      case kFanout:
         return "Fanout";
     }
   }
@@ -829,7 +829,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   // annotate with depth
-  const auto text_anchor = gui::Painter::Anchor::CENTER;
+  const auto text_anchor = gui::Painter::Anchor::kCenter;
   const double text_margin = 2.0;
   painter.setPen(gui::Painter::kWhite, true);
   for (const auto& [level, pins] : map_) {
@@ -1250,7 +1250,7 @@ void TimingControlsDialog::setPinSelections()
   to_->updatePins();
 }
 
-const sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
+const sta::Pin* TimingControlsDialog::convertTerm(Gui::Term term) const
 {
   sta::dbNetwork* network = sta_->getNetwork();
 
