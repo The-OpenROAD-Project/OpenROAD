@@ -455,13 +455,13 @@ IRSolver::Voltage IRSolver::generateSourceNodes(
 
     if (sources.empty()) {
       switch (source_type) {
-        case GeneratedSourceType::FULL:
+        case GeneratedSourceType::kFull:
           sources = generateSourceNodesGenericFull();
           break;
-        case GeneratedSourceType::STRAPS:
+        case GeneratedSourceType::kStraps:
           sources = generateSourceNodesGenericStraps();
           break;
-        case GeneratedSourceType::BUMPS:
+        case GeneratedSourceType::kBumps:
           sources = generateSourceNodesGenericBumps();
           break;
       }
