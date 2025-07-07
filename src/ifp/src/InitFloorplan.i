@@ -202,6 +202,33 @@ void make_polygon_die(ord::Design* design, std::vector<odb::Point>& points)
   design->getFloorplan().makePolygonDie(points);
 }
 
+void make_polygon_rows(ord::Design* design, 
+                       std::vector<odb::Point>& core_polygon,
+                       odb::dbSite* base_site,
+                       const std::vector<odb::dbSite*>& additional_sites,
+                       const char* row_parity_str,
+                       const std::set<odb::dbSite*>& flipped_sites)
+{
+  ifp::RowParity row_parity = ifp::RowParity::NONE;
+  if (strcmp(row_parity_str, "ODD") == 0) {
+    row_parity = ifp::RowParity::ODD;
+  } else if (strcmp(row_parity_str, "EVEN") == 0) {
+    row_parity = ifp::RowParity::EVEN;
+  }
+  
+  design->getFloorplan().makePolygonRows(core_polygon, base_site, additional_sites, row_parity, flipped_sites);
+}
+
+// Simplified wrapper for TCL
+void make_polygon_rows_simple(ord::Design* design, 
+                              std::vector<odb::Point>& core_polygon,
+                              odb::dbSite* base_site)
+{
+  std::vector<odb::dbSite*> additional_sites;
+  std::set<odb::dbSite*> flipped_sites;
+  design->getFloorplan().makePolygonRows(core_polygon, base_site, additional_sites, ifp::RowParity::NONE, flipped_sites);
+}
+
 } // namespace
 
 %} // inline

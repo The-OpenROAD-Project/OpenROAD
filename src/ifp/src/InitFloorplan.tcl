@@ -46,7 +46,7 @@ proc initialize_floorplan { args } {
   # Branch to polygon flow if polygon options present
   if {$has_poly} {
     ifp::make_polygon_die_helper [array get keys]
-    # make_polygon_rows_helper [array get keys]
+    ifp::make_polygon_rows_helper [array get keys]
     return
   } else {
   ifp::make_die_helper [array get keys]
@@ -397,7 +397,102 @@ proc make_polygon_die_helper { key_array } {
   return
 }
 
-  # proc make_polygon_rows_helper { key_array } {
-  #   # TODO: implement core_polygon handling
-  # }
+proc make_polygon_rows_helper { key_array } {
+    array set keys $key_array
+    # Get the site information (required for polygon rows)
+    set site ""
+    if { [info exists keys(-site)] } {
+      set site [ifp::find_site $keys(-site)]
+    } else {
+      utl::error IFP 80 "use -site to add placement rows for polygon floorplan."
+    }
+
+    # Get additional sites
+    set additional_sites {}
+    if { [info exists keys(-additional_sites)] } {
+      foreach sitename $keys(-additional_sites) {
+        lappend additional_sites [ifp::find_site $sitename]
+      }
+    }
+
+    # Get flipped sites
+    set flipped_sites {}
+    if { [info exists keys(-flip_sites)] } {
+      foreach sitename $keys(-flip_sites) {
+        lappend flipped_sites [ifp::find_site $sitename]
+      }
+    }
+
+    # Get row parity
+    set row_parity "NONE"
+    if { [info exists keys(-row_parity)] } {
+      set row_parity $keys(-row_parity)
+      if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
+        utl::error IFP 81 "-row_parity must be NONE, ODD or EVEN"
+      }
+    }
+
+    # Handle core polygon - this is the key difference from rectangular rows
+    if { [info exists keys(-core_polygon)] } {
+      set core_vertices $keys(-core_polygon)
+      if { [llength $core_vertices] % 2 != 0 } {
+        utl::error IFP 82 "-core_polygon must have an even number of coordinates (x y pairs)."
+      }
+      
+      if { [llength $core_vertices] < 8 } {
+        utl::error IFP 83 "-core_polygon must have at least 4 vertices (8 coordinates)."
+      }
+
+      # Convert micron coordinates to DBU and create polygon vertices list
+      set polygon_vertices {}
+      set point_count 0
+      foreach {x y} $core_vertices {
+        # Validate coordinates are numeric
+        if {![string is double -strict $x] || ![string is double -strict $y]} {
+          utl::error IFP 84 "Invalid core polygon coordinate at position [expr $point_count*2]: '$x $y' - must be numeric"
+        }
+        
+        # Convert micron input to DBU
+        lappend polygon_vertices [ord::microns_to_dbu $x]
+        lappend polygon_vertices [ord::microns_to_dbu $y]
+        incr point_count
+      }
+      
+      ord::ensure_linked
+      
+      utl::info IFP 7 "Added $point_count core polygon vertices for row generation."
+      
+      # Call the polygon rows creation function with simplified interface
+      ifp::make_polygon_rows_simple \
+        $polygon_vertices \
+        $site
+      return
+    }
+
+    # If no core polygon is specified, try to use the die polygon as the core
+    if { [info exists keys(-die_polygon)] } {
+      utl::warn IFP 85 "No -core_polygon specified. Using die polygon as core area for row generation."
+      set core_vertices $keys(-die_polygon)
+      
+      # Convert micron coordinates to DBU and create polygon vertices list
+      set polygon_vertices {}
+      set point_count 0
+      foreach {x y} $core_vertices {
+        # Convert micron input to DBU
+        lappend polygon_vertices [ord::microns_to_dbu $x]
+        lappend polygon_vertices [ord::microns_to_dbu $y]
+        incr point_count
+      }
+      
+      ord::ensure_linked
+      
+      # Call the polygon rows creation function with simplified interface
+      ifp::make_polygon_rows_simple \
+        $polygon_vertices \
+        $site
+      return
+    }
+
+    utl::error IFP 86 "no -core_polygon specified for polygon floorplan."
+  }
 } ;# end namespace ifp
