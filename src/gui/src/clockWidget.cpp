@@ -48,7 +48,7 @@ namespace gui {
 ClockTreeRenderer::ClockTreeRenderer(ClockTree* tree)
     : tree_(tree), max_depth_(1), path_to_(nullptr)
 {
-  addDisplayControl(render_label_, true);
+  addDisplayControl(kRenderLabel, true);
 }
 
 void ClockTreeRenderer::drawObjects(Painter& painter)
@@ -57,7 +57,7 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
     return;
   }
 
-  if (!checkDisplayControl(render_label_)) {
+  if (!checkDisplayControl(kRenderLabel)) {
     return;
   }
 
@@ -70,7 +70,7 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
   drawTree(painter, descriptor, generator, tree_, 0);
 
   if (path_to_ != nullptr) {
-    painter.setPen(Painter::cyan, true, pen_width_);
+    painter.setPen(Painter::kCyan, true, kPenWidth);
     auto* network = tree_->getNetwork();
     sta::Pin* pin = network->dbToSta(path_to_);
     if (pin == nullptr) {
@@ -115,7 +115,7 @@ void ClockTreeRenderer::drawTree(Painter& painter,
 
 void ClockTreeRenderer::setPen(Painter& painter, const Painter::Color& color)
 {
-  painter.setPenAndBrush(color, true, Painter::SOLID, pen_width_);
+  painter.setPenAndBrush(color, true, Painter::kSolid, kPenWidth);
 }
 
 void ClockTreeRenderer::setPathTo(odb::dbITerm* term)
@@ -211,8 +211,8 @@ void ClockNetGraphicsViewItem::buildPath()
   const qreal trunk_distance = sink_ymax - source_ymin;
 
   const qreal trunk_x = source_xcenter;
-  const qreal trunk_topy = source_ymin + trunk_rounding_ * trunk_distance;
-  const qreal trunk_boty = sink_ymax - trunk_rounding_ * trunk_distance;
+  const qreal trunk_topy = source_ymin + kTrunkRounding * trunk_distance;
+  const qreal trunk_boty = sink_ymax - kTrunkRounding * trunk_distance;
 
   const QPointF trunk_top(trunk_x, trunk_topy);
   const QPointF trunk_bot(trunk_x, trunk_boty);
@@ -269,7 +269,7 @@ void ClockNetGraphicsViewItem::addLeafPath(const QPointF& start,
 
   const qreal x_dist = end.x() - start.x();
 
-  const qreal x_offset = leaf_rounding_ * x_dist;
+  const qreal x_offset = kLeafRounding * x_dist;
 
   const QPointF mid0(start.x() + x_offset, y_trunk);
   const QPointF control0(start.x(), y_trunk);
@@ -308,7 +308,7 @@ ClockNodeGraphicsViewItem::ClockNodeGraphicsViewItem(ClockTree* tree,
                                                      QGraphicsItem* parent)
     : QGraphicsObject(parent),
       tree_(tree),
-      size_(default_size_),
+      size_(kDefaultSize),
       name_(""),
       extra_tooltip_(""),
       show_hide_subtree_(nullptr)
@@ -488,7 +488,7 @@ QPolygonF ClockBufferNodeGraphicsViewItem::getBufferShape(qreal size)
 QPainterPath ClockBufferNodeGraphicsViewItem::shape() const
 {
   const qreal size = getSize();
-  const qreal bar_size = size * bar_scale_size_;
+  const qreal bar_size = size * kBarScaleSize;
 
   QPainterPath path;
   qreal buffer_size = size;
@@ -680,13 +680,13 @@ ClockTreeScene::ClockTreeScene(QWidget* parent)
   QWidgetAction* renderer_widget = new QWidgetAction(menu_);
   QGroupBox* renderer_group = new QGroupBox("Draw tree", menu_);
   QVBoxLayout* renderer_layout = new QVBoxLayout;
-  renderer_state_[RendererState::OnlyShowOnActiveWidget]
+  renderer_state_[RendererState::kOnlyShowOnActiveWidget]
       = new QRadioButton("Only show when clock is selected", menu_);
-  renderer_state_[RendererState::AlwaysShow]
+  renderer_state_[RendererState::kAlwaysShow]
       = new QRadioButton("Always show", menu_);
-  renderer_state_[RendererState::NeverShow]
+  renderer_state_[RendererState::kNeverShow]
       = new QRadioButton("Never show", menu_);
-  renderer_state_[RendererState::OnlyShowOnActiveWidget]->setChecked(true);
+  renderer_state_[RendererState::kOnlyShowOnActiveWidget]->setChecked(true);
   for (const auto& [state, button] : renderer_state_) {
     renderer_layout->addWidget(button);
     connect(button,
@@ -764,7 +764,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
       tree_(std::move(tree)),
       sta_(sta),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
-      renderer_state_(RendererState::OnlyShowOnActiveWidget),
+      renderer_state_(RendererState::kOnlyShowOnActiveWidget),
       scene_(nullptr),
       logger_(logger),
       show_mouse_time_tick_(true),
@@ -773,7 +773,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
       unit_scale_(1.0),
       unit_suffix_(""),
       leaf_scale_(1.0),
-      time_scale_(default_scene_height_)
+      time_scale_(kDefaultSceneHeight)
 {
   setDragMode(QGraphicsView::ScrollHandDrag);
   setMouseTracking(true);
@@ -815,11 +815,11 @@ void ClockTreeView::build()
 {
   min_delay_ = tree_->getMinimumArrival(true);
   max_delay_ = tree_->getMaximumArrival(true);
-  leaf_scale_ = 1.0 / ((1.0 + node_spacing_) * tree_->getMaxLeaves(true));
+  leaf_scale_ = 1.0 / ((1.0 + kNodeSpacing) * tree_->getMaxLeaves(true));
 
   const int tree_width = tree_->getTotalFanout(true);
   const qreal bin_pitch
-      = (1.0 + node_spacing_) * ClockNodeGraphicsViewItem::default_size_;
+      = (1.0 + kNodeSpacing) * ClockNodeGraphicsViewItem::kDefaultSize;
   qreal bin_center = 0.0;
   bin_center_.clear();
   for (int i = 0; i < tree_width; i++) {
@@ -827,10 +827,10 @@ void ClockTreeView::build()
     bin_center += bin_pitch;
   }
 
-  const qreal est_scene_width = (tree_width - 1) * (1 + node_spacing_)
-                                    * ClockNodeGraphicsViewItem::default_size_
-                                + ClockNodeGraphicsViewItem::default_size_;
-  const qreal min_time_scale = ClockNodeGraphicsViewItem::default_size_
+  const qreal est_scene_width = (tree_width - 1) * (1 + kNodeSpacing)
+                                    * ClockNodeGraphicsViewItem::kDefaultSize
+                                + ClockNodeGraphicsViewItem::kDefaultSize;
+  const qreal min_time_scale = ClockNodeGraphicsViewItem::kDefaultSize
                                * (max_delay_ - min_delay_)
                                / tree_->getMinimumDriverDelay(true);
   if (tree_width == 1) {
@@ -1105,13 +1105,13 @@ void ClockTreeView::updateRendererState() const
 {
   bool enable = false;
   switch (renderer_state_) {
-    case RendererState::AlwaysShow:
+    case RendererState::kAlwaysShow:
       enable = true;
       break;
-    case RendererState::NeverShow:
+    case RendererState::kNeverShow:
       enable = false;
       break;
-    case RendererState::OnlyShowOnActiveWidget:
+    case RendererState::kOnlyShowOnActiveWidget:
       enable = isVisible();
       break;
   }
@@ -1182,7 +1182,7 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
     }
 
     const QRectF bbox = node->boundingRect();
-    driver_offset += (1.0 + node_spacing_) * bbox.width();
+    driver_offset += (1.0 + kNodeSpacing) * bbox.width();
 
     driver_bbox.append(node->pos());
 
@@ -1219,7 +1219,7 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
       continue;
     }
     const QRectF bbox = leaf_rect->boundingRect();
-    leaf_offset += (1.0 + node_spacing_) * bbox.width();
+    leaf_offset += (1.0 + kNodeSpacing) * bbox.width();
 
     leaves_bbox.append(leaf_rect->pos());
 
@@ -1308,15 +1308,15 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
     float ins_delay = 0.0;
     if (inst->getMaster()->getType().isBlock()) {
       // add insertion delay at macro cell input pin
-      sta::LibertyCell* libCell = network->libertyCell(network->dbToSta(inst));
+      sta::LibertyCell* lib_cell = network->libertyCell(network->dbToSta(inst));
       odb::dbMTerm* mterm = iterm->getMTerm();
-      if (libCell && mterm) {
-        sta::LibertyPort* libPort
-            = libCell->findLibertyPort(mterm->getConstName());
-        if (libPort) {
-          const float rise = libPort->clkTreeDelay(
+      if (lib_cell && mterm) {
+        sta::LibertyPort* lib_port
+            = lib_cell->findLibertyPort(mterm->getConstName());
+        if (lib_port) {
+          const float rise = lib_port->clkTreeDelay(
               0.0, sta::RiseFall::rise(), sta::MinMax::max());
-          const float fall = libPort->clkTreeDelay(
+          const float fall = lib_port->clkTreeDelay(
               0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
           if (rise != 0 || fall != 0) {
@@ -1467,9 +1467,9 @@ void ClockTreeView::addNode(qreal x,
 
 void ClockTreeView::highlightTo(odb::dbITerm* term)
 {
-  if (renderer_state_ == RendererState::NeverShow) {
+  if (renderer_state_ == RendererState::kNeverShow) {
     // need to enable the renderer
-    scene_->setRendererState(RendererState::OnlyShowOnActiveWidget);
+    scene_->setRendererState(RendererState::kOnlyShowOnActiveWidget);
   }
   renderer_->setPathTo(term);
 }

@@ -806,7 +806,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
     if (is_lib_port) {
       const std::string freq
-          = Descriptor::convertUnits(power.density(), false, float_precision_);
+          = Descriptor::convertUnits(power.density(), false, kFloatPrecision);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
                                                     100 * power.duty(),
                                                     freq,
@@ -821,7 +821,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 ? "None"
                 : fmt::format(
                       "{} {}",
-                      timeunit->asString(setup_arrival, float_precision_),
+                      timeunit->asString(setup_arrival, kFloatPrecision),
                       timeunit->scaledSuffix());
       port_arrival_setup.push_back({port_id, setup_text});
       const auto hold_arrival
@@ -829,10 +829,9 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       const std::string hold_text
           = is_inf(hold_arrival)
                 ? "None"
-                : fmt::format(
-                      "{} {}",
-                      timeunit->asString(hold_arrival, float_precision_),
-                      timeunit->scaledSuffix());
+                : fmt::format("{} {}",
+                              timeunit->asString(hold_arrival, kFloatPrecision),
+                              timeunit->scaledSuffix());
       port_arrival_hold.push_back({port_id, hold_text});
     }
   }
@@ -845,7 +844,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
     const auto power_info = sta_->power(inst, corner);
     power.push_back(
         {gui->makeSelected(corner),
-         Descriptor::convertUnits(power_info.total(), false, float_precision_)
+         Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
              + "W"});
   }
   props.push_back({"Total power", power});

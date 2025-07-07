@@ -14,19 +14,19 @@
 namespace pdn {
 
 const gui::Painter::Color PDNRenderer::ring_color_
-    = gui::Painter::Color(gui::Painter::red, 100);
+    = gui::Painter::Color(gui::Painter::kRed, 100);
 const gui::Painter::Color PDNRenderer::strap_color_
-    = gui::Painter::Color(gui::Painter::cyan, 100);
+    = gui::Painter::Color(gui::Painter::kCyan, 100);
 const gui::Painter::Color PDNRenderer::followpin_color_
-    = gui::Painter::Color(gui::Painter::green, 100);
+    = gui::Painter::Color(gui::Painter::kGreen, 100);
 const gui::Painter::Color PDNRenderer::via_color_
-    = gui::Painter::Color(gui::Painter::blue, 100);
+    = gui::Painter::Color(gui::Painter::kBlue, 100);
 const gui::Painter::Color PDNRenderer::obstruction_color_
-    = gui::Painter::Color(gui::Painter::gray, 100);
+    = gui::Painter::Color(gui::Painter::kGray, 100);
 const gui::Painter::Color PDNRenderer::repair_color_
-    = gui::Painter::Color(gui::Painter::light_gray, 100);
+    = gui::Painter::Color(gui::Painter::kLightGray, 100);
 const gui::Painter::Color PDNRenderer::repair_outline_color_
-    = gui::Painter::Color(gui::Painter::yellow, 100);
+    = gui::Painter::Color(gui::Painter::kYellow, 100);
 
 PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 {
@@ -120,8 +120,8 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const odb::Rect paint_rect = painter.getBounds();
 
   if (checkDisplayControl(initial_obs_text_)) {
-    painter.setPen(gui::Painter::highlight, true);
-    painter.setBrush(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kHighlight, true);
+    painter.setBrush(gui::Painter::kTransparent);
     auto& shapes = initial_obstructions_[layer];
     for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
@@ -132,8 +132,8 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (checkDisplayControl(grid_obs_text_)) {
-    painter.setPen(gui::Painter::highlight, true);
-    painter.setBrush(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kHighlight, true);
+    painter.setBrush(gui::Painter::kTransparent);
     auto& shapes = grid_obstructions_[layer];
     for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
@@ -178,7 +178,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
           painter.setPenAndBrush(followpin_color_, true);
           break;
         default:
-          painter.setPenAndBrush(gui::Painter::highlight, true);
+          painter.setPenAndBrush(gui::Painter::kHighlight, true);
       }
       const odb::Rect shape_rect = shape->getRect();
       if (shape_rect.minDXDY() < min_shape) {
@@ -188,18 +188,18 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       painter.drawRect(shape_rect);
 
       if (show_obs) {
-        painter.setPen(gui::Painter::highlight, true);
-        painter.setBrush(gui::Painter::transparent);
+        painter.setPen(gui::Painter::kHighlight, true);
+        painter.setBrush(gui::Painter::kTransparent);
         painter.drawRect(shape->getObstruction());
       }
 
       const std::string net_name = shape->getDisplayText();
       const odb::Rect name_box = painter.stringBoundaries(
-          0, 0, gui::Painter::Anchor::BOTTOM_LEFT, net_name);
+          0, 0, gui::Painter::Anchor::kBottomLeft, net_name);
 
       if (shape_rect.dx() * net_name_margin > name_box.dx()
           && shape_rect.dy() * net_name_margin > name_box.dy()) {
-        painter.setPen(gui::Painter::white, true);
+        painter.setPen(gui::Painter::kWhite, true);
 
         if (shape_rect.dx() > shape_rect.dy()) {
           // horizontal
@@ -209,7 +209,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                x < shape_rect.xMax() - name_offset;
                x += net_name_increment * name_box.dx()) {
             if (paint_rect.intersects(odb::Point(x, y))) {
-              painter.drawString(x, y, gui::Painter::Anchor::CENTER, net_name);
+              painter.drawString(x, y, gui::Painter::Anchor::kCenter, net_name);
             }
           }
         } else {
@@ -220,7 +220,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                y < shape_rect.yMax() - name_offset;
                y += net_name_increment * name_box.dy()) {
             if (paint_rect.intersects(odb::Point(x, y))) {
-              painter.drawString(x, y, gui::Painter::Anchor::CENTER, net_name);
+              painter.drawString(x, y, gui::Painter::Anchor::kCenter, net_name);
             }
           }
         }
@@ -248,13 +248,13 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
       const std::string via_name = via->getDisplayText();
       const odb::Rect name_box = painter.stringBoundaries(
-          0, 0, gui::Painter::Anchor::BOTTOM_LEFT, via_name);
+          0, 0, gui::Painter::Anchor::kBottomLeft, via_name);
       if (area.dx() * net_name_margin > name_box.dx()
           && area.dy() * net_name_margin > name_box.dy()) {
-        painter.setPen(gui::Painter::white, true);
+        painter.setPen(gui::Painter::kWhite, true);
         const int x = 0.5 * (area.xMin() + area.xMax());
         const int y = 0.5 * (area.yMin() + area.yMax());
-        painter.drawString(x, y, gui::Painter::Anchor::CENTER, via_name);
+        painter.drawString(x, y, gui::Painter::Anchor::kCenter, via_name);
       }
     }
   }
@@ -264,17 +264,18 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (layer == repair.source || layer == repair.target) {
         painter.setPenAndBrush(repair_color_, true);
         painter.drawRect(repair.rect);
-        painter.setPenAndBrush(repair_outline_color_, true, gui::Painter::NONE);
+        painter.setPenAndBrush(
+            repair_outline_color_, true, gui::Painter::kNone);
         painter.drawRect(repair.available_rect);
 
         const odb::Rect name_box = painter.stringBoundaries(
-            0, 0, gui::Painter::Anchor::BOTTOM_LEFT, repair.text);
+            0, 0, gui::Painter::Anchor::kBottomLeft, repair.text);
         if (repair.rect.dx() * net_name_margin > name_box.dx()
             && repair.rect.dy() * net_name_margin > name_box.dy()) {
-          painter.setPen(gui::Painter::white, true);
+          painter.setPen(gui::Painter::kWhite, true);
           const int x = 0.5 * (repair.rect.xMin() + repair.rect.xMax());
           const int y = 0.5 * (repair.rect.yMin() + repair.rect.yMax());
-          painter.drawString(x, y, gui::Painter::Anchor::CENTER, repair.text);
+          painter.drawString(x, y, gui::Painter::Anchor::kCenter, repair.text);
         }
       }
     }

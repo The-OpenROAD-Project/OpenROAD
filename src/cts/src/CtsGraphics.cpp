@@ -40,16 +40,16 @@ void CtsGraphics::initializeWithPoints(SinkClustering* SinkClustering,
 
 void CtsGraphics::drawCluster(gui::Painter& painter)
 {
-  std::vector<gui::Painter::Color> colors{gui::Painter::red,
-                                          gui::Painter::yellow,
-                                          gui::Painter::green,
-                                          gui::Painter::dark_red,
-                                          gui::Painter::magenta,
-                                          gui::Painter::dark_yellow,
-                                          gui::Painter::blue,
-                                          gui::Painter::dark_gray,
-                                          gui::Painter::dark_green,
-                                          gui::Painter::cyan};
+  std::vector<gui::Painter::Color> colors{gui::Painter::kRed,
+                                          gui::Painter::kYellow,
+                                          gui::Painter::kGreen,
+                                          gui::Painter::kDarkRed,
+                                          gui::Painter::kMagenta,
+                                          gui::Painter::kDarkYellow,
+                                          gui::Painter::kBlue,
+                                          gui::Painter::kDarkGray,
+                                          gui::Painter::kDarkGreen,
+                                          gui::Painter::kCyan};
 
   unsigned clusterCounter = 0;
   bool first = true;
@@ -74,7 +74,7 @@ void CtsGraphics::drawCluster(gui::Painter& painter)
       } else {
         if (first_in_cluster) {
           first_in_cluster = false;
-          painter.setPen(gui::Painter::white, /* cosmetic */ true);
+          painter.setPen(gui::Painter::kWhite, /* cosmetic */ true);
         } else {
           painter.setPen(colors[color], /* cosmetic */ true);
         }
@@ -92,7 +92,7 @@ void CtsGraphics::drawCluster(gui::Painter& painter)
 
 void CtsGraphics::drawHTree(gui::Painter& painter)
 {
-  auto color = gui::Painter::red;
+  auto color = gui::Painter::kRed;
   color.a = 180;
   painter.setPen(color, /* cosmetic */ true);
 
@@ -123,9 +123,9 @@ void CtsGraphics::drawHTree(gui::Painter& painter)
           Point<double> parentPoint
               = h_tree_builder_->getTopologyVector()[levelIdx - 1]
                     .getBranchingPoint(parentIdx);
-          auto color = gui::Painter::yellow;
+          auto color = gui::Painter::kYellow;
           if (levelIdx % 2 == 0) {
-            color = gui::Painter::red;
+            color = gui::Painter::kRed;
           }
           color.a = 180;
           painter.setPen(color, /* cosmetic */ true);

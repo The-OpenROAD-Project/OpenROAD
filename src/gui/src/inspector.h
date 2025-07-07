@@ -27,18 +27,18 @@ class EditorItemDelegate : public QItemDelegate
 
  public:
   // positions in ->data() where data is located
-  static const int editor_ = Qt::UserRole;
-  static const int editor_name_ = Qt::UserRole + 1;
-  static const int editor_type_ = Qt::UserRole + 2;
-  static const int editor_select_ = Qt::UserRole + 3;
-  static const int selected_ = Qt::UserRole + 4;
+  static const int kEditor = Qt::UserRole;
+  static const int kEditorName = Qt::UserRole + 1;
+  static const int kEditorType = Qt::UserRole + 2;
+  static const int kEditorSelect = Qt::UserRole + 3;
+  static const int kSelected = Qt::UserRole + 4;
 
   enum EditType
   {
-    NUMBER,
-    STRING,
-    BOOL,
-    LIST
+    kNumber,
+    kString,
+    kBool,
+    kList
   };
 
   EditorItemDelegate(SelectedItemModel* model, QObject* parent = nullptr);
@@ -179,7 +179,7 @@ class Inspector : public QDockWidget
  signals:
   void addSelected(const Selected& selected);
   void removeSelected(const Selected& selected);
-  void selected(const Selected& selected, bool showConnectivity = false);
+  void selected(const Selected& selected, bool show_connectivity = false);
   void selectedItemChanged(const Selected& selected);
   void selection(const Selected& selected);
   void focus(const Selected& selected);
@@ -236,8 +236,8 @@ class Inspector : public QDockWidget
   // The columns in the tree view
   enum Column
   {
-    Name,
-    Value
+    kName,
+    kValue
   };
 
   ObjectTree* view_;
@@ -266,7 +266,7 @@ class Inspector : public QDockWidget
   Descriptor::ActionCallback deselect_action_;
 
   // used to finetune the double click interval
-  static constexpr double mouse_double_click_scale_ = 0.75;
+  static constexpr double kMouseDoubleClickScale = 0.75;
 };
 
 }  // namespace gui

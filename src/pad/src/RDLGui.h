@@ -34,17 +34,17 @@ class RDLGui : public gui::Renderer
   RDLRouter* router_ = nullptr;
 
   std::set<std::pair<odb::Point, odb::Point>> snap_;
-  gui::Painter::Color snap_color_ = gui::Painter::white;
+  gui::Painter::Color snap_color_ = gui::Painter::kWhite;
 
-  static constexpr const char* draw_vertex_ = "Vertices";
-  static constexpr const char* draw_edge_ = "Edges";
-  static constexpr const char* draw_obs_ = "Obstructions";
-  static constexpr const char* draw_fly_wires_ = "Routing fly wires";
-  static constexpr const char* draw_targets_ = "Targets";
-  static constexpr const char* draw_routes_ = "Routes";
-  static constexpr const char* draw_route_obstructions_ = "Route obstructions";
+  static constexpr const char* kDrawVertex = "Vertices";
+  static constexpr const char* kDrawEdge = "Edges";
+  static constexpr const char* kDrawObs = "Obstructions";
+  static constexpr const char* kDrawFlyWires = "Routing fly wires";
+  static constexpr const char* kDrawTargets = "Targets";
+  static constexpr const char* kDrawRoutes = "Routes";
+  static constexpr const char* kDrawRouteObstructions = "Route obstructions";
 
-  static constexpr int gui_timeout_ = 100;
+  static constexpr int kGuiTimeout = 100;
 };
 
 }  // namespace pad

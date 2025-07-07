@@ -42,9 +42,9 @@ class TimingWidget : public QDockWidget
  public:
   enum CommandType
   {
-    EXACT,
-    NO_BUFFERING,
-    FROM_START_TO_END
+    kExact,
+    kNoBuffering,
+    kFromStartToEnd
   };
 
   TimingWidget(QWidget* parent = nullptr);

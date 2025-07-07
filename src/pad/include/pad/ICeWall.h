@@ -172,16 +172,16 @@ class ICeWall
   std::unique_ptr<RDLGui> router_gui_;
   odb::dbNet* rdl_net_debug_ = nullptr;
 
-  constexpr static const char* fake_library_name_ = "FAKE_IO";
-  constexpr static const char* row_north_ = "IO_NORTH";
-  constexpr static const char* row_south_ = "IO_SOUTH";
-  constexpr static const char* row_east_ = "IO_EAST";
-  constexpr static const char* row_west_ = "IO_WEST";
-  constexpr static const char* corner_nw_ = "IO_CORNER_NORTH_WEST";
-  constexpr static const char* corner_ne_ = "IO_CORNER_NORTH_EAST";
-  constexpr static const char* corner_sw_ = "IO_CORNER_SOUTH_WEST";
-  constexpr static const char* corner_se_ = "IO_CORNER_SOUTH_EAST";
-  constexpr static const char* fill_prefix_ = "IO_FILL_";
+  constexpr static const char* kFakeLibraryName = "FAKE_IO";
+  constexpr static const char* kRowNorth = "IO_NORTH";
+  constexpr static const char* kRowSouth = "IO_SOUTH";
+  constexpr static const char* kRowEast = "IO_EAST";
+  constexpr static const char* kRowWest = "IO_WEST";
+  constexpr static const char* kCornerNw = "IO_CORNER_NORTH_WEST";
+  constexpr static const char* kCornerNe = "IO_CORNER_NORTH_EAST";
+  constexpr static const char* kCornerSw = "IO_CORNER_SOUTH_WEST";
+  constexpr static const char* kCornerSe = "IO_CORNER_SOUTH_EAST";
+  constexpr static const char* kFillPrefix = "IO_FILL_";
 };
 
 }  // namespace pad
