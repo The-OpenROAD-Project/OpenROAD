@@ -1463,28 +1463,28 @@ std::vector<std::pair<odb::Point, odb::Point>> RDLRouter::simplifyRoute(
 
   enum class Direction
   {
-    UNSET,
-    HORIZONTAL,
-    VERTICAL,
-    ANGLE45,
-    ANGLE135
+    kUnset,
+    kHorizontal,
+    kVertical,
+    kAngle45,
+    kAngle135
   };
 
   auto get_direction
       = [](const odb::Point& s, const odb::Point& t) -> Direction {
     if (s.y() == t.y()) {
-      return Direction::HORIZONTAL;
+      return Direction::kHorizontal;
     }
     if (s.x() == t.x()) {
-      return Direction::VERTICAL;
+      return Direction::kVertical;
     }
     if (s.x() < t.x() && s.y() < t.y()) {
-      return Direction::ANGLE45;
+      return Direction::kAngle45;
     }
     if (s.x() > t.x() && s.y() > t.y()) {
-      return Direction::ANGLE45;
+      return Direction::kAngle45;
     }
-    return Direction::ANGLE135;
+    return Direction::kAngle135;
   };
 
   wire.emplace_back(route[0], route[1]);
@@ -1501,8 +1501,8 @@ std::vector<std::pair<odb::Point, odb::Point>> RDLRouter::simplifyRoute(
     } else {
       // Determine if extentions are needed
       int extention = width_ / 2;
-      if (direction == Direction::HORIZONTAL
-          && segment_direction == Direction::VERTICAL) {
+      if (direction == Direction::kHorizontal
+          && segment_direction == Direction::kVertical) {
         const odb::Point& prev_s = wire.rbegin()->first;
         if (prev_s.x() < s.x()) {
           wire.rbegin()->second.setX(s.x() + extention);
@@ -1514,8 +1514,8 @@ std::vector<std::pair<odb::Point, odb::Point>> RDLRouter::simplifyRoute(
         } else {
           s.setY(s.y() + extention);
         }
-      } else if (direction == Direction::VERTICAL
-                 && segment_direction == Direction::HORIZONTAL) {
+      } else if (direction == Direction::kVertical
+                 && segment_direction == Direction::kHorizontal) {
         const odb::Point& prev_s = wire.rbegin()->first;
         if (prev_s.y() < s.y()) {
           wire.rbegin()->second.setY(s.y() + extention);
