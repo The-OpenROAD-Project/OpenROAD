@@ -699,4 +699,26 @@ class DbMarkerDescriptor : public BaseDbDescriptor<odb::dbMarker>
   Properties getDBProperties(odb::dbMarker* marker) const override;
 };
 
+class DbScanInstDescriptor : public BaseDbDescriptor<odb::dbScanInst>
+{
+ public:
+  DbScanInstDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+  static Descriptor::Property getScanPinProperty(
+      const std::string& name,
+      const std::variant<odb::dbBTerm*, odb::dbITerm*>& pin);
+
+ protected:
+  Properties getDBProperties(odb::dbScanInst* scan_inst) const override;
+};
+
 };  // namespace gui
