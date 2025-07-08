@@ -7,11 +7,11 @@
 #include <string>
 #include <vector>
 
+#include "find_some_net.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/grids.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace rcx {
