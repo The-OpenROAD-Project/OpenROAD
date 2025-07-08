@@ -167,6 +167,7 @@ cc_test(
     deps = [
         "//src/cts",
         "//src/utl",
+        "//src/grt",  # work around cyclic dependncy between rsz and grt
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
