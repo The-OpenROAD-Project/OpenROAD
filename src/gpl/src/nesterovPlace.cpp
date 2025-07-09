@@ -325,13 +325,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     clean_directory(routability_driven_dir);
   }
 
-  int routability_driven_count = 0;
+  int routability_gpl_iter_count_ = 0;
+  int routability_driven_revert_count = 0;
   int timing_driven_count = 0;
   bool final_routability_image_saved = false;
 
   // Core Nesterov Loop
-  int iter = start_iter;
-  for (; iter < npVars_.maxNesterovIter; iter++) {
+  int gpl_iter = start_iter;
+  for (; gpl_iter < npVars_.maxNesterovIter; gpl_iter++) {
     float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
@@ -405,7 +406,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       break;
     }
 
-    updateNextIter(iter);
+    updateNextIter(gpl_iter);
 
     // For JPEG Saving
     // graphics_ is only true if debug mode is active
@@ -414,22 +415,22 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     const int debug_start_iter = npVars_.debug_start_iter;
-    if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
-      bool update
-          = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
+    if (graphics_ && (debug_start_iter == 0 || gpl_iter >= debug_start_iter)) {
+      bool update = (gpl_iter == 0
+                     || (gpl_iter) % npVars_.debug_update_iterations == 0);
       if (update) {
-        bool pause
-            = (iter == 0 || (iter + 1) % npVars_.debug_pause_iterations == 0);
+        bool pause = (gpl_iter == 0
+                      || (gpl_iter) % npVars_.debug_pause_iterations == 0);
         graphics_->cellPlot(pause);
       }
     }
 
-    if (graphics_ && npVars_.debug_generate_images && iter == 0) {
+    if (graphics_ && npVars_.debug_generate_images && gpl_iter == 0) {
       std::string gif_path = fmt::format("{}/placement.gif", reports_dir);
       graphics_->getGuiObjectFromGraphics()->gifStart(gif_path);
     }
 
-    if (graphics_ && npVars_.debug_generate_images && iter % 10 == 0) {
+    if (graphics_ && npVars_.debug_generate_images && gpl_iter % 10 == 0) {
       odb::Rect region;
       int width_px = 500;
       odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
@@ -437,10 +438,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
       int delay = 20;
       std::string label = fmt::format("Iter {} |R: {} |T: {}",
-                                      iter,
-                                      routability_driven_count,
+                                      gpl_iter,
+                                      routability_driven_revert_count,
                                       timing_driven_count);
-      std::string label_name = fmt::format("frame_label_{}", iter);
+      std::string label_name = fmt::format("frame_label_{}", gpl_iter);
 
       gui::Gui* gui = graphics_->getGuiObjectFromGraphics();
       graphics_->addFrameLabel(gui, bbox, label, label_name);
@@ -456,21 +457,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         updateDb();
 
         std::string label = fmt::format("Iter {} |R: {} |T: {}",
-                                        iter,
-                                        routability_driven_count,
+                                        gpl_iter,
+                                        routability_driven_revert_count,
                                         timing_driven_count);
 
         graphics_->saveLabeledImage(
             fmt::format("{}/1_routability_final_{:05d}.png",
                         routability_driven_dir,
-                        iter),
+                        gpl_iter),
             label,
             /* select_buffers = */ false);
 
         graphics_->saveLabeledImage(
             fmt::format("{}/1_density_routability_final_{:05d}.png",
                         routability_driven_dir,
-                        iter),
+                        gpl_iter),
             label,
             false,
             "Heat Maps/Placement Density");
@@ -478,7 +479,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         graphics_->saveLabeledImage(
             fmt::format("{}/1_rudy_routability_final_{:05d}.png",
                         routability_driven_dir,
-                        iter),
+                        gpl_iter),
             label,
             false,
             "Heat Maps/Estimated Congestion (RUDY)");
@@ -486,10 +487,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         graphics_->saveLabeledImage(
             fmt::format("{}/1_routability_final_{:05d}.png",
                         routability_driven_dir,
-                        iter),
+                        gpl_iter),
             fmt::format("Iter {} |R: {} |T: {} final route",
-                        iter,
-                        routability_driven_count,
+                        gpl_iter,
+                        routability_driven_revert_count,
                         timing_driven_count),
             false);
       }
@@ -499,25 +500,27 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // timing driven feature
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
-    const bool is_before_routability
-        = average_overflow_unscaled_ > routability_save_snapshot_;
-    const bool is_after_routability
-        = (average_overflow_unscaled_ < npVars_.routability_end_overflow
-           && !is_routability_need_);
+    bool is_routability_gpl_iter
+        = is_routability_snapshot_saved
+          && average_overflow_unscaled_ > npVars_.routability_end_overflow;
+    if (is_routability_gpl_iter) {
+      ++routability_gpl_iter_count_;
+      ++npVars_.maxNesterovIter;
+    }
+
     if (npVars_.timingDrivenMode
         && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_) &&
         // do not execute timing-driven if routability is under execution
-        (is_before_routability || is_after_routability
-         || !npVars_.routability_driven_mode)) {
+        (!is_routability_gpl_iter || !npVars_.routability_driven_mode)) {
       // update db's instance location from current density coordinates
       updateDb();
 
       if (graphics_ && npVars_.debug_generate_images) {
         graphics_->saveLabeledImage(
-            fmt::format("{}/timing_{:05d}_0.png", timing_driven_dir, iter),
+            fmt::format("{}/timing_{:05d}_0.png", timing_driven_dir, gpl_iter),
             fmt::format("Iter {} |R: {} |T: {} before TD",
-                        iter,
-                        routability_driven_count,
+                        gpl_iter,
+                        routability_driven_revert_count,
                         timing_driven_count),
             /* select_buffers = */ false);
       }
@@ -541,7 +544,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                  101,
                  "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
                  "HPWL: {}",
-                 iter + 1,
+                 gpl_iter,
                  average_overflow_unscaled_,
                  npVars_.keepResizeBelowOverflow,
                  nbc_->getHpwl());
@@ -570,10 +573,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         updateDb();
         bool select_buffers = !virtual_td_iter;
         graphics_->saveLabeledImage(
-            fmt::format("{}/timing_{:05d}_1.png", timing_driven_dir, iter),
+            fmt::format("{}/timing_{:05d}_1.png", timing_driven_dir, gpl_iter),
             fmt::format("Iter {} |R: {} |T: {} after TD",
-                        iter,
-                        routability_driven_count,
+                        gpl_iter,
+                        routability_driven_revert_count,
                         timing_driven_count),
             select_buffers);
       }
@@ -649,7 +652,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           min_hpwl_ = hpwl;
           diverge_snapshot_average_overflow_unscaled_
               = average_overflow_unscaled_;
-          diverge_snapshot_iter_ = iter + 1;
+          diverge_snapshot_iter_ = gpl_iter;
           is_min_hpwl_ = true;
         }
       }
@@ -755,17 +758,17 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         nb->snapshot();
       }
 
-      log_->info(GPL, 88, "Routability snapshot saved at iter = {}", iter);
+      log_->info(GPL, 88, "Routability snapshot saved at iter = {}", gpl_iter);
 
       // Save image of routability snapshot
       if (graphics_ && npVars_.debug_generate_images) {
         graphics_->saveLabeledImage(
             fmt::format("{}/0_routability_snapshot_{:05d}.png",
                         routability_driven_dir,
-                        iter),
+                        gpl_iter),
             fmt::format("Iter {} |R: {} |T: {} save snapshot",
-                        iter,
-                        routability_driven_count,
+                        gpl_iter,
+                        routability_driven_revert_count,
                         timing_driven_count),
             /* select_buffers = */ false);
       }
@@ -775,26 +778,27 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (npVars_.routability_driven_mode && is_routability_need_
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
       nbVec_[0]->setTrueReprintIterHeader();
-      ++routability_driven_count;
+      ++routability_driven_revert_count;
 
       if (graphics_ && npVars_.debug_generate_images) {
         updateDb();
         std::string label = fmt::format("Iter {} |R: {} |T: {}",
-                                        iter,
-                                        routability_driven_count,
+                                        gpl_iter,
+                                        routability_driven_revert_count,
                                         timing_driven_count);
 
         graphics_->saveLabeledImage(
             fmt::format("{}/density_routability_{:05d}.png",
                         routability_driven_dir,
-                        iter),
+                        gpl_iter),
             label,
             /* select_buffers = */ false,
             "Heat Maps/Placement Density");
 
         graphics_->saveLabeledImage(
-            fmt::format(
-                "{}/rudy_routability_{:05d}.png", routability_driven_dir, iter),
+            fmt::format("{}/rudy_routability_{:05d}.png",
+                        routability_driven_dir,
+                        gpl_iter),
             label,
             /* select_buffers = */ false,
             "Heat Maps/Estimated Congestion (RUDY)");
@@ -827,7 +831,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // check each for converge and if all are converged then stop
     int numConverge = 0;
     for (auto& nb : nbVec_) {
-      numConverge += nb->checkConvergence();
+      numConverge
+          += nb->checkConvergence(gpl_iter, routability_gpl_iter_count_);
     }
 
     if (numConverge == nbVec_.size()) {
@@ -836,7 +841,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
       break;
     }
+  }  // end core nesterov loop
+
+  if (gpl_iter >= npVars_.maxNesterovIter) {
+    log_->warn(GPL,
+               1010,
+               "GPL reached the maximum number of iterations {}. \n\tPlacement "
+               "may have failed to converge.",
+               npVars_.maxNesterovIter);
   }
+
   // in all case including diverge,
   // db should be updated.
   updateDb();
@@ -852,21 +866,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   if (graphics_ && npVars_.debug_generate_images) {
     std::string label = fmt::format("Iter {} |R: {} |T: {}",
-                                    iter,
-                                    routability_driven_count,
+                                    gpl_iter,
+                                    routability_driven_revert_count,
                                     timing_driven_count);
 
-    graphics_->saveLabeledImage(
-        fmt::format(
-            "{}/2_final_placement_{:05d}.png", routability_driven_dir, iter),
-        label,
-        /* select_buffers = */ false);
+    graphics_->saveLabeledImage(fmt::format("{}/2_final_placement_{:05d}.png",
+                                            routability_driven_dir,
+                                            gpl_iter),
+                                label,
+                                /* select_buffers = */ false);
   }
 
   if (db_cbk_ != nullptr) {
     db_cbk_->removeOwner();
   }
-  return iter;
+  return gpl_iter;
 }
 
 void NesterovPlace::updateWireLengthCoef(float overflow)

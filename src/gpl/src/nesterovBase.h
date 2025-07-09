@@ -1063,7 +1063,7 @@ class NesterovBase
 
   void snapshot();
 
-  bool checkConvergence();
+  bool checkConvergence(int gpl_iter_count, int routability_gpl_iter_count);
   bool checkDivergence();
   bool revertToSnapshot();
 
