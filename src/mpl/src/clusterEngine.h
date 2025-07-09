@@ -202,6 +202,7 @@ class ClusteringEngine
   void createCluster(odb::dbModule* module, Cluster* parent);
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
+  bool isLargeFlatCluster(Cluster* cluster);
   void breakLargeFlatCluster(Cluster* parent);
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
