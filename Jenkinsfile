@@ -252,8 +252,18 @@ def getParallelTests(String image) {
 def bazelTest = {
     stage ('Build with Bazel') {
         node {
-            stage('Setup Bazel Build') {
-                checkout scm;
+            stage('Checkout - shallow') {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: scm.branches[0].name]],
+                    extensions: [
+                        [$class: 'SubmoduleOption', recursiveSubmodules: true, trackingSubmodules: false, reference: '', shallow: true],
+                        [$class: 'CloneOption', depth: 1, noTags: true, reference: '', shallow: true, honorRefspec: true, timeout: 360, fetchTags: false]
+                    ],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ]);
+            }
+            stage('Bazel Build') {
                 sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
             }
             withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
