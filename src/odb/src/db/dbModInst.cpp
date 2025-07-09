@@ -24,6 +24,7 @@
 #include "dbModBTerm.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
+#include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
@@ -225,6 +226,11 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
   module->_modinst_hash[modinst->_name] = modinst->getOID();
+
+  for (dbBlockCallBackObj* cb : block->_callbacks) {
+    cb->inDbModInstCreate((dbModInst*) modinst);
+  }
+
   return (dbModInst*) modinst;
 }
 
@@ -249,6 +255,10 @@ void dbModInst::destroy(dbModInst* modinst)
     // trying to connect on journalling restore of modInst.
     moditerm->disconnect();
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
+  }
+
+  for (auto cb : _block->_callbacks) {
+    cb->inDbModInstDestroy(modinst);
   }
 
   // unlink from parent start
