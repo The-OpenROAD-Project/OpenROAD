@@ -2359,7 +2359,7 @@ bool TritonCTS::propagateClock(odb::dbITerm* input)
 
   // Clock Gater / Latch improvised as clock gater
   if (inputPort) {
-    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+    return inputPort->isClockGateClock() || inputPort->isLatchData();
   }
 
   return false;
