@@ -51,6 +51,28 @@ bazel build --config=openroad-dev //...
 
 This configuration is **read-only** to prevent local, unverified builds from populating the shared cache.
 
+### Using a `user.bazelrc` file instead of `--config=openroad-dev`
+
+You may prefer `user.bazelrc` file instead of using the `--config=openroad-dev` option.
+
+    # user: username@openroad.tools
+    build --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
+    build --credential_helper=*.googleapis.com=%workspace%/etc/cred_helper.py
+    build --remote_cache_compression=true
+    build --remote_upload_local_results=false
+
+To test the setup:
+
+    $ etc/cred_helper.py test
+    Running: gcloud auth print-access-token username@openroad.tools
+    {
+    "kind": "storage#testIamPermissionsResponse",
+    "permissions": [
+        "storage.buckets.get",
+        "storage.objects.create"
+    ]
+    }
+
 ---
 
 ### 3. CI Access (Jenkins Pipeline)

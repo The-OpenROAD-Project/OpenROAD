@@ -264,7 +264,13 @@ def bazelTest = {
                             if (env.BRANCH_NAME != 'master') {
                                 cmd += ' --remote_upload_local_results=false';
                             }
-                            sh label: 'Bazel Build', script: cmd + ' --google_credentials=$GCS_SA_KEY ...';
+                            cmd += ' --google_credentials=$GCS_SA_KEY';
+                            try {
+                                sh label: 'Bazel Build', script: cmd + ' ...';
+                            } catch (e) {
+                                currentBuild.result = 'FAILURE';
+                                sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
+                            }
                         }
                     }
                 }
