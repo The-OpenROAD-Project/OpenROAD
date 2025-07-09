@@ -14,6 +14,9 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "odb/dbBlockCallBackObj.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbModITerm>;
 
@@ -242,6 +245,10 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
     modbterm->setParentModITerm(((dbModITerm*) moditerm));
   }
 
+  for (auto callback : block->_callbacks) {
+    callback->inDbModITermCreate((dbModITerm*) moditerm);
+  }
+
   return (dbModITerm*) moditerm;
 }
 
@@ -253,6 +260,9 @@ void dbModITerm::connect(dbModNet* net)
   // already connected.
   if (_moditerm->_mod_net == _modnet->getId()) {
     return;
+  }
+  for (auto callback : _block->_callbacks) {
+    callback->inDbModITermPreConnect(this, net);
   }
   _moditerm->_mod_net = _modnet->getId();
   // append to net moditerms
@@ -275,6 +285,9 @@ void dbModITerm::connect(dbModNet* net)
     _block->_journal->pushParam(_modnet->getId());
     _block->_journal->endAction();
   }
+  for (auto callback : _block->_callbacks) {
+    callback->inDbModITermPostConnect(this);
+  }
 }
 
 void dbModITerm::disconnect()
@@ -283,6 +296,9 @@ void dbModITerm::disconnect()
   _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
   if (_moditerm->_mod_net == 0) {
     return;
+  }
+  for (auto callback : _block->_callbacks) {
+    callback->inDbModITermPreDisconnect(this);
   }
   _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_mod_net);
 
@@ -312,6 +328,10 @@ void dbModITerm::disconnect()
     next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
   }
   _moditerm->_mod_net = 0;
+
+  for (auto callback : _block->_callbacks) {
+    callback->inDbModITermPostDisconnect(this, (dbModNet*) _modnet);
+  }
 }
 
 dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
@@ -334,6 +354,10 @@ void dbModITerm::destroy(dbModITerm* val)
     block->_journal->pushParam(_moditerm->_child_modbterm);
     block->_journal->pushParam(_moditerm->_parent);
     block->_journal->endAction();
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbModITermDestroy(val);
   }
 
   // snip out the mod iterm, from doubly linked list
