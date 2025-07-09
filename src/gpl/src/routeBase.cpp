@@ -276,11 +276,6 @@ void RouteBase::reset()
 void RouteBase::resetRoutabilityResources()
 {
   inflatedAreaDelta_ = 0;
-
-  if (!rbVars_.useRudy) {
-    grouter_->clear();
-  }
-  tg_.reset();
 }
 
 void RouteBase::init()
@@ -821,7 +816,7 @@ std::pair<bool, bool> RouteBase::routability(
   return std::make_pair(true, true);
 }
 
-float RouteBase::getRudyRC() const
+float RouteBase::getRudyRC(bool verbose) const
 {
   grt::Rudy* rudy = grouter_->getRudy();
   double totalRouteOverflow = 0;
@@ -841,13 +836,15 @@ float RouteBase::getRudyRC() const
     }
   }
 
-  log_->info(GPL, 41, "Total routing overflow: {:.4f}", totalRouteOverflow);
-  log_->info(
-      GPL,
-      42,
-      "Number of overflowed tiles: {} ({:.2f}%)",
-      overflowTileCnt,
-      (static_cast<double>(overflowTileCnt) / tg_->tiles().size()) * 100);
+  if (verbose) {
+    log_->info(GPL, 41, "Total routing overflow: {:.4f}", totalRouteOverflow);
+    log_->info(
+        GPL,
+        42,
+        "Number of overflowed tiles: {} ({:.2f}%)",
+        overflowTileCnt,
+        (static_cast<double>(overflowTileCnt) / tg_->tiles().size()) * 100);
+  }
 
   int arraySize = edgeCongArray.size();
   std::sort(edgeCongArray.rbegin(), edgeCongArray.rend());
@@ -876,20 +873,24 @@ float RouteBase::getRudyRC() const
   avg010RC /= ceil(0.010 * arraySize);
   avg020RC /= ceil(0.020 * arraySize);
   avg050RC /= ceil(0.050 * arraySize);
-
-  log_->info(GPL, 43, "Average top 0.5% routing congestion: {:.4f}", avg005RC);
-  log_->info(GPL, 44, "Average top 1.0% routing congestion: {:.4f}", avg010RC);
-  log_->info(GPL, 45, "Average top 2.0% routing congestion: {:.4f}", avg020RC);
-  log_->info(GPL, 46, "Average top 5.0% routing congestion: {:.4f}", avg050RC);
-
   float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
                    + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL,
-             47,
-             "Routability iteration weighted routing congestion: {:.4f}",
-             finalRC);
+  if (verbose) {
+    log_->info(
+        GPL, 43, "Average top 0.5% routing congestion: {:.4f}", avg005RC);
+    log_->info(
+        GPL, 44, "Average top 1.0% routing congestion: {:.4f}", avg010RC);
+    log_->info(
+        GPL, 45, "Average top 2.0% routing congestion: {:.4f}", avg020RC);
+    log_->info(
+        GPL, 46, "Average top 5.0% routing congestion: {:.4f}", avg050RC);
+    log_->info(GPL,
+               47,
+               "Routability iteration weighted routing congestion: {:.4f}",
+               finalRC);
+  }
   return finalRC;
 }
 

@@ -2800,7 +2800,8 @@ void NesterovBase::snapshot()
 }
 
 bool NesterovBase::checkConvergence(int gpl_iter_count,
-                                    int routability_gpl_iter_count)
+                                    int routability_gpl_iter_count,
+                                    RouteBase* rb)
 {
   assert(omp_get_thread_num() == 0);
   if (isConverged_) {
@@ -2836,6 +2837,12 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                  "Routability mode iteration count: {}",
                  routability_gpl_iter_count);
     }
+
+    rb->getRudyResult();
+    log_->info(GPL,
+               1005,
+               "Routability final weighted congestion: {:.4f}",
+               rb->getRudyRC(false));
 
     dbBlock* block = pb_->db()->getChip()->getBlock();
     log_->info(GPL,

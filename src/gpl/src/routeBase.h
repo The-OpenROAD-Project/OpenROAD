@@ -162,7 +162,7 @@ class RouteBase
 
   void updateRudyRoute();
   void getRudyResult();
-  float getRudyRC() const;
+  float getRudyRC(bool verbose = true) const;
 
   // first: is Routability Need
   // second: reverting procedure need in NesterovPlace

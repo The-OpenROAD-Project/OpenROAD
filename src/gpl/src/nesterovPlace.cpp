@@ -836,8 +836,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // check each for converge and if all are converged then stop
     int numConverge = 0;
     for (auto& nb : nbVec_) {
-      numConverge
-          += nb->checkConvergence(nesterov_iter, routability_gpl_iter_count_);
+      numConverge += nb->checkConvergence(
+          nesterov_iter, routability_gpl_iter_count_, rb_.get());
     }
 
     if (numConverge == nbVec_.size()) {
