@@ -86,8 +86,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       270 |   0.3006 |  1.287973e+09 |   -0.51% |  2.71e-09 |      
       280 |   0.2911 |  1.291709e+09 |   +0.29% |  3.99e-09 |      
       290 |   0.2826 |  1.298577e+09 |   +0.53% |  5.87e-09 |      
-[WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. 
-	Placement may have failed to converge.
+[WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
 [INFO GPL-0133] Unlocked instances
 [INFO GPL-0007] Execute nesterov global placement.
       310 |   0.4877 |  1.149846e+09 |  -11.45% |  1.12e-08 |      
