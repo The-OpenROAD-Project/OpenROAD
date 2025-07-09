@@ -244,7 +244,7 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
                             upper_block_balance,
                             lower_block_balance,
                             top_solutions[best_solution_id],
-                            PartitionType::INIT_DIRECT_ILP);
+                            PartitionType::kInitDirectIlp);
   }
   // Here we need to do rebugetting on the best solution
   RefinePartition(hierarchy,
@@ -297,7 +297,7 @@ void MultilevelPartitioner::InitialPartition(
                             upper_block_balance,
                             lower_block_balance,
                             solution,
-                            PartitionType::INIT_RANDOM);
+                            PartitionType::kInitRandom);
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
@@ -325,7 +325,7 @@ void MultilevelPartitioner::InitialPartition(
                             upper_block_balance,
                             lower_block_balance,
                             solution,
-                            PartitionType::INIT_RANDOM_VILE);
+                            PartitionType::kInitRandomVile);
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
@@ -351,7 +351,7 @@ void MultilevelPartitioner::InitialPartition(
                           upper_block_balance,
                           lower_block_balance,
                           vile_solution,
-                          PartitionType::INIT_VILE);
+                          PartitionType::kInitVile);
   // We need k_way_fm_refiner to generate a balanced partitioning
   k_way_fm_refiner_->Refine(
       hgraph, upper_block_balance, lower_block_balance, vile_solution);
@@ -386,7 +386,7 @@ void MultilevelPartitioner::InitialPartition(
                             upper_block_balance,
                             lower_block_balance,
                             ilp_solution,
-                            PartitionType::INIT_DIRECT_ILP);
+                            PartitionType::kInitDirectIlp);
     const auto ilp_token
         = evaluator_->CutEvaluator(hgraph, ilp_solution, false);
     initial_solutions_cost.push_back(ilp_token.cost);
@@ -651,7 +651,7 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
                             upper_block_balance,
                             lower_block_balance,
                             init_solution,
-                            PartitionType::INIT_DIRECT_ILP);
+                            PartitionType::kInitDirectIlp);
   } else {
     clustered_hgraph->SetCommunity(init_solution);
     init_solution = SingleCycleRefinement(

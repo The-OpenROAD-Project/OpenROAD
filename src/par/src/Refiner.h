@@ -16,16 +16,6 @@
 
 namespace par {
 
-// The algorithms we support
-enum class RefinerChoice
-{
-  GREEDY,         // greedy refinement. try to one entire hyperedge each time
-  FLAT_K_WAY_FM,  // direct k-way FM
-  KPM_FM,         // K-way pair-wise FM
-  ILP_REFINE      // ILP-based partitioning (only for two-way since k-way ILP
-                  // partitioning is too timing-consuming)
-};
-
 class VertexGain;
 using GainCell = std::shared_ptr<VertexGain>;  // for abbreviation
 
