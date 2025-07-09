@@ -810,7 +810,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       // recover the densityPenalty values
       // if further routability-driven is needed
-      std::pair<bool, bool> result = rb_->routability();
+      std::pair<bool, bool> result
+          = rb_->routability(routability_driven_revert_count);
       is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
 
@@ -851,8 +852,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->warn(GPL,
                1010,
                "GPL reached the maximum number of iterations for nesterov {}. "
-               "\n\tPlacement "
-               "may have failed to converge.",
+               "Placement may have failed to converge.",
                npVars_.maxNesterovIter);
   }
 

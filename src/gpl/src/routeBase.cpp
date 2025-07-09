@@ -264,7 +264,9 @@ void RouteBase::reset()
 
   minRc_ = 1e30;
   minRcTargetDensity_ = 0;
-  minRcViolatedCnt_ = 0;
+  min_RC_violated_cnt_ = 0;
+  max_routability_no_improvement_ = 0;
+  max_routability_revert_ = 50;
 
   nbc_->resetMinRcCellSize();
 
@@ -530,7 +532,8 @@ void RouteBase::updateGrtRoute()
 // first: is Routability Need
 // second: reverting procedure init need
 //          (e.g. calling NesterovPlace's init())
-std::pair<bool, bool> RouteBase::routability()
+std::pair<bool, bool> RouteBase::routability(
+    int routability_driven_revert_count)
 {
   increaseCounter();
 
@@ -569,20 +572,20 @@ std::pair<bool, bool> RouteBase::routability()
                minRc_);
     minRc_ = curRc;
     minRcTargetDensity_ = nbVec_[0]->targetDensity();
-    minRcViolatedCnt_ = 0;
+    min_RC_violated_cnt_ = 0;
 
     // save cell size info
     nbc_->updateMinRcCellSize();
 
   } else {
-    minRcViolatedCnt_++;
+    min_RC_violated_cnt_++;
     log_->info(GPL,
                49,
                "Routing congestion ({:.4f}) higher than minimum ({:.4f}). "
                "Consecutive non-improvement count: {}.",
                curRc,
                minRc_,
-               minRcViolatedCnt_);
+               min_RC_violated_cnt_);
   }
 
   // set inflated ratio
@@ -686,12 +689,15 @@ std::pair<bool, bool> RouteBase::routability()
   // rc not improvement detection -- (not improved the RC values 3 times in a
   // row)
   //
-  if (nbVec_[0]->targetDensity() > rbVars_.maxDensity
-      || minRcViolatedCnt_ >= 3) {
-    bool density_exceeded = nbVec_[0]->targetDensity() > rbVars_.maxDensity;
-    bool congestion_not_improving = minRcViolatedCnt_ >= 3;
-
-    if (density_exceeded) {
+  bool is_max_density_exceeded
+      = nbVec_[0]->targetDensity() > rbVars_.maxDensity;
+  bool congestion_not_improving
+      = min_RC_violated_cnt_ >= max_routability_no_improvement_;
+  bool is_max_routability_revert
+      = routability_driven_revert_count >= max_routability_revert_;
+  if (is_max_density_exceeded || congestion_not_improving
+      || is_max_routability_revert) {
+    if (is_max_density_exceeded) {
       log_->info(GPL,
                  53,
                  "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
@@ -702,8 +708,15 @@ std::pair<bool, bool> RouteBase::routability()
       log_->info(GPL,
                  54,
                  "No improvement in routing congestion for {} consecutive "
-                 "iterations (limit is 3).",
-                 minRcViolatedCnt_);
+                 "iterations (limit is {}).",
+                 min_RC_violated_cnt_,
+                 max_routability_no_improvement_);
+    }
+    if (is_max_routability_revert) {
+      log_->info(GPL,
+                 76,
+                 "Routability mode reached the maximum allowed reverts {}",
+                 routability_driven_revert_count);
     }
 
     log_->info(
