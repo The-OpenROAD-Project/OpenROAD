@@ -65,20 +65,20 @@ void Partitioner::Partition(const HGraphPtr& hgraph,
     std::fill(solution.begin(), solution.end(), -1);
   }
   switch (partitioner_choice) {
-    case PartitionType::INIT_RANDOM:
+    case PartitionType::kInitRandom:
       RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
 
-    case PartitionType::INIT_RANDOM_VILE:
+    case PartitionType::kInitRandomVile:
       RandomPart(
           hgraph, upper_block_balance, lower_block_balance, solution, true);
       break;
 
-    case PartitionType::INIT_VILE:
+    case PartitionType::kInitVile:
       VilePart(hgraph, solution);
       break;
 
-    case PartitionType::INIT_DIRECT_ILP:
+    case PartitionType::kInitDirectIlp:
       ILPPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
 
@@ -224,7 +224,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
     std::iota(edge_mask.begin(), edge_mask.end(), 0);
   } else if (ilp_accelerator_factor_ > 0.0) {
     // define comp structure to compare hyperedge ( function: >)
-    struct comp
+    struct Comp
     {
       // comparator function
       bool operator()(const std::pair<int, float>& l,
@@ -237,7 +237,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
       }
     };
     // use set data structure to sort hyperedges
-    std::set<std::pair<int, float>, comp> unvisited_hyperedges;
+    std::set<std::pair<int, float>, Comp> unvisited_hyperedges;
     float tot_cost = 0.0;  // total hyperedge cut
     for (auto e = 0; e < hgraph->GetNumHyperedges(); ++e) {
       const float score = evaluator_->CalculateHyperedgeCost(e, hgraph);
