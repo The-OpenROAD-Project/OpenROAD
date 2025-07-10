@@ -151,7 +151,8 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item_param,
                   EditorItemDelegate::selected_);
     return item;
   }
-  return makeItem(QString::fromStdString(Descriptor::Property::toString(item_param)));
+  return makeItem(
+      QString::fromStdString(Descriptor::Property::toString(item_param)));
 }
 
 template <typename Iterator>
