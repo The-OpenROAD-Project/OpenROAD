@@ -2838,11 +2838,13 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                  routability_gpl_iter_count);
     }
 
-    rb->getRudyResult();
-    log_->info(GPL,
-               1005,
-               "Routability final weighted congestion: {:.4f}",
-               rb->getRudyRC(false));
+    if (npVars_->routability_driven_mode) {
+      rb->getRudyResult();
+      log_->info(GPL,
+                 1005,
+                 "Routability final weighted congestion: {:.4f}",
+                 rb->getRudyRC(false));
+    }
 
     dbBlock* block = pb_->db()->getChip()->getBlock();
     log_->info(GPL,
