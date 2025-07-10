@@ -22,6 +22,7 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModNet>;
@@ -223,6 +224,10 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
     block->_journal->endAction();
   }
 
+  for (auto cb : block->_callbacks) {
+    cb->inDbModNetCreate((dbModNet*) modnet);
+  }
+
   return (dbModNet*) modnet;
 }
 
@@ -240,6 +245,10 @@ void dbModNet::destroy(dbModNet* mod_net)
     block->_journal->pushParam(mod_net->getId());
     block->_journal->pushParam(module->getId());
     block->_journal->endAction();
+  }
+
+  for (auto cb : block->_callbacks) {
+    cb->inDbModNetDestroy(mod_net);
   }
 
   uint prev = _modnet->_prev_entry;

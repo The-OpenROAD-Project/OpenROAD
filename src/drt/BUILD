@@ -270,6 +270,7 @@ cc_library(
     ],
     deps = [
         ":db_hdrs",
+        ":drt",
         "//:ord",
         "//src/dst",
         "//src/gui",

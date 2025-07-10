@@ -71,6 +71,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":mpl",
         "//:ord",
         "//src/gui",
         "//src/odb",
