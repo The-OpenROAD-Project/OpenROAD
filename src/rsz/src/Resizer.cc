@@ -37,6 +37,7 @@
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
+#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -1530,6 +1531,11 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       source_cell_leakage = cellLeakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
+      // This should have been handled by STA
+      if (!equivCellTimingArcSets(source_cell, equiv_cell)) {
+        continue;
+      }
+
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
       }
