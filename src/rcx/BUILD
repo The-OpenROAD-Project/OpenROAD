@@ -116,6 +116,7 @@ cc_library(
     ],
     deps = [
         ":hdrs",
+        ":rcx",
         "//:ord",
         "//src/odb",
         "//src/utl",
