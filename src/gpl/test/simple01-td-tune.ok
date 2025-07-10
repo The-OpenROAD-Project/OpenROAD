@@ -278,10 +278,13 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1001] Finished with Overflow: 0.098870
 [INFO GPL-1002] Placed Cell Area              487.0460
 [INFO GPL-1003] Available Free Area           953.8760
-[INFO GPL-1004] Minimum Feasible Density        0.5106 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.5900 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.5673
 [INFO GPL-1008]     - For 80% usage of free space: 0.6382
-[INFO GPL-1009]     - For 50% usage of free space: 1.0212
+[INFO GPL-1010] Original area (um^2): 553.28
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: -66.23 (-11.97%)
+[INFO GPL-1013] Final placement area: 487.05 (-11.97%)
 worst slack max 1.40
 No differences found.
