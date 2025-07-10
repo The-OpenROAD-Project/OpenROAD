@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -101,6 +102,7 @@ Corner: slow
 
 
 ### swap bc1 to inv_chain ###
+[INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -121,6 +123,7 @@ Corner: slow
 [INFO GPL-0020] Standard cells area:            59.850 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 251960
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 259304
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000006 HPWL: 258856
@@ -134,11 +137,15 @@ Corner: slow
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
+[INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.1929 |  1.027780e+05 |   +0.00% |  4.39e-14 |      
-[INFO GPL-1001] Finished with Overflow: 0.192909
+        0 |   0.1929 |  1.027780e+05 |   +0.00% |  4.39e-14 |      
+        0 |   0.1929 |  1.027780e+05 |          |  4.56e-14 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area               59.8500
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -146,6 +153,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0014
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-0133] Unlocked instances
+[INFO GPL-0007] Execute nesterov global placement.
 Placement Analysis
 ---------------------------------
 total displacement         52.6 u
@@ -222,6 +230,7 @@ Corner: slow
 
 
 ### swap bc1 back to buffer_chain ###
+[INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -242,6 +251,7 @@ Corner: slow
 [INFO GPL-0020] Standard cells area:            60.382 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 203020
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000010 HPWL: 210674
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000011 HPWL: 210704
@@ -255,11 +265,15 @@ Corner: slow
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
+[INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.1876 |  8.809500e+04 |   +0.00% |  3.98e-14 |      
-[INFO GPL-1001] Finished with Overflow: 0.187566
+        0 |   0.1876 |  8.809500e+04 |   +0.00% |  3.98e-14 |      
+        0 |   0.1876 |  8.809500e+04 |          |  4.13e-14 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area               60.3820
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -267,6 +281,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0014
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-0133] Unlocked instances
+[INFO GPL-0007] Execute nesterov global placement.
 Placement Analysis
 ---------------------------------
 total displacement         39.4 u
@@ -343,6 +358,7 @@ Corner: slow
 
 
 ### swap bc1 back to inv_chain ###
+[INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -363,6 +379,7 @@ Corner: slow
 [INFO GPL-0020] Standard cells area:            59.850 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 194280
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 201324
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 201200
@@ -376,11 +393,15 @@ Corner: slow
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
+[INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.1408 |  9.342400e+04 |   +0.00% |  3.25e-14 |      
-[INFO GPL-1001] Finished with Overflow: 0.140830
+        0 |   0.1408 |  9.342400e+04 |   +0.00% |  3.25e-14 |      
+        0 |   0.1408 |  9.342400e+04 |          |  3.38e-14 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area               59.8500
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -388,6 +409,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0014
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-0133] Unlocked instances
+[INFO GPL-0007] Execute nesterov global placement.
 Placement Analysis
 ---------------------------------
 total displacement         34.4 u

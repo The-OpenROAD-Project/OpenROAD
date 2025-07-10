@@ -4,6 +4,7 @@
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0007] Random pin placement.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
@@ -34,11 +35,15 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
 [INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.0000 |  5.633130e+05 |   +0.00% |  9.92e-15 |      
-[INFO GPL-1001] Finished with Overflow: 0.000000
+        0 |   0.0000 |  5.633130e+05 |   +0.00% |  9.92e-15 |      
+        0 |   0.0000 |  5.633130e+05 |          |  1.03e-14 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area                4.5220
 [INFO GPL-1003] Available Free Area          6256.3200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
