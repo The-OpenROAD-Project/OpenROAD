@@ -31,7 +31,8 @@ class SizeDownMove : public BaseMove
 
  private:
   LibertyCell* downsizeGate(const LibertyPort* drvr_port,
-                            const Pin* drvr_pin,
+                            const LibertyPort* load_port,
+                            const Pin* load_pin,
                             const DcalcAnalysisPt* dcalc_ap,
                             float slack_margin);
   LibertyCellSeq getSwappableCells(LibertyCell* base);
