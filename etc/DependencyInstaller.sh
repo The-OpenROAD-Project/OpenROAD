@@ -594,9 +594,6 @@ EOF
 
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
-
-    # Install swig 4.1.1
-    _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
 
 _installDebianCleanUp() {
