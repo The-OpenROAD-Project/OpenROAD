@@ -52,7 +52,6 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
-        "//src/stt:ui",
         "//src/utl",
         "@boost.container_hash",
         "@boost.polygon",

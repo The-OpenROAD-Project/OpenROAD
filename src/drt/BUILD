@@ -211,7 +211,6 @@ cc_library(
         "//src/dst",
         "//src/odb",
         "//src/stt",
-        "//src/stt:ui",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
