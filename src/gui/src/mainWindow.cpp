@@ -4,6 +4,9 @@
 #include "mainWindow.h"
 
 #include <QDesktopServices>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QDesktopWidget>
+#endif
 #include <QFileDialog>
 #include <QFontDialog>
 #include <QInputDialog>
@@ -90,7 +93,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
   // Size and position the window
-  QSize size = this->screen()->availableGeometry().size();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  QSize size = screen()->availableGeometry().size();
+#else
+  QSize size = QDesktopWidget().availableGeometry(this).size();
+#endif
+
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
 
