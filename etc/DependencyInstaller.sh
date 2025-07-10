@@ -64,8 +64,8 @@ _installCommonDev() {
     cmakeVersionSmall=${cmakeVersionBig}.6
     pcreVersion=10.42
     pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
-    swigVersion=4.1.0
-    swigChecksum="794433378154eb61270a3ac127d9c5f3"
+    swigVersion=4.3.0
+    swigChecksum="9f74c7f402aa28d9f75e67d1990ee6fb"
     boostVersionBig=1.86
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="ac857d73bb754b718a039830b07b9624"
