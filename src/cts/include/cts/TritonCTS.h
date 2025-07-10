@@ -66,6 +66,7 @@ class TritonCTS
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_.get(); }
   int setClockNets(const char* names);
+  int setSkipNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
   void setSinkBuffer(const char* buffers);

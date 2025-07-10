@@ -192,6 +192,12 @@ set_clock_nets(const char* names)
   return getTritonCts()->setClockNets(names);
 }
 
+int
+set_skip_clock_nets(const char* names)
+{
+  return getTritonCts()->setSkipNets(names);
+}
+
 void
 set_buffer_list(const char* buffers)
 {
