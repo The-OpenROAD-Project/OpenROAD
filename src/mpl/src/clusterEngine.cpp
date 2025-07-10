@@ -1482,7 +1482,7 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
   }
 }
 
-bool ClusteringEngine::isLargeFlatCluster(Cluster* cluster)
+bool ClusteringEngine::isLargeFlatCluster(const Cluster* cluster) const
 {
   return (cluster->getDbModules().empty()
           && (cluster->getLeafStdCells().size() > max_std_cell_
