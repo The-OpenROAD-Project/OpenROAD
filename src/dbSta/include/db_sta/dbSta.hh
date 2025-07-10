@@ -22,6 +22,20 @@ class Logger;
 
 namespace sta {
 
+
+// std::any and typeid do not work on incomplete types
+// talking to the OpenSTA author about implementing these
+// upstream instead. https://github.com/llvm/llvm-project/issues/36746
+// for llvm bug.
+class Library {};
+class Cell {};
+class Port {};
+class Instance {};
+class Pin {};
+class Term {};
+class Net {};
+class ViewType {};
+
 class dbSta;
 class dbNetwork;
 class dbStaReport;
