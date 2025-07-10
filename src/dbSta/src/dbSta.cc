@@ -724,17 +724,7 @@ void dbSta::deleteInstance(Instance* inst)
 
 void dbSta::replaceCell(Instance* inst, Cell* to_cell, LibertyCell* to_lib_cell)
 {
-  NetworkEdit* network = networkCmdEdit();
-  LibertyCell* from_lib_cell = network->libertyCell(inst);
-  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
-    replaceEquivCellBefore(inst, to_lib_cell);
-    network->replaceCell(inst, to_cell);
-    replaceEquivCellAfter(inst);
-  } else {
-    replaceCellBefore(inst, to_lib_cell);
-    network->replaceCell(inst, to_cell);
-    replaceCellAfter(inst);
-  }
+  Sta::replaceCell(inst, to_cell, to_lib_cell);
 }
 
 void dbSta::deleteNet(Net* net)
