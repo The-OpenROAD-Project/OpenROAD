@@ -8,6 +8,8 @@
 #include <string>
 
 #include "BaseMove.hh"
+#include "ord/Timing.h"
+#include "sta/DelayFloat.hh"
 
 namespace rsz {
 
@@ -18,7 +20,9 @@ using std::vector;
 using utl::RSZ;
 
 using sta::ArcDelay;
+using sta::DcalcAnalysisPt;
 using sta::Edge;
+using sta::GraphDelayCalc;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
@@ -56,12 +60,11 @@ bool SizeDownMove::doMove(const Path* drvr_path,
              RSZ,
              "size_down",
              2,
-             "sizing down crit fanout {} -> {}",
+             "sizing down for crit fanout {} -> {}",
              network_->pathName(drvr_pin),
              network_->pathName(load_pin));
 
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
-  LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
 
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.
@@ -76,17 +79,8 @@ bool SizeDownMove::doMove(const Path* drvr_path,
           = sta_->vertexSlack(fanout_vertex, resizer_->max_);
       Pin* load_pin = load_vertex->pin();
       Instance* load_inst = network_->instance(load_pin);
-      debugPrint(logger_,
-                 RSZ,
-                 "size_down",
-                 3,
-                 " unsorted {} slack: {} drvr slack: {}",
-                 network_->pathName(fanout_vertex->pin()),
-                 delayAsString(fanout_slack, sta_, 3),
-                 delayAsString(drvr_slack, sta_, 3))
-          // If we already have a move on the load, don't try to size down
-          if (!hasMoves(load_inst))
-      {
+      // If we already have a move on the load, don't try to size down
+      if (!hasMoves(load_inst)) {
         fanout_slacks.emplace_back(fanout_vertex, fanout_slack);
       }
     }
@@ -132,12 +126,8 @@ bool SizeDownMove::doMove(const Path* drvr_path,
       continue;
     }
 
-    LibertyCell* new_cell = downsizeFanout(drvr_port,
-                                           drvr_pin,
-                                           load_port,
-                                           load_pin,
-                                           dcalc_ap,
-                                           fanout_slack.second);
+    LibertyCell* new_cell
+        = downsizeGate(load_port, load_pin, dcalc_ap, fanout_slack.second);
     if (new_cell && replaceCell(load_inst, new_cell)) {
       debugPrint(logger_,
                  RSZ,
@@ -178,31 +168,29 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   return false;
 }
 
-LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
-                                          const Pin* drvr_pin,
-                                          const LibertyPort* fanout_port,
-                                          const Pin* fanout_pin,
-                                          const DcalcAnalysisPt* dcalc_ap,
-                                          float fanout_slack)
+// This will downsize the gate to the smallest input capacitance that that
+// satisfies the given slack margin.
+LibertyCell* SizeDownMove::downsizeGate(const LibertyPort* drvr_port,
+                                        const Pin* drvr_pin,
+                                        const DcalcAnalysisPt* dcalc_ap,
+                                        float slack_margin)
 {
   const int lib_ap = dcalc_ap->libertyIndex();
-  LibertyCell* fanout_cell = fanout_port->libertyCell();
-  const Instance* fanout_inst = network_->instance(fanout_pin);
+  LibertyCell* drvr_cell = drvr_port->libertyCell();
+  const char* drvr_port_name = drvr_port->name();
 
-  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(fanout_cell);
+  LibertyCellSeq swappable_cells = getSwappableCells(drvr_cell);
   LibertyCell* best_cell = nullptr;
 
   if (swappable_cells.size() > 1) {
-    const char* fanout_port_name = fanout_port->name();
-
     // Sort from the smallest input capacitance to the smallest
     // breaking tie by the intrinsic delay
     sort(&swappable_cells,
          [=](const LibertyCell* cell1, const LibertyCell* cell2) {
            LibertyPort* port1
-               = cell1->findLibertyPort(fanout_port_name)->cornerPort(lib_ap);
+               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            const LibertyPort* port2
-               = cell2->findLibertyPort(fanout_port_name)->cornerPort(lib_ap);
+               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
 
            const float cap1 = port1->capacitance();
            const float cap2 = port2->capacitance();
@@ -210,172 +198,242 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
            const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
            return (std::tie(cap1, intrinsic2) < std::tie(cap2, intrinsic1));
          });
+  }
 
-    const float drvr_load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
-    const float fanout_cap = fanout_port->cornerPort(lib_ap)->capacitance();
-
-    // Get fanouts based on Liberty since STA arcs are not present in DFFs
-    vector<const Pin*> fanouts = getFanouts(fanout_inst);
-
-    int max_fanout_id = 0;
-    float fanout_load_cap = -1.0;
-    // Find the output pin with max cap load and use that if more than one.
-    // We might want to use the most critical one instead?
-    for (int i = 0; i < fanouts.size(); i++) {
-      const float cur_fanout_load_cap
-          = graph_delay_calc_->loadCap(fanouts[i], dcalc_ap);
-      if (cur_fanout_load_cap > fanout_load_cap) {
-        fanout_load_cap = cur_fanout_load_cap;
-        max_fanout_id = i;
-      }
+  string swappable_names;
+  for (LibertyCell* swappable : swappable_cells) {
+    if (swappable == drvr_cell) {
+      swappable_names += "*";
     }
-    const Pin* fanout_output_pin = fanouts[max_fanout_id];
-    LibertyPort* fanout_output_port = network_->libertyPort(fanout_output_pin);
-    const char* fanout_output_port_name = fanout_output_port->name();
+    swappable_names += swappable->name();
+    if (swappable == drvr_cell) {
+      swappable_names += "*";
+    }
+    swappable_names += " ";
+  }
+  debugPrint(logger_,
+             RSZ,
+             "size_down",
+             3,
+             "size_down fanout {} swaps={}",
+             network_->pathName(drvr_pin),
+             swappable_names.c_str());
 
+  const float drvr_input_cap = drvr_port->cornerPort(lib_ap)->capacitance();
+
+  // Get fanouts based on Liberty since STA arcs are not present in DFFs
+  // Could have more than one fanout (e.g. Q and QN of a flop)
+  const Instance* fanout_inst = network_->instance(drvr_pin);
+  auto output_pins = getFanouts(fanout_inst);
+
+  vector<float> output_caps;
+  vector<float> output_slew_factors;
+  vector<float> output_delays;
+  vector<const char*> output_port_names;
+
+  for (const auto& output_pin : output_pins) {
+    LibertyPort* output_port = network_->libertyPort(output_pin);
+    const char* output_port_name = output_port->name();
+    output_port_names.push_back(output_port_name);
+    Vertex* output_vertex = graph_->pinLoadVertex(output_pin);
+
+    // Find output capacitance
+    const float output_load_cap
+        = graph_delay_calc_->loadCap(output_pin, dcalc_ap);
+    output_caps.push_back(output_load_cap);
+
+    // Find output slew and slew factor
+    const Slew output_slew = sta_->vertexSlew(output_vertex, resizer_->max_);
+    float output_res = output_port->driveResistance();
+    float elmore_slew_factor = 0.0;
+    // Can have gates without fanout (e.g. QN of flop) which have no load
+    if (output_res > 0.0 and output_load_cap > 0.0) {
+      elmore_slew_factor = output_slew / (output_res * output_load_cap);
+    }
+    output_slew_factors.push_back(elmore_slew_factor);
+
+    // Compute the baseline delay of the existing fanout cell outputs
     const float drvr_delay
-        = resizer_->gateDelay(drvr_port, drvr_load_cap, dcalc_ap);
-    const float fanout_delay
-        = resizer_->gateDelay(fanout_output_port, fanout_load_cap, dcalc_ap);
-    debugPrint(
-        logger_,
-        RSZ,
-        "size_down",
-        3,
-        "base delay {} FO={} drvr_delay={} fanout_delay={} fanout_slack={}",
-        network_->pathName(fanout_pin),
-        fanout_cell->name(),
-        delayAsString(drvr_delay, sta_, 3),
-        delayAsString(fanout_delay, sta_, 3),
-        delayAsString(fanout_slack, sta_, 3));
+        = resizer_->gateDelay(output_port, output_load_cap, dcalc_ap);
+    output_delays.push_back(drvr_delay);
 
-    best_cell = fanout_cell;
-    float best_cap = fanout_cap;
-    float best_area = fanout_cell->area();
-    for (LibertyCell* swappable : swappable_cells) {
-      if (swappable == fanout_cell) {
-        continue;
-      }
-      LibertyPort* new_fanout_port
-          = swappable->findLibertyPort(fanout_port_name);
-      LibertyPort* new_fanout_output_port
-          = swappable->findLibertyPort(fanout_output_port_name);
-      float new_fanout_cap = new_fanout_port->cornerPort(lib_ap)->capacitance();
-      float new_drvr_load_cap = drvr_load_cap - fanout_cap + new_fanout_cap;
-      float new_area = swappable->area();
+    debugPrint(logger_,
+               RSZ,
+               "size_down",
+               3,
+               " current {}->{} gate={} delay={} cap={} slew={} slack={}",
+               network_->pathName(drvr_pin),
+               network_->pathName(output_pin),
+               drvr_cell->name(),
+               delayAsString(drvr_delay, sta_, 3),
+               output_load_cap,
+               delayAsString(output_slew, sta_, 3),
+               delayAsString(slack_margin, sta_, 3));
+  }
 
-      // Only evalute delay if needed
-      if (new_fanout_cap > best_cap || new_area > best_area) {
-        debugPrint(logger_,
-                   RSZ,
-                   "size_down",
-                   3,
-                   " skip based on cap/area {} FO={} cap={}>{} area={}>{}",
-                   network_->pathName(fanout_pin),
-                   swappable->name(),
-                   new_fanout_cap,
-                   best_cap,
-                   new_area,
-                   best_area);
-        continue;
-      }
+  best_cell = drvr_cell;
+  float best_cap = drvr_input_cap;
+  float best_area = drvr_cell->area();
+  for (LibertyCell* swappable : swappable_cells) {
+    if (swappable == drvr_cell) {
+      continue;
+    }
+    debugPrint(logger_,
+               RSZ,
+               "size_down",
+               3,
+               " considering swap {} {} -> {}",
+               network_->pathName(drvr_pin),
+               drvr_cell->name(),
+               swappable->name());
+    LibertyPort* new_drvr_port = swappable->findLibertyPort(drvr_port_name);
+    float new_input_cap = new_drvr_port->cornerPort(lib_ap)->capacitance();
+    float new_area = swappable->area();
 
-      // We only need to check the output pin cap of the fanout
-      // gate that gets sized down. The driver will always have
-      // less fanout cap so will only improve the max cap limit.
-      float cap, max_cap, cap_slack;
-      const Corner* corner;
-      const RiseFall* tr;
-      sta_->checkCapacitance(fanout_output_pin,
-                             nullptr /* corner */,
-                             resizer_->max_,
-                             // return values
-                             corner,
-                             tr,
-                             cap,
-                             max_cap,
-                             cap_slack);
-      if (max_cap > 0.0 && corner) {
-        // Check if the new driver load cap is within the max cap limit
-        if (cap > max_cap) {
-          debugPrint(logger_,
-                     RSZ,
-                     "size_down",
-                     2,
-                     " skip based on max cap {} FO={} cap={} max_cap={}",
-                     network_->pathName(fanout_pin),
-                     swappable->name(),
-                     new_drvr_load_cap,
-                     max_cap);
-          continue;
-        }
-      }
-
-      // Only check the max slew for the fanout gate that gets sized down
-      // too.
-      const Corner* slew_corner;
-      const RiseFall* slew_tr;
-      float slew, max_slew, slew_slack;
-      sta_->checkSlew(fanout_output_pin,
-                      nullptr,
-                      resizer_->max_,
-                      false,
-                      slew_corner,
-                      slew_tr,
-                      slew,
-                      max_slew,
-                      slew_slack);
-      if (slew_corner) {
-        // Check if the new driver load slew is within the max slew limit
-        if (slew > max_slew) {
-          debugPrint(logger_,
-                     RSZ,
-                     "size_down",
-                     2,
-                     " skip based on max slew {} FO={} slew={} max_slew={}",
-                     network_->pathName(fanout_pin),
-                     swappable->name(),
-                     slew,
-                     max_slew);
-          continue;
-        }
-      }
-
-      float new_drvr_delay
-          = resizer_->gateDelay(drvr_port, new_drvr_load_cap, dcalc_ap);
-      float new_fanout_delay = resizer_->gateDelay(
-          new_fanout_output_port, fanout_load_cap, dcalc_ap);
+    // Input cap and area improvement checking
+    // Note: we check area because we don't want a bigger cell with smaller
+    // cap.
+    if (new_input_cap > best_cap || new_area > best_area) {
       debugPrint(logger_,
                  RSZ,
                  "size_down",
                  3,
-                 " new delay {} FO={} drvr_delay {}<{}, fanout_delay: {}<{} "
-                 "({}+{}) ",
-                 network_->pathName(fanout_pin),
+                 "  skip based on cap/area {} gate={} cap={}>{} area={}>{}",
+                 network_->pathName(drvr_pin),
                  swappable->name(),
-                 delayAsString(new_drvr_delay, sta_, 3),
-                 delayAsString(drvr_delay, sta_, 3),
-                 delayAsString(new_fanout_delay, sta_, 3),
-                 delayAsString(fanout_delay - fanout_slack, sta_, 3),
-                 delayAsString(fanout_delay, sta_, 3),
-                 delayAsString(fanout_slack, sta_, 3));
-      // Check if the combined new delay is better than the old one
-      // If fanout slack is positive, this allows us to slow down the fanout
-      // gate. If fanout slack is negative, this allows us to accept it as
-      // long as the total delay improves.
-      if (new_drvr_delay + new_fanout_delay
-          < drvr_delay + fanout_delay + fanout_slack) {
-        best_cell = swappable;
-        best_cap = new_fanout_cap;
-        best_area = new_area;
+                 new_input_cap,
+                 best_cap,
+                 new_area,
+                 best_area);
+      continue;
+    }
+
+    bool reject = false;
+
+    // Max capacitance checking
+    int i = 0;
+    for (; i < output_pins.size(); i++) {
+      LibertyPort* output_port
+          = swappable->findLibertyPort(output_port_names[i]);
+      float max_cap;
+      bool cap_limit_exists;
+      output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
+      debugPrint(logger_,
+                 RSZ,
+                 "size_down",
+                 3,
+                 " fanout pin {} cap {} new_cap {} ",
+                 output_port_names[i],
+                 max_cap,
+                 new_input_cap);
+
+      if (cap_limit_exists && max_cap > 0.0 && output_caps[i] > max_cap) {
+        debugPrint(logger_,
+                   RSZ,
+                   "size_down",
+                   2,
+                   "  skip based on max cap {} gate={} cap={} max_cap={}",
+                   network_->pathName(drvr_pin),
+                   swappable->name(),
+                   output_caps[i],
+                   max_cap);
+        reject = true;
       }
+      // Max slew checking
+      float output_res = output_port->driveResistance();
+      float output_slew = output_slew_factors[i] * output_res * output_caps[i];
+      float max_slew;
+      bool slew_limit_exists;
+      sta_->findSlewLimit(output_port,
+                          dcalc_ap->corner(),
+                          resizer_->max_,
+                          max_slew,
+                          slew_limit_exists);
+
+      if (output_slew > max_slew) {
+        debugPrint(logger_,
+                   RSZ,
+                   "size_down",
+                   2,
+                   "  skip based on max slew {} gate={} slew={} max_slew={}",
+                   network_->pathName(drvr_pin),
+                   swappable->name(),
+                   output_slew,
+                   max_slew);
+        reject = true;
+      }
+
+      float new_delay
+          = resizer_->gateDelay(output_port, output_caps[i], dcalc_ap);
+      debugPrint(logger_,
+                 RSZ,
+                 "size_down",
+                 4,
+                 " new delay {}->{} gate={} old_delay {}, new_delay: {} ",
+                 network_->pathName(drvr_pin),
+                 network_->pathName(output_pins[i]),
+                 swappable->name(),
+                 delayAsString(output_delays[i], sta_, 3),
+                 delayAsString(new_delay, sta_, 3));
+
+      // This ignores that the driver delay may have gotten better due to
+      // decreased capacitance and just applies the slack margin to the fanout
+      // gate. It also assumes all outputs get the same slack margin.
+      if (new_delay > output_delays[i] + slack_margin) {
+        debugPrint(logger_,
+                   RSZ,
+                   "size_down",
+                   4,
+                   " new delay {}->{} gate={} new_delay {} < old_delay {} + "
+                   "slack {} ({})",
+                   network_->pathName(drvr_pin),
+                   network_->pathName(output_pins[i]),
+                   swappable->name(),
+                   delayAsString(new_delay, sta_, 3),
+                   delayAsString(output_delays[i], sta_, 3),
+                   delayAsString(slack_margin, sta_, 3),
+                   delayAsString(output_delays[i] + slack_margin, sta_, 3));
+        reject = true;
+      }
+    }
+
+    if (!reject) {
+      best_cell = swappable;
+      best_cap = new_input_cap;
+      best_area = new_area;
+      debugPrint(logger_,
+                 RSZ,
+                 "size_down",
+                 3,
+                 " new best size down {} -> {} ({} -> {})",
+                 network_->pathName(drvr_pin),
+                 network_->pathName(output_pins[0]),
+                 drvr_cell->name(),
+                 swappable->name());
     }
   }
 
-  if (best_cell != fanout_cell) {
+  if (best_cell != drvr_cell) {
     return best_cell;
   }
   return nullptr;
+}
+
+LibertyCellSeq SizeDownMove::getSwappableCells(LibertyCell* base)
+{
+  if (base->isBuffer()) {
+    // Do this once to populate the set
+    if (buffer_sizes_.empty()) {
+      for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
+        buffer_sizes_.push_back(buffer);
+      }
+    }
+    if (resizer_->buffer_fast_sizes_.count(base) == 0) {
+      return LibertyCellSeq();
+    }
+    return buffer_sizes_;
+  }
+  return resizer_->getSwappableCells(base);
 }
 
 }  // namespace rsz
