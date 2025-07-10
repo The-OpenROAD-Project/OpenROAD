@@ -97,6 +97,8 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 354
 [INFO GPL-1003] Routability mode iteration count: 63
+[INFO GPL-0039] Number of routing layers: 0
+[INFO GPL-1005] Routability final weighted congestion: 0.4420
 [INFO GPL-1002] Placed Cell Area              569.7720
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6000 (cell_area / free_area)
