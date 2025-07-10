@@ -587,7 +587,7 @@ Then, rerun this script.
 EOF
         exit 1
     fi
-    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig
 
     # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
