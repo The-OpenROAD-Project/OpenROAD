@@ -250,27 +250,25 @@ def getParallelTests(String image) {
 }
 
 def bazelTest = {
-    stage ('Build with Bazel') {
-        node {
-            stage('Setup Bazel Build') {
-                checkout scm;
-                sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
-            }
-            withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
-                stage('Bazel Build') {
-                    withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
-                        timeout(time: 120, unit: 'MINUTES') {
-                            def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
-                            if (env.BRANCH_NAME != 'master') {
-                                cmd += ' --remote_upload_local_results=false';
-                            }
-                            cmd += ' --google_credentials=$GCS_SA_KEY';
-                            try {
-                                sh label: 'Bazel Build', script: cmd + ' ...';
-                            } catch (e) {
-                                currentBuild.result = 'FAILURE';
-                                sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
-                            }
+    node {
+        stage('Setup') {
+            checkout scm;
+            sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
+        }
+        withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
+            stage('bazelisk test ...') {
+                withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                    timeout(time: 120, unit: 'MINUTES') {
+                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
+                        if (env.BRANCH_NAME != 'master') {
+                            cmd += ' --remote_upload_local_results=false';
+                        }
+                        cmd += ' --google_credentials=$GCS_SA_KEY';
+                        try {
+                            sh label: 'Bazel Build', script: cmd + ' ...';
+                        } catch (e) {
+                            currentBuild.result = 'FAILURE';
+                            sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
                         }
                     }
                 }
@@ -323,7 +321,7 @@ node {
         ))
     ]);
     parallel(
-            "Bazel Tests": bazelTest,
+            "Bazel": bazelTest,
             "Docker Tests": dockerTests
     );
     stage('Send Email Report') {

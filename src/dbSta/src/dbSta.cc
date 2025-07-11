@@ -166,6 +166,9 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
 
  private:
+  // for inDbInstSwapMasterBefore/inDbInstSwapMasterAfter
+  bool swap_master_arcs_equiv_ = false;
+
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
   Logger* logger_;
@@ -724,17 +727,10 @@ void dbSta::deleteInstance(Instance* inst)
 
 void dbSta::replaceCell(Instance* inst, Cell* to_cell, LibertyCell* to_lib_cell)
 {
+  // do not call `Sta::replaceCell` as sta's before/after hooks are called
+  // from db callbacks
   NetworkEdit* network = networkCmdEdit();
-  LibertyCell* from_lib_cell = network->libertyCell(inst);
-  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
-    replaceEquivCellBefore(inst, to_lib_cell);
-    network->replaceCell(inst, to_cell);
-    replaceEquivCellAfter(inst);
-  } else {
-    replaceCellBefore(inst, to_lib_cell);
-    network->replaceCell(inst, to_cell);
-    replaceCellAfter(inst);
-  }
+  network->replaceCell(inst, to_cell);
 }
 
 void dbSta::deleteNet(Net* net)
@@ -933,20 +929,25 @@ void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
   LibertyCell* to_lib_cell = network_->libertyCell(network_->dbToSta(master));
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
   Instance* sta_inst = network_->dbToSta(inst);
-  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
+
+  swap_master_arcs_equiv_ = sta::equivCellsArcs(from_lib_cell, to_lib_cell);
+
+  if (swap_master_arcs_equiv_) {
     sta_->replaceEquivCellBefore(sta_inst, to_lib_cell);
   } else {
-    logger_->error(STA,
-                   1000,
-                   "instance {} swap master {} is not equivalent",
-                   inst->getConstName(),
-                   master->getConstName());
+    sta_->replaceCellBefore(sta_inst, to_lib_cell);
   }
 }
 
 void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
 {
-  sta_->replaceEquivCellAfter(network_->dbToSta(inst));
+  Instance* sta_inst = network_->dbToSta(inst);
+
+  if (swap_master_arcs_equiv_) {
+    sta_->replaceEquivCellAfter(sta_inst);
+  } else {
+    sta_->replaceCellAfter(sta_inst);
+  }
 }
 
 void dbStaCbk::inDbNetDestroy(dbNet* db_net)

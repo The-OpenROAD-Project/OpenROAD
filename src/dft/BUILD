@@ -52,6 +52,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dft",
         "//:ord",
         "//src/dbSta",
         "//src/dft/src/architect",

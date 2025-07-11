@@ -42,6 +42,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":tap",
         "//:ord",
         "//src/odb",
         "//src/utl",

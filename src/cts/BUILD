@@ -24,6 +24,7 @@ cc_library(
         "src/Util.h",
     ],
     visibility = ["//visibility:private"],
+    deps = ["//src/sta:opensta_lib"],
 )
 
 cc_library(
@@ -77,6 +78,7 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
+        ":cts",
         ":private_hdrs",
         "//:ord",
         "//src/dbSta",

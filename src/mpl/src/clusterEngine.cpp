@@ -1250,7 +1250,8 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   level_++;
   updateSizeThresholds();
 
-  if (force_split_root || (parent->getNumStdCell() > max_std_cell_)) {
+  if (force_split_root || (parent->getNumStdCell() > max_std_cell_)
+      || (parent->getNumMacro() > max_macro_)) {
     breakCluster(parent);
     updateSubTree(parent);
 
@@ -1475,10 +1476,17 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
   for (int i = 0; i < new_children.size(); ++i) {
     auto& child = new_children[i];
     child->setParent(parent);
-    if (child->getNumStdCell() > max_std_cell_) {
+    if (isLargeFlatCluster(child.get())) {
       breakLargeFlatCluster(child.get());
     }
   }
+}
+
+bool ClusteringEngine::isLargeFlatCluster(const Cluster* cluster) const
+{
+  return (cluster->getDbModules().empty()
+          && (cluster->getLeafStdCells().size() > max_std_cell_
+              || cluster->getLeafMacros().size() > max_macro_));
 }
 
 // Break large flat clusters with TritonPart
@@ -1488,11 +1496,6 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
 // cluster_1 -> cluster_1_0, cluster_1_1 [...]
 void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 {
-  // Check if the cluster is a large flat cluster
-  if (!parent->getDbModules().empty()
-      || parent->getLeafStdCells().size() < max_std_cell_) {
-    return;
-  }
   updateInstancesAssociation(parent);
 
   std::map<int, int> cluster_vertex_id_map;
@@ -1630,8 +1633,13 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
-  breakLargeFlatCluster(parent);
-  breakLargeFlatCluster(raw_part_1);
+  if (isLargeFlatCluster(parent)) {
+    breakLargeFlatCluster(parent);
+  }
+
+  if (isLargeFlatCluster(raw_part_1)) {
+    breakLargeFlatCluster(raw_part_1);
+  }
 }
 
 bool ClusteringEngine::partitionerSolutionIsFullyUnbalanced(
