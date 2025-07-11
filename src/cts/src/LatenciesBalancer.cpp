@@ -33,6 +33,7 @@ void LatenciesBalancer::run()
   delayBufIndex_ = 0;
   initSta();
   findAllBuilders(root_);
+  expandBuilderGraph(root_->getTopInputNet());
   computeLeafsNumBufferToInsert(0);
   debugPrint(logger_, CTS, "insertion delay", 1, "inserted {} delay buffers.", delayBufIndex_);
 }
@@ -46,9 +47,78 @@ void LatenciesBalancer::initSta() {
 
 void LatenciesBalancer::findAllBuilders(TreeBuilder* builder)
 {
-  expandBuilderGraph(builder);
+  std::string topBufferName = builder->getTopBufferName();
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbInst* topBuffer = block->findInst(topBufferName.c_str());
+  inst2builder_[topBufferName] = builder;
   for (const auto& child : builder->getChildren()) {
     findAllBuilders(child);
+  }
+}
+
+void LatenciesBalancer::expandBuilderGraph(odb::dbNet* clkInputNet)
+{
+  std::string builderSrcName;
+  if(!clkInputNet->getFirstOutput()) {
+    builderSrcName = clkInputNet->getName();
+  } else {
+    builderSrcName = clkInputNet->getFirstOutput()->getInst()->getName();
+  }
+  int builderSrcId = graph_.size();
+  GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, clkInputNet->getFirstOutput());
+  graph_.push_back(builderSrcNode);
+
+  std::stack<odb::dbInst*> visitInst;
+
+  for(odb::dbITerm* iterm : clkInputNet->getITerms()) {
+    if(iterm->getIoType() == odb::dbIoType::INPUT) {
+      int id = graph_.size();
+      GraphNode topBufNode = GraphNode(id, iterm->getInst()->getName(), iterm);
+      graph_.push_back(topBufNode);
+      graph_[builderSrcId].childrenIds.push_back(id);
+      if(inst2builder_.find(iterm->getInst()->getName()) != inst2builder_.end()) {
+        auto builder = inst2builder_[iterm->getInst()->getName()];
+        if(builder->isLeafTree()) {
+          float builerAvgArrival = computeAveSinkArrivals(builder);
+          worseDelay_ = std::max(worseDelay_, builerAvgArrival);
+          graph_[id].delay = builerAvgArrival;
+          continue;
+        }
+      }
+      visitInst.push(iterm->getInst());
+    }
+  }
+
+  while(!visitInst.empty()) {
+    odb::dbInst* driver = visitInst.top();
+    visitInst.pop();
+    int driverId = getNodeIdByName(driver->getName());
+    odb::dbITerm* firstOutput = driver->getFirstOutput();
+    odb::dbNet* net = firstOutput->getNet();
+    if(!net) {
+      continue;
+    }
+    for(odb::dbITerm* sinkIterm : net->getITerms()) {
+      if(sinkIterm->getIoType() == odb::dbIoType::INPUT) {
+        odb::dbInst* sinkInst = sinkIterm->getInst();
+        int sinkId = graph_.size();
+        std::string sinkName = sinkInst->getName();
+        GraphNode sinkNode = GraphNode(sinkId, sinkName, sinkIterm);
+        graph_.push_back(sinkNode);
+        graph_[driverId].childrenIds.push_back(sinkId);
+
+        if(inst2builder_.find(sinkName) != inst2builder_.end()) {
+          auto builder = inst2builder_[sinkName];
+          if(builder->isLeafTree()) {
+            float builerAvgArrival = computeAveSinkArrivals(builder);
+            worseDelay_ = std::max(worseDelay_, builerAvgArrival);
+            graph_[sinkId].delay = builerAvgArrival;
+            continue;
+          }
+        }
+        visitInst.push(sinkInst);
+      }
+    }
   }
 }
 
@@ -79,13 +149,13 @@ void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
   int builderSrcId = getNodeIdByName(builderSrcName);
   if(builderSrcId == -1) {
     builderSrcId = graph_.size();
-    GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, -1, topBufInputNet->getFirstOutput());
+    GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, topBufInputNet->getFirstOutput());
     graph_.push_back(builderSrcNode);
   }
 
   // Create the node for the root of the tree
   int topBufId = graph_.size();
-  GraphNode topBufNode = GraphNode(topBufId, topBufferName, builderSrcId, builderTopBufInputTerm);
+  GraphNode topBufNode = GraphNode(topBufId, topBufferName, builderTopBufInputTerm);
   graph_.push_back(topBufNode);
   graph_[builderSrcId].childrenIds.push_back(topBufId);
 
@@ -97,16 +167,12 @@ void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
     graph_[topBufId].delay = builerAvgArrival;
     return;
   }
-
+  std::map<std::string, std::vector<int>> not_created_nodes;
   // Expand clock tree to possibly insert delay
   Clock& clockNet = builder->getClock();
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     odb::dbInst* driver = subNet.getDriver()->getDbInst();
     int driverId = getNodeIdByName(driver->getName());
-    
-    if(driverId == -1) {
-      logger_->error(CTS, 545, "Could not find node for driver: {}", driver->getName());
-    }
 
     subNet.forEachSink([&](ClockInst* inst) {
       int sinkId = graph_.size();
@@ -117,9 +183,17 @@ void LatenciesBalancer::expandBuilderGraph(TreeBuilder* builder)
       } else {
         sinkName = inst->getName();
       }
-      GraphNode sinkNode = GraphNode(sinkId, sinkName, driverId, sinkIterm);
+      GraphNode sinkNode = GraphNode(sinkId, sinkName, sinkIterm);
+      if(driverId == -1) {
+        not_created_nodes[driver->getName()].push_back(sinkId);
+      } else {
+        graph_[driverId].childrenIds.push_back(sinkId);
+      }
+
+      if(not_created_nodes.find(sinkName) !=  not_created_nodes.end()) {
+        sinkNode.childrenIds = not_created_nodes[sinkName];
+      }
       graph_.push_back(sinkNode);
-      graph_[driverId].childrenIds.push_back(sinkId);
     });
   });
 }
@@ -286,14 +360,16 @@ void LatenciesBalancer::computeLeafsNumBufferToInsert(int nodeId) {
   GraphNode* node = &graph_[nodeId];
   // Compute number of buffer needed for leaf node
   if(node->childrenIds.empty()) {
-    debugPrint(logger_,
-               CTS,
-               "insertion delay",
-               1,
-               "For node {}, isert {:2f} buffers",
-               node->name,
-               (worseDelay_ - node->delay) / root_->getTopBufferDelay());
-    node->nBuffInsert = (int) ((worseDelay_ - node->delay) / root_->getTopBufferDelay());
+    if(node->delay != 0.0) {
+      debugPrint(logger_,
+                 CTS,
+                 "insertion delay",
+                 1,
+                 "For node {}, isert {:2f} buffers",
+                 node->name,
+                 (worseDelay_ - node->delay) / root_->getTopBufferDelay());
+      node->nBuffInsert = (int) ((worseDelay_ - node->delay) / root_->getTopBufferDelay());
+    }
     return;
   }
 
@@ -325,6 +401,8 @@ void LatenciesBalancer::computeLeafsNumBufferToInsert(int nodeId) {
       previous_buf_to_insert = buf_to_insert;
       sinksInput.clear();
       sinksInput = childs;      
+      continue;
+    } else if(buf_to_insert == -1) {
       continue;
     }
 
@@ -460,7 +538,7 @@ bool LatenciesBalancer::propagateClock(odb::dbITerm* input)
 
   // Clock Gater / Latch improvised as clock gater
   if (inputPort) {
-    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+    return inputPort->isClockGateClock() || inputPort->isLatchData();
   }
 
   return false;
@@ -494,7 +572,6 @@ void LatenciesBalancer::showGraph() {
     odb::dbITerm* inputTerm = node.inputTerm;
     logger_->report(" Node {}", node.name);
     logger_->report("   id       = {}", node.id);
-    logger_->report("   parent   = {}", node.parentId);
     logger_->report("   delay    = {}", node.delay);
     logger_->report("   n buffer = {}", node.nBuffInsert);
     logger_->report("   in Term  = {}", inputTerm == nullptr ? "no dbITerm" : inputTerm->getName());
