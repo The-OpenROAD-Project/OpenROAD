@@ -272,6 +272,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     return 0;
   }
 
+  if (nbc_->getHpwl() == 0) {
+    log_->report("0 HPWL, nothing to be done.");
+    return 0;  // return 0 iterations
+  }
+
   if (graphics_ && npVars_.debug_start_iter == 0) {
     graphics_->cellPlot(true);
   }
