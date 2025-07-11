@@ -350,7 +350,7 @@ void Graphics::reportSelected()
   if (selected_ == kInvalidIndex) {
     return;
   }
-  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->name());
+  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->getName());
 
   if (np_) {
     auto wlCoeffX = np_->getWireLengthCoefX();
@@ -365,7 +365,7 @@ void Graphics::reportSelected()
                       wlGrad.x,
                       wlGrad.y,
                       weight,
-                      gPin->pin()->name());
+                      gPin->pin()->getName());
     }
 
     FloatPoint wlGrad = nbc_->getWireLengthGradientWA(

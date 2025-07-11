@@ -568,6 +568,7 @@ std::pair<bool, bool> RouteBase::routability(
     minRc_ = curRc;
     minRcTargetDensity_ = nbVec_[0]->targetDensity();
     min_RC_violated_cnt_ = 0;
+    nbVec_[0]->clearRemovedFillers();
 
     // save cell size info
     nbc_->updateMinRcCellSize();
@@ -649,7 +650,7 @@ std::pair<bool, bool> RouteBase::routability(
   if (inflatedAreaDelta_ > targetInflationDeltaAreaRatio
                                * (nbVec_[0]->whiteSpaceArea()
                                   - (nbVec_[0]->nesterovInstsArea()
-                                     + nbVec_[0]->totalFillerArea()))) {
+                                     + nbVec_[0]->getTotalFillerArea()))) {
     // TODO dynamic inflation procedure?
   }
 
@@ -671,13 +672,15 @@ std::pair<bool, bool> RouteBase::routability(
              "Placement target density:",
              nbVec_[0]->targetDensity());
 
-  int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-                           + nbVec_[0]->totalFillerArea();
+  double prev_white_space_area = nbVec_[0]->whiteSpaceArea();
+  double prev_movable_area = nbVec_[0]->movableArea();
+  double prev_total_filler_area = nbVec_[0]->getTotalFillerArea();
+  double prev_total_gcells_area
+      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
+  double prev_expected_gcells_area
+      = inflatedAreaDelta_ + prev_total_gcells_area;
 
-  // newly set Density
-  nbVec_[0]->setTargetDensity(
-      static_cast<float>(totalGCellArea)
-      / static_cast<float>(nbVec_[0]->whiteSpaceArea()));
+  nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
 
   //
   // max density detection or,
@@ -709,7 +712,7 @@ std::pair<bool, bool> RouteBase::routability(
     }
     if (is_max_routability_revert) {
       log_->info(GPL,
-                 76,
+                 91,
                  "Routability mode reached the maximum allowed reverts {}",
                  routability_driven_revert_count);
     }
@@ -728,35 +731,18 @@ std::pair<bool, bool> RouteBase::routability(
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
     nbc_->revertGCellSizeToMinRc();
+    nbVec_[0]->restoreRemovedFillers();
     nbVec_[0]->updateDensitySize();
     resetRoutabilityResources();
 
     return std::make_pair(false, true);
   }
 
-  double prev_white_space_area = nbVec_[0]->whiteSpaceArea();
-  double prev_movable_area = nbVec_[0]->movableArea();
-  double prev_total_filler_area = nbVec_[0]->totalFillerArea();
-  double prev_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea();
-  double prev_expected_gcells_area
-      = inflatedAreaDelta_ + prev_total_gcells_area;
-
-  // cut filler cells accordingly
-  //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
-  //    nb_->cutFillerCells( nb_->totalFillerArea() - inflatedAreaDelta_ );
-  //  }
-  // routability-driven cannot solve this problem with the given density...
-  // return false
-  //  else {
-  //    return false;
-  //  }
-
   // updateArea
   nbVec_[0]->updateAreas();
 
   double new_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea();
+      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
   double new_expected_gcells_area = inflatedAreaDelta_ + new_total_gcells_area;
 
   auto percentDiff = [](double old_value, double new_value) -> double {
@@ -780,12 +766,13 @@ std::pair<bool, bool> RouteBase::routability(
              block->dbuAreaToMicrons(nbVec_[0]->movableArea()),
              percentDiff(prev_movable_area, nbVec_[0]->movableArea()));
 
-  log_->info(GPL,
-             60,
-             format_label_um2_with_delta,
-             "Total filler area:",
-             block->dbuAreaToMicrons(nbVec_[0]->totalFillerArea()),
-             percentDiff(prev_total_filler_area, nbVec_[0]->totalFillerArea()));
+  log_->info(
+      GPL,
+      60,
+      format_label_um2_with_delta,
+      "Total filler area:",
+      block->dbuAreaToMicrons(nbVec_[0]->getTotalFillerArea()),
+      percentDiff(prev_total_filler_area, nbVec_[0]->getTotalFillerArea()));
 
   log_->info(GPL,
              61,
