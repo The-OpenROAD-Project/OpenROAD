@@ -37,21 +37,18 @@ struct GraphNode
 {
   GraphNode(int id,
        std::string name,
-       int parentId,
        odb::dbITerm* inputTerm)
     : id(id),
       name(name),
-      parentId(parentId),
       inputTerm(inputTerm)
     {
     }
 
   int id;
   std::string name;
-  int parentId;
   std::vector<int> childrenIds;
   float delay = 0.0;
-  int nBuffInsert = 0;
+  int nBuffInsert = -1;
   odb::dbITerm* inputTerm = nullptr;
 };
 
@@ -81,6 +78,7 @@ class LatenciesBalancer
   void initSta();
   void findAllBuilders(TreeBuilder* builder);
   void expandBuilderGraph(TreeBuilder* builder);
+  void expandBuilderGraph(odb::dbNet* clkInputNet);
   int getNodeIdByName(std::string name);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -112,6 +110,7 @@ class LatenciesBalancer
   float worseDelay_;
   int delayBufIndex_;
   std::vector<GraphNode> graph_;
+  std::map<std::string, TreeBuilder*> inst2builder_;
 };
 
 }  // namespace cts
