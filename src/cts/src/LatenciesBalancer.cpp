@@ -48,8 +48,6 @@ void LatenciesBalancer::initSta() {
 void LatenciesBalancer::findAllBuilders(TreeBuilder* builder)
 {
   std::string topBufferName = builder->getTopBufferName();
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::dbInst* topBuffer = block->findInst(topBufferName.c_str());
   inst2builder_[topBufferName] = builder;
   for (const auto& child : builder->getChildren()) {
     findAllBuilders(child);
@@ -68,37 +66,26 @@ void LatenciesBalancer::expandBuilderGraph(odb::dbNet* clkInputNet)
   GraphNode builderSrcNode = GraphNode(builderSrcId, builderSrcName, clkInputNet->getFirstOutput());
   graph_.push_back(builderSrcNode);
 
-  std::stack<odb::dbInst*> visitInst;
+  std::stack<int> visitNode;
+  visitNode.push(builderSrcId);
 
-  for(odb::dbITerm* iterm : clkInputNet->getITerms()) {
-    if(iterm->getIoType() == odb::dbIoType::INPUT) {
-      int id = graph_.size();
-      GraphNode topBufNode = GraphNode(id, iterm->getInst()->getName(), iterm);
-      graph_.push_back(topBufNode);
-      graph_[builderSrcId].childrenIds.push_back(id);
-      if(inst2builder_.find(iterm->getInst()->getName()) != inst2builder_.end()) {
-        auto builder = inst2builder_[iterm->getInst()->getName()];
-        if(builder->isLeafTree()) {
-          float builerAvgArrival = computeAveSinkArrivals(builder);
-          worseDelay_ = std::max(worseDelay_, builerAvgArrival);
-          graph_[id].delay = builerAvgArrival;
-          continue;
-        }
+  while(!visitNode.empty()) {
+    int driverId = visitNode.top();
+    visitNode.pop();
+
+    odb::dbNet* driverNet;
+    if(graph_[driverId].inputTerm != nullptr) {
+      odb::dbInst* driverInst = graph_[driverId].inputTerm->getInst();
+      odb::dbITerm* firstOutput = driverInst->getFirstOutput();
+      driverNet = firstOutput->getNet();
+      if(!driverNet) {
+        continue;
       }
-      visitInst.push(iterm->getInst());
+    } else {
+      driverNet = clkInputNet;
     }
-  }
 
-  while(!visitInst.empty()) {
-    odb::dbInst* driver = visitInst.top();
-    visitInst.pop();
-    int driverId = getNodeIdByName(driver->getName());
-    odb::dbITerm* firstOutput = driver->getFirstOutput();
-    odb::dbNet* net = firstOutput->getNet();
-    if(!net) {
-      continue;
-    }
-    for(odb::dbITerm* sinkIterm : net->getITerms()) {
+    for(odb::dbITerm* sinkIterm : driverNet->getITerms()) {
       if(sinkIterm->getIoType() == odb::dbIoType::INPUT) {
         odb::dbInst* sinkInst = sinkIterm->getInst();
         int sinkId = graph_.size();
@@ -116,7 +103,7 @@ void LatenciesBalancer::expandBuilderGraph(odb::dbNet* clkInputNet)
             continue;
           }
         }
-        visitInst.push(sinkInst);
+        visitNode.push(sinkId);
       }
     }
   }
