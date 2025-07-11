@@ -42,8 +42,8 @@ class BazelInitializer
 
     std::string error;
     std::string program_location = getProgramLocation().value();
-    std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
-        program_location, BAZEL_CURRENT_REPOSITORY, &error));
+    std::unique_ptr<Runfiles> runfiles(
+        Runfiles::Create(program_location, BAZEL_CURRENT_REPOSITORY, &error));
     if (!runfiles) {
       std::cerr << "Error initializing Bazel runfiles: " << error << std::endl;
       std::exit(1);
