@@ -22,7 +22,6 @@ using utl::RSZ;
 using sta::ArcDelay;
 using sta::DcalcAnalysisPt;
 using sta::Edge;
-using sta::GraphDelayCalc;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
@@ -365,46 +364,60 @@ LibertyCell* SizeDownMove::downsizeGate(const LibertyPort* drvr_port,
         reject = true;
       }
 
-      // Compute the change in delay due to decreased load cap using simple RC
-      // model
+      // Compute the change in delay due to decreased load cap of the driver
+      // using simple RC model. This is specifically so that we can downsize
+      // the critical fanout if it gets a net improvement in delay.
       float drvr_res = drvr_port->driveResistance();
-      float drvr_delta_delay = drvr_res * (load_input_cap - new_input_cap);
+      float drvr_delta_delay = -drvr_res * (load_input_cap - new_input_cap);
 
       // Find the gate delay with the new gate and old output cap
       float new_load_delay
           = resizer_->gateDelay(output_port, output_caps[i], dcalc_ap);
 
       // This includes the improvement in delay of the driver gate
-      float new_total_delay = new_load_delay - drvr_delta_delay;
+      float new_total_delay = new_load_delay + drvr_delta_delay;
+
+      float delay_change = new_total_delay - output_delays[i];
 
       debugPrint(logger_,
                  RSZ,
                  "size_down",
                  4,
-                 " new delay {}->{} gate={} drvr_delta {}, old_delay {}, "
-                 "new_delay: {} ",
+                 " new delay {}->{} gate={} drvr_delta {} + new_delay {} - "
+                 "old_delay {} < "
+                 "slack {} ({} < {})",
                  network_->pathName(load_pin),
                  network_->pathName(output_pins[i]),
                  swappable->name(),
+                 delayAsString(drvr_delta_delay, sta_, 3),
+                 delayAsString(new_load_delay, sta_, 3),
                  delayAsString(output_delays[i], sta_, 3),
-                 delayAsString(new_load_delay, sta_, 3));
+                 delayAsString(slack_margin, sta_, 3),
+                 delayAsString(delay_change, sta_, 3),
+                 delayAsString(slack_margin, sta_, 3));
 
-      // This just applies the slack margin to the fanout gate.
-      // It also assumes all outputs get the same slack margin.
-      if (new_total_delay > output_delays[i] + slack_margin) {
+      // First case is positive slack and delay change doesn't get worse than
+      // that slack. Second case is negative slack and delay is improved, but
+      // doesn't necessarily fix the slack violation entirely.
+      if ((slack_margin > 0 && delay_change > slack_margin)
+          || (slack_margin < 0 && delay_change > 0)) {
         debugPrint(logger_,
                    RSZ,
                    "size_down",
                    4,
-                   " new delay {}->{} gate={} new_delay {} < old_delay {} + "
-                   "slack {} ({})",
+                   " skip based on delay {}->{} gate={} drvr_delta {} + "
+                   "new_delay {} - "
+                   "old_delay {} < "
+                   "slack {} ({} < {})",
                    network_->pathName(load_pin),
                    network_->pathName(output_pins[i]),
                    swappable->name(),
-                   delayAsString(new_delay, sta_, 3),
+                   delayAsString(drvr_delta_delay, sta_, 3),
+                   delayAsString(new_load_delay, sta_, 3),
                    delayAsString(output_delays[i], sta_, 3),
                    delayAsString(slack_margin, sta_, 3),
-                   delayAsString(output_delays[i] + slack_margin, sta_, 3));
+                   delayAsString(delay_change, sta_, 3),
+                   delayAsString(slack_margin, sta_, 3));
         reject = true;
       }
     }
