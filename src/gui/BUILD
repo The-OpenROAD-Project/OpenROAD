@@ -52,13 +52,13 @@ qt6_library(
         "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
+    defines = [
+        "STATIC_QPA_PLUGIN_XCB=1",
+    ],
     includes = [
         "include",
         "src",
         "ui",
-    ],
-    defines = [
-        "STATIC_QPA_PLUGIN_XCB=1",
     ],
     moc_hdrs = glob(["src/*.h"]),
     uic_srcs = glob(["ui/*.ui"]),
@@ -69,12 +69,13 @@ qt6_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/gif-h:gif_h",
         "@boost.algorithm",
-        "@boost.multi_array",
         "@boost.geometry",
+        "@boost.multi_array",
+        "@boost.stacktrace",
         "@spdlog",
         "@tk_tcl//:tcl",
-        "//third-party/gif-h:gif_h",
     ],
 )
 
