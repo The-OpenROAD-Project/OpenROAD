@@ -1542,7 +1542,18 @@ int startGui(int& argc,
              bool minimize)
 {
 #ifdef STATIC_QPA_PLUGIN_XCB
-  setenv("QT_QPA_PLATFORM", "xcb", /*__replace=*/true);
+  const char* qt_qpa_platform_env = getenv("QT_QPA_PLATFORM");
+  std::string qpa_platform
+      = qt_qpa_platform_env == nullptr ? "" : qt_qpa_platform_env;
+  if (qpa_platform != "") {
+    if (qpa_platform.find("xcb") == std::string::npos
+        && qpa_platform.find("offscreen") == std::string::npos) {
+      // OpenROAD logger is not available yet, using cout.
+      std::cout << "Your system has set QT_QPA_PLATFORM='" << qpa_platform
+                << "', openroad only supports 'offscreen' and 'xcb', please "
+                   "include one of these plugins in your platform env\n";
+    }
+  }
 #endif
   auto gui = gui::Gui::get();
   // ensure continue after close is false
