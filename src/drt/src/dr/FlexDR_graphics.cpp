@@ -319,7 +319,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const bool draw_edges = checkDisplayControl(graph_edges_visible_);
   const bool draw_gCostEdges = checkDisplayControl(grid_cost_edges_visible_);
   const bool draw_blockedEdges = checkDisplayControl(blocked_edges_visible_);
-  if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
+  if (grid_graph_ && layer->getType() == dbTechLayerType::ROUTING
       && (draw_edges || draw_drc || draw_marker || draw_shape || draw_gCostEdges
           || draw_blockedEdges)) {
     const frMIdx z = grid_graph_->getMazeZIdx(layerNum);

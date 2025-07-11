@@ -39,7 +39,7 @@ void FlexGRGridGraph::initCoords()
   // z
   if (!is2DRouting_) {
     for (auto& layer : getTech()->getLayers()) {
-      if (layer->getType() != dbTechLayerType::ROUTING) {
+      if (!layer->isRouting()) {
         continue;
       }
       frLayerNum lNum = layer->getLayerNum();
@@ -54,7 +54,7 @@ void FlexGRGridGraph::initCoords()
   frCoord zHeight = 0;
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
-    zHeight += getTech()->getLayer(k)->getPitch() * router_cfg_->VIACOST;
+    zHeight += getLayer(k)->getPitch() * router_cfg_->VIACOST;
     zHeights_.push_back(zHeight);
     zDirs_.push_back((v == dbTechLayerDir::HORIZONTAL));
   }

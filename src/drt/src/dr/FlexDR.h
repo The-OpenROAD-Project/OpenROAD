@@ -95,6 +95,10 @@ class FlexDR
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
   // others
   void init();
@@ -364,6 +368,10 @@ class FlexDRWorker
   void setWorkerId(const int id) { worker_id_ = id; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
   const Rect& getRouteBox() const { return routeBox_; }
   Rect& getRouteBox() { return routeBox_; }

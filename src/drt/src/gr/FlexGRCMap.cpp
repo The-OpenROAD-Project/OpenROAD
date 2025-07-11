@@ -90,8 +90,8 @@ void FlexGRCMap::init()
   unsigned layerSize = 0;
   for (unsigned layerIdx = 0; layerIdx < design_->getTech()->getLayers().size();
        layerIdx++) {
-    auto layer = design_->getTech()->getLayer(layerIdx);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    auto layer = getLayer(layerIdx);
+    if (!layer->isRouting()) {
       continue;
     }
     layerSize++;
@@ -175,7 +175,7 @@ void FlexGRCMap::init()
   unsigned numBlkTracks = 0;
   // layerIdx == tech layer num
   for (auto& [layerIdx, dir] : zMap_) {
-    frCoord width = design_->getTech()->getLayer(layerIdx)->getWidth();
+    frCoord width = getLayer(layerIdx)->getWidth();
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         trackLocs.clear();
@@ -314,7 +314,7 @@ unsigned FlexGRCMap::getNumBlkTracks(
   std::set<frCoord> openTrackLocs = trackLocs;
   frCoord low, high;
   frCoord actBloatDist;
-  auto layer = getDesign()->getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   for (auto& [box, obj] : results) {
     actBloatDist = bloatDist;
     if (obj->typeId() == frcInstTerm) {
@@ -357,20 +357,19 @@ frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
                                   const Rect& box,
                                   bool isOBS)
 {
-  auto layer = getDesign()->getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   frCoord width = layer->getWidth();
   // use width if minSpc does not exist
   frCoord bloatDist = width;
   frCoord objWidth = std::min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
-  frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
-                    ? (box.xMax() - box.xMin())
-                    : (box.yMax() - box.yMin());
+  frCoord prl = (layer->isHorizontal()) ? (box.xMax() - box.xMin())
+                                        : (box.yMax() - box.yMin());
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
     if (isOBS && router_cfg_->USEMINSPACING_OBS) {
       objWidth = width;
     }
   }
-  auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
+  auto con = getLayer(lNum)->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -551,12 +550,10 @@ void FlexGRCMap::print(bool isAll)
   unsigned layerIdx = 0;
   for (auto& [layerNum, dir] : zMap_) {
     if (congMap.is_open()) {
-      congMap << "----------------------"
-              << design_->getTech()->getLayer(layerNum)->getName()
+      congMap << "----------------------" << getLayer(layerNum)->getName()
               << "----------------------\n";
     } else {
-      std::cout << "----------------------"
-                << design_->getTech()->getLayer(layerNum)->getName()
+      std::cout << "----------------------" << getLayer(layerNum)->getName()
                 << "----------------------\n";
     }
     for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {

@@ -677,7 +677,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
   gcell->addGridPatternY(dieBox.yMax(), 1, 0);
   unsigned cmapLayerIdx = 0;
   for (auto& [layerNum, dir] : cmap->getZMap()) {
-    std::string layerName(design_->getTech()->getLayer(layerNum)->getName());
+    std::string layerName(getLayer(layerNum)->getName());
     auto layer = tech->findLayer(layerName.c_str());
     if (layer == nullptr) {
       logger_->warn(utl::DRT,
@@ -724,13 +724,13 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
     std::vector<double> con;
     numOverConGCell = 0;
 
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getLayer(layerNum);
     std::string layerName(layer->getName());
     std::cout << "---------- " << layerName << " ----------" << std::endl;
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+        if (layer->isHorizontal()) {
           auto supply
               = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -798,13 +798,13 @@ void FlexGR::reportCong3D()
     std::vector<double> con;
     numOverConGCell = 0;
 
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getLayer(layerNum);
     std::string layerName(layer->getName());
     std::cout << "---------- " << layerName << " ----------" << std::endl;
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+        if (layer->isHorizontal()) {
           auto supply
               = cmap_->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -882,7 +882,7 @@ void FlexGR::ra()
 
   unsigned cmapLayerIdx = 0;
   for (auto& [layerNum, dir] : cmap_->getZMap()) {
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getLayer(layerNum);
     std::string layerName(layer->getName());
     layerName.append(16 - layerName.size(), ' ');
     std::cout << layerName;
@@ -2165,7 +2165,7 @@ void FlexGR::layerAssign_node_compute(
         }
         // horz
         if (beginIdx.y() == endIdx.y()) {
-          if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
+          if (getLayer((layerNum + 1) * 2)->getDir()
               == dbTechLayerDir::VERTICAL) {
             isLayerBlocked = true;
           }
@@ -2191,8 +2191,7 @@ void FlexGR::layerAssign_node_compute(
             }
           }
         } else {
-          if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == dbTechLayerDir::HORIZONTAL) {
+          if (getLayer((layerNum + 1) * 2)->isHorizontal()) {
             isLayerBlocked = true;
           }
           int xIdx = beginIdx.x();
@@ -2516,12 +2515,12 @@ void FlexGR::updateDb()
       if (bNum != eNum) {
         for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
              lNum += 2) {
-          auto layer = design_->getTech()->getLayer(lNum);
+          auto layer = getLayer(lNum);
           auto dbLayer = dbTech->findLayer(layer->getName().c_str());
           odb::dbGuide::create(dbNet, dbLayer, dbLayer, bbox, false);
         }
       } else {
-        auto layer = design_->getTech()->getLayer(bNum);
+        auto layer = getLayer(bNum);
         auto dbLayer = dbTech->findLayer(layer->getName().c_str());
         odb::dbGuide::create(
             dbNet,
