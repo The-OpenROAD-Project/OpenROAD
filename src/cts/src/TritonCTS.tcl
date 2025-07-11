@@ -62,7 +62,8 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-delay_buffer_derate] \
                                              [-library] \
                                              [-repair_clock_nets] \
-                                             [-no_insertion_delay]
+                                             [-no_insertion_delay] \
+                                             [-skip_nets]
 } ;# checker off
 
 proc clock_tree_synthesis { args } {
@@ -73,7 +74,7 @@ proc clock_tree_synthesis { args } {
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
           -macro_clustering_size -macro_clustering_max_diameter \
-          -sink_clustering_levels -tree_buf \
+          -sink_clustering_levels -tree_buf -skip_nets\
           -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -no_obstruction_aware -apply_ndr \
@@ -162,6 +163,14 @@ proc clock_tree_synthesis { args } {
     set fail [cts::set_clock_nets $clk_nets]
     if { $fail } {
       utl::error CTS 56 "Error when finding -clk_nets in DB."
+    }
+  }
+
+  if { [info exists keys(-skip_nets)] } {
+    set clk_nets $keys(-skip_nets)
+    set fail [cts::set_skip_clock_nets $clk_nets]
+    if { $fail } {
+      utl::error CTS 57 "Error when finding -skip_nets in DB."
     }
   }
 
