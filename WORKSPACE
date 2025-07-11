@@ -30,7 +30,6 @@ load("@rules_hdl//dependency_support/net_invisible_island_ncurses:net_invisible_
 load("@rules_hdl//dependency_support/net_zlib:net_zlib.bzl", "net_zlib")
 load("@rules_hdl//dependency_support/org_gnu_bison:org_gnu_bison.bzl", "org_gnu_bison")
 load("@rules_hdl//dependency_support/org_gnu_readline:org_gnu_readline.bzl", "org_gnu_readline")
-load("@rules_hdl//dependency_support/org_llvm_openmp:org_llvm_openmp.bzl", "org_llvm_openmp")
 load("@rules_hdl//dependency_support/org_pcre_ftp:org_pcre_ftp.bzl", "org_pcre_ftp")
 load("@rules_hdl//dependency_support/org_swig:org_swig.bzl", "org_swig")
 load("@rules_hdl//dependency_support/tk_tcl:tk_tcl.bzl", "tk_tcl")
@@ -39,8 +38,6 @@ load("@rules_hdl//dependency_support/tk_tcl:tk_tcl.bzl", "tk_tcl")
 com_github_quantamhd_lemon()
 
 edu_berkeley_abc()
-
-org_llvm_openmp()
 
 tk_tcl()
 

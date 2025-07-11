@@ -2,6 +2,8 @@
 
 #include <unistd.h>
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 #include <filesystem>
 #include <string>
 namespace fs = std::filesystem;
@@ -50,7 +52,7 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
-StreamHandler::StreamHandler(const char* filename, bool binary)
+OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
     : filename_(filename)
 {
   tmp_filename_ = generate_unused_filename(filename_);
@@ -66,10 +68,25 @@ StreamHandler::StreamHandler(const char* filename, bool binary)
     std::throw_with_nested(std::runtime_error("Failed to open '" + tmp_filename_
                                               + "' for writing"));
   }
+
+  if (boost::ends_with(filename_, ".gz")) {
+    buf_ = std::make_unique<boost::iostreams::filtering_ostreambuf>();
+
+    buf_->push(boost::iostreams::gzip_compressor());
+    buf_->push(os_);
+
+    stream_ = std::make_unique<std::ostream>(buf_.get());
+  }
 }
 
-StreamHandler::~StreamHandler()
+OutStreamHandler::~OutStreamHandler()
 {
+  if (stream_) {
+    boost::iostreams::close(*buf_);
+    buf_ = nullptr;
+    stream_ = nullptr;
+  }
+
   if (os_.is_open()) {
     // Any pending output sequence is written to the file.
     os_.close();
@@ -78,9 +95,59 @@ StreamHandler::~StreamHandler()
   fs::rename(tmp_filename_, filename_);
 }
 
-std::ofstream& StreamHandler::getStream()
+std::ostream& OutStreamHandler::getStream()
 {
+  if (stream_) {
+    return *stream_;
+  }
   return os_;
+}
+
+InStreamHandler::InStreamHandler(const char* filename, bool binary)
+    : filename_(filename)
+{
+  is_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+  std::ios_base::openmode mode = std::ios_base::in;
+  if (binary) {
+    mode |= std::ios::binary;
+  }
+  try {
+    is_.open(filename_, mode);
+  } catch (std::ios_base::failure& e) {
+    std::throw_with_nested(
+        std::runtime_error("Failed to open '" + filename_ + "' for reading"));
+  }
+
+  if (boost::ends_with(filename_, ".gz")) {
+    buf_ = std::make_unique<boost::iostreams::filtering_istreambuf>();
+
+    buf_->push(boost::iostreams::gzip_decompressor());
+    buf_->push(is_);
+
+    stream_ = std::make_unique<std::istream>(buf_.get());
+  }
+}
+
+InStreamHandler::~InStreamHandler()
+{
+  if (stream_) {
+    boost::iostreams::close(*buf_);
+    buf_ = nullptr;
+    stream_ = nullptr;
+  }
+
+  if (is_.is_open()) {
+    // Any pending output sequence is written to the file.
+    is_.close();
+  }
+}
+
+std::istream& InStreamHandler::getStream()
+{
+  if (stream_) {
+    return *stream_;
+  }
+  return is_;
 }
 
 FileHandler::FileHandler(const char* filename, bool binary)

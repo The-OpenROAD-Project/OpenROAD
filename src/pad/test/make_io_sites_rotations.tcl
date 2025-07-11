@@ -9,8 +9,8 @@ read_def Nangate45_blackparrot/floorplan.def
 
 # Test make_io_sites
 make_io_sites -horizontal_site IOSITE -vertical_site IOSITE2 -corner_site IOSITE -offset 15 \
-    -rotation_horizontal MXR90 \
-    -rotation_vertical MY
+  -rotation_horizontal MXR90 \
+  -rotation_vertical MY
 
 set def_file [make_result_file "make_io_sites_rotations.def"]
 write_def $def_file

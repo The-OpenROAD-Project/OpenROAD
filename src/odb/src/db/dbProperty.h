@@ -13,8 +13,6 @@
 
 namespace odb {
 
-template <class T>
-class dbTable;
 class _dbDatabase;
 class _dbProperty;
 class dbPropertyItr;

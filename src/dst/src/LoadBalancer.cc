@@ -29,7 +29,7 @@ void LoadBalancer::start_accept()
     }
   }
   jobs_++;
-  BalancerConnection::pointer connection
+  BalancerConnection::Pointer connection
       = BalancerConnection::create(*service_, this, logger_);
   acceptor_.async_accept(connection->socket(),
                          boost::bind(&LoadBalancer::handle_accept,
@@ -53,25 +53,25 @@ LoadBalancer::LoadBalancer(Distributed* dist,
   service_ = &service;
   start_accept();
   if (std::strcmp(workers_domain, "") != 0) {
-    workers_lookup_thread = boost::thread(
+    workers_lookup_thread_ = boost::thread(
         boost::bind(&LoadBalancer::lookUpWorkers, this, workers_domain, port));
   }
 }
 
 LoadBalancer::~LoadBalancer()
 {
-  alive = false;
-  if (workers_lookup_thread.joinable()) {
-    workers_lookup_thread.join();
+  alive_ = false;
+  if (workers_lookup_thread_.joinable()) {
+    workers_lookup_thread_.join();
   }
 }
 
 bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  bool validWorkerState = true;
-  if (!broadcastData.empty()) {
-    for (auto data : broadcastData) {
+  bool valid_worker_state = true;
+  if (!broadcastData_.empty()) {
+    for (auto data : broadcastData_) {
       try {
         asio::io_context service;
         tcp::socket socket(service);
@@ -84,36 +84,36 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
             == std::string::npos) {
           // Since asio::transfer_all() used with a stream buffer it
           // always reach an eof file exception!
-          validWorkerState = false;
+          valid_worker_state = false;
           break;
         }
       }
     }
   }
-  if (validWorkerState) {
-    workers_.push(worker(ip::make_address(ip), port, 0));
+  if (valid_worker_state) {
+    workers_.push(Worker(ip::make_address(ip), port, 0));
   }
-  return validWorkerState;
+  return valid_worker_state;
 }
 void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port) {
       worker.priority--;
     }
-    newQueue.push(worker);
+    new_queue.push(worker);
   }
-  workers_.swap(newQueue);
+  workers_.swap(new_queue);
 }
 void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
   if (!workers_.empty()) {
-    worker w = workers_.top();
+    Worker w = workers_.top();
     workers_.pop();
     ip = w.ip;
     port = w.port;
@@ -127,16 +127,16 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
 void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port) {
       worker.priority = worker.priority == 0 ? 2 : worker.priority * 2;
     }
-    newQueue.push(worker);
+    new_queue.push(worker);
   }
-  workers_.swap(newQueue);
+  workers_.swap(new_queue);
 }
 
 void LoadBalancer::removeWorker(const ip::address& ip,
@@ -146,16 +146,16 @@ void LoadBalancer::removeWorker(const ip::address& ip,
   if (lock) {
     workers_mutex_.lock();
   }
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port) {
       continue;
     }
-    newQueue.push(worker);
+    new_queue.push(worker);
   }
-  workers_.swap(newQueue);
+  workers_.swap(new_queue);
   if (lock) {
     workers_mutex_.unlock();
   }
@@ -164,10 +164,10 @@ void LoadBalancer::removeWorker(const ip::address& ip,
 void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
 {
   asio::io_context ios;
-  std::vector<worker> workers_set;
+  std::vector<Worker> workers_set;
   udp::resolver resolver(ios);
-  while (alive) {
-    std::vector<worker> new_workers;
+  while (alive_) {
+    std::vector<Worker> new_workers;
     boost::system::error_code ec;
     udp::resolver::results_type results
         = resolver.resolve(domain, std::to_string(port), ec);
@@ -181,7 +181,7 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
     }
     int new_workers_count = 0;
     for (const auto& entry : results) {
-      auto discovered_worker = worker(entry.endpoint().address(), port, 0);
+      auto discovered_worker = Worker(entry.endpoint().address(), port, 0);
       if (std::find(workers_set.begin(), workers_set.end(), discovered_worker)
           == workers_set.end()) {
         workers_set.push_back(discovered_worker);
@@ -214,11 +214,11 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
     }
 
     boost::this_thread::sleep(
-        boost::posix_time::milliseconds(workers_discovery_period * 1000));
+        boost::posix_time::milliseconds(kWorkersDiscoveryPeriod * 1000));
   }
 }
 
-void LoadBalancer::handle_accept(const BalancerConnection::pointer& connection,
+void LoadBalancer::handle_accept(const BalancerConnection::Pointer& connection,
                                  const boost::system::error_code& err)
 {
   if (!err) {

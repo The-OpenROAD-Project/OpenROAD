@@ -3,7 +3,6 @@
 
 #include "BufferMove.hh"
 
-#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -28,6 +27,10 @@ using sta::Slack;
 using sta::Slew;
 using sta::TimingArc;
 using sta::Vertex;
+
+BufferMove::BufferMove(Resizer* resizer) : BaseMove(resizer)
+{
+}
 
 bool BufferMove::doMove(const Path* drvr_path,
                         int drvr_index,
@@ -71,12 +74,20 @@ bool BufferMove::doMove(const Path* drvr_path,
                rebuffer_count);
     debugPrint(logger_,
                RSZ,
-               "moves",
+               "opt_moves",
                1,
-               "rebuffer {} inserted {}",
+               "ACCEPT buffer {} inserted {}",
                network_->pathName(drvr_pin),
                rebuffer_count);
     addMove(drvr_inst, rebuffer_count);
+  } else {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT buffer {} inserted {}",
+               network_->pathName(drvr_pin),
+               rebuffer_count);
   }
   return rebuffer_count > 0;
 }

@@ -50,6 +50,7 @@ using sta::Port;
 using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::TimingRole;
+using sta::VertexInEdgeIterator;
 
 RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {
@@ -78,6 +79,7 @@ void RepairDesign::repairDesign(double max_wire_length,
                                 bool verbose)
 {
   init();
+
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairDesign(max_wire_length,
@@ -209,62 +211,64 @@ void RepairDesign::repairDesign(
     performEarlySizingRound(repaired_net_count);
   }
 
-  resizer_->incrementalParasiticsBegin();
-  int print_iteration = 0;
-  if (resizer_->level_drvr_vertices_.size() > size_t(5) * max_print_interval_) {
-    print_interval_ = max_print_interval_;
-  } else {
-    print_interval_ = min_print_interval_;
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    int print_iteration = 0;
+    if (resizer_->level_drvr_vertices_.size()
+        > size_t(5) * max_print_interval_) {
+      print_interval_ = max_print_interval_;
+    } else {
+      print_interval_ = min_print_interval_;
+    }
+    printProgress(print_iteration, false, false, repaired_net_count);
+    int max_length = resizer_->metersToDbu(max_wire_length);
+    for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+      print_iteration++;
+      if (verbose || (print_iteration == 1)) {
+        printProgress(print_iteration, false, false, repaired_net_count);
+      }
+      Vertex* drvr = resizer_->level_drvr_vertices_[i];
+      Pin* drvr_pin = drvr->pin();
+      // hier fix
+      // clang-format off
+      Net* net = network_->isTopLevelPort(drvr_pin)
+                     ? db_network_->dbToSta(
+                         db_network_->flatNet(network_->term(drvr_pin)))
+                     : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+      // clang-format on
+      if (!net) {
+        continue;
+      }
+      dbNet* net_db = db_network_->staToDb(net);
+      bool debug = (drvr_pin == resizer_->debug_pin_);
+      if (debug) {
+        logger_->setDebugLevel(RSZ, "repair_net", 3);
+      }
+      if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+          && !sta_->isClock(drvr_pin)
+          // Exclude tie hi/low cells and supply nets.
+          && !drvr->isConstant()) {
+        repairNet(net,
+                  drvr_pin,
+                  drvr,
+                  true,
+                  true,
+                  true,
+                  max_length,
+                  true,
+                  repaired_net_count,
+                  slew_violations,
+                  cap_violations,
+                  fanout_violations,
+                  length_violations);
+      }
+      if (debug) {
+        logger_->setDebugLevel(RSZ, "repair_net", 0);
+      }
+    }
+    resizer_->updateParasitics();
+    printProgress(print_iteration, true, true, repaired_net_count);
   }
-  printProgress(print_iteration, false, false, repaired_net_count);
-  int max_length = resizer_->metersToDbu(max_wire_length);
-  for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    print_iteration++;
-    if (verbose || (print_iteration == 1)) {
-      printProgress(print_iteration, false, false, repaired_net_count);
-    }
-    Vertex* drvr = resizer_->level_drvr_vertices_[i];
-    Pin* drvr_pin = drvr->pin();
-    // hier fix
-    // clang-format off
-    Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? db_network_->dbToSta(
-                       db_network_->flatNet(network_->term(drvr_pin)))
-                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-    // clang-format on
-    if (!net) {
-      continue;
-    }
-    dbNet* net_db = db_network_->staToDb(net);
-    bool debug = (drvr_pin == resizer_->debug_pin_);
-    if (debug) {
-      logger_->setDebugLevel(RSZ, "repair_net", 3);
-    }
-    if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
-        && !sta_->isClock(drvr_pin)
-        // Exclude tie hi/low cells and supply nets.
-        && !drvr->isConstant()) {
-      repairNet(net,
-                drvr_pin,
-                drvr,
-                true,
-                true,
-                true,
-                max_length,
-                true,
-                repaired_net_count,
-                slew_violations,
-                cap_violations,
-                fanout_violations,
-                length_violations);
-    }
-    if (debug) {
-      logger_->setDebugLevel(RSZ, "repair_net", 0);
-    }
-  }
-  resizer_->updateParasitics();
-  printProgress(print_iteration, true, true, repaired_net_count);
-  resizer_->incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
     resizer_->level_drvr_vertices_valid_ = false;
@@ -302,40 +306,40 @@ void RepairDesign::repairClkNets(double max_wire_length)
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
 
-  resizer_->incrementalParasiticsBegin();
-  int max_length = resizer_->metersToDbu(max_wire_length);
-  for (Clock* clk : sdc_->clks()) {
-    const PinSet* clk_pins = sta_->pins(clk);
-    if (clk_pins) {
-      for (const Pin* clk_pin : *clk_pins) {
-        // clang-format off
-        Net* net = network_->isTopLevelPort(clk_pin)
-                       ? db_network_->dbToSta(
-                           db_network_->flatNet(network_->term(clk_pin)))
-                       : db_network_->dbToSta(db_network_->flatNet(clk_pin));
-        // clang-format on
-        if (net && network_->isDriver(clk_pin)) {
-          Vertex* drvr = graph_->pinDrvrVertex(clk_pin);
-          // Do not resize clock tree gates.
-          repairNet(net,
-                    clk_pin,
-                    drvr,
-                    false,
-                    false,
-                    false,
-                    max_length,
-                    false,
-                    repaired_net_count,
-                    slew_violations,
-                    cap_violations,
-                    fanout_violations,
-                    length_violations);
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    int max_length = resizer_->metersToDbu(max_wire_length);
+    for (Clock* clk : sdc_->clks()) {
+      const PinSet* clk_pins = sta_->pins(clk);
+      if (clk_pins) {
+        for (const Pin* clk_pin : *clk_pins) {
+          // clang-format off
+          Net* net = network_->isTopLevelPort(clk_pin)
+                         ? db_network_->dbToSta(
+                             db_network_->flatNet(network_->term(clk_pin)))
+                         : db_network_->dbToSta(db_network_->flatNet(clk_pin));
+          // clang-format on
+          if (net && network_->isDriver(clk_pin)) {
+            Vertex* drvr = graph_->pinDrvrVertex(clk_pin);
+            // Do not resize clock tree gates.
+            repairNet(net,
+                      clk_pin,
+                      drvr,
+                      false,
+                      false,
+                      false,
+                      max_length,
+                      false,
+                      repaired_net_count,
+                      slew_violations,
+                      cap_violations,
+                      fanout_violations,
+                      length_violations);
+          }
         }
       }
     }
   }
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
 
   if (length_violations > 0) {
     logger_->info(RSZ, 47, "Found {} long wires.", length_violations);
@@ -377,29 +381,29 @@ void RepairDesign::repairNet(Net* net,
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
-  resizer_->incrementalParasiticsBegin();
-  int max_length = resizer_->metersToDbu(max_wire_length);
-  PinSet* drivers = network_->drivers(net);
-  if (drivers && !drivers->empty()) {
-    PinSet::Iterator drvr_iter(drivers);
-    const Pin* drvr_pin = drvr_iter.next();
-    Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
-    repairNet(net,
-              drvr_pin,
-              drvr,
-              true,
-              true,
-              true,
-              max_length,
-              true,
-              repaired_net_count,
-              slew_violations,
-              cap_violations,
-              fanout_violations,
-              length_violations);
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    int max_length = resizer_->metersToDbu(max_wire_length);
+    PinSet* drivers = network_->drivers(net);
+    if (drivers && !drivers->empty()) {
+      PinSet::Iterator drvr_iter(drivers);
+      const Pin* drvr_pin = drvr_iter.next();
+      Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+      repairNet(net,
+                drvr_pin,
+                drvr,
+                true,
+                true,
+                true,
+                max_length,
+                true,
+                repaired_net_count,
+                slew_violations,
+                cap_violations,
+                fanout_violations,
+                length_violations);
+    }
   }
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
 
   reportViolationCounters(true,
                           slew_violations,
@@ -728,6 +732,7 @@ bool RepairDesign::performGainBuffering(Net* net,
 
 void RepairDesign::checkDriverArcSlew(const Corner* corner,
                                       const Instance* inst,
+                                      const Edge* edge,
                                       const TimingArc* arc,
                                       float load_cap,
                                       float limit,
@@ -739,8 +744,11 @@ void RepairDesign::checkDriverArcSlew(const Corner* corner,
   Pin* in_pin = network_->findPin(inst, arc->from()->name());
 
   if (model && in_pin) {
-    Slew in_slew = sta_->graph()->slew(
-        graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap->index());
+    Vertex* vertex = graph_->pinLoadVertex(in_pin);
+    // edgeFromSlew returns the graph slew value for the pin, or the ideal
+    // clock slew if applicable
+    Slew in_slew
+        = graph_delay_calc_->edgeFromSlew(vertex, in_rf, edge, dcalc_ap);
     const Pvt* pvt = dcalc_ap->operatingConditions();
 
     ArcDelay arc_delay;
@@ -784,17 +792,25 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
         if (limit_exists) {
           float limit_w_margin = maxSlewMargined(limit);
 
-          for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
+          VertexInEdgeIterator edge_iter(graph_->pinDrvrVertex(drvr_pin),
+                                         graph_);
+          while (edge_iter.hasNext()) {
+            Edge* edge = edge_iter.next();
+            TimingArcSet* arc_set = edge->timingArcSet();
             const TimingRole* role = arc_set->role();
             if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
                 && role != TimingRole::tristateEnable()
                 && role != TimingRole::clockTreePathMin()
                 && role != TimingRole::clockTreePathMax()) {
-              for (TimingArc* arc : arc_set->arcs()) {
-                if (arc->to() == port) {
-                  checkDriverArcSlew(
-                      corner, inst, arc, load_cap, limit_w_margin, violation);
-                }
+              TimingArcSet* size_arc_set = size_cell->findTimingArcSet(arc_set);
+              for (TimingArc* arc : size_arc_set->arcs()) {
+                checkDriverArcSlew(corner,
+                                   inst,
+                                   edge,
+                                   arc,
+                                   load_cap,
+                                   limit_w_margin,
+                                   violation);
               }
             }
           }
@@ -2534,9 +2550,6 @@ bool RepairDesign::makeRepeater(
       }
     }
   }
-
-  resizer_->parasiticsInvalid(buffer_ip_net);
-  resizer_->parasiticsInvalid(buffer_op_net);
 
   // Resize repeater as we back up by levels.
   if (resize) {

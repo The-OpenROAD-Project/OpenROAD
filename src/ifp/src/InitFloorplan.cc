@@ -362,22 +362,22 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
 {
   // The unit for power_domain_y_space is the site height. The real space is
   // power_domain_y_space * site_dy
-  static constexpr int power_domain_y_space = 6;
+  const int power_domain_y_space = 6;
 
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
     if (group->getType() == dbGroupType::VOLTAGE_DOMAIN
         || group->getType() == dbGroupType::POWER_DOMAIN) {
       dbRegion* domain_region = group->getRegion();
-      int domain_xMin = std::numeric_limits<int>::max();
-      int domain_yMin = std::numeric_limits<int>::max();
-      int domain_xMax = std::numeric_limits<int>::min();
-      int domain_yMax = std::numeric_limits<int>::min();
+      int domain_x_min = std::numeric_limits<int>::max();
+      int domain_y_min = std::numeric_limits<int>::max();
+      int domain_x_max = std::numeric_limits<int>::min();
+      int domain_y_max = std::numeric_limits<int>::min();
       for (auto boundary : domain_region->getBoundaries()) {
-        domain_xMin = std::min(domain_xMin, boundary->xMin());
-        domain_yMin = std::min(domain_yMin, boundary->yMin());
-        domain_xMax = std::max(domain_xMax, boundary->xMax());
-        domain_yMax = std::max(domain_yMax, boundary->yMax());
+        domain_x_min = std::min(domain_x_min, boundary->xMin());
+        domain_y_min = std::min(domain_y_min, boundary->yMin());
+        domain_x_max = std::max(domain_x_max, boundary->xMax());
+        domain_y_max = std::max(domain_y_max, boundary->yMax());
       }
 
       string domain_name = group->getName();
@@ -397,21 +397,21 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
            row_processed++) {
         dbRow* row = *row_itr;
         Rect row_bbox = row->getBBox();
-        int row_yMin = row_bbox.yMin();
-        int row_yMax = row_bbox.yMax();
+        int row_y_min = row_bbox.yMin();
+        int row_y_max = row_bbox.yMax();
         auto site = row->getSite();
 
         int site_dy = site->getHeight();
         int site_dx = site->getWidth();
 
         // snap inward to site grid
-        domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
-        domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
+        domain_x_min = odb::makeSiteLoc(domain_x_min, site_dx, false, 0);
+        domain_x_max = odb::makeSiteLoc(domain_x_max, site_dx, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
-        if (row_yMax + power_domain_y_space * site_dy <= domain_yMin
-            || row_yMin >= domain_yMax + power_domain_y_space * site_dy) {
+        if (row_y_max + power_domain_y_space * site_dy <= domain_y_min
+            || row_y_min >= domain_y_max + power_domain_y_space * site_dy) {
           row_itr++;
         } else {
           string row_name = row->getName();
@@ -420,24 +420,24 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           row_itr++;
 
           // lcr stands for left core row
-          int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;
+          int lcr_x_max = domain_x_min - power_domain_y_space * site_dy;
           // in case there is at least one valid site width on the left, create
           // left core rows
-          if (lcr_xMax > core_lx + site_dx) {
+          if (lcr_x_max > core_lx + site_dx) {
             string lcr_name = row_name + "_1";
             // warning message since tap cells might not be inserted
-            if (lcr_xMax < core_lx + 10 * site_dx) {
+            if (lcr_x_max < core_lx + 10 * site_dx) {
               logger_->warn(IFP,
                             26,
                             "left core row: {} has less than 10 sites",
                             lcr_name);
             }
-            int lcr_sites = (lcr_xMax - core_lx) / site_dx;
+            int lcr_sites = (lcr_x_max - core_lx) / site_dx;
             dbRow::create(block_,
                           lcr_name.c_str(),
                           site,
                           core_lx,
-                          row_yMin,
+                          row_y_min,
                           orient,
                           dbRowDir::HORIZONTAL,
                           lcr_sites,
@@ -446,45 +446,45 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
 
           // rcr stands for right core row
           // rcr_dx_site_number is the max number of site_dx that is less than
-          // power_domain_y_space * site_dy. This helps align the rcr_xMin on
+          // power_domain_y_space * site_dy. This helps align the rcr_x_min on
           // the multiple of site_dx.
           int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx;
-          int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx;
+          int rcr_x_min = domain_x_max + rcr_dx_site_number * site_dx;
           // snap to the site grid rightward
-          rcr_xMin = odb::makeSiteLoc(rcr_xMin, site_dx, false, 0);
+          rcr_x_min = odb::makeSiteLoc(rcr_x_min, site_dx, false, 0);
 
           // in case there is at least one valid site width on the right, create
           // right core rows
-          if (rcr_xMin + site_dx < core_ux) {
+          if (rcr_x_min + site_dx < core_ux) {
             string rcr_name = row_name + "_2";
-            if (rcr_xMin + 10 * site_dx > core_ux) {
+            if (rcr_x_min + 10 * site_dx > core_ux) {
               logger_->warn(IFP,
                             27,
                             "right core row: {} has less than 10 sites",
                             rcr_name);
             }
-            int rcr_sites = (core_ux - rcr_xMin) / site_dx;
+            int rcr_sites = (core_ux - rcr_x_min) / site_dx;
             dbRow::create(block_,
                           rcr_name.c_str(),
                           site,
-                          rcr_xMin,
-                          row_yMin,
+                          rcr_x_min,
+                          row_y_min,
                           orient,
                           dbRowDir::HORIZONTAL,
                           rcr_sites,
                           site_dx);
           }
 
-          int domain_row_sites = (domain_xMax - domain_xMin) / site_dx;
+          int domain_row_sites = (domain_x_max - domain_x_min) / site_dx;
           // create domain rows if current iterations are not in margin area
-          if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
+          if (row_y_min >= domain_y_min && row_y_max <= domain_y_max) {
             const string domain_row_name
                 = fmt::format("{}_{}", row_name, domain_name);
             dbRow::create(block_,
                           domain_row_name.c_str(),
                           site,
-                          domain_xMin,
-                          row_yMin,
+                          domain_x_min,
+                          row_y_min,
                           orient,
                           dbRowDir::HORIZONTAL,
                           domain_row_sites,
@@ -580,7 +580,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
       logger_->error(
           IFP,
           54,
-          "Site {} height {}um of  is not a multiple of site {} height {}um.",
+          "Site {} height {}um is not a multiple of site {} height {}um.",
           site->getName(),
           block_->dbuToMicrons(site->getHeight()),
           base_site->getName(),

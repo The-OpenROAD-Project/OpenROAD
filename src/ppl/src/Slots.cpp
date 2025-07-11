@@ -4,7 +4,7 @@
 #include "Slots.h"
 
 #include <algorithm>
-#include <boost/functional/hash.hpp>
+#include <boost/container_hash/hash.hpp>
 #include <limits>
 #include <vector>
 
@@ -35,6 +35,21 @@ bool Interval::operator==(const Interval& interval) const
 {
   return edge_ == interval.getEdge() && begin_ == interval.getBegin()
          && end_ == interval.getEnd() && layer_ == interval.getLayer();
+}
+
+bool Interval::operator<(const Interval& interval) const
+{
+  if (edge_ != interval.edge_) {
+    return edge_ < interval.edge_;
+  }
+  if (layer_ != interval.layer_) {
+    return layer_ < interval.layer_;
+  }
+  if (begin_ != interval.begin_) {
+    return begin_ < interval.begin_;
+  }
+
+  return end_ < interval.end_;
 }
 
 std::size_t IntervalHash::operator()(const Interval& interval) const

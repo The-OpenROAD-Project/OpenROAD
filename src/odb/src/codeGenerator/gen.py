@@ -49,10 +49,7 @@ def get_json_files(directory):
 def make_parent_field(parent, relation):
     """Adds a table field to the parent of a relationsip"""
     field = {}
-    if "tbl_name" in relation:
-        field["name"] = relation["tbl_name"]
-    else:
-        field["name"] = relation["tbl_name"] = get_table_name(relation["child"])
+    field["name"] = relation["tbl_name"]
     field["type"] = relation["child"]
     field["table"] = True
     field["dbSetGetter"] = True
@@ -102,7 +99,7 @@ def add_field_attributes(field, klass, flags_struct, schema):
         field["bits"] = 1
     if "bits" in field:
         flags_struct["fields"].append(field)
-        flag_num_bits += int(field["bits"])
+        flag_num_bits = int(field["bits"])
     field["bitFields"] = is_bit_fields(field, klass["structs"])
 
     if field["type"].startswith("std::"):
@@ -259,8 +256,6 @@ def generate_relations(schema):
         if child_type_name not in parent["declared_classes"]:
             parent["declared_classes"].append(child_type_name)
 
-        if "dbTable" not in parent["declared_classes"]:
-            parent["declared_classes"].append("dbTable")
         if relation.get("hash", False):
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)
@@ -277,9 +272,6 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
         schema["classes"].append(klass)
 
     for i, klass in enumerate(schema["classes"]):
-        if "src" in klass:
-            with open(klass["src"], encoding="ascii") as file:
-                klass = json.load(file)
         add_once_to_dict(
             [
                 "declared_classes",
@@ -385,20 +377,6 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
     print("###################Code Generation End###################")
 
 
-def by_base_type(classes):
-    """A custom Jinja sort by the class' type
-
-    Objects based on dbObject come first"""
-    non_default_types = []
-    default_types = []
-    for klass in classes:
-        if "type" in klass and klass["type"] != "dbObject":
-            non_default_types.append(klass)
-        else:
-            default_types.append(klass)
-    return default_types + non_default_types
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Code generator",
@@ -425,7 +403,6 @@ def main():
         schema = json.load(file)
 
     env = Environment(loader=FileSystemLoader(args.templates), trim_blocks=True)
-    env.filters["by_base_type"] = by_base_type
 
     # Creating Directory for generated files
     if os.path.exists("generated"):

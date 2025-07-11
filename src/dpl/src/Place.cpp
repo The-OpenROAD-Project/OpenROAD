@@ -800,7 +800,8 @@ bool Opendp::canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const
   }
 
   const GridX x_end = bin_x + grid_->gridPaddedWidth(cell);
-  const GridY y_end = bin_y + grid_->gridHeight(cell);
+  const GridY y_end
+      = grid_->gridEndY(grid_->gridYToDbu(bin_y) + cell->getHeight());
 
   if (debug_observer_) {
     debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
@@ -909,7 +910,7 @@ bool Opendp::checkPixels(const Node* cell,
   }
   const auto& orient = grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite());
-  return drc_engine_->checkEdgeSpacing(cell, x, y, orient);
+  return drc_engine_->checkDRC(cell, x + padding_->padLeft(cell), y, orient);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -46,17 +46,16 @@ add_library(rcx_lib
   extPatterns.cpp
   extRulesVia.cpp
   extmeasure_print.cpp
-  extmeasure_res_v2.cpp
+#  extmeasure_res_v2.cpp
   extmain_v2.cpp
   extmeasure_diag_opt.cpp
   parse.cpp
-  util.cpp
+  find_some_net.cpp
 )
 
 target_include_directories(rcx_lib
   PUBLIC
     ../include
-    ../include/rcx
 )
 
 target_link_libraries(rcx_lib
@@ -79,7 +78,6 @@ target_sources(rcx
 target_include_directories(rcx
   PUBLIC
     ../include
-    ../include/rcx
 )
 
 target_link_libraries(rcx

@@ -43,13 +43,13 @@ void addCutClassRule(
 }  // namespace odb::lefTechLayerCutClass
 
 namespace odb {
-bool lefTechLayerCutClassParser::parse(std::string s,
+bool lefTechLayerCutClassParser::parse(const std::string& s,
                                        dbTechLayer* layer,
                                        odb::lefinReader* lefin)
 {
   auto first = s.begin();
   auto last = s.end();
-  qi::rule<std::string::iterator, space_type> cutClassRule
+  qi::rule<std::string::const_iterator, space_type> cutClassRule
       = (+(lit("CUTCLASS") >> _string >> lit("WIDTH") >> double_
            >> -(lit("LENGTH") >> double_) >> -(lit("CUTS") >> int_)
            >> -(lit("ORIENT") >> _string) >> lit(";"))[boost::bind(

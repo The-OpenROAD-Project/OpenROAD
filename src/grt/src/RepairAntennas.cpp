@@ -70,7 +70,7 @@ bool RepairAntennas::checkAntennaViolations(
                         : RoutingSource::GlobalRouting;
   bool destroy_wires = routing_source_ == RoutingSource::GlobalRouting;
 
-  makeNetWires(routing, nets_to_repair, max_routing_layer);
+  arc_->makeNetWiresFromGuides(nets_to_repair);
   arc_->initAntennaRules();
   omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
@@ -122,303 +122,12 @@ void RepairAntennas::checkNetViolations(odb::dbNet* db_net,
   }
 }
 
-void RepairAntennas::makeNetWires(
-    NetRouteMap& routing,
-    const std::vector<odb::dbNet*>& nets_to_repair,
-    int max_routing_layer)
-{
-  std::map<int, odb::dbTechVia*> default_vias
-      = grouter_->getDefaultVias(max_routing_layer);
-
-  for (odb::dbNet* db_net : nets_to_repair) {
-    if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && !grouter_->getNet(db_net)->isLocal()
-        && !grouter_->isDetailedRouted(db_net)) {
-      makeNetWire(db_net, routing[db_net], default_vias);
-    }
-  }
-}
-
-odb::dbWire* RepairAntennas::makeNetWire(
-    odb::dbNet* db_net,
-    GRoute& route,
-    std::map<int, odb::dbTechVia*>& default_vias)
-{
-  odb::dbWire* wire = odb::dbWire::create(db_net);
-  if (wire) {
-    Net* net = grouter_->getNet(db_net);
-    odb::dbTech* tech = db_->getTech();
-    odb::dbWireEncoder wire_encoder;
-    wire_encoder.begin(wire);
-    RoutePtPinsMap route_pt_pins = findRoutePtPins(net);
-    std::unordered_set<GSegment, GSegmentHash> wire_segments;
-    int prev_conn_layer = -1;
-    for (GSegment& seg : route) {
-      int l1 = seg.init_layer;
-      int l2 = seg.final_layer;
-      auto [bottom_layer, top_layer] = std::minmax(l1, l2);
-
-      odb::dbTechLayer* bottom_tech_layer
-          = tech->findRoutingLayer(bottom_layer);
-      odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer);
-
-      if (std::abs(seg.init_layer - seg.final_layer) > 1) {
-        debugPrint(logger_,
-                   GRT,
-                   "check_antennas",
-                   1,
-                   "invalid seg: ({}, {})um to ({}, {})um",
-                   block_->dbuToMicrons(seg.init_x),
-                   block_->dbuToMicrons(seg.init_y),
-                   block_->dbuToMicrons(seg.final_x),
-                   block_->dbuToMicrons(seg.final_y));
-
-        logger_->error(GRT,
-                       68,
-                       "Global route segment for net {} not "
-                       "valid. The layers {} and {} "
-                       "are not adjacent.",
-                       net->getName(),
-                       bottom_tech_layer->getName(),
-                       top_tech_layer->getName());
-      }
-      if (wire_segments.find(seg) == wire_segments.end()) {
-        int x1 = seg.init_x;
-        int y1 = seg.init_y;
-
-        if (seg.isVia()) {
-          if (bottom_layer >= grouter_->getMinRoutingLayer()) {
-            if (bottom_layer == prev_conn_layer) {
-              wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
-              prev_conn_layer = std::max(l1, l2);
-            } else if (top_layer == prev_conn_layer) {
-              wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
-              prev_conn_layer = std::min(l1, l2);
-            } else {
-              // if a via is the first object added to the wire_encoder, or the
-              // via starts a new path and is not connected to previous wires
-              // create a new path using the bottom layer and do not update the
-              // prev_conn_layer. this way, this process is repeated until the
-              // first wire is added and properly update the prev_conn_layer
-              wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
-            }
-            wire_encoder.addPoint(x1, y1);
-            wire_encoder.addTechVia(default_vias[bottom_layer]);
-            addWireTerms(net,
-                         route,
-                         x1,
-                         y1,
-                         bottom_layer,
-                         bottom_tech_layer,
-                         route_pt_pins,
-                         wire_encoder,
-                         default_vias,
-                         false);
-            wire_segments.insert(seg);
-          }
-        } else {
-          // Add wire
-          int x2 = seg.final_x;
-          int y2 = seg.final_y;
-          if (x1 != x2 || y1 != y2) {
-            odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l1);
-            addWireTerms(net,
-                         route,
-                         x1,
-                         y1,
-                         l1,
-                         tech_layer,
-                         route_pt_pins,
-                         wire_encoder,
-                         default_vias,
-                         true);
-            wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(x1, y1);
-            wire_encoder.addPoint(x2, y2);
-            addWireTerms(net,
-                         route,
-                         x2,
-                         y2,
-                         l1,
-                         tech_layer,
-                         route_pt_pins,
-                         wire_encoder,
-                         default_vias,
-                         true);
-            wire_segments.insert(seg);
-            prev_conn_layer = l1;
-          }
-        }
-      }
-    }
-    wire_encoder.end();
-
-    return wire;
-  }
-  logger_->error(
-      GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
-}
-
-RoutePtPinsMap RepairAntennas::findRoutePtPins(Net* net)
-{
-  RoutePtPinsMap route_pt_pins;
-  for (Pin& pin : net->getPins()) {
-    int conn_layer = pin.getConnectionLayer();
-    odb::Point grid_pt = pin.getOnGridPosition();
-    RoutePt route_pt(grid_pt.x(), grid_pt.y(), conn_layer);
-    route_pt_pins[route_pt].pins.push_back(&pin);
-    route_pt_pins[route_pt].connected = false;
-  }
-  return route_pt_pins;
-}
-
-void RepairAntennas::addWireTerms(Net* net,
-                                  GRoute& route,
-                                  int grid_x,
-                                  int grid_y,
-                                  int layer,
-                                  odb::dbTechLayer* tech_layer,
-                                  RoutePtPinsMap& route_pt_pins,
-                                  odb::dbWireEncoder& wire_encoder,
-                                  std::map<int, odb::dbTechVia*>& default_vias,
-                                  bool connect_to_segment)
-{
-  std::vector<int> layers;
-  layers.push_back(layer);
-  if (layer == grouter_->getMinRoutingLayer()) {
-    layer--;
-    layers.push_back(layer);
-  }
-
-  for (int l : layers) {
-    auto itr = route_pt_pins.find(RoutePt(grid_x, grid_y, l));
-    if (itr != route_pt_pins.end() && !itr->second.connected) {
-      for (const Pin* pin : itr->second.pins) {
-        itr->second.connected = true;
-        int conn_layer = pin->getConnectionLayer();
-        std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(conn_layer);
-        odb::Point grid_pt = pin->getOnGridPosition();
-        odb::Point pin_pt = grid_pt;
-        // create the local connection with the pin center only when the global
-        // segment doesn't overlap the pin
-        if (!pinOverlapsGSegment(grid_pt, conn_layer, pin_boxes, route)) {
-          int min_dist = std::numeric_limits<int>::max();
-          for (const odb::Rect& pin_box : pin_boxes) {
-            odb::Point pos = grouter_->getRectMiddle(pin_box);
-            int dist = odb::Point::manhattanDistance(pos, pin_pt);
-            if (dist < min_dist) {
-              min_dist = dist;
-              pin_pt = pos;
-            }
-          }
-        }
-
-        if (conn_layer >= grouter_->getMinRoutingLayer()) {
-          wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
-          wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-          wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-          wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
-        } else {
-          odb::dbTech* tech = db_->getTech();
-          odb::dbTechLayer* min_layer
-              = tech->findRoutingLayer(grouter_->getMinRoutingLayer());
-
-          if (connect_to_segment && tech_layer != min_layer) {
-            // create vias to connect the guide segment to the min routing
-            // layer. the min routing layer will be used to connect to the pin.
-            wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-            for (int l = min_layer->getRoutingLevel();
-                 l < tech_layer->getRoutingLevel();
-                 l++) {
-              wire_encoder.addTechVia(default_vias[l]);
-            }
-          }
-
-          if (min_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-            makeWire(wire_encoder,
-                     min_layer,
-                     grid_pt,
-                     odb::Point(grid_pt.x(), pin_pt.y()));
-            wire_encoder.addTechVia(
-                default_vias[grouter_->getMinRoutingLayer()]);
-            makeWire(wire_encoder,
-                     min_layer,
-                     odb::Point(grid_pt.x(), pin_pt.y()),
-                     pin_pt);
-          } else {
-            makeWire(wire_encoder,
-                     min_layer,
-                     grid_pt,
-                     odb::Point(pin_pt.x(), grid_pt.y()));
-            wire_encoder.addTechVia(
-                default_vias[grouter_->getMinRoutingLayer()]);
-            makeWire(wire_encoder,
-                     min_layer,
-                     odb::Point(pin_pt.x(), grid_pt.y()),
-                     pin_pt);
-          }
-
-          // create vias to reach the pin
-          for (int i = min_layer->getRoutingLevel() - 1; i >= conn_layer; i--) {
-            wire_encoder.addTechVia(default_vias[i]);
-          }
-        }
-      }
-    }
-  }
-}
-
-void RepairAntennas::makeWire(odb::dbWireEncoder& wire_encoder,
-                              odb::dbTechLayer* layer,
-                              const odb::Point& start,
-                              const odb::Point& end)
-{
-  wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-  wire_encoder.addPoint(start.x(), start.y());
-  wire_encoder.addPoint(end.x(), end.y());
-}
-
-bool RepairAntennas::pinOverlapsGSegment(
-    const odb::Point& pin_position,
-    const int pin_layer,
-    const std::vector<odb::Rect>& pin_boxes,
-    const GRoute& route)
-{
-  // check if pin position on grid overlaps with the pin shape
-  for (const odb::Rect& box : pin_boxes) {
-    if (box.overlaps(pin_position)) {
-      return true;
-    }
-  }
-
-  // check if pin position on grid overlaps with at least one GSegment
-  for (const odb::Rect& box : pin_boxes) {
-    for (const GSegment& seg : route) {
-      if (seg.init_layer == seg.final_layer &&  // ignore vias
-          seg.init_layer == pin_layer) {
-        int x0 = std::min(seg.init_x, seg.final_x);
-        int y0 = std::min(seg.init_y, seg.final_y);
-        int x1 = std::max(seg.init_x, seg.final_x);
-        int y1 = std::max(seg.init_y, seg.final_y);
-        odb::Rect seg_rect(x0, y0, x1, y1);
-
-        if (box.intersects(seg_rect)) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
 void RepairAntennas::destroyNetWires(
     const std::vector<odb::dbNet*>& nets_to_repair)
 {
   for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
-    if (wire) {
+    if (!db_net->isSpecial() && wire) {
       odb::dbWire::destroy(wire);
     }
   }
@@ -488,8 +197,9 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
             inserted_diodes = true;
           }
         }
-      } else
+      } else {
         repair_failures = true;
+      }
     }
     if (inserted_diodes) {
       // Diode insertion deletes the jumpers in guides
@@ -546,8 +256,9 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
-  if (!legally_placed)
+  if (!legally_placed) {
     illegal_diode_placement_count_++;
+  }
 
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
@@ -836,8 +547,9 @@ odb::dbMTerm* RepairAntennas::findDiodeMTerm()
     for (auto master : lib->getMasters()) {
       if (master->getType() == odb::dbMasterType::CORE_ANTENNACELL) {
         for (odb::dbMTerm* mterm : master->getMTerms()) {
-          if (diffArea(mterm) > 0.0)
+          if (diffArea(mterm) > 0.0) {
             return mterm;
+          }
         }
       }
     }
@@ -1395,7 +1107,8 @@ int RepairAntennas::addJumperOnSegments(
 
 void RepairAntennas::jumperInsertion(NetRouteMap& routing,
                                      const int& tile_size,
-                                     const int& max_routing_layer)
+                                     const int& max_routing_layer,
+                                     std::vector<odb::dbNet*>& modified_nets)
 {
   // Init jumper size
   tile_size_ = tile_size;
@@ -1452,6 +1165,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
         db_net->setJumpers(true);
         net_with_jumpers++;
         total_jumpers += jumper_by_net;
+        modified_nets.push_back(db_net);
       }
     }
   }

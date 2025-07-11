@@ -1,4 +1,4 @@
-# Testing buffer inferece based on liberty 
+# Testing buffer inferece based on liberty
 # attribute "is_clock_cell : true"
 
 source "helpers.tcl"
@@ -13,12 +13,12 @@ set_wire_rc -clock -layer metal5
 set_debug CTS "buffering" 1
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
-                     -wire_unit 20 \
-                     -sink_clustering_enable \
-                     -distance_between_buffers 100 \
-                     -sink_clustering_size 10 \
-                     -sink_clustering_max_diameter 60 \
-                     -num_static_layers 1
+  -wire_unit 20 \
+  -sink_clustering_enable \
+  -distance_between_buffers 100 \
+  -sink_clustering_size 10 \
+  -sink_clustering_max_diameter 60 \
+  -num_static_layers 1
 
 set unconnected_buffers 0
 foreach buf [get_cells clkbuf_*_clk] {

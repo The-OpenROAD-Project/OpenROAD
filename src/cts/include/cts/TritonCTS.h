@@ -182,6 +182,8 @@ class TritonCTS
                         ClockSubNet& subNet,
                         ClockInst& dummyClock);
   void printClockNetwork(const Clock& clockNet) const;
+  void setAllClocksPropagated();
+  void repairClockNets();
   void balanceMacroRegisterLatencies();
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,

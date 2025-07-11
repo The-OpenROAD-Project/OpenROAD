@@ -11,6 +11,7 @@ or_integration_tests(
     two_designs
     upf_test
     upf_aes
+    write_db
   PASSFAIL_TESTS
     commands_without_load
 )

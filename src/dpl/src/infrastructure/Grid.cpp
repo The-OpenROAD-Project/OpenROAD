@@ -14,6 +14,7 @@
 #include "Objects.h"
 #include "Padding.h"
 #include "dpl/Opendp.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -72,6 +73,7 @@ void Grid::allocateGrid()
       pixel.util = 0.0;
       pixel.is_valid = false;
       pixel.is_hopeless = false;
+      pixel.blocked_layers_ = 0;
     }
   }
 }
@@ -127,6 +129,49 @@ void Grid::markHopeless(dbBlock* block,
 void Grid::markBlocked(dbBlock* block)
 {
   const Rect core = getCore();
+  auto addBlockedLayers
+      = [&](odb::Rect wire_rect, odb::dbTechLayer* tech_layer) {
+          if (tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+            return;
+          }
+          auto routing_level = tech_layer->getRoutingLevel();
+          if (routing_level <= 1 || routing_level > 3) {  // considering M2, M3
+            return;
+          }
+          if (wire_rect.getDir() == 1) {  // horizontal
+            return;
+          }
+          wire_rect.moveDelta(-core.xMin(), -core.yMin());
+          GridRect grid_rect = gridCovering(wire_rect);
+          GridRect core{.xlo = GridX{0},
+                        .ylo = GridY{0},
+                        .xhi = GridX{row_site_count_},
+                        .yhi = GridY{row_count_}};
+          grid_rect = grid_rect.intersect(core);
+          for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+            for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+              auto pixel1 = gridPixel(x, y);
+              if (pixel1) {
+                pixel1->blocked_layers_ |= 1 << routing_level;
+              }
+            }
+          }
+        };
+
+  for (auto net : block->getNets()) {
+    if (!net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* s : swire->getWires()) {
+        if (!s->isVia()) {
+          odb::Rect wire_rect = s->getBox();
+          odb::dbTechLayer* tech_layer = s->getTechLayer();
+          addBlockedLayers(wire_rect, tech_layer);
+        }
+      }
+    }
+  }
   for (odb::dbBlockage* blockage : block->getBlockages()) {
     if (blockage->isSoft()) {
       continue;
@@ -325,8 +370,7 @@ void Grid::erasePixel(Node* cell)
 void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
   GridX x_end = grid_x + gridPaddedWidth(cell);
-  GridY grid_height = gridHeight(cell);
-  GridY y_end = grid_y + grid_height;
+  GridY y_end = gridEndY(gridYToDbu(grid_y) + cell->getHeight());
 
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
@@ -344,6 +388,11 @@ void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 GridX Grid::gridPaddedWidth(const Node* cell) const
 {
   return GridX{divCeil(padding_->paddedWidth(cell).v, getSiteWidth().v)};
+}
+
+GridX Grid::gridWidth(const Node* cell) const
+{
+  return GridX{divCeil(cell->getWidth().v, getSiteWidth().v)};
 }
 
 GridY Grid::gridHeight(odb::dbMaster* master) const
@@ -553,11 +602,6 @@ void Grid::examineRows(dbBlock* block)
     logger_->error(DPL, 12, "no rows found.");
   }
 
-  if (hasHybridRows() && has_non_hybrid_rows) {
-    logger_->error(
-        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
-  }
-
   GridY index{0};
   DbuY prev_y{0};
   for (auto& [dbu_y, grid_y] : row_y_dbu_to_index_) {
@@ -566,15 +610,30 @@ void Grid::examineRows(dbBlock* block)
     row_index_to_pixel_height_.push_back(dbu_y - prev_y);
     prev_y = dbu_y;
   }
-
-  if (!hasHybridRows()) {
-    uniform_row_height_ = DbuY{std::numeric_limits<int>::max()};
-    visitDbRows(block, [&](odb::dbRow* db_row) {
-      const int site_height = db_row->getSite()->getHeight();
-      uniform_row_height_
-          = std::min(uniform_row_height_.value(), DbuY{site_height});
-    });
-  }
+  uniform_row_height_.reset();
+  bool is_uniform = true;
+  visitDbRows(block, [&](odb::dbRow* db_row) {
+    if (!is_uniform) {
+      return;
+    }
+    const int site_height = db_row->getSite()->getHeight();
+    if (uniform_row_height_.has_value()) {
+      // check if the bigger of both; the new and old heights, is a multiple of
+      // the smaller
+      const auto smaller = std::min(site_height, uniform_row_height_.value().v);
+      const auto larger = std::max(site_height, uniform_row_height_.value().v);
+      if (larger % smaller != 0) {
+        // not uniform
+        uniform_row_height_.reset();
+        is_uniform = false;
+      } else {
+        // uniform
+        uniform_row_height_ = DbuY{smaller};
+      }
+    } else {
+      uniform_row_height_ = DbuY{site_height};
+    }
+  });
   row_site_count_ = GridX{divFloor(getCore().dx(), getSiteWidth().v)};
   row_count_ = GridY{static_cast<int>(row_y_dbu_to_index_.size() - 1)};
 }
@@ -591,7 +650,7 @@ std::unordered_set<int> Grid::getRowCoordinates() const
 bool Grid::isMultiHeight(dbMaster* master) const
 {
   if (uniform_row_height_) {
-    return master->getHeight() != uniform_row_height_.value();
+    return master->getHeight() > uniform_row_height_.value();
   }
 
   return master->getSite()->hasRowPattern();

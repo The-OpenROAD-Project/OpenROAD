@@ -58,9 +58,10 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nbc_->getGCells()) {
+    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+      auto cell = nbc_->getGCellByIndex(idx);
       if (cell->contains(inst)) {
-        selected_ = cell;
+        selected_ = idx;
         break;
       }
     }
@@ -107,7 +108,7 @@ void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
   auto& die = pbc_->die();
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
   painter.drawLine(die.coreUx(), die.coreUy(), die.coreLx(), die.coreUy());
@@ -118,14 +119,14 @@ void Graphics::drawInitial(gui::Painter& painter)
 {
   drawBounds(painter);
 
-  painter.setPen(gui::Painter::white, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kWhite, /* cosmetic */ true);
   for (auto& inst : pbc_->placeInsts()) {
     int lx = inst->lx();
     int ly = inst->ly();
     int ux = inst->ux();
     int uy = inst->uy();
 
-    gui::Painter::Color color = gui::Painter::dark_green;
+    gui::Painter::Color color = gui::Painter::kDarkGreen;
     color.a = 180;
     painter.setBrush(color);
     painter.drawRect({lx, ly, ux, uy});
@@ -163,7 +164,7 @@ void Graphics::drawForce(gui::Painter& painter)
       int cx = bin.cx();
       int cy = bin.cy();
 
-      painter.setPen(gui::Painter::red, true);
+      painter.setPen(gui::Painter::kRed, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
 
       // Draw a circle at the outer end of the line
@@ -171,7 +172,7 @@ void Graphics::drawForce(gui::Painter& painter)
       int circle_y = static_cast<int>(cy + dy);
       float bin_area = bin.dx() * bin.dy();
       int circle_radius = static_cast<int>(0.05 * std::sqrt(bin_area / M_PI));
-      painter.setPen(gui::Painter::red, true);
+      painter.setPen(gui::Painter::kRed, true);
       painter.drawCircle(circle_x, circle_y, circle_radius);
     }
   }
@@ -181,8 +182,7 @@ void Graphics::drawCells(const std::vector<GCellHandle>& cells,
                          gui::Painter& painter)
 {
   for (const auto& handle : cells) {
-    const GCell* gCell
-        = handle;  // Uses the conversion operator to get a GCell*
+    const GCell* gCell = handle;
     drawSingleGCell(gCell, painter);
   }
 }
@@ -206,20 +206,52 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   int yh = gcy + gCell->dy() / 2;
 
   gui::Painter::Color color;
-  if (gCell->isInstance()) {
-    color = gCell->isLocked() ? gui::Painter::dark_cyan
-                              : gui::Painter::dark_green;
-  } else if (gCell->isFiller()) {
-    color = gui::Painter::dark_magenta;
+  // Highlight modified instances (overrides base color, unless selected)
+  switch (gCell->changeType()) {
+    case GCell::GCellChange::kRoutability:
+      color = {255, 255, 255, 100};  // White
+      break;
+    case GCell::GCellChange::kTimingDriven:
+      color = {180, 150, 255, 100};  // Light purple
+      break;
+    default:
+      if (gCell->isInstance()) {
+        color = gCell->isLocked() ? gui::Painter::kDarkCyan
+                                  : gui::Painter::kDarkGreen;
+      } else if (gCell->isFiller()) {
+        color = gui::Painter::kDarkMagenta;
+      }
+      color.a = 180;
+      break;
   }
 
-  if (gCell == selected_) {
-    color = gui::Painter::yellow;
+  // Highlight selection (highest priority)
+  if (gCell == nbc_->getGCellByIndex(selected_)) {
+    color = gui::Painter::kYellow;
+    color.a = 180;
   }
 
-  color.a = 180;
   painter.setBrush(color);
   painter.drawRect({xl, yl, xh, yh});
+
+  if (gCell->isInstance()) {
+    odb::dbInst* db_inst = gCell->insts()[0]->dbInst();
+    if (db_inst != nullptr) {
+      odb::dbBox* bbox = db_inst->getBBox();
+      if (bbox != nullptr) {
+        int origLx = bbox->xMin();
+        int origLy = bbox->yMin();
+        int origUx = bbox->xMax();
+        int origUy = bbox->yMax();
+
+        gui::Painter::Color outline = gui::Painter::kBlack;
+        outline.a = 150;  // Semi-transparent
+
+        painter.setPen(outline, /*cosmetic=*/false, /*width=*/1);
+        painter.drawRect({origLx, origLy, origUx, origUy});
+      }
+    }
+  }
 }
 
 void Graphics::drawNesterov(gui::Painter& painter)
@@ -227,7 +259,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   drawBounds(painter);
   if (draw_bins_) {
     // Draw the bins
-    painter.setPen(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kTransparent);
 
     for (const auto& nb : nbVec_) {
       for (auto& bin : nb->bins()) {
@@ -247,13 +279,13 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw the placeable objects
-  painter.setPen(gui::Painter::white);
+  painter.setPen(gui::Painter::kWhite);
   drawCells(nbc_->getGCells(), painter);
   for (const auto& nb : nbVec_) {
     drawCells(nb->getGCells(), painter);
   }
 
-  painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
+  painter.setBrush(gui::Painter::Color(gui::Painter::kLightGray, 50));
   for (const auto& pb : pbVec_) {
     for (auto& inst : pb->nonPlaceInsts()) {
       painter.drawRect({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
@@ -261,16 +293,16 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw lines to neighbors
-  if (selected_) {
-    painter.setPen(gui::Painter::yellow, true);
-    for (GPin* pin : selected_->gPins()) {
+  if (nbc_->getGCellByIndex(selected_)) {
+    painter.setPen(gui::Painter::kYellow, true);
+    for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->gNet();
       if (!net) {
         continue;
       }
       for (GPin* other_pin : net->gPins()) {
         GCell* neighbor = other_pin->gCell();
-        if (neighbor == selected_) {
+        if (neighbor == nbc_->getGCellByIndex(selected_)) {
           continue;
         }
         painter.drawLine(
@@ -287,7 +319,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
 void Graphics::drawMBFF(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (const auto& [start, end] : mbff_edges_) {
     painter.drawLine(start, end);
   }
@@ -315,17 +347,17 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 void Graphics::reportSelected()
 {  // TODO: PD_FIX
-  if (!selected_) {
+  if (selected_ == kInvalidIndex) {
     return;
   }
-  logger_->report("Inst: {}", selected_->name());
+  logger_->report("Inst: {}", nbc_->getGCellByIndex(selected_)->getName());
 
   if (np_) {
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
 
     logger_->report("  Wire Length Gradient");
-    for (auto& gPin : selected_->gPins()) {
+    for (auto& gPin : nbc_->getGCellByIndex(selected_)->gPins()) {
       FloatPoint wlGrad
           = nbc_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
       const float weight = gPin->gNet()->totalWeight();
@@ -333,14 +365,15 @@ void Graphics::reportSelected()
                       wlGrad.x,
                       wlGrad.y,
                       weight,
-                      gPin->pin()->name());
+                      gPin->pin()->getName());
     }
 
-    FloatPoint wlGrad
-        = nbc_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+    FloatPoint wlGrad = nbc_->getWireLengthGradientWA(
+        nbc_->getGCellByIndex(selected_), wlCoeffX, wlCoeffY);
     logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    auto densityGrad = nbVec_[0]->getDensityGradient(selected_);
+    auto densityGrad
+        = nbVec_[0]->getDensityGradient(nbc_->getGCellByIndex(selected_));
     float densityPenalty = nbVec_[0]->getDensityPenalty();
     logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
                     densityPenalty * densityGrad.x,
@@ -380,13 +413,14 @@ void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
                                    const odb::Rect& region)
 {
-  selected_ = nullptr;
+  selected_ = kInvalidIndex;
 
   if (layer || !nbc_) {
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nbc_->getGCells()) {
+  for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+    auto cell = nbc_->getGCellByIndex(idx);
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -400,7 +434,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
       continue;
     }
 
-    selected_ = cell;
+    selected_ = idx;
     gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
@@ -532,6 +566,54 @@ void Graphics::combineMapData(bool base_has_value,
 bool Graphics::guiActive()
 {
   return gui::Gui::enabled();
+}
+
+void Graphics::addFrameLabel(gui::Gui* gui,
+                             const odb::Rect& bbox,
+                             const std::string& label,
+                             const std::string& label_name,
+                             int image_width_px)
+{
+  int label_x = bbox.xMin() + 300;
+  int label_y = bbox.yMin() + 300;
+
+  gui::Painter::Color color = gui::Painter::kYellow;
+  gui::Painter::Anchor anchor = gui::Painter::kBottomLeft;
+
+  int font_size = std::clamp(image_width_px / 50, 15, 24);
+
+  gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
+}
+
+void Graphics::saveLabeledImage(const std::string& path,
+                                const std::string& label,
+                                bool select_buffers,
+                                const std::string& heatmap_control,
+                                int image_width_px)
+{
+  gui::Gui* gui = getGuiObjectFromGraphics();
+  odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, true);
+  }
+
+  if (select_buffers) {
+    gui->select("Inst", "", "Description", "Timing Repair Buffer", true, -1);
+  }
+
+  static int label_id = 0;
+  std::string label_name = fmt::format("auto_label_{}", label_id++);
+
+  addFrameLabel(gui, bbox, label, label_name, image_width_px);
+  gui->saveImage(path);
+  gui->deleteLabel(label_name);
+
+  if (!heatmap_control.empty()) {
+    gui->setDisplayControlsVisible(heatmap_control, false);
+  }
+
+  gui->clearSelections();
 }
 
 }  // namespace gpl

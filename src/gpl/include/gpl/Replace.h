@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace odb {
@@ -104,6 +105,7 @@ class Replace
   void setRoutabilityInflationRatioCoef(float coef);
   void setRoutabilityMaxInflationRatio(float ratio);
   void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
+  void setEnableRoutingCongestion(bool mode);
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
@@ -115,7 +117,8 @@ class Replace
                 bool initial,
                 odb::dbInst* inst,
                 int start_iter,
-                bool update_db);
+                bool generate_images,
+                std::string images_path);
 
  private:
   bool initNesterovPlace(int threads);
@@ -160,6 +163,7 @@ class Replace
   float routabilityTargetRcMetric_ = 1.01;
   float routabilityInflationRatioCoef_ = 3;
   float routabilityMaxInflationRatio_ = 6;
+  int routabilityMaxInflationIter_ = 4;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
@@ -167,10 +171,8 @@ class Replace
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
 
-  int routabilityMaxInflationIter_ = 4;
-
   float timingNetWeightMax_ = 5;
-  float keepResizeBelowOverflow_ = 0.3;
+  float keepResizeBelowOverflow_ = 1.0;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;
@@ -178,6 +180,7 @@ class Replace
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
   bool disableRevertIfDiverge_ = false;
+  bool enable_routing_congestion_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
   Clusters clusters_;
@@ -192,7 +195,8 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
-  bool gui_debug_update_db_every_iteration = false;
+  bool gui_debug_generate_images = false;
+  std::string gui_debug_images_path = "REPORTS_DIR";
 };
 
 inline constexpr const char* format_label_int = "{:27} {:10}";

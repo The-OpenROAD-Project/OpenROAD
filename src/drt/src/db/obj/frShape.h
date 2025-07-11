@@ -76,6 +76,7 @@ class frRect : public frShape
   // constructors
   frRect() = default;
   frRect(const frRect& in) : frShape(in), box_(in.box_), layer_(in.layer_) {}
+  frRect& operator=(const frRect&) = default;
   frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner)
       : frShape(owner), box_(xl, yl, xh, yh), layer_(lNum)
   {

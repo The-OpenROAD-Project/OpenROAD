@@ -340,7 +340,7 @@ GainCell Refiner::CalculateVertexGain(int v,
   // define lambda function
   // for checking connectivity (number of blocks connected by a hyperedge)
   // function : check the connectivity for the hyperedge
-  auto GetConnectivity = [&](int e) {
+  auto get_connectivity = [&](int e) {
     int connectivity = 0;
     for (auto& num_v : net_degs[e]) {
       if (num_v > 0) {
@@ -351,7 +351,7 @@ GainCell Refiner::CalculateVertexGain(int v,
   };
   // traverse all the hyperedges connected to v
   for (const int e : hgraph->Edges(v)) {
-    const int connectivity = GetConnectivity(e);
+    const int connectivity = get_connectivity(e);
     const float e_score = evaluator_->CalculateHyperedgeCost(e, hgraph);
     if (connectivity == 0) {
       // ignore the hyperedge consisting of multiple vertices
@@ -511,7 +511,7 @@ HyperedgeGainPtr Refiner::CalculateHyperedgeGain(
   // define lambda function
   // for checking connectivity (number of blocks connected by a hyperedge)
   // function : check the connectivity for the hyperedge
-  auto GetConnectivity = [&](int e) {
+  auto get_connectivity = [&](int e) {
     int connectivity = 0;
     for (auto& num_v : net_deg_map[e]) {
       if (num_v > 0) {
@@ -527,7 +527,7 @@ HyperedgeGainPtr Refiner::CalculateHyperedgeGain(
     const int from_pid = vertex_pair.second;
     // traverse all the hyperedges connected to v
     for (const int e : hgraph->Edges(v)) {
-      const int connectivity = GetConnectivity(e);
+      const int connectivity = get_connectivity(e);
       const float e_score = evaluator_->CalculateHyperedgeCost(e, hgraph);
       if (connectivity == 0) {
         // ignore the hyperedge consisting of multiple vertices

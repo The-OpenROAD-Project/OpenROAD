@@ -232,7 +232,7 @@ void HierRTLMP::run()
     graphics_->drawResult();
   }
 
-  Pusher pusher(logger_, tree_->root.get(), block_, boundary_to_io_blockage_);
+  Pusher pusher(logger_, tree_->root.get(), block_, io_blockages_);
   pusher.pushMacrosToCoreBoundaries();
 
   updateMacrosOnDb();
@@ -241,9 +241,11 @@ void HierRTLMP::run()
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
-
   writeMacroPlacement(macro_placement_file_);
+
   clear();
+
+  computeWireLength();
 }
 
 void HierRTLMP::init()
@@ -259,7 +261,7 @@ void HierRTLMP::init()
 void HierRTLMP::runMultilevelAutoclustering()
 {
   clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_);
+      block_, network_, logger_, tritonpart_, graphics_.get());
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
@@ -317,7 +319,8 @@ void HierRTLMP::runCoarseShaping()
 
   calculateChildrenTilings(tree_->root.get());
 
-  setPinAccessBlockages();
+  searchAvailableRegionsForUnconstrainedPins();
+  createPinAccessBlockages();
   setPlacementBlockages();
 }
 
@@ -481,7 +484,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               num_perturb_per_step,
                                               random_seed_,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -540,7 +544,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               num_perturb_per_step,
                                               random_seed_,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -563,6 +568,13 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       }
     }
     remaining_runs -= run_thread;
+  }
+
+  if (tilings_set.empty()) {
+    logger_->error(MPL,
+                   3,
+                   "There are no valid tilings for mixed cluster: {}",
+                   parent->getName());
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
@@ -595,12 +607,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
 
   parent->setTilings(tilings_list);
 
-  if (tilings_list.empty()) {
-    logger_->error(MPL,
-                   3,
-                   "There are no valid tilings for mixed cluster: {}",
-                   parent->getName());
-  } else {
+  if (!tilings_list.empty()) {
     std::string line
         = "The macro tiling for mixed cluster " + parent->getName() + "  ";
     for (auto& tiling : tilings_list) {
@@ -720,7 +727,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                               num_perturb_per_step,
                                               random_seed_ + run_id,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -774,7 +782,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                               num_perturb_per_step,
                                               random_seed_ + run_id,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -797,6 +806,13 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
       }
     }
     remaining_runs -= run_thread;
+  }
+
+  if (tilings_set.empty()) {
+    logger_->error(MPL,
+                   4,
+                   "No valid tilings for hard macro cluster: {}",
+                   cluster->getName());
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
@@ -824,13 +840,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
   tilings_list = std::move(new_tilings_list);
   cluster->setTilings(tilings_list);
-
-  if (tilings_list.empty()) {
-    logger_->error(MPL,
-                   4,
-                   "No valid tilings for hard macro cluster: {}",
-                   cluster->getName());
-  }
 
   std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
   for (auto& tiling : tilings_list) {
@@ -867,9 +876,40 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   macro_array->setTilings(tight_packing_tilings);
 }
 
-void HierRTLMP::setPinAccessBlockages()
+void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
 {
-  if (!tree_->maps.pad_to_bterm.empty()) {
+  if (!treeHasUnconstrainedIOs()) {
+    return;
+  }
+
+  const std::vector<odb::Rect>& blocked_regions_for_pins
+      = block_->getBlockedRegionsForPins();
+
+  BoundaryToRegionsMap boundary_to_blocked_regions
+      = getBoundaryToBlockedRegionsMap(blocked_regions_for_pins);
+  std::vector<odb::Rect> available_regions
+      = computeAvailableRegions(boundary_to_blocked_regions);
+
+  tree_->available_regions_for_unconstrained_pins.reserve(
+      available_regions.size());
+  for (const odb::Rect& region : available_regions) {
+    tree_->available_regions_for_unconstrained_pins.emplace_back(
+        rectToLine(block_, region, logger_), getBoundary(block_, region));
+  }
+
+  if (graphics_) {
+    graphics_->setBlockedRegionsForPins(blocked_regions_for_pins);
+    graphics_->setAvailableRegionsForUnconstrainedPins(
+        tree_->available_regions_for_unconstrained_pins);
+  }
+}
+
+// If there are no constraints at all, we give freedom to SA so it
+// doesn't have to deal with pin access blockages across the entire
+// extension of all edges of the die area.
+void HierRTLMP::createPinAccessBlockages()
+{
+  if (!tree_->io_pads.empty()) {
     return;
   }
 
@@ -881,107 +921,306 @@ void HierRTLMP::setPinAccessBlockages()
     return;
   }
 
-  std::vector<Cluster*> clusters_of_unplaced_io_pins
-      = getClustersOfUnplacedIOPins();
+  computePinAccessDepthLimits();
+
+  createBlockagesForIOBundles();
+  createBlockagesForAvailableRegions();
+  createBlockagesForConstraintRegions();
+}
+
+void HierRTLMP::computePinAccessDepthLimits()
+{
   const Rect die = dbuToMicrons(block_->getDieArea());
 
-  const float depth
-      = computePinAccessBlockagesDepth(clusters_of_unplaced_io_pins, die);
+  constexpr float max_depth_proportion = 0.20;
+  pin_access_depth_limits_.x.max = max_depth_proportion * die.getWidth();
+  pin_access_depth_limits_.y.max = max_depth_proportion * die.getHeight();
 
-  for (Cluster* cluster_of_unplaced_io_pins : clusters_of_unplaced_io_pins) {
-    Boundary constraint_boundary
-        = cluster_of_unplaced_io_pins->getConstraintBoundary();
-    if (constraint_boundary != NONE) {
-      createPinAccessBlockage(constraint_boundary, depth, die);
-    }
-  }
+  constexpr float min_depth_proportion = 0.04;
+  pin_access_depth_limits_.x.min = min_depth_proportion * die.getWidth();
+  pin_access_depth_limits_.y.min = min_depth_proportion * die.getHeight();
 
-  if (boundary_to_io_blockage_.empty()) {
-    // If there are no constraints at all, give freedom to SA so it
-    // doesn't have to deal with pin access blockages in all boundaries.
-    // This will help SA not relying on extreme utilizations to
-    // converge for designs such as sky130hd/uW.
-    if (tree_->blocked_boundaries.empty()) {
-      return;
-    }
-
-    // There are only -exclude constraints, so we create pin access
-    // blockages based on the boundaries that are not blocked.
-    if (tree_->blocked_boundaries.find(L) == tree_->blocked_boundaries.end()) {
-      createPinAccessBlockage(L, depth, die);
-    }
-
-    if (tree_->blocked_boundaries.find(R) == tree_->blocked_boundaries.end()) {
-      createPinAccessBlockage(R, depth, die);
-    }
-
-    if (tree_->blocked_boundaries.find(B) == tree_->blocked_boundaries.end()) {
-      createPinAccessBlockage(B, depth, die);
-    }
-
-    if (tree_->blocked_boundaries.find(T) == tree_->blocked_boundaries.end()) {
-      createPinAccessBlockage(T, depth, die);
-    }
+  if (logger_->debugCheck(MPL, "coarse_shaping", 1)) {
+    logger_->report("\n  Pin Access Depth (μm)  |  Min  |  Max");
+    logger_->report("-----------------------------------------");
+    logger_->report("             Horizontal  | {:>5.2f} | {:>6.2f}",
+                    pin_access_depth_limits_.x.min,
+                    pin_access_depth_limits_.x.max);
+    logger_->report("               Vertical  | {:>5.2f} | {:>6.2f}\n",
+                    pin_access_depth_limits_.y.min,
+                    pin_access_depth_limits_.y.max);
   }
 }
 
-void HierRTLMP::createPinAccessBlockage(Boundary constraint_boundary,
-                                        const float depth,
-                                        const Rect& die)
+void HierRTLMP::createBlockagesForIOBundles()
 {
-  Rect blockage = die;
-  if (constraint_boundary == L) {
-    blockage.setXMax(blockage.xMin() + depth);
-  } else if (constraint_boundary == T) {
-    blockage.setYMin(blockage.yMax() - depth);
-  } else if (constraint_boundary == R) {
-    blockage.setXMin(blockage.xMax() - depth);
-  } else {  // Bottom
-    blockage.setYMax(blockage.yMin() + depth);
+  const std::vector<Cluster*> io_bundles = getIOBundles();
+  if (io_bundles.empty()) {
+    return;
   }
 
-  boundary_to_io_blockage_[constraint_boundary] = blockage;
-  macro_blockages_.push_back(blockage);
+  float io_bundles_span = 0.0f;
+  for (Cluster* io_bundle : io_bundles) {
+    // The shape of an IO bundle is just a line.
+    io_bundles_span += io_bundle->getBBox().getPerimeter() / 2;
+  }
+
+  int total_fixed_ios = 0;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getFirstPinPlacementStatus().isFixed()) {
+      ++total_fixed_ios;
+    }
+  }
+
+  const float base_depth = computePinAccessBaseDepth(io_bundles_span);
+
+  for (Cluster* io_bundle : io_bundles) {
+    const float number_of_ios
+        = static_cast<float>(clustering_engine_->getNumberOfIOs(io_bundle));
+    const float io_density_factor = number_of_ios / total_fixed_ios;
+    const float depth = base_depth * io_density_factor;
+    const odb::Rect rect = micronsToDbu(io_bundle->getBBox());
+    const odb::Line line = rectToLine(block_, rect, logger_);
+    const BoundaryRegion region(line, getBoundary(block_, rect));
+    createPinAccessBlockage(region, depth);
+  }
 }
 
-std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins()
+std::vector<Cluster*> HierRTLMP::getIOBundles() const
+{
+  std::vector<Cluster*> io_bundles;
+  for (const auto& child : tree_->root->getChildren()) {
+    if (child->isIOBundle()) {
+      io_bundles.push_back(child.get());
+    }
+  }
+  return io_bundles;
+}
+
+bool HierRTLMP::treeHasUnconstrainedIOs() const
+{
+  std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
+  for (Cluster* io_cluster : io_clusters) {
+    if (io_cluster->isClusterOfUnconstrainedIOPins()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool HierRTLMP::treeHasConstrainedIOs() const
+{
+  std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
+  for (Cluster* io_cluster : io_clusters) {
+    if (!io_cluster->isClusterOfUnconstrainedIOPins()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void HierRTLMP::createBlockagesForAvailableRegions()
+{
+  if (block_->getBlockedRegionsForPins().empty()) {
+    return;
+  }
+
+  double io_span = 0.0;
+  for (const BoundaryRegion& region :
+       tree_->available_regions_for_unconstrained_pins) {
+    io_span += std::sqrt(
+        odb::Point::squaredDistance(region.line.pt0(), region.line.pt1()));
+  }
+
+  const float depth = computePinAccessBaseDepth(block_->dbuToMicrons(io_span));
+
+  for (const BoundaryRegion region :
+       tree_->available_regions_for_unconstrained_pins) {
+    createPinAccessBlockage(region, depth);
+  }
+}
+
+void HierRTLMP::createBlockagesForConstraintRegions()
+{
+  if (!treeHasConstrainedIOs()) {
+    return;
+  }
+
+  float io_span = 0.0f;
+  std::vector<Cluster*> clusters_of_unplaced_ios
+      = getClustersOfUnplacedIOPins();
+
+  for (Cluster* cluster_of_unplaced_ios : clusters_of_unplaced_ios) {
+    if (cluster_of_unplaced_ios->isClusterOfUnconstrainedIOPins()) {
+      continue;
+    }
+
+    // Reminder: the region rect is always a line for a cluster
+    // of constrained pins.
+    const Rect region = cluster_of_unplaced_ios->getBBox();
+    io_span += region.getPerimeter() / 2;
+  }
+
+  const float base_depth = computePinAccessBaseDepth(io_span);
+  int total_ios = 0;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
+      ++total_ios;
+    }
+  }
+
+  for (Cluster* cluster_of_unplaced_ios : clusters_of_unplaced_ios) {
+    if (cluster_of_unplaced_ios->isClusterOfUnconstrainedIOPins()) {
+      continue;
+    }
+
+    const float cluster_number_of_ios = static_cast<float>(
+        clustering_engine_->getNumberOfIOs(cluster_of_unplaced_ios));
+
+    const float io_density_factor = cluster_number_of_ios / total_ios;
+    const float depth = base_depth * io_density_factor;
+
+    const odb::Rect region_rect
+        = micronsToDbu(cluster_of_unplaced_ios->getBBox());
+    const odb::Line region_line = rectToLine(block_, region_rect, logger_);
+    const BoundaryRegion region(region_line, getBoundary(block_, region_rect));
+    createPinAccessBlockage(region, depth);
+  }
+}
+
+BoundaryToRegionsMap HierRTLMP::getBoundaryToBlockedRegionsMap(
+    const std::vector<odb::Rect>& blocked_regions_for_pins) const
+{
+  BoundaryToRegionsMap boundary_to_blocked_regions;
+  std::queue<odb::Rect> blocked_regions;
+
+  boundary_to_blocked_regions[Boundary::L] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::R] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::B] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::T] = blocked_regions;
+
+  for (const odb::Rect& blocked_region : blocked_regions_for_pins) {
+    Boundary boundary = getBoundary(block_, blocked_region);
+    boundary_to_blocked_regions.at(boundary).push(blocked_region);
+
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Found blocked region {} in {} boundary.",
+               blocked_region,
+               toString(boundary));
+  }
+
+  return boundary_to_blocked_regions;
+}
+
+std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
+    BoundaryToRegionsMap& boundary_to_blocked_regions) const
+{
+  std::vector<odb::Rect> available_regions;
+
+  for (auto& [boundary, blocked_regions] : boundary_to_blocked_regions) {
+    // The initial available region is the entire edge of the die area.
+    std::vector<odb::Rect> boundary_available_regions = {getRect(boundary)};
+
+    while (!blocked_regions.empty()) {
+      odb::Rect blocked_region = blocked_regions.front();
+      blocked_regions.pop();
+
+      std::vector<odb::Rect> new_boundary_available_regions;
+      for (const odb::Rect& boundary_available_region :
+           boundary_available_regions) {
+        if (!boundary_available_region.contains(blocked_region)) {
+          new_boundary_available_regions.push_back(boundary_available_region);
+          continue;
+        }
+
+        std::vector<odb::Rect> subtraction_result
+            = subtractOverlapRegion(boundary_available_region, blocked_region);
+        new_boundary_available_regions.insert(
+            new_boundary_available_regions.end(),
+            subtraction_result.begin(),
+            subtraction_result.end());
+      }
+
+      boundary_available_regions = std::move(new_boundary_available_regions);
+    }
+
+    available_regions.insert(available_regions.end(),
+                             boundary_available_regions.begin(),
+                             boundary_available_regions.end());
+  }
+
+  return available_regions;
+}
+
+void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
+                                        const float depth)
+{
+  float blockage_depth = depth;
+
+  const Interval& limits = isVertical(region.boundary)
+                               ? pin_access_depth_limits_.x
+                               : pin_access_depth_limits_.y;
+
+  if (blockage_depth > limits.max) {
+    blockage_depth = limits.max;
+  } else if (blockage_depth < limits.min) {
+    blockage_depth = limits.min;
+  }
+
+  debugPrint(logger_,
+             MPL,
+             "coarse_shaping",
+             1,
+             "Creating pin access blockage in {} -> Region line = ({}) ({}) , "
+             "Depth = {}",
+             toString(region.boundary),
+             region.line.pt0(),
+             region.line.pt1(),
+             blockage_depth);
+
+  Rect blockage = dbuToMicrons(lineToRect(region.line));
+  switch (region.boundary) {
+    case (Boundary::L): {
+      blockage.setXMax(blockage.xMin() + blockage_depth);
+      break;
+    }
+    case (Boundary::R): {
+      blockage.setXMin(blockage.xMax() - blockage_depth);
+      break;
+    }
+    case (Boundary::B): {
+      blockage.setYMax(blockage.yMin() + blockage_depth);
+      break;
+    }
+    case (Boundary::T): {
+      blockage.setYMin(blockage.yMax() - blockage_depth);
+      break;
+    }
+  }
+
+  io_blockages_.push_back(blockage);
+}
+
+std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins() const
 {
   std::vector<Cluster*> clusters_of_unplaced_io_pins;
-
   for (const auto& child : tree_->root->getChildren()) {
     if (child->isClusterOfUnplacedIOPins()) {
       clusters_of_unplaced_io_pins.push_back(child.get());
     }
   }
-
   return clusters_of_unplaced_io_pins;
 }
 
-// The depth of pin access blockages is computed based on:
+// The base depth of pin access blockages is computed based on:
 // 1) Amount of std cell area in the design.
-// 2) Extension of the IO clusters across the design's boundaries.
-float HierRTLMP::computePinAccessBlockagesDepth(
-    const std::vector<Cluster*>& io_clusters,
-    const Rect& die)
+// 2) Extension of IO span.
+// 3) Macro dominance quadratic factor.
+float HierRTLMP::computePinAccessBaseDepth(const double io_span) const
 {
-  float io_clusters_extension = 0.0;
-
-  for (Cluster* io_cluster : io_clusters) {
-    if (io_cluster->getConstraintBoundary() == NONE) {
-      const Rect die = io_cluster->getBBox();
-      io_clusters_extension = die.getPerimeter();
-      break;
-    }
-
-    Boundary constraint_boundary = io_cluster->getConstraintBoundary();
-
-    if (constraint_boundary == L || constraint_boundary == R) {
-      io_clusters_extension += die.getWidth();
-    } else {  // Bottom or Top
-      io_clusters_extension += die.getHeight();
-    }
-  }
-
   float std_cell_area = 0.0;
   for (auto& cluster : tree_->root->getChildren()) {
     if (cluster->getClusterType() == StdCellCluster) {
@@ -1000,17 +1239,17 @@ float HierRTLMP::computePinAccessBlockagesDepth(
   const float macro_dominance_factor
       = tree_->macro_with_halo_area
         / (tree_->root->getWidth() * tree_->root->getHeight());
-  const float depth = (std_cell_area / io_clusters_extension)
-                      * std::pow((1 - macro_dominance_factor), 2);
+  const float base_depth
+      = (std_cell_area / io_span) * std::pow((1 - macro_dominance_factor), 2);
 
   debugPrint(logger_,
              MPL,
              "coarse_shaping",
              1,
-             "Pin access blockages depth = {}",
-             depth);
+             "Base pin access depth: {} μm",
+             base_depth);
 
-  return depth;
+  return base_depth;
 }
 
 void HierRTLMP::setPlacementBlockages()
@@ -1118,8 +1357,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
     cluster->setSoftMacro(std::move(soft_macro));
   }
 
-  // The simulated annealing outline is determined by the parent's shape
   const Rect outline = parent->getBBox();
+  if (graphics_) {
+    graphics_->setOutline(micronsToDbu(outline));
+  }
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -1132,7 +1373,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
   std::vector<Rect> placement_blockages;
   std::vector<Rect> macro_blockages;
 
-  findOverlappingBlockages(macro_blockages, placement_blockages, outline);
+  findBlockagesWithinOutline(macro_blockages, placement_blockages, outline);
 
   // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -1209,8 +1450,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
 
-  clustering_engine_->updateConnections();
-  clustering_engine_->updateDataFlow();
+  clustering_engine_->rebuildConnections();
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -1382,7 +1622,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
                                               num_perturb_per_step,
                                               random_seed_,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
       sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
@@ -1518,11 +1759,10 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
     cluster->setSoftMacro(std::move(soft_macro));
   }
 
-  // The simulated annealing outline is determined by the parent's shape
-  const Rect outline(parent->getX(),
-                     parent->getY(),
-                     parent->getX() + parent->getWidth(),
-                     parent->getY() + parent->getHeight());
+  const Rect outline = parent->getBBox();
+  if (graphics_) {
+    graphics_->setOutline(micronsToDbu(outline));
+  }
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -1535,7 +1775,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
   std::vector<Rect> placement_blockages;
   std::vector<Rect> macro_blockages;
 
-  findOverlappingBlockages(macro_blockages, placement_blockages, outline);
+  findBlockagesWithinOutline(macro_blockages, placement_blockages, outline);
 
   // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -1612,8 +1852,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
 
-  clustering_engine_->updateConnections();
-  clustering_engine_->updateDataFlow();
+  clustering_engine_->rebuildConnections();
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -1771,7 +2010,8 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
                                               num_perturb_per_step,
                                               random_seed_,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa->setNumberOfMacrosToPlace(macros_to_place);
       sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
@@ -1879,30 +2119,30 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
   updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
 }
 
-// Verify the blockages' areas that have overlapped with current parent
-// cluster. All the blockages will be converted to hard macros with fences.
-void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
-                                         std::vector<Rect>& placement_blockages,
-                                         const Rect& outline)
+// Find the area of blockages that are inside the outline.
+void HierRTLMP::findBlockagesWithinOutline(
+    std::vector<Rect>& macro_blockages,
+    std::vector<Rect>& placement_blockages,
+    const Rect& outline) const
 {
   for (auto& blockage : placement_blockages_) {
-    computeBlockageOverlap(placement_blockages, blockage, outline);
+    getBlockageRegionWithinOutline(placement_blockages, blockage, outline);
   }
 
-  for (auto& blockage : macro_blockages_) {
-    computeBlockageOverlap(macro_blockages, blockage, outline);
+  for (auto& blockage : io_blockages_) {
+    getBlockageRegionWithinOutline(macro_blockages, blockage, outline);
   }
 
   if (graphics_) {
-    graphics_->setOutline(micronsToDbu(outline));
     graphics_->setMacroBlockages(macro_blockages);
     graphics_->setPlacementBlockages(placement_blockages);
   }
 }
 
-void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
-                                       const Rect& blockage,
-                                       const Rect& outline)
+void HierRTLMP::getBlockageRegionWithinOutline(
+    std::vector<Rect>& blockages_within_outline,
+    const Rect& blockage,
+    const Rect& outline) const
 {
   const float b_lx = std::max(outline.xMin(), blockage.xMin());
   const float b_ly = std::max(outline.yMin(), blockage.yMin());
@@ -1910,10 +2150,10 @@ void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
   const float b_uy = std::min(outline.yMax(), blockage.yMax());
 
   if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {
-    overlapping_blockages.emplace_back(b_lx - outline.xMin(),
-                                       b_ly - outline.yMin(),
-                                       b_ux - outline.xMin(),
-                                       b_uy - outline.yMin());
+    blockages_within_outline.emplace_back(b_lx - outline.xMin(),
+                                          b_ly - outline.yMin(),
+                                          b_ux - outline.xMin(),
+                                          b_uy - outline.yMin());
   }
 }
 
@@ -2195,10 +2435,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   clustering_engine_->createTempMacroClusters(
       hard_macros, sa_macros, macro_clusters, cluster_to_macro, masters);
 
-  const Rect outline(cluster->getX(),
-                     cluster->getY(),
-                     cluster->getX() + cluster->getWidth(),
-                     cluster->getY() + cluster->getHeight());
+  const Rect outline = cluster->getBBox();
 
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
@@ -2208,7 +2445,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     graphics_->setFences(fences);
   }
 
-  clustering_engine_->updateConnections();
+  clustering_engine_->rebuildConnections();
 
   createFixedTerminals(outline, macro_clusters, cluster_to_macro, sa_macros);
 
@@ -2294,7 +2531,8 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               num_perturb_per_step,
                                               random_seed_ + run_id,
                                               graphics_.get(),
-                                              logger_);
+                                              logger_,
+                                              block_);
       sa->setNumberOfMacrosToPlace(macros_to_place);
       sa->setNets(nets);
       sa->setFences(fences);
@@ -2587,31 +2825,27 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
       }
 
       for (odb::dbBTerm* bterm : net->getBTerms()) {
-        auto constraint_region = bterm->getConstraintRegion();
-        if (constraint_region) {
-          int x = constraint_region->xCenter();
-          int y = constraint_region->yCenter();
-          odb::Rect region_rect(x, y, x, y);
-          net_box.merge(region_rect);
+        if (bterm->getFirstPinPlacementStatus().isFixed()) {
+          const odb::Rect pin_bbox = bterm->getBBox();
+          const odb::Rect center_rect(pin_bbox.center(), pin_bbox.center());
+          net_box.merge(center_rect);
         } else {
-          odb::Point macro_pin_location(macro_pin->getBBox().xCenter(),
-                                        macro_pin->getBBox().yCenter());
-          Boundary closest_boundary = getClosestBoundary(
-              macro_pin_location, tree_->unblocked_boundaries);
-
-          // As we classify the blocked/unblocked state of the boundary based on
-          // the extension of the -exclude constraint, it's possible to have
-          // all boundaries blocked for IOs even though there are small
-          // unblocked spaces in those boundaries. For this situation, we just
-          // skip IOs without constraint regions.
-          if (closest_boundary == NONE) {
-            continue;
+          const auto& constraint_region = bterm->getConstraintRegion();
+          odb::Point nearest_point;
+          if (constraint_region) {
+            BoundaryRegion constraint(
+                rectToLine(block_, *constraint_region, logger_),
+                getBoundary(block_, *constraint_region));
+            computeDistToNearestRegion(
+                macro_pin->getBBox().center(), {constraint}, &nearest_point);
+          } else {
+            computeDistToNearestRegion(
+                macro_pin->getBBox().center(),
+                tree_->available_regions_for_unconstrained_pins,
+                &nearest_point);
           }
-
-          odb::Point closest_point
-              = getClosestBoundaryPoint(macro_pin_location, closest_boundary);
-          odb::Rect closest_point_rect(closest_point, closest_point);
-          net_box.merge(closest_point_rect);
+          odb::Rect point_rect(nearest_point, nearest_point);
+          net_box.merge(point_rect);
         }
       }
 
@@ -2620,65 +2854,6 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
   }
 
   return wirelength;
-}
-
-// Search the given boundaries list for the closest boundary to the point.
-Boundary HierRTLMP::getClosestBoundary(const odb::Point& from,
-                                       const std::set<Boundary>& boundaries)
-{
-  Boundary closest_boundary = NONE;
-  int shortest_distance = std::numeric_limits<int>::max();
-
-  for (const Boundary boundary : boundaries) {
-    const int dist_to_boundary = getDistanceToBoundary(from, boundary);
-    if (dist_to_boundary < shortest_distance) {
-      shortest_distance = dist_to_boundary;
-      closest_boundary = boundary;
-    }
-  }
-
-  return closest_boundary;
-}
-
-int HierRTLMP::getDistanceToBoundary(const odb::Point& from,
-                                     const Boundary boundary)
-{
-  int distance = 0;
-
-  if (boundary == L) {
-    distance = from.x() - block_->getDieArea().xMin();
-  } else if (boundary == R) {
-    distance = from.x() - block_->getDieArea().xMax();
-  } else if (boundary == B) {
-    distance = from.y() - block_->getDieArea().yMin();
-  } else if (boundary == T) {
-    distance = from.y() - block_->getDieArea().yMax();
-  }
-
-  return std::abs(distance);
-}
-
-odb::Point HierRTLMP::getClosestBoundaryPoint(const odb::Point& from,
-                                              const Boundary boundary)
-{
-  odb::Point closest_boundary_point;
-  const odb::Rect& die = block_->getDieArea();
-
-  if (boundary == L) {
-    closest_boundary_point.setX(die.xMin());
-    closest_boundary_point.setY(from.y());
-  } else if (boundary == R) {
-    closest_boundary_point.setX(die.xMax());
-    closest_boundary_point.setY(from.y());
-  } else if (boundary == B) {
-    closest_boundary_point.setX(from.x());
-    closest_boundary_point.setY(die.yMin());
-  } else {  // Top
-    closest_boundary_point.setX(from.x());
-    closest_boundary_point.setY(die.yMax());
-  }
-
-  return closest_boundary_point;
 }
 
 void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
@@ -2805,6 +2980,13 @@ void HierRTLMP::clear()
   }
 }
 
+void HierRTLMP::computeWireLength() const
+{
+  odb::WireLengthEvaluator wirelength_evaluator(block_);
+  logger_->metric("macro_place__wirelength",
+                  block_->dbuToMicrons(wirelength_evaluator.hpwl()));
+}
+
 void HierRTLMP::setDebug(std::unique_ptr<MplObserver>& graphics)
 {
   graphics_ = std::move(graphics);
@@ -2836,7 +3018,7 @@ void HierRTLMP::setDebugTargetClusterId(const int target_cluster_id)
   graphics_->setTargetClusterId(target_cluster_id);
 }
 
-odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)
+odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect) const
 {
   return odb::Rect(block_->micronsToDbu(micron_rect.xMin()),
                    block_->micronsToDbu(micron_rect.yMin()),
@@ -2844,12 +3026,83 @@ odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)
                    block_->micronsToDbu(micron_rect.yMax()));
 }
 
-Rect HierRTLMP::dbuToMicrons(const odb::Rect& dbu_rect)
+Rect HierRTLMP::dbuToMicrons(const odb::Rect& dbu_rect) const
 {
   return Rect(block_->dbuToMicrons(dbu_rect.xMin()),
               block_->dbuToMicrons(dbu_rect.yMin()),
               block_->dbuToMicrons(dbu_rect.xMax()),
               block_->dbuToMicrons(dbu_rect.yMax()));
+}
+
+// Example for a vertical region:
+//  Base - Overlay = Result
+//   |                  |
+//   |                  | "b"
+//   |                  |
+//   |        |
+//   |        |
+//   |        |
+//   |                  |
+//   |                  | "a"
+//   |                  |
+std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
+    const odb::Rect& base,
+    const odb::Rect& overlay) const
+{
+  Boundary base_boundary = getBoundary(block_, base);
+
+  if (base_boundary != getBoundary(block_, overlay)) {
+    logger_->critical(
+        MPL, 46, "Attempting to subtract regions from different boundaries.");
+  }
+
+  std::vector<odb::Rect> result;
+  odb::Rect a = base;
+  odb::Rect b = base;
+
+  if (isVertical(base_boundary)) {
+    a.set_yhi(overlay.yMin());
+    b.set_ylo(overlay.yMax());
+  } else {
+    a.set_xhi(overlay.xMin());
+    b.set_xlo(overlay.xMax());
+  }
+
+  if (a.dx() != 0 || a.dy() != 0) {
+    result.push_back(a);
+  }
+
+  if (b.dx() != 0 || b.dy() != 0) {
+    result.push_back(b);
+  }
+
+  return result;
+}
+
+odb::Rect HierRTLMP::getRect(Boundary boundary) const
+{
+  odb::Rect boundary_rect = block_->getDieArea();
+
+  switch (boundary) {
+    case (Boundary::L): {
+      boundary_rect.set_xhi(boundary_rect.xMin());
+      break;
+    }
+    case (Boundary::R): {
+      boundary_rect.set_xlo(boundary_rect.xMax());
+      break;
+    }
+    case (Boundary::T): {
+      boundary_rect.set_ylo(boundary_rect.yMax());
+      break;
+    }
+    case (Boundary::B): {
+      boundary_rect.set_yhi(boundary_rect.yMin());
+      break;
+    }
+  }
+
+  return boundary_rect;
 }
 
 template <typename SACore>
@@ -2871,22 +3124,20 @@ void HierRTLMP::printPlacementResult(Cluster* parent,
 Pusher::Pusher(utl::Logger* logger,
                Cluster* root,
                odb::dbBlock* block,
-               const std::map<Boundary, Rect>& boundary_to_io_blockage)
+               const std::vector<Rect>& io_blockages)
     : logger_(logger), root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
-  setIOBlockages(boundary_to_io_blockage);
+  setIOBlockages(io_blockages);
 }
 
-void Pusher::setIOBlockages(
-    const std::map<Boundary, Rect>& boundary_to_io_blockage)
+void Pusher::setIOBlockages(const std::vector<Rect>& io_blockages)
 {
-  for (const auto& [boundary, box] : boundary_to_io_blockage) {
-    boundary_to_io_blockage_[boundary]
-        = odb::Rect(block_->micronsToDbu(box.xMin()),
-                    block_->micronsToDbu(box.yMin()),
-                    block_->micronsToDbu(box.xMax()),
-                    block_->micronsToDbu(box.yMax()));
+  for (const Rect& blockage : io_blockages) {
+    io_blockages_.emplace_back(block_->micronsToDbu(blockage.xMin()),
+                               block_->micronsToDbu(blockage.yMin()),
+                               block_->micronsToDbu(blockage.xMax()),
+                               block_->micronsToDbu(blockage.yMax()));
   }
 }
 
@@ -2996,10 +3247,10 @@ std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
   int smaller_hor_distance = 0;
 
   if (distance_to_left < distance_to_right) {
-    hor_boundary_to_push = L;
+    hor_boundary_to_push = Boundary::L;
     smaller_hor_distance = distance_to_left;
   } else {
-    hor_boundary_to_push = R;
+    hor_boundary_to_push = Boundary::R;
     smaller_hor_distance = distance_to_right;
   }
 
@@ -3014,10 +3265,10 @@ std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
   int smaller_ver_distance = 0;
 
   if (distance_to_bottom < distance_to_top) {
-    ver_boundary_to_push = B;
+    ver_boundary_to_push = Boundary::B;
     smaller_ver_distance = distance_to_bottom;
   } else {
-    ver_boundary_to_push = T;
+    ver_boundary_to_push = Boundary::T;
     smaller_ver_distance = distance_to_top;
   }
 
@@ -3068,7 +3319,7 @@ void Pusher::pushMacroClusterToCoreBoundaries(
     // Check based on the shape of the macro cluster to avoid iterating each
     // of its HardMacros.
     if (overlapsWithHardMacro(cluster_box, hard_macros)
-        || overlapsWithIOBlockage(cluster_box, boundary)) {
+        || overlapsWithIOBlockage(cluster_box)) {
       // Move back to original position.
       for (HardMacro* hard_macro : hard_macros) {
         moveHardMacro(hard_macro, boundary, (-distance));
@@ -3082,21 +3333,19 @@ void Pusher::moveMacroClusterBox(odb::Rect& cluster_box,
                                  const int distance)
 {
   switch (boundary) {
-    case NONE:
-      return;
-    case L: {
+    case (Boundary::L): {
       cluster_box.moveDelta(-distance, 0);
       break;
     }
-    case R: {
+    case (Boundary::R): {
       cluster_box.moveDelta(distance, 0);
       break;
     }
-    case T: {
+    case (Boundary::T): {
       cluster_box.moveDelta(0, distance);
       break;
     }
-    case B: {
+    case (Boundary::B): {
       cluster_box.moveDelta(0, -distance);
       break;
     }
@@ -3108,21 +3357,19 @@ void Pusher::moveHardMacro(HardMacro* hard_macro,
                            const int distance)
 {
   switch (boundary) {
-    case NONE:
-      return;
-    case L: {
+    case (Boundary::L): {
       hard_macro->setXDBU(hard_macro->getXDBU() - distance);
       break;
     }
-    case R: {
+    case (Boundary::R): {
       hard_macro->setXDBU(hard_macro->getXDBU() + distance);
       break;
     }
-    case T: {
+    case (Boundary::T): {
       hard_macro->setYDBU(hard_macro->getYDBU() + distance);
       break;
     }
-    case B: {
+    case (Boundary::B): {
       hard_macro->setYDBU(hard_macro->getYDBU() - distance);
       break;
     }
@@ -3164,25 +3411,18 @@ bool Pusher::overlapsWithHardMacro(
   return false;
 }
 
-bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
-                                    const Boundary boundary)
+bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box) const
 {
-  if (boundary_to_io_blockage_.find(boundary)
-      == boundary_to_io_blockage_.end()) {
-    return false;
-  }
-
-  const odb::Rect box = boundary_to_io_blockage_.at(boundary);
-
-  if (cluster_box.xMin() < box.xMax() && cluster_box.yMin() < box.yMax()
-      && cluster_box.xMax() > box.xMin() && cluster_box.yMax() > box.yMin()) {
-    debugPrint(logger_,
-               MPL,
-               "boundary_push",
-               1,
-               "\tFound overlap with IO blockage {}. Push will be reverted.",
-               box);
-    return true;
+  for (const odb::Rect& io_blockage : io_blockages_) {
+    if (cluster_box.overlaps(io_blockage)) {
+      debugPrint(logger_,
+                 MPL,
+                 "boundary_push",
+                 1,
+                 "\tFound overlap with IO blockage {}. Push will be reverted.",
+                 io_blockage);
+      return true;
+    }
   }
 
   return false;

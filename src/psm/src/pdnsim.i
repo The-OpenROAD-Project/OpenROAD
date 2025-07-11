@@ -27,13 +27,13 @@ using sta::Corner;
   const char *arg = Tcl_GetStringFromObj($input, &length);
 
   if (strcmp(arg, "BUMPS") == 0) {
-    $1 = psm::GeneratedSourceType::BUMPS;
+    $1 = psm::GeneratedSourceType::kBumps;
   } else if (strcmp(arg, "FULL") == 0) {
-    $1 = psm::GeneratedSourceType::FULL;
+    $1 = psm::GeneratedSourceType::kFull;
   } else if (strcmp(arg, "STRAPS") == 0) {
-    $1 = psm::GeneratedSourceType::STRAPS;
+    $1 = psm::GeneratedSourceType::kStraps;
   } else {
-    $1 = psm::GeneratedSourceType::BUMPS;
+    $1 = psm::GeneratedSourceType::kBumps;
   }
 }
 

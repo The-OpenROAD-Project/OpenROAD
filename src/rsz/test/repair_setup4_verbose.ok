@@ -5,32 +5,33 @@
 [INFO ODB-0132]     Created 2 special nets and 34 connections.
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 worst slack max -1.954
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
-       10 |       4 |       4 |        2 |      0 |     0 |    +0.5% |   -0.394 |       -2.1 |      6 | r2/D
-       13 |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-       14 |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-       15 |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-       16 |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-       17 |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-       18 |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      19* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      20* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      20* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      21* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      22* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      23* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-      24* |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
-    final |       4 |       6 |        2 |      0 |     0 |    +4.6% |   -0.365 |       -2.1 |      6 | r2/D
+       10 |       4 |       4 |        2 |      0 |     0 |    +0.9% |   -0.394 |       -2.1 |      6 | r2/D
+       14 |       4 |       6 |        2 |      0 |     0 |    +5.0% |   -0.365 |       -2.1 |      6 | r2/D
+       16 |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+       17 |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+       18 |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+       19 |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+       20 |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+       20 |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      20* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      21* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      22* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      23* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      24* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      25* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+      26* |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
+    final |       4 |       6 |        3 |      0 |     0 |    +6.4% |   -0.365 |       -2.1 |      6 | r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
-[INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0041] Resized 6 instances.
+[INFO RSZ-0040] Inserted 3 buffers.
+[INFO RSZ-0051] Resized 6 instances, 6 sized up, 0 sized down.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack max -0.365

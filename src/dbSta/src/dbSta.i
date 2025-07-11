@@ -33,6 +33,7 @@ using sta::Instance;
 %include "power/Power.i"
 %include "sdc/Sdc.i"
 %include "sdf/Sdf.i"
+%include "search/Property.i"
 %include "search/Search.i"
 %include "spice/WriteSpice.i"
 %include "util/Util.i"

@@ -35,6 +35,7 @@ sta::define_cmd_args "global_placement" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
+    [-enable_routing_congestion]
 }
 
 proc global_placement { args } {
@@ -63,8 +64,9 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental\
-      -disable_revert_if_diverge}
+      -incremental \
+      -disable_revert_if_diverge \
+      -enable_routing_congestion}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -155,6 +157,9 @@ proc global_placement { args } {
     utl::info "GPL" 153 \
       "Revert-to-snapshot on divergence detection is disabled."
   }
+
+  set enable_routing_congestion [info exists flags(-enable_routing_congestion)]
+  gpl::set_enable_routing_congestion $enable_routing_congestion
 
   if { [info exists keys(-initial_place_max_fanout)] } {
     set initial_place_max_fanout $keys(-initial_place_max_fanout)
@@ -352,8 +357,8 @@ proc cluster_flops { args } {
 
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
-    keys {-pause -update -inst -start_iter} \
-    flags {-draw_bins -initial -update_db} ;# checker off
+    keys {-pause -update -inst -start_iter -images_path} \
+    flags {-draw_bins -initial -generate_images} ;# checker off
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 117 "No design block found."
@@ -384,9 +389,15 @@ proc global_placement_debug { args } {
 
   set draw_bins [info exists flags(-draw_bins)]
   set initial [info exists flags(-initial)]
-  set update_db [info exists flags(-update_db)]
+  set generate_images [info exists flags(-generate_images)]
 
-  gpl::set_debug_cmd $pause $update $draw_bins $initial $inst $start_iter $update_db
+  set images_path ""
+  if { [info exists keys(-images_path)] } {
+    set images_path $keys(-images_path)
+  }
+
+  gpl::set_debug_cmd $pause $update $draw_bins $initial \
+    $inst $start_iter $generate_images $images_path
 }
 
 sta::define_cmd_args "placement_cluster" {}

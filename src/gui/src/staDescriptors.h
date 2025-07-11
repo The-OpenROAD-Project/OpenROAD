@@ -147,7 +147,7 @@ class StaInstanceDescriptor : public Descriptor
  private:
   sta::dbSta* sta_;
 
-  static constexpr int float_precision_ = 2;
+  static constexpr int kFloatPrecision = 2;
 };
 
 class ClockDescriptor : public Descriptor

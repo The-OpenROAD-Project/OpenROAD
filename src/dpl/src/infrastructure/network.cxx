@@ -75,6 +75,22 @@ Pin* Network::addPin(odb::dbITerm* term)
   upin->setPinWidth(DbuX{ww});
   upin->setPinLayer(0);  // Set to zero since not currently used.
   pins_.emplace_back(std::move(upin));
+
+  auto node = getNode(term->getInst());
+  for (auto pin : term->getMTerm()->getMPins()) {
+    for (auto box : pin->getGeometry()) {
+      auto layer = box->getTechLayer();
+      if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+        continue;
+      }
+      if (layer->getRoutingLevel() > 3) {
+        continue;
+      }
+      node->addUsedLayer(layer->getRoutingLevel());
+      node->addUsedLayer(layer->getRoutingLevel()
+                         + 1);  // for via access from above
+    }
+  }
   return ptr;
 }
 Pin* Network::addPin(odb::dbBTerm* term)

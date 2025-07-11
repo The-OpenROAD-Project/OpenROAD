@@ -56,7 +56,8 @@ BaseMove::BaseMove(Resizer* resizer)
   dbu_ = resizer_->dbu_;
   opendp_ = resizer_->opendp_;
 
-  all_count_ = 0;
+  accepted_count_ = 0;
+  rejected_count_ = 0;
   all_inst_set_ = InstanceSet(db_network_);
   pending_count_ = 0;
   pending_inst_set_ = InstanceSet(db_network_);
@@ -64,7 +65,7 @@ BaseMove::BaseMove(Resizer* resizer)
 
 void BaseMove::commitMoves()
 {
-  all_count_ += pending_count_;
+  accepted_count_ += pending_count_;
   pending_count_ = 0;
   pending_inst_set_.clear();
 }
@@ -72,13 +73,15 @@ void BaseMove::commitMoves()
 void BaseMove::init()
 {
   pending_count_ = 0;
-  all_count_ = 0;
+  rejected_count_ = 0;
+  accepted_count_ = 0;
   pending_inst_set_.clear();
   all_inst_set_.clear();
 }
 
 void BaseMove::undoMoves()
 {
+  rejected_count_ += pending_count_;
   pending_count_ = 0;
   pending_inst_set_.clear();
 }
@@ -100,12 +103,17 @@ int BaseMove::numPendingMoves() const
 
 int BaseMove::numCommittedMoves() const
 {
-  return all_count_;
+  return accepted_count_;
+}
+
+int BaseMove::numRejectedMoves() const
+{
+  return rejected_count_;
 }
 
 int BaseMove::numMoves() const
 {
-  return all_count_ + pending_count_;
+  return accepted_count_ + pending_count_;
 }
 
 void BaseMove::addMove(Instance* inst, int count)
@@ -421,8 +429,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
   Net* output_net = network_->net(params.driver_pin);
-  NetConnectedPinIterator* pin_iter
-      = network_->connectedPinIterator(output_net);
+  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+      network_->connectedPinIterator(output_net));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin == params.driver_pin) {
@@ -456,7 +464,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   // Check side fanout paths.  Side fanout paths get no delay benefit from
   // buffer removal.
   Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = network_->connectedPinIterator(input_net);
+  pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+      network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();
     if (side_input_pin == params.prev_driver_pin
@@ -510,7 +519,8 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
                                        bool accept_if_slack_improves)
 {
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  InstancePinIterator* pin_iter = network_->pinIterator(instance);
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(instance));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (!network_->direction(pin)->isOutput()) {
@@ -596,6 +606,98 @@ int BaseMove::fanout(Vertex* vertex)
     }
   }
   return fanout;
+}
+
+LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
+                                  LibertyPort* drvr_port,
+                                  const float load_cap,
+                                  const float prev_drive,
+                                  const DcalcAnalysisPt* dcalc_ap)
+{
+  const int lib_ap = dcalc_ap->libertyIndex();
+  LibertyCell* cell = drvr_port->libertyCell();
+  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  if (!swappable_cells.empty()) {
+    const char* in_port_name = in_port->name();
+    const char* drvr_port_name = drvr_port->name();
+    sort(swappable_cells,
+         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+           LibertyPort* port1
+               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           LibertyPort* port2
+               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           const float drive1 = port1->driveResistance();
+           const float drive2 = port2->driveResistance();
+           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           const float capacitance1 = port1->capacitance();
+           const float capacitance2 = port2->capacitance();
+           return std::tie(drive2, intrinsic1, capacitance1)
+                  < std::tie(drive1, intrinsic2, capacitance2);
+         });
+    const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
+    const float delay
+        = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
+          + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+
+    for (LibertyCell* swappable : swappable_cells) {
+      LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
+      LibertyPort* swappable_drvr
+          = swappable_corner->findLibertyPort(drvr_port_name);
+      LibertyPort* swappable_input
+          = swappable_corner->findLibertyPort(in_port_name);
+      const float swappable_drive = swappable_drvr->driveResistance();
+      // Include delay of previous driver into swappable gate.
+      const float swappable_delay
+          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+            + prev_drive * swappable_input->capacitance();
+      if (swappable_drive < drive && swappable_delay < delay) {
+        return swappable;
+      }
+    }
+  }
+  return nullptr;
+};
+
+// Replace LEF with LEF so ports stay aligned in instance.
+bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
+{
+  const char* replacement_name = replacement->name();
+  dbMaster* replacement_master = db_->findMaster(replacement_name);
+
+  if (replacement_master) {
+    dbInst* dinst = db_network_->staToDb(inst);
+    dbMaster* master = dinst->getMaster();
+    resizer_->designAreaIncr(-area(master));
+    Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
+    sta_->replaceCell(inst, replacement_cell1);
+    resizer_->designAreaIncr(area(replacement_master));
+
+    // Legalize the position of the instance in case it leaves the die
+    if (resizer_->getParasiticsSrc() == ParasiticsSrc::global_routing
+        || resizer_->getParasiticsSrc() == ParasiticsSrc::detailed_routing) {
+      opendp_->legalCellPos(db_network_->staToDb(inst));
+    }
+
+    return true;
+  }
+  return false;
+}
+
+vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
+{
+  vector<const Pin*> fanouts;
+
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const Pin* pin = pin_iter->next();
+    if (network_->direction(pin)->isOutput()) {
+      fanouts.push_back(pin);
+    }
+  }
+
+  return fanouts;
 }
 
 ////////////////////////////////////////////////////////////////

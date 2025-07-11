@@ -19,4 +19,4 @@ global_placement -routability_driven \
   -routability_rc_coefficients {1 1 0 0} \
   -verbose 1 \
   -skip_initial_place -density 0.5 \
-  -pad_left 1 -pad_right 1 
+  -pad_left 1 -pad_right 1

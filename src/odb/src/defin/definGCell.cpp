@@ -12,19 +12,6 @@
 
 namespace odb {
 
-definGCell::definGCell()
-{
-}
-
-definGCell::~definGCell()
-{
-}
-
-void definGCell::init()
-{
-  definBase::init();
-}
-
 void definGCell::gcell(defDirection dir, int orig, int count, int step)
 {
   orig = dbdist(orig);

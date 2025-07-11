@@ -1197,9 +1197,9 @@ int DetailedMgr::checkOverlapInSegments()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
+bool DetailedMgr::hasPlacementViolation(const Node* node) const
 {
-  return !drc_engine_->checkEdgeSpacing(node);
+  return !drc_engine_->checkDRC(node);
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1237,7 +1237,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
       arch_->getCellPadding(ndr, leftPadding, dummyPadding);
       const int padding = leftPadding + rightPadding;
 
-      if (hasEdgeSpacingViolation(ndl)) {
+      if (hasPlacementViolation(ndl)) {
         logger_->report("Violation in {}", ndl->name());
         ++err_n;
       }
@@ -2163,7 +2163,7 @@ bool DetailedMgr::shiftLeftHelper(Node* ndi, DbuX xj, const int sj, Node* ndl)
 bool DetailedMgr::verifyMove()
 {
   for (const auto& node : journal.getAffectedNodes()) {
-    if (hasEdgeSpacingViolation(node)) {
+    if (hasPlacementViolation(node)) {
       rejectMove();
       return false;
     }
@@ -2980,8 +2980,8 @@ void DetailedMgr::eraseFromGrid(Node* node)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::paintInGrid(Node* node)
 {
-  const auto grid_x = grid_->gridX(DbuX(node->getLeft()));
-  const auto grid_y = grid_->gridRoundY(DbuY(node->getBottom()));
+  const auto grid_x = grid_->gridX(node);
+  const auto grid_y = grid_->gridSnapDownY(node);
   auto pixel = grid_->gridPixel(grid_x, grid_y);
   grid_->paintPixel(node, grid_x, grid_y);
   node->adjustCurrOrient(

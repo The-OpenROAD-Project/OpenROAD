@@ -24,6 +24,7 @@
 #include "dbModBTerm.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
+#include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
@@ -217,8 +218,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
     block->_journal->endAction();
   }
 
-  modinst->_name = strdup(name);
-  ZALLOCATED(modinst->_name);
+  modinst->_name = safe_strdup(name);
   modinst->_master = master->getOID();
   modinst->_parent = module->getOID();
   // push to head of list in block
@@ -226,6 +226,11 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
   module->_modinst_hash[modinst->_name] = modinst->getOID();
+
+  for (dbBlockCallBackObj* cb : block->_callbacks) {
+    cb->inDbModInstCreate((dbModInst*) modinst);
+  }
+
   return (dbModInst*) modinst;
 }
 
@@ -250,6 +255,10 @@ void dbModInst::destroy(dbModInst* modinst)
     // trying to connect on journalling restore of modInst.
     moditerm->disconnect();
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
+  }
+
+  for (auto cb : _block->_callbacks) {
+    cb->inDbModInstDestroy(modinst);
   }
 
   // unlink from parent start
@@ -345,6 +354,8 @@ void dbModInst::RemoveUnusedPortsAndPins()
   dbModule* module = this->getMaster();
   dbSet<dbModITerm> moditerms = getModITerms();
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  std::set<dbModBTerm*> busmodbterms;  // harvest the bus modbterms
+
   int bus_ix = 0;
 
   // traverse in modbterm order so we can skip over
@@ -352,7 +363,6 @@ void dbModInst::RemoveUnusedPortsAndPins()
 
   for (dbModBTerm* mod_bterm : modbterms) {
     dbModNet* mod_net = nullptr;
-
     // Avoid removing unused ports from a bus
     // when we hit a bus port, we count down from the size
     // skipping the bus elements
@@ -363,10 +373,12 @@ void dbModInst::RemoveUnusedPortsAndPins()
     if (mod_bterm->isBusPort()) {
       dbBusPort* bus_port = mod_bterm->getBusPort();
       bus_ix = bus_port->getSize();  // count down
+      busmodbterms.insert(mod_bterm);
       continue;
     }
     if (bus_ix != 0) {
       bus_ix = bus_ix - 1;
+      busmodbterms.insert(mod_bterm);
       continue;
     }
 
@@ -385,6 +397,10 @@ void dbModInst::RemoveUnusedPortsAndPins()
 
   for (dbModITerm* mod_iterm : moditerms) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    if (busmodbterms.find(mod_bterm) != busmodbterms.end()) {
+      continue;
+    }
+
     dbModNet* mod_net = mod_bterm->getModNet();
     if (mod_net) {
       dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
@@ -402,6 +418,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
   for (auto mod_iterm : kill_set) {
     dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
 
     // Do the destruction in order for benefit of journaller
@@ -593,7 +610,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   debugRDPrint1("New mod inst has {} mod iterms",
                 new_mod_inst->getModITerms().size());
 
-  dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
+  _dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
     for (dbInst* inst : new_module_copy->getInsts()) {
       logger->report("new_module_copy {} instance {} has the following iterms:",
@@ -701,7 +718,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     dbNet::destroy(net);
   }
 
-  dbModule::copyToChildBlock(old_module);
+  _dbModule::copyToChildBlock(old_module);
   debugRDPrint1("Copied to child block and deleted old module {}",
                 old_module->getName());
   dbModule::destroy(old_module);

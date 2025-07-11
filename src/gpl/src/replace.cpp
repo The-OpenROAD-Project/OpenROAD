@@ -86,7 +86,7 @@ void Replace::reset()
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
-  keepResizeBelowOverflow_ = 0.3;
+  keepResizeBelowOverflow_ = 1.0;
   routabilityDrivenMode_ = true;
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
@@ -334,8 +334,8 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
-    npVars.debug_update_db_every_iteration
-        = gui_debug_update_db_every_iteration;
+    npVars.debug_generate_images = gui_debug_generate_images;
+    npVars.debug_images_path = gui_debug_images_path;
     npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
@@ -371,6 +371,13 @@ int Replace::doNesterovPlace(int threads, int start_iter)
              1,
              "NP->doNesterovPlace() runtime: {} seconds ",
              elapsed.count());
+
+  if (enable_routing_congestion_) {
+    fr_->setAllowCongestion(true);
+    fr_->setCongestionIterations(0);
+    fr_->setCriticalNetsPercentage(0);
+    fr_->globalRoute();
+  }
   return return_do_nesterov;
 }
 
@@ -471,7 +478,8 @@ void Replace::setDebug(int pause_iterations,
                        bool initial,
                        odb::dbInst* inst,
                        int start_iter,
-                       bool update_db)
+                       bool generate_images,
+                       std::string images_path)
 {
   gui_debug_ = true;
   gui_debug_pause_iterations_ = pause_iterations;
@@ -480,12 +488,18 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
-  gui_debug_update_db_every_iteration = update_db;
+  gui_debug_generate_images = generate_images;
+  gui_debug_images_path = std::move(images_path);
 }
 
 void Replace::setDisableRevertIfDiverge(bool mode)
 {
   disableRevertIfDiverge_ = mode;
+}
+
+void Replace::setEnableRoutingCongestion(bool mode)
+{
+  enable_routing_congestion_ = mode;
 }
 
 void Replace::setSkipIoMode(bool mode)

@@ -10,7 +10,7 @@
 #include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
-#include "SizeMove.hh"
+#include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 
@@ -66,15 +66,15 @@ bool UnbufferMove::doMove(const Path* drvr_path,
     // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
     // cloning because such removal may lead to an inifinte loop or long runtime
     std::string reason;
-    if (resizer_->swap_pins_move->hasMoves(drvr)) {
+    if (resizer_->swap_pins_move_->hasMoves(drvr)) {
       reason = "its pins have been swapped";
-    } else if (resizer_->clone_move->hasMoves(drvr)) {
+    } else if (resizer_->clone_move_->hasMoves(drvr)) {
       reason = "it has been cloned";
-    } else if (resizer_->split_load_move->hasMoves(drvr)) {
+    } else if (resizer_->split_load_move_->hasMoves(drvr)) {
       reason = "it was from split load buffering";
-    } else if (resizer_->buffer_move->hasMoves(drvr)) {
+    } else if (resizer_->buffer_move_->hasMoves(drvr)) {
       reason = "it was from rebuffering";
-    } else if (resizer_->size_move->hasMoves(drvr)) {
+    } else if (resizer_->size_up_move_->hasMoves(drvr)) {
       reason = "it has been resized";
     }
     if (!reason.empty()) {
@@ -179,9 +179,21 @@ bool UnbufferMove::doMove(const Path* drvr_path,
     }
 
     if (canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
+      debugPrint(logger_,
+                 RSZ,
+                 "opt_moves",
+                 1,
+                 "ACCEPT unbuffer {}",
+                 network_->pathName(drvr));
       removeBuffer(drvr);
       return true;
     }
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT unbuffer {}",
+               network_->pathName(drvr));
   }
 
   return false;
@@ -335,8 +347,12 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
-  debugPrint(
-      logger_, RSZ, "moves", 1, "unbuffer_move {}", network_->pathName(buffer));
+  debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             3,
+             "remove_buffer{}",
+             network_->pathName(buffer));
   addMove(buffer);
 
   LibertyCell* lib_cell = network_->libertyCell(buffer);

@@ -61,6 +61,15 @@ if(USE_SYSTEM_OPENSTA)
   endif()
   include_directories(${OPENSTA_INCLUDE_DIR})
   message(STATUS "Using OPENSTA_INCLUDE_DIR=${OPENSTA_INCLUDE_DIR}")
+  add_library(OpenSTA STATIC IMPORTED)
+  set_target_properties(OpenSTA PROPERTIES
+    IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
+  )
+  if(CUDD_LIB)
+    set_target_properties(OpenSTA PROPERTIES 
+      INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
+    )
+  endif()
 else()
   # local build of opensta
   set(OPENSTA_LIBRARY "sta_swig")
@@ -135,7 +144,7 @@ if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
 endif()
 include(UseSWIG)
 
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
 
 if (ENABLE_TESTS)
@@ -251,6 +260,7 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
+add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -306,6 +316,7 @@ target_link_libraries(openroad
   ord
   gpl
   dpl
+  exa
   fin
   rsz
   ppl
@@ -333,6 +344,7 @@ target_link_libraries(openroad
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
+  ${Boost_LIBRARIES}
 )
 
 target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
@@ -392,6 +404,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     grt_py
     gpl_py
     dpl_py
+    exa_py
     ppl_py
     tap_py
     cts_py

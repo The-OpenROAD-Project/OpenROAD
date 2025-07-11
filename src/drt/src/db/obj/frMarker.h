@@ -18,6 +18,7 @@ class frMarker : public frFig
  public:
   // constructors
   frMarker() = default;
+  frMarker& operator=(const frMarker&) = default;
   frMarker(const frMarker& in)
       : constraint_(in.constraint_),
         bbox_(in.bbox_),

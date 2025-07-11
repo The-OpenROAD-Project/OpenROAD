@@ -754,8 +754,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   }
 
   /* OPT-MEM
-  //    seg->_res = (float *) malloc(sizeof(float)*seg->_flags._cnt);
-  //    ZALLOCATED(seg->_res);
+  //    seg->_res = (float *) safe_malloc(sizeof(float)*seg->_flags._cnt);
   //
   //    int i;
   //
@@ -768,8 +767,8 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   //    if (allocate_cap)
   //    {
   //        seg->_flags._allocated_cap= 1;
-  //        seg->_cap = (float *) malloc( sizeof(float) * seg->_flags._cnt );
-  //        ZALLOCATED( seg->_cap );
+  //        seg->_cap =
+  //             (float *) safe_malloc( sizeof(float) * seg->_flags._cnt );
   //
   //        int i;
   //        for( i = 0; i < seg->_flags._cnt; ++i )

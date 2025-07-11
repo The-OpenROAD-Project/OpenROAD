@@ -115,7 +115,7 @@ class Opendp
   int padRight(dbInst* inst) const;
 
   void checkPlacement(bool verbose, const std::string& report_file_name = "");
-  void fillerPlacement(dbMasterSeq* filler_masters,
+  void fillerPlacement(const dbMasterSeq& filler_masters,
                        const char* prefix,
                        bool verbose);
   void removeFillers();
@@ -261,7 +261,8 @@ class Opendp
                     const std::vector<Node*>& site_align_failures,
                     const std::vector<Node*>& region_placement_failures,
                     const std::vector<Node*>& placement_failures,
-                    const std::vector<Node*>& edge_spacing_failures);
+                    const std::vector<Node*>& edge_spacing_failures,
+                    const std::vector<Node*>& blocked_layers_failures);
   void writeJsonReport(const std::string& filename);
 
   void rectDist(const Node* cell,
@@ -277,7 +278,7 @@ class Opendp
   DbuPt initialLocation(const Node* cell, bool padded) const;
   int disp(const Node* cell) const;
   // Place fillers
-  MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
+  MasterByImplant splitByImplant(const dbMasterSeq& filler_masters);
   void setGridCells();
   dbMasterSeq& gapFillers(dbTechLayer* implant,
                           GridX gap,

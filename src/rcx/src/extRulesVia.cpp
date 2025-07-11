@@ -27,8 +27,9 @@ extViaModel* extMetRCTable::addViaModel(char* name,
 {
   int n1;
   if (_viaModelHash.get(name, n1)) {
-    if (n1 < 0)
+    if (n1 < 0) {
       return nullptr;
+    }
     extViaModel* v = _viaModel.get(n1);
     return v;
   }
@@ -43,8 +44,9 @@ extViaModel* extMetRCTable::getViaModel(char* name)
 {
   int n1;
   if (_viaModelHash.get(name, n1)) {
-    if (n1 < 0)
+    if (n1 < 0) {
       return nullptr;
+    }
     extViaModel* v = _viaModel.get(n1);
     return v;
   }
@@ -77,14 +79,16 @@ void extViaModel::writeViaRule(FILE* fp)
 }
 void extMetRCTable::printViaModels()
 {
-  for (uint ii = 0; ii < _viaModel.getCnt(); ii++)
+  for (uint ii = 0; ii < _viaModel.getCnt(); ii++) {
     _viaModel.get(ii)->printViaRule(stdout);
+  }
 }
 void extMetRCTable::writeViaRes(FILE* fp)
 {
   fprintf(fp, "\nVIARES %d Default LEF Vias:\n", _viaModel.getCnt());
-  for (uint ii = 0; ii < _viaModel.getCnt(); ii++)
+  for (uint ii = 0; ii < _viaModel.getCnt(); ii++) {
     _viaModel.get(ii)->writeViaRule(fp);
+  }
 
   fprintf(fp, "END VIARES\n\n");
 }
@@ -139,8 +143,9 @@ bool extMetRCTable::ReadRules(Ath__parser* p)
 {
   // 10.1442 V12_VV cuts 1  TopMetal 2 BotMetal 1 dx 200 dy 320
   while (p->parseNextLine() > 0) {
-    if (p->isKeyword(0, "END") && p->isKeyword(1, "VIARES"))
+    if (p->isKeyword(0, "END") && p->isKeyword(1, "VIARES")) {
       break;
+    }
 
     char* viaName = p->get(1);
     double via_res = p->getDouble(0);
@@ -163,21 +168,25 @@ uint extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
 
-    if (via->getNonDefaultRule() != nullptr)
+    if (via->getNonDefaultRule() != nullptr) {
       continue;
-    if (via->getViaGenerateRule() != nullptr)
+    }
+    if (via->getViaGenerateRule() != nullptr) {
       continue;
+    }
 
     const char* viaName = via->getConstName();
     cnt++;
 
     extViaModel* viaModel = getViaModel((char*) viaName);
-    if (viaModel == nullptr)
+    if (viaModel == nullptr) {
       continue;
+    }
 
     via->setResistance(viaModel->_res);
-    if (dbg)
+    if (dbg) {
       viaModel->printViaRule(stdout);
+    }
   }
   return cnt;
 }
@@ -192,20 +201,19 @@ bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
   uint targetWire = 0;
 
   if (p->getFirstChar() == 'D') {
-    if (p->get(0)[1] == 'O')
+    if (p->get(0)[1] == 'O') {
       return true;
+    }
     targetWire = p->getInt(0, 2);
-    if (targetWire < 3)
-      return true;
-    else
-      return false;
+    return targetWire < 3;
   }
   if (p->getFirstChar() == 'U' || p->getFirstChar() == 'R') {
     targetWire = p->getInt(0, 1);
   } else {
     targetWire = p->getInt(0, 1);
-    if (targetWire == 0)
+    if (targetWire == 0) {
       targetWire = p->getInt(0, 2);
+    }
   }
   /*
   else if (p->getFirstChar() == 'D')
@@ -216,8 +224,9 @@ bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
   {
       targetWire = p->getInt(0, 1);
   } */
-  if (targetWire < 5)
+  if (targetWire < 5) {
     return true;
+  }
   //  if (targetWire < 6)
   //    return true;
   return false;

@@ -48,8 +48,9 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
     return QVariant();
   }
   unsigned int row_index = index.row();
-  if (row_index > table_data_.size())
+  if (row_index > table_data_.size()) {
     return QVariant();
+  }
   const std::string obj_name = table_data_[row_index]->getName();
   const std::string obj_type = table_data_[row_index]->getTypeName();
   if (index.column() == 0) {
@@ -123,21 +124,23 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
           && role != Qt::BackgroundRole)) {
     return QVariant();
   }
-  if (role == Qt::BackgroundRole && index.column() != 3)
+  if (role == Qt::BackgroundRole && index.column() != 3) {
     return QVariant();
+  }
   if (role == Qt::BackgroundRole && index.column() == 3) {
     auto highlight_color
-        = Painter::highlightColors[table_data_[index.row()].first];
+        = Painter::kHighlightColors[table_data_[index.row()].first];
     return QColor(highlight_color.r,
                   highlight_color.g,
                   highlight_color.b,
                   highlight_color.a);
   }
   unsigned int row_index = index.row();
-  if (row_index > table_data_.size())
+  if (row_index > table_data_.size()) {
     return QVariant();
+  }
   std::string obj_name = table_data_[row_index].second->getName();
-  std::string obj_type("");
+  std::string obj_type;
   if (obj_name.rfind("Net: ", 0) == 0) {
     obj_name = obj_name.substr(5);
     obj_type = "Net";

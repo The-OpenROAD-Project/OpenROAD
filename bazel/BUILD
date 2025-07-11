@@ -12,8 +12,8 @@ cc_library(
     srcs = [
         "InitRunFiles.cpp",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "@rules_cc//cc/runfiles",
     ],
-    visibility = ["//visibility:public"],
 )

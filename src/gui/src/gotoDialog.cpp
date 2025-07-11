@@ -15,9 +15,9 @@ GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutTabs* viewers)
   setupUi(this);
 }
 
-void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)
+void GotoLocationDialog::updateUnits(int dbu_per_micron, bool use_dbu)
 {
-  if (useDBU) {
+  if (use_dbu) {
     xEdit->setText(QString::number(xEdit->text().toDouble() * dbu_per_micron));
     yEdit->setText(QString::number(yEdit->text().toDouble() * dbu_per_micron));
     sEdit->setText(QString::number(sEdit->text().toDouble() * dbu_per_micron));
@@ -28,12 +28,12 @@ void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)
   }
 }
 
-void GotoLocationDialog::updateLocation(QLineEdit* xEdit, QLineEdit* yEdit)
+void GotoLocationDialog::updateLocation(QLineEdit* x_edit, QLineEdit* y_edit)
 {
   auto viewer = viewers_->getCurrent();
-  xEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+  x_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().x(), false)));
-  yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+  y_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().y(), false)));
 }
 

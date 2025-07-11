@@ -16,4 +16,3 @@ report_ties LOGIC1_X1
 set def_file [make_result_file repair_tie9.def]
 write_def $def_file
 diff_files repair_tie9.defok $def_file
-

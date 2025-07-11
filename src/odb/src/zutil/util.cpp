@@ -336,7 +336,7 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net,
   return hpwl_x + hpwl_y;
 }
 
-void WireLengthEvaluator::report(utl::Logger* logger) const
+void WireLengthEvaluator::reportEachNetHpwl(utl::Logger* logger) const
 {
   for (dbNet* net : block_->getNets()) {
     int64_t tmp;
@@ -344,6 +344,11 @@ void WireLengthEvaluator::report(utl::Logger* logger) const
                    net->getConstName(),
                    block_->dbuToMicrons(hpwl(net, tmp, tmp)));
   }
+}
+
+void WireLengthEvaluator::reportHpwl(utl::Logger* logger) const
+{
+  logger->report("{}", block_->dbuToMicrons(hpwl()));
 }
 
 }  // namespace odb

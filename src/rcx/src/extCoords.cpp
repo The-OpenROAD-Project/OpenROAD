@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "grids.h"
 #include "parse.h"
 #include "rcx/extSpef.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 namespace rcx {

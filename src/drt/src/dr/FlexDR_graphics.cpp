@@ -407,14 +407,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
   // Draw markers
-  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kGreen, /* cosmetic */ true);
   for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       Rect box = marker->getBBox();
@@ -553,8 +553,8 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
     return;
   }
 
-  painter.setBrush(gui::Painter::transparent);
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setBrush(gui::Painter::kTransparent);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
 
   Rect box;
   worker_->getRouteBox(box);

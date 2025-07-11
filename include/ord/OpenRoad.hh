@@ -59,6 +59,10 @@ namespace fin {
 class Finale;
 }
 
+namespace exa {
+class Example;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -144,6 +148,7 @@ class OpenRoad
   fin::Finale* getFinale() { return finale_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
+  exa::Example* getExample() { return example_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   drt::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -186,9 +191,9 @@ class OpenRoad
                 // major.minor (avoid including defout.h)
                 const string& version);
 
-  void writeCdl(const char* outFilename,
-                const std::vector<const char*>& mastersFilenames,
-                bool includeFillers);
+  void writeCdl(const char* out_filename,
+                const std::vector<const char*>& masters_filenames,
+                bool include_fillers);
 
   void readVerilog(const char* filename);
   void linkDesign(const char* design_name,
@@ -203,8 +208,8 @@ class OpenRoad
   void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 
-  void setThreadCount(int threads, bool printInfo = true);
-  void setThreadCount(const char* threads, bool printInfo = true);
+  void setThreadCount(int threads, bool print_info = true);
+  void setThreadCount(const char* threads, bool print_info = true);
   int getThreadCount();
 
   std::string getExePath() const;
@@ -234,6 +239,7 @@ class OpenRoad
   dpl::Opendp* opendp_ = nullptr;
   fin::Finale* finale_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
+  exa::Example* example_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;
   cts::TritonCTS* tritonCts_ = nullptr;

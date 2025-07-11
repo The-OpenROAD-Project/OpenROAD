@@ -67,7 +67,7 @@ double lefiNonDefault_propNumber(const ::lefiNonDefault* obj, int index)
   return ((LefParser::lefiNonDefault*) obj)->propNumber(index);
 }
 
-const char lefiNonDefault_propType(const ::lefiNonDefault* obj, int index)
+char lefiNonDefault_propType(const ::lefiNonDefault* obj, int index)
 {
   return ((const LefParser::lefiNonDefault*) obj)->propType(index);
 }

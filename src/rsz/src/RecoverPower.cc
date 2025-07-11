@@ -98,6 +98,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 
   int end_index = 0;
   int failed_move_threshold = 0;
+  IncrementalParasiticsGuard guard(resizer_);
   for (Vertex* end : ends_with_slack) {
     resizer_->journalBegin();
     const Slack end_slack_before = sta_->vertexSlack(end, max_);
@@ -218,11 +219,12 @@ Vertex* RecoverPower::recoverPower(const Pin* end_pin)
   Vertex* vertex = graph_->pinLoadVertex(end_pin);
   const Slack slack = sta_->vertexSlack(vertex, max_);
   const Path* path = sta_->vertexWorstSlackPath(vertex, max_);
-  resizer_->incrementalParasiticsBegin();
-  Vertex* drvr_vertex = recoverPower(path, slack);
-  // Leave the parasitices up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
+  Vertex* drvr_vertex;
+
+  {
+    IncrementalParasiticsGuard guard(resizer_);
+    drvr_vertex = recoverPower(path, slack);
+  }
 
   if (resize_count_ > 0) {
     logger_->info(RSZ, 3111, "Resized {} instances.", resize_count_);

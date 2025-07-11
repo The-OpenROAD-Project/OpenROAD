@@ -74,16 +74,16 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
   unsigned char charnum[256], line[32], *linep, c;
   FILE *fpwv, *fprt;
-  struct csoln* p;
   int d, i, j, k, kk, ns, nn;
 
   for (i = 0; i <= 255; i++) {
-    if ('0' <= i && i <= '9')
+    if ('0' <= i && i <= '9') {
       charnum[i] = i - '0';
-    else if (i >= 'A')
+    } else if (i >= 'A') {
       charnum[i] = i - 'A' + 10;
-    else  // if (i=='$' || i=='\n' || ... )
+    } else {  // if (i=='$' || i=='\n' || ... )
       charnum[i] = 0;
+    }
   }
 
   fpwv = fopen(FLUTE_POWVFILE, "r");
@@ -114,12 +114,11 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
         fscanf(fpwv, "%d", &kk);
         fgetc(fpwv);  // '/n'
         numsoln[d][k] = numsoln[d][kk];
-        LUT[d][k] = LUT[d][kk];
+        (*LUT)[d][k] = (*LUT)[d][kk];
       } else {
         fgetc(fpwv);  // '\n'
         numsoln[d][k] = ns;
-        p = (struct csoln*) malloc(ns * sizeof(struct csoln));
-        LUT[d][k] = p;
+        auto p = std::make_shared<struct csoln[]>(ns);
         for (i = 1; i <= ns; i++) {
           linep = (unsigned char*) fgets((char*) line, 32, fpwv);
           p->parent = charnum[*(linep++)];
@@ -147,6 +146,7 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 #endif
           p++;
         }
+        (*LUT)[d][k] = std::move(p);
       }
     }
   }
@@ -189,15 +189,16 @@ void Flute::readLUT()
   makeLUT(LUT_, numsoln_);
   initLUT(FLUTE_D, LUT_, numsoln_);
   checkLUT(LUT, numsoln, LUT_, numsoln_);
+  deleteLUT(LUT_, numsoln_);
 #endif
 }
 
 void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 {
-  LUT = new struct csoln**[FLUTE_D + 1];
+  LUT = new boost::multi_array<std::shared_ptr<struct csoln[]>, 2>(
+      boost::extents[FLUTE_D + 1][MGROUP]);
   numsoln = new int*[FLUTE_D + 1];
   for (int d = 4; d <= FLUTE_D; d++) {
-    LUT[d] = new struct csoln*[MGROUP];
     numsoln[d] = new int[MGROUP];
   }
 }
@@ -210,13 +211,11 @@ void Flute::deleteLUT()
 void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 {
   if (LUT) {
+    delete LUT;
     for (int d = 4; d <= FLUTE_D; d++) {
-      delete[] LUT[d];
       delete[] numsoln[d];
     }
     delete[] numsoln;
-    delete[] LUT;
-    LUT = nullptr;
   }
 }
 
@@ -277,12 +276,12 @@ void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
         int kk;
         pwv = readDecimalInt(pwv, kk) + 1;
         numsoln[d][k] = numsoln[d][kk];
-        LUT[d][k] = LUT[d][kk];
+        (*LUT)[d][k] = (*LUT)[d][kk];
       } else {
         pwv++;  // '\n'
         numsoln[d][k] = ns;
         struct csoln* p = new struct csoln[ns];
-        LUT[d][k] = p;
+        (*LUT)[d][k] = std::shared_ptr<struct csoln[]>(p);
         for (int i = 1; i <= ns; i++) {
           p->parent = charNum(*pwv++);
 
@@ -346,28 +345,34 @@ static void checkLUT(LUT_TYPE LUT1,
     for (int k = 0; k < numgrp[d]; k++) {
       int ns1 = numsoln1[d][k];
       int ns2 = numsoln2[d][k];
-      if (ns1 != ns2)
+      if (ns1 != ns2) {
         printf("numsoln[%d][%d] mismatch\n", d, k);
-      struct csoln* soln1 = LUT1[d][k];
-      struct csoln* soln2 = LUT2[d][k];
-      if (soln1->parent != soln2->parent)
+      }
+      struct csoln* soln1 = LUT1[d][k].get();
+      struct csoln* soln2 = LUT2[d][k].get();
+      if (soln1->parent != soln2->parent) {
         printf("LUT[%d][%d]->parent mismatch\n", d, k);
+      }
       for (int j = 0; soln1->seg[j] != 0; j++) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 10; soln1->seg[j] != 0; j--) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       int nn = 2 * d - 2;
       for (int j = d; j < nn; j++) {
-        if (soln1->rowcol[j - d] != soln2->rowcol[j - d])
+        if (soln1->rowcol[j - d] != soln2->rowcol[j - d]) {
           printf("LUT[%d][%d]->rowcol[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 0; j < nn; j++) {
-        if (soln1->neighbor[j] != soln2->neighbor[j])
+        if (soln1->neighbor[j] != soln2->neighbor[j]) {
           printf("LUT[%d][%d]->neighbor[%d] mismatch\n", d, k, j);
+        }
       }
     }
   }
@@ -442,11 +447,14 @@ int Flute::flute_wl(int d,
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -573,7 +581,7 @@ int Flute::flutes_wl_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = LUT[d][k];
+    rlist = (*LUT)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
@@ -970,11 +978,14 @@ Tree Flute::flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -1135,7 +1146,7 @@ Tree Flute::flutes_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = LUT[d][k];
+    rlist = (*LUT)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }

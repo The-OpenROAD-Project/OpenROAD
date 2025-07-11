@@ -34,7 +34,6 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
-      map_(),
       renderer_(nullptr),
       setup_(nullptr),
       color_generator_(SpectrumGenerator(100.0))
@@ -127,8 +126,6 @@ RealValueHeatMapDataSource::RealValueHeatMapDataSource(
     const std::string& short_name,
     const std::string& settings_group)
     : HeatMapDataSource(logger, name, short_name, settings_group),
-      unit_suffix_(),
-      units_(),
       min_(0.0),
       max_(0.0),
       scale_(0.0)
@@ -193,6 +190,62 @@ double GlobalRoutingDataSource::getGridXSize() const
 double GlobalRoutingDataSource::getGridYSize() const
 {
   return HeatMapDataSource::getGridYSize();
+}
+
+//////////
+
+HeatMapRenderer::HeatMapRenderer(HeatMapDataSource& datasource)
+    : datasource_(datasource), first_paint_(true)
+{
+}
+
+void HeatMapRenderer::drawObjects(Painter& painter)
+{
+}
+
+std::string HeatMapRenderer::getSettingsGroupName()
+{
+  return kGroupnamePrefix;
+}
+
+Renderer::Settings HeatMapRenderer::getSettings()
+{
+  return {};
+}
+
+void HeatMapRenderer::setSettings(const Renderer::Settings& settings)
+{
+}
+
+//////////
+PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
+                                               utl::Logger* logger)
+    : gui::RealValueHeatMapDataSource(logger,
+                                      "W",
+                                      "Power Density",
+                                      "Power",
+                                      "PowerDensity"),
+      sta_(sta)
+{
+}
+
+bool PowerDensityDataSource::populateMap()
+{
+  return false;
+}
+
+void PowerDensityDataSource::combineMapData(bool base_has_value,
+                                            double& base,
+                                            const double new_data,
+                                            const double data_area,
+                                            const double intersection_area,
+                                            const double rect_area)
+{
+}
+
+sta::Corner* PowerDensityDataSource::getCorner() const
+{
+  return nullptr;
 }
 
 }  // namespace gui

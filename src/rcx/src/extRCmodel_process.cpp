@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "grids.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
+#include "rcx/grids.h"
 
 #ifdef _WIN32
 #include "direct.h"
@@ -48,39 +48,46 @@ uint extRCModel::measureWithVar(extMeasure* measure)
     uint scnt;
     if (dIndex) {
       wcnt = measure->_widthTable.getCnt();
-      if (!measure->_diag)
+      if (!measure->_diag) {
         scnt = measure->_spaceTable.getCnt();
-      else
+      } else {
         //      scnt=measure->_spaceTable0.getCnt();
         scnt = measure->_diagSpaceTable0.getCnt();
+      }
     } else {
       wcnt = measure->_widthTable0.getCnt();
-      if (!measure->_diag)
+      if (!measure->_diag) {
         scnt = measure->_spaceTable0.getCnt();
-      else
+      } else {
         scnt = measure->_diagSpaceTable0.getCnt();
+      }
     }
     for (uint wIndex = 0; wIndex < wcnt; wIndex++) {
       double w;
-      if (!dIndex)
+      if (!dIndex) {
         w = measure->_widthTable0.get(wIndex);
-      else
+      } else {
         w = measure->_widthTable.get(wIndex);  // layout
+      }
       measure->_wIndex = wIndex;
 
       for (uint sIndex = 0; sIndex < scnt; sIndex++) {
         double s;
         if (!measure->_diag) {
-          if (!dIndex)
+          if (!dIndex) {
             s = measure->_spaceTable0.get(sIndex);
-          else
+          } else {
             s = measure->_spaceTable.get(sIndex);  // layout
-          if (sIndex == scnt - 1 && wIndex == wcnt - 1 && !measure->_overUnder)
+          }
+          if (sIndex == scnt - 1 && wIndex == wcnt - 1
+              && !measure->_overUnder) {
             measure->_plate = true;
-          else
+          } else {
             measure->_plate = false;
-        } else
+          }
+        } else {
           s = measure->_diagSpaceTable0.get(sIndex);
+        }
 
         double top_width = w + 2 * top_ext;
         double top_widthR = w + 2 * top_ext;
@@ -94,20 +101,22 @@ uint extRCModel::measureWithVar(extMeasure* measure)
           //					top_widthR= w;
           if (xvar != nullptr) {
             double a = xvar->getP(w);
-            if (a != 0.0)
+            if (a != 0.0) {
               ro = a;
+            }
           }
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
         } else if (xvar != nullptr && !_maxMinFlag) {
           uint ss;
-          if (measure->_diag)
+          if (measure->_diag) {
             ss = 5;
-          else {
-            if (sIndex < scnt - 1)
+          } else {
+            if (sIndex < scnt - 1) {
               ss = sIndex;
-            else
+            } else {
               ss = scnt - 2;
+            }
           }
           /*
                                                   top_width=
@@ -127,24 +136,27 @@ uint extRCModel::measureWithVar(extMeasure* measure)
 
           thicknessR = xvar->getThicknessR(w, dIndex - 1);
           double a = xvar->getP(w);
-          if (a != 0.0)
+          if (a != 0.0) {
             ro = a;
+          }
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
         } else if (_maxMinFlag && r == 1.0) {
           top_width = w - 2 * cond->_min_cw_del;
           thickness = t - cond->_min_ct_del;
           bot_width = top_width - 2 * thickness * cond->_min_ca;
-          if (bot_width > w)
+          if (bot_width > w) {
             bot_width = w;
+          }
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
         } else if (_maxMinFlag && r == 2.0) {
           top_width = w + 2 * cond->_max_cw_del;
           thickness = t + cond->_max_ct_del;
           bot_width = top_width - 2 * thickness * cond->_max_ca;
-          if (bot_width < w)
+          if (bot_width < w) {
             bot_width = w;
+          }
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
         } else if (measure->_thickVarFlag) {
@@ -194,8 +206,9 @@ uint extRCModel::linesOver(uint wireCnt,
   measure._simVersion = _simVersion;
 
   for (uint met = 1; met < _layerCnt; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     measure._met = met;
     computeTables(&measure, wireCnt, widthCnt, spaceCnt, dCnt);
@@ -204,8 +217,9 @@ uint extRCModel::linesOver(uint wireCnt,
 
     for (uint underMet = 0; underMet < met; underMet++) {
       int metDist = met - underMet;
-      if (metDist > _maxLevelDist && underMet > 0)
+      if (metDist > _maxLevelDist && underMet > 0) {
         continue;
+      }
 
       measure.setMets(met, underMet, -1);
       measure._capTable = _capOver;
@@ -249,8 +263,9 @@ uint extRCModel::linesDiagUnder(uint wireCnt,
   measure._diagModel = _diagModel;
 
   for (uint met = 1; met < _layerCnt - 1; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     measure._met = met;
     measure._overMet = met;
@@ -262,8 +277,9 @@ uint extRCModel::linesDiagUnder(uint wireCnt,
          overMet++) {  // the max overMet need to be the same as in functions
                        // writeRulesDiagUnder readRulesDiagUnder
 
-      if (overMet - met > _maxLevelDist)
+      if (overMet - met > _maxLevelDist) {
         continue;
+      }
 
       measure.setMets(met, 0, overMet);
       uint cnt1 = 0;
@@ -333,15 +349,17 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
       dwcnt = measure->_diagWidthTable0.getCnt();
       dscnt = measure->_diagSpaceTable0.getCnt();
     }
-    if (_diagModel == 2)
+    if (_diagModel == 2) {
       scnt /= 2;
+    }
 
     for (uint wIndex = 0; wIndex < wcnt; wIndex++) {
       double w;
-      if (!dIndex)
+      if (!dIndex) {
         w = measure->_widthTable0.get(wIndex);
-      else
+      } else {
         w = measure->_widthTable.get(wIndex);  // layout
+      }
       measure->_wIndex = wIndex;
       for (uint dwIndex = 0; dwIndex < dwcnt; dwIndex++) {
         double dw;
@@ -353,10 +371,11 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
           measure->_dsIndex = dsIndex;
           for (uint sIndex = 0; sIndex < scnt; sIndex++) {
             double s;
-            if (!dIndex)
+            if (!dIndex) {
               s = measure->_spaceTable0.get(sIndex);
-            else
+            } else {
               s = measure->_spaceTable.get(sIndex);
+            }
             double top_width = w + 2 * top_ext;
             double top_widthR = w + 2 * top_ext;
             double bot_width = w + 2 * bot_ext;
@@ -370,8 +389,9 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
               //                                        top_widthR= w;
               if (xvar != nullptr) {
                 double a = xvar->getP(w);
-                if (a != 0.0)
+                if (a != 0.0) {
                   ro = a;
+                }
               }
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
@@ -379,12 +399,13 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
               uint ss;
               //							if
               //(sIndex < scnt-1)
-              if (sIndex < scnt - 2)
+              if (sIndex < scnt - 2) {
                 ss = sIndex;
-              else
+              } else {
                 //								ss
                 //= scnt-2;
                 ss = scnt - 3;
+              }
               top_width = xvar->getTopWidth(wIndex, ss);
               top_widthR = xvar->getTopWidthR(wIndex, ss);
               bot_width = xvar->getBottomWidth(w, dIndex - 1);
@@ -394,24 +415,27 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
               bot_widthR = top_widthR - bot_widthR;
               thicknessR = xvar->getThicknessR(w, dIndex - 1);
               double a = xvar->getP(w);
-              if (a != 0.0)
+              if (a != 0.0) {
                 ro = a;
+              }
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
             } else if (_maxMinFlag && r == 1.0) {
               top_width = w - 2 * cond->_min_cw_del;
               thickness = t - cond->_min_ct_del;
               bot_width = top_width - 2 * thickness * cond->_min_ca;
-              if (bot_width > w)
+              if (bot_width > w) {
                 bot_width = w;
+              }
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
             } else if (_maxMinFlag && r == 2.0) {
               top_width = w + 2 * cond->_max_cw_del;
               thickness = t + cond->_max_ct_del;
               bot_width = top_width - 2 * thickness * cond->_max_ca;
-              if (bot_width < w)
+              if (bot_width < w) {
                 bot_width = w;
+              }
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
             } else if (measure->_thickVarFlag) {
@@ -454,8 +478,9 @@ uint extRCModel::linesUnder(uint wireCnt,
   measure._simVersion = _simVersion;
 
   for (uint met = 1; met < _layerCnt; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
 
     measure._met = met;
     computeTables(&measure, wireCnt, widthCnt, spaceCnt, dCnt);
@@ -464,8 +489,9 @@ uint extRCModel::linesUnder(uint wireCnt,
 
     for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
       int metDist = overMet - met;
-      if (metDist > _maxLevelDist)
+      if (metDist > _maxLevelDist) {
         continue;
+      }
 
       measure.setMets(met, 0, overMet);
       measure._capTable = _capUnder;
@@ -502,8 +528,9 @@ void extRCModel::setOptions(const char* topDir,
   _readSolver = true;
   _runSolver = true;
 
-  if (metLevel)
+  if (metLevel) {
     _metLevel = metLevel;
+  }
 #ifdef _WIN32
   _runSolver = false;
 #endif
@@ -525,8 +552,9 @@ uint extRCModel::linesOverUnder(uint wireCnt,
   measure._simVersion = _simVersion;
 
   for (uint met = 1; met < _layerCnt - 1; met++) {
-    if (metLevel > 0 && met != metLevel)
+    if (metLevel > 0 && met != metLevel) {
       continue;
+    }
     measure._met = met;
     computeTables(&measure, wireCnt, widthCnt, spaceCnt, dCnt);
 
@@ -534,12 +562,14 @@ uint extRCModel::linesOverUnder(uint wireCnt,
 
     for (uint underMet = 1; underMet < met; underMet++) {
       int metDist = met - underMet;
-      if (metDist > _maxLevelDist)
+      if (metDist > _maxLevelDist) {
         continue;
+      }
       for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
         int metDist = overMet - met;
-        if (metDist > _maxLevelDist)
+        if (metDist > _maxLevelDist) {
           continue;
+        }
         measure.setMets(met, underMet, overMet);
         measure._capTable = _capUnder;
 
@@ -581,13 +611,13 @@ uint extMain::rulesGen(const char* name,
   m->_simVersion = version;
   m->_maxLevelDist = 999;
 
-  if ((pattern > 0) && (pattern <= 9))
+  if ((pattern > 0) && (pattern <= 9)) {
     m->linesOver(pattern, 20, 20, 20);
-  else if ((pattern > 10) && (pattern <= 19))
+  } else if ((pattern > 10) && (pattern <= 19)) {
     m->linesUnder(pattern - 10, 20, 20, 20);
-  else if ((pattern > 20) && (pattern <= 29))
+  } else if ((pattern > 20) && (pattern <= 29)) {
     m->linesOverUnder(pattern - 20, 20, 20, 20);
-  else if ((pattern > 30) && (pattern <= 39)) {
+  } else if ((pattern > 30) && (pattern <= 39)) {
     m->setDiagModel(1);
     m->linesDiagUnder(pattern - 30, 20, 20, 20);
   } else if ((pattern > 40) && (pattern <= 49)) {
@@ -604,23 +634,26 @@ uint extMain::rulesGen(const char* name,
       dCnt = 1;
       m->setDiagModel(0);
       m->_maxLevelDist = 4;
-      if (m->_simVersion >= 2)
+      if (m->_simVersion >= 2) {
         m->_maxLevelDist = 4;
+      }
     }
     uint cnt1 = m->linesOver(wireCnt, widthCnt, spaceCnt, dCnt);
     cnt1 += m->linesUnder(wireCnt, widthCnt, spaceCnt, dCnt);
     cnt1 += m->linesOverUnder(wireCnt, widthCnt, spaceCnt, dCnt);
-    if (pattern > 200)
+    if (pattern > 200) {
       m->setDiagModel(2);
-    else
+    } else {
       m->setDiagModel(1);
+    }
     cnt1 += m->linesDiagUnder(wireCnt, widthCnt, spaceCnt, dCnt);
 
     logger_->info(RCX, 232, "Finished {} patterns", cnt1);
   }
   m->closeFiles();
-  if (!(pattern > 100))
+  if (!(pattern > 100)) {
     m->writeRules((char*) rulesFile, false);
+  }
   return 0;
 }
 void extRCModel::writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt)
@@ -632,15 +665,17 @@ void extRCModel::writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt)
   double pitch;
   if (measure->_diag && _diagModel == 1) {
     //		pitch= measure->_topWidth + 2*minSpace;
-    if (measure->_metExtFlag)
+    if (measure->_metExtFlag) {
       pitch = measure->_topWidth - 2 * top_ext + minSpace;
-    else
+    } else {
       pitch = measure->_topWidth + minSpace;
+    }
   } else {
-    if (measure->_metExtFlag)
+    if (measure->_metExtFlag) {
       pitch = measure->_topWidth - 2 * top_ext + measure->_seff;
-    else
+    } else {
       pitch = measure->_topWidth + measure->_seff;
+    }
   }
   double min_pitch = minWidth + minSpace;
 
@@ -679,15 +714,17 @@ void extRCModel::writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt)
     m->writeRaphaelPoly(fp, n + 1, 100, -50, 1.0, _process);
   }
 
-  if (!measure->_diag)
+  if (!measure->_diag) {
     return;
+  }
   int met;
-  if (measure->_overMet > 0)
+  if (measure->_overMet > 0) {
     met = measure->_overMet;
-  else if (measure->_underMet > 0)
+  } else if (measure->_underMet > 0) {
     met = measure->_underMet;
-  else
+  } else {
     return;
+  }
 
   m = _process->getMasterConductor(met);
   minWidth = _process->getConductor(met)->_min_width;
@@ -730,8 +767,9 @@ double extRCModel::writeWirePatterns(FILE* fp,
 {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
   extMasterConductor* mOver = nullptr;
-  if (_diagModel > 0)
+  if (_diagModel > 0) {
     mOver = _process->getMasterConductor(measure->_overMet);
+  }
 
   double targetWidth = measure->_topWidth;
   double targetPitch = measure->_topWidth + measure->_seff;
@@ -740,16 +778,19 @@ double extRCModel::writeWirePatterns(FILE* fp,
   double min_pitch = minWidth + minSpace;
 
   len = measure->_len * minWidth;  // HEIGHT param
-  if (len <= 0)
+  if (len <= 0) {
     len = 10 * minWidth;
+  }
 
   // len *= 0.001;
 
   // Assumption -- odd wireCnt, >1
-  if (wireCnt == 0)
+  if (wireCnt == 0) {
     return 0.0;
-  if (wireCnt % 2 > 0)  // should be odd
+  }
+  if (wireCnt % 2 > 0) {  // should be odd
     wireCnt--;
+  }
 
   int n = wireCnt / 2;
   double orig = 0.0;
@@ -764,18 +805,21 @@ double extRCModel::writeWirePatterns(FILE* fp,
   double min_x = xd[1];
   for (int ii = 2; ii < n; ii++) {
     xd[ii] = xd[ii - 1] - min_pitch;  // next over neighbor spacing
-    if (min_x > xd[ii])
+    if (min_x > xd[ii]) {
       min_x = xd[ii];
+    }
   }
   for (int ii = n - 1; ii > 0; ii--) {
     m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
     max_x = xd[ii] + minWidth;
   }
-  if (n > 1)
+  if (n > 1) {
     m->writeWire3D(fp, cnt++, X0, targetWidth, len, height_offset, 0.0);
+  }
 
-  if (min_x > x)
+  if (min_x > x) {
     min_x = x;
+  }
 
   m->writeWire3D(
       fp, cnt++, x, targetWidth, len, height_offset, 1.0);  // Wire on focues
@@ -836,8 +880,9 @@ double extRCModel::writeWirePatterns_w3(FILE* fp,
 {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
   extMasterConductor* mOver = nullptr;
-  if (_diagModel > 0)
+  if (_diagModel > 0) {
     mOver = _process->getMasterConductor(measure->_overMet);
+  }
 
   double targetWidth = measure->_topWidth;
   double targetPitch = measure->_topWidth + measure->_seff;
@@ -847,16 +892,19 @@ double extRCModel::writeWirePatterns_w3(FILE* fp,
   // min_pitch = minWidth + minSpace;
 
   len = measure->_len * minWidth;  // HEIGHT param
-  if (len <= 0)
+  if (len <= 0) {
     len = 10 * minWidth;
+  }
 
   // len *= 0.001;
 
   // Assumption -- odd wireCnt, >1
-  if (wireCnt == 0)
+  if (wireCnt == 0) {
     return 0.0;
-  if (wireCnt % 2 > 0)  // should be odd
+  }
+  if (wireCnt % 2 > 0) {  // should be odd
     wireCnt--;
+  }
 
   // int n = wireCnt / 2;
   double orig = 0.0;
@@ -965,8 +1013,9 @@ void extRCModel::writeWires(FILE* fp, extMeasure* measure, uint wireCnt)
 
   uint n = wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
 
-  if (_commentFlag)
+  if (_commentFlag) {
     fprintf(fp, "%s\n", _commentLine);
+  }
 
   // assume origin = (0,0)
   double x = -pitch * n;
@@ -1011,16 +1060,18 @@ bool extRCModel::measurePatternVar_3D(extMeasure* m,
 
   FILE* wfp = mkPatternFile();
 
-  if (wfp == nullptr)
+  if (wfp == nullptr) {
     return false;  // should be an exception!! and return!
+  }
 
   double maxHeight
       = _process->adjustMasterDielectricsForHeight(m->_met, thicknessChange);
   maxHeight *= 1.2;
 
   double len = top_width * _len;
-  if (len <= 0)
+  if (len <= 0) {
     len = top_width * 10 * 0.001;
+  }
   //                        double W = (m->_ur[m->_dir] -
   // m->_ll[m->_dir])*10;
   double W = 40;
@@ -1054,19 +1105,22 @@ bool extRCModel::measurePatternVar_3D(extMeasure* m,
                                                        apply_height_offset,
                                                        height_ceiling);
   }
-  if (_simVersion < 2)
+  if (_simVersion < 2) {
     height_low = 0;
+  }
 
-  if (_commentFlag)
+  if (_commentFlag) {
     fprintf(wfp, "%s\n", _commentLine);
+  }
 
   double len1;
   double X1;
   double X0 = 0;
-  if (wireCnt == 5)
+  if (wireCnt == 5) {
     X0 = writeWirePatterns(wfp, m, wireCnt, height_low, len1, X1);
-  else
+  } else {
     X0 = writeWirePatterns_w3(wfp, m, wireCnt, height_low, len1, X1);
+  }
 
   fprintf(wfp,
           "\nWINDOW_BBOX  LL %6.3f %6.3f UR %6.3f %6.3f LENGTH %6.3f\n",

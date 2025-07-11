@@ -7,11 +7,11 @@
 #include <algorithm>
 #include <vector>
 
+#include "find_some_net.h"
 #include "rcx/extModelGen.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/ext_options.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -23,19 +23,21 @@ class extModelGen;
 
 uint extMain::getPeakMemory(const char* msg, int n)
 {
-  if (_dbgOption == 0)
+  if (_dbgOption == 0) {
     return 0;
+  }
 
   struct rusage usage;
   if (getrusage(RUSAGE_SELF, &usage) == 0) {
     // Convert from KB to Mbytes
     int peak_rss = usage.ru_maxrss / 1024;
 
-    if (n < 0)
+    if (n < 0) {
       fprintf(stdout, "\t\t\t\tPeak Memory: %s    %6d MBytes\n", msg, peak_rss);
-    else
+    } else {
       fprintf(
           stdout, "\t\t\t\tPeak Memory: %s %d %6d MBytes\n", msg, n, peak_rss);
+    }
     return peak_rss;
   }
   return 0;
@@ -47,8 +49,9 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   // Model file is required if not option _lefRC is used.
   // _lefRC option requires Resistance and Capacitance values per Layer and
   // Technology to be taken from LEF file.
-  if (!_lefRC && !modelExists(extRules))
+  if (!_lefRC && !modelExists(extRules)) {
     return;
+  }
 
   // Selected user set for net names to be extracted
   std::vector<dbNet*> inets;
@@ -59,8 +62,9 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
     getPeakMemory("Before LoadModels: ");
 
     // Associate User defined Process Corners and DensityModels in Model file
-    if (!SetCornersAndReadModels_v2(extRules))
+    if (!SetCornersAndReadModels_v2(extRules)) {
       return;
+    }
 
     getPeakMemory("End LoadModels: ");
 
@@ -85,8 +89,9 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   // Create RC network for every net: Resistor Nodes and Resistor Segments,
   // Following the order of the wires
   // NOTE: dependent on odb::orderWires
-  if (!makeRCNetwork_v2())
+  if (!makeRCNetwork_v2()) {
     return;
+  }
 
   getPeakMemory("End RC_Network: ");
 
@@ -149,11 +154,13 @@ bool extMain::makeRCNetwork_v2()
 
   uint cnt = 0;
   for (dbNet* net : _block->getNets()) {
-    if (net->getSigType().isSupply())
+    if (net->getSigType().isSupply()) {
       continue;
+    }
 
-    if (!_allNet && !net->isMarked())
+    if (!_allNet && !net->isMarked()) {
       continue;
+    }
 
     _connectedBTerm.clear();
     _connectedITerm.clear();
@@ -188,10 +195,9 @@ bool extMain::couplingExtEnd_v2()
                   numOfCapNode,
                   numOfCCSeg);
     return true;
-  } else {
-    logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
-    return false;
   }
+  logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
+  return false;
 }
 void extMain::update_wireAltered_v2(std::vector<dbNet*>& inets)
 {
@@ -226,21 +232,22 @@ void extMain::setExtractionOptions_v2(ExtractOptions options)
   _metal_flag_22 = 0;
   // fprintf(stdout, "RC Flow Version %5.3f enabled\n", _version);
   // notice(0, "RC Flow Version %5.3f enabled\n", _version);
-  if (abs(options._version - 2.2) < 0.001) {
+  if (std::fabs(options._version - 2.2) < 0.001) {
     _metal_flag_22 = 2;
     fprintf(stdout,
             "Version %5.3f enabled new RC calc flow for lower 2 metals\n",
             options._version);
   }
-  if (abs(options._version - 2.3) < 0.001) {
+  if (std::fabs(options._version - 2.3) < 0.001) {
     _metal_flag_22 = 3;
     fprintf(stdout,
             "Version %5.3f enabled new RC calc flow for lower 2 metals\n",
             options._version);
   }
   _v2 = options._v2;
-  if (options._v2 >= 2.2)
+  if (options._v2 >= 2.2) {
     _v2 = true;
+  }
   _dbgOption = options._dbg;
   _overCell = _v2 && options.over_cell;  // Use inside cell context for coupling
                                          // cap extraction
@@ -278,8 +285,9 @@ bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 
     extRCModel* m = createCornerMap(rulesFileName);
 
-    if (!ReadModels_v2(rulesFileName, m, 0, nullptr))
+    if (!ReadModels_v2(rulesFileName, m, 0, nullptr)) {
       return false;
+    }
   }
   _currentModel = getRCmodel(0);
   for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
@@ -321,7 +329,6 @@ bool extMain::ReadModels_v2(const char* rulesFileName,
 
   if (!(m->readRules_v2(
           (char*) rulesFileName, false, true, true, true, true, dbFactor))) {
-    delete m;
     return false;
   }
   // If RCX reads wrong extRules file format
@@ -366,8 +373,9 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
     return 0;
   }
   const uint rcCnt1 = resetMapNodes_v2(wire);
-  if (rcCnt1 <= 0)
+  if (rcCnt1 <= 0) {
     return 0;
+  }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
   _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
@@ -514,12 +522,13 @@ uint extMain::getCapNodeId_v2(dbNet* net,
                               bool branch)
 {
   uint srcId = 0;
-  if (path.bterm != nullptr)
+  if (path.bterm != nullptr) {
     srcId = getCapNodeId_v2(path.bterm, junct_id);
-  else if (path.iterm != nullptr)
+  } else if (path.iterm != nullptr) {
     srcId = getCapNodeId_v2(path.iterm, junct_id);
-  else
+  } else {
     srcId = getCapNodeId_v2(net, junct_id, branch);
+  }
   return srcId;
 }
 uint extMain::getCapNodeId_v2(dbNet* net,
@@ -528,19 +537,21 @@ uint extMain::getCapNodeId_v2(dbNet* net,
                               bool branch)
 {
   uint srcId = 0;
-  if (pshape.bterm != nullptr)
+  if (pshape.bterm != nullptr) {
     srcId = getCapNodeId_v2(pshape.bterm, junct_id);
-  else if (pshape.iterm != nullptr)
+  } else if (pshape.iterm != nullptr) {
     srcId = getCapNodeId_v2(pshape.iterm, junct_id);
-  else
+  } else {
     srcId = getCapNodeId_v2(net, junct_id, branch);
+  }
   return srcId;
 }
 uint extMain::getCapNodeId_v2(dbITerm* iterm, const uint junction)
 {
   uint capId = _itermTable->geti(iterm->getId());
-  if (capId > 0)  // CapNode exists
+  if (capId > 0) {  // CapNode exists
     return capId;
+  }
 
   dbCapNode* cap = dbCapNode::create(iterm->getNet(), 0, _foreign);
 
@@ -559,8 +570,9 @@ uint extMain::getCapNodeId_v2(dbBTerm* bterm, const uint junction)
 {
   uint id = bterm->getId();
   uint capId = _btermTable->geti(id);
-  if (capId > 0)
+  if (capId > 0) {
     return capId;
+  }
 
   dbCapNode* cap = dbCapNode::create(bterm->getNet(), 0, _foreign);
 
@@ -585,8 +597,9 @@ uint extMain::getCapNodeId_v2(dbNet* net, const int junction, const bool branch)
     if (branch) {
       cap->setBranchFlag();
     }
-    if (cap->getNet()->getId() == _debug_net_id)
+    if (cap->getNet()->getId() == _debug_net_id) {
       print_debug(branch, junction, capId, "OLD");
+    }
 
     return capId;
   }
@@ -600,8 +613,9 @@ uint extMain::getCapNodeId_v2(dbNet* net, const int junction, const bool branch)
       cap->setBranchFlag();
     }
   }
-  if (cap->getNet()->getId() == _debug_net_id)
+  if (cap->getNet()->getId() == _debug_net_id) {
     print_debug(branch, junction, capId, "NEW");
+  }
 
   uint ncapId = cap->getId();
   int tcapId = capId == 0 ? ncapId : -ncapId;
@@ -662,8 +676,9 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
     return nullptr;
   }
 
-  if (net->getId() == _debug_net_id)
+  if (net->getId() == _debug_net_id) {
     print_shape(pshape.shape, srcId, dstId);
+  }
 
   uint length;
   const uint pathDir = computePathDir(prevPoint, pshape.point, &length);
@@ -684,10 +699,12 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
   rc->setSourceNode(srcId);
   rc->setTargetNode(dstId);
 
-  if (srcId > 0)
+  if (srcId > 0) {
     dbCapNode::getCapNode(_block, srcId)->incrChildrenCnt();
-  if (dstId > 0)
+  }
+  if (dstId > 0) {
     dbCapNode::getCapNode(_block, dstId)->incrChildrenCnt();
+  }
 
   setResAndCap_v2(rc, restbl, captbl);
 
@@ -718,8 +735,9 @@ void extMain::setResAndCap_v2(dbRSeg* rc,
     rc->setResistance(res, pcdbIdx);
     double cap = _gndcModify ? captbl[ii] * _gndcFactor : captbl[ii];
     cap = _netGndcCalibration ? cap * _netGndcCalibFactor : cap;
-    if (_lefRC)
+    if (_lefRC) {
       rc->setCapacitance(cap, pcdbIdx);  // _lefRC
+    }
 
     int sci, scdbIdx;
     getScaledCornerDbIndex(ii, sci, scdbIdx);
@@ -763,8 +781,9 @@ void extMain::initJunctionIdMaps(dbNet* net)
   }
   uint srcJid;
   dbWirePathItr pitr;
-  if (!(_mergeResBound != 0.0 || _mergeViaRes))
+  if (!(_mergeResBound != 0.0 || _mergeViaRes)) {
     return;
+  }
   dbWire* wire = net->getWire();
 
   dbWirePath path;
@@ -801,14 +820,17 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
 
   double res
       = tvia->getResistance();  // LEF -- via section OR set at previous call
-  if (res == 0)
+  if (res == 0) {
     res = getViaResistance(tvia);  // CUT layer res
-  if (res <= 0.0)
+  }
+  if (res <= 0.0) {
     res = getResistance(level, width, width, 0);  // Bottom Layer Resistance
+  }
 
   if (_lef_res || _lefRC) {
-    if (res > 0)
+    if (res > 0) {
       tvia->setResistance(res);  // set for next call af another net
+    }
 
     for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
       _tmpResTable[ii] = res;
@@ -916,8 +938,9 @@ void extMain::getShapeRC_v2(dbNet* net,
       getViaRes_v2(net, tvia);
     } else {
       dbVia* bvia = s.getVia();
-      if (bvia != nullptr)
+      if (bvia != nullptr) {
         getDbViaRes_v2(net, s);
+      }
     }
   } else {
     getMetalRes_v2(net, s, pshape);

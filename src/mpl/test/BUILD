@@ -8,11 +8,22 @@ COMPULSORY_TESTS = [
     "no_unfixed_macros",
     "guides1",
     "guides2",
+    "fixed_ios1",
     "io_constraints1",
     "io_constraints2",
+    "io_constraints3",
+    "io_constraints4",
+    "io_constraints5",
+    "io_constraints6",
+    "io_constraints7",
+    "io_constraints8",
+    "io_constraints9",
+    "io_constraints10",
+    "mixed_ios1",
     "io_pads1",
     "orientation_improve1",
     "orientation_improve2",
+    "orientation_improve3",
     "boundary_push1",
     "boundary_push2",
     "boundary_push3",
@@ -87,6 +98,8 @@ filegroup(
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",
         "testcases/orientation_improve1.lef",
+        "testcases/fixed_ios1.def",
+        "testcases/mixed_ios1.def",
     ],
 )
 
@@ -96,7 +109,11 @@ filegroup(
         srcs = [":regression_resources"] + glob(
             [
                 test_name + ".*",
-            ],
+            ] + {
+                "io_constraints6": ["testcases/io_constraints6.def"],
+                "io_constraints7": ["testcases/io_constraints6.def"],
+                "io_constraints8": ["testcases/io_constraints6.def"],
+            }.get(test_name, []),
         ),
     )
     for test_name in ALL_TESTS

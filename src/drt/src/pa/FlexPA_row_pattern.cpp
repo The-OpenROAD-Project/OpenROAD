@@ -140,8 +140,8 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
         std::vector<std::vector<frInst*>> batch(start, end);
         std::string path = fmt::format("{}/batch_{}.bin", shared_vol_, i);
         serializeInstRows(batch, path);
-        dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                            dst::JobMessage::UNICAST),
+        dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                            dst::JobMessage::kUnicast),
             result;
         std::unique_ptr<PinAccessJobDescription> uDesc
             = std::make_unique<PinAccessJobDescription>();
@@ -179,8 +179,8 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
       }
     }
     // send updates back to workers
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
+    dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                        dst::JobMessage::kBroadcast),
         result;
     const std::string updates_path
         = fmt::format("{}/final_updates.bin", shared_vol_);
@@ -495,10 +495,9 @@ void FlexPA::addAccessPatternObj(
         continue;
       }
       if (access_point->hasAccess(frDirEnum::U)) {
-        auto via = std::make_unique<frVia>(access_point->getViaDef());
         Point pt(access_point->getPoint());
         xform.apply(pt);
-        via->setOrigin(pt);
+        auto via = std::make_unique<frVia>(access_point->getViaDef(), pt);
         auto rvia = via.get();
         if (inst_term->hasNet()) {
           objs.emplace_back(rvia, inst_term->getNet());

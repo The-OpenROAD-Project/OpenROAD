@@ -157,9 +157,9 @@ void RenderThread::drawDesignLoadingMessage(Painter& painter,
   qpainter->setFont(design_loading_font);
 
   std::string message = "Design loading...";
-  painter.setPen(gui::Painter::white, true);
+  painter.setPen(gui::Painter::kWhite, true);
   painter.drawString(
-      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, message);
+      bounds.xCenter(), bounds.yCenter(), Painter::kCenter, message);
 
   qpainter->setFont(initial_font);
 }
@@ -399,15 +399,15 @@ void RenderThread::drawSelected(Painter& painter, const SelectionSet& selected)
   }
 
   for (auto& selected : selected) {
-    selected.highlight(painter, Painter::highlight);
+    selected.highlight(painter, Painter::kHighlight);
   }
 
   if (viewer_->focus_) {
     viewer_->focus_.highlight(painter,
-                              Painter::highlight,
+                              Painter::kHighlight,
                               1,
-                              Painter::highlight,
-                              Painter::Brush::DIAGONAL);
+                              Painter::kHighlight,
+                              Painter::Brush::kDiagonal);
   }
 }
 
@@ -416,7 +416,7 @@ void RenderThread::drawHighlighted(Painter& painter,
 {
   int highlight_group = 0;
   for (auto& highlight_set : highlighted) {
-    auto highlight_color = Painter::highlightColors[highlight_group];
+    auto highlight_color = Painter::kHighlightColors[highlight_group];
 
     for (auto& highlighted : highlight_set) {
       highlighted.highlight(painter, highlight_color, 1, highlight_color);
@@ -720,12 +720,12 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
   }
 
   // text should not fill more than 90% of the instance height or width
-  static const float size_limit = 0.9;
-  static const float rotation_limit
-      = 0.85;  // slightly lower to prevent oscillating rotations when zooming
+  static const float kSizeLimit = 0.9;
+  // slightly lower to prevent oscillating rotations when zooming
+  static const float kRotationLimit = 0.85;
 
   // limit non-core text to 1/2.0 (50%) of cell height or width
-  static const float non_core_scale_limit = 2.0;
+  static const float kNonCoreScaleLimit = 2.0;
 
   const qreal scale_adjust = 1.0 / viewer_->pixels_per_dbu_;
 
@@ -734,7 +734,7 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
   QRectF text_bounding_box = font_metrics.boundingRect(name);
 
   bool do_rotate = false;
-  if (text_bounding_box.width() > rotation_limit * bbox_in_px.width()) {
+  if (text_bounding_box.width() > kRotationLimit * bbox_in_px.width()) {
     // non-rotated text will not fit without elide
     if (bbox_in_px.height() > bbox_in_px.width()) {
       // check if more text will fit if rotated
@@ -742,7 +742,7 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
     }
   }
 
-  qreal text_height_check = non_core_scale_limit * text_bounding_box.height();
+  qreal text_height_check = kNonCoreScaleLimit * text_bounding_box.height();
   // don't show text if it's more than "non_core_scale_limit" of cell
   // height/width this keeps text from dominating the cell size
   if (!do_rotate && text_height_check > bbox_in_px.height()) {
@@ -754,10 +754,10 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
 
   if (do_rotate) {
     name = font_metrics.elidedText(
-        name, Qt::ElideLeft, size_limit * bbox_in_px.height());
+        name, Qt::ElideLeft, kSizeLimit * bbox_in_px.height());
   } else {
     name = font_metrics.elidedText(
-        name, Qt::ElideLeft, size_limit * bbox_in_px.width());
+        name, Qt::ElideLeft, kSizeLimit * bbox_in_px.width());
   }
   text_bounding_box = font_metrics.boundingRect(name);
 
@@ -771,20 +771,21 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
     // account for descent of font
     painter->translate(-font_metrics.descent(), 0);
     if (center) {
-      const auto xOffset
+      const auto x_offset
           = (bbox_in_px.height() - text_bounding_box.width()) / 2;
-      const auto yOffset
+      const auto y_offset
           = (bbox_in_px.width() - text_bounding_box.height()) / 2;
-      painter->translate(-xOffset, -yOffset);
+      painter->translate(-x_offset, -y_offset);
     }
   } else {
     // account for descent of font
     painter->translate(font_metrics.descent(), 0);
     if (center) {
-      const auto xOffset = (bbox_in_px.width() - text_bounding_box.width()) / 2;
-      const auto yOffset
+      const auto x_offset
+          = (bbox_in_px.width() - text_bounding_box.width()) / 2;
+      const auto y_offset
           = (bbox_in_px.height() - text_bounding_box.height()) / 2;
-      painter->translate(xOffset, -yOffset);
+      painter->translate(x_offset, -y_offset);
     }
   }
   if (center) {
@@ -1382,8 +1383,8 @@ void RenderThread::drawAccessPoints(Painter& painter,
     return;
   }
 
-  const Painter::Color has_access = Painter::green;
-  const Painter::Color not_access = Painter::red;
+  const Painter::Color has_access = Painter::kGreen;
+  const Painter::Color not_access = Painter::kRed;
 
   auto draw = [&](odb::dbAccessPoint* ap, const odb::dbTransform& transform) {
     if (ap == nullptr) {
@@ -1476,58 +1477,62 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   const auto die_width = die_area.dx();
   const auto die_height = die_area.dy();
 
-  const double scale_factor
-      = 0.02;  // 4 Percent of bounds is used to draw pin-markers
-  const int die_max_dim
-      = std::min(std::max(die_width, die_height), bounds.maxDXDY());
-  const double abs_min_dim = 8.0;  // prevent markers from falling apart
-  pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
+  if (viewer_->options_->areIOPinNamesVisible()) {
+    const double scale_factor
+        = 0.02;  // 4 Percent of bounds is used to draw pin-markers
+    const int die_max_dim
+        = std::min(std::max(die_width, die_height), bounds.maxDXDY());
+    const double abs_min_dim = 8.0;  // prevent markers from falling apart
+    pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
 
-  pin_font_ = viewer_->options_->pinMarkersFont();
-  const QFontMetrics font_metrics(pin_font_);
+    pin_font_ = viewer_->options_->ioPinMarkersFont();
+    const QFontMetrics font_metrics(pin_font_);
 
-  QString largest_text;
-  for (auto pin : block->getBTerms()) {
-    QString current_text = QString::fromStdString(pin->getName());
-    if (font_metrics.boundingRect(current_text).width()
-        > font_metrics.boundingRect(largest_text).width()) {
-      largest_text = std::move(current_text);
+    QString largest_text;
+    for (auto pin : block->getBTerms()) {
+      QString current_text = QString::fromStdString(pin->getName());
+      if (font_metrics.boundingRect(current_text).width()
+          > font_metrics.boundingRect(largest_text).width()) {
+        largest_text = std::move(current_text);
+      }
     }
-  }
 
-  const int vertical_gap
-      = (viewer_->geometry().height()
-         - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
-        / 2;
-  const int horizontal_gap
-      = (viewer_->geometry().width()
-         - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
-        / 2;
+    const int vertical_gap
+        = (viewer_->geometry().height()
+           - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
+          / 2;
+    const int horizontal_gap
+        = (viewer_->geometry().width()
+           - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
+          / 2;
 
-  const int available_space
-      = std::min(vertical_gap, horizontal_gap)
-        - std::ceil(pin_max_size_) * viewer_->pixels_per_dbu_;  // in pixels
+    const int available_space
+        = std::min(vertical_gap, horizontal_gap)
+          - std::ceil(pin_max_size_) * viewer_->pixels_per_dbu_;  // in pixels
 
-  int font_size = pin_font_.pointSize();
-  int largest_text_width = font_metrics.boundingRect(largest_text).width();
-  const int drawing_font_size = 6;  // in points
+    int font_size = pin_font_.pointSize();
+    int largest_text_width = font_metrics.boundingRect(largest_text).width();
+    const int drawing_font_size = 6;  // in points
 
-  // when the size is minimum the text won't be drawn
-  const int minimum_font_size = drawing_font_size - 1;
+    // when the size is minimum the text won't be drawn
+    const int minimum_font_size = drawing_font_size - 1;
 
-  while (largest_text_width > available_space) {
-    if (font_size == minimum_font_size) {
-      break;
+    while (largest_text_width > available_space) {
+      if (font_size == minimum_font_size) {
+        break;
+      }
+      font_size -= 1;
+      pin_font_.setPointSize(font_size);
+      QFontMetrics current_font_metrics(pin_font_);
+      largest_text_width
+          = current_font_metrics.boundingRect(largest_text).width();
     }
-    font_size -= 1;
-    pin_font_.setPointSize(font_size);
-    QFontMetrics current_font_metrics(pin_font_);
-    largest_text_width
-        = current_font_metrics.boundingRect(largest_text).width();
-  }
 
-  // draw names of pins when text height is at least 6 pts
-  pin_draw_names_ = font_size >= drawing_font_size;
+    // draw names of pins when text height is at least 6 pts
+    pin_draw_names_ = font_size >= drawing_font_size;
+  } else {
+    pin_draw_names_ = false;
+  }
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     if (restart_) {
@@ -1670,18 +1675,18 @@ void RenderThread::drawIOPins(Painter& painter,
     if (pin_draw_names_) {
       Point text_anchor_pt = xfm.getOffset();
 
-      auto text_anchor = Painter::BOTTOM_CENTER;
+      auto text_anchor = Painter::kBottomCenter;
       if (arg_min == 0) {  // left
-        text_anchor = Painter::RIGHT_CENTER;
+        text_anchor = Painter::kRightCenter;
         text_anchor_pt.setX(text_anchor_pt.x() - pin_max_size_ - text_margin);
       } else if (arg_min == 1) {  // right
-        text_anchor = Painter::LEFT_CENTER;
+        text_anchor = Painter::kLeftCenter;
         text_anchor_pt.setX(text_anchor_pt.x() + pin_max_size_ + text_margin);
       } else if (arg_min == 2) {  // top
-        text_anchor = Painter::BOTTOM_CENTER;
+        text_anchor = Painter::kBottomCenter;
         text_anchor_pt.setY(text_anchor_pt.y() + pin_max_size_ + text_margin);
       } else {  // bottom
-        text_anchor = Painter::TOP_CENTER;
+        text_anchor = Painter::kTopCenter;
         text_anchor_pt.setY(text_anchor_pt.y() - pin_max_size_ - text_margin);
       }
 
@@ -1726,10 +1731,10 @@ void RenderThread::drawIOPins(Painter& painter,
                                          }))
           != pin_text_spec_shapes.qend()) {
         // adjust anchor
-        if (pin.anchor == Painter::BOTTOM_CENTER) {
-          anchor = Painter::RIGHT_CENTER;
-        } else if (pin.anchor == Painter::TOP_CENTER) {
-          anchor = Painter::LEFT_CENTER;
+        if (pin.anchor == Painter::kBottomCenter) {
+          anchor = Painter::kRightCenter;
+        } else if (pin.anchor == Painter::kTopCenter) {
+          anchor = Painter::kLeftCenter;
         }
         do_rotate = true;
       }

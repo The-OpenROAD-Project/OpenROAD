@@ -33,6 +33,11 @@ void ScanCellMock::connectScanOut(const ScanLoad& pin) const
 {
 }
 
+ScanLoad ScanCellMock::getScanEnable() const
+{
+  return ScanLoad(static_cast<odb::dbITerm*>(nullptr));
+}
+
 ScanLoad ScanCellMock::getScanIn() const
 {
   return ScanLoad(static_cast<odb::dbBTerm*>(nullptr));

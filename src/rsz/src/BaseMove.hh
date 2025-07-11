@@ -127,6 +127,8 @@ class BaseMove : public sta::dbStaState
   int hasPendingMoves(Instance* inst) const;
   // Total optimizations
   int numCommittedMoves() const;
+  // Total rejected count
+  int numRejectedMoves() const;
   // Whether this optimization is committed or pending
   int hasMoves(Instance* inst) const;
   // Total accepted and pending optimizations
@@ -154,6 +156,8 @@ class BaseMove : public sta::dbStaState
   InstanceSet pending_inst_set_;
   int pending_count_ = 0;
   int all_count_ = 0;
+  int rejected_count_ = 0;
+  int accepted_count_ = 0;
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
@@ -213,10 +217,19 @@ class BaseMove : public sta::dbStaState
   void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
+  LibertyCell* upsizeCell(LibertyPort* in_port,
+                          LibertyPort* drvr_port,
+                          float load_cap,
+                          float prev_drive,
+                          const DcalcAnalysisPt* dcalc_ap);
+  bool replaceCell(Instance* inst, const LibertyCell* replacement);
+
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float rebuffer_relaxation_factor_ = 0.03;
+
+  vector<const Pin*> getFanouts(const Instance* inst);
 };
 
 }  // namespace rsz

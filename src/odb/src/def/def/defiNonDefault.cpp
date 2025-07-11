@@ -137,10 +137,12 @@ void defiNonDefault::Destroy()
     free((char*) (hasWireExt_));
     free((char*) (wireExt_));
   }
-  if (viasAllocated_)
+  if (viasAllocated_) {
     free((char*) (viaNames_));
-  if (viaRulesAllocated_)
+  }
+  if (viaRulesAllocated_) {
     free((char*) (viaRuleNames_));
+  }
   if (minCutsAllocated_) {
     free((char*) (cutLayerName_));
     free((char*) (numCuts_));
@@ -151,8 +153,9 @@ void defiNonDefault::clear()
 {
   int i;
 
-  if (name_)
+  if (name_) {
     free(name_);
+  }
   hardSpacing_ = 0;
   for (i = 0; i < numProps_; i++) {
     free(names_[i]);
@@ -160,17 +163,21 @@ void defiNonDefault::clear()
     dvalues_[i] = 0;
   }
   numProps_ = 0;
-  for (i = 0; i < numLayers_; i++)
+  for (i = 0; i < numLayers_; i++) {
     free(layerName_[i]);
+  }
   numLayers_ = 0;
-  for (i = 0; i < numVias_; i++)
+  for (i = 0; i < numVias_; i++) {
     free((char*) (viaNames_[i]));
+  }
   numVias_ = 0;
-  for (i = 0; i < numViaRules_; i++)
+  for (i = 0; i < numViaRules_; i++) {
     free((char*) (viaRuleNames_[i]));
+  }
   numViaRules_ = 0;
-  for (i = 0; i < numMinCuts_; i++)
+  for (i = 0; i < numMinCuts_; i++) {
     free((char*) (cutLayerName_[i]));
+  }
   numMinCuts_ = 0;
 }
 
@@ -199,10 +206,11 @@ void defiNonDefault::addLayer(const char* name)
     char* newhs;
     char* newhe;
 
-    if (layersAllocated_ == 0)
+    if (layersAllocated_ == 0) {
       layersAllocated_ = 2;
-    else
+    } else {
       layersAllocated_ *= 2;
+    }
     newl = (char**) malloc(sizeof(char*) * layersAllocated_);
     newe = (double*) malloc(sizeof(double) * layersAllocated_);
     neww = (double*) malloc(sizeof(double) * layersAllocated_);
@@ -281,10 +289,11 @@ void defiNonDefault::addVia(const char* name)
     int i;
     char** vn;
 
-    if (viasAllocated_ == 0)
+    if (viasAllocated_ == 0) {
       viasAllocated_ = 2;
-    else
+    } else {
       viasAllocated_ *= 2;
+    }
     vn = (char**) malloc(sizeof(char*) * viasAllocated_);
     for (i = 0; i < numVias_; i++) {
       vn[i] = viaNames_[i];
@@ -303,10 +312,11 @@ void defiNonDefault::addViaRule(const char* name)
     int i;
     char** vn;
 
-    if (viaRulesAllocated_ == 0)
+    if (viaRulesAllocated_ == 0) {
       viaRulesAllocated_ = 2;
-    else
+    } else {
       viaRulesAllocated_ *= 2;
+    }
     vn = (char**) malloc(sizeof(char*) * viaRulesAllocated_);
     for (i = 0; i < numViaRules_; i++) {
       vn[i] = viaRuleNames_[i];
@@ -326,10 +336,11 @@ void defiNonDefault::addMinCuts(const char* name, int numCuts)
     char** cln;
     int* nc;
 
-    if (minCutsAllocated_ == 0)
+    if (minCutsAllocated_ == 0) {
       minCutsAllocated_ = 2;
-    else
+    } else {
       minCutsAllocated_ *= 2;
+    }
     cln = (char**) malloc(sizeof(char*) * minCutsAllocated_);
     nc = (int*) malloc(sizeof(int) * minCutsAllocated_);
     for (i = 0; i < numMinCuts_; i++) {
@@ -543,12 +554,15 @@ void defiNonDefault::print(FILE* f) const
   for (i = 0; i < numLayers(); i++) {
     fprintf(f, "  Layer %s\n", layerName(i));
     fprintf(f, "    WIDTH %g\n", layerWidth(i));
-    if (hasLayerDiagWidth(i))
+    if (hasLayerDiagWidth(i)) {
       fprintf(f, "    DIAGWIDTH %g\n", layerDiagWidth(i));
-    if (hasLayerSpacing(i))
+    }
+    if (hasLayerSpacing(i)) {
       fprintf(f, "    SPACING %g\n", layerSpacing(i));
-    if (hasLayerWireExt(i))
+    }
+    if (hasLayerWireExt(i)) {
       fprintf(f, "    WIREEXT %g\n", layerWireExt(i));
+    }
   }
   for (i = 0; i < numVias(); i++) {
     fprintf(f, "    VIA %s\n", viaName(i));
@@ -580,10 +594,11 @@ void defiNonDefault::addProperty(const char* name,
     double* nd;
     char* nt;
 
-    if (propsAllocated_ == 0)
+    if (propsAllocated_ == 0) {
       max = propsAllocated_ = 2;
-    else
+    } else {
       max = propsAllocated_ *= 2;
+    }
     nn = (char**) malloc(sizeof(char*) * max);
     nv = (char**) malloc(sizeof(char*) * max);
     nd = (double*) malloc(sizeof(double) * max);
@@ -628,10 +643,11 @@ void defiNonDefault::addNumProperty(const char* name,
     double* nd;
     char* nt;
 
-    if (propsAllocated_ == 0)
+    if (propsAllocated_ == 0) {
       max = propsAllocated_ = 2;
-    else
+    } else {
       max = propsAllocated_ *= 2;
+    }
     nn = (char**) malloc(sizeof(char*) * max);
     nv = (char**) malloc(sizeof(char*) * max);
     nd = (double*) malloc(sizeof(double) * max);

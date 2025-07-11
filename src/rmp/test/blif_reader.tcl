@@ -24,4 +24,3 @@ rmp::blif_read $blif "./blif_reader.blif"
 
 write_def "./results/blif_reader.def"
 diff_files "./results/blif_reader.def" "blif_reader.def.ok"
-

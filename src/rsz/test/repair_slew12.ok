@@ -4,14 +4,12 @@
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
-[INFO RSZ-0058] Using max wire length 693um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +166.7% |       2 |       3 |             2 |         0
+    final |   +100.0% |       2 |       1 |             3 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0039] Resized 2 instances.
-[INFO RSZ-0038] Inserted 3 buffers in 2 nets.
+[INFO RSZ-0038] Inserted 1 buffers in 3 nets.

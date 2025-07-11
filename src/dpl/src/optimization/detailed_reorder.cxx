@@ -340,7 +340,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
     }
     if (!failed) {
       for (int i = 0; i < size; i++) {
-        if (mgrPtr_->hasEdgeSpacingViolation(nodes[jstrt + i])) {
+        if (mgrPtr_->hasPlacementViolation(nodes[jstrt + i])) {
           failed = true;
           break;
         }
@@ -373,7 +373,7 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
   double cost = 0.;
   for (int i = istrt; i <= istop; i++) {
     const Node* ndi = nodes[i];
-    if (mgrPtr_->hasEdgeSpacingViolation(ndi)) {
+    if (mgrPtr_->hasPlacementViolation(ndi)) {
       return std::numeric_limits<double>::max();
     }
 
