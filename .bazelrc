@@ -75,8 +75,8 @@ test --build_tests_only
 build --jobs=200
 
 # Enable local disk caching to supplement the remote cache.
-# The location can be overridden by setting the OPENROAD_BAZEL_CACHE env variable.
-build --disk_cache=$(OPENROAD_BAZEL_CACHE:-~/.cache/bazel-disk-cache)
+build --disk_cache=~/.cache/bazel-disk-cache
+build --repository_cache=~/.cache/bazel-repository-cache
 
 # --- CI Settings (write access) ---
 build:ci --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
@@ -94,5 +94,7 @@ build:openroad-dev --remote_upload_local_results=false
 # Developers need the actual output files to run and use them.
 build:openroad-dev --remote_download_toplevel
 build:openroad-dev --google_default_credentials=true
+build:openroad-dev --disk_cache=/workspace/.cache/bazel-disk-cache
+build:openroad-dev --repository_cache=/workspace/.cache/bazel-repository-cache
 
 try-import %workspace%/user.bazelrc
