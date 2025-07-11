@@ -52,7 +52,7 @@ void IOPlacerRenderer::setPinAssignment(const std::vector<IOPin>& assignment)
 
 void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::yellow, true);
+  painter.setPen(gui::Painter::kYellow, true);
 
   if (isDrawingNeeded()) {
     for (int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {

@@ -52,6 +52,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dft",
         "//:ord",
         "//src/dbSta",
         "//src/dft/src/architect",
@@ -62,6 +63,7 @@ cc_library(
         "//src/dft/src/stitch",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

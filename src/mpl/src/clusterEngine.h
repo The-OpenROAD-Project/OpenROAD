@@ -122,6 +122,14 @@ struct PhysicalHierarchy
   // and its corresponding standard-cell cluster to bias
   // the macro placer to place them together.
   const float virtual_weight = 10.0f;
+
+  const int io_bundles_per_edge = 5;
+};
+
+struct IOBundleSpans
+{
+  int x{0};
+  int y{0};
 };
 
 class ClusteringEngine
@@ -172,6 +180,12 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  bool designHasFixedIOPins() const;
+  IOBundleSpans computeIOBundleSpans() const;
+  void createIOBundles();
+  void createIOBundles(Boundary boundary);
+  void createIOBundle(Boundary boundary, int bundle_index);
+  int findAssociatedBundledIOId(odb::dbBTerm* bterm) const;
   Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm) const;
   void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
@@ -188,6 +202,7 @@ class ClusteringEngine
   void createCluster(odb::dbModule* module, Cluster* parent);
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
+  bool isLargeFlatCluster(const Cluster* cluster) const;
   void breakLargeFlatCluster(Cluster* parent);
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
@@ -285,6 +300,9 @@ class ClusteringEngine
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
+
+  int first_io_bundle_id_{-1};
+  IOBundleSpans io_bundle_spans_;
 };
 
 }  // namespace mpl

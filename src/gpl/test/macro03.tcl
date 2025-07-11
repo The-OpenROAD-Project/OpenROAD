@@ -1,5 +1,5 @@
 source helpers.tcl
-set test_name macro03 
+set test_name macro03
 read_lef ./nangate45.lef
 read_lef ./swerv_wrapper_macro.lef
 read_def ./$test_name.def

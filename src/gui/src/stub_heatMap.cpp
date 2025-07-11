@@ -34,7 +34,6 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
-      map_(),
       renderer_(nullptr),
       setup_(nullptr),
       color_generator_(SpectrumGenerator(100.0))
@@ -127,8 +126,6 @@ RealValueHeatMapDataSource::RealValueHeatMapDataSource(
     const std::string& short_name,
     const std::string& settings_group)
     : HeatMapDataSource(logger, name, short_name, settings_group),
-      unit_suffix_(),
-      units_(),
       min_(0.0),
       max_(0.0),
       scale_(0.0)
@@ -208,7 +205,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
 std::string HeatMapRenderer::getSettingsGroupName()
 {
-  return groupname_prefix_;
+  return kGroupnamePrefix;
 }
 
 Renderer::Settings HeatMapRenderer::getSettings()

@@ -15,8 +15,8 @@
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 11
 [INFO GRT-0019] Found 0 clock nets.
-[INFO GRT-0001] Minimum degree: 2147483647
-[INFO GRT-0002] Maximum degree: 1
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 2
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource
@@ -26,6 +26,11 @@ li1        Vertical           12             0          100.00%
 met1       Horizontal          9             0          100.00%
 ---------------------------------------------------------------
 
+[INFO GRT-0197] Via related to pin nodes: 0
+[INFO GRT-0198] Via related Steiner nodes: 0
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 0
+[INFO GRT-0112] Final usage 3D: 0
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

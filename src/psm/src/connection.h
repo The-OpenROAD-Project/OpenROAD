@@ -139,7 +139,7 @@ class TermConnection : public Connection
   std::string describe() const override;
 
  private:
-  static constexpr Resistance resistance_ = 0.001;
+  static constexpr Resistance kResistance = 0.001;
 };
 
 }  // namespace psm

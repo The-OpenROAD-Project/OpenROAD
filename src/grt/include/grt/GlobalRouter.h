@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "GRoute.h"
-#include "ant/GlobalRouteSource.hh"
+#include "RoutePt.h"
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -88,6 +88,12 @@ struct RegionAdjustment
   float getAdjustment() { return adjustment; }
 };
 
+struct RoutePointPins
+{
+  std::vector<Pin*> pins;
+  bool connected = false;
+};
+
 enum class NetType
 {
   Clock,
@@ -99,12 +105,13 @@ enum class NetType
 using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
+using RoutePointToPinsMap = std::map<RoutePt, RoutePointPins>;
 
-class GlobalRouter : public ant::GlobalRouteSource
+class GlobalRouter
 {
  public:
   GlobalRouter();
-  ~GlobalRouter() override;
+  ~GlobalRouter();
 
   void init(utl::Logger* logger,
             stt::SteinerTreeBuilder* stt_builder,
@@ -195,12 +202,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void addDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
-  bool haveRoutes() override;
+  bool haveRoutes();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
-  void makeNetWires() override;
-  void destroyNetWires() override;
 
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
@@ -298,7 +303,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNetlist(std::vector<Net*>& nets);
-  bool makeFastrouteNet(Net* net);
+  void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
   std::vector<LayerId> findTransitionLayers();
@@ -377,6 +382,10 @@ class GlobalRouter : public ant::GlobalRouteSource
                     const std::map<int, int>& tile_size_y_map,
                     int& tile_size_x,
                     int& tile_size_y);
+  RoutePointToPinsMap findRoutePtPins(Net* net);
+  void addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                const RoutePt& route_pt,
+                                odb::dbGuide* guide);
 
   // check functions
   void checkPinPlacement();

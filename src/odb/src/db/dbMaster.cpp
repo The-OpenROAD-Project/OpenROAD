@@ -280,7 +280,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> *master._mpin_tbl;
   if (!db->isSchema(db_rm_target)) {
     // obsolete table is always unpopulated so type/values unimportant
-    dbTable<_dbMaster> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
+    dbTable<_dbMaster, 4> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
     stream >> dummy;
   }
   stream >> *master._box_tbl;

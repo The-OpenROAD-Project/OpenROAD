@@ -85,8 +85,8 @@ cc_library(
         "src/parse.cpp",
         "src/parse.h",
         "src/process_ext.cpp",
-        "src/util.cpp",
-        "src/util.h",
+        "src/find_some_net.cpp",
+        "src/find_some_net.h",
     ],
     includes = [
         "include",
@@ -116,9 +116,11 @@ cc_library(
     ],
     deps = [
         ":hdrs",
+        ":rcx",
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

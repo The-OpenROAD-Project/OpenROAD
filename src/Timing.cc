@@ -100,15 +100,15 @@ float Timing::getPinSlew(odb::dbBTerm* db_pin, MinMax minmax)
 float Timing::getPinSlew(sta::Pin* sta_pin, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
-  float pinSlew = (minmax == Max) ? -sta::INF : sta::INF;
+  float pin_slew = (minmax == Max) ? -sta::INF : sta::INF;
   for (auto vertex : vertex_array) {
     if (vertex != nullptr) {
-      float pinSlewTemp = slewAllCorners(vertex, getMinMax(minmax));
-      pinSlew = (minmax == Max) ? std::max(pinSlew, pinSlewTemp)
-                                : std::min(pinSlew, pinSlewTemp);
+      const float pin_slew_temp = slewAllCorners(vertex, getMinMax(minmax));
+      pin_slew = (minmax == Max) ? std::max(pin_slew, pin_slew_temp)
+                                 : std::min(pin_slew, pin_slew_temp);
     }
   }
-  return pinSlew;
+  return pin_slew;
 }
 
 sta::Network* Timing::cmdLinkedNetwork()
@@ -205,7 +205,7 @@ float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
   auto vertex_array = vertices(sta_pin);
   float delay = (minmax == Max) ? -sta::INF : sta::INF;
   float d1, d2;
-  sta::Clock* defaultArrivalClock = getSta()->sdc()->defaultArrivalClock();
+  sta::Clock* default_arrival_clock = getSta()->sdc()->defaultArrivalClock();
   for (auto vertex : vertex_array) {
     if (vertex == nullptr) {
       continue;
@@ -214,7 +214,7 @@ float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
     const sta::RiseFall* clk_f = sta::RiseFall::fall();
     const sta::RiseFall* arrive_hold = (rf == Rise) ? clk_r : clk_f;
     d1 = getPinArrivalTime(nullptr, clk_r, vertex, arrive_hold);
-    d2 = getPinArrivalTime(defaultArrivalClock, clk_r, vertex, arrive_hold);
+    d2 = getPinArrivalTime(default_arrival_clock, clk_r, vertex, arrive_hold);
     delay = (minmax == Max) ? std::max({d1, d2, delay})
                             : std::min({d1, d2, delay});
     for (auto clk : findClocksMatching("*", false, false)) {
@@ -339,15 +339,15 @@ float Timing::getMaxCapLimit(odb::dbMTerm* pin)
   sta::Port* port = network->dbToSta(pin);
   sta::LibertyPort* lib_port = network->libertyPort(port);
   sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
-  float maxCap = 0.0;
-  bool maxCapExists = false;
+  float max_cap = 0.0;
+  bool max_cap_exists = false;
   if (!pin->getSigType().isSupply()) {
-    lib_port->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
-    if (!maxCapExists) {
-      lib->defaultMaxCapacitance(maxCap, maxCapExists);
+    lib_port->capacitanceLimit(sta::MinMax::max(), max_cap, max_cap_exists);
+    if (!max_cap_exists) {
+      lib->defaultMaxCapacitance(max_cap, max_cap_exists);
     }
   }
-  return maxCap;
+  return max_cap;
 }
 
 float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
@@ -357,15 +357,15 @@ float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
   sta::Port* port = network->dbToSta(pin);
   sta::LibertyPort* lib_port = network->libertyPort(port);
   sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
-  float maxSlew = 0.0;
-  bool maxSlewExists = false;
+  float max_slew = 0.0;
+  bool max_slew_exists = false;
   if (!pin->getSigType().isSupply()) {
-    lib_port->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExists);
-    if (!maxSlewExists) {
-      lib->defaultMaxSlew(maxSlew, maxSlewExists);
+    lib_port->slewLimit(sta::MinMax::max(), max_slew, max_slew_exists);
+    if (!max_slew_exists) {
+      lib->defaultMaxSlew(max_slew, max_slew_exists);
     }
   }
-  return maxSlew;
+  return max_slew;
 }
 
 float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
@@ -405,19 +405,19 @@ std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::Cell* cell = network->dbToSta(master);
-  std::vector<odb::dbMaster*> masterSeq;
+  std::vector<odb::dbMaster*> master_seq;
   if (cell) {
     sta::LibertyCell* libcell = network->libertyCell(cell);
     sta::LibertyCellSeq* equiv_cells = sta->equivCells(libcell);
     if (equiv_cells) {
       for (sta::LibertyCell* equiv_cell : *equiv_cells) {
         odb::dbMaster* equiv_master = network->staToDb(equiv_cell);
-        masterSeq.emplace_back(equiv_master);
+        master_seq.emplace_back(equiv_master);
       }
     } else {
-      masterSeq.emplace_back(master);
+      master_seq.emplace_back(master);
     }
   }
-  return masterSeq;
+  return master_seq;
 }
 }  // namespace ord

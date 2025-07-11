@@ -116,9 +116,8 @@ void ScriptWidget::flushReportBufferToOutput()
   if (!guard.owns_lock()) {
     // failed to aquire lock
     // return and this will be called at some point later
-    QTimer::singleShot(report_display_interval,
-                       this,
-                       &ScriptWidget::flushReportBufferToOutput);
+    QTimer::singleShot(
+        kReportDisplayInterval, this, &ScriptWidget::flushReportBufferToOutput);
     return;
   }
   if (report_buffer_.isEmpty()) {
@@ -197,7 +196,7 @@ void ScriptWidget::addResultToOutput(const QString& result, bool is_ok)
   } else {
     try {
       auto msg = result.toStdString();
-      if (msg.find(TclCmdInputWidget::exit_string) == std::string::npos) {
+      if (msg.find(TclCmdInputWidget::kExitString) == std::string::npos) {
         logger_->error(utl::GUI, 70, msg);
       }
     } catch (const std::runtime_error& e) {
@@ -215,7 +214,7 @@ void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
 
 void ScriptWidget::startReportTimer()
 {
-  report_timer_->start(report_display_interval);
+  report_timer_->start(kReportDisplayInterval);
 }
 
 void ScriptWidget::addMsgToReportBuffer(const QString& text)

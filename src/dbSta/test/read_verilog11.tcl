@@ -9,7 +9,7 @@ link_design top
 set block [ord::get_db_block]
 foreach i [$block getInsts] {
   set src_file_line [odb::dbIntProperty_find $i src_file_line]
-  if { $src_file_line !=  "NULL" } {
+  if { $src_file_line != "NULL" } {
     set src_file_id [[odb::dbIntProperty_find $i src_file_id] getValue]
     set src_file_str "src_file_$src_file_id"
     set src_file_name [odb::dbStringProperty_find $block $src_file_str]

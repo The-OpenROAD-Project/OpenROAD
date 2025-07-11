@@ -114,7 +114,7 @@ StringToDBU Descriptor::Property::convert_string;
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 // https://gist.github.com/mikhailov-work/6a308c20e494d9e0ccc29036b28faa7a
-const unsigned char SpectrumGenerator::spectrum_[256][3]
+const unsigned char SpectrumGenerator::kSpectrum[256][3]
     = {{48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
        {53, 30, 88},   {54, 33, 95},   {55, 36, 102},   {56, 39, 109},
        {57, 42, 115},  {58, 45, 121},  {59, 47, 128},   {60, 50, 134},
@@ -321,23 +321,22 @@ bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 
 void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
 {
-  return main_window->selectHighlightConnectedInsts(select_flag,
-                                                    highlight_group);
+  main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 void Gui::selectHighlightConnectedNets(bool select_flag,
                                        bool output,
                                        bool input,
                                        int highlight_group)
 {
-  return main_window->selectHighlightConnectedNets(
+  main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
 }
 
 void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
                                               int highlight_group)
 {
-  return main_window->selectHighlightConnectedBufferTrees(select_flag,
-                                                          highlight_group);
+  main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                   highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
@@ -1067,9 +1066,10 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
   const std::string& group_name = getDisplayControlGroupName();
 
   if (group_name.empty()) {
-    return Gui::get()->setDisplayControlsVisible(name, value);
+    Gui::get()->setDisplayControlsVisible(name, value);
+  } else {
+    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
   }
-  return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
 }
 
 void Renderer::addDisplayControl(
@@ -1123,7 +1123,7 @@ Painter::Color SpectrumGenerator::getColor(double value, int alpha) const
   }
 
   return Painter::Color(
-      spectrum_[index][0], spectrum_[index][1], spectrum_[index][2], alpha);
+      kSpectrum[index][0], kSpectrum[index][1], kSpectrum[index][2], alpha);
 }
 
 void SpectrumGenerator::drawLegend(
@@ -1139,7 +1139,7 @@ void SpectrumGenerator::drawLegend(
   const int legend_top = bounds.yMax() - legend_offset;
   const int legend_right = bounds.xMax() - legend_offset;
   const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
 
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
@@ -1161,8 +1161,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw background
-  painter.setPen(Painter::dark_gray, true);
-  painter.setBrush(Painter::dark_gray);
+  painter.setPen(Painter::kDarkGray, true);
+  painter.setBrush(Painter::kDarkGray);
   painter.drawRect(legend_bounds, 10, 10);
 
   // draw color map
@@ -1177,8 +1177,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw key values
-  painter.setPen(Painter::black, true);
-  painter.setBrush(Painter::transparent);
+  painter.setPen(Painter::kBlack, true);
+  painter.setBrush(Painter::kTransparent);
   for (const auto& [pt, text] : legend_key_points) {
     painter.drawString(pt.x(), pt.y(), key_anchor, text);
   }
@@ -1217,12 +1217,12 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
+void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
 }
 
-void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
   main_window->timingPathsThrough(terms);
 }
@@ -1443,7 +1443,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
              gif_->filename.c_str(),
              gif_->width,
              gif_->height,
-             delay.value_or(default_gif_delay_));
+             delay.value_or(kDefaultGifDelay));
   } else {
     // scale IMG if not matched
     img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
@@ -1472,7 +1472,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
                 frame.data(),
                 gif_->width,
                 gif_->height,
-                delay.value_or(default_gif_delay_));
+                delay.value_or(kDefaultGifDelay));
 }
 
 void Gui::gifEnd()
@@ -1684,7 +1684,7 @@ void Selected::highlight(Painter& painter,
   painter.setPen(pen, true, pen_width);
   painter.setBrush(brush, brush_style);
 
-  return descriptor_->highlight(object_, painter);
+  descriptor_->highlight(object_, painter);
 }
 
 Descriptor::Properties Selected::getProperties() const

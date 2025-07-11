@@ -112,7 +112,7 @@ class Logger
   // below)
   template <typename... Args>
   void debug(ToolId tool,
-             const std::string& group,
+             const char* group,
              const std::string& message,
              const Args&... args)
   {

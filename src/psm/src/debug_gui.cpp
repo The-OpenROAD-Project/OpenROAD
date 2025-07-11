@@ -355,22 +355,22 @@ void ConnectionDescriptor::highlight(std::any object,
 DebugGui::DebugGui(IRNetwork* network)
     : network_(network),
       control_group_("PSM: " + network_->getNet()->getName()),
-      shape_color_(gui::Painter::white),
-      node_color_(gui::Painter::cyan),
-      src_node_color_(gui::Painter::magenta),
-      iterm_node_color_(gui::Painter::red),
-      bpin_node_color_(gui::Painter::blue),
-      connection_color_(gui::Painter::yellow),
-      term_connection_color_(gui::Painter::red),
+      shape_color_(gui::Painter::kWhite),
+      node_color_(gui::Painter::kCyan),
+      src_node_color_(gui::Painter::kMagenta),
+      iterm_node_color_(gui::Painter::kRed),
+      bpin_node_color_(gui::Painter::kBlue),
+      connection_color_(gui::Painter::kYellow),
+      term_connection_color_(gui::Painter::kRed),
       found_select_(false)
 {
-  addDisplayControl(shapes_text_, true);
-  addDisplayControl(nodes_text_, true);
-  addDisplayControl(iterm_nodes_text_, true);
-  addDisplayControl(bpin_nodes_text_, true);
-  addDisplayControl(connectivity_text_, true);
-  addDisplayControl(source_text_, true);
-  addDisplayControl(source_shape_text_, true);
+  addDisplayControl(kShapesText, true);
+  addDisplayControl(kNodesText, true);
+  addDisplayControl(kItermNodesText, true);
+  addDisplayControl(kBpinNodesText, true);
+  addDisplayControl(kConnectivityText, true);
+  addDisplayControl(kSourceText, true);
+  addDisplayControl(kSourceShapeText, true);
 
   gui::Gui::get()->registerRenderer(this);
 }
@@ -457,7 +457,7 @@ void DebugGui::drawShape(const Shape* shape, gui::Painter& painter) const
   const bool bold = isSelected(shape);
   if (bold) {
     painter.saveState();
-    painter.setPen(shape_color_, /* cosmetic */ true, bold_multiplier_);
+    painter.setPen(shape_color_, /* cosmetic */ true, kBoldMultiplier);
   }
   painter.drawRect(shape->getShape());
   if (bold) {
@@ -472,11 +472,10 @@ void DebugGui::drawNode(const Node* node,
   const bool bold = isSelected(node);
   if (bold) {
     painter.saveState();
-    painter.setPen(
-        color, /* cosmetic */ true, node_pen_width_ * bold_multiplier_);
+    painter.setPen(color, /* cosmetic */ true, kNodePenWidth * kBoldMultiplier);
   }
   const odb::Point& pt = node->getPoint();
-  painter.drawCircle(pt.getX(), pt.getY(), node_size_);
+  painter.drawCircle(pt.getX(), pt.getY(), kNodeSize);
   if (bold) {
     painter.restoreState();
   }
@@ -491,7 +490,7 @@ void DebugGui::drawConnection(const Connection* connection,
       = is_terminal_connection ? term_connection_color_ : connection_color_;
   const bool bold = isSelected(connection);
   if (bold) {
-    painter.setPen(color, /* cosmetic */ true, bold_multiplier_);
+    painter.setPen(color, /* cosmetic */ true, kBoldMultiplier);
   } else {
     painter.setPen(color, /* cosmetic */ true);
   }
@@ -500,7 +499,7 @@ void DebugGui::drawConnection(const Connection* connection,
 
   if (connection->isVia()) {
     // draw an X to indicate cross layer connection
-    painter.drawX(pt.getX(), pt.getY(), via_size_);
+    painter.drawX(pt.getX(), pt.getY(), kViaSize);
   } else {
     const Node* other = connection->getOtherNode(node);
     painter.drawLine(pt, other->getPoint());
@@ -510,8 +509,8 @@ void DebugGui::drawConnection(const Connection* connection,
 void DebugGui::drawSource(const Node* node, gui::Painter& painter) const
 {
   const int src_node_size
-      = std::max(src_node_max_size_,
-                 static_cast<int>(static_cast<double>(src_node_max_size_)
+      = std::max(kSrcNodeMaxSize,
+                 static_cast<int>(static_cast<double>(kSrcNodeMaxSize)
                                   / painter.getPixelsPerDBU()));
 
   const odb::Point& pt = node->getPoint();
@@ -527,7 +526,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   const odb::Rect& rect = painter.getBounds();
 
-  if (checkDisplayControl(shapes_text_)) {
+  if (checkDisplayControl(kShapesText)) {
     painter.setPen(shape_color_, /* cosmetic */ true);
 
     for (auto shape_itr
@@ -538,8 +537,8 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(nodes_text_)) {
-    painter.setPen(node_color_, /* cosmetic */ true, node_pen_width_);
+  if (checkDisplayControl(kNodesText)) {
+    painter.setPen(node_color_, /* cosmetic */ true, kNodePenWidth);
 
     for (auto node_itr
          = nodes_[layer].qbegin(boost::geometry::index::intersects(rect));
@@ -549,8 +548,8 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(iterm_nodes_text_)) {
-    painter.setPen(iterm_node_color_, /* cosmetic */ true, node_pen_width_);
+  if (checkDisplayControl(kItermNodesText)) {
+    painter.setPen(iterm_node_color_, /* cosmetic */ true, kNodePenWidth);
 
     for (auto node_itr
          = iterm_nodes_[layer].qbegin(boost::geometry::index::intersects(rect));
@@ -560,8 +559,8 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(bpin_nodes_text_)) {
-    painter.setPen(bpin_node_color_, /* cosmetic */ true, node_pen_width_);
+  if (checkDisplayControl(kBpinNodesText)) {
+    painter.setPen(bpin_node_color_, /* cosmetic */ true, kNodePenWidth);
 
     for (auto node_itr
          = bpin_nodes_[layer].qbegin(boost::geometry::index::intersects(rect));
@@ -571,7 +570,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(connectivity_text_)) {
+  if (checkDisplayControl(kConnectivityText)) {
     for (auto conn_itr
          = connections_[layer].qbegin(boost::geometry::index::intersects(rect));
          conn_itr != connections_[layer].qend();
@@ -580,7 +579,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(source_shape_text_)) {
+  if (checkDisplayControl(kSourceShapeText)) {
     gui::Painter::Color color = src_node_color_;
     color.a = 100;
     painter.setPen(color, /* cosmetic */ true, 1);
@@ -593,8 +592,8 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(source_text_)) {
-    painter.setPen(src_node_color_, /* cosmetic */ true, node_pen_width_);
+  if (checkDisplayControl(kSourceText)) {
+    painter.setPen(src_node_color_, /* cosmetic */ true, kNodePenWidth);
 
     for (auto node_itr
          = sources_[layer].qbegin(boost::geometry::index::intersects(rect));
@@ -618,7 +617,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
   } else {
     gui::SelectionSet selection;
 
-    if (checkDisplayControl(shapes_text_)) {
+    if (checkDisplayControl(kShapesText)) {
       for (auto shape_itr
            = shapes_[layer].qbegin(boost::geometry::index::intersects(region));
            shape_itr != shapes_[layer].qend();
@@ -626,7 +625,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
         selected_shapes_.insert(*shape_itr);
       }
     }
-    if (checkDisplayControl(nodes_text_)) {
+    if (checkDisplayControl(kNodesText)) {
       for (auto node_itr
            = nodes_[layer].qbegin(boost::geometry::index::intersects(region));
            node_itr != nodes_[layer].qend();
@@ -635,7 +634,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
         selection.insert(gui::Gui::get()->makeSelected(*node_itr));
       }
     }
-    if (checkDisplayControl(iterm_nodes_text_)) {
+    if (checkDisplayControl(kItermNodesText)) {
       for (auto node_itr = iterm_nodes_[layer].qbegin(
                boost::geometry::index::intersects(region));
            node_itr != iterm_nodes_[layer].qend();
@@ -644,7 +643,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
         selection.insert(gui::Gui::get()->makeSelected(*node_itr));
       }
     }
-    if (checkDisplayControl(bpin_nodes_text_)) {
+    if (checkDisplayControl(kBpinNodesText)) {
       for (auto node_itr = bpin_nodes_[layer].qbegin(
                boost::geometry::index::intersects(region));
            node_itr != bpin_nodes_[layer].qend();
@@ -653,7 +652,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
         selection.insert(gui::Gui::get()->makeSelected(*node_itr));
       }
     }
-    if (checkDisplayControl(connectivity_text_)) {
+    if (checkDisplayControl(kConnectivityText)) {
       for (auto conn_itr = connections_[layer].qbegin(
                boost::geometry::index::intersects(region));
            conn_itr != connections_[layer].qend();

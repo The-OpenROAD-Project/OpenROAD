@@ -750,8 +750,9 @@ void FlexDR::processWorkersBatchDistributed(
   {
     ProfileTask task("DIST: SERIALIZE+SEND");
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
+    for (int i = 0; i < distWorkerBatches.size(); i++) {  // NOLINT
       sendWorkers(distWorkerBatches.at(i), workers_batch);
+    }
   }
   std::vector<std::pair<int, std::string>> workers;
   router_->getWorkerResults(workers);
@@ -1860,9 +1861,9 @@ int FlexDR::main()
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
 
-      db_->write(
-          utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
-              .getStream());
+      std::string snapshotPath = fmt::format(
+          "{}/drt_iter{}.odb", router_->getDebugSettings()->snapshotDir, iter_);
+      db_->write(utl::OutStreamHandler(snapshotPath.c_str(), true).getStream());
     }
     if (reporter->incrementProgress()) {
       break;
@@ -1902,8 +1903,8 @@ void FlexDR::sendWorkers(
   std::string remote_ip = dist_ip_;
   uint16_t remote_port = dist_port_;
   if (router_->getCloudSize() > 1) {
-    dst::JobMessage msg(dst::JobMessage::BALANCER),
-        result(dst::JobMessage::NONE);
+    dst::JobMessage msg(dst::JobMessage::kBalancer),
+        result(dst::JobMessage::kNone);
     bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
     if (!ok) {
       logger_->error(utl::DRT, 7461, "Balancer failed");
@@ -1916,8 +1917,8 @@ void FlexDR::sendWorkers(
     }
   }
   {
-    dst::JobMessage msg(dst::JobMessage::ROUTING),
-        result(dst::JobMessage::NONE);
+    dst::JobMessage msg(dst::JobMessage::kRouting),
+        result(dst::JobMessage::kNone);
     std::unique_ptr<dst::JobDescription> desc
         = std::make_unique<RoutingJobDescription>();
     RoutingJobDescription* rjd

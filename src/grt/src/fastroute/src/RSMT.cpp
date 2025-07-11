@@ -40,12 +40,14 @@ static int mapxy(const int nx,
 
   while (min <= max) {
     const int mid = (min + max) / 2;
-    if (nx == nxs[mid])
+    if (nx == nxs[mid]) {
       return (xs[mid]);
-    if (nx < nxs[mid])
+    }
+    if (nx < nxs[mid]) {
       max = mid - 1;
-    else
+    } else {
       min = mid + 1;
+    }
   }
 
   return -1;
@@ -66,8 +68,9 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   // initialize the nbrcnt for treenodes
   const int sizeV = 2 * nets_[ind]->getNumPins();
   std::vector<int> nbrcnt(sizeV);
-  for (int i = 0; i < numnodes; i++)
+  for (int i = 0; i < numnodes; i++) {
     nbrcnt[i] = 0;
+  }
 
   int edgecnt = 0;
   // original rsmt has 2*d-2 branch (one is a loop for root), in StTree 2*d-3
@@ -107,8 +110,9 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
       nbrcnt[n]++;
       edgecnt++;
     }
-    if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
+    if (nbrcnt[i] > 3 || nbrcnt[n] > 3) {
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
+    }
   }
   // Copy num neighbors
   for (int i = 0; i < numnodes; i++) {
@@ -400,8 +404,9 @@ void FastRouteCore::fluteCongest(const int netID,
       int usageH = 0;
       for (int k = ys[0]; k <= ys[d - 1]; k++)  // all grids in the column
       {
-        for (int j = xs[i]; j < xs[i + 1]; j++)
+        for (int j = xs[i]; j < xs[i + 1]; j++) {
           usageH += h_edges_[k][j].est_usage_red();
+        }
       }
       if (x_seg[i] != 0 && usageH != 0) {
         x_seg[i]
@@ -411,8 +416,9 @@ void FastRouteCore::fluteCongest(const int netID,
       }
       int usageV = 0;
       for (int j = ys[i]; j < ys[i + 1]; j++) {
-        for (int k = xs[0]; k <= xs[d - 1]; k++)  // all grids in the row
+        for (int k = xs[0]; k <= xs[d - 1]; k++) {  // all grids in the row
           usageV += v_edges_[j][k].est_usage_red();
+        }
       }
       if (y_seg[i] != 0 && usageV != 0) {
         y_seg[i]

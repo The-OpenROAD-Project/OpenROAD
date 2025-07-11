@@ -59,7 +59,7 @@ TclCmdInputWidget::~TclCmdInputWidget()
   // restore old exit
   Tcl_DeleteCommand(interp_, "exit");
   std::string exit_rename
-      = fmt::format("rename {}exit exit", command_rename_prefix_);
+      = fmt::format("rename {}exit exit", kCommandRenamePrefix);
   Tcl_Eval(interp_, exit_rename.c_str());
 }
 
@@ -71,7 +71,7 @@ void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
 
   // Overwrite exit to allow Qt to handle exit
   std::string exit_rename
-      = fmt::format("rename exit {}exit", command_rename_prefix_);
+      = fmt::format("rename exit {}exit", kCommandRenamePrefix);
   Tcl_Eval(interp_, exit_rename.c_str());
   Tcl_CreateCommand(
       interp_, "exit", TclCmdInputWidget::tclExitHandler, this, nullptr);
@@ -104,7 +104,7 @@ int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
   // announces exit to Qt
   emit widget->exiting();
 
-  Tcl_SetResult(interp, (char*) exit_string, TCL_STATIC);
+  Tcl_SetResult(interp, (char*) kExitString, TCL_STATIC);
   return TCL_ERROR;
 }
 
@@ -157,10 +157,10 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
 
     bool show_popup = is_completer_shortcut;  // shortcut enabled it
     show_popup |= completion_prefix.length()
-                  >= completer_mimimum_length_;  // minimum length
-    show_popup |= is_argument;                   // is argument
-    show_popup |= is_variable;                   // is variable
-    show_popup |= is_swig;                       // is swig argument
+                  >= kCompleterMimimumLength;  // minimum length
+    show_popup |= is_argument;                 // is argument
+    show_popup |= is_variable;                 // is variable
+    show_popup |= is_swig;                     // is swig argument
     if (!show_popup) {
       completer_->popup()->hide();
     } else {
@@ -324,9 +324,9 @@ void TclCmdInputWidget::readSettings(QSettings* settings)
   CmdInputWidget::readSettings(settings);
 
   enable_highlighting_->setChecked(
-      settings->value(enable_highlighting_keyword_, true).toBool());
+      settings->value(kEnableHighlightingKeyword, true).toBool());
   enable_completion_->setChecked(
-      settings->value(enable_completion_keyword_, true).toBool());
+      settings->value(kEnableCompletionKeyword, true).toBool());
   settings->endGroup();
 }
 
@@ -335,10 +335,9 @@ void TclCmdInputWidget::writeSettings(QSettings* settings)
   settings->beginGroup(objectName());
   CmdInputWidget::writeSettings(settings);
 
-  settings->setValue(enable_highlighting_keyword_,
+  settings->setValue(kEnableHighlightingKeyword,
                      enable_highlighting_->isChecked());
-  settings->setValue(enable_completion_keyword_,
-                     enable_completion_->isChecked());
+  settings->setValue(kEnableCompletionKeyword, enable_completion_->isChecked());
   settings->endGroup();
 }
 
@@ -568,7 +567,7 @@ void TclCmdInputWidget::insertCompletion(const QString& text)
   setTextCursor(cursor);
 }
 
-const QString TclCmdInputWidget::wordUnderCursor()
+QString TclCmdInputWidget::wordUnderCursor()
 {
   // get line
   QTextCursor cursor = textCursor();
@@ -635,12 +634,12 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
     variable_content = var_content;
   }
 
-  Tcl_CmdInfo infoPtr;
+  Tcl_CmdInfo info_ptr;
   // find command information
-  if (Tcl_GetCommandInfo(interp_, variable_content.c_str(), &infoPtr) != 0) {
-    if (infoPtr.isNativeObjectProc == 1) {
+  if (Tcl_GetCommandInfo(interp_, variable_content.c_str(), &info_ptr) != 0) {
+    if (info_ptr.isNativeObjectProc == 1) {
       // set to one if created by Tcl_CreateObjCommand()
-      swig_instance* inst = static_cast<swig_instance*>(infoPtr.objClientData);
+      swig_instance* inst = static_cast<swig_instance*>(info_ptr.objClientData);
       if (inst != nullptr && inst->classptr != nullptr) {
         // make sure cls is in the arguments
         if (swig_arguments_.count(inst->classptr) != 0) {

@@ -14,15 +14,15 @@ set_domain_area PD_AES_2 -area {2.3 544 554.3 816}
 
 
 initialize_floorplan -utilization 20 \
-                       -aspect_ratio 1 \
-                       -core_space 2 \
-                       -site unithd
+  -aspect_ratio 1 \
+  -core_space 2 \
+  -site unithd
 
 
 make_tracks
 place_pins \
-    -hor_layers met3 \
-    -ver_layers met2
+  -hor_layers met3 \
+  -ver_layers met2
 global_placement -skip_initial_place -density 0.82
 detailed_placement
 improve_placement

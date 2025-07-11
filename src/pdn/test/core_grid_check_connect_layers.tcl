@@ -11,11 +11,11 @@ set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
 
-catch {add_pdn_connect -layers {metal5 metal5}} err
+catch { add_pdn_connect -layers {metal5 metal5} } err
 puts $err
 
-catch {add_pdn_connect -layers {via1 metal5}} err
+catch { add_pdn_connect -layers {via1 metal5} } err
 puts $err
 
-catch {add_pdn_connect -layers {metal1 via2}} err
+catch { add_pdn_connect -layers {metal1 via2} } err
 puts $err

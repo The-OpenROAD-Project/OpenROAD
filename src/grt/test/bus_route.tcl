@@ -16,7 +16,7 @@ set lines [split [read $stream] "\n"]
 close $stream
 
 foreach line $lines {
-  if {[regexp {met[3-5]} $line] != 0} {
+  if { [regexp {met[3-5]} $line] != 0 } {
     puts "FAIL: met3-5 found"
     exit
   }

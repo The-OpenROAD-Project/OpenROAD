@@ -498,8 +498,9 @@ uint extSpef::getCapNodeId(const char* nodeWord,
 
       if (!_testParsing && !_diff) {
         capId = getCapIdFromCapTable(nodeWord);
-        if (capId == 0 && cornerNet == nullptr)
+        if (capId == 0 && cornerNet == nullptr) {
           return 0;
+        }
 
         if (capId > 0) {
           cap = dbCapNode::getCapNode(_cornerBlock, capId);

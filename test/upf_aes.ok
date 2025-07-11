@@ -222,7 +222,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.8956
 [INFO GPL-1008]     - For 80% usage of free space: 1.0075
-[INFO GPL-1009]     - For 50% usage of free space: 1.6120
       440 |   0.1675 |  1.840219e+09 |   +0.34% |  2.38e-07 |      
       440 |   0.1283 |  1.840219e+09 |   +0.34% |  3.91e-07 |  (PD_AES_2)
       450 |   0.1497 |  1.845615e+09 |   +0.29% |  2.87e-07 |      
@@ -236,7 +235,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.8956
 [INFO GPL-1008]     - For 80% usage of free space: 1.0075
-[INFO GPL-1009]     - For 50% usage of free space: 1.6120
       470 |   0.1199 |  1.853808e+09 |   +0.18% |  4.16e-07 |      
       480 |   0.1092 |  1.855957e+09 |   +0.12% |  5.01e-07 |      
 [INFO GPL-1001] Finished with Overflow: 0.099566
@@ -246,6 +244,11 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0943
 [INFO GPL-1008]     - For 80% usage of free space: 0.1061
+[INFO GPL-1009]     - For 50% usage of free space: 0.1697
+[INFO GPL-1010] Original area (um^2): 368817.48
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 368817.48 (+0.00%)
 Placement Analysis
 ---------------------------------
 total displacement     130979.1 u

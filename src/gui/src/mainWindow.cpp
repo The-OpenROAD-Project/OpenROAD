@@ -543,6 +543,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbMarkerCategory*>(
       new DbMarkerCategoryDescriptor(db_));
   gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanInst*>(new DbScanInstDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
@@ -875,14 +876,14 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
     return parent;
   }
 
-  auto cleanupText = [](const QString& text) -> QString {
+  auto cleanup_text = [](const QString& text) -> QString {
     QString text_cpy = text;
     text_cpy.replace(QRegExp("&(?!&)"), "");  // remove single &, but keep &&
     return text_cpy;
   };
 
   const QString top_name = path[0];
-  const QString compare_name = cleanupText(top_name);
+  const QString compare_name = cleanup_text(top_name);
   path.pop_front();
 
   QList<QAction*> actions;
@@ -894,7 +895,7 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
 
   QMenu* menu = nullptr;
   for (auto* action : actions) {
-    if (cleanupText(action->text()) == compare_name) {
+    if (cleanup_text(action->text()) == compare_name) {
       menu = action->menu();
     }
   }
@@ -1144,8 +1145,8 @@ std::string MainWindow::addLabel(int x,
   auto new_label
       = std::make_unique<Label>(odb::Point(x, y),
                                 text,
-                                anchor.value_or(Painter::Anchor::CENTER),
-                                color.value_or(gui::Painter::white),
+                                anchor.value_or(Painter::Anchor::kCenter),
+                                color.value_or(gui::Painter::kWhite),
                                 size,
                                 std::move(name));
   std::string new_name = new_label->getName();
@@ -1376,8 +1377,9 @@ void MainWindow::showFindDialog()
 
 void MainWindow::showGotoDialog()
 {
-  if (getBlock() == nullptr)
+  if (getBlock() == nullptr) {
     return;
+  }
 
   goto_dialog_->show_init();
 }
@@ -1711,7 +1713,7 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   return new_value.toDouble(ok) * dbu_per_micron;
 }
 
-void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
+void MainWindow::timingCone(Gui::Term term, bool fanin, bool fanout)
 {
   auto* renderer = timing_widget_->getConeRenderer();
 
@@ -1722,7 +1724,7 @@ void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
   }
 }
 
-void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
+void MainWindow::timingPathsThrough(const std::set<Gui::Term>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});

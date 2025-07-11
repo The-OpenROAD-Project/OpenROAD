@@ -7,7 +7,7 @@ read_guides "gcd_sky130hd.guide"
 set def_file [make_result_file ndr_vias3.def]
 
 create_ndr -name NDR_3W_3S \
-           -via { L1M1_PR_R M1M2_PR_R }
+  -via { L1M1_PR_R M1M2_PR_R }
 
 assign_ndr -ndr NDR_3W_3S -net clk
 assign_ndr -ndr NDR_3W_3S -net clknet_0_clk

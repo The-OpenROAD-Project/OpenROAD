@@ -159,7 +159,10 @@ class FlexPA
   void prep();
 
   bool isStdCell(frInst* unique_inst);
+  bool isStdCellTerm(frInstTerm* inst_term);
   bool isMacroCell(frInst* unique_inst);
+  bool isMacroCellTerm(frInstTerm* inst_term);
+  bool isIOTerm(frInstTerm* inst_term);
 
   /**
    * @brief generates all access points of a single unique instance
@@ -552,6 +555,21 @@ class FlexPA
   bool isPointOutsideShapes(
       const Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
+
+  /**
+   * @brief Calculates the maximum extension a via has overhang on pin shapes
+   *
+   * @param inst_term the term representing the pin
+   * @param ap the access point the via is centered on
+   * @param polyset the polygon set representing pin shapes
+   * @param via_def the via def
+   *
+   * @returns the maximum extension
+   */
+  frCoord viaMaxExt(frInstTerm* inst_term,
+                    frAccessPoint* ap,
+                    const gtl::polygon_90_set_data<frCoord>& polyset,
+                    const frViaDef* via_def);
 
   /**
    * @brief Filters access through via on the access point

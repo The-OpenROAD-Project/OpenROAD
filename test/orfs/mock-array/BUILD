@@ -130,6 +130,10 @@ orfs_flow(
         ),
         "MACRO_PLACE_HALO": "0 2.16",
         "RTLMP_BOUNDARY_WT": "0",
+        "RTLMP_MAX_INST" :"250",
+        "RTLMP_MIN_INST" :"50",
+        "RTLMP_MAX_MACRO" :"64",
+        "RTLMP_MIN_MACRO" :"8",
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "MACRO_ROWS_HALO_X": "0.5",
         "MACRO_ROWS_HALO_Y": "0.5",
@@ -354,13 +358,14 @@ orfs_run(
     arguments = {
         "OUTPUT": "$(location :power.txt)",
         "VCD_STIMULI": "$(location :vcd)",
-        "OPENROAD_EXE": "$(location //:opensta)",
+        "OPENROAD_EXE": "$(location //src/sta:opensta)",
         "POWER_STAGE_NAME": POWER_STAGE_NAME,
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
     },
     data = [
+               # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
+               ":opensta_runfiles",
                ":vcd",
-               "//:opensta",
            ] + ["{macro}_{stage}".format(
                macro = macro,
                stage = POWER_STAGE_NAME,
@@ -368,6 +373,7 @@ orfs_run(
            (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
     script = ":power.tcl",
     tags = ["manual"],
+    tools = ["//src/sta:opensta"],
     visibility = ["//visibility:public"],
 )
 
@@ -381,6 +387,15 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
-    # FIXME enable when it works in CI
-    tags = ["manual"],
+)
+
+# FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
+genrule(
+    name = "opensta_runfiles",
+    srcs = [],
+    outs = ["dummy"],
+    cmd = """
+    $(location //src/sta:opensta) >$@
+    """,
+    tools = ["//src/sta:opensta"],
 )

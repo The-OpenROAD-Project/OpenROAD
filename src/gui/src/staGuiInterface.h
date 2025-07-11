@@ -85,8 +85,8 @@ class TimingPathNode
   const sta::Pin* getPinAsSTA() const { return stapin_; }
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
-  const odb::Rect getPinBBox() const;
-  const odb::Rect getPinLargestBox() const;
+  odb::Rect getPinBBox() const;
+  odb::Rect getPinLargestBox() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }

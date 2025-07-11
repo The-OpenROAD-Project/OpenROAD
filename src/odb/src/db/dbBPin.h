@@ -44,6 +44,7 @@ class _dbBPin : public _dbObject
   bool operator==(const _dbBPin& rhs) const;
   bool operator!=(const _dbBPin& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);
+  void removeBox(_dbBox* box);
 };
 
 dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin);

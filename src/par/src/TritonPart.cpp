@@ -1228,7 +1228,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         std::vector<float> vwts(vertex_dimensions_,
                                 0.0);  // IO port has no area
         vertex_weights_.emplace_back(vwts);
-        vertex_types_.emplace_back(PORT);
+        vertex_types_.emplace_back(kPort);
         odb::dbIntProperty::find(term, "vertex_id")->setValue(vertex_id++);
         if (placement_flag_ == true) {
           std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0f,
@@ -1258,11 +1258,11 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         std::vector<float> vwts(vertex_dimensions_, area);
         vertex_weights_.emplace_back(vwts);
         if (master->isBlock()) {
-          vertex_types_.emplace_back(MACRO);
+          vertex_types_.emplace_back(kMacro);
         } else if (liberty_cell->hasSequentials()) {
-          vertex_types_.emplace_back(SEQ_STD_CELL);
+          vertex_types_.emplace_back(kSeqStdCell);
         } else {
-          vertex_types_.emplace_back(COMB_STD_CELL);
+          vertex_types_.emplace_back(kCombStdCell);
         }
         if (placement_flag_ == true) {
           std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0f,
@@ -1275,7 +1275,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   } else {
     for (auto term : block_->getBTerms()) {
       odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
-      vertex_types_.emplace_back(PORT);
+      vertex_types_.emplace_back(kPort);
       std::vector<float> vwts(vertex_dimensions_, 0.0);
       vertex_weights_.push_back(vwts);
       if (placement_flag_ == true) {
@@ -1302,11 +1302,11 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       std::vector<float> vwts(vertex_dimensions_, area);
       vertex_weights_.emplace_back(vwts);
       if (master->isBlock()) {
-        vertex_types_.emplace_back(MACRO);
+        vertex_types_.emplace_back(kMacro);
       } else if (liberty_cell->hasSequentials()) {
-        vertex_types_.emplace_back(SEQ_STD_CELL);
+        vertex_types_.emplace_back(kSeqStdCell);
       } else {
-        vertex_types_.emplace_back(COMB_STD_CELL);
+        vertex_types_.emplace_back(kCombStdCell);
       }
       odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
       if (placement_flag_ == true) {

@@ -8,7 +8,7 @@ read_def ./$test_name.def
 create_clock -name core_clock -period 2 clk
 
 set_wire_rc -signal -layer metal3
-set_wire_rc -clock  -layer metal5
+set_wire_rc -clock -layer metal5
 
 global_placement -timing_driven -timing_driven_net_reweight_overflow [list 80 70 60 50 40 30 20]
 

@@ -18,9 +18,10 @@ read_sdc convergence01.sdc
 
 source asap7/setRC.tcl
 
+global_placement_debug
 global_placement -density 0.5 -timing_driven \
-    -pad_left 2 \
-    -pad_right 2
+  -pad_left 2 \
+  -pad_right 2
 
 set def_file [make_result_file $test_name.def]
 write_def $def_file

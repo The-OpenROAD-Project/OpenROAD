@@ -781,13 +781,15 @@ uint dbCapNode::getShapeId()
   }
   if (seg->_flags._iterm > 0) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
-    if (!iterm->getNet() || !iterm->getNet()->getWire())
+    if (!iterm->getNet() || !iterm->getNet()->getWire()) {
       return 0;
+    }
     return iterm->getNet()->getWire()->getTermJid(iterm->getId());
   }
   dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
-  if (!bterm->getNet() || !bterm->getNet()->getWire())
+  if (!bterm->getNet() || !bterm->getNet()->getWire()) {
     return 0;
+  }
   return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
 }
 

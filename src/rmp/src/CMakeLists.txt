@@ -65,7 +65,6 @@ target_link_libraries(rmp_abc_library
   PUBLIC
     OpenSTA
     dbSta_lib
-    libabc
     utl_lib
     ${ABC_LIBRARY}
 )

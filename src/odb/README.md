@@ -407,6 +407,28 @@ replace_design instance_name module_name
 | `module_name`   | Name of a new module that needs to be swapped in.  |
 
 
+### Create Blockage
+
+This command provides a unified interface for creating placement blockages. The command supports hard, soft, and partial blockages with flexible configuration options.
+
+```tcl
+create_blockage 
+    -region {x1 y1 x2 y2}
+    [-inst instance] 
+    [-max_density density] 
+    [-soft]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `region` | (required) Blockage coordinates in microns. For example, {0 0 10 10} |
+| `inst`   | (optional): Associate blockage with a specific instance.  |
+| `max_density`   | (optional): Maximum density for partial blockages (0-100).  |
+| `soft`   | (optional): Create a soft blockage only blocked during initial placement.  |
+
+
 ## Example scripts
 
 After building successfully, run OpenDB Tcl shell using

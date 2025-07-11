@@ -109,8 +109,8 @@ class HistogramView : public QChartView
   Buckets buckets_;
   std::unique_ptr<utl::Histogram<float>> histogram_;
 
-  static constexpr int default_number_of_buckets_ = 15;
-  static constexpr int minimum_number_of_buckets_ = 8;
+  static constexpr int kDefaultNumberOfBuckets = 15;
+  static constexpr int kMinimumNumberOfBuckets = 8;
 };
 
 class ChartsWidget : public QDockWidget
@@ -120,9 +120,9 @@ class ChartsWidget : public QDockWidget
  public:
   enum Mode
   {
-    SELECT,
-    SETUP_SLACK,
-    HOLD_SLACK
+    kSelect,
+    kSetupSlack,
+    kHoldSlack
   };
 
   ChartsWidget(QWidget* parent = nullptr);

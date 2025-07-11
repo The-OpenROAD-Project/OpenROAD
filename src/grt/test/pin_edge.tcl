@@ -1,5 +1,5 @@
 source "helpers.tcl"
-read_lef pin_edge.lef  
+read_lef pin_edge.lef
 read_def pin_edge.def
 
 set guide_file [make_result_file pin_edge.guide]

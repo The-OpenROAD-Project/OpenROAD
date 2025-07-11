@@ -24,6 +24,7 @@ cc_library(
         "src/Util.h",
     ],
     visibility = ["//visibility:private"],
+    deps = ["//src/sta:opensta_lib"],
 )
 
 cc_library(
@@ -46,10 +47,10 @@ cc_library(
     includes = ["include"],
     deps = [
         ":private_hdrs",
-        "//:opensta_lib",
         "//src/dbSta",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.container_hash",
@@ -77,6 +78,7 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
+        ":cts",
         ":private_hdrs",
         "//:ord",
         "//src/dbSta",
@@ -84,6 +86,7 @@ cc_library(
         "//src/odb",
         "//src/rsz",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

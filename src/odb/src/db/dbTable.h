@@ -26,9 +26,14 @@ class dbTablePage final : public dbObjectPage
 template <class T, uint page_size /* = 128 */>
 class dbTable final : public dbObjectTable, public dbIterator
 {
-  constexpr static int page_shift = boost::static_log2<page_size>::value;
   static_assert((page_size & (page_size - 1)) == 0,
                 "page_size must be a power of two");
+
+  // number of bits to shift to determine page number
+  constexpr static int page_shift = boost::static_log2<page_size>::value;
+
+  // bit-mask to get page-offset
+  constexpr static uint page_mask = page_size - 1;
 
  public:
   dbTable(_dbDatabase* db,
@@ -50,7 +55,7 @@ class dbTable final : public dbObjectTable, public dbIterator
   // clear the table
   void clear();
 
-  uint pageSize() const { return _page_mask + 1; }
+  uint pageSize() const { return page_mask + 1; }
 
   // Get the object of this id
   T* getPtr(dbId<T> id) const;
@@ -88,8 +93,6 @@ class dbTable final : public dbObjectTable, public dbIterator
   _dbFreeObject* getFreeObj(dbId<T> id);
 
   // PERSISTANT-DATA
-  uint _page_mask;      // bit-mask to get page-offset
-  uint _page_shift;     // number of bits to shift to determine page-no
   uint _top_idx;        // largest id which has been allocated.
   uint _bottom_idx;     // smallest id which has been allocated.
   uint _page_cnt;       // high-water mark of page-table

@@ -1,0 +1,106 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk toplevel port is not placed!
+       Replace will regard clk is placed in (0, 0)
+[INFO GPL-0006] Number of instances:               279
+[INFO GPL-0007] Movable instances:                 279
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                      1
+[INFO GPL-0011] Number of pins:                    280
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:       1357.116 um^2
+[INFO GPL-0019] Utilization:                     2.835 %
+[INFO GPL-0020] Standard cells area:          1257.116 um^2
+[INFO GPL-0021] Large instances area:          100.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 40000
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 40000
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 40000
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 40000
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 40000
+Placement Analysis
+---------------------------------
+total displacement       9363.8 u
+average displacement       33.6 u
+max displacement           51.7 u
+original HPWL              10.1 u
+legalized HPWL             91.3 u
+delta HPWL                  806 %
+
+[INFO CTS-0050] Root buffer is CLKBUF_X3.
+[INFO CTS-0051] Sink buffer is CLKBUF_X3.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    CLKBUF_X3
+[INFO CTS-0049] Characterization buffer is CLKBUF_X3.
+[INFO CTS-0007] Net "clk" found for clock "core".
+[INFO CTS-0011]  Clock net "clk" for macros has 1 sinks.
+[INFO CTS-0011]  Clock net "clk_regs" for registers has 278 sinks.
+[INFO CTS-0008] TritonCTS found 2 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 1.
+[INFO CTS-0029]  Macro  sinks will be clustered in groups of up to 4 and with maximum cluster diameter of 50.0 um.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0023]  Original sink region: [(-10000, 9999), (-10000, 9999)].
+[INFO CTS-0024]  Normalized sink region: [(-0.714286, 0.714214), (-0.714286, 0.714214)].
+[INFO CTS-0025]     Width:  0.0000.
+[INFO CTS-0026]     Height: 0.0000.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 1
+    Sub-region size: 0.0000 X 0.0000
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 1.
+[INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk_regs.
+[INFO CTS-0028]  Total number of sinks: 278.
+[INFO CTS-0029]  Register sinks will be clustered in groups of up to 10 and with maximum cluster diameter of 60.0 um.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 28.
+[INFO CTS-0024]  Normalized sink region: [(0.369143, 0.371964), (5.02957, 6.24)].
+[INFO CTS-0025]     Width:  4.6604.
+[INFO CTS-0026]     Height: 5.8680.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 14
+    Sub-region size: 4.6604 X 2.9340
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 28.
+[INFO CTS-0018]     Created 2 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 2 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0018]     Created 31 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
+[INFO CTS-0015]     Created 31 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 8:1, 10:27, 12:1, 16:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0124] Clock net "clk"
+[INFO CTS-0125]  Sinks 1
+[INFO CTS-0098] Clock net "clk_regs"
+[INFO CTS-0099]  Sinks 280
+[INFO CTS-0100]  Leaf buffers 28
+[INFO CTS-0101]  Average sink wire length 31.00 um
+[INFO CTS-0102]  Path depth 2 - 3
+[INFO CTS-0207]  Leaf load cells 2
+Found 0 unconnected buffers.
+No differences found.

@@ -21,8 +21,8 @@ class RDLRoute
  public:
   RDLRoute(odb::dbITerm* source, const std::vector<odb::dbITerm*>& dests);
 
-  void setRoute(const std::map<grid_vertex, odb::Point>& vertex_point_map,
-                const std::vector<grid_vertex>& vertex,
+  void setRoute(const std::map<GridGraphVertex, odb::Point>& vertex_point_map,
+                const std::vector<GridGraphVertex>& vertex,
                 const std::vector<RDLRouter::GridEdge>& removed_edges,
                 const RouteTarget* source,
                 const RouteTarget* target,
@@ -57,7 +57,7 @@ class RDLRoute
 
   bool compare(const std::shared_ptr<RDLRoute>& other) const;
 
-  const std::vector<grid_vertex>& getRouteVerticies() const
+  const std::vector<GridGraphVertex>& getRouteVerticies() const
   {
     return route_vertex_;
   }
@@ -90,7 +90,7 @@ class RDLRoute
   std::vector<odb::dbITerm*> terminals_;
   std::vector<odb::dbITerm*>::iterator next_;
 
-  std::vector<grid_vertex> route_vertex_;
+  std::vector<GridGraphVertex> route_vertex_;
   std::vector<odb::Point> route_pts_;
   std::vector<RDLRouter::GridEdge> route_edges_;
   const RouteTarget* route_source_;

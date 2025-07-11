@@ -12,6 +12,7 @@ set spef3 $d/SPEF/umc110.1231.patterns.Cmin_125C.spef
 read_lef $lef
 read_def $def
 
-gen_rcx_model -out_file $test_case.rcx.model -corner_list "MAX TYP MIN" -spef_file_list "$spef1 $spef2 $spef3"
+gen_rcx_model -out_file $test_case.rcx.model -corner_list "MAX TYP MIN" \
+  -spef_file_list "$spef1 $spef2 $spef3"
 
 exit

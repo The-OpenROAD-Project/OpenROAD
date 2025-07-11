@@ -13,20 +13,6 @@
 
 namespace odb {
 
-definRegion::definRegion()
-{
-  init();
-}
-
-definRegion::~definRegion()
-{
-}
-
-void definRegion::init()
-{
-  definBase::init();
-}
-
 void definRegion::begin(const char* name)
 {
   _cur_region = _block->findRegion(name);

@@ -22,21 +22,21 @@ class dbTechNonDefaultRule;
 
 class definNet : public definBase
 {
-  bool _skip_signal_connections;
-  bool _skip_wires;
-  dbNet* _cur_net;
-  dbTechLayer* _cur_layer;
+  bool _skip_signal_connections{false};
+  bool _skip_wires{false};
+  dbNet* _cur_net{nullptr};
+  dbTechLayer* _cur_layer{nullptr};
   dbWireEncoder _wire_encoder;
-  dbWire* _wire;
-  dbWireType _wire_type;
-  dbWireShapeType _wire_shape_type;
-  int _prev_x;
-  int _prev_y;
-  int _width;
-  int _point_cnt;
-  dbTechLayerRule* _taper_rule;
-  dbTechNonDefaultRule* _non_default_rule;
-  dbTechNonDefaultRule* _rule_for_path;
+  dbWire* _wire{nullptr};
+  dbWireType _wire_type{dbWireType::NONE};
+  dbWireShapeType _wire_shape_type{dbWireShapeType::NONE};
+  int _prev_x{0};
+  int _prev_y{0};
+  int _width{0};
+  int _point_cnt{0};
+  dbTechLayerRule* _taper_rule{nullptr};
+  dbTechNonDefaultRule* _non_default_rule{nullptr};
+  dbTechNonDefaultRule* _rule_for_path{nullptr};
   std::map<std::string, dbVia*> _rotated_vias;
 
   void getUniqueViaName(std::string& viaName);
@@ -44,9 +44,9 @@ class definNet : public definBase
   dbTechNonDefaultRule* findNonDefaultRule(const char* name);
 
  public:
-  int _net_cnt;
-  uint _update_cnt;
-  int _net_iterm_cnt;
+  int _net_cnt{0};
+  uint _update_cnt{0};
+  int _net_iterm_cnt{0};
 
   /// Net interface methods
   void begin(const char* name);
@@ -82,9 +82,6 @@ class definNet : public definBase
 
   dbTechLayer* getLayer() const { return _cur_layer; }
 
-  definNet();
-  ~definNet() override;
-  void init() override;
   void skipWires() { _skip_wires = true; }
   void skipConnections() { _skip_signal_connections = true; }
 };

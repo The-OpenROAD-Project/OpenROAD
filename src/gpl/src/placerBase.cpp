@@ -299,18 +299,18 @@ Pin::Pin()
 Pin::Pin(odb::dbITerm* iTerm) : Pin()
 {
   setITerm();
-  term_ = (void*) iTerm;
+  term_ = iTerm;
   updateCoordi(iTerm);
 }
 
 Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger) : Pin()
 {
   setBTerm();
-  term_ = (void*) bTerm;
+  term_ = bTerm;
   updateCoordi(bTerm, logger);
 }
 
-std::string Pin::name() const
+std::string Pin::getName() const
 {
   if (!term_) {
     return "DUMMY";
@@ -794,15 +794,29 @@ void PlacerBaseCommon::init()
              block->dbuToMicrons(die_.coreUy()));
 
   // insts fill with real instances
-  dbSet<dbInst> insts = block->getInsts();
-  instStor_.reserve(insts.size());
+  dbSet<dbInst> db_insts = block->getInsts();
+  instStor_.reserve(db_insts.size());
   insts_.reserve(instStor_.size());
-  for (dbInst* inst : insts) {
-    auto type = inst->getMaster()->getType();
+  for (dbInst* db_inst : db_insts) {
+    auto type = db_inst->getMaster()->getType();
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
-    Instance myInst(inst, this, log_);
+
+    Instance myInst(db_inst, this, log_);
+    odb::dbBox* inst_bbox = db_inst->getBBox();
+    if (inst_bbox->getDY() > die_.coreDy()) {
+      log_->error(GPL,
+                  119,
+                  "instance {} height is larger than core.",
+                  db_inst->getName());
+    }
+    if (inst_bbox->getDX() > die_.coreDx()) {
+      log_->error(GPL,
+                  120,
+                  "instance {} width is larger than core.",
+                  db_inst->getName());
+    }
 
     // Fixed instaces need to be snapped outwards to the nearest site
     // boundary.  A partially overlapped site is unusable and this
@@ -815,16 +829,6 @@ void PlacerBaseCommon::init()
 
     if (myInst.dy() > siteSizeY_ * 6) {
       macroInstsArea_ += myInst.area();
-    }
-
-    dbBox* bbox = inst->getBBox();
-    if (bbox->getDY() > die_.coreDy()) {
-      log_->error(
-          GPL, 119, "instance {} height is larger than core.", inst->getName());
-    }
-    if (bbox->getDX() > die_.coreDx()) {
-      log_->error(
-          GPL, 120, "instance {} width is larger than core.", inst->getName());
     }
   }
 
@@ -873,9 +877,9 @@ void PlacerBaseCommon::init()
   pins_.reserve(pinStor_.size());
   for (auto& pin : pinStor_) {
     if (pin.isITerm()) {
-      pinMap_[(void*) pin.dbITerm()] = &pin;
+      pinMap_[pin.dbITerm()] = &pin;
     } else if (pin.isBTerm()) {
-      pinMap_[(void*) pin.dbBTerm()] = &pin;
+      pinMap_[pin.dbBTerm()] = &pin;
     }
     pins_.push_back(&pin);
   }
@@ -948,13 +952,13 @@ Instance* PlacerBaseCommon::dbToPb(odb::dbInst* inst) const
 
 Pin* PlacerBaseCommon::dbToPb(odb::dbITerm* term) const
 {
-  auto pinPtr = pinMap_.find((void*) term);
+  auto pinPtr = pinMap_.find(term);
   return (pinPtr == pinMap_.end()) ? nullptr : pinPtr->second;
 }
 
 Pin* PlacerBaseCommon::dbToPb(odb::dbBTerm* term) const
 {
-  auto pinPtr = pinMap_.find((void*) term);
+  auto pinPtr = pinMap_.find(term);
   return (pinPtr == pinMap_.end()) ? nullptr : pinPtr->second;
 }
 

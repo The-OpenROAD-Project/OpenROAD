@@ -265,11 +265,11 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool getRepairClockNets() { return repairClockNets_; }
 
  private:
-  std::string clockNets_ = "";
-  std::string rootBuffer_ = "";
-  std::string sinkBuffer_ = "";
-  std::string treeBuffer_ = "";
-  std::string metricFile_ = "";
+  std::string clockNets_;
+  std::string rootBuffer_;
+  std::string sinkBuffer_;
+  std::string treeBuffer_;
+  std::string metricFile_;
   int dbUnits_ = -1;
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;

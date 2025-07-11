@@ -17,9 +17,10 @@ lefTechLayerPitchRuleParser::lefTechLayerPitchRuleParser(lefinReader* l)
   lefin_ = l;
 }
 
-void lefTechLayerPitchRuleParser::parse(std::string s, odb::dbTechLayer* layer)
+void lefTechLayerPitchRuleParser::parse(const std::string& s,
+                                        odb::dbTechLayer* layer)
 {
-  qi::rule<std::string::iterator, space_type> PITCH
+  qi::rule<std::string::const_iterator, space_type> PITCH
       = ((lit("PITCH") >> double_ >> double_)[boost::bind(
              &odb::lefTechLayerPitchRuleParser::setPitchXY, this, _1, layer)]
          | lit("PITCH")
@@ -29,7 +30,7 @@ void lefTechLayerPitchRuleParser::parse(std::string s, odb::dbTechLayer* layer)
                                       layer,
                                       &odb::dbTechLayer::setPitch)]);
 
-  qi::rule<std::string::iterator, space_type> FIRST_LAST_PTICH
+  qi::rule<std::string::const_iterator, space_type> FIRST_LAST_PTICH
       = (PITCH
          >> -(lit("FIRSTLASTPITCH")
               >> double_[boost::bind(&odb::lefTechLayerPitchRuleParser::setInt,

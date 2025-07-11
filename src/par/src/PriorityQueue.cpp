@@ -72,7 +72,7 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
   int index = 0;             // starting from the first index
 
   // define the lambda function to check the balance constraint
-  auto CheckBalance = [&](int index) {
+  auto check_balance = [&](int index) {
     const int vertex_id = vertices_[index]->GetVertex();
     const int to_pid = vertices_[index]->GetDestinationPart();
     const int from_pid = vertices_[index]->GetSourcePart();
@@ -86,7 +86,7 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
   };
 
   // check the first index
-  if (CheckBalance(index) == true) {
+  if (check_balance(index) == true) {
     return vertices_[index];
   }
 
@@ -95,13 +95,13 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
     pass++;
     // Step 1: check the left child first
     const int left_child = LeftChild(index);
-    if (left_child < total_elements_ && CheckBalance(left_child) == true) {
+    if (left_child < total_elements_ && check_balance(left_child) == true) {
       candidate_index = left_child;
     }
 
     // Step 2: check the right child second
     const int right_child = RightChild(index);
-    if (right_child < total_elements_ && CheckBalance(right_child) == true
+    if (right_child < total_elements_ && check_balance(right_child) == true
         && (candidate_index == -1
             || CompareElementLargeThan(right_child, candidate_index))) {
       candidate_index = right_child;  // use the right index

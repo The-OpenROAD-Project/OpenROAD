@@ -54,6 +54,10 @@ void InitialPlace::doBicgstabPlace(int threads)
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
+  if (graphics) {
+    graphics->getGuiObjectFromGraphics()->gifStart("initPlacement.gif");
+  }
+
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
@@ -78,49 +82,81 @@ void InitialPlace::doBicgstabPlace(int threads)
 
     if (graphics) {
       graphics->cellPlot(true);
+
+      gui::Gui* gui = graphics->getGuiObjectFromGraphics();
+      odb::Rect region;
+      odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+      int max_dim = std::max(bbox.dx(), bbox.dy());
+      double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
+      gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
 
     if (error_max <= 1e-5 && iter >= 5) {
       break;
     }
   }
+
+  if (graphics) {
+    graphics->getGuiObjectFromGraphics()->gifEnd();
+  }
 }
 
 // starting point of initial place is center.
 void InitialPlace::placeInstsCenter()
 {
-  const int centerX = pbc_->die().coreCx();
-  const int centerY = pbc_->die().coreCy();
+  const int center_x = pbc_->die().coreCx();
+  const int center_y = pbc_->die().coreCy();
+
+  int count_region_center = 0;
+  int count_db_location = 0;
+  int count_core_center = 0;
 
   for (auto& inst : pbc_->placeInsts()) {
-    if (!inst->isLocked()) {
-      const auto db_inst = inst->dbInst();
-      const auto group = db_inst->getGroup();
-      if (group && group->getType() == odb::dbGroupType::POWER_DOMAIN) {
-        auto domain_region = group->getRegion();
-        int domain_xMin = std::numeric_limits<int>::max();
-        int domain_yMin = std::numeric_limits<int>::max();
-        int domain_xMax = std::numeric_limits<int>::min();
-        int domain_yMax = std::numeric_limits<int>::min();
-        for (auto boundary : domain_region->getBoundaries()) {
-          domain_xMin = std::min(domain_xMin, boundary->xMin());
-          domain_yMin = std::min(domain_yMin, boundary->yMin());
-          domain_xMax = std::max(domain_xMax, boundary->xMax());
-          domain_yMax = std::max(domain_yMax, boundary->yMax());
-        }
-        inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin) / 2,
-                                domain_yMax - (domain_yMax - domain_yMin) / 2);
-      } else if (ipVars_.maxIter == 0 && db_inst->isPlaced()) {
-        // It is helpful to pick up the placement from mpl if available,
-        // particularly when you are going to skip initial placement
-        // (eg skip_io).
-        const auto bbox = db_inst->getBBox()->getBox();
-        inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
-      } else {
-        inst->setCenterLocation(centerX, centerY);
+    if (inst->isLocked()) {
+      continue;
+    }
+
+    const auto db_inst = inst->dbInst();
+    const auto group = db_inst->getGroup();
+
+    if (group && group->getType() == odb::dbGroupType::POWER_DOMAIN) {
+      auto domain_region = group->getRegion();
+      int domain_x_min = std::numeric_limits<int>::max();
+      int domain_y_min = std::numeric_limits<int>::max();
+      int domain_x_max = std::numeric_limits<int>::min();
+      int domain_y_max = std::numeric_limits<int>::min();
+
+      for (auto boundary : domain_region->getBoundaries()) {
+        domain_x_min = std::min(domain_x_min, boundary->xMin());
+        domain_y_min = std::min(domain_y_min, boundary->yMin());
+        domain_x_max = std::max(domain_x_max, boundary->xMax());
+        domain_y_max = std::max(domain_y_max, boundary->yMax());
       }
+
+      inst->setCenterLocation(domain_x_max - (domain_x_max - domain_x_min) / 2,
+                              domain_y_max - (domain_y_max - domain_y_min) / 2);
+      ++count_region_center;
+    } else if (pbc_->skipIoMode() && db_inst->isPlaced()) {
+      // It is helpful to pick up the placement from mpl if available,
+      // particularly when you are going to run skip_io.
+      const auto bbox = db_inst->getBBox()->getBox();
+      inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
+      ++count_db_location;
+    } else {
+      inst->setCenterLocation(center_x, center_y);
+      ++count_core_center;
     }
   }
+
+  debugPrint(log_,
+             GPL,
+             "init",
+             1,
+             "[InitialPlace] origin position counters: region center = {}, db "
+             "location = {}, core center = {}",
+             count_region_center,
+             count_db_location,
+             count_core_center);
 }
 
 void InitialPlace::setPlaceInstExtId()

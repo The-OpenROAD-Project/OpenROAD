@@ -17,7 +17,7 @@ using namespace dst;
 template <class Archive>
 inline bool is_loading(const Archive& ar)
 {
-  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+  return std::is_same_v<typename Archive::is_loading, boost::mpl::true_>;
 }
 
 template <class Archive>
@@ -27,7 +27,7 @@ void JobMessage::serialize(Archive& ar, const unsigned int version)
   (ar) & job_type_;
   (ar) & desc_;
   if (!is_loading(ar)) {
-    std::string eop = EOP;
+    std::string eop = kEop;
     (ar) & eop;
   }
 }
@@ -36,7 +36,7 @@ bool JobMessage::serializeMsg(SerializeType type,
                               JobMessage& msg,
                               std::string& str)
 {
-  if (type == WRITE) {
+  if (type == kWrite) {
     try {
       std::ostringstream oarchive_stream;
       boost::archive::text_oarchive archive(oarchive_stream);

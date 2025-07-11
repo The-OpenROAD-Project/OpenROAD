@@ -19,5 +19,5 @@ rmp::blif_add_instance $blif "_r1_"
 rmp::blif_dump $blif "./results/blif_writer_sequential.blif"
 
 write_def "./results/design_seq.def"
-diff_files "./results/blif_writer_sequential.blif" "blif_writer_sequential.blif.ok"
-
+diff_files "./results/blif_writer_sequential.blif" \
+  "blif_writer_sequential.blif.ok"

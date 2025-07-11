@@ -7,6 +7,7 @@ module(
 
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
@@ -15,17 +16,6 @@ git_override(
     module_name = "rules_scala",
     commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
     remote = "https://github.com/bazelbuild/rules_scala",
-)
-
-# The current rules_cc 0.1.1 hardcodes script locations to `#!/bin/bash`
-# instead of using `#!/usr/bin/env bash`.
-# This is fixed by https://github.com/bazelbuild/rules_cc/pull/306 but
-# is not released yet. Use rules_cc from that commit.
-bazel_dep(name = "rules_cc", version = "0.1.1")
-git_override(
-    module_name = "rules_cc",
-    commit = "d74915024017250e46d95e91a3defc34174effe0",
-    remote = "https://github.com/bazelbuild/rules_cc",
 )
 
 bazel_dep(name = "rules_verilator", version = "5.034")
@@ -149,7 +139,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "ca614657a795785bd4b472e406fc1d583e0620a2",
+    commit = "eaf22cee8fe62d5326f0486e2742a63bbe3d987f",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -158,10 +148,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3240-g821a2bfa",
+    image = "docker.io/openroad/orfs:v3.0-3393-g0ae5fce9",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "5fc6bcacc138d557e6b1fd8500ad8565b22f558728b3149800b6cc5eb632b91a",
+    sha256 = "3e8134fc509e189ee3762cec4345ba1c690255abee4bba9966d4b0605b2079f7",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")

@@ -12,11 +12,12 @@ namespace utl {
 class Logger;
 }
 
+namespace dst {
+
 namespace asio = boost::asio;
 using asio::ip::tcp;
+using Socket = asio::basic_stream_socket<tcp>;
 
-namespace dst {
-using socket = asio::basic_stream_socket<tcp>;
 class JobMessage;
 class JobCallBack;
 class Worker;
@@ -40,7 +41,7 @@ class Distributed
                           const char* ip,
                           unsigned short port,
                           JobMessage& result);
-  bool sendResult(JobMessage& msg, socket& sock);
+  bool sendResult(JobMessage& msg, Socket& sock);
   void addCallBack(JobCallBack* cb);
   const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
 
