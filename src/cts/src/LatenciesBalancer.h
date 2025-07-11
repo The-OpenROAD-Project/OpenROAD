@@ -77,7 +77,6 @@ class LatenciesBalancer
  private:
   void initSta();
   void findAllBuilders(TreeBuilder* builder);
-  void expandBuilderGraph(TreeBuilder* builder);
   void expandBuilderGraph(odb::dbNet* clkInputNet);
   int getNodeIdByName(std::string name);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
