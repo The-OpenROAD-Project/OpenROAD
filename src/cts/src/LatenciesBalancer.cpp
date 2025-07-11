@@ -36,6 +36,7 @@ void LatenciesBalancer::run()
   expandBuilderGraph(root_->getTopInputNet());
   computeLeafsNumBufferToInsert(0);
   debugPrint(logger_, CTS, "insertion delay", 1, "inserted {} delay buffers.", delayBufIndex_);
+  showGraph();
 }
 
 void LatenciesBalancer::initSta() {
@@ -308,12 +309,12 @@ void LatenciesBalancer::computeLeafsNumBufferToInsert(int nodeId) {
   for (auto it = buffersNeeded2Childern.rbegin(); it != buffersNeeded2Childern.rend(); ++it) {
     int buf_to_insert = it->first;
     std::vector<odb::dbITerm*> childs = it->second;
-    if(!previous_buf_to_insert) {
+    if(buf_to_insert == -1) {
+      continue;
+    } else if(!previous_buf_to_insert) {
       previous_buf_to_insert = buf_to_insert;
       sinksInput.clear();
       sinksInput = childs;      
-      continue;
-    } else if(buf_to_insert == -1) {
       continue;
     }
 
@@ -346,7 +347,12 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(int numBuffers, int srcX, in
     if (drivingNet == nullptr) {
       drivingNet = sinkInput->getNet();
     }
-
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               1,
+               "  {}",
+               sinkInput->getName());
     sinkInput->disconnect();
     int sinkX, sinkY;
     sinkInput->getAvgXY(&sinkX, &sinkY);
