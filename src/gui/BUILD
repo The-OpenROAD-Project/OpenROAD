@@ -57,6 +57,9 @@ qt6_library(
         "src",
         "ui",
     ],
+    defines = [
+        "STATIC_QPA_PLUGIN_XCB=1",
+    ],
     moc_hdrs = glob(["src/*.h"]),
     uic_srcs = glob(["ui/*.ui"]),
     deps = [

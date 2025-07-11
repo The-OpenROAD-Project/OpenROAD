@@ -1541,6 +1541,9 @@ int startGui(int& argc,
              bool load_settings,
              bool minimize)
 {
+#ifdef STATIC_QPA_PLUGIN_XCB
+  setenv("QT_QPA_PLATFORM", "xcb", /*__replace=*/true);
+#endif
   auto gui = gui::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();
