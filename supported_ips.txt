@@ -1,0 +1,7 @@
+# OpenROAD Supported IP Blocks
+aes
+sha256
+gcd
+
+riscv
+jpeg_encoder
