@@ -273,8 +273,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   if (nbc_->getHpwl() == 0) {
-    log_->report("0 HPWL, nothing to be done.");
-    return 0;  // return 0 iterations
+    log_->info(GPL, 20, "0 HPWL, skipping nesterov loop.");
+    return 0;
   }
 
   if (graphics_ && npVars_.debug_start_iter == 0) {
