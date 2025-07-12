@@ -90,6 +90,19 @@ a result, this should be run after placement, and after `scan_replace`.
 execute_dft_plan
 ```
 
+### Scan Optimization
+
+**Note: This is currently not implement and this command currently operates as a
+nop**
+
+Performs scan optimizations on the design reordering the flops of the scan
+chains using the latest placement information.
+
+
+```tcl
+scan_opt
+```
+
 ## Example scripts
 
 This example will create scan chains with a max length of 10 bits mixing all the
@@ -113,6 +126,7 @@ Simply run the following script:
 ```shell
 ./test/regression
 ```
+
 
 ## Limitations
 
