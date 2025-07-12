@@ -399,11 +399,13 @@ int IOPlacer::placeFallbackPins(bool random)
           int last_slot = constraint.last_slot;
           int available_slots = last_slot - first_slot;
           if (available_slots < group.first.size()) {
-            logger_->error(
-                PPL,
-                90,
-                "Group of size {} does not fit in constrained region.",
-                group.first.size());
+            logger_->error(PPL,
+                           90,
+                           "Group of size {} with pin {} does not fit in "
+                           "constrained region. ({} available slots)",
+                           group.first.size(),
+                           bterm->getName(),
+                           available_slots);
           }
 
           int mid_slot = (last_slot - first_slot) / 2 - group.first.size() / 2
