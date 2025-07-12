@@ -1,0 +1,94 @@
+// Copyright 2024 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
+#pragma once
+
+#include <optional>
+#include <set>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include "base/abc/abc.h"
+#include "db_sta/dbSta.hh"
+#include "map/mio/mio.h"
+#include "map/mio/mioInt.h"
+#include "map/scl/sclLib.h"
+#include "sta/Sta.hh"
+#include "utl/Logger.h"
+#include "utl/deleter.h"
+
+namespace lext {
+
+class AbcLibrary
+{
+ public:
+  AbcLibrary() = default;
+  ~AbcLibrary() = default;
+
+  AbcLibrary(AbcLibrary&&) = default;
+  AbcLibrary& operator=(AbcLibrary&&) = default;
+
+  AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library);
+
+  abc::SC_Lib* abc_library() { return abc_library_.get(); }
+  abc::Mio_Library_t* mio_library() { return mio_library_; }
+  bool IsSupportedCell(const std::string& cell_name);
+  bool IsConst0Cell(const std::string& cell_name);
+  bool IsConst1Cell(const std::string& cell_name);
+  bool IsConstCell(const std::string& cell_name);
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantZeroCell();
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantOneCell();
+
+ private:
+  void InitializeConstGates();
+
+  utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library_;
+  abc::Mio_Library_t* mio_library_;  // TODO: handle lifetime of this lib
+  std::set<std::string> supported_cells_;
+  std::unordered_set<std::string> const1_gates_;
+  std::unordered_set<std::string> const0_gates_;
+  std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const0_cell_;
+  std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const1_cell_;
+  bool const_gates_initalized_ = false;
+};
+
+// A Factory to construct an abc::SC_Lib* from an OpenSTA library.
+// It is key to reconstructing cuts from OpenROAD in ABC's AIG
+// data structure.
+class AbcLibraryFactory
+{
+ public:
+  explicit AbcLibraryFactory(utl::Logger* logger) : logger_(logger) {}
+  AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
+  AbcLibraryFactory& SetCorner(sta::Corner* corner);
+  AbcLibrary Build();
+
+ private:
+  void PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
+                                std::vector<sta::LibertyCell*>& cells,
+                                sta::Units* units);
+  void PopulateLibraryDetails(abc::SC_Lib* sc_library,
+                              sta::LibertyLibrary* library);
+  int ScaleAbbreviationToExponent(const std::string& scale_abbreviation);
+  int StaTimeUnitToAbcInt(sta::Unit* time_unit);
+  float StaCapacitanceToAbc(sta::Unit* cap_unit);
+  std::vector<abc::SC_Pin*> CreateAbcOutputPins(
+      sta::LibertyCell* cell,
+      const std::vector<std::string>& input_names);
+  void AbcPopulateAbcSurfaceFromSta(abc::SC_Surface* abc_table,
+                                    const sta::TableModel* model,
+                                    sta::Units* units);
+  std::vector<sta::LibertyCell*> GetLibertyCellsFromCorner(sta::Corner* corner);
+  std::vector<abc::SC_Pin*> CreateAbcInputPins(sta::LibertyCell* cell);
+
+  utl::Logger* logger_;
+  sta::dbSta* db_sta_ = nullptr;
+  sta::Corner* corner_ = nullptr;
+};
+
+}  // namespace lext

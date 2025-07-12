@@ -37,6 +37,7 @@ class Progress;
 // Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
+  X(CGT)                \
   X(CTS)                \
   X(DFT)                \
   X(DPL)                \
@@ -49,6 +50,7 @@ class Progress;
   X(GRT)                \
   X(GUI)                \
   X(IFP)                \
+  X(LEXT)               \
   X(MPL)                \
   X(ODB)                \
   X(ORD)                \

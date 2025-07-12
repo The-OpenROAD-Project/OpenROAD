@@ -263,7 +263,9 @@ add_subdirectory(dpl)
 add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
+add_subdirectory(lext)
 add_subdirectory(rmp)
+add_subdirectory(cgt)
 add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
@@ -327,6 +329,8 @@ target_link_libraries(openroad
   odbtcl
   rcx
   rmp
+  lext
+  cgt
   cts
   grt
   tap
@@ -407,6 +411,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     exa_py
     ppl_py
     tap_py
+    cgt_py
     cts_py
     drt_py
     fin_py

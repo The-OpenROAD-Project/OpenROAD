@@ -42,7 +42,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/tclCmdHighlighter.cpp
     src/displayControls.cpp
     src/gui.cpp
-    src/search.cpp 
+    src/search.cpp
     src/findDialog.cpp
     src/gotoDialog.cpp
     src/inspector.cpp
@@ -90,8 +90,8 @@ messages(
 
 else()
   message(STATUS "GUI is not enabled")
-  add_library(gui 
-    src/stub.cpp 
+  add_library(gui
+    src/stub.cpp
     src/stub_heatMap.cpp
   )
   target_link_libraries(gui
