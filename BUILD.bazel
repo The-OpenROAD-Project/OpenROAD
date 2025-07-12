@@ -25,6 +25,7 @@ string_flag(
     build_setting_default = "cli",
     values = [
         "cli",
+        "gui",
     ],
 )
 
@@ -32,6 +33,13 @@ config_setting(
     name = "platform_cli",
     flag_values = {
         ":platform": "cli",
+    },
+)
+
+config_setting(
+    name = "platform_gui",
+    flag_values = {
+        ":platform": "gui",
     },
 )
 
@@ -60,7 +68,6 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/gpl",
     "//src/grt",
     "//src/grt:ui",
-    "//src/gui",
     "//src/ifp",
     "//src/ifp:ui",
     "//src/mpl",
@@ -86,7 +93,12 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl",
     "//src/utl:ui",
     "@edu_berkeley_abc//:abc-lib",
-]
+] + select(
+    {
+        ":platform_gui": ["//src/gui:gui_qt"],
+        ":platform_cli": ["//src/gui"],
+    },
+)
 
 OPENROAD_COPTS = [
     "-Wno-error",
@@ -121,14 +133,9 @@ cc_binary(
         ":rmp_swig",
         ":rmp_tcl",
         "//bazel:runfiles",
-    ] + select({
-        ":platform_cli": [],
-    }),
+    ],
     copts = OPENROAD_COPTS,
     features = ["-use_header_modules"],
-    linkopts = select({
-        ":platform_cli": [],
-    }),
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
@@ -141,6 +148,13 @@ cc_binary(
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],
+)
+
+GUI_BUILD_FLAGS = select(
+    {
+        ":platform_gui": ["BUILD_GUI=true"],
+        ":platform_cli": ["BUILD_GUI=false"],
+    },
 )
 
 cc_library(
@@ -157,9 +171,7 @@ cc_library(
         "src/rmp/include/rmp/*.h",
     ]),
     copts = OPENROAD_COPTS,
-    defines = OPENROAD_DEFINES + [
-        "BUILD_GUI=false",
-    ],
+    defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
     features = ["-use_header_modules"],
     includes = [
         "include",
@@ -185,9 +197,7 @@ cc_library(
     ]),
     hdrs = glob(["src/rmp/include/rmp/*.h"]),
     copts = OPENROAD_COPTS,
-    defines = OPENROAD_DEFINES + [
-        "BUILD_GUI=false",
-    ],
+    defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
     features = ["-use_header_modules"],
     includes = [
         "include",

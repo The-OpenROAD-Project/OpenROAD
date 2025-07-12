@@ -858,8 +858,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
 Selected StaInstanceDescriptor::makeSelected(std::any object) const
 {
-  if (auto inst = std::any_cast<sta::Instance*>(&object)) {
-    return Selected(*inst, this);
+  if (auto inst = std::any_cast<sta::Instance*>(object)) {
+    return Selected(inst, this);
   }
   return Selected();
 }

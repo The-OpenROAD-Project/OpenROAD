@@ -9,7 +9,6 @@
 #include <QMap>
 #include <QMenu>
 #include <QMutex>
-#include <QOpenGLWidget>
 #include <QPaintEvent>
 #include <QPixmap>
 #include <QScrollArea>

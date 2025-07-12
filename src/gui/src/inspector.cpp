@@ -137,10 +137,10 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   return item;
 }
 
-QStandardItem* SelectedItemModel::makeItem(const std::any& item,
+QStandardItem* SelectedItemModel::makeItem(const std::any& item_param,
                                            bool short_name)
 {
-  if (auto selected = std::any_cast<Selected>(&item)) {
+  if (auto selected = std::any_cast<Selected>(&item_param)) {
     QStandardItem* item = nullptr;
     if (short_name) {
       item = makeItem(QString::fromStdString(selected->getShortName()));
@@ -151,7 +151,8 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item,
                   EditorItemDelegate::kSelected);
     return item;
   }
-  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
+  return makeItem(
+      QString::fromStdString(Descriptor::Property::toString(item_param)));
 }
 
 template <typename Iterator>
