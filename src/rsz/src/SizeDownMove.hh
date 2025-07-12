@@ -30,12 +30,13 @@ class SizeDownMove : public BaseMove
   const char* name() override { return "SizeDownMove"; }
 
  private:
-  LibertyCell* downsizeFanout(const LibertyPort* drvr_port,
-                              const Pin* drvr_pin,
-                              const LibertyPort* fanout_port,
-                              const Pin* fanout_pin,
-                              const DcalcAnalysisPt* dcalc_ap,
-                              float fanout_slack);
+  LibertyCell* downsizeGate(const LibertyPort* drvr_port,
+                            const LibertyPort* load_port,
+                            const Pin* load_pin,
+                            const DcalcAnalysisPt* dcalc_ap,
+                            float slack_margin);
+  LibertyCellSeq getSwappableCells(LibertyCell* base);
+  LibertyCellSeq buffer_sizes_;
 };
 
 }  // namespace rsz

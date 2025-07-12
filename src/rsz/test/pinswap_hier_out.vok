@@ -25,13 +25,13 @@ module td1 (a1,
     .ZN(n1));
  AND2_X4 U5 (.A1(a3),
     .A2(n1),
-    .ZN(net11));
- BUF_X8 wire1 (.A(net3),
+    .ZN(net12));
+ BUF_X2 wire1 (.A(net3),
     .Z(y1));
  pinswap U4 (.ip0(a6),
     .ip1(a4),
     .ip2(a5),
-    .ip3(net11),
+    .ip3(net12),
     .op0(y2));
 endmodule
 module pinswap (ip0,

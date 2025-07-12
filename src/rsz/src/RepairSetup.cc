@@ -144,14 +144,16 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move_.get());
     }
-    // TODO: Add size_down_move to the sequence if we want to allow
-    // Always  have sizing
+    // Always have size up
     move_sequence.push_back(resizer_->size_up_move_.get());
     if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move_.get());
     }
     if (!skip_buffering) {
       move_sequence.push_back(resizer_->buffer_move_.get());
+    }
+    if (!skip_size_down) {
+      move_sequence.push_back(resizer_->size_down_move_.get());
     }
     if (!skip_gate_cloning) {
       move_sequence.push_back(resizer_->clone_move_.get());
@@ -163,6 +165,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   string repair_moves = "Repair move sequence: ";
   for (auto move : move_sequence) {
+    move->init();
     repair_moves += move->name() + string(" ");
   }
   logger_->info(RSZ, 100, repair_moves);
@@ -223,6 +226,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Ensure that max cap and max fanout violations don't get worse
   sta_->checkCapacitanceLimitPreamble();
+  sta_->checkSlewLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
   IncrementalParasiticsGuard guard(resizer_);
