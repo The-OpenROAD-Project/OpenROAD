@@ -411,7 +411,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
 }
 bool FlexGCWorker::Impl::isWrongDir(gcSegment* edge)
 {
-  auto layer = getTech()->getLayer(edge->getLayerNum());
+  auto layer = getLayer(edge->getLayerNum());
   return layer->getDir() == odb::dbTechLayerDir::HORIZONTAL
              ? (edge->getDir() == frDirEnum::E
                 || edge->getDir() == frDirEnum::W)
@@ -1263,7 +1263,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
 {
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layer = getLayer(layerNum);
   auto& cons = layer->getEolSpacing();
   auto lef58Cons = layer->getLef58SpacingEndOfLineConstraints();
   auto keepoutCons = layer->getLef58EolKeepOutConstraints();
@@ -1322,8 +1322,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      auto currLayer = getLayer(i);
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -1337,8 +1337,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      auto currLayer = getLayer(i);
+      if (!currLayer->isRouting()) {
         continue;
       }
       for (auto& net : getNets()) {

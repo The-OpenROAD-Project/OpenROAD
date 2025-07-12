@@ -135,10 +135,8 @@ void io::Parser::initDefaultVias()
       bool isLayer2Square = layer2Box.dx() == layer2Box.dy();
       bool isLayer1EncHorz = layer1Box.dx() > layer1Box.dy();
       bool isLayer2EncHorz = layer2Box.dx() > layer2Box.dy();
-      bool isLayer1Horz = (getTech()->getLayer(layer1Num)->getDir()
-                           == dbTechLayerDir::HORIZONTAL);
-      bool isLayer2Horz = (getTech()->getLayer(layer2Num)->getDir()
-                           == dbTechLayerDir::HORIZONTAL);
+      bool isLayer1Horz = getTech()->getLayer(layer1Num)->isHorizontal();
+      bool isLayer2Horz = getTech()->getLayer(layer2Num)->isHorizontal();
       bool needViaGen = false;
       if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
           || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
@@ -503,11 +501,9 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
                                  (yh(layer1Rect) - yl(layer1Rect)));
   isNotLowerAlign
       = (isLayer1Horz
-         && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
+         && (getTech()->getLayer(viaDef->getLayer1Num())->isVertical()))
         || (!isLayer1Horz
-            && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+            && (getTech()->getLayer(viaDef->getLayer1Num())->isHorizontal()));
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -523,11 +519,9 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
                                  (yh(layer2Rect) - yl(layer2Rect)));
   isNotUpperAlign
       = (isLayer2Horz
-         && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
+         && (getTech()->getLayer(viaDef->getLayer2Num())->isVertical()))
         || (!isLayer2Horz
-            && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+            && (getTech()->getLayer(viaDef->getLayer2Num())->isHorizontal()));
 
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);
@@ -664,7 +658,7 @@ void io::Parser::convertLef58MinCutConstraints()
   auto topLayerNum = getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     frLayer* layer = getTech()->getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     if (!layer->hasLef58Minimumcut()) {

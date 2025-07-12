@@ -89,8 +89,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
                  gtl::yh(markerRect));
         marker->setBBox(box);
         marker->setLayerNum(lNum);
-        marker->setConstraint(
-            getTech()->getLayer(lNum)->getSpacingTableInfluence());
+        marker->setConstraint(getLayer(lNum)->getSpacingTableInfluence());
         marker->addSrc(rects[i]->getNet()->getOwner());
         marker->addVictim(rects[i]->getNet()->getOwner(),
                           std::make_tuple(lNum,
@@ -189,7 +188,7 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
 void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
 {
   frLayerNum lNum = pin->getPolygon()->getLayerNum();
-  auto con = getTech()->getLayer(lNum)->getSpacingTableInfluence();
+  auto con = getLayer(lNum)->getSpacingTableInfluence();
   for (auto& rect : pin->getMaxRectangles()) {
     checkRectMetSpcTblInf(rect.get(), con);
   }
@@ -202,8 +201,8 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      auto currLayer = getLayer(i);
+      if (!currLayer->isRouting()) {
         continue;
       }
       if (!currLayer->hasSpacingTableInfluence()) {
@@ -220,8 +219,8 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
          i
          <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != dbTechLayerType::ROUTING) {
+      auto currLayer = getLayer(i);
+      if (!currLayer->isRouting()) {
         continue;
       }
       if (!currLayer->hasSpacingTableInfluence()) {

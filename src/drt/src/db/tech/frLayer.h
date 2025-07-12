@@ -101,7 +101,7 @@ class frLayer
                ? false
                : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL;
   }
-  bool isRoutable() const
+  bool isRouting() const
   {
     return (fakeCut_ || fakeMasterslice_)
                ? false

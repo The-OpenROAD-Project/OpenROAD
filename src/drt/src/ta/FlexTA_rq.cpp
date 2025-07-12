@@ -37,6 +37,16 @@ frDesign* FlexTAWorkerRegionQuery::getDesign() const
   return impl_->taWorker->getDesign();
 }
 
+frTechObject* FlexTAWorkerRegionQuery::getTech() const
+{
+  return impl_->taWorker->getTech();
+}
+
+frLayer* FlexTAWorkerRegionQuery::getLayer(const frLayerNum layer_num) const
+{
+  return impl_->taWorker->getLayer(layer_num);
+}
+
 void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 {
   Rect box;
@@ -89,7 +99,7 @@ void FlexTAWorkerRegionQuery::query(const Rect& box,
 
 void FlexTAWorkerRegionQuery::init()
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   impl_->shapes_.clear();
   impl_->shapes_.resize(numLayers);
   impl_->route_costs_.clear();

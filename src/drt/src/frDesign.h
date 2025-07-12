@@ -38,6 +38,11 @@ class frDesign
   // getters
   frBlock* getTopBlock() const { return topBlock_.get(); }
   frTechObject* getTech() const { return tech_.get(); }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
+
   frRegionQuery* getRegionQuery() const { return rq_.get(); }
   std::vector<std::unique_ptr<frMaster>>& getMasters() { return masters_; }
   const std::vector<std::unique_ptr<frMaster>>& getMasters() const

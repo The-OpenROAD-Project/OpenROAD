@@ -449,7 +449,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     createNDR(ndr);
   }
   for (auto& layer : getTech()->getLayers()) {
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (!layer->isRouting()) {
       continue;
     }
     router_cfg_->MTSAFEDIST = std::max(

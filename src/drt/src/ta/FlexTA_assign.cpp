@@ -36,7 +36,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord width1 = box.minDXDY();
   frCoord length1 = box.maxDXDY();
   // obj2 = other obj
-  auto layer = getDesign()->getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   // layer default width
   frCoord width2 = layer->getWidth();
   frCoord halfwidth2 = width2 / 2;
@@ -124,16 +124,14 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   const frViaDef* viaDef = nullptr;
   frLayerNum cutLNum = 0;
   if (isUpperVia) {
-    viaDef
-        = (lNum < getDesign()->getTech()->getTopLayerNum())
-              ? getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef()
-              : nullptr;
+    viaDef = (lNum < getTech()->getTopLayerNum())
+                 ? getLayer(lNum + 1)->getDefaultViaDef()
+                 : nullptr;
     cutLNum = lNum + 1;
   } else {
-    viaDef
-        = (lNum > getDesign()->getTech()->getBottomLayerNum())
-              ? getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef()
-              : nullptr;
+    viaDef = (lNum > getTech()->getBottomLayerNum())
+                 ? getLayer(lNum - 1)->getDefaultViaDef()
+                 : nullptr;
     cutLNum = lNum - 1;
   }
   if (viaDef == nullptr) {
@@ -151,16 +149,13 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
 
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
-  if (cutLNum - 1 >= getDesign()->getTech()->getBottomLayerNum()
-      && getDesign()->getTech()->getLayer(cutLNum - 1)->getType()
-             == dbTechLayerType::ROUTING
-      && getDesign()->getTech()->getLayer(cutLNum - 1)->getDir() == getDir()) {
+  if (cutLNum - 1 >= getTech()->getBottomLayerNum()
+      && getLayer(cutLNum - 1)->isRouting()
+      && getLayer(cutLNum - 1)->getDir() == getDir()) {
     followTrackLNum = cutLNum - 1;
-  } else if (cutLNum + 1 <= getDesign()->getTech()->getTopLayerNum()
-             && getDesign()->getTech()->getLayer(cutLNum + 1)->getType()
-                    == dbTechLayerType::ROUTING
-             && getDesign()->getTech()->getLayer(cutLNum + 1)->getDir()
-                    == getDir()) {
+  } else if (cutLNum + 1 <= getTech()->getTopLayerNum()
+             && getLayer(cutLNum + 1)->isRouting()
+             && getLayer(cutLNum + 1)->getDir() == getDir()) {
     followTrackLNum = cutLNum + 1;
   } else {
     std::cout
@@ -171,7 +166,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   }
 
   // spacing value needed
-  auto layer = getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   frCoord bloatDist = layer->getMinSpacingValue(
       width1, width2, isCurrPs ? length2 : std::min(length1, length2), false);
   if (fig->getNet()->getNondefaultRule()) {
@@ -297,29 +292,25 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
                                      bool isAddCost,
                                      frOrderedIdSet<taPin*>* pinS)
 {
-  if (!getDesign()->getTech()->getLayer(lNum)->hasCutSpacing()) {
+  if (!getLayer(lNum)->hasCutSpacing()) {
     return;
   }
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
-  const frViaDef* viaDef
-      = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* viaDef = getLayer(lNum)->getDefaultViaDef();
   frVia via(viaDef);
   Rect viaBox = via.getCutBBox();
 
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
-  if (lNum - 1 >= getDesign()->getTech()->getBottomLayerNum()
-      && getDesign()->getTech()->getLayer(lNum - 1)->getType()
-             == dbTechLayerType::ROUTING
-      && getDesign()->getTech()->getLayer(lNum - 1)->getDir() == getDir()) {
+  if (lNum - 1 >= getTech()->getBottomLayerNum()
+      && getLayer(lNum - 1)->isRouting()
+      && getLayer(lNum - 1)->getDir() == getDir()) {
     followTrackLNum = lNum - 1;
-  } else if (lNum + 1 <= getDesign()->getTech()->getTopLayerNum()
-             && getDesign()->getTech()->getLayer(lNum + 1)->getType()
-                    == dbTechLayerType::ROUTING
-             && getDesign()->getTech()->getLayer(lNum + 1)->getDir()
-                    == getDir()) {
+  } else if (lNum + 1 <= getTech()->getTopLayerNum()
+             && getLayer(lNum + 1)->isRouting()
+             && getLayer(lNum + 1)->getDir() == getDir()) {
     followTrackLNum = lNum + 1;
   } else {
     std::cout
@@ -331,7 +322,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
 
   // spacing value needed
   frCoord bloatDist = 0;
-  for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+  for (auto con : getLayer(lNum)->getCutSpacing()) {
     bloatDist = std::max(bloatDist, con->getCutSpacing());
   }
 
@@ -372,7 +363,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
     xform.apply(tmpBx);
     box2boxDistSquare(box, tmpBx, dx, dy);
 
-    for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+    for (auto con : getLayer(lNum)->getCutSpacing()) {
       hasViol = false;
       reqDist = con->getCutSpacing();
       bool isC2C = con->hasCenterToCenter();
@@ -521,7 +512,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
     Rect box = obj->getLayer1BBox();
     auto layerNum = obj->getViaDef()->getLayer1Num();
     // current TA layer
-    if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
+    if (getDir() == getLayer(layerNum)->getDir()) {
       modMinSpacingCostPlanar(box, layerNum, obj, isAddCost, pinS);
     }
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
@@ -531,7 +522,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
     box = obj->getLayer2BBox();
     layerNum = obj->getViaDef()->getLayer2Num();
     // current TA layer
-    if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
+    if (getDir() == getLayer(layerNum)->getDir()) {
       modMinSpacingCostPlanar(box, layerNum, obj, isAddCost, pinS);
     }
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
@@ -564,16 +555,16 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   frCoord coordLow = isH ? gBox.yMin() : gBox.xMin();
   frCoord coordHigh = isH ? gBox.yMax() : gBox.xMax();
   coordHigh--;  // to avoid higher track == guide top/right
-  if (getTech()->getLayer(lNum)->isUnidirectional()) {
+  if (getLayer(lNum)->isUnidirectional()) {
     const Rect& dieBx = design_->getTopBlock()->getDieBox();
     const frViaDef* via = nullptr;
     Rect testBox;
     if (lNum + 1 <= getTech()->getTopLayerNum()) {
-      via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+      via = getLayer(lNum + 1)->getDefaultViaDef();
       testBox = via->getLayer1ShapeBox();
       testBox.merge(via->getLayer2ShapeBox());
     } else {
-      via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+      via = getLayer(lNum - 1)->getDefaultViaDef();
       testBox = via->getLayer1ShapeBox();
       testBox.merge(via->getLayer2ShapeBox());
     }
@@ -601,7 +592,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
                    isH ? "horizontal" : "vertical",
                    coordLow / dbu,
                    coordHigh / dbu,
-                   getTech()->getLayer(lNum)->getName());
+                   getLayer(lNum)->getName());
   }
 }
 
@@ -652,7 +643,7 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
     // add cost to locations that will cause forbidden via spacing to
     // boundary pin
     auto layerNum = iroute->getGuide()->getBeginLayerNum();
-    auto layer = getTech()->getLayer(layerNum);
+    auto layer = getLayer(layerNum);
 
     if (layer->isUnidirectional()) {
       bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -688,7 +679,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
                                                      Rect& box,
                                                      frLayerNum lNum)
 {
-  auto layer = getDesign()->getTech()->getLayer(lNum);
+  auto layer = getLayer(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>> result;
   int overlap = 0;
@@ -703,7 +694,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
   workerRegionQuery.queryCost(box, lNum, result);
 
   auto getPartialBox = [this, lNum](Rect box, bool begin) {
-    auto layer = getTech()->getLayer(lNum);
+    auto layer = getLayer(lNum);
     Rect result;
     frCoord addHorz = 0;
     frCoord addVert = 0;
@@ -802,19 +793,16 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     }
   }
   frCoord pitch = 0;
-  if (getDesign()->getTech()->getLayer(lNum)->getType()
-      == dbTechLayerType::ROUTING) {
-    pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
+  if (getLayer(lNum)->isRouting()) {
+    pitch = getLayer(lNum)->getPitch();
     isCut = false;
-  } else if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1
-             && getDesign()->getTech()->getLayer(lNum + 1)->getType()
-                    == dbTechLayerType::ROUTING) {
-    pitch = getDesign()->getTech()->getLayer(lNum + 1)->getPitch();
+  } else if (getTech()->getTopLayerNum() >= lNum + 1
+             && getLayer(lNum + 1)->isRouting()) {
+    pitch = getLayer(lNum + 1)->getPitch();
     isCut = true;
-  } else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1
-             && getDesign()->getTech()->getLayer(lNum - 1)->getType()
-                    == dbTechLayerType::ROUTING) {
-    pitch = getDesign()->getTech()->getLayer(lNum - 1)->getPitch();
+  } else if (getTech()->getBottomLayerNum() <= lNum - 1
+             && getLayer(lNum - 1)->isRouting()) {
+    pitch = getLayer(lNum - 1)->getPitch();
     isCut = true;
   } else {
     std::cout << "Error: assignIroute_getDRCCost_helper unknown layer type"
@@ -878,7 +866,7 @@ frUInt4 FlexTAWorker::assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc)
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
       auto [bp, ep] = obj->getPoints();
       auto lNum = obj->getLayerNum();
-      pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
+      pitch = getLayer(lNum)->getPitch();
       auto& workerRegionQuery = getWorkerRegionQuery();
       frOrderedIdSet<taPin*> result;
       Rect box;
@@ -907,7 +895,7 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
                                            frUInt4& outDrcCost)
 {
   frCoord irouteLayerPitch
-      = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
+      = getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
   int drcCost = (isInitTA()) ? (0.05 * outDrcCost)
                              : (router_cfg_->TADRCCOST * outDrcCost);
@@ -1088,8 +1076,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
     std::cout << "Error: assignIroute_bestTrack select no track for "
               << guide->getNet()->getName() << " @(" << box.xMin() / dbu << ", "
               << box.yMin() / dbu << ") (" << box.xMax() / dbu << ", "
-              << box.yMax() / dbu << " "
-              << getDesign()->getTech()->getLayer(lNum)->getName()
+              << box.yMax() / dbu << " " << getLayer(lNum)->getName()
               << " idx1/2=" << idx1 << "/" << idx2 << std::endl;
     exit(1);
   }

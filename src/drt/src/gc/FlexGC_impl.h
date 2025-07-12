@@ -102,6 +102,10 @@ class FlexGCWorker::Impl
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
   frTechObject* getTech() const { return tech_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
   const Rect& getExtBox() const { return extBox_; }
   std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }

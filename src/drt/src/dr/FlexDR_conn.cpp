@@ -31,6 +31,11 @@ frTechObject* FlexDRConnectivityChecker::getTech() const
   return getDesign()->getTech();
 }
 
+frLayer* FlexDRConnectivityChecker::getLayer(const frLayerNum layer_num) const
+{
+  return getTech()->getLayer(layer_num);
+}
+
 frDesign* FlexDRConnectivityChecker::getDesign() const
 {
   return router_->getDesign();
@@ -1140,7 +1145,8 @@ void FlexDRConnectivityChecker::addMarker(frNet* net,
   auto marker = std::make_unique<frMarker>();
   marker->setBBox(bbox);
   marker->setLayerNum(lNum);
-  marker->setConstraint(getTech()->getLayer(lNum)->getRecheckConstraint());
+  getTech();
+  marker->setConstraint(getLayer(lNum)->getRecheckConstraint());
   marker->addSrc(net);
   marker->addVictim(net, std::make_tuple(lNum, bbox, false));
   marker->addAggressor(net, std::make_tuple(lNum, bbox, false));

@@ -48,6 +48,10 @@ class GuideProcessor
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   // processGuides helper functions
   void buildGCellPatterns_getWidth(frCoord& GCELLGRIDX, frCoord& GCELLGRIDY);
   void buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
@@ -428,6 +432,10 @@ class GuidePathFinder
   void mergeGuides(std::vector<frRect>& rects);
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
 
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};

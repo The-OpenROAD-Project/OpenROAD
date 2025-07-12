@@ -18,8 +18,7 @@ void io::Parser::instAnalysis()
   for (auto& trackPattern : getBlock()->getTrackPatterns()) {
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
-    if (getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == dbTechLayerDir::HORIZONTAL) {
+    if (getTech()->getLayer(trackPattern->getLayerNum())->isHorizontal()) {
       if (!isVerticalTrack) {
         prefTrackPatterns_.push_back(trackPattern);
       }

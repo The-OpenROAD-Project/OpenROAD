@@ -14,7 +14,7 @@ void FlexRP::init()
   const auto topLayerNum = tech_->getTopLayerNum();
 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
+    if (!tech_->getLayer(lNum)->isRouting()) {
       continue;
     }
     tech_->via2ViaForbiddenLen_.push_back({});

@@ -276,15 +276,9 @@ class frTechObject
     return hasCornerSpacingConstraint_;
   }
 
-  bool isHorizontalLayer(frLayerNum l)
-  {
-    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
-  }
+  bool isHorizontalLayer(frLayerNum l) { return getLayer(l)->isHorizontal(); }
 
-  bool isVerticalLayer(frLayerNum l)
-  {
-    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
-  }
+  bool isVerticalLayer(frLayerNum l) { return getLayer(l)->isVertical(); }
 
  private:
   // forbidden length table related utilities

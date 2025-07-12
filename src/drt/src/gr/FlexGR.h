@@ -46,6 +46,10 @@ class FlexGR
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
+  frLayer* getLayer(const frLayerNum layer_num) const
+  {
+    return getTech()->getLayer(layer_num);
+  }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
   FlexGRCMap* getCMap(bool is2DCMap) const
   {
@@ -224,6 +228,7 @@ class FlexGRWorkerRegionQuery
  public:
   FlexGRWorkerRegionQuery(FlexGRWorker* in) : grWorker_(in) {}
   frDesign* getDesign() const;
+  frTechObject* getTech() const;
   FlexGRWorker* getGRWorker() const { return grWorker_; }
   void add(grConnFig* connFig);
   void add(grConnFig* connFig,
