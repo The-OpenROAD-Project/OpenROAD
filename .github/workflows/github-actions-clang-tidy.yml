@@ -34,5 +34,5 @@ jobs:
         shell: bash
       - if: steps.review.outputs.total_comments > 0
         run: |
-          echo "Pendinding review comments. Please resolve all comments before merging."
+          echo "Pending review comments. Please resolve all comments before merging."
           exit 1

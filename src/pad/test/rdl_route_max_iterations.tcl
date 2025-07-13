@@ -5,5 +5,8 @@ read_lef Nangate45_io/dummy_pads.lef
 
 read_def Nangate45_blackparrot/floorplan_flipchip.def
 
-catch {rdl_route -layer metal10 -width 10 -spacing 10 -max_iterations 4 "VDD DVDD VSS DVSS p_*"} error
+catch {
+  rdl_route -layer metal10 -width 10 -spacing 10 -max_iterations 4 \
+    "VDD DVDD VSS DVSS p_*"
+} error
 puts $error

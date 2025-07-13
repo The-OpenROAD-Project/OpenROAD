@@ -256,8 +256,6 @@ def generate_relations(schema):
         if child_type_name not in parent["declared_classes"]:
             parent["declared_classes"].append(child_type_name)
 
-        if "dbTable" not in parent["declared_classes"]:
-            parent["declared_classes"].append("dbTable")
         if relation.get("hash", False):
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)

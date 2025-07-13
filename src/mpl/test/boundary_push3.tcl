@@ -1,5 +1,5 @@
 # Four ungrouped macros, centralized by the floorplan centralization
-# and prevented from being pushed to the core left/right boundaries 
+# and prevented from being pushed to the core left/right boundaries
 # by pin access blockages along those boundaries.
 #
 # Observations:

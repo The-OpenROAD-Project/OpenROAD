@@ -42,10 +42,12 @@ cc_library(
         "include",
     ],
     deps = [
+        ":tap",
         "//:ord",
         "//src/odb",
         "//src/utl",
         "@boost.polygon",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

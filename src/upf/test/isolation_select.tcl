@@ -14,8 +14,8 @@ set_domain_area PD_D3 -area {200 200 300 300}
 set_domain_area PD_D4 -area {300 300 400 400}
 
 initialize_floorplan -die_area { 0 0 500 500 } \
-    -core_area { 100 100 400 400 } \
-    -site unithd
+  -core_area { 100 100 400 400 } \
+  -site unithd
 
 set v_file [make_result_file isolation_select.v]
 write_verilog -include_pwr_gnd $v_file

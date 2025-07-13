@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+namespace eval rsz {
+proc get_db_tech_checked { } {
+  set tech [ord::get_db_tech]
+  if { $tech == "NULL" } {
+    utl::error RSZ 210 "No technology loaded."
+  }
+  return $tech
+}
+}
+
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
 sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-via via_layer]\
@@ -17,7 +27,7 @@ proc set_layer_rc { args } {
   }
 
   set corners [sta::parse_corner_or_all keys]
-  set tech [ord::get_db_tech]
+  set tech [rsz::get_db_tech_checked]
   if { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
     set layer [$tech findLayer $layer_name]
@@ -91,6 +101,57 @@ proc set_layer_rc { args } {
   }
 }
 
+sta::define_cmd_args "report_layer_rc" {[-corner corner]}
+proc report_layer_rc { args } {
+  sta::parse_key_args "report_layer_rc" args \
+    keys {-corner} \
+    flags {}
+  set corner [sta::parse_corner_or_all keys]
+  set tech [rsz::get_db_tech_checked]
+  set no_routing_layers [$tech getRoutingLayerCount]
+  ord::ensure_units_initialized
+  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
+  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
+  set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+  set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+
+  puts "   Layer   | Unit Resistance | Unit Capacitance "
+  puts [format "           | %15s | %16s" [format "(%s)" $res_unit] [format "(%s)" $cap_unit]]
+  puts "------------------------------------------------"
+  for { set i 1 } { $i <= $no_routing_layers } { incr i } {
+    set layer [$tech findRoutingLayer $i]
+    if { $corner == "NULL" } {
+      lassign [rsz::dblayer_wire_rc $layer] layer_wire_res layer_wire_cap
+    } else {
+      set layer_wire_res [rsz::layer_resistance $layer $corner]
+      set layer_wire_cap [rsz::layer_capacitance $layer $corner]
+    }
+    set res_ui [expr $layer_wire_res * $res_convert]
+    set cap_ui [expr $layer_wire_cap * $cap_convert]
+    puts [format "%10s | %15.2e | %16.2e" [$layer getName] $res_ui $cap_ui]
+  }
+  puts "------------------------------------------------"
+
+  set res_unit "[sta::unit_scaled_suffix "resistance"]"
+  set res_convert [sta::resistance_sta_ui 1.0]
+  puts ""
+  puts "   Layer   | Via Resistance "
+  puts [format "           | %14s " [format "(%s)" $res_unit]]
+  puts "----------------------------"
+  # ignore the last routing layer (no via layer above it)
+  for { set i 1 } { $i < $no_routing_layers } { incr i } {
+    set layer [[$tech findRoutingLayer $i] getUpperLayer]
+    if { $corner == "NULL" } {
+      set layer_via_res [$layer getResistance]
+    } else {
+      set layer_via_res [rsz::layer_resistance $layer $corner]
+    }
+    set res_ui [expr $layer_via_res * $res_convert]
+    puts [format "%10s | %14.2e " [$layer getName] $res_ui]
+  }
+  puts "----------------------------"
+}
+
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layers layers]\
                                       [-layer layer]\
@@ -138,7 +199,7 @@ proc set_wire_rc { args } {
     set layers $keys(-layers)
 
     foreach layer_name $layers {
-      set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+      set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error RSZ 2 "layer $layer_name not found."
       }
@@ -179,7 +240,7 @@ proc set_wire_rc { args } {
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
-    set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+    set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
       utl::error RSZ 15 "layer $tec_layer not found."
     }
@@ -447,7 +508,7 @@ proc repair_design { args } {
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
@@ -466,7 +527,7 @@ proc repair_clock_nets { args } {
 
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length true]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
 
@@ -978,6 +1039,38 @@ proc report_equiv_cells { args } {
   rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells
 }
 
+sta::define_cmd_args "replace_arith_modules" { [-path_count num_critical_paths] \
+                                      [-slack_threshold float] \
+                                      [-target opto_goal] }
+
+proc replace_arith_modules { args } {
+  sta::parse_key_args "replace_arith_modules" args \
+    keys {-path_count -slack_threshold -target} \
+    flags {}
+
+  if { [info exists keys(-path_count)] } {
+    set path_count $keys(-path_count)
+  } else {
+    set path_count 1000
+  }
+  if { [info exists keys(-target)] } {
+    set target $keys(-target)
+    if { [lsearch -exact {setup hold power area} $target] == -1 } {
+      util::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
+    }
+  } else {
+    set target "setup"
+  }
+  if { [info exists keys(-slack_margin)] } {
+    set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  } else {
+    set slack_margin 0.0
+  }
+
+  puts "replace_arith_module -path_count $path_count -target $target -slack_margin $slack_margin"
+  rsz::swap_arith_modules_cmd $path_count $target $slack_margin
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
@@ -1069,7 +1162,7 @@ proc check_corner_wire_caps { } {
   return $have_rc
 }
 
-proc check_max_wire_length { max_wire_length } {
+proc check_max_wire_length { max_wire_length use_default } {
   if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
@@ -1078,9 +1171,11 @@ proc check_max_wire_length { max_wire_length } {
         utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
       }
     } else {
-      set max_wire_length $min_delay_max_wire_length
-      set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
-      utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
+      if { $use_default } {
+        set max_wire_length $min_delay_max_wire_length
+        set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
+        utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
+      }
     }
   }
   return $max_wire_length

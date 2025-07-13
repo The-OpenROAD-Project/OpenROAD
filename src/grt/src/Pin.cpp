@@ -130,24 +130,27 @@ void Pin::determineEdge(const odb::Rect& bounds,
 
 odb::dbITerm* Pin::getITerm() const
 {
-  if (is_port_)
+  if (is_port_) {
     return nullptr;
+  }
 
   return iterm_;
 }
 
 odb::dbBTerm* Pin::getBTerm() const
 {
-  if (is_port_)
+  if (is_port_) {
     return bterm_;
+  }
 
   return nullptr;
 }
 
 std::string Pin::getName() const
 {
-  if (is_port_)
+  if (is_port_) {
     return bterm_->getName();
+  }
 
   return getITermName(iterm_);
 }

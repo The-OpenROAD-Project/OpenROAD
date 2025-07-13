@@ -66,15 +66,15 @@ bool UnbufferMove::doMove(const Path* drvr_path,
     // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
     // cloning because such removal may lead to an inifinte loop or long runtime
     std::string reason;
-    if (resizer_->swap_pins_move->hasMoves(drvr)) {
+    if (resizer_->swap_pins_move_->hasMoves(drvr)) {
       reason = "its pins have been swapped";
-    } else if (resizer_->clone_move->hasMoves(drvr)) {
+    } else if (resizer_->clone_move_->hasMoves(drvr)) {
       reason = "it has been cloned";
-    } else if (resizer_->split_load_move->hasMoves(drvr)) {
+    } else if (resizer_->split_load_move_->hasMoves(drvr)) {
       reason = "it was from split load buffering";
-    } else if (resizer_->buffer_move->hasMoves(drvr)) {
+    } else if (resizer_->buffer_move_->hasMoves(drvr)) {
       reason = "it was from rebuffering";
-    } else if (resizer_->size_up_move->hasMoves(drvr)) {
+    } else if (resizer_->size_up_move_->hasMoves(drvr)) {
       reason = "it has been resized";
     }
     if (!reason.empty()) {

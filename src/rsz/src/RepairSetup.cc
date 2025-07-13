@@ -14,6 +14,7 @@
 #include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
+#include "Rebuffer.hh"
 #include "SizeDownMove.hh"
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
@@ -31,6 +32,7 @@
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
@@ -84,6 +86,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 {
   bool repaired = false;
   init();
+  resizer_->rebuffer_->init();
+  // IMPROVE ME: rebuffering always looks at cmd corner
+  resizer_->rebuffer_->initOnCorner(sta_->cmdCorner());
   constexpr int digits = 3;
   max_repairs_per_pass_ = max_repairs_per_pass;
   resizer_->buffer_moved_into_core_ = false;
@@ -94,41 +99,41 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       switch (move) {
         case MoveType::BUFFER:
           if (!skip_buffering) {
-            move_sequence.push_back(resizer_->buffer_move);
+            move_sequence.push_back(resizer_->buffer_move_.get());
           }
           break;
         case MoveType::UNBUFFER:
           if (!skip_buffer_removal) {
-            move_sequence.push_back(resizer_->unbuffer_move);
+            move_sequence.push_back(resizer_->unbuffer_move_.get());
           }
           break;
         case MoveType::SWAP:
           if (!skip_pin_swap) {
-            move_sequence.push_back(resizer_->swap_pins_move);
+            move_sequence.push_back(resizer_->swap_pins_move_.get());
           }
           break;
         case MoveType::SIZE:
           if (!skip_size_down) {
-            move_sequence.push_back(resizer_->size_down_move);
+            move_sequence.push_back(resizer_->size_down_move_.get());
           }
-          move_sequence.push_back(resizer_->size_up_move);
+          move_sequence.push_back(resizer_->size_up_move_.get());
           break;
         case MoveType::SIZEUP:
-          move_sequence.push_back(resizer_->size_up_move);
+          move_sequence.push_back(resizer_->size_up_move_.get());
           break;
         case MoveType::SIZEDOWN:
           if (!skip_size_down) {
-            move_sequence.push_back(resizer_->size_down_move);
+            move_sequence.push_back(resizer_->size_down_move_.get());
           }
           break;
         case MoveType::CLONE:
           if (!skip_gate_cloning) {
-            move_sequence.push_back(resizer_->clone_move);
+            move_sequence.push_back(resizer_->clone_move_.get());
           }
           break;
         case MoveType::SPLIT:
           if (!skip_buffering) {
-            move_sequence.push_back(resizer_->split_load_move);
+            move_sequence.push_back(resizer_->split_load_move_.get());
           }
           break;
       }
@@ -137,22 +142,22 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   } else {
     move_sequence.clear();
     if (!skip_buffer_removal) {
-      move_sequence.push_back(resizer_->unbuffer_move);
+      move_sequence.push_back(resizer_->unbuffer_move_.get());
     }
     // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
-    move_sequence.push_back(resizer_->size_up_move);
+    move_sequence.push_back(resizer_->size_up_move_.get());
     if (!skip_pin_swap) {
-      move_sequence.push_back(resizer_->swap_pins_move);
+      move_sequence.push_back(resizer_->swap_pins_move_.get());
     }
     if (!skip_buffering) {
-      move_sequence.push_back(resizer_->buffer_move);
+      move_sequence.push_back(resizer_->buffer_move_.get());
     }
     if (!skip_gate_cloning) {
-      move_sequence.push_back(resizer_->clone_move);
+      move_sequence.push_back(resizer_->clone_move_.get());
     }
     if (!skip_buffering) {
-      move_sequence.push_back(resizer_->split_load_move);
+      move_sequence.push_back(resizer_->split_load_move_.get());
     }
   }
 
@@ -441,13 +446,13 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   printProgress(opto_iteration, true, true, false, num_viols);
 
-  int buffer_moves_ = resizer_->buffer_move->numCommittedMoves();
-  int size_up_moves_ = resizer_->size_up_move->numCommittedMoves();
-  int size_down_moves_ = resizer_->size_down_move->numCommittedMoves();
-  int swap_pins_moves_ = resizer_->swap_pins_move->numCommittedMoves();
-  int clone_moves_ = resizer_->clone_move->numCommittedMoves();
-  int split_load_moves_ = resizer_->split_load_move->numCommittedMoves();
-  int unbuffer_moves_ = resizer_->unbuffer_move->numCommittedMoves();
+  int buffer_moves_ = resizer_->buffer_move_->numCommittedMoves();
+  int size_up_moves_ = resizer_->size_up_move_->numCommittedMoves();
+  int size_down_moves_ = resizer_->size_down_move_->numCommittedMoves();
+  int swap_pins_moves_ = resizer_->swap_pins_move_->numCommittedMoves();
+  int clone_moves_ = resizer_->clone_move_->numCommittedMoves();
+  int split_load_moves_ = resizer_->split_load_move_->numCommittedMoves();
+  int unbuffer_moves_ = resizer_->unbuffer_move_->numCommittedMoves();
 
   if (unbuffer_moves_ > 0) {
     repaired = true;
@@ -507,31 +512,31 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   Path* path = sta_->vertexWorstSlackPath(vertex, max_);
 
   move_sequence.clear();
-  move_sequence = {resizer_->unbuffer_move,
-                   resizer_->size_down_move,
-                   resizer_->size_up_move,
-                   resizer_->swap_pins_move,
-                   resizer_->buffer_move,
-                   resizer_->clone_move,
-                   resizer_->split_load_move};
+  move_sequence = {resizer_->unbuffer_move_.get(),
+                   resizer_->size_down_move_.get(),
+                   resizer_->size_up_move_.get(),
+                   resizer_->swap_pins_move_.get(),
+                   resizer_->buffer_move_.get(),
+                   resizer_->clone_move_.get(),
+                   resizer_->split_load_move_.get()};
 
   {
     IncrementalParasiticsGuard guard(resizer_);
     repairPath(path, slack, 0.0);
   }
 
-  int unbuffer_moves_ = resizer_->unbuffer_move->numCommittedMoves();
+  int unbuffer_moves_ = resizer_->unbuffer_move_->numCommittedMoves();
   if (unbuffer_moves_ > 0) {
     logger_->info(RSZ, 61, "Removed {} buffers.", unbuffer_moves_);
   }
-  int buffer_moves_ = resizer_->buffer_move->numCommittedMoves();
-  int split_load_moves_ = resizer_->split_load_move->numMoves();
+  int buffer_moves_ = resizer_->buffer_move_->numCommittedMoves();
+  int split_load_moves_ = resizer_->split_load_move_->numMoves();
   if (buffer_moves_ + split_load_moves_ > 0) {
     logger_->info(
         RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
   }
-  int size_up_moves_ = resizer_->size_up_move->numMoves();
-  int size_down_moves_ = resizer_->size_down_move->numMoves();
+  int size_up_moves_ = resizer_->size_up_move_->numMoves();
+  int size_down_moves_ = resizer_->size_down_move_->numMoves();
   if (size_up_moves_ + size_down_moves_ > 0) {
     logger_->info(RSZ,
                   38,
@@ -540,7 +545,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
                   size_up_moves_,
                   size_down_moves_);
   }
-  int swap_pins_moves_ = resizer_->swap_pins_move->numMoves();
+  int swap_pins_moves_ = resizer_->swap_pins_move_->numMoves();
   if (swap_pins_moves_ > 0) {
     logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pins_moves_);
   }
@@ -676,7 +681,7 @@ bool RepairSetup::repairPath(Path* path,
                          path_slack,
                          &expanded,
                          setup_slack_margin)) {
-          if (move == resizer_->unbuffer_move) {
+          if (move == resizer_->unbuffer_move_.get()) {
             // Only allow one unbuffer move per pass to
             // prevent the use-after-free error of multiple buffer removals.
             changed += repairs_per_pass;
@@ -735,18 +740,18 @@ void RepairSetup::printProgress(const int iteration,
     const double area_growth = design_area - initial_design_area_;
 
     // This actually prints both committed and pending moves, so the moves could
-    // could go down if a pass is restrored by the journal.
+    // could go down if a pass is rejected and restored by the ECO.
     logger_->report(
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
-        resizer_->unbuffer_move->numCommittedMoves(),
-        resizer_->size_up_move->numCommittedMoves()
-            + resizer_->size_down_move->numCommittedMoves(),
-        resizer_->buffer_move->numCommittedMoves()
-            + resizer_->split_load_move->numCommittedMoves(),
-        resizer_->clone_move->numCommittedMoves(),
-        resizer_->swap_pins_move->numCommittedMoves(),
+        resizer_->unbuffer_move_->numMoves(),
+        resizer_->size_up_move_->numMoves()
+            + resizer_->size_down_move_->numMoves(),
+        resizer_->buffer_move_->numMoves()
+            + resizer_->split_load_move_->numMoves(),
+        resizer_->clone_move_->numMoves(),
+        resizer_->swap_pins_move_->numMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),

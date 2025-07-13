@@ -15,6 +15,9 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "odb/dbBlockCallBackObj.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbModBTerm>;
 
@@ -284,8 +287,7 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   modbterm->_next_net_modbterm = 0;
   modbterm->_prev_net_modbterm = 0;
   modbterm->_busPort = 0;
-  modbterm->_name = strdup(name);
-  ZALLOCATED(modbterm->_name);
+  modbterm->_name = safe_strdup(name);
   modbterm->_parent = module->getOID();
   modbterm->_next_entry = module->_modbterms;
   modbterm->_prev_entry = 0;
@@ -305,6 +307,10 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
     block->_journal->endAction();
   }
 
+  for (auto callback : block->_callbacks) {
+    callback->inDbModBTermCreate((dbModBTerm*) modbterm);
+  }
+
   return (dbModBTerm*) modbterm;
 }
 
@@ -317,6 +323,9 @@ void dbModBTerm::connect(dbModNet* net)
   // already connected
   if (_modbterm->_modnet == net->getId()) {
     return;
+  }
+  for (auto callback : _block->_callbacks) {
+    callback->inDbModBTermPreConnect(this, net);
   }
   _modbterm->_modnet = net->getId();
   // append to net mod bterms. Do this by pushing onto head of list.
@@ -346,6 +355,9 @@ void dbModBTerm::connect(dbModNet* net)
     _block->_journal->pushParam(net->getId());
     _block->_journal->endAction();
   }
+  for (auto callback : _block->_callbacks) {
+    callback->inDbModBTermPostConnect(this);
+  }
 }
 
 void dbModBTerm::disconnect()
@@ -355,6 +367,10 @@ void dbModBTerm::disconnect()
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
   if (_modbterm->_modnet == 0) {
     return;
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbModBTermPreDisconnect(this);
   }
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modnet);
 
@@ -388,6 +404,10 @@ void dbModBTerm::disconnect()
   _modbterm->_next_net_modbterm = 0;
   _modbterm->_prev_net_modbterm = 0;
   _modbterm->_modnet = 0;
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbModBTermPostDisConnect(this, (dbModNet*) mod_net);
+  }
 }
 
 bool dbModBTerm::isBusPort() const
@@ -432,6 +452,10 @@ void dbModBTerm::destroy(dbModBTerm* val)
     block->_journal->pushParam(val->getId());
     block->_journal->pushParam(module->getId());
     block->_journal->endAction();
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbModBTermDestroy(val);
   }
 
   uint prev = _modbterm->_prev_entry;

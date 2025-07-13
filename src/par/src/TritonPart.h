@@ -306,7 +306,7 @@ class TritonPart
             // for the partitioning solution of the coareset hypergraph
             // We achieve this by controlling the maximum vertex weight
             // during coarsening
-  CoarsenOrder coarsen_order_ = CoarsenOrder::RANDOM;
+  CoarsenOrder coarsen_order_ = CoarsenOrder::kRandom;
   // weight related parameter
 
   // cost related parameter

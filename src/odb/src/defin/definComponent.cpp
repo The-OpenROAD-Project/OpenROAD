@@ -18,27 +18,6 @@ namespace odb {
 
 definComponent::definComponent()
 {
-  init();
-}
-
-definComponent::~definComponent()
-{
-  MasterMap::iterator mitr;
-
-  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr) {
-    free((void*) (*mitr).first);
-  }
-
-  SiteMap::iterator sitr;
-
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
-    free((void*) (*sitr).first);
-  }
-}
-
-void definComponent::init()
-{
-  definBase::init();
   _libs.clear();
 
   MasterMap::iterator mitr;
@@ -59,6 +38,21 @@ void definComponent::init()
   _update_cnt = 0;
   _iterm_cnt = 0;
   _cur_inst = nullptr;
+}
+
+definComponent::~definComponent()
+{
+  MasterMap::iterator mitr;
+
+  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr) {
+    free((void*) (*mitr).first);
+  }
+
+  SiteMap::iterator sitr;
+
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
+    free((void*) (*sitr).first);
+  }
 }
 
 dbMaster* definComponent::getMaster(const char* name)

@@ -14,6 +14,4 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal5
 
-clock_tree_synthesis -library NangateOpenCellLibrary_lvt 
-
-
+clock_tree_synthesis -library NangateOpenCellLibrary_lvt

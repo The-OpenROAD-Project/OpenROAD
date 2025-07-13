@@ -3,21 +3,20 @@
 
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 
 class _dbMPin;
-template <class T>
-class dbTable;
 
 class dbMPinItr : public dbIterator
 {
-  dbTable<_dbMPin>* _mpin_tbl;
+  dbTable<_dbMPin, 4>* _mpin_tbl;
 
  public:
-  dbMPinItr(dbTable<_dbMPin>* mpin_tbl) { _mpin_tbl = mpin_tbl; }
+  dbMPinItr(dbTable<_dbMPin, 4>* mpin_tbl) { _mpin_tbl = mpin_tbl; }
 
   bool reversible() override;
   bool orderReversed() override;

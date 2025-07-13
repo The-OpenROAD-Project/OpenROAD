@@ -6,7 +6,7 @@
 #include "dbMPin.h"
 #include "dbMaster.h"
 #include "dbPolygon.h"
-#include "dbTable.h"
+#include "dbTable.hpp"
 
 namespace odb {
 

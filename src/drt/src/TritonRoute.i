@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
-
 %ignore drt::TritonRoute::init;
 
 %{
@@ -58,6 +57,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int drouteEndIter,
                         const char* viaInPinBottomLayer,
                         const char* viaInPinTopLayer,
+                        const char* viaAccessLayer,
                         int orSeed,
                         double orK,
                         const char* bottomRoutingLayer,
@@ -87,6 +87,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     drouteEndIter,
                     viaInPinBottomLayer,
                     viaInPinTopLayer,
+                    viaAccessLayer,
                     orSeed,
                     orK,
                     bottomRoutingLayer,
@@ -106,8 +107,11 @@ void detailed_route_cmd(const char* outputMazeFile,
 void pin_access_cmd(const char* dbProcessNode,
                     const char* bottomRoutingLayer,
                     const char* topRoutingLayer,
+                    const char* viaAccessLayer,
                     int verbose,
-                    int minAccessPoints)
+                    int minAccessPoints,
+                    const char* viaInPinBottomLayer,
+                    const char* viaInPinTopLayer)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   drt::ParamStruct params;
@@ -115,7 +119,10 @@ void pin_access_cmd(const char* dbProcessNode,
   params.bottomRoutingLayer = bottomRoutingLayer;
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
+  params.viaAccessLayer = viaAccessLayer;
   params.minAccessPoints = minAccessPoints;
+  params.viaInPinBottomLayer = viaInPinBottomLayer;
+  params.viaInPinTopLayer = viaInPinTopLayer;
   params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();
@@ -141,6 +148,7 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool pa_edge,
                              bool pa_commit,
                              const char* dumpDir,
+                             const char* snapshotDir,
                              bool ta,
                              bool write_net_tracks,
                              bool dump_last_worker)
@@ -150,6 +158,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
   router->setDebugDumpDR(dump_dr, dumpDir);
+  router->setDebugSnapshotDir(snapshotDir);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   router->setDebugBox(x1, y1, x2, y2);

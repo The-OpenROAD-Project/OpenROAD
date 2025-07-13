@@ -77,12 +77,13 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
   int d, i, j, k, kk, ns, nn;
 
   for (i = 0; i <= 255; i++) {
-    if ('0' <= i && i <= '9')
+    if ('0' <= i && i <= '9') {
       charnum[i] = i - '0';
-    else if (i >= 'A')
+    } else if (i >= 'A') {
       charnum[i] = i - 'A' + 10;
-    else  // if (i=='$' || i=='\n' || ... )
+    } else {  // if (i=='$' || i=='\n' || ... )
       charnum[i] = 0;
+    }
   }
 
   fpwv = fopen(FLUTE_POWVFILE, "r");
@@ -344,28 +345,34 @@ static void checkLUT(LUT_TYPE LUT1,
     for (int k = 0; k < numgrp[d]; k++) {
       int ns1 = numsoln1[d][k];
       int ns2 = numsoln2[d][k];
-      if (ns1 != ns2)
+      if (ns1 != ns2) {
         printf("numsoln[%d][%d] mismatch\n", d, k);
+      }
       struct csoln* soln1 = LUT1[d][k].get();
       struct csoln* soln2 = LUT2[d][k].get();
-      if (soln1->parent != soln2->parent)
+      if (soln1->parent != soln2->parent) {
         printf("LUT[%d][%d]->parent mismatch\n", d, k);
+      }
       for (int j = 0; soln1->seg[j] != 0; j++) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 10; soln1->seg[j] != 0; j--) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       int nn = 2 * d - 2;
       for (int j = d; j < nn; j++) {
-        if (soln1->rowcol[j - d] != soln2->rowcol[j - d])
+        if (soln1->rowcol[j - d] != soln2->rowcol[j - d]) {
           printf("LUT[%d][%d]->rowcol[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 0; j < nn; j++) {
-        if (soln1->neighbor[j] != soln2->neighbor[j])
+        if (soln1->neighbor[j] != soln2->neighbor[j]) {
           printf("LUT[%d][%d]->neighbor[%d] mismatch\n", d, k, j);
+        }
       }
     }
   }
@@ -440,11 +447,14 @@ int Flute::flute_wl(int d,
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -968,11 +978,14 @@ Tree Flute::flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif

@@ -14,14 +14,14 @@ set_domain_area PD_D2 -area {2.3 92.48 57.5 108.8}
 
 
 initialize_floorplan -utilization 1 \
-                       -aspect_ratio 1 \
-                       -core_space 2 \
-                       -site unithd
+  -aspect_ratio 1 \
+  -core_space 2 \
+  -site unithd
 
 make_tracks
 place_pins \
-    -hor_layers met3 \
-    -ver_layers met2
+  -hor_layers met3 \
+  -ver_layers met2
 
 global_placement -skip_initial_place
 detailed_placement

@@ -9,6 +9,7 @@
 #include <mutex>
 #include <optional>
 #include <queue>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,6 +39,7 @@ class Distributed;
 namespace drt {
 
 class frDesign;
+class frInst;
 class DesignCallBack;
 class FlexDR;
 class FlexPA;
@@ -62,6 +64,7 @@ struct ParamStruct
   int drouteEndIter = -1;
   std::string viaInPinBottomLayer;
   std::string viaInPinTopLayer;
+  std::string viaAccessLayer;
   int orSeed = 0;
   double orK = 0;
   std::string bottomRoutingLayer;
@@ -112,6 +115,7 @@ class TritonRoute
 
   void setDebugDR(bool on = true);
   void setDebugDumpDR(bool on, const std::string& dumpDir);
+  void setDebugSnapshotDir(const std::string& snapshotDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugTA(bool on = true);
@@ -176,6 +180,8 @@ class TritonRoute
   void prep();
   odb::dbDatabase* getDb() const { return db_; }
   void fixMaxSpacing(int num_threads);
+  void deleteInstancePAData(frInst* inst);
+  void addInstancePAData(frInst* inst);
 
  private:
   std::unique_ptr<frDesign> design_;

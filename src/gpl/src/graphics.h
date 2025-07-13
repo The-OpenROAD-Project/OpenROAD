@@ -122,7 +122,8 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
-  GCell* selected_ = nullptr;
+  static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+  size_t selected_ = kInvalidIndex;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;

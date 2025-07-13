@@ -63,7 +63,7 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
   _netId = _extMain->_debug_net_id;
   if (IsDebugNet()) {
     OpenDebugFile();
-    if (_debugFP != nullptr)
+    if (_debugFP != nullptr) {
       fprintf(_debugFP,
               "init_measureRC %d met= %d  len= %d  dist= %d r1= %d r2= %d\n",
               _totSignalSegCnt,
@@ -72,6 +72,7 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
               _dist,
               rsegId1,
               rsegId2);
+    }
   }
 }
 bool extMeasureRC::updateCoupCap(dbRSeg* rseg1,
@@ -126,14 +127,16 @@ extDistRC* extMeasureRC::getOverOpenRC_Dist(extMetRCTable* rcModel,
                                             int metUnder,
                                             int dist)
 {
-  if (met >= (int) _layerCnt)
+  if (met >= (int) _layerCnt) {
     return nullptr;
+  }
 
   extDistRC* rc = nullptr;
-  if (dist < 0)  // TODO: single wire
+  if (dist < 0) {  // TODO: single wire
     rc = rcModel->_capOver[met]->getFringeRC(metUnder, width);
-  else
+  } else {
     rc = rcModel->_capOver_open[met][0]->getRC(metUnder, width, dist);
+  }
 
   return rc;
 }
@@ -144,16 +147,18 @@ extDistRC* extMeasureRC::getOverRC_Dist(extMetRCTable* rcModel,
                                         int dist,
                                         int open)
 {
-  if (met >= (int) _layerCnt)
+  if (met >= (int) _layerCnt) {
     return nullptr;
+  }
 
   extDistRC* rc = nullptr;
-  if (dist < 0)
+  if (dist < 0) {
     rc = rcModel->_capOver[met]->getFringeRC(metUnder, width);
-  else if (open < 0)
+  } else if (open < 0) {
     rc = rcModel->_capOver[met]->getRC(metUnder, width, dist);
-  else if (open < 2)
+  } else if (open < 2) {
     rc = rcModel->_capOver_open[met][open]->getRC(metUnder, width, dist);
+  }
 
   return rc;
 }
@@ -264,8 +269,9 @@ float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel,
   }
   _tmpRC->Reset();
   extDistRC* rc1 = getOverOpenRC_Dist(rcModel, width, met, metUnder, dist2);
-  if (rc1 == nullptr)
+  if (rc1 == nullptr) {
     return 0;
+  }
   // TODO extDistRC* rc2= getOverRC_Dist(rcModel, width, met, metUnder, dist2);
   _tmpRC->_fringe = 2 * rc1->getFringe();
   _tmpRC->_coupling = 2 * rc1->getCoupling();
@@ -302,8 +308,9 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel,
     // TODO ?? rc2= getOverUnderRC_Dist(rcModel, width, met, metUnder, metOver,
     // dist2);
   }
-  if (rc1 == nullptr)
+  if (rc1 == nullptr) {
     return 0;
+  }
 
   _tmpRC->_fringe = 2 * rc1->getFringe();
   _tmpRC->_coupling = 2 * rc1->getCoupling();
@@ -320,19 +327,21 @@ extDistRC* extMeasureRC::getUnderRC_Dist(extMetRCTable* rcModel,
                                          int dist,
                                          int open)
 {
-  if (rcModel->_capUnder[met] == nullptr)
+  if (rcModel->_capUnder[met] == nullptr) {
     return nullptr;
+  }
 
   uint n = overMet - met - 1;
 
   extDistRC* rc = nullptr;
-  if (dist < 0)
+  if (dist < 0) {
     rc = rcModel->_capUnder[met]->getFringeRC(n, width);
-  else if (open < 0)
+  } else if (open < 0) {
     rc = rcModel->_capUnder[met]->getRC(n, width, dist);
-  else if (open < 2 && rcModel->_capUnder_open != nullptr
-           && rcModel->_capUnder_open[met][open] != nullptr)
+  } else if (open < 2 && rcModel->_capUnder_open != nullptr
+             && rcModel->_capUnder_open[met][open] != nullptr) {
     rc = rcModel->_capUnder_open[met][open]->getRC(n, width, dist);
+  }
   return rc;
 }
 float extMeasureRC::getUnderRC_weightedFringe(extMetRCTable* rcModel,
@@ -388,13 +397,14 @@ extDistRC* extMeasureRC::getOverUnderRC_Dist(extMetRCTable* rcModel,
       met, underMet, overMet, _layerCnt, maxCnt);
 
   extDistRC* rc = nullptr;
-  if (dist < 0)
+  if (dist < 0) {
     rc = rcModel->_capOverUnder[met]->getFringeRC(n, width);
-  else if (open < 0)
+  } else if (open < 0) {
     rc = rcModel->_capOverUnder[met]->getRC(n, width, dist);
-  else if ((open < 2) && (rcModel->_capOverUnder_open != nullptr)
-           && rcModel->_capOverUnder_open[met][open] != nullptr)
+  } else if ((open < 2) && (rcModel->_capOverUnder_open != nullptr)
+             && rcModel->_capOverUnder_open[met][open] != nullptr) {
     rc = rcModel->_capOverUnder_open[met][open]->getRC(n, width, dist);
+  }
 
   return rc;
 }
@@ -465,31 +475,34 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
   // if (!_useWeighted)
   //  return 0;
 
-  if (rc1 == nullptr || rc2 == nullptr)
+  if (rc1 == nullptr || rc2 == nullptr) {
     return 0;
+  }
 
   float fr1 = rc1->getFringe();
   float fr2 = rc2->getFringe();
 
   float fr = fr1 + fr2;
   if (use_weighted) {
-    int ratio = (int) ceil(fr2 / fr1);
+    int ratio = (int) std::ceil(fr2 / fr1);
     float wfr = (fr2 * ratio + fr1) / (ratio + 1);
     if (fr1 > fr2) {
-      ratio = (int) ceil(fr1 / fr2);
+      ratio = (int) std::ceil(fr1 / fr2);
       wfr = (fr1 * ratio + fr2) / (ratio + 1);
     }
     wfr *= 2;
-    if (_useWeighted)
+    if (_useWeighted) {
       return wfr;
+    }
     float delta = wfr - fr;
     if (delta > 0) {
       return delta;
       int dist_ratio = rc2->_sep / rc1->_sep;
-      if (dist_ratio > 3)
+      if (dist_ratio > 3) {
         fr = delta;
-      else
+      } else {
         fr = delta / 2;
+      }
 
       // fr= 0.75 * delta;
       // fr= 0.25 * delta;
@@ -507,8 +520,9 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
 bool extMeasureRC::useWeightedAvg(int& dist1, int& dist2, int underMet)
 {
   // only used by Over pattern
-  if (dist1 > 0 && dist2 == dist1)
+  if (dist1 > 0 && dist2 == dist1) {
     return false;
+  }
 
   int minDist = dist1;
   int maxDist = dist2;
@@ -520,8 +534,9 @@ bool extMeasureRC::useWeightedAvg(int& dist1, int& dist2, int underMet)
   dist2 = maxDist;
 
   // if ((dist1<0 || dist2<0) && underMet>0)
-  if (dist1 < 0 || dist2 < 0)
+  if (dist1 < 0 || dist2 < 0) {
     return false;
+  }
 
   return true;
 }

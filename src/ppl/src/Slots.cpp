@@ -37,6 +37,21 @@ bool Interval::operator==(const Interval& interval) const
          && end_ == interval.getEnd() && layer_ == interval.getLayer();
 }
 
+bool Interval::operator<(const Interval& interval) const
+{
+  if (edge_ != interval.edge_) {
+    return edge_ < interval.edge_;
+  }
+  if (layer_ != interval.layer_) {
+    return layer_ < interval.layer_;
+  }
+  if (begin_ != interval.begin_) {
+    return begin_ < interval.begin_;
+  }
+
+  return end_ < interval.end_;
+}
+
 std::size_t IntervalHash::operator()(const Interval& interval) const
 {
   return boost::hash<std::tuple<Edge, int, int, int>>()({interval.getEdge(),

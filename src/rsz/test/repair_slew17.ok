@@ -5,7 +5,6 @@
 [INFO ODB-0132]     Created 2 special nets and 24 connections.
 [INFO ODB-0133]     Created 4 nets and 14 connections.
 Found 9 slew violations
-[INFO RSZ-0058] Using max wire length 240um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        13

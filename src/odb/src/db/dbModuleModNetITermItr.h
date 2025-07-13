@@ -4,19 +4,17 @@
 // Generator Code Begin Header
 #pragma once
 
+#include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
 class _dbITerm;
 
-template <class T>
-class dbTable;
-
 class dbModuleModNetITermItr : public dbIterator
 {
  public:
-  dbModuleModNetITermItr(dbTable<_dbITerm>* iterm_tbl)
+  dbModuleModNetITermItr(dbTable<_dbITerm, 1024>* iterm_tbl)
   {
     _iterm_tbl = iterm_tbl;
   }
@@ -32,7 +30,7 @@ class dbModuleModNetITermItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbITerm>* _iterm_tbl;
+  dbTable<_dbITerm, 1024>* _iterm_tbl;
 };
 
 }  // namespace odb

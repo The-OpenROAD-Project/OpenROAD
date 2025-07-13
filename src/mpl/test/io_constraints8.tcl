@@ -17,4 +17,3 @@ rtl_macro_placer -report_directory results/io_constraints8 -halo_width 4.0
 set def_file [make_result_file "io_constraints8.def"]
 write_def $def_file
 diff_files $def_file "io_constraints8.defok"
-

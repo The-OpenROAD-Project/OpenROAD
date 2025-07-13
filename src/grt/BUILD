@@ -21,7 +21,6 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/ant:types",
         "//src/odb",
     ],
 )
@@ -93,6 +92,9 @@ cc_library(
     hdrs = [
         "include/grt/Rudy.h",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     includes = [
         "include",
     ],
@@ -100,13 +102,14 @@ cc_library(
         ":abstract-fastroute",
         ":fastroute",
         ":types",
-        "//:opensta_lib",
         "//src/ant",
+        "//src/ant:types",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.geometry",
@@ -142,6 +145,7 @@ cc_library(
     copts = [
         "-Isrc/grt/src",
         "-Wno-missing-braces",  # from TCL swigging
+        "-fopenmp",
     ],
     includes = [
         "include",
@@ -150,7 +154,6 @@ cc_library(
         ":abstract-fastroute",
         ":fastroute",
         ":types",
-        "//:opensta_lib",
         "//:ord",
         "//src/ant",
         "//src/dbSta",
@@ -158,12 +161,14 @@ cc_library(
         "//src/gui",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.geometry",
         "@boost.graph",
         "@boost.icl",
         "@boost.iterator",
+        "@boost.stacktrace",
         "@openmp",
         "@tk_tcl//:tcl",
     ],

@@ -24,13 +24,13 @@ set_voltage_domain -power VDD -ground VSS
 
 set_voltage_domain -power VDD -ground VSS -region "test_domain" -secondary_power "VREG1 VREG2"
 # tclint-disable-next-line line-length
-catch {set_voltage_domain -power VDD -ground VSS -region "test_domain" -secondary_power "VREG1 VREG2"} err
+catch { set_voltage_domain -power VDD -ground VSS -region "test_domain" -secondary_power "VREG1 VREG2" } err
 puts $err
 
 define_pdn_grid -name "Core" -voltage_domains "Core"
-catch {define_pdn_grid -name "Core" -voltage_domains "Core"} err
+catch { define_pdn_grid -name "Core" -voltage_domains "Core" } err
 puts $err
 
 define_pdn_grid -macro -name "Inst" -voltage_domains "Core" -instances {cmp1}
-catch {define_pdn_grid -macro -name "Inst" -voltage_domains "Core" -instances {cmp1}}
+catch { define_pdn_grid -macro -name "Inst" -voltage_domains "Core" -instances {cmp1} }
 puts $err

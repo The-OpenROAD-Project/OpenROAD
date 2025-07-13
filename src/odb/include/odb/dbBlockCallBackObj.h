@@ -9,27 +9,31 @@
 
 namespace odb {
 
+class dbBPin;
+class dbBTerm;
 class dbBlock;
+class dbBlockage;
 class dbBox;
 class dbFill;
-class dbInst;
-class dbMaster;
-class dbNet;
-class dbIoType;
 class dbITerm;
-class dbWire;
-class dbBTerm;
-class dbBPin;
-class dbBlockage;
-class dbPlacementStatus;
-class dbObstruction;
-class dbRegion;
-class dbRow;
-class dbSigType;
-class dbSBox;
-class dbSWire;
+class dbInst;
+class dbIoType;
 class dbMarker;
 class dbMarkerCategory;
+class dbMaster;
+class dbModBTerm;
+class dbModInst;
+class dbModITerm;
+class dbModNet;
+class dbNet;
+class dbObstruction;
+class dbPlacementStatus;
+class dbRegion;
+class dbRow;
+class dbSBox;
+class dbSWire;
+class dbSigType;
+class dbWire;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -56,20 +60,39 @@ class dbBlockCallBackObj
   virtual void inDbPostMoveInst(dbInst*) {}
   // dbInst End
 
+  // dbModInst Start
+  virtual void inDbModInstCreate(dbModInst*) {}
+  virtual void inDbModInstDestroy(dbModInst*) {}
+  // dbModInst End
+
   // dbNet Start
   virtual void inDbNetCreate(dbNet*) {}
   virtual void inDbNetDestroy(dbNet*) {}
   virtual void inDbNetPreMerge(dbNet*, dbNet*) {}
   // dbNet End
 
+  // dbModNet Start
+  virtual void inDbModNetCreate(dbModNet*) {}
+  virtual void inDbModNetDestroy(dbModNet*) {}
+  // dbModNet End
+
   // dbITerm Start
   virtual void inDbITermCreate(dbITerm*) {}
-  virtual void inDbITermDestroy(dbITerm*) {}  // Bugzilla #7 - payam
+  virtual void inDbITermDestroy(dbITerm*) {}
   virtual void inDbITermPreDisconnect(dbITerm*) {}
   virtual void inDbITermPostDisconnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPreConnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPostConnect(dbITerm*) {}
   // dbITerm End
+
+  // dbModITerm Start
+  virtual void inDbModITermCreate(dbModITerm*) {}
+  virtual void inDbModITermDestroy(dbModITerm*) {}
+  virtual void inDbModITermPreDisconnect(dbModITerm*) {}
+  virtual void inDbModITermPostDisconnect(dbModITerm*, dbModNet*) {}
+  virtual void inDbModITermPreConnect(dbModITerm*, dbModNet*) {}
+  virtual void inDbModITermPostConnect(dbModITerm*) {}
+  // dbModITerm End
 
   // dbBTerm Start
   virtual void inDbBTermCreate(dbBTerm*) {}
@@ -81,6 +104,15 @@ class dbBlockCallBackObj
   virtual void inDbBTermSetIoType(dbBTerm*, const dbIoType&) {}
   virtual void inDbBTermSetSigType(dbBTerm*, const dbSigType&) {}
   // dbBTerm End
+
+  // dbModBTerm Start
+  virtual void inDbModBTermCreate(dbModBTerm*) {}
+  virtual void inDbModBTermDestroy(dbModBTerm*) {}
+  virtual void inDbModBTermPreConnect(dbModBTerm*, dbModNet*) {}
+  virtual void inDbModBTermPostConnect(dbModBTerm*) {}
+  virtual void inDbModBTermPreDisconnect(dbModBTerm*) {}
+  virtual void inDbModBTermPostDisConnect(dbModBTerm*, dbModNet*) {}
+  // dbModBTerm End
 
   // dbBPin Start
   virtual void inDbBPinCreate(dbBPin*) {}

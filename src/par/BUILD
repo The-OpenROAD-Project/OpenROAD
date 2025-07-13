@@ -10,7 +10,7 @@ package(
 )
 
 cc_library(
-    name = "lib",
+    name = "par",
     srcs = [
         "src/Coarsener.cpp",
         "src/Coarsener.h",
@@ -47,10 +47,10 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:opensta_lib",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
@@ -65,7 +65,7 @@ cc_library(
 )
 
 cc_library(
-    name = "par",
+    name = "ui",
     srcs = [
         "src/MakePartitionMgr.cpp",
         ":swig",
@@ -82,12 +82,11 @@ cc_library(
         "include",
     ],
     deps = [
-        ":lib",
-        "//:opensta_lib",
         "//:ord",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
@@ -95,6 +94,7 @@ cc_library(
         "@boost.property_tree",
         "@boost.random",
         "@boost.range",
+        "@boost.stacktrace",
         "@boost.tokenizer",
         "@boost.utility",
         "@tk_tcl//:tcl",

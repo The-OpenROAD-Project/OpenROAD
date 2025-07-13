@@ -41,6 +41,8 @@ class PlacementDRC
                         GridX x,
                         GridY y,
                         const odb::dbOrientType& orient) const;
+  bool checkBlockedLayers(const Node* cell) const;
+  bool checkBlockedLayers(const Node* cell, GridX x, GridY y) const;
   // Check shared padding spacing conflicts
   bool checkPadding(const Node* cell) const;
   bool checkPadding(const Node* cell, GridX x, GridY y) const;

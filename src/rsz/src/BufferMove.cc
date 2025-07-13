@@ -3,7 +3,6 @@
 
 #include "BufferMove.hh"
 
-#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -28,6 +27,10 @@ using sta::Slack;
 using sta::Slew;
 using sta::TimingArc;
 using sta::Vertex;
+
+BufferMove::BufferMove(Resizer* resizer) : BaseMove(resizer)
+{
+}
 
 bool BufferMove::doMove(const Path* drvr_path,
                         int drvr_index,

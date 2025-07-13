@@ -879,8 +879,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             p = {beginX, beginY};
           }
           auto viaDef = getTech()->name2via_[viaName];
-          auto tmpP = std::make_unique<frVia>(viaDef);
-          tmpP->setOrigin(p);
+          auto tmpP = std::make_unique<frVia>(viaDef, p);
           tmpP->addToNet(netIn);
           netIn->addVia(std::move(tmpP));
         }
@@ -3062,6 +3061,15 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
                     "topRoutingLayer {} not found.",
                     router_cfg_->TOP_ROUTING_LAYER_NAME);
     }
+  } else {
+    for (frLayerNum layer_num = fr_tech->getTopLayerNum();
+         layer_num >= fr_tech->getBottomLayerNum();
+         layer_num--) {
+      if (fr_tech->getLayer(layer_num)->getType() == dbTechLayerType::ROUTING) {
+        router_cfg_->TOP_ROUTING_LAYER = layer_num;
+        break;
+      }
+    }
   }
 
   setTechVias(db->getTech());
@@ -3984,7 +3992,8 @@ void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,
   std::map<int, odb::dbTechVia*> default_vias;
 
   for (auto layer : tech->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
+    if (layer->getType() == odb::dbTechLayerType::CUT
+        && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::MIMCAP) {
       frLayer* fr_layer = fr_tech->getLayer(layer->getName());
       const frViaDef* via_def = fr_layer->getDefaultViaDef();
       if (via_def == nullptr) {

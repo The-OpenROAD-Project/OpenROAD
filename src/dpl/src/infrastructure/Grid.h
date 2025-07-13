@@ -39,6 +39,7 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   std::map<dbSite*, dbOrientType> sites;
+  uint8_t blocked_layers_ = 0;
   Node* padding_reserved_by;  // Cell that reserved this pixel for padding
 };
 

@@ -8,9 +8,9 @@
 
 #include "utl/Logger.h"
 
-namespace ip = asio::ip;
-
 namespace dst {
+
+namespace ip = asio::ip;
 
 void Worker::start_accept()
 {

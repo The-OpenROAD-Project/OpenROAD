@@ -46,7 +46,7 @@ bool SizeUpMove::doMove(const Path* drvr_path,
   // We always size the cloned gates for some reason, but it would be good if we
   // also down-sized here instead since we might want smaller original.
   if (!resizer_->dontTouch(drvr)
-      || resizer_->clone_move->hasPendingMoves(drvr)) {
+      || resizer_->clone_move_->hasPendingMoves(drvr)) {
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;

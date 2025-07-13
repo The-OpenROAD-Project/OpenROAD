@@ -73,6 +73,7 @@ void Grid::allocateGrid()
       pixel.util = 0.0;
       pixel.is_valid = false;
       pixel.is_hopeless = false;
+      pixel.blocked_layers_ = 0;
     }
   }
 }
@@ -128,6 +129,49 @@ void Grid::markHopeless(dbBlock* block,
 void Grid::markBlocked(dbBlock* block)
 {
   const Rect core = getCore();
+  auto addBlockedLayers
+      = [&](odb::Rect wire_rect, odb::dbTechLayer* tech_layer) {
+          if (tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+            return;
+          }
+          auto routing_level = tech_layer->getRoutingLevel();
+          if (routing_level <= 1 || routing_level > 3) {  // considering M2, M3
+            return;
+          }
+          if (wire_rect.getDir() == 1) {  // horizontal
+            return;
+          }
+          wire_rect.moveDelta(-core.xMin(), -core.yMin());
+          GridRect grid_rect = gridCovering(wire_rect);
+          GridRect core{.xlo = GridX{0},
+                        .ylo = GridY{0},
+                        .xhi = GridX{row_site_count_},
+                        .yhi = GridY{row_count_}};
+          grid_rect = grid_rect.intersect(core);
+          for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+            for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+              auto pixel1 = gridPixel(x, y);
+              if (pixel1) {
+                pixel1->blocked_layers_ |= 1 << routing_level;
+              }
+            }
+          }
+        };
+
+  for (auto net : block->getNets()) {
+    if (!net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* s : swire->getWires()) {
+        if (!s->isVia()) {
+          odb::Rect wire_rect = s->getBox();
+          odb::dbTechLayer* tech_layer = s->getTechLayer();
+          addBlockedLayers(wire_rect, tech_layer);
+        }
+      }
+    }
+  }
   for (odb::dbBlockage* blockage : block->getBlockages()) {
     if (blockage->isSoft()) {
       continue;

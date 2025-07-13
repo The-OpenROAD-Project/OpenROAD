@@ -34,21 +34,21 @@ class JobMessage
  public:
   enum JobType : int8_t
   {
-    ROUTING,
-    UPDATE_DESIGN,
-    BALANCER,
-    PIN_ACCESS,
-    GRDR_INIT,
-    SUCCESS,
-    ERROR,
-    NONE
+    kRouting,
+    kUpdateDesign,
+    kBalancer,
+    kPinAccess,
+    kGrdrInit,
+    kSuccess,
+    kError,
+    kNone
   };
   enum MessageType : int8_t
   {
-    UNICAST,
-    BROADCAST
+    kUnicast,
+    kBroadcast
   };
-  JobMessage(JobType job_type = NONE, MessageType msg_type = UNICAST)
+  JobMessage(JobType job_type = kNone, MessageType msg_type = kUnicast)
       : msg_type_(msg_type), job_type_(job_type)
   {
   }
@@ -77,7 +77,7 @@ class JobMessage
   std::unique_ptr<JobDescription> desc_;
   std::vector<std::unique_ptr<JobDescription>> descs_;
 
-  static constexpr const char* EOP
+  static constexpr const char* kEop
       = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
@@ -87,8 +87,8 @@ class JobMessage
 
   enum SerializeType
   {
-    READ,
-    WRITE
+    kRead,
+    kWrite
   };
   static bool serializeMsg(SerializeType type,
                            JobMessage& msg,

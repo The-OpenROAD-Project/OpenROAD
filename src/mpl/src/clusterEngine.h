@@ -79,15 +79,12 @@ struct PhysicalHierarchyMaps
 
   InstToHardMap inst_to_hard;
   ModuleToMetricsMap module_to_metrics;
-
-  // Only for designs with IO Pads
-  std::map<odb::dbInst*, odb::dbBTerm*> pad_to_bterm;
-  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_pad;
 };
 
 struct PhysicalHierarchy
 {
   std::unique_ptr<Cluster> root;
+  std::vector<odb::dbInst*> io_pads;
   PhysicalHierarchyMaps maps;
 
   BoundaryRegionList available_regions_for_unconstrained_pins;
@@ -125,6 +122,14 @@ struct PhysicalHierarchy
   // and its corresponding standard-cell cluster to bias
   // the macro placer to place them together.
   const float virtual_weight = 10.0f;
+
+  const int io_bundles_per_edge = 5;
+};
+
+struct IOBundleSpans
+{
+  int x{0};
+  int y{0};
 };
 
 class ClusteringEngine
@@ -170,15 +175,21 @@ class ClusteringEngine
   void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
+  std::vector<odb::dbInst*> getIOPads() const;
   void reportDesignData();
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  bool designHasFixedIOPins() const;
+  IOBundleSpans computeIOBundleSpans() const;
+  void createIOBundles();
+  void createIOBundles(Boundary boundary);
+  void createIOBundle(Boundary boundary, int bundle_index);
+  int findAssociatedBundledIOId(odb::dbBTerm* bterm) const;
   Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm) const;
   void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
-  void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
-  void mapIOPinsAndPads();
+  void createIOPadCluster(odb::dbInst* pad);
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
@@ -191,6 +202,7 @@ class ClusteringEngine
   void createCluster(odb::dbModule* module, Cluster* parent);
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
+  bool isLargeFlatCluster(const Cluster* cluster) const;
   void breakLargeFlatCluster(Cluster* parent);
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
@@ -233,6 +245,7 @@ class ClusteringEngine
   bool stdCellsHaveLiberty();
   VerticesMaps computeVertices();
   void computeIOVertices(VerticesMaps& vertices_maps);
+  void computePadVertices(VerticesMaps& vertices_maps);
   void computeStdCellVertices(VerticesMaps& vertices_maps);
   void computeMacroPinVertices(VerticesMaps& vertices_maps);
   DataFlowHypergraph computeHypergraph(int num_of_vertices);
@@ -287,6 +300,9 @@ class ClusteringEngine
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
+
+  int first_io_bundle_id_{-1};
+  IOBundleSpans io_bundle_spans_;
 };
 
 }  // namespace mpl

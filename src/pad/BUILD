@@ -38,7 +38,10 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.geometry",
+        "@boost.graph",
+        "@boost.icl",
         "@boost.polygon",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

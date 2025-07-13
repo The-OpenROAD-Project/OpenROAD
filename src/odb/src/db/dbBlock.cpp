@@ -168,8 +168,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _bterm_tbl = new dbTable<_dbBTerm>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBTermObj);
 
-  _iterm_tbl = new dbTable<_dbITerm>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbITermObj, 1024, 10);
+  _iterm_tbl = new dbTable<_dbITerm, 1024>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbITermObj);
 
   _net_tbl = new dbTable<_dbNet>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbNetObj);
@@ -228,11 +228,11 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _net_tracks_tbl = new dbTable<_dbNetTrack>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbNetTrackObj);
 
-  _box_tbl = new dbTable<_dbBox>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBoxObj, 1024, 10);
+  _box_tbl = new dbTable<_dbBox, 1024>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBoxObj);
 
-  _via_tbl = new dbTable<_dbVia>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbViaObj, 1024, 10);
+  _via_tbl = new dbTable<_dbVia, 1024>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbViaObj);
 
   _gcell_grid_tbl = new dbTable<_dbGCellGrid>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGCellGridObj);
@@ -261,30 +261,23 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _fill_tbl = new dbTable<_dbFill>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbFillObj);
 
-  _region_tbl = new dbTable<_dbRegion>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbRegionObj, 32, 5);
+  _region_tbl = new dbTable<_dbRegion, 32>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbRegionObj);
 
-  _hier_tbl = new dbTable<_dbHier>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbHierObj, 16, 4);
+  _hier_tbl = new dbTable<_dbHier, 16>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbHierObj);
 
   _bpin_tbl = new dbTable<_dbBPin>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBPinObj);
 
-  _non_default_rule_tbl = new dbTable<_dbTechNonDefaultRule>(
+  _non_default_rule_tbl = new dbTable<_dbTechNonDefaultRule, 16>(
       db,
       this,
       (GetObjTbl_t) &_dbBlock::getObjectTable,
-      dbTechNonDefaultRuleObj,
-      16,
-      4);
+      dbTechNonDefaultRuleObj);
 
-  _layer_rule_tbl
-      = new dbTable<_dbTechLayerRule>(db,
-                                      this,
-                                      (GetObjTbl_t) &_dbBlock::getObjectTable,
-                                      dbTechLayerRuleObj,
-                                      16,
-                                      4);
+  _layer_rule_tbl = new dbTable<_dbTechLayerRule, 16>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbTechLayerRuleObj);
 
   _prop_tbl = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPropertyObj);
@@ -301,28 +294,23 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _cc_val_tbl = new dbPagedVector<float, 4096, 12>();
   _cc_val_tbl->push_back(0.0);
 
-  _cap_node_tbl
-      = new dbTable<_dbCapNode>(db,
-                                this,
-                                (GetObjTbl_t) &_dbBlock::getObjectTable,
-                                dbCapNodeObj,
-                                4096,
-                                12);
+  _cap_node_tbl = new dbTable<_dbCapNode, 4096>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbCapNodeObj);
 
   // We need to allocate the first cap-node (id == 1) to resolve a problem with
   // the extraction code (Hopefully this is temporary)
   _cap_node_tbl->create();
 
-  _r_seg_tbl = new dbTable<_dbRSeg>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbRSegObj, 4096, 12);
+  _r_seg_tbl = new dbTable<_dbRSeg, 4096>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbRSegObj);
 
-  _cc_seg_tbl = new dbTable<_dbCCSeg>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbCCSegObj, 4096, 12);
+  _cc_seg_tbl = new dbTable<_dbCCSeg, 4096>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbCCSegObj);
 
   _extControl = new dbExtControl();
 
-  _dft_tbl = new dbTable<_dbDft>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbDftObj, 4096, 12);
+  _dft_tbl = new dbTable<_dbDft, 4096>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbDftObj);
   _dbDft* dft_ptr = _dft_tbl->create();
   dft_ptr->initialize();
   _dft = dft_ptr->getId();
@@ -350,7 +338,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
+  _box_itr = new dbBoxItr<1024>(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -508,8 +496,7 @@ void dbBlock::clear()
   _dbTech* tech = (_dbTech*) getTech();
 
   // save a copy of the name
-  char* name = strdup(block->_name);
-  ZALLOCATED(name);
+  char* name = safe_strdup(block->_name);
 
   // save a copy of the delimiter
   char delimiter = block->_hier_delimiter;
@@ -555,8 +542,7 @@ void _dbBlock::initialize(_dbChip* chip,
                           const char* name,
                           char delimiter)
 {
-  _name = strdup(name);
-  ZALLOCATED(name);
+  _name = safe_strdup(name);
 
   _dbBox* box = _box_tbl->create();
   box->_flags._owner_type = dbBoxOwner::BLOCK;
@@ -1892,7 +1878,19 @@ dbInst* dbBlock::findInst(const char* name)
 dbModule* dbBlock::findModule(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
-  return (dbModule*) block->_module_hash.find(name);
+  dbModule* module = (dbModule*) block->_module_hash.find(name);
+  if (module != nullptr) {
+    return module;
+  }
+  // Search in children blocks for uninstantiated modules
+  dbSet<dbBlock> children = getChildren();
+  for (auto* child : children) {
+    module = child->findModule(name);
+    if (module != nullptr) {
+      return module;
+    }
+  }
+  return nullptr;
 }
 
 dbPowerDomain* dbBlock::findPowerDomain(const char* name)
@@ -2353,6 +2351,33 @@ void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
   block->_max_layer_for_clock = max_layer_for_clock;
 }
 
+int dbBlock::getGCellTileSize()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  // Use the pitch of the third routing layer to compute the gcell tile size.
+  int layer_for_gcell_size = 3;
+  if (block->_max_routing_layer < layer_for_gcell_size) {
+    layer_for_gcell_size = block->_max_routing_layer;
+  }
+  const int pitches_in_tile = 15;
+
+  dbTech* tech = getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_gcell_size);
+  odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+
+  if (track_grid == nullptr) {
+    getImpl()->getLogger()->error(utl::ODB,
+                                  358,
+                                  "Track grid for routing layer {} not found.",
+                                  tech_layer->getName());
+  }
+
+  int track_spacing, track_init, num_tracks;
+  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+
+  return pitches_in_tile * track_spacing;
+}
+
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2575,13 +2600,8 @@ void dbBlock::initParasiticsValueTables()
     block->_cap_node_tbl->clear();
   } else {
     delete block->_cap_node_tbl;
-    block->_cap_node_tbl
-        = new dbTable<_dbCapNode>(db,
-                                  block,
-                                  (GetObjTbl_t) &_dbBlock::getObjectTable,
-                                  dbCapNodeObj,
-                                  4096,
-                                  12);
+    block->_cap_node_tbl = new dbTable<_dbCapNode, 4096>(
+        db, block, (GetObjTbl_t) &_dbBlock::getObjectTable, dbCapNodeObj);
   }
   block->_maxCapNodeId = 0;
 
@@ -2589,13 +2609,8 @@ void dbBlock::initParasiticsValueTables()
     block->_r_seg_tbl->clear();
   } else {
     delete block->_r_seg_tbl;
-    block->_r_seg_tbl
-        = new dbTable<_dbRSeg>(db,
-                               block,
-                               (GetObjTbl_t) &_dbBlock::getObjectTable,
-                               dbRSegObj,
-                               4096,
-                               12);
+    block->_r_seg_tbl = new dbTable<_dbRSeg, 4096>(
+        db, block, (GetObjTbl_t) &_dbBlock::getObjectTable, dbRSegObj);
   }
   block->_maxRSegId = 0;
 
@@ -2603,13 +2618,8 @@ void dbBlock::initParasiticsValueTables()
     block->_cc_seg_tbl->clear();
   } else {
     delete block->_cc_seg_tbl;
-    block->_cc_seg_tbl
-        = new dbTable<_dbCCSeg>(db,
-                                block,
-                                (GetObjTbl_t) &_dbBlock::getObjectTable,
-                                dbCCSegObj,
-                                4096,
-                                12);
+    block->_cc_seg_tbl = new dbTable<_dbCCSeg, 4096>(
+        db, block, (GetObjTbl_t) &_dbBlock::getObjectTable, dbCCSegObj);
   }
   block->_maxCCSegId = 0;
 
@@ -3208,6 +3218,16 @@ bool dbBlock::designIsRouted(bool verbose)
     }
   }
   return design_is_routed;
+}
+
+void dbBlock::destroyNetWires()
+{
+  for (dbNet* db_net : getNets()) {
+    dbWire* wire = db_net->getWire();
+    if (!db_net->isSpecial() && wire) {
+      dbWire::destroy(wire);
+    }
+  }
 }
 
 int dbBlock::globalConnect()

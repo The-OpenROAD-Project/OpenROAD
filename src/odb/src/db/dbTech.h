@@ -14,9 +14,6 @@
 
 namespace odb {
 
-template <class T>
-class dbTable;
-
 class _dbProperty;
 class dbPropertyItr;
 class _dbNameCache;
@@ -34,6 +31,7 @@ class _dbDatabase;
 class _dbMetalWidthViaMap;
 class _dbCellEdgeSpacing;
 class dbTechLayerItr;
+template <uint page_size>
 class dbBoxItr;
 class dbIStream;
 class dbOStream;
@@ -77,14 +75,14 @@ class _dbTech : public _dbObject
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbTechLayer>* _layer_tbl;
   dbTable<_dbTechVia>* _via_tbl;
-  dbTable<_dbTechNonDefaultRule>* _non_default_rule_tbl;
-  dbTable<_dbTechLayerRule>* _layer_rule_tbl;
+  dbTable<_dbTechNonDefaultRule, 4>* _non_default_rule_tbl;
+  dbTable<_dbTechLayerRule, 4>* _layer_rule_tbl;
   dbTable<_dbBox>* _box_tbl;
-  dbTable<_dbTechSameNetRule>* _samenet_rule_tbl;
-  dbTable<_dbTechLayerAntennaRule>* _antenna_rule_tbl;
-  dbTable<_dbTechViaRule>* _via_rule_tbl;
-  dbTable<_dbTechViaLayerRule>* _via_layer_rule_tbl;
-  dbTable<_dbTechViaGenerateRule>* _via_generate_rule_tbl;
+  dbTable<_dbTechSameNetRule, 16>* _samenet_rule_tbl;
+  dbTable<_dbTechLayerAntennaRule, 16>* _antenna_rule_tbl;
+  dbTable<_dbTechViaRule, 16>* _via_rule_tbl;
+  dbTable<_dbTechViaLayerRule, 16>* _via_layer_rule_tbl;
+  dbTable<_dbTechViaGenerateRule, 16>* _via_generate_rule_tbl;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbMetalWidthViaMap>* _metal_width_via_map_tbl;
   dbTable<_dbCellEdgeSpacing>* cell_edge_spacing_tbl_;
@@ -93,7 +91,7 @@ class _dbTech : public _dbObject
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS
   dbTechLayerItr* _layer_itr;
-  dbBoxItr* _box_itr;
+  dbBoxItr<128>* _box_itr;
   dbPropertyItr* _prop_itr;
 
   double _getLefVersion() const;

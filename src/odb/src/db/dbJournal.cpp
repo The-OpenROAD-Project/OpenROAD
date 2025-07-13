@@ -1025,13 +1025,14 @@ void dbJournal::redo_updateNetField()
                    2,
                    "REDO ECO: dbNetObj {} set term extId",
                    net_id);
-      } else
+      } else {
         debugPrint(_logger,
                    utl::ODB,
                    "DB_ECO",
                    2,
                    "REDO ECO: dbNetObj {} reset term extId",
                    net_id);
+      }
       break;
     }
 

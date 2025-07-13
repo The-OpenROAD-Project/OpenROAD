@@ -8,6 +8,6 @@ read_def Nangate45_data/macros.def
 
 set def_file [make_result_file boundary_macros_tapcell.def]
 
-catch {place_endcaps} error
+catch { place_endcaps } error
 
 puts $error

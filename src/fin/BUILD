@@ -37,6 +37,7 @@ cc_library(
         "@boost.lexical_cast",
         "@boost.polygon",
         "@boost.property_tree",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

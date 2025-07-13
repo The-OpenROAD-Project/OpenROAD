@@ -13,7 +13,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <fstream>
 #include <set>
-#include <string>
 // User Code End Includes
 
 namespace odb {
@@ -21,8 +20,6 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbMarker;
-template <class T>
-class dbTable;
 class _dbMarkerCategory;
 // User Code Begin Classes
 class _dbBlock;

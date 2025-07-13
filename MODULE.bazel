@@ -7,6 +7,7 @@ module(
 
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
@@ -15,17 +16,6 @@ git_override(
     module_name = "rules_scala",
     commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
     remote = "https://github.com/bazelbuild/rules_scala",
-)
-
-# The current rules_cc 0.1.1 hardcodes script locations to `#!/bin/bash`
-# instead of using `#!/usr/bin/env bash`.
-# This is fixed by https://github.com/bazelbuild/rules_cc/pull/306 but
-# is not released yet. Use rules_cc from that commit.
-bazel_dep(name = "rules_cc", version = "0.1.1")
-git_override(
-    module_name = "rules_cc",
-    commit = "d74915024017250e46d95e91a3defc34174effe0",
-    remote = "https://github.com/bazelbuild/rules_cc",
 )
 
 bazel_dep(name = "rules_verilator", version = "5.034")
@@ -69,6 +59,7 @@ bazel_dep(name = "boost.geometry", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.graph", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.heap", version = BOOST_VERSION)
 bazel_dep(name = "boost.icl", version = BOOST_VERSION)
+bazel_dep(name = "boost.integer", version = BOOST_VERSION)
 bazel_dep(name = "boost.io", version = BOOST_VERSION)
 bazel_dep(name = "boost.iostreams", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.iterator", version = BOOST_VERSION)
@@ -148,7 +139,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "0408d693af0e193fd736f44580fc9a17c2bef8f0",
+    commit = "eaf22cee8fe62d5326f0486e2742a63bbe3d987f",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -157,10 +148,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3145-ge35c9b1f",
+    image = "docker.io/openroad/orfs:v3.0-3393-g0ae5fce9",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "d2875b4834a7c01dab79b37816e8730c0505fabb98c112f6afa69577e5163c87",
+    sha256 = "3e8134fc509e189ee3762cec4345ba1c690255abee4bba9966d4b0605b2079f7",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -200,7 +191,6 @@ maven.install(
         "https://repo1.maven.org/maven2",
     ],
 )
-
 use_repo(maven, "openroad_maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -216,11 +206,11 @@ exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
 )
 
 http_archive(
-        name = "openmp",
-        urls = [
-            "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
-        ],
-        strip_prefix = "openmp-20.1.0.src",
-        sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
-        build_file = "//bazel/openmp:bundled.BUILD.bazel",
-    )
+    name = "openmp",
+    build_file = "//bazel/openmp:bundled.BUILD.bazel",
+    sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
+    strip_prefix = "openmp-20.1.0.src",
+    urls = [
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
+    ],
+)

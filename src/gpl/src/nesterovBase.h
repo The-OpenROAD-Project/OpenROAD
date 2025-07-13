@@ -47,6 +47,13 @@ class nesterovDbCbk;
 class GCell
 {
  public:
+  enum class GCellChange : uint8_t
+  {
+    kNone,
+    kRoutability,
+    kTimingDriven,
+  };
+
   // instance cells
   GCell(Instance* inst);
   GCell(const std::vector<Instance*>& insts);
@@ -57,7 +64,7 @@ class GCell
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
-  std::string name() const;
+  std::string getName() const;
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
@@ -89,7 +96,9 @@ class GCell
 
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
-  void setSize(int dx, int dy);
+  void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
+  void setAreaChangeType(GCellChange change) { change_ = change; }
+  GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
 
   void setDensityLocation(int dLx, int dLy);
@@ -113,6 +122,14 @@ class GCell
   void print(utl::Logger* logger, bool print_only_name) const;
   void printToFile(std::ostream& out, bool print_only_name = true) const;
 
+  void writeAttributesToCSV(std::ostream& out) const
+  {
+    out << "," << insts_.size() << "," << gPins_.size();
+    out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
+    out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
+    out << "," << densityScale_ << "," << gradientX_ << "," << gradientY_;
+  }
+
  private:
   std::vector<Instance*> insts_;
   std::vector<GPin*> gPins_;
@@ -129,6 +146,8 @@ class GCell
   float densityScale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
+
+  GCellChange change_ = GCellChange::kNone;
 };
 
 inline int GCell::lx() const
@@ -844,7 +863,17 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  GCell& getGCell(size_t index) { return gCellStor_[index]; }
+  GCell& getGCell(size_t index)
+  {
+    if (index >= gCellStor_.size()) {
+      log_->error(utl::GPL,
+                  316,
+                  "getGCell: index {} out of bounds (gCellStor_.size() = {}).",
+                  index,
+                  gCellStor_.size());
+    }
+    return gCellStor_[index];
+  }
 
   size_t getGCellIndex(const GCell* gCell) const
   {
@@ -853,8 +882,8 @@ class NesterovBaseCommon
 
   void printGCells();
   void printGCellsToFile(const std::string& filename,
-                         bool print_only_name = true,
-                         bool also_print_minRc = false);
+                         bool print_only_name,
+                         bool also_print_minRc) const;
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -875,7 +904,7 @@ class NesterovBaseCommon
 
   std::vector<GCell*> nbc_gcells_;
   // For usage in routability mode, parallel to nbc_gcells_
-  std::vector<std::pair<int, int>> minRcCellSize_;
+  std::vector<odb::Rect> minRcCellSize_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -886,6 +915,7 @@ class NesterovBaseCommon
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
   std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
+  std::unordered_map<odb::dbBTerm*, size_t> db_bterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -895,7 +925,7 @@ class NesterovBaseCommon
 
   int num_threads_;
   int64_t delta_area_;
-  uint new_gcells_count_;
+  int new_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
@@ -912,7 +942,18 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
+  GCell& getFillerGCell(size_t index)
+  {
+    if (index >= fillerStor_.size()) {
+      log_->error(
+          utl::GPL,
+          314,
+          "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
+          index,
+          fillerStor_.size());
+    }
+    return fillerStor_[index];
+  }
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -944,10 +985,10 @@ class NesterovBase
   int fillerDx() const;
   int fillerDy() const;
   int getFillerCnt() const;
-  int64_t fillerCellArea() const;
+  int64_t getFillerCellArea() const;
   int64_t whiteSpaceArea() const;
   int64_t movableArea() const;
-  int64_t totalFillerArea() const;
+  int64_t getTotalFillerArea() const;
 
   // update
   // fillerArea, whiteSpaceArea, movableArea
@@ -1072,13 +1113,36 @@ class NesterovBase
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   void destroyCbkGCell(odb::dbInst* db_inst);
-  void destroyFillerGCell(size_t index_remove);
 
-  // Resets all pointers to storages of gcells, gpins, and gnets.
-  void fixPointers(std::vector<size_t> new_gcells);
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
   void updateGCellState(float wlCoeffX, float wlCoeffY);
+
+  void destroyFillerGCell(size_t index_remove);
+  void restoreRemovedFillers();
+  void clearRemovedFillers() { removed_fillers_.clear(); }
+
+  void appendGCellCSVNote(const std::string& filename,
+                          int iteration,
+                          const std::string& message) const
+  {
+    std::ofstream file(filename, std::ios::app);
+    if (!file.is_open()) {
+      log_->report("Could not open CSV file for appending message: {}",
+                   filename);
+      return;
+    }
+
+    file << "# NOTE @ iteration " << iteration << ": " << message << "\n";
+    file.close();
+  }
+
+  void writeGCellVectorsToCSV(const std::string& filename,
+                              int iteration,
+                              bool write_header) const;
+
+  void printGCellsToFile(const std::string& filename,
+                         bool print_only_name) const;
 
  private:
   NesterovBaseVars nbVars_;
@@ -1094,6 +1158,7 @@ class NesterovBase
   int64_t whiteSpaceArea_ = 0;
   int64_t movableArea_ = 0;
   int64_t totalFillerArea_ = 0;
+  int64_t initial_filler_area_ = 0;
 
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
@@ -1101,10 +1166,36 @@ class NesterovBase
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
+  std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
+
+  struct RemovedFillerState
+  {
+    GCell gcell;
+    FloatPoint curSLPCoordi;
+    FloatPoint curSLPWireLengthGrads;
+    FloatPoint curSLPDensityGrads;
+    FloatPoint curSLPSumGrads;
+    FloatPoint nextSLPCoordi;
+    FloatPoint nextSLPWireLengthGrads;
+    FloatPoint nextSLPDensityGrads;
+    FloatPoint nextSLPSumGrads;
+    FloatPoint prevSLPCoordi;
+    FloatPoint prevSLPWireLengthGrads;
+    FloatPoint prevSLPDensityGrads;
+    FloatPoint prevSLPSumGrads;
+    FloatPoint curCoordi;
+    FloatPoint nextCoordi;
+    FloatPoint initCoordi;
+    FloatPoint snapshotCoordi;
+    FloatPoint snapshotSLPCoordi;
+    FloatPoint snapshotSLPSumGrads;
+  };
+
+  std::vector<RemovedFillerState> removed_fillers_;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
@@ -1150,6 +1241,7 @@ class NesterovBase
                   size_t remove_index,
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
+  void appendParallelVectors();
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1207,10 +1299,14 @@ class biNormalParameters
 class GCellHandle
 {
  public:
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx)
+      : storage_(nbc), storage_index_(idx)
   {
   }
-  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
+
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
+  {
+  }
 
   // Non-const versions
   GCell* operator->() { return &getGCell(); }
@@ -1227,8 +1323,19 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  void updateIndex(size_t new_index) { index_ = new_index; }
-  size_t getIndex() const { return index_; }
+  void updateHandle(NesterovBaseCommon* nbc, size_t new_index)
+  {
+    storage_ = nbc;
+    storage_index_ = new_index;
+  }
+
+  void updateHandle(NesterovBase* nb, size_t new_index)
+  {
+    storage_ = nb;
+    storage_index_ = new_index;
+  }
+
+  size_t getStorageIndex() const { return storage_index_; }
 
  private:
   using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
@@ -1236,13 +1343,13 @@ class GCellHandle
   GCell& getGCell() const
   {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
-      return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
+      return std::get<NesterovBaseCommon*>(storage_)->getGCell(storage_index_);
     }
-    return std::get<NesterovBase*>(storage_)->getFillerGCell(index_);
+    return std::get<NesterovBase*>(storage_)->getFillerGCell(storage_index_);
   }
 
   StorageVariant storage_;
-  size_t index_;
+  size_t storage_index_;
 };
 
 inline bool isValidSigType(const odb::dbSigType& db_type)

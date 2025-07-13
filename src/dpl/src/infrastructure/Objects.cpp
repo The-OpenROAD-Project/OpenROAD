@@ -265,6 +265,10 @@ Rect Node::getBBox() const
 {
   return Rect(left_.v, bottom_.v, left_.v + width_.v, bottom_.v + height_.v);
 }
+uint8_t Node::getUsedLayers() const
+{
+  return used_layers_;
+}
 void Node::setId(int id)
 {
   id_ = id;
@@ -348,6 +352,10 @@ void Node::addPin(Pin* pin)
 void Node::setGroupId(int id)
 {
   group_id_ = id;
+}
+void Node::addUsedLayer(int layer)
+{
+  used_layers_ |= 1 << layer;
 }
 bool Node::adjustCurrOrient(const dbOrientType& newOri)
 {

@@ -24,7 +24,6 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:ord",
         "//src/odb",
         "//src/utl",
         "@tk_tcl//:tcl",
@@ -56,6 +55,7 @@ cc_library(
         "//src/gui",
         "//src/odb",
         "//src/utl",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

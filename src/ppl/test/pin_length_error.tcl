@@ -6,5 +6,5 @@ read_def on_grid.def
 
 set_pin_length -hor_length 0.1 -ver_length 0.1
 
-catch {place_pins -hor_layer met3 -ver_layer met2} error
+catch { place_pins -hor_layer met3 -ver_layer met2 } error
 puts $error

@@ -123,8 +123,8 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (pa_markers_) {
-    painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-    painter.setBrush(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+    painter.setBrush(gui::Painter::kTransparent);
     for (auto& marker : *pa_markers_) {
       if (marker->getLayerNum() == layer_num) {
         painter.drawRect(marker->getBBox());
@@ -136,7 +136,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     if (ap.getLayerNum() != layer_num) {
       continue;
     }
-    auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
+    auto color = ap.hasAccess() ? gui::Painter::kGreen : gui::Painter::kRed;
     painter.setPen(color, /* cosmetic */ true);
 
     const Point& pt = ap.getPoint();
@@ -245,7 +245,8 @@ void FlexPAGraphics::setViaAP(
   if (!pin_ || !settings_->paMarkers) {
     return;
   }
-
+  logger_->report(
+      "Via {} markers {}", via->getViaDef()->getName(), markers.size());
   pa_ap_ = ap;
   pa_vias_ = {via};
   pa_segs_.clear();

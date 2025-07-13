@@ -111,6 +111,7 @@ COMPULSORY_TESTS = [
     "report",
     "reset",
     "ripup",
+    "sky130_spm_floating_bpin",
     "sroute_test",
     "widthtable",
 ]
@@ -212,6 +213,8 @@ filegroup(
         "sky130_secondary_nets/capacitor_test_nf.lef",
         "sky130_secondary_nets/floorplan.def",
         "sky130_secondary_nets/vref_gen_nmos_with_trim.lef",
+        "sky130_spm/delayed_serial_adder.lef",
+        "sky130_spm/floorplan.def",
         "sky130_temp_sensor/4_cts.def",
         "sky130_temp_sensor/HEADER.lef",
         "sky130_temp_sensor/SLC.lef",
@@ -235,7 +238,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
         "sky130hvl/sky130_fd_sc_hvl.tlef",
-        "sky130hvl/sky130_fd_sc_hvl_merged.lef",
+        "sky130hvl/sky130_fd_sc_hvl_merged.lef"
     ],
 )
 

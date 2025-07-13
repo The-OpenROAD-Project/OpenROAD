@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "cts/TritonCTS.h"
 #include "gtest/gtest.h"
 #include "src/cts/src/Clock.h"
 #include "src/cts/src/Clustering.h"
@@ -65,9 +66,9 @@ TEST(Cluster, BranchingPointIsDisabledIfNoBranchesAreProvided)
   std::vector<std::pair<float, float>> means_with_branching
       = {{16, 41}, {33, 18}};
   clustering_engine_with_branching.iterKmeans(/*iter=*/1,
-                                              /*number_of_clusters=*/2,
-                                              /*max_cluster_size=*/2,
-                                              /*maximum_iteration_count*/ 5,
+                                              /*n=*/2,
+                                              /*cap=*/2,
+                                              /*max*/ 5,
                                               /*power*/ 4,
                                               means_with_branching);
 

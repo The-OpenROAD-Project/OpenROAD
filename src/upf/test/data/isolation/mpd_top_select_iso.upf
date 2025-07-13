@@ -1,17 +1,17 @@
 create_power_domain PD_TOP \
-  -elements {.}  \
+  -elements {.}
 
 create_power_domain PD_D1 \
-  -elements {d1} \
+  -elements {d1}
 
 create_power_domain PD_D2 \
-  -elements {d2} \
+  -elements {d2}
 
 create_power_domain PD_D3 \
-  -elements {d3} \
+  -elements {d3}
 
 create_power_domain PD_D4 \
-  -elements {d4} \
+  -elements {d4}
 
 create_logic_port d1_iso_control
 create_logic_port d2_iso_control

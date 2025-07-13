@@ -83,12 +83,12 @@ bool CloneMove::doMove(const Path* drvr_path,
     return false;
   }
   // We can probably relax this with the new ECO code
-  if (resizer_->buffer_move->hasPendingMoves(db_network_->instance(drvr_pin))
+  if (resizer_->buffer_move_->hasPendingMoves(db_network_->instance(drvr_pin))
       > 0) {
     return false;
   }
   // We can probably relax this with the new ECO code
-  if (resizer_->split_load_move->hasPendingMoves(
+  if (resizer_->split_load_move_->hasPendingMoves(
           db_network_->instance(drvr_pin))
       > 0) {
     return false;

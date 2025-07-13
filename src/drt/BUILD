@@ -201,6 +201,7 @@ cc_library(
         "-Isrc/drt/src/pa",
         "-Isrc/drt/src/rp",
         "-Isrc/drt/src/ta",
+        "-fopenmp",
     ],
     includes = [
         "include",
@@ -215,6 +216,8 @@ cc_library(
         "@boost.bind",
         "@boost.container",
         "@boost.geometry",
+        "@boost.graph",
+        "@boost.icl",
         "@boost.io",
         "@boost.polygon",
         "@boost.serialization",
@@ -267,6 +270,7 @@ cc_library(
     ],
     deps = [
         ":db_hdrs",
+        ":drt",
         "//:ord",
         "//src/dst",
         "//src/gui",
@@ -277,6 +281,7 @@ cc_library(
         "@boost.geometry",
         "@boost.polygon",
         "@boost.serialization",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

@@ -136,6 +136,32 @@ def getParallelTests(String image) {
             }
         },
 
+        'Build on RHEL8': {
+            node ('rhel8') {
+                stage('Setup RHEL8 Build') {
+                    checkout scm;
+                }
+                stage('Build on RHEL8') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            sh label: 'Build on RHEL8', script: './etc/Build.sh 2>&1 | tee rhel8-build.log';
+                        }
+                    }
+                    archiveArtifacts artifacts: 'rhel8-build.log';
+                }
+                stage('Unit Tests CTest') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc) --output-on-failure';
+                        }
+                    }
+                    sh label: 'Save ctest results', script: 'tar zcvf results-ctest-rhel8.tgz build/Testing';
+                    sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: 'results-ctest-rhel8.tgz, **/results.tgz';
+                }
+            }
+        },
+
         'Check message IDs': {
             dir('src') {
                 sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';
@@ -223,21 +249,35 @@ def getParallelTests(String image) {
     return ret;
 }
 
-node {
+def bazelTest = {
+    node {
+        stage('Setup') {
+            checkout scm;
+            sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
+        }
+        withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
+            stage('bazelisk test ...') {
+                withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                    timeout(time: 120, unit: 'MINUTES') {
+                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
+                        if (env.BRANCH_NAME != 'master') {
+                            cmd += ' --remote_upload_local_results=false';
+                        }
+                        cmd += ' --google_credentials=$GCS_SA_KEY';
+                        try {
+                            sh label: 'Bazel Build', script: cmd + ' ...';
+                        } catch (e) {
+                            currentBuild.result = 'FAILURE';
+                            sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
-    def isDefaultBranch = (env.BRANCH_NAME == 'master') 
-    def daysToKeep = '20';
-    def numToKeep = (isDefaultBranch ? '-1' : '10');
-
-    properties([
-        buildDiscarder(logRotator(
-            daysToKeepStr:         daysToKeep,
-            artifactDaysToKeepStr: daysToKeep,
-
-            numToKeepStr:          numToKeep,
-            artifactNumToKeepStr:  numToKeep
-        ))
-    ]);
+def dockerTests = {
     stage('Checkout') {
         checkout scm;
     }
@@ -256,7 +296,7 @@ node {
                 node {
                     checkout scm;
                     sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
-                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image}";
+                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image} -smoke";
                     dockerPush("${os.image}", 'openroad');
                 }
             }
@@ -266,6 +306,24 @@ node {
         echo "Docker image is ${DOCKER_IMAGE}";
     }
     parallel(getParallelTests(DOCKER_IMAGE));
+}
+
+node {
+    def isDefaultBranch = (env.BRANCH_NAME == 'master')
+    def daysToKeep = '20';
+    def numToKeep = (isDefaultBranch ? '-1' : '10');
+    properties([
+        buildDiscarder(logRotator(
+            daysToKeepStr:         daysToKeep,
+            artifactDaysToKeepStr: daysToKeep,
+            numToKeepStr:          numToKeep,
+            artifactNumToKeepStr:  numToKeep
+        ))
+    ]);
+    parallel(
+            "Bazel": bazelTest,
+            "Docker Tests": dockerTests
+    );
     stage('Send Email Report') {
         sendEmail();
     }
