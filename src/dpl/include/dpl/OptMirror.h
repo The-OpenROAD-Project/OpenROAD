@@ -24,11 +24,17 @@ class NetBox
 {
  public:
   NetBox() = default;
-  NetBox(dbNet* net, Rect box, bool ignore);
+  NetBox(dbNet* net, const Rect& box, bool ignore);
   int64_t hpwl();
   void saveBox();
   void restoreBox();
+  bool isIgnore() const { return ignore_; }
+  dbNet* getNet() const { return net_; }
+  const Rect& getBox() const { return box_; }
 
+  void setBox(const Rect& box) { box_ = box; }
+
+ private:
   dbNet* net_ = nullptr;
   Rect box_;
   Rect box_saved_;

@@ -1107,9 +1107,9 @@ NetRouteMap FastRouteCore::run()
   }
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
-  if (debug_->isOn() && debug_->rectilinearSTree_) {
+  if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1348,9 +1348,9 @@ NetRouteMap FastRouteCore::run()
   }  // end overflow iterations
 
   // Debug mode Tree 2D after overflow iterations
-  if (debug_->isOn() && debug_->tree2D_) {
+  if (debug_->isOn() && debug_->tree2D) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1407,9 +1407,9 @@ NetRouteMap FastRouteCore::run()
   }
 
   // Debug mode Tree 3D after layer assignament
-  if (debug_->isOn() && debug_->tree3D_) {
+  if (debug_->isOn() && debug_->tree3D) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -1547,43 +1547,43 @@ const char* FrNet::getName() const
 void FastRouteCore::setDebugOn(
     std::unique_ptr<AbstractFastRouteRenderer> renderer)
 {
-  debug_->renderer_ = std::move(renderer);
+  debug_->renderer = std::move(renderer);
 }
 void FastRouteCore::setDebugSteinerTree(bool steinerTree)
 {
-  debug_->steinerTree_ = steinerTree;
+  debug_->steinerTree = steinerTree;
 }
 void FastRouteCore::setDebugTree2D(bool tree2D)
 {
-  debug_->tree2D_ = tree2D;
+  debug_->tree2D = tree2D;
 }
 void FastRouteCore::setDebugTree3D(bool tree3D)
 {
-  debug_->tree3D_ = tree3D;
+  debug_->tree3D = tree3D;
 }
 void FastRouteCore::setDebugNet(const odb::dbNet* net)
 {
-  debug_->net_ = net;
+  debug_->net = net;
 }
 void FastRouteCore::setDebugRectilinearSTree(bool rectiliniarSTree)
 {
-  debug_->rectilinearSTree_ = rectiliniarSTree;
+  debug_->rectilinearSTree = rectiliniarSTree;
 }
 void FastRouteCore::setSttInputFilename(const char* file_name)
 {
-  debug_->sttInputFileName_ = std::string(file_name);
+  debug_->sttInputFileName = std::string(file_name);
 }
 bool FastRouteCore::hasSaveSttInput()
 {
-  return (debug_->sttInputFileName_ != "");
+  return (debug_->sttInputFileName != "");
 }
 std::string FastRouteCore::getSttInputFileName()
 {
-  return debug_->sttInputFileName_;
+  return debug_->sttInputFileName;
 }
 const odb::dbNet* FastRouteCore::getDebugNet()
 {
-  return debug_->net_;
+  return debug_->net;
 }
 
 void FastRouteCore::steinerTreeVisualization(const stt::Tree& stree, FrNet* net)

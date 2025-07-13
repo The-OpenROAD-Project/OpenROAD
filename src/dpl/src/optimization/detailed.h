@@ -24,8 +24,8 @@ class DetailedMgr;
 ////////////////////////////////////////////////////////////////////////////////
 struct DetailedParams
 {
-  std::string script_;
-  double targetUt_ = 1.0;
+  std::string script;
+  double targetUt = 1.0;
 };
 
 class Detailed

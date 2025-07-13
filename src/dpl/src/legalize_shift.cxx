@@ -27,13 +27,13 @@ namespace dpl {
 
 struct ShiftLegalizer::Clump
 {
-  int id_ = 0;
-  double weight_ = 0.0;
-  double wposn_ = 0.0;
+  int id = 0;
+  double weight = 0.0;
+  double wposn = 0.0;
   // Left edge of clump should be integer, although
   // the computation can be double.
-  int posn_ = 0;
-  std::vector<Node*> nodes_;
+  int posn = 0;
+  std::vector<Node*> nodes;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -331,12 +331,12 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
     const double wt = 1.0e8;
 
-    r->id_ = clumpId;
-    r->nodes_.clear();
-    r->nodes_.push_back(ndi);
-    r->wposn_ = wt * ndi->getLeft().v;
-    r->weight_ = wt;  // Massive weight for segment start.
-    r->posn_ = ndi->getLeft().v;
+    r->id = clumpId;
+    r->nodes.clear();
+    r->nodes.push_back(ndi);
+    r->wposn = wt * ndi->getLeft().v;
+    r->weight = wt;  // Massive weight for segment start.
+    r->posn = ndi->getLeft().v;
 
     ++clumpId;
   }
@@ -351,12 +351,12 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
     const double wt = 1.0;
 
-    r->id_ = (int) i;
-    r->nodes_.clear();
-    r->nodes_.push_back(ndi);
-    r->wposn_ = wt * ndi->getLeft().v;
-    r->weight_ = wt;
-    r->posn_ = ndi->getLeft().v;
+    r->id = (int) i;
+    r->nodes.clear();
+    r->nodes.push_back(ndi);
+    r->wposn = wt * ndi->getLeft().v;
+    r->weight = wt;
+    r->posn = ndi->getLeft().v;
 
     // Always ensure the left edge is within the segments
     // in which the cell is assigned.
@@ -365,8 +365,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
       DbuX xmin = segPtr->getMinX();
       DbuX xmax = segPtr->getMaxX();
       // Left edge always within segment.
-      r->posn_
-          = std::min(std::max(r->posn_, xmin.v), xmax.v - ndi->getWidth().v);
+      r->posn = std::min(std::max(r->posn, xmin.v), xmax.v - ndi->getWidth().v);
     }
 
     ++clumpId;
@@ -381,12 +380,12 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
     const double wt = 1.0e8;
 
-    r->id_ = clumpId;
-    r->nodes_.clear();
-    r->nodes_.push_back(ndi);
-    r->wposn_ = wt * ndi->getLeft().v;
-    r->weight_ = wt;  // Massive weight for segment end.
-    r->posn_ = ndi->getLeft().v;
+    r->id = clumpId;
+    r->nodes.clear();
+    r->nodes.push_back(ndi);
+    r->wposn = wt * ndi->getLeft().v;
+    r->weight = wt;  // Massive weight for segment end.
+    r->posn = ndi->getLeft().v;
 
     ++clumpId;
   }
@@ -409,7 +408,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
     // Left edge.
     const DbuX oldX = ndi->getLeft();
-    const DbuX newX{r->posn_ + offset_[ndi->getId()]};
+    const DbuX newX{r->posn + offset_[ndi->getId()]};
 
     ndi->setLeft(newX);
 
@@ -436,20 +435,20 @@ void ShiftLegalizer::merge(Clump* r)
     // Merge clump r into clump l which, in turn, could result in more merges.
 
     // Move blocks from r to l and update offsets, etc.
-    for (const Node* ndi : r->nodes_) {
+    for (const Node* ndi : r->nodes) {
       offset_[ndi->getId()] += dist;
       ptr_[ndi->getId()] = l;
     }
-    l->nodes_.insert(l->nodes_.end(), r->nodes_.begin(), r->nodes_.end());
+    l->nodes.insert(l->nodes.end(), r->nodes.begin(), r->nodes.end());
 
     // Remove blocks from clump r.
-    r->nodes_.clear();
+    r->nodes.clear();
 
     // Update position of clump l.
-    l->wposn_ += r->wposn_ - dist * r->weight_;
-    l->weight_ += r->weight_;
+    l->wposn += r->wposn - dist * r->weight;
+    l->weight += r->weight;
     // Rounding down should always be fine since we merge to the left.
-    l->posn_ = (int) std::floor(l->wposn_ / l->weight_);
+    l->posn = (int) std::floor(l->wposn / l->weight);
 
     // Since clump l changed position, we need to make it the new right clump
     // and see if there are more merges to the left.
@@ -471,8 +470,8 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
   int worst_diff = std::numeric_limits<int>::max();
   dist = std::numeric_limits<int>::max();
 
-  for (size_t i = 0; i < r->nodes_.size(); i++) {
-    const Node* ndr = r->nodes_[i];
+  for (size_t i = 0; i < r->nodes.size(); i++) {
+    const Node* ndr = r->nodes[i];
 
     // Look at each cell that must be left of current cell.
     for (size_t j = 0; j < incoming_[ndr->getId()].size(); j++) {
@@ -495,8 +494,8 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
         continue;
       }
       // Get left edge of both cells.
-      const int pdst = r->posn_ + offset_[ndr->getId()];
-      const int psrc = t->posn_ + offset_[ndl->getId()];
+      const int pdst = r->posn + offset_[ndr->getId()];
+      const int psrc = t->posn + offset_[ndl->getId()];
       const int gap = ndl->getWidth().v;
       const int diff = pdst - (psrc + gap);
       if (diff < 0 && diff < worst_diff) {
