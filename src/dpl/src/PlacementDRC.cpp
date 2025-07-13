@@ -5,6 +5,7 @@
 
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 
@@ -43,7 +44,8 @@ Rect getQueryRect(const Rect& edge_box, const int spc)
 };  // namespace cell_edges
 
 // Constructor
-PlacementDRC::PlacementDRC(Grid* grid, odb::dbTech* tech) : grid_(grid)
+PlacementDRC::PlacementDRC(Grid* grid, odb::dbTech* tech, Padding* padding)
+    : grid_(grid), padding_(padding)
 {
   makeCellEdgeSpacingTable(tech);
 }
@@ -138,6 +140,163 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
     }
   }
   return true;
+}
+
+bool PlacementDRC::checkDRC(const Node* cell) const
+{
+  return checkDRC(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), cell->getOrient());
+}
+
+bool PlacementDRC::checkDRC(const Node* cell,
+                            const GridX x,
+                            const GridY y,
+                            const dbOrientType& orient) const
+{
+  return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y);
+}
+
+namespace {
+bool isCrWtBlClass(const Node* cell)
+{
+  dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type.getValue()) {
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+      return true;
+    case dbMasterType::CORE_SPACER:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      // These classes are completely ignored by the placer.
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+      return false;
+  }
+  return false;
+}
+
+bool isWellTap(const Node* cell)
+{
+  dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  return type == dbMasterType::CORE_WELLTAP;
+}
+
+bool allowOverlap(const Node* cell1, const Node* cell2)
+{
+  return cell1->isBlock() && cell2->isBlock();
+}
+
+bool allowPaddingOverlap(const Node* cell1, const Node* cell2)
+{
+  return !isCrWtBlClass(cell1) || !isCrWtBlClass(cell2)
+         || (isWellTap(cell1) && isWellTap(cell2));
+}
+
+}  // namespace
+
+bool PlacementDRC::hasPaddingConflict(const Node* cell,
+                                      const Node* padding_cell) const
+{
+  return cell != nullptr && padding_cell != nullptr
+         && !allowPaddingOverlap(cell, padding_cell)
+         && !allowOverlap(cell, padding_cell);
+}
+
+bool PlacementDRC::checkPadding(const Node* cell) const
+{
+  return checkPadding(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+}
+
+// CLASSes are grouped as follows
+// CR = {CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL}
+// WT = CORE WELLTAP
+// SP = CORE SPACER, ENDCAP *
+// BL = BLOCK *
+
+//    CR WT BL SP
+// CR  P  P  P  O
+// WT  P  O  P  O
+// BL  P  P  -  O
+// SP  O  O  O  O
+//
+// P = no padded overlap
+// O = no overlap (padding ignored)
+// - = no overlap check (overlap allowed)
+// The rules apply to both FIXED or PLACED instances
+
+bool PlacementDRC::checkPadding(const Node* cell,
+                                const GridX x,
+                                const GridY y) const
+{
+  const GridX cell_x_end = x + grid_->gridWidth(cell);
+  const GridY cell_y_end
+      = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+
+  // Get the cell's padding requirements
+  const GridX left_pad = padding_->padLeft(cell);
+  const GridX right_pad = padding_->padRight(cell);
+  for (GridX grid_x{x - left_pad}; grid_x < cell_x_end + right_pad; grid_x++) {
+    const bool within_cell = grid_x >= x && grid_x < cell_x_end;
+    for (GridY grid_y{y}; grid_y < cell_y_end; grid_y++) {
+      const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
+      if (pixel == nullptr) {  // at the core edge
+        if (isCrWtBlClass(cell) && !isWellTap(cell) && !cell->isBlock()) {
+          // Padding violation with the core edge.
+          return false;
+        }
+        continue;
+      }
+      if (within_cell) {  // in the cell footprint
+        if (hasPaddingConflict(cell, pixel->padding_reserved_by)) {
+          return false;
+        }
+      } else {  // in the padding area of the cell
+        // check if there is another cell in the padding area
+        if (pixel->cell != nullptr && pixel->cell != cell
+            && !allowPaddingOverlap(pixel->cell, cell)) {
+          return false;
+        }
+        // check if another cell has already claimed the padding area
+        if (hasPaddingConflict(cell, pixel->padding_reserved_by)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;  // No padding conflicts found
 }
 
 // Initialize the edge spacing table from the technology

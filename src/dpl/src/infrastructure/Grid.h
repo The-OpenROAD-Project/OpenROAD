@@ -39,6 +39,7 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   std::map<dbSite*, dbOrientType> sites;
+  Node* padding_reserved_by;  // Cell that reserved this pixel for padding
 };
 
 // Return value for grid searches.
@@ -97,16 +98,24 @@ class Grid
   DbuY gridYToDbu(GridY y) const;
 
   GridX gridPaddedWidth(const Node* cell) const;
+  GridX gridWidth(const Node* cell) const;
   GridY gridHeight(const Node* cell) const;
   GridY gridHeight(odb::dbMaster* master) const;
   DbuY rowHeight(GridY index);
 
   void paintPixel(Node* cell, GridX grid_x, GridY grid_y);
   void paintPixel(Node* cell);
+  void paintCellPadding(Node* cell);
+  void paintCellPadding(Node* cell,
+                        const GridX grid_x_begin,
+                        const GridY grid_y_begin,
+                        const GridX grid_x_end,
+                        const GridY grid_y_end);
   void erasePixel(Node* cell);
-  void visitCellPixels(Node& cell,
-                       bool padded,
-                       const std::function<void(Pixel* pixel)>& visitor) const;
+  void visitCellPixels(
+      Node& cell,
+      bool padded,
+      const std::function<void(Pixel* pixel, bool padded)>& visitor) const;
   void visitCellBoundaryPixels(
       Node& cell,
       const std::function<

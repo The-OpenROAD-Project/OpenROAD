@@ -128,7 +128,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->info(DPL, 35, " {}", cell->name());
     }
 
-    saveFailures({}, {}, {}, {}, {}, {}, placement_failures_, {});
+    saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {});
     if (!report_file_name.empty()) {
       writeJsonReport(report_file_name);
     }
@@ -269,8 +269,13 @@ void Opendp::setFixedGridCells()
 {
   for (auto& cell : network_->getNodes()) {
     if (cell->getType() == Node::CELL && cell->isFixed()) {
-      grid_->visitCellPixels(
-          *cell, true, [&](Pixel* pixel) { setGridCell(*cell, pixel); });
+      grid_->visitCellPixels(*cell, true, [&](Pixel* pixel, bool padded) {
+        if (padded) {
+          pixel->padding_reserved_by = cell.get();
+        } else {
+          setGridCell(*cell, pixel);
+        }
+      });
     }
   }
 }
