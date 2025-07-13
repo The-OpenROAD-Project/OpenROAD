@@ -699,8 +699,8 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
                     rsmt);
       }
     }
-    if (debug_->isOn() && debug_->steinerTree_
-        && net->getDbNet() == debug_->net_) {
+    if (debug_->isOn() && debug_->steinerTree
+        && net->getDbNet() == debug_->net) {
       steinerTreeVisualization(rsmt, net);
     }
 

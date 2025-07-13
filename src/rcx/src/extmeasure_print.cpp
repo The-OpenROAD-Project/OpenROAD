@@ -524,17 +524,18 @@ void extMeasureRC::printDebugRC(FILE* fp,
                                 const char* msg,
                                 const char* post)
 {
-  fprintf(fp,
-          "%s s %d  CC %g  fr %g wfr %g dg %g  TC %g  R %g %s",
-          msg,
-          rc->_sep,
-          rc->_coupling,
-          rc->_fringe,
-          rc->_fringeW,
-          rc->_diag,
-          rc->_coupling + rc->_fringe + rc->_diag + rc->_fringeW,
-          rc->_res,
-          post);
+  fprintf(
+      fp,
+      "%s s %d  CC %g  fr %g wfr %g dg %g  TC %g  R %g %s",
+      msg,
+      rc->getSep(),
+      rc->getCoupling(),
+      rc->getFringe(),
+      rc->getFringeW(),
+      rc->getDiag(),
+      rc->getCoupling() + rc->getFringe() + rc->getDiag() + rc->getFringeW(),
+      rc->getRes(),
+      post);
 }
 void extMeasureRC::printDebugRC(FILE* fp,
                                 extDistRC* rc,

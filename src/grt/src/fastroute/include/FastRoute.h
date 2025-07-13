@@ -50,15 +50,15 @@ class MakeWireParasitics;
 // Debug mode settings
 struct DebugSetting
 {
-  const odb::dbNet* net_ = nullptr;
-  bool steinerTree_ = false;
-  bool rectilinearSTree_ = false;
-  bool tree2D_ = false;
-  bool tree3D_ = false;
-  std::unique_ptr<AbstractFastRouteRenderer> renderer_;
-  std::string sttInputFileName_;
+  const odb::dbNet* net = nullptr;
+  bool steinerTree = false;
+  bool rectilinearSTree = false;
+  bool tree2D = false;
+  bool tree3D = false;
+  std::unique_ptr<AbstractFastRouteRenderer> renderer;
+  std::string sttInputFileName;
 
-  bool isOn() const { return renderer_ != nullptr; }
+  bool isOn() const { return renderer != nullptr; }
 };
 
 using stt::Tree;
@@ -224,7 +224,7 @@ class FastRouteCore
 
   AbstractFastRouteRenderer* fastrouteRender()
   {
-    return debug_->renderer_.get();
+    return debug_->renderer.get();
   }
 
  private:

@@ -36,7 +36,7 @@ struct frOArchive : OutputArchive
 struct frIArchive : InputArchive
 {
   frIArchive(std::istream& os, unsigned flags = 0)
-      : InputArchive(os, flags), design(nullptr)
+      : InputArchive(os, flags), design_(nullptr)
   {
   }
 
@@ -46,11 +46,11 @@ struct frIArchive : InputArchive
   {
     InputArchive::load(t);
   }
-  frDesign* getDesign() const { return design; }
-  void setDesign(frDesign* in) { design = in; }
+  frDesign* getDesign() const { return design_; }
+  void setDesign(frDesign* in) { design_ = in; }
 
  private:
-  frDesign* design;
+  frDesign* design_;
 };
 }  // namespace drt
 

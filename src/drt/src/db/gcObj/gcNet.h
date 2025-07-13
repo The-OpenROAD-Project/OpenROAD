@@ -25,8 +25,8 @@ class gcNet : public gcBlockObject
         fixedRectangles_(numLayers),
         routeRectangles_(numLayers),
         pins_(numLayers),
-        taperedRects(numLayers),
-        nonTaperedRects(numLayers)
+        taperedRects_(numLayers),
+        nonTaperedRects_(numLayers)
   {
   }
   // setters
@@ -76,11 +76,11 @@ class gcNet : public gcBlockObject
     routePolygons_.resize(size);
     routeRectangles_.clear();
     routeRectangles_.resize(size);
-    taperedRects.clear();
-    taperedRects.resize(size);
-    nonTaperedRects.clear();
-    nonTaperedRects.resize(size);
-    specialSpacingRects.clear();
+    taperedRects_.clear();
+    taperedRects_.resize(size);
+    nonTaperedRects_.clear();
+    nonTaperedRects_.resize(size);
+    specialSpacingRects_.clear();
     for (auto& layerPins : pins_) {
       layerPins.clear();
     }
@@ -170,19 +170,19 @@ class gcNet : public gcBlockObject
   }
   void addTaperedRect(const Rect& bx, int zIdx)
   {
-    taperedRects[zIdx].push_back(bx);
+    taperedRects_[zIdx].push_back(bx);
   }
   const std::vector<Rect>& getTaperedRects(int z) const
   {
-    return taperedRects[z];
+    return taperedRects_[z];
   }
   void addNonTaperedRect(const Rect& bx, int zIdx)
   {
-    nonTaperedRects[zIdx].push_back(bx);
+    nonTaperedRects_[zIdx].push_back(bx);
   }
   const std::vector<Rect>& getNonTaperedRects(int z) const
   {
-    return nonTaperedRects[z];
+    return nonTaperedRects_[z];
   }
   void addSpecialSpcRect(const Rect& bx,
                          frLayerNum lNum,
@@ -194,11 +194,11 @@ class gcNet : public gcBlockObject
     sp->addToNet(net);
     sp->addToPin(pin);
     sp->setRect(bx);
-    specialSpacingRects.push_back(std::move(sp));
+    specialSpacingRects_.push_back(std::move(sp));
   }
   const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
   {
-    return specialSpacingRects;
+    return specialSpacingRects_;
   }
   bool hasPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
   {
@@ -238,11 +238,11 @@ class gcNet : public gcBlockObject
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
   frBlockObject* owner_{nullptr};
-  std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
-  std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
+  std::vector<std::vector<Rect>> taperedRects_;     //(only routing layer)
+  std::vector<std::vector<Rect>> nonTaperedRects_;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<std::unique_ptr<gcRect>> specialSpacingRects_;
 
   void init();
 };
