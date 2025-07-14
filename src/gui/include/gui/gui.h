@@ -579,6 +579,8 @@ class Chart
       = 0;
   virtual void addPoint(double x, double y) = 0;
 
+  virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
+
  protected:
   Chart() = default;
 };

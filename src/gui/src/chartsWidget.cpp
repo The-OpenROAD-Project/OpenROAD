@@ -37,6 +37,8 @@ class GuiChart : public Chart
                      odb::Orientation2D orientation) override;
   void addPoint(double x, double y) override;
 
+  void addVerticalMarker(double x, const Painter::Color& color) override;
+
  private:
   QChart* chart_;
   QLineSeries* series_;
@@ -85,6 +87,22 @@ void GuiChart::addPoint(const double x, const double y)
   x_axis_->setMax(x_max_);
   y_axis_->setMin(y_min_);
   y_axis_->setMax(y_max_);
+}
+
+void GuiChart::addVerticalMarker(const double x, const Painter::Color& color)
+{
+  QLineSeries* vline = new QLineSeries();
+  vline->append(x, y_axis_->min());
+  vline->append(x, y_axis_->max());
+
+  QColor qt_color(color.r, color.g, color.b, color.a);
+  vline->setPen(QPen(qt_color, 2, Qt::DashLine));
+
+  chart_->addSeries(vline);
+
+  // link to same axes
+  vline->attachAxis(x_axis_);
+  vline->attachAxis(y_axis_);
 }
 
 //////////////////////////////////////////////////
