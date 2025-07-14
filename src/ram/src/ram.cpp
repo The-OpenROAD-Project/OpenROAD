@@ -222,7 +222,11 @@ std::unique_ptr<Element> RamGen::create_and_layer (const std::string& prefix,
     for (int i = 0; i < layers; ++i) {
         auto input_net = makeNet(prefix, fmt::format("layer_in{}", i));
         //sets up first AND gate, closest to byte's select + write enable gate
-        if (i == 0) {
+	if (i == 0 && i == layers - 1) {
+	    makeInst (layout.get(), prefix, fmt::format("and_layer{}",i), and2_cell_,
+		{{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", selects[0]}});
+	   prev_net = input_net;
+	} else if (i == 0) {
             makeInst(layout.get(), prefix, fmt::format("and_layer{}", i), and2_cell_,
             {{"A", addr_nets[i]}, {"B", input_net}, {"X", selects[0]}});
             prev_net = input_net;
@@ -446,7 +450,7 @@ void RamGen::generate(const int bytes_per_word,
     vector<vector<dbNet*>> and_layer_nets(word_count, vector<dbNet*> (numImputs));
     for (int word = 0; word < word_count; ++word) {
         int word_num = word;
-        for (int input = numImputs - 1; input >= 0; --input) { //start at right most bit
+        for (int input = 0; input < numImputs; ++input) { //start at right most bit
             if (word_num % 2 == 0) {
                 //places inverter for each input
                 and_layer_nets[word][input] = inv_addr[input];

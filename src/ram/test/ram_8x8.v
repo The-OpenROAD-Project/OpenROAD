@@ -1,13 +1,13 @@
-module RAM8x8 (clock,
+module RAM8x8 (clk,
     D,
     Q,
-    bit,
-    write_enable);
- input clock;
+    addr,
+    we);
+ input clk;
  input [7:0] D;
  output [7:0] Q;
- input [2:0] bit;
- input [0:0] write_enable;
+ input [2:0] addr;
+ input [0:0] we;
 
  wire \D_nets[0].net ;
  wire \D_nets[1].net ;
@@ -137,7 +137,7 @@ module RAM8x8 (clock,
  wire \storage_7_0.bit7.storage ;
  wire \decoder7.layer_in0 ;
  wire \decoder7.layer_in1 ;
- wire [2:0] \inv.bit ;
+ wire [2:0] \inv.addr ;
 
  sky130_fd_sc_hd__dlxtp_1 \storage_0_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_0_0.bit0.storage ),
@@ -191,17 +191,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_0_0.gclock ),
     .CLK(\storage_0_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_0_0.gcand  (.A(\storage_0_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_0_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_0_0.select_inv_0  (.A(\storage_0_0.decoder0 ),
     .Y(\storage_0_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_0_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_0_0.clock_inv  (.A(clk),
     .Y(\storage_0_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder0.and_layer0  (.A(\inv.bit [0]),
+ sky130_fd_sc_hd__and2_0 \decoder0.and_layer0  (.A(\inv.addr [0]),
     .B(\decoder0.layer_in0 ),
     .X(\storage_0_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder0.and_layer1  (.A(\inv.bit [1]),
-    .B(\inv.bit [2]),
+ sky130_fd_sc_hd__and2_0 \decoder0.and_layer1  (.A(\inv.addr [1]),
+    .B(\inv.addr [2]),
     .X(\decoder0.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_1_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_1_0.bit0.storage ),
@@ -255,17 +255,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_1_0.gclock ),
     .CLK(\storage_1_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_1_0.gcand  (.A(\storage_1_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_1_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_1_0.select_inv_0  (.A(\storage_1_0.decoder0 ),
     .Y(\storage_1_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_1_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_1_0.clock_inv  (.A(clk),
     .Y(\storage_1_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder1.and_layer0  (.A(\inv.bit [0]),
+ sky130_fd_sc_hd__and2_0 \decoder1.and_layer0  (.A(addr[0]),
     .B(\decoder1.layer_in0 ),
     .X(\storage_1_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder1.and_layer1  (.A(\inv.bit [1]),
-    .B(bit[2]),
+ sky130_fd_sc_hd__and2_0 \decoder1.and_layer1  (.A(\inv.addr [1]),
+    .B(\inv.addr [2]),
     .X(\decoder1.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_2_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_2_0.bit0.storage ),
@@ -319,17 +319,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_2_0.gclock ),
     .CLK(\storage_2_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_2_0.gcand  (.A(\storage_2_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_2_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_2_0.select_inv_0  (.A(\storage_2_0.decoder0 ),
     .Y(\storage_2_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_2_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_2_0.clock_inv  (.A(clk),
     .Y(\storage_2_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder2.and_layer0  (.A(\inv.bit [0]),
+ sky130_fd_sc_hd__and2_0 \decoder2.and_layer0  (.A(\inv.addr [0]),
     .B(\decoder2.layer_in0 ),
     .X(\storage_2_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder2.and_layer1  (.A(bit[1]),
-    .B(\inv.bit [2]),
+ sky130_fd_sc_hd__and2_0 \decoder2.and_layer1  (.A(addr[1]),
+    .B(\inv.addr [2]),
     .X(\decoder2.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_3_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_3_0.bit0.storage ),
@@ -383,17 +383,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_3_0.gclock ),
     .CLK(\storage_3_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_3_0.gcand  (.A(\storage_3_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_3_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_3_0.select_inv_0  (.A(\storage_3_0.decoder0 ),
     .Y(\storage_3_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_3_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_3_0.clock_inv  (.A(clk),
     .Y(\storage_3_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder3.and_layer0  (.A(\inv.bit [0]),
+ sky130_fd_sc_hd__and2_0 \decoder3.and_layer0  (.A(addr[0]),
     .B(\decoder3.layer_in0 ),
     .X(\storage_3_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder3.and_layer1  (.A(bit[1]),
-    .B(bit[2]),
+ sky130_fd_sc_hd__and2_0 \decoder3.and_layer1  (.A(addr[1]),
+    .B(\inv.addr [2]),
     .X(\decoder3.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_4_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_4_0.bit0.storage ),
@@ -447,17 +447,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_4_0.gclock ),
     .CLK(\storage_4_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_4_0.gcand  (.A(\storage_4_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_4_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_4_0.select_inv_0  (.A(\storage_4_0.decoder0 ),
     .Y(\storage_4_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_4_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_4_0.clock_inv  (.A(clk),
     .Y(\storage_4_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder4.and_layer0  (.A(bit[0]),
+ sky130_fd_sc_hd__and2_0 \decoder4.and_layer0  (.A(\inv.addr [0]),
     .B(\decoder4.layer_in0 ),
     .X(\storage_4_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder4.and_layer1  (.A(\inv.bit [1]),
-    .B(\inv.bit [2]),
+ sky130_fd_sc_hd__and2_0 \decoder4.and_layer1  (.A(\inv.addr [1]),
+    .B(addr[2]),
     .X(\decoder4.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_5_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_5_0.bit0.storage ),
@@ -511,17 +511,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_5_0.gclock ),
     .CLK(\storage_5_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_5_0.gcand  (.A(\storage_5_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_5_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_5_0.select_inv_0  (.A(\storage_5_0.decoder0 ),
     .Y(\storage_5_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_5_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_5_0.clock_inv  (.A(clk),
     .Y(\storage_5_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder5.and_layer0  (.A(bit[0]),
+ sky130_fd_sc_hd__and2_0 \decoder5.and_layer0  (.A(addr[0]),
     .B(\decoder5.layer_in0 ),
     .X(\storage_5_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder5.and_layer1  (.A(\inv.bit [1]),
-    .B(bit[2]),
+ sky130_fd_sc_hd__and2_0 \decoder5.and_layer1  (.A(\inv.addr [1]),
+    .B(addr[2]),
     .X(\decoder5.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_6_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_6_0.bit0.storage ),
@@ -575,17 +575,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_6_0.gclock ),
     .CLK(\storage_6_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_6_0.gcand  (.A(\storage_6_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_6_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_6_0.select_inv_0  (.A(\storage_6_0.decoder0 ),
     .Y(\storage_6_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_6_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_6_0.clock_inv  (.A(clk),
     .Y(\storage_6_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder6.and_layer0  (.A(bit[0]),
+ sky130_fd_sc_hd__and2_0 \decoder6.and_layer0  (.A(\inv.addr [0]),
     .B(\decoder6.layer_in0 ),
     .X(\storage_6_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder6.and_layer1  (.A(bit[1]),
-    .B(\inv.bit [2]),
+ sky130_fd_sc_hd__and2_0 \decoder6.and_layer1  (.A(addr[1]),
+    .B(addr[2]),
     .X(\decoder6.layer_in0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_7_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_7_0.bit0.storage ),
@@ -639,17 +639,17 @@ module RAM8x8 (clock,
     .GCLK(\storage_7_0.gclock ),
     .CLK(\storage_7_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \storage_7_0.gcand  (.A(\storage_7_0.decoder0 ),
-    .B(write_enable[0]),
+    .B(we[0]),
     .X(\storage_7_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_7_0.select_inv_0  (.A(\storage_7_0.decoder0 ),
     .Y(\storage_7_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_7_0.clock_inv  (.A(clock),
+ sky130_fd_sc_hd__clkinv_1 \storage_7_0.clock_inv  (.A(clk),
     .Y(\storage_7_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder7.and_layer0  (.A(bit[0]),
+ sky130_fd_sc_hd__and2_0 \decoder7.and_layer0  (.A(addr[0]),
     .B(\decoder7.layer_in0 ),
     .X(\storage_7_0.decoder0 ));
- sky130_fd_sc_hd__and2_0 \decoder7.and_layer1  (.A(bit[1]),
-    .B(bit[2]),
+ sky130_fd_sc_hd__and2_0 \decoder7.and_layer1  (.A(addr[1]),
+    .B(addr[2]),
     .X(\decoder7.layer_in0 ));
  sky130_fd_sc_hd__buf_1 \buffer.in[0]  (.A(D[0]),
     .X(\D_nets[0].net ));
@@ -667,10 +667,10 @@ module RAM8x8 (clock,
     .X(\D_nets[6].net ));
  sky130_fd_sc_hd__buf_1 \buffer.in[7]  (.A(D[7]),
     .X(\D_nets[7].net ));
- sky130_fd_sc_hd__clkinv_1 \decoder.inv_0  (.A(bit[0]),
-    .Y(\inv.bit [0]));
- sky130_fd_sc_hd__clkinv_1 \decoder.inv_1  (.A(bit[1]),
-    .Y(\inv.bit [1]));
- sky130_fd_sc_hd__clkinv_1 \decoder.inv_2  (.A(bit[2]),
-    .Y(\inv.bit [2]));
+ sky130_fd_sc_hd__clkinv_1 \decoder.inv_0  (.A(addr[0]),
+    .Y(\inv.addr [0]));
+ sky130_fd_sc_hd__clkinv_1 \decoder.inv_1  (.A(addr[1]),
+    .Y(\inv.addr [1]));
+ sky130_fd_sc_hd__clkinv_1 \decoder.inv_2  (.A(addr[2]),
+    .Y(\inv.addr [2]));
 endmodule

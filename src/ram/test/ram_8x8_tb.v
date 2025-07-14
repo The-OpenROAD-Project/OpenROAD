@@ -101,10 +101,10 @@ initial begin
     // end
 
     //read mode
+    @(negedge clk)
     we = 0;
 
     //read word 0
-    @(negedge clk)
     addr = 3'b000;
 
     @(negedge clk)
@@ -129,6 +129,7 @@ initial begin
     addr = 3'b111;
 
 
+    @(negedge clk)
     $display ("Test complete: RAM_8x8");
     $finish();
 

@@ -41,11 +41,11 @@ initial begin
 
     //word 0
     @(negedge clk)
-    D = 8'd0; addr = 2'b0;
+    D = 8'd0; addr = 2'd0;
 
     //word 1
     @(negedge clk)
-    D = 8'd1; addr = 2'b1;
+    D = 8'd1; addr = 2'd1;
 
     //word 2
     @(negedge clk)

@@ -134,7 +134,7 @@ module RAM4x8 (clk,
  sky130_fd_sc_hd__clkinv_1 \storage_0_0.clock_inv  (.A(clk),
     .Y(\storage_0_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \decoder0.and_layer0  (.A(\inv.addr [0]),
-    .B(\decoder0.layer_in0 ),
+    .B(\inv.addr [1]),
     .X(\storage_0_0.decoder0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_1_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_1_0.bit0.storage ),
@@ -194,8 +194,8 @@ module RAM4x8 (clk,
     .Y(\storage_1_0.select0_b ));
  sky130_fd_sc_hd__clkinv_1 \storage_1_0.clock_inv  (.A(clk),
     .Y(\storage_1_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder1.and_layer0  (.A(\inv.addr [0]),
-    .B(\decoder1.layer_in0 ),
+ sky130_fd_sc_hd__and2_0 \decoder1.and_layer0  (.A(addr[0]),
+    .B(\inv.addr [1]),
     .X(\storage_1_0.decoder0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_2_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_2_0.bit0.storage ),
@@ -255,8 +255,8 @@ module RAM4x8 (clk,
     .Y(\storage_2_0.select0_b ));
  sky130_fd_sc_hd__clkinv_1 \storage_2_0.clock_inv  (.A(clk),
     .Y(\storage_2_0.clock_b ));
- sky130_fd_sc_hd__and2_0 \decoder2.and_layer0  (.A(addr[0]),
-    .B(\decoder2.layer_in0 ),
+ sky130_fd_sc_hd__and2_0 \decoder2.and_layer0  (.A(\inv.addr [0]),
+    .B(addr[1]),
     .X(\storage_2_0.decoder0 ));
  sky130_fd_sc_hd__dlxtp_1 \storage_3_0.bit0.bit  (.D(\D_nets[0].net ),
     .Q(\storage_3_0.bit0.storage ),
@@ -317,7 +317,7 @@ module RAM4x8 (clk,
  sky130_fd_sc_hd__clkinv_1 \storage_3_0.clock_inv  (.A(clk),
     .Y(\storage_3_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \decoder3.and_layer0  (.A(addr[0]),
-    .B(\decoder3.layer_in0 ),
+    .B(addr[1]),
     .X(\storage_3_0.decoder0 ));
  sky130_fd_sc_hd__buf_1 \buffer.in[0]  (.A(D[0]),
     .X(\D_nets[0].net ));
