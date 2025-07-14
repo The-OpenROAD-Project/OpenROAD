@@ -108,10 +108,10 @@ class Grid
   void paintPixel(Node* cell);
   void paintCellPadding(Node* cell);
   void paintCellPadding(Node* cell,
-                        const GridX grid_x_begin,
-                        const GridY grid_y_begin,
-                        const GridX grid_x_end,
-                        const GridY grid_y_end);
+                        GridX grid_x_begin,
+                        GridY grid_y_begin,
+                        GridX grid_x_end,
+                        GridY grid_y_end);
   void erasePixel(Node* cell);
   void visitCellPixels(
       Node& cell,
