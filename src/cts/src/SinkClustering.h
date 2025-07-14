@@ -25,14 +25,14 @@ using utl::Logger;
 class Matching
 {
  public:
-  Matching(unsigned p0, unsigned p1) : p_0(p0), p_1(p1) {}
+  Matching(unsigned p0, unsigned p1) : p0_(p0), p1_(p1) {}
 
-  unsigned getP0() const { return p_0; }
-  unsigned getP1() const { return p_1; }
+  unsigned getP0() const { return p0_; }
+  unsigned getP1() const { return p1_; }
 
  private:
-  const unsigned p_0;
-  const unsigned p_1;
+  const unsigned p0_;
+  const unsigned p1_;
 };
 
 class SinkClustering

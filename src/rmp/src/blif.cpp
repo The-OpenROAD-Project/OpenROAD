@@ -51,12 +51,12 @@ Blif::Blif(Logger* logger,
 
 void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
 {
-  instances_to_optimize = insts;
+  instances_to_optimize_ = insts;
 }
 
 void Blif::addReplaceableInstance(odb::dbInst* inst)
 {
-  instances_to_optimize.insert(inst);
+  instances_to_optimize_.insert(inst);
 }
 
 bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
@@ -75,7 +75,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     return false;
   }
 
-  std::set<odb::dbInst*>& insts = this->instances_to_optimize;
+  std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
   std::map<odb::uint, odb::dbInst*> instMap;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
@@ -396,7 +396,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     logger_->error(RMP,
                    34,
                    "Blif parser failed. File doesn't follow blif spec.",
-                   instances_to_optimize.size());
+                   instances_to_optimize_.size());
     return false;
   }
 
@@ -404,7 +404,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   logger_->info(RMP,
                 5,
                 "Blif parsed successfully, will destroy {} existing instances.",
-                instances_to_optimize.size());
+                instances_to_optimize_.size());
   logger_->info(RMP,
                 6,
                 "Found {} inputs, {} outputs, {} clocks, {} combinational "
@@ -415,7 +415,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getCombGateCount(),
                 blif.getFlopCount());
 
-  for (auto& inst : instances_to_optimize) {
+  for (auto& inst : instances_to_optimize_) {
     std::set<odb::dbNet*> connectedNets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
@@ -434,9 +434,9 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   std::map<std::string, int> instIds;
 
   for (auto&& gate : gates) {
-    GateType masterType = gate.type_;
-    std::string masterName = gate.master_;
-    std::vector<std::string> connections = gate.connections_;
+    GateType masterType = gate.type;
+    std::string masterName = gate.master;
+    std::vector<std::string> connections = gate.connections;
     odb::dbMaster* master = nullptr;
 
     for (auto&& lib : block->getDb()->getLibs()) {

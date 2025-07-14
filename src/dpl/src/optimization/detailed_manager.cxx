@@ -38,7 +38,7 @@ DetailedMgr::DetailedMgr(Architecture* arch,
       network_(network),
       grid_(grid),
       drc_engine_(drc_engine),
-      journal(grid, this)
+      journal_(grid, this)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -2164,7 +2164,7 @@ bool DetailedMgr::shiftLeftHelper(Node* ndi, DbuX xj, const int sj, Node* ndl)
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::verifyMove()
 {
-  for (const auto& node : journal.getAffectedNodes()) {
+  for (const auto& node : journal_.getAffectedNodes()) {
     if (hasPlacementViolation(node)) {
       rejectMove();
       return false;
@@ -2883,7 +2883,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::clearMoveList()
 {
-  journal.clear();
+  journal_.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2897,7 +2897,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
                                 const int newSeg)
 {
   // Limit maximum number of cells that can move at once.
-  if (journal.size() >= moveLimit_) {
+  if (journal_.size() >= moveLimit_) {
     return false;
   }
 
@@ -2924,7 +2924,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 
   MoveCellAction action(
       ndi, curLeft, curBottom, newLeft, newBottom, true, {curSeg}, {newSeg});
-  journal.addAction(action);
+  journal_.addAction(action);
   return true;
 }
 
@@ -2939,7 +2939,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
                                 const std::vector<int>& newSegs)
 {
   // Most number of cells that can move.
-  if (journal.size() >= moveLimit_) {
+  if (journal_.size() >= moveLimit_) {
     return false;
   }
   // commit move and add to journal
@@ -2955,7 +2955,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   }
   MoveCellAction action(
       ndi, curLeft, curBottom, newLeft, newBottom, true, curSegs, newSegs);
-  journal.addAction(action);
+  journal_.addAction(action);
   return true;
 }
 
@@ -2970,7 +2970,7 @@ void DetailedMgr::acceptMove()
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::rejectMove()
 {
-  journal.undo();
+  journal_.undo();
   clearMoveList();
 }
 

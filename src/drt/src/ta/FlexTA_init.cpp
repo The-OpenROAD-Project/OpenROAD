@@ -644,14 +644,14 @@ void FlexTAWorker::sortIroutes()
   // init cost
   if (isInitTA()) {
     for (auto& iroute : iroutes_) {
-      if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
+      if (hardIroutesMode_ == iroute->getGuide()->getNet()->isClock()) {
         addToReassignIroutes(iroute.get());
       }
     }
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-        if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
+        if (hardIroutesMode_ == iroute->getGuide()->getNet()->isClock()) {
           addToReassignIroutes(iroute.get());
         }
       }

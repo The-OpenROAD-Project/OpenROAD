@@ -113,7 +113,7 @@ class FlexTAWorker
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
-        hardIroutesMode(false)
+        hardIroutesMode_(false)
   {
   }
   // setters
@@ -200,7 +200,7 @@ class FlexTAWorker
   int numAssigned_;
   int totCost_;
   int maxRetry_;
-  bool hardIroutesMode;
+  bool hardIroutesMode_;
 
   //// others
   void init();

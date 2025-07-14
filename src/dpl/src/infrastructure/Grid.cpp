@@ -73,7 +73,7 @@ void Grid::allocateGrid()
       pixel.util = 0.0;
       pixel.is_valid = false;
       pixel.is_hopeless = false;
-      pixel.blocked_layers_ = 0;
+      pixel.blocked_layers = 0;
     }
   }
 }
@@ -152,7 +152,7 @@ void Grid::markBlocked(dbBlock* block)
             for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
               auto pixel1 = gridPixel(x, y);
               if (pixel1) {
-                pixel1->blocked_layers_ |= 1 << routing_level;
+                pixel1->blocked_layers |= 1 << routing_level;
               }
             }
           }

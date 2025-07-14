@@ -30,7 +30,7 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
   if (!skip_res_calc) {
     calcRes(_rsegSrcId, s->_len, s->_dist, s->_dist_down, _met);
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      double totR1 = _rc[jj]->_res;
+      double totR1 = _rc[jj]->getRes();
       _extMain->updateRes(rseg1, totR1, jj);
     }
   }
