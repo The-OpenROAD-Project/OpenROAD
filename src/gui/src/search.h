@@ -269,33 +269,33 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   struct BlockData
   {
-    RtreeDBox<odb::dbInst*> insts_;
-    RtreeDBox<odb::dbBlockage*> blockages_;
-    RtreeRect<odb::dbRow*> rows_;
+    RtreeDBox<odb::dbInst*> insts;
+    RtreeDBox<odb::dbBlockage*> blockages;
+    RtreeRect<odb::dbRow*> rows;
 
-    std::mutex shapes_init_mutex_;
-    std::mutex fills_init_mutex_;
-    std::mutex insts_init_mutex_;
-    std::mutex blockages_init_mutex_;
-    std::mutex obstructions_init_mutex_;
-    std::mutex rows_init_mutex_;
+    std::mutex shapes_init_mutex;
+    std::mutex fills_init_mutex;
+    std::mutex insts_init_mutex;
+    std::mutex blockages_init_mutex;
+    std::mutex obstructions_init_mutex;
+    std::mutex rows_init_mutex;
 
     // The net is used for filter shapes by net type
-    LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes_;
+    LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes;
     // Special net vias may be large multi-cut vias.  It is more efficient
     // to store the dbSBox (ie the via) than all the cuts.  This is
     // particularly true when you have parallel straps like m1 & m2 in asap7.
-    LayerMap<RtreeSNetDBoxShapes<odb::dbNet*>> snet_via_shapes_;
-    LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes_;
-    LayerMap<RtreeFill> fills_;
-    LayerMap<RtreeDBox<odb::dbObstruction*>> obstructions_;
+    LayerMap<RtreeSNetDBoxShapes<odb::dbNet*>> snet_via_shapes;
+    LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes;
+    LayerMap<RtreeFill> fills;
+    LayerMap<RtreeDBox<odb::dbObstruction*>> obstructions;
 
-    std::atomic_bool shapes_init_{false};
-    std::atomic_bool fills_init_{false};
-    std::atomic_bool insts_init_{false};
-    std::atomic_bool blockages_init_{false};
-    std::atomic_bool obstructions_init_{false};
-    std::atomic_bool rows_init_{false};
+    std::atomic_bool shapes_init{false};
+    std::atomic_bool fills_init{false};
+    std::atomic_bool insts_init{false};
+    std::atomic_bool blockages_init{false};
+    std::atomic_bool obstructions_init{false};
+    std::atomic_bool rows_init{false};
   };
   std::map<odb::dbBlock*, BlockData> child_block_data_;
   BlockData top_block_data_;

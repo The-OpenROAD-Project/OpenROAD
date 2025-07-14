@@ -1,6 +1,8 @@
 # buffer chain with set_max_delay
 source "helpers.tcl"
-if {[expr {![info exists repair_args]}]} { set repair_args {} }
+if { ![info exists repair_args] } {
+  set repair_args {}
+}
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef

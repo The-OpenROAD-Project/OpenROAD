@@ -130,7 +130,7 @@ bool extMeasureRC::VerticalCap(uint met,
       return false;
     }
 
-    capTable[ii] = len * rc->_fringe;
+    capTable[ii] = len * rc->getFringe();
   }
   createCap(rsegId1, rsegId2, capTable);
   return true;
@@ -166,7 +166,7 @@ bool extMeasureRC::DiagCouplingCap(uint met,
     }
 
     capTable[ii]
-        = len * rc->_fringe;  // OVERLOADED value from model - dkf 110424
+        = len * rc->getFringe();  // OVERLOADED value from model - dkf 110424
   }
   createCap(rsegId1, rsegId2, capTable);
   return true;

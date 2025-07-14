@@ -29,10 +29,10 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   // Checking if the worker is up and calling callbacks correctly
   dist->addCallBack(new HelperCallBack(dist));
-  JobMessage msg(JobMessage::JobType::ROUTING);
+  JobMessage msg(JobMessage::JobType::kRouting);
   JobMessage result;
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), port, result));
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::kSuccess);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

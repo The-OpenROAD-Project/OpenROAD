@@ -16,5 +16,5 @@ add_pdn_stripe -layer M4 -width 11.280 -pitch 526.400 -spacing 16.920 -offset 37
 add_pdn_connect -layers {M3 M4}
 add_pdn_connect -layers {M1 M3}
 
-catch {pdngen} err
+catch { pdngen } err
 puts $err

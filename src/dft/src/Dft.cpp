@@ -111,6 +111,9 @@ void Dft::executeDftPlan()
       odb::dbInst* db_inst = db_block->findInst(inst_name.c_str());
       odb::dbScanInst* db_scaninst = db_scanlist->add(db_inst);
       db_scaninst->setBits(scan_cell->getBits());
+      ScanLoad scan_enable = scan_cell->getScanEnable();
+      std::visit([&](auto&& pin) { db_scaninst->setScanEnable(pin); },
+                 scan_enable.getValue());
       auto scan_in_term = scan_cell->getScanIn().getValue();
       auto scan_out_term = scan_cell->getScanOut().getValue();
       db_scaninst->setAccessPins(
@@ -172,6 +175,11 @@ std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
   scan_architect->architect();
 
   return scan_architect->getScanChains();
+}
+
+void Dft::scanOpt()
+{
+  logger_->warn(utl::DFT, 14, "Scan Opt is not currently implemented");
 }
 
 }  // namespace dft

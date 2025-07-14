@@ -289,10 +289,22 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // backTracking variable.
   float curA = 1.0;
 
+  int routability_driven_count = 0;
+  int timing_driven_count = 0;
+  bool final_routability_image_saved = false;
+  int64_t original_area = 0, td_accumulated_delta_area = 0,
+          end_routability_area = 0;
+  ;
+
   for (auto& nb : nbVec_) {
     nb->setIter(start_iter);
     nb->setMaxPhiCoefChanged(false);
     nb->resetMinSumOverflow();
+    original_area += nb->nesterovInstsArea();
+  }
+
+  if (!npVars_.routability_driven_mode) {
+    end_routability_area = original_area;
   }
 
   namespace fs = std::filesystem;
@@ -324,10 +336,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     clean_directory(timing_driven_dir);
     clean_directory(routability_driven_dir);
   }
-
-  int routability_driven_count = 0;
-  int timing_driven_count = 0;
-  bool final_routability_image_saved = false;
 
   // Core Nesterov Loop
   int iter = start_iter;
@@ -557,7 +565,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       int nb_gcells_before_td = 0;
       int nb_gcells_after_td = 0;
       int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
-
       for (auto& nb : nbVec_) {
         nb_gcells_before_td += nb->getGCells().size();
       }
@@ -565,6 +572,20 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
       nbVec_[0]->setTrueReprintIterHeader();
       ++timing_driven_count;
+
+      td_accumulated_delta_area += nbc_->getDeltaArea();
+      for (auto& nb : nbVec_) {
+        nb_gcells_after_td += nb->getGCells().size();
+      }
+      nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
+      if (nb_total_gcells_delta != nbc_->getNewGcellsCount()) {
+        log_->warn(GPL,
+                   92,
+                   "Mismatch in #cells between central object and all regions. "
+                   "NesterovBaseCommon: {}, Summing all regions: {}",
+                   nbc_->getNewGcellsCount(),
+                   nb_total_gcells_delta);
+      }
 
       if (graphics_ && npVars_.debug_generate_images) {
         updateDb();
@@ -578,19 +599,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
             select_buffers);
       }
 
-      for (auto& nb : nbVec_) {
-        nb_gcells_after_td += nb->getGCells().size();
-      }
-
-      nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
-      if (nb_total_gcells_delta != nbc_->getNewGcellsCount()) {
-        log_->warn(GPL,
-                   92,
-                   "Mismatch in #cells between central object and all regions. "
-                   "NesterovBaseCommon: {}, Summing all regions: {}",
-                   nbc_->getNewGcellsCount(),
-                   nb_total_gcells_delta);
-      }
       if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
@@ -603,7 +611,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nesterov->setTargetDensity(
               static_cast<float>(nbc_->getDeltaArea()
                                  + nesterov->nesterovInstsArea()
-                                 + nesterov->totalFillerArea())
+                                 + nesterov->getTotalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
           float rsz_delta_area_microns
@@ -718,10 +726,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
         log_->warn(GPL,
-                   90,
+                   998,
                    "Divergence detected, reverting to snapshot with min hpwl.");
         log_->warn(GPL,
-                   91,
+                   999,
                    "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
                    diverge_snapshot_iter_,
                    diverge_snapshot_average_overflow_unscaled_,
@@ -755,7 +763,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         nb->snapshot();
       }
 
-      log_->info(GPL, 88, "Routability snapshot saved at iter = {}", iter);
+      log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);
 
       // Save image of routability snapshot
       if (graphics_ && npVars_.debug_generate_images) {
@@ -819,24 +827,88 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
+      }
+
+      if (is_routability_need_ && isRevertInitNeeded) {
         log_->info(
-            GPL, 89, "Routability end iteration: revert back to snapshot");
+            GPL, 87, "Routability end iteration: reverting from divergence.");
+      }
+
+      if (is_routability_need_ && !isRevertInitNeeded) {
+        log_->info(GPL,
+                   88,
+                   "Routability end iteration: increase inflation and revert "
+                   "back to snapshot.");
+      }
+
+      if (!is_routability_need_ && isRevertInitNeeded) {
+        log_->info(GPL,
+                   89,
+                   "Routability finished. Reverting to minimal observed "
+                   "routing congestion, could not reach target.");
+      }
+
+      if (!is_routability_need_ && !isRevertInitNeeded) {
+        log_->info(GPL,
+                   90,
+                   "Routability finished. Target routing congestion achieved "
+                   "succesfully.");
+      }
+
+      if (!is_routability_need_) {
+        for (auto& nb : nbVec_) {
+          end_routability_area += nb->nesterovInstsArea();
+        }
       }
     }
 
     // check each for converge and if all are converged then stop
-    int numConverge = 0;
+    int num_region_converge = 0;
     for (auto& nb : nbVec_) {
-      numConverge += nb->checkConvergence();
+      num_region_converge += nb->checkConvergence();
     }
 
-    if (numConverge == nbVec_.size()) {
+    if (num_region_converge == nbVec_.size()) {
       if (graphics_ && npVars_.debug_generate_images) {
         graphics_->getGuiObjectFromGraphics()->gifEnd();
       }
       break;
     }
   }
+
+  auto block = pbc_->db()->getChip()->getBlock();
+  log_->info(GPL,
+             1010,
+             "Original area (um^2): {:.2f}",
+             block->dbuAreaToMicrons(original_area));
+
+  int64_t new_area = 0;
+  for (auto& nb : nbVec_) {
+    new_area += nb->nesterovInstsArea();
+  }
+
+  float routability_diff
+      = 100.0 * (end_routability_area - original_area) / original_area;
+  log_->info(GPL,
+             1011,
+             "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
+             block->dbuAreaToMicrons(end_routability_area - original_area),
+             routability_diff);
+
+  float td_diff = 100.0 * td_accumulated_delta_area / original_area;
+  log_->info(GPL,
+             1012,
+             "Total timing-driven delta area: {:.2f} ({:+.2f}%)",
+             block->dbuAreaToMicrons(td_accumulated_delta_area),
+             td_diff);
+
+  float placement_diff = 100.0 * (new_area - original_area) / original_area;
+  log_->info(GPL,
+             1013,
+             "Final placement area: {:.2f} ({:+.2f}%)",
+             block->dbuAreaToMicrons(new_area),
+             placement_diff);
+
   // in all case including diverge,
   // db should be updated.
   updateDb();

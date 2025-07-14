@@ -7,11 +7,11 @@
 #include <algorithm>
 #include <vector>
 
+#include "find_some_net.h"
 #include "rcx/extModelGen.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/ext_options.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace rcx {

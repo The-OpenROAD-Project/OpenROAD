@@ -9,4 +9,3 @@ create_clock -name clk -period 10 {clk1 clk2 clk3}
 set_input_delay -clock clk 0 {in1 in2}
 set_output_delay -clock clk 0 out
 report_checks -path_delay min_max
-

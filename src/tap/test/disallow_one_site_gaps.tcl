@@ -6,8 +6,8 @@ read_def disallow_one_site_gaps.def
 set def_file [make_result_file disallow_one_site_gaps.def]
 
 tapcell -distance "20" -tapcell_master "TAPCELL_X2" \
-    -endcap_master "TAPCELL_X2" \
-    -disallow_one_site_gaps
+  -endcap_master "TAPCELL_X2" \
+  -disallow_one_site_gaps
 
 write_def $def_file
 

@@ -8,5 +8,5 @@ read_sdc Nangate45_data/gcd.sdc
 [[ord::get_db_tech] findLayer metal1] setResistance 0
 [[ord::get_db_tech] findLayer via1] setResistance 0
 
-catch {[analyze_power_grid -net VDD]} err
+catch { [analyze_power_grid -net VDD] } err
 puts $err

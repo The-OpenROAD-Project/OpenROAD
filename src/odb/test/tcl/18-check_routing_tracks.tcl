@@ -14,17 +14,17 @@ set block [$chip getBlock]
 
 set routing_layers_count [$tech getRoutingLayerCount]
 
-for {set l 1} {$l <= $routing_layers_count} {incr l} {
-    set routingLayer [$tech findRoutingLayer $l]
+for { set l 1 } { $l <= $routing_layers_count } { incr l } {
+  set routingLayer [$tech findRoutingLayer $l]
 
-    if {$routingLayer == "NULL"} {
-        puts "Read routing layer Failed"
-        exit 1
-    }
+  if { $routingLayer == "NULL" } {
+    puts "Read routing layer Failed"
+    exit 1
+  }
 
-    set routingTrack [$block findTrackGrid $routingLayer]
-    if {$routingTrack == "NULL"} {
-        puts "Read routing track for layer $l Failed"
-        exit 1
-    }
+  set routingTrack [$block findTrackGrid $routingLayer]
+  if { $routingTrack == "NULL" } {
+    puts "Read routing track for layer $l Failed"
+    exit 1
+  }
 }

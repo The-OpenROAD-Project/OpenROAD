@@ -17,12 +17,12 @@ set def1 [exec md5sum [string range $out_gzip_def 0 end-3]]
 # Remove filename from output
 set def0 [string range $def0 0 32]
 set def1 [string range $def1 0 32]
-if {$def0 == $def1} {
-    puts "Matched"
-    puts "pass"
+if { $def0 == $def1 } {
+  puts "Matched"
+  puts "pass"
 } else {
-    puts "Differences found in dbs $def0 != $def1"
-    puts "failed"
+  puts "Differences found in dbs $def0 != $def1"
+  puts "failed"
 }
 
 exit 0

@@ -653,16 +653,16 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
                               std::vector<int>& vertices) const
 {
   switch (vertex_order_choice_) {
-    case CoarsenOrder::RANDOM:
+    case CoarsenOrder::kRandom:
       shuffle(vertices.begin(),
               vertices.end(),
               std::default_random_engine(random_seed_));
       return;
 
-    case CoarsenOrder::DEFAULT:
+    case CoarsenOrder::kDefault:
       return;
 
-    case CoarsenOrder::SIZE: {
+    case CoarsenOrder::kSize: {
       // sort the vertices based on vertex weight
       // calculate the weight for all the vertices
       std::vector<float> average_sizes(hgraph->GetNumVertices(), 0.0);
@@ -677,7 +677,7 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
     }
       return;
 
-    case CoarsenOrder::DEGREE: {
+    case CoarsenOrder::kDegree: {
       // sort the vertices based on degree of each vertex in non-decreasing
       // order i.e., number of neighboring vertices
       std::vector<int> degrees(hgraph->GetNumVertices(), 0);
@@ -944,16 +944,16 @@ HGraphPtr Coarsener::Contraction(
 std::string ToString(const CoarsenOrder order)
 {
   switch (order) {
-    case CoarsenOrder::RANDOM:
+    case CoarsenOrder::kRandom:
       return std::string("RANDOM");
 
-    case CoarsenOrder::DEGREE:
+    case CoarsenOrder::kDegree:
       return std::string("DEGREE");
 
-    case CoarsenOrder::SIZE:
+    case CoarsenOrder::kSize:
       return std::string("SIZE");
 
-    case CoarsenOrder::DEFAULT:
+    case CoarsenOrder::kDefault:
       return std::string("DEFAULT");
 
     default:

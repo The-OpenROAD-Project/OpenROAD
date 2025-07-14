@@ -303,3 +303,39 @@ cached authorization:
 
 To gain write access to the https://storage.googleapis.com/megaboom-bazel-artifacts bucket,
 reach out to Tom Spyrou, Precision Innovations (https://www.linkedin.com/in/tomspyrou/).
+
+## Bisecting OpenSTA or OpenROAD with Bazel
+
+Bisecting OpenROAD or OpenSTA requires finding a good and a bad commit. Normally in bisection, origin/master is bad, but finding a good commit is trickier because most commits are there solely to preserve review history and have not run through any extensive testing.
+
+Fortunately, OpenSTA is a submodule in OpenROAD that is tested before it is updated, so all the submodule commits in OpenROAD of OpenSTA are known to be of good quality. Similarly for OpenROAD and ORFS.
+
+A git/bash incantation will list the commit hashes of the src/sta submodule:
+
+    $ git log --pretty=format:'%h' -- src/sta | while read commit; do  git show $commit src/sta| grep "Subproject commit" | awk '{print $3}'; done | head -n 10
+    5ee1a315141d1c799a0b2532e90ddccf52ddee95
+    3bff2d218c20adb867fcb3d8ae236f5da9928bed
+    3bff2d218c20adb867fcb3d8ae236f5da9928bed
+    5ee1a315141d1c799a0b2532e90ddccf52ddee95
+    f21d4a3878e2531e3af4930818d9b5968aad9416
+    3bff2d218c20adb867fcb3d8ae236f5da9928bed
+    522fc9563f25728f456bf86c2eb665c60d823e74
+    f21d4a3878e2531e3af4930818d9b5968aad9416
+    fa0cdd65290843e4e5cbe39d0bb9f2a63d580d1f
+    522fc9563f25728f456bf86c2eb665c60d823e74
+
+To build OpenSTA, use master of the https://github.com/The-OpenROAD-Project/OpenSTA fork, because it contains Bazel build files:
+
+    bazelisk build src/sta:opensta -c opt
+
+Now start the bisection as usual with a bad and good commit from the above list:
+
+    $ cd src/sta
+    $ git bisect start origin/master 6e95d93a44f7c46bb572933f5e2f8a624135820b
+    HEAD is now at 6e95d93a Merge remote-tracking branch 'parallax/master'
+    Bisecting: 55 revisions left to test after this (roughly 6 steps)
+    [03d2a48f462105a39b5850b8f45d6c5db16fd5f0] misc
+
+Use `git bisect --skip` if the version does not build or otherwise should not be tested.
+
+OpenSTA has an additional challenge in that only the https://github.com/The-OpenROAD-Project/OpenSTA fork has the Bazel BUILD file. To bisect the https://github.com/parallaxsw/OpenSTA branch, check out the branch you want, then check out BUILD from the fork and do a `git reset HEAD`. This will leave BUILD as a local file, because it is not in the upstream repository and bisection can be done on the upstream master branch.

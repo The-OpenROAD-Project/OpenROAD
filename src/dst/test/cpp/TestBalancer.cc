@@ -49,10 +49,10 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   // Checking if balancer is up and responding
   boost::thread t(boost::bind(&asio::io_context::run, &service));
-  JobMessage msg(JobMessage::JobType::BALANCER);
+  JobMessage msg(JobMessage::JobType::kBalancer);
   JobMessage result;
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::kSuccess);
 
   // Checking if a balancer can relay a message to a worker and send the result
   // correctly. note we make worker 2, which is not running, the next
@@ -60,22 +60,22 @@ BOOST_AUTO_TEST_CASE(test_default)
   balancer->updateWorker(asio::ip::make_address(local_ip), worker_port_2);
   dist->addCallBack(new HelperCallBack(dist));
   dist->runWorker(local_ip.c_str(), worker_port_1, true);
-  msg.setJobType(JobMessage::JobType::ROUTING);
-  result.setJobType(JobMessage::JobType::NONE);
+  msg.setJobType(JobMessage::JobType::kRouting);
+  result.setJobType(JobMessage::JobType::kNone);
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::kSuccess);
 
   // Checking broadcast message relaying and handling.
-  JobMessage broadcast_msg(JobMessage::JobType::ROUTING,
-                           JobMessage::MessageType::BROADCAST);
-  result.setJobType(JobMessage::JobType::NONE);
+  JobMessage broadcast_msg(JobMessage::JobType::kRouting,
+                           JobMessage::MessageType::kBroadcast);
+  result.setJobType(JobMessage::JobType::kNone);
   balancer->addWorker(local_ip, worker_port_3);
   balancer->addWorker(local_ip, worker_port_4);
   BOOST_TEST(
       dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result));
-  BOOST_TEST(
-      result.getJobType()
-      == JobMessage::JobType::ERROR);  // failed to send to more than 2 workers.
+  BOOST_TEST(result.getJobType()
+             == JobMessage::JobType::kError);  // failed to send to more than 2
+                                               // workers.
   BroadcastJobDescription* desc
       = static_cast<BroadcastJobDescription*>(result.getJobDescription());
   BOOST_TEST(desc->getWorkersCount()
@@ -90,12 +90,13 @@ BOOST_AUTO_TEST_CASE(test_default)
   // broadcast messages. The next boost test confirms that.
   BOOST_TEST(balancer->addWorker(
       local_ip, worker_port_4));  // re-add it to the loadbalancer
-  result.setJobType(JobMessage::JobType::NONE);
+  result.setJobType(JobMessage::JobType::kNone);
   BOOST_TEST(
       dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result));
-  BOOST_TEST(result.getJobType()
-             == JobMessage::JobType::SUCCESS);  // No more than 2 workers failed
-                                                // to receive the broadcast
+  BOOST_TEST(
+      result.getJobType()
+      == JobMessage::JobType::kSuccess);  // No more than 2 workers failed
+                                          // to receive the broadcast
   desc = static_cast<BroadcastJobDescription*>(result.getJobDescription());
   BOOST_TEST(desc->getWorkersCount()
              == 2);  // number of successful broadcasts was 2

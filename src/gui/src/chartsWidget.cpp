@@ -91,23 +91,23 @@ void ChartsWidget::changeMode()
   const Mode mode = static_cast<Mode>(mode_menu_->currentIndex());
 
   switch (mode) {
-    case SETUP_SLACK:
+    case kSetupSlack:
       stagui_->setUseMax(true);
       break;
-    case HOLD_SLACK:
+    case kHoldSlack:
       stagui_->setUseMax(false);
       break;
-    case SELECT:
+    case kSelect:
       break;
   }
 
   setSlackHistogramLayout();
 
   switch (mode) {
-    case SELECT:
+    case kSelect:
       break;
-    case SETUP_SLACK:
-    case HOLD_SLACK:
+    case kSetupSlack:
+    case kHoldSlack:
       setSlackHistogram();
       break;
   }
@@ -118,18 +118,18 @@ void ChartsWidget::changeMode()
 ChartsWidget::Mode ChartsWidget::modeFromString(const std::string& mode) const
 {
   if (mode == "setup" || mode == "Endpoint Slack" || mode == "Setup Slack") {
-    return SETUP_SLACK;
+    return kSetupSlack;
   }
   if (mode == "hold" || mode == "Hold Slack") {
-    return HOLD_SLACK;
+    return kHoldSlack;
   }
   if (mode == "Select Mode") {
-    return SELECT;
+    return kSelect;
   }
 
   logger_->error(utl::GUI, 4, "{} is not a recognized mode", mode);
 
-  return SELECT;
+  return kSelect;
 }
 
 void ChartsWidget::setMode(Mode mode)
@@ -208,17 +208,15 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
   const int all_endpoints_count = end_points.size();
 
   int unconstrained_count = 0;
-  sta::Unit* time_unit = sta_->units()->timeUnit();
 
   auto network = sta_->getDbNetwork();
   for (StaPins::iterator pin_iter = end_points.begin();
        pin_iter != end_points.end();) {
     const sta::Pin* pin = *pin_iter;
 
-    float slack = stagui_->getPinSlack(pin);
+    const float slack = stagui_->getPinSlack(pin);
 
     if (slack != sta::INF && slack != -sta::INF) {
-      slack = time_unit->staToUser(slack);
       ++pin_iter;
     } else {
       const bool is_input = network->direction(pin)->isAnyInput();
@@ -416,7 +414,7 @@ void HistogramView::populateBuckets(
   for (int bin = 0; bin < histogram_->getBinsCount(); bin++) {
     const auto& [bin_start, bin_end] = histogram_->getBinRange(bin);
     if ((bin_start + bin_end) / 2 < 0) {
-      buckets_.negative.push_front(pin_bins[bin]);
+      buckets_.negative.push_back(pin_bins[bin]);
     } else {
       buckets_.positive.push_back(pin_bins[bin]);
     }
@@ -493,16 +491,16 @@ float HistogramView::computeBucketInterval()
   }
 
   const float exact_interval
-      = (max_slack - min_slack) / default_number_of_buckets_;
+      = (max_slack - min_slack) / kDefaultNumberOfBuckets;
 
   const float snap_interval = computeSnapBucketInterval(exact_interval);
 
   // We compute a new number of buckets based on the snap interval.
   const int new_number_of_buckets = (max_slack - min_slack) / snap_interval;
 
-  if (new_number_of_buckets < minimum_number_of_buckets_) {
+  if (new_number_of_buckets < kMinimumNumberOfBuckets) {
     const float minimum_interval
-        = (max_slack - min_slack) / minimum_number_of_buckets_;
+        = (max_slack - min_slack) / kMinimumNumberOfBuckets;
 
     float decimal_snap_interval
         = computeSnapBucketDecimalInterval(minimum_interval);
@@ -615,10 +613,10 @@ void HistogramView::emitEndPointsInBucket(const int bar_index)
     return;
   }
 
-  auto compareSlack = [=](const sta::Pin* a, const sta::Pin* b) {
+  auto compare_slack = [=](const sta::Pin* a, const sta::Pin* b) {
     return sta_->getPinSlack(a) < sta_->getPinSlack(b);
   };
-  std::sort(end_points.begin(), end_points.end(), compareSlack);
+  std::sort(end_points.begin(), end_points.end(), compare_slack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.

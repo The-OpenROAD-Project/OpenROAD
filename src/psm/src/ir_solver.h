@@ -57,8 +57,8 @@ class IRSolver
   };
   struct ConnectivityResults
   {
-    std::set<Node*, Node::Compare> unconnected_nodes_;
-    std::set<ITermNode*, Node::Compare> unconnected_iterms_;
+    std::set<Node*, Node::Compare> unconnected_nodes;
+    std::set<ITermNode*, Node::Compare> unconnected_iterms;
   };
 
   IRSolver(
@@ -183,14 +183,14 @@ class IRSolver
       const ValueNodeMap<Current>& currents,
       const Connection::ConnectionMap<Connection::Conductance>& conductance,
       const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& G,
-      Eigen::VectorXd& J) const;
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector) const;
   void addSourcesToMatrixAndVoltages(
       Voltage src_voltage,
       const std::vector<std::unique_ptr<psm::SourceNode>>& sources,
       const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& G,
-      Eigen::VectorXd& J) const;
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector) const;
 
   std::string getMetricKey(const std::string& key, sta::Corner* corner) const;
 
@@ -224,7 +224,7 @@ class IRSolver
   std::map<sta::Corner*, ValueNodeMap<Voltage>> voltages_;
   std::map<sta::Corner*, ValueNodeMap<Current>> currents_;
 
-  static constexpr Current spice_file_min_current_ = 1e-18;
+  static constexpr Current kSpiceFileMinCurrent = 1e-18;
 };
 
 }  // namespace psm

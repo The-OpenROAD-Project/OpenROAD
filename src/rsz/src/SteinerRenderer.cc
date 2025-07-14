@@ -20,7 +20,7 @@ void SteinerRenderer::highlight(SteinerTree* tree)
 void SteinerRenderer::drawObjects(gui::Painter& painter)
 {
   if (tree_) {
-    painter.setPen(gui::Painter::red, true);
+    painter.setPen(gui::Painter::kRed, true);
     for (int i = 0; i < tree_->branchCount(); ++i) {
       Point pt1, pt2;
       int steiner_pt1, steiner_pt2;

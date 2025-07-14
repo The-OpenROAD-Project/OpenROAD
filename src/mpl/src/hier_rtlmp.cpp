@@ -922,6 +922,8 @@ void HierRTLMP::createPinAccessBlockages()
   }
 
   computePinAccessDepthLimits();
+
+  createBlockagesForIOBundles();
   createBlockagesForAvailableRegions();
   createBlockagesForConstraintRegions();
 }
@@ -948,6 +950,51 @@ void HierRTLMP::computePinAccessDepthLimits()
                     pin_access_depth_limits_.y.min,
                     pin_access_depth_limits_.y.max);
   }
+}
+
+void HierRTLMP::createBlockagesForIOBundles()
+{
+  const std::vector<Cluster*> io_bundles = getIOBundles();
+  if (io_bundles.empty()) {
+    return;
+  }
+
+  float io_bundles_span = 0.0f;
+  for (Cluster* io_bundle : io_bundles) {
+    // The shape of an IO bundle is just a line.
+    io_bundles_span += io_bundle->getBBox().getPerimeter() / 2;
+  }
+
+  int total_fixed_ios = 0;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getFirstPinPlacementStatus().isFixed()) {
+      ++total_fixed_ios;
+    }
+  }
+
+  const float base_depth = computePinAccessBaseDepth(io_bundles_span);
+
+  for (Cluster* io_bundle : io_bundles) {
+    const float number_of_ios
+        = static_cast<float>(clustering_engine_->getNumberOfIOs(io_bundle));
+    const float io_density_factor = number_of_ios / total_fixed_ios;
+    const float depth = base_depth * io_density_factor;
+    const odb::Rect rect = micronsToDbu(io_bundle->getBBox());
+    const odb::Line line = rectToLine(block_, rect, logger_);
+    const BoundaryRegion region(line, getBoundary(block_, rect));
+    createPinAccessBlockage(region, depth);
+  }
+}
+
+std::vector<Cluster*> HierRTLMP::getIOBundles() const
+{
+  std::vector<Cluster*> io_bundles;
+  for (const auto& child : tree_->root->getChildren()) {
+    if (child->isIOBundle()) {
+      io_bundles.push_back(child.get());
+    }
+  }
+  return io_bundles;
 }
 
 bool HierRTLMP::treeHasUnconstrainedIOs() const
@@ -1015,7 +1062,12 @@ void HierRTLMP::createBlockagesForConstraintRegions()
   }
 
   const float base_depth = computePinAccessBaseDepth(io_span);
-  const int total_ios = static_cast<int>(block_->getBTerms().size());
+  int total_ios = 0;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
+      ++total_ios;
+    }
+  }
 
   for (Cluster* cluster_of_unplaced_ios : clusters_of_unplaced_ios) {
     if (cluster_of_unplaced_ios->isClusterOfUnconstrainedIOPins()) {
@@ -1092,7 +1144,7 @@ std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
             subtraction_result.end());
       }
 
-      boundary_available_regions = new_boundary_available_regions;
+      boundary_available_regions = std::move(new_boundary_available_regions);
     }
 
     available_regions.insert(available_regions.end(),
@@ -2773,22 +2825,28 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
       }
 
       for (odb::dbBTerm* bterm : net->getBTerms()) {
-        const auto& constraint_region = bterm->getConstraintRegion();
-        odb::Point nearest_point;
-        if (constraint_region) {
-          BoundaryRegion constraint(
-              rectToLine(block_, *constraint_region, logger_),
-              getBoundary(block_, *constraint_region));
-          computeDistToNearestRegion(
-              macro_pin->getBBox().center(), {constraint}, &nearest_point);
+        if (bterm->getFirstPinPlacementStatus().isFixed()) {
+          const odb::Rect pin_bbox = bterm->getBBox();
+          const odb::Rect center_rect(pin_bbox.center(), pin_bbox.center());
+          net_box.merge(center_rect);
         } else {
-          computeDistToNearestRegion(
-              macro_pin->getBBox().center(),
-              tree_->available_regions_for_unconstrained_pins,
-              &nearest_point);
+          const auto& constraint_region = bterm->getConstraintRegion();
+          odb::Point nearest_point;
+          if (constraint_region) {
+            BoundaryRegion constraint(
+                rectToLine(block_, *constraint_region, logger_),
+                getBoundary(block_, *constraint_region));
+            computeDistToNearestRegion(
+                macro_pin->getBBox().center(), {constraint}, &nearest_point);
+          } else {
+            computeDistToNearestRegion(
+                macro_pin->getBBox().center(),
+                tree_->available_regions_for_unconstrained_pins,
+                &nearest_point);
+          }
+          odb::Rect point_rect(nearest_point, nearest_point);
+          net_box.merge(point_rect);
         }
-        odb::Rect point_rect(nearest_point, nearest_point);
-        net_box.merge(point_rect);
       }
 
       wirelength += block_->dbuToMicrons(net_box.dx() + net_box.dy());
@@ -3019,11 +3077,6 @@ std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
   }
 
   return result;
-}
-
-bool HierRTLMP::isVertical(Boundary boundary) const
-{
-  return boundary == Boundary::L || boundary == Boundary::R;
 }
 
 odb::Rect HierRTLMP::getRect(Boundary boundary) const

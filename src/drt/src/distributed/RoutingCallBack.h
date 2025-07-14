@@ -51,9 +51,9 @@ class RoutingCallBack : public dst::JobCallBack
             router->getRouterConfiguration())
   {
   }
-  void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  void onRoutingJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::ROUTING) {
+    if (msg.getJobType() != dst::JobMessage::kRouting) {
       return;
     }
     RoutingJobDescription* desc
@@ -96,12 +96,12 @@ class RoutingCallBack : public dst::JobCallBack
     sendResult(results, sock, true, cnt);
   }
 
-  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
+  void onFrDesignUpdated(dst::JobMessage& msg, dst::Socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::UPDATE_DESIGN) {
+    if (msg.getJobType() != dst::JobMessage::kUpdateDesign) {
       return;
     }
-    dst::JobMessage result(dst::JobMessage::UPDATE_DESIGN);
+    dst::JobMessage result(dst::JobMessage::kUpdateDesign);
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (!desc->getGlobalsPath().empty()) {
@@ -134,15 +134,15 @@ class RoutingCallBack : public dst::JobCallBack
     sock.close();
   }
 
-  void onPinAccessJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  void onPinAccessJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::PIN_ACCESS) {
+    if (msg.getJobType() != dst::JobMessage::kPinAccess) {
       return;
     }
     PinAccessJobDescription* desc
         = static_cast<PinAccessJobDescription*>(msg.getJobDescription());
     logger_->report("Received PA Job");
-    dst::JobMessage result(dst::JobMessage::SUCCESS);
+    dst::JobMessage result(dst::JobMessage::kSuccess);
     switch (desc->getType()) {
       case PinAccessJobDescription::UPDATE_PA: {
         paUpdate update;
@@ -191,30 +191,30 @@ class RoutingCallBack : public dst::JobCallBack
     dist_->sendResult(result, sock);
     sock.close();
   }
-  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::Socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::GRDR_INIT) {
+    if (msg.getJobType() != dst::JobMessage::kGrdrInit) {
       return;
     }
     router_->initGuide();
     router_->prep();
     router_->getDesign()->getRegionQuery()->initDRObj();
-    dst::JobMessage result(dst::JobMessage::SUCCESS);
+    dst::JobMessage result(dst::JobMessage::kSuccess);
     dist_->sendResult(result, sock);
     sock.close();
   }
 
  private:
   void sendResult(const std::vector<std::pair<int, std::string>>& results,
-                  dst::socket& sock,
+                  dst::Socket& sock,
                   bool finish,
                   int cnt)
   {
     dst::JobMessage result;
     if (finish) {
-      result.setJobType(dst::JobMessage::SUCCESS);
+      result.setJobType(dst::JobMessage::kSuccess);
     } else {
-      result.setJobType(dst::JobMessage::NONE);
+      result.setJobType(dst::JobMessage::kNone);
     }
     auto uResultDesc = std::make_unique<RoutingJobDescription>();
     auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
