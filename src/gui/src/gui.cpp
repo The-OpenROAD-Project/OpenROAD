@@ -1237,6 +1237,11 @@ void Gui::addRouteGuides(odb::dbNet* net)
   main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
+Chart* Gui::addChart(const std::string& name)
+{
+  return main_window->getChartsWidget()->addChart(name);
+}
+
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
   main_window->getLayoutTabs()->removeRouteGuides(net);

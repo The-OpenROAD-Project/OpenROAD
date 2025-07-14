@@ -7,6 +7,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QString>
+#include <QValueAxis>
 #include <QWidget>
 #include <QtCharts>
 #include <algorithm>
@@ -25,11 +26,75 @@
 
 namespace gui {
 
+class GuiChart : public Chart
+{
+ public:
+  GuiChart(QChart* chart);
+
+  void setAxisLabel(const std::string& label,
+                    odb::Orientation2D orientation) override;
+  void setAxisFormat(const std::string& label,
+                     odb::Orientation2D orientation) override;
+  void addPoint(const double x, const double y) override;
+
+ private:
+  QChart* chart_;
+  QLineSeries* series_;
+  QValueAxis* x_axis_;
+  QValueAxis* y_axis_;
+  double x_min_{std::numeric_limits<double>::max()};
+  double x_max_{std::numeric_limits<double>::lowest()};
+  double y_min_{std::numeric_limits<double>::max()};
+  double y_max_{std::numeric_limits<double>::lowest()};
+};
+
+GuiChart::GuiChart(QChart* chart) : chart_(chart)
+{
+  series_ = new QLineSeries();
+  chart->addSeries(series_);
+  chart->createDefaultAxes();
+
+  x_axis_ = qobject_cast<QValueAxis*>(chart_->axes(Qt::Horizontal).first());
+  y_axis_ = qobject_cast<QValueAxis*>(chart_->axes(Qt::Vertical).first());
+}
+
+void GuiChart::setAxisLabel(const std::string& label,
+                            odb::Orientation2D orientation)
+{
+  QValueAxis* axis = (orientation == odb::horizontal) ? x_axis_ : y_axis_;
+  axis->setTitleText(QString::fromStdString(label));
+}
+
+void GuiChart::setAxisFormat(const std::string& format,
+                             odb::Orientation2D orientation)
+{
+  QValueAxis* axis = (orientation == odb::horizontal) ? x_axis_ : y_axis_;
+  axis->setLabelFormat(QString::fromStdString(format));
+}
+
+void GuiChart::addPoint(const double x, const double y)
+{
+  series_->append(x, y);
+  x_min_ = std::min(x_min_, x);
+  x_max_ = std::max(x_max_, x);
+  y_min_ = std::min(y_min_, x);
+  y_max_ = std::max(y_max_, y);
+
+  // Adjust the axes to match the data range
+  x_axis_->setMin(x_min_);
+  x_axis_->setMax(x_max_);
+  y_axis_->setMin(y_min_);
+  y_axis_->setMax(y_max_);
+}
+
+//////////////////////////////////////////////////
+
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
       logger_(nullptr),
       sta_(nullptr),
       stagui_(nullptr),
+      chart_tabs_(new QTabWidget(this)),
       mode_menu_(new QComboBox(this)),
       filters_menu_(new QComboBox(this)),
       display_(new HistogramView(this)),
@@ -39,29 +104,37 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       label_(new QLabel(this))
 {
   setObjectName("charts_widget");  // for settings
+  chart_tabs_->setTabBarAutoHide(true);
 
-  QWidget* container = new QWidget(this);
   QHBoxLayout* controls_layout = new QHBoxLayout;
   controls_layout->addWidget(label_);
 
-  QVBoxLayout* layout = new QVBoxLayout;
-  QFrame* controls_frame = new QFrame;
-
-  controls_layout->insertWidget(0, mode_menu_);
+  controls_layout->addWidget(mode_menu_);
   setModeMenu();
-  controls_layout->insertWidget(1, filters_menu_);
+  controls_layout->addWidget(filters_menu_);
   filters_menu_->hide();
   controls_layout->addWidget(refresh_filters_button_);
   refresh_filters_button_->hide();
   controls_layout->insertStretch(2);
 
+  QFrame* controls_frame = new QFrame;
   controls_frame->setLayout(controls_layout);
   controls_frame->setFrameShape(QFrame::StyledPanel);
   controls_frame->setFrameShadow(QFrame::Raised);
 
-  layout->addWidget(controls_frame);
-  layout->addWidget(display_);
+  QVBoxLayout* slack_layout = new QVBoxLayout;
+  slack_layout->addWidget(controls_frame);
+  slack_layout->addWidget(display_);
 
+  QWidget* slack_container = new QWidget(this);
+  slack_container->setLayout(slack_layout);
+
+  chart_tabs_->addTab(slack_container, "Slack");
+
+  QVBoxLayout* layout = new QVBoxLayout;
+  layout->addWidget(chart_tabs_);
+
+  QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
   connect(refresh_filters_button_,
@@ -79,6 +152,15 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           this,
           &ChartsWidget::changePathGroupFilter);
   setWidget(container);
+}
+
+Chart* ChartsWidget::addChart(const std::string& name)
+{
+  QChart* chart = new QChart;
+  QChartView* view = new QChartView(chart);
+  const int tab_index = chart_tabs_->addTab(view, QString::fromStdString(name));
+  chart_tabs_->setCurrentIndex(tab_index);
+  return new GuiChart(chart);
 }
 
 void ChartsWidget::changeMode()
