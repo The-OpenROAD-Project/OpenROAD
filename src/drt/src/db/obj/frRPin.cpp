@@ -12,17 +12,17 @@ Rect frRPin::getBBox()
 {
   Point pt;
 
-  switch (term->typeId()) {
+  switch (term_->typeId()) {
     case frcInstTerm: {
-      auto inst = static_cast<frInstTerm*>(term)->getInst();
+      auto inst = static_cast<frInstTerm*>(term_)->getInst();
       dbTransform shiftXform = inst->getNoRotationTransform();
 
-      pt = accessPoint->getPoint();
+      pt = accessPoint_->getPoint();
       shiftXform.apply(pt);
       break;
     }
     case frcBTerm:
-      pt = accessPoint->getPoint();
+      pt = accessPoint_->getPoint();
       break;
     default:
       std::cout << "ERROR: Invalid term type in frRPin." << std::endl;
@@ -34,7 +34,7 @@ Rect frRPin::getBBox()
 
 frLayerNum frRPin::getLayerNum()
 {
-  return accessPoint->getLayerNum();
+  return accessPoint_->getLayerNum();
 }
 
 }  // namespace drt

@@ -86,6 +86,9 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
+  // Performs scan optimizations on the netlist
+  void scanOpt();
+
  private:
   // If we need to run pre_dft to create the internal state
   bool need_to_run_pre_dft_;

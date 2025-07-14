@@ -11,11 +11,11 @@ class UniqueName
  public:
   std::string GetUniqueName(const std::string& prefix = "rmp_")
   {
-    int64_t id = counter++;
+    int64_t id = counter_++;
     return prefix + std::to_string(id);
   }
 
  private:
-  int64_t counter = 0;
+  int64_t counter_ = 0;
 };
 }  // namespace rmp

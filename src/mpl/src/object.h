@@ -265,7 +265,7 @@ class Cluster
   bool is_io_pad_cluster_{false};
   bool is_io_bundle_{false};
 
-  bool is_array_of_interconnected_macros = false;
+  bool is_array_of_interconnected_macros_ = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;

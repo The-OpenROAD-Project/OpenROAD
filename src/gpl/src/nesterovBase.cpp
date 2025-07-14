@@ -2677,7 +2677,7 @@ void NesterovBase::updateNextIter(const int iter)
       group_name = fmt::format(" ({})", pb_->group()->getName());
     }
 
-    if ((iter == 0 || reprint_iter_header) && !pb_->group()) {
+    if ((iter == 0 || reprint_iter_header_) && !pb_->group()) {
       if (iter == 0) {
         log_->info(GPL, 31, "HPWL: Half-Perimeter Wirelength");
       }
@@ -2695,7 +2695,7 @@ void NesterovBase::updateNextIter(const int iter)
       log_->report(
           "---------------------------------------------------------------");
 
-      reprint_iter_header = false;
+      reprint_iter_header_ = false;
     }
 
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
@@ -3030,7 +3030,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 {
-  for (auto& db_inst : new_instances) {
+  for (auto& db_inst : new_instances_) {
     auto db_it = db_inst_to_nb_index_.find(db_inst);
     if (db_it != db_inst_to_nb_index_.end()) {
       size_t gcells_index = db_it->second;
@@ -3105,14 +3105,14 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
                  db_inst->getName());
     }
   }
-  new_instances.clear();
+  new_instances_.clear();
 }
 
 void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 {
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
-    new_instances.push_back(db_inst);
+    new_instances_.push_back(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
     size_t gcells_index = nb_gcells_.size() - 1;
     debugPrint(log_,

@@ -315,12 +315,12 @@ bool Cluster::isClusterOfUnplacedIOPins() const
 
 void Cluster::setAsArrayOfInterconnectedMacros()
 {
-  is_array_of_interconnected_macros = true;
+  is_array_of_interconnected_macros_ = true;
 }
 
 bool Cluster::isArrayOfInterconnectedMacros() const
 {
-  return is_array_of_interconnected_macros;
+  return is_array_of_interconnected_macros_;
 }
 
 bool Cluster::isEmpty() const

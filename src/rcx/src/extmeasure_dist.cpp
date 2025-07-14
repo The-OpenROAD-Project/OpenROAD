@@ -92,13 +92,13 @@ bool extMeasureRC::updateCoupCap(dbRSeg* rseg1,
                     dbg_msg,
                     rseg1->getId(),
                     rseg2->getId(),
-                    _rc[jj]->_coupling,
+                    _rc[jj]->getCoupling(),
                     ccap->getCapacitance());
       DebugUpdateCC(_debugFP,
                     dbg_msg,
                     rseg1->getId(),
                     rseg2->getId(),
-                    _rc[jj]->_coupling,
+                    _rc[jj]->getCoupling(),
                     ccap->getCapacitance());
     }
     return true;
@@ -176,12 +176,12 @@ float extMeasureRC::getOver_over1(extMetRCTable* rcModel,
   extDistRC* rc = rcModel->_capOver_open[met][1]->getRC(metUnder, width, dist2);
   extDistRC* rc1 = getOverRC_Dist(rcModel, width, met, metUnder, dist2);
 
-  float fr0 = 2 * rc->_fringe;
+  float fr0 = 2 * rc->getFringe();
 
   // wire is next to openended and no fringe was added -- no full fringe
-  _tmpRC->_fringeW = 2 * rc->_fringe;
-  _tmpRC->_fringe = rc1->_fringe;
-  _tmpRC->_coupling = rc1->_coupling;
+  _tmpRC->setFringeW(2 * rc->getFringe());
+  _tmpRC->setFringe(rc1->getFringe());
+  _tmpRC->setCoupling(rc1->getCoupling());
   return fr0;
 }
 float extMeasureRC::getOU_over1(extMetRCTable* rcModel,
@@ -206,12 +206,12 @@ float extMeasureRC::getOU_over1(extMetRCTable* rcModel,
     rc1 = getOverUnderRC_Dist(
         rcModel, _width, _met, _underMet, _overMet, dist2);
   }
-  float fr0 = 2 * rc->_fringe;
+  float fr0 = 2 * rc->getFringe();
 
   // wire is next to openended and no fringe was added -- no full fringe
-  _tmpRC->_fringeW = 2 * rc->_fringe;
-  _tmpRC->_fringe = rc1->_fringe;
-  _tmpRC->_coupling = rc1->_coupling;
+  _tmpRC->setFringeW(2 * rc->getFringe());
+  _tmpRC->setFringe(rc1->getFringe());
+  _tmpRC->setCoupling(rc1->getCoupling());
   return fr0;
 }
 
@@ -245,12 +245,12 @@ float extMeasureRC::getOverR_weightedFringe(extMetRCTable* rcModel,
 }
 void extDistRC::Reset()
 {
-  _fringe = 0;
-  _fringeW = 0;
-  _coupling = 0;
-  _res = 0;
-  _diag = 0;
-  _sep = 0;
+  fringe_ = 0;
+  fringeW_ = 0;
+  coupling_ = 0;
+  res_ = 0;
+  diag_ = 0;
+  sep_ = 0;
 }
 float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel,
                                    uint width,
@@ -273,8 +273,8 @@ float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel,
     return 0;
   }
   // TODO extDistRC* rc2= getOverRC_Dist(rcModel, width, met, metUnder, dist2);
-  _tmpRC->_fringe = 2 * rc1->getFringe();
-  _tmpRC->_coupling = 2 * rc1->getCoupling();
+  _tmpRC->setFringe(2 * rc1->getFringe());
+  _tmpRC->setCoupling(2 * rc1->getCoupling());
   float fr1 = 2 * rc1->getFringe();
   // TODO float fr2= rc2->getFringe();
   // TODO float fr= fr1 - fr2;
@@ -312,8 +312,8 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel,
     return 0;
   }
 
-  _tmpRC->_fringe = 2 * rc1->getFringe();
-  _tmpRC->_coupling = 2 * rc1->getCoupling();
+  _tmpRC->setFringe(2 * rc1->getFringe());
+  _tmpRC->setCoupling(2 * rc1->getCoupling());
   float fr1 = 2 * rc1->getFringe();
   // TODO ?? float fr2= rc2->getFringe();
   // TODO ?? float fr= fr1 - fr2;
@@ -497,7 +497,7 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
     float delta = wfr - fr;
     if (delta > 0) {
       return delta;
-      int dist_ratio = rc2->_sep / rc1->_sep;
+      const int dist_ratio = rc2->getSep() / rc1->getSep();
       if (dist_ratio > 3) {
         fr = delta;
       } else {

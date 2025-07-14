@@ -336,8 +336,8 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
-    npVars.debug_generate_images = gui_debug_generate_images;
-    npVars.debug_images_path = gui_debug_images_path;
+    npVars.debug_generate_images = gui_debug_generate_images_;
+    npVars.debug_images_path = gui_debug_images_path_;
     npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
@@ -492,8 +492,8 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
-  gui_debug_generate_images = generate_images;
-  gui_debug_images_path = std::move(images_path);
+  gui_debug_generate_images_ = generate_images;
+  gui_debug_images_path_ = std::move(images_path);
 }
 
 void Replace::setDisableRevertIfDiverge(bool mode)

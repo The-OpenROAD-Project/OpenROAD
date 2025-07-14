@@ -243,7 +243,7 @@ class DetailedMgr
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   // Journal operations
-  const Journal& getJournal() const { return journal; }
+  const Journal& getJournal() const { return journal_; }
   void eraseFromGrid(Node* node);
   void paintInGrid(Node* node);
   struct compareNodesX
@@ -329,7 +329,7 @@ class DetailedMgr
   Network* network_;
   Grid* grid_;
   PlacementDRC* drc_engine_;
-  Journal journal;
+  Journal journal_;
 
   // For output.
   utl::Logger* logger_ = nullptr;

@@ -812,7 +812,7 @@ void extMeasureRC::OverSubRC_dist_new(dbRSeg* rseg1,
         else */
     if (openEnded) {
       getOverRC_Open(rcModel, _width, _met, 0, _dist, _diagResDist);
-      fr = _tmpRC->_fringe * lenOverSub;
+      fr = _tmpRC->getFringe() * lenOverSub;
       if (rseg1 != nullptr) {
         tot = _extMain->updateTotalCap(rseg1, fr, jj);
         if (IsDebugNet()) {
@@ -833,7 +833,7 @@ void extMeasureRC::OverSubRC_dist_new(dbRSeg* rseg1,
       // if (!_sameNetFlag && !_useWeighted)
       //    _extMain->updateTotalCap(rseg2, fr/2, jj);
 
-      cc = _tmpRC->_coupling * lenOverSub;
+      cc = _tmpRC->getCoupling() * lenOverSub;
       updateCoupCap(rseg1, rseg2, jj, cc, "OverSubRC_dist_new-openEnded");
       tot += cc;
     }
@@ -849,16 +849,17 @@ void extMeasureRC::OverSubRC_dist_new(dbRSeg* rseg1,
       // float cc = rc->_coupling * lenOverSub;
       // float cc0 = rc0->_coupling * lenOverSub;
       // float cc1 = rc1->_coupling * lenOverSub;
-      float delta_cc = (2 * rc->_coupling - (rc0->_coupling + rc1->_coupling))
-                       * lenOverSub;
+      float delta_cc
+          = (2 * rc->getCoupling() - (rc0->getCoupling() + rc1->getCoupling()))
+            * lenOverSub;
       cc += delta_cc;
 
       // float FR = getOver_over1(rcModel, _width, _met, 0, _diagResDist, _dist,
       // lenOverSub);
 
-      float FR0 = _tmpRC->_fringeW * lenOverSub;
-      float FR1 = _tmpRC->_fringe * lenOverSub;
-      float CC = _tmpRC->_coupling * lenOverSub;
+      float FR0 = _tmpRC->getFringeW() * lenOverSub;
+      float FR1 = _tmpRC->getFringe() * lenOverSub;
+      float CC = _tmpRC->getCoupling() * lenOverSub;
 
       // if (FR0!=fr0 || FR1!=fr1) {
       //  fprintf(stdout, "ERROR getOver_over1\n");
@@ -897,7 +898,7 @@ void extMeasureRC::OverSubRC_dist_new(dbRSeg* rseg1,
       tot += cc;
     } else {
       extDistRC* rc = getOverRC(rcModel);
-      fr = rc->_fringe * lenOverSub;
+      fr = rc->getFringe() * lenOverSub;
       tot = _extMain->updateTotalCap(rseg1, fr, jj);
       if (IsDebugNet() && rseg1 != nullptr) {
         DebugUpdateValue(
@@ -918,7 +919,7 @@ void extMeasureRC::OverSubRC_dist_new(dbRSeg* rseg1,
                            tot);
         }
       }
-      cc = rc->_coupling * lenOverSub;
+      cc = rc->getCoupling() * lenOverSub;
       updateCoupCap(rseg1, rseg2, jj, cc, "OverSubRC_dist_new-else");
       tot += cc;
 
@@ -1022,11 +1023,11 @@ int extMeasureRC::computeAndStoreRC_new(dbRSeg* rseg1,
     _no_debug = false;
 
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      _rc[jj]->_res = 0;  // DF 022821 : Res non context based
+      _rc[jj]->setRes(0);  // DF 022821 : Res non context based
 
-      if (_rc[jj]->_fringe > 0) {
-        double fr = _rc[jj]->_fringe;
-        fr += _rc[jj]->_fringeW;
+      if (_rc[jj]->getFringe() > 0) {
+        double fr = _rc[jj]->getFringe();
+        fr += _rc[jj]->getFringeW();
         _extMain->updateTotalCap(rseg1, fr, jj);
         if (IsDebugNet()) {
           printDebugRC(_debugFP, _rc[jj], "\tOU_TOTAL_INF", "\n");
@@ -1075,7 +1076,7 @@ int extMeasureRC::computeAndStoreRC_new(dbRSeg* rseg1,
       double tot1 = 0;
       double tot2 = 0;
       if (OpenEnded) {
-        double tot_fr = _rc[jj]->_fringe;
+        double tot_fr = _rc[jj]->getFringe();
         if (rseg1 != nullptr) {
           tot1 = _extMain->updateTotalCap(rseg1, tot_fr, jj);
           if (IsDebugNet()) {
@@ -1083,56 +1084,60 @@ int extMeasureRC::computeAndStoreRC_new(dbRSeg* rseg1,
                              "OVER_SUB_DIST_OpenEnded",
                              "FR",
                              rseg1->getId(),
-                             _rc[jj]->_fringe,
+                             _rc[jj]->getFringe(),
                              tot1);
             DebugUpdateValue(_debugFP,
                              "OVER_SUB_DIST_OpenEnded",
                              "FR",
                              rseg1->getId(),
-                             _rc[jj]->_fringe,
+                             _rc[jj]->getFringe(),
                              tot1);
           }
         }
-        updateCoupCap(
-            rseg1, rseg2, jj, _rc[jj]->_coupling, "OVER_SUB_DIST_OpenEnded");
+        updateCoupCap(rseg1,
+                      rseg2,
+                      jj,
+                      _rc[jj]->getCoupling(),
+                      "OVER_SUB_DIST_OpenEnded");
       } else if (over1) {
-        tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringeW, jj);
+        tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->getFringeW(), jj);
         if (IsDebugNet()) {
           DebugUpdateValue(stdout,
                            "OVER_SUB_DIST_Over1",
                            "FR",
                            rseg1->getId(),
-                           _rc[jj]->_fringe,
+                           _rc[jj]->getFringe(),
                            tot1);
           DebugUpdateValue(_debugFP,
                            "OVER_SUB_DIST_Over1",
                            "FR",
                            rseg1->getId(),
-                           _rc[jj]->_fringe,
+                           _rc[jj]->getFringe(),
                            tot1);
         }
 
         if (!_sameNetFlag) {
-          double tot1 = _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
+          double tot1
+              = _extMain->updateTotalCap(rseg2, _rc[jj]->getFringe(), jj);
           if (IsDebugNet()) {
             DebugUpdateValue(stdout,
                              "OVER_SUB_DIST_Over1",
                              "FR",
                              rseg2->getId(),
-                             _rc[jj]->_fringe,
+                             _rc[jj]->getFringe(),
                              tot1);
             DebugUpdateValue(_debugFP,
                              "OVER_SUB_DIST_Over1",
                              "FR",
                              rseg2->getId(),
-                             _rc[jj]->_fringe,
+                             _rc[jj]->getFringe(),
                              tot1);
           }
         }
         updateCoupCap(
-            rseg1, rseg2, jj, _rc[jj]->_coupling, "OVER_SUB_DIST_Over1");
+            rseg1, rseg2, jj, _rc[jj]->getCoupling(), "OVER_SUB_DIST_Over1");
       } else {
-        double tot_fr = _rc[jj]->_fringe + _rc[jj]->_fringeW;
+        double tot_fr = _rc[jj]->getFringe() + _rc[jj]->getFringeW();
         tot1 = _extMain->updateTotalCap(rseg1, tot_fr, jj);
         if (IsDebugNet() && rseg1 != nullptr) {
           DebugUpdateValue(
@@ -1144,26 +1149,26 @@ int extMeasureRC::computeAndStoreRC_new(dbRSeg* rseg1,
                            tot_fr,
                            tot1);
         }
-        tot2 = _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
+        tot2 = _extMain->updateTotalCap(rseg2, _rc[jj]->getFringe(), jj);
         if (IsDebugNet() && rseg2 != nullptr) {
           DebugUpdateValue(stdout,
                            "OVER_SUB_DIST_else",
                            "FR",
                            rseg2->getId(),
-                           _rc[jj]->_fringe,
+                           _rc[jj]->getFringe(),
                            tot2);
           DebugUpdateValue(_debugFP,
                            "OVER_SUB_DIST_else",
                            "FR",
                            rseg2->getId(),
-                           _rc[jj]->_fringe,
+                           _rc[jj]->getFringe(),
                            tot2);
         }
         updateCoupCap(
-            rseg1, rseg2, jj, _rc[jj]->_coupling, "OVER_SUB_DIST_else");
+            rseg1, rseg2, jj, _rc[jj]->getCoupling(), "OVER_SUB_DIST_else");
       }
-      tot1 += _rc[jj]->_coupling;
-      tot2 += _rc[jj]->_coupling;
+      tot1 += _rc[jj]->getCoupling();
+      tot2 += _rc[jj]->getCoupling();
     }
     rcSegInfo();
     if (IsDebugNet()) {

@@ -65,7 +65,7 @@ class ExtProgressTracker
   float previousProgressPercent_{0.0f};
   float progressInterval_;
   bool enabled_{true};
-  int wire_extracted_progress_count{500000};
+  int wire_extracted_progress_count_{500000};
   std::string progressFormat_
       = "{:.1f}% completion -- {} wires have been extracted\n";
 
