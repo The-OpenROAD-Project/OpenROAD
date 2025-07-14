@@ -185,18 +185,6 @@ void InitFloorplan::clearPolygonData()
       die_polygon_buf_.size());
 }
 
-void InitFloorplan::addDiePolygonPoint(int x, int y)
-{
-  logger_->info(IFP,
-                984,
-                "InitFloorplan object: {} - Adding point ({}, {}) to buffer. "
-                "Current size: {}",
-                (void*) this,
-                x,
-                y,
-                die_polygon_buf_.size());
-  die_polygon_buf_.emplace_back(x, y);
-}
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
@@ -206,8 +194,6 @@ void InitFloorplan::makeDie(const odb::Rect& die)
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
 }
-
-
 
 void InitFloorplan::makePolygonDie(std::vector<odb::Point>& points)
 {
@@ -240,11 +226,12 @@ void InitFloorplan::makePolygonDie(std::vector<odb::Point>& points)
       IFP, 990, "Created polygon die with {} vertices.", mfg_pts.size());
 }
 
-void InitFloorplan::makePolygonRows(const std::vector<odb::Point>& core_polygon,
-                                    odb::dbSite* base_site,
-                                    const std::vector<odb::dbSite*>& additional_sites,
-                                    RowParity row_parity,
-                                    const std::set<odb::dbSite*>& flipped_sites)
+void InitFloorplan::makePolygonRows(
+    const std::vector<odb::Point>& core_polygon,
+    odb::dbSite* base_site,
+    const std::vector<odb::dbSite*>& additional_sites,
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
 {
   if (core_polygon.empty()) {
     logger_->error(IFP, 991, "No core polygon vertices provided.");
@@ -252,11 +239,19 @@ void InitFloorplan::makePolygonRows(const std::vector<odb::Point>& core_polygon,
   }
 
   if (core_polygon.size() < 4) {
-    logger_->error(IFP, 992, "Core polygon must have at least 4 vertices. Got {} vertices.", core_polygon.size());
+    logger_->error(
+        IFP,
+        992,
+        "Core polygon must have at least 4 vertices. Got {} vertices.",
+        core_polygon.size());
     return;
   }
 
-  logger_->info(IFP, 994, "Creating polygon rows with {} core vertices using scanline intersection", core_polygon.size());
+  logger_->info(
+      IFP,
+      994,
+      "Creating polygon rows with {} core vertices using scanline intersection",
+      core_polygon.size());
 
   // Snap all coordinates to manufacturing grid
   std::vector<odb::Point> mfg_pts;
@@ -277,7 +272,8 @@ void InitFloorplan::makePolygonRows(const std::vector<odb::Point>& core_polygon,
   odb::Rect core_bbox = core_poly.getEnclosingRect();
 
   if (!block_die_area.contains(core_bbox)) {
-    logger_->error(IFP, 1004, "Die area must contain the core polygon bounding box.");
+    logger_->error(
+        IFP, 1004, "Die area must contain the core polygon bounding box.");
     return;
   }
 
@@ -303,9 +299,13 @@ void InitFloorplan::makePolygonRows(const std::vector<odb::Point>& core_polygon,
   }
 
   // Use the new scanline-based approach
-  makePolygonRowsScanline(mfg_pts, base_site, sites_by_name, row_parity, flipped_sites);
-  
-  logger_->info(IFP, 997, "Completed polygon-aware row generation using {} vertices", core_polygon.size());
+  makePolygonRowsScanline(
+      mfg_pts, base_site, sites_by_name, row_parity, flipped_sites);
+
+  logger_->info(IFP,
+                997,
+                "Completed polygon-aware row generation using {} vertices",
+                core_polygon.size());
 }
 
 double InitFloorplan::designArea()
@@ -1089,14 +1089,16 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
 }
 
 // Scanline-based polygon-aware row generation methods
-void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_polygon,
-                                             odb::dbSite* base_site,
-                                             const SitesByName& sites_by_name,
-                                             RowParity row_parity,
-                                             const std::set<odb::dbSite*>& flipped_sites)
+void InitFloorplan::makePolygonRowsScanline(
+    const std::vector<odb::Point>& core_polygon,
+    odb::dbSite* base_site,
+    const SitesByName& sites_by_name,
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
 {
   if (core_polygon.empty()) {
-    logger_->error(IFP, 998, "No core polygon vertices provided to Boost method.");
+    logger_->error(
+        IFP, 998, "No core polygon vertices provided to Boost method.");
     return;
   }
 
@@ -1104,10 +1106,14 @@ void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_
   odb::Polygon core_poly(core_polygon);
   odb::Rect core_bbox = core_poly.getEnclosingRect();
 
-  logger_->info(IFP, 999, "Using scanline intersection for polygon-aware row generation");
+  logger_->info(
+      IFP, 999, "Using scanline intersection for polygon-aware row generation");
 
   if (base_site->hasRowPattern()) {
-    logger_->error(IFP, 1000, "Hybrid rows not yet supported with polygon-aware generation.");
+    logger_->error(
+        IFP,
+        1000,
+        "Hybrid rows not yet supported with polygon-aware generation.");
     return;
   }
 
@@ -1116,7 +1122,7 @@ void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_
 
     const uint site_dx = base_site->getWidth();
     const uint site_dy = base_site->getHeight();
-    
+
     // Snap core bounding box to site grid
     const int clx = divCeil(core_bbox.xMin(), site_dx) * site_dx;
     const int cly = divCeil(core_bbox.yMin(), site_dy) * site_dy;
@@ -1125,14 +1131,15 @@ void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_
 
     if (clx != core_bbox.xMin() || cly != core_bbox.yMin()) {
       const double dbu = block_->getDbUnitsPerMicron();
-      logger_->warn(IFP,
-                    1003,
-                    "Core polygon bounding box lower left ({:.3f}, {:.3f}) snapped to "
-                    "({:.3f}, {:.3f}).",
-                    core_bbox.xMin() / dbu,
-                    core_bbox.yMin() / dbu,
-                    clx / dbu,
-                    cly / dbu);
+      logger_->warn(
+          IFP,
+          1003,
+          "Core polygon bounding box lower left ({:.3f}, {:.3f}) snapped to "
+          "({:.3f}, {:.3f}).",
+          core_bbox.xMin() / dbu,
+          core_bbox.yMin() / dbu,
+          clx / dbu,
+          cly / dbu);
     }
 
     const odb::Rect snapped_bbox(clx, cly, cux, cuy);
@@ -1150,7 +1157,8 @@ void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_
             block_->dbuToMicrons(base_site->getHeight()));
         continue;
       }
-      makeUniformRowsPolygon(site, core_polygon, snapped_bbox, row_parity, flipped_sites);
+      makeUniformRowsPolygon(
+          site, core_polygon, snapped_bbox, row_parity, flipped_sites);
     }
 
     updateVoltageDomain(clx, cly, cux, cuy);
@@ -1170,32 +1178,33 @@ void InitFloorplan::makePolygonRowsScanline(const std::vector<odb::Point>& core_
                logger_);
 }
 
-std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(const odb::Rect& row,
-                                                              const std::vector<odb::Point>& polygon)
+std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
+    const odb::Rect& row,
+    const std::vector<odb::Point>& polygon)
 {
   std::vector<odb::Rect> result;
-  
+
   // Simple scanline intersection approach - more robust for inflection points
   const int row_y = row.yMin();
   const int row_height = row.dy();
-  
+
   // Find all intersections of polygon edges with the row's horizontal strip
   std::vector<int> intersections;
-  
+
   for (size_t i = 0; i < polygon.size(); ++i) {
     const odb::Point& p1 = polygon[i];
     const odb::Point& p2 = polygon[(i + 1) % polygon.size()];
-    
+
     const int y1 = p1.y();
     const int y2 = p2.y();
     const int x1 = p1.x();
     const int x2 = p2.x();
-    
+
     // Skip horizontal edges
     if (y1 == y2) {
       continue;
     }
-    
+
     // Check if edge crosses the scanline at row_y
     if ((y1 <= row_y && y2 > row_y) || (y1 > row_y && y2 <= row_y)) {
       // Calculate intersection point
@@ -1203,43 +1212,44 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(const odb::Rect& r
       intersections.push_back(x_intersect);
     }
   }
-  
+
   // Sort intersections by x-coordinate
   std::sort(intersections.begin(), intersections.end());
-  
+
   // Create segments from pairs of intersections (polygon uses even-odd rule)
   for (size_t i = 0; i + 1 < intersections.size(); i += 2) {
     const int x_start = intersections[i];
     const int x_end = intersections[i + 1];
-    
+
     if (x_end > x_start) {
       // Clip to row bounds
       const int clipped_x1 = std::max(x_start, row.xMin());
       const int clipped_x2 = std::min(x_end, row.xMax());
-      
+
       if (clipped_x2 > clipped_x1) {
         result.emplace_back(clipped_x1, row_y, clipped_x2, row_y + row_height);
       }
     }
   }
-  
+
   return result;
 }
 
-void InitFloorplan::makeUniformRowsPolygon(odb::dbSite* site,
-                                           const std::vector<odb::Point>& core_polygon,
-                                           const odb::Rect& core_bbox,
-                                           RowParity row_parity,
-                                           const std::set<odb::dbSite*>& flipped_sites)
+void InitFloorplan::makeUniformRowsPolygon(
+    odb::dbSite* site,
+    const std::vector<odb::Point>& core_polygon,
+    const odb::Rect& core_bbox,
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
 {
   const uint site_dx = site->getWidth();
   const uint site_dy = site->getHeight();
   const int core_dy = core_bbox.dy();
-  
+
   // Calculate number of rows
   int total_rows_y = core_dy / site_dy;
   bool flip = flipped_sites.find(site) != flipped_sites.end();
-  
+
   // Apply row parity constraints
   switch (row_parity) {
     case RowParity::NONE:
@@ -1249,44 +1259,47 @@ void InitFloorplan::makeUniformRowsPolygon(odb::dbSite* site,
       break;
     case RowParity::ODD:
       if (total_rows_y > 0) {
-        total_rows_y = (total_rows_y % 2 == 0) ? total_rows_y - 1 : total_rows_y;
+        total_rows_y
+            = (total_rows_y % 2 == 0) ? total_rows_y - 1 : total_rows_y;
       } else {
         total_rows_y = 0;
       }
       break;
   }
-  
+
   int rows_created = 0;
   int y = core_bbox.yMin();
-  
+
   // Create rows, clipping each one to the polygon
   for (int row_idx = 0; row_idx < total_rows_y; row_idx++) {
     // Create a row rectangle for this row
     odb::Rect row_rect(core_bbox.xMin(), y, core_bbox.xMax(), y + site_dy);
-    
+
     // Intersect this row with the polygon
-    std::vector<odb::Rect> row_segments = intersectRowWithPolygon(row_rect, core_polygon);
-    
+    std::vector<odb::Rect> row_segments
+        = intersectRowWithPolygon(row_rect, core_polygon);
+
     // Create a row for each segment that's wide enough
     for (const auto& segment : row_segments) {
       int seg_width = segment.dx();
       int seg_sites = seg_width / site_dx;
-      
+
       // Only create row if it has at least one site
       if (seg_sites > 0) {
         int seg_left = segment.xMin();
-        
+
         // Snap to site grid
         int snapped_left = (seg_left / site_dx) * site_dx;
         if (snapped_left < seg_left) {
           snapped_left += site_dx;
           seg_sites = (seg_width - (snapped_left - seg_left)) / site_dx;
         }
-        
+
         if (seg_sites > 0) {
-          dbOrientType orient = ((row_idx + flip) % 2 == 0) ? dbOrientType::R0 : dbOrientType::MX;
+          dbOrientType orient = ((row_idx + flip) % 2 == 0) ? dbOrientType::R0
+                                                            : dbOrientType::MX;
           string row_name = "ROW_" + std::to_string(block_->getRows().size());
-          
+
           dbRow::create(block_,
                         row_name.c_str(),
                         site,
@@ -1300,10 +1313,10 @@ void InitFloorplan::makeUniformRowsPolygon(odb::dbSite* site,
         }
       }
     }
-    
+
     y += site_dy;
   }
-  
+
   logger_->info(IFP,
                 1002,
                 "Added {} polygon-aware rows for site {}.",

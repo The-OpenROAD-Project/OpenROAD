@@ -192,11 +192,6 @@ void clear_polygon_data(ord::Design* design)
   design->getFloorplan().clearPolygonData();
 }
 
-void add_die_polygon_point(ord::Design* design, int x, int y)
-{
-  design->getFloorplan().addDiePolygonPoint(x, y);
-}
-
 void make_polygon_die(ord::Design* design, std::vector<odb::Point>& points)
 {
   design->getFloorplan().makePolygonDie(points);
