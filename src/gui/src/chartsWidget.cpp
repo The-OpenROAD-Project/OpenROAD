@@ -33,9 +33,9 @@ class GuiChart : public Chart
 
   void setAxisLabel(const std::string& label,
                     odb::Orientation2D orientation) override;
-  void setAxisFormat(const std::string& label,
+  void setAxisFormat(const std::string& format,
                      odb::Orientation2D orientation) override;
-  void addPoint(const double x, const double y) override;
+  void addPoint(double x, double y) override;
 
  private:
   QChart* chart_;

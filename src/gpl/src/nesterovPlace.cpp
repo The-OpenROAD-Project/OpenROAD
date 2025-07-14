@@ -423,6 +423,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
+      graphics_->addIter(iter);
       bool update
           = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
       if (update) {

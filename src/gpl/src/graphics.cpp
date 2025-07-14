@@ -55,7 +55,16 @@ Graphics::Graphics(utl::Logger* logger,
       logger_(logger),
       mode_(Nesterov)
 {
-  gui::Gui::get()->registerRenderer(this);
+  gui::Gui* gui = gui::Gui::get();
+  gui->registerRenderer(this);
+
+  // Setup the chart
+  chart_ = gui->addChart("GPL");
+  chart_->setAxisLabel("Iteration", odb::horizontal);
+  chart_->setAxisLabel("HPWL (μm)", odb::vertical);
+  chart_->setAxisFormat("%d", odb::horizontal);
+  chart_->setAxisFormat("%.2e", odb::vertical);
+
   initHeatmap();
   if (inst) {
     for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -226,7 +235,7 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   }
 
   // Highlight selection (highest priority)
-  if (gCell == nbc_->getGCellByIndex(selected_)) {
+  if (selected_ != kInvalidIndex && gCell == nbc_->getGCellByIndex(selected_)) {
     color = gui::Painter::kYellow;
     color.a = 180;
   }
@@ -293,7 +302,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw lines to neighbors
-  if (nbc_->getGCellByIndex(selected_)) {
+  if (selected_ != kInvalidIndex && nbc_->getGCellByIndex(selected_)) {
     painter.setPen(gui::Painter::kYellow, true);
     for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->gNet();
@@ -383,6 +392,12 @@ void Graphics::reportSelected()
                     wlGrad.x + densityPenalty * densityGrad.x,
                     wlGrad.y + densityPenalty * densityGrad.y);
   }
+}
+
+void Graphics::addIter(const int iter)
+{
+  odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+  chart_->addPoint(iter, block->dbuToMicrons(nbc_->getHpwl()));
 }
 
 void Graphics::cellPlot(bool pause)
