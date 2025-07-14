@@ -84,13 +84,11 @@ void InitialPlace::doBicgstabPlace(int threads)
     }
 
     if (std::isnan(error.x) || std::isnan(error.y)) {
-      log_->warn(
-          GPL,
-          154,
-          "Conjugate gradient initial placement solver failed at iteration {}. "
-          "Positioning all movable instances at core center.",
-          iter);
-      placeInstsCenter();
+      log_->warn(GPL,
+                 154,
+                 "Conjugate gradient initial placement solver failed at "
+                 "iteration {}. ",
+                 iter);
       break;
     }
 
