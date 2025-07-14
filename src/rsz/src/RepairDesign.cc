@@ -18,6 +18,7 @@
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -732,7 +733,6 @@ bool RepairDesign::performGainBuffering(Net* net,
 
 void RepairDesign::checkDriverArcSlew(const Corner* corner,
                                       const Instance* inst,
-                                      const Edge* edge,
                                       const TimingArc* arc,
                                       float load_cap,
                                       float limit,
@@ -744,11 +744,15 @@ void RepairDesign::checkDriverArcSlew(const Corner* corner,
   Pin* in_pin = network_->findPin(inst, arc->from()->name());
 
   if (model && in_pin) {
-    Vertex* vertex = graph_->pinLoadVertex(in_pin);
-    // edgeFromSlew returns the graph slew value for the pin, or the ideal
-    // clock slew if applicable
+    const bool use_ideal_clk_slew
+        = arc->set()->role()->genericRole() == TimingRole::regClkToQ()
+          && clk_network_->isIdealClock(in_pin);
     Slew in_slew
-        = graph_delay_calc_->edgeFromSlew(vertex, in_rf, edge, dcalc_ap);
+        = use_ideal_clk_slew
+              ? clk_network_->idealClkSlew(
+                    in_pin, in_rf, dcalc_ap->slewMinMax())
+              : graph_->slew(
+                    graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap->index());
     const Pvt* pvt = dcalc_ap->operatingConditions();
 
     ArcDelay arc_delay;
@@ -791,26 +795,15 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
 
         if (limit_exists) {
           float limit_w_margin = maxSlewMargined(limit);
-
-          VertexInEdgeIterator edge_iter(graph_->pinDrvrVertex(drvr_pin),
-                                         graph_);
-          while (edge_iter.hasNext()) {
-            Edge* edge = edge_iter.next();
-            TimingArcSet* arc_set = edge->timingArcSet();
+          for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
             const TimingRole* role = arc_set->role();
             if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
                 && role != TimingRole::tristateEnable()
                 && role != TimingRole::clockTreePathMin()
                 && role != TimingRole::clockTreePathMax()) {
-              TimingArcSet* size_arc_set = size_cell->findTimingArcSet(arc_set);
-              for (TimingArc* arc : size_arc_set->arcs()) {
-                checkDriverArcSlew(corner,
-                                   inst,
-                                   edge,
-                                   arc,
-                                   load_cap,
-                                   limit_w_margin,
-                                   violation);
+              for (TimingArc* arc : arc_set->arcs()) {
+                checkDriverArcSlew(
+                    corner, inst, arc, load_cap, limit_w_margin, violation);
               }
             }
           }

@@ -198,7 +198,6 @@ class RouteBase
   int max_routability_revert_ = 50;
 
   void init();
-  void reset();
   void resetRoutabilityResources();
 
   // update numCall_

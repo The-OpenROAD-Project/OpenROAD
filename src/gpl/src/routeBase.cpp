@@ -253,26 +253,6 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
 
 RouteBase::~RouteBase() = default;
 
-void RouteBase::reset()
-{
-  rbVars_.reset();
-  db_ = nullptr;
-  nbc_ = nullptr;
-  log_ = nullptr;
-
-  numCall_ = 0;
-
-  minRc_ = 1e30;
-  minRcTargetDensity_ = 0;
-  min_RC_violated_cnt_ = 0;
-  max_routability_no_improvement_ = 0;
-  max_routability_revert_ = 50;
-
-  nbc_->resetMinRcCellSize();
-
-  resetRoutabilityResources();
-}
-
 void RouteBase::resetRoutabilityResources()
 {
   inflatedAreaDelta_ = 0;
