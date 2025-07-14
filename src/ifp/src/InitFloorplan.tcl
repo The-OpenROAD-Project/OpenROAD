@@ -380,10 +380,6 @@ proc make_polygon_die_helper { key_array } {
     # if {$x < 0 || $y < 0} {
     #   utl::error IFP 79 "Die polygon coordinates must be non-negative. Found: ($x, $y)"
     # }
-    
-      # Convert micron input to DBU, then add point
-      # ifp::add_die_polygon_point \
-      #   [ord::microns_to_dbu $x] [ord::microns_to_dbu $y]
 
       lappend polygon_vertices [ord::microns_to_dbu $x]
       lappend polygon_vertices [ord::microns_to_dbu $y]
