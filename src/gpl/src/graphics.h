@@ -56,6 +56,8 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 
   // Update the chart for the current iter
   void addIter(int iter);
+  void addTimingDrivenIter(int iter);
+  void addRoutabilityIter(int iter, bool revert);
 
   // Draw the MBFF mapping
   void mbffMapping(const LineSegs& segs);

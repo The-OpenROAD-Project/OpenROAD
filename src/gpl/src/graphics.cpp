@@ -400,6 +400,18 @@ void Graphics::addIter(const int iter)
   chart_->addPoint(iter, block->dbuToMicrons(nbc_->getHpwl()));
 }
 
+void Graphics::addTimingDrivenIter(const int iter)
+{
+  chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+}
+
+void Graphics::addRoutabilityIter(const int iter, const bool revert)
+{
+  gui::Painter::Color color
+      = revert ? gui::Painter::kRed : gui::Painter::kGreen;
+  chart_->addVerticalMarker(iter, color);
+}
+
 void Graphics::cellPlot(bool pause)
 {
   gui::Gui::get()->redraw();

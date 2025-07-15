@@ -521,6 +521,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // update db's instance location from current density coordinates
       updateDb();
 
+      if (graphics_) {
+        graphics_->addTimingDrivenIter(iter);
+      }
+
       if (graphics_ && npVars_.debug_generate_images) {
         graphics_->saveLabeledImage(
             fmt::format("{}/timing_{:05d}_0.png", timing_driven_dir, iter),
@@ -814,6 +818,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       std::pair<bool, bool> result = rb_->routability();
       is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
+
+      if (graphics_) {
+        graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
+      }
 
       // if routability is needed
       if (is_routability_need_ || isRevertInitNeeded) {
