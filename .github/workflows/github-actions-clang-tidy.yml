@@ -6,7 +6,7 @@ on:
     - master
 
 jobs:
-  build:
+  Clang-Tidy:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository

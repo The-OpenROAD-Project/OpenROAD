@@ -14,7 +14,7 @@ on:
 
 
 jobs:
-  Sync-Branch-From-Upstream:
+  Sync-Branch-From-Upstream-PII:
     name: Automatic sync 'master' from The-OpenROAD-Project/OpenROAD
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
 
