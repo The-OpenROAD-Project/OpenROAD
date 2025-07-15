@@ -1102,7 +1102,7 @@ void RenderThread::drawBlock(QPainter* painter,
   odb::Polygon die_area = block->getDieAreaPolygon();
 
   if (die_area.getEnclosingRect().area() > 0) {
-    QPolygon die_area_qpoly(die_area.getPoints().size());
+    QPolygon die_area_qpoly;
     for (const odb::Point& point : die_area.getPoints()) {
       die_area_qpoly << QPoint(point.getX(), point.getY());
     }
