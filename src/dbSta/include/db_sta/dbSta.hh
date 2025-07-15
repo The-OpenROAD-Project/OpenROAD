@@ -34,34 +34,42 @@ namespace sta {
 // for more information.
 class Library
 {
+ public:
   Library() = delete;
 };
 class Cell
 {
+ public:
   Cell() = delete;
 };
 class Port
 {
+ public:
   Port() = delete;
 };
 class Instance
 {
+ public:
   Instance() = delete;
 };
 class Pin
 {
+ public:
   Pin() = delete;
 };
 class Term
 {
+ public:
   Term() = delete;
 };
 class Net
 {
+ public:
   Net() = delete;
 };
 class ViewType
 {
+ public:
   ViewType() = delete;
 };
 
