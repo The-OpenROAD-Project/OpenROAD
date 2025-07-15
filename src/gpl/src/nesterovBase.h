@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -16,7 +17,6 @@
 #include "placerBase.h"
 #include "point.h"
 #include "routeBase.h"
-
 namespace odb {
 class dbInst;
 class dbITerm;

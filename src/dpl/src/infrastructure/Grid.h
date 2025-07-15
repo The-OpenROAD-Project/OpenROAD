@@ -40,8 +40,8 @@ struct Pixel
   bool is_hopeless = false;  // too far from sites for diamond search
   std::map<dbSite*, dbOrientType> sites;
   uint8_t blocked_layers = 0;
-  Node* padding_reserved_by
-      = nullptr;  // Cell that reserved this pixel for padding
+  std::unordered_set<Node*>
+      padding_reserved_by;  // Cells that reserved this pixel for padding
 };
 
 // Return value for grid searches.

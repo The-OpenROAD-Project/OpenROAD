@@ -255,7 +255,7 @@ bool allowPaddingOverlap(const Node* cell1, const Node* cell2)
 bool PlacementDRC::hasPaddingConflict(const Node* cell,
                                       const Node* padding_cell) const
 {
-  return cell != nullptr && padding_cell != nullptr
+  return cell != nullptr && padding_cell != nullptr && cell != padding_cell
          && !allowPaddingOverlap(cell, padding_cell)
          && !allowOverlap(cell, padding_cell);
 }
@@ -294,7 +294,6 @@ bool PlacementDRC::checkPadding(const Node* cell,
   const GridX left_pad = padding_->padLeft(cell);
   const GridX right_pad = padding_->padRight(cell);
   for (GridX grid_x{x - left_pad}; grid_x < cell_x_end + right_pad; grid_x++) {
-    const bool within_cell = grid_x >= x && grid_x < cell_x_end;
     for (GridY grid_y{y}; grid_y < cell_y_end; grid_y++) {
       const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
       if (pixel == nullptr) {  // at the core edge
@@ -304,18 +303,11 @@ bool PlacementDRC::checkPadding(const Node* cell,
         }
         continue;
       }
-      if (within_cell) {  // in the cell footprint
-        if (hasPaddingConflict(cell, pixel->padding_reserved_by)) {
-          return false;
-        }
-      } else {  // in the padding area of the cell
-        // check if there is another cell in the padding area
-        if (pixel->cell != nullptr && pixel->cell != cell
-            && !allowPaddingOverlap(pixel->cell, cell)) {
-          return false;
-        }
-        // check if another cell has already claimed the padding area
-        if (hasPaddingConflict(cell, pixel->padding_reserved_by)) {
+      if (hasPaddingConflict(cell, pixel->cell)) {
+        return false;
+      }
+      for (auto padding_cell : pixel->padding_reserved_by) {
+        if (hasPaddingConflict(cell, padding_cell)) {
           return false;
         }
       }

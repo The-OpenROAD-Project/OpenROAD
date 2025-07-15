@@ -43,12 +43,12 @@ bool Padding::isPaddedType(dbInst* inst) const
     case dbMasterType::CORE_TIEHIGH:
     case dbMasterType::CORE_TIELOW:
     case dbMasterType::CORE_WELLTAP:
+      return true;
     case dbMasterType::ENDCAP:
     case dbMasterType::ENDCAP_PRE:
     case dbMasterType::ENDCAP_POST:
     case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
     case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-      return true;
     case dbMasterType::CORE_SPACER:
     case dbMasterType::BLOCK:
     case dbMasterType::BLOCK_BLACKBOX:
