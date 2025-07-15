@@ -55,8 +55,9 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   void cellPlot(bool pause = false);
 
   // Update the chart for the current iter
-  void addIter(int iter);
+  void addIter(int iter, double overflow);
   void addTimingDrivenIter(int iter);
+  void addRoutabilitySnapshot(int iter);
   void addRoutabilityIter(int iter, bool revert);
 
   // Draw the MBFF mapping

@@ -566,18 +566,19 @@ class SpectrumGenerator
   double scale_;
 };
 
+// A chart with a single X axis and potentially multiple Y axes
 class Chart
 {
  public:
   virtual ~Chart() = default;
 
-  virtual void setAxisLabel(const std::string& label,
-                            odb::Orientation2D orientation)
-      = 0;
-  virtual void setAxisFormat(const std::string& format,
-                             odb::Orientation2D orientation)
-      = 0;
-  virtual void addPoint(double x, double y) = 0;
+  // printf-style format string
+  virtual void setXAxisFormat(const std::string& format) = 0;
+  // printf-style format.  An empty string is a no-op placeholder
+  virtual void setYAxisFormats(const std::vector<std::string>& formats) = 0;
+  virtual void setYAxisMin(const std::vector<std::optional<double>>& mins) = 0;
+  // One y per series.  The order matches y_labels in addChart
+  virtual void addPoint(double x, const std::vector<double>& ys) = 0;
 
   virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
 
@@ -724,7 +725,9 @@ class Gui
   void removeNetTracks(odb::dbNet* net);
   void clearNetTracks();
 
-  Chart* addChart(const std::string& name);
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
