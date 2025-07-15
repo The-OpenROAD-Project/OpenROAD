@@ -1266,7 +1266,7 @@ class NesterovBase
 
   bool isDiverged_ = false;
 
-  NesterovPlaceVars* npVars_;
+  NesterovPlaceVars* npVars_ = nullptr;
 
   bool isMaxPhiCoefChanged_ = false;
 
@@ -1274,7 +1274,7 @@ class NesterovBase
   float hpwlWithMinSumOverflow_ = 1e30;
   int iter_ = 0;
   bool isConverged_ = false;
-  bool reprint_iter_header_;
+  bool reprint_iter_header_ = false;
 
   void initFillerGCells();
 };

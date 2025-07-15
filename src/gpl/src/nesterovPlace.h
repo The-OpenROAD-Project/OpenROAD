@@ -110,7 +110,7 @@ class NesterovPlace
   float wireLengthCoefY_ = 0;
 
   // observability metrics
-  utl::Gauge<double>* hpwl_gauge_;
+  utl::Gauge<double>* hpwl_gauge_ = nullptr;
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;

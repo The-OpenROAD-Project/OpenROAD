@@ -90,6 +90,18 @@ bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
+# A from source build of QT that allows it to link into OpenROAD.
+# Building like any other bazel project. scripts in the docker folder
+# of this project generate stubs .ifso for things like X11 that will
+# allow openroad to link, but will search on the system at runtime for
+# the correct system libs.
+bazel_dep(name = "qt-bazel")
+git_override(
+    module_name = "qt-bazel",
+    commit = "90cfbab79df93960c5493f8a75df6199fb80fe26",
+    remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
+)
+
 bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
 
 # Dependencies needed by one of the rules_hdl repos. Once they are on
@@ -139,7 +151,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "eaf22cee8fe62d5326f0486e2742a63bbe3d987f",
+    commit = "f8e4ced47dc2c9d15aea97d734eba55a50f35666",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -148,10 +160,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3393-g0ae5fce9",
+    image = "docker.io/openroad/orfs:v3.0-3444-g669e62e5",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "3e8134fc509e189ee3762cec4345ba1c690255abee4bba9966d4b0605b2079f7",
+    sha256 = "9f9c6c0817eba504c56cdf613bf1bcc00054164500a276de894a4cb1f48b69a6",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
