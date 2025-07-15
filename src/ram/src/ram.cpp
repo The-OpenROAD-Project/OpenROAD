@@ -174,7 +174,7 @@ std::unique_ptr<Element> RamGen::make_byte(
              prefix,
              "cg",
              clock_gate_cell_,
-    {{"CLK", clock_b_net}, {"GATE", we0_net}, {"GCLK", gclock_net}});
+    {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
 
     // Make clock and
     // this AND gate needs to be fed a net created by a decoder
@@ -195,11 +195,11 @@ std::unique_ptr<Element> RamGen::make_byte(
     }
 
     // Make clock inverter
-    makeInst(layout.get(),
-             prefix,
-             "clock_inv",
-             inv_cell_,
-    {{"A", clock}, {"Y", clock_b_net}});
+   // makeInst(layout.get(),
+   //          prefix,
+   //          "clock_inv",
+   //          inv_cell_,
+   // {{"A", clock}, {"Y", clock_b_net}});
 
 
 

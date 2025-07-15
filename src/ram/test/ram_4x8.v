@@ -125,14 +125,12 @@ module RAM4x8 (clk,
     .Z(Q[7]));
  sky130_fd_sc_hd__dlclkp_1 \storage_0_0.cg  (.GATE(\storage_0_0.we0 ),
     .GCLK(\storage_0_0.gclock ),
-    .CLK(\storage_0_0.clock_b ));
+    .CLK(clk));
  sky130_fd_sc_hd__and2_0 \storage_0_0.gcand  (.A(\storage_0_0.decoder0 ),
     .B(we[0]),
     .X(\storage_0_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_0_0.select_inv_0  (.A(\storage_0_0.decoder0 ),
     .Y(\storage_0_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_0_0.clock_inv  (.A(clk),
-    .Y(\storage_0_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \decoder0.and_layer0  (.A(\inv.addr [0]),
     .B(\inv.addr [1]),
     .X(\storage_0_0.decoder0 ));
@@ -186,14 +184,12 @@ module RAM4x8 (clk,
     .Z(Q[7]));
  sky130_fd_sc_hd__dlclkp_1 \storage_1_0.cg  (.GATE(\storage_1_0.we0 ),
     .GCLK(\storage_1_0.gclock ),
-    .CLK(\storage_1_0.clock_b ));
+    .CLK(clk));
  sky130_fd_sc_hd__and2_0 \storage_1_0.gcand  (.A(\storage_1_0.decoder0 ),
     .B(we[0]),
     .X(\storage_1_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_1_0.select_inv_0  (.A(\storage_1_0.decoder0 ),
     .Y(\storage_1_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_1_0.clock_inv  (.A(clk),
-    .Y(\storage_1_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \decoder1.and_layer0  (.A(addr[0]),
     .B(\inv.addr [1]),
     .X(\storage_1_0.decoder0 ));
@@ -247,14 +243,12 @@ module RAM4x8 (clk,
     .Z(Q[7]));
  sky130_fd_sc_hd__dlclkp_1 \storage_2_0.cg  (.GATE(\storage_2_0.we0 ),
     .GCLK(\storage_2_0.gclock ),
-    .CLK(\storage_2_0.clock_b ));
+    .CLK(clk));
  sky130_fd_sc_hd__and2_0 \storage_2_0.gcand  (.A(\storage_2_0.decoder0 ),
     .B(we[0]),
     .X(\storage_2_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_2_0.select_inv_0  (.A(\storage_2_0.decoder0 ),
     .Y(\storage_2_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_2_0.clock_inv  (.A(clk),
-    .Y(\storage_2_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \decoder2.and_layer0  (.A(\inv.addr [0]),
     .B(addr[1]),
     .X(\storage_2_0.decoder0 ));
@@ -308,14 +302,12 @@ module RAM4x8 (clk,
     .Z(Q[7]));
  sky130_fd_sc_hd__dlclkp_1 \storage_3_0.cg  (.GATE(\storage_3_0.we0 ),
     .GCLK(\storage_3_0.gclock ),
-    .CLK(\storage_3_0.clock_b ));
+    .CLK(clk));
  sky130_fd_sc_hd__and2_0 \storage_3_0.gcand  (.A(\storage_3_0.decoder0 ),
     .B(we[0]),
     .X(\storage_3_0.we0 ));
  sky130_fd_sc_hd__clkinv_1 \storage_3_0.select_inv_0  (.A(\storage_3_0.decoder0 ),
     .Y(\storage_3_0.select0_b ));
- sky130_fd_sc_hd__clkinv_1 \storage_3_0.clock_inv  (.A(clk),
-    .Y(\storage_3_0.clock_b ));
  sky130_fd_sc_hd__and2_0 \decoder3.and_layer0  (.A(addr[0]),
     .B(addr[1]),
     .X(\storage_3_0.decoder0 ));

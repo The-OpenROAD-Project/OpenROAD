@@ -30,7 +30,7 @@ initial begin
     clk = 0;
     we = 1;
     D = 0;
-    addr = 0;
+    //addr = 0;
 
 
     // for (integer i = 0l i < 8; i = i + 1) begin
