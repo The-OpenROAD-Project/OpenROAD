@@ -114,7 +114,9 @@ void Opendp::createNetwork()
 
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
-    if (!inst->getMaster()->isCoreAutoPlaceable()) {
+    if (!(inst->getMaster()->isCoreAutoPlaceable()
+          || (inst->getMaster()->getType().isIoCornerEndCap()
+              && core_.overlaps(inst->getBBox()->getBox())))) {
       continue;
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
