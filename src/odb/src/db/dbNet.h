@@ -107,7 +107,6 @@ class _dbNet : public _dbObject
   bool operator!=(const _dbNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbNet& rhs) const;
   void collectMemInfo(MemInfo& info);
-  dbObjectTable* getObjectTable(dbObjectType type);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net);
