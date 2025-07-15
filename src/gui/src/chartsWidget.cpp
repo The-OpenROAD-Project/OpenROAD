@@ -29,80 +29,137 @@ namespace gui {
 class GuiChart : public Chart
 {
  public:
-  GuiChart(QChart* chart);
+  GuiChart(QChart* chart,
+           const std::string& x_label,
+           const std::vector<std::string>& y_labels);
 
-  void setAxisLabel(const std::string& label,
-                    odb::Orientation2D orientation) override;
-  void setAxisFormat(const std::string& format,
-                     odb::Orientation2D orientation) override;
-  void addPoint(double x, double y) override;
+  void setXAxisFormat(const std::string& format) override;
+  void setYAxisFormats(const std::vector<std::string>& formats) override;
+  void setYAxisMin(const std::vector<std::optional<double>>& mins) override;
+  void addPoint(double x, const std::vector<double>& ys) override;
 
   void addVerticalMarker(double x, const Painter::Color& color) override;
 
  private:
-  QChart* chart_;
-  QLineSeries* series_;
+  struct Series
+  {
+    QLineSeries* series;
+    QValueAxis* y_axis;
+    double y_min{std::numeric_limits<double>::max()};
+    double y_max{std::numeric_limits<double>::lowest()};
+    bool has_min{false};
+  };
+
+  void addSeries(const std::string& label);
+
   QValueAxis* x_axis_;
-  QValueAxis* y_axis_;
+  QChart* chart_;
+  std::vector<Series> series_;
   double x_min_{std::numeric_limits<double>::max()};
   double x_max_{std::numeric_limits<double>::lowest()};
-  double y_min_{std::numeric_limits<double>::max()};
-  double y_max_{std::numeric_limits<double>::lowest()};
 };
 
-GuiChart::GuiChart(QChart* chart) : chart_(chart)
+GuiChart::GuiChart(QChart* chart,
+                   const std::string& x_label,
+                   const std::vector<std::string>& y_labels)
+    : chart_(chart)
 {
-  series_ = new QLineSeries();
-  chart->addSeries(series_);
-  chart->createDefaultAxes();
+  x_axis_ = new QValueAxis(chart_);
+  x_axis_->setTitleText(QString::fromStdString(x_label));
+  chart_->addAxis(x_axis_, Qt::AlignBottom);
 
-  x_axis_ = qobject_cast<QValueAxis*>(chart_->axes(Qt::Horizontal).first());
-  y_axis_ = qobject_cast<QValueAxis*>(chart_->axes(Qt::Vertical).first());
+  for (const auto& label : y_labels) {
+    addSeries(label);
+  }
 }
 
-void GuiChart::setAxisLabel(const std::string& label,
-                            odb::Orientation2D orientation)
+void GuiChart::setXAxisFormat(const std::string& format)
 {
-  QValueAxis* axis = (orientation == odb::horizontal) ? x_axis_ : y_axis_;
-  axis->setTitleText(QString::fromStdString(label));
+  x_axis_->setLabelFormat(QString::fromStdString(format));
 }
 
-void GuiChart::setAxisFormat(const std::string& format,
-                             odb::Orientation2D orientation)
+void GuiChart::setYAxisFormats(const std::vector<std::string>& formats)
 {
-  QValueAxis* axis = (orientation == odb::horizontal) ? x_axis_ : y_axis_;
-  axis->setLabelFormat(QString::fromStdString(format));
+  assert(formats.size() == series_.size());
+  for (int i = 0; i < formats.size(); ++i) {
+    if (!formats[i].empty()) {
+      Series& series = series_[i];
+      series.y_axis->setLabelFormat(QString::fromStdString(formats[i]));
+    }
+  }
 }
 
-void GuiChart::addPoint(const double x, const double y)
+void GuiChart::setYAxisMin(const std::vector<std::optional<double>>& mins)
 {
-  series_->append(x, y);
+  assert(mins.size() == series_.size());
+  for (int i = 0; i < mins.size(); ++i) {
+    const std::optional<double>& min = mins[i];
+    if (min) {
+      series_[i].y_axis->setMin(*min);
+      series_[i].has_min = true;
+    }
+  }
+}
+
+void GuiChart::addSeries(const std::string& label)
+{
+  Series series;
+
+  series.series = new QLineSeries();
+  series.series->setName(QString::fromStdString(label));
+  chart_->addSeries(series.series);
+
+  series.y_axis = new QValueAxis(chart_);
+  const Qt::AlignmentFlag side
+      = series_.size() % 2 ? Qt::AlignRight : Qt::AlignLeft;
+  chart_->addAxis(series.y_axis, side);
+  series.y_axis->setTitleText(QString::fromStdString(label));
+  series.series->attachAxis(series.y_axis);
+  series.series->attachAxis(x_axis_);
+
+  series_.emplace_back(series);
+}
+
+void GuiChart::addPoint(const double x, const std::vector<double>& ys)
+{
+  assert(ys.size() == series_.size());
+
   x_min_ = std::min(x_min_, x);
   x_max_ = std::max(x_max_, x);
-  y_min_ = std::min(y_min_, x);
-  y_max_ = std::max(y_max_, y);
-
-  // Adjust the axes to match the data range
   x_axis_->setMin(x_min_);
   x_axis_->setMax(x_max_);
-  y_axis_->setMin(y_min_);
-  y_axis_->setMax(y_max_);
+
+  for (int i = 0; i < ys.size(); ++i) {
+    Series& series = series_[i];
+    const double y = ys[i];
+    series.series->append(x, y);
+    series.y_min = std::min(series.y_min, y);
+    series.y_max = std::max(series.y_max, y);
+
+    // Adjust the axes to match the data range
+    if (!series.has_min) {
+      series.y_axis->setMin(series.y_min);
+    }
+    series.y_axis->setMax(series.y_max);
+  }
 }
 
 void GuiChart::addVerticalMarker(const double x, const Painter::Color& color)
 {
   QLineSeries* vline = new QLineSeries();
-  vline->append(x, y_axis_->min());
-  vline->append(x, y_axis_->max());
+  QValueAxis* y_axis = series_[0].y_axis;
+  vline->append(x, y_axis->min());
+  vline->append(x, y_axis->max());
 
   QColor qt_color(color.r, color.g, color.b, color.a);
   vline->setPen(QPen(qt_color, 2, Qt::DashLine));
 
   chart_->addSeries(vline);
+  chart_->legend()->markers(vline).first()->setVisible(false);
 
   // link to same axes
   vline->attachAxis(x_axis_);
-  vline->attachAxis(y_axis_);
+  vline->attachAxis(y_axis);
 }
 
 //////////////////////////////////////////////////
@@ -172,13 +229,15 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   setWidget(container);
 }
 
-Chart* ChartsWidget::addChart(const std::string& name)
+Chart* ChartsWidget::addChart(const std::string& name,
+                              const std::string& x_label,
+                              const std::vector<std::string>& y_labels)
 {
   QChart* chart = new QChart;
   QChartView* view = new QChartView(chart);
   const int tab_index = chart_tabs_->addTab(view, QString::fromStdString(name));
   chart_tabs_->setCurrentIndex(tab_index);
-  return new GuiChart(chart);
+  return new GuiChart(chart, x_label, y_labels);
 }
 
 void ChartsWidget::changeMode()

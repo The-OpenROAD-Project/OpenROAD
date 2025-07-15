@@ -225,7 +225,9 @@ std::string Gui::addLabel(int x,
   return "";
 }
 
-Chart* Gui::addChart(const std::string& name)
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
 {
   return nullptr;
 }

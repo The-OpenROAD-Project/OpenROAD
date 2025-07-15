@@ -59,11 +59,10 @@ Graphics::Graphics(utl::Logger* logger,
   gui->registerRenderer(this);
 
   // Setup the chart
-  chart_ = gui->addChart("GPL");
-  chart_->setAxisLabel("Iteration", odb::horizontal);
-  chart_->setAxisLabel("HPWL (μm)", odb::vertical);
-  chart_->setAxisFormat("%d", odb::horizontal);
-  chart_->setAxisFormat("%.2e", odb::vertical);
+  chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+  chart_->setXAxisFormat("%d");
+  chart_->setYAxisFormats({"%.2e", "%.2f"});
+  chart_->setYAxisMin({std::nullopt, 0});
 
   initHeatmap();
   if (inst) {
@@ -394,15 +393,20 @@ void Graphics::reportSelected()
   }
 }
 
-void Graphics::addIter(const int iter)
+void Graphics::addIter(const int iter, const double overflow)
 {
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
-  chart_->addPoint(iter, block->dbuToMicrons(nbc_->getHpwl()));
+  chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 }
 
 void Graphics::addTimingDrivenIter(const int iter)
 {
   chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+}
+
+void Graphics::addRoutabilitySnapshot(int iter)
+{
+  chart_->addVerticalMarker(iter, gui::Painter::kYellow);
 }
 
 void Graphics::addRoutabilityIter(const int iter, const bool revert)
