@@ -137,7 +137,9 @@ class ChartsWidget : public QDockWidget
                  const std::optional<int>& height_px);
 
   Mode modeFromString(const std::string& mode) const;
-  Chart* addChart(const std::string& name);
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,

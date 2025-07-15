@@ -9,7 +9,7 @@ on:
     - master
 
 jobs:
-  format:
+  Clang-Format:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code
