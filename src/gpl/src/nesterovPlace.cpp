@@ -423,6 +423,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
+      graphics_->addIter(iter);
       bool update
           = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
       if (update) {
@@ -519,6 +520,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
          || !npVars_.routability_driven_mode)) {
       // update db's instance location from current density coordinates
       updateDb();
+
+      if (graphics_) {
+        graphics_->addTimingDrivenIter(iter);
+      }
 
       if (graphics_ && npVars_.debug_generate_images) {
         graphics_->saveLabeledImage(
@@ -813,6 +818,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       std::pair<bool, bool> result = rb_->routability();
       is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
+
+      if (graphics_) {
+        graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
+      }
 
       // if routability is needed
       if (is_routability_need_ || isRevertInitNeeded) {

@@ -158,10 +158,6 @@ class Painter
   static inline const Color kHighlight = kYellow;
   static inline const Color kPersistHighlight = kYellow;
 
-  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
-      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
-  {
-  }
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -279,6 +275,12 @@ class Painter
   double getPixelsPerDBU() { return pixels_per_dbu_; }
   Options* getOptions() { return options_; }
   const odb::Rect& getBounds() { return bounds_; }
+
+ protected:
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
+      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
+  {
+  }
 
  private:
   Options* options_;
@@ -564,6 +566,25 @@ class SpectrumGenerator
   double scale_;
 };
 
+class Chart
+{
+ public:
+  virtual ~Chart() = default;
+
+  virtual void setAxisLabel(const std::string& label,
+                            odb::Orientation2D orientation)
+      = 0;
+  virtual void setAxisFormat(const std::string& format,
+                             odb::Orientation2D orientation)
+      = 0;
+  virtual void addPoint(double x, double y) = 0;
+
+  virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
+
+ protected:
+  Chart() = default;
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -702,6 +723,8 @@ class Gui
   void addNetTracks(odb::dbNet* net);
   void removeNetTracks(odb::dbNet* net);
   void clearNetTracks();
+
+  Chart* addChart(const std::string& name);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
