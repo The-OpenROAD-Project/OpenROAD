@@ -818,6 +818,8 @@ class NesterovBaseCommon
   GPin* dbToNb(odb::dbBTerm* pin) const;
   GNet* dbToNb(odb::dbNet* net) const;
 
+  bool skipIoMode() const { return pbc_->skipIoMode(); }
+
   // WL force update based on WeightedAverage model
   // wlCoeffX : WireLengthCoefficient for X.
   //            equal to 1 / gamma_x
