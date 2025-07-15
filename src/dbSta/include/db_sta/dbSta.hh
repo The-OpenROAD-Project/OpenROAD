@@ -26,29 +26,43 @@ namespace sta {
 // talking to the OpenSTA author about implementing these
 // upstream instead. https://github.com/llvm/llvm-project/issues/36746
 // for llvm bug.
+//
+// Deleting all the constructors to preserve behavior as opaque pointers.
+// This should let RTTI based constructs like std::any to work on these
+// types. See
+// https://github.com/The-OpenROAD-Project/OpenROAD/pull/7725#discussion_r2201423922
+// for more information.
 class Library
 {
+  Library() = delete;
 };
 class Cell
 {
+  Cell() = delete;
 };
 class Port
 {
+  Port() = delete;
 };
 class Instance
 {
+  Instance() = delete;
 };
 class Pin
 {
+  Pin() = delete;
 };
 class Term
 {
+  Term() = delete;
 };
 class Net
 {
+  Net() = delete;
 };
 class ViewType
 {
+  ViewType() = delete;
 };
 
 class dbSta;

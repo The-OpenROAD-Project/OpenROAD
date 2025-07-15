@@ -108,7 +108,7 @@ bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "69398ecac8d66587d1bc31a4bc46084ba34b161a",
+    commit = "90cfbab79df93960c5493f8a75df6199fb80fe26",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
