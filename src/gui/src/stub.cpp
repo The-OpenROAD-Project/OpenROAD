@@ -225,6 +225,11 @@ std::string Gui::addLabel(int x,
   return "";
 }
 
+Chart* Gui::addChart(const std::string& name)
+{
+  return nullptr;
+}
+
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
                     int width_px,
