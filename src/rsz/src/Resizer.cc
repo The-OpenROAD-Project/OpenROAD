@@ -746,6 +746,30 @@ void Resizer::findBuffers()
   }
 }
 
+LibertyCell* Resizer::findLowestDriveBuffer(LibertyCell* buffer_cell)
+{
+  // Prefer user-specified buffer cell if provided.
+  if (buffer_cell) {
+    logger_->info(RSZ, 31, "Using the given buffer: {}", buffer_cell->name());
+    return buffer_cell;
+  }
+
+  // Otherwise, find the weakest buffer with the lowest drive resistance.
+  findBuffers(); // updates buffer_lowest_drive_
+
+  // No buffer?
+  if (buffer_lowest_drive_ == nullptr) {
+    logger_->error(RSZ, 23, "No buffers found.");
+    return nullptr;
+  } 
+
+  logger_->info(
+    RSZ, 52, 
+    "Using the buffer with the lowest driving resistance: {}", 
+    buffer_lowest_drive_->name());
+  return buffer_lowest_drive_;
+}
+
 bool Resizer::isLinkCell(LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
@@ -753,10 +777,16 @@ bool Resizer::isLinkCell(LibertyCell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::bufferInputs()
+void Resizer::bufferInputs(LibertyCell* buffer_cell)
 {
   init();
-  findBuffers();
+  
+  // find the buffer to use
+  LibertyCell* buffer_to_use = findLowestDriveBuffer(buffer_cell);
+  if (buffer_to_use == nullptr) {
+    return;
+  }
+
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
@@ -776,14 +806,14 @@ void Resizer::bufferInputs()
           // Hands off special nets.
           && !db_network_->isSpecial(net) && hasPins(net)) {
         // repair_design will resize to target slew.
-        bufferInput(pin, buffer_lowest_drive_);
+        bufferInput(pin, buffer_to_use);
       }
     }
   }
 
+  logger_->info(
+      RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
   if (inserted_buffer_count_ > 0) {
-    logger_->info(
-        RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
   }
 }
@@ -972,10 +1002,16 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   return buffer;
 }
 
-void Resizer::bufferOutputs()
+void Resizer::bufferOutputs(LibertyCell* buffer_cell)
 {
   init();
-  findBuffers();
+
+  // find the buffer to use
+  LibertyCell* buffer_to_use = findLowestDriveBuffer(buffer_cell);
+  if (buffer_to_use == nullptr) {
+    return;
+  }
+
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
@@ -995,14 +1031,14 @@ void Resizer::bufferOutputs()
           // drivers.
           && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
           && hasPins(net)) {
-        bufferOutput(pin, buffer_lowest_drive_);
+        bufferOutput(pin, buffer_to_use);
       }
     }
   }
 
+  logger_->info(
+      RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
   if (inserted_buffer_count_ > 0) {
-    logger_->info(
-        RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
   }
 }
@@ -1056,6 +1092,7 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   sta_->disconnectPin(const_cast<Pin*>(top_pin));
 
   LibertyPort *input, *output;
+  assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
   string buffer_name = makeUniqueInstName("output");

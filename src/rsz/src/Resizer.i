@@ -409,19 +409,19 @@ set_dont_touch_net(Net *net,
 }
 
 void
-buffer_inputs()
+buffer_inputs(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferInputs();
+  resizer->bufferInputs(buffer_cell);
 }
 
 void
-buffer_outputs()
+buffer_outputs(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferOutputs();
+  resizer->bufferOutputs(buffer_cell);
 }
 
 void
