@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -1087,7 +1088,7 @@ class NesterovBase
                       const std::vector<FloatPoint>& curSLPSumGrads_);
 
   void updateNextIter(int iter);
-  void setTrueReprintIterHeader() { reprint_iter_header = true; }
+  void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
 
   void snapshot();
@@ -1170,7 +1171,7 @@ class NesterovBase
   std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
   // used to update gcell states after fixPointers() is called
-  std::vector<odb::dbInst*> new_instances;
+  std::vector<odb::dbInst*> new_instances_;
 
   struct RemovedFillerState
   {
@@ -1265,7 +1266,7 @@ class NesterovBase
 
   bool isDiverged_ = false;
 
-  NesterovPlaceVars* npVars_;
+  NesterovPlaceVars* npVars_ = nullptr;
 
   bool isMaxPhiCoefChanged_ = false;
 
@@ -1273,7 +1274,7 @@ class NesterovBase
   float hpwlWithMinSumOverflow_ = 1e30;
   int iter_ = 0;
   bool isConverged_ = false;
-  bool reprint_iter_header;
+  bool reprint_iter_header_ = false;
 
   void initFillerGCells();
 };

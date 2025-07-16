@@ -39,7 +39,7 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   std::map<dbSite*, dbOrientType> sites;
-  uint8_t blocked_layers_ = 0;
+  uint8_t blocked_layers = 0;
 };
 
 // Return value for grid searches.

@@ -96,3 +96,15 @@ proc report_dft_config { args } {
   sta::parse_key_args "report_dft_config" args keys {} flags {}
   dft::report_dft_config
 }
+
+
+sta::define_cmd_args "scan_opt" { }
+proc scan_opt { args } {
+  sta::parse_key_args "scan_opt" args \
+    keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DFT 13 "No design block found."
+  }
+  dft::scan_opt
+}

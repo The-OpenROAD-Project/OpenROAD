@@ -36,11 +36,10 @@ class MetricsPolicy
 
   static std::vector<MetricsPolicy> makeDefaultPolicies();
 
+ private:
   MetricsPolicyType policy_;
   std::string pattern_;
   bool repeating_use_regex_;
-
- private:
   std::regex pattern_regex_;
   bool matching(std::string key);
 };

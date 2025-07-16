@@ -119,4 +119,9 @@ void report_dft_config() {
   getDft()->reportDftConfig();
 }
 
+void scan_opt()
+{
+  getDft()->scanOpt();
+}
+
 %}  // inline

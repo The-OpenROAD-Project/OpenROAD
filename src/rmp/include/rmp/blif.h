@@ -51,7 +51,7 @@ class Blif
   void addRequired(sta::Pin* pin, std::string netName);
 
  private:
-  std::set<odb::dbInst*> instances_to_optimize;
+  std::set<odb::dbInst*> instances_to_optimize_;
   Logger* logger_;
   sta::dbSta* open_sta_ = nullptr;
   std::string const0_cell_;

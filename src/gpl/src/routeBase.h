@@ -196,7 +196,6 @@ class RouteBase
   int minRcViolatedCnt_ = 0;
 
   void init();
-  void reset();
   void resetRoutabilityResources();
 
   // update numCall_
