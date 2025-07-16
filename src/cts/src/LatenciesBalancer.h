@@ -76,8 +76,8 @@ class LatenciesBalancer
 
  private:
   void initSta();
-  void findAllBuilders(TreeBuilder* builder);
-  void expandBuilderGraph(odb::dbNet* clkInputNet);
+  void findLeafBuilders(TreeBuilder* builder);
+  void buildGraph(odb::dbNet* clkInputNet);
   int getNodeIdByName(std::string name);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -89,7 +89,10 @@ class LatenciesBalancer
                                         float& sumArrivals,
                                         unsigned& numSinks);
 
-  void computeLeafsNumBufferToInsert(int nodeId);
+  // DFS search throw the tree graph to insert delay buffers. At each node, evaluate the delay of the 
+  // its children, if the children need delay buffers and need different ammount of delay buffers, isert this difference,
+  // to the child that need more buffers.
+  void balanceLatencies(int nodeId);
   odb::dbITerm* insertDelayBuffers(int numBuffers, int srcX, int srcY, std::vector<odb::dbITerm*> sinksInput);
   odb::dbInst* createDelayBuffer(odb::dbNet* driverNet, const std::string& clockName, int locX, int locY);
   bool propagateClock(odb::dbITerm* input);
