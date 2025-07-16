@@ -98,12 +98,6 @@ void Replace::reset()
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
   timingNetWeightMax_ = 5;
-
-  gui_debug_ = false;
-  gui_debug_pause_iterations_ = 10;
-  gui_debug_update_iterations_ = 10;
-  gui_debug_draw_bins_ = false;
-  gui_debug_initial_ = false;
 }
 
 void Replace::addPlacementCluster(const Cluster& cluster)
@@ -440,6 +434,7 @@ void Replace::setUniformTargetDensityMode(bool mode)
 
 float Replace::getUniformTargetDensity(int threads)
 {
+  log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
   // TODO: update to be compatible with multiple target densities
   if (initNesterovPlace(threads)) {
     return nbVec_[0]->uniformTargetDensity();
