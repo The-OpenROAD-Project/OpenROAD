@@ -117,16 +117,6 @@ void LatenciesBalancer::buildGraph(odb::dbNet* clkInputNet)
   }
 }
 
-int LatenciesBalancer::getNodeIdByName(std::string name)
-{
-  for (GraphNode node : graph_) {
-    if (node.name == name) {
-      return node.id;
-    }
-  }
-  return -1;
-}
-
 odb::dbITerm* LatenciesBalancer::getFirstInput(odb::dbInst* inst) const
 {
   odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
@@ -324,7 +314,9 @@ void LatenciesBalancer::balanceLatencies(int nodeId)
     std::vector<odb::dbITerm*> children = it->second;
     if (bufToInsert == -1) {
       continue;
-    } else if (!previouBufToInsert) {
+    }
+
+    if (!previouBufToInsert) {
       previouBufToInsert = bufToInsert;
       sinksInput.clear();
       sinksInput = children;
@@ -349,7 +341,7 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(
     int numBuffers,
     int srcX,
     int srcY,
-    std::vector<odb::dbITerm*> sinksInput)
+    const std::vector<odb::dbITerm*>& sinksInput)
 {
   // get bbox of current load pins without driver output pin
   int maxSinkX = 0, maxSinkY = 0;
@@ -501,7 +493,7 @@ bool LatenciesBalancer::isSink(odb::dbITerm* iterm)
 void LatenciesBalancer::showGraph()
 {
   logger_->report("Graph builded:");
-  for (auto node : graph_) {
+  for (const auto& node : graph_) {
     odb::dbITerm* inputTerm = node.inputTerm;
     logger_->report(" Node {}", node.name);
     logger_->report("   id       = {}", node.id);

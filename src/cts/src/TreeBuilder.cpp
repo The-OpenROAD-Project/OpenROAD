@@ -116,7 +116,7 @@ bool TreeBuilder::isLeafTree()
     // but it is not a sub-tree ignore the first child.
     return children_.size() == 1;
   }
-  return !children_.size();
+  return children_.empty();
 }
 
 // Check if location (x, y) is legal by checking if

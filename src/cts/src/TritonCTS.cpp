@@ -2197,7 +2197,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
                               network_,
                               openSta_,
                               techChar_->getLengthUnit());
-      // balancer.run();
+      balancer.run();
       parasitics_guard.update();
     }
   }

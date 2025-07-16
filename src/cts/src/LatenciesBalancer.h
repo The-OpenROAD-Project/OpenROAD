@@ -35,7 +35,7 @@ using utl::Logger;
 struct GraphNode
 {
   GraphNode(int id, std::string name, odb::dbITerm* inputTerm)
-      : id(id), name(name), inputTerm(inputTerm)
+      : id(id), name(std::move(name)), inputTerm(inputTerm)
   {
   }
 
@@ -73,7 +73,6 @@ class LatenciesBalancer
   void initSta();
   void findLeafBuilders(TreeBuilder* builder);
   void buildGraph(odb::dbNet* clkInputNet);
-  int getNodeIdByName(std::string name);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
@@ -89,10 +88,11 @@ class LatenciesBalancer
   // and need different ammount of delay buffers, isert this difference, to the
   // child that need more buffers.
   void balanceLatencies(int nodeId);
-  odb::dbITerm* insertDelayBuffers(int numBuffers,
-                                   int srcX,
-                                   int srcY,
-                                   std::vector<odb::dbITerm*> sinksInput);
+  odb::dbITerm* insertDelayBuffers(
+      int numBuffers,
+      int srcX,
+      int srcY,
+      const std::vector<odb::dbITerm*>& sinksInput);
   odb::dbInst* createDelayBuffer(odb::dbNet* driverNet,
                                  const std::string& clockName,
                                  int locX,
