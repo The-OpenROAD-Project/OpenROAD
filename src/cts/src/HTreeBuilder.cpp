@@ -1832,8 +1832,8 @@ void HTreeBuilder::createClockSubNets()
 
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
-  
-  if(topBufferName_.empty()) {
+
+  if (topBufferName_.empty()) {
     topBufferName_ = rootBuffer.getName();
   }
 

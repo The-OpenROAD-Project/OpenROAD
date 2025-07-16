@@ -23,8 +23,8 @@
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
-#include "LevelBalancer.h"
 #include "LatenciesBalancer.h"
+#include "LevelBalancer.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
 #include "db_sta/dbNetwork.hh"
@@ -2186,11 +2186,18 @@ void TritonCTS::balanceMacroRegisterLatencies()
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
   rsz::IncrementalParasiticsGuard parasitics_guard(resizer_);
-    for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
+  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* builder = iter->get();
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
-      LatenciesBalancer balancer = LatenciesBalancer(builder, options_, logger_, db_, network_, openSta_, techChar_->getLengthUnit());
-      balancer.run();
+      LatenciesBalancer balancer
+          = LatenciesBalancer(builder,
+                              options_,
+                              logger_,
+                              db_,
+                              network_,
+                              openSta_,
+                              techChar_->getLengthUnit());
+      // balancer.run();
       parasitics_guard.update();
     }
   }

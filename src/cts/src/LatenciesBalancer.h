@@ -14,7 +14,6 @@
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
 #include "Util.h"
-
 #include "odb/db.h"
 
 namespace utl {
@@ -35,14 +34,10 @@ using utl::Logger;
 
 struct GraphNode
 {
-  GraphNode(int id,
-       std::string name,
-       odb::dbITerm* inputTerm)
-    : id(id),
-      name(name),
-      inputTerm(inputTerm)
-    {
-    }
+  GraphNode(int id, std::string name, odb::dbITerm* inputTerm)
+      : id(id), name(name), inputTerm(inputTerm)
+  {
+  }
 
   int id;
   std::string name;
@@ -55,13 +50,13 @@ struct GraphNode
 class LatenciesBalancer
 {
  public:
- LatenciesBalancer(TreeBuilder* root,
-                const CtsOptions* options,
-                Logger* logger,
-                odb::dbDatabase* db,
-                sta::dbNetwork* network,
-                sta::dbSta* sta,
-                double scalingUnit)
+  LatenciesBalancer(TreeBuilder* root,
+                    const CtsOptions* options,
+                    Logger* logger,
+                    odb::dbDatabase* db,
+                    sta::dbNetwork* network,
+                    sta::dbSta* sta,
+                    double scalingUnit)
       : root_(root),
         options_(options),
         logger_(logger),
@@ -81,23 +76,29 @@ class LatenciesBalancer
   int getNodeIdByName(std::string name);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
-                                     odb::dbNet* topNet,
-                                     odb::dbITerm* iterm);
+                            odb::dbNet* topNet,
+                            odb::dbITerm* iterm);
   float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
-                                        odb::dbITerm* iterm,
-                                        float& sumArrivals,
-                                        unsigned& numSinks);
+                               odb::dbITerm* iterm,
+                               float& sumArrivals,
+                               unsigned& numSinks);
 
-  // DFS search throw the tree graph to insert delay buffers. At each node, evaluate the delay of the 
-  // its children, if the children need delay buffers and need different ammount of delay buffers, isert this difference,
-  // to the child that need more buffers.
+  // DFS search throw the tree graph to insert delay buffers. At each node,
+  // evaluate the delay of the its children, if the children need delay buffers
+  // and need different ammount of delay buffers, isert this difference, to the
+  // child that need more buffers.
   void balanceLatencies(int nodeId);
-  odb::dbITerm* insertDelayBuffers(int numBuffers, int srcX, int srcY, std::vector<odb::dbITerm*> sinksInput);
-  odb::dbInst* createDelayBuffer(odb::dbNet* driverNet, const std::string& clockName, int locX, int locY);
+  odb::dbITerm* insertDelayBuffers(int numBuffers,
+                                   int srcX,
+                                   int srcY,
+                                   std::vector<odb::dbITerm*> sinksInput);
+  odb::dbInst* createDelayBuffer(odb::dbNet* driverNet,
+                                 const std::string& clockName,
+                                 int locX,
+                                 int locY);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
-
 
   void showGraph();
 
