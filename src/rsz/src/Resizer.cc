@@ -746,7 +746,7 @@ void Resizer::findBuffers()
   }
 }
 
-LibertyCell* Resizer::findLowestDriveBuffer(LibertyCell* buffer_cell)
+LibertyCell* Resizer::selectBufferCell(LibertyCell* buffer_cell)
 {
   // Prefer user-specified buffer cell if provided.
   if (buffer_cell) {
@@ -781,9 +781,9 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell)
 {
   init();
   
-  // find the buffer to use
-  LibertyCell* buffer_to_use = findLowestDriveBuffer(buffer_cell);
-  if (buffer_to_use == nullptr) {
+  // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
+  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  if (selected_buffer_cell == nullptr) {
     return;
   }
 
@@ -806,7 +806,7 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell)
           // Hands off special nets.
           && !db_network_->isSpecial(net) && hasPins(net)) {
         // repair_design will resize to target slew.
-        bufferInput(pin, buffer_to_use);
+        bufferInput(pin, selected_buffer_cell);
       }
     }
   }
@@ -1006,9 +1006,9 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell)
 {
   init();
 
-  // find the buffer to use
-  LibertyCell* buffer_to_use = findLowestDriveBuffer(buffer_cell);
-  if (buffer_to_use == nullptr) {
+  // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
+  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  if (selected_buffer_cell == nullptr) {
     return;
   }
 
@@ -1031,7 +1031,7 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell)
           // drivers.
           && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
           && hasPins(net)) {
-        bufferOutput(pin, buffer_to_use);
+        bufferOutput(pin, selected_buffer_cell);
       }
     }
   }

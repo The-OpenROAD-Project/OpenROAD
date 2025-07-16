@@ -457,7 +457,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                             float max_drive_resist);
   void findBuffers();
   void findFastBuffers();
-  LibertyCell* findLowestDriveBuffer(LibertyCell* buffer_cell = nullptr);
+  LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
