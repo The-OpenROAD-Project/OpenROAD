@@ -44,8 +44,13 @@ Rect getQueryRect(const Rect& edge_box, const int spc)
 };  // namespace cell_edges
 
 // Constructor
-PlacementDRC::PlacementDRC(Grid* grid, odb::dbTech* tech, Padding* padding)
-    : grid_(grid), padding_(padding)
+PlacementDRC::PlacementDRC(Grid* grid,
+                           odb::dbTech* tech,
+                           Padding* padding,
+                           bool disallow_one_site_gap)
+    : grid_(grid),
+      padding_(padding),
+      disallow_one_site_gap_(disallow_one_site_gap)
 {
   makeCellEdgeSpacingTable(tech);
 }
@@ -178,7 +183,7 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const dbOrientType& orient) const
 {
   return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
-         && checkBlockedLayers(cell, x, y);
+         && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);
 }
 
 namespace {
@@ -314,6 +319,47 @@ bool PlacementDRC::checkPadding(const Node* cell,
     }
   }
   return true;  // No padding conflicts found
+}
+
+bool PlacementDRC::checkOneSiteGap(const Node* cell) const
+{
+  return checkOneSiteGap(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+}
+
+bool PlacementDRC::checkOneSiteGap(const Node* cell,
+                                   const GridX x,
+                                   const GridY y) const
+{
+  if (!disallow_one_site_gap_) {
+    return true;
+  }
+  const GridX x_begin = x - 1;
+  const GridY y_begin = y;
+  // inclusive search, so we don't add 1 to the end
+  const GridX x_finish = x + grid_->gridWidth(cell);
+  const GridY y_finish
+      = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+
+  auto isAbutted = [this](const GridX x, const GridY y) {
+    const Pixel* pixel = grid_->gridPixel(x, y);
+    return (pixel == nullptr || pixel->cell);
+  };
+
+  auto cellAtSite = [this](const GridX x, const GridY y) {
+    const Pixel* pixel = grid_->gridPixel(x, y);
+    return (pixel == nullptr || pixel->cell);
+  };
+  for (GridY y = y_begin; y < y_finish; ++y) {
+    // left side
+    if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+      return false;
+    }
+    // right side
+    if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Initialize the edge spacing table from the technology
