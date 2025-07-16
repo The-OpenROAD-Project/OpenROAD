@@ -79,6 +79,7 @@ class TritonCTS
   void inferBufferList(std::vector<std::string>& buffers);
   TreeBuilder* addBuilder(CtsOptions* options,
                           Clock& net,
+                          odb::dbNet* topInputNet,
                           TreeBuilder* parent,
                           utl::Logger* logger,
                           odb::dbDatabase* db);
@@ -127,6 +128,7 @@ class TritonCTS
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks);
   TreeBuilder* addClockSinks(
       Clock& clockNet,
+      odb::dbNet* topInputNet,
       odb::dbNet* physicalNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
       TreeBuilder* parentBuilder,

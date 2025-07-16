@@ -79,6 +79,7 @@ class TreeBuilder
   void addChild(TreeBuilder* child) { children_.emplace_back(child); }
   std::vector<TreeBuilder*> getChildren() const { return children_; }
   TreeBuilder* getParent() const { return parent_; }
+  bool isLeafTree();
   unsigned getTreeBufLevels() const { return treeBufLevels_; }
   void addFirstLevelSinkDriver(ClockInst* inst)
   {
