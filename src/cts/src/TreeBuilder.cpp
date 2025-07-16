@@ -108,6 +108,17 @@ void TreeBuilder::initBlockages()
                 blockages_.size());
 }
 
+// Returns true if the tree has no sub-trees.
+bool TreeBuilder::isLeafTree()
+{
+  if (type_ == TreeType::MacroTree) {
+    // Because the register tree is a child of the macro tree
+    // but it is not a sub-tree ignore the first child.
+    return children_.size() == 1;
+  }
+  return children_.empty();
+}
+
 // Check if location (x, y) is legal by checking if
 // 1) it lies along edges of a known blockage (x1,y1) (x2,y2), or
 // 2) it is not on any other blockages (more expensive)

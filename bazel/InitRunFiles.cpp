@@ -41,8 +41,9 @@ class BazelInitializer
     using rules_cc::cc::runfiles::Runfiles;
 
     std::string error;
-    std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
-        getProgramLocation().value(), BAZEL_CURRENT_REPOSITORY, &error));
+    std::string program_location = getProgramLocation().value();
+    std::unique_ptr<Runfiles> runfiles(
+        Runfiles::Create(program_location, BAZEL_CURRENT_REPOSITORY, &error));
     if (!runfiles) {
       std::cerr << "Error initializing Bazel runfiles: " << error << std::endl;
       std::exit(1);
@@ -57,6 +58,12 @@ class BazelInitializer
                 << std::endl;
       std::exit(1);
     }
+
+    // Setup env variables for any other libraries that use runfiles
+    std::string manifest = program_location + ".runfiles/MANIFEST";
+    std::string runfiles_dir = program_location + ".runfiles";
+    setenv("RUNFILES_MANIFEST_FILE", manifest.c_str(), /*__replace=*/true);
+    setenv("RUNFILES_DIR", runfiles_dir.c_str(), /*__replace=*/true);
   }
 };
 

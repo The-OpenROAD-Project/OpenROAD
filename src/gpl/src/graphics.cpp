@@ -55,7 +55,15 @@ Graphics::Graphics(utl::Logger* logger,
       logger_(logger),
       mode_(Nesterov)
 {
-  gui::Gui::get()->registerRenderer(this);
+  gui::Gui* gui = gui::Gui::get();
+  gui->registerRenderer(this);
+
+  // Setup the chart
+  chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+  chart_->setXAxisFormat("%d");
+  chart_->setYAxisFormats({"%.2e", "%.2f"});
+  chart_->setYAxisMin({std::nullopt, 0});
+
   initHeatmap();
   if (inst) {
     for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -226,7 +234,7 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
   }
 
   // Highlight selection (highest priority)
-  if (gCell == nbc_->getGCellByIndex(selected_)) {
+  if (selected_ != kInvalidIndex && gCell == nbc_->getGCellByIndex(selected_)) {
     color = gui::Painter::kYellow;
     color.a = 180;
   }
@@ -293,7 +301,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   // Draw lines to neighbors
-  if (nbc_->getGCellByIndex(selected_)) {
+  if (selected_ != kInvalidIndex && nbc_->getGCellByIndex(selected_)) {
     painter.setPen(gui::Painter::kYellow, true);
     for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->gNet();
@@ -383,6 +391,29 @@ void Graphics::reportSelected()
                     wlGrad.x + densityPenalty * densityGrad.x,
                     wlGrad.y + densityPenalty * densityGrad.y);
   }
+}
+
+void Graphics::addIter(const int iter, const double overflow)
+{
+  odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+  chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
+}
+
+void Graphics::addTimingDrivenIter(const int iter)
+{
+  chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+}
+
+void Graphics::addRoutabilitySnapshot(int iter)
+{
+  chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+}
+
+void Graphics::addRoutabilityIter(const int iter, const bool revert)
+{
+  gui::Painter::Color color
+      = revert ? gui::Painter::kRed : gui::Painter::kGreen;
+  chart_->addVerticalMarker(iter, color);
 }
 
 void Graphics::cellPlot(bool pause)
