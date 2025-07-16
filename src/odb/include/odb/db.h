@@ -8440,6 +8440,8 @@ class dbScanInst : public dbObject
 
   dbInst* getInst() const;
 
+  void insertInScanList(dbScanList* scan_list);
+
   static dbScanInst* create(dbScanList* scan_list, dbInst* inst);
   // User Code End dbScanInst
 };

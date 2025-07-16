@@ -16,17 +16,18 @@ class _dbScanInst;
 class _dbScanList : public _dbObject
 {
  public:
-  _dbScanList(_dbDatabase*);
-
-  ~_dbScanList();
+  _dbScanList(_dbDatabase* db);
 
   bool operator==(const _dbScanList& rhs) const;
   bool operator!=(const _dbScanList& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbScanList& rhs) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
 
-  dbTable<_dbScanInst>* scan_insts_;
+  // As the elements of a free dbTable are 12 bytes long, we need this
+  // additional member in order to make _dbScanList big enough to allow
+  // safe casting between table members.
+  uint _unused{0};
+  dbId<_dbScanInst> _scan_insts;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj);

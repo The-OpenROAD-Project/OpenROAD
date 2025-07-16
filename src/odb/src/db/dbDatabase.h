@@ -43,7 +43,9 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 109;  // Current revision number
+const uint db_schema_minor = 110;  // Current revision number
+
+const uint db_schema_block_owns_scan_insts = 110;
 
 // Revision where is_connect_to_term_ flag was added to dbGuide
 const uint db_schema_guide_connected_to_term = 109;
