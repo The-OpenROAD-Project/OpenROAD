@@ -199,7 +199,7 @@ float LatenciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
   debugPrint(logger_,
              CTS,
              "insertion delay",
-             1,
+             2,
              "{} {}: average sink arrival is {:0.3e}",
              (builder->getTreeType() == TreeType::MacroTree) ? "macro tree"
                                                              : "register tree",
@@ -277,7 +277,7 @@ void LatenciesBalancer::balanceLatencies(int nodeId) {
       debugPrint(logger_,
                  CTS,
                  "insertion delay",
-                 1,
+                 3,
                  "For node {}, isert {:2f} buffers",
                  node->name,
                  (worseDelay_ - node->delay) / root_->getTopBufferDelay());
@@ -341,7 +341,7 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(int numBuffers, int srcX, in
   debugPrint(logger_,
                CTS,
                "insertion delay",
-               1,
+               3,
                "Inserting {} buffers for sinks:",
                numBuffers);
   for (odb::dbITerm* sinkInput : sinksInput) {
@@ -351,7 +351,7 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(int numBuffers, int srcX, in
     debugPrint(logger_,
                CTS,
                "insertion delay",
-               1,
+               3,
                "  {}",
                sinkInput->getName());
     sinkInput->disconnect();
