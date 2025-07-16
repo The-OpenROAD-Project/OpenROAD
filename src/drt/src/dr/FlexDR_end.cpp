@@ -659,7 +659,7 @@ void FlexDRWorker::cleanup()
   markers_.clear();
   markers_.shrink_to_fit();
   rq_.cleanup();
-  specialAccessAPs.clear();
+  specialAccessAPs_.clear();
 }
 
 bool FlexDRWorker::end(frDesign* design)

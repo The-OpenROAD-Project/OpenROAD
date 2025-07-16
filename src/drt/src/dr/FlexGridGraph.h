@@ -875,7 +875,7 @@ class FlexGridGraph
 
   void setNDR(frNonDefaultRule* ndr) { ndr_ = ndr; }
 
-  void setDstTaperBox(frBox3D* t) { dstTaperBox = t; }
+  void setDstTaperBox(frBox3D* t) { dstTaperBox_ = t; }
 
   frCost getCosts(frMIdx gridX,
                   frMIdx gridY,
@@ -887,7 +887,7 @@ class FlexGridGraph
   bool useNDRCosts(const FlexWavefrontGrid& p) const;
 
   frNonDefaultRule* getNDR() const { return ndr_; }
-  const frBox3D* getDstTaperBox() const { return dstTaperBox; }
+  const frBox3D* getDstTaperBox() const { return dstTaperBox_; }
   // functions
   void init(const frDesign* design,
             const Rect& routeBBox,
@@ -1065,7 +1065,7 @@ class FlexGridGraph
       = nullptr;  // std::pair<layer1area, layer2area>
   // ndr related
   frNonDefaultRule* ndr_ = nullptr;
-  const frBox3D* dstTaperBox
+  const frBox3D* dstTaperBox_
       = nullptr;  // taper box for the current dest pin in the search
 
   // locations of access points. The vector is indexed by layer number.

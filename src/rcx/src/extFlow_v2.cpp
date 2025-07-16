@@ -1498,8 +1498,8 @@ void extDistRC::printBound(FILE* fp,
           met,
           corner,
           loHi,
-          2 * (_coupling + _fringe + _diag) * 10e+3,
-          2 * _coupling * 10e+3,
+          2 * (coupling_ + fringe_ + diag_) * 10e+3,
+          2 * coupling_ * 10e+3,
           res * 1000);
 }
 

@@ -50,10 +50,10 @@ int FlexTAWorker::main_mt()
 
   init();
   if (isInitTA()) {
-    hardIroutesMode = true;
+    hardIroutesMode_ = true;
     sortIroutes();
     assign();
-    hardIroutesMode = false;
+    hardIroutesMode_ = false;
   }
   sortIroutes();
   auto t1 = high_resolution_clock::now();

@@ -1468,7 +1468,7 @@ void extMeasureRC::OpenEnded2(extSegment* cc,
                                 overMet,
                                 segFP);
 
-    double inf_cc = 2 * len * (rc->_coupling + rc->_fringe);
+    double inf_cc = 2 * len * (rc->getCoupling() + rc->getFringe());
     _extMain->updateTotalCap(rseg1, inf_cc, ii);
   }
 }
@@ -1506,8 +1506,8 @@ void extMeasureRC::OpenEnded1(extSegment* cc,
     if (rc == nullptr) {
       continue;
     }
-    double fr2 = 2 * len * rc->_fringe;
-    double cc = 2 * len * rc->_coupling;
+    double fr2 = 2 * len * rc->getFringe();
+    double cc = 2 * len * rc->getCoupling();
 
     _extMain->updateTotalCap(rseg, fr2, ii);
 
@@ -1564,9 +1564,9 @@ void extMeasureRC::OverUnder(extSegment* cc,
                                      metOver,
                                      segFP);
 
-    double fr2 = len * (rc_up->_fringe + rc_down->_fringe);
-    double cc_up = len * rc_up->_coupling;
-    double cc_down = len * rc_down->_coupling;
+    double fr2 = len * (rc_up->getFringe() + rc_down->getFringe());
+    double cc_up = len * rc_up->getCoupling();
+    double cc_down = len * rc_down->getCoupling();
 
     _extMain->updateTotalCap(rseg, fr2, ii);
 
@@ -1625,7 +1625,7 @@ void extMeasureRC::Model1(extSegment* cc,
                                    metUnder,
                                    metOver,
                                    segFP);
-    double cc_up = len * rc_up->_coupling;
+    double cc_up = len * rc_up->getCoupling();
     // updateCoupCap(rseg1, rseg_up, ii, cc_up);
 
     extDistRC* rc_down = OverUnderRC(rcModel,
@@ -1637,7 +1637,7 @@ void extMeasureRC::Model1(extSegment* cc,
                                      metUnder,
                                      metOver,
                                      segFP);
-    double cc_down = len * rc_down->_coupling;
+    double cc_down = len * rc_down->getCoupling();
     // updateCoupCap(rseg1, rseg_down, ii, cc_down);
 
     extDistRC* rc_fr = OverUnderRC(rcModel,
@@ -1649,7 +1649,7 @@ void extMeasureRC::Model1(extSegment* cc,
                                    metUnder,
                                    metOver,
                                    segFP);
-    double fr2 = 2 * len * rc_fr->_fringe;
+    double fr2 = 2 * len * rc_fr->getFringe();
     _extMain->updateTotalCap(rseg1, fr2, ii);
 
     if (CHECK_COUPLING_THRESHOLD) {

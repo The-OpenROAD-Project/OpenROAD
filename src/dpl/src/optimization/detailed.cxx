@@ -39,7 +39,7 @@ bool Detailed::improve(DetailedMgr& mgr)
 
   // Parse the script string and run each command.
   boost::char_separator<char> separators(" \r\t\n", ";");
-  boost::tokenizer<boost::char_separator<char>> tokens(params_.script_,
+  boost::tokenizer<boost::char_separator<char>> tokens(params_.script,
                                                        separators);
   std::vector<std::string> args;
   for (auto temp : tokens) {

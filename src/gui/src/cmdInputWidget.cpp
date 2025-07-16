@@ -3,6 +3,7 @@
 
 #include "cmdInputWidget.h"
 
+#include <QFile>
 #include <QMimeData>
 #include <QTextStream>
 

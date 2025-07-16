@@ -86,7 +86,7 @@ class SelectedItemModel : public QStandardItemModel
                         QStandardItem*& name_item,
                         QStandardItem*& value_item);
   QStandardItem* makeItem(const QString& name);
-  QStandardItem* makeItem(const std::any& item, bool short_name = false);
+  QStandardItem* makeItem(const std::any& item_param, bool short_name = false);
 
   template <typename Iterator>
   QStandardItem* makeList(QStandardItem* name_item,

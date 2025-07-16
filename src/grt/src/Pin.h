@@ -71,8 +71,8 @@ class Pin
 
   union
   {
-    odb::dbITerm* iterm_;
-    odb::dbBTerm* bterm_;
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
   };
   odb::Point position_;
   odb::Point on_grid_position_;
