@@ -288,6 +288,8 @@ class GlobalRouter
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
 
+  void writePinLocations(const char* file_name);
+
  private:
   // Net functions
   Net* addNet(odb::dbNet* db_net);

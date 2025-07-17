@@ -252,6 +252,11 @@ void read_segments(const char* file_name)
   getGlobalRouter()->readSegments(file_name);
 }
 
+void write_pin_locations(const char* file_name)
+{
+  getGlobalRouter()->writePinLocations(file_name);
+}
+
 } // namespace
 
 %} // inline
