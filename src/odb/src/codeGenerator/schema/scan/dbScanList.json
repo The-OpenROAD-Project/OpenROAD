@@ -9,6 +9,25 @@
     "optimizing the scan chain."],
   "cpp_includes": [
     "dbScanChain.h",
-    "dbScanPartition.h"
+    "dbScanPartition.h",
+    "dbDft.h",
+    "dbScanInstItr.h"],
+  "fields": [
+    {
+      "name": "_unused",
+      "type": "uint",
+      "flags": [
+        "private"
+      ],
+      "default": 0,
+      "comment": "// As the elements of a free dbTable are 12 bytes long, we need this\n// additional member in order to make _dbScanList big enough to allow\n// safe casting between table members."
+    },
+    {
+      "name": "_scan_insts",
+      "type": "dbId<_dbScanInst>",
+      "flags": [
+        "private"
+      ]
+    }
   ]
 }

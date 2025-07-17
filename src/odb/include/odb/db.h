@@ -8454,9 +8454,8 @@ class dbScanInst : public dbObject
 class dbScanList : public dbObject
 {
  public:
-  dbSet<dbScanInst> getScanInsts() const;
-
   // User Code Begin dbScanList
+  dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList

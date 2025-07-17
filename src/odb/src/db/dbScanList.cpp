@@ -7,20 +7,24 @@
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
-#include "dbScanInst.h"
 #include "dbScanInstItr.h"
 #include "dbScanPartition.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
-#include "odb/dbSet.h"
-
 namespace odb {
 template class dbTable<_dbScanList>;
 
 bool _dbScanList::operator==(const _dbScanList& rhs) const
 {
-  return _scan_insts == rhs._scan_insts;
+  if (_unused != rhs._unused) {
+    return false;
+  }
+  if (_scan_insts != rhs._scan_insts) {
+    return false;
+  }
+
+  return true;
 }
 
 bool _dbScanList::operator<(const _dbScanList& rhs) const
@@ -30,16 +34,19 @@ bool _dbScanList::operator<(const _dbScanList& rhs) const
 
 _dbScanList::_dbScanList(_dbDatabase* db)
 {
+  _unused = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
+  stream >> obj._unused;
   stream >> obj._scan_insts;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj)
 {
+  stream << obj._unused;
   stream << obj._scan_insts;
   return stream;
 }
@@ -56,6 +63,7 @@ void _dbScanList::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
+// User Code Begin dbScanListPublicMethods
 dbSet<dbScanInst> dbScanList::getScanInsts() const
 {
   _dbScanList* scan_list = (_dbScanList*) this;
@@ -66,7 +74,6 @@ dbSet<dbScanInst> dbScanList::getScanInsts() const
   return dbSet<dbScanInst>(scan_list, block->_scan_list_scan_inst_itr);
 }
 
-// User Code Begin dbScanListPublicMethods
 dbScanInst* dbScanList::add(dbInst* inst)
 {
   dbScanInst* scan_inst = dbScanInst::create(this, inst);
