@@ -279,6 +279,14 @@ dbMaster* RamGen::findMaster(
                 continue;
             }
 
+	    if (!match) {
+	       if (liberty->portCount() == 0) {
+	            best_area = liberty->area();
+		    best = master;
+	       }
+	       continue;
+	    }
+
             auto port_iter = liberty->portIterator();
 
             sta::ConcretePort* out = nullptr;
@@ -379,6 +387,13 @@ void RamGen::findMasters() {
         },
         "buffer");
     }
+//    if (!filler_cell_){
+//	filler_cell_ = findMaster(
+//	[this](sta::LibertyPort *port) {
+//	    return port->libertyLibrary()->findLibertyCell("FILL");
+//	},
+  //     	"filler");
+   // }
 }
 
 void RamGen::generate(const int bytes_per_word,
@@ -399,6 +414,7 @@ void RamGen::generate(const int bytes_per_word,
     and2_cell_ = nullptr;
     clock_gate_cell_ = nullptr;
     buffer_cell_ = nullptr;
+    filler_cell_ = nullptr;
     findMasters();
 
     auto chip = db_->getChip();
@@ -534,11 +550,11 @@ void RamGen::generate(const int bytes_per_word,
 
 	auto input_buffer_layer = std::make_unique<Layout>(odb::horizontal); //input buffer layer
         for (int bit = 0; bit < 8; ++bit) {
-            makeInst(input_buffer_layer.get(),
+           makeInst(input_buffer_layer.get(),
                      "buffer",
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
-            { {"A", D[bit]}, {"X", D_nets[bit]} });
+            { {"A", D[bit]}, {"X", D_nets[bit]} })->setLocation(bit*10, 0);
 //            for (int read = 0; read < 4 + read_ports * 4; ++read) {
 //                makeInst(input_buffer_layer.get(),
 //                         "buffer",
@@ -546,8 +562,13 @@ void RamGen::generate(const int bytes_per_word,
 //                         filler_cell_,
 //                         {});
 //            }
+   
+	   int x = bit * 30 ;
+	   int y = 0;
+	  // buffer_inst->setLocation(x,y);
 
-        }
+        
+	}
 	//adds input buffer layer to column
         column->addElement(std::make_unique<Element>(std::move(input_buffer_layer)));
 
