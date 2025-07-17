@@ -208,6 +208,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
         s.push(blockages[i]);  // new interval.
       } else {
         if (top.getPaddedXMax() < blockages[i].getPaddedXMax()) {
+          top.pad_right = blockages[i].pad_right;
           top.x_max = blockages[i].getXMax();  // extend interval.
         }
         s.pop();      // remove old.
