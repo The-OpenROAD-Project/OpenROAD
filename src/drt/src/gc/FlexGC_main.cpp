@@ -3785,7 +3785,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
   }
 }
 
-// loop through violation and patch C5 enclosure minStep for GF14
+// Patch minStep markers for transition layers vias
 void FlexGCWorker::Impl::patchMetalShape_minStep()
 {
   std::vector<drConnFig*> results;
