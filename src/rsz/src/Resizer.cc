@@ -754,12 +754,12 @@ LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
   }
 
   // Otherwise, find the weakest buffer with the lowest drive resistance.
-  findBuffers(); // updates buffer_lowest_drive_
+  findBuffers();  // updates buffer_lowest_drive_
 
   // No buffer?
   if (buffer_lowest_drive_ == nullptr) {
     logger_->error(RSZ, 23, "No buffers found.");
-  } 
+  }
 
   return buffer_lowest_drive_;
 }
@@ -774,7 +774,7 @@ bool Resizer::isLinkCell(LibertyCell* cell) const
 void Resizer::bufferInputs(LibertyCell* buffer_cell)
 {
   init();
-  
+
   // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
   LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
   if (selected_buffer_cell == nullptr) {
@@ -805,10 +805,11 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell)
     }
   }
 
-  logger_->info(
-      RSZ, 27, 
-      "Inserted {} {} input buffers.", 
-      inserted_buffer_count_, selected_buffer_cell->name());
+  logger_->info(RSZ,
+                27,
+                "Inserted {} {} input buffers.",
+                inserted_buffer_count_,
+                selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
     level_drvr_vertices_valid_ = false;
@@ -1033,11 +1034,11 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell)
     }
   }
 
-  logger_->info(
-      RSZ, 28, 
-      "Inserted {} {} output buffers.", 
-      inserted_buffer_count_,
-      selected_buffer_cell->name());
+  logger_->info(RSZ,
+                28,
+                "Inserted {} {} output buffers.",
+                inserted_buffer_count_,
+                selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
     level_drvr_vertices_valid_ = false;
