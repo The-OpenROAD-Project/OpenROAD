@@ -66,8 +66,7 @@ bool SizeDownMove::doMove(const Path* drvr_path,
 
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
 
-  // Sort fanouts of the drvr on the critical path by slack margin
-  // wrt the critical path slack.
+  // Sort fanouts of the drvr by slack
   vector<pair<Vertex*, Slack>> fanout_slacks;
   VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
@@ -77,10 +76,11 @@ bool SizeDownMove::doMove(const Path* drvr_path,
       Vertex* fanout_vertex = edge->to(graph_);
       const Slack fanout_slack
           = sta_->vertexSlack(fanout_vertex, resizer_->max_);
-      Pin* load_pin = load_vertex->pin();
-      Instance* load_inst = network_->instance(load_pin);
-      // If we already have a move on the load, don't try to size down
-      if (!hasMoves(load_inst)) {
+      Pin* fanout_pin = fanout_vertex->pin();
+      Instance* fanout_inst = network_->instance(fanout_pin);
+      // If we already have a move on the fanout gate, don't try to size down
+      // again
+      if (!hasMoves(fanout_inst)) {
         fanout_slacks.emplace_back(fanout_vertex, fanout_slack);
       }
     }
