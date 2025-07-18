@@ -4782,6 +4782,29 @@ std::vector<PinGridLocation> GlobalRouter::getPinGridPositions(
   return pin_locs;
 }
 
+void GlobalRouter::writePinLocations(const char* file_name)
+{
+  std::ofstream pin_loc_file;
+  pin_loc_file.open(file_name);
+  if (!pin_loc_file) {
+    logger_->error(
+        GRT, 271, "Global route pin locations file could not be opened.");
+  }
+
+  for (const auto [db_net, net] : db_net_map_) {
+    if (!net->getPins().empty()) {
+      pin_loc_file << net->getName() << " " << net->getNumPins() << "\n";
+      for (const Pin& pin : net->getPins()) {
+        const odb::Point& pin_pos = pin.getOnGridPosition();
+        pin_loc_file << pin.getName() << " " << pin_pos.getX() << " "
+                     << pin_pos.getY() << "\n";
+      }
+      pin_loc_file << "\n";
+    }
+  }
+  pin_loc_file.close();
+}
+
 ////////////////////////////////////////////////////////////////
 
 bool operator<(const RoutePt& p1, const RoutePt& p2)
