@@ -32,6 +32,8 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 //  CLANG_TIDY_CONFIG  = override configuration file in kConfig.clang_tidy_file
 //  CACHE_DIR          = where to put the cached content; default ~/.cache
 //  CLANG_TIDY_JOBS    = Number of tasks to run in parallel.
+//  COMPILE_JSON       = where to find cmake compile commands;
+//                       default build/compile_commands.json
 
 // This file shall be c++17 self-contained; not using any re2 or absl niceties.
 #include <unistd.h>
@@ -629,14 +631,15 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  auto compdb_ts = fs::last_write_time("compile_commands.json", ec);
+  std::string_view compile_json_str
+      = EnvWithFallback("COMPILE_JSON", "build/compile_commands.json");
+  auto compdb_ts = fs::last_write_time(compile_json_str, ec);
   if (ec.value() != 0) {
     compdb_ts = fs::last_write_time("compile_flags.txt", ec);
   }
   if (ec.value() != 0) {
-    std::cerr << "No compilation db compile_commands.json or compile_flags.txt "
-              << "found; create that first. For cmake projects, often simply\n"
-              << "\tln -s build/compile_commands.json .\n";
+    std::cerr << "No compilation db " << compile_json_str
+              << " found; create that first.\n";
     return EXIT_FAILURE;
   }
 
