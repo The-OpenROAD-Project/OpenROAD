@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// clang-format off
+
 %{
 
 #include <cstdint>
@@ -409,19 +411,19 @@ set_dont_touch_net(Net *net,
 }
 
 void
-buffer_inputs(LibertyCell *buffer_cell)
+buffer_inputs(LibertyCell *buffer_cell, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferInputs(buffer_cell);
+  resizer->bufferInputs(buffer_cell, verbose);
 }
 
 void
-buffer_outputs(LibertyCell *buffer_cell)
+buffer_outputs(LibertyCell *buffer_cell, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferOutputs(buffer_cell);
+  resizer->bufferOutputs(buffer_cell, verbose);
 }
 
 void

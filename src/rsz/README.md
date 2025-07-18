@@ -224,6 +224,8 @@ buffer_ports
 | ----- | ----- |
 | `-inputs`, `-outputs` | Insert a buffer between the input and load, output and load respectively. The default behavior is `-inputs` and `-outputs` set if neither is specified. |
 | `-max_utilization` | Defines the percentage of core area used. |
+| `-buffer_cell`     | Specifies the buffer cell type to be used. |
+| `-verbose`         | Enable verbose logging. |
 
 #### Instance Name Prefixes
 

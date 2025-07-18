@@ -771,7 +771,7 @@ bool Resizer::isLinkCell(LibertyCell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::bufferInputs(LibertyCell* buffer_cell)
+void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
 {
   init();
 
@@ -779,6 +779,13 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell)
   LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
   if (selected_buffer_cell == nullptr) {
     return;
+  }
+
+  if (verbose) {
+    logger_->info(RSZ,
+                  29,
+                  "Start input port buffering with {}.",
+                  selected_buffer_cell->name());
   }
 
   sta_->ensureClkNetwork();
@@ -800,7 +807,7 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell)
           // Hands off special nets.
           && !db_network_->isSpecial(net) && hasPins(net)) {
         // repair_design will resize to target slew.
-        bufferInput(pin, selected_buffer_cell);
+        bufferInput(pin, selected_buffer_cell, verbose);
       }
     }
   }
@@ -880,7 +887,9 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 Make sure all the top pins are buffered
 */
 
-Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
+Instance* Resizer::bufferInput(const Pin* top_pin,
+                               LibertyCell* buffer_cell,
+                               bool verbose)
 {
   dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
   odb::dbModNet* top_pin_hier_net = db_network_->hierNet(top_pin);
@@ -925,7 +934,18 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   delete pin_iter;
   // dont buffer, buffers
   if (has_dont_touch || !has_non_buffer) {
+    if (verbose) {
+      logger_->info(RSZ,
+                    213,
+                    "Skipping input port {} buffering.",
+                    network_->name(top_pin));
+    }
     return nullptr;
+  }
+
+  if (verbose) {
+    logger_->info(
+        RSZ, 214, "Buffering input port {}.", network_->name(top_pin));
   }
 
   // make the buffer and its output net.
@@ -1000,7 +1020,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   return buffer;
 }
 
-void Resizer::bufferOutputs(LibertyCell* buffer_cell)
+void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
 {
   init();
 
@@ -1008,6 +1028,13 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell)
   LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
   if (selected_buffer_cell == nullptr) {
     return;
+  }
+
+  if (verbose) {
+    logger_->info(RSZ,
+                  31,
+                  "Start output port buffering with {}.",
+                  selected_buffer_cell->name());
   }
 
   inserted_buffer_count_ = 0;
@@ -1029,7 +1056,7 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell)
           // drivers.
           && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
           && hasPins(net)) {
-        bufferOutput(pin, selected_buffer_cell);
+        bufferOutput(pin, selected_buffer_cell, verbose);
       }
     }
   }
@@ -1077,8 +1104,15 @@ bool Resizer::isTristateDriver(const Pin* pin)
   return port && port->direction()->isAnyTristate();
 }
 
-void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
+void Resizer::bufferOutput(const Pin* top_pin,
+                           LibertyCell* buffer_cell,
+                           bool verbose)
 {
+  if (verbose) {
+    logger_->info(
+        RSZ, 215, "Buffering output port {}.", network_->name(top_pin));
+  }
+
   NetworkEdit* network = networkEdit();
 
   odb::dbITerm* top_pin_op_iterm;

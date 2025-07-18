@@ -470,12 +470,13 @@ proc report_dont_touch { args } {
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
                                      [-max_utilization util]\
-                                     [-buffer_cell buf_cell]}
+                                     [-buffer_cell buf_cell]\
+                                     [-verbose]}
 
 proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
     keys {-buffer_cell -max_utilization} \
-    flags {-inputs -outputs}
+    flags {-inputs -outputs -verbose}
 
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
@@ -484,16 +485,18 @@ proc buffer_ports { args } {
     set buffer_outputs 1
   }
 
+  set verbose [info exists flags(-verbose)]
+
   sta::check_argc_eq0 "buffer_ports" $args
 
   rsz::set_max_utilization [rsz::parse_max_util keys]
   set buffer_cell [rsz::parse_buffer_cell keys 0] ; # 0: optional argument
 
   if { $buffer_inputs } {
-    rsz::buffer_inputs $buffer_cell
+    rsz::buffer_inputs $buffer_cell $verbose
   }
   if { $buffer_outputs } {
-    rsz::buffer_outputs $buffer_cell
+    rsz::buffer_outputs $buffer_cell $verbose
   }
 }
 
