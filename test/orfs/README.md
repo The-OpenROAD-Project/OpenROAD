@@ -80,7 +80,7 @@ The `/tmp/place/make` script, if `FLOW_HOME` is set, will use a local ORFS and O
 
 More explictly ORFS only:
 
-    make --file=~/OpenROAD-flow-scripts/flow/Makefile -C /tmp/place/_main/ DESIGN_CONFIG=config.mk do-place
+    make --file=~/OpenROAD-flow-scripts/flow/Makefile -C /tmp/place/_main WORK_HOME=test/orfs/mock-array DESIGN_CONFIG=config.mk do-place
 
 This is a bit more verbose, but eliminates any concerns about what the `/tmp/place/make` might be doing differently than ORFS only.
 
