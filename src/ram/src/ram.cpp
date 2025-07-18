@@ -524,8 +524,14 @@ void RamGen::generate(const int bytes_per_word,
 
 
             auto name = fmt::format("storage_{}_{}", row, col);
-            word_decoder_nets = decoder_selects(name, read_ports);
 
+	    if (word_count == 2) {
+		word_decoder_nets.clear();
+	    	word_decoder_nets.push_back(row == 0 ? inv_addr[0] : addr[0]);
+	    } else {
+                word_decoder_nets = decoder_selects(name, read_ports);
+	    
+	    }
             //creates nets that decoders will use
             decoder_select_nets.push_back(word_decoder_nets);
 
@@ -550,11 +556,11 @@ void RamGen::generate(const int bytes_per_word,
 
 	auto input_buffer_layer = std::make_unique<Layout>(odb::horizontal); //input buffer layer
         for (int bit = 0; bit < 8; ++bit) {
-           makeInst(input_buffer_layer.get(),
+           dbInst* buffer_inst =  makeInst(input_buffer_layer.get(),
                      "buffer",
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
-            { {"A", D[bit]}, {"X", D_nets[bit]} })->setLocation(bit*10, 0);
+            { {"A", D[bit]}, {"X", D_nets[bit]} });
 //            for (int read = 0; read < 4 + read_ports * 4; ++read) {
 //                makeInst(input_buffer_layer.get(),
 //                         "buffer",
@@ -563,9 +569,9 @@ void RamGen::generate(const int bytes_per_word,
 //                         {});
 //            }
    
-	   int x = bit * 30 ;
-	   int y = 0;
-	  // buffer_inst->setLocation(x,y);
+	   int x = bit * 10 ;
+	   int y = 200;
+	   buffer_inst->setLocation(x,y);
 
         
 	}
@@ -593,7 +599,7 @@ void RamGen::generate(const int bytes_per_word,
                   "decoder",
                   fmt::format("inv_{}", 0),
                   inv_cell_,
-        {{"A", addr[0]}, {"Y", word_decoder_nets[0]}});
+        {{"A", addr[0]}, {"Y", inv_addr[0]}});
     }
 
     //adds column of inverters
