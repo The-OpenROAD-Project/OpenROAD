@@ -120,6 +120,8 @@ class RamGen
   odb::dbMaster* and2_cell_;
   odb::dbMaster* clock_gate_cell_;
   odb::dbMaster* buffer_cell_;
+  odb::dbMaster* filler_cell_;
+
 };
 
 }  // namespace ram

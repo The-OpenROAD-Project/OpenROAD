@@ -50,9 +50,8 @@ initial begin
 
     $dumpfile("ram_2x8.vcd");
     $dumpvars(0,RAM2x8_tb);
-
     D = 0;
-    addr = 0;
+    // addr = 0;
 
     //write mode
     clk = 0;
@@ -82,13 +81,12 @@ initial begin
     we = 0;
 
     //read word 0
-    @(negedge clk)
     addr = 1'b0;
 
     @(negedge clk)
     addr = 1'b1;
 
-
+    @(negedge clk)
     $display ("Test complete: RAM_2x8");
     $finish();
 
