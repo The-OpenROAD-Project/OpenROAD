@@ -50,6 +50,12 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
 [INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1013] Final placement area: 4.52 (+0.00%)
+[INFO RSZ-0029] Start input port buffering with BUF_X1.
+[INFO RSZ-0214] Buffering input port clk1.
+[INFO RSZ-0214] Buffering input port in1.
 [INFO RSZ-0027] Inserted 2 BUF_X1 input buffers.
+[INFO RSZ-0031] Start output port buffering with BUF_X1.
+[INFO RSZ-0215] Buffering output port out1.
+[INFO RSZ-0215] Buffering output port out2.
 [INFO RSZ-0028] Inserted 2 BUF_X1 output buffers.
 No differences found.

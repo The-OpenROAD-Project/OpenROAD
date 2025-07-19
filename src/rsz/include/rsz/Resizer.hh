@@ -259,8 +259,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts);
   void unbufferNet(Net* net);
-  void bufferInputs();
-  void bufferOutputs();
+  void bufferInputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
+  void bufferOutputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
 
   // from sta::dbNetworkObserver callbacks
   void postReadLiberty() override;
@@ -446,8 +446,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
-  Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
-  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell);
+  Instance* bufferInput(const Pin* top_pin,
+                        LibertyCell* buffer_cell,
+                        bool verbose);
+  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
@@ -457,6 +459,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                             float max_drive_resist);
   void findBuffers();
   void findFastBuffers();
+  LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
