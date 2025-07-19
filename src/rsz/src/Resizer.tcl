@@ -28,7 +28,7 @@ proc parse_buffer_cell { keys_var required } {
 
   # required argument is missing?
   if { $buffer_cell == "NULL" && $required } {
-    utl::error RSZ 212 "-buffer_cell is required for buffer insertion."    
+    utl::error RSZ 212 "-buffer_cell is required for buffer insertion."
   }
 
   return $buffer_cell
@@ -36,7 +36,6 @@ proc parse_buffer_cell { keys_var required } {
 
 # namespace eval rsz
 }
-
 
 
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
@@ -490,7 +489,7 @@ proc buffer_ports { args } {
   sta::check_argc_eq0 "buffer_ports" $args
 
   rsz::set_max_utilization [rsz::parse_max_util keys]
-  set buffer_cell [rsz::parse_buffer_cell keys 0] ; # 0: optional argument
+  set buffer_cell [rsz::parse_buffer_cell keys 0] ;# 0: optional argument
 
   if { $buffer_inputs } {
     rsz::buffer_inputs $buffer_cell $verbose
