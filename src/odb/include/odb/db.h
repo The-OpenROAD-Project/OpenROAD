@@ -7665,11 +7665,11 @@ class dbGuide : public dbObject
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
 
-  bool isJumper();
+  bool isJumper() const;
 
   void setIsJumper(bool jumper);
 
-  bool isConnectedToTerm();
+  bool isConnectedToTerm() const;
 
   void setIsConnectedToTerm(bool is_connected);
 

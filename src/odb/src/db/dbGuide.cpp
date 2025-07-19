@@ -244,7 +244,7 @@ dbSet<dbGuide>::iterator dbGuide::destroy(dbSet<dbGuide>::iterator& itr)
   return next;
 }
 
-bool dbGuide::isJumper()
+bool dbGuide::isJumper() const
 {
   bool is_jumper = false;
   _dbGuide* guide = (_dbGuide*) this;
@@ -264,7 +264,7 @@ void dbGuide::setIsJumper(bool jumper)
   }
 }
 
-bool dbGuide::isConnectedToTerm()
+bool dbGuide::isConnectedToTerm() const
 {
   bool is_connected_to_term = false;
   _dbGuide* guide = (_dbGuide*) this;
