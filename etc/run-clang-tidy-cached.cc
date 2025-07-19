@@ -284,7 +284,8 @@ class ClangTidyRunner
   // Given a work-queue in/out-file, process it. Using system() for portability.
   // Empties work_queue.
   void RunClangTidyOn(ContentAddressedStore& output_store,
-                      std::list<filepath_contenthash_t>* work_queue)
+                      std::list<filepath_contenthash_t>* work_queue,
+                      std::string_view compile_json_str)
   {
     if (work_queue->empty()) {
       return;
@@ -321,9 +322,10 @@ class ClangTidyRunner
         const std::string tmp_out = final_out.string() + uniquifier + ".tmp";
         // Putting the file to clang-tidy early in the command line so that
         // it is easy to find with `ps` or `top`.
-        const std::string command = clang_tidy_ + " '" + work.first.string()
-                                    + "'" + clang_tidy_args_ + "> '" + tmp_out
-                                    + "' 2>/dev/null";
+        const std::string command
+            = clang_tidy_ + " -p " + std::string(compile_json_str) + " '"
+              + work.first.string() + "'" + clang_tidy_args_ + "> '" + tmp_out
+              + "' 2>/dev/null";
         const int r = system(command.c_str());
 #ifdef WIFSIGNALED
         // NOLINTBEGIN
@@ -658,7 +660,7 @@ int main(int argc, char* argv[])
   auto work_list = cc_file_gatherer.BuildWorkList(build_env_latest_change);
 
   // Now the expensive part...
-  runner.RunClangTidyOn(store, &work_list);
+  runner.RunClangTidyOn(store, &work_list, compile_json_str);
 
   const std::string detailed_report = cache_prefix + "clang-tidy.out";
   const std::string summary = cache_prefix + "clang-tidy.summary";
