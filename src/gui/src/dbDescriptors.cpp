@@ -1430,10 +1430,13 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
           }
         }
 
+        std::vector<odb::Rect> guide_rects;
+        guide_rects.reserve(guides.size());
         for (const auto* guide : guides) {
           const auto& box = guide->getBox();
           const auto center = box.center();
           const int width_half = box.minDXDY() / 2;
+          guide_rects.push_back(box);
           odb::Point p0, p1;
           switch (box.getDir()) {
             case 0: {
@@ -1494,6 +1497,11 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
         }
 
         painter.restoreState();
+
+        // draw outlines of guides
+        for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
+          painter.drawPolygon(outline);
+        }
       }
     }
   }
