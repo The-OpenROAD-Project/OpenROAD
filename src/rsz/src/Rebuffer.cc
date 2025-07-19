@@ -109,6 +109,137 @@ void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& options)
   options.resize(si);
 }
 
+void accumulateBufferTreeFlatLoadPins(
+    bool gone_through_buffer,
+    dbNetwork* nwk,
+    const BufferedNetPtr& choice,
+    std::unordered_set<const sta::Pin*>& buffer_tree_flat_load_pins)
+{
+  switch (choice->type()) {
+    case BufferedNetType::buffer: {
+      accumulateBufferTreeFlatLoadPins(
+          true, nwk, choice->ref(), buffer_tree_flat_load_pins);
+
+      break;
+    }
+    case BufferedNetType::wire: {
+      accumulateBufferTreeFlatLoadPins(
+          gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
+      break;
+    }
+    case BufferedNetType::junction: {
+      accumulateBufferTreeFlatLoadPins(
+          gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
+      accumulateBufferTreeFlatLoadPins(
+          gone_through_buffer, nwk, choice->ref2(), buffer_tree_flat_load_pins);
+      break;
+    }
+    case BufferedNetType::load: {
+      const Pin* load_pin = choice->loadPin();
+      odb::dbITerm* load_iterm = nullptr;
+      odb::dbBTerm* load_bterm = nullptr;
+      odb::dbModITerm* load_moditerm = nullptr;
+      nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
+      if (load_iterm || load_bterm) {
+        // accumulate all loads
+        buffer_tree_flat_load_pins.insert(load_pin);
+      }
+      break;
+    }
+  }
+}
+
+void reportChoiceTree(dbNetwork* nwk,
+                      int level,
+                      const BufferedNetPtr& choice,
+                      int& buffer_count,
+                      int& load_count,
+                      int& wire_count,
+                      int& junction_count,
+                      std::set<odb::dbModule*>& load_modules)
+{
+  switch (choice->type()) {
+    case BufferedNetType::buffer: {
+      for (int i = 0; i < level; i++) {
+        printf(" ");
+      }
+      printf("buffer\n");
+      buffer_count++;
+      reportChoiceTree(nwk,
+                       level + 1,
+                       choice->ref(),
+                       buffer_count,
+                       load_count,
+                       wire_count,
+                       junction_count,
+                       load_modules);
+      break;
+    }
+    case BufferedNetType::wire: {
+      for (int i = 0; i < level; i++) {
+        printf(" ");
+      }
+      printf("wire\n");
+      wire_count++;
+      reportChoiceTree(nwk,
+                       level + 1,
+                       choice->ref(),
+                       buffer_count,
+                       load_count,
+                       wire_count,
+                       junction_count,
+                       load_modules);
+      break;
+    }
+    case BufferedNetType::junction: {
+      for (int i = 0; i < level; i++) {
+        printf(" ");
+      }
+      printf("junction\n");
+
+      junction_count++;
+      reportChoiceTree(nwk,
+                       level + 1,
+                       choice->ref(),
+                       buffer_count,
+                       load_count,
+                       wire_count,
+                       junction_count,
+                       load_modules);
+      reportChoiceTree(nwk,
+                       level + 1,
+                       choice->ref2(),
+                       buffer_count,
+                       load_count,
+                       wire_count,
+                       junction_count,
+                       load_modules);
+      break;
+    }
+    case BufferedNetType::load: {
+      for (int i = 0; i < level; i++) {
+        printf(" ");
+      }
+
+      const Pin* load_pin = choice->loadPin();
+      printf("load %s\n", nwk->name(load_pin));
+      odb::dbITerm* load_iterm = nullptr;
+      odb::dbBTerm* load_bterm = nullptr;
+      odb::dbModITerm* load_moditerm = nullptr;
+
+      nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
+      if (load_iterm) {
+        dbInst* load_inst = load_iterm->getInst();
+        if (load_inst) {
+          load_modules.insert(load_inst->getModule());
+        }
+      }
+      load_count++;
+      break;
+    }
+  }
+}
+
 void characterizeChoiceTree(dbNetwork* nwk,
                             int level,
                             const BufferedNetPtr& choice,
@@ -718,6 +849,7 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
                                wire_count,
                                junction_count,
                                load_modules);
+
         /*
           Propagating a hierarchicial through a single buffer or serial chain
           of buffers is fine.
@@ -760,7 +892,18 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
         if (all_loads_in_same_module) {
           propagate_mod_net = true;
         }
-        if (db_net && db_modnet && propagate_mod_net) {
+
+        if (db_modnet) {
+          std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
+          accumulateBufferTreeFlatLoadPins(
+              false, db_network_, best_option, buffer_tree_flat_load_pins);
+          for (auto p : buffer_tree_flat_load_pins) {
+            db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+          }
+          propagate_mod_net = false;
+        }
+
+        if (db_net && db_modnet) {
           // as we move the modnet and dbnet around we will get a clash
           //(the dbNet name now exposed is the same as the modnet name)
           // so we uniquify the modnet name. Only do this is if we
@@ -769,13 +912,13 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
           db_modnet->rename(new_name.c_str());
         }
 
-        inserted_buffer_count
-            = rebufferTopDown(best_option,
-                              db_network_->dbToSta(db_net),
-                              1,
-                              parent,
-                              drvr_op_iterm,
-                              (propagate_mod_net ? db_modnet : nullptr));
+        inserted_buffer_count = rebufferTopDown(best_option,
+                                                db_network_->dbToSta(db_net),
+                                                1,
+                                                parent,
+                                                drvr_op_iterm,
+                                                nullptr);
+
         if (inserted_buffer_count > 0) {
           rebuffer_net_count_++;
           debugPrint(logger_,
@@ -1133,9 +1276,9 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
         mod_net_drvr->connect(orig_db_net);
         // add the modnet to the new output
         buffer_op_iterm->disconnect();
-
-        // hierarchy fix: simultaneously connect flat and hieararchical net
-        // to force reassociation
+        // propagate hierarchical net to op
+        //  hierarchy fix: simultaneously connect flat and hieararchical net
+        //  to force reassociation
         db_network_->connectPin(buffer_op_pin, (Net*) net2, (Net*) mod_net_in);
       }
 

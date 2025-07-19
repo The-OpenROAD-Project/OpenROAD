@@ -4,6 +4,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_set>
 
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
@@ -326,6 +327,10 @@ class dbNetwork : public ConcreteNetwork
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
                               dbNet* orig_flat_net);
+  void accumulateFlatLoadPinsOnNet(
+      Net* net,
+      Pin* drvr_pin,
+      std::unordered_set<const Pin*>& accumulated_pins);
 
   int fromIndex(const Port* port) const override;
   int toIndex(const Port* port) const override;

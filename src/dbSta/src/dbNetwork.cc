@@ -3553,6 +3553,31 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dest_pin->connect(top_net);
     }
 
+    // What we are doing here is making sure that the
+    // hierarchical nets at the source and the destination
+    // are correctly associated. In the above code
+    // we are wiring/unwiring modnets without regard to the
+    // flat net association. We clean that up here.
+
+    // reassociate the dest pin
+    dbModNet* dest_pin_mod_net = hierNet((Pin*) dest_pin);
+    if (dest_pin_mod_net) {
+      dbNet* dest_pin_flat_net = flatNet((Pin*) dest_pin);
+      dest_pin->disconnect();
+      connectPin(
+          (Pin*) dest_pin, (Net*) dest_pin_flat_net, (Net*) dest_pin_mod_net);
+    }
+
+    // reassociate the source pin
+    dbModNet* source_pin_mod_net = hierNet((Pin*) source_pin);
+    if (source_pin_mod_net) {
+      dbNet* source_pin_flat_net = flatNet((Pin*) source_pin);
+      source_pin->disconnect();
+      connectPin((Pin*) source_pin,
+                 (Net*) source_pin_flat_net,
+                 (Net*) source_pin_mod_net);
+    }
+
     // During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
     std::set<dbModInst*> cleaned_up;
@@ -3989,6 +4014,48 @@ bool dbNetwork::hasHierarchicalElements() const
     return true;
   }
   return false;
+}
+
+class AccumulateNetFlatLoadPins : public PinVisitor
+{
+ public:
+  AccumulateNetFlatLoadPins(dbNetwork* nwk,
+                            Pin* drvr_pin,
+                            std::unordered_set<const Pin*>& accumulated_pins)
+      : nwk_(nwk), drvr_pin_(drvr_pin), flat_load_pinset_(accumulated_pins)
+  {
+  }
+  void operator()(const Pin* pin) override;
+
+ private:
+  dbNetwork* nwk_;
+  Pin* drvr_pin_;
+  std::unordered_set<const sta::Pin*>& flat_load_pinset_;
+};
+
+void AccumulateNetFlatLoadPins::operator()(const Pin* pin)
+{
+  if (pin != drvr_pin_) {
+    dbITerm* iterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModITerm* moditerm = nullptr;
+    // only stash the flat loads.
+    nwk_->staToDb(pin, iterm, bterm, moditerm);
+    if (iterm || bterm) {
+      flat_load_pinset_.insert(pin);
+    }
+  }
+}
+
+void dbNetwork::accumulateFlatLoadPinsOnNet(
+    Net* net,
+    Pin* drvr_pin,
+    std::unordered_set<const Pin*>& accumulated_pins)
+{
+  NetSet visited_nets(this);
+  // just the flat load pins
+  AccumulateNetFlatLoadPins rp(this, drvr_pin, accumulated_pins);
+  visitConnectedPins(net, rp, visited_nets);
 }
 
 }  // namespace sta

@@ -47,6 +47,21 @@ void characterizeChoiceTree(dbNetwork* nwk,
                             int& junction_count,
                             std::set<odb::dbModule*>& load_modules);
 
+void accumulateBufferTreeFlatLoadPins(
+    bool gone_through_buffer,
+    dbNetwork* nwk,
+    const BufferedNetPtr& choice,
+    std::unordered_set<const sta::Pin*>& buffer_tree_flat_load_pins);
+
+void reportChoiceTree(dbNetwork* nwk,
+                      int level,
+                      const BufferedNetPtr& choice,
+                      int& buffer_count,
+                      int& load_count,
+                      int& wire_count,
+                      int& junction_count,
+                      std::set<odb::dbModule*>& load_modules);
+
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
 // lambda calling and it keeps track of the level number which is important
@@ -2230,13 +2245,22 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       propagate_mod_net = true;
     }
 
-    inserted_count_
-        += exportBufferTree(area_opt_tree,
-                            db_network_->dbToSta(db_net),
-                            1,
-                            parent,
-                            drvr_op_iterm,
-                            (propagate_mod_net ? db_modnet : nullptr));
+    if (db_modnet) {
+      std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
+      accumulateBufferTreeFlatLoadPins(
+          false, db_network_, area_opt_tree, buffer_tree_flat_load_pins);
+      for (auto p : buffer_tree_flat_load_pins) {
+        db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+      }
+      propagate_mod_net = false;
+    }
+
+    inserted_count_ += exportBufferTree(area_opt_tree,
+                                        db_network_->dbToSta(db_net),
+                                        1,
+                                        parent,
+                                        drvr_op_iterm,
+                                        nullptr);
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);
