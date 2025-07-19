@@ -46,7 +46,7 @@ void Opendp::checkPlacement(const bool verbose,
     if (cell->getType() != Node::CELL) {
       continue;
     }
-    if (cell->isStdCell()) {
+    if (cell->isStdCell() && !cell->isFixed()) {
       // Site alignment check
       if (cell->getLeft() % grid_->getSiteWidth() != 0
           || row_coords.find(cell->getBottom().v) == row_coords.end()) {

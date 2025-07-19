@@ -514,6 +514,11 @@ class dbMasterType
   bool isEndCap() const;
 
   ///
+  /// Is the type ENDCAP_TOPLEFT/TOPRIGHT/BOTTOMLEFT/BOTTOMRIGHT
+  ///
+  bool isIoCornerEndCap() const;
+
+  ///
   /// Is the type COVER or any of its subtypes
   ///
   bool isCover() const;
