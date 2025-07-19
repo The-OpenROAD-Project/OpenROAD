@@ -134,6 +134,33 @@ bool Instance::isDummy() const
   return (inst_ == nullptr);
 }
 
+bool Instance::isConnected(const bool skip_io_mode) const
+{
+  if (isDummy()) {
+    return false;
+  }
+
+  for (odb::dbITerm* iterm : inst_->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (!net) {
+      continue;
+    }
+    const dbSigType net_type = net->getSigType();
+    if (net_type != dbSigType::SIGNAL && net_type != dbSigType::CLOCK) {
+      continue;
+    }
+    if (net->getITerms().size() > 1) {
+      return true;
+    }
+    // If we are skipping IOs then we need to be connected to another iterm
+    // not a bterm.
+    if (!skip_io_mode && !net->getBTerms().empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Instance::setLocation(int x, int y)
 {
   ux_ = x + (ux_ - lx_);

@@ -1684,18 +1684,17 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   stdInstsArea_ = pb_->stdInstsArea();
   macroInstsArea_ = pb_->macroInstsArea();
 
-  int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
-
   // update gFillerCells
   initFillerGCells();
 
   nb_gcells_.reserve(pb_->insts().size() + fillerStor_.size());
 
+  const Die& die = pb_->die();
+  const int core_width = die.coreUx() - die.coreLx();
+  const int core_height = die.coreUy() - die.coreLy();
+
   // add place instances
   for (auto& pb_inst : pb_->placeInsts()) {
-    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-
     GCell* gCell = nbc_->pbToNb(pb_inst);
     if (pb_inst != gCell->insts()[0]) {
       // Only process the first cluster once
@@ -1703,7 +1702,18 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     }
 
     for (Instance* inst : gCell->insts()) {
-      inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
+      // Unconnected instances can be placed anywhere in the core area.
+      // It is important that they not land exactly on top of eachother
+      // as they will move in lockstep in response to density forces
+      // and feel no hwpl force.  Randomizing over the whole core area
+      // minimizes the chances of that.
+      if (!inst->isConnected(nbc_->skipIoMode())) {
+        const int x = rand() % core_width + die.coreLx();
+        const int y = rand() % core_height + die.coreLy();
+        inst->setLocation(x, y);
+      } else {
+        inst->setLocation(pb_inst->lx(), pb_inst->ly());
+      }
     }
     gCell->updateLocations();
     nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));

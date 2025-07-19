@@ -71,6 +71,10 @@ class Instance
   // unusable sites.  It will have inst_ as nullptr
   bool isDummy() const;
 
+  // At least one iterm has a net (ie this instance will feel some
+  //  wire length force).
+  bool isConnected(bool skip_io_mode) const;
+
   void copyDbLocation(PlacerBaseCommon* pbc);
   void setLocation(int x, int y);
   void setCenterLocation(int x, int y);
