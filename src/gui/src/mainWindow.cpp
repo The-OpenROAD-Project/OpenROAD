@@ -185,6 +185,15 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       });
 
   connect(
+      viewers_, &LayoutTabs::focusNetsChanged, inspector_, &Inspector::reload);
+  connect(viewers_,
+          &LayoutTabs::routeGuidesChanged,
+          inspector_,
+          &Inspector::reload);
+  connect(
+      viewers_, &LayoutTabs::netTracksChanged, inspector_, &Inspector::reload);
+
+  connect(
       this, &MainWindow::selectionChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::highlightChanged, viewers_, &LayoutTabs::fullRepaint);
