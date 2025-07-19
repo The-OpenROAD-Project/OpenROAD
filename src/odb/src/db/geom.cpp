@@ -61,7 +61,6 @@ std::vector<Polygon> Polygon::merge(const std::vector<Polygon>& polys)
   using BoostPolygon = boost::polygon::polygon_data<int>;
   using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
   using boost::polygon::operators::operator+=;
-  using boost::polygon::operators::operator+;
 
   // add to polygon set
   BoostPolygonSet poly_in_set;
