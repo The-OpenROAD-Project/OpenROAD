@@ -154,6 +154,7 @@ class BufferedNet
   // buffer   buffer driver pin location
   // load     load pin location
   Point location() const { return location_; }
+  void setLocation(Point location);
   float cap() const { return cap_; }
   void setCapacitance(float cap);
   float fanout() const { return fanout_; }

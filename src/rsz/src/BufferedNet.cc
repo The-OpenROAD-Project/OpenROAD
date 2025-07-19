@@ -222,6 +222,11 @@ int BufferedNet::length() const
   return odb::Point::manhattanDistance(location_, ref_->location());
 }
 
+void BufferedNet::setLocation(Point loc)
+{
+  location_ = loc;
+}
+
 void BufferedNet::setCapacitance(float cap)
 {
   cap_ = cap;

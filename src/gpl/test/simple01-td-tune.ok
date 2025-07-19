@@ -66,27 +66,27 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.62665915
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-       10 |   0.7675 |  3.901301e+06 |   +6.54% |  1.25e-13 |      
-       20 |   0.7594 |  3.928217e+06 |   +0.69% |  2.04e-13 |      
-       30 |   0.7573 |  3.923137e+06 |   -0.13% |  3.32e-13 |      
-       40 |   0.7573 |  3.917555e+06 |   -0.14% |  5.40e-13 |      
-       50 |   0.7569 |  3.916204e+06 |   -0.03% |  8.80e-13 |      
-       60 |   0.7568 |  3.917457e+06 |   +0.03% |  1.43e-12 |      
-       70 |   0.7568 |  3.917776e+06 |   +0.01% |  2.33e-12 |      
-       80 |   0.7565 |  3.918014e+06 |   +0.01% |  3.80e-12 |      
-       90 |   0.7562 |  3.919124e+06 |   +0.03% |  6.19e-12 |      
-      100 |   0.7560 |  3.920466e+06 |   +0.03% |  1.01e-11 |      
-      110 |   0.7556 |  3.922373e+06 |   +0.05% |  1.64e-11 |      
-      120 |   0.7552 |  3.925462e+06 |   +0.08% |  2.68e-11 |      
-      130 |   0.7542 |  3.930589e+06 |   +0.13% |  4.36e-11 |      
-      140 |   0.7523 |  3.938789e+06 |   +0.21% |  7.10e-11 |      
-      150 |   0.7489 |  3.951344e+06 |   +0.32% |  1.16e-10 |      
-      160 |   0.7430 |  3.970043e+06 |   +0.47% |  1.88e-10 |      
-      170 |   0.7331 |  3.996886e+06 |   +0.68% |  3.07e-10 |      
-      180 |   0.7216 |  4.035748e+06 |   +0.97% |  5.00e-10 |      
-      190 |   0.7064 |  4.091434e+06 |   +1.38% |  8.15e-10 |      
+       10 |   0.7674 |  3.901264e+06 |   +6.54% |  1.25e-13 |      
+       20 |   0.7594 |  3.928231e+06 |   +0.69% |  2.04e-13 |      
+       30 |   0.7573 |  3.923127e+06 |   -0.13% |  3.32e-13 |      
+       40 |   0.7573 |  3.917528e+06 |   -0.14% |  5.40e-13 |      
+       50 |   0.7569 |  3.916192e+06 |   -0.03% |  8.80e-13 |      
+       60 |   0.7568 |  3.917444e+06 |   +0.03% |  1.43e-12 |      
+       70 |   0.7568 |  3.917749e+06 |   +0.01% |  2.33e-12 |      
+       80 |   0.7565 |  3.918001e+06 |   +0.01% |  3.80e-12 |      
+       90 |   0.7562 |  3.919084e+06 |   +0.03% |  6.19e-12 |      
+      100 |   0.7560 |  3.920435e+06 |   +0.03% |  1.01e-11 |      
+      110 |   0.7556 |  3.922334e+06 |   +0.05% |  1.64e-11 |      
+      120 |   0.7552 |  3.925441e+06 |   +0.08% |  2.68e-11 |      
+      130 |   0.7542 |  3.930579e+06 |   +0.13% |  4.36e-11 |      
+      140 |   0.7523 |  3.938829e+06 |   +0.21% |  7.10e-11 |      
+      150 |   0.7489 |  3.951360e+06 |   +0.32% |  1.16e-10 |      
+      160 |   0.7430 |  3.970069e+06 |   +0.47% |  1.88e-10 |      
+      170 |   0.7331 |  3.996908e+06 |   +0.68% |  3.07e-10 |      
+      180 |   0.7216 |  4.035757e+06 |   +0.97% |  5.00e-10 |      
+      190 |   0.7064 |  4.091462e+06 |   +1.38% |  8.15e-10 |      
 [INFO GPL-0100] Timing-driven iteration 2/7, virtual: false.
-[INFO GPL-0101]    Iter: 195, overflow: 0.694, keep resizer changes at: 1, HPWL: 4124661
+[INFO GPL-0101]    Iter: 195, overflow: 0.694, keep resizer changes at: 1, HPWL: 4124656
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -114,11 +114,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.6305633
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      200 |   0.6819 |  4.154178e+06 |   +1.53% |  1.33e-09 |      
-      210 |   0.6557 |  4.221910e+06 |   +1.63% |  2.16e-09 |      
-      220 |   0.6237 |  4.299958e+06 |   +1.85% |  3.52e-09 |      
+      200 |   0.6826 |  4.169992e+06 |   +1.92% |  1.33e-09 |      
+      210 |   0.6562 |  4.235630e+06 |   +1.57% |  2.16e-09 |      
+      220 |   0.6202 |  4.318474e+06 |   +1.96% |  3.52e-09 |      
 [INFO GPL-0100] Timing-driven iteration 3/7, virtual: false.
-[INFO GPL-0101]    Iter: 228, overflow: 0.593, keep resizer changes at: 1, HPWL: 4372923
+[INFO GPL-0101]    Iter: 228, overflow: 0.592, keep resizer changes at: 1, HPWL: 4382621
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -146,17 +146,17 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.63084215
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      230 |   0.5842 |  4.394545e+06 |   +2.20% |  5.73e-09 |      
-      240 |   0.5429 |  4.473763e+06 |   +1.80% |  9.34e-09 |      
-      250 |   0.4918 |  4.573121e+06 |   +2.22% |  1.52e-08 |      
+      230 |   0.5840 |  4.406588e+06 |   +2.04% |  5.73e-09 |      
+      240 |   0.5441 |  4.491474e+06 |   +1.93% |  9.34e-09 |      
+      250 |   0.4900 |  4.581198e+06 |   +2.00% |  1.52e-08 |      
 [INFO GPL-0100] Timing-driven iteration 4/7, virtual: false.
-[INFO GPL-0101]    Iter: 250, overflow: 0.492, keep resizer changes at: 1, HPWL: 4573121
+[INFO GPL-0101]    Iter: 250, overflow: 0.490, keep resizer changes at: 1, HPWL: 4581198
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
-    final |     +0.1% |      40 |       0 |             0 |         0
+    final |     +0.1% |      39 |       0 |             0 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 40 instances.
+[INFO RSZ-0039] Resized 39 instances.
    Iter   |    Area   | Removed | Inserted |   Pins
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
@@ -173,14 +173,45 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     -0.1% |       1 |        1 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
+[INFO GPL-0107] Timing-driven: repair_design delta area: 0.266 um^2 (+0.05%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
+[INFO GPL-0110] Timing-driven: new target density: 0.631121
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      260 |   0.4307 |  4.606211e+06 |   +0.55% |  2.48e-08 |      
+[INFO GPL-0100] Timing-driven iteration 5/7, virtual: false.
+[INFO GPL-0101]    Iter: 266, overflow: 0.395, keep resizer changes at: 1, HPWL: 4612087
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       357
+    final |     +0.0% |      39 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 39 instances.
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       320
+       32 |     +0.0% |       0 |        0 |       288
+       64 |     +0.0% |       0 |        0 |       256
+       96 |     +0.0% |       0 |        0 |       224
+      128 |     +0.0% |       0 |        0 |       192
+      160 |     +0.0% |       0 |        0 |       160
+      192 |     +0.0% |       0 |        0 |       128
+      224 |     +0.0% |       0 |        0 |        96
+      256 |     +0.0% |       0 |        0 |        64
+      288 |     +0.0% |       0 |        0 |        32
+    final |     -0.1% |       1 |        1 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack 1.4e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: -0.266 um^2 (-0.05%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0110] Timing-driven: new target density: 0.63084215
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      260 |   0.4342 |  4.629617e+06 |   +1.24% |  2.48e-08 |      
-[INFO GPL-0100] Timing-driven iteration 5/7, virtual: false.
-[INFO GPL-0101]    Iter: 268, overflow: 0.391, keep resizer changes at: 1, HPWL: 4641694
+      270 |   0.3754 |  4.614811e+06 |   +0.19% |  4.04e-08 |      
+      280 |   0.3178 |  4.667211e+06 |   +1.14% |  6.25e-08 |      
+[INFO GPL-0100] Timing-driven iteration 6/7, virtual: false.
+[INFO GPL-0101]    Iter: 286, overflow: 0.294, keep resizer changes at: 1, HPWL: 4692886
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -208,42 +239,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.6305633
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      270 |   0.3825 |  4.665173e+06 |   +0.77% |  4.04e-08 |      
-      280 |   0.3190 |  4.686571e+06 |   +0.46% |  6.32e-08 |      
-[INFO GPL-0100] Timing-driven iteration 6/7, virtual: false.
-[INFO GPL-0101]    Iter: 288, overflow: 0.293, keep resizer changes at: 1, HPWL: 4703186
-Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
----------------------------------------------------------------------
-        0 |     +0.0% |       0 |       0 |             0 |       357
-    final |     +0.1% |      38 |       0 |             0 |         0
----------------------------------------------------------------------
-[INFO RSZ-0039] Resized 38 instances.
-   Iter   |    Area   | Removed | Inserted |   Pins
-          |           | Buffers | Buffers  | Remaining
--------------------------------------------------------
-        0 |     +0.0% |       0 |        0 |       320
-       32 |     +0.0% |       0 |        0 |       288
-       64 |     +0.0% |       0 |        0 |       256
-       96 |     +0.0% |       0 |        0 |       224
-      128 |     +0.0% |       0 |        0 |       192
-      160 |     +0.0% |       0 |        0 |       160
-      192 |     +0.0% |       0 |        0 |       128
-      224 |     +0.0% |       0 |        0 |        96
-      256 |     +0.0% |       0 |        0 |        64
-      288 |     +0.0% |       0 |        0 |        32
-    final |     -0.1% |       1 |        1 |         0
--------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
-[INFO GPL-0110] Timing-driven: new target density: 0.6305633
-Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
----------------------------------------------------------------
-      290 |   0.2911 |  4.738642e+06 |   +1.11% |  9.31e-08 |      
-      300 |   0.2581 |  4.801763e+06 |   +1.33% |  1.37e-07 |      
-      310 |   0.2073 |  4.796903e+06 |   -0.10% |  2.02e-07 |      
+      290 |   0.2817 |  4.717170e+06 |   +1.07% |  9.21e-08 |      
+      300 |   0.2468 |  4.757725e+06 |   +0.86% |  1.36e-07 |      
+      310 |   0.2099 |  4.774343e+06 |   +0.35% |  2.00e-07 |      
 [INFO GPL-0100] Timing-driven iteration 7/7, virtual: false.
-[INFO GPL-0101]    Iter: 315, overflow: 0.194, keep resizer changes at: 1, HPWL: 4790105
+[INFO GPL-0101]    Iter: 317, overflow: 0.193, keep resizer changes at: 1, HPWL: 4801762
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -271,11 +271,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.6305633
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      320 |   0.1809 |  4.824143e+06 |   +0.57% |  2.97e-07 |      
-      330 |   0.1515 |  4.836932e+06 |   +0.27% |  4.38e-07 |      
-      340 |   0.1373 |  4.851500e+06 |   +0.30% |  6.46e-07 |      
-      350 |   0.1108 |  4.876701e+06 |   +0.52% |  9.51e-07 |      
-[INFO GPL-1001] Finished with Overflow: 0.098870
+      320 |   0.1825 |  4.832340e+06 |   +1.21% |  2.95e-07 |      
+      330 |   0.1530 |  4.852230e+06 |   +0.41% |  4.34e-07 |      
+      340 |   0.1281 |  4.875457e+06 |   +0.48% |  6.39e-07 |      
+      350 |   0.1110 |  4.905446e+06 |   +0.62% |  9.42e-07 |      
+[INFO GPL-1001] Finished with Overflow: 0.099174
 [INFO GPL-1002] Placed Cell Area              487.0460
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.5900 (cell_area / free_area)
