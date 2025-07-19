@@ -22,6 +22,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "options.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -1380,19 +1381,26 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
     }
   }
 
-  odb::dbWire* wire = net->getWire();
-  if (wire) {
-    if (sink_object != nullptr) {
-      drawPathSegment(net, sink_object, painter);
-    }
+  bool draw_flywires = painter.getOptions()->isFlywireHighlightOnly();
 
-    odb::dbWireShapeItr it;
-    it.begin(wire);
-    odb::dbShape shape;
-    while (it.next(shape)) {
-      painter.drawRect(shape.getBox());
+  if (!draw_flywires) {
+    odb::dbWire* wire = net->getWire();
+    if (wire) {
+      draw_flywires = false;
+      if (sink_object != nullptr) {
+        drawPathSegment(net, sink_object, painter);
+      }
+
+      odb::dbWireShapeItr it;
+      it.begin(wire);
+      odb::dbShape shape;
+      while (it.next(shape)) {
+        painter.drawRect(shape.getBox());
+      }
     }
-  } else if (!is_supply && !is_routed_special) {
+  }
+
+  if (draw_flywires && !is_supply && !is_routed_special) {
     std::set<odb::Point> driver_locs;
     std::set<odb::Point> sink_locs;
     for (auto inst_term : net->getITerms()) {
