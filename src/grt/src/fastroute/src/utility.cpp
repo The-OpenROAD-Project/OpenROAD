@@ -113,6 +113,12 @@ void FastRouteCore::ConvertToFull3DType2()
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
+  // First priority: NDR nets (lower is better, so NDR nets with priority 0 come first)
+  if (a.ndr_priority != b.ndr_priority) {
+    return a.ndr_priority < b.ndr_priority;
+  }
+
+  // Second priority: original sorting by length_per_pin, minX, and treeIndex
   return std::tie(a.length_per_pin, a.minX, a.treeIndex)
          < std::tie(b.length_per_pin, b.minX, b.treeIndex);
 }
@@ -134,7 +140,13 @@ void FastRouteCore::netpinOrderInc()
 
     const float length_per_pin = (float) totalLength / stree->num_terminals;
 
-    tree_order_pv_.push_back({netID, xmin, length_per_pin});
+    // Check if net has NDR
+    int ndr_priority = 1; // Default priority for non-NDR nets
+    if (nets_[netID]->getDbNet()->getNonDefaultRule() != nullptr) {
+      ndr_priority = 0; // Higher priority for NDR nets
+    }
+
+    tree_order_pv_.push_back({netID, xmin, length_per_pin, ndr_priority});
   }
 
   std::stable_sort(
