@@ -1057,6 +1057,7 @@ void Inspector::handleAction(QWidget* action)
   }
 
   if (new_selection && new_selection == selection_) {
+    reload();
     return;
   }
 
