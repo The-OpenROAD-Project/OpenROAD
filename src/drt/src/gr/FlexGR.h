@@ -910,7 +910,9 @@ class FlexGRWorker
   void initNet_addNet(std::unique_ptr<grNet>& in);
   void initNets_regionQuery();
   void initGridGraph();
- 
+  // Note that you need to update the parent/child relationship mannully for flexibility
+  inline grNode* addNodeToGrNet(grNet* net,
+    const Point& loc, const frLayerNum& lNum, frNodeTypeEnum type);
 
   // debug
   void initNets_printNets();

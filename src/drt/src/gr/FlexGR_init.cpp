@@ -412,7 +412,6 @@ void FlexGRWorker::init()
 
   initNets();
 }
-*/
 
 
 
@@ -683,6 +682,7 @@ Point FlexGRWorker::getBoundaryPinGCellNodeLoc(const Point& boundaryPinLoc)
   return gcellNodeLoc;
 }
 
+
 void FlexGRWorker::initNet_initRoot(grNet* net)
 {
   // set root
@@ -704,6 +704,7 @@ void FlexGRWorker::initNet_initRoot(grNet* net)
     std::cout << "Error: root should not be steiner\n";
   }
 }
+
 
 // based on topology, add / remove congestion map (in gridGraph)
 void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
@@ -774,6 +775,8 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
     }
   }
 }
+
+
 
 // initialize pinGCellNodes as well as removing overlapping pinGCellNodes
 void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
@@ -870,6 +873,8 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
     std::cout << "Error: pinGCellNodes should contain at least one element\n";
   }
 }
+*/
+
 
 // generate route and ext objs based on subnet tree node information
 void FlexGRWorker::initNet_initObjs(grNet* net)
