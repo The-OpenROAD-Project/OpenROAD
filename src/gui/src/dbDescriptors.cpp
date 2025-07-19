@@ -1605,14 +1605,17 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
     }
   }
   if (!net->getTracks().empty()) {
-    actions.push_back(Descriptor::Action{"Tracks", [this, gui, net]() {
-                                           if (tracks_nets_.count(net) == 0) {
+    if (tracks_nets_.count(net) == 0) {
+      actions.push_back(Descriptor::Action{"Show Tracks", [this, gui, net]() {
                                              gui->addNetTracks(net);
-                                           } else {
+                                             return makeSelected(net);
+                                           }});
+    } else {
+      actions.push_back(Descriptor::Action{"Hide Tracks", [this, gui, net]() {
                                              gui->removeNetTracks(net);
-                                           }
-                                           return makeSelected(net);
-                                         }});
+                                             return makeSelected(net);
+                                           }});
+    }
   }
   return actions;
 }
