@@ -87,6 +87,7 @@ class Options
   virtual bool isModuleView() const = 0;
 
   virtual bool isGCellGridVisible() const = 0;
+  virtual bool isFlywireHighlightOnly() const = 0;
 };
 
 }  // namespace gui

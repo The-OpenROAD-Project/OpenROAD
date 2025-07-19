@@ -243,6 +243,7 @@ class DisplayControls : public QDockWidget,
   bool isModuleView() const override;
 
   bool isGCellGridVisible() const override;
+  bool isFlywireHighlightOnly() const override;
 
   // API from dbNetworkObserver
   void postReadLiberty() override;
@@ -378,6 +379,7 @@ class DisplayControls : public QDockWidget,
     ModelRow module;
     ModelRow manufacturing_grid;
     ModelRow gcell_grid;
+    ModelRow flywires_only;
     ModelRow labels;
     ModelRow background;
   };
