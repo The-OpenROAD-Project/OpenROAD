@@ -32,6 +32,8 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 //  CLANG_TIDY_CONFIG  = override configuration file in kConfig.clang_tidy_file
 //  CACHE_DIR          = where to put the cached content; default ~/.cache
 //  CLANG_TIDY_JOBS    = Number of tasks to run in parallel.
+//  COMPILE_JSON       = where to find cmake compile commands;
+//                       default build/compile_commands.json
 
 // This file shall be c++17 self-contained; not using any re2 or absl niceties.
 #include <unistd.h>
@@ -282,7 +284,8 @@ class ClangTidyRunner
   // Given a work-queue in/out-file, process it. Using system() for portability.
   // Empties work_queue.
   void RunClangTidyOn(ContentAddressedStore& output_store,
-                      std::list<filepath_contenthash_t>* work_queue)
+                      std::list<filepath_contenthash_t>* work_queue,
+                      std::string_view compile_json_str)
   {
     if (work_queue->empty()) {
       return;
@@ -319,9 +322,10 @@ class ClangTidyRunner
         const std::string tmp_out = final_out.string() + uniquifier + ".tmp";
         // Putting the file to clang-tidy early in the command line so that
         // it is easy to find with `ps` or `top`.
-        const std::string command = clang_tidy_ + " '" + work.first.string()
-                                    + "'" + clang_tidy_args_ + "> '" + tmp_out
-                                    + "' 2>/dev/null";
+        const std::string command
+            = clang_tidy_ + " -p " + std::string(compile_json_str) + " '"
+              + work.first.string() + "'" + clang_tidy_args_ + "> '" + tmp_out
+              + "' 2>/dev/null";
         const int r = system(command.c_str());
 #ifdef WIFSIGNALED
         // NOLINTBEGIN
@@ -629,14 +633,15 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  auto compdb_ts = fs::last_write_time("compile_commands.json", ec);
+  std::string_view compile_json_str
+      = EnvWithFallback("COMPILE_JSON", "build/compile_commands.json");
+  auto compdb_ts = fs::last_write_time(compile_json_str, ec);
   if (ec.value() != 0) {
     compdb_ts = fs::last_write_time("compile_flags.txt", ec);
   }
   if (ec.value() != 0) {
-    std::cerr << "No compilation db compile_commands.json or compile_flags.txt "
-              << "found; create that first. For cmake projects, often simply\n"
-              << "\tln -s build/compile_commands.json .\n";
+    std::cerr << "No compilation db " << compile_json_str
+              << " found; create that first.\n";
     return EXIT_FAILURE;
   }
 
@@ -655,7 +660,7 @@ int main(int argc, char* argv[])
   auto work_list = cc_file_gatherer.BuildWorkList(build_env_latest_change);
 
   // Now the expensive part...
-  runner.RunClangTidyOn(store, &work_list);
+  runner.RunClangTidyOn(store, &work_list, compile_json_str);
 
   const std::string detailed_report = cache_prefix + "clang-tidy.out";
   const std::string summary = cache_prefix + "clang-tidy.summary";
