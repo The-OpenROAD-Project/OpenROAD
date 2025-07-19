@@ -358,7 +358,11 @@ frInst* UniqueInsts::getUnique(int idx) const
 
 frInst* UniqueInsts::getUnique(frInst* inst) const
 {
-  return inst_to_unique_.at(inst);
+  auto it = inst_to_unique_.find(inst);
+  if (it == inst_to_unique_.end()) {
+    return nullptr;
+  }
+  return it->second;
 }
 
 }  // namespace drt
