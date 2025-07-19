@@ -543,7 +543,7 @@ int Opendp::refine()
 
 bool Opendp::mapMove(Node* cell)
 {
-  const GridPt init = legalGridPt(cell, true);
+  const GridPt init = legalGridPt(cell, false);
   return mapMove(cell, init);
 }
 
@@ -632,9 +632,9 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
           + distChange(cell2, cell1->getLeft(), cell1->getBottom());
 
     if (dist_change < 0) {
-      const GridX grid_x1 = grid_->gridPaddedX(cell2);
+      const GridX grid_x1 = grid_->gridX(cell2);
       const GridY grid_y1 = grid_->gridSnapDownY(cell2);
-      const GridX grid_x2 = grid_->gridPaddedX(cell1);
+      const GridX grid_x2 = grid_->gridX(cell1);
       const GridY grid_y2 = grid_->gridSnapDownY(cell1);
 
       unplaceCell(cell1);
@@ -649,7 +649,7 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
 
 bool Opendp::refineMove(Node* cell)
 {
-  const GridPt grid_pt = legalGridPt(cell, true);
+  const GridPt grid_pt = legalGridPt(cell, false);
   const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
 
   if (pixel_pt.pixel) {
@@ -799,7 +799,7 @@ bool Opendp::canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const
     return false;
   }
 
-  const GridX x_end = bin_x + grid_->gridPaddedWidth(cell);
+  const GridX x_end = bin_x + grid_->gridWidth(cell);
   const GridY y_end
       = grid_->gridEndY(grid_->gridYToDbu(bin_y) + cell->getHeight());
 
@@ -910,7 +910,7 @@ bool Opendp::checkPixels(const Node* cell,
   }
   const auto& orient = grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite());
-  return drc_engine_->checkDRC(cell, x + padding_->padLeft(cell), y, orient);
+  return drc_engine_->checkDRC(cell, x, y, orient);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1115,7 +1115,7 @@ void Opendp::legalCellPos(dbInst* db_inst)
   const GridPt legal_grid_pt{grid_->gridX(DbuX{new_pos.x}),
                              grid_->gridSnapDownY(DbuY{new_pos.y})};
   // Transform position on real position
-  setGridPaddedLoc(&cell, legal_grid_pt.x, legal_grid_pt.y);
+  setGridLoc(&cell, legal_grid_pt.x, legal_grid_pt.y);
   // Set position of cell on db
   db_inst->setLocation(core_.xMin() + cell.getLeft().v,
                        core_.yMin() + cell.getBottom().v);
@@ -1187,9 +1187,9 @@ GridPt Opendp::legalGridPt(const Node* cell, const bool padded) const
   return GridPt(grid_->gridX(pt.x), grid_->gridSnapDownY(pt.y));
 }
 
-void Opendp::setGridPaddedLoc(Node* cell, const GridX x, const GridY y)
+void Opendp::setGridLoc(Node* cell, const GridX x, const GridY y)
 {
-  cell->setLeft(gridToDbu(x + padding_->padLeft(cell), grid_->getSiteWidth()));
+  cell->setLeft(gridToDbu(x, grid_->getSiteWidth()));
   cell->setBottom(grid_->gridYToDbu(y));
 }
 void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
@@ -1197,8 +1197,8 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   const DbuX original_x = cell->getLeft();
   const DbuY original_y = cell->getBottom();
   const bool was_placed = cell->isPlaced();
-  grid_->paintPixel(cell, x, y);
-  setGridPaddedLoc(cell, x, y);
+  setGridLoc(cell, x, y);
+  grid_->paintPixel(cell);
   cell->setPlaced(true);
   cell->setOrient(grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite()));

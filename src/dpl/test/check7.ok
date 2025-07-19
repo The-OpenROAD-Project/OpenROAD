@@ -6,7 +6,7 @@
 [INFO ODB-0131]     Created 2 components and 11 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 4 connections.
 [INFO ODB-0133]     Created 2 nets and 0 connections.
-[WARNING DPL-0005] Overlap check failed (1).
- block1 (BLOCK1) overlaps _277_ (BUF_X1)
+[WARNING DPL-0011] Padding check failed (1).
+ block1
 [ERROR DPL-0033] detailed placement checks failed.
 DPL-0033

@@ -14,6 +14,7 @@ class dbOrientType;
 namespace dpl {
 class Grid;
 class Node;
+class Padding;
 
 struct EdgeSpacingEntry
 {
@@ -33,7 +34,10 @@ class PlacementDRC
 {
  public:
   // Constructor
-  PlacementDRC(Grid* grid, odb::dbTech* tech);
+  PlacementDRC(Grid* grid,
+               odb::dbTech* tech,
+               Padding* padding,
+               bool disallow_one_site_gap);
   bool checkEdgeSpacing(const Node* cell) const;
   // Check edge spacing for a cell at a given location and orientation
   bool checkEdgeSpacing(const Node* cell,
@@ -42,6 +46,13 @@ class PlacementDRC
                         const odb::dbOrientType& orient) const;
   bool checkBlockedLayers(const Node* cell) const;
   bool checkBlockedLayers(const Node* cell, GridX x, GridY y) const;
+  // Check shared padding spacing conflicts
+  bool checkPadding(const Node* cell) const;
+  bool checkPadding(const Node* cell, GridX x, GridY y) const;
+
+  // Check one site gap
+  bool checkOneSiteGap(const Node* cell) const;
+  bool checkOneSiteGap(const Node* cell, GridX x, GridY y) const;
 
   // aggregate function to check against all DRC types
   bool checkDRC(const Node* cell) const;
@@ -56,15 +67,18 @@ class PlacementDRC
 
  private:
   // Member variables
-  Grid* grid_{nullptr};  // Pointer to the grid for placement
+  Grid* grid_{nullptr};        // Pointer to the grid for placement
+  Padding* padding_{nullptr};  // Pointer to the padding
   std::unordered_map<std::string, int> edge_types_indices_;
   std::vector<std::vector<EdgeSpacingEntry>>
       edge_spacing_table_;  // LEF58_CELLEDGESPACINGTABLE between edge type
                             // pairs [from_idx][to_idx]
+  bool disallow_one_site_gap_{false};
 
   // Helper functions
   DbuX gridToDbu(GridX grid_x, DbuX site_width) const;
   void makeCellEdgeSpacingTable(odb::dbTech* tech);
+  bool hasPaddingConflict(const Node* cell, const Node* padding_cell) const;
 };
 
 }  // namespace dpl

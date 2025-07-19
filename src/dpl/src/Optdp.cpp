@@ -84,6 +84,7 @@ void Opendp::improvePlacement(const int seed,
   // a bug in my code somewhere.
   ShiftLegalizer lg;
   lg.legalize(mgr);
+  setFixedGridCells();
 
   // Detailed improvement.  Runs through a number of different
   // optimizations aimed at wirelength improvement.  The last
