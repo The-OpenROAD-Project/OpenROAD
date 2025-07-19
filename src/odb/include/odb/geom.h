@@ -327,6 +327,10 @@ class Polygon
   // returns a corrected Polygon with a closed form and counter-clockwise points
   Polygon bloat(int margin) const;
 
+  // Merge a collection of vectors
+  static std::vector<Polygon> merge(const std::vector<Polygon>& polys);
+  static std::vector<Polygon> merge(const std::vector<Rect>& rects);
+
   // Returns the geometric difference between this polygon "a" and polygon "b"
   // results in a vector of polygons.
   std::vector<Polygon> difference(Polygon b) const;

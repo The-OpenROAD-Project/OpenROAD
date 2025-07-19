@@ -48,6 +48,47 @@ Polygon Polygon::bloat(int margin) const
   return Polygon(new_coord);
 }
 
+std::vector<Polygon> Polygon::merge(const std::vector<Rect>& rects)
+{
+  std::vector<Polygon> polys(rects.begin(), rects.end());
+  return Polygon::merge(polys);
+}
+
+std::vector<Polygon> Polygon::merge(const std::vector<Polygon>& polys)
+{
+  // convert to native boost types to avoid needed a mutable access
+  // to odb::Polygon
+  using BoostPolygon = boost::polygon::polygon_data<int>;
+  using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator+;
+
+  // add to polygon set
+  BoostPolygonSet poly_in_set;
+
+  for (const Polygon& poly : polys) {
+    // convert to boost polygon
+    const BoostPolygon polygon_in(poly.points_.begin(), poly.points_.end());
+    poly_in_set += polygon_in;
+  }
+
+  // extract new polygons
+  std::vector<BoostPolygon> output_polygons;
+  poly_in_set.get(output_polygons);
+
+  std::vector<Polygon> out_polys;
+  for (const BoostPolygon& out_poly : output_polygons) {
+    std::vector<odb::Point> new_coord;
+    new_coord.reserve(out_poly.coords_.size());
+    for (const auto& pt : out_poly.coords_) {
+      new_coord.emplace_back(pt.x(), pt.y());
+    }
+    out_polys.emplace_back(new_coord);
+  }
+
+  return out_polys;
+}
+
 std::vector<Polygon> Polygon::difference(Polygon b) const
 {
   // convert to native boost types to avoid needed a mutable access
