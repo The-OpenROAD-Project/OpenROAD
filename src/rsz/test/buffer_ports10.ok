@@ -58,6 +58,4 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO RSZ-0215] Buffering output port out1.
 [INFO RSZ-0215] Buffering output port out2.
 [INFO RSZ-0028] Inserted 2 BUF_X1 output buffers.
-Differences found at line 84.
-    - input1 BUF_X16 + SOURCE TIMING + PLACED ( 20140 22400 ) N ;
-    - input1 BUF_X1 + SOURCE TIMING + PLACED ( 20140 22400 ) N ;
+No differences found.
