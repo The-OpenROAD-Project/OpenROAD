@@ -16,6 +16,7 @@ add_library(db
     dbITermItr.cpp 
     dbInst.cpp 
     dbInstHdr.cpp 
+    dbScanInstItr.cpp
     dbLib.cpp 
     dbMPin.cpp 
     dbMPinItr.cpp 
