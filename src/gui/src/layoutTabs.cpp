@@ -291,7 +291,7 @@ void LayoutTabs::removeRouteGuides(odb::dbNet* net)
 void LayoutTabs::removeNetTracks(odb::dbNet* net)
 {
   if (net_tracks_.erase(net) > 0) {
-    emit clearNetTracks();
+    emit netTracksChanged();
     fullRepaint();
   }
 }
@@ -318,7 +318,7 @@ void LayoutTabs::clearNetTracks()
 {
   if (!net_tracks_.empty()) {
     net_tracks_.clear();
-    emit clearNetTracks();
+    emit netTracksChanged();
     fullRepaint();
   }
 }

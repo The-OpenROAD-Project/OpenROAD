@@ -184,14 +184,18 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
         addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
       });
 
-  connect(
-      viewers_, &LayoutTabs::focusNetsChanged, inspector_, &Inspector::reload);
+  connect(viewers_,
+          &LayoutTabs::focusNetsChanged,
+          inspector_,
+          &Inspector::loadActions);
   connect(viewers_,
           &LayoutTabs::routeGuidesChanged,
           inspector_,
-          &Inspector::reload);
-  connect(
-      viewers_, &LayoutTabs::netTracksChanged, inspector_, &Inspector::reload);
+          &Inspector::loadActions);
+  connect(viewers_,
+          &LayoutTabs::netTracksChanged,
+          inspector_,
+          &Inspector::loadActions);
 
   connect(
       this, &MainWindow::selectionChanged, viewers_, &LayoutTabs::fullRepaint);
@@ -232,14 +236,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(inspector_, &Inspector::focus, viewers_, &LayoutTabs::selectionFocus);
   connect(
       drc_viewer_, &DRCWidget::focus, viewers_, &LayoutTabs::selectionFocus);
-  connect(this,
-          &MainWindow::highlightChanged,
-          inspector_,
-          &Inspector::highlightChanged);
+  connect(
+      this, &MainWindow::highlightChanged, inspector_, &Inspector::loadActions);
   connect(viewers_,
           &LayoutTabs::focusNetsChanged,
           inspector_,
-          &Inspector::focusNetsChanged);
+          &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
           [=](const QList<const Selected*>& selected) {
