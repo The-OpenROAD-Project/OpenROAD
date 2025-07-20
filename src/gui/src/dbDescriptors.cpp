@@ -1499,9 +1499,12 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
         painter.restoreState();
 
         // draw outlines of guides
+        painter.saveState();
+        painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
         for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
           painter.drawPolygon(outline);
         }
+        painter.restoreState();
       }
     }
   }
