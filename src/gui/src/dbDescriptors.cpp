@@ -1657,7 +1657,7 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
         painter.saveState();
         Painter::Color highlight_color = painter.getPenColor();
         highlight_color.a = 255;
-        painter.setPen(highlight_color, true, 4);
+        painter.setPen(highlight_color, true, 2);
 
         DbTargets sources;
         DbTargets sinks;
