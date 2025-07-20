@@ -208,6 +208,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
         s.push(blockages[i]);  // new interval.
       } else {
         if (top.getPaddedXMax() < blockages[i].getPaddedXMax()) {
+          top.pad_right = blockages[i].pad_right;
           top.x_max = blockages[i].getXMax();  // extend interval.
         }
         s.pop();      // remove old.
@@ -1379,6 +1380,7 @@ bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
     clearMoveList();
     return true;
   }
+  rejectMove();  // shift left failed, undo changes and try shift right
   if (shiftRightHelper(
           cell,
           cell->getLeft()
@@ -1391,6 +1393,7 @@ bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
     clearMoveList();
     return true;
   }
+  rejectMove();
   return false;
 }
 
