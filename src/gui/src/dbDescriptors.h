@@ -222,6 +222,7 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   odb::dbObject* getSink(const std::any& object) const;
 
   static const int kMaxIterms = 10000;
+  static constexpr double kMinGuidePixelWidth = 10.0;
 };
 
 class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
