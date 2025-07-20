@@ -48,6 +48,12 @@ Polygon Polygon::bloat(int margin) const
   return Polygon(new_coord);
 }
 
+std::vector<Polygon> Polygon::merge(const std::vector<Oct>& octs)
+{
+  std::vector<Polygon> polys(octs.begin(), octs.end());
+  return Polygon::merge(polys);
+}
+
 std::vector<Polygon> Polygon::merge(const std::vector<Rect>& rects)
 {
   std::vector<Polygon> polys(rects.begin(), rects.end());
