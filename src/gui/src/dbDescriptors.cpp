@@ -1598,24 +1598,32 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
                        }});
   }
   if (!net->getGuides().empty()) {
-    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, net]() {
-                                           if (guide_nets_.count(net) == 0) {
-                                             gui->addRouteGuides(net);
-                                           } else {
-                                             gui->removeRouteGuides(net);
-                                           }
-                                           return makeSelected(net);
-                                         }});
+    if (guide_nets_.count(net) == 0) {
+      actions.push_back(
+          Descriptor::Action{"Show Route Guides", [this, gui, net]() {
+                               gui->addRouteGuides(net);
+                               return makeSelected(net);
+                             }});
+    } else {
+      actions.push_back(
+          Descriptor::Action{"Hide Route Guides", [this, gui, net]() {
+                               gui->removeRouteGuides(net);
+                               return makeSelected(net);
+                             }});
+    }
   }
   if (!net->getTracks().empty()) {
-    actions.push_back(Descriptor::Action{"Tracks", [this, gui, net]() {
-                                           if (tracks_nets_.count(net) == 0) {
+    if (tracks_nets_.count(net) == 0) {
+      actions.push_back(Descriptor::Action{"Show Tracks", [this, gui, net]() {
                                              gui->addNetTracks(net);
-                                           } else {
+                                             return makeSelected(net);
+                                           }});
+    } else {
+      actions.push_back(Descriptor::Action{"Hide Tracks", [this, gui, net]() {
                                              gui->removeNetTracks(net);
-                                           }
-                                           return makeSelected(net);
-                                         }});
+                                             return makeSelected(net);
+                                           }});
+    }
   }
   return actions;
 }

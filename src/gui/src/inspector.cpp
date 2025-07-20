@@ -836,16 +836,6 @@ void Inspector::unsetReadOnly()
   reload();
 }
 
-void Inspector::highlightChanged()
-{
-  loadActions();
-}
-
-void Inspector::focusNetsChanged()
-{
-  loadActions();
-}
-
 void Inspector::loadActions()
 {
   // remove action buttons and ensure delete
@@ -1057,6 +1047,7 @@ void Inspector::handleAction(QWidget* action)
   }
 
   if (new_selection && new_selection == selection_) {
+    loadActions();
     return;
   }
 

@@ -76,6 +76,8 @@ class LayoutTabs : public QTabWidget
   void addSelected(const SelectionSet& selected);
   void addRuler(int x0, int y0, int x1, int y1);
   void focusNetsChanged();
+  void routeGuidesChanged();
+  void netTracksChanged();
 
  public slots:
   void tabChange(int index);
