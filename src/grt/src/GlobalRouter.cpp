@@ -1269,18 +1269,18 @@ void GlobalRouter::computeTrackConsumption(
       int ndr_width = layer_rule->getWidth();
       int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
-      // int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      int consumption = std::ceil((float) ndr_pitch / default_pitch);
       // int consumption = std::round((float) ndr_pitch / default_pitch);
-      int consumption = ndr_pitch / default_pitch;
-      consumption = (consumption == 0) ? 1 : consumption;
+      // int consumption = ndr_pitch / default_pitch;
+      // consumption = (consumption == 0) ? 1 : consumption;
       
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
       track_consumption = std::max(track_consumption, consumption);
 
-      std::cout << "Net: " << net->getConstName() << " NDR consumption (real/int): " 
-          << (float) ndr_pitch / default_pitch << "/" << consumption 
-          << " track consumption: " << track_consumption << std::endl;
+      logger_->report("Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}", 
+          net->getConstName(), layer_rule->getLayer()->getConstName(), 
+          (float) ndr_pitch / default_pitch, consumption, track_consumption);
     }
   }
 }
@@ -4880,6 +4880,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         = findRouting(dirty_nets, getMinRoutingLayer(), getMaxRoutingLayer());
     mergeResults(new_route);
 
+    logger_->report("DEBUG: 2D Overflow: {}", fastroute_->has2Doverflow());
+
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
@@ -4895,6 +4897,14 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         // The nets that cross the congestion area are obtained and added to
         // the set
         fastroute_->getCongestionNets(congestion_nets);
+
+        // ==> ADD THIS DEBUGGING PRINT <==
+        logger_->report("DEBUG: Nets selected for rerouting in this iteration:");
+        for (odb::dbNet* net : congestion_nets) {
+            logger_->report(" - {}", net->getConstName());
+        }
+        // ==> END OF DEBUGGING PRINT <==
+
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
