@@ -856,6 +856,9 @@ void io::Parser::checkPins()
   bool hasPolys = false;
   // Check BTerms on grid
   for (const auto& bTerm : getBlock()->getTerms()) {
+    if (!bTerm->hasNet() || bTerm->getNet()->isSpecial()) {
+      continue;
+    }
     foundTracks = false;
     foundCenterTracks = false;
     hasPolys = false;
