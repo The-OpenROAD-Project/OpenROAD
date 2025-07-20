@@ -156,7 +156,6 @@ std::unique_ptr<Element> RamGen::make_byte(
 
     // vector<dbNet*> select_b_nets = decoder_selects(prefix, read_ports);
 
-    auto clock_b_net = makeNet(prefix, "clock_b");
     auto gclock_net = makeNet(prefix, "gclock");
     auto we0_net = makeNet(prefix, "we0");
 
@@ -458,6 +457,7 @@ void RamGen::generate(const int bytes_per_word,
             word_num /= 2;
         }
     }
+    Layout input_buffer_layer(odb::horizontal); //input buffer layer
 
     auto inv_layer = std::make_unique<Layout>(odb::vertical); //inverter column
     vector<dbNet*> word_decoder_nets;
@@ -531,16 +531,15 @@ void RamGen::generate(const int bytes_per_word,
 
         }
 
-	auto input_buffer_layer = std::make_unique<Layout>(odb::horizontal); //input buffer layer
         for (int bit = 0; bit < 8; ++bit) {
-           makeInst(input_buffer_layer.get(),
+           makeInst(&input_buffer_layer,
                      "buffer",
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
             { {"A", D[bit]}, {"X", D_nets[bit]} });
 	}
 
-	input_buffer_layer->position(odb::Point(0,10880), 7900); //tester for offset for buffer
+//	input_buffer_layer.position(odb::Point(0,0), 7900); //tester for offset for buffer
 	//adds input buffer layer to column
         //column->addElement(std::make_unique<Element>(std::move(input_buffer_layer)));
 
@@ -572,7 +571,17 @@ void RamGen::generate(const int bytes_per_word,
     layout.addElement(std::make_unique<Element>(std::move(inv_layer)));
 
 
-   layout.position(odb::Point(0, 0));
+  // layout.position(odb::Point(0, 0));
+
+   GridLayout gridTest(odb::vertical);
+
+
+   gridTest.setCellWidth(7820);
+   gridTest.addLayout(std::make_unique<Layout> (std::move(layout)));
+   gridTest.addLayout(std::make_unique<Layout> (std::move(input_buffer_layer)));
+
+
+   gridTest.placeGrid (odb::Point (0,0));
 }
 
 }  // namespace ram

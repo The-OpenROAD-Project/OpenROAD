@@ -77,9 +77,9 @@ class GridLayout {
  public: 
   GridLayout(odb::Orientation2D orientation);
 
-  void addTrack(std::unique_ptr<Layout> track);
+  void addLayout(std::unique_ptr<Layout> track);
 
-  odb::Rect position(odb::Point origin);
+  odb::Rect placeGrid(odb::Point origin);
 
   int getCellWidth();
 
@@ -88,7 +88,7 @@ class GridLayout {
  private:
   std::vector<std::unique_ptr<Layout>> grid_;
   int cell_width_;
-  odb::Orientation2D orientation_;
+  odb::Orientation2D orientation_; //direction in which layout is built
 
 
 };

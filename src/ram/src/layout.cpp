@@ -107,8 +107,21 @@ void Layout::addElement(std::unique_ptr<Element> element)
 
 GridLayout::GridLayout(odb::Orientation2D orientation) : orientation_ (orientation){}
 
-void GridLayout::addTrack(std::unique_ptr<Layout> track){
+void GridLayout::addLayout(std::unique_ptr<Layout> track){
   grid_.push_back(std::move(track));
+}
+
+Rect GridLayout::placeGrid(Point origin) {
+ Rect bbox (origin, origin);
+
+ 
+ auto bounds =  grid_[0]->position(origin);
+ bbox.merge(bounds);
+ origin = bbox.ul();
+ grid_[1]->position(origin, cell_width_);
+
+  return bbox; 
+
 }
 
 int GridLayout::getCellWidth() {
