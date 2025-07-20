@@ -914,6 +914,19 @@ class FlexGRWorker
   inline grNode* addNodeToGrNet(grNet* net,
     const Point& loc, const frLayerNum& lNum, frNodeTypeEnum type);
 
+  inline void addSegmentToGrNet(grNet* net,
+    grNode* child, grNode* parent,
+    const Point& bp, const Point& ep,
+    const frLayerNum& lNum,
+    bool isExt = false);
+
+  inline void addViaToGrNet(grNet* net,
+    grNode* child, grNode* parent,
+    const Point& loc,
+    const frLayerNum& beginLayerNum,
+    const frLayerNum& endLayerNum,
+    bool isExt = false);
+
   // debug
   void initNets_printNets();
   void initNets_printNet(grNet* net);
