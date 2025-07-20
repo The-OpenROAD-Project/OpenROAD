@@ -1114,9 +1114,9 @@ void DbNetDescriptor::findSourcesAndSinksInGraph(
   sink_nodes.insert(sinks_nodes.begin(), sinks_nodes.end());
 }
 
-void DbNetDescriptor::drawPathSegment(odb::dbNet* net,
-                                      const odb::dbObject* sink,
-                                      Painter& painter) const
+void DbNetDescriptor::drawPathSegmentWithGraph(odb::dbNet* net,
+                                               const odb::dbObject* sink,
+                                               Painter& painter) const
 {
   odb::dbWireGraph graph;
   graph.decode(net->getWire());
@@ -1482,7 +1482,7 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
     if (wire) {
       draw_flywires = false;
       if (sink_object != nullptr) {
-        drawPathSegment(net, sink_object, painter);
+        drawPathSegmentWithGraph(net, sink_object, painter);
       }
 
       odb::dbWireShapeItr it;
