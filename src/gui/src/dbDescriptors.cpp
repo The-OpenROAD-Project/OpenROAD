@@ -1468,7 +1468,8 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
         break;
       }
     }
-    lines.emplace(p0, p1);
+    lines.emplace(p0, center);
+    lines.emplace(center, p1);
 
     if (guide->isConnectedToTerm()) {
       std::vector<odb::Point> anchors = {p0, center, p1};
