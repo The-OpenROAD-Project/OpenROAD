@@ -952,6 +952,9 @@ void io::Parser::initRPin()
 void io::Parser::initRPin_rpin()
 {
   for (auto& net : getBlock()->getNets()) {
+    if (net->isConnectedByAbutment()) {
+      continue;
+    }
     // instTerm
     for (auto& instTerm : net->getInstTerms()) {
       auto inst = instTerm->getInst();
