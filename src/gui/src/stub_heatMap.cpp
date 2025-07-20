@@ -205,7 +205,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
 std::string HeatMapRenderer::getSettingsGroupName()
 {
-  return groupname_prefix_;
+  return kGroupnamePrefix;
 }
 
 Renderer::Settings HeatMapRenderer::getSettings()

@@ -9,6 +9,7 @@
 
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
+#include "global.h"
 
 namespace drt {
 class FlexWavefrontGrid
@@ -99,8 +100,8 @@ class FlexWavefrontGrid
     backTraceBuffer_ |= newBS;
     return retBS;
   }
-  void setSrcTaperBox(const frBox3D* b) { srcTaperBox = b; }
-  const frBox3D* getSrcTaperBox() const { return srcTaperBox; }
+  void setSrcTaperBox(const frBox3D* b) { srcTaperBox_ = b; }
+  const frBox3D* getSrcTaperBox() const { return srcTaperBox_; }
   void setId(const frUInt4 in) { id_ = in; }
   void setParentId(const frUInt4 in) { parent_id_ = in; }
 
@@ -114,7 +115,7 @@ class FlexWavefrontGrid
   bool prevViaUp_;
   frCoord tLength_;  // length since last turn
   std::bitset<WAVEFRONTBITSIZE> backTraceBuffer_;
-  const frBox3D* srcTaperBox = nullptr;
+  const frBox3D* srcTaperBox_ = nullptr;
   frUInt4 id_{0};
   frUInt4 parent_id_{0};
 };

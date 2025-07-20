@@ -18,12 +18,12 @@ namespace gui {
 
 enum class GlobalConnectField
 {
-  Instance,
-  Pin,
-  Net,
-  Region,
-  Run,
-  Remove
+  kInstance,
+  kPin,
+  kNet,
+  kRegion,
+  kRun,
+  kRemove
 };
 
 static int toValue(GlobalConnectField f)
@@ -82,19 +82,19 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
 
   layout_->addWidget(new QLabel("Instance pattern", this),
                      0,
-                     toValue(GlobalConnectField::Instance),
+                     toValue(GlobalConnectField::kInstance),
                      Qt::AlignCenter);
   layout_->addWidget(new QLabel("Pin pattern", this),
                      0,
-                     toValue(GlobalConnectField::Pin),
+                     toValue(GlobalConnectField::kPin),
                      Qt::AlignCenter);
   layout_->addWidget(new QLabel("Net", this),
                      0,
-                     toValue(GlobalConnectField::Net),
+                     toValue(GlobalConnectField::kNet),
                      Qt::AlignCenter);
   layout_->addWidget(new QLabel("Region", this),
                      0,
-                     toValue(GlobalConnectField::Region),
+                     toValue(GlobalConnectField::kRegion),
                      Qt::AlignCenter);
   for (auto* rule : block_->getGlobalConnects()) {
     addRule(rule);
@@ -118,16 +118,18 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   const int row_idx = rules_.size() + 1;
   layout_->addWidget(inst_pattern_,
                      row_idx,
-                     toValue(GlobalConnectField::Instance),
+                     toValue(GlobalConnectField::kInstance),
+                     Qt::AlignCenter);
+  layout_->addWidget(pin_pattern_,
+                     row_idx,
+                     toValue(GlobalConnectField::kPin),
                      Qt::AlignCenter);
   layout_->addWidget(
-      pin_pattern_, row_idx, toValue(GlobalConnectField::Pin), Qt::AlignCenter);
+      net_, row_idx, toValue(GlobalConnectField::kNet), Qt::AlignCenter);
   layout_->addWidget(
-      net_, row_idx, toValue(GlobalConnectField::Net), Qt::AlignCenter);
+      region_, row_idx, toValue(GlobalConnectField::kRegion), Qt::AlignCenter);
   layout_->addWidget(
-      region_, row_idx, toValue(GlobalConnectField::Region), Qt::AlignCenter);
-  layout_->addWidget(
-      add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
+      add_, row_idx, toValue(GlobalConnectField::kRun), Qt::AlignCenter);
 
   connect(this,
           &GlobalConnectDialog::connectionsMade,
@@ -197,20 +199,20 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.inst_pattern->setText(QString::fromStdString(gc->getInstPattern()));
   layout_->addWidget(widgets.inst_pattern,
                      row_idx,
-                     toValue(GlobalConnectField::Instance),
+                     toValue(GlobalConnectField::kInstance),
                      Qt::AlignCenter);
   widgets.pin_pattern = new QLineEdit(this);
   setup_line(widgets.pin_pattern);
   widgets.pin_pattern->setText(QString::fromStdString(gc->getPinPattern()));
   layout_->addWidget(widgets.pin_pattern,
                      row_idx,
-                     toValue(GlobalConnectField::Pin),
+                     toValue(GlobalConnectField::kPin),
                      Qt::AlignCenter);
   widgets.net = new QLineEdit(this);
   setup_line(widgets.net);
   widgets.net->setText(QString::fromStdString(gc->getNet()->getName()));
   layout_->addWidget(
-      widgets.net, row_idx, toValue(GlobalConnectField::Net), Qt::AlignCenter);
+      widgets.net, row_idx, toValue(GlobalConnectField::kNet), Qt::AlignCenter);
 
   widgets.region = new QLineEdit(this);
   odb::dbRegion* dbregion = gc->getRegion();
@@ -222,7 +224,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   setup_line(widgets.region);
   layout_->addWidget(widgets.region,
                      row_idx,
-                     toValue(GlobalConnectField::Region),
+                     toValue(GlobalConnectField::kRegion),
                      Qt::AlignCenter);
 
   widgets.run = new QPushButton(this);
@@ -232,7 +234,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.run->setDefault(false);
   connect(widgets.run, &QPushButton::pressed, [this, gc]() { runRule(gc); });
   layout_->addWidget(
-      widgets.run, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
+      widgets.run, row_idx, toValue(GlobalConnectField::kRun), Qt::AlignCenter);
 
   widgets.remove = new QPushButton(this);
   widgets.remove->setIcon(QIcon(":/delete.png"));
@@ -243,7 +245,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
       widgets.remove, &QPushButton::pressed, [this, gc]() { deleteRule(gc); });
   layout_->addWidget(widgets.remove,
                      row_idx,
-                     toValue(GlobalConnectField::Remove),
+                     toValue(GlobalConnectField::kRemove),
                      Qt::AlignCenter);
 
   adjustSize();
@@ -273,16 +275,18 @@ void GlobalConnectDialog::makeRule()
   const int row_idx = rules_.size() + 1;
   layout_->addWidget(inst_pattern_,
                      row_idx,
-                     toValue(GlobalConnectField::Instance),
+                     toValue(GlobalConnectField::kInstance),
+                     Qt::AlignCenter);
+  layout_->addWidget(pin_pattern_,
+                     row_idx,
+                     toValue(GlobalConnectField::kPin),
                      Qt::AlignCenter);
   layout_->addWidget(
-      pin_pattern_, row_idx, toValue(GlobalConnectField::Pin), Qt::AlignCenter);
+      net_, row_idx, toValue(GlobalConnectField::kNet), Qt::AlignCenter);
   layout_->addWidget(
-      net_, row_idx, toValue(GlobalConnectField::Net), Qt::AlignCenter);
+      region_, row_idx, toValue(GlobalConnectField::kRegion), Qt::AlignCenter);
   layout_->addWidget(
-      region_, row_idx, toValue(GlobalConnectField::Region), Qt::AlignCenter);
-  layout_->addWidget(
-      add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
+      add_, row_idx, toValue(GlobalConnectField::kRun), Qt::AlignCenter);
 
   inst_pattern_->clear();
   pin_pattern_->clear();

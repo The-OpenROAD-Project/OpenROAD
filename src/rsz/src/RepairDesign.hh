@@ -93,7 +93,6 @@ class RepairDesign : dbStaState
 
   void checkDriverArcSlew(const Corner* corner,
                           const Instance* inst,
-                          const Edge* edge,
                           const TimingArc* arc,
                           float load_cap,
                           float limit,

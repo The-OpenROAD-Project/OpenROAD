@@ -25,10 +25,10 @@ namespace par {
 // Define the partitioning algorithm
 enum class PartitionType
 {
-  INIT_RANDOM,
-  INIT_RANDOM_VILE,
-  INIT_VILE,
-  INIT_DIRECT_ILP
+  kInitRandom,
+  kInitRandomVile,
+  kInitVile,
+  kInitDirectIlp
 };
 
 class Partitioner;

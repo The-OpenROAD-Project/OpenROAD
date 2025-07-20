@@ -198,15 +198,15 @@ class Verilog2db
   std::map<std::string, int> src_file_id_;
   // We have to store dont_touch instances and apply the attribute after
   // creating iterms; as iterms can't be added to a dont_touch inst
-  std::vector<dbInst*> dont_touch_insts;
+  std::vector<dbInst*> dont_touch_insts_;
   bool hierarchy_ = false;
   bool omit_filename_prop_ = false;
-  static const std::regex line_info_re;
+  static const std::regex kLineInfoRe;
   std::vector<ConcreteCell*> unused_cells_;
 };
 
 // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
-const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
+const std::regex Verilog2db::kLineInfoRe("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
 bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
@@ -291,7 +291,7 @@ void Verilog2db::makeDbNetlist()
   if (hierarchy_) {
     makeVModNets(inst_pairs);
   }
-  for (auto inst : dont_touch_insts) {
+  for (auto inst : dont_touch_insts_) {
     inst->setDoNotTouch(true);
   }
 }
@@ -332,7 +332,7 @@ void Verilog2db::storeLineInfo(const std::string& attribute, dbInst* db_inst)
 
   std::smatch match;
 
-  if (std::regex_match(attribute, match, line_info_re)) {
+  if (std::regex_match(attribute, match, kLineInfoRe)) {
     const std::string file_name = match[1];
     const auto iter = src_file_id_.find(file_name);
     int file_id;
@@ -582,7 +582,7 @@ void Verilog2db::makeChildInsts(Instance* inst,
       const auto dont_touch = network_->getAttribute(child, "dont_touch");
       if (!dont_touch.empty()) {
         if (std::stoi(dont_touch)) {
-          dont_touch_insts.push_back(db_inst);
+          dont_touch_insts_.push_back(db_inst);
         }
       }
 
@@ -798,9 +798,9 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
   dbModule* parent_module = mod_inst->getParent();
   dbModule* child_module = mod_inst->getMaster();
 
-  std::unique_ptr<InstancePinIterator> pinIter{network_->pinIterator(inst)};
-  while (pinIter->hasNext()) {
-    Pin* inst_pin = pinIter->next();
+  std::unique_ptr<InstancePinIterator> pin_iter{network_->pinIterator(inst)};
+  while (pin_iter->hasNext()) {
+    Pin* inst_pin = pin_iter->next();
     Net* inst_pin_net = network_->net(inst_pin);
 
     if (!inst_pin_net) {
@@ -990,9 +990,9 @@ dbMaster* Verilog2db::getMaster(Cell* cell)
 void Verilog2db::makeModNets(Instance* inst)
 {
   dbModule* module = block_->getTopModule();
-  std::unique_ptr<InstancePinIterator> pinIter{network_->pinIterator(inst)};
-  while (pinIter->hasNext()) {
-    Pin* inst_pin = pinIter->next();
+  std::unique_ptr<InstancePinIterator> pin_iter{network_->pinIterator(inst)};
+  while (pin_iter->hasNext()) {
+    Pin* inst_pin = pin_iter->next();
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -1047,11 +1047,11 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
                                     bool link_make_black_boxes)
 {
   // Collect all unused modules
-  std::unique_ptr<sta::LibraryIterator> libraryIterator{
+  std::unique_ptr<sta::LibraryIterator> library_iterator{
       network_->libraryIterator()};
-  while (libraryIterator->hasNext()) {
+  while (library_iterator->hasNext()) {
     sta::ConcreteLibrary* lib
-        = (sta::ConcreteLibrary*) (libraryIterator->next());
+        = (sta::ConcreteLibrary*) (library_iterator->next());
     std::unique_ptr<sta::ConcreteLibraryCellIterator> lib_cell_iter{
         lib->cellIterator()};
     while (lib_cell_iter->hasNext()) {
@@ -1146,7 +1146,7 @@ void Verilog2db::makeUnusedDbNetlist()
   if (hierarchy_) {
     makeVModNets(inst_pairs);
   }
-  for (auto inst : dont_touch_insts) {
+  for (auto inst : dont_touch_insts_) {
     inst->setDoNotTouch(true);
   }
 }

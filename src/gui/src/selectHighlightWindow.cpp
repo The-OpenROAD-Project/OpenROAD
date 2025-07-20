@@ -129,7 +129,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   }
   if (role == Qt::BackgroundRole && index.column() == 3) {
     auto highlight_color
-        = Painter::highlightColors[table_data_[index.row()].first];
+        = Painter::kHighlightColors[table_data_[index.row()].first];
     return QColor(highlight_color.r,
                   highlight_color.g,
                   highlight_color.b,

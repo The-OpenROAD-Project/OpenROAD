@@ -30,6 +30,7 @@ or_integration_tests(
     add_constraint_error7
     add_constraint_error8
     add_constraint_error9
+    add_constraint_error10
     annealing1
     annealing2
     annealing3

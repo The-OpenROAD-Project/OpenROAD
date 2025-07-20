@@ -1,7 +1,7 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: ten_cells
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
-[WARNING DPL-0005] Overlap check failed (1).
- _285_ (NOR2_X1) overlaps _284_ (NOR2_X1)
+[WARNING DPL-0011] Padding check failed (1).
+ _285_
 [ERROR DPL-0033] detailed placement checks failed.
 DPL-0033

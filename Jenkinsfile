@@ -162,31 +162,6 @@ def getParallelTests(String image) {
             }
         },
 
-        'Build with Bazel': {
-            node {
-                withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: image) {
-                    stage('Setup Bazel Build') {
-                        echo "Build with Bazel";
-                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                        checkout scm;
-                    }
-                    stage('Bazel Build') {
-                        timeout(time: 120, unit: 'MINUTES') {
-                            sh label: 'Bazel Build', script: '''
-                                bazel test \
-                                --keep_going \
-                                --show_timestamps \
-                                --test_output=errors \
-                                --curses=no \
-                                --force_pic \
-                                ...
-                                ''';
-                        }
-                    }
-                }
-            }
-        },
-
         'Check message IDs': {
             dir('src') {
                 sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';
@@ -274,21 +249,35 @@ def getParallelTests(String image) {
     return ret;
 }
 
-node {
+def bazelTest = {
+    node {
+        stage('Setup') {
+            checkout scm;
+            sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
+        }
+        withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
+            stage('bazelisk test ...') {
+                withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                    timeout(time: 120, unit: 'MINUTES') {
+                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
+                        if (env.BRANCH_NAME != 'master') {
+                            cmd += ' --remote_upload_local_results=false';
+                        }
+                        cmd += ' --google_credentials=$GCS_SA_KEY';
+                        try {
+                            sh label: 'Bazel Build', script: cmd + ' ...';
+                        } catch (e) {
+                            currentBuild.result = 'FAILURE';
+                            sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
-    def isDefaultBranch = (env.BRANCH_NAME == 'master') 
-    def daysToKeep = '20';
-    def numToKeep = (isDefaultBranch ? '-1' : '10');
-
-    properties([
-        buildDiscarder(logRotator(
-            daysToKeepStr:         daysToKeep,
-            artifactDaysToKeepStr: daysToKeep,
-
-            numToKeepStr:          numToKeep,
-            artifactNumToKeepStr:  numToKeep
-        ))
-    ]);
+def dockerTests = {
     stage('Checkout') {
         checkout scm;
     }
@@ -317,6 +306,24 @@ node {
         echo "Docker image is ${DOCKER_IMAGE}";
     }
     parallel(getParallelTests(DOCKER_IMAGE));
+}
+
+node {
+    def isDefaultBranch = (env.BRANCH_NAME == 'master')
+    def daysToKeep = '20';
+    def numToKeep = (isDefaultBranch ? '-1' : '10');
+    properties([
+        buildDiscarder(logRotator(
+            daysToKeepStr:         daysToKeep,
+            artifactDaysToKeepStr: daysToKeep,
+            numToKeepStr:          numToKeep,
+            artifactNumToKeepStr:  numToKeep
+        ))
+    ]);
+    parallel(
+            "Bazel": bazelTest,
+            "Docker Tests": dockerTests
+    );
     stage('Send Email Report') {
         sendEmail();
     }

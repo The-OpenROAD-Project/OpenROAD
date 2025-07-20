@@ -7667,11 +7667,11 @@ class dbGuide : public dbObject
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
 
-  bool isJumper();
+  bool isJumper() const;
 
   void setIsJumper(bool jumper);
 
-  bool isConnectedToTerm();
+  bool isConnectedToTerm() const;
 
   void setIsConnectedToTerm(bool is_connected);
 
@@ -7711,7 +7711,7 @@ class dbIsolation : public dbObject
 
   void setLocation(const std::string& location);
 
-  void addIsolationCell(std::string& master);
+  void addIsolationCell(const std::string& master);
 
   std::vector<dbMaster*> getIsolationCells();
 
@@ -8426,6 +8426,7 @@ class dbScanInst : public dbObject
 
   void setClockEdge(ClockEdge clock_edge);
   ClockEdge getClockEdge() const;
+  std::string getClockEdgeString() const;
 
   // The number of bits that are in this scan inst from the scan in to the scan
   // out. For simple flops this is just 1.

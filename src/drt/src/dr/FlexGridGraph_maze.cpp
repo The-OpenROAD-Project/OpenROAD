@@ -562,7 +562,7 @@ bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
         && p.getSrcTaperBox()->contains(p.x(), p.y(), p.z())) {
       return false;
     }
-    if (dstTaperBox && dstTaperBox->contains(p.x(), p.y(), p.z())) {
+    if (dstTaperBox_ && dstTaperBox_->contains(p.x(), p.y(), p.z())) {
       return false;
     }
     return true;

@@ -30,9 +30,7 @@ struct Rect
   int ux = 0;
   int uy = 0;
 
-  Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
-  {
-  }
+  Rect(int lx, int ly, int ux, int uy) : lx(lx), ly(ly), ux(ux), uy(uy) {}
 
   // check if the Rect is valid
   bool IsValid() const { return ux > lx && uy > ly; }
@@ -50,10 +48,10 @@ struct Rect
 // Define the type for vertices
 enum VertexType
 {
-  COMB_STD_CELL,  // combinational standard cell
-  SEQ_STD_CELL,   // sequential standard cell
-  MACRO,          // hard macros
-  PORT            // IO ports
+  kCombStdCell,  // combinational standard cell
+  kSeqStdCell,   // sequential standard cell
+  kMacro,        // hard macros
+  kPort          // IO ports
 };
 
 std::string GetVectorString(const std::vector<float>& vec);

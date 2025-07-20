@@ -128,7 +128,7 @@ class defrData
   int componentWarnings{0};
   int constraintWarnings{0};
   int cover_is_keyword{0};
-  int defMsgCnt{0};
+  int defMsgCnt{5500};
   int defMsgPrinted{0};  // number of msgs output so far
   int defRetVal{0};
   int def_warnings{0};

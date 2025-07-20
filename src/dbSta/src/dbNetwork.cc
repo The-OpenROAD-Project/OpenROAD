@@ -3317,7 +3317,7 @@ dbModule* dbNetwork::findHighestCommonModule(std::vector<dbModule*>& itree1,
 class PinModuleConnection : public PinVisitor
 {
  public:
-  PinModuleConnection(const dbNetwork* nwk, const dbModule* target_module_);
+  PinModuleConnection(const dbNetwork* nwk, const dbModule* target_module);
   void operator()(const Pin* pin) override;
   dbModBTerm* getModBTerm() const { return dest_modbterm_; }
   dbModITerm* getModITerm() const { return dest_moditerm_; }

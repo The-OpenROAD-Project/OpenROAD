@@ -46,6 +46,8 @@ class Network
     {
       return a->getEdge()->getId() < b->getEdge()->getId();
     }
+
+   private:
     Network* nw_ = nullptr;
   };
 
@@ -60,6 +62,8 @@ class Network
       }
       return a->getOffsetX() < b->getOffsetX();
     }
+
+   private:
     Network* nw_ = nullptr;
   };
 

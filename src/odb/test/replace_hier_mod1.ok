@@ -145,7 +145,16 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0014
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
+[INFO GPL-1009]     - For 50% usage of free space: 0.0025
+[INFO GPL-1010] Original area (um^2): 59.85
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 59.85 (+0.00%)
 [INFO GPL-0133] Unlocked instances
+[INFO GPL-1010] Original area (um^2): 59.85
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 59.85 (+0.00%)
 Placement Analysis
 ---------------------------------
 total displacement         52.6 u
@@ -266,7 +275,16 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0014
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
+[INFO GPL-1009]     - For 50% usage of free space: 0.0025
+[INFO GPL-1010] Original area (um^2): 60.38
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 60.38 (+0.00%)
 [INFO GPL-0133] Unlocked instances
+[INFO GPL-1010] Original area (um^2): 60.38
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 60.38 (+0.00%)
 Placement Analysis
 ---------------------------------
 total displacement         39.4 u
@@ -387,7 +405,16 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0014
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
+[INFO GPL-1009]     - For 50% usage of free space: 0.0025
+[INFO GPL-1010] Original area (um^2): 59.85
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 59.85 (+0.00%)
 [INFO GPL-0133] Unlocked instances
+[INFO GPL-1010] Original area (um^2): 59.85
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 59.85 (+0.00%)
 Placement Analysis
 ---------------------------------
 total displacement         34.4 u

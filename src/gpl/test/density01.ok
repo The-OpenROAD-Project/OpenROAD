@@ -3,83 +3,11 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
-[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0006] Number of instances:               294
-[INFO GPL-0007] Movable instances:                 294
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                    364
-[INFO GPL-0011] Number of pins:                   1122
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0016] Core area:                     953.876 um^2
-[INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:        569.772 um^2
-[INFO GPL-0019] Utilization:                    59.732 %
-[INFO GPL-0020] Standard cells area:           569.772 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0023] Placement target density:       1.0000
-[INFO GPL-0024] Movable insts average area:      1.938 um^2
-[INFO GPL-0025] Ideal bin area:                  1.938 um^2
-[INFO GPL-0026] Ideal bin count:                   492
-[INFO GPL-0027] Total bin area:                953.876 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 ,     16
-[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
-[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0022] Initialize gpl and calculate uniform density.
 pad : 0 -> 0.600
-[INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
-[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0006] Number of instances:               294
-[INFO GPL-0007] Movable instances:                 294
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                    364
-[INFO GPL-0011] Number of pins:                   1122
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0016] Core area:                     953.876 um^2
-[INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:        726.180 um^2
-[INFO GPL-0019] Utilization:                    76.129 %
-[INFO GPL-0020] Standard cells area:           726.180 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0023] Placement target density:       1.0000
-[INFO GPL-0024] Movable insts average area:      2.470 um^2
-[INFO GPL-0025] Ideal bin area:                  2.470 um^2
-[INFO GPL-0026] Ideal bin count:                   386
-[INFO GPL-0027] Total bin area:                953.876 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 ,     16
-[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
-[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0022] Initialize gpl and calculate uniform density.
 pad : 1 -> 0.770
-[INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
-[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0006] Number of instances:               294
-[INFO GPL-0007] Movable instances:                 294
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                    364
-[INFO GPL-0011] Number of pins:                   1122
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0016] Core area:                     953.876 um^2
-[INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:        882.588 um^2
-[INFO GPL-0019] Utilization:                    92.526 %
-[INFO GPL-0020] Standard cells area:           882.588 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0023] Placement target density:       1.0000
-[INFO GPL-0024] Movable insts average area:      3.002 um^2
-[INFO GPL-0025] Ideal bin area:                  3.002 um^2
-[INFO GPL-0026] Ideal bin count:                   317
-[INFO GPL-0027] Total bin area:                953.876 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 ,     16
-[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
-[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0022] Initialize gpl and calculate uniform density.
 pad : 2 -> 0.930
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
@@ -142,5 +70,8 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.6637
 [INFO GPL-1008]     - For 80% usage of free space: 0.7467
-[INFO GPL-1009]     - For 50% usage of free space: 1.1946
+[INFO GPL-1010] Original area (um^2): 569.77
+[INFO GPL-1011] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1012] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1013] Final placement area: 569.77 (+0.00%)
 No differences found.

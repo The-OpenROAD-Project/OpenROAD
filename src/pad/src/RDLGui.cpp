@@ -13,13 +13,13 @@ namespace pad {
 
 RDLGui::RDLGui()
 {
-  addDisplayControl(draw_vertex_, true);
-  addDisplayControl(draw_edge_, true);
-  addDisplayControl(draw_obs_, true);
-  addDisplayControl(draw_targets_, true);
-  addDisplayControl(draw_fly_wires_, true);
-  addDisplayControl(draw_routes_, true);
-  addDisplayControl(draw_route_obstructions_, true);
+  addDisplayControl(kDrawVertex, true);
+  addDisplayControl(kDrawEdge, true);
+  addDisplayControl(kDrawObs, true);
+  addDisplayControl(kDrawTargets, true);
+  addDisplayControl(kDrawFlyWires, true);
+  addDisplayControl(kDrawRoutes, true);
+  addDisplayControl(kDrawRouteObstructions, true);
 }
 
 RDLGui::~RDLGui()
@@ -45,9 +45,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
     routes[route->getTerminal()] = route.get();
   }
 
-  const bool draw_obs = draw_detail && checkDisplayControl(draw_obs_);
+  const bool draw_obs = draw_detail && checkDisplayControl(kDrawObs);
   if (draw_obs) {
-    gui::Painter::Color obs_color = gui::Painter::cyan;
+    gui::Painter::Color obs_color = gui::Painter::kCyan;
     obs_color.a = 127;
     painter.setPenAndBrush(obs_color, true);
 
@@ -56,8 +56,8 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  const bool draw_vertex = draw_detail && checkDisplayControl(draw_vertex_);
-  const bool draw_edge = draw_detail && checkDisplayControl(draw_edge_);
+  const bool draw_vertex = draw_detail && checkDisplayControl(kDrawVertex);
+  const bool draw_edge = draw_detail && checkDisplayControl(kDrawEdge);
 
   std::vector<GridGraph::vertex_descriptor> vertex;
   if (draw_vertex || draw_edge) {
@@ -76,7 +76,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   }
 
   if (draw_vertex) {
-    painter.setPenAndBrush(gui::Painter::red, true);
+    painter.setPenAndBrush(gui::Painter::kRed, true);
 
     for (const auto& v : vertex) {
       const odb::Point& pt = vertex_map.at(v);
@@ -85,7 +85,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   }
 
   if (draw_edge) {
-    gui::Painter::Color edge_color = gui::Painter::green;
+    gui::Painter::Color edge_color = gui::Painter::kGreen;
     edge_color.a = 127;
     painter.setPenAndBrush(edge_color, true);
 
@@ -100,10 +100,10 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  const bool draw_flywires = checkDisplayControl(draw_fly_wires_);
+  const bool draw_flywires = checkDisplayControl(kDrawFlyWires);
   if (draw_flywires) {
     painter.setPenAndBrush(
-        gui::Painter::yellow, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kYellow, true, gui::Painter::Brush::kSolid, 3);
 
     const auto& targets = router_->getRoutingTargets();
 
@@ -121,7 +121,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
 
     painter.setPenAndBrush(
-        gui::Painter::red, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kRed, true, gui::Painter::Brush::kSolid, 3);
     for (const auto& route : router_->getFailedRoutes()) {
       for (auto* dst : route->getTerminals()) {
         painter.drawLine(route->getTerminal()->getBBox().center(),
@@ -130,9 +130,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(draw_routes_)) {
+  if (checkDisplayControl(kDrawRoutes)) {
     painter.setPenAndBrush(
-        gui::Painter::green, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kGreen, true, gui::Painter::Brush::kSolid, 3);
 
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
@@ -148,15 +148,15 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(draw_targets_)) {
+  if (checkDisplayControl(kDrawTargets)) {
     for (const auto& [net, iterm_targets] : router_->getRoutingTargets()) {
       for (const auto& [iterm, targets] : iterm_targets) {
         for (const auto& target : targets) {
           if (box.intersects(target.shape)) {
             painter.setPenAndBrush(
-                gui::Painter::blue, true, gui::Painter::Brush::DIAGONAL);
+                gui::Painter::kBlue, true, gui::Painter::Brush::kDiagonal);
             painter.drawRect(target.shape);
-            painter.setPenAndBrush(gui::Painter::blue, true);
+            painter.setPenAndBrush(gui::Painter::kBlue, true);
             painter.drawCircle(target.center.x(),
                                target.center.y(),
                                0.05 * target.shape.minDXDY());
@@ -166,9 +166,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(draw_routes_)) {
+  if (checkDisplayControl(kDrawRoutes)) {
     painter.setPenAndBrush(
-        gui::Painter::green, true, gui::Painter::Brush::SOLID, 3);
+        gui::Painter::kGreen, true, gui::Painter::Brush::kSolid, 3);
 
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
@@ -184,7 +184,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(draw_route_obstructions_)) {
+  if (checkDisplayControl(kDrawRouteObstructions)) {
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
         continue;
@@ -195,7 +195,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
         const odb::Point& dst = route_pts[i];
 
         painter.setPenAndBrush(
-            gui::Painter::green, true, gui::Painter::Brush::NONE, 2);
+            gui::Painter::kGreen, true, gui::Painter::Brush::kNone, 2);
         if (i == 1) {
           painter.drawRect(router_->getPointObstruction(src));
         }
@@ -207,7 +207,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  painter.setPenAndBrush(snap_color_, true, gui::Painter::Brush::SOLID, 2);
+  painter.setPenAndBrush(snap_color_, true, gui::Painter::Brush::kSolid, 2);
   for (const auto& [pt0, pt1] : snap_) {
     painter.drawLine(pt0, pt1);
   }
@@ -231,9 +231,9 @@ void RDLGui::zoomToSnap(bool preview)
   }
 
   if (preview) {
-    snap_color_ = gui::Painter::gray;
+    snap_color_ = gui::Painter::kGray;
   } else {
-    snap_color_ = gui::Painter::white;
+    snap_color_ = gui::Painter::kWhite;
   }
 
   odb::Rect zoomto;
@@ -259,7 +259,7 @@ void RDLGui::pause(bool timeout) const
   gui::Gui::get()->redraw();
 
   if (timeout) {
-    gui::Gui::get()->pause(gui_timeout_);
+    gui::Gui::get()->pause(kGuiTimeout);
   } else {
     gui::Gui::get()->pause();
   }

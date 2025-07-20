@@ -54,6 +54,12 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false);
 
+  // Update the chart for the current iter
+  void addIter(int iter, double overflow);
+  void addTimingDrivenIter(int iter);
+  void addRoutabilitySnapshot(int iter);
+  void addRoutabilityIter(int iter, bool revert);
+
   // Draw the MBFF mapping
   void mbffMapping(const LineSegs& segs);
   void mbffFlopClusters(const std::vector<odb::dbInst*>& ffs);
@@ -122,13 +128,15 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
-  GCell* selected_ = nullptr;
+  static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+  size_t selected_ = kInvalidIndex;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;
   LineSegs mbff_edges_;
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
+  gui::Chart* chart_{nullptr};
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

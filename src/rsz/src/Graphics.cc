@@ -53,7 +53,7 @@ void Graphics::subdivideDone()
 
 void Graphics::drawObjects(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::red, true);
+  painter.setPen(gui::Painter::kRed, true);
   for (const odb::Line& line : lines_) {
     painter.drawLine(line.pt0(), line.pt1());
   }
