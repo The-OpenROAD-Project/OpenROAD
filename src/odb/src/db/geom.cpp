@@ -82,6 +82,7 @@ std::vector<Polygon> Polygon::merge(const std::vector<Polygon>& polys)
   poly_in_set.get(output_polygons);
 
   std::vector<Polygon> out_polys;
+  out_polys.reserve(output_polygons.size());
   for (const BoostPolygon& out_poly : output_polygons) {
     std::vector<odb::Point> new_coord;
     new_coord.reserve(out_poly.coords_.size());
