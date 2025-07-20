@@ -350,7 +350,7 @@ proc place_io_terminals { args } {
     flags {-allow_non_top_layer}
 
   if { [llength $args] == 0 } {
-    utl::error PAD 8 "place_io_terminals requires atleast one terminal"
+    utl::error PAD 8 "place_io_terminals requires at least one terminal"
   }
 
   set iterms []
