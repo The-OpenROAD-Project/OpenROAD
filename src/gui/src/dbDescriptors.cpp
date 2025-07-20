@@ -1316,6 +1316,100 @@ void DbNetDescriptor::findPath(NodeMap& graph,
   }
 }
 
+std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(odb::dbNet* net) const
+{
+  auto guides = net->getGuides();
+  if (guides.empty()) {
+    return {};
+  }
+
+  std::set<odb::Line> lines;
+
+  std::map<odb::dbTechLayer*, std::map<odb::dbObject*, std::set<odb::Rect>>>
+      terms;
+  for (odb::dbITerm* term : net->getITerms()) {
+    if (!term->getInst()->isPlaced()) {
+      continue;
+    }
+    for (const auto& [layer, itermbox] : term->getGeometries()) {
+      terms[layer][term].insert(itermbox);
+    }
+  }
+  for (odb::dbBTerm* term : net->getBTerms()) {
+    for (odb::dbBPin* pin : term->getBPins()) {
+      if (!pin->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+      for (odb::dbBox* box : pin->getBoxes()) {
+        terms[box->getTechLayer()][pin].insert(box->getBox());
+      }
+    }
+  }
+
+  for (const auto* guide : guides) {
+    const auto& box = guide->getBox();
+    const auto center = box.center();
+    const int width_half = box.minDXDY() / 2;
+    odb::Point p0, p1;
+    switch (box.getDir()) {
+      case 0: {
+        // DX < DY
+        p0 = odb::Point(center.x(), box.yMin() + width_half);
+        p1 = odb::Point(center.x(), box.yMax() - width_half);
+        break;
+      }
+      case 1: {
+        p0 = odb::Point(box.xMin() + width_half, center.y());
+        p1 = odb::Point(box.xMax() - width_half, center.y());
+        break;
+      }
+      default: {
+        p0 = center;
+        p1 = center;
+        break;
+      }
+    }
+    lines.emplace(p0, p1);
+
+    if (guide->isConnectedToTerm()) {
+      std::vector<odb::Point> anchors = {p0, center, p1};
+
+      auto draw_term_connection = [&anchors, &lines](const odb::Point& term) {
+        // draw shortest flywire
+        std::stable_sort(anchors.begin(),
+                         anchors.end(),
+                         [&term](const odb::Point& pt0, const odb::Point& pt1) {
+                           return odb::Point::manhattanDistance(term, pt0)
+                                  < odb::Point::manhattanDistance(term, pt1);
+                         });
+        lines.emplace(term, anchors[0]);
+      };
+
+      for (const auto& [obj, objbox] : terms[guide->getLayer()]) {
+        std::vector<const odb::Rect*> candidates;
+        for (const auto& termbox : objbox) {
+          if (termbox.intersects(box)) {
+            candidates.push_back(&termbox);
+          }
+        }
+        bool drawn = false;
+        for (const auto* termbox : candidates) {
+          if (termbox->overlaps(box)) {
+            draw_term_connection(termbox->center());
+            drawn = true;
+            break;
+          }
+        }
+        if (!drawn && !candidates.empty()) {
+          draw_term_connection(candidates[0]->center());
+        }
+      }
+    }
+  }
+
+  return lines;
+}
+
 // additional_data is used define the related sink for this net
 // this will limit the fly-wires to just those related to that sink
 // if nullptr, all flywires will be drawn
@@ -1401,109 +1495,33 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
       auto guides = net->getGuides();
       if (!guides.empty()) {
         draw_flywires = false;
-        painter.saveState();
 
-        Painter::Color highlight_color = painter.getPenColor();
-        highlight_color.a = 255;
-
-        painter.setPen(highlight_color, true, 4);
-
-        std::map<odb::dbTechLayer*,
-                 std::map<odb::dbObject*, std::set<odb::Rect>>>
-            terms;
-        for (odb::dbITerm* term : net->getITerms()) {
-          if (!term->getInst()->isPlaced()) {
-            continue;
-          }
-          for (const auto& [layer, itermbox] : term->getGeometries()) {
-            terms[layer][term].insert(itermbox);
-          }
-        }
-        for (odb::dbBTerm* term : net->getBTerms()) {
-          for (odb::dbBPin* pin : term->getBPins()) {
-            if (!pin->getPlacementStatus().isPlaced()) {
-              continue;
-            }
-            for (odb::dbBox* box : pin->getBoxes()) {
-              terms[box->getTechLayer()][pin].insert(box->getBox());
-            }
-          }
-        }
-
+        // draw outlines of guides
         std::vector<odb::Rect> guide_rects;
         guide_rects.reserve(guides.size());
         for (const auto* guide : guides) {
-          const auto& box = guide->getBox();
-          const auto center = box.center();
-          const int width_half = box.minDXDY() / 2;
-          guide_rects.push_back(box);
-          odb::Point p0, p1;
-          switch (box.getDir()) {
-            case 0: {
-              // DX < DY
-              p0 = odb::Point(center.x(), box.yMin() + width_half);
-              p1 = odb::Point(center.x(), box.yMax() - width_half);
-              break;
-            }
-            case 1: {
-              p0 = odb::Point(box.xMin() + width_half, center.y());
-              p1 = odb::Point(box.xMax() - width_half, center.y());
-              break;
-            }
-            default: {
-              p0 = center;
-              p1 = center;
-              break;
-            }
-          }
-          painter.drawLine(p0, p1);
-
-          if (guide->isConnectedToTerm()) {
-            std::vector<odb::Point> anchors = {p0, center, p1};
-
-            auto draw_term_connection
-                = [&anchors, &painter](const odb::Point& term) {
-                    // draw shortest flywire
-                    std::stable_sort(
-                        anchors.begin(),
-                        anchors.end(),
-                        [&term](const odb::Point& pt0, const odb::Point& pt1) {
-                          return odb::Point::manhattanDistance(term, pt0)
-                                 < odb::Point::manhattanDistance(term, pt1);
-                        });
-                    painter.drawLine(term, anchors[0]);
-                  };
-
-            for (const auto& [obj, objbox] : terms[guide->getLayer()]) {
-              std::vector<const odb::Rect*> candidates;
-              for (const auto& termbox : objbox) {
-                if (termbox.intersects(box)) {
-                  candidates.push_back(&termbox);
-                }
-              }
-              bool drawn = false;
-              for (const auto* termbox : candidates) {
-                if (termbox->overlaps(box)) {
-                  draw_term_connection(termbox->center());
-                  drawn = true;
-                  break;
-                }
-              }
-              if (!drawn && !candidates.empty()) {
-                draw_term_connection(candidates[0]->center());
-              }
-            }
-          }
+          guide_rects.push_back(guide->getBox());
         }
-
-        painter.restoreState();
-
-        // draw outlines of guides
         painter.saveState();
         painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
         for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
           painter.drawPolygon(outline);
         }
+        painter.restoreState();
+
+        painter.saveState();
+        Painter::Color highlight_color = painter.getPenColor();
+        highlight_color.a = 255;
+        painter.setPen(highlight_color, true, 4);
+
+        std::set<odb::Line> lines = convertGuidesToLines(net);
+        if (sink_object != nullptr) {
+        } else {
+          for (const auto& line : lines) {
+            painter.drawLine(line);
+          }
+        }
+
         painter.restoreState();
       }
     }

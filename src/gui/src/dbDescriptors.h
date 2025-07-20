@@ -180,6 +180,8 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   using NodeMap = std::map<const Node*, NodeList>;
   using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
 
+  std::set<odb::Line> convertGuidesToLines(odb::dbNet* net) const;
+
   void drawPathSegment(odb::dbNet* net,
                        const odb::dbObject* sink,
                        Painter& painter) const;
