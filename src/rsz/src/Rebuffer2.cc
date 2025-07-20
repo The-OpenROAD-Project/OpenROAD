@@ -38,21 +38,6 @@ using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
 // from Rebuffer.cc
-void characterizeChoiceTree(dbNetwork* nwk,
-                            int level,
-                            const BufferedNetPtr& choice,
-                            int& buffer_count,
-                            int& load_count,
-                            int& wire_count,
-                            int& junction_count,
-                            std::set<odb::dbModule*>& load_modules);
-
-void accumulateBufferTreeFlatLoadPins(
-    bool gone_through_buffer,
-    dbNetwork* nwk,
-    const BufferedNetPtr& choice,
-    std::unordered_set<const sta::Pin*>& buffer_tree_flat_load_pins);
-
 void reportChoiceTree(dbNetwork* nwk,
                       int level,
                       const BufferedNetPtr& choice,
@@ -61,6 +46,12 @@ void reportChoiceTree(dbNetwork* nwk,
                       int& wire_count,
                       int& junction_count,
                       std::set<odb::dbModule*>& load_modules);
+
+void accumulateBufferTreeFlatLoadPins(
+    bool gone_through_buffer,
+    dbNetwork* nwk,
+    const BufferedNetPtr& choice,
+    std::unordered_set<const sta::Pin*>& buffer_tree_flat_load_pins);
 
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
@@ -2183,68 +2174,8 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     auto insts = collectImportedTreeBufferInstances(drvr_pin, unbuffered_tree);
 
-    //
-    // characterize the buffer tree here
-    //
-    bool propagate_mod_net = false;
-    bool all_loads_in_same_module = false;
-    int buffer_count = 0;
-    int load_count = 0;
-    int wire_count = 0;
-    int junction_count = 0;
-    std::set<odb::dbModule*> load_modules;
-
-    characterizeChoiceTree(db_network_,
-                           1,
-                           area_opt_tree,
-                           buffer_count,
-                           load_count,
-                           wire_count,
-                           junction_count,
-                           load_modules);
-
-    /*
-      Propagating a hierarchicial through a single buffer or serial chain
-      of buffers is fine.
-
-      However, normally we cannot propagate a hierarchical net through a
-      junction, because we cannot discriminate between the two outputs.
-
-      Specifically if there is a junction with loads or buffers we
-      cannot do the propagation. However, if there is a
-      junction which is just doing wiring (no buffers or loads) then fine.
-     */
-    odb::dbModule* source_module = nullptr;
-    odb::dbITerm* drvr_iterm = nullptr;
-    odb::dbBTerm* drvr_bterm = nullptr;
-    odb::dbModITerm* drvr_moditerm = nullptr;
-    db_network_->staToDb(drvr_pin, drvr_iterm, drvr_bterm, drvr_moditerm);
-
-    if (drvr_iterm) {
-      dbInst* drvr_inst = drvr_iterm->getInst();
-      source_module = drvr_inst->getModule();
-    }
-    // check to see if we have just one module in load set
-    // and that all loads in the source module.
-    if (load_modules.size() == 1) {
-      if (*(load_modules.begin()) == source_module) {
-        all_loads_in_same_module = true;
-      }
-    }
-
-    if (junction_count != 0 && (!(buffer_count == 0 && load_count == 0))) {
-      propagate_mod_net = false;
-    } else {
-      propagate_mod_net = true;
-    }
-    // Corner case. If all the loads are in the same module
-    // then it is fine to propagate the modnet, no matter
-    // how many junctions
-
-    if (all_loads_in_same_module) {
-      propagate_mod_net = true;
-    }
-
+    // remove any loads behind a buffer in the buffer tree
+    // we will wire those in during construction.
     if (db_modnet) {
       std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
       accumulateBufferTreeFlatLoadPins(
@@ -2252,7 +2183,6 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       for (auto p : buffer_tree_flat_load_pins) {
         db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
       }
-      propagate_mod_net = false;
     }
 
     inserted_count_ += exportBufferTree(area_opt_tree,
@@ -2261,6 +2191,17 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
                                         parent,
                                         drvr_op_iterm,
                                         nullptr);
+    // This is to make sure than any surviving hierarchical connections
+    // at this level of hierarchy are associated with the flat net
+    // at this level. Recall we killed any loads in the buffer tree
+    // from the modnet. The reassociateHierFlatNet will restore
+    // any flat/hier net association on the driver side of the buffer tree.
+    if (db_modnet) {
+      const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
+      dbNet* driver_flat_net = db_network_->flatNet(pin);
+      odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
+      db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
+    }
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);

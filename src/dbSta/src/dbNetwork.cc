@@ -3818,6 +3818,13 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   visitConnectedPins(dbToSta(new_flat_net), visitordb, visited_dbnets);
 }
 
+void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
+{
+  DbModNetAssociation visitordb(this, mod_net);
+  NetSet visited_dbnets(this);
+  visitConnectedPins(dbToSta(flat_net), visitordb, visited_dbnets);
+}
+
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
 {
   (void) mod_inst->swapMaster(module);
@@ -4039,9 +4046,9 @@ void AccumulateNetFlatLoadPins::operator()(const Pin* pin)
     dbITerm* iterm = nullptr;
     dbBTerm* bterm = nullptr;
     dbModITerm* moditerm = nullptr;
-    // only stash the flat loads.
+    // only stash the flat loads on instances (iterms)
     nwk_->staToDb(pin, iterm, bterm, moditerm);
-    if (iterm || bterm) {
+    if (iterm /*|| bterm */) {
       flat_load_pinset_.insert(pin);
     }
   }

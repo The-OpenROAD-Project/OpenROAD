@@ -327,6 +327,9 @@ class dbNetwork : public ConcreteNetwork
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
                               dbNet* orig_flat_net);
+
+  void reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net);
+
   void accumulateFlatLoadPinsOnNet(
       Net* net,
       Pin* drvr_pin,
