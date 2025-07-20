@@ -82,6 +82,7 @@ dbInst* RamGen::makeInst(
         iterm->connect(net);
     }
 
+
     layout->addElement(std::make_unique<Element>(inst));
     return inst;
 }
@@ -387,13 +388,6 @@ void RamGen::findMasters() {
         },
         "buffer");
     }
-//    if (!filler_cell_){
-//	filler_cell_ = findMaster(
-//	[this](sta::LibertyPort *port) {
-//	    return port->libertyLibrary()->findLibertyCell("FILL");
-//	},
-  //     	"filler");
-   // }
 }
 
 void RamGen::generate(const int bytes_per_word,
@@ -413,8 +407,7 @@ void RamGen::generate(const int bytes_per_word,
     inv_cell_ = inv_cell;
     and2_cell_ = nullptr;
     clock_gate_cell_ = nullptr;
-    buffer_cell_ = nullptr;
-    filler_cell_ = nullptr;
+    buffer_cell_ = nullptr; 
     findMasters();
 
     auto chip = db_->getChip();
@@ -451,17 +444,6 @@ void RamGen::generate(const int bytes_per_word,
     }
 
 
-    // //tester code
-    // vector<dbNet*> byte_and_inputs(numInputs);
-    // int word_num = 4;
-    // for (int i = 0; i < numInputs; ++i) {
-    //   if (word_num % 2 == 0) { //places inverter for each input
-    //     byte_and_inputs[i] = input_nets[0];
-    //   } else { //puts original input in invert nets
-    //     byte_and_inputs[i] = input_nets[1];
-    //   }
-    // }
-
     // //something is wrong here
     vector<vector<dbNet*>> and_layer_nets(word_count, vector<dbNet*> (numImputs));
     for (int word = 0; word < word_count; ++word) {
@@ -476,11 +458,6 @@ void RamGen::generate(const int bytes_per_word,
             word_num /= 2;
         }
     }
-
-   // vector<dbNet*> select(read_ports, nullptr);
-   // for (int port = 0; port < read_ports; ++port) {
-    //    select[port] = makeBTerm(fmt::format("select{}", port));
-   // }
 
     auto inv_layer = std::make_unique<Layout>(odb::vertical); //inverter column
     vector<dbNet*> word_decoder_nets;
@@ -556,27 +533,16 @@ void RamGen::generate(const int bytes_per_word,
 
 	auto input_buffer_layer = std::make_unique<Layout>(odb::horizontal); //input buffer layer
         for (int bit = 0; bit < 8; ++bit) {
-           dbInst* buffer_inst =  makeInst(input_buffer_layer.get(),
+           makeInst(input_buffer_layer.get(),
                      "buffer",
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
             { {"A", D[bit]}, {"X", D_nets[bit]} });
-//            for (int read = 0; read < 4 + read_ports * 4; ++read) {
-//                makeInst(input_buffer_layer.get(),
-//                         "buffer",
-//                         fmt::format("bit[{}]_filler{}", bit, read),
-//                         filler_cell_,
-//                         {});
-//            }
-   
-	   int x = bit * 10 ;
-	   int y = 200;
-	   buffer_inst->setLocation(x,y);
-
-        
 	}
+
+	input_buffer_layer->position(odb::Point(0,10880), 7900); //tester for offset for buffer
 	//adds input buffer layer to column
-        column->addElement(std::make_unique<Element>(std::move(input_buffer_layer)));
+        //column->addElement(std::make_unique<Element>(std::move(input_buffer_layer)));
 
         //places byte first
         layout.addElement(std::make_unique<Element>(std::move(column)));
@@ -585,7 +551,7 @@ void RamGen::generate(const int bytes_per_word,
 
     }
 
-    //if statement to check if AND gate layer is needed
+    //check for AND gate, specific case for 2 words
     if (numImputs > 1) {
         for (int i = 0; i < numImputs; ++i) {
             makeInst(inv_layer.get(),
@@ -606,8 +572,7 @@ void RamGen::generate(const int bytes_per_word,
     layout.addElement(std::make_unique<Element>(std::move(inv_layer)));
 
 
-
-    layout.position(odb::Point(0, 0));
+   layout.position(odb::Point(0, 0));
 }
 
 }  // namespace ram

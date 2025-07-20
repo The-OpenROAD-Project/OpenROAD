@@ -65,11 +65,31 @@ class Layout
   void addElement(std::unique_ptr<Element> element);
 
   // Return the bbox of the positioned layout
-  odb::Rect position(odb::Point origin);
+  odb::Rect position(odb::Point origin, int offset = 0);
+
+  std::vector<std::unique_ptr<Element>>& getElements ();
 
  private:
   odb::Orientation2D orientation_;
   std::vector<std::unique_ptr<Element>> elements_;
 };
+class GridLayout {
+ public: 
+  GridLayout(odb::Orientation2D orientation);
 
+  void addTrack(std::unique_ptr<Layout> track);
+
+  odb::Rect position(odb::Point origin);
+
+  int getCellWidth();
+
+  void setCellWidth(int new_width);
+
+ private:
+  std::vector<std::unique_ptr<Layout>> grid_;
+  int cell_width_;
+  odb::Orientation2D orientation_;
+
+
+};
 }  // namespace ram

@@ -58,7 +58,7 @@ Element::Element(std::unique_ptr<Layout> layout) : layout_(std::move(layout))
 
 Rect Element::position(Point origin)
 {
-  if (inst_) {
+  if (inst_) { 
     inst_->setLocation(origin.getX(), origin.getY());
     inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     return inst_->getBBox()->getBox();
@@ -72,29 +72,51 @@ Rect Element::position(Point origin)
 Layout::Layout(odb::Orientation2D orientation) : orientation_(orientation)
 {
 }
-
-Rect Layout::position(Point origin)
+// this is the method that affects position without layout
+Rect Layout::position(Point origin, int offset)
 {
   Rect bbox(origin, origin);
+  //layout logic, iterating over elements vector, moving origin accrodingly
   if (orientation_ == odb::horizontal) {
     for (auto& elem : elements_) {
+      //position is in relation to the layout
       auto bounds = elem->position(origin);
       bbox.merge(bounds);
       origin = bbox.lr();
+      origin.setX(origin.getX() + offset);
     }
   } else {
     for (auto& elem : elements_) {
       auto bounds = elem->position(origin);
       bbox.merge(bounds);
       origin = bbox.ul();
+      origin.setY(origin.getY() + offset);
     }
   }
   return bbox;
 }
 
+std::vector<std::unique_ptr<Element>>& Layout::getElements() {
+  return elements_; 
+}
+
 void Layout::addElement(std::unique_ptr<Element> element)
 {
   elements_.push_back(std::move(element));
+}
+
+GridLayout::GridLayout(odb::Orientation2D orientation) : orientation_ (orientation){}
+
+void GridLayout::addTrack(std::unique_ptr<Layout> track){
+  grid_.push_back(std::move(track));
+}
+
+int GridLayout::getCellWidth() {
+  return cell_width_;
+}
+
+void GridLayout::setCellWidth(int new_width) {
+  cell_width_ = new_width;
 }
 
 }  // namespace ram
