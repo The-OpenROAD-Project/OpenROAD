@@ -404,12 +404,12 @@ class ClockTreeView : public QGraphicsView
   void setRendererState(RendererState state);
   void fit();
   void save(const QString& path = "");
+  void updateColorDepth(int depth);
 
  private slots:
   void selectionChanged();
   void highlightTo(odb::dbITerm* term);
   void clearHighlightTo();
-  void updateColorDepth(int depth);
 
  protected:
   void wheelEvent(QWheelEvent* event) override;
@@ -516,7 +516,8 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
                  const std::string& corner,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
-  void selectClock(const std::string& clock_name);
+  void selectClock(const std::string& clock_name,
+                   std::optional<int> depth = {});
 
   void postReadLiberty() override;
 

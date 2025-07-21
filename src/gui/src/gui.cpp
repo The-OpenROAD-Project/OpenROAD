@@ -832,12 +832,13 @@ void Gui::saveHistogramImage(const std::string& filename,
       filename, chart_mode, width, height);
 }
 
-void Gui::selectClockviewerClock(const std::string& clock_name)
+void Gui::selectClockviewerClock(const std::string& clock_name,
+                                 std::optional<int> depth)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->selectClock(clock_name);
+  main_window->getClockViewer()->selectClock(clock_name, depth);
 }
 
 static QWidget* findWidget(const std::string& name)
