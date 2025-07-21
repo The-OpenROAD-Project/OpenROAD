@@ -152,7 +152,7 @@ void ClockTreeRenderer::resetTree()
 
 void ClockTreeRenderer::setMaxColorDepth(int depth)
 {
-  if (max_depth_ < 1) {
+  if (depth < 1) {
     return;
   }
 
