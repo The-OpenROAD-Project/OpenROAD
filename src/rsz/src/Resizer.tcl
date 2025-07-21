@@ -10,7 +10,7 @@ proc get_db_tech_checked { } {
   return $tech
 }
 
-proc parse_buffer_cell { keys_var required } {
+proc parse_buffer_cell { keys_var } {
   upvar 1 $keys_var keys
   set buffer_cell "NULL"
 
@@ -25,12 +25,6 @@ proc parse_buffer_cell { keys_var required } {
       }
     }
   }
-
-  # required argument is missing?
-  if { $buffer_cell == "NULL" && $required } {
-    utl::error RSZ 212 "-buffer_cell is required for buffer insertion."
-  }
-
   return $buffer_cell
 }
 
@@ -489,7 +483,7 @@ proc buffer_ports { args } {
   sta::check_argc_eq0 "buffer_ports" $args
 
   rsz::set_max_utilization [rsz::parse_max_util keys]
-  set buffer_cell [rsz::parse_buffer_cell keys 0] ;# 0: optional argument
+  set buffer_cell [rsz::parse_buffer_cell keys]
 
   if { $buffer_inputs } {
     rsz::buffer_inputs $buffer_cell $verbose

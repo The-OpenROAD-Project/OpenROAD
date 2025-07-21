@@ -777,10 +777,6 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
 
   // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
   LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
-  if (selected_buffer_cell == nullptr) {
-    return;
-  }
-
   if (verbose) {
     logger_->info(RSZ,
                   29,
@@ -1026,10 +1022,6 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
 
   // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
   LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
-  if (selected_buffer_cell == nullptr) {
-    return;
-  }
-
   if (verbose) {
     logger_->info(RSZ,
                   31,

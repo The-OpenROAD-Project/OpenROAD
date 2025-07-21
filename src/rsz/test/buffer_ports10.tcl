@@ -1,4 +1,4 @@
-# buffer output with assign between output ports
+# buffer input/output ports with detailed messages
 source "helpers.tcl"
 source Nangate45/Nangate45.vars
 read_liberty Nangate45/Nangate45_typ.lib
