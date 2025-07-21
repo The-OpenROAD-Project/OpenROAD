@@ -1468,7 +1468,8 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
         break;
       }
     }
-    lines.emplace(p0, p1);
+    lines.emplace(p0, center);
+    lines.emplace(center, p1);
 
     if (guide->isConnectedToTerm()) {
       std::vector<odb::Point> anchors = {p0, center, p1};
@@ -1641,18 +1642,22 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
       if (!guides.empty()) {
         draw_flywires = false;
 
-        // draw outlines of guides
-        std::vector<odb::Rect> guide_rects;
-        guide_rects.reserve(guides.size());
-        for (const auto* guide : guides) {
-          guide_rects.push_back(guide->getBox());
+        if (guides.begin()->getBox().minDXDY() * painter.getPixelsPerDBU()
+            >= kMinGuidePixelWidth) {
+          // draw outlines of guides, dont draw if less that kMinGuidePixelWidth
+          // pixels
+          std::vector<odb::Rect> guide_rects;
+          guide_rects.reserve(guides.size());
+          for (const auto* guide : guides) {
+            guide_rects.push_back(guide->getBox());
+          }
+          painter.saveState();
+          painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
+          for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
+            painter.drawPolygon(outline);
+          }
+          painter.restoreState();
         }
-        painter.saveState();
-        painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
-        for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
-          painter.drawPolygon(outline);
-        }
-        painter.restoreState();
 
         painter.saveState();
         Painter::Color highlight_color = painter.getPenColor();
