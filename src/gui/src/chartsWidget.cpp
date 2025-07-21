@@ -530,9 +530,23 @@ void HistogramView::clear()
 void HistogramView::showToolTip(bool is_hovering, int bar_index)
 {
   if (is_hovering) {
+    int num;
+    if (buckets_.negative.empty()) {
+      num = buckets_.positive[bar_index].size();
+    } else {
+      const int num_of_neg_buckets = static_cast<int>(buckets_.negative.size());
+
+      if (bar_index >= num_of_neg_buckets) {
+        num = buckets_.positive[bar_index - num_of_neg_buckets].size();
+        ;
+      } else {
+        num = buckets_.negative[bar_index].size();
+        ;
+      }
+    }
+
     const QString number_of_pins
-        = QString("Number of Endpoints: %1\n")
-              .arg(static_cast<QBarSet*>(sender())->at(bar_index));
+        = QString("Number of Endpoints: %1\n").arg(num);
 
     QString scaled_suffix = sta_->getSTA()->units()->timeUnit()->scaledSuffix();
 
