@@ -78,7 +78,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calPenalty() override;
 
   void perturb() override;
-  void restore() override;
+  void saveState() override;
+  void restoreState() override;
   // actions used
   void resizeOneCluster();
 
