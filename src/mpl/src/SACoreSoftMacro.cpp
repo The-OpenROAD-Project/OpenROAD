@@ -182,6 +182,7 @@ void SACoreSoftMacro::perturb()
   }
 
   // Keep back up
+  pre_macros_ = macros_;
   pre_pos_seq_ = pos_seq_;
   pre_neg_seq_ = neg_seq_;
   pre_width_ = width_;
@@ -215,7 +216,6 @@ void SACoreSoftMacro::perturb()
     exchangeMacros();  // exchange two macros in the sequence pair
   } else {
     action_id_ = 5;
-    pre_macros_ = macros_;
     resizeOneCluster();
   }
 
@@ -234,17 +234,17 @@ void SACoreSoftMacro::restore()
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 5) {
-    macros_[macro_id_] = pre_macros_[macro_id_];
-  } else if (action_id_ == 1) {
+
+   if (action_id_ == 1) {
     pos_seq_ = pre_pos_seq_;
   } else if (action_id_ == 2) {
     neg_seq_ = pre_neg_seq_;
-  } else {
+  } else if (action_id_ == 3 || action_id_ == 4) {
     pos_seq_ = pre_pos_seq_;
     neg_seq_ = pre_neg_seq_;
   }
 
+  macros_ = pre_macros_;
   width_ = pre_width_;
   height_ = pre_height_;
   outline_penalty_ = pre_outline_penalty_;
@@ -539,7 +539,7 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
-  pre_macros_ = macros_;
+  std::vector<SoftMacro> pre_macros = macros_;
   // align macro clusters to reduce notches
   alignMacroClusters();
   // Fill dead space
@@ -709,7 +709,7 @@ void SACoreSoftMacro::calNotchPenalty()
           += (y_grid[y_end_new] - y_grid[y_end]) * macros_[macro_id].getWidth();
     }
   }
-  macros_ = pre_macros_;
+  macros_ = pre_macros;
   // normalization
   notch_penalty_
       = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
