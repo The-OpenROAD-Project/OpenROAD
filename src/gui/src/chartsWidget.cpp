@@ -712,16 +712,22 @@ void HistogramView::setVisualConfig()
     return;
   }
 
-  std::pair<QBarSet*, QBarSet*> bar_sets = createBarSets(); /* <neg, pos> */
-  populateBarSets(*bar_sets.first, *bar_sets.second);
+  std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*> bar_sets
+      = createBarSets(); /* <neg, pos> */
+  populateBarSets(*std::get<0>(bar_sets),
+                  *std::get<1>(bar_sets),
+                  *std::get<2>(bar_sets),
+                  *std::get<3>(bar_sets));
 
   QStackedBarSeries* series = new QStackedBarSeries(this);
-  series->append(bar_sets.first);
-  series->append(bar_sets.second);
+  series->append(std::get<0>(bar_sets));
+  series->append(std::get<1>(bar_sets));
+  series->append(std::get<2>(bar_sets));
+  series->append(std::get<3>(bar_sets));
   series->setBarWidth(1.0);
   chart_->addSeries(series);
 
-  setXAxisConfig(bar_sets.first->count());
+  setXAxisConfig(std::get<0>(bar_sets)->count());
   setYAxisConfig();
   series->attachAxis(axis_y_);
 
@@ -732,7 +738,8 @@ void HistogramView::setVisualConfig()
   chart_->setTitle("Endpoint Slack");
 }
 
-std::pair<QBarSet*, QBarSet*> HistogramView::createBarSets()
+std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*>
+HistogramView::createBarSets()
 {
   QBarSet* neg_set = new QBarSet("");
   neg_set->setBorderColor(0x8b0000);  // darkred
@@ -740,16 +747,34 @@ std::pair<QBarSet*, QBarSet*> HistogramView::createBarSets()
   QBarSet* pos_set = new QBarSet("");
   pos_set->setBorderColor(0x006400);  // darkgreen
   pos_set->setColor(0x90ee90);        // lightgreen
+  QBarSet* pos_set_invisible = new QBarSet("");
+  pos_set_invisible->setBorderColor(Qt::transparent);
+  pos_set_invisible->setColor(Qt::transparent);
+  QBarSet* neg_set_invisible = new QBarSet("");
+  neg_set_invisible->setBorderColor(Qt::transparent);
+  neg_set_invisible->setColor(Qt::transparent);
 
   connect(neg_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+  connect(
+      pos_set_invisible, &QBarSet::hovered, this, &HistogramView::showToolTip);
+  connect(
+      neg_set_invisible, &QBarSet::hovered, this, &HistogramView::showToolTip);
 
   connect(
       neg_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
   connect(
       pos_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
+  connect(pos_set_invisible,
+          &QBarSet::clicked,
+          this,
+          &HistogramView::emitEndPointsInBucket);
+  connect(neg_set_invisible,
+          &QBarSet::clicked,
+          this,
+          &HistogramView::emitEndPointsInBucket);
 
-  return {neg_set, pos_set};
+  return {neg_set, pos_set, pos_set_invisible, neg_set_invisible};
 }
 
 void HistogramView::emitEndPointsInBucket(const int bar_index)
@@ -915,15 +940,22 @@ int HistogramView::computeFirstDigit(int value, int digits)
   return static_cast<int>(value / std::pow(10, digits - 1));
 }
 
-void HistogramView::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
+void HistogramView::populateBarSets(QBarSet& neg_set,
+                                    QBarSet& pos_set,
+                                    QBarSet& neg_set_invisible,
+                                    QBarSet& pos_set_invisible)
 {
   for (const auto& bucket : buckets_.negative) {
     neg_set << bucket.size();
+    neg_set_invisible << histogram_->getMaxBinCount() - bucket.size();
     pos_set << 0;
+    pos_set_invisible << 0;
   }
   for (const auto& bucket : buckets_.positive) {
     neg_set << 0;
+    neg_set_invisible << 0;
     pos_set << bucket.size();
+    pos_set_invisible << histogram_->getMaxBinCount() - bucket.size();
   }
 }
 
