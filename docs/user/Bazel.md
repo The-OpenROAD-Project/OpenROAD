@@ -342,14 +342,20 @@ OpenSTA has an additional challenge in that only the https://github.com/The-Open
 
 ## Testing the GUI with gcd on a pull request by number
 
+To test a PR with the GUI on gcd, run:
+
+```
+    $ git fetch origin pull/7856/head
+    $ git checkout FETCH_HEAD
+    $ bazelisk run test/orfs/gcd:gcd_final /tmp/gcd -- gui_final
+```
+
 This will:
 
 - fetch and checkout pull request 7856
 - build OpenROAD
 - run bazel-orfs flow on gcd
-- create a /tmp/gcd folder with the ORFS project. `bazelisk run test/orfs/gcd:gcd_final` run alone would create the /tmp/gcd folder and the arguments. The arguments after `--` are forwarded to the /tmp/gcd/make script that invokes make with the gcd ORFS project set up in /tmp/gcd/_main/config.mk.
+- create a /tmp/gcd folder with the ORFS project
 - launch the GUI opening gui_final gcd
 
-    $ git fetch origin pull/7856/head
-    $ git checkout FETCH_HEAD
-    $ bazelisk run test/orfs/gcd:gcd_final /tmp/gcd -- gui_final
+`bazelisk run test/orfs/gcd:gcd_final` run alone would create the `/tmp/gcd` folder and the arguments. The arguments after `--` are forwarded to the `/tmp/gcd/make` script that invokes make with the gcd ORFS project set up in `/tmp/gcd/_main/config.mk`.
