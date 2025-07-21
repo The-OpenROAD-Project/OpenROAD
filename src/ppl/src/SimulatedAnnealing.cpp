@@ -85,8 +85,8 @@ void SimulatedAnnealing::run(float init_temperature,
           }
         }
       } else {
-        for (int i = 0; i < prev_slots_.size(); i++) {
-          slots_[prev_slots_[i]].used = true;
+        for (const int prev_slot : prev_slots_) {
+          slots_[prev_slot].used = true;
         }
         restorePreviousAssignment();
       }
