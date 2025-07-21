@@ -728,6 +728,7 @@ void SimulatedAnnealingCore<T>::fastSA()
 
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
+      saveState();
       perturb();
       cost = calNormCost();
 
@@ -745,7 +746,7 @@ void SimulatedAnnealingCore<T>::fastSA()
       if (num < prob) {
         pre_cost = cost;
       } else {
-        restore();
+        restoreState();
       }
     }
 

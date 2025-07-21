@@ -181,20 +181,6 @@ void SACoreSoftMacro::perturb()
     return;
   }
 
-  // Keep back up
-  pre_macros_ = macros_;
-  pre_pos_seq_ = pos_seq_;
-  pre_neg_seq_ = neg_seq_;
-  pre_width_ = width_;
-  pre_height_ = height_;
-  pre_outline_penalty_ = outline_penalty_;
-  pre_wirelength_ = wirelength_;
-  pre_guidance_penalty_ = guidance_penalty_;
-  pre_fence_penalty_ = fence_penalty_;
-  pre_boundary_penalty_ = boundary_penalty_;
-  pre_macro_blockage_penalty_ = macro_blockage_penalty_;
-  pre_notch_penalty_ = notch_penalty_;
-
   // generate random number (0 - 1) to determine actions
   const float op = distribution_(generator_);
   const float action_prob_1 = pos_swap_prob_;
@@ -225,7 +211,27 @@ void SACoreSoftMacro::perturb()
   calPenalty();
 }
 
-void SACoreSoftMacro::restore()
+void SACoreSoftMacro::saveState() {
+  if (macros_.empty()) {
+    return;
+  }
+
+  // Keep back up
+  pre_macros_ = macros_;
+  pre_pos_seq_ = pos_seq_;
+  pre_neg_seq_ = neg_seq_;
+  pre_width_ = width_;
+  pre_height_ = height_;
+  pre_outline_penalty_ = outline_penalty_;
+  pre_wirelength_ = wirelength_;
+  pre_guidance_penalty_ = guidance_penalty_;
+  pre_fence_penalty_ = fence_penalty_;
+  pre_boundary_penalty_ = boundary_penalty_;
+  pre_macro_blockage_penalty_ = macro_blockage_penalty_;
+  pre_notch_penalty_ = notch_penalty_;
+}
+
+void SACoreSoftMacro::restoreState()
 {
   if (macros_.empty()) {
     return;
