@@ -302,7 +302,7 @@ def dockerTests = {
             }
         }
         parallel(build_docker_images);
-        DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
+        DOCKER_IMAGE = dockerPush('ubuntu24.04', 'openroad');
         echo "Docker image is ${DOCKER_IMAGE}";
     }
     parallel(getParallelTests(DOCKER_IMAGE));
