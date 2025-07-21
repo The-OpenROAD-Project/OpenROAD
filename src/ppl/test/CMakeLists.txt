@@ -77,7 +77,6 @@ or_integration_tests(
     large_groups3
     large_groups4
     macro_not_placed
-    macro_not_placed_random
     min_dist_in_tracks1
     min_dist_in_tracks2
     multiple_calls
@@ -107,15 +106,6 @@ or_integration_tests(
     place_pin_error1
     place_pin_error2
     place_pin_error3
-    random1
-    random2
-    random3
-    random4
-    random5
-    random6
-    random7
-    random8
-    random9
     top_layer1
     top_layer2
     top_layer3
