@@ -959,9 +959,10 @@ void HistogramView::populateBarSets(QBarSet& neg_set,
                                     QBarSet& neg_set_invisible,
                                     QBarSet& pos_set_invisible)
 {
+  const int max_bin_count = histogram_->getMaxBinCount();
   for (const auto& bucket : buckets_.negative) {
     neg_set << bucket.size();
-    neg_set_invisible << histogram_->getMaxBinCount() - bucket.size();
+    neg_set_invisible << max_bin_count - bucket.size();
     pos_set << 0;
     pos_set_invisible << 0;
   }
@@ -969,7 +970,7 @@ void HistogramView::populateBarSets(QBarSet& neg_set,
     neg_set << 0;
     neg_set_invisible << 0;
     pos_set << bucket.size();
-    pos_set_invisible << histogram_->getMaxBinCount() - bucket.size();
+    pos_set_invisible << max_bin_count - bucket.size();
   }
 }
 
