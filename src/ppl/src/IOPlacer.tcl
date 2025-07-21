@@ -208,8 +208,6 @@ proc write_pin_placement { args } {
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
-                                  [-random_seed seed]\
-                                  [-random]\
                                   [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
                                   [-min_distance_in_tracks]\
@@ -222,9 +220,9 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
 proc place_pins { args } {
   ord::parse_list_args "place_pins" args list {-exclude -group_pins}
   sta::parse_key_args "place_pins" args \
-    keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
+    keys {-hor_layers -ver_layers -corner_avoidance \
           -min_distance -write_pin_placement} \
-    flags {-random -min_distance_in_tracks -annealing} ;# checker off
+    flags {-min_distance_in_tracks -annealing} ;# checker off
 
   sta::check_argc_eq0 "place_pins" $args
 
@@ -247,7 +245,7 @@ proc place_pins { args } {
 
   foreach inst [$dbBlock getInsts] {
     if { [$inst isBlock] } {
-      if { ![$inst isPlaced] && ![info exists flags(-random)] } {
+      if { ![$inst isPlaced] } {
         utl::warn PPL 15 "Macro [$inst getName] is not placed."
       } else {
         lappend blockages $inst
@@ -256,12 +254,6 @@ proc place_pins { args } {
   }
 
   utl::report "Found [llength $blockages] macro blocks."
-
-  set seed 42
-  if { [info exists keys(-random_seed)] } {
-    set seed $keys(-random_seed)
-  }
-  ppl::set_rand_seed $seed
 
   if { [info exists keys(-hor_layers)] } {
     set hor_layers $keys(-hor_layers)
@@ -365,9 +357,9 @@ proc place_pins { args } {
   }
 
   if { [info exists flags(-annealing)] } {
-    ppl::run_annealing [info exists flags(-random)]
+    ppl::run_annealing
   } else {
-    ppl::run_hungarian_matching [info exists flags(-random)]
+    ppl::run_hungarian_matching
   }
 }
 
