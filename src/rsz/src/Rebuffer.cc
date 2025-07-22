@@ -1394,7 +1394,7 @@ void Rebuffer::init()
     buffer_sizes_.push_back(BufferSize{
         cell,
         FixedDelay(out->intrinsicDelay(sta_)),
-        /*intrinsic_delay=*/0.0f,
+        /*margined_max_cap=*/0.0f,
         out->driveResistance(),
     });
   }
