@@ -40,7 +40,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         0 |   0.8306 |  3.661695e+06 |   +0.00% |  8.06e-14 |      
 [INFO GPL-0100] Timing-driven iteration 1/7, virtual: false.
-[INFO GPL-0101]    Iter: 2, overflow: 0.760, keep resizer changes at: 1, HPWL: 3938056
+[INFO GPL-0101]    Iter: 3, overflow: 0.760, keep resizer changes at: 1, HPWL: 3938056
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -88,7 +88,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       180 |   0.7203 |  4.041681e+06 |   +1.01% |  5.25e-10 |      
       190 |   0.7041 |  4.099272e+06 |   +1.42% |  8.55e-10 |      
 [INFO GPL-0100] Timing-driven iteration 2/7, virtual: false.
-[INFO GPL-0101]    Iter: 194, overflow: 0.694, keep resizer changes at: 1, HPWL: 4124661
+[INFO GPL-0101]    Iter: 195, overflow: 0.694, keep resizer changes at: 1, HPWL: 4124661
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -120,7 +120,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       210 |   0.6522 |  4.230921e+06 |   +1.70% |  2.27e-09 |      
       220 |   0.6208 |  4.309523e+06 |   +1.86% |  3.70e-09 |      
 [INFO GPL-0100] Timing-driven iteration 3/7, virtual: false.
-[INFO GPL-0101]    Iter: 227, overflow: 0.593, keep resizer changes at: 1, HPWL: 4372923
+[INFO GPL-0101]    Iter: 228, overflow: 0.593, keep resizer changes at: 1, HPWL: 4372923
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -151,7 +151,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       230 |   0.5801 |  4.402438e+06 |   +2.16% |  6.02e-09 |      
       240 |   0.5394 |  4.482471e+06 |   +1.82% |  9.81e-09 |      
 [INFO GPL-0100] Timing-driven iteration 4/7, virtual: false.
-[INFO GPL-0101]    Iter: 249, overflow: 0.492, keep resizer changes at: 1, HPWL: 4573121
+[INFO GPL-0101]    Iter: 250, overflow: 0.492, keep resizer changes at: 1, HPWL: 4573121
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -182,7 +182,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       250 |   0.4865 |  4.590874e+06 |   +2.42% |  1.60e-08 |      
       260 |   0.4274 |  4.631970e+06 |   +0.90% |  2.60e-08 |      
 [INFO GPL-0100] Timing-driven iteration 5/7, virtual: false.
-[INFO GPL-0101]    Iter: 267, overflow: 0.391, keep resizer changes at: 1, HPWL: 4641694
+[INFO GPL-0101]    Iter: 268, overflow: 0.391, keep resizer changes at: 1, HPWL: 4641694
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -213,7 +213,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       270 |   0.3794 |  4.663606e+06 |   +0.68% |  4.24e-08 |      
       280 |   0.3152 |  4.683448e+06 |   +0.43% |  6.57e-08 |      
 [INFO GPL-0100] Timing-driven iteration 6/7, virtual: false.
-[INFO GPL-0101]    Iter: 287, overflow: 0.293, keep resizer changes at: 1, HPWL: 4703186
+[INFO GPL-0101]    Iter: 288, overflow: 0.293, keep resizer changes at: 1, HPWL: 4703186
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357
@@ -245,7 +245,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       300 |   0.2537 |  4.803074e+06 |   +1.29% |  1.42e-07 |      
       310 |   0.2045 |  4.794100e+06 |   -0.19% |  2.10e-07 |      
 [INFO GPL-0100] Timing-driven iteration 7/7, virtual: false.
-[INFO GPL-0101]    Iter: 314, overflow: 0.194, keep resizer changes at: 1, HPWL: 4790105
+[INFO GPL-0101]    Iter: 315, overflow: 0.194, keep resizer changes at: 1, HPWL: 4790105
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       357

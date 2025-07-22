@@ -52,7 +52,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         0 |   0.1267 |  3.978990e+05 |   +0.00% |  8.30e-11 |      
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
-[INFO GPL-0101]    Iter: 0, overflow: 0.127, keep resizer changes at: 1, HPWL: 397899
+[INFO GPL-0101]    Iter: 1, overflow: 0.127, keep resizer changes at: 1, HPWL: 397899
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
