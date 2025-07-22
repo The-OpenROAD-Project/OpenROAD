@@ -109,12 +109,13 @@ class NesterovPlace
                       int& routability_driven_count,
                       float& curA,
                       int64_t& end_routability_area);
-  bool isConverged();
+  bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
                         const std::string& routability_driven_dir) const;
   void doBackTracking(float coeff);
-  void reportResults(int64_t original_area,
+  void reportResults(int nesterov_iter,
+                     int64_t original_area,
                      int64_t end_routability_area,
                      int64_t td_accumulated_delta_area);
 
