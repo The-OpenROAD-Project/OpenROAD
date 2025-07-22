@@ -385,20 +385,10 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
   size.cell->bufferPorts(inp, outp);
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
-                          + outp->capacitance();
-
-  // Cache the value of drive resistance since it's expensive to calculate.
-  float r_drvr;
-  auto it_drive_resistance = drive_resistance_cache_.find(outp);
-  if (it_drive_resistance != drive_resistance_cache_.end()) {
-    r_drvr = it_drive_resistance->second;
-  } else {
-    r_drvr = outp->driveResistance();
-    drive_resistance_cache_[outp] = r_drvr;
-  }
+                          + outp->capacitance();  
 
   const float load_slew
-      = (r_drvr
+      = (size.driver_resistance
          + resizer_->dbuToMeters(bnet->maxLoadWireLength() + extra_wire_length)
                * wire_res)
         * (bnet->cap() + extra_cap) * elmore_skew_factor_;
@@ -1404,7 +1394,8 @@ void Rebuffer::init()
     buffer_sizes_.push_back(BufferSize{
         cell,
         FixedDelay(out->intrinsicDelay(sta_)),
-        0.0f,
+        /*intrinsic_delay=*/0.0f,
+        out->driveResistance(),
     });
   }
 

@@ -123,6 +123,7 @@ class Rebuffer : public sta::dbStaState
     LibertyCell* cell;
     FixedDelay intrinsic_delay;
     float margined_max_cap;
+    float driver_resistance;
   };
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
@@ -138,7 +139,6 @@ class Rebuffer : public sta::dbStaState
 
   std::vector<BufferSize> buffer_sizes_;
   std::map<LibertyCell*, BufferSize*> buffer_sizes_index_;
-  std::unordered_map<LibertyPort*, float> drive_resistance_cache_;
 
   Pin* pin_;
   float fanout_limit_;
