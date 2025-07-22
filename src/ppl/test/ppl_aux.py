@@ -42,8 +42,6 @@ def place_pins(
     *,
     hor_layers=None,
     ver_layers=None,
-    random_seed=None,
-    random=False,
     corner_avoidance=None,
     min_distance=None,
     min_distance_in_tracks=False,
@@ -55,8 +53,6 @@ def place_pins(
     keyword arguments:
     hor_layers       --
     ver_layers       --
-    random_seed      --
-    random           --
     corner_avoidance --
     min_distance     --
     min_distance_in_tracks --
@@ -83,12 +79,7 @@ def place_pins(
 
     utl.report(f"Found {len(blockages)} macro blocks.")
 
-    seed = 42
-    if random_seed != None:
-        seed = random_seed
-
     params = design.getIOPlacer().getParameters()
-    params.setRandSeed(seed)
 
     if hor_layers == None:
         utl.error(utl.PPL, 317, "hor_layers is required.")
@@ -230,7 +221,7 @@ def place_pins(
             dbBlock.addBTermGroup(pin_list, False)
             group_idx += 1
 
-    design.getIOPlacer().runHungarianMatching(random)
+    design.getIOPlacer().runHungarianMatching()
 
 
 def place_pin(
