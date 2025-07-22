@@ -229,7 +229,8 @@ proc place_pins { args } {
   sta::check_argc_eq0 "place_pins" $args
 
   if { [info exists flags(-random)] || [info exists keys(-random_seed)] } {
-    utl::warn PPL 113 "-random and -random_seed are deprecated."
+    utl::warn PPL 113 "-random and -random_seed are deprecated and will not be applied." \
+      "Skipping random pin placement."
   } else {
     set regions $list(-exclude)
     set pin_groups $list(-group_pins)
