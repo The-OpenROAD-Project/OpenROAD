@@ -1621,9 +1621,9 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
     }
   }
 
-  bool draw_flywires = painter.getOptions()->isFlywireHighlightOnly();
+  bool draw_flywires = true;
 
-  if (!draw_flywires) {
+  if (!painter.getOptions()->isFlywireHighlightOnly()) {
     odb::dbWire* wire = net->getWire();
     if (wire) {
       draw_flywires = false;
