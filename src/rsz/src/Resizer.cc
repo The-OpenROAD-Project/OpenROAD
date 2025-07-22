@@ -746,6 +746,24 @@ void Resizer::findBuffers()
   }
 }
 
+LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
+{
+  // Prefer user-specified buffer cell if provided.
+  if (user_buffer_cell) {
+    return user_buffer_cell;
+  }
+
+  // Otherwise, find the weakest buffer with the lowest drive resistance.
+  findBuffers();  // updates buffer_lowest_drive_
+
+  // No buffer?
+  if (buffer_lowest_drive_ == nullptr) {
+    logger_->error(RSZ, 23, "No buffers found.");
+  }
+
+  return buffer_lowest_drive_;
+}
+
 bool Resizer::isLinkCell(LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
@@ -753,10 +771,19 @@ bool Resizer::isLinkCell(LibertyCell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::bufferInputs()
+void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
 {
   init();
-  findBuffers();
+
+  // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
+  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  if (verbose) {
+    logger_->info(RSZ,
+                  29,
+                  "Start input port buffering with {}.",
+                  selected_buffer_cell->name());
+  }
+
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
@@ -776,14 +803,18 @@ void Resizer::bufferInputs()
           // Hands off special nets.
           && !db_network_->isSpecial(net) && hasPins(net)) {
         // repair_design will resize to target slew.
-        bufferInput(pin, buffer_lowest_drive_);
+        bufferInput(pin, selected_buffer_cell, verbose);
       }
     }
   }
 
+  logger_->info(RSZ,
+                27,
+                "Inserted {} {} input buffers.",
+                inserted_buffer_count_,
+                selected_buffer_cell->name());
+
   if (inserted_buffer_count_ > 0) {
-    logger_->info(
-        RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
   }
 }
@@ -852,7 +883,9 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 Make sure all the top pins are buffered
 */
 
-Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
+Instance* Resizer::bufferInput(const Pin* top_pin,
+                               LibertyCell* buffer_cell,
+                               bool verbose)
 {
   dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
   odb::dbModNet* top_pin_hier_net = db_network_->hierNet(top_pin);
@@ -897,7 +930,18 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   delete pin_iter;
   // dont buffer, buffers
   if (has_dont_touch || !has_non_buffer) {
+    if (verbose) {
+      logger_->info(RSZ,
+                    213,
+                    "Skipping input port {} buffering.",
+                    network_->name(top_pin));
+    }
     return nullptr;
+  }
+
+  if (verbose) {
+    logger_->info(
+        RSZ, 214, "Buffering input port {}.", network_->name(top_pin));
   }
 
   // make the buffer and its output net.
@@ -972,10 +1016,19 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   return buffer;
 }
 
-void Resizer::bufferOutputs()
+void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
 {
   init();
-  findBuffers();
+
+  // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
+  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  if (verbose) {
+    logger_->info(RSZ,
+                  31,
+                  "Start output port buffering with {}.",
+                  selected_buffer_cell->name());
+  }
+
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
@@ -995,14 +1048,18 @@ void Resizer::bufferOutputs()
           // drivers.
           && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
           && hasPins(net)) {
-        bufferOutput(pin, buffer_lowest_drive_);
+        bufferOutput(pin, selected_buffer_cell, verbose);
       }
     }
   }
 
+  logger_->info(RSZ,
+                28,
+                "Inserted {} {} output buffers.",
+                inserted_buffer_count_,
+                selected_buffer_cell->name());
+
   if (inserted_buffer_count_ > 0) {
-    logger_->info(
-        RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
   }
 }
@@ -1039,8 +1096,15 @@ bool Resizer::isTristateDriver(const Pin* pin)
   return port && port->direction()->isAnyTristate();
 }
 
-void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
+void Resizer::bufferOutput(const Pin* top_pin,
+                           LibertyCell* buffer_cell,
+                           bool verbose)
 {
+  if (verbose) {
+    logger_->info(
+        RSZ, 215, "Buffering output port {}.", network_->name(top_pin));
+  }
+
   NetworkEdit* network = networkEdit();
 
   odb::dbITerm* top_pin_op_iterm;
@@ -1056,6 +1120,7 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   sta_->disconnectPin(const_cast<Pin*>(top_pin));
 
   LibertyPort *input, *output;
+  assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
   string buffer_name = makeUniqueInstName("output");
