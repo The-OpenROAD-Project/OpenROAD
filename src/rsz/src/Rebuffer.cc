@@ -386,7 +386,17 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
                           + outp->capacitance();
-  const float r_drvr = outp->driveResistance();
+
+  // Cache the value of drive resistance since it's expensive to calculate.
+  float r_drvr;
+  auto it_drive_resistance = drive_resistance_cache_.find(outp);
+  if (it_drive_resistance != drive_resistance_cache_.end()) {
+    r_drvr = it_drive_resistance->second;
+  } else {
+    r_drvr = outp->driveResistance();
+    drive_resistance_cache_[outp] = r_drvr;
+  }
+
   const float load_slew
       = (r_drvr
          + resizer_->dbuToMeters(bnet->maxLoadWireLength() + extra_wire_length)

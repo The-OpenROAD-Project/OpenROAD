@@ -138,6 +138,7 @@ class Rebuffer : public sta::dbStaState
 
   std::vector<BufferSize> buffer_sizes_;
   std::map<LibertyCell*, BufferSize*> buffer_sizes_index_;
+  std::unordered_map<LibertyPort*, float> drive_resistance_cache_;
 
   Pin* pin_;
   float fanout_limit_;
