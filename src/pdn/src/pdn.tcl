@@ -634,10 +634,10 @@ proc add_pdn_connect { args } {
     $dont_use
 }
 
-sta::define_cmd_args "add_sroute_connect" {[-net net] \
-                                           [-outerNet outerNet] \
+sta::define_cmd_args "add_sroute_connect" {-net net \
                                            -layers list_of_2_layers \
                                            -cut_pitch pitch_value \
+                                           [-outerNet outerNet] \
                                            [-fixed_vias list_of_vias] \
                                            [-max_rows rows] \
                                            [-max_columns columns] \
