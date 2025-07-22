@@ -846,6 +846,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._max_layer_for_clock;
   stream << block._bterm_groups;
   stream << block._bterm_top_layer_grid;
+  stream << block._inst_scan_inst_map;
 
   //---------------------------------------------------------- stream out
   // properties
@@ -1023,6 +1024,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   if (db->isSchema(db_schema_bterm_top_layer_grid)) {
     stream >> block._bterm_top_layer_grid;
+  }
+  if (db->isSchema(db_schema_block_owns_scan_insts)) {
+    stream >> block._inst_scan_inst_map;
   }
 
   //---------------------------------------------------------- stream in

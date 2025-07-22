@@ -36,6 +36,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
+#include "dbScanInst.h"
 
 namespace odb {
 
@@ -783,6 +784,22 @@ bool dbInst::isPad() const
 bool dbInst::isEndCap() const
 {
   return getMaster()->isEndCap();
+}
+
+dbScanInst* dbInst::getScanInst() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  _dbBlock* block = (_dbBlock*) inst->getOwner();
+  auto itr = block->_inst_scan_inst_map.find(inst->getId());
+
+  if (itr == block->_inst_scan_inst_map.end()) {
+    return nullptr;
+  }
+
+  dbId<_dbScanInst> scan_inst_id = itr->second;
+  _dbScanInst* scan_inst = block->_scan_inst_tbl->getPtr(scan_inst_id);
+
+  return (dbScanInst*) scan_inst;
 }
 
 dbSet<dbITerm> dbInst::getITerms()
