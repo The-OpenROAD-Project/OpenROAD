@@ -50,12 +50,8 @@ dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream << obj._unused;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream << obj._first_scan_inst;
-  }
+  stream << obj._unused;
+  stream << obj._first_scan_inst;
   return stream;
 }
 

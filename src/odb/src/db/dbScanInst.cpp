@@ -82,12 +82,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
   stream << obj.inst_;
   stream << obj.scan_clock_;
   stream << obj.clock_edge_;
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream << obj._next_list_scan_inst;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream << obj._prev_list_scan_inst;
-  }
+  stream << obj._next_list_scan_inst;
+  stream << obj._prev_list_scan_inst;
   return stream;
 }
 
