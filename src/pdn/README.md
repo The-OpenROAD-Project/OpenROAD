@@ -247,13 +247,13 @@ add_sroute_connect  -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {2
 add_sroute_connect
     -cut_pitch pitch_value
     -layers list_of_2_layers
+    -net net
     [-fixed_vias list_of_vias]
     [-insts inst]
     [-max_columns columns]
     [-max_rows rows]
     [-metalspaces metalspaces]
     [-metalwidths metalwidths]
-    [-net net]
     [-ongrid ongrid_layers]
     [-outerNet outerNet]
 ```
@@ -264,13 +264,13 @@ add_sroute_connect
 | ----- | ----- |
 | `-cut_pitch` | Distance between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. (Default:200 200) |
 | `-layers` |  The metal layers for vertical stripes within inner power ring. |
+| `-net` | The inner net where the power ring exists. |
 | `[-fixed_vias]` | List of fixed vias to be used to form the via stack. |
 | `[-insts]` | List of all the instances that contain the pin that needs to get connected with power ring. (Default:nothing) |
 | `[-max_columns]` | Maximum number of columns when adding arrays of vias. (Default:10) |
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. (Default:10) |
 | `[-metalspaces]` | Spacing of each metal layer. |
 | `[-metalwidths]` | Width for each metal layer. |
-| `[-net]` | The inner net where the power ring exists. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `[-outerNet]` | The outer net where instances/pins that need to get connected exist. |
 

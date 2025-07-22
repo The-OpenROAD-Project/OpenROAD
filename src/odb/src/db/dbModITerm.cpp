@@ -101,30 +101,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._name;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._parent;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._child_modbterm;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._mod_net;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._next_net_moditerm;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._prev_net_moditerm;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._next_entry;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
-    stream << obj._prev_entry;
-  }
+  stream << obj._name;
+  stream << obj._parent;
+  stream << obj._child_modbterm;
+  stream << obj._mod_net;
+  stream << obj._next_net_moditerm;
+  stream << obj._prev_net_moditerm;
+  stream << obj._next_entry;
+  stream << obj._prev_entry;
   return stream;
 }
 

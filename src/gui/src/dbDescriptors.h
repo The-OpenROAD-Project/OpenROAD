@@ -178,11 +178,23 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   using Node = odb::dbWireGraph::Node;
   using NodeList = std::set<const Node*>;
   using NodeMap = std::map<const Node*, NodeList>;
+  using PointList = std::set<odb::Point>;
+  using PointMap = std::map<odb::Point, PointList>;
   using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
+  using DbTargets = std::map<const odb::dbObject*, std::set<odb::Point>>;
 
-  void drawPathSegment(odb::dbNet* net,
-                       const odb::dbObject* sink,
-                       Painter& painter) const;
+  std::set<odb::Line> convertGuidesToLines(odb::dbNet* net,
+                                           DbTargets& sources,
+                                           DbTargets& sinks) const;
+
+  void drawPathSegmentWithGraph(odb::dbNet* net,
+                                const odb::dbObject* sink,
+                                Painter& painter) const;
+  void drawPathSegmentWithGuides(const std::set<odb::Line>& lines,
+                                 DbTargets& sources,
+                                 DbTargets& sinks,
+                                 const odb::dbObject* sink,
+                                 Painter& painter) const;
   void findSourcesAndSinksInGraph(odb::dbNet* net,
                                   const odb::dbObject* sink,
                                   odb::dbWireGraph* graph,
@@ -196,6 +208,10 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
                 const Node* source,
                 const Node* sink,
                 std::vector<odb::Point>& path) const;
+  void findPath(PointMap& graph,
+                const odb::Point& source,
+                const odb::Point& sink,
+                std::vector<odb::Point>& path) const;
 
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
@@ -206,6 +222,7 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   odb::dbObject* getSink(const std::any& object) const;
 
   static const int kMaxIterms = 10000;
+  static constexpr double kMinGuidePixelWidth = 10.0;
 };
 
 class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>

@@ -171,8 +171,6 @@ orfs_flow(
     abstract_stage = POWER_STAGE_NAME,
     arguments = {
         "PLACE_DENSITY": "0.82",
-        "MOCK_ARRAY_ROWS": "8",
-        "MOCK_ARRAY_COLS": "8",
         "DETAILED_ROUTE_END_ITERATION": "6",
         "MIN_ROUTING_LAYER": "M2",
         "MAX_ROUTING_LAYER": "M5",

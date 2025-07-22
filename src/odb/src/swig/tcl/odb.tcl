@@ -734,6 +734,9 @@ proc set_io_pin_constraint { args } {
       } elseif { $interval == "*" } {
         set begin [ppl::get_edge_extreme "-region" 1 $edge]
         set end [ppl::get_edge_extreme "-region" 0 $edge]
+      } else {
+        utl::error PPL 212 "Invalid value for \'-region edge:interval\'. Set the interval as the\
+                wildcard \'*\' or as a range \'begin-end\' in microns."
       }
 
       if { [info exists keys(-direction)] && [info exists keys(-pin_names)] } {

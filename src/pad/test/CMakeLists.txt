@@ -17,6 +17,7 @@ or_integration_tests(
     non_top_layer
     place_bondpad
     place_bondpad_stagger
+    place_io_terminals_empty_call
     place_pad
     place_pad_hv
     place_pad_no_master

@@ -747,7 +747,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
   }
-  _dbDatabase* db = block.getImpl()->getDatabase();
   dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
@@ -759,9 +758,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._corner_name_list;
   stream << block._name;
   stream << block._die_area;
-  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
-    stream << block._blocked_regions_for_pins;
-  }
+  stream << block._blocked_regions_for_pins;
   stream << block._tech;
   stream << block._chip;
   stream << block._bbox;
@@ -795,25 +792,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._iterm_tbl;
   stream << *block._net_tbl;
   stream << *block._inst_hdr_tbl;
-  if (db->isSchema(db_schema_db_remove_hash)) {
-    stream << *block._module_tbl;
-    stream << *block._inst_tbl;
-  } else {
-    stream << *block._inst_tbl;
-    stream << *block._module_tbl;
-  }
-  if (db->isSchema(db_schema_block_owns_scan_insts)) {
-    stream << *block._scan_inst_tbl;
-  }
+  stream << *block._module_tbl;
+  stream << *block._inst_tbl;
+  stream << *block._scan_inst_tbl;
   stream << *block._modinst_tbl;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream << *block._modbterm_tbl;
-    if (db->isSchema(db_schema_db_remove_hash)) {
-      stream << *block._busport_tbl;
-    }
-    stream << *block._moditerm_tbl;
-    stream << *block._modnet_tbl;
-  }
+  stream << *block._modbterm_tbl;
+  stream << *block._busport_tbl;
+  stream << *block._moditerm_tbl;
+  stream << *block._modnet_tbl;
   stream << *block._powerdomain_tbl;
   stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
@@ -854,18 +840,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._dft_tbl;
   stream << *block._marker_categories_tbl;
   stream << block._marker_category_hash;
-  if (block.getDatabase()->isSchema(db_schema_dbblock_layers_ranges)) {
-    stream << block._min_routing_layer;
-    stream << block._max_routing_layer;
-    stream << block._min_layer_for_clock;
-    stream << block._max_layer_for_clock;
-  }
-  if (db->isSchema(db_schema_block_pin_groups)) {
-    stream << block._bterm_groups;
-  }
-  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
-    stream << block._bterm_top_layer_grid;
-  }
+  stream << block._min_routing_layer;
+  stream << block._max_routing_layer;
+  stream << block._min_layer_for_clock;
+  stream << block._max_layer_for_clock;
+  stream << block._bterm_groups;
+  stream << block._bterm_top_layer_grid;
 
   //---------------------------------------------------------- stream out
   // properties
