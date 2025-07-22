@@ -106,6 +106,8 @@ or_integration_tests(
     place_pin_error1
     place_pin_error2
     place_pin_error3
+    random_deprecated1
+    random_deprecated2
     top_layer1
     top_layer2
     top_layer3
