@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  diffs:
+  No-Diffs-In-Ok-Files:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code

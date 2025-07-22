@@ -114,6 +114,7 @@ class BrowserWidget : public QDockWidget,
   QTreeView* view_;
   QStandardItemModel* model_;
   bool model_modified_;
+  bool initial_load_;
 
   bool ignore_selection_;
 

@@ -75,6 +75,7 @@ class Replace
   void setBinGridCnt(int binGridCntX, int binGridCntY);
 
   void setTargetDensity(float density);
+  // Execute gpl with uniform density as target density
   void setUniformTargetDensityMode(bool mode);
   void setTargetOverflow(float overflow);
   void setInitDensityPenalityFactor(float penaltyFactor);
@@ -82,6 +83,7 @@ class Replace
   void setMinPhiCoef(float minPhiCoef);
   void setMaxPhiCoef(float maxPhiCoef);
 
+  // Query for uniform density value
   float getUniformTargetDensity(int threads);
 
   // HPWL: half-parameter wire length.

@@ -4,6 +4,11 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 #include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <optional>
@@ -442,10 +447,25 @@ int Gui::select(const std::string& type,
           std::vector<Selected> selected_vector(selected_set.begin(),
                                                 selected_set.end());
           // remove elements
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+          // Define case sensitivity options for QRegularExpression
+          QRegularExpression::PatternOptions options
+              = filter_case_sensitive
+                    ? QRegularExpression::NoPatternOption
+                    : QRegularExpression::CaseInsensitiveOption;
+
+          // Convert the wildcard string to a regex pattern and create the
+          // object
+          QRegularExpression reg_filter(
+              QRegularExpression::wildcardToRegularExpression(
+                  QString::fromStdString(name_filter)),
+              options);
+#else
           QRegExp reg_filter(
               QString::fromStdString(name_filter),
               filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
               QRegExp::WildcardUnix);
+#endif
           auto remove_if = std::remove_if(
               selected_vector.begin(),
               selected_vector.end(),
@@ -455,7 +475,13 @@ int Gui::select(const std::string& type,
                   // direct match, so don't remove
                   return false;
                 }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                return !reg_filter.match(QString::fromStdString(sel_name))
+                            .hasMatch();
+
+#else
                 return !reg_filter.exactMatch(QString::fromStdString(sel_name));
+#endif
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset
@@ -806,12 +832,13 @@ void Gui::saveHistogramImage(const std::string& filename,
       filename, chart_mode, width, height);
 }
 
-void Gui::selectClockviewerClock(const std::string& clock_name)
+void Gui::selectClockviewerClock(const std::string& clock_name,
+                                 std::optional<int> depth)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->selectClock(clock_name);
+  main_window->getClockViewer()->selectClock(clock_name, depth);
 }
 
 static QWidget* findWidget(const std::string& name)
@@ -1237,6 +1264,13 @@ void Gui::addRouteGuides(odb::dbNet* net)
   main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
+}
+
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
   main_window->getLayoutTabs()->removeRouteGuides(net);
@@ -1515,6 +1549,20 @@ int startGui(int& argc,
              bool load_settings,
              bool minimize)
 {
+#ifdef STATIC_QPA_PLUGIN_XCB
+  const char* qt_qpa_platform_env = getenv("QT_QPA_PLATFORM");
+  std::string qpa_platform
+      = qt_qpa_platform_env == nullptr ? "" : qt_qpa_platform_env;
+  if (qpa_platform != "") {
+    if (qpa_platform.find("xcb") == std::string::npos
+        && qpa_platform.find("offscreen") == std::string::npos) {
+      // OpenROAD logger is not available yet, using cout.
+      std::cout << "Your system has set QT_QPA_PLATFORM='" << qpa_platform
+                << "', openroad only supports 'offscreen' and 'xcb', please "
+                   "include one of these plugins in your platform env\n";
+    }
+  }
+#endif
   auto gui = gui::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();

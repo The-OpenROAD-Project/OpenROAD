@@ -86,7 +86,7 @@ class SelectedItemModel : public QStandardItemModel
                         QStandardItem*& name_item,
                         QStandardItem*& value_item);
   QStandardItem* makeItem(const QString& name);
-  QStandardItem* makeItem(const std::any& item, bool short_name = false);
+  QStandardItem* makeItem(const std::any& item_param, bool short_name = false);
 
   template <typename Iterator>
   QStandardItem* makeList(QStandardItem* name_item,
@@ -194,8 +194,6 @@ class Inspector : public QDockWidget
   void clicked(const QModelIndex& index);
   void doubleClicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
-  void highlightChanged();
-  void focusNetsChanged();
 
   int selectNext();
   int selectPrevious();
@@ -206,6 +204,7 @@ class Inspector : public QDockWidget
   void unsetReadOnly();
 
   void reload();
+  void loadActions();
 
  private slots:
   void focusIndex(const QModelIndex& index);
@@ -218,7 +217,6 @@ class Inspector : public QDockWidget
 
  private:
   void handleAction(QWidget* action);
-  void loadActions();
 
   void adjustHeaders();
 

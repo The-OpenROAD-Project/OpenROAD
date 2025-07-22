@@ -242,7 +242,6 @@ class definReader : public definBase
   std::unique_ptr<definPropDefs> _prop_defsR;
   std::unique_ptr<definPinProps> _pin_propsR;
   std::vector<definBase*> _interfaces;
-  bool _update{false};
   bool _continue_on_errors{false};
   std::string _block_name;
   std::string version_;

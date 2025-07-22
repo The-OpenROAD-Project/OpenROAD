@@ -17,7 +17,6 @@
 #include "placerBase.h"
 #include "point.h"
 #include "routeBase.h"
-
 namespace odb {
 class dbInst;
 class dbITerm;

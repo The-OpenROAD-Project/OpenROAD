@@ -82,8 +82,11 @@ class HistogramView : public QChartView
       const std::vector<std::vector<const sta::Pin*>>& pin_bins);
   void setVisualConfig();
 
-  std::pair<QBarSet*, QBarSet*> createBarSets();
-  void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
+  std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*> createBarSets();
+  void populateBarSets(QBarSet& neg_set,
+                       QBarSet& pos_set,
+                       QBarSet& neg_set_invisible,
+                       QBarSet& pos_set_invisible);
 
   void setXAxisConfig(int all_bars_count);
   void setXAxisTitle();
@@ -137,6 +140,9 @@ class ChartsWidget : public QDockWidget
                  const std::optional<int>& height_px);
 
   Mode modeFromString(const std::string& mode) const;
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
@@ -163,6 +169,8 @@ class ChartsWidget : public QDockWidget
   utl::Logger* logger_;
   sta::dbSta* sta_;
   std::unique_ptr<STAGuiInterface> stagui_;
+
+  QTabWidget* chart_tabs_;
 
   QComboBox* mode_menu_;
   QComboBox* filters_menu_;

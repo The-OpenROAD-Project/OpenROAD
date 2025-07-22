@@ -3785,7 +3785,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
   }
 }
 
-// loop through violation and patch C5 enclosure minStep for GF14
+// Patch minStep markers for transition layers vias
 void FlexGCWorker::Impl::patchMetalShape_minStep()
 {
   std::vector<drConnFig*> results;
@@ -3801,7 +3801,8 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     auto layer = tech_->getLayer(lNum);
     if (!layer->hasVia2ViaMinStepViol()
         && !tech_->getLayer(lNum - 1)->hasLef58MaxSpacingConstraints()
-        && !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints()) {
+        && (lNum + 1 >= tech_->getLayers().size()
+            || !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints())) {
       continue;
     }
 

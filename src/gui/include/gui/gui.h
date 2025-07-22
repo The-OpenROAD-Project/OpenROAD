@@ -158,10 +158,6 @@ class Painter
   static inline const Color kHighlight = kYellow;
   static inline const Color kPersistHighlight = kYellow;
 
-  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
-      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
-  {
-  }
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -220,6 +216,7 @@ class Painter
 
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
+  void drawLine(const odb::Line& line) { drawLine(line.pt0(), line.pt1()); }
 
   // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
@@ -279,6 +276,12 @@ class Painter
   double getPixelsPerDBU() { return pixels_per_dbu_; }
   Options* getOptions() { return options_; }
   const odb::Rect& getBounds() { return bounds_; }
+
+ protected:
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
+      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
+  {
+  }
 
  private:
   Options* options_;
@@ -564,6 +567,26 @@ class SpectrumGenerator
   double scale_;
 };
 
+// A chart with a single X axis and potentially multiple Y axes
+class Chart
+{
+ public:
+  virtual ~Chart() = default;
+
+  // printf-style format string
+  virtual void setXAxisFormat(const std::string& format) = 0;
+  // printf-style format.  An empty string is a no-op placeholder
+  virtual void setYAxisFormats(const std::vector<std::string>& formats) = 0;
+  virtual void setYAxisMin(const std::vector<std::optional<double>>& mins) = 0;
+  // One y per series.  The order matches y_labels in addChart
+  virtual void addPoint(double x, const std::vector<double>& ys) = 0;
+
+  virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
+
+ protected:
+  Chart() = default;
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -668,7 +691,8 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
-  void selectClockviewerClock(const std::string& clock_name);
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth);
 
   // Save histogram view
   void saveHistogramImage(const std::string& filename,
@@ -702,6 +726,10 @@ class Gui
   void addNetTracks(odb::dbNet* net);
   void removeNetTracks(odb::dbNet* net);
   void clearNetTracks();
+
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);

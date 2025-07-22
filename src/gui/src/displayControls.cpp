@@ -9,7 +9,11 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
 #include <QRegExp>
+#endif
 #include <QSettings>
 #include <QVBoxLayout>
 #include <array>
@@ -511,6 +515,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.flywires_only, "Flywires only", misc, Qt::Unchecked);
   makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
   setNameItemDoubleClickAction(misc_.labels, [this]() {
     label_font_
@@ -1230,6 +1235,23 @@ void DisplayControls::findControlsInItems(const std::string& path,
   std::map<std::string, QStandardItem*> controls;
   collectControls(model_->invisibleRootItem(), column, controls);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  QString regexPattern = QRegularExpression::wildcardToRegularExpression(
+      QString::fromStdString(path));  // Defaults to exact match.
+
+  // Create the QRegularExpression object with the case-insensitive option.
+  const QRegularExpression path_compare(
+      regexPattern, QRegularExpression::CaseInsensitiveOption);
+
+  // Iterate and check for an exact match.
+  for (auto& [item_path, item] : controls) {
+    QRegularExpressionMatch match
+        = path_compare.match(QString::fromStdString(item_path));
+    if (match.hasMatch()) {
+      items.push_back(item);
+    }
+  }
+#else
   const QRegExp path_compare(
       QString::fromStdString(path), Qt::CaseInsensitive, QRegExp::Wildcard);
   for (auto& [item_path, item] : controls) {
@@ -1237,6 +1259,7 @@ void DisplayControls::findControlsInItems(const std::string& path,
       items.push_back(item);
     }
   }
+#endif
 }
 
 void DisplayControls::save()
@@ -1836,6 +1859,11 @@ bool DisplayControls::isModuleView() const
 bool DisplayControls::isGCellGridVisible() const
 {
   return isModelRowVisible(&misc_.gcell_grid);
+}
+
+bool DisplayControls::isFlywireHighlightOnly() const
+{
+  return isModelRowVisible(&misc_.flywires_only);
 }
 
 bool DisplayControls::areIOPinsVisible() const
