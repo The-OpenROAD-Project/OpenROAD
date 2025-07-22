@@ -385,7 +385,7 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
   size.cell->bufferPorts(inp, outp);
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
-                          + outp->capacitance();  
+                          + outp->capacitance();
 
   const float load_slew
       = (size.driver_resistance
