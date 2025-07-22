@@ -1,6 +1,7 @@
 /* Authors: Lutong Wang and Bangqi Xu */
+/* Updated version: Zhiang Wang*/
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2025, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,10 +43,12 @@ void FlexGRWorker::end()
   // boundaries are always splitted, need to stitch boundaries
   endStitchBoundary();
   endWriteBackCMap();
-
   cleanup();
 }
 
+
+// Even in a single worker, each frNet may have multiple grNets
+// We need to have two loops
 void FlexGRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
 {
   for (auto& net : nets_) {
@@ -61,50 +64,12 @@ void FlexGRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
   }
 }
 
-void FlexGRWorker::endRemoveNets(
-    const std::set<frNet*, frBlockObjectComp>& modNets)
+// Remove existing frNets in the current worker
+void FlexGRWorker::endRemoveNets(const std::set<frNet*, frBlockObjectComp>& modNets)
 {
   endRemoveNets_objs(modNets);
   endRemoveNets_nodes(modNets);
 }
-
-
-/*
-void FlexGRWorker::endRemoveNets_objs(
-  const std::set<frNet*, frBlockObjectComp>& modNets)
-{
-  // remove pathSeg and via (all nets based)
-  std::vector<grBlockObject*> result;
-  // if a pathSeg or a via belongs to a modified net, as long as it touches
-  // routeBox we need to remove it (will remove all the way to true pin and
-  // boundary pin)
-  getRegionQuery()->queryGRObj(getRouteBox(), result);
-  for (auto rptr : result) {
-    if (rptr->typeId() == grcPathSeg) {
-      auto cptr = static_cast<grPathSeg*>(rptr);
-      if (cptr->hasNet()) {
-        if (modNets.find(cptr->getNet()) != modNets.end()) {
-          endRemoveNets_pathSeg(cptr);
-        }
-      } else {
-        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
-      }
-    } else if (rptr->typeId() == grcVia) {
-      auto cptr = static_cast<grVia*>(rptr);
-      if (cptr->hasNet()) {
-        if (modNets.find(cptr->getNet()) != modNets.end()) {
-          endRemoveNets_via(cptr);
-        }
-      } else {
-        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
-      }
-    } else {
-      std::cout << "Error: endRemoveNets unsupported type" << std::endl;
-    }
-  }
-}
-*/
-
 
 
 // Remove the grShape in the local worker
@@ -114,65 +79,55 @@ void FlexGRWorker::endRemoveNets_objs(
   // remove pathSeg and via (all nets based)
   std::vector<grBlockObject*> result;
   // if a pathSeg or a via belongs to a modified net, as long as it touches
-  // routeBox we need to remove it (will remove all the way to true pin and
-  // boundary pin)
+  // routeBox we need to remove it 
+  // (will remove all the way to true pin and boundary pin)
   getRegionQuery()->queryGRObj(getRouteBox(), result);
-  std::string errInfo;
-  bool errFlag = false;
-  
   for (auto rptr : result) {
-    // check type of the object
-    auto objectTypeId = rptr->typeId();
-    if (objectTypeId != grcPathSeg && objectTypeId != grcVia) {
-      errFlag = true;
-      errInfo = "Error: endRemoveNets_objs unsupported type";
-      break;
-    }
+    switch(rptr->typeId()) {
+      case grcPathSeg: {
+        auto pathSeg = static_cast<grPathSeg*>(rptr);
+        frNet* net = pathSeg->getNet();
+        if (!net) {
+          logger_->error(utl::DRT, 367, "Error: endRemoveNets_objs pathSeg hasNet() empty");
+        }
+        if (modNets.find(net) != modNets.end()) {
+          endRemoveNets_pathSeg(pathSeg);
+        }
+        break;
+      }
+      
+      case grcVia: {
+        auto* via = static_cast<grVia*>(rptr);
+        frNet* net = via->getNet();
+        if (!net) {
+          logger_->error(utl::DRT, 369, "Error: endRemoveNets_objs via hasNet() empty");
+        }
+        if (modNets.find(net) != modNets.end()) {
+          endRemoveNets_via(via);
+        }
+        break;
+      }
 
-    
-    auto cptrTemp = static_cast<grPathSeg*>(rptr);
-
-    // check if the object has a net
-    if (!cptrTemp->hasNet()) {
-      errFlag = true;
-      errInfo = "Error: endRemoveNet hasNet() empty";
-      break;
+      default:
+        logger_->error(utl::DRT, 371, "Error: endRemoveNets_objs unsupported type");
+        break;
     }
-
-    // check if the net is in the modified nets
-    if (modNets.find(cptrTemp->getNet()) == modNets.end()) {
-      continue;
-    }
-    
-    // remove the object
-    if (objectTypeId == grcPathSeg) {
-      auto cptr = static_cast<grPathSeg*>(rptr);
-      endRemoveNets_pathSeg(cptr);
-    } else if (objectTypeId == grcVia) {
-      auto cptr = static_cast<grVia*>(rptr);
-      endRemoveNets_via(cptr);
-    }
-  }
-
-  if (errFlag) {
-    logger_->error(utl::DRT, 264, errInfo);
-  }  
+  } 
 }
 
-void FlexGRWorker::endRemoveNets_pathSeg(grPathSeg* pathSeg)
+inline void FlexGRWorker::endRemoveNets_pathSeg(grPathSeg* pathSeg)
 {
   auto net = pathSeg->getNet();
   getRegionQuery()->removeGRObj(pathSeg);
   net->removeGRShape(pathSeg);
 }
 
-void FlexGRWorker::endRemoveNets_via(grVia* via)
+inline void FlexGRWorker::endRemoveNets_via(grVia* via)
 {
   auto net = via->getNet();
   getRegionQuery()->removeGRObj(via);
   net->removeGRVia(via);
 }
-
 
 
 // Update the nodes in both fNet and grNet
@@ -187,62 +142,17 @@ void FlexGRWorker::endRemoveNets_nodes(
 }
 
 
-/*
-void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
-{
-  auto frRoot = net->getFrRoot();
-
-  std::deque<frNode*> nodeQ;
-  nodeQ.push_back(frRoot);
-  bool isRoot = true;
-  while (!nodeQ.empty()) {
-    auto node = nodeQ.front();
-    nodeQ.pop_front();
-
-    if (isRoot || node->getType() == frNodeTypeEnum::frcSteiner) {
-      for (auto child : node->getChildren()) {
-        nodeQ.push_back(child);
-      }
-    }
-
-    if (node->getType() == frNodeTypeEnum::frcBoundaryPin
-        || node->getType() == frNodeTypeEnum::frcPin) {
-      // boundary pin or real pin, only need to remove connection and connFig
-      // no need to remove the node itself
-      ;
-    } else {
-      // remove node
-      fnet->removeNode(node);
-    }
-
-    isRoot = false;
-  }
-
-  // remove connection for pin nodes
-  auto& gr2FrPinNode = net->getGR2FrPinNode();
-  for (auto& [gNode, fNode] : gr2FrPinNode) {
-    if (gNode == net->getRoot()) {
-      fNode->clearChildren();
-    } else {
-      fNode->setParent(nullptr);
-    }
-  }
-}*/
-
 
 // Remove all the steiner nodes in the frNet segment corresponding to this grNet
 void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
 {
   auto frRoot = net->getFrRoot();
-
   std::queue<frNode*> nodeQ;
   nodeQ.push(frRoot);
-
   bool isRoot = true;
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
     nodeQ.pop();
-
     if (isRoot || node->getType() == frNodeTypeEnum::frcSteiner) {
       for (auto child : node->getChildren()) {
         nodeQ.push(child);
@@ -269,6 +179,7 @@ void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
     }
   }
 }
+
 
 void FlexGRWorker::endAddNets(std::set<frNet*, frBlockObjectComp>& modNets)
 {

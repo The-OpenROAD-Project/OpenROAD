@@ -983,8 +983,8 @@ class FlexGRWorker
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(const std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets_objs(const std::set<frNet*, frBlockObjectComp>& modNets);
-  void endRemoveNets_pathSeg(grPathSeg* pathSeg);
-  void endRemoveNets_via(grVia* via);
+  inline void endRemoveNets_pathSeg(grPathSeg* pathSeg);
+  inline void endRemoveNets_via(grVia* via);
   void endRemoveNets_nodes(const std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets_nodes_net(grNet* net, frNet* fnet);
   void endRemoveNets_node(frNode* node);

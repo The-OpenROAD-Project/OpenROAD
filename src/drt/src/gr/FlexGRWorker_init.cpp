@@ -1,7 +1,7 @@
 /* Initial Authors: Lutong Wang and Bangqi Xu */
 /* Updated Version: Zhiang Wang*/
 /*
- * Copyright (c) 2024, The Regents of the University of California
+ * Copyright (c) 2025, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

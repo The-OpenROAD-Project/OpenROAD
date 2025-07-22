@@ -932,6 +932,8 @@ void FlexGR::reportCong3D()
   std::cout << std::endl;
 }
 
+
+/*
 // resource analysis
 void FlexGR::ra()
 {
@@ -1040,6 +1042,7 @@ void FlexGR::ra()
 
   std::cout << std::endl << std::endl;
 }
+*/
 
 // information to be reported after each iteration
 void FlexGR::end()

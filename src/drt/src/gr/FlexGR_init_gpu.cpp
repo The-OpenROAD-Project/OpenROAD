@@ -30,6 +30,8 @@
 #include <deque>
 #include <iostream>
 #include <vector>
+#include <iomanip>
+#include <sstream>
 
 #include "FlexGR.h"
 #include "FlexGRCMap.h"
@@ -232,8 +234,95 @@ void FlexGR::initCMap()
 }
 
 
+// resource analysis
+void FlexGR::ra()
+{
+  if (router_cfg_->VERBOSE > 0) {
+    logger_->report("\nstart routing resource analysis ...\n");
+  }
+
+  auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
+  auto xgp = &(gCellPatterns.at(0));
+  auto ygp = &(gCellPatterns.at(1));
+
+  int totNumTrack = 0;
+  int totNumGCell = 0;
+  int totNumBlockedGCell = 0;
+
+  logger_->report("             Routing   #Avail     #Total     %Gcell");
+  logger_->report("Layer      Direction    Track      Gcell    Blocked"); 
+  logger_->report("---------------------------------------------------"); 
+
+  unsigned cmapLayerIdx = 0;
+  for (auto& [layerNum, dir] : cmap_->getZMap()) {
+    auto layer = design_->getTech()->getLayer(layerNum);
+    std::string layerName(layer->getName());
+    layerName.append(16 - layerName.size(), ' ');
+
+    std::string dirStr = 
+      (dir == dbTechLayerDir::HORIZONTAL) ? "H      " :
+      (dir == dbTechLayerDir::VERTICAL)   ? "V      " 
+                                          : "UNKNOWN";
+
+    int numTrack = 0;
+    int numGCell = xgp->getCount() * ygp->getCount();
+    int numBlockedGCell = 0;
+    if (dir == dbTechLayerDir::HORIZONTAL) {
+      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+        numTrack += cmap_->getSupply(0, yIdx, cmapLayerIdx, frDirEnum::E);
+        for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+          auto supply
+              = cmap_->getSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
+          auto demand
+              = cmap_->getDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
+          if (demand >= supply) {
+            numBlockedGCell++;
+          }
+        }
+      }
+    } else if (dir == dbTechLayerDir::VERTICAL) {
+      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+        numTrack += cmap_->getSupply(xIdx, 0, cmapLayerIdx, frDirEnum::N);
+        for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+          auto supply
+              = cmap_->getSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
+          auto demand
+              = cmap_->getDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
+          if (demand >= supply) {
+            numBlockedGCell++;
+          }
+        }
+      }
+    } 
+    
+    // use ostringstream for formatting
+    std::ostringstream oss;
+    oss << layerName << dirStr 
+        << std::setw(6) << numTrack << "     "
+        << std::setw(6) << numGCell << "    "
+        << std::setw(6) << std::fixed << std::setprecision(2)
+        << numBlockedGCell * 100.0 / numGCell << "%";
+    logger_->report("{}", oss.str().c_str());
+    // add to total
+    totNumTrack += numTrack;
+    totNumGCell += numGCell;
+    totNumBlockedGCell += numBlockedGCell;
+    cmapLayerIdx++;
+  }
+
+  logger_->report("--------------------------------------------------------------");
+  std::ostringstream oss;
+  oss << "Total                  "
+      << std::setw(6) << totNumTrack << "     "
+      << std::setw(7) << totNumGCell << "     "
+      << std::setw(5) << std::fixed << std::setprecision(2)
+      << (totNumBlockedGCell * 100.0 / totNumGCell) << "%";
+  logger_->report("{}\n\n", oss.str().c_str());
+}
 
 
+
+// ----------------------------------------------------------------------------------------
 // Todo: 
 // The following functions are just for debugging and printing purposes
 // We will delete them in the release version
