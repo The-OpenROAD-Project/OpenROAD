@@ -37,7 +37,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.0000 |  5.633130e+05 |   +0.00% |  9.92e-15 |      
+        1 |   0.0000 |  5.633130e+05 |   +0.00% |  9.93e-15 |      
 [INFO GPL-1001] Finished with Overflow: 0.000000
 [INFO GPL-1002] Placed Cell Area                4.5220
 [INFO GPL-1003] Available Free Area          6256.3200

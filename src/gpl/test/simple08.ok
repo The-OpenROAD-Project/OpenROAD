@@ -41,8 +41,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.1831 |  8.458500e+04 |   +0.00% |  2.74e-19 |      
-[INFO GPL-1001] Finished with Overflow: 0.183083
+        1 |   0.1639 |  8.458500e+04 |   +0.00% |  3.54e-18 |      
+[INFO GPL-1001] Finished with Overflow: 0.163858
 [INFO GPL-1002] Placed Cell Area                3.7536
 [INFO GPL-1003] Available Free Area           651.8752
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
