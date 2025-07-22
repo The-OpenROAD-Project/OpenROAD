@@ -235,23 +235,24 @@ dbInst* dbScanInst::getInst() const
   return (dbInst*) block->_inst_tbl->getPtr((dbId<_dbInst>) scan_inst->inst_);
 }
 
-void dbScanInst::insertInScanList(dbScanList* scan_list_)
+void dbScanInst::insertAtFront(dbScanList* scan_list_)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanList* scan_list = (_dbScanList*) scan_list_;
   _dbBlock* block = (_dbBlock*) scan_inst->getOwner();
 
-  if (scan_list->_scan_insts != 0) {
-    _dbScanInst* tail = block->_scan_inst_tbl->getPtr(scan_list->_scan_insts);
-    scan_inst->_next_list_scan_inst = scan_list->_scan_insts;
-    tail->_prev_list_scan_inst = scan_inst->getOID();
+  if (scan_list->_first_scan_inst != 0) {
+    _dbScanInst* head
+        = block->_scan_inst_tbl->getPtr(scan_list->_first_scan_inst);
+    scan_inst->_next_list_scan_inst = scan_list->_first_scan_inst;
+    head->_prev_list_scan_inst = scan_inst->getOID();
   } else {
     // Needed if an already listed scan inst is moved to an empty list.
     scan_inst->_next_list_scan_inst = 0;
   }
 
   scan_inst->_prev_list_scan_inst = 0;
-  scan_list->_scan_insts = scan_inst->getOID();
+  scan_list->_first_scan_inst = scan_inst->getOID();
 }
 
 dbScanInst* dbScanInst::create(dbScanList* scan_list, dbInst* inst)

@@ -24,10 +24,10 @@ class _dbScanList : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   // As the elements of a free dbTable are 12 bytes long, we need this
-  // additional member in order to make _dbScanList big enough to allow
-  // safe casting between table members.
+  // additional member in order to make _dbScanList big enough to allow safe
+  // casting between table members.
   uint _unused;
-  dbId<_dbScanInst> _scan_insts;
+  dbId<_dbScanInst> _first_scan_inst;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj);

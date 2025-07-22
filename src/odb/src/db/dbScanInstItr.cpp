@@ -40,7 +40,7 @@ uint dbScanListScanInstItr::size(dbObject* parent)
 uint dbScanListScanInstItr::begin(dbObject* parent)
 {
   _dbScanList* scan_list = (_dbScanList*) parent;
-  return (uint) scan_list->_scan_insts;
+  return (uint) scan_list->_first_scan_inst;
 }
 
 uint dbScanListScanInstItr::end(dbObject* parent)

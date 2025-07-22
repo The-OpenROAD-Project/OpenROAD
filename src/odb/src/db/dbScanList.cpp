@@ -20,7 +20,7 @@ bool _dbScanList::operator==(const _dbScanList& rhs) const
   if (_unused != rhs._unused) {
     return false;
   }
-  if (_scan_insts != rhs._scan_insts) {
+  if (_first_scan_inst != rhs._first_scan_inst) {
     return false;
   }
 
@@ -39,15 +39,23 @@ _dbScanList::_dbScanList(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
-  stream >> obj._unused;
-  stream >> obj._scan_insts;
+  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+    stream >> obj._unused;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+    stream >> obj._first_scan_inst;
+  }
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj)
 {
-  stream << obj._unused;
-  stream << obj._scan_insts;
+  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+    stream << obj._unused;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+    stream << obj._first_scan_inst;
+  }
   return stream;
 }
 
@@ -77,7 +85,7 @@ dbSet<dbScanInst> dbScanList::getScanInsts() const
 dbScanInst* dbScanList::add(dbInst* inst)
 {
   dbScanInst* scan_inst = dbScanInst::create(this, inst);
-  scan_inst->insertInScanList(this);
+  scan_inst->insertAtFront(this);
   return scan_inst;
 }
 
