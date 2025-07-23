@@ -91,6 +91,8 @@
 #include "dbSBoxItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
+#include "dbScanInst.h"
+#include "dbScanListScanInstItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -179,6 +181,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _inst_tbl = new dbTable<_dbInst>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbInstObj);
+
+  _scan_inst_tbl = new dbTable<_dbScanInst>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbScanInstObj);
 
   _module_tbl = new dbTable<_dbModule>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModuleObj);
@@ -338,6 +343,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
+  _scan_list_scan_inst_itr = new dbScanListScanInstItr(_scan_inst_tbl);
+
   _box_itr = new dbBoxItr<1024>(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
@@ -406,6 +413,7 @@ _dbBlock::~_dbBlock()
   delete _net_tbl;
   delete _inst_hdr_tbl;
   delete _inst_tbl;
+  delete _scan_inst_tbl;
   delete _module_tbl;
   delete _modinst_tbl;
   delete _modbterm_tbl;
@@ -450,6 +458,7 @@ _dbBlock::~_dbBlock()
   delete _net_bterm_itr;
   delete _net_iterm_itr;
   delete _inst_iterm_itr;
+  delete _scan_list_scan_inst_itr;
   delete _box_itr;
   delete _swire_itr;
   delete _sbox_itr;
@@ -785,6 +794,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._inst_hdr_tbl;
   stream << *block._module_tbl;
   stream << *block._inst_tbl;
+  stream << *block._scan_inst_tbl;
   stream << *block._modinst_tbl;
   stream << *block._modbterm_tbl;
   stream << *block._busport_tbl;
@@ -940,6 +950,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   } else {
     stream >> *block._inst_tbl;
     stream >> *block._module_tbl;
+  }
+  if (db->isSchema(db_schema_block_owns_scan_insts)) {
+    stream >> *block._scan_inst_tbl;
   }
   stream >> *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
