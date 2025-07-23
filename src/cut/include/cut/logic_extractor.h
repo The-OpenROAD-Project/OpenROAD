@@ -63,9 +63,6 @@ class LogicExtractorFactory
       sta::InstanceSet& cut_instances);
   std::vector<sta::Net*> ConvertIoPinsToNets(
       std::vector<sta::Pin*>& primary_io_pins);
-  void RemovePrimaryOutputInstances(
-      sta::InstanceSet& cut_instances,
-      std::vector<sta::Pin*>& primary_output_pins);
   std::vector<sta::Vertex*> AddMissingVertices(
       std::vector<sta::Vertex*>& cut_vertices,
       AbcLibrary& abc_library);
