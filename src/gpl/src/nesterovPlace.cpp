@@ -1161,7 +1161,7 @@ void NesterovPlace::createGNet(odb::dbNet* db_net)
   if (!isValidSigType(netType)) {
     return;
   }
-  nbc_->createCbkGNet(db_net, pbc_->skipIoMode());
+  nbc_->createCbkGNet(db_net, pbc_->isSkipIoMode());
 }
 
 void NesterovPlace::destroyCbkGNet(odb::dbNet* db_net)

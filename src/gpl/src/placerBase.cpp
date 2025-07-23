@@ -104,8 +104,8 @@ void Instance::copyDbLocation(PlacerBaseCommon* pbc)
   uy_ = ly_ + bbox->getDY();
 
   if (isPlaceInstance()) {
-    lx_ -= pbc->padLeft() * pbc->siteSizeX();
-    ux_ += pbc->padRight() * pbc->siteSizeX();
+    lx_ -= pbc->getPadLeft() * pbc->siteSizeX();
+    ux_ += pbc->getPadRight() * pbc->siteSizeX();
   }
 }
 
@@ -316,9 +316,9 @@ std::string Pin::getName() const
     return "DUMMY";
   }
   if (isITerm()) {
-    return dbITerm()->getName();
+    return getDbITerm()->getName();
   }
-  return dbBTerm()->getName();
+  return getDbBTerm()->getName();
 }
 
 void Pin::setITerm()
@@ -411,21 +411,21 @@ int Pin::cy() const
   return cy_;
 }
 
-int Pin::offsetCx() const
+int Pin::getOffsetCx() const
 {
   return offsetCx_;
 }
 
-int Pin::offsetCy() const
+int Pin::getOffsetCy() const
 {
   return offsetCy_;
 }
 
-odb::dbITerm* Pin::dbITerm() const
+odb::dbITerm* Pin::getDbITerm() const
 {
   return (isITerm()) ? (odb::dbITerm*) term_ : nullptr;
 }
-odb::dbBTerm* Pin::dbBTerm() const
+odb::dbBTerm* Pin::getDbBTerm() const
 {
   return (isBTerm()) ? (odb::dbBTerm*) term_ : nullptr;
 }
@@ -588,7 +588,7 @@ int Net::cy() const
   return (ly_ + uy_) / 2;
 }
 
-int64_t Net::hpwl() const
+int64_t Net::getHpwl() const
 {
   if (ux_ < lx_) {  // dangling net
     return 0;
@@ -877,9 +877,9 @@ void PlacerBaseCommon::init()
   pins_.reserve(pinStor_.size());
   for (auto& pin : pinStor_) {
     if (pin.isITerm()) {
-      pinMap_[pin.dbITerm()] = &pin;
+      pinMap_[pin.getDbITerm()] = &pin;
     } else if (pin.isBTerm()) {
-      pinMap_[pin.dbBTerm()] = &pin;
+      pinMap_[pin.getDbBTerm()] = &pin;
     }
     pins_.push_back(&pin);
   }
@@ -904,11 +904,11 @@ void PlacerBaseCommon::init()
   // nets' pin update
   nets_.reserve(netStor_.size());
   for (auto& net : netStor_) {
-    for (dbITerm* iTerm : net.dbNet()->getITerms()) {
+    for (dbITerm* iTerm : net.getDbNet()->getITerms()) {
       net.addPin(dbToPb(iTerm));
     }
     if (pbVars_.skipIoMode == false) {
-      for (dbBTerm* bTerm : net.dbNet()->getBTerms()) {
+      for (dbBTerm* bTerm : net.getDbNet()->getBTerms()) {
         net.addPin(dbToPb(bTerm));
       }
     }
@@ -934,12 +934,12 @@ void PlacerBaseCommon::reset()
   netMap_.clear();
 }
 
-int64_t PlacerBaseCommon::hpwl() const
+int64_t PlacerBaseCommon::getHpwl() const
 {
   int64_t hpwl = 0;
   for (auto& net : nets_) {
     net->updateBox(pbVars_.skipIoMode);
-    hpwl += net->hpwl();
+    hpwl += net->getHpwl();
   }
   return hpwl;
 }
@@ -1004,13 +1004,13 @@ PlacerBase::~PlacerBase()
 
 void PlacerBase::init()
 {
-  die_ = pbCommon_->die();
+  die_ = pbCommon_->getDie();
 
   // siteSize update
   siteSizeX_ = pbCommon_->siteSizeX();
   siteSizeY_ = pbCommon_->siteSizeY();
 
-  for (auto& inst : pbCommon_->insts()) {
+  for (auto& inst : pbCommon_->getInsts()) {
     if (!inst->isInstance()) {
       continue;
     }
@@ -1192,7 +1192,7 @@ void PlacerBase::initInstsForUnusableSites()
   }
 
   // fill fixed instances' bbox
-  for (auto& inst : pbCommon_->insts()) {
+  for (auto& inst : pbCommon_->getInsts()) {
     if (!inst->isFixed()) {
       continue;
     }
@@ -1257,10 +1257,16 @@ void PlacerBase::printInfo() const
       GPL, 7, format_label_int, "Movable instances:", placeInsts_.size());
   log_->info(GPL, 8, format_label_int, "Fixed instances:", fixedInsts_.size());
   log_->info(GPL, 9, format_label_int, "Dummy instances:", dummyInsts_.size());
-  log_->info(
-      GPL, 10, format_label_int, "Number of nets:", pbCommon_->nets().size());
-  log_->info(
-      GPL, 11, format_label_int, "Number of pins:", pbCommon_->pins().size());
+  log_->info(GPL,
+             10,
+             format_label_int,
+             "Number of nets:",
+             pbCommon_->getNets().size());
+  log_->info(GPL,
+             11,
+             format_label_int,
+             "Number of pins:",
+             pbCommon_->getPins().size());
 
   log_->info(GPL,
              12,
