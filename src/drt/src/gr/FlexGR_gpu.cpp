@@ -105,6 +105,14 @@ void FlexGR::main_gpu(odb::dbDatabase* db)
   
   checkNetNodeMatch();
 
+
+  // 2D Maze Routing (GPU accelerated)
+  auto maze2DRuntimeStart = std::chrono::high_resolution_clock::now();
+  mazeRoute2D_gpu();
+  auto maze2DRuntimeEnd = std::chrono::high_resolution_clock::now();
+  auto maze2DRuntime = std::chrono::duration_cast<std::chrono::milliseconds>(maze2DRuntimeEnd - maze2DRuntimeStart);
+  logger_->report("[INFO] Runtime for 2D Maze Routing : {} ms", static_cast<int>(maze2DRuntime.count()));
+
   // layer assignment
   auto layerAssignRuntimeStart = std::chrono::high_resolution_clock::now();
   layerAssign_gpu();

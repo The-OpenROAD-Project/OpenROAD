@@ -86,6 +86,15 @@ void FlexGRWorker::route_decayHistCost_update()
 }
 
 
+void main_mt_prep(std::vector<grNet*>& rerouteNets, int iter) {
+    route_addHistCost_update();
+    routePrep_update(rerouteNets, iter);
+    for (auto net : rerouteNets) {
+      net->setPreCost(calcPathCost(net));
+    }
+  }
+
+
 float FlexGRWorker::calcPathCost(grNet* net)
 {
   // Traverse all the metal segments in the net

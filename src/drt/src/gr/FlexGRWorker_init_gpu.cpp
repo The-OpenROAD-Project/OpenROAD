@@ -926,7 +926,7 @@ void FlexGRWorker::initNet_addNet(std::unique_ptr<grNet>& in)
 void FlexGRWorker::initNets_regionQuery()
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
-  workerRegionQuery.init(false );
+  workerRegionQuery.init(false);
 }
 
 

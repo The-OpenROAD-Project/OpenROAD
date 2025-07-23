@@ -188,6 +188,26 @@ class FlexGR
   void initGR_initPhysicalObj();
 
   // 2D Maze Routing
+  void mazeRoute2D_gpu();
+  // parameters
+  int clipSize2D_ = 200;
+  int mazeEndIter2D_ = 2;
+  void searchRepair_gpu(int iter,
+                        int size,
+                        int offset,
+                        int mazeEndIter,
+                        unsigned workerCongCost,
+                        unsigned workerHistCost,
+                        double congThresh,
+                        bool is2DRouting,
+                        RipUpMode mode);
+
+  void searchRepairMazeCore(
+    std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+    int mazeEndIter,
+    unsigned BLOCKCOST,
+    unsigned OVERFLOWCOST,
+    unsigned HISTCOST);
 
   // Layer Assignment
   void layerAssign_gpu();
@@ -668,14 +688,9 @@ class FlexGRWorker
   bool restoreNet(grNet* net);
   FlexGRGridGraph& getGridGraph() { return gridGraph_; }
 
-  void main_mt_prep(std::vector<grNet*>& rerouteNets, int iter) {
-    route_addHistCost_update();
-    routePrep_update(rerouteNets, iter);
-    for (auto net : rerouteNets) {
-      net->setPreCost(calcPathCost(net));
-    }
-  }
-
+  void main_mt_prep(std::vector<grNet*>& rerouteNets, 
+    int iter);
+  
   void main_mt_init(std::vector<grNet*>& rerouteNets) {
     auto LLCorner = getRouteGCellIdxLL();
     for (auto net : rerouteNets) {
