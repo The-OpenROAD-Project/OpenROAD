@@ -92,7 +92,7 @@
 #include "dbSWire.h"
 #include "dbSWireItr.h"
 #include "dbScanInst.h"
-#include "dbScanInstItr.h"
+#include "dbScanListScanInstItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"

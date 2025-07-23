@@ -16,7 +16,6 @@ add_library(db
     dbITermItr.cpp 
     dbInst.cpp 
     dbInstHdr.cpp 
-    dbScanInstItr.cpp
     dbLib.cpp 
     dbMPin.cpp 
     dbMPinItr.cpp 
@@ -162,6 +161,7 @@ add_library(db
     dbModulePortItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
+    dbScanListScanInstItr.cpp
     # Generator Code End cpp
 )
 

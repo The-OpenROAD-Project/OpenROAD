@@ -7,7 +7,7 @@
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
-#include "dbScanInstItr.h"
+#include "dbScanListScanInstItr.h"
 #include "dbScanPartition.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

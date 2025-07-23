@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2025-2025, The OpenROAD Authors
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "odb/dbIterator.h"
+#include "odb/odb.h"
 
 namespace odb {
-
 class _dbScanInst;
 
 class dbScanListScanInstItr : public dbIterator
 {
-  dbTable<_dbScanInst>* _scan_inst_tbl;
-
  public:
   dbScanListScanInstItr(dbTable<_dbScanInst>* scan_inst_tbl)
-      : _scan_inst_tbl(scan_inst_tbl)
   {
+    _scan_inst_tbl = scan_inst_tbl;
   }
 
   bool reversible() override;
@@ -29,6 +28,10 @@ class dbScanListScanInstItr : public dbIterator
   uint end(dbObject* parent) override;
   uint next(uint id, ...) override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbScanInst>* _scan_inst_tbl;
 };
 
 }  // namespace odb
+// Generator Code End Header

@@ -153,6 +153,15 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0
+    },
+    {
+      "name": "dbScanListScanInstItr",
+      "parentObject": "dbScanInst",
+      "tableName": "scan_inst_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbScanList.h", "dbScanInst.h"]
     }
   ],
   "relations":[
