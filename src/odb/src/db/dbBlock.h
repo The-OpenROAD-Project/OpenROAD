@@ -287,6 +287,7 @@ class _dbBlock : public _dbObject
 
   std::unordered_map<std::string, int> _module_name_id_map;
   std::unordered_map<std::string, int> _inst_name_id_map;
+  std::unordered_map<dbId<_dbInst>, dbId<_dbScanInst>> _inst_scan_inst_map;
 
   unsigned char _num_ext_dbs;
 
