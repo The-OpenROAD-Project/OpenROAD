@@ -453,6 +453,11 @@ void FastRouteCore::assignEdge(const int netID,
     gridD[i].resize(treeedge->route.routelen + 1);
   }
 
+  bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+  if(net->isClock() && has_ndr){
+    logger_->report("--- Assign Edge for {}", net->getName());
+  }
+
   multi_array<int, 2> via_link;
   via_link.resize(boost::extents[num_layers_][routelen + 1]);
   for (int l = 0; l < num_layers_; l++) {
@@ -473,12 +478,34 @@ void FastRouteCore::assignEdge(const int netID,
         bool is_vertical
             = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
         if (is_vertical) {
-          layer_grid[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap
-                             - v_edges_3D_[l][min_y][gridsX[k]].usage;
+          int effective_capacity = v_edges_3D_[l][min_y][gridsX[k]].cap
+                                 - v_edges_3D_[l][min_y][gridsX[k]].usage;
+          
+          // For NDR nets, check adjacent tracks too
+          // if (has_ndr) {
+          //   // Check left adjacent track
+          //   if (gridsX[k] > 0) {
+          //     effective_capacity = std::min(effective_capacity,
+          //       v_edges_3D_[l][min_y][gridsX[k]-1].cap - v_edges_3D_[l][min_y][gridsX[k]-1].usage);
+          //   }
+          //   // Check right adjacent track
+          //   if (gridsX[k] < x_grid_ - 1) {
+          //     effective_capacity = std::min(effective_capacity,
+          //       v_edges_3D_[l][min_y][gridsX[k]+1].cap - v_edges_3D_[l][min_y][gridsX[k]+1].usage);
+          //   }
+          // }
+          
+          layer_grid[l][k] = effective_capacity;
+          // layer_grid[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap
+          //                    - v_edges_3D_[l][min_y][gridsX[k]].usage;
           best_cost = std::max(best_cost, layer_grid[l][k]);
         } else {
           layer_grid[l][k] = std::numeric_limits<int>::min();
         }
+        // if(net->isClock() && has_ndr){
+        //   logger_->report("--- x{} y{} V:{} best_cost:{} layer_grid:{}", 
+        //                   gridsX[k], min_y, is_vertical, best_cost, layer_grid[l][k]);
+        // }
       }
 
       // assigning the edge to the layer range would cause overflow try to
@@ -528,8 +555,26 @@ void FastRouteCore::assignEdge(const int netID,
         bool is_horizontal
             = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
         if (is_horizontal) {
-          layer_grid[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap
-                             - h_edges_3D_[l][gridsY[k]][min_x].usage;
+          int effective_capacity = h_edges_3D_[l][gridsY[k]][min_x].cap
+                                 - h_edges_3D_[l][gridsY[k]][min_x].usage;
+          
+          // For NDR nets, check adjacent tracks too
+          // if (has_ndr) {
+          //   // Check bottom adjacent track
+          //   if (gridsY[k] > 0) {
+          //     effective_capacity = std::min(effective_capacity,
+          //       h_edges_3D_[l][gridsY[k]-1][min_x].cap - h_edges_3D_[l][gridsY[k]-1][min_x].usage);
+          //   }
+          //   // Check upper adjacent track
+          //   if (gridsY[k] < y_grid_ - 1) {
+          //     effective_capacity = std::min(effective_capacity,
+          //       h_edges_3D_[l][gridsY[k]+1][min_x].cap - h_edges_3D_[l][gridsY[k]+1][min_x].usage);
+          //   }
+          // }
+          
+          layer_grid[l][k] = effective_capacity;
+          // layer_grid[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap
+          //                    - h_edges_3D_[l][gridsY[k]][min_x].usage;
           best_cost = std::max(best_cost, layer_grid[l][k]);
         } else {
           layer_grid[l][k] = std::numeric_limits<int>::min();
@@ -812,11 +857,31 @@ void FastRouteCore::assignEdge(const int netID,
 
       v_edges_3D_[gridsL[k]][min_y][gridsX[k]].usage
           += net->getLayerEdgeCost(gridsL[k]);
+
+      // Block adjacent tracks for NDR nets
+      // if (has_ndr){
+      //   if (gridsX[k] > 0) {
+      //     v_edges_3D_[gridsL[k]][min_y][gridsX[k]-1].usage += net->getLayerEdgeCost(gridsL[k]);
+      //   }
+      //   if (gridsX[k] < x_grid_ - 1) {
+      //     v_edges_3D_[gridsL[k]][min_y][gridsX[k]+1].usage += net->getLayerEdgeCost(gridsL[k]);
+      //   }
+      // }
     } else {
       const int min_x = std::min(gridsX[k], gridsX[k + 1]);
 
       h_edges_3D_[gridsL[k]][gridsY[k]][min_x].usage
           += net->getLayerEdgeCost(gridsL[k]);
+
+      // Block adjacent tracks for NDR nets
+      // if (has_ndr){
+      //   if (gridsY[k] > 0) {
+      //     h_edges_3D_[gridsL[k]][gridsY[k]-1][min_x].usage += net->getLayerEdgeCost(gridsL[k]);
+      //   }
+      //   if (gridsY[k] < y_grid_ - 1) {
+      //     h_edges_3D_[gridsL[k]][gridsY[k]+1][min_x].usage += net->getLayerEdgeCost(gridsL[k]);
+      //   }
+      // }
     }
   }
 }

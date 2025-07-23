@@ -1222,6 +1222,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     double cost1 = getCost(pos1, is_horizontal, cost_params);
 
+    // if (nets_[net_id]->isClock()) {
+    // logger_->report("{} net maze cost: pos1={}, cost1={}, is_horizontal={}",
+    //                 nets_[net_id]->getName(), pos1, cost1, is_horizontal);
+    // }
+
     double tmp = d1[cur_y][cur_x] + cost1;
 
     if (add_via && d1[cur_y][cur_x] != 0) {
@@ -2029,6 +2034,16 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     logger_->report("Final overflow       : {}\n", total_overflow_);
   }
 
+  // std::set<odb::dbNet*> congestion_nets;
+  // getCongestionNets(congestion_nets);
+
+  // // ==> DEBUGGING PRINT <==
+  // logger_->report("DEBUG: Nets involved in overflow:");
+  // for (odb::dbNet* net : congestion_nets) {
+  //     logger_->report(" - {}", net->getConstName());
+  // }
+  // // ==> DEBUGGING PRINT <==
+
   *tUsage = total_usage;
 
   if (total_usage > 800000) {
@@ -2105,40 +2120,129 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   return total_overflow_;
 }
 
+// int FastRouteCore::getOverflow3D()
+// {
+//   // get overflow
+//   int overflow = 0;
+//   int H_overflow = 0;
+//   int V_overflow = 0;
+//   int max_H_overflow = 0;
+//   int max_V_overflow = 0;
+
+//   int total_usage = 0;
+//   /// Get location and nets involved  
+
+//   for (int k = 0; k < num_layers_; k++) {
+//     for (const auto& [i, j] : h_used_ggrid_) {
+//       total_usage += h_edges_3D_[k][i][j].usage;
+//       overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
+
+//       if (overflow > 0) {
+//         H_overflow += overflow;
+//         max_H_overflow = std::max(max_H_overflow, overflow);
+//       }
+//     }
+//     for (const auto& [i, j] : v_used_ggrid_) {
+//       total_usage += v_edges_3D_[k][i][j].usage;
+//       overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
+//       if (overflow > 0) {
+//         V_overflow += overflow;
+//         max_V_overflow = std::max(max_V_overflow, overflow);
+//       }
+//     }
+//   }
+
+//   total_overflow_ = H_overflow + V_overflow;
+
+//   return total_usage;
+// }
+
 int FastRouteCore::getOverflow3D()
 {
-  // get overflow
-  int overflow = 0;
-  int H_overflow = 0;
-  int V_overflow = 0;
-  int max_H_overflow = 0;
-  int max_V_overflow = 0;
+    // get overflow
+    int overflow = 0;
+    int H_overflow = 0;
+    int V_overflow = 0;
+    int max_H_overflow = 0;
+    int max_V_overflow = 0;
+    int total_usage = 0;
+    
+    // Track overflow locations
+    std::vector<std::tuple<int, int, int, int, bool>> overflow_locations; // layer, y, x, overflow, is_horizontal
+    
+    logger_->report("=== 3D Overflow Analysis ===");
+    
+    for (int k = 0; k < num_layers_; k++) {
+        int layer_h_overflow = 0;
+        int layer_v_overflow = 0;
+        
+        // Check horizontal edges
+        for (const auto& [i, j] : h_used_ggrid_) {
+            total_usage += h_edges_3D_[k][i][j].usage;
+            overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
 
-  int total_usage = 0;
-
-  for (int k = 0; k < num_layers_; k++) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      total_usage += h_edges_3D_[k][i][j].usage;
-      overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
-
-      if (overflow > 0) {
-        H_overflow += overflow;
-        max_H_overflow = std::max(max_H_overflow, overflow);
-      }
+            if (overflow > 0) {
+                H_overflow += overflow;
+                layer_h_overflow += overflow;
+                max_H_overflow = std::max(max_H_overflow, overflow);
+                overflow_locations.push_back({k, i, j, overflow, true});
+                
+                // Detailed logging for each overflow
+                logger_->report("H Overflow: Layer {} at ({},{}) - usage: {}, cap: {}, overflow: {}",
+                               k+1, j, i, 
+                               h_edges_3D_[k][i][j].usage,
+                               h_edges_3D_[k][i][j].cap,
+                               overflow);
+                               
+                // Convert to real coordinates
+                int x_real = tile_size_ * (j + 0.5) + x_corner_;
+                int y_real = tile_size_ * (i + 0.5) + y_corner_;
+                logger_->report("  Real coordinates: ({}, {})", x_real, y_real);
+            }
+        }
+        
+        // Check vertical edges
+        for (const auto& [i, j] : v_used_ggrid_) {
+            total_usage += v_edges_3D_[k][i][j].usage;
+            overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
+            
+            if (overflow > 0) {
+                V_overflow += overflow;
+                layer_v_overflow += overflow;
+                max_V_overflow = std::max(max_V_overflow, overflow);
+                overflow_locations.push_back({k, i, j, overflow, false});
+                
+                // Detailed logging for each overflow
+                logger_->report("V Overflow: Layer {} at ({},{}) - usage: {}, cap: {}, overflow: {}",
+                               k+1, j, i,
+                               v_edges_3D_[k][i][j].usage,
+                               v_edges_3D_[k][i][j].cap,
+                               overflow);
+                               
+                // Convert to real coordinates
+                int x_real = tile_size_ * (j + 0.5) + x_corner_;
+                int y_real = tile_size_ * (i + 0.5) + y_corner_;
+                logger_->report("  Real coordinates: ({}, {})", x_real, y_real);
+            }
+        }
+        
+        if (layer_h_overflow > 0 || layer_v_overflow > 0) {
+            logger_->report("Layer {} total overflow - H: {}, V: {}", 
+                           k+1, layer_h_overflow, layer_v_overflow);
+        }
     }
-    for (const auto& [i, j] : v_used_ggrid_) {
-      total_usage += v_edges_3D_[k][i][j].usage;
-      overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
-      if (overflow > 0) {
-        V_overflow += overflow;
-        max_V_overflow = std::max(max_V_overflow, overflow);
-      }
-    }
-  }
 
-  total_overflow_ = H_overflow + V_overflow;
+    total_overflow_ = H_overflow + V_overflow;
+    
+    logger_->report("=== Total 3D Overflow Summary ===");
+    logger_->report("Total H overflow: {}", H_overflow);
+    logger_->report("Total V overflow: {}", V_overflow);
+    logger_->report("Max H overflow: {}", max_H_overflow);
+    logger_->report("Max V overflow: {}", max_V_overflow);
+    logger_->report("Total overflow: {}", total_overflow_);
+    logger_->report("Number of overflow locations: {}", overflow_locations.size());
 
-  return total_usage;
+    return total_usage;
 }
 
 void FastRouteCore::InitEstUsage()

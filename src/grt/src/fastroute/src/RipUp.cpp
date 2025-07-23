@@ -237,22 +237,60 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
   }  // not ripup for degraded edge
 
   bool needRipup = false;
+  auto* net = nets_[netID];
+  // if (net->getDbNet()->getNonDefaultRule()) {
+  //   logger_->report("[DEBUG] Clock net {} edge {} x1/y1: {}/{} x2/y2: {}/{} Critical slack: {} - checking ripup", 
+  //                   nets_[netID]->getName(), edgeID, x1,y1,x2,y2, critical_slack);
+  //   logger_->report("  Capacity H:{} V:{}, Threshold:{}, isCritical: {}", 
+  //                   h_capacity_, v_capacity_, ripup_threshold, nets_[netID]->isCritical());
+  // }
 
   if (treeedge->route.type == RouteType::MazeRoute) {
     const std::vector<short>& gridsX = treeedge->route.gridsX;
     const std::vector<short>& gridsY = treeedge->route.gridsY;
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
-        const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (v_edges_[ymin][gridsX[i]].usage_red()
-            >= v_capacity_ - ripup_threshold) {
+        const int ymin = std::min(gridsY[i], gridsY[i + 1]); 
+        // DEBUG V
+        // if (net->getDbNet()->getNonDefaultRule()) {
+        //   logger_->report("\tV: {}/{} {} - usage_red {} - capacity-ripup_threshold {}", gridsX[i], ymin, nets_[netID]->getName(),
+        //                   v_edges_[ymin][gridsX[i]].usage_red(), v_capacity_ - ripup_threshold);
+
+        //     logger_->report("\tClock net at ({},{}) - usage: {}, usage_red: {}, capacity: {}, edge cost: {}",
+        //             gridsX[i], ymin,
+        //             v_edges_[ymin][gridsX[i]].usage,
+        //             v_edges_[ymin][gridsX[i]].usage_red(),
+        //             v_capacity_,
+        //             nets_[netID]->getEdgeCost());
+    
+        //     // Check adjacent tracks
+        //     // if (gridsX[i] > 0) {
+        //     //     logger_->report("\t  Adjacent left track usage_red: {}",
+        //     //                     v_edges_[ymin][gridsX[i]-1].usage_red());
+        //     // }
+        //     // if (gridsX[i] < x_grid_ - 1) {
+        //     //     logger_->report("\t  Adjacent right track usage_red: {}",
+        //     //                     v_edges_[ymin][gridsX[i]+1].usage_red());
+        //     // }
+        // }       
+        ///////////////////////////////////////////////////////////////
+        if ((v_edges_[ymin][gridsX[i]].usage_red()
+            >= v_capacity_ - ripup_threshold) ||
+          getEdgeCapacity(net,gridsX[i],ymin,EdgeDirection::Vertical) == 0) {
           needRipup = true;
           break;
         }
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+        // DEBUG H
+        // if (net->getDbNet()->getNonDefaultRule()) {
+        //   logger_->report("\tH: {} {} Clk net - usage_red {} - capacity-ripup_threshold {}", gridsY[i], xmin,
+        //                   h_edges_[gridsY[i]][xmin].usage_red(), h_capacity_ - ripup_threshold);
+        // }       
+        ///////////////////////////////////////////////////////////////
         if (h_edges_[gridsY[i]][xmin].usage_red()
-            >= h_capacity_ - ripup_threshold) {
+            >= h_capacity_ - ripup_threshold ||
+          getEdgeCapacity(net,xmin,gridsY[i],EdgeDirection::Horizontal) == 0) {
           needRipup = true;
           break;
         }
@@ -272,6 +310,11 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     }
     if (needRipup) {
       const int edgeCost = nets_[netID]->getEdgeCost();
+
+      if (net->getDbNet()->getNonDefaultRule()) {
+        logger_->report("\tRipping up clock net {} with edge cost {}", 
+                        net->getName(), edgeCost);
+      }
 
       for (int i = 0; i < treeedge->route.routelen; i++) {
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
@@ -388,11 +431,15 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
     if (gridsL[i] == gridsL[i + 1]) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+        if (net->getDbNet()->getNonDefaultRule())
+          logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), gridsX[i], ymin, gridsL[i]+1);
         v_edges_[ymin][gridsX[i]].usage -= net->getEdgeCost();
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+        if (net->getDbNet()->getNonDefaultRule())
+          logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), xmin, gridsY[i], gridsL[i]+1);
         h_edges_[gridsY[i]][xmin].usage -= net->getEdgeCost();
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             -= net->getLayerEdgeCost(gridsL[i]);
@@ -455,6 +502,12 @@ void FastRouteCore::newRipupNet(const int netID)
   const auto& treenodes = sttrees_[netID].nodes;
   const int num_edges = sttrees_[netID].num_edges();
 
+  // auto* net = nets_[netID];
+  // if(net->getDbNet()->getNonDefaultRule()){
+  //   logger_->report("=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===", 
+  //       net->getName(), num_edges, edgeCost);
+  // }
+
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     const TreeEdge* treeedge = &(treeedges[edgeID]);
     if (treeedge->len > 0) {
@@ -471,6 +524,10 @@ void FastRouteCore::newRipupNet(const int netID)
 
       if (ripuptype == RouteType::LRoute)  // remove L routing
       {
+        // if(net->getDbNet()->getNonDefaultRule()){
+        //   logger_->report("=== Removing L routing ===");
+        //   logger_->report("\tx1/y1: {}/{} x2/y2: {}/{}", x1,y1,x2,y2);
+        // }
         if (treeedge->route.xFirst) {
           for (int i = x1; i < x2; i++) {
             h_edges_[y1][i].est_usage -= edgeCost;

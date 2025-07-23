@@ -1270,6 +1270,11 @@ void GlobalRouter::computeTrackConsumption(
       int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      // if (consumption >= 2) {
+      //   consumption++;
+      // }
+      // Needs two times the spacing to block adjacent tracks
+      // int consumption = std::round(2*(float) ndr_pitch / default_pitch);
       // int consumption = std::round((float) ndr_pitch / default_pitch);
       // int consumption = ndr_pitch / default_pitch;
       // consumption = (consumption == 0) ? 1 : consumption;
@@ -4898,12 +4903,12 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         // the set
         fastroute_->getCongestionNets(congestion_nets);
 
-        // ==> ADD THIS DEBUGGING PRINT <==
+        // ==> DEBUGGING PRINT <==
         logger_->report("DEBUG: Nets selected for rerouting in this iteration:");
         for (odb::dbNet* net : congestion_nets) {
             logger_->report(" - {}", net->getConstName());
         }
-        // ==> END OF DEBUGGING PRINT <==
+        // ==> DEBUGGING PRINT <==
 
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted

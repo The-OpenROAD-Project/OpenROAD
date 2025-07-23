@@ -648,6 +648,29 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
                                    EdgeDirection direction)
 {
   int cap = 0;
+    
+  // Check if this is an NDR net
+  bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+  int ndr_cost = net->getEdgeCost();
+  
+  if (has_ndr) {
+      // For NDR nets, we need at least one layer with sufficient capacity
+      int max_single_layer_cap = 0;
+      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+          int layer_cap = 0;
+          if (direction == EdgeDirection::Horizontal) {
+              layer_cap = h_edges_3D_[l][y1][x1].cap;
+          } else {
+              layer_cap = v_edges_3D_[l][y1][x1].cap;
+          }
+          max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
+      }
+      
+      // No single layer can accommodate this NDR net
+      if (max_single_layer_cap < ndr_cost) {
+          return 0; 
+      }
+  }
 
   // get 2D edge capacity respecting layer restrictions
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
@@ -1040,14 +1063,19 @@ NetRouteMap FastRouteCore::run()
 
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
+  logger_->report("=== Before pattern routing phases ===");
   routeLAll(true);
+  logger_->report("=== After routeLAll ===");
   gen_brk_RSMT(true, true, true, false, noADJ);
 
   getOverflow2D(&maxOverflow);
   newrouteLAll(false, true);
+  logger_->report("=== After newrouteLAll ===");
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
+  logger_->report("=== After spiralRouteAll ===");
   newrouteZAll(10);
+  logger_->report("=== After newrouteZAll ===");
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
@@ -1209,6 +1237,19 @@ NetRouteMap FastRouteCore::run()
                   L,
                   cost_params,
                   slack_th);
+      
+    // logger_->report("=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - OverflowIncreases {} - MaxOverIncr {} ===",
+    //     i, total_overflow_, overflow_iterations_, overflow_increases, max_overflow_increases);
+
+    // // debug mode Rectilinear Steiner Tree before overflow iterations
+    // if (debug_->isOn() && debug_->rectilinearSTree_) {
+    //   for (const int& netID : net_ids_) {
+    //     if (nets_[netID]->getDbNet() == debug_->net_) {
+    //       StTreeVisualization(sttrees_[netID], nets_[netID], false);
+    //     }
+    //   }
+    // }
+
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1341,6 +1382,17 @@ NetRouteMap FastRouteCore::run()
 
     last_total_overflow = total_overflow_;
 
+    logger_->report("=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - OverflowIncreases {} - MaxOverIncr {} ===",
+        i, total_overflow_, overflow_iterations_, overflow_increases, max_overflow_increases);
+    // debug mode Rectilinear Steiner Tree before overflow iterations
+    if (debug_->isOn() && debug_->rectilinearSTree_) {
+      for (const int& netID : net_ids_) {
+        if (nets_[netID]->getDbNet() == debug_->net_) {
+          StTreeVisualization(sttrees_[netID], nets_[netID], false);
+        }
+      }
+    }
+
     // generate DRC report each interval
     if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
       saveCongestion(i);
@@ -1349,6 +1401,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
+    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
@@ -1385,7 +1438,32 @@ NetRouteMap FastRouteCore::run()
 
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
+  // debug mode Rectilinear Steiner Tree before overflow iterations
+  if (debug_->isOn() && debug_->rectilinearSTree_) {
+    logger_->report("Tree before layerAssignment");
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        StTreeVisualization(sttrees_[netID], nets_[netID], false);
+      }
+    }
+  }
+
   layerAssignment();
+  past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+  getOverflow3D();
+  // logger_->report("Total Over: {}",total_overflow_);
+
+  logger_->report("After LayerAssignment - 2D/3D cong: {}/{}", past_cong, total_overflow_);
+  // logger_->report("After LayerAssignment - 3D cong: {}", total_overflow_);
+  // debug mode Rectilinear Steiner Tree before overflow iterations
+  if (debug_->isOn() && debug_->rectilinearSTree_) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        StTreeVisualization(sttrees_[netID], nets_[netID], true);
+      }
+    }
+  }
+
 
   costheight_ = 3;
   via_cost_ = 1;
@@ -1393,6 +1471,17 @@ NetRouteMap FastRouteCore::run()
   if (goingLV && past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
+  }
+
+  // logger_->report("After MazeRoute3D - 2D/3Dcong: {}/{}", getOverflow2Dmaze(&maxOverflow, &tUsage), total_overflow_);
+  logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
+  // debug mode Rectilinear Steiner Tree before overflow iterations
+  if (debug_->isOn() && debug_->rectilinearSTree_) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        StTreeVisualization(sttrees_[netID], nets_[netID], true);
+      }
+    }
   }
 
   fillVIA();
@@ -1406,6 +1495,8 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
   }
 
+  // logger_->report("Tree 3D after layer assignment - Overflow (2D/3D): {}/{}", getOverflow2Dmaze(&maxOverflow, &tUsage), total_overflow_);
+  logger_->report("Tree 3D after layer assignment - Overflow (3D): {}", total_overflow_);
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D_) {
     for (const int& netID : net_ids_) {
@@ -1653,7 +1744,7 @@ void FastRouteCore::printOverflowReport(const std::vector<OverflowInfo>& overflo
         std::cout << "----------------------------------------" << std::endl;
         std::cout << "Overflow #" << count << ":" << std::endl;
         std::cout << "  Location: (" << ovf.x1 << "," << ovf.y1 << ") to (" 
-                  << ovf.x2 << "," << ovf.y2 << ") on Metal" << ovf.layer << std::endl;
+                  << ovf.x2 << "," << ovf.y2 << ") on Metal" << ovf.layer + 1 << std::endl;
         std::cout << "  Type: " << (ovf.isHorizontal ? "Horizontal" : "Vertical") << " edge" << std::endl;
         std::cout << "  Capacity: " << ovf.capacity 
                   << ", Usage: " << ovf.usage 
@@ -1715,7 +1806,7 @@ void FastRouteCore::computeCongestionInformation()
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
-          std::cout << "Overflow H: x: " << j << " y: " << i << std::endl;
+          logger_->report("Overflow H: x: {} y: {} layer: {}", j, i, l);
         }
       }
     }
@@ -1729,7 +1820,7 @@ void FastRouteCore::computeCongestionInformation()
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
-          std::cout << "Overflow V: x: " << j << " y: " << i << std::endl;
+          logger_->report("Overflow V: x: {} y: {} layer: {}", j, i, l);
         }
       }
     }
