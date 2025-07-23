@@ -100,6 +100,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.7467
 [INFO GPL-1011] Original area (um^2): 569.77
 [INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
-[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 569.77 (+0.00%)
 No differences found.

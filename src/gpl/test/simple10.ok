@@ -47,7 +47,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
         0 |   0.0000 |  2.065415e+06 |          |  8.36e-23 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
-[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area                3.7536
 [INFO GPL-1003] Available Free Area         63659439.4496
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -55,8 +54,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0000
 [INFO GPL-1008]     - For 80% usage of free space: 0.0000
 [INFO GPL-1009]     - For 50% usage of free space: 0.0000
-[INFO GPL-1011] Original area (um^2): 3.75
-[INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
-[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 3.75 (+0.00%)
 No differences found.

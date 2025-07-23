@@ -87,9 +87,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       280 |   0.2911 |  1.291709e+09 |   +0.29% |  3.99e-09 |      
       290 |   0.2826 |  1.298577e+09 |   +0.53% |  5.87e-09 |      
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
-[INFO GPL-1011] Original area (um^2): 44590.38
-[INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
-[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 44590.38 (+0.00%)
 [INFO GPL-0133] Unlocked instances
 [INFO GPL-0007] Execute nesterov global placement.
@@ -110,7 +107,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       446 |   0.1000 |  1.283879e+09 |          |  5.64e-07 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 446
-[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area            44590.3780
 [INFO GPL-1003] Available Free Area         896177.4080
 [INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)
@@ -118,8 +114,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0553
 [INFO GPL-1008]     - For 80% usage of free space: 0.0622
 [INFO GPL-1009]     - For 50% usage of free space: 0.0995
-[INFO GPL-1011] Original area (um^2): 44590.38
-[INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
-[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 44590.38 (+0.00%)
 No differences found.
