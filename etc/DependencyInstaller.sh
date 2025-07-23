@@ -186,11 +186,13 @@ _installCommonDev() {
             git submodule update --recursive
             ARGS_KOKKOSFFT=" -DCMAKE_BUILD_TYPE=Release -DKokkos_ENABLE_OPENMP=ON -DKokkosFFT_ENABLE_INTERNAL_KOKKOS=ON"
             if [[ ${gpuDeps} == "nvidia" && -n "$(lspci -vnnn 2>/dev/null | grep -i vga.*nvidia*)" ]]; then
+                ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON "
+                ARGS_KOKKOSFFT+=" -DKokkosFFT_ENABLE_HOST_AND_DEVICE=ON" # we always do fft on CPU for result constistency
                 if [[ -z "$(which g++-10)" ]]; then
                     export PATH=$(pwd)/tpls/kokkos/bin:$PATH
-                    ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=nvcc_wrapper "
+                    ARGS_KOKKOSFFT+=" -DCMAKE_CXX_COMPILER=nvcc_wrapper "
                 else
-                    ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=g++-10 "
+                    ARGS_KOKKOSFFT+=" -DCMAKE_CXX_COMPILER=g++-10 "
                 fi
             fi
             ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${kokkosfftPrefix}" ${ARGS_KOKKOSFFT} -B build
