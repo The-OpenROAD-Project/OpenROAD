@@ -880,31 +880,36 @@ void NesterovPlace::reportResults(const int nesterov_iter,
                npVars_.maxNesterovIter);
   }
 
-  log_->info(GPL,
-             1011,
-             "Original area (um^2): {:.2f}",
-             block->dbuAreaToMicrons(original_area));
+  if (npVars_.routability_driven_mode || npVars_.timingDrivenMode) {
+    log_->info(GPL,
+               1011,
+               "Original area (um^2): {:.2f}",
+               block->dbuAreaToMicrons(original_area));
+  }
+
+  if (npVars_.routability_driven_mode) {
+    const float routability_diff
+        = 100.0 * (end_routability_area - original_area) / original_area;
+    log_->info(GPL,
+               1012,
+               "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
+               block->dbuAreaToMicrons(end_routability_area - original_area),
+               routability_diff);
+  }
+
+  if (npVars_.timingDrivenMode) {
+    const float td_diff = 100.0 * td_accumulated_delta_area / original_area;
+    log_->info(GPL,
+               1013,
+               "Total timing-driven delta area: {:.2f} ({:+.2f}%)",
+               block->dbuAreaToMicrons(td_accumulated_delta_area),
+               td_diff);
+  }
 
   int64_t new_area = 0;
   for (auto& nb : nbVec_) {
     new_area += nb->nesterovInstsArea();
   }
-
-  const float routability_diff
-      = 100.0 * (end_routability_area - original_area) / original_area;
-  log_->info(GPL,
-             1012,
-             "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
-             block->dbuAreaToMicrons(end_routability_area - original_area),
-             routability_diff);
-
-  const float td_diff = 100.0 * td_accumulated_delta_area / original_area;
-  log_->info(GPL,
-             1013,
-             "Total timing-driven delta area: {:.2f} ({:+.2f}%)",
-             block->dbuAreaToMicrons(td_accumulated_delta_area),
-             td_diff);
-
   const float placement_diff
       = 100.0 * (new_area - original_area) / original_area;
   log_->info(GPL,

@@ -2844,17 +2844,19 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
 
     if (is_power_domain) {
       log_->info(GPL,
-                 1002,
+                 1016,
                  "Power domain '{}' placement finished at iteration {}",
                  group_name,
                  final_iter);
     } else {
       log_->info(
           GPL, 1001, "Global placement finished at iteration {}", final_iter);
-      log_->info(GPL,
-                 1003,
-                 "Routability mode iteration count: {}",
-                 routability_gpl_iter_count);
+      if (npVars_->routability_driven_mode) {
+        log_->info(GPL,
+                   1003,
+                   "Routability mode iteration count: {}",
+                   routability_gpl_iter_count);
+      }
     }
 
     if (npVars_->routability_driven_mode) {
