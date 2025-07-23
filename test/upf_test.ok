@@ -91,7 +91,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
         5 |   0.0817 |  5.432170e+05 |          |  9.54e-14 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 5
-[INFO GPL-1003] Routability mode iteration count: 0
 [INFO GPL-1002] Placed Cell Area               93.8400
 [INFO GPL-1003] Available Free Area          6812.7840
 [INFO GPL-1004] Minimum Feasible Density        0.0200 (cell_area / free_area)
@@ -267,7 +266,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       830 |   0.1762 |  7.298180e+05 |   +4.65% |  4.73e-06 |  (PD_D2)
       837 |   0.0901 |  7.572950e+05 |          |  5.49e-06 | PD_D2
 ---------------------------------------------------------------
-[INFO GPL-1002] Power domain 'PD_D2' placement finished at iteration 837
+[INFO GPL-1016] Power domain 'PD_D2' placement finished at iteration 837
 [INFO GPL-1002] Placed Cell Area               43.7920
 [INFO GPL-1003] Available Free Area           900.8640
 [INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)
@@ -284,7 +283,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       900 |   0.0658 |  9.887790e+05 |   +8.10% |  1.32e-05 |  (PD_D1)
       900 |   0.0658 |  9.887790e+05 |          |  1.34e-05 | PD_D1
 ---------------------------------------------------------------
-[INFO GPL-1002] Power domain 'PD_D1' placement finished at iteration 900
+[INFO GPL-1016] Power domain 'PD_D1' placement finished at iteration 900
 [INFO GPL-1002] Placed Cell Area               21.2704
 [INFO GPL-1003] Available Free Area           900.8640
 [INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)
@@ -292,9 +291,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0262
 [INFO GPL-1008]     - For 80% usage of free space: 0.0295
 [INFO GPL-1009]     - For 50% usage of free space: 0.0472
-[INFO GPL-1011] Original area (um^2): 158.90
-[INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
-[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 158.90 (+0.00%)
 Placement Analysis
 ---------------------------------
