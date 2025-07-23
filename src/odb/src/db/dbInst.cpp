@@ -1428,6 +1428,15 @@ void dbInst::destroy(dbInst* inst_)
                              inst->_name);
   }
 
+  dbScanInst* scan_inst = inst_->getScanInst();
+  if (scan_inst) {
+    inst->getLogger()->error(
+        utl::ODB,
+        505,
+        "Attempt to destroy instance {} with an associated scan inst.",
+        inst->_name);
+  }
+
   uint i;
   uint n = inst->_iterms.size();
 

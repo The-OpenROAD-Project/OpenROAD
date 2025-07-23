@@ -1025,7 +1025,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   if (db->isSchema(db_schema_bterm_top_layer_grid)) {
     stream >> block._bterm_top_layer_grid;
   }
-  if (db->isSchema(db_schema_block_owns_scan_insts)) {
+  if (db->isSchema(db_schema_map_insts_to_scan_insts)) {
     stream >> block._inst_scan_inst_map;
   }
 
