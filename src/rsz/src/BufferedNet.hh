@@ -46,7 +46,14 @@ class FixedDelay
  public:
   explicit FixedDelay(sta::Delay float_value)
   {
-    value_fs_ = float_value * second_;
+    double fs = float_value * second_;
+    if (!std::isinf(fs) && !std::isnan(fs)) {
+      value_fs_ = static_cast<int64_t>(fs);
+    } else {
+      // HOTFIX: to be replaced by a better understood
+      // fix later
+      value_fs_ = 0;
+    }
   }
 
   sta::Delay toSeconds() { return ((float) value_fs_) / second_; }
