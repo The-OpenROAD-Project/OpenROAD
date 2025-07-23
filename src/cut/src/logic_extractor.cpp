@@ -361,17 +361,6 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   return result;
 }
 
-void LogicExtractorFactory::RemovePrimaryOutputInstances(
-    sta::InstanceSet& cut_instances,
-    std::vector<sta::Pin*>& primary_output_pins)
-{
-  sta::dbNetwork* network = open_sta_->getDbNetwork();
-  for (sta::Pin* pin : primary_output_pins) {
-    sta::Instance* instance = network->instance(pin);
-    cut_instances.erase(instance);
-  }
-}
-
 LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
 {
   open_sta_->ensureGraph();
@@ -395,9 +384,6 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
       = ConvertIoPinsToNets(primary_inputs);
   std::vector<sta::Net*> primary_output_nets
       = ConvertIoPinsToNets(filtered_primary_outputs);
-
-  // Modifies cut_instances in-place
-  RemovePrimaryOutputInstances(cut_instances, primary_outputs);
 
   return LogicCut(primary_input_nets, primary_output_nets, cut_instances);
 }
