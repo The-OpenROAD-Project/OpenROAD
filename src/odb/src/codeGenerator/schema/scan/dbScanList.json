@@ -11,7 +11,7 @@
     "dbScanChain.h",
     "dbScanPartition.h",
     "dbDft.h",
-    "dbScanInstItr.h"],
+    "dbScanListScanInstItr.h"],
   "fields": [
     {
       "name": "_unused",
