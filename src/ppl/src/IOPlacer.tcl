@@ -228,146 +228,144 @@ proc place_pins { args } {
 
   sta::check_argc_eq0 "place_pins" $args
 
-  set regions $list(-exclude)
-  set pin_groups $list(-group_pins)
+  if { [info exists flags(-random)] || [info exists keys(-random_seed)] } {
+    utl::warn PPL 113 "-random and -random_seed are obsolete. Skipping random pin placement."
+  } else {
+    set regions $list(-exclude)
+    set pin_groups $list(-group_pins)
 
-  set dbTech [ord::get_db_tech]
-  if { $dbTech == "NULL" } {
-    utl::error PPL 31 "No technology found."
-  }
+    set dbTech [ord::get_db_tech]
+    if { $dbTech == "NULL" } {
+      utl::error PPL 31 "No technology found."
+    }
 
-  set dbBlock [ord::get_db_block]
-  if { $dbBlock == "NULL" } {
-    utl::error PPL 32 "No block found."
-  }
+    set dbBlock [ord::get_db_block]
+    if { $dbBlock == "NULL" } {
+      utl::error PPL 32 "No block found."
+    }
 
-  set db [ord::get_db]
+    set db [ord::get_db]
 
-  set blockages {}
+    set blockages {}
 
-  foreach inst [$dbBlock getInsts] {
-    if { [$inst isBlock] } {
-      if { ![$inst isPlaced] && ![info exists flags(-random)] } {
-        utl::warn PPL 15 "Macro [$inst getName] is not placed."
-      } else {
-        lappend blockages $inst
+    foreach inst [$dbBlock getInsts] {
+      if { [$inst isBlock] } {
+        if { ![$inst isPlaced] } {
+          utl::warn PPL 15 "Macro [$inst getName] is not placed."
+        } else {
+          lappend blockages $inst
+        }
       }
     }
-  }
 
-  utl::report "Found [llength $blockages] macro blocks."
+    utl::report "Found [llength $blockages] macro blocks."
 
-  set seed 42
-  if { [info exists keys(-random_seed)] } {
-    set seed $keys(-random_seed)
-  }
-  ppl::set_rand_seed $seed
-
-  if { [info exists keys(-hor_layers)] } {
-    set hor_layers $keys(-hor_layers)
-  } else {
-    utl::error PPL 17 "-hor_layers is required."
-  }
-
-  if { [info exists keys(-ver_layers)] } {
-    set ver_layers $keys(-ver_layers)
-  } else {
-    utl::error PPL 18 "-ver_layers is required."
-  }
-
-  # set default interval_length from boundaries as 1u
-  set distance 1
-  if { [info exists keys(-corner_avoidance)] } {
-    set distance $keys(-corner_avoidance)
-    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
-  }
-
-  set min_dist 2
-  set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
-  if { [info exists keys(-min_distance)] } {
-    set min_dist $keys(-min_distance)
-    if { $dist_in_tracks } {
-      ppl::set_min_distance $min_dist
+    if { [info exists keys(-hor_layers)] } {
+      set hor_layers $keys(-hor_layers)
     } else {
-      ppl::set_min_distance [ord::microns_to_dbu $min_dist]
-    }
-  } else {
-    utl::report "Using $min_dist tracks default min distance between IO pins."
-    # setting min distance as 0u leads to the default min distance
-    ppl::set_min_distance 0
-  }
-  ppl::set_min_distance_in_tracks $dist_in_tracks
-
-  set bterms_cnt [llength [$dbBlock getBTerms]]
-
-  if { $bterms_cnt == 0 } {
-    utl::error PPL 19 "Design without pins."
-  }
-
-
-  set num_tracks_y 0
-  foreach hor_layer_name $hor_layers {
-    set hor_layer [ppl::parse_layer_name $hor_layer_name]
-    if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer_name."
+      utl::error PPL 17 "-hor_layers is required."
     }
 
-    if { [$hor_layer getDirection] != "HORIZONTAL" } {
-      utl::error PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
+    if { [info exists keys(-ver_layers)] } {
+      set ver_layers $keys(-ver_layers)
+    } else {
+      utl::error PPL 18 "-ver_layers is required."
     }
 
-    set hor_track_grid [$dbBlock findTrackGrid $hor_layer]
-
-    set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
-
-    ppl::add_hor_layer $hor_layer
-  }
-
-  set num_tracks_x 0
-  foreach ver_layer_name $ver_layers {
-    set ver_layer [ppl::parse_layer_name $ver_layer_name]
-    if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer_name."
+    # set default interval_length from boundaries as 1u
+    set distance 1
+    if { [info exists keys(-corner_avoidance)] } {
+      set distance $keys(-corner_avoidance)
+      ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
     }
 
-    if { [$ver_layer getDirection] != "VERTICAL" } {
-      utl::error PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
+    set min_dist 2
+    set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
+    if { [info exists keys(-min_distance)] } {
+      set min_dist $keys(-min_distance)
+      if { $dist_in_tracks } {
+        ppl::set_min_distance $min_dist
+      } else {
+        ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+      }
+    } else {
+      utl::report "Using $min_dist tracks default min distance between IO pins."
+      # setting min distance as 0u leads to the default min distance
+      ppl::set_min_distance 0
+    }
+    ppl::set_min_distance_in_tracks $dist_in_tracks
+
+    set bterms_cnt [llength [$dbBlock getBTerms]]
+
+    if { $bterms_cnt == 0 } {
+      utl::error PPL 19 "Design without pins."
     }
 
-    set ver_track_grid [$dbBlock findTrackGrid $ver_layer]
 
-    set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
+    set num_tracks_y 0
+    foreach hor_layer_name $hor_layers {
+      set hor_layer [ppl::parse_layer_name $hor_layer_name]
+      if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
+        utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer_name."
+      }
 
-    ppl::add_ver_layer $ver_layer
-  }
+      if { [$hor_layer getDirection] != "HORIZONTAL" } {
+        utl::error PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
+      }
 
-  set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
+      set hor_track_grid [$dbBlock findTrackGrid $hor_layer]
 
-  if { [llength $regions] != 0 } {
-    set lef_units [$dbTech getLefUnits]
+      set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
 
-    foreach region $regions {
-      exclude_io_pin_region -region $region
+      ppl::add_hor_layer $hor_layer
     }
-  }
 
-  if { [llength $pin_groups] != 0 } {
-    foreach group $pin_groups {
-      set pins [ppl::parse_pin_names "place_pins -group_pins" $group]
-      if { [llength $pins] != 0 } {
-        odb::add_pin_group $pins 0
+    set num_tracks_x 0
+    foreach ver_layer_name $ver_layers {
+      set ver_layer [ppl::parse_layer_name $ver_layer_name]
+      if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
+        utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer_name."
+      }
+
+      if { [$ver_layer getDirection] != "VERTICAL" } {
+        utl::error PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
+      }
+
+      set ver_track_grid [$dbBlock findTrackGrid $ver_layer]
+
+      set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
+
+      ppl::add_ver_layer $ver_layer
+    }
+
+    set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
+
+    if { [llength $regions] != 0 } {
+      set lef_units [$dbTech getLefUnits]
+
+      foreach region $regions {
+        exclude_io_pin_region -region $region
       }
     }
-  }
 
-  if { [info exists keys(-write_pin_placement)] } {
-    ppl::set_pin_placement_file $keys(-write_pin_placement)
-  }
+    if { [llength $pin_groups] != 0 } {
+      foreach group $pin_groups {
+        set pins [ppl::parse_pin_names "place_pins -group_pins" $group]
+        if { [llength $pins] != 0 } {
+          odb::add_pin_group $pins 0
+        }
+      }
+    }
 
-  if { [info exists flags(-annealing)] } {
-    ppl::run_annealing [info exists flags(-random)]
-  } else {
-    ppl::run_hungarian_matching [info exists flags(-random)]
+    if { [info exists keys(-write_pin_placement)] } {
+      ppl::set_pin_placement_file $keys(-write_pin_placement)
+    }
+
+    if { [info exists flags(-annealing)] } {
+      ppl::run_annealing
+    } else {
+      ppl::run_hungarian_matching
+    }
   }
 }
 

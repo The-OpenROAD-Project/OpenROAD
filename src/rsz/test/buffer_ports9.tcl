@@ -12,7 +12,7 @@ initialize_floorplan -site $site \
 
 source $tracks_file
 
-place_pins -random -hor_layers $io_placer_hor_layer \
+place_pins -hor_layers $io_placer_hor_layer \
   -ver_layers $io_placer_ver_layer
 
 global_placement

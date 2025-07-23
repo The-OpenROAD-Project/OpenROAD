@@ -14,7 +14,7 @@ set_io_pin_constraint -mirrored_pins {resp_msg[0] req_msg[0] resp_msg[1]
   req_msg[10]}
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
-  -min_distance 0.12 -annealing -random
+  -min_distance 0.12 -annealing
 
 set def_file [make_result_file annealing_mirrored4.def]
 
