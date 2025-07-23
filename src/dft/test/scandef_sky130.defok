@@ -112,8 +112,8 @@ SCANCHAINS 9 ;
   ff6_clk2_falling ( IN SCD ) ( OUT Q )
   ff2_clk2_falling ( IN SCD ) ( OUT Q )
 + ORDERED
-  ff8_clk2_falling ( IN SCD ) ( OUT Q )
   mux1 ( IN A0 ) ( OUT X )
+  ff8_clk2_falling ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_falling
 + STOP PIN output1 ;
 
@@ -138,8 +138,8 @@ SCANCHAINS 9 ;
   ff8_clk2_rising ( IN SCD ) ( OUT Q )
   ff2_clk2_rising ( IN SCD ) ( OUT Q )
 + ORDERED
-  ff6_clk2_rising ( IN SCD ) ( OUT Q )
   iso ( IN A ) ( OUT X )
+  ff6_clk2_rising ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_rising
 + STOP PIN ff6_clk2_rising/SCD ;
 
