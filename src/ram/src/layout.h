@@ -73,6 +73,38 @@ class Layout
   odb::Orientation2D orientation_;
   std::vector<std::unique_ptr<Element>> elements_;
 };
+
+class Cell {
+public:
+
+ Cell(odb::Point origin, int cell_width = 0, int cell_height = 0);
+
+ int getWidth();
+
+ int getHeight();
+
+ void setWidth(int width);
+
+ void  setHeight(int height);
+
+ odb::Point getOrigin();
+
+ void setOrigin(odb::Point origin);
+
+ void addElement(std::unique_ptr<Element> element);
+
+ odb::Rect placeCell(odb::Point place);
+
+
+
+private:
+ odb::Point origin_;
+ std::vector<std::unique_ptr<Element>> elements_;
+ int cell_width_;
+ int cell_height_;
+
+};
+
 class GridLayout {
  public: 
   GridLayout(odb::Orientation2D orientation);

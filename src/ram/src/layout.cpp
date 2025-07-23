@@ -105,6 +105,61 @@ void Layout::addElement(std::unique_ptr<Element> element)
   elements_.push_back(std::move(element));
 }
 
+
+Cell::Cell(Point origin, int cell_width, int cell_height) : 
+	origin_(origin), cell_width_(cell_width), cell_height_(cell_height) {}
+
+int Cell::getWidth() { return cell_width_; }
+
+int Cell::getHeight() { return cell_height_; }
+
+void Cell::setWidth(int width) { cell_width_ = width; }
+
+void Cell::setHeight(int height) { cell_height_ = height; }
+
+Point Cell::getOrigin() { return origin_; }
+
+void Cell::setOrigin (Point origin) { origin_ = origin; }
+
+void Cell::addElement(std::unique_ptr<Element> element) {
+  elements_.push_back(std::move(element));
+
+}
+
+odb::Rect Cell::placeCell(Point global_pos) {
+   
+	
+   auto local_pos = Point (0,0);
+   Rect bbox (global_pos, global_pos);
+   for (auto& elem : elements_) {
+       auto place_pos = Point (0,0);
+       place_pos.setX(global_pos.getX() + local_pos.getX());
+       place_pos.setY(global_pos.getY() + local_pos.getY());
+
+       auto bounds = elem->position(place_pos);
+       bbox.merge(bounds);
+       place_pos = bbox.lr();
+
+       local_pos.setX(place_pos.getX() - global_pos.getX());
+       local_pos.setY(place_pos.getY() - global_pos.getY());
+
+   }
+
+   cell_width_ = local_pos.getX() - global_pos.getX();
+   cell_height_ = local_pos.getY() - global_pos.getY();
+
+   return bbox;
+
+
+
+}
+
+
+
+
+
+
+
 GridLayout::GridLayout(odb::Orientation2D orientation) : orientation_ (orientation){}
 
 void GridLayout::addLayout(std::unique_ptr<Layout> track){

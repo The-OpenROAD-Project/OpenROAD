@@ -58,6 +58,8 @@ using utl::Logger;
 ////////////////////////////////////////////////////////////////
 class Element;
 class Layout;
+class Cell;
+class GridLayout;
 
 class RamGen
 {
@@ -79,6 +81,12 @@ class RamGen
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
   odb::dbInst* makeInst(
       Layout* layout,
+      const std::string& prefix,
+      const std::string& name,
+      odb::dbMaster* master,
+      const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
+  odb::dbInst* makeCellInst(
+      Cell* cell,
       const std::string& prefix,
       const std::string& name,
       odb::dbMaster* master,
