@@ -242,7 +242,7 @@ if(USE_GPL2)
       kokkos-fft
       SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gpl2/kokkos-fft
       GIT_REPOSITORY https://github.com/kokkos/kokkos-fft
-      GIT_TAG origin/main
+      GIT_TAG v0.3.0
     )
     set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "Set Kokkos OpenMP backend" FORCE)
     if(GPU)
