@@ -36,7 +36,6 @@
 include("openroad")
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(fmt REQUIRED)
 
 if(NOT (${Kokkos_FOUND} AND ${KokkosFFT_FOUND}))
   add_subdirectory(kokkos-fft)
@@ -81,7 +80,6 @@ target_link_libraries(gpl2
     rsz
     grt
     KokkosFFT::fft
-    fmt::fmt-header-only
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)

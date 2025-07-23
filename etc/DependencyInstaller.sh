@@ -391,7 +391,6 @@ _installUbuntuPackages() {
         libgomp1 \
         libomp-dev \
         libfftw3-dev\
-        libfmt-dev \
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
@@ -519,7 +518,6 @@ _installOpenSusePackages() {
     zypper -n update
     zypper -n install -t pattern devel_basis
     zypper -n --gpg-auto-import-keys \
-        --plus-repo https://download.opensuse.org/repositories/games/$(grep ^VERSION= /etc/os-release | sed  's/VERSION="\(.*\)"/\1/g') \
         --plus-repo https://download.opensuse.org/repositories/Education/$(grep ^VERSION= /etc/os-release | sed  's/VERSION="\(.*\)"/\1/g')\
         install \
             binutils \
@@ -534,7 +532,6 @@ _installOpenSusePackages() {
             libffi-devel \
             libgomp1 \
             libomp11-devel \
-            libfmt11 \
             libpython3_6m1_0 \
             libqt5-creator \
             libqt5-qtbase \
@@ -642,7 +639,6 @@ _installDebianPackages() {
         libfl-dev \
         libgomp1 \
         libfftw3-dev\
-        libfmt-dev \
         libomp-dev \
         libpcre2-dev \
         libpcre3-dev \

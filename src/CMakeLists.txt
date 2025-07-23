@@ -371,11 +371,9 @@ target_link_libraries(openroad
 )
 
 if(USE_GPL2)
-  find_package(fmt REQUIRED)
   target_link_libraries(openroad
     gpl2
     KokkosFFT::fft
-    fmt::fmt-header-only
   )
 endif()
 
