@@ -29,6 +29,7 @@
 #include "dbNet.h"
 #include "dbNullIterator.h"
 #include "dbRegion.h"
+#include "dbScanInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -36,7 +37,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
-#include "dbScanInst.h"
 
 namespace odb {
 
