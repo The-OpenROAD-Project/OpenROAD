@@ -339,9 +339,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_output_nets
       = CreateAbcPrimaryOutputs(primary_outputs_, *abc_network, network);
 
-  // Create MIO standard cell library
-  abc::Mio_Library_t* mio_library
-      = abc::Abc_SclDeriveGenlibSimple(abc_library.abc_library());
+  abc::Mio_Library_t* mio_library = abc_library.mio_library();
   abc_network->pManFunc = mio_library;
 
   // Create cells from cut instances, get a map of the created nodes
