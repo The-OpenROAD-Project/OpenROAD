@@ -187,9 +187,10 @@ class OpenRoad
                         int bloat_factor,
                         bool bloat_occupied_layers);
 
+  void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                const char* version);
+                const string& version);
 
   void writeCdl(const char* out_filename,
                 const std::vector<const char*>& masters_filenames,

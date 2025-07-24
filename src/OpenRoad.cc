@@ -350,6 +350,11 @@ static odb::defout::Version stringToDefVersion(const string& version)
 
 void OpenRoad::writeDef(const char* filename, const char* version)
 {
+  writeDef(filename, std::string(version));
+}
+
+void OpenRoad::writeDef(const char* filename, const string& version)
+{
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     odb::dbBlock* block = chip->getBlock();
