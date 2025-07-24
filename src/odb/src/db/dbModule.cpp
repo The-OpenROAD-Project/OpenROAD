@@ -103,12 +103,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._insts;
   stream << obj._mod_inst;
   stream << obj._modinsts;
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._modnets;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._modbterms;
-  }
+  stream << obj._modnets;
+  stream << obj._modbterms;
   return stream;
 }
 

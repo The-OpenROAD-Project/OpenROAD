@@ -3263,6 +3263,12 @@ class dbInst : public dbObject
   ///
   bool isEndCap() const;
 
+  ///
+  /// Get the scan version of this instance.
+  /// Returns nullptr if this instance has no scan version.
+  ///
+  dbScanInst* getScanInst() const;
+
   void setPinAccessIdx(uint idx);
 
   uint getPinAccessIdx() const;
@@ -8440,6 +8446,8 @@ class dbScanInst : public dbObject
 
   dbInst* getInst() const;
 
+  void insertAtFront(dbScanList* scan_list);
+
   static dbScanInst* create(dbScanList* scan_list, dbInst* inst);
   // User Code End dbScanInst
 };
@@ -8452,9 +8460,8 @@ class dbScanInst : public dbObject
 class dbScanList : public dbObject
 {
  public:
-  dbSet<dbScanInst> getScanInsts() const;
-
   // User Code Begin dbScanList
+  dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList

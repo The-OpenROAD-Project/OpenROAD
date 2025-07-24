@@ -629,9 +629,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
-    stream << obj.orth_spacing_tbl_;
-  }
+  stream << obj.orth_spacing_tbl_;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -645,25 +643,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.eol_ext_rules_tbl_;
   stream << *obj.array_spacing_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
-    stream << *obj.max_spacing_rules_tbl_;
-  }
+  stream << *obj.max_spacing_rules_tbl_;
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
-    stream << *obj.forbidden_spacing_rules_tbl_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
-    stream << *obj.keepout_zone_rules_tbl_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
-    stream << *obj.wrongdir_spacing_rules_tbl_;
-  }
-  if (obj.getDatabase()->isSchema(
-          db_schema_lef58_two_wires_forbidden_spacing)) {
-    stream << *obj.two_wires_forbidden_spc_rules_tbl_;
-  }
+  stream << *obj.forbidden_spacing_rules_tbl_;
+  stream << *obj.keepout_zone_rules_tbl_;
+  stream << *obj.wrongdir_spacing_rules_tbl_;
+  stream << *obj.two_wires_forbidden_spc_rules_tbl_;
   // User Code Begin <<
   stream << obj.layer_adjustment_;
   stream << obj._pitch_x;
@@ -704,12 +691,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._two_widths_sp_spacing;
   stream << obj._oxide1;
   stream << obj._oxide2;
-  if (obj.getDatabase()->isSchema(db_schema_wrongway_width)) {
-    stream << obj.wrong_way_width_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
-    stream << obj._first_last_pitch;
-  }
+  stream << obj.wrong_way_width_;
+  stream << obj._first_last_pitch;
   // User Code End <<
   return stream;
 }
