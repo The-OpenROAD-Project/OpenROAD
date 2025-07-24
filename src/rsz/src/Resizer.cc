@@ -758,7 +758,7 @@ LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
 
   // No buffer?
   if (buffer_lowest_drive_ == nullptr) {
-    logger_->error(RSZ, 23, "No buffers found.");
+    logger_->error(RSZ, 41, "No buffers found.");
   }
 
   return buffer_lowest_drive_;
@@ -1560,6 +1560,109 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     }
     logger_->report(
         "--------------------------------------------------------------");
+  }
+}
+
+void Resizer::reportBuffers()
+{
+  LibertyCellSeq buffer_list;
+  std::map<std::pair<int, std::string>, int> vt_types;
+  std::unordered_map<std::string, int> footprint_types;
+  std::unordered_map<int, float> vt_leak;
+  LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* lib = lib_iter->next();
+    for (LibertyCell* buffer : *lib->buffers()) {
+      if (exclude_clock_buffers_) {
+        BufferUse buffer_use = sta_->getBufferUse(buffer);
+        if (buffer_use == CLOCK) {
+          continue;
+        }
+      }
+      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+          && !buffer->isLevelShifter() && isLinkCell(buffer)) {
+        buffer_list.emplace_back(buffer);
+        footprint_types[buffer->footprint()]++;
+        odb::dbMaster* master = db_network_->staToDb(buffer);
+        vt_types[cellVTType(master)]++;
+        std::optional<float> cell_leak = cellLeakage(buffer);
+        vt_leak[cellVTType(master).first] += *cell_leak;
+      }
+    }
+  }
+  delete lib_iter;
+
+  if (buffer_list.empty()) {
+    logger_->error(RSZ, 23, "No buffers are found from the loaded libraries.");
+  } else {
+    sort(buffer_list,
+         [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+           odb::dbMaster* master1 = db_network_->staToDb(buffer1);
+           odb::dbMaster* master2 = db_network_->staToDb(buffer2);
+
+           auto vt_type1 = cellVTType(master1);
+           auto vt_type2 = cellVTType(master2);
+
+           if (vt_type1 != vt_type2) {
+             return vt_type1 < vt_type2;
+           }
+           return bufferDriveResistance(buffer1)
+                  < bufferDriveResistance(buffer2);
+         });
+
+    logger_->report(
+        "**********************************************************************"
+        "**********");
+    logger_->report("Buffer Report:");
+    logger_->report(
+        "There are {} buffers that are not marked as dont-use, MV{}",
+        buffer_list.size(),
+        (exclude_clock_buffers_ ? " or clock buffers" : ""));
+    logger_->report("There are {} VT types:", vt_types.size());
+    logger_->report("VT type[index]: # buffers, ave leakage");
+    for (const auto& [vt_type, count] : vt_types) {
+      logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
+                      vt_type.second,
+                      vt_type.first,
+                      count,
+                      vt_leak[vt_type.first] / count);
+    }
+    logger_->report("There are {} cell footprint types:",
+                    footprint_types.size());
+    for (const auto& [footprint_type, count] : footprint_types) {
+      logger_->report("  {:<6}: {} [{:.2f}%]",
+                      footprint_type,
+                      count,
+                      ((float) count) / buffer_list.size() * 100);
+    }
+    logger_->report(
+        "Cell                                        Drive Drive    Leak "
+        "  Cell    VT");
+    logger_->report(
+        "                                            Res   Res*Cin       "
+        "Footprint Type");
+    logger_->report(
+        "----------------------------------------------------------------------"
+        "-----------");
+    for (LibertyCell* buffer : buffer_list) {
+      float drive_res = bufferDriveResistance(buffer);
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float c_in = input->capacitance();
+      std::optional<float> cell_leak = cellLeakage(buffer);
+      odb::dbMaster* master = db_network_->staToDb(buffer);
+
+      logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:<7} {}",
+                      buffer->name(),
+                      drive_res,
+                      drive_res * c_in,
+                      *cell_leak,
+                      buffer->footprint(),
+                      cellVTType(master).second);
+    }
+    logger_->report(
+        "**********************************************************************"
+        "**********");
   }
 }
 
