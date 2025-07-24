@@ -189,7 +189,7 @@ class OpenRoad
 
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                const string& version);
+                const char* version);
 
   void writeCdl(const char* out_filename,
                 const std::vector<const char*>& masters_filenames,

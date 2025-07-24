@@ -348,7 +348,7 @@ static odb::defout::Version stringToDefVersion(const string& version)
   return odb::defout::Version::DEF_5_8;
 }
 
-void OpenRoad::writeDef(const char* filename, const string& version)
+void OpenRoad::writeDef(const char* filename, const char* version)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
