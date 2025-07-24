@@ -32,7 +32,7 @@
 namespace drt {
 
 
-
+/*
 void FlexGRWorker::batchGenerationRelax(
   std::vector<grNet*>& rerouteNets,
   std::vector<std::vector<grNet*>>& batches)
@@ -205,14 +205,12 @@ void FlexGRWorker::batchGenerationRelax(
     //logger_->report("[INFO][FlexGR] Batch {} has {} nets", i, batches[i].size());
   }
 
-  /*
-  for (auto& netTree : netTrees) {
-    std::cout << "netTree.points.size() = " << netTree.points.size() << "  "
-              << "netTree.vSegments.size() = " << netTree.vSegments.size() << "  "
-              << "netTree.hSegments.size() = " << netTree.hSegments.size() << std::endl;
-  }
-  */
-
+  
+  // for (auto& netTree : netTrees) {
+  //  std::cout << "netTree.points.size() = " << netTree.points.size() << "  "
+  //            << "netTree.vSegments.size() = " << netTree.vSegments.size() << "  "
+  //            << "netTree.hSegments.size() = " << netTree.hSegments.size() << std::endl;
+  //}
 
   // logger_->report("[INFO][FlexGR] Number of sparse batches (#nets < 40): {}", sparseBatch);
   // logger_->report("[INFO][FlexGR] Number of dense batches (#nets >= 40): {}", batches.size() - sparseBatch);
@@ -220,7 +218,7 @@ void FlexGRWorker::batchGenerationRelax(
 
   //exit(1);
 }
-
+*/
 
 
 // To be updated

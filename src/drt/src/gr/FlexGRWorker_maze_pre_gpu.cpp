@@ -27,14 +27,29 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vector>
+
+
 
 #include "gr/FlexGR.h"
+
+#include <vector>
+#include <omp.h>
+#include <spdlog/common.h>
+#include <sys/types.h>
+#include <climits>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <mutex>
+#include <queue>
 
 namespace drt {
 
 
 void FlexGRWorker::main_mt_prep(std::vector<grNet*>& rerouteNets, int iter) {
+  // set local grid graph dimensions
+  gridGraph_.getDim(xDim_, yDim_, zDim_);
   // For incremental RRR (DRC mode), we need to update the history at the beginning of each iteration
   route_addHistCost_update();
   routePrep_update(rerouteNets, iter);
@@ -90,7 +105,7 @@ void FlexGRWorker::routePrep_update(std::vector<grNet*> &rerouteNets,
   }
 
   // Get all the candidates nets to be rerouted
-  route_getRerouteNets(rerouteNets);
+  route_getRerouteNets(rerouteNets); 
 }
 
 
@@ -101,6 +116,7 @@ void FlexGRWorker::init_pinGCellIdxs()
   const auto UR = getRouteGCellIdxUR();
   const int xDim = UR.x() - LL.x() + 1;
   const int yDim = UR.y() - LL.y() + 1;  
+  const int workerId = getWorkerId();
   for (auto &net : nets_) {
     net->clearPinGCellIdxs();
     for (auto pinGCellNode : net->getPinGCellNodes()) {
@@ -141,10 +157,10 @@ void FlexGRWorker::init_pinGCellIdxs()
     // Set the routed wirelength as HPWL: we will use this to estimate the routed wirelength
     int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
     net->setHPWL(hpwl);
+    net->setWorkerId(workerId);
     // net->setCPUFlag(true); // This is only for testing purpose
   }
 }
-
 
 
 // The route_mazeIterInit function is only used in the DRC mode
@@ -284,6 +300,157 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
   
   return false;
 }
+
+
+
+void FlexGRWorker::grNet2NetTree(
+  std::vector<grNet*>& sortedNets,
+  std::vector<std::unique_ptr<NetStruct> >& netTrees)
+{
+  netTrees.clear();
+  netTrees.resize(sortedNets.size());
+  int numNets = static_cast<int>(sortedNets.size());
+  
+  // Use OpenMP to parallelize the net tree generation
+  int numThreads = std::max(1, static_cast<int>(omp_get_max_threads()));
+  #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
+  for (int netId = 0; netId < numNets; netId++) {
+    auto& net = sortedNets[netId];
+    std::unique_ptr<NetStruct> netTree = std::make_unique<NetStruct>();
+    netTree->netId = netId;  
+    auto& points = netTree->points;
+    auto& vSegments = netTree->vSegments;
+    auto& hSegments = netTree->hSegments;
+
+    // Use queue to traverse the net's GCell nodes
+    auto& pinGCellNodePairs = net->getPinGCellNodePairs();
+    if (pinGCellNodePairs.empty()) {
+      logger_->error(utl::DRT, 375, "Error: pinGCellNodePairs is empty in grNet2NetTree!");
+    }
+    grNode* root = pinGCellNodePairs.front().second;
+    std::queue<grNode*> nodeQ;
+    nodeQ.push(root);
+
+    while (!nodeQ.empty()) {
+      auto node = nodeQ.front();
+      nodeQ.pop();
+      // add the children nodes to the queue (we just need to consider Steiner nodes)
+      for (auto& child : node->getChildren()) {
+        if (child->getType() == frNodeTypeEnum::frcSteiner) {
+          nodeQ.push(child);
+        }
+      }
+   
+      FlexMazeIdx nodeMIdx;
+      gridGraph_.getMazeIdx(node->getLoc(), node->getLayerNum(), nodeMIdx);
+      const int nodeLocIdx = getGCellIdx1D(nodeMIdx.x(), nodeMIdx.y(), nodeMIdx.z());
+      points.push_back(nodeLocIdx);
+
+      // get the segment associated with the gcell node
+      auto parent = node->getParent();
+      if (parent == nullptr || node->getType() != frNodeTypeEnum::frcSteiner) {
+        continue; // skip root gcellNode, boundary node, or pin node
+      }
+
+      // get the parent node's location index
+      FlexMazeIdx parentMIdx;
+      gridGraph_.getMazeIdx(parent->getLoc(), parent->getLayerNum(), parentMIdx);
+      const int parentLocIdx = getGCellIdx1D(parentMIdx.x(), parentMIdx.y(), parentMIdx.z());
+      if (nodeMIdx.x() == parentMIdx.x()) { // vertical segment
+        nodeLocIdx > parentLocIdx
+          ? vSegments.push_back(std::make_pair(parentLocIdx, nodeLocIdx))
+          : vSegments.push_back(std::make_pair(nodeLocIdx, parentLocIdx));
+      } else if (nodeMIdx.y() == parentMIdx.y()) { // horizontal segment
+        nodeLocIdx > parentLocIdx
+          ? hSegments.push_back(std::make_pair(parentLocIdx, nodeLocIdx))
+          : hSegments.push_back(std::make_pair(nodeLocIdx, parentLocIdx));
+      } else {
+        logger_->error(DRT, 373, "current node and parent node are are not aligned collinearly.");
+      }  
+    }
+
+    // Push the net tree into the vector
+    netTrees[netId] = std::move(netTree);
+  }
+}
+
+
+void FlexGRWorker::batchGenerationRelax(
+  std::vector<grNet*>& rerouteNets,
+  std::vector<std::vector<grNet*> >& batches)
+{
+  batches.clear();
+  batches.reserve(rerouteNets.size());
+  const int numNets = static_cast<int>(rerouteNets.size()); 
+  // Use mask to track the occupied gcells for each batch to detect conflicts
+  // batchMask[i] is a 2D vector with the same size as the gcell grid of size (xGrids_ x yGrids_)
+  std::vector<std::vector<bool> > batchMask; 
+  batchMask.reserve(rerouteNets.size());
+
+  std::sort(rerouteNets.begin(), rerouteNets.end(), 
+    [](const grNet* a, const grNet* b) {
+      return a->getHPWL() > b->getHPWL();
+    });
+
+  // Construct the netTrees
+  std::vector<std::unique_ptr<NetStruct> > netTrees;
+  netTrees.reserve(numNets);
+  grNet2NetTree(rerouteNets, netTrees);
+
+  // Define the lambda function to check if the net is in some batch
+  // Here we use the representative point exhaustion, for non-exact overlap checking.
+  // Only checks the two end points of a query segment
+  // The checking may fail is the segment is too long 
+  // and the two end points cover all the existing segments
+  // For speedup, no worry, we need to use atomic operations when updating the demand in congestion map
+  auto hasConflict_lambda = [&](std::vector<std::vector<bool> >::iterator maskIter, int netId) -> bool {
+    for (auto& point : netTrees[netId]->points) {
+      if ((*maskIter)[point]) { return true; }
+    }
+    return false;
+  };
+
+  auto findBatch_lambda = [&](int netId) -> int {
+    std::vector<std::vector<bool> >::iterator maskIter = batchMask.begin();
+    while (maskIter != batchMask.end()) {
+      if (!hasConflict_lambda(maskIter, netId)) {
+        return std::distance(batchMask.begin(), maskIter);
+      }
+      maskIter++;
+    }
+    return -1; 
+  };    
+  
+  auto maskExactRegion_lambda = [&](int netId, std::vector<bool>& mask) -> void {    
+    for (auto& vSeg : netTrees[netId]->vSegments) {
+      for (int id = vSeg.first; id <= vSeg.second; id += xDim_) {
+        mask[id] = true;
+      }
+    }
+
+    for (auto& hSeg : netTrees[netId]->hSegments) {
+      for (int id = hSeg.first; id <= hSeg.second; id++) {
+        mask[id] = true;
+      }
+    }
+  };
+
+  // We limit the maximum batch size to the number of grids
+  int numGrids = xDim_ * yDim_;
+  for (int netId = 0; netId < numNets; netId++) {
+    int batchId = findBatch_lambda(netId);  
+    // always create a new batch if no batch is found
+    if (batchId == -1 || batches[batchId].size() >= numGrids) {
+      batchId = batches.size();
+      batches.push_back(std::vector<grNet*>());
+      batchMask.push_back(std::vector<bool>(static_cast<size_t>(numGrids), false));
+    }  
+
+    batches[batchId].push_back(rerouteNets[netId]);
+    maskExactRegion_lambda(netId, batchMask[batchId]);      
+  } 
+}
+
 
 
 }  // namespace drt

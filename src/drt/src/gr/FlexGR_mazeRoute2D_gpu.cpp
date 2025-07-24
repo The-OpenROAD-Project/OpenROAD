@@ -202,13 +202,14 @@ void FlexGR::searchRepairMazeCore(
   unsigned OVERFLOWCOST,
   unsigned HISTCOST)
 {
+  const int numWorkers = uworkers.size();
   for (int iter = 0; iter < mazeEndIter; iter++) {    
     logger_->report("[INFO] RRR iteration " + std::to_string(iter) + " start !"); 
     // Generate the batches in parallel
     // Get all the nets to be rerouted
     std::vector<std::vector<grNet*> > rerouteNets(uworkers.size());
     ThreadException exception1;
-#pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(dynamic)
     for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
       try {
         uworkers[j]->main_mt_prep(rerouteNets[j], iter);
@@ -217,7 +218,32 @@ void FlexGR::searchRepairMazeCore(
       }
     }
     exception1.rethrow();
+   
     
+    // Assign unique netId to each net
+    int netId = 0;
+    for (auto& nets : rerouteNets) {
+      for (auto net : nets) {
+        net->setNetId(netId++);
+      }
+    }
+    
+    const int totalNumNets = netId;
+    if (totalNumNets == 0) {
+      logger_->report("[INFO] [Early Exit] Overflow free!");
+      break;
+    }
+
+
+    // Generate the batch for each worker in parallel
+    // Divide the nets into multiple batches within each worker
+    // Here we use the lazy check: only the starting and ending points of a path segment are checked
+    std::vector<std::vector<std::vector<grNet*>> > workerBatches(uworkers.size());
+    #pragma omp parallel for schedule(dynamic)
+    for (int workerId = 0; workerId < (int) uworkers.size(); workerId++) {  // NOLINT
+     uworkers[workerId]->batchGenerationRelax(rerouteNets[workerId], workerBatches[workerId]); // Use the lazy mode
+    }
+
     logger_->report("[INFO] RRR iteration " + std::to_string(iter) + " finish !"); 
   }
 }

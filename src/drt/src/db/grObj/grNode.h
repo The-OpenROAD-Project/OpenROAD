@@ -119,7 +119,9 @@ class grNode : public grBlockObject
   frListIter<std::unique_ptr<grNode>> getIter() { return iter; }
 
   frBlockObjectEnum typeId() const override { return grcNode; }
-  
+  void setDontMove(bool in) { dontMove = in; }
+  bool isDontMove() const { return dontMove; }
+
  protected:
   grNet* net{nullptr};
   Point loc;
@@ -134,9 +136,7 @@ class grNode : public grBlockObject
   std::list<grNode*> children;
 
   frListIter<std::unique_ptr<grNode>> iter;
-
+  bool dontMove{false};  // used for boundary pin, should not be moved
   friend class frNode;
-
-
 };
 }  // namespace drt

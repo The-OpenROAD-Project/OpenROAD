@@ -873,6 +873,19 @@ class FlexGRWorker
   RipUpMode ripupMode_{RipUpMode::DRC};
   int workerId_{0};
 
+
+  int xDim_{0};  // x dimension of the grid graph
+  int yDim_{0};  // y dimension of the grid graph
+  int zDim_{0};  // z dimension of the grid graph
+
+  inline int getGCellIdx1D(int x, int y, int z) const 
+  {
+    return z * xDim_ * yDim_ + y * xDim_ + x;
+  }
+
+  void grNet2NetTree(std::vector<grNet*>& sortedNets,
+    std::vector<std::unique_ptr<NetStruct> >& netTrees);
+
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;
   std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets_;

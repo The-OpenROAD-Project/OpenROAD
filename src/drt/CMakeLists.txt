@@ -81,11 +81,13 @@ set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
 
 target_sources(drt
   PRIVATE
-    src/gr/FlexGRWorker_init.cpp
+    src/gr/FlexGR_mazeRoute2D_gpu.cpp  
+    src/gr/FlexGRWorker_init_gpu.cpp
+    src/gr/FlexGRWorker_end_gpu.cpp 
+    src/gr/FlexGRWorker_maze_pre_gpu.cpp
     src/gr/FlexGRCMap.cpp
     src/gr/FlexGR.cpp
     src/gr/FlexGR_gpu.cpp
-    src/gr/FlexGR_end.cpp
     src/gr/FlexGR_aux.cpp
     src/gr/FlexGR_update.cpp
     src/gr/FlexGR_cost.cpp
@@ -102,7 +104,7 @@ target_sources(drt
     src/gr/FlexGR_GPUDB_layerAssign.cu
     src/gr/FlexGR_util.cu
     src/gr/FlexGR_util.cpp
-    src/gr/FlexGR_init.cpp
+    src/gr/FlexGR_init_gpu.cpp
     src/gr/FlexGR_maze.cpp
     src/gr/FlexGR_maze_restore.cpp
     src/gr/FlexGR_rq.cpp
