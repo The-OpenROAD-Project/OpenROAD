@@ -115,7 +115,7 @@ void Graphics::initHeatmap()
 void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
-  auto& die = pbc_->die();
+  auto& die = pbc_->getDie();
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());

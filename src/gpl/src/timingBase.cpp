@@ -154,7 +154,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
     // default weight
     gNet->setTimingWeight(1.0);
     if (gNet->gPins().size() > 1) {
-      auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->dbNet());
+      auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->getDbNet());
       if (!net_slack_opt) {
         continue;
       }
@@ -177,7 +177,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
                  "timing",
                  1,
                  "net:{} slack:{} weight:{}",
-                 gNet->net()->dbNet()->getConstName(),
+                 gNet->net()->getDbNet()->getConstName(),
                  net_slack,
                  gNet->totalWeight());
     }

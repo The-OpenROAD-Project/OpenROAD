@@ -393,7 +393,7 @@ bool GNet::isDontCare() const
 
 void GNet::print(utl::Logger* log) const
 {
-  log->report("print net: {}", nets_[0]->dbNet()->getName());
+  log->report("print net: {}", nets_[0]->getDbNet()->getName());
   log->report("gPins_ size: {}", gPins_.size());
   log->report("nets_ size: {}", nets_.size());
   // log->report("gpl_net_: {}", pb_net->);
@@ -419,8 +419,8 @@ GPin::GPin(Pin* pin)
   pins_.push_back(pin);
   cx_ = pin->cx();
   cy_ = pin->cy();
-  offsetCx_ = pin->offsetCx();
-  offsetCy_ = pin->offsetCy();
+  offsetCx_ = pin->getOffsetCx();
+  offsetCy_ = pin->getOffsetCy();
 }
 
 GPin::GPin(const std::vector<Pin*>& pins)
@@ -501,14 +501,14 @@ void GPin::updateCoordi()
   Pin* pb_pin = pins_[0];
   cx_ = pb_pin->cx();
   cy_ = pb_pin->cy();
-  offsetCx_ = pb_pin->offsetCx();
-  offsetCy_ = pb_pin->offsetCy();
+  offsetCx_ = pb_pin->getOffsetCx();
+  offsetCy_ = pb_pin->getOffsetCy();
 }
 
 void GPin::print(utl::Logger* log) const
 {
-  if (pin()->dbITerm() != nullptr) {
-    log->report("--> print pin: {}", pin()->dbITerm()->getName());
+  if (pin()->getDbITerm() != nullptr) {
+    log->report("--> print pin: {}", pin()->getDbITerm()->getName());
   } else {
     log->report("pin()->dbIterm() is nullptr!");
   }
@@ -521,7 +521,7 @@ void GPin::print(utl::Logger* log) const
   } else {
     log->report("gcell of gpin is null");
   }
-  log->report("GNet: {}", gNet_->net()->dbNet()->getName());
+  log->report("GNet: {}", gNet_->net()->getDbNet()->getName());
   log->report("pins_.size(): {}", pins_.size());
   log->report("offsetCx_: {}", offsetCx_);
   log->report("offsetCy_: {}", offsetCy_);
@@ -1074,15 +1074,15 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   // Net and Pin
 
   // gPinStor init
-  gPinStor_.reserve(pbc_->pins().size());
-  for (auto& pin : pbc_->pins()) {
+  gPinStor_.reserve(pbc_->getPins().size());
+  for (auto& pin : pbc_->getPins()) {
     GPin myGPin(pin);
     gPinStor_.push_back(myGPin);
   }
 
   // gNetStor init
-  gNetStor_.reserve(pbc_->nets().size());
-  for (auto& net : pbc_->nets()) {
+  gNetStor_.reserve(pbc_->getNets().size());
+  for (auto& net : pbc_->getNets()) {
     GNet myGNet(net);
     gNetStor_.push_back(myGNet);
   }
@@ -1108,9 +1108,9 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
     if (gPin.pin()->isITerm()) {
-      db_iterm_to_index_map_[gPin.pin()->dbITerm()] = i;
+      db_iterm_to_index_map_[gPin.pin()->getDbITerm()] = i;
     } else if (gPin.pin()->isBTerm()) {
-      db_bterm_to_index_map_[gPin.pin()->dbBTerm()] = i;
+      db_bterm_to_index_map_[gPin.pin()->getDbBTerm()] = i;
     } else {
       debugPrint(log_, GPL, "callbacks", 1, "gPin neither bterm or iterm!");
     }
@@ -1122,7 +1122,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     GNet& gNet = gNetStor_[i];
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
-    db_net_to_index_map_[gNet.net()->dbNet()] = i;
+    db_net_to_index_map_[gNet.net()->getDbNet()] = i;
   }
 
   // gCellStor_'s pins_ fill
@@ -1135,7 +1135,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
 
     for (Instance* inst : gCell.insts()) {
-      for (auto& pin : inst->pins()) {
+      for (auto& pin : inst->getPins()) {
         gCell.addGPin(pbToNb(pin));
       }
     }
@@ -1146,8 +1146,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
     auto& gPin = *it;  // old-style loop for old OpenMP
 
-    gPin.setGCell(pbToNb(gPin.pin()->instance()));
-    gPin.setGNet(pbToNb(gPin.pin()->net()));
+    gPin.setGCell(pbToNb(gPin.pin()->getInstance()));
+    gPin.setGNet(pbToNb(gPin.pin()->getNet()));
   }
 
   // gNetStor_'s GPin fill
@@ -1155,7 +1155,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
     auto& gNet = *it;  // old-style loop for old OpenMP
 
-    for (auto& pin : gNet.net()->pins()) {
+    for (auto& pin : gNet.net()->getPins()) {
       gNet.addGPin(pbToNb(pin));
     }
   }
@@ -1439,9 +1439,9 @@ void NesterovBaseCommon::updateDbGCells()
         db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
         // pad awareness on X coordinates
-        db_inst->setLocation(
-            gCell->dCx() - inst->dx() / 2 + pbc_->siteSizeX() * pbc_->padLeft(),
-            gCell->dCy() - inst->dy() / 2);
+        db_inst->setLocation(gCell->dCx() - inst->dx() / 2
+                                 + pbc_->siteSizeX() * pbc_->getPadLeft(),
+                             gCell->dCy() - inst->dy() / 2);
       }
     }
   }
@@ -1551,9 +1551,9 @@ void NesterovBaseCommon::fixPointers()
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
     if (gPin.pin()->isITerm()) {
-      db_iterm_to_index_map_[gPin.pin()->dbITerm()] = i;
+      db_iterm_to_index_map_[gPin.pin()->getDbITerm()] = i;
     } else if (gPin.pin()->isBTerm()) {
-      db_bterm_to_index_map_[gPin.pin()->dbBTerm()] = i;
+      db_bterm_to_index_map_[gPin.pin()->getDbBTerm()] = i;
     } else {
       debugPrint(log_, GPL, "callbacks", 1, "gPin neither bterm or iterm!");
     }
@@ -1567,7 +1567,7 @@ void NesterovBaseCommon::fixPointers()
     GNet& gNet = gNetStor_[i];
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
-    db_net_to_index_map_[gNet.net()->dbNet()] = i;
+    db_net_to_index_map_[gNet.net()->getDbNet()] = i;
   }
 
   for (auto& gCell : gCellStor_) {
@@ -1598,7 +1598,7 @@ void NesterovBaseCommon::fixPointers()
   }
 
   for (auto& gPin : gPinStor_) {
-    auto iterm = gPin.pin()->dbITerm();
+    auto iterm = gPin.pin()->getDbITerm();
     if (iterm != nullptr) {
       if (isValidSigType(iterm->getSigType())) {
         auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
@@ -1633,7 +1633,7 @@ void NesterovBaseCommon::fixPointers()
 
   for (auto& gNet : gNetStor_) {
     gNet.clearGPins();
-    for (odb::dbITerm* iterm : gNet.net()->dbNet()->getITerms()) {
+    for (odb::dbITerm* iterm : gNet.net()->getDbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
         auto it = db_iterm_to_index_map_.find(iterm);
         if (it != db_iterm_to_index_map_.end()) {
@@ -1643,7 +1643,7 @@ void NesterovBaseCommon::fixPointers()
       }
     }
 
-    for (odb::dbBTerm* bterm : gNet.net()->dbNet()->getBTerms()) {
+    for (odb::dbBTerm* bterm : gNet.net()->getDbNet()->getBTerms()) {
       if (isValidSigType(bterm->getSigType())) {
         auto it = db_bterm_to_index_map_.find(bterm);
         if (it != db_bterm_to_index_map_.end()) {
@@ -1689,7 +1689,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
-  nb_gcells_.reserve(pb_->insts().size() + fillerStor_.size());
+  nb_gcells_.reserve(pb_->getInsts().size() + fillerStor_.size());
 
   // add place instances
   for (auto& pb_inst : pb_->placeInsts()) {
@@ -1747,7 +1747,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   bg_.setPlacerBase(pb_);
   bg_.setLogger(log_);
-  bg_.setCorePoints(&(pb_->die()));
+  bg_.setCorePoints(&(pb_->getDie()));
   bg_.setTargetDensity(targetDensity_);
 
   // update binGrid info
@@ -1811,7 +1811,7 @@ void NesterovBase::initFillerGCells()
   fillerDx_ = static_cast<int>(dxSum / (maxIdx - minIdx));
   fillerDy_ = static_cast<int>(dySum / (maxIdx - minIdx));
 
-  int64_t coreArea = pb_->die().coreArea();
+  int64_t coreArea = pb_->getDie().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
   // if(pb_->group() == nullptr) {
@@ -1873,9 +1873,9 @@ void NesterovBase::initFillerGCells()
 
     const double max_edge_fillers = 1024;
     const int max_filler_x = std::max(
-        static_cast<int>(pb_->die().coreDx() / max_edge_fillers), fillerDx_);
+        static_cast<int>(pb_->getDie().coreDx() / max_edge_fillers), fillerDx_);
     const int max_filler_y = std::max(
-        static_cast<int>(pb_->die().coreDy() / max_edge_fillers), fillerDy_);
+        static_cast<int>(pb_->getDie().coreDy() / max_edge_fillers), fillerDy_);
     debugPrint(log_,
                GPL,
                "FillerInit",
@@ -1958,8 +1958,8 @@ void NesterovBase::initFillerGCells()
 
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    GCell myGCell(randX % pb_->die().coreDx() + pb_->die().coreLx(),
-                  randY % pb_->die().coreDy() + pb_->die().coreLy(),
+    GCell myGCell(randX % pb_->getDie().coreDx() + pb_->getDie().coreLx(),
+                  randY % pb_->getDie().coreDy() + pb_->getDie().coreLy(),
                   fillerDx_,
                   fillerDy_);
 
@@ -3008,7 +3008,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       GCell* gcell = handle;
 
       for (auto& gpin : gcell->gPins()) {
-        gpin->pin()->updateCoordi(gpin->pin()->dbITerm());
+        gpin->pin()->updateCoordi(gpin->pin()->getDbITerm());
         gpin->updateCoordi();
       }
 
@@ -3553,7 +3553,7 @@ void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
     std::swap(gNetStor_[index_remove], gNetStor_[last_index]);
 
     // Update index map for the swapped net
-    odb::dbNet* swapped_net = gNetStor_[index_remove].nets()[0]->dbNet();
+    odb::dbNet* swapped_net = gNetStor_[index_remove].nets()[0]->getDbNet();
     db_net_to_index_map_[swapped_net] = index_remove;
   }
 
@@ -3578,7 +3578,7 @@ void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
     }
     if (index_remove != last_index) {
       std::swap(gPinStor_[index_remove], gPinStor_[last_index]);
-      odb::dbITerm* swapped_iterm = gPinStor_[index_remove].pin()->dbITerm();
+      odb::dbITerm* swapped_iterm = gPinStor_[index_remove].pin()->getDbITerm();
       db_iterm_to_index_map_[swapped_iterm] = index_remove;
     }
     gPinStor_.pop_back();
