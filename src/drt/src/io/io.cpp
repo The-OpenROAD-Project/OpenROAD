@@ -107,6 +107,10 @@ void io::Parser::setTracks(odb::dbBlock* block)
 
 frInst* io::Parser::setInst(odb::dbInst* db_inst)
 {
+  auto existing_inst = getBlock()->findInst(db_inst);
+  if (existing_inst != nullptr) {
+    return existing_inst;
+  }
   frMaster* master
       = getDesign()->name2master_.at(db_inst->getMaster()->getName());
   auto inst = std::make_unique<frInst>(db_inst->getName(), master, db_inst);
@@ -961,6 +965,10 @@ void io::Parser::setNets(odb::dbBlock* block)
 
 frNet* io::Parser::addNet(odb::dbNet* db_net)
 {
+  auto existing_net = getBlock()->findNet(db_net->getName());
+  if (existing_net != nullptr) {
+    return existing_net;
+  }
   bool is_special = db_net->isSpecial();
   bool has_jumpers = db_net->hasJumpers();
   bool is_abuted = db_net->isConnectedByAbutment();
@@ -3096,7 +3104,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 void io::Parser::updateDesign()
 {
   auto block = db_->getChip()->getBlock();
-  getBlock()->removeDeletedInsts();
+  getBlock()->removeDeletedObjects();
   for (auto db_inst : block->getInsts()) {
     auto inst = getBlock()->findInst(db_inst);
     if (inst == nullptr) {

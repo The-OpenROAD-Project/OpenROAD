@@ -1,0 +1,47 @@
+[INFO ODB-0227] LEF file: testcase/ispd18_sample/ispd18_sample.input.lef, created 18 layers, 22 vias, 16 library cells
+[INFO ODB-0128] Design: ispd18_sample
+[INFO ODB-0131]     Created 2 components and 15 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 2 connections.
+[WARNING DRT-0160] Warning: Metal5 does not have viaDef aligned with layer direction, generating new viaDef Via5_FR.
+[WARNING DRT-0160] Warning: Metal6 does not have viaDef aligned with layer direction, generating new viaDef Via6_FR.
+[WARNING DRT-0160] Warning: Metal7 does not have viaDef aligned with layer direction, generating new viaDef Via7_FR.
+[INFO DRT-0167] List of default vias:
+  Layer Via1
+    default via: VIA12_1C
+  Layer Via2
+    default via: VIA23_1C
+  Layer Via3
+    default via: VIA34_1C
+  Layer Via4
+    default via: VIA45_1C
+  Layer Via5
+    default via: Via5_FR
+  Layer Via6
+    default via: Via6_FR
+  Layer Via7
+    default via: Via7_FR
+  Layer Via8
+    default via: VIA8_0_VH
+[INFO DRT-0168] Init region query.
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
+[INFO DRT-0033] FR_VIA shape region query size = 0.
+[INFO DRT-0033] Metal1 shape region query size = 24.
+[INFO DRT-0033] Via1 shape region query size = 0.
+[INFO DRT-0033] Metal2 shape region query size = 0.
+[INFO DRT-0033] Via2 shape region query size = 0.
+[INFO DRT-0033] Metal3 shape region query size = 0.
+[INFO DRT-0033] Via3 shape region query size = 0.
+[INFO DRT-0033] Metal4 shape region query size = 0.
+[INFO DRT-0033] Via4 shape region query size = 0.
+[INFO DRT-0033] Metal5 shape region query size = 0.
+[INFO DRT-0033] Via5 shape region query size = 0.
+[INFO DRT-0033] Metal6 shape region query size = 0.
+[INFO DRT-0033] Via6 shape region query size = 0.
+[INFO DRT-0033] Metal7 shape region query size = 0.
+[INFO DRT-0033] Via7 shape region query size = 0.
+[INFO DRT-0033] Metal8 shape region query size = 0.
+[INFO DRT-0033] Via8 shape region query size = 0.
+[INFO DRT-0033] Metal9 shape region query size = 0.
+[DEBUG DRT-incr_pin_access] updateDirtyInsts: inst5333 ( 96400 78660 ) 0
+[DEBUG DRT-incr_pin_access] updateDirtyInsts: inst6286 ( 96000 75240 ) 6
+[DEBUG DRT-incr_pin_access] new unique inst: inst6286

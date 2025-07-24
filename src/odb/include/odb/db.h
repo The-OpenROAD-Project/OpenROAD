@@ -1655,6 +1655,11 @@ class dbBlock : public dbObject
 
   std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
 
+  ///
+  /// Update pin access for this block.
+  ///
+  void updatePinAccess();
+
  public:
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already

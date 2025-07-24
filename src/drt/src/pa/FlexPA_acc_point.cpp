@@ -1534,42 +1534,42 @@ void FlexPA::genAllAccessPoints()
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
+void FlexPA::revertAccessPoints(frInst* inst)
+{
+  const dbTransform xform = inst->getTransform();
+  const Point offset(xform.getOffset());
+  dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
+
+  const auto pin_access_idx = inst->getPinAccessIdx();
+  for (auto& inst_term : inst->getInstTerms()) {
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      auto pin_access = pin->getPinAccess(pin_access_idx);
+      for (auto& access_point : pin_access->getAccessPoints()) {
+        Point unique_AP_point(access_point->getPoint());
+        revertXform.apply(unique_AP_point);
+        access_point->setPoint(unique_AP_point);
+        for (auto& ps : access_point->getPathSegs()) {
+          Point begin = ps.getBeginPoint();
+          Point end = ps.getEndPoint();
+          revertXform.apply(begin);
+          revertXform.apply(end);
+          if (end < begin) {
+            Point tmp = begin;
+            begin = end;
+            end = tmp;
+          }
+          ps.setPoints(begin, end);
+        }
+      }
+    }
+  }
+}
 
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
   for (frInst* inst : unique) {
-    const dbTransform xform = inst->getTransform();
-    const Point offset(xform.getOffset());
-    dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
-
-    const auto pin_access_idx = inst->getPinAccessIdx();
-    for (auto& inst_term : inst->getInstTerms()) {
-      // if (isSkipInstTerm(inst_term.get())) {
-      //   continue;
-      // }
-
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        auto pin_access = pin->getPinAccess(pin_access_idx);
-        for (auto& access_point : pin_access->getAccessPoints()) {
-          Point unique_AP_point(access_point->getPoint());
-          revertXform.apply(unique_AP_point);
-          access_point->setPoint(unique_AP_point);
-          for (auto& ps : access_point->getPathSegs()) {
-            Point begin = ps.getBeginPoint();
-            Point end = ps.getEndPoint();
-            revertXform.apply(begin);
-            revertXform.apply(end);
-            if (end < begin) {
-              Point tmp = begin;
-              begin = end;
-              end = tmp;
-            }
-            ps.setPoints(begin, end);
-          }
-        }
-      }
-    }
+    revertAccessPoints(inst);
   }
 }
 

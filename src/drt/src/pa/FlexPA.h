@@ -91,7 +91,11 @@ class FlexPA
                       int cloud_sz);
 
   void addInst(frInst* inst);
+  void redoClass(frInst* unique_inst);
   void deleteInst(frInst* inst);
+  void removeInstFromInstSet(frInst* inst);
+  void addDirtyInst(frInst* inst);
+  void updateDirtyInsts();
 
   int main();
 
@@ -128,6 +132,7 @@ class FlexPA
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
+  frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
 
   std::string remote_host_;
   uint16_t remote_port_ = -1;
@@ -155,6 +160,7 @@ class FlexPA
   void initViaRawPriority();
   void initAllSkipInstTerm();
   void initSkipInstTerm(frInst* unique_inst);
+  bool updateSkipInstTerm(frInst* inst);
   // prep
   void prep();
 
@@ -673,11 +679,18 @@ class FlexPA
       frInstTerm* inst_term);
 
   /**
-   * @brief Adjusts the coordinates for all access points
+   * @brief Adjusts the coordinates for all access points of an instance
    *
    * @details access points are created with their coordinates relative to the
    * chip. They have to have their coordinates altered to be relative to their
    * instances, including rotation.
+   */
+  void revertAccessPoints(frInst* inst);
+
+  /**
+   * @brief Adjusts the coordinates for all access points of all instances
+   *
+   * @details call revertAccessPoints for all instances.
    */
   void revertAccessPoints();
 

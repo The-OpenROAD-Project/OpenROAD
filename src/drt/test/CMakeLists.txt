@@ -14,6 +14,7 @@ or_integration_tests(
     top_level_term
     top_level_term2
     via_access_layer
+    incr_pin_access
   PASSFAIL_TESTS
     gc_test
 )

@@ -177,4 +177,18 @@ void FlexPA::initSkipInstTerm(frInst* unique_inst)
   }
 }
 
+bool FlexPA::updateSkipInstTerm(frInst* inst)
+{
+  const auto unique_inst = unique_insts_.getUnique(inst);
+  const UniqueInsts::InstSet* inst_class = unique_insts_.getClass(unique_inst);
+  for (auto& inst_term : inst->getInstTerms()) {
+    frMTerm* term = inst_term->getTerm();
+    if (isSkipInstTermLocal(inst_term.get())
+        != skip_unique_inst_term_.at({inst_class, term})) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace drt

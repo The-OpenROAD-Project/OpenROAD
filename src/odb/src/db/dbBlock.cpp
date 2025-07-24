@@ -3687,4 +3687,13 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
   }
 }
 
+void dbBlock::updatePinAccess()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  // get callbacks
+  for (auto callback : block->_callbacks) {
+    callback->inDbPinAccessUpdateRequired();
+  }
+}
+
 }  // namespace odb

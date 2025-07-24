@@ -98,7 +98,56 @@ void FlexPA::init()
   unique_insts_.init();
   initAllSkipInstTerm();
 }
+void FlexPA::redoClass(frInst* inst)
+{
+  auto unique_inst = unique_insts_.getUnique(inst);
+  UniqueInsts::InstSet unique_class = *unique_insts_.getClass(unique_inst);
+  for (auto& child_inst : unique_class) {
+    deleteInst(child_inst);
+  }
+  for (auto& child_inst : unique_class) {
+    addInst(child_inst);
+  }
+}
 
+void FlexPA::addDirtyInst(frInst* inst)
+{
+  dirty_insts_.insert(inst);
+}
+
+void FlexPA::updateDirtyInsts()
+{
+  for (auto& inst : dirty_insts_) {
+    insts_set_.insert(inst);
+  }
+  for (auto& inst : dirty_insts_) {
+    debugPrint(logger_,
+               DRT,
+               "incr_pin_access",
+               1,
+               "updateDirtyInsts: {} {} {}",
+               inst->getName(),
+               inst->getOrigin(),
+               inst->getOrient());
+    auto old_unique_inst = unique_insts_.getUnique(inst);
+    auto unique_class = unique_insts_.computeUniqueClass(inst);
+    frInst* new_unique_inst = nullptr;
+    if (unique_class.size() >= 1) {
+      new_unique_inst = unique_insts_.getUnique(*unique_class.begin());
+    }
+    if (new_unique_inst != old_unique_inst) {
+      debugPrint(logger_,
+                 DRT,
+                 "incr_pin_access",
+                 1,
+                 "new unique inst: {}",
+                 inst->getName());
+      deleteInst(inst);
+    }
+    addInst(inst);
+  }
+  dirty_insts_.clear();
+}
 void FlexPA::addInst(frInst* inst)
 {
   const bool new_unique = unique_insts_.addInst(inst);
@@ -107,6 +156,13 @@ void FlexPA::addInst(frInst* inst)
     initSkipInstTerm(inst);
     genInstAccessPoints(inst);
     prepPatternInst(inst);
+    revertAccessPoints(inst);
+  } else {
+    if (updateSkipInstTerm(inst)) {
+      // redo the whole class
+      redoClass(inst);
+      return;
+    }
   }
   inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
 
@@ -120,7 +176,12 @@ void FlexPA::addInst(frInst* inst)
 
 void FlexPA::deleteInst(frInst* inst)
 {
-  const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  auto unique_inst = unique_insts_.getUnique(inst);
+  if (unique_inst == nullptr) {
+    return;
+  }
+  const bool is_class_head = (inst == unique_inst);
+
   // if inst is the class head the new head will be returned by deleteInst()
   UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   frInst* class_head = unique_insts_.deleteInst(inst);
@@ -137,6 +198,11 @@ void FlexPA::deleteInst(frInst* inst)
     unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
     unique_inst_patterns_.erase(inst);
   }
+  removeInstFromInstSet(inst);
+}
+
+void FlexPA::removeInstFromInstSet(frInst* inst)
+{
   insts_set_.erase(inst);
 }
 
