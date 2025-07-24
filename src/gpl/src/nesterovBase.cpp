@@ -283,30 +283,12 @@ void GCell::print(utl::Logger* logger, bool print_only_name = true) const
   }
 }
 
-void GCell::printToFile(std::ostream& out, bool print_only_name) const
-{
-  if (!out) {
-    return;
+void GCell::writeAttributesToCSV(std::ostream& out) {
+    out << "," << insts_.size() << "," << gPins_.size();
+    out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
+    out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
+    out << "," << densityScale_ << "," << gradientX_ << "," << gradientY_;
   }
-
-  if (!insts_.empty()) {
-    out << "print gcell:" << insts_[0]->dbInst()->getName() << "\n";
-  } else {
-    out << "print gcell insts_ empty! (filler cell)\n";
-  }
-
-  if (!print_only_name) {
-    out << fmt::format(
-        "insts_ size: {}, gPins_ size: {}\n", insts_.size(), gPins_.size());
-    out << fmt::format("lx_: {} ly_: {} ux_: {} uy_: {}\n", lx_, ly_, ux_, uy_);
-    out << fmt::format(
-        "dLx_: {} dLy_: {} dUx_: {} dUy_: {}\n", dLx_, dLy_, dUx_, dUy_);
-    out << fmt::format("densityScale_: {} gradientX_: {} gradientY_: {}\n",
-                       densityScale_,
-                       gradientX_,
-                       gradientY_);
-  }
-}
 
 ////////////////////////////////////////////////
 // GNet
@@ -893,7 +875,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
             Bin& bin = bins_[y * binCntX_ + x];
 
             const float scaledAvea = getOverlapDensityArea(bin, cell)
-                                     * cell->densityScale()
+                                     * cell->getDensityScale()
                                      * bin.targetDensity();
             bin.addInstPlacedAreaUnscaled(scaledAvea);
           }
@@ -905,7 +887,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
           for (int x = pairX.first; x < pairX.second; x++) {
             Bin& bin = bins_[y * binCntX_ + x];
             const float scaledArea
-                = getOverlapDensityArea(bin, cell) * cell->densityScale();
+                = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
             bin.addInstPlacedAreaUnscaled(scaledArea);
           }
         }
@@ -915,7 +897,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = bins_[y * binCntX_ + x];
           bin.addFillerArea(getOverlapDensityArea(bin, cell)
-                            * cell->densityScale());
+                            * cell->getDensityScale());
         }
       }
     }
@@ -2222,7 +2204,7 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
     for (int j = pairY.first; j < pairY.second; j++) {
       const Bin& bin = bg_.binsConst()[j * binCntX() + i];
       float overlapArea
-          = getOverlapDensityArea(bin, gCell) * gCell->densityScale();
+          = getOverlapDensityArea(bin, gCell) * gCell->getDensityScale();
 
       electroForce.x += overlapArea * bin.electroForceX();
       electroForce.y += overlapArea * bin.electroForceY();
@@ -3592,33 +3574,6 @@ void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
   }
 }
 
-void NesterovBase::printGCellsToFile(const std::string& filename,
-                                     bool print_only_name) const
-{
-  std::ofstream out(filename);
-  if (!out.is_open()) {
-    return;
-  }
-
-  out << "nb_gcells_.size(): " << nb_gcells_.size() << "\n";
-  out.close();
-
-  std::ofstream out_append(filename, std::ios::app);
-  if (!out_append.is_open()) {
-    return;
-  }
-
-  for (size_t i = 0; i < nb_gcells_.size(); ++i) {
-    const GCellHandle& handle = nb_gcells_[i];
-    const GCell* gcell = handle.operator->();
-
-    out_append << fmt::format("idx:{} filler:{}\n", i, gcell->isFiller());
-    gcell->printToFile(out_append, print_only_name);
-  }
-
-  out_append.close();
-}
-
 void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
                               size_t remove_index,
                               size_t last_index)
@@ -3711,47 +3666,6 @@ void NesterovBaseCommon::printGCells()
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     log_->reportLiteral(fmt::format("idx:{}", i));
     gCellStor_[i].print(log_);
-  }
-}
-
-void NesterovBaseCommon::printGCellsToFile(const std::string& filename,
-                                           bool print_only_name,
-                                           bool also_print_minRc) const
-{
-  std::ofstream out(filename);
-  if (!out.is_open()) {
-    return;
-  }
-
-  out << "gCellStor_.size(): " << gCellStor_.size() << "\n";
-  out.close();
-
-  std::ofstream out_append(filename, std::ios::app);
-  if (!out_append.is_open()) {
-    return;
-  }
-
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    out_append << fmt::format("idx:{}\n", i);
-    gCellStor_[i].printToFile(out_append, print_only_name);
-  }
-
-  out_append.close();
-
-  if (also_print_minRc) {
-    std::string minrc_filename = filename + ".minrc";
-    std::ofstream minrc_out(minrc_filename);
-    if (!minrc_out.is_open()) {
-      return;
-    }
-
-    for (size_t i = 0; i < minRcCellSize_.size(); ++i) {
-      const auto& min_rc = minRcCellSize_[i];
-      minrc_out << fmt::format(
-          "idx:{} minRc: {} {}\n", i, min_rc.dx(), min_rc.dy());
-    }
-
-    minrc_out.close();
   }
 }
 
