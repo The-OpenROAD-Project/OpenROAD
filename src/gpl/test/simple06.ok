@@ -3,6 +3,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
