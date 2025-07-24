@@ -32,33 +32,6 @@
 
 namespace drt {
 
-// ----------------------------------------------------------------------------
-// updated for GPU acceleration
-void FlexGRWorker::routePrep_update(
-  std::vector<grNet*> &rerouteNets, 
-  int iter)
-{
-  if (iter == 0) {
-    init_pinGCellIdxs();
-  }  
-  
-  if (ripupMode_ == RipUpMode::DRC) {
-    route_addHistCost();
-  }
-  
-  route_mazeIterInit();
-  std::vector<grNet*> nets;
-  route_getRerouteNets(nets);
-
-  for (auto net : nets) {
-    if (ripupMode_ == RipUpMode::DRC || (ripupMode_ == RipUpMode::ALL && mazeNetHasCong(net))) {
-      //mazeNetInit(net);
-      rerouteNets.push_back(net);  
-    }
-  }
-}
-
-
 void FlexGRWorker::route(std::vector<grNet*> &nets)
 {
   for (auto net : nets) {
@@ -71,12 +44,6 @@ void FlexGRWorker::route(std::vector<grNet*> &nets)
   }
 }
 
-void FlexGRWorker::route_addHistCost_update()
-{
-  if (ripupMode_ == RipUpMode::DRC) {
-    route_addHistCost();
-  }
-}
 
 void FlexGRWorker::route_decayHistCost_update()
 {
@@ -85,120 +52,6 @@ void FlexGRWorker::route_decayHistCost_update()
   }
 }
 
-
-void main_mt_prep(std::vector<grNet*>& rerouteNets, int iter) {
-    route_addHistCost_update();
-    routePrep_update(rerouteNets, iter);
-    for (auto net : rerouteNets) {
-      net->setPreCost(calcPathCost(net));
-    }
-  }
-
-
-float FlexGRWorker::calcPathCost(grNet* net)
-{
-  // Traverse all the metal segments in the net
-  float pathCost = 0;
-  for (auto& uptr : net->getRouteConnFigs()) {
-    if (uptr->typeId() == grcPathSeg) {
-      auto cptr = static_cast<grPathSeg*>(uptr.get());
-      auto [bp, ep] = cptr->getPoints();
-      frLayerNum lNum = cptr->getLayerNum();
-      FlexMazeIdx bi, ei;
-      gridGraph_.getMazeIdx(bp, lNum, bi);
-      gridGraph_.getMazeIdx(ep, lNum, ei);
-      frDirEnum dir = (bi.x() == ei.x()) ? frDirEnum::N : frDirEnum::E;
-      if (bi.x() == ei.x()) {
-        // vert
-        for (auto yIdx = bi.y(); yIdx < ei.y(); yIdx++) {
-          pathCost += gridGraph_.getGridCost(bi.x(), yIdx, bi.z(), dir);
-        }  
-          
-        if (bi.y() == ei.y()) {
-          std::cout << "Single point pathseg" << std::endl;
-        }
-        
-      } else {
-        // horz
-        for (auto xIdx = bi.x(); xIdx < ei.x(); xIdx++) {
-          pathCost += gridGraph_.getGridCost(xIdx, bi.y(), bi.z(), dir);   
-        }
-
-        if (bi.x() == ei.x()) {
-          std::cout << "Single point pathseg" << std::endl;
-        }
-      }
-    }
-  }
-
-  return pathCost;  
-}
-
-
-void FlexGRWorker::init_pinGCellIdxs()
-{
-  for (auto &net : nets_) {
-    net->clearPinGCellIdxs();
-    for (auto pinGCellNode : net->getPinGCellNodes()) {
-      auto loc = pinGCellNode->getLoc();
-      auto lNum = pinGCellNode->getLayerNum();
-      FlexMazeIdx mi;
-      gridGraph_.getMazeIdx(loc, lNum, mi);
-      net->addPinGCellIdx(mi);
-    }
-
-    // Check if the net is a feedthrough net
-    const std::vector<FlexMazeIdx>& pinGCellIdxs = net->getPinGCellIdxs();
-    if (pinGCellIdxs.size() == 2 && (pinGCellIdxs[0].x() == pinGCellIdxs[1].x() || pinGCellIdxs[0].y() == pinGCellIdxs[1].y())) {
-      net->setFeedThrough(true);
-    } else {
-      net->setFeedThrough(false);
-    }
-
-    // Set the bounding box
-    FlexMazeIdx ll(std::numeric_limits<frMIdx>::max(), std::numeric_limits<frMIdx>::max(), std::numeric_limits<frMIdx>::max());
-    FlexMazeIdx ur(std::numeric_limits<frMIdx>::min(), std::numeric_limits<frMIdx>::min(), std::numeric_limits<frMIdx>::min());
-    for (auto &idx : pinGCellIdxs) {
-      ll.set(std::min(ll.x(), idx.x()), std::min(ll.y(), idx.y()), std::min(ll.z(), idx.z()));
-      ur.set(std::max(ur.x(), idx.x()), std::max(ur.y(), idx.y()), std::max(ur.z(), idx.z()));
-    }
-   
-   
-    
-    /*
-    int xDim, yDim, zDim;
-    gridGraph_.getDim(xDim, yDim, zDim); 
-    int xDim_global, yDim_global, zDim_global;
-    this->getCMap()->getDim(xDim_global, yDim_global, zDim_global);
-    xDim = std::min(xDim, xDim_global);
-    yDim = std::min(yDim, yDim_global);
-    */
-    //ur.set(std::min(xDim - 1, ur.x() + delta), std::min(yDim - 1, ur.y() + delta), ur.z());        
-    //net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));
-    auto LL = getRouteGCellIdxLL();
-    auto UR = getRouteGCellIdxUR();
-
-    int xDim = UR.x() - LL.x() + 1;
-    int yDim = UR.y() - LL.y() + 1;
-    
-    if (1) {
-      int deltaX = std::min(ur.x() - ll.x(), 10);
-      int deltaY = std::min(ur.y() - ll.y(), 10);
-      int delta = std::max(deltaX, deltaY);
-      ll.set(std::max(0, ll.x() - delta), std::max(0, ll.y() - delta), ll.z());
-      ur.set(std::min(xDim - 1, ur.x() + delta), std::min(yDim - 1, ur.y() + delta), ur.z());     
-    }
-
-    //net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));    
-    //auto netRouteBBox = net->getRouteBBox();
-    // std::cout << "[Test] xDim = " << xDim << ", yDim = " << yDim << std::endl;
-    net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y())); 
-    // Set the routed wirelength as HPWL
-    int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
-    net->setHPWL(hpwl);
-    net->setCPUFlag(true);
-  }
-}
 
 // ----------------------------------------------------------------------------
 // Original Functions
@@ -225,173 +78,13 @@ void FlexGRWorker::route()
   }
 }
 
-void FlexGRWorker::route_addHistCost()
-{
-  frMIdx xDim = 0;
-  frMIdx yDim = 0;
-  frMIdx zDim = 0;
 
-  gridGraph_.getDim(xDim, yDim, zDim);
 
-  for (int zIdx = 0; zIdx < zDim; zIdx++) {
-    // frLayerNum lNum = (zIdx + 1) * 2;
-    for (int xIdx = 0; xIdx < xDim; xIdx++) {
-      for (int yIdx = 0; yIdx < yDim; yIdx++) {
-        if (gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E)
-                > congThresh_
-                      * gridGraph_.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::E)
-            || gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N)
-                   > congThresh_
-                         * gridGraph_.getRawSupply(
-                             xIdx, yIdx, zIdx, frDirEnum::N)) {
-          // has congestion, need to add history cost
-          int overflowH = std::max(
-              0,
-              int(gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E)
-                  - congThresh_
-                        * gridGraph_.getRawSupply(
-                            xIdx, yIdx, zIdx, frDirEnum::E)));
-          int overflowV = std::max(
-              0,
-              int(gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N)
-                  - congThresh_
-                        * gridGraph_.getRawSupply(
-                            xIdx, yIdx, zIdx, frDirEnum::N)));
-          gridGraph_.addHistoryCost(
-              xIdx, yIdx, zIdx, (overflowH + overflowV) / 2 + 1);
-        }
-      }
-    }
-  }
-}
 
-void FlexGRWorker::route_mazeIterInit()
-{
-  // reset ripup
-  for (auto& net : nets_) {
-    net->setRipup(false);
-  }
-  if (ripupMode_ == RipUpMode::DRC) {
-    // set ripup based on congestion
-    auto& workerRegionQuery = getWorkerRegionQuery();
 
-    frMIdx xDim = 0;
-    frMIdx yDim = 0;
-    frMIdx zDim = 0;
 
-    gridGraph_.getDim(xDim, yDim, zDim);
 
-    std::vector<grConnFig*> result;
 
-    for (int zIdx = 0; zIdx < zDim; zIdx++) {
-      frLayerNum lNum = (zIdx + 1) * 2;
-      for (int xIdx = 0; xIdx < xDim; xIdx++) {
-        for (int yIdx = 0; yIdx < yDim; yIdx++) {
-          if (gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E)
-                  > congThresh_
-                        * gridGraph_.getRawSupply(
-                            xIdx, yIdx, zIdx, frDirEnum::E)
-              || gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N)
-                     > congThresh_
-                           * gridGraph_.getRawSupply(
-                               xIdx, yIdx, zIdx, frDirEnum::N)) {
-            // has congestion, need to region query to find what nets are using
-            // this gcell
-            Point gcellCenter;
-            gridGraph_.getPoint(xIdx, yIdx, gcellCenter);
-            Rect gcellCenterBox(gcellCenter, gcellCenter);
-            result.clear();
-            workerRegionQuery.query(gcellCenterBox, lNum, result);
-            for (auto rptr : result) {
-              if (rptr->typeId() == grcPathSeg) {
-                auto cptr = static_cast<grPathSeg*>(rptr);
-                if (cptr->hasGrNet()) {
-                  cptr->getGrNet()->setRipup(true);
-                } else {
-                  std::cout << "Error: route_mazeIterInit hasGrNet() empty"
-                            << std::endl;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-void FlexGRWorker::route_getRerouteNets(std::vector<grNet*>& rerouteNets)
-{
-  rerouteNets.clear();
-  if (ripupMode_ == RipUpMode::DRC) {
-    for (auto& net : nets_) {
-      if (net->isRipup() && !net->isTrivial()) {
-        rerouteNets.push_back(net.get());
-        net->setModified(true);
-        net->getFrNet()->setModified(true);
-      } else {
-      }
-    }
-  } else if (ripupMode_ == RipUpMode::ALL) {
-    for (auto& net : nets_) {
-      if (!net->isTrivial()) {
-        rerouteNets.push_back(net.get());
-      }
-    }
-  }
-}
-
-bool FlexGRWorker::mazeNetHasCong(grNet* net)
-{
-  for (auto& uptr : net->getRouteConnFigs()) {
-    if (uptr->typeId() == grcPathSeg) {
-      auto cptr = static_cast<grPathSeg*>(uptr.get());
-      auto [bp, ep] = cptr->getPoints();
-      frLayerNum lNum = cptr->getLayerNum();
-      FlexMazeIdx bi, ei;
-      gridGraph_.getMazeIdx(bp, lNum, bi);
-      gridGraph_.getMazeIdx(ep, lNum, ei);
-      if (bi.x() == ei.x()) {
-        // vert
-        for (auto yIdx = bi.y(); yIdx <= ei.y(); yIdx++) {
-          if (gridGraph_.getRawDemand(bi.x(), yIdx, bi.z(), frDirEnum::E)
-                  > getCongThresh()
-                        * gridGraph_.getRawSupply(
-                            bi.x(), yIdx, bi.z(), frDirEnum::E)
-              || gridGraph_.getRawDemand(bi.x(), yIdx, bi.z(), frDirEnum::N)
-                     > getCongThresh()
-                           * gridGraph_.getRawSupply(
-                               bi.x(), yIdx, bi.z(), frDirEnum::N)) {
-            net->setModified(true);
-            net->getFrNet()->setModified(true);
-            net->setRipup(true);
-
-            return true;
-          }
-        }
-      } else {
-        // horz
-        for (auto xIdx = bi.x(); xIdx <= ei.x(); xIdx++) {
-          if (gridGraph_.getRawDemand(xIdx, bi.y(), bi.z(), frDirEnum::E)
-                  > getCongThresh()
-                        * gridGraph_.getRawSupply(
-                            xIdx, bi.y(), bi.z(), frDirEnum::E)
-              || gridGraph_.getRawDemand(xIdx, bi.y(), bi.z(), frDirEnum::N)
-                     > getCongThresh()
-                           * gridGraph_.getRawSupply(
-                               xIdx, bi.y(), bi.z(), frDirEnum::N)) {
-            net->setModified(true);
-            net->getFrNet()->setModified(true);
-            net->setRipup(true);
-
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
 
 // reset gridGraph, remove routeObj and remove nodes
 void FlexGRWorker::mazeNetInit(grNet* net)
@@ -650,6 +343,7 @@ bool FlexGRWorker::routeNet(grNet* net)
   
   routeNet_checkNet(net);
 
+  /*
   // To be deleted, just for testing
   if (net->getPinGCellNodes().size() < 0) {
     net->setPostCost(calcPathCost(net));
@@ -690,6 +384,7 @@ bool FlexGRWorker::routeNet(grNet* net)
       }
     }
   }
+  */
 
   return true;
 }

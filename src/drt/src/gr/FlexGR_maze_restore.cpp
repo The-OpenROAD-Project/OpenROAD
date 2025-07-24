@@ -451,7 +451,7 @@ bool FlexGRWorker::restoreNet(grNet* net)
   // routeNet_checkNet(net);
   routeNet_postRouteAddCong(net);
 
-  net->setPostCost(calcPathCost(net));
+  // net->setPostCost(calcPathCost(net));
   if (net->getPinGCellNodes().size() <= 0) {
     if (net->getPostCost() != net->getPreCost()) {
       std::cout << "Net " << net->getFrNet()->getName() << " ";

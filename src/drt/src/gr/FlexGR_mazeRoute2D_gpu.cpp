@@ -180,7 +180,8 @@ void FlexGR::searchRepair_gpu(int iter,
   unsigned BLOCKCOST = router_cfg_->BLOCKCOST * 100;
   unsigned OVERFLOWCOST = workerCongCost;
   unsigned HISTCOST = workerHistCost;
-
+  searchRepairMazeCore(uworkers, mazeEndIter,
+    BLOCKCOST, OVERFLOWCOST, HISTCOST);
 
   // Step 4: Write back the local routing solutions (grNet) to the global routing (frNet) solution 
   // This part cannot be parallelized
@@ -202,7 +203,7 @@ void FlexGR::searchRepairMazeCore(
   unsigned HISTCOST)
 {
   for (int iter = 0; iter < mazeEndIter; iter++) {    
-    logger_->report("[INFO] RRRR iteration " + std::to_string(iter) + " start !"); 
+    logger_->report("[INFO] RRR iteration " + std::to_string(iter) + " start !"); 
     // Generate the batches in parallel
     // Get all the nets to be rerouted
     std::vector<std::vector<grNet*> > rerouteNets(uworkers.size());
@@ -216,6 +217,8 @@ void FlexGR::searchRepairMazeCore(
       }
     }
     exception1.rethrow();
+    
+    logger_->report("[INFO] RRR iteration " + std::to_string(iter) + " finish !"); 
   }
 }
 

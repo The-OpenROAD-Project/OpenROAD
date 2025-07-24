@@ -658,7 +658,7 @@ class FlexGRWorker
   const FlexGRWorkerRegionQuery& getWorkerRegionQuery() const { return rq_; }
   FlexGRWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
-  float calcPathCost(grNet* net);
+  // float calcPathCost(grNet* net);
 
   // others
   void initBoundary();
@@ -672,6 +672,7 @@ class FlexGRWorker
 
   // updated functions for GPU-accelerated Router
   void routePrep_update(std::vector<grNet*> &rerouteNets, int iter);
+  bool isGCellOverflow(int xIdx, int yIdx, int zIdx) const;
 
   // init
   void init();
