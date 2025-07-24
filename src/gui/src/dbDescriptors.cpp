@@ -619,6 +619,11 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});
   }
 
+  odb::dbScanInst* scan_inst = inst->getScanInst();
+  if (scan_inst != nullptr) {
+    props.push_back({"Scan Inst", gui->makeSelected(scan_inst)});
+  }
+
   return props;
 }
 

@@ -40,3 +40,17 @@ class dbId
 };
 
 }  // namespace odb
+
+// Enable unordered_map/set usage
+namespace std {
+
+template <typename T>
+struct hash<odb::dbId<T>>
+{
+  std::size_t operator()(const odb::dbId<T>& db_id) const
+  {
+    return std::hash<unsigned int>()(db_id);
+  }
+};
+
+}  // namespace std
