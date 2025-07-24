@@ -4904,10 +4904,10 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         fastroute_->getCongestionNets(congestion_nets);
 
         // ==> DEBUGGING PRINT <==
-        logger_->report("DEBUG: Nets selected for rerouting in this iteration:");
-        for (odb::dbNet* net : congestion_nets) {
-            logger_->report(" - {}", net->getConstName());
-        }
+        // logger_->report("DEBUG: Nets selected for rerouting in this iteration:");
+        // for (odb::dbNet* net : congestion_nets) {
+        //     logger_->report(" - {}", net->getConstName());
+        // }
         // ==> DEBUGGING PRINT <==
 
         // When every attempt to increase the congestion region failed, try

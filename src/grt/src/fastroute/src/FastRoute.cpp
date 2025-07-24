@@ -642,6 +642,37 @@ int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
       "Cannot get edge capacity: edge is not vertical or horizontal.");
 }
 
+bool FastRouteCore::verifyNDRCapacity(FrNet* net,
+                                   int x1,
+                                   int y1,
+                                   EdgeDirection direction)
+{  
+  // Check if this is an NDR net
+  bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+  int ndr_cost=0;
+  
+  if (has_ndr) {
+      // For NDR nets, we need at least one layer with sufficient capacity
+      int max_single_layer_cap = 0;
+      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+        ndr_cost = net->getLayerEdgeCost(l);
+        int layer_cap = 0;
+        if (direction == EdgeDirection::Horizontal) {
+            layer_cap = h_edges_3D_[l][y1][x1].cap;
+        } else {
+            layer_cap = v_edges_3D_[l][y1][x1].cap;
+        }
+        max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
+      }
+      
+      // No single layer can accommodate this NDR net
+      if (max_single_layer_cap < ndr_cost) {
+          return false; 
+      }
+  }
+  return true;
+}
+
 int FastRouteCore::getEdgeCapacity(FrNet* net,
                                    int x1,
                                    int y1,
@@ -649,28 +680,28 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
 {
   int cap = 0;
     
-  // Check if this is an NDR net
-  bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
-  int ndr_cost = net->getEdgeCost();
+  // // Check if this is an NDR net
+  // bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+  // int ndr_cost = net->getEdgeCost();
   
-  if (has_ndr) {
-      // For NDR nets, we need at least one layer with sufficient capacity
-      int max_single_layer_cap = 0;
-      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-          int layer_cap = 0;
-          if (direction == EdgeDirection::Horizontal) {
-              layer_cap = h_edges_3D_[l][y1][x1].cap;
-          } else {
-              layer_cap = v_edges_3D_[l][y1][x1].cap;
-          }
-          max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
-      }
+  // if (has_ndr) {
+  //     // For NDR nets, we need at least one layer with sufficient capacity
+  //     int max_single_layer_cap = 0;
+  //     for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+  //         int layer_cap = 0;
+  //         if (direction == EdgeDirection::Horizontal) {
+  //             layer_cap = h_edges_3D_[l][y1][x1].cap;
+  //         } else {
+  //             layer_cap = v_edges_3D_[l][y1][x1].cap;
+  //         }
+  //         max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
+  //     }
       
-      // No single layer can accommodate this NDR net
-      if (max_single_layer_cap < ndr_cost) {
-          return 0; 
-      }
-  }
+  //     // No single layer can accommodate this NDR net
+  //     if (max_single_layer_cap < ndr_cost) {
+  //         return 0; 
+  //     }
+  // }
 
   // get 2D edge capacity respecting layer restrictions
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {

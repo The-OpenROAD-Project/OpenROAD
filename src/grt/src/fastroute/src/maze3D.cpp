@@ -877,9 +877,15 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         removeMin3D(src_heap_3D_);
 
         // If Net has NDR, get its cost - default cost = extra cost
-        if(net->getDbNet()->getNonDefaultRule()){
-          ndr_extra_cost = net->getLayerEdgeCost(curL) - 1;
-        }
+        // if(net->getDbNet()->getNonDefaultRule()){
+          // ndr_extra_cost = net->getLayerEdgeCost(curL) - 1;
+        // }
+        ndr_extra_cost = net->getLayerEdgeCost(curL);
+        // ndr_extra_cost = net->getEdgeCost();
+
+        // if(curX == 30 && (curY == 35 || curY == 34)){
+        //     logger_->report("zzz Net at x{} y{}: {} {} {}", curX, curY, net->getName(), curL, (net->getDbNet()->getNonDefaultRule()!=nullptr));
+        // }
 
         const bool Horizontal
             = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
@@ -890,7 +896,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D_[curL][curY][curX] != Direction::East) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             if (h_edges_3D_[curL][curY][curX - 1].usage + ndr_extra_cost
-                    < h_edges_3D_[curL][curY][curX - 1].cap
+                    <= h_edges_3D_[curL][curY][curX - 1].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               const int tmpX = curX - 1;  // the left neighbor
 
@@ -937,7 +943,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const int tmpX = curX + 1;  // the right neighbor
 
             if (h_edges_3D_[curL][curY][curX].usage + ndr_extra_cost
-                    < h_edges_3D_[curL][curY][curX].cap
+                    <= h_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][curY][tmpX]
                   >= BIG_INT)  // right neighbor not been put into
@@ -982,7 +988,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY - 1;  // the bottom neighbor
             if (v_edges_3D_[curL][curY - 1][curX].usage + ndr_extra_cost
-                    < v_edges_3D_[curL][curY - 1][curX].cap
+                    <= v_edges_3D_[curL][curY - 1][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
                   >= BIG_INT)  // bottom neighbor not been put into
@@ -1026,7 +1032,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY + 1;  // the top neighbor
             if (v_edges_3D_[curL][curY][curX].usage + ndr_extra_cost
-                    < v_edges_3D_[curL][curY][curX].cap
+                    <= v_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
                   >= BIG_INT)  // top neighbor not been put into src_heap_3D
