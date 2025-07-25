@@ -3,10 +3,6 @@
 
 %{
 #include "cgt/ClockGating.h"
-
-namespace ord {
-// Defined in OpenRoad.i
-cgt::ClockGating *
-getClockGating();
-}
 %}
+
+%include "cgt/ClockGating.h"

@@ -63,6 +63,7 @@ using std::string;
   X(par)                                 \
   X(rcx)                                 \
   X(rmp)                                 \
+  X(cgt)                                 \
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
