@@ -227,9 +227,9 @@ class GNet
   GNet(Net* net);
   GNet(const std::vector<Net*>& nets);
 
-  Net* net() const;
-  const std::vector<Net*>& nets() const { return nets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  Net* getPbNet() const;
+  const std::vector<Net*>& getPbNets() const { return nets_; }
+  const std::vector<GPin*>& getGPins() const { return gPins_; }
 
   int lx() const;
   int ly() const;
@@ -239,14 +239,14 @@ class GNet
   void setTimingWeight(float timingWeight);
   void setCustomWeight(float customWeight);
 
-  float totalWeight() const { return timingWeight_ * customWeight_; }
-  float timingWeight() const { return timingWeight_; }
-  float customWeight() const { return customWeight_; }
+  float getTotalWeight() const { return timingWeight_ * customWeight_; }
+  float getTimingWeight() const { return timingWeight_; }
+  float getCustomWeight() const { return customWeight_; }
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
   void updateBox();
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
 
   void setDontCare();
   bool isDontCare() const;
@@ -438,11 +438,11 @@ class GPin
   GPin(Pin* pin);
   GPin(const std::vector<Pin*>& pins);
 
-  Pin* pin() const;
-  const std::vector<Pin*>& pins() const { return pins_; }
+  Pin* getPbPin() const;
+  const std::vector<Pin*>& getPbPins() const { return pins_; }
 
-  GCell* gCell() const { return gCell_; }
-  GNet* gNet() const { return gNet_; }
+  GCell* getGCell() const { return gCell_; }
+  GNet* getGNet() const { return gNet_; }
 
   void setGCell(GCell* gCell);
   void setGNet(GNet* gNet);
@@ -530,8 +530,8 @@ class Bin
   float electroPhi() const;
   float electroForceX() const;
   float electroForceY() const;
-  float targetDensity() const;
-  float density() const;
+  float getTargetDensity() const;
+  float getDensity() const;
 
   void setDensity(float density);
   void setTargetDensity(float density);
@@ -552,13 +552,13 @@ class Bin
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
 
-  int64_t binArea() const;
-  int64_t nonPlaceArea() const { return nonPlaceArea_; }
+  int64_t getBinArea() const;
+  int64_t getNonPlaceArea() const { return nonPlaceArea_; }
   int64_t instPlacedArea() const { return instPlacedArea_; }
-  int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
+  int64_t getNonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  int64_t getInstPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
-  int64_t fillerArea() const { return fillerArea_; }
+  int64_t getFillerArea() const { return fillerArea_; }
 
  private:
   // index
@@ -690,8 +690,8 @@ class BinGrid
   double binSizeX() const;
   double binSizeY() const;
 
-  int64_t overflowArea() const;
-  int64_t overflowAreaUnscaled() const;
+  int64_t getOverflowArea() const;
+  int64_t getOverflowAreaUnscaled() const;
 
   // return bins_ index with given gcell
   std::pair<int, int> getDensityMinMaxIdxX(const GCell* gcell) const;
@@ -700,8 +700,8 @@ class BinGrid
   std::pair<int, int> getMinMaxIdxX(const Instance* inst) const;
   std::pair<int, int> getMinMaxIdxY(const Instance* inst) const;
 
-  std::vector<Bin>& bins();
-  const std::vector<Bin>& binsConst() const { return bins_; };
+  std::vector<Bin>& getBins();
+  const std::vector<Bin>& getBinsConst() const { return bins_; };
 
   void updateBinsNonPlaceArea();
 
@@ -724,7 +724,7 @@ class BinGrid
   int num_threads_ = 1;
 };
 
-inline std::vector<Bin>& BinGrid::bins()
+inline std::vector<Bin>& BinGrid::getBins()
 {
   return bins_;
 }
@@ -931,18 +931,7 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index)
-  {
-    if (index >= fillerStor_.size()) {
-      log_->error(
-          utl::GPL,
-          314,
-          "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
-          index,
-          fillerStor_.size());
-    }
-    return fillerStor_[index];
-  }
+  GCell& getFillerGCell(size_t index);
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -959,15 +948,15 @@ class NesterovBase
 
   void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
 
-  int binCntX() const;
-  int binCntY() const;
+  int getBinCntX() const;
+  int getBinCntY() const;
   double binSizeX() const;
   double binSizeY() const;
-  int64_t overflowArea() const;
-  int64_t overflowAreaUnscaled() const;
+  int64_t getOverflowArea() const;
+  int64_t getOverflowAreaUnscaled() const;
 
-  std::vector<Bin>& bins();
-  const std::vector<Bin>& binsConst() const { return bg_.binsConst(); };
+  std::vector<Bin>& getBins();
+  const std::vector<Bin>& getBinsConst() const { return bg_.getBinsConst(); };
 
   // filler cells / area control
   // will be used in Routability-driven loop
@@ -975,8 +964,8 @@ class NesterovBase
   int fillerDy() const;
   int getFillerCnt() const;
   int64_t getFillerCellArea() const;
-  int64_t whiteSpaceArea() const;
-  int64_t movableArea() const;
+  int64_t getWhiteSpaceArea() const;
+  int64_t getMovableArea() const;
   int64_t getTotalFillerArea() const;
 
   // update
@@ -989,13 +978,13 @@ class NesterovBase
 
   // should be separately defined.
   // This is mainly used for NesterovLoop
-  int64_t nesterovInstsArea() const;
+  int64_t getNesterovInstsArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
   // sum phi and target density
   // used in NesterovPlace
-  float sumPhi() const;
+  float getSumPhi() const;
 
   //
   // return uniform (lower bound) target density
@@ -1264,9 +1253,9 @@ class NesterovBase
   void initFillerGCells();
 };
 
-inline std::vector<Bin>& NesterovBase::bins()
+inline std::vector<Bin>& NesterovBase::getBins()
 {
-  return bg_.bins();
+  return bg_.getBins();
 }
 
 class biNormalParameters
