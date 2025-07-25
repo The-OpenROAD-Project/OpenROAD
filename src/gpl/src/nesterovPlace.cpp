@@ -511,7 +511,7 @@ void NesterovPlace::runTimingDriven(const int iter,
         log_->info(GPL,
                    110,
                    "Timing-driven: new target density: {}",
-                   nesterov->targetDensity());
+                   nesterov->getTargetDensity());
         nbc_->resetDeltaArea();
         nbc_->resetNewGcellsCount();
         nesterov->updateAreas();
@@ -557,7 +557,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
       diverge_snapshot_WlCoefX = wireLengthCoefX_;
       diverge_snapshot_WlCoefY = wireLengthCoefY_;
       for (auto& nb : nbVec_) {
-        nb->snapshot();
+        nb->saveSnapshot();
       }
       is_diverge_snapshot_saved = true;
     }
@@ -645,7 +645,7 @@ void NesterovPlace::routabilitySnapshot(
     is_routability_snapshot_saved = true;
 
     for (auto& nb : nbVec_) {
-      nb->snapshot();
+      nb->saveSnapshot();
     }
 
     log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);

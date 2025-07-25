@@ -144,7 +144,7 @@ void Graphics::drawInitial(gui::Painter& painter)
 void Graphics::drawForce(gui::Painter& painter)
 {
   for (const auto& nb : nbVec_) {
-    const auto& bins = nb->getNins();
+    const auto& bins = nb->getBins();
     if (bins.empty()) {
       continue;
     }
@@ -270,7 +270,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
     painter.setPen(gui::Painter::kTransparent);
 
     for (const auto& nb : nbVec_) {
-      for (auto& bin : nb->getNins()) {
+      for (auto& bin : nb->getBins()) {
         int density = bin.getDensity() * 50 + 20;
         gui::Painter::Color color;
         if (density > 255) {
@@ -510,7 +510,7 @@ bool Graphics::populateMap()
   double max_value = std::numeric_limits<double>::lowest();
 
   if (heatmap_type_ == OverflowMinMax) {
-    for (const Bin& bin : grid.getNins()) {
+    for (const Bin& bin : grid.getBins()) {
       int64_t binArea = bin.getBinArea();
       const float scaledBinArea
           = static_cast<float>(binArea * bin.getTargetDensity());
@@ -526,7 +526,7 @@ bool Graphics::populateMap()
     }
   }
 
-  for (const Bin& bin : grid.getNins()) {
+  for (const Bin& bin : grid.getBins()) {
     odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     double value = 0.0;
 
@@ -559,7 +559,7 @@ bool Graphics::populateMap()
 void Graphics::populateXYGrid()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
-  std::vector<Bin>& bin = grid.getNins();
+  std::vector<Bin>& bin = grid.getBins();
   int x_grid = grid.binCntX();
   int y_grid = grid.binCntY();
 

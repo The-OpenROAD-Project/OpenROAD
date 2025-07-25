@@ -960,8 +960,8 @@ class NesterovBase
 
   // filler cells / area control
   // will be used in Routability-driven loop
-  int fillerDx() const;
-  int fillerDy() const;
+  int getFillerDx() const;
+  int getFillerDy() const;
   int getFillerCnt() const;
   int64_t getFillerCellArea() const;
   int64_t getWhiteSpaceArea() const;
@@ -997,7 +997,7 @@ class NesterovBase
   // would be changed dynamically in RD loop
   //
   float initTargetDensity() const;
-  float targetDensity() const;
+  float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
 
@@ -1066,12 +1066,11 @@ class NesterovBase
 
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
-  float getPhiCoef(float scaledDiffHpwl) const;
-
-  void snapshot();
+  float getPhiCoef(float scaledDiffHpwl) const; 
 
   bool checkConvergence();
   bool checkDivergence();
+  void saveSnapshot();
   bool revertToSnapshot();
 
   void updateDensityCenterCur();

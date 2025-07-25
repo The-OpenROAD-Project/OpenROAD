@@ -2015,12 +2015,12 @@ int64_t NesterovBase::getOverflowAreaUnscaled() const
   return bg_.getOverflowAreaUnscaled();
 }
 
-int NesterovBase::fillerDx() const
+int NesterovBase::getFillerDx() const
 {
   return fillerDx_;
 }
 
-int NesterovBase::fillerDy() const
+int NesterovBase::getFillerDy() const
 {
   return fillerDy_;
 }
@@ -2085,7 +2085,7 @@ float NesterovBase::initTargetDensity() const
   return nbVars_.targetDensity;
 }
 
-float NesterovBase::targetDensity() const
+float NesterovBase::getTargetDensity() const
 {
   return targetDensity_;
 }
@@ -2800,7 +2800,7 @@ void NesterovBase::nesterovAdjustPhi()
   }
 }
 
-void NesterovBase::snapshot()
+void NesterovBase::saveSnapshot()
 {
   if (isConverged_) {
     return;
