@@ -855,22 +855,8 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  GCell& getGCell(size_t index)
-  {
-    if (index >= gCellStor_.size()) {
-      log_->error(utl::GPL,
-                  316,
-                  "getGCell: index {} out of bounds (gCellStor_.size() = {}).",
-                  index,
-                  gCellStor_.size());
-    }
-    return gCellStor_[index];
-  }
-
-  size_t getGCellIndex(const GCell* gCell) const
-  {
-    return std::distance(gCellStor_.data(), gCell);
-  }
+  GCell& getGCell(size_t index);
+  size_t getGCellIndex(const GCell* gCell) const;
 
   void printGCells();
   void printGPins();
