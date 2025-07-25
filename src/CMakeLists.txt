@@ -329,6 +329,7 @@ target_link_libraries(openroad
   odbtcl
   rcx
   rmp
+  cgt
   cts
   cut
   grt
