@@ -170,21 +170,8 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::clearPolygonData()
 {
-  logger_->info(
-      IFP,
-      982,
-      "InitFloorplan object: {} - Clearing polygon buffer. Current size: {}",
-      (void*) this,
-      die_polygon_buf_.size());
   die_polygon_buf_.clear();
-  logger_->info(
-      IFP,
-      983,
-      "InitFloorplan object: {} - Polygon buffer cleared. New size: {}",
-      (void*) this,
-      die_polygon_buf_.size());
 }
-
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
@@ -210,8 +197,6 @@ void InitFloorplan::makePolygonDie(std::vector<odb::Point>& points)
     return;
   }
 
-  logger_->info(IFP, 989, "Processing {} polygon vertices", points.size());
-
   // Snap all coordinates to manufacturing grid
   std::vector<odb::Point> mfg_pts;
   mfg_pts.reserve(points.size());
@@ -221,9 +206,6 @@ void InitFloorplan::makePolygonDie(std::vector<odb::Point>& points)
 
   // Set the die area using the polygon
   block_->setDieArea(mfg_pts);
-
-  logger_->info(
-      IFP, 990, "Created polygon die with {} vertices.", mfg_pts.size());
 }
 
 void InitFloorplan::makePolygonRows(
@@ -246,12 +228,6 @@ void InitFloorplan::makePolygonRows(
         core_polygon.size());
     return;
   }
-
-  logger_->info(
-      IFP,
-      994,
-      "Creating polygon rows with {} core vertices using scanline intersection",
-      core_polygon.size());
 
   // Snap all coordinates to manufacturing grid
   std::vector<odb::Point> mfg_pts;
@@ -1096,18 +1072,9 @@ void InitFloorplan::makePolygonRowsScanline(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
-  if (core_polygon.empty()) {
-    logger_->error(
-        IFP, 998, "No core polygon vertices provided to Boost method.");
-    return;
-  }
-
-  // Get the bounding box for the polygon
+  // Get the bounding box for the polygon (reuse existing polygon if available)
   odb::Polygon core_poly(core_polygon);
   odb::Rect core_bbox = core_poly.getEnclosingRect();
-
-  logger_->info(
-      IFP, 999, "Using scanline intersection for polygon-aware row generation");
 
   if (base_site->hasRowPattern()) {
     logger_->error(
@@ -1200,15 +1167,17 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
     const int x1 = p1.x();
     const int x2 = p2.x();
 
-    // Skip horizontal edges
+    // Skip horizontal edges and ensure no division by zero
     if (y1 == y2) {
       continue;
     }
 
     // Check if edge crosses the scanline at row_y
     if ((y1 <= row_y && y2 > row_y) || (y1 > row_y && y2 <= row_y)) {
-      // Calculate intersection point
-      const int x_intersect = x1 + (x2 - x1) * (row_y - y1) / (y2 - y1);
+      // Calculate intersection point with proper precision handling
+      const double x_intersect_d
+          = x1 + static_cast<double>(x2 - x1) * (row_y - y1) / (y2 - y1);
+      const int x_intersect = static_cast<int>(std::round(x_intersect_d));
       intersections.push_back(x_intersect);
     }
   }

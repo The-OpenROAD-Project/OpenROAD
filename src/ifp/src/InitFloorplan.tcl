@@ -388,7 +388,6 @@ proc make_polygon_die_helper { key_array } {
   }
   
   utl::info IFP 5 "Added $point_count die polygon vertices to the list."
-  utl::info IFP 6 "Received the following vertices - $polygon_vertices"
   ifp::make_polygon_die $polygon_vertices
   return
 }
@@ -455,13 +454,14 @@ proc make_polygon_rows_helper { key_array } {
       }
       
       ord::ensure_linked
-      
-      utl::info IFP 7 "Added $point_count core polygon vertices for row generation."
-      
+            
       # Call the polygon rows creation function with simplified interface
       ifp::make_polygon_rows_simple \
         $polygon_vertices \
-        $site
+        $site \
+        $additional_sites \
+        $row_parity \
+        $flipped_sites
       return
     }
 
@@ -485,7 +485,10 @@ proc make_polygon_rows_helper { key_array } {
       # Call the polygon rows creation function with simplified interface
       ifp::make_polygon_rows_simple \
         $polygon_vertices \
-        $site
+        $site \
+        $additional_sites \
+        $row_parity \
+        $flipped_sites
       return
     }
 
