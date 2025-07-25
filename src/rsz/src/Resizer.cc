@@ -1594,11 +1594,11 @@ void Resizer::reportBuffers()
       if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         buffer_list.emplace_back(buffer);
-	if (buffer->footprint()) {
-	  footprint_types[buffer->footprint()]++;
-	}
+        if (buffer->footprint()) {
+          footprint_types[buffer->footprint()]++;
+        }
         odb::dbMaster* master = db_network_->staToDb(buffer);
-	site_types[master->getSite()]++;
+        site_types[master->getSite()]++;
         auto vt_type = cellVTType(master);
         vt_leak_data[vt_type].count++;
         std::optional<float> cell_leak = cellLeakage(buffer);
@@ -1629,6 +1629,7 @@ void Resizer::reportBuffers()
          });
 
     std::vector<std::pair<std::pair<int, std::string>, VTLeakage>> vt_sorted;
+    vt_sorted.reserve(vt_leak_data.size());
     for (const auto& [vt_type, leak_data] : vt_leak_data) {
       vt_sorted.emplace_back(vt_type, leak_data);
     }
@@ -1664,12 +1665,11 @@ void Resizer::reportBuffers()
                       count,
                       ((float) count) / buffer_list.size() * 100);
     }
-    logger_->report("\nThere are {} cell site types:",
-                    site_types.size());
+    logger_->report("\nThere are {} cell site types:", site_types.size());
     for (const auto& [site_type, count] : site_types) {
       logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
                       site_type->getName(),
-		      site_type->getHeight(),
+                      site_type->getHeight(),
                       count,
                       ((float) count) / buffer_list.size() * 100);
     }
@@ -1699,7 +1699,7 @@ void Resizer::reportBuffers()
                       drive_res * c_in,
                       cell_leak.value_or(0.0f),
                       master->getSite()->getHeight(),
-		      (buffer->footprint()?buffer->footprint():"N/A"),
+                      (buffer->footprint() ? buffer->footprint() : "N/A"),
                       cellVTType(master).second);
     }
     logger_->report(
