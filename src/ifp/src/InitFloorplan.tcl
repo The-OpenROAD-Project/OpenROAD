@@ -394,6 +394,12 @@ proc make_polygon_die_helper { key_array } {
 
 proc make_polygon_rows_helper { key_array } {
     array set keys $key_array
+    
+    # Validate that core_polygon is specified for polygon floorplan
+    if { ![info exists keys(-core_polygon)] } {
+      utl::error IFP 85 "no -core_polygon specified for polygon floorplan."
+    }
+    
     # Get the site information (required for polygon rows)
     set site ""
     if { [info exists keys(-site)] } {
@@ -464,34 +470,5 @@ proc make_polygon_rows_helper { key_array } {
         $flipped_sites
       return
     }
-
-    # If no core polygon is specified, try to use the die polygon as the core
-    if { [info exists keys(-die_polygon)] } {
-      utl::warn IFP 85 "No -core_polygon specified. Using die polygon as core area for row generation."
-      set core_vertices $keys(-die_polygon)
-      
-      # Convert micron coordinates to DBU and create polygon vertices list
-      set polygon_vertices {}
-      set point_count 0
-      foreach {x y} $core_vertices {
-        # Convert micron input to DBU
-        lappend polygon_vertices [ord::microns_to_dbu $x]
-        lappend polygon_vertices [ord::microns_to_dbu $y]
-        incr point_count
-      }
-      
-      ord::ensure_linked
-      
-      # Call the polygon rows creation function with simplified interface
-      ifp::make_polygon_rows_simple \
-        $polygon_vertices \
-        $site \
-        $additional_sites \
-        $row_parity \
-        $flipped_sites
-      return
-    }
-
-    utl::error IFP 86 "no -core_polygon specified for polygon floorplan."
   }
 } ;# end namespace ifp
