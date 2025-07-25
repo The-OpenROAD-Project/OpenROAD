@@ -3,9 +3,9 @@
 
 #include "SteinerRenderer.h"
 
-#include "rsz/SteinerTree.hh"
+#include "est/SteinerTree.h"
 
-namespace rsz {
+namespace est {
 
 SteinerRenderer::SteinerRenderer()
 {
@@ -31,4 +31,4 @@ void SteinerRenderer::drawObjects(gui::Painter& painter)
   }
 }
 
-}  // namespace rsz
+}  // namespace est

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rsz/SteinerTree.hh"
+#include "est/SteinerTree.h"
 
 #include <cmath>
 #include <cstddef>
@@ -9,18 +9,17 @@
 #include <string>
 #include <vector>
 
-#include "AbstractSteinerRenderer.h"
 #include "db_sta/dbNetwork.hh"
 #include "sta/NetworkCmp.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
-namespace rsz {
+namespace est {
 
 using std::abs;
 using std::string;
 
-using utl::RSZ;
+using utl::EST;
 
 using sta::NetConnectedPinIterator;
 using sta::stringPrintTmp;
@@ -189,7 +188,7 @@ void SteinerTree::validatePoint(const SteinerPt pt) const
 {
   if (pt < 0 || pt >= branchCount()) {
     logger_->error(
-        RSZ,
+        EST,
         93,
         "Invalid Steiner point {} requested. 0 <= Valid values <  {}.",
         pt,
@@ -259,7 +258,7 @@ void SteinerTree::populateSides(const SteinerPt from,
 {
   if (adj != from && adj != SteinerNull) {
     if (adj == to) {
-      logger_->error(RSZ, 92, "Steiner tree creation error.");
+      logger_->error(EST, 92, "Steiner tree creation error.");
     }
     if (left_[to] == SteinerNull) {
       left_[to] = adj;
@@ -328,4 +327,4 @@ bool PointEqual::operator()(const Point& pt1, const Point& pt2) const
   return pt1.x() == pt2.x() && pt1.y() == pt2.y();
 }
 
-}  // namespace rsz
+}  // namespace est

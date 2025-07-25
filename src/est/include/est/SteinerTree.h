@@ -15,7 +15,7 @@
 
 const int SteinerNull = -1;
 
-namespace rsz {
+namespace est {
 
 using utl::Logger;
 
@@ -118,13 +118,13 @@ class SteinerTree
  private:
   stt::Tree tree_;
   const Point drvr_location_;
-  int drvr_steiner_pt_ = 0;  // index into tree_.branch
-  sta::Vector<PinLoc> pinlocs_;   // Initial input
-  LocPinMap loc_pin_map_;    // location -> pins map
+  int drvr_steiner_pt_ = 0;      // index into tree_.branch
+  sta::Vector<PinLoc> pinlocs_;  // Initial input
+  LocPinMap loc_pin_map_;        // location -> pins map
   std::vector<SteinerPt> left_;
   std::vector<SteinerPt> right_;
   std::vector<const Pin*> point_pin_array_;
   Logger* logger_;
 };
 
-}  // namespace rsz
+}  // namespace est
