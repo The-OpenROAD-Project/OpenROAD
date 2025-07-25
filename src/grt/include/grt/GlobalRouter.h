@@ -44,9 +44,9 @@ namespace dpl {
 class Opendp;
 }
 
-namespace rsz {
-class Resizer;
-}  // namespace rsz
+namespace est {
+class EstimateParasitics;
+}  // namespace est
 
 namespace sta {
 class dbSta;
@@ -117,7 +117,7 @@ class GlobalRouter
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            rsz::Resizer* resizer,
+            est::EstimateParasitics* estimate_parasitics,
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -442,7 +442,7 @@ class GlobalRouter
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
-  rsz::Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;

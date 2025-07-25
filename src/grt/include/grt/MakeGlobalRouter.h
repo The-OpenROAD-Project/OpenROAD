@@ -13,8 +13,8 @@ namespace sta {
 class dbSta;
 }
 
-namespace rsz {
-class Resizer;
+namespace est {
+class EstimateParasitics;
 }
 
 namespace ant {
@@ -42,7 +42,7 @@ grt::GlobalRouter* makeGlobalRouter();
 void initGlobalRouter(grt::GlobalRouter* grt,
                       odb::dbDatabase* db,
                       sta::dbSta* sta,
-                      rsz::Resizer* resizer,
+                      est::EstimateParasitics* estimate_parasitics_,
                       ant::AntennaChecker* antenna_checker,
                       dpl::Opendp* dpl,
                       stt::SteinerTreeBuilder* stt_builder,

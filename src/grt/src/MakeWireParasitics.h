@@ -10,6 +10,7 @@
 #include "AbstractMakeWireParasitics.h"
 #include "Pin.h"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "grt/RoutePt.h"
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
@@ -43,7 +44,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
 {
  public:
   MakeWireParasitics(utl::Logger* logger,
-                     rsz::Resizer* resizer,
+                     est::EstimateParasitics* estimate_parasitics,
                      sta::dbSta* sta,
                      odb::dbTech* tech,
                      odb::dbBlock* block,
@@ -115,10 +116,10 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
 
   // Variables common to all nets.
   GlobalRouter* grouter_;
+  est::EstimateParasitics* estimate_parasitics_;
   odb::dbTech* tech_;
   odb::dbBlock* block_;
   utl::Logger* logger_;
-  rsz::Resizer* resizer_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   sta::Parasitics* parasitics_;

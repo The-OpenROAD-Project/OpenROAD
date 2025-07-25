@@ -31,17 +31,18 @@ using utl::GRT;
 using std::abs;
 using std::min;
 
-MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
-                                       rsz::Resizer* resizer,
-                                       sta::dbSta* sta,
-                                       odb::dbTech* tech,
-                                       odb::dbBlock* block,
-                                       GlobalRouter* grouter)
+MakeWireParasitics::MakeWireParasitics(
+    utl::Logger* logger,
+    est::EstimateParasitics* estimate_parasitics,
+    sta::dbSta* sta,
+    odb::dbTech* tech,
+    odb::dbBlock* block,
+    GlobalRouter* grouter)
     : grouter_(grouter),
+      estimate_parasitics_(estimate_parasitics),
       tech_(tech),
       block_(block),
       logger_(logger),
-      resizer_(resizer),
       sta_(sta),
       network_(sta_->getDbNetwork()),
       parasitics_(sta_->parasitics()),
@@ -441,7 +442,7 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
   odb::dbTechLayer* layer = tech_->findRoutingLayer(layer_id);
   double r_per_meter = 0.0;    // ohm/meter
   double cap_per_meter = 0.0;  // F/meter
-  resizer_->layerRC(layer, corner, r_per_meter, cap_per_meter);
+  estimate_parasitics_->layerRC(layer, corner, r_per_meter, cap_per_meter);
 
   const float layer_width = block_->dbuToMicrons(layer->getWidth());
   if (r_per_meter == 0.0) {
@@ -556,7 +557,7 @@ float MakeWireParasitics::getCutLayerRes(odb::dbTechLayer* cut_layer,
 {
   double res = 0.0;
   double cap = 0.0;
-  resizer_->layerRC(cut_layer, corner, res, cap);
+  estimate_parasitics_->layerRC(cut_layer, corner, res, cap);
   if (res == 0.0) {
     res = cut_layer->getResistance();  // assumes single cut
   }

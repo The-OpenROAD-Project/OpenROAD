@@ -35,13 +35,13 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "grt/GRoute.h"
 #include "grt/Rudy.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
-#include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -60,7 +60,7 @@ GlobalRouter::GlobalRouter()
       stt_builder_(nullptr),
       antenna_checker_(nullptr),
       opendp_(nullptr),
-      resizer_(nullptr),
+      estimate_parasitics_(nullptr),
       fastroute_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
@@ -92,7 +92,7 @@ void GlobalRouter::init(utl::Logger* logger,
                         stt::SteinerTreeBuilder* stt_builder,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
-                        rsz::Resizer* resizer,
+                        est::EstimateParasitics* estimate_parasitics,
                         ant::AntennaChecker* antenna_checker,
                         dpl::Opendp* opendp,
                         std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -108,7 +108,7 @@ void GlobalRouter::init(utl::Logger* logger,
   opendp_ = opendp;
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = sta;
-  resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
 
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
@@ -470,7 +470,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   NetRouteMap routes;
   if (!nets.empty()) {
     MakeWireParasitics builder(
-        logger_, resizer_, sta_, db_->getTech(), block_, this);
+        logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
     fastroute_->setMakeWireParasiticsBuilder(&builder);
     routes = fastroute_->run();
     fastroute_->setMakeWireParasiticsBuilder(nullptr);
@@ -495,7 +495,7 @@ void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
   sta_->setParasiticAnalysisPts(true);
 
   MakeWireParasitics builder(
-      logger_, resizer_, sta_, db_->getTech(), block_, this);
+      logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
 
   for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
@@ -508,7 +508,7 @@ void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
   MakeWireParasitics builder(
-      logger_, resizer_, sta_, db_->getTech(), block_, this);
+      logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
   auto iter = routes_.find(db_net);
   if (iter == routes_.end()) {
     return;
@@ -524,7 +524,7 @@ std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
   loadGuidesFromDB();
   MakeWireParasitics builder(
-      logger_, resizer_, sta_, db_->getTech(), block_, this);
+      logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
   return builder.routeLayerLengths(db_net);
 }
 
