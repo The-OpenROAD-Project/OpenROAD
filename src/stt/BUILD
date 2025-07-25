@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -66,6 +67,8 @@ cc_library(
         "src/LinesRenderer.h",
         "src/MakeSteinerTreeBuilder.cpp",
         ":swig",
+        ":swig-py",
+        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -89,6 +92,7 @@ cc_library(
         "@boost.multi_array",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -113,4 +117,29 @@ tcl_wrap_cc(
     swig_includes = [
         "src",
     ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/stt/SteinerTreeBuilder.h",
+        "include/stt/flute.h",
+        "include/stt/pd.h",
+        "src/SteinerTreeBuilder-py.i",
+        "//:error_swig-py",
+    ],
+    module = "stt_py",
+    root_swig_src = "src/SteinerTreeBuilder-py.i",
+    swig_includes = [
+        "include",
+    ],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "stt_py_python_inits",
+    namespace = "stt",
 )

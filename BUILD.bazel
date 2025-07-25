@@ -4,6 +4,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     features = [
@@ -65,7 +66,9 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/exa",
     "//src/exa:ui",
     "//src/fin",
+    # "//src/fin:ui",
     "//src/gpl",
+    # "//src/gpl:ui",
     "//src/grt",
     "//src/grt:ui",
     "//src/ifp",
@@ -75,11 +78,15 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/odb",
     "//src/odb:ui",
     "//src/pad",
+    # "//src/pad:ui",
     "//src/par",
     "//src/par:ui",
     "//src/pdn",
+    # "//src/pdn:ui",
     "//src/ppl",
+    # "//src/ppl:ui",
     "//src/psm",
+    # "//src/psm:ui",
     "//src/rcx",
     "//src/rcx:ui",
     "//src/rsz",
@@ -118,7 +125,8 @@ OPENROAD_DEFINES = [
     "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
     "GPU=false",
-    "BUILD_PYTHON=false",
+    "BUILD_PYTHON=true",
+    "ENABLE_PYTHON3",
     "ABC_NAMESPACE=abc",
     "TCLRL_VERSION_STR=",
 ]
@@ -129,8 +137,12 @@ cc_binary(
         "src/Main.cc",
         "src/OpenRoad.cc",
         ":openroad_swig",
+        ":openroad_swig-py",
+        ":openroad_py",
         ":openroad_tcl",
         ":rmp_swig",
+        ":rmp_swig-py",
+        ":rmp_python",
         ":rmp_tcl",
         "//bazel:runfiles",
     ],
@@ -147,6 +159,8 @@ cc_binary(
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@openroad_rules_python//python/cc:current_py_cc_libs",
     ],
 )
 
@@ -188,8 +202,12 @@ cc_library(
         "src/Tech.cc",
         "src/Timing.cc",
         ":openroad_swig",
+        ":openroad_swig-py",
+        ":openroad_py",
         ":openroad_tcl",
         ":rmp_swig",
+        ":rmp_swig-py",
+        ":rmp_python",
         ":rmp_tcl",
     ] + glob([
         "src/rmp/src/*.cpp",
@@ -275,6 +293,32 @@ tcl_wrap_cc(
     ],
 )
 
+python_wrap_cc(
+    name = "openroad_swig-py",
+    srcs = [
+        "src/OpenRoad-py.i",
+        ":error_swig-py",
+        "include/ord/Tech.h",
+        "include/ord/Design.h",
+        "include/ord/Timing.h",
+    ],
+    module = "ord_py",
+    root_swig_src = "src/OpenRoad-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+)
+
+tcl_encode(
+    name = "openroad_py",
+    srcs = [
+        ":openroad_swig-py",
+    ],
+    char_array_name = "ord_py_python_inits",
+    namespace = "ord",
+)
+
 tcl_wrap_cc(
     name = "rmp_swig",
     srcs = [
@@ -291,10 +335,45 @@ tcl_wrap_cc(
     ],
 )
 
+python_wrap_cc(
+    name = "rmp_swig-py",
+    srcs = [
+        "src/rmp/include/rmp/blif.h",
+        "src/rmp/include/rmp/Restructure.h",
+        "src/rmp/src/rmp-py.i",
+        ":error_swig-py",
+        "//src/sta:sta_swig_files",
+    ],
+    module = "rmp_py",
+    root_swig_src = "src/rmp/src/rmp-py.i",
+    swig_includes = [
+        "src/rmp/include",
+        "src/rmp/src",
+        "src/sta",
+    ],
+)
+
+tcl_encode(
+    name = "rmp_python",
+    srcs = [
+        ":rmp_swig-py",
+    ],
+    char_array_name = "rmp_py_python_inits",
+    namespace = "rmp",
+)
+
 filegroup(
     name = "error_swig",
     srcs = [
         "src/Exception.i",
+    ],
+    visibility = ["@//:__subpackages__"],
+)
+
+filegroup(
+    name = "error_swig-py",
+    srcs = [
+        "src/Exception-py.i",
     ],
     visibility = ["@//:__subpackages__"],
 )

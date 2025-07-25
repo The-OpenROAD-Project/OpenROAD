@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -82,7 +83,9 @@ cc_library(
         "src/LoggerCommon.h",
         "src/MakeLogger.cpp",
         ":swig",
+        ":swig-py",
         ":tcl",
+        ":python",
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
@@ -132,6 +135,7 @@ cc_library(
         "@boost.stacktrace",
         "@spdlog",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -159,4 +163,30 @@ tcl_encode(
     char_array_name = "utl_tcl_inits",
     namespace = "utl",
     visibility = ["//visibility:public"],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/utl/Logger.h",
+        "src/Logger-py.i",
+        "src/LoggerCommon.h",
+        "//:error_swig-py",
+    ],
+    module = "utl_py",
+    root_swig_src = "src/Logger-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "utl_py_python_inits",
+    namespace = "utl",
 )

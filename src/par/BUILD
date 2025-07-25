@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -69,6 +70,8 @@ cc_library(
     srcs = [
         "src/MakePartitionMgr.cpp",
         ":swig",
+        ":swig-py",
+        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -98,6 +101,7 @@ cc_library(
         "@boost.tokenizer",
         "@boost.utility",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -125,4 +129,30 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/par/PartitionMgr.h",
+        "src/partitionmgr-py.i",
+        "//:error_swig-py",
+    ],
+    module = "par_py",
+    root_swig_src = "src/partitionmgr-py.i",
+    swig_includes = [
+        "include",
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "par_py_python_inits",
+    namespace = "par",
 )
