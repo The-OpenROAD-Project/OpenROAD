@@ -4,6 +4,4 @@
 [INFO IFP-1002] Added 256 polygon-aware rows for site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO ODB-0303] The initial 256 rows (121361 sites) were cut with 2 shapes for a total of 256 rows (121361 sites).
 [INFO IFP-0997] Completed polygon-aware row generation using 8 vertices
-Differences found at line 6.
-DIEAREA ( 300000 0 ) ( 300000 400000 ) ( 0 400000 ) ( 0 600000 ) ( 800000 600000 ) ( 800000 400000 ) ( 500000 400000 ) ( 500000 0 ) ;
-DIEAREA ( 0 0 ) ( 0 800000 ) ( 200000 800000 ) ( 200000 500000 ) ( 600000 500000 ) ( 600000 300000 ) ( 200000 300000 ) ( 200000 0 ) ;
+No differences found.

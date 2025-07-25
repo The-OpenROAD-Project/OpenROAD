@@ -18,4 +18,4 @@ initialize_floorplan -die_polygon $die_polygon \
 
 set def_file [make_result_file make_polygon_rows2.def]
 write_def $def_file
-diff_files make_polygon_rows1.defok $def_file
+diff_files make_polygon_rows2.defok $def_file
