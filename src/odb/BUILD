@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -13,6 +14,14 @@ filegroup(
     name = "swig_imports",
     srcs = glob([
         "src/swig/tcl/*.i",
+        "src/swig/common/*.i",
+    ]),
+)
+
+filegroup(
+    name = "swig_imports_py",
+    srcs = glob([
+        "src/swig/python/*.i",
         "src/swig/common/*.i",
     ]),
 )
@@ -79,6 +88,8 @@ cc_library(
         "src/swig/common/swig_common.h",
         "src/swig/tcl/MakeOdb.cpp",
         ":swig",
+        ":swig-py",
+        ":python",
         ":tcl",
     ],
     hdrs = glob([
@@ -102,6 +113,7 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -137,5 +149,39 @@ tcl_encode(
         "src/swig/tcl/odb.tcl",
     ],
     char_array_name = "odbtcl_tcl_inits",
+    namespace = "odb",
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = glob([
+        "include/odb/*.h",
+    ]) + [
+        ":swig_imports_py",
+        "//:src/Design.i",
+        "//:src/Exception.i",
+    ],
+    module = "odb_py",
+    root_swig_src = "src/swig/common/odb.i",
+    swig_includes = [
+        "include",
+        "src/swig/common",
+        "src/swig/python",
+    ],
+    swig_options = [
+        # These values are derived from the CMakeList.txt and represent the "rules" this swig file
+        # breaks. Swig refuses to compile our swig files unless we acknowledge we are ignoring the
+        # following warnings. They can be derived by attemtpting to compile without them and fixing
+        # the warnings one by one.
+        "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
+    ],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "odb_py_python_inits",
     namespace = "odb",
 )

@@ -44,7 +44,7 @@ tcl_encode = rule(
         ),
         "srcs": attr.label_list(
             allow_empty = False,
-            allow_files = [".tcl"],
+            allow_files = [".tcl", ".py"],
             doc = "Files to be wrapped.",
         ),
         "_encode_script": attr.label(

@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -72,6 +73,8 @@ cc_library(
         "src/CtsGraphics.h",
         "src/MakeTritoncts.cpp",
         ":swig",
+        ":swig-py",
+        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -93,6 +96,7 @@ cc_library(
         "//src/utl",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -117,4 +121,28 @@ tcl_wrap_cc(
     swig_includes = [
         "src/cts/src",
     ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/cts/TritonCTS.h",
+        "src/CtsOptions.h",
+        "src/TritonCTS-py.i",
+        "//:error_swig-py",
+    ],
+    module = "cts_py",
+    root_swig_src = "src/TritonCTS-py.i",
+    swig_includes = [
+        "include",
+    ],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "cts_py_python_inits",
+    namespace = "cts",
 )

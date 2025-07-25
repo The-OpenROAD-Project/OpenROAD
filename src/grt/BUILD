@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -169,6 +170,8 @@ cc_library(
         "src/heatMapRudy.cpp",
         "src/heatMapRudy.h",
         ":swig",
+        ":swig-py",
+        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -204,6 +207,7 @@ cc_library(
         "@boost.stacktrace",
         "@openmp",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -228,4 +232,28 @@ tcl_wrap_cc(
     swig_includes = [
         "src",
     ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/grt/GlobalRouter.h",
+        "src/GlobalRouter-py.i",
+        "//:error_swig-py",
+    ],
+    module = "grt_py",
+    root_swig_src = "src/GlobalRouter-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "grt_py_python_inits",
+    namespace = "grt",
 )
