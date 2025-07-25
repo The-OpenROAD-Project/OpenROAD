@@ -238,15 +238,99 @@ void FlexGR::searchRepairMazeCore(
     // Generate the batch for each worker in parallel
     // Divide the nets into multiple batches within each worker
     // Here we use the lazy check: only the starting and ending points of a path segment are checked
-    std::vector<std::vector<std::vector<grNet*>> > workerBatches(uworkers.size());
+    std::vector<std::vector<std::vector<grNet*> > > workerBatches(uworkers.size());
     #pragma omp parallel for schedule(dynamic)
     for (int workerId = 0; workerId < (int) uworkers.size(); workerId++) {  // NOLINT
      uworkers[workerId]->batchGenerationRelax(rerouteNets[workerId], workerBatches[workerId]); // Use the lazy mode
     }
 
     logger_->report("[INFO] RRR iteration " + std::to_string(iter) + " finish !"); 
+  
+    
+    // Create the global level batches
+    std::vector<std::vector<grNet*> > batches;
+    int maxNumBatches = 0;
+    for (int i = 0; i < numWorkers; i++) {
+      maxNumBatches = std::max(maxNumBatches, static_cast<int>(workerBatches[i].size()));      
+    }
+    batches.resize(maxNumBatches);
+    logger_->report("[INFO] Number of batches: " + std::to_string(maxNumBatches));
+    
+    // To balance the load, we evenly distribute nets into batches
+    mazeRouteEvenBatchDistribution(workerBatches, batches, totalNumNets, numWorkers, maxNumBatches); 
+
+    // At this step, we ripup all the nets to be rerouted
+    ThreadException exception2;
+    #pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < numWorkers; i++) {
+      try {
+        uworkers[i]->main_mt_init(rerouteNets[i]);  
+      } catch (...) {
+        exception2.capture();
+      }
+    }
+    exception2.rethrow();
   }
 }
+
+
+// Evenly distribute the nets into batches (for load balancing)
+void FlexGR::mazeRouteEvenBatchDistribution(
+  const std::vector<std::vector<std::vector<grNet*> > >& workerBatches,
+  std::vector<std::vector<grNet*> >& batches,
+  int totalNumNets,
+  int numWorkers,
+  int maxNumBatches)
+{
+  std::vector<int> binCnt(maxNumBatches, 0);
+  const int targetBatchSize = (totalNumNets + maxNumBatches - 1) / maxNumBatches;
+  // Visit flag for each worker 
+  std::vector<bool> binVisited(maxNumBatches, false);
+  for (int workerId = 0; workerId < numWorkers; workerId++) {
+    std::fill(binVisited.begin(), binVisited.end(), false);
+    // Assign each local batch (from last to first) to a global batch
+    // determine the batch id for each localBatch
+    auto& workerLocalBatches = workerBatches[workerId];
+    for (int localBatchId = workerLocalBatches.size() - 1; localBatchId >= 0; localBatchId--) {
+      auto& localBatch = workerLocalBatches[localBatchId]; 
+      int batchId = -1;
+      // Prefer batches that are not used by this worker and can accommodate the local batch
+      for (int i = 0; i < maxNumBatches; i++) {
+        if (!binVisited[i] && binCnt[i] + localBatch.size() <= targetBatchSize) {
+          batchId = i;
+          break;
+        }
+      }
+
+      // If no batch is found, find the batch with the minimum size
+      if (batchId == -1) {
+        int minCount = totalNumNets;
+        for (int i = 0; i < maxNumBatches; i++) {
+          if (!binVisited[i] && binCnt[i] < minCount) {
+            minCount = binCnt[i];
+            batchId = i;
+          }
+        }
+      }
+
+      // Assign nets and update counts
+      std::copy(localBatch.begin(), localBatch.end(), std::back_inserter(batches[batchId]));
+      binCnt[batchId] += static_cast<int>(localBatch.size());
+      binVisited[batchId] = true;
+    }
+  }
+
+  if (debugMode_) {
+    logger_->report("[DEBUG] Number of batches: " + std::to_string(batches.size()));
+    for (int i = 0; i < static_cast<int>(batches.size()); i++) {
+      logger_->report("[DEBUG] Batch " + std::to_string(i) + ": " + std::to_string(batches[i].size()) + " nets");
+    }
+  }
+}
+
+
+
+
 
 
 

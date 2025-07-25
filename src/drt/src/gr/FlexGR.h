@@ -208,6 +208,15 @@ class FlexGR
     unsigned BLOCKCOST,
     unsigned OVERFLOWCOST,
     unsigned HISTCOST);
+  
+
+  void mazeRouteEvenBatchDistribution(
+    const std::vector<std::vector<std::vector<grNet*> > >& workerBatches,
+    std::vector<std::vector<grNet*> >& batches,
+    int totalNumNets,
+    int numWorkers,
+    int maxNumBatches);
+
 
   // Layer Assignment
   void layerAssign_gpu();
