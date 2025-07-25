@@ -701,16 +701,10 @@ class FlexGRWorker
   void main_mt_prep(std::vector<grNet*>& rerouteNets, 
     int iter);
   
-  void main_mt_init(std::vector<grNet*>& rerouteNets) {
-    auto LLCorner = getRouteGCellIdxLL();
-    for (auto net : rerouteNets) {
-      //net->setCPUFlag(false);
-      mazeNetInit(net);
-      net->setCPUFlag(true);
-      net->updateAbsGridCoords(LLCorner);
-    }
-  }
-
+  void main_mt_init(std::vector<grNet*>& rerouteNets);
+  void mazeNetInit_getRoutingTraces(grNet* net,
+    std::set<FlexMazeIdx>& pts);
+  
   void printSrc();
 
   void main_mt_restore(
