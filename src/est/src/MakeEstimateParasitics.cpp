@@ -6,8 +6,9 @@
 #include <memory>
 #include <utility>
 
-#include "gui/gui.h"
+#include "SteinerRenderer.h"
 #include "est/EstimateParasitics.h"
+#include "gui/gui.h"
 #include "utl/decode.h"
 
 extern "C" {
@@ -28,18 +29,19 @@ void deleteEstimateParasitics(est::EstimateParasitics* estimate_parasitics)
 }
 
 void initEstimateParasitics(est::EstimateParasitics* estimate_parasitics,
-                 Tcl_Interp* tcl_interp,
-                 utl::Logger* logger,
-                 odb::dbDatabase* db,
-                 sta::dbSta* sta,
-                 stt::SteinerTreeBuilder* stt_builder,
-                 grt::GlobalRouter* global_router)
+                            Tcl_Interp* tcl_interp,
+                            utl::Logger* logger,
+                            odb::dbDatabase* db,
+                            sta::dbSta* sta,
+                            stt::SteinerTreeBuilder* stt_builder,
+                            grt::GlobalRouter* global_router)
 {
-  estimate_parasitics->init(logger,
-                db,
-                sta,
-                stt_builder,
-                global_router);
+  std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer;
+  if (gui::Gui::enabled()) {
+    steiner_renderer = std::make_unique<est::SteinerRenderer>();
+  }
+  estimate_parasitics->init(
+      logger, db, sta, stt_builder, global_router, std::move(steiner_renderer));
   // Define swig TCL commands.
   Est_Init(tcl_interp);
   // Eval encoded sta TCL sources.

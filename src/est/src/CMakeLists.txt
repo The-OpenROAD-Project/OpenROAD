@@ -12,11 +12,14 @@ swig_lib(NAME      est
 
 add_library(est_lib
     EstimateParasitics.cpp
+    OdbCallBack.cpp
+    SteinerTree.cpp
 )
 
 target_sources(est
   PRIVATE
     MakeEstimateParasitics.cpp
+    SteinerRenderer.cpp
 )
 
 target_include_directories(est

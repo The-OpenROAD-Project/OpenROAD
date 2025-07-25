@@ -8,8 +8,10 @@
 #include <string>
 #include <vector>
 
+#include "SteinerTree.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/OdbCallBack.h"
 #include "grt/GlobalRouter.h"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
@@ -22,11 +24,7 @@ class IncrementalGRoute;
 
 namespace stt {
 class SteinerTreeBuilder;
-}
-
-namespace rsz{
-class SteinerTree;
-}  // namespace rsz
+}  // namespace stt
 
 namespace est {
 
@@ -117,6 +115,8 @@ struct ParasiticsCapacitance
   double v_cap;
 };
 
+class AbstractSteinerRenderer;
+
 class EstimateParasitics : public dbStaState
 {
  public:
@@ -126,11 +126,12 @@ class EstimateParasitics : public dbStaState
             dbDatabase* db,
             dbSta* sta,
             SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router);
+            GlobalRouter* global_router,
+            std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer* layer,
-                    const Corner* corner,
-                    double res,
-                    double cap);
+                  const Corner* corner,
+                  double res,
+                  double cap);
   void layerRC(dbTechLayer* layer,
                const Corner* corner,
                // Return values.
@@ -180,17 +181,51 @@ class EstimateParasitics : public dbStaState
   void estimateWireParasitic(const Pin* drvr_pin,
                              const Net* net,
                              SpefWriter* spef_writer = nullptr);
+  void makeWireParasitic(Net* net,
+                         Pin* drvr_pin,
+                         Pin* load_pin,
+                         double wire_length,  // meters
+                         const Corner* corner,
+                         Parasitics* parasitics);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net* net);
   void parasiticsInvalid(const dbNet* net);
+  void eraseParasitics(const Net* net);
   bool parasiticsValid() const;
-  
- private:
-  void initBlock();
-  void ensureParasitics();
+
+  ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
+  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; };
+
+  ////////////////////////////////////////////////////////////////
+  // Returns nullptr if net has less than 2 pins or any pin is not placed.
+  SteinerTree* makeSteinerTree(Point drvr_location,
+                               const std::vector<Point>& sink_locations);
+  SteinerTree* makeSteinerTree(const Pin* drvr_pin);
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
   void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
+  void highlightSteiner(const Pin* drvr);
+
+  dbNetwork* getDbNetwork() { return db_network_; }
+  dbBlock* getBlock() { return block_; }
+  GlobalRouter* getGlobalRouter() { return global_router_; }
+  IncrementalGRoute* getIncrementalGRT() { return incr_groute_; }
+  void setIncrementalGRT(IncrementalGRoute* incr_groute)
+  {
+    incr_groute_ = incr_groute;
+  }
+  void setDbCbkOwner(dbBlock* block) { db_cbk_->addOwner(block); }
+  void removeDbCbkOwner() { db_cbk_->removeOwner(); }
+
+  void initBlock();
+
+  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+  bool incremental_parasitics_enabled_ = false;
+
+  Logger* getLogger() { return logger_; }
+
+ private:
+  void ensureParasitics();
   void estimateWireParasiticSteiner(const Pin* drvr_pin,
                                     const Net* net,
                                     SpefWriter* spef_writer);
@@ -199,13 +234,13 @@ class EstimateParasitics : public dbStaState
   bool isPadPin(const Pin* pin) const;
   bool isPad(const Instance* inst) const;
   float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap) const;
-  float totalLoad(rsz::SteinerTree* tree) const;
-  float subtreeLoad(rsz::SteinerTree* tree,
+  float totalLoad(SteinerTree* tree) const;
+  float subtreeLoad(SteinerTree* tree,
                     float cap_per_micron,
                     SteinerPt pt) const;
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
-                                rsz::SteinerTree* tree,
+                                SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id);
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
@@ -214,11 +249,11 @@ class EstimateParasitics : public dbStaState
   Logger* logger_ = nullptr;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
-  rsz::Resizer* resizer_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
+  std::unique_ptr<OdbCallBack> db_cbk_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   std::vector<std::vector<double>> layer_res_;  // ohms/meter
@@ -231,17 +266,29 @@ class EstimateParasitics : public dbStaState
   std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
   const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
-  bool incremental_parasitics_enabled_ = false;
+
+  std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   int dbu_ = 0;
 
   // constants
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
-
 };
 
+class IncrementalParasiticsGuard
+{
+ public:
+  IncrementalParasiticsGuard(est::EstimateParasitics* estimate_parasitics);
+  ~IncrementalParasiticsGuard();
+
+  // calls estimate_parasitics_->updateParasitics()
+  void update();
+
+ private:
+  est::EstimateParasitics* estimate_parasitics_;
+  bool need_unregister_;
+};
 
 }  // namespace est
