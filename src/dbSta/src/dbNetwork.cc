@@ -975,15 +975,16 @@ Instance* dbNetwork::findInstance(const char* path_name) const
         if (module_defn) {
           // get the leaf instance definition from the module
           dbInst* ret = module_defn->findDbInst(leaf_inst_name.c_str());
-          return (Instance*) ret;
+          if (ret) {
+            return (Instance*) ret;
+          }
         }
       }
     }
-  } else {
-    dbInst* inst = block_->findInst(path_name);
-    return dbToSta(inst);
   }
-  return nullptr;
+  // fall through (even in hierarchical mode).
+  dbInst* inst = block_->findInst(path_name);
+  return dbToSta(inst);
 }
 
 Instance* dbNetwork::findChild(const Instance* parent, const char* name) const
