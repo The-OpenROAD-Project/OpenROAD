@@ -1,5 +1,11 @@
 or_integration_tests(
   "est"
   TESTS
-    tst
+    make_parasitics1
+    make_parasitics2
+    make_parasitics3
+    make_parasitics4
+    make_parasitics5
+    make_parasitics6
+    make_parasitics7
 )
