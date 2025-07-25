@@ -373,7 +373,7 @@ void Graphics::reportSelected()
                       wlGrad.x,
                       wlGrad.y,
                       weight,
-                      gPin->getPin()->getName());
+                      gPin->getPbPin()->getName());
     }
 
     FloatPoint wlGrad = nbc_->getWireLengthGradientWA(

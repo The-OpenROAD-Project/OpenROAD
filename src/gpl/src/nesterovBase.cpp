@@ -283,7 +283,7 @@ void GCell::print(utl::Logger* logger, bool print_only_name = true) const
   }
 }
 
-void GCell::writeAttributesToCSV(std::ostream& out) {
+void GCell::writeAttributesToCSV(std::ostream& out) const {
     out << "," << insts_.size() << "," << gPins_.size();
     out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
     out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
