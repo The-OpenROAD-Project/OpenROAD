@@ -1,6 +1,29 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+namespace eval rsz {
+
+proc parse_buffer_cell { keys_var } {
+  upvar 1 $keys_var keys
+  set buffer_cell "NULL"
+
+  if { [info exists keys(-buffer_cell)] } {
+    set buffer_cell_name $keys(-buffer_cell)
+    if { $buffer_cell_name ne "" } {
+      set buffer_cell [sta::get_lib_cell_error "-buffer_cell" $buffer_cell_name]
+
+      # the lib cell is a buffer?
+      if { $buffer_cell ne "NULL" && ![get_property $buffer_cell is_buffer] } {
+        utl::error RSZ 211 "[get_name $buffer_cell] is not a buffer."
+      }
+    }
+  }
+  return $buffer_cell
+}
+
+# namespace eval rsz
+}
+
 sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {

@@ -10,24 +10,6 @@ proc get_db_tech_checked { } {
   return $tech
 }
 
-proc parse_buffer_cell { keys_var } {
-  upvar 1 $keys_var keys
-  set buffer_cell "NULL"
-
-  if { [info exists keys(-buffer_cell)] } {
-    set buffer_cell_name $keys(-buffer_cell)
-    if { $buffer_cell_name ne "" } {
-      set buffer_cell [sta::get_lib_cell_error "-buffer_cell" $buffer_cell_name]
-
-      # the lib cell is a buffer?
-      if { $buffer_cell ne "NULL" && ![get_property $buffer_cell is_buffer] } {
-        utl::error EST 211 "[get_name $buffer_cell] is not a buffer."
-      }
-    }
-  }
-  return $buffer_cell
-}
-
 # namespace eval est
 }
 
