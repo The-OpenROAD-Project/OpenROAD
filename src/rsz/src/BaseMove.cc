@@ -44,9 +44,11 @@ using sta::VertexOutEdgeIterator;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
-BaseMove::BaseMove(Resizer* resizer)
+BaseMove::BaseMove(Resizer* resizer,
+                   est::EstimateParasitics* estimate_parasitics)
 {
   resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
   logger_ = resizer_->logger_;
   network_ = resizer_->network_;
   db_ = resizer_->db_;
@@ -674,8 +676,10 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
     resizer_->designAreaIncr(area(replacement_master));
 
     // Legalize the position of the instance in case it leaves the die
-    if (resizer_->getParasiticsSrc() == ParasiticsSrc::global_routing
-        || resizer_->getParasiticsSrc() == ParasiticsSrc::detailed_routing) {
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::global_routing
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
 

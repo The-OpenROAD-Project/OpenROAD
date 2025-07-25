@@ -15,11 +15,11 @@
 #include <mutex>
 #include <set>
 
-#include "AbstractSteinerRenderer.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/MakeOpendp.h"
+#include "est/EstimateParasitics.h"
 #include "gmock/gmock.h"
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
@@ -215,7 +215,8 @@ TEST_F(BufRemTest, SlackImproves)
   stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
   grt::GlobalRouter* grt = new grt::GlobalRouter;
   dpl::Opendp* dp = new dpl::Opendp;
-  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, nullptr);
+  est::EstimateParasitics* ep = new est::EstimateParasitics;
+  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, ep);
 
   float origArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
@@ -228,7 +229,7 @@ TEST_F(BufRemTest, SlackImproves)
   db_->setLogger(&logger_);
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(ep);
 
     resizer_->journalBeginTest();
     resizer_->logger()->setDebugLevel(utl::RSZ, "journal", 1);

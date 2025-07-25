@@ -6,7 +6,6 @@
 #include <memory>
 #include <utility>
 
-#include "SteinerRenderer.h"
 #include "gui/gui.h"
 #include "rsz/Resizer.hh"
 #include "utl/decode.h"
@@ -35,19 +34,11 @@ void initResizer(rsz::Resizer* resizer,
                  sta::dbSta* sta,
                  stt::SteinerTreeBuilder* stt_builder,
                  grt::GlobalRouter* global_router,
-                 dpl::Opendp* dp)
+                 dpl::Opendp* dp,
+                 est::EstimateParasitics* estimate_parasitics)
 {
-  std::unique_ptr<rsz::AbstractSteinerRenderer> steiner_renderer;
-  if (gui::Gui::enabled()) {
-    steiner_renderer = std::make_unique<rsz::SteinerRenderer>();
-  }
-  resizer->init(logger,
-                db,
-                sta,
-                stt_builder,
-                global_router,
-                dp,
-                std::move(steiner_renderer));
+  resizer->init(
+      logger, db, sta, stt_builder, global_router, dp, estimate_parasitics);
   // Define swig TCL commands.
   Rsz_Init(tcl_interp);
   // Eval encoded sta TCL sources.

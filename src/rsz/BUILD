@@ -12,7 +12,6 @@ package(
 cc_library(
     name = "rsz",
     srcs = [
-        "src/AbstractSteinerRenderer.h",
         "src/BaseMove.cc",
         "src/BaseMove.hh",
         "src/BufferMove.cc",
@@ -79,13 +78,10 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/AbstractSteinerRenderer.h",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",
         "src/ResizerObserver.hh",
-        "src/SteinerRenderer.cc",
-        "src/SteinerRenderer.h",
         ":swig",
         ":tcl",
     ],

@@ -12,6 +12,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -38,6 +39,10 @@
 #include "sta/Transition.hh"
 #include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
+
+namespace est {
+class EstimateParasitics;
+}
 
 namespace rsz {
 
@@ -101,7 +106,7 @@ struct SlackEstimatorParams
 class BaseMove : public sta::dbStaState
 {
  public:
-  BaseMove(Resizer* resizer);
+  BaseMove(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
   ~BaseMove() override = default;
 
   virtual bool doMove(const Path* drvr_path,
@@ -138,6 +143,7 @@ class BaseMove : public sta::dbStaState
 
  protected:
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   Logger* logger_;
   Network* network_;
   dbNetwork* db_network_;

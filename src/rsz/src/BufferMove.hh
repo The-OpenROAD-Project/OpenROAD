@@ -3,6 +3,10 @@
 
 #include "BaseMove.hh"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 using std::string;
@@ -24,7 +28,7 @@ using sta::Vertex;
 class BufferMove : public BaseMove
 {
  public:
-  BufferMove(Resizer* resizer);
+  BufferMove(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
 
   bool doMove(const Path* drvr_path,
               int drvr_index,
