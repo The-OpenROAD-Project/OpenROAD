@@ -45,12 +45,14 @@ std::once_flag init_abc_flag;
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
                        odb::dbDatabase* db,
-                       rsz::Resizer* resizer)
+                       rsz::Resizer* resizer,
+                       est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;
   open_sta_ = open_sta;
   resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
 
   std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 }
@@ -292,7 +294,7 @@ void Restructure::runABC()
 void Restructure::postABC(float worst_slack)
 {
   // Leave the parasitics up to date.
-  resizer_->estimateWireParasitics();
+  estimate_parasitics_->estimateWireParasitics();
 }
 void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,
