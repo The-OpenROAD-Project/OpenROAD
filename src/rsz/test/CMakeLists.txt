@@ -161,6 +161,7 @@ or_integration_tests(
     repair_setup7_multi
     report_equiv_cells
     replace_arith_modules1
+    report_buffers
   PASSFAIL_TESTS
     cpp_tests
 )
