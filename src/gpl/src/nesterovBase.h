@@ -685,10 +685,10 @@ class BinGrid
   int dx() const;
   int dy() const;
 
-  int binCntX() const;
-  int binCntY() const;
-  double binSizeX() const;
-  double binSizeY() const;
+  int getBinCntX() const;
+  int getBinCntY() const;
+  double getBinSizeX() const;
+  double getBinSizeY() const;
 
   int64_t getOverflowArea() const;
   int64_t getOverflowAreaUnscaled() const;
@@ -950,8 +950,8 @@ class NesterovBase
 
   int getBinCntX() const;
   int getBinCntY() const;
-  double binSizeX() const;
-  double binSizeY() const;
+  double getBinSizeX() const;
+  double getBinSizeY() const;
   int64_t getOverflowArea() const;
   int64_t getOverflowAreaUnscaled() const;
 
@@ -990,7 +990,7 @@ class NesterovBase
   // return uniform (lower bound) target density
   // LB of target density is required for massive runs.
   //
-  float uniformTargetDensity() const;
+  float getUniformTargetDensity() const;
 
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and
@@ -1066,7 +1066,7 @@ class NesterovBase
 
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
-  float getPhiCoef(float scaledDiffHpwl) const; 
+  float getPhiCoef(float scaledDiffHpwl) const;
 
   bool checkConvergence();
   bool checkDivergence();
@@ -1101,19 +1101,7 @@ class NesterovBase
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
-                          const std::string& message) const
-  {
-    std::ofstream file(filename, std::ios::app);
-    if (!file.is_open()) {
-      log_->report("Could not open CSV file for appending message: {}",
-                   filename);
-      return;
-    }
-
-    file << "# NOTE @ iteration " << iteration << ": " << message << "\n";
-    file.close();
-  }
-
+                          const std::string& message) const;
   void writeGCellVectorsToCSV(const std::string& filename,
                               int iteration,
                               bool write_header) const;

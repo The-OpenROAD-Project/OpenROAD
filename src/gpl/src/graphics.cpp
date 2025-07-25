@@ -487,13 +487,13 @@ void Graphics::status(const std::string& message)
 double Graphics::getGridXSize() const
 {
   const BinGrid& grid = nbVec_[0]->getBinGrid();
-  return grid.binSizeX() / (double) getBlock()->getDbUnitsPerMicron();
+  return grid.getBinSizeX() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
 double Graphics::getGridYSize() const
 {
   const BinGrid& grid = nbVec_[0]->getBinGrid();
-  return grid.binSizeY() / (double) getBlock()->getDbUnitsPerMicron();
+  return grid.getBinSizeY() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
 odb::Rect Graphics::getBounds() const
@@ -515,10 +515,11 @@ bool Graphics::populateMap()
       const float scaledBinArea
           = static_cast<float>(binArea * bin.getTargetDensity());
 
-      double value = std::max(
-          0.0f,
-          static_cast<float>(bin.getInstPlacedAreaUnscaled())
-              + static_cast<float>(bin.getNonPlaceAreaUnscaled()) - scaledBinArea);
+      double value
+          = std::max(0.0f,
+                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                         - scaledBinArea);
       value = block->dbuAreaToMicrons(value);
 
       min_value = std::min(min_value, value);
@@ -537,10 +538,11 @@ bool Graphics::populateMap()
       const float scaledBinArea
           = static_cast<float>(binArea * bin.getTargetDensity());
 
-      double raw_value = std::max(
-          0.0f,
-          static_cast<float>(bin.getInstPlacedAreaUnscaled())
-              + static_cast<float>(bin.getNonPlaceAreaUnscaled()) - scaledBinArea);
+      double raw_value
+          = std::max(0.0f,
+                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                         - scaledBinArea);
       raw_value = block->dbuAreaToMicrons(raw_value);
 
       if (heatmap_type_ == OverflowMinMax && max_value > min_value) {
@@ -560,8 +562,8 @@ void Graphics::populateXYGrid()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
   std::vector<Bin>& bin = grid.getBins();
-  int x_grid = grid.binCntX();
-  int y_grid = grid.binCntY();
+  int x_grid = grid.getBinCntX();
+  int y_grid = grid.getBinCntY();
 
   std::vector<int> x_grid_set, y_grid_set;
   x_grid_set.reserve(x_grid + 1);

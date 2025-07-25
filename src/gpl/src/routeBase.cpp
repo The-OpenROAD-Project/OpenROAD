@@ -726,12 +726,13 @@ std::pair<bool, bool> RouteBase::routability()
     return ((new_value - old_value) / old_value) * 100.0;
   };
 
-  log_->info(GPL,
-             58,
-             format_label_um2_with_delta,
-             "White space area:",
-             block->dbuAreaToMicrons(nbVec_[0]->getWhiteSpaceArea()),
-             percentDiff(prev_white_space_area, nbVec_[0]->getWhiteSpaceArea()));
+  log_->info(
+      GPL,
+      58,
+      format_label_um2_with_delta,
+      "White space area:",
+      block->dbuAreaToMicrons(nbVec_[0]->getWhiteSpaceArea()),
+      percentDiff(prev_white_space_area, nbVec_[0]->getWhiteSpaceArea()));
 
   log_->info(GPL,
              59,
