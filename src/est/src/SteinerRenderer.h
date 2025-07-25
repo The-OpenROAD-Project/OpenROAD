@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "AbstractSteinerRenderer.h"
+#include "est/AbstractSteinerRenderer.h"
 #include "gui/gui.h"
 
 namespace est {

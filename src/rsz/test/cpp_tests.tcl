@@ -9,7 +9,7 @@ set tests_list [split [exec sh -c "find $tests_path -maxdepth 1\
 
 foreach test $tests_list {
   set test_name [file tail $test]
-  puts "Running test: $test_name"
+  puts "Running test: $test"
   puts "**********"
 
   set test_status [catch { exec sh -c "BASE_DIR=$test_dir $test" } \

@@ -19,6 +19,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/MakeOpendp.h"
+#include "est/AbstractSteinerRenderer.h"
 #include "est/EstimateParasitics.h"
 #include "gmock/gmock.h"
 #include "grt/GlobalRouter.h"
@@ -216,6 +217,7 @@ TEST_F(BufRemTest, SlackImproves)
   grt::GlobalRouter* grt = new grt::GlobalRouter;
   dpl::Opendp* dp = new dpl::Opendp;
   est::EstimateParasitics* ep = new est::EstimateParasitics;
+  ep->init(&logger_, db_.get(), sta_.get(), stt, grt, nullptr);
   resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, ep);
 
   float origArrival
