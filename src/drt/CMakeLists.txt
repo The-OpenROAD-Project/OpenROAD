@@ -85,6 +85,7 @@ target_sources(drt
     src/gr/FlexGRWorker_init_gpu.cpp
     src/gr/FlexGRWorker_end_gpu.cpp 
     src/gr/FlexGRWorker_maze_pre_gpu.cpp
+    src/gr/FlexGRWorker_maze_gpu.cpp
     src/gr/FlexGRCMap.cpp
     src/gr/FlexGR.cpp
     src/gr/FlexGR_gpu.cpp
