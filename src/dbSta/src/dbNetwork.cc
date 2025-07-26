@@ -3432,8 +3432,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
                                     dbITerm* dest_pin,
                                     const char* connection_name)
 {
-  static int debug;
-  debug++;
   dbModule* source_db_module = source_pin->getInst()->getModule();
   dbModule* dest_db_module = dest_pin->getInst()->getModule();
   // it is possible that one or other of the pins is not involved
@@ -3504,7 +3502,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     int level = 0;
 
     while (cur_module != highest_common_module) {
-      debug++;
       std::string connection_name_o
           = std::string(connection_name) + std::string("_o");
       dbModBTerm* mod_bterm
@@ -3539,7 +3536,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     level = 0;
     cur_module = dest_db_module;
     while (cur_module != highest_common_module) {
-      debug++;
       std::string connection_name_i
           = std::string(connection_name) + std::string("_i");
       dbModBTerm* mod_bterm
