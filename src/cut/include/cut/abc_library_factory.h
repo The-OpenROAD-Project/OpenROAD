@@ -10,23 +10,25 @@
 #include <utility>
 #include <vector>
 
+#include "base/abc/abc.h"
 #include "db_sta/dbSta.hh"
+#include "map/mio/mio.h"
+#include "map/mio/mioInt.h"
 #include "map/scl/sclLib.h"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace rmp {
+namespace cut {
 
 class AbcLibrary
 {
  public:
-  AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library)
-      : abc_library_(std::move(abc_library))
-  {
-  }
+  AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library);
+  AbcLibrary(AbcLibrary&&) = default;
   ~AbcLibrary() = default;
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
+  abc::Mio_Library_t* mio_library() { return mio_library_; }
   bool IsSupportedCell(const std::string& cell_name);
   bool IsConst0Cell(const std::string& cell_name);
   bool IsConst1Cell(const std::string& cell_name);
@@ -38,6 +40,7 @@ class AbcLibrary
   void InitializeConstGates();
 
   utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library_;
+  abc::Mio_Library_t* mio_library_;
   std::set<std::string> supported_cells_;
   std::unordered_set<std::string> const1_gates_;
   std::unordered_set<std::string> const0_gates_;
@@ -80,4 +83,4 @@ class AbcLibraryFactory
   sta::Corner* corner_ = nullptr;
 };
 
-}  // namespace rmp
+}  // namespace cut

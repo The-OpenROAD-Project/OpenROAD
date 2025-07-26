@@ -264,7 +264,9 @@ add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
+add_subdirectory(cgt)
 add_subdirectory(cts)
+add_subdirectory(cut)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(rcx)
@@ -328,6 +330,7 @@ target_link_libraries(openroad
   rcx
   rmp
   cts
+  cut
   grt
   tap
   gui
@@ -407,6 +410,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     exa_py
     ppl_py
     tap_py
+    cgt_py
     cts_py
     drt_py
     fin_py

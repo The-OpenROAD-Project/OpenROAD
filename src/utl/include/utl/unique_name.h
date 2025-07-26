@@ -5,11 +5,11 @@
 
 #include <string>
 
-namespace rmp {
+namespace utl {
 class UniqueName
 {
  public:
-  std::string GetUniqueName(const std::string& prefix = "rmp_")
+  std::string GetUniqueName(const std::string& prefix)
   {
     int64_t id = counter_++;
     return prefix + std::to_string(id);
@@ -18,4 +18,4 @@ class UniqueName
  private:
   int64_t counter_ = 0;
 };
-}  // namespace rmp
+}  // namespace utl
