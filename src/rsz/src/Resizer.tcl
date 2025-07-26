@@ -1098,6 +1098,13 @@ proc replace_arith_modules { args } {
   rsz::swap_arith_modules_cmd $path_count $target $slack_margin
 }
 
+sta::define_cmd_args "report_buffers" {}
+
+proc report_buffers { args } {
+  sta::parse_key_args "report_buffers" args keys {} flags {}
+  rsz::report_buffers_cmd
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {

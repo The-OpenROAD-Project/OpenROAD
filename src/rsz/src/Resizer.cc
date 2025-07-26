@@ -758,7 +758,7 @@ LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
 
   // No buffer?
   if (buffer_lowest_drive_ == nullptr) {
-    logger_->error(RSZ, 23, "No buffers found.");
+    logger_->error(RSZ, 41, "No buffers found.");
   }
 
   return buffer_lowest_drive_;
@@ -1560,6 +1560,151 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     }
     logger_->report(
         "--------------------------------------------------------------");
+  }
+}
+
+struct VTLeakage
+{
+  int count = 0;
+  float total_leakage = 0.0f;
+
+  float average_leakage() const
+  {
+    return count > 0 ? total_leakage / count : 0.0f;
+  }
+};
+
+void Resizer::reportBuffers()
+{
+  LibertyCellSeq buffer_list;
+  std::map<std::pair<int, std::string>, VTLeakage> vt_leak_data;
+  std::unordered_map<std::string, int> footprint_types;
+  std::unordered_map<odb::dbSite*, int> site_types;
+
+  LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* lib = lib_iter->next();
+    for (LibertyCell* buffer : *lib->buffers()) {
+      if (exclude_clock_buffers_) {
+        BufferUse buffer_use = sta_->getBufferUse(buffer);
+        if (buffer_use == CLOCK) {
+          continue;
+        }
+      }
+      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+          && !buffer->isLevelShifter() && isLinkCell(buffer)) {
+        buffer_list.emplace_back(buffer);
+        if (buffer->footprint()) {
+          footprint_types[buffer->footprint()]++;
+        }
+        odb::dbMaster* master = db_network_->staToDb(buffer);
+        site_types[master->getSite()]++;
+        auto vt_type = cellVTType(master);
+        vt_leak_data[vt_type].count++;
+        std::optional<float> cell_leak = cellLeakage(buffer);
+        if (cell_leak.has_value()) {
+          vt_leak_data[vt_type].total_leakage += *cell_leak;
+        }
+      }
+    }
+  }
+  delete lib_iter;
+
+  if (buffer_list.empty()) {
+    logger_->error(RSZ, 23, "No buffers are found from the loaded libraries.");
+  } else {
+    sort(buffer_list,
+         [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+           odb::dbMaster* master1 = db_network_->staToDb(buffer1);
+           odb::dbMaster* master2 = db_network_->staToDb(buffer2);
+
+           auto vt_type1 = cellVTType(master1);
+           auto vt_type2 = cellVTType(master2);
+
+           if (vt_type1 != vt_type2) {
+             return vt_type1 < vt_type2;
+           }
+           return bufferDriveResistance(buffer1)
+                  < bufferDriveResistance(buffer2);
+         });
+
+    std::vector<std::pair<std::pair<int, std::string>, VTLeakage>> vt_sorted;
+    vt_sorted.reserve(vt_leak_data.size());
+    for (const auto& [vt_type, leak_data] : vt_leak_data) {
+      vt_sorted.emplace_back(vt_type, leak_data);
+    }
+
+    // Sort by average leakage (ascending)
+    sort(vt_sorted.begin(), vt_sorted.end(), [](const auto& a, const auto& b) {
+      return a.second.average_leakage() < b.second.average_leakage();
+    });
+
+    logger_->report(
+        "**********************************************************************"
+        "**********");
+    logger_->report("Buffer Report:");
+    logger_->report(
+        "There are {} buffers that are not marked as dont-use, multi-voltage\n"
+        "special cells{}",
+        buffer_list.size(),
+        (exclude_clock_buffers_ ? " or clock buffers" : ""));
+    logger_->report("\nThere are {} VT types:", vt_leak_data.size());
+    logger_->report("VT type[index]: # buffers, ave leakage");
+    for (const auto& [vt_type, leak_data] : vt_sorted) {
+      logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
+                      vt_type.second,
+                      vt_type.first,
+                      leak_data.count,
+                      leak_data.average_leakage());
+    }
+    logger_->report("\nThere are {} cell footprint types:",
+                    footprint_types.size());
+    for (const auto& [footprint_type, count] : footprint_types) {
+      logger_->report("  {:<6}: {} [{:.2f}%]",
+                      footprint_type,
+                      count,
+                      ((float) count) / buffer_list.size() * 100);
+    }
+    logger_->report("\nThere are {} cell site types:", site_types.size());
+    for (const auto& [site_type, count] : site_types) {
+      logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
+                      site_type->getName(),
+                      site_type->getHeight(),
+                      count,
+                      ((float) count) / buffer_list.size() * 100);
+    }
+    logger_->report(
+        "----------------------------------------------------------------------"
+        "------------");
+    logger_->report(
+        "Cell                                        Drive Drive    Leak "
+        "  Site Cell   VT");
+    logger_->report(
+        "                                            Res   Res*Cin       "
+        "   Ht Footpt Type");
+    logger_->report(
+        "----------------------------------------------------------------------"
+        "------------");
+    for (LibertyCell* buffer : buffer_list) {
+      float drive_res = bufferDriveResistance(buffer);
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float c_in = input->capacitance();
+      std::optional<float> cell_leak = cellLeakage(buffer);
+      odb::dbMaster* master = db_network_->staToDb(buffer);
+
+      logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {}",
+                      buffer->name(),
+                      drive_res,
+                      drive_res * c_in,
+                      cell_leak.value_or(0.0f),
+                      master->getSite()->getHeight(),
+                      (buffer->footprint() ? buffer->footprint() : "N/A"),
+                      cellVTType(master).second);
+    }
+    logger_->report(
+        "**********************************************************************"
+        "**********");
   }
 }
 

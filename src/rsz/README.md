@@ -589,6 +589,17 @@ report_equiv_cells
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 | `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
 
+### Reporting Buffers
+
+The `report_buffers` command reports all usable buffers to include for optimization.
+Usable buffers are standard cell buffers that are not clock buffers, always on buffers,
+level shifters, or buffers marked as dont-use.  VT type, cell site,
+cell footprint and leakage are also reported.
+
+```tcl
+report_buffers
+```
+
 ### Optimizing Arithmetic Modules
 
 The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing models.

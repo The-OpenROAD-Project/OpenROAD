@@ -435,6 +435,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void reportEquivalentCells(LibertyCell* base_cell,
                              bool match_cell_footprint,
                              bool report_all_cells);
+  void reportBuffers();
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static MoveType parseMove(const std::string& s);
