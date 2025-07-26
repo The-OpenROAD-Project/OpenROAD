@@ -3,6 +3,8 @@
 
 #include "clusterEngine.h"
 
+#include <spdlog/fmt/bundled/format.h>
+
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -14,8 +16,14 @@
 
 #include "MplObserver.h"
 #include "db_sta/dbNetwork.hh"
+#include "object.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
+#include "util.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 using utl::MPL;

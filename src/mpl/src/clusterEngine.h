@@ -7,11 +7,13 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "object.h"
+#include "odb/db.h"
 #include "util.h"
 
 namespace par {
