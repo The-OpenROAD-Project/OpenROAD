@@ -118,11 +118,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._group_next;
   stream << obj._group;
   // User Code Begin <<
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  auto db_ = (_dbDatabase*) (block->getDataBase());
-  if (db_->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._moditerms;
-  }
+  stream << obj._moditerms;
   // User Code End <<
   return stream;
 }

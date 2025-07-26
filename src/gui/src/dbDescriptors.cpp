@@ -619,6 +619,11 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});
   }
 
+  odb::dbScanInst* scan_inst = inst->getScanInst();
+  if (scan_inst != nullptr) {
+    props.push_back({"Scan Inst", gui->makeSelected(scan_inst)});
+  }
+
   return props;
 }
 
@@ -1445,52 +1450,74 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
     }
   }
 
+  // Build gcell grid centers
+  std::vector<int> grid;
+  net->getBlock()->getGCellGrid()->getGridX(grid);
+  grid.push_back(net->getBlock()->getDieArea().xMax());
+  std::vector<int> x_grid;
+  x_grid.reserve(grid.size() - 1);
+  for (int i = 1; i < grid.size(); i++) {
+    x_grid.push_back((grid[i - 1] + grid[i]) / 2);
+  }
+
+  grid.clear();
+  net->getBlock()->getGCellGrid()->getGridY(grid);
+  grid.push_back(net->getBlock()->getDieArea().yMax());
+  std::vector<int> y_grid;
+  y_grid.reserve(grid.size() - 1);
+  for (int i = 1; i < grid.size(); i++) {
+    y_grid.push_back((grid[i - 1] + grid[i]) / 2);
+  }
+
   for (const auto* guide : guides) {
     const auto& box = guide->getBox();
-    const auto center = box.center();
-    const int width_half = box.minDXDY() / 2;
-    odb::Point p0, p1;
-    switch (box.getDir()) {
-      case 0: {
-        // DX < DY
-        p0 = odb::Point(center.x(), box.yMin() + width_half);
-        p1 = odb::Point(center.x(), box.yMax() - width_half);
+
+    std::vector<odb::Point> guide_pts;
+    for (const auto& x : x_grid) {
+      if (x < box.xMin()) {
+        continue;
+      }
+      if (x > box.xMax()) {
         break;
       }
-      case 1: {
-        p0 = odb::Point(box.xMin() + width_half, center.y());
-        p1 = odb::Point(box.xMax() - width_half, center.y());
-        break;
-      }
-      default: {
-        p0 = center;
-        p1 = center;
-        break;
+
+      for (const auto& y : y_grid) {
+        if (y < box.yMin()) {
+          continue;
+        }
+        if (y > box.yMax()) {
+          break;
+        }
+
+        guide_pts.emplace_back(x, y);
       }
     }
-    lines.emplace(p0, p1);
 
-    if (guide->isConnectedToTerm()) {
-      std::vector<odb::Point> anchors = {p0, center, p1};
+    std::sort(guide_pts.begin(), guide_pts.end());
+    for (int i = 1; i < guide_pts.size(); i++) {
+      lines.emplace(guide_pts[i - 1], guide_pts[i]);
+    }
 
-      auto find_term_connection = [&anchors, &lines, &io_map, &sources, &sinks](
-                                      odb::dbObject* dbterm,
-                                      const odb::Point& term) {
-        // draw shortest flywire
-        std::stable_sort(anchors.begin(),
-                         anchors.end(),
-                         [&term](const odb::Point& pt0, const odb::Point& pt1) {
-                           return odb::Point::manhattanDistance(term, pt0)
-                                  < odb::Point::manhattanDistance(term, pt1);
-                         });
-        lines.emplace(term, anchors[0]);
-        if (io_map[dbterm].is_sink) {
-          sinks[dbterm].insert(term);
-        }
-        if (io_map[dbterm].is_source) {
-          sources[dbterm].insert(term);
-        }
-      };
+    if (!guide_pts.empty() && guide->isConnectedToTerm()) {
+      auto find_term_connection
+          = [&guide_pts, &lines, &io_map, &sources, &sinks](
+                odb::dbObject* dbterm, const odb::Point& term) {
+              // draw shortest flywire
+              std::stable_sort(
+                  guide_pts.begin(),
+                  guide_pts.end(),
+                  [&term](const odb::Point& pt0, const odb::Point& pt1) {
+                    return odb::Point::manhattanDistance(term, pt0)
+                           < odb::Point::manhattanDistance(term, pt1);
+                  });
+              lines.emplace(term, guide_pts[0]);
+              if (io_map[dbterm].is_sink) {
+                sinks[dbterm].insert(term);
+              }
+              if (io_map[dbterm].is_source) {
+                sources[dbterm].insert(term);
+              }
+            };
 
       for (const auto& [obj, objbox] : terms[guide->getLayer()]) {
         std::vector<const odb::Rect*> candidates;
@@ -1620,9 +1647,9 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
     }
   }
 
-  bool draw_flywires = painter.getOptions()->isFlywireHighlightOnly();
+  bool draw_flywires = true;
 
-  if (!draw_flywires) {
+  if (!painter.getOptions()->isFlywireHighlightOnly()) {
     odb::dbWire* wire = net->getWire();
     if (wire) {
       draw_flywires = false;
@@ -1641,18 +1668,22 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
       if (!guides.empty()) {
         draw_flywires = false;
 
-        // draw outlines of guides
-        std::vector<odb::Rect> guide_rects;
-        guide_rects.reserve(guides.size());
-        for (const auto* guide : guides) {
-          guide_rects.push_back(guide->getBox());
+        if (guides.begin()->getBox().minDXDY() * painter.getPixelsPerDBU()
+            >= kMinGuidePixelWidth) {
+          // draw outlines of guides, dont draw if less that kMinGuidePixelWidth
+          // pixels
+          std::vector<odb::Rect> guide_rects;
+          guide_rects.reserve(guides.size());
+          for (const auto* guide : guides) {
+            guide_rects.push_back(guide->getBox());
+          }
+          painter.saveState();
+          painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
+          for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
+            painter.drawPolygon(outline);
+          }
+          painter.restoreState();
         }
-        painter.saveState();
-        painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
-        for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
-          painter.drawPolygon(outline);
-        }
-        painter.restoreState();
 
         painter.saveState();
         Painter::Color highlight_color = painter.getPenColor();

@@ -169,6 +169,8 @@ class ClusteringEngine
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
   void setDieArea();
   void setFloorplanShape();
@@ -230,9 +232,6 @@ class ClusteringEngine
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
-  void addStdCellClusterToSubTree(Cluster* parent,
-                                  Cluster* mixed_leaf,
-                                  std::vector<int>& virtual_conn_clusters);
   void replaceByStdCellCluster(Cluster* mixed_leaf,
                                std::vector<int>& virtual_conn_clusters);
 

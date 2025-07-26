@@ -8,7 +8,7 @@ define_pin_shape_pattern -layer metal10 -x_step 4.8 -y_step 4.8 -region * -size 
 place_pin -pin_name clk -layer metal10 -location {4.8 4.8} -pin_size {1.6 2.5}
 set_io_pin_constraint -pin_names * -region "up:*"
 
-place_pins -hor_layers metal3 -ver_layers metal2 -random
+place_pins -hor_layers metal3 -ver_layers metal2
 
 set def_file [make_result_file top_layer6.def]
 

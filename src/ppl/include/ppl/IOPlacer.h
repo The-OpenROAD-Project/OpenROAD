@@ -88,8 +88,8 @@ class IOPlacer
   void init(odb::dbDatabase* db, Logger* logger);
   void clear();
   void clearConstraints();
-  void runHungarianMatching(bool random_mode);
-  void runAnnealing(bool random);
+  void runHungarianMatching();
+  void runAnnealing();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -134,14 +134,8 @@ class IOPlacer
                           const std::set<int>& ver_layer_idx);
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
   std::vector<int> findValidSlots(const Constraint& constraint, bool top_layer);
-  void randomPlacement();
-  void randomPlacement(const std::vector<int>& pin_indices,
-                       const std::vector<int>& slot_indices,
-                       Edge edge,
-                       bool top_layer,
-                       bool is_group);
   std::string getSlotsLocation(Edge edge, bool top_layer);
-  int placeFallbackPins(bool random);
+  int placeFallbackPins();
   void assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,

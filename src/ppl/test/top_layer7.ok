@@ -5,5 +5,12 @@
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0060] Restrict pins [ clk req_msg[0] req_msg[10] req_msg[11] req_msg[12] ... ] to region (10.07u, 11.20u)-(90.25u, 91.00u) at routing layer metal7.
-[INFO PPL-0007] Random pin placement.
+[INFO PPL-0001] Number of available slots 1220
+[INFO PPL-0062] Number of top layer slots 459
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      0
+[INFO PPL-0004] Number of I/O w/o sink    54
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 0.00 um.
 No differences found.

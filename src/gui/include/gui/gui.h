@@ -691,7 +691,8 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
-  void selectClockviewerClock(const std::string& clock_name);
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth);
 
   // Save histogram view
   void saveHistogramImage(const std::string& filename,

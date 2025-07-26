@@ -225,10 +225,6 @@ class HierRTLMP
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
-  // Aux for conversion
-  odb::Rect micronsToDbu(const Rect& micron_rect) const;
-  Rect dbuToMicrons(const odb::Rect& dbu_rect) const;
-
   template <typename Macro>
   void createFixedTerminal(Cluster* cluster,
                            const Rect& outline,
