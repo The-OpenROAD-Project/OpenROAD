@@ -6,16 +6,22 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
+                  #  we only plan to use die_polygon and core_polygon combination for maunually specifying the polygon die/core area 
+					       [-die_polygon {x1 y1 x2 y2 ...}]\
+					       [-core_polygon {x1 y1 x2 y2 ...}]\
 					       [-additional_sites site_names]\
 					       [-site site_name]\
 					       [-row_parity NONE|ODD|EVEN]\
 					       [-flip_sites site_names]}
+
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-    -die_area -core_area -site -additional_sites -row_parity -flip_sites} \
+    -die_area -core_area -die_polygon -core_polygon \
+    -site -additional_sites -row_parity -flip_sites} \
     flags {}
 
+  # Existing validation
   if { [info exists keys(-utilization)] } {
     if { [info exists keys(-core_area)] } {
       utl::error IFP 20 "-core_area cannot be used with -utilization."
@@ -28,8 +34,24 @@ proc initialize_floorplan { args } {
     }
   }
 
+  # New validation for polygon vs rectangular options
+  set has_rect [expr {[info exists keys(-die_area)] || [info exists keys(-core_area)] || \
+                     [info exists keys(-utilization)]}]
+  set has_poly [expr {[info exists keys(-die_polygon)] || [info exists keys(-core_polygon)]}]
+  
+  if {$has_rect && $has_poly} {
+    utl::error IFP 74 "Cannot specify both rectangular (-die_area/-core_area/-utilization) and polygon (-die_polygon/-core_polygon) options"
+  }
+
+  # Branch to polygon flow if polygon options present
+  if {$has_poly} {
+    ifp::make_polygon_die_helper [array get keys]
+    ifp::make_polygon_rows_helper [array get keys]
+    return
+  } else {
   ifp::make_die_helper [array get keys]
   make_rows_helper [array get keys]
+  }
 }
 
 variable make_rows_args
@@ -324,4 +346,129 @@ proc make_die_helper { key_array } {
 
   utl::error IFP 19 "no -utilization or -die_area specified."
 }
+
+proc make_polygon_die_helper { key_array } {
+  array set keys $key_array
+  
+    if { ![info exists keys(-die_polygon)] } {
+      utl::error IFP 75 "no -die_polygon specified for polygon floorplan."
+    }
+  set die_vertices $keys(-die_polygon)
+  if { [llength $die_vertices] % 2 != 0 } {
+    utl::error IFP 76 "-die_polygon must have an even number of coordinates (x y pairs)."
+  }
+  
+  if { [llength $die_vertices] < 8 } {
+    utl::error IFP 77 "-die_polygon must have at least 4 vertices (8 coordinates)."
+  }
+  
+  # Clear any previous polygon data
+  ord::ensure_linked
+  ifp::clear_polygon_data
+
+  # list of vertices of the polygon
+  set polygon_vertices {}
+  
+  # Add die polygon points
+  set point_count 0
+  foreach {x y} $die_vertices {
+    # Validate coordinates are numeric
+    if {![string is double -strict $x] || ![string is double -strict $y]} {
+      utl::error IFP 78 "Invalid die polygon coordinate at position [expr $point_count*2]: '$x $y' - must be numeric"
+    }
+    # Check for negative coordinates
+    # if {$x < 0 || $y < 0} {
+    #   utl::error IFP 79 "Die polygon coordinates must be non-negative. Found: ($x, $y)"
+    # }
+
+      lappend polygon_vertices [ord::microns_to_dbu $x]
+      lappend polygon_vertices [ord::microns_to_dbu $y]
+
+    incr point_count
+  }
+  
+  utl::info IFP 5 "Added $point_count die polygon vertices to the list."
+  ifp::make_polygon_die $polygon_vertices
+  return
 }
+
+proc make_polygon_rows_helper { key_array } {
+    array set keys $key_array
+    
+    # Validate that core_polygon is specified for polygon floorplan
+    if { ![info exists keys(-core_polygon)] } {
+      utl::error IFP 85 "no -core_polygon specified for polygon floorplan."
+    }
+    
+    # Get the site information (required for polygon rows)
+    set site ""
+    if { [info exists keys(-site)] } {
+      set site [ifp::find_site $keys(-site)]
+    } else {
+      utl::error IFP 80 "use -site to add placement rows for polygon floorplan."
+    }
+
+    # Get additional sites
+    set additional_sites {}
+    if { [info exists keys(-additional_sites)] } {
+      foreach sitename $keys(-additional_sites) {
+        lappend additional_sites [ifp::find_site $sitename]
+      }
+    }
+
+    # Get flipped sites
+    set flipped_sites {}
+    if { [info exists keys(-flip_sites)] } {
+      foreach sitename $keys(-flip_sites) {
+        lappend flipped_sites [ifp::find_site $sitename]
+      }
+    }
+
+    # Get row parity
+    set row_parity "NONE"
+    if { [info exists keys(-row_parity)] } {
+      set row_parity $keys(-row_parity)
+      if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
+        utl::error IFP 81 "-row_parity must be NONE, ODD or EVEN"
+      }
+    }
+
+    # Handle core polygon - this is the key difference from rectangular rows
+    if { [info exists keys(-core_polygon)] } {
+      set core_vertices $keys(-core_polygon)
+      if { [llength $core_vertices] % 2 != 0 } {
+        utl::error IFP 82 "-core_polygon must have an even number of coordinates (x y pairs)."
+      }
+      
+      if { [llength $core_vertices] < 8 } {
+        utl::error IFP 83 "-core_polygon must have at least 4 vertices (8 coordinates)."
+      }
+
+      # Convert micron coordinates to DBU and create polygon vertices list
+      set polygon_vertices {}
+      set point_count 0
+      foreach {x y} $core_vertices {
+        # Validate coordinates are numeric
+        if {![string is double -strict $x] || ![string is double -strict $y]} {
+          utl::error IFP 84 "Invalid core polygon coordinate at position [expr $point_count*2]: '$x $y' - must be numeric"
+        }
+        
+        # Convert micron input to DBU
+        lappend polygon_vertices [ord::microns_to_dbu $x]
+        lappend polygon_vertices [ord::microns_to_dbu $y]
+        incr point_count
+      }
+      
+      ord::ensure_linked
+            
+      # Call the polygon rows creation function with simplified interface
+      ifp::make_polygon_rows_simple \
+        $polygon_vertices \
+        $site \
+        $additional_sites \
+        $row_parity \
+        $flipped_sites
+      return
+    }
+  }
+} ;# end namespace ifp

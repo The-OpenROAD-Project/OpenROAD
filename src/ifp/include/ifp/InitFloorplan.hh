@@ -33,6 +33,10 @@ enum class RowParity
 class InitFloorplan
 {
  public:
+
+  void clearPolygonData();
+  void makePolygonDie(std::vector<odb::Point>& points);
+  
   InitFloorplan() = default;  // only for swig
   InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
@@ -97,6 +101,13 @@ class InitFloorplan
                 RowParity row_parity = RowParity::NONE,
                 const std::set<odb::dbSite*>& flipped_sites = {});
 
+  // Create rows for a polygon core area using true polygon-aware generation
+  void makePolygonRows(const std::vector<odb::Point>& core_polygon,
+                       odb::dbSite* base_site,
+                       const std::vector<odb::dbSite*>& additional_sites = {},
+                       RowParity row_parity = RowParity::NONE,
+                       const std::set<odb::dbSite*>& flipped_sites = {});
+
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
                   int x_offset,
@@ -114,6 +125,7 @@ class InitFloorplan
   odb::dbSite* findSite(const char* site_name);
 
  private:
+  // std::vector<odb::Point> die_polygon_buf_;
   using SitesByName = std::map<std::string, odb::dbSite*>;
 
   double designArea();
@@ -135,6 +147,22 @@ class InitFloorplan
   int snapToMfgGrid(int coord) const;
   void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
   void addUsedSites(std::map<std::string, odb::dbSite*>& sites_by_name) const;
+
+  // Private methods for polygon-aware row generation using scanline intersection
+  void makePolygonRowsScanline(const std::vector<odb::Point>& core_polygon,
+                                odb::dbSite* base_site,
+                                const SitesByName& sites_by_name,
+                                RowParity row_parity,
+                                const std::set<odb::dbSite*>& flipped_sites);
+  
+  std::vector<odb::Rect> intersectRowWithPolygon(const odb::Rect& row,
+                                                  const std::vector<odb::Point>& polygon);
+  
+  void makeUniformRowsPolygon(odb::dbSite* site,
+                              const std::vector<odb::Point>& core_polygon,
+                              const odb::Rect& core_bbox,
+                              RowParity row_parity,
+                              const std::set<odb::dbSite*>& flipped_sites);
 
   odb::dbBlock* block_{nullptr};
   Logger* logger_{nullptr};
