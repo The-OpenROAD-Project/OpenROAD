@@ -838,7 +838,7 @@ static void accumulateBufferTreeFlatLoadPins(
       odb::dbModITerm* load_moditerm = nullptr;
       nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
       if (load_iterm || load_bterm) {
-        // accumulate all loads
+        // accumulate all loads through buffers
         if (gone_through_buffer) {
           buffer_tree_flat_load_pins.insert(load_pin);
         }
@@ -1858,21 +1858,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
       db_network_->staToDb(
           buffer_op_pin, buffer_op_iterm, buffer_op_bterm, buffer_op_moditerm);
 
-      // disconnect modnet from original driver
-      // connect the output to the modnet.
-      // inch the modnet to the end of the buffer chain created in this scope
-
-      // Hierarchy handling
-      if (mod_net_drvr && mod_net_in) {
-        // save original dbnet
-        dbNet* orig_db_net = mod_net_drvr->getNet();
-        // disconnect everything
-        mod_net_drvr->disconnect();
-        // restore dbnet
-        mod_net_drvr->connect(orig_db_net);
-        // add the modnet to the new output
-        buffer_op_iterm->connect(mod_net_in);
-      }
+      // we never expect to see mod_net_in
+      assert(!(mod_net_drvr && mod_net_in));
 
       int buffer_count = exportBufferTree(choice->ref(),
                                           net2,
@@ -1968,7 +1955,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
             // make the flat connection
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
             std::string preferred_connection_name;
-            // always make a unique name to avoid name clashes
+            // always make a unique name to avoid name clashes.
             preferred_connection_name = resizer_->makeUniqueNetName();
             db_network_->hierarchicalConnect(
                 mod_net_drvr, load_iterm, preferred_connection_name.c_str());
@@ -2299,12 +2286,16 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     // Hierarchy support
     //  remove any loads behind a buffer in the buffer tree
     //  we will wire those in during construction.
+
     if (db_modnet) {
       std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
       accumulateBufferTreeFlatLoadPins(
           false, db_network_, area_opt_tree, buffer_tree_flat_load_pins);
       for (auto p : buffer_tree_flat_load_pins) {
-        db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+        odb::dbModNet* mod_net = db_network_->hierNet(p);
+        if (mod_net == db_modnet) {
+          db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+        }
       }
     }
 
@@ -2489,12 +2480,16 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     // Hierarchy support
     //  remove any loads behind a buffer in the buffer tree
     //  we will wire those in during construction.
+
     if (db_modnet) {
       std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
       accumulateBufferTreeFlatLoadPins(
           false, db_network_, bnet, buffer_tree_flat_load_pins);
       for (auto p : buffer_tree_flat_load_pins) {
-        db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+        odb::dbModNet* mod_net = db_network_->hierNet(p);
+        if (mod_net == db_modnet) {
+          db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+        }
       }
     }
 

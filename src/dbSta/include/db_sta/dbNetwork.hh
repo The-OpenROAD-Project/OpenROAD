@@ -67,6 +67,7 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
+  void AxiomCheck();
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
@@ -276,6 +277,7 @@ class dbNetwork : public ConcreteNetwork
   // Net functions
   ObjectId id(const Net* net) const override;
   Net* findNet(const Instance* instance, const char* net_name) const override;
+  Net* findNetAllScopes(const char* net_name) const;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
                             // Return value.
