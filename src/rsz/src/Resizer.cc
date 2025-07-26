@@ -625,7 +625,169 @@ bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
   return true;
 }
 
+#define debugRDPrint1(format_str, ...) \
+  debugPrint(logger_, utl::RSZ, "resizer", 1, format_str, ##__VA_ARGS__)
+// debugPrint for replace_design level 2
+#define debugRDPrint2(format_str, ...) \
+  debugPrint(logger_, utl::RSZ, "resizer", 2, format_str, ##__VA_ARGS__)
+
 void Resizer::findFastBuffers()
+{
+  if (!buffer_fast_sizes_.empty()) {
+    return;
+  }
+
+  LibertyCellSeq buffer_list;
+  LibraryAnalysisData lib_data;
+  getBufferList(buffer_list, lib_data);
+
+  // Pick the right cell footprint to avoid delay cells
+  std::string best_footprint;
+  if (lib_data.footprint_data.size() > 1) {
+    for (const auto& [footprint_type, count] : lib_data.footprint_data) {
+      float ratio = (float) count / buffer_list.size();
+      // Some PDK libs have a distinct footprint for each drive strength
+      // Pick a footprint that dominates
+      if (ratio > 0.5) {
+        best_footprint = footprint_type;
+        debugRDPrint2("findBestBuffers: Best footprint is {}", footprint_type);
+        break;
+      }
+    }
+  }
+
+  // Pick the second most leaky VT for multiple VTs
+  int best_vt_index = -1;
+  int num_vt = lib_data.vt_sorted.size();
+  if (num_vt > 1) {
+    best_vt_index = lib_data.vt_sorted[num_vt - 2].first.first;
+    debugRDPrint2("findBestBuffers: Best VT index is {} [{}]",
+                  best_vt_index,
+                  lib_data.vt_sorted[num_vt - 2].first.second);
+  } else if (num_vt == 1) {
+    best_vt_index = 1;
+    debugRDPrint2("findBestBuffers: Best VT index is 1");
+  } else {
+    debugRDPrint2("findBestBuffers: Best VT index is -1");
+  }
+
+  // There may be multiple cell sites like short, tall, short+tall, etc.
+  // Pick two sites that are the most dominant.  Most likely, short and tall.
+  std::vector<std::pair<odb::dbSite*, float>> site_list;
+  for (const auto& [site_type, count] : lib_data.site_data) {
+    site_list.emplace_back(site_type, (float) count / buffer_list.size());
+  }
+  std::sort(site_list.begin(),
+            site_list.end(),
+            [](const auto& a, const auto& b) { return a.second > b.second; });
+  int num_best_sites = std::min(2, (int) lib_data.site_data.size());
+  for (int i = 0; i < num_best_sites; i++) {
+    debugRDPrint2("findBestBuffers: {} is a dominant site",
+                  site_list[i].first->getName());
+  }
+
+  LibertyCellSeq new_buffer_list;
+  for (LibertyCell* buffer : buffer_list) {
+    const char* footprint = buffer->footprint();
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+    auto vt_type = cellVTType(master);
+    bool footprint_matches
+        = best_footprint.empty() || (footprint && best_footprint == footprint);
+    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+
+    if (footprint_matches && vt_matches) {
+      new_buffer_list.emplace_back(buffer);
+      debugRDPrint2("findBestBuffers: Adding {} to new buffer list",
+                    buffer->name());
+    }
+  }
+  debugRDPrint2("findBestBuffers: new buffer list has {} buffers",
+                new_buffer_list.size());
+
+  // The buffer list is already sorted in ascending order of drive resistance.
+  // Divide buffers into 5 buckets based on drive resistance.
+  // Each bucket is a proxy for drive strength group.
+  // We want to pick 2 best buffers from each bucket using drive resistance *
+  // c_in.  The lower the RC product, the better.
+  const int num_buckets = 5;
+  const int bucket_size = new_buffer_list.size() / num_buckets;
+  const int remainder = new_buffer_list.size() % num_buckets;
+
+  LibertyCellSeq final_buffer_list;
+  for (int bucket = 0; bucket < num_buckets; bucket++) {
+    // Calculate bucket boundaries
+    int start_idx = bucket * bucket_size + std::min(bucket, remainder);
+    int end_idx = start_idx + bucket_size + (bucket < remainder ? 1 : 0);
+
+    // Create a vector for this bucket with drive_res * input_cap values
+    std::vector<std::pair<LibertyCell*, float>> bucket_buffers;
+    bucket_buffers.reserve(bucket_size);
+
+    for (int i = start_idx; i < end_idx && i < new_buffer_list.size(); i++) {
+      LibertyCell* buffer = new_buffer_list[i];
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float metric = bufferDriveResistance(buffer) * input->capacitance();
+      bucket_buffers.emplace_back(buffer, metric);
+    }
+
+    // Sort this bucket by drive_res * input_cap (ascending)
+    std::sort(bucket_buffers.begin(),
+              bucket_buffers.end(),
+              [](const auto& a, const auto& b) {
+                return a.second < b.second;  // Compare by R * C
+              });
+
+    // Select up to 2 best buffers from this bucket
+    if (num_best_sites == 1) {
+      int buffers_to_select
+          = std::min(2, static_cast<int>(bucket_buffers.size()));
+      for (int i = 0; i < buffers_to_select; i++) {
+        final_buffer_list.emplace_back(bucket_buffers[i].first);
+        debugRDPrint2(
+            "findBestBuffers: Buffer {} with RC={:.2e} is selected for bucket "
+            "{}",
+            bucket_buffers[i].first->name(),
+            bucket_buffers[i].second,
+            bucket);
+      }
+    } else {
+      // Try to choose one for each dominant site
+      // It's possible that there are no buffers matching the sites in this
+      // bucket
+      for (int site_idx = 0; site_idx < 2 && site_idx < site_list.size();
+           site_idx++) {
+        for (const auto& pair : bucket_buffers) {
+          odb::dbMaster* master = db_network_->staToDb(pair.first);
+          if (master->getSite() == site_list[site_idx].first) {
+            final_buffer_list.emplace_back(pair.first);
+            debugRDPrint2(
+                "findBestBuffers: Buffer {} with RC={:.2e} is selected for "
+                "bucket {} and site "
+                "{}",
+                pair.first->name(),
+                pair.second,
+                bucket,
+                master->getSite()->getName());
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  debugRDPrint2(
+      "findBestBuffers: Selected {} buffers total from {} original buffers in "
+      "{} buckets",
+      final_buffer_list.size(),
+      new_buffer_list.size(),
+      num_buckets);
+
+  // final_buffer_list now contains up to 10 buffers (2 from each of 5 buckets)
+  buffer_fast_sizes_ = {final_buffer_list.begin(), final_buffer_list.end()};
+}
+
+void Resizer::findFastBuffersOld()
 {
   if (!buffer_fast_sizes_.empty()) {
     return;
@@ -1563,24 +1725,88 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   }
 }
 
-struct VTLeakage
-{
-  int count = 0;
-  float total_leakage = 0.0f;
-
-  float average_leakage() const
-  {
-    return count > 0 ? total_leakage / count : 0.0f;
-  }
-};
-
 void Resizer::reportBuffers()
 {
   LibertyCellSeq buffer_list;
-  std::map<std::pair<int, std::string>, VTLeakage> vt_leak_data;
-  std::unordered_map<std::string, int> footprint_types;
-  std::unordered_map<odb::dbSite*, int> site_types;
+  LibraryAnalysisData lib_data;
 
+  getBufferList(buffer_list, lib_data);
+  if (buffer_list.empty()) {
+    logger_->error(RSZ, 23, "No buffers are found from the loaded libraries.");
+    return;
+  }
+
+  logger_->report(
+      "**********************************************************************"
+      "**********");
+  logger_->report("Buffer Report:");
+  logger_->report(
+      "There are {} buffers that are not marked as dont-use, multi-voltage\n"
+      "special cells{}",
+      buffer_list.size(),
+      (exclude_clock_buffers_ ? " or clock buffers" : ""));
+  logger_->report("\nThere are {} VT types:", lib_data.vt_leak_data.size());
+  logger_->report("VT type[index]: # buffers, ave leakage");
+  for (const auto& [vt_type, leak_data] : lib_data.vt_sorted) {
+    logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
+                    vt_type.second,
+                    vt_type.first,
+                    leak_data.count,
+                    leak_data.average_leakage());
+  }
+  logger_->report("\nThere are {} cell footprint types:",
+                  lib_data.footprint_data.size());
+  for (const auto& [footprint_type, count] : lib_data.footprint_data) {
+    logger_->report("  {:<6}: {} [{:.2f}%]",
+                    footprint_type,
+                    count,
+                    ((float) count) / buffer_list.size() * 100);
+  }
+  logger_->report("\nThere are {} cell site types:", lib_data.site_data.size());
+  for (const auto& [site_type, count] : lib_data.site_data) {
+    logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
+                    site_type->getName(),
+                    site_type->getHeight(),
+                    count,
+                    ((float) count) / buffer_list.size() * 100);
+  }
+  logger_->report(
+      "----------------------------------------------------------------------"
+      "------------");
+  logger_->report(
+      "Cell                                        Drive Drive    Leak "
+      "  Site Cell   VT");
+  logger_->report(
+      "                                            Res   Res*Cin       "
+      "   Ht Footpt Type");
+  logger_->report(
+      "----------------------------------------------------------------------"
+      "------------");
+  for (LibertyCell* buffer : buffer_list) {
+    float drive_res = bufferDriveResistance(buffer);
+    LibertyPort *input, *output;
+    buffer->bufferPorts(input, output);
+    float c_in = input->capacitance();
+    std::optional<float> cell_leak = cellLeakage(buffer);
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+
+    logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {}",
+                    buffer->name(),
+                    drive_res,
+                    drive_res * c_in,
+                    cell_leak.value_or(0.0f),
+                    master->getSite()->getHeight(),
+                    (buffer->footprint() ? buffer->footprint() : "N/A"),
+                    cellVTType(master).second);
+  }
+  logger_->report(
+      "**********************************************************************"
+      "**********");
+}
+
+void Resizer::getBufferList(LibertyCellSeq& buffer_list,
+                            LibraryAnalysisData& lib_data)
+{
   LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary* lib = lib_iter->next();
@@ -1595,24 +1821,22 @@ void Resizer::reportBuffers()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         buffer_list.emplace_back(buffer);
         if (buffer->footprint()) {
-          footprint_types[buffer->footprint()]++;
+          lib_data.footprint_data[buffer->footprint()]++;
         }
         odb::dbMaster* master = db_network_->staToDb(buffer);
-        site_types[master->getSite()]++;
+        lib_data.site_data[master->getSite()]++;
         auto vt_type = cellVTType(master);
-        vt_leak_data[vt_type].count++;
+        lib_data.vt_leak_data[vt_type].count++;
         std::optional<float> cell_leak = cellLeakage(buffer);
         if (cell_leak.has_value()) {
-          vt_leak_data[vt_type].total_leakage += *cell_leak;
+          lib_data.vt_leak_data[vt_type].total_leakage += *cell_leak;
         }
       }
     }
   }
   delete lib_iter;
 
-  if (buffer_list.empty()) {
-    logger_->error(RSZ, 23, "No buffers are found from the loaded libraries.");
-  } else {
+  if (!buffer_list.empty()) {
     sort(buffer_list,
          [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
            odb::dbMaster* master1 = db_network_->staToDb(buffer1);
@@ -1628,83 +1852,16 @@ void Resizer::reportBuffers()
                   < bufferDriveResistance(buffer2);
          });
 
-    std::vector<std::pair<std::pair<int, std::string>, VTLeakage>> vt_sorted;
-    vt_sorted.reserve(vt_leak_data.size());
-    for (const auto& [vt_type, leak_data] : vt_leak_data) {
-      vt_sorted.emplace_back(vt_type, leak_data);
+    lib_data.vt_sorted.reserve(lib_data.vt_leak_data.size());
+    for (const auto& [vt_type, leak_data] : lib_data.vt_leak_data) {
+      lib_data.vt_sorted.emplace_back(vt_type, leak_data);
     }
-
     // Sort by average leakage (ascending)
-    sort(vt_sorted.begin(), vt_sorted.end(), [](const auto& a, const auto& b) {
-      return a.second.average_leakage() < b.second.average_leakage();
-    });
-
-    logger_->report(
-        "**********************************************************************"
-        "**********");
-    logger_->report("Buffer Report:");
-    logger_->report(
-        "There are {} buffers that are not marked as dont-use, multi-voltage\n"
-        "special cells{}",
-        buffer_list.size(),
-        (exclude_clock_buffers_ ? " or clock buffers" : ""));
-    logger_->report("\nThere are {} VT types:", vt_leak_data.size());
-    logger_->report("VT type[index]: # buffers, ave leakage");
-    for (const auto& [vt_type, leak_data] : vt_sorted) {
-      logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
-                      vt_type.second,
-                      vt_type.first,
-                      leak_data.count,
-                      leak_data.average_leakage());
-    }
-    logger_->report("\nThere are {} cell footprint types:",
-                    footprint_types.size());
-    for (const auto& [footprint_type, count] : footprint_types) {
-      logger_->report("  {:<6}: {} [{:.2f}%]",
-                      footprint_type,
-                      count,
-                      ((float) count) / buffer_list.size() * 100);
-    }
-    logger_->report("\nThere are {} cell site types:", site_types.size());
-    for (const auto& [site_type, count] : site_types) {
-      logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
-                      site_type->getName(),
-                      site_type->getHeight(),
-                      count,
-                      ((float) count) / buffer_list.size() * 100);
-    }
-    logger_->report(
-        "----------------------------------------------------------------------"
-        "------------");
-    logger_->report(
-        "Cell                                        Drive Drive    Leak "
-        "  Site Cell   VT");
-    logger_->report(
-        "                                            Res   Res*Cin       "
-        "   Ht Footpt Type");
-    logger_->report(
-        "----------------------------------------------------------------------"
-        "------------");
-    for (LibertyCell* buffer : buffer_list) {
-      float drive_res = bufferDriveResistance(buffer);
-      LibertyPort *input, *output;
-      buffer->bufferPorts(input, output);
-      float c_in = input->capacitance();
-      std::optional<float> cell_leak = cellLeakage(buffer);
-      odb::dbMaster* master = db_network_->staToDb(buffer);
-
-      logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {}",
-                      buffer->name(),
-                      drive_res,
-                      drive_res * c_in,
-                      cell_leak.value_or(0.0f),
-                      master->getSite()->getHeight(),
-                      (buffer->footprint() ? buffer->footprint() : "N/A"),
-                      cellVTType(master).second);
-    }
-    logger_->report(
-        "**********************************************************************"
-        "**********");
+    sort(lib_data.vt_sorted.begin(),
+         lib_data.vt_sorted.end(),
+         [](const auto& a, const auto& b) {
+           return a.second.average_leakage() < b.second.average_leakage();
+         });
   }
 }
 
@@ -1834,10 +1991,10 @@ void Resizer::checkLibertyForAllCorners()
 void Resizer::setParasiticsSrc(ParasiticsSrc src)
 {
   if (incremental_parasitics_enabled_) {
-    logger_->error(
-        RSZ,
-        108,
-        "cannot change parasitics source while incremental parasitics enabled");
+    logger_->error(RSZ,
+                   108,
+                   "cannot change parasitics source while incremental "
+                   "parasitics enabled");
   }
 
   parasitics_src_ = src;
@@ -4332,12 +4489,12 @@ float Resizer::maxInputSlew(const LibertyPort* input,
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
   if (!exists || limit == 0.0) {
     // Fixup for nangate45: This library doesn't specify any max transition on
-    // input pins which indirectly causes issues for the resizer when repairing
-    // driver pin transitions.
+    // input pins which indirectly causes issues for the resizer when
+    // repairing driver pin transitions.
     //
-    // To address, if there's no max tran on the port directly, use the library
-    // default (the default only applies to output pins per the Liberty spec,
-    // as a workaround we apply it to input pins too).
+    // To address, if there's no max tran on the port directly, use the
+    // library default (the default only applies to output pins per the
+    // Liberty spec, as a workaround we apply it to input pins too).
     input->libertyLibrary()->defaultMaxSlew(limit, exists);
     if (!exists) {
       limit = INF;

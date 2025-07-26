@@ -163,6 +163,29 @@ enum class MoveType
   SPLIT
 };
 
+struct OneVTLeakage
+{
+  int count = 0;               // number of cells in one VT
+  float total_leakage = 0.0f;  // sum of all cell leakages for one VT
+
+  float average_leakage() const
+  {
+    return count > 0 ? total_leakage / count : 0.0f;
+  }
+};
+
+struct LibraryAnalysisData
+{
+  // How many cells in each VT category, total and average leakage per VT
+  std::map<std::pair<int, std::string>, OneVTLeakage> vt_leak_data;
+  // How many cells with liberty cell_footprint attributes
+  std::unordered_map<std::string, int> footprint_data;
+  // How many cells with different LEF cell sites (short, tall, etc.)
+  std::unordered_map<odb::dbSite*, int> site_data;
+  // Sorted VT categories to determine HVT/RVT/LVT/uLVT order
+  std::vector<std::pair<std::pair<int, std::string>, OneVTLeakage>> vt_sorted;
+};
+
 class OdbCallBack;
 
 class Resizer : public dbStaState, public dbNetworkObserver
@@ -436,6 +459,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                              bool match_cell_footprint,
                              bool report_all_cells);
   void reportBuffers();
+  void getBufferList(LibertyCellSeq& buffer_list,
+                     LibraryAnalysisData& lib_data);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static MoveType parseMove(const std::string& s);
@@ -460,6 +485,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                             float max_drive_resist);
   void findBuffers();
   void findFastBuffers();
+  void findFastBuffersOld();
   LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
