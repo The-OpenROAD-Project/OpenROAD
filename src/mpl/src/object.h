@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -16,7 +13,6 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "shapes.h"
 #include "util.h"
 

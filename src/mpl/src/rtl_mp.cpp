@@ -3,6 +3,8 @@
 
 #include "mpl/rtl_mp.h"
 
+#include <spdlog/fmt/bundled/format.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,6 +12,8 @@
 #include "MplObserver.h"
 #include "hier_rtlmp.h"
 #include "object.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 using std::string;
