@@ -48,9 +48,9 @@ Path Type: max
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
-    final |       0 |       2 |        0 |      0 |     0 |   -11.1% |   -0.202 |       -0.2 |      1 | r2/D
+    final |       0 |       3 |        0 |      0 |     0 |   -16.1% |   -0.201 |       -0.2 |      1 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 2 instances, 0 sized up, 2 sized down.
+[INFO RSZ-0051] Resized 3 instances, 0 sized up, 3 sized down.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -63,19 +63,19 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.168    0.168 ^ r1/Q (DFF_X1)
-   0.013    0.182 ^ u1/A (BUF_X8)
-   0.029    0.211 ^ u1/Z (BUF_X8)
-   0.002    0.212 ^ u2/A (BUF_X1)
-   0.038    0.250 ^ u2/Z (BUF_X1)
-   0.002    0.252 ^ u3/A (BUF_X1)
-   0.042    0.294 ^ u3/Z (BUF_X1)
-   0.002    0.296 ^ u4/A (BUF_X1)
-   0.042    0.338 ^ u4/Z (BUF_X1)
-   0.002    0.340 ^ u5/A (BUF_X1)
-   0.116    0.456 ^ u5/Z (BUF_X1)
-   0.049    0.505 ^ r2/D (DFF_X1)
-            0.505   data arrival time
+   0.157    0.157 ^ r1/Q (DFF_X1)
+   0.012    0.169 ^ u1/A (BUF_X2)
+   0.038    0.208 ^ u1/Z (BUF_X2)
+   0.002    0.209 ^ u2/A (BUF_X1)
+   0.040    0.249 ^ u2/Z (BUF_X1)
+   0.002    0.251 ^ u3/A (BUF_X1)
+   0.042    0.293 ^ u3/Z (BUF_X1)
+   0.002    0.295 ^ u4/A (BUF_X1)
+   0.042    0.337 ^ u4/Z (BUF_X1)
+   0.002    0.338 ^ u5/A (BUF_X1)
+   0.116    0.454 ^ u5/Z (BUF_X1)
+   0.049    0.503 ^ r2/D (DFF_X1)
+            0.503   data arrival time
 
    0.350    0.350   clock clk (rise edge)
    0.000    0.350   clock network delay (ideal)
@@ -85,8 +85,8 @@ Path Type: max
             0.302   data required time
 -----------------------------------------------------------
             0.302   data required time
-           -0.505   data arrival time
+           -0.503   data arrival time
 -----------------------------------------------------------
-           -0.202   slack (VIOLATED)
+           -0.201   slack (VIOLATED)
 
 
