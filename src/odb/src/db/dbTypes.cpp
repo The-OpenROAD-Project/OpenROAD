@@ -1110,6 +1110,55 @@ bool dbMasterType::isEndCap() const
   return false;
 }
 
+bool dbMasterType::isIoCornerEndCap() const
+{
+  switch (_value) {
+    case ENDCAP_TOPLEFT:
+    case ENDCAP_TOPRIGHT:
+    case ENDCAP_BOTTOMLEFT:
+    case ENDCAP_BOTTOMRIGHT:
+      return true;
+    case ENDCAP:
+    case ENDCAP_PRE:
+    case ENDCAP_POST:
+    case ENDCAP_LEF58_BOTTOMEDGE:
+    case ENDCAP_LEF58_TOPEDGE:
+    case ENDCAP_LEF58_RIGHTEDGE:
+    case ENDCAP_LEF58_LEFTEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+    case ENDCAP_LEF58_LEFTTOPCORNER:
+    case COVER:
+    case COVER_BUMP:
+    case RING:
+    case BLOCK:
+    case BLOCK_BLACKBOX:
+    case BLOCK_SOFT:
+    case PAD:
+    case PAD_INPUT:
+    case PAD_OUTPUT:
+    case PAD_INOUT:
+    case PAD_POWER:
+    case PAD_SPACER:
+    case PAD_AREAIO:
+    case CORE:
+    case CORE_FEEDTHRU:
+    case CORE_TIEHIGH:
+    case CORE_TIELOW:
+    case CORE_SPACER:
+    case CORE_ANTENNACELL:
+    case CORE_WELLTAP:
+      return false;
+  }
+  assert(false);
+  return false;
+}
+
 bool dbMasterType::isCover() const
 {
   switch (_value) {
