@@ -3,8 +3,6 @@
 
 #include "mpl/rtl_mp.h"
 
-#include <spdlog/fmt/bundled/format.h>
-
 #include <memory>
 #include <string>
 #include <vector>
