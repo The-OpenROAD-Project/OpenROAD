@@ -255,8 +255,9 @@ dbScanInst* dbScanInst::create(dbScanList* scan_list, dbInst* inst)
 {
   _dbBlock* block = (_dbBlock*) ((_dbInst*) inst)->getOwner();
   _dbScanInst* scan_inst = (_dbScanInst*) block->_scan_inst_tbl->create();
-  scan_inst->inst_ = ((_dbInst*) inst)->getId();
-
+  odb::uint inst_id = ((_dbInst*) inst)->getId();
+  scan_inst->inst_ = (dbId<dbInst>) inst_id;
+  block->_inst_scan_inst_map[(dbId<_dbInst>) inst_id] = scan_inst->getId();
   return (dbScanInst*) scan_inst;
 }
 

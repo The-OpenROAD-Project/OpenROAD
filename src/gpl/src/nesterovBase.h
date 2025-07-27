@@ -109,9 +109,9 @@ class GCell
   void setGradientX(float gradientX);
   void setGradientY(float gradientY);
 
-  float gradientX() const { return gradientX_; }
-  float gradientY() const { return gradientY_; }
-  float densityScale() const { return densityScale_; }
+  float getGradientX() const { return gradientX_; }
+  float getGradientY() const { return gradientY_; }
+  float getDensityScale() const { return densityScale_; }
 
   bool isInstance() const;
   bool isFiller() const;
@@ -120,15 +120,7 @@ class GCell
   bool contains(odb::dbInst* db_inst) const;
 
   void print(utl::Logger* logger, bool print_only_name) const;
-  void printToFile(std::ostream& out, bool print_only_name = true) const;
-
-  void writeAttributesToCSV(std::ostream& out) const
-  {
-    out << "," << insts_.size() << "," << gPins_.size();
-    out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
-    out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
-    out << "," << densityScale_ << "," << gradientX_ << "," << gradientY_;
-  }
+  void writeAttributesToCSV(std::ostream& out) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -235,9 +227,9 @@ class GNet
   GNet(Net* net);
   GNet(const std::vector<Net*>& nets);
 
-  Net* net() const;
-  const std::vector<Net*>& nets() const { return nets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  Net* getPbNet() const;
+  const std::vector<Net*>& getPbNets() const { return nets_; }
+  const std::vector<GPin*>& getGPins() const { return gPins_; }
 
   int lx() const;
   int ly() const;
@@ -247,14 +239,14 @@ class GNet
   void setTimingWeight(float timingWeight);
   void setCustomWeight(float customWeight);
 
-  float totalWeight() const { return timingWeight_ * customWeight_; }
-  float timingWeight() const { return timingWeight_; }
-  float customWeight() const { return customWeight_; }
+  float getTotalWeight() const { return timingWeight_ * customWeight_; }
+  float getTimingWeight() const { return timingWeight_; }
+  float getCustomWeight() const { return customWeight_; }
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
   void updateBox();
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
 
   void setDontCare();
   bool isDontCare() const;
@@ -446,11 +438,11 @@ class GPin
   GPin(Pin* pin);
   GPin(const std::vector<Pin*>& pins);
 
-  Pin* pin() const;
-  const std::vector<Pin*>& pins() const { return pins_; }
+  Pin* getPbPin() const;
+  const std::vector<Pin*>& getPbPins() const { return pins_; }
 
-  GCell* gCell() const { return gCell_; }
-  GNet* gNet() const { return gNet_; }
+  GCell* getGCell() const { return gCell_; }
+  GNet* getGNet() const { return gNet_; }
 
   void setGCell(GCell* gCell);
   void setGNet(GNet* gNet);
@@ -538,8 +530,8 @@ class Bin
   float electroPhi() const;
   float electroForceX() const;
   float electroForceY() const;
-  float targetDensity() const;
-  float density() const;
+  float getTargetDensity() const;
+  float getDensity() const;
 
   void setDensity(float density);
   void setTargetDensity(float density);
@@ -560,13 +552,13 @@ class Bin
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
 
-  int64_t binArea() const;
-  int64_t nonPlaceArea() const { return nonPlaceArea_; }
+  int64_t getBinArea() const;
+  int64_t getNonPlaceArea() const { return nonPlaceArea_; }
   int64_t instPlacedArea() const { return instPlacedArea_; }
-  int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
+  int64_t getNonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  int64_t getInstPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
-  int64_t fillerArea() const { return fillerArea_; }
+  int64_t getFillerArea() const { return fillerArea_; }
 
  private:
   // index
@@ -693,13 +685,13 @@ class BinGrid
   int dx() const;
   int dy() const;
 
-  int binCntX() const;
-  int binCntY() const;
-  double binSizeX() const;
-  double binSizeY() const;
+  int getBinCntX() const;
+  int getBinCntY() const;
+  double getBinSizeX() const;
+  double getBinSizeY() const;
 
-  int64_t overflowArea() const;
-  int64_t overflowAreaUnscaled() const;
+  int64_t getOverflowArea() const;
+  int64_t getOverflowAreaUnscaled() const;
 
   // return bins_ index with given gcell
   std::pair<int, int> getDensityMinMaxIdxX(const GCell* gcell) const;
@@ -708,8 +700,8 @@ class BinGrid
   std::pair<int, int> getMinMaxIdxX(const Instance* inst) const;
   std::pair<int, int> getMinMaxIdxY(const Instance* inst) const;
 
-  std::vector<Bin>& bins();
-  const std::vector<Bin>& binsConst() const { return bins_; };
+  std::vector<Bin>& getBins();
+  const std::vector<Bin>& getBinsConst() const { return bins_; };
 
   void updateBinsNonPlaceArea();
 
@@ -732,7 +724,7 @@ class BinGrid
   int num_threads_ = 1;
 };
 
-inline std::vector<Bin>& BinGrid::bins()
+inline std::vector<Bin>& BinGrid::getBins()
 {
   return bins_;
 }
@@ -863,27 +855,10 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  GCell& getGCell(size_t index)
-  {
-    if (index >= gCellStor_.size()) {
-      log_->error(utl::GPL,
-                  316,
-                  "getGCell: index {} out of bounds (gCellStor_.size() = {}).",
-                  index,
-                  gCellStor_.size());
-    }
-    return gCellStor_[index];
-  }
-
-  size_t getGCellIndex(const GCell* gCell) const
-  {
-    return std::distance(gCellStor_.data(), gCell);
-  }
+  GCell& getGCell(size_t index);
+  size_t getGCellIndex(const GCell* gCell) const;
 
   void printGCells();
-  void printGCellsToFile(const std::string& filename,
-                         bool print_only_name,
-                         bool also_print_minRc) const;
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -942,18 +917,7 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index)
-  {
-    if (index >= fillerStor_.size()) {
-      log_->error(
-          utl::GPL,
-          314,
-          "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
-          index,
-          fillerStor_.size());
-    }
-    return fillerStor_[index];
-  }
+  GCell& getFillerGCell(size_t index);
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -970,24 +934,24 @@ class NesterovBase
 
   void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
 
-  int binCntX() const;
-  int binCntY() const;
-  double binSizeX() const;
-  double binSizeY() const;
-  int64_t overflowArea() const;
-  int64_t overflowAreaUnscaled() const;
+  int getBinCntX() const;
+  int getBinCntY() const;
+  double getBinSizeX() const;
+  double getBinSizeY() const;
+  int64_t getOverflowArea() const;
+  int64_t getOverflowAreaUnscaled() const;
 
-  std::vector<Bin>& bins();
-  const std::vector<Bin>& binsConst() const { return bg_.binsConst(); };
+  std::vector<Bin>& getBins();
+  const std::vector<Bin>& getBinsConst() const { return bg_.getBinsConst(); };
 
   // filler cells / area control
   // will be used in Routability-driven loop
-  int fillerDx() const;
-  int fillerDy() const;
+  int getFillerDx() const;
+  int getFillerDy() const;
   int getFillerCnt() const;
   int64_t getFillerCellArea() const;
-  int64_t whiteSpaceArea() const;
-  int64_t movableArea() const;
+  int64_t getWhiteSpaceArea() const;
+  int64_t getMovableArea() const;
   int64_t getTotalFillerArea() const;
 
   // update
@@ -1000,26 +964,26 @@ class NesterovBase
 
   // should be separately defined.
   // This is mainly used for NesterovLoop
-  int64_t nesterovInstsArea() const;
+  int64_t getNesterovInstsArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
   // sum phi and target density
   // used in NesterovPlace
-  float sumPhi() const;
+  float getSumPhi() const;
 
   //
   // return uniform (lower bound) target density
   // LB of target density is required for massive runs.
   //
-  float uniformTargetDensity() const;
+  float getUniformTargetDensity() const;
 
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and
   // would be changed dynamically in RD loop
   //
   float initTargetDensity() const;
-  float targetDensity() const;
+  float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
 
@@ -1090,10 +1054,9 @@ class NesterovBase
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
 
-  void snapshot();
-
   bool checkConvergence();
   bool checkDivergence();
+  void saveSnapshot();
   bool revertToSnapshot();
 
   void updateDensityCenterCur();
@@ -1124,25 +1087,10 @@ class NesterovBase
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
-                          const std::string& message) const
-  {
-    std::ofstream file(filename, std::ios::app);
-    if (!file.is_open()) {
-      log_->report("Could not open CSV file for appending message: {}",
-                   filename);
-      return;
-    }
-
-    file << "# NOTE @ iteration " << iteration << ": " << message << "\n";
-    file.close();
-  }
-
+                          const std::string& message) const;
   void writeGCellVectorsToCSV(const std::string& filename,
                               int iteration,
                               bool write_header) const;
-
-  void printGCellsToFile(const std::string& filename,
-                         bool print_only_name) const;
 
  private:
   NesterovBaseVars nbVars_;
@@ -1278,9 +1226,9 @@ class NesterovBase
   void initFillerGCells();
 };
 
-inline std::vector<Bin>& NesterovBase::bins()
+inline std::vector<Bin>& NesterovBase::getBins()
 {
-  return bg_.bins();
+  return bg_.getBins();
 }
 
 class biNormalParameters

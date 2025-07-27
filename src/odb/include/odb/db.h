@@ -3263,6 +3263,12 @@ class dbInst : public dbObject
   ///
   bool isEndCap() const;
 
+  ///
+  /// Get the scan version of this instance.
+  /// Returns nullptr if this instance has no scan version.
+  ///
+  dbScanInst* getScanInst() const;
+
   void setPinAccessIdx(uint idx);
 
   uint getPinAccessIdx() const;
