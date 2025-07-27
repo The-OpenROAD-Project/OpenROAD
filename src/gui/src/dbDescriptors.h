@@ -12,6 +12,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"
 
 namespace odb {
@@ -736,6 +737,37 @@ class DbScanInstDescriptor : public BaseDbDescriptor<odb::dbScanInst>
 
  protected:
   Properties getDBProperties(odb::dbScanInst* scan_inst) const override;
+};
+
+class DbBoxDescriptor : public BaseDbDescriptor<odb::dbBox>
+{
+ public:
+  struct BoxWithTransform
+  {
+    odb::dbBox* box;
+    odb::dbTransform xform;
+  };
+
+  DbBoxDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  Selected makeSelected(std::any obj) const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbBox* box) const override;
+
+ private:
+  odb::dbBox* getObject(const std::any& object) const override;
+  odb::dbTransform getTransform(const std::any& object) const;
 };
 
 };  // namespace gui
