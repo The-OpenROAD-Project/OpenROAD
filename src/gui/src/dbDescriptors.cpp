@@ -4186,6 +4186,19 @@ Descriptor::Properties DbSiteDescriptor::getDBProperties(
   }
   props.push_back({"Symmetry", symmetry});
 
+  auto* gui = Gui::get();
+  SelectionSet masters;
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      if (master->getSite() == site) {
+        masters.insert(gui->makeSelected(master));
+      }
+    }
+  }
+  if (!masters.empty()) {
+    props.push_back({"Masters", masters});
+  }
+
   return props;
 }
 
