@@ -439,7 +439,7 @@ float Replace::getUniformTargetDensity(int threads)
 
   float density = 1.0f;
   if (initNesterovPlace(threads)) {
-    density = nbVec_[0]->uniformTargetDensity();
+    density = nbVec_[0]->getUniformTargetDensity();
   }
 
   std::string _ = log_->redirectStringEnd();

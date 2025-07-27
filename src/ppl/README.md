@@ -255,15 +255,11 @@ place_pin
 
 The `place_pins` command places all pins together. Use the following command to perform pin placement:
 
-Developer arguments:
-- `-random`, `-random_seed`
 
 ```tcl
 place_pins 
     -hor_layers h_layers
     -ver_layers v_layers
-    [-random_seed seed]
-    [-random]
     [-corner_avoidance length]
     [-min_distance distance]
     [-min_distance_in_tracks]
@@ -293,13 +289,6 @@ value, or a range of values. For example, in `place_pins -hor_layers metal2
 -ver_layers metal3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`
 three intervals are excluded: the whole top edge, the right edge from 15
 microns to 60.5 microns, and the left edge from its beginning to 50 microns.
-
-#### Developer Arguments
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-random_seed` | Specify the seed for random operations. |
-| `-random` | When this flag is enabled, the pin placement is random. |
 
 ### Write Pin Placement
 

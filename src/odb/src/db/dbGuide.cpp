@@ -85,19 +85,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
-  if (obj.getDatabase()->isSchema(db_schema_db_guide_via_layer)) {
-    stream << obj.via_layer_;
-  }
+  stream << obj.via_layer_;
   stream << obj.guide_next_;
-  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
-    stream << obj.is_congested_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
-    stream << obj.is_jumper_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_guide_connected_to_term)) {
-    stream << obj.is_connect_to_term_;
-  }
+  stream << obj.is_congested_;
+  stream << obj.is_jumper_;
+  stream << obj.is_connect_to_term_;
   return stream;
 }
 

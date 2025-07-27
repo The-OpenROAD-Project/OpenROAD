@@ -115,36 +115,16 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._name;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._flags;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._parent_moditerm;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._parent;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._modnet;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._next_net_modbterm;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._prev_net_modbterm;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._busPort;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._next_entry;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
-    stream << obj._prev_entry;
-  }
+  stream << obj._name;
+  stream << obj._flags;
+  stream << obj._parent_moditerm;
+  stream << obj._parent;
+  stream << obj._modnet;
+  stream << obj._next_net_modbterm;
+  stream << obj._prev_net_modbterm;
+  stream << obj._busPort;
+  stream << obj._next_entry;
+  stream << obj._prev_entry;
   return stream;
 }
 

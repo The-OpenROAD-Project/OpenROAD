@@ -386,9 +386,9 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
                           + outp->capacitance();
-  const float r_drvr = outp->driveResistance();
+
   const float load_slew
-      = (r_drvr
+      = (size.driver_resistance
          + resizer_->dbuToMeters(bnet->maxLoadWireLength() + extra_wire_length)
                * wire_res)
         * (bnet->cap() + extra_cap) * elmore_skew_factor_;
@@ -1394,7 +1394,8 @@ void Rebuffer::init()
     buffer_sizes_.push_back(BufferSize{
         cell,
         FixedDelay(out->intrinsicDelay(sta_)),
-        0.0f,
+        /*margined_max_cap=*/0.0f,
+        out->driveResistance(),
     });
   }
 
