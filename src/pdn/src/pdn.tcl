@@ -6,13 +6,15 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-reset] \
                                [-ripup] \
                                [-report_only] \
+                               [-check_only] \
                                [-failed_via_report file] \
                                [-verbose]
 } ;#checker off
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
-    keys {-failed_via_report} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
+    keys {-failed_via_report} \
+    flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose -check_only}
 
   sta::check_argc_eq0 "pdngen" $args
 
@@ -41,6 +43,13 @@ proc pdngen { args } {
       utl::error PDN 1039 "-report_only flag is mutually exclusive to all other flags"
     }
     pdn::report
+    return
+  }
+  if { [info exists flags(-check_only)] } {
+    if { [array size flags] != 1 } {
+      utl::error PDN 1040 "-check_only flag is mutually exclusive to all other flags"
+    }
+    pdn::check_setup
     return
   }
 
