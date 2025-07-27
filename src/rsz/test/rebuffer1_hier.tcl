@@ -40,5 +40,5 @@ set rebuffered_def_filename "rebuffer1_hier_out.def"
 write_def $rebuffered_def_filename
 diff_file ${rebuffered_def_filename}ok $rebuffered_def_filename
 
-# TODO: there is an issue that the name name (\u_mid1/l2_out1) of 
+# TODO: there is an issue that the name name (\u_mid1/l2_out1) of
 #       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong

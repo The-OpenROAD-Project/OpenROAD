@@ -41,7 +41,7 @@ set repaired_def_filename "repair_setup9_out.def"
 write_def $repaired_def_filename
 diff_file ${repaired_def_filename}ok $repaired_def_filename
 
-# TODO: there is an issue that the name name (\u_mid1/l2_out1) of 
+# TODO: there is an issue that the name name (\u_mid1/l2_out1) of
 #       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong
 
 # TODO: there is an issue that the new buffer input u_mid1/u_leaf2/split2/A input is floating.
