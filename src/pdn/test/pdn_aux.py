@@ -552,7 +552,9 @@ def add_pdn_connect(
 
     split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
-    split_cuts_dict = dict(zip(split_cuts_layers, (split_cuts_pitches, split_cuts_staggered)))
+    split_cuts_dict = dict(
+        zip(split_cuts_layers, (split_cuts_pitches, split_cuts_staggered))
+    )
 
     for g in pdngen.findGrid(grid):
         pdngen.makeConnect(
