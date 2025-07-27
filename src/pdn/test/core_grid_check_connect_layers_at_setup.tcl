@@ -21,7 +21,7 @@ add_pdn_connect -layers {metal2 metal4}
 add_pdn_connect -layers {metal4 metal7}
 
 # Check pin layer
-catch {pdngen} err
+catch { pdngen -check_only } err
 puts $err
 
 pdngen -reset
@@ -40,5 +40,5 @@ add_pdn_connect -layers {metal2 metal5}
 add_pdn_connect -layers {metal4 metal7}
 
 # Check connect layer metal5 invalid
-catch {pdngen} err
+catch { pdngen -check_only } err
 puts $err
