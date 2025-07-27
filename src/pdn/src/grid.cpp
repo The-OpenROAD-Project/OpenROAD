@@ -702,8 +702,16 @@ void Grid::checkSetup() const
     }
   }
 
-  // add bterms
+  // add bterms and exisiting routing
   for (auto* net : nets) {
+    for (auto* swire : net->getSWires()) {
+      for (auto* box : swire->getWires()) {
+        auto* layer = box->getTechLayer();
+        if (layer) {
+          check_layers.insert(layer);
+        }
+      }
+    }
     for (auto* bterm : net->getBTerms()) {
       for (auto* bpin : bterm->getBPins()) {
         if (!bpin->getPlacementStatus().isFixed()) {
@@ -731,7 +739,7 @@ void Grid::checkSetup() const
       getLogger()->error(utl::PDN,
                          113,
                          "Cannot find shapes to connect to on {}",
-                         connect->getLowerLayer()->getName());
+                         connect->getUpperLayer()->getName());
     }
   }
 }
