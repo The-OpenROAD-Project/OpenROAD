@@ -957,6 +957,32 @@ bool dbNetwork::isLeaf(const Instance* instance) const
 
 Instance* dbNetwork::findInstance(const char* path_name) const
 {
+  if (hierarchy_) {  // are we in hierarchical mode ?
+    std::string path_name_str = path_name;
+    // search for the last token in the string, which is the leaf instance name
+    size_t last_idx = path_name_str.find_last_of('/');
+    if (last_idx != std::string::npos) {
+      std::string leaf_inst_name = path_name_str.substr(last_idx + 1);
+      // get the parent name, which is the hierarchical prefix in the string
+      std::string parent_name_str = path_name_str.substr(0, last_idx);
+      // get the module instance from the block
+      dbModInst* parent_mod_inst
+          = block()->findModInst(parent_name_str.c_str());
+      if (parent_mod_inst) {
+        // get the module definition
+        //(we are in a uniquified environment so all modules are uniquified).
+        dbModule* module_defn = parent_mod_inst->getMaster();
+        if (module_defn) {
+          // get the leaf instance definition from the module
+          dbInst* ret = module_defn->findDbInst(leaf_inst_name.c_str());
+          if (ret) {
+            return (Instance*) ret;
+          }
+        }
+      }
+    }
+  }
+  // fall through (even in hierarchical mode).
   dbInst* inst = block_->findInst(path_name);
   return dbToSta(inst);
 }
