@@ -636,10 +636,6 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
       obs_layers.push_back(
           {gui->makeSelected(via),
            gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform})});
-    } else if (auto* via = obs->getBlockVia()) {
-      obs_layers.push_back(
-          {gui->makeSelected(via),
-           gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform})});
     }
   }
   if (!obs_layers.empty()) {
