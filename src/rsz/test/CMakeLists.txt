@@ -149,6 +149,8 @@ or_integration_tests(
     resize_slack1
     resize_slack2
     resize_slack3
+    rebuffer1
+    rebuffer1_hier
     set_dont_touch1
     set_dont_use1
     split_load_hier
