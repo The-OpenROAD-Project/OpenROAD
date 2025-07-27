@@ -195,12 +195,13 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "openroad_maven",
     artifacts = [
-        "org.chipsalliance:chisel_2.13:7.0.0-RC1+22-2cb90ea2-SNAPSHOT",
-        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC1+22-2cb90ea2-SNAPSHOT",
+        "org.chipsalliance:chisel_2.13:7.0.0-RC3",
+        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC3",
     ],
     repositories = [
-        "https://s01.oss.sonatype.org/content/repositories/snapshots",
         "https://repo1.maven.org/maven2",
+        "https://s01.oss.sonatype.org/content/repositories/releases",
+        "https://s01.oss.sonatype.org/content/repositories/snapshots",
     ],
 )
 use_repo(maven, "openroad_maven")
