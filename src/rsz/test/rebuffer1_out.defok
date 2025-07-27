@@ -861,12 +861,12 @@ ROW ROW_853 FreePDK45_38x28_10R_NP_162NW_34O 0 2388400 FS DO 210 BY 1 STEP 380 0
 ROW ROW_854 FreePDK45_38x28_10R_NP_162NW_34O 0 2391200 N DO 210 BY 1 STEP 380 0 ;
 ROW ROW_855 FreePDK45_38x28_10R_NP_162NW_34O 0 2394000 FS DO 210 BY 1 STEP 380 0 ;
 ROW ROW_856 FreePDK45_38x28_10R_NP_162NW_34O 0 2396800 N DO 210 BY 1 STEP 380 0 ;
-COMPONENTS 36 ;
-    - buf1 BUF_X2 + PLACED ( 1520 0 ) N ;
-    - buf2 BUF_X2 + PLACED ( 380 0 ) N ;
+COMPONENTS 35 ;
+    - buf1 BUF_X1 + PLACED ( 1520 0 ) N ;
+    - buf2 BUF_X1 + PLACED ( 380 0 ) N ;
     - dff_out1 DFF_X1 + PLACED ( 15580 2800 ) FS ;
     - dff_out2 DFF_X1 + PLACED ( 9120 11200 ) N ;
-    - split2 BUF_X4 + SOURCE TIMING + PLACED ( 23530 8343 ) N ;
+    - place1 BUF_X4 + SOURCE TIMING + PLACED ( 21850 6990 ) N ;
     - u_mid1/dff_load1 DFF_X1 + PLACED ( 2660 0 ) N ;
     - u_mid1/dff_load10 DFF_X1 + PLACED ( 2660 2800 ) FS ;
     - u_mid1/dff_load2 DFF_X1 + PLACED ( 2660 5600 ) N ;
@@ -879,22 +879,21 @@ COMPONENTS 36 ;
     - u_mid1/dff_load9 DFF_X1 + PLACED ( 2660 14000 ) FS ;
     - u_mid1/dff_out1 DFF_X1 + PLACED ( 380 19600 ) FS ;
     - u_mid1/dff_out2 DFF_X1 + PLACED ( 15580 0 ) N ;
-    - u_mid1/u_leaf1/buf1 BUF_X2 + PLACED ( 1140 8400 ) FS ;
-    - u_mid1/u_leaf1/buf2 BUF_X2 + PLACED ( 1520 11200 ) N ;
+    - u_mid1/u_leaf1/buf1 BUF_X1 + PLACED ( 1140 8400 ) FS ;
+    - u_mid1/u_leaf1/buf2 BUF_X1 + PLACED ( 1520 11200 ) N ;
     - u_mid1/u_leaf1/dff1 DFF_X1 + PLACED ( 0 25200 ) FS ;
     - u_mid1/u_leaf1/dff2 DFF_X1 + PLACED ( 9120 14000 ) FS ;
-    - u_mid1/u_leaf2/buf1 BUF_X2 + PLACED ( 380 5600 ) N ;
-    - u_mid1/u_leaf2/buf2 BUF_X2 + PLACED ( 1520 2800 ) FS ;
+    - u_mid1/u_leaf2/buf1 BUF_X1 + PLACED ( 380 5600 ) N ;
+    - u_mid1/u_leaf2/buf2 BUF_X1 + PLACED ( 1520 2800 ) FS ;
     - u_mid1/u_leaf2/dff1 DFF_X1 + PLACED ( 22040 2800 ) FS ;
     - u_mid1/u_leaf2/dff2 DFF_X1 + PLACED ( 15580 5600 ) N ;
     - u_mid1/u_leaf2/dff3 DFF_X1 + PLACED ( 1520 16800 ) N ;
-    - u_mid1/u_leaf2/rebuffer1 BUF_X4 + SOURCE TIMING + PLACED ( 21850 6990 ) N ;
-    - u_mid2/buf1 BUF_X2 + PLACED ( 1520 5600 ) N ;
+    - u_mid2/buf1 BUF_X1 + PLACED ( 1520 5600 ) N ;
     - u_mid2/dff_out1 DFF_X1 + PLACED ( 22040 0 ) N ;
-    - u_mid2/u_leaf3/buf1 BUF_X2 + PLACED ( 380 2800 ) FS ;
-    - u_mid2/u_leaf3/buf2 BUF_X2 + PLACED ( 0 8400 ) FS ;
-    - u_mid2/u_leaf3/buf3 BUF_X2 + PLACED ( 380 11200 ) N ;
-    - u_mid2/u_leaf3/buf4 BUF_X2 + PLACED ( 0 14000 ) FS ;
+    - u_mid2/u_leaf3/buf1 BUF_X1 + PLACED ( 380 2800 ) FS ;
+    - u_mid2/u_leaf3/buf2 BUF_X1 + PLACED ( 0 8400 ) FS ;
+    - u_mid2/u_leaf3/buf3 BUF_X1 + PLACED ( 380 11200 ) N ;
+    - u_mid2/u_leaf3/buf4 BUF_X1 + PLACED ( 0 14000 ) FS ;
     - u_mid2/u_leaf3/dff1 DFF_X1 + PLACED ( 15580 8400 ) FS ;
     - u_mid2/u_leaf3/dff2 DFF_X1 + PLACED ( 7980 16800 ) N ;
     - u_mid2/u_leaf4/dff1 DFF_X1 + PLACED ( 0 22400 ) N ;
@@ -908,7 +907,7 @@ PINS 7 ;
     - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL ;
     - out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-NETS 31 ;
+NETS 30 ;
     - clk ( PIN clk ) ( u_mid2/u_leaf4/dff1 CK ) ( u_mid2/u_leaf3/dff2 CK ) ( u_mid2/u_leaf3/dff1 CK ) ( u_mid2/dff_out1 CK ) ( u_mid1/u_leaf2/dff3 CK ) ( u_mid1/u_leaf2/dff2 CK )
       ( u_mid1/u_leaf2/dff1 CK ) ( u_mid1/u_leaf1/dff2 CK ) ( u_mid1/u_leaf1/dff1 CK ) ( u_mid1/dff_out2 CK ) ( u_mid1/dff_out1 CK ) ( u_mid1/dff_load9 CK ) ( u_mid1/dff_load8 CK ) ( u_mid1/dff_load7 CK )
       ( u_mid1/dff_load6 CK ) ( u_mid1/dff_load5 CK ) ( u_mid1/dff_load4 CK ) ( u_mid1/dff_load3 CK ) ( u_mid1/dff_load2 CK ) ( u_mid1/dff_load10 CK ) ( u_mid1/dff_load1 CK ) ( dff_out2 CK )
@@ -922,13 +921,12 @@ NETS 31 ;
     - m2_out1 ( u_mid2/dff_out1 Q ) ( buf2 A ) + USE SIGNAL ;
     - n1 ( dff_out1 D ) ( buf1 Z ) + USE SIGNAL ;
     - n2 ( dff_out2 D ) ( buf2 Z ) + USE SIGNAL ;
-    - net15 ( u_mid1/dff_load8 D ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) ( split2 Z ) + USE SIGNAL ;
-    - net2 ( u_mid1/dff_load2 D ) ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load4 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load9 D ) ( split2 A )
-      ( u_mid1/u_leaf2/rebuffer1 Z ) + USE SIGNAL ;
+    - net1 ( u_mid1/dff_load8 D ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load9 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load4 D ) ( u_mid1/dff_load2 D )
+      ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) ( place1 Z ) + USE SIGNAL ;
     - out1 ( PIN out1 ) ( dff_out1 Q ) + USE SIGNAL ;
     - out2 ( PIN out2 ) ( dff_out2 Q ) + USE SIGNAL ;
     - u_mid1/l1_out ( u_mid1/u_leaf1/dff2 Q ) ( u_mid1/dff_out1 D ) + USE SIGNAL ;
-    - u_mid1/l2_out1 ( u_mid1/u_leaf2/rebuffer1 A ) ( u_mid1/u_leaf2/dff2 Q ) + USE SIGNAL ;
+    - u_mid1/l2_out1 ( place1 A ) ( u_mid1/u_leaf2/dff2 Q ) + USE SIGNAL ;
     - u_mid1/l2_out2 ( u_mid1/u_leaf2/dff3 Q ) + USE SIGNAL ;
     - u_mid1/u_leaf1/n1 ( u_mid1/u_leaf1/dff1 Q ) ( u_mid1/u_leaf1/buf1 A ) + USE SIGNAL ;
     - u_mid1/u_leaf1/n2 ( u_mid1/u_leaf1/buf2 A ) ( u_mid1/u_leaf1/buf1 Z ) + USE SIGNAL ;

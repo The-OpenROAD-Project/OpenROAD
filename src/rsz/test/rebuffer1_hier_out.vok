@@ -14,9 +14,9 @@ module top (clk,
  output out2;
 
 
- BUF_X2 buf1 (.A(m1_out1),
+ BUF_X1 buf1 (.A(m1_out1),
     .Z(n1));
- BUF_X2 buf2 (.A(m2_out1),
+ BUF_X1 buf2 (.A(m2_out1),
     .Z(n2));
  DFF_X1 dff_out1 (.D(n1),
     .CK(clk),
@@ -45,11 +45,6 @@ module mid1 (clk,
  output out1;
  output out2;
 
- wire net20;
- wire net19;
- wire net18;
- wire net17;
- wire net16;
  wire net13;
  wire net12;
  wire net11;
@@ -71,35 +66,30 @@ module mid1 (clk,
     .CK(clk));
  DFF_X1 dff_load2 (.D(net7),
     .CK(clk));
- DFF_X1 dff_load3 (.D(net17),
+ DFF_X1 dff_load3 (.D(net4),
     .CK(clk));
  DFF_X1 dff_load4 (.D(net8),
     .CK(clk));
- DFF_X1 dff_load5 (.D(net18),
+ DFF_X1 dff_load5 (.D(net11),
     .CK(clk));
  DFF_X1 dff_load6 (.D(net9),
     .CK(clk));
- DFF_X1 dff_load7 (.D(net19),
+ DFF_X1 dff_load7 (.D(net12),
     .CK(clk));
- DFF_X1 dff_load8 (.D(net20),
+ DFF_X1 dff_load8 (.D(net13),
     .CK(clk));
  DFF_X1 dff_load9 (.D(net10),
     .CK(clk));
  DFF_X1 dff_out1 (.D(l1_out),
     .CK(clk),
     .Q(out1));
- DFF_X1 dff_out2 (.D(net16),
+ DFF_X1 dff_out2 (.D(net3),
     .CK(clk),
     .Q(out2));
  leaf1 u_leaf1 (.clk(clk),
     .in1(in1),
     .out1(l1_out));
- leaf2 u_leaf2 (.net20_o(net20),
-    .net19_o(net19),
-    .net18_o(net18),
-    .net17_o(net17),
-    .net16_o(net16),
-    .net13_o(net13),
+ leaf2 u_leaf2 (.net13_o(net13),
     .net12_o(net12),
     .net11_o(net11),
     .net10_o(net10),
@@ -123,9 +113,9 @@ module leaf1 (clk,
  output out1;
 
 
- BUF_X2 buf1 (.A(n1),
+ BUF_X1 buf1 (.A(n1),
     .Z(n2));
- BUF_X2 buf2 (.A(n2),
+ BUF_X1 buf2 (.A(n2),
     .Z(n3));
  DFF_X1 dff1 (.D(in1),
     .CK(clk),
@@ -134,12 +124,7 @@ module leaf1 (clk,
     .CK(clk),
     .Q(out1));
 endmodule
-module leaf2 (net20_o,
-    net19_o,
-    net18_o,
-    net17_o,
-    net16_o,
-    net13_o,
+module leaf2 (net13_o,
     net12_o,
     net11_o,
     net10_o,
@@ -154,11 +139,6 @@ module leaf2 (net20_o,
     in1,
     out1,
     out2);
- output net20_o;
- output net19_o;
- output net18_o;
- output net17_o;
- output net16_o;
  output net13_o;
  output net12_o;
  output net11_o;
@@ -175,17 +155,13 @@ module leaf2 (net20_o,
  output out1;
  output out2;
 
- wire net90;
- wire net89;
  wire net1;
 
- BUF_X4 split2 (.A(net2),
-    .Z(net90));
- BUF_X4 rebuffer1 (.A(\u_mid1/l2_out1 ),
-    .Z(net89));
- BUF_X2 buf1 (.A(n1),
+ BUF_X4 place1 (.A(\u_mid1/l2_out1 ),
+    .Z(net3_o));
+ BUF_X1 buf1 (.A(n1),
     .Z(n2));
- BUF_X2 buf2 (.A(n1),
+ BUF_X1 buf2 (.A(n1),
     .Z(n3));
  DFF_X1 dff1 (.D(in1),
     .CK(clk),
@@ -196,22 +172,16 @@ module leaf2 (net20_o,
  DFF_X1 dff3 (.D(n3),
     .CK(clk),
     .Q(out2));
- assign net20_o = net90;
- assign net19_o = net90;
- assign net18_o = net90;
- assign net17_o = net90;
- assign net16_o = net90;
- assign net13_o = net89;
- assign net12_o = net89;
- assign net11_o = net89;
- assign net10_o = net89;
- assign net9_o = net89;
- assign net8_o = net89;
- assign net7_o = net89;
- assign net6_o = net89;
- assign net5_o = net89;
- assign net4_o = net89;
- assign net3_o = net89;
+ assign net13_o = net3_o;
+ assign net12_o = net3_o;
+ assign net11_o = net3_o;
+ assign net10_o = net3_o;
+ assign net9_o = net3_o;
+ assign net8_o = net3_o;
+ assign net7_o = net3_o;
+ assign net6_o = net3_o;
+ assign net5_o = net3_o;
+ assign net4_o = net3_o;
  assign out1 = net1;
 endmodule
 module mid2 (clk,
@@ -226,7 +196,7 @@ module mid2 (clk,
  wire l4_out;
  wire l3_out;
 
- BUF_X2 buf1 (.A(l3_out),
+ BUF_X1 buf1 (.A(l3_out),
     .Z(n1));
  DFF_X1 dff_out1 (.D(n1),
     .CK(clk),
@@ -246,13 +216,13 @@ module leaf3 (clk,
  output out1;
 
 
- BUF_X2 buf1 (.A(n1),
+ BUF_X1 buf1 (.A(n1),
     .Z(n2));
- BUF_X2 buf2 (.A(n2),
+ BUF_X1 buf2 (.A(n2),
     .Z(n3));
- BUF_X2 buf3 (.A(n3),
+ BUF_X1 buf3 (.A(n3),
     .Z(n4));
- BUF_X2 buf4 (.A(n4),
+ BUF_X1 buf4 (.A(n4),
     .Z(n5));
  DFF_X1 dff1 (.D(in1),
     .CK(clk),
