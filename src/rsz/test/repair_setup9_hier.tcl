@@ -5,7 +5,7 @@ define_corners fast slow
 read_liberty -corner slow Nangate45/Nangate45_slow.lib
 read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
-read_verilog repair_setup1_hier.v
+read_verilog repair_setup9_hier.v
 link_design top -hier
 
 #place the design
@@ -33,11 +33,11 @@ repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning \
   -skip_buffer_removal -max_passes 10
 
 # generate .v and .def files
-set repaired_verilog_filename "repair_setup1_hier_out.v"
+set repaired_verilog_filename "repair_setup9_hier_out.v"
 write_verilog $repaired_verilog_filename
 diff_file ${repaired_verilog_filename}ok $repaired_verilog_filename
 
-set repaired_def_filename "repair_setup1_hier_out.def"
+set repaired_def_filename "repair_setup9_hier_out.def"
 write_def $repaired_def_filename
 diff_file ${repaired_def_filename}ok $repaired_def_filename
 
