@@ -21,6 +21,7 @@ Build a power grid in accordance with the information specified.
 
 ```tcl
 pdngen
+    [-check_only]
     [-dont_add_pins]
     [-failed_via_report file]
     [-report_only]
@@ -36,6 +37,7 @@ pdngen
 | `[-dont_add_pins]` | Prevent the creation of block pins. |
 | `[-failed_via_report]` | Generate a report file which can be viewed in the DRC viewer for all the failed vias (ie. those that did not get built or were removed). |
 | `[-report_only]` | Print the current specifications. |
+| `[-check_only]` | Check the current setup for errors. |
 | `[-reset]` | Reset the grid and domain specifications. |
 | `[-ripup]` | Ripup the existing power grid, as specified by the voltage domains. |
 | `[-skip_trim]` | Skip the metal trim step, which attempts to remove metal stubs. |

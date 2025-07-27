@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "core_grid_auto_domain_multiple_nets",
     "core_grid_bad_metal_specs",
     "core_grid_check_connect_layers",
+    "core_grid_check_connect_layers_at_setup",
     "core_grid_cut_pitch",
     "core_grid_dual_followpins",
     "core_grid_dual_followpins_error",

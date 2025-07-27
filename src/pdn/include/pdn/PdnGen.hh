@@ -71,6 +71,10 @@ class PdnGen
                              odb::dbMTerm* switched_power,
                              odb::dbMTerm* alwayson_power,
                              odb::dbMTerm* ground);
+  const std::vector<std::unique_ptr<PowerCell>>& getSwitchedPowerCells() const
+  {
+    return switched_power_cells_;
+  }
 
   // Domains
   std::vector<VoltageDomain*> getDomains() const;
