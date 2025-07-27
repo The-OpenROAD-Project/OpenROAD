@@ -1771,8 +1771,14 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name
-          = resizer_->makeUniqueInstName(instance_base_name);
+      // Decide new buffer name
+      std::string buffer_full_name;
+      if (parent && parent != db_network_->topInstance()) {
+        buffer_full_name = db_network_->pathName(parent);
+        buffer_full_name += db_network_->pathDivider();
+      }
+      buffer_full_name += instance_base_name;
+      buffer_full_name = resizer_->makeUniqueInstName(buffer_full_name.c_str());
 
       // HFix: make net in hierarchy
       std::string net_name = resizer_->makeUniqueNetName();
@@ -1780,7 +1786,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
-          buffer_cell, buffer_name.c_str(), parent, choice->location());
+          buffer_cell, buffer_full_name.c_str(), parent, choice->location());
 
       resizer_->level_drvr_vertices_valid_ = false;
       LibertyPort *input, *output;
@@ -1793,7 +1799,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                  "",
                  level,
                  sdc_network_->pathName(net),
-                 buffer_name.c_str(),
+                 buffer_full_name.c_str(),
                  buffer_cell->name(),
                  sdc_network_->pathName(net2));
 
