@@ -18,6 +18,7 @@ COMPULSORY_TESTS = [
     "asap7_vias_fixed_vias",
     "asap7_vias_max_rows_columns",
     "asap7_M1_M3_followpins",
+    "asap7_M1_M3_followpins_staggered",
     "bpin_removal",
     "core_grid",
     "core_grid_adjacentcuts",
