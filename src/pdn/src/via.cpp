@@ -809,8 +809,10 @@ ViaReport DbArrayVia::getViaReport() const
 DbSplitCutVia::DbSplitCutVia(DbBaseVia* via,
                              int rows,
                              int row_pitch,
+                             int row_offset,
                              int cols,
                              int col_pitch,
+                             int col_offset,
                              odb::dbBlock* block,
                              odb::dbTechLayer* bottom,
                              bool snap_bottom,
@@ -821,8 +823,10 @@ DbSplitCutVia::DbSplitCutVia(DbBaseVia* via,
       via_(std::unique_ptr<DbBaseVia>(via)),
       rows_(rows),
       row_pitch_(row_pitch),
+      row_offset_(row_offset),
       cols_(cols),
-      col_pitch_(col_pitch)
+      col_pitch_(col_pitch),
+      col_offset_(col_offset)
 {
   if (snap_bottom) {
     bottom_->populateGrid(block);
@@ -856,11 +860,14 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(
   odb::Rect via_rect(0, 0, (cols_ - 1) * col_pitch_, (rows_ - 1) * row_pitch_);
   via_rect.moveTo(x - via_rect.dx() / 2, y - via_rect.dy() / 2);
 
-  int row = via_rect.yMin();
+  const int row_offset = rows_ > 1 ? row_offset_ : 0;
+  const int col_offset = cols_ > 1 ? col_offset_ : 0;
+
+  int row = via_rect.yMin() + row_offset;
   for (int r = 0; r < rows_; r++) {
     const int row_pos = horizontal->snapToGrid(row);
 
-    int col = via_rect.xMin();
+    int col = via_rect.xMin() + col_offset;
     for (int c = 0; c < cols_; c++) {
       const int col_pos = vertical->snapToGrid(col);
 
@@ -2243,8 +2250,10 @@ DbVia* ViaGenerator::generate(odb::dbBlock* block) const
                                          getCutPitchX()),
                              getArrayCoresY(),
                              getCutPitchY(),
+                             getCutOffsetY(),
                              getArrayCoresX(),
                              getCutPitchX(),
+                             getCutOffsetX(),
                              block,
                              getBottomLayer(),
                              false,

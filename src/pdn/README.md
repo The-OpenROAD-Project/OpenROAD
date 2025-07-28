@@ -358,6 +358,7 @@ add_pdn_connect
     [-max_rows rows]
     [-ongrid ongrid_layers]
     [-split_cuts split_cuts_mapping]
+    [-split_cuts_staggered]
 ```
 
 #### Options
@@ -373,6 +374,7 @@ add_pdn_connect
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `[-split_cuts]` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
+| `[-split_cuts_staggered]` | Specified if the split cuts should be staggered, ie. the ground vias will appear with an offset of pitch / 2. |
 
 ### Repairing power grid vias after detailed routing
 

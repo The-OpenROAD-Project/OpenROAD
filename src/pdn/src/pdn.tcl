@@ -545,14 +545,15 @@ sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         [-max_rows rows] \
                                         [-max_columns columns] \
                                         [-ongrid ongrid_layers] \
-                                        [-split_cuts split_cuts_mapping]
+                                        [-split_cuts split_cuts_mapping] \
+                                        [-split_cuts_staggered]
 }
 
 proc add_pdn_connect { args } {
   sta::parse_key_args "add_pdn_connect" args \
     keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts \
       -dont_use_vias} \
-    flags {}
+    flags {-split_cuts_staggered}
 
   sta::check_argc_eq0 "add_pdn_connect" $args
 
@@ -616,11 +617,13 @@ proc add_pdn_connect { args } {
 
   set split_cuts_layers {}
   set split_cuts_pitches {}
+  set split_cuts_staggered false
   if { [info exists keys(-split_cuts)] } {
     foreach {l pitch} $keys(-split_cuts) {
       lappend split_cuts_layers [pdn::get_layer $l]
       lappend split_cuts_pitches [ord::microns_to_dbu $pitch]
     }
+    set split_cuts_staggered [info exists flags(-split_cuts_staggered)]
   }
 
   set dont_use ""
@@ -640,6 +643,7 @@ proc add_pdn_connect { args } {
     $ongrid \
     $split_cuts_layers \
     $split_cuts_pitches \
+    $split_cuts_staggered \
     $dont_use
 }
 
