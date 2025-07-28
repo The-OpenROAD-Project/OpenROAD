@@ -3937,8 +3937,7 @@ int io::TopLayerBTermHandler::countNetBTermsAboveMaxLayer(odb::dbNet* net)
   odb::dbTech* tech = db_->getTech();
   odb::dbBlock* block = db_->getChip()->getBlock();
   const int max_routing_layer = block->getMaxRoutingLayer();
-  odb::dbTechLayer* top_tech_layer
-      = tech->findRoutingLayer(max_routing_layer);
+  odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(max_routing_layer);
   int bterm_count = 0;
   for (auto bterm : net->getBTerms()) {
     int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
@@ -4061,8 +4060,7 @@ void io::TopLayerBTermHandler::processBTermsAboveTopLayer(bool has_routing)
   }
   odb::dbTech* tech = db_->getTech();
 
-  odb::dbTechLayer* top_tech_layer
-      = tech->findRoutingLayer(max_routing_layer);
+  odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(max_routing_layer);
   if (top_tech_layer != nullptr) {
     int top_layer_idx = top_tech_layer->getRoutingLevel();
     for (auto bterm : block->getBTerms()) {
