@@ -11,7 +11,6 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <mutex>
 #include <sstream>
 #include <vector>
 
@@ -41,8 +40,6 @@ using cut::Blif;
 
 namespace rmp {
 
-std::once_flag init_abc_flag;
-
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
                        odb::dbDatabase* db,
@@ -53,7 +50,7 @@ void Restructure::init(utl::Logger* logger,
   open_sta_ = open_sta;
   resizer_ = resizer;
 
-  std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
+  ord::abcInit();
 }
 
 void Restructure::deleteComponents()
