@@ -170,6 +170,9 @@ cc_binary(
         "@openroad_rules_python//python/cc:current_py_cc_headers",
         "@openroad_rules_python//python/cc:current_py_cc_libs",
     ],
+    data = [
+        "@python_3_13//:py3_runtime",
+    ]
 )
 
 GUI_BUILD_FLAGS = select(
