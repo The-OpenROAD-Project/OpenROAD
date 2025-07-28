@@ -125,8 +125,8 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
             } else {
               const RiseFall* rf = req_path->transition(sta_);
               node->setSlackTransition(rf->asRiseFallBoth());
-              node->setSlack(
-                  FixedDelay(req_path->required() - arrival_path->arrival()));
+              node->setSlack(FixedDelay(
+                  req_path->required() - arrival_path->arrival(), resizer_));
 
               if (arrival_paths_[rf->index()] == nullptr) {
                 arrival_paths_[rf->index()] = arrival_path;
@@ -279,7 +279,7 @@ FixedDelay Rebuffer::slackAtDriverPin(const BufferedNetPtr& bnet)
 {
   Delay correction;
   std::tie(std::ignore, correction, std::ignore) = drvrPinTiming(bnet);
-  return bnet->slack() + FixedDelay(correction);
+  return bnet->slack() + FixedDelay(correction, resizer_);
 }
 
 std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
@@ -289,7 +289,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   Delay correction;
   Slew slew;
   std::tie(std::ignore, correction, slew) = drvrPinTiming(option);
-  FixedDelay slack = option->slack() + FixedDelay(correction);
+  FixedDelay slack = option->slack() + FixedDelay(correction, resizer_);
 
   if (!loadSlewSatisfactory(drvr_port_, option)) {
     return {};
@@ -298,7 +298,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   // Refuse buffering option if we are violating max slew on the driver pin.
   // There's one exception: If we previously observed satisfactory slew with
   // an even higher load, ficticiously assume this load satisfies max slew.
-  // This is a precaution against non-mononotic slew vs load data which would
+  // This is a precaution against non-monotonic slew vs load data which would
   // cause inconsistencies in the algorithm.
   if (slew > drvr_pin_max_slew_ && option->cap() > drvr_load_high_water_mark_) {
     return {};
@@ -937,7 +937,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
         return 0;
       },
       root,
-      -FixedDelay(slack_correction));
+      -FixedDelay(slack_correction, resizer_));
 
   BnetSeq top_opts = visitTree(
       [&](auto& recurse, int level, const BnetPtr& node, int upstream_wl)
@@ -1124,7 +1124,7 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             double wire_res = wire_length * layer_res;
             double wire_cap = wire_length * layer_cap;
             FixedDelay wire_delay
-                = FixedDelay(wire_res * (wire_cap / 2 + p->cap()));
+                = FixedDelay(wire_res * (wire_cap / 2 + p->cap()), resizer_);
             if (bnet->length() == 0) {
               wire_res = 0;
               wire_cap = 0;
@@ -1171,8 +1171,8 @@ FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
       ArcDelay gate_delays[RiseFall::index_count];
       Slew slews[RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-      delay
-          = std::max<FixedDelay>(delay, FixedDelay(gate_delays[rf1->index()]));
+      delay = std::max<FixedDelay>(
+          delay, FixedDelay(gate_delays[rf1->index()], resizer_));
     }
   }
 
@@ -1192,7 +1192,8 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
   double wire_length = resizer_->dbuToMeters(z->length());
   double wire_res = wire_length * layer_res;
   double wire_cap = wire_length * layer_cap;
-  FixedDelay wire_delay = FixedDelay(wire_res * (wire_cap / 2 + p->cap()));
+  FixedDelay wire_delay
+      = FixedDelay(wire_res * (wire_cap / 2 + p->cap()), resizer_);
 
   // account for wire delay
   z->setDelay(wire_delay);
@@ -1435,7 +1436,7 @@ void Rebuffer::init()
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
         cell,
-        FixedDelay(out->intrinsicDelay(sta_)),
+        FixedDelay(out->intrinsicDelay(sta_), resizer_),
         /*margined_max_cap=*/0.0f,
         out->driveResistance(),
     });
@@ -2248,23 +2249,29 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     //    computation of wire load, we are using pin position for the existing
     //    buffer, but instance position for the new buffer.)
     //
-    Delay relaxation
-        = std::max<float>(0.0f,
-                          ((slackAtDriverPin(timing_tree).toSeconds())
-                           - std::min(original_tree_slack_error, 0.0f)))
-              / 4.0f
-          + (std::max(drvr_gate_delay, 0.0f)
-             + criticalPathDelay(logger_, timing_tree).toSeconds())
-                * relaxation_factor_;
 
-    FixedDelay target = slackAtDriverPin(timing_tree) - FixedDelay(relaxation);
+    FixedDelay target_slack = -FixedDelay::INF;
+
+    // Check the tree isn't fully unconstrained
+    if (timing_tree->slackTransition() != nullptr) {
+      Delay relaxation
+          = std::max<float>(0.0f,
+                            ((slackAtDriverPin(timing_tree).toSeconds())
+                             - std::min(original_tree_slack_error, 0.0f)))
+                / 4.0f
+            + (std::max(drvr_gate_delay, 0.0f)
+               + criticalPathDelay(logger_, timing_tree).toSeconds())
+                  * relaxation_factor_;
+      target_slack
+          = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
+    }
 
     BnetPtr area_opt_tree = timing_tree;
     {
       ScopedTimer timer(logger_, ra_runtime);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
         area_opt_tree
-            = recoverArea(area_opt_tree, target, ((float) (1 + i)) / 5);
+            = recoverArea(area_opt_tree, target_slack, ((float) (1 + i)) / 5);
       }
     }
 
@@ -2459,7 +2466,8 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
                         + criticalPathDelay(logger_, bnet).toSeconds())
                        * relaxation_factor_;
 
-    FixedDelay target = slackAtDriverPin(bnet) - FixedDelay(relaxation);
+    FixedDelay target
+        = slackAtDriverPin(bnet) - FixedDelay(relaxation, resizer_);
 
     for (int i = 0; i < 5 && bnet; i++) {
       bnet = recoverArea(bnet, target, ((float) (1 + i)) / 5);
