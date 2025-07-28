@@ -399,7 +399,7 @@ proc write_rules { args } {
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }
-  rcx::write_rules $filename $dir $name
+  rcx::write_rules $dir/$filename $name
 }
 sta::define_cmd_args "bench_wires_gen" {
     [  -len		length_in_min_widths ]
