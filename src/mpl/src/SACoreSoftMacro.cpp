@@ -532,26 +532,41 @@ void SACoreSoftMacro::alignMacroClusters()
   }
 }
 
+float SACoreSoftMacro::calSingleNotchPenalty(float width, float height) {
+  return sqrt((width * height)/outline_.getArea());
+}
+
 // If there is no HardMacroCluster, we do not consider the notch penalty
 void SACoreSoftMacro::calNotchPenalty()
 {
   // Initialization
   notch_penalty_ = 0.0;
+  notch_h_th_ = outline_.getHeight() / 10.0;
+  notch_v_th_ = outline_.getWidth() / 10.0;
+
+  float width = 0;
+  float height = 0;
+
   if (notch_weight_ <= 0.0) {
     return;
   }
   // If the floorplan cannot fit into the outline
   // We think the entire floorplan is a "huge" notch
-  if (width_ > outline_.getWidth() * 1.001
-      || height_ > outline_.getHeight() * 1.001) {
-    notch_penalty_ += outline_.getWidth() * outline_.getHeight()
-                      / (outline_.getWidth() * outline_.getHeight());
+  if (!isValid(outline_)) {;
+    width = std::max(width_, outline_.getWidth());
+    height = std::max(height_, outline_.getHeight());
+    notch_penalty_ = calSingleNotchPenalty(width, height) * notch_weight_;
     return;
   }
 
+<<<<<<< HEAD
   // Macros need to be saved (and restored) since alignMacroClusters and
   // fillDeadSpace move them
   std::vector<SoftMacro> pre_macros = macros_;
+=======
+  std::vector<SoftMacro> pre_macros = macros_;
+
+>>>>>>> cc2e688b57 (mpl: update calNotchPenalty)
   // align macro clusters to reduce notches
   alignMacroClusters();
   // Fill dead space
@@ -580,12 +595,12 @@ void SACoreSoftMacro::calNotchPenalty()
   std::vector<float> x_grid(x_point.begin(), x_point.end());
   std::vector<float> y_grid(y_point.begin(), y_point.end());
   // create grid in a row-based manner
-  std::vector<std::vector<int>> grids;  // store the macro id
+  std::vector<std::vector<int>> grid;  // store the macro id
   const int num_x = x_grid.size() - 1;
   const int num_y = y_grid.size() - 1;
-  for (int j = 0; j < num_y; j++) {
-    std::vector<int> macro_ids(num_x, -1);
-    grids.push_back(macro_ids);
+  for (int i = 0; i < num_x; i++) {
+    std::vector<int> macro_ids(num_y, -1);
+    grid.push_back(macro_ids);
   }
   // detect the notch region around each MixedCluster and HardMacroCluster
   for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
@@ -606,125 +621,42 @@ void SACoreSoftMacro::calNotchPenalty()
                   y_start,
                   y_end,
                   y_grid);
-    for (int j = y_start; j < y_end; j++) {
-      for (int i = x_start; i < x_end; i++) {
-        grids[j][i] = macro_id;
+    for (int i = x_start; i < x_end; i++) {
+      for (int j = y_start; j < y_end; j++) {
+        grid[i][j] = macro_id;
       }
     }
   }
-  // check surroundings of each HardMacroCluster and MixecCluster
-  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (!macro_mask[macro_id]) {
-      continue;
-    }
-    int x_start = 0;
-    int x_end = 0;
-    calSegmentLoc(macros_[macro_id].getX(),
-                  macros_[macro_id].getX() + macros_[macro_id].getWidth(),
-                  x_start,
-                  x_end,
-                  x_grid);
-    int y_start = 0;
-    int y_end = 0;
-    calSegmentLoc(macros_[macro_id].getY(),
-                  macros_[macro_id].getY() + macros_[macro_id].getHeight(),
-                  y_start,
-                  y_end,
-                  y_grid);
-    int x_start_new = x_start;
-    int x_end_new = x_end;
-    int y_start_new = y_start;
-    int y_end_new = y_end;
-    // check left first
-    for (int i = x_start - 1; i >= 0; i--) {
-      bool flag = true;
-      for (int j = y_start; j < y_end; j++) {
-        if (grids[j][i] != -1) {
-          flag = false;  // we cannot extend the current cluster
-          break;
-        }  // end if
-      }  // end y
-      if (!flag) {  // extension done
-        break;
+
+  for (int i = 0; i < num_x; i++) {
+    for (int j = 0; j < num_y; j++) {
+      int surroundings = 0;
+      if (i == 0 || grid[i-1][j] != -1) {
+        surroundings++;
       }
-      x_start_new--;  // extend left
-      for (int j = y_start; j < y_end; j++) {
-        grids[j][i] = macro_id;
+      if (i == num_x-1 || grid[i+1][j] != -1) {
+        surroundings++;
       }
-    }  // end left
-    // check top second
-    for (int j = y_end; j < num_y; j++) {
-      bool flag = true;
-      for (int i = x_start; i < x_end; i++) {
-        if (grids[j][i] != -1) {
-          flag = false;  // we cannot extend the current cluster
-          break;
-        }  // end if
-      }  // end y
-      if (!flag) {  // extension done
-        break;
+      if (j == 0 || grid[i][j-1] != -1) {
+        surroundings++;
       }
-      y_end_new++;  // extend top
-      for (int i = x_start; i < x_end; i++) {
-        grids[j][i] = macro_id;
+      if (j == num_y-1 || grid[i][j+1] != -1) {
+        surroundings++;
       }
-    }  // end top
-    // check right third
-    for (int i = x_end; i < num_x; i++) {
-      bool flag = true;
-      for (int j = y_start; j < y_end; j++) {
-        if (grids[j][i] != -1) {
-          flag = false;  // we cannot extend the current cluster
-          break;
-        }  // end if
-      }  // end y
-      if (!flag) {  // extension done
-        break;
+
+      if (surroundings >= 3) {
+        width = x_grid[i+1] - x_grid[i];
+        height = y_grid[j+1] - y_grid[j];
+
+        if (width <= notch_h_th_ || height <= notch_v_th_) {
+          notch_penalty_ += calSingleNotchPenalty(width, height);
+        }
       }
-      x_end_new++;  // extend right
-      for (int j = y_start; j < y_end; j++) {
-        grids[j][i] = macro_id;
-      }
-    }  // end right
-    // check down second
-    for (int j = y_start - 1; j >= 0; j--) {
-      bool flag = true;
-      for (int i = x_start; i < x_end; i++) {
-        if (grids[j][i] != -1) {
-          flag = false;  // we cannot extend the current cluster
-          break;
-        }  // end if
-      }  // end y
-      if (!flag) {  // extension done
-        break;
-      }
-      y_start_new--;  // extend down
-      for (int i = x_start; i < x_end; i++) {
-        grids[j][i] = macro_id;
-      }
-    }  // end down
-    // check the notch area
-    if ((x_grid[x_start] - x_grid[x_start_new]) <= notch_h_th_) {
-      notch_penalty_ += (x_grid[x_start] - x_grid[x_start_new])
-                        * macros_[macro_id].getHeight();
-    }
-    if ((x_grid[x_end_new] - x_grid[x_end]) <= notch_h_th_) {
-      notch_penalty_ += (x_grid[x_end_new] - x_grid[x_end])
-                        * macros_[macro_id].getHeight();
-    }
-    if ((y_grid[y_start] - y_grid[y_start_new]) <= notch_v_th_) {
-      notch_penalty_ += (y_grid[y_start] - y_grid[y_start_new])
-                        * macros_[macro_id].getWidth();
-    }
-    if ((y_grid[y_end_new] - y_grid[y_end]) <= notch_v_th_) {
-      notch_penalty_
-          += (y_grid[y_end_new] - y_grid[y_end]) * macros_[macro_id].getWidth();
     }
   }
-  macros_ = pre_macros;
-  // normalization
-  notch_penalty_
-      = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
+
+  notch_penalty_ *= notch_weight_;
+
   if (graphics_) {
     graphics_->setNotchPenalty(
         {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});

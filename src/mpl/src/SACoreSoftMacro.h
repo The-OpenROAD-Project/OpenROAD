@@ -93,6 +93,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                      std::vector<float>& grid);
 
   void calBoundaryPenalty();
+  float calSingleNotchPenalty(float height, float width);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
 

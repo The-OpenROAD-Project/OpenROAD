@@ -720,7 +720,7 @@ void SimulatedAnnealingCore<T>::fastSA()
 
   // Used to ensure notch penalty is used only in the latter steps
   // as it is too expensive
-  notch_weight_ = 0.0;
+  // notch_weight_ = 0.0;
 
   if (isValid()) {
     updateBestValidResult(cost);
