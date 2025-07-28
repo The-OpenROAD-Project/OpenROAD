@@ -2449,7 +2449,9 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   driverOutputTerm->disconnect();
   // hierarchical fix. guarded by network has hierarchy
   if (candidate_hier_net && network_->hasHierarchy()) {
-    driverOutputTerm->connect(orig_flat_net, candidate_hier_net);
+    network_->connectPin((sta::Pin*) driverOutputTerm,
+                         (sta::Net*) orig_flat_net,
+                         (sta::Net*) candidate_hier_net);
   } else {
     driverOutputTerm->connect(outputNet);
   }
