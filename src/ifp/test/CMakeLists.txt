@@ -21,6 +21,7 @@ or_integration_tests(
     make_polygon_rows1
     make_polygon_rows2
     make_polygon_rows3
+    make_polygon_rows4
     make_rows
     make_tracks1
     make_tracks2
