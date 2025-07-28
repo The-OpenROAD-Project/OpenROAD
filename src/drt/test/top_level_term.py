@@ -11,8 +11,12 @@ design.readDef("top_level_term.def")
 gr = design.getGlobalRouter()
 gr.readGuides("top_level_term.guide")
 
+design.evalTclString(
+    "set_routing_layers -signal met1-met3"
+)
+
 drt_aux.detailed_route(
-    design, bottom_routing_layer="met1", top_routing_layer="met3", verbose=0
+    design, verbose=0
 )
 
 def_file = helpers.make_result_file("top_level_term.def")

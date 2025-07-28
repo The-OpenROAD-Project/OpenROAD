@@ -18,7 +18,8 @@ assign_ndr -ndr NDR_3W_3S -net clknet_2_1__leaf_clk
 assign_ndr -ndr NDR_3W_3S -net clknet_2_2__leaf_clk
 assign_ndr -ndr NDR_3W_3S -net clknet_2_3__leaf_clk
 
-detailed_route -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0
+set_routing_layers -signal met1-met5
+detailed_route -verbose 0
 
 write_def $def_file
 diff_files ndr_vias1.defok $def_file
