@@ -775,6 +775,12 @@ static utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> WrapUnique(
   return utl::UniquePtrWithDeleter<abc::Abc_Ntk_t>(ntk, &abc::Abc_NtkDelete);
 }
 
+static utl::UniquePtrWithDeleter<abc::Vec_Ptr_t> WrapUnique(
+    abc::Vec_Ptr_t* const vec)
+{
+  return utl::UniquePtrWithDeleter<abc::Vec_Ptr_t>(vec, &abc::Vec_PtrFree);
+}
+
 // Translates the data function of a given instance into an ABC network,
 static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
                                             abc::Abc_Ntk_t* const abc_network,
@@ -924,14 +930,14 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
     }
   }
 
-  abc::Vec_Ptr_t* xor_states = abc::Vec_PtrAlloc(1);
-  abc::Vec_Ptr_t* fanins = abc::Vec_PtrAlloc(2);
+  auto xor_states = WrapUnique(abc::Vec_PtrAlloc(1));
+  auto fanins = WrapUnique(abc::Vec_PtrAlloc(2));
   auto network = sta_->getDbNetwork();
 
-  auto prev_state
-      = regDataFunctionToAbc(network, abc_network.get(), fanins, instance);
-  abc::Vec_PtrClear(fanins);
-  abc::Vec_PtrPush(fanins, prev_state);
+  auto prev_state = regDataFunctionToAbc(
+      network, abc_network.get(), fanins.get(), instance);
+  abc::Vec_PtrClear(fanins.get());
+  abc::Vec_PtrPush(fanins.get(), prev_state);
   auto out_pin = getRegOutPin(network, instance);
   assert(out_pin);
   auto out_pin_name = network->name(out_pin);
@@ -948,16 +954,14 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
     } else {
       assert(abc::Abc_ObjIsNet(curr_state));
     }
-    abc::Vec_PtrPush(fanins, curr_state);
+    abc::Vec_PtrPush(fanins.get(), curr_state);
     abc::Abc_Obj_t* xor_state
-        = abc::Abc_NtkCreateNodeExor(abc_network.get(), fanins);
-    abc::Vec_PtrPop(fanins);
+        = abc::Abc_NtkCreateNodeExor(abc_network.get(), fanins.get());
+    abc::Vec_PtrPop(fanins.get());
     abc::Abc_Obj_t* net_xor_state = abc::Abc_NtkCreateNet(abc_network.get());
     abc::Abc_ObjAddFanin(net_xor_state, xor_state);
-    abc::Vec_PtrPush(xor_states, net_xor_state);
+    abc::Vec_PtrPush(xor_states.get(), net_xor_state);
   }
-
-  abc::Vec_PtrFree(fanins);
 
   std::unordered_set<std::string> gate_cond_names;
   for (auto gate_cond_net : gate_cond_nets) {
@@ -967,12 +971,12 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
   {
     abc::Abc_Obj_t* obj;
     int idx;
-    abc::Vec_Ptr_t* gate_cond_nets = abc::Vec_PtrAlloc(1);
+    auto gate_cond_nets = WrapUnique(abc::Vec_PtrAlloc(1));
     Abc_NtkForEachNet(abc_network.get(), obj, idx)
     {
       if (gate_cond_names.find(abc::Abc_ObjName(obj))
           != gate_cond_names.end()) {
-        abc::Vec_PtrPush(gate_cond_nets, obj);
+        abc::Vec_PtrPush(gate_cond_nets.get(), obj);
         debugPrint(logger_,
                    CGT,
                    "clock_gating",
@@ -982,31 +986,31 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
       }
     }
 
-    assert(abc::Vec_PtrSize(xor_states) > 0);
+    assert(abc::Vec_PtrSize(xor_states.get()) > 0);
     auto xor_state_net
-        = static_cast<abc::Abc_Obj_t*>(abc::Vec_PtrEntry(xor_states, 0));
-    if (abc::Vec_PtrSize(xor_states) > 1) {
-      auto xors_or = abc::Abc_NtkCreateNodeOr(abc_network.get(), xor_states);
+        = static_cast<abc::Abc_Obj_t*>(abc::Vec_PtrEntry(xor_states.get(), 0));
+    if (abc::Vec_PtrSize(xor_states.get()) > 1) {
+      auto xors_or
+          = abc::Abc_NtkCreateNodeOr(abc_network.get(), xor_states.get());
       abc::Abc_ObjAssignName(xors_or, const_cast<char*>("or_xors"), nullptr);
       xor_state_net = abc::Abc_NtkCreateNet(abc_network.get());
       abc::Abc_ObjAssignName(
           xor_state_net, const_cast<char*>("or_xors"), nullptr);
       abc::Abc_ObjAddFanin(xor_state_net, xors_or);
     }
-    abc::Vec_PtrFree(xor_states);
 
-    if (abc::Vec_PtrSize(gate_cond_nets) == 0) {
+    if (abc::Vec_PtrSize(gate_cond_nets.get()) == 0) {
       debugPrint(logger_, CGT, "clock_gating", 4, "No gate condition found");
-      abc::Vec_PtrFree(gate_cond_nets);
       return {};
     }
-    auto gate_cond_net
-        = static_cast<abc::Abc_Obj_t*>(abc::Vec_PtrEntry(gate_cond_nets, 0));
-    if (abc::Vec_PtrSize(gate_cond_nets) > 1) {
-      auto gate_reduce
-          = clk_enable
-                ? abc::Abc_NtkCreateNodeOr(abc_network.get(), gate_cond_nets)
-                : abc::Abc_NtkCreateNodeAnd(abc_network.get(), gate_cond_nets);
+    auto gate_cond_net = static_cast<abc::Abc_Obj_t*>(
+        abc::Vec_PtrEntry(gate_cond_nets.get(), 0));
+    if (abc::Vec_PtrSize(gate_cond_nets.get()) > 1) {
+      auto gate_reduce = clk_enable
+                             ? abc::Abc_NtkCreateNodeOr(abc_network.get(),
+                                                        gate_cond_nets.get())
+                             : abc::Abc_NtkCreateNodeAnd(abc_network.get(),
+                                                         gate_cond_nets.get());
       abc::Abc_ObjAssignName(
           gate_reduce, const_cast<char*>("gate_cond"), nullptr);
       gate_cond_net = abc::Abc_NtkCreateNet(abc_network.get());
@@ -1025,11 +1029,11 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
       gate_cond_net = not_enable_net;
     }
 
-    abc::Vec_Ptr_t* and_fanins = abc::Vec_PtrAlloc(2);
-    abc::Vec_PtrPush(and_fanins, xor_state_net);
-    abc::Vec_PtrPush(and_fanins, gate_cond_net);
+    auto and_fanins = WrapUnique(abc::Vec_PtrAlloc(2));
+    abc::Vec_PtrPush(and_fanins.get(), xor_state_net);
+    abc::Vec_PtrPush(and_fanins.get(), gate_cond_net);
     abc::Abc_Obj_t* and_gate
-        = abc::Abc_NtkCreateNodeAnd(abc_network.get(), and_fanins);
+        = abc::Abc_NtkCreateNodeAnd(abc_network.get(), and_fanins.get());
     abc::Abc_Obj_t* and_net = abc::Abc_NtkCreateNet(abc_network.get());
     abc::Abc_ObjAssignName(and_net, const_cast<char*>("and"), nullptr);
     abc::Abc_ObjAddFanin(and_net, and_gate);
@@ -1037,11 +1041,11 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
     abc::Abc_Obj_t* result = abc::Abc_NtkCreatePo(abc_network.get());
     abc::Abc_ObjAssignName(result, (char*) "result", nullptr);
     abc::Abc_ObjAddFanin(result, and_net);
-    abc::Vec_PtrFree(and_fanins);
 
     // For error reporting
     std::string combined_gate_name;
-    Vec_PtrForEachEntry(abc::Abc_Obj_t*, gate_cond_nets, gate_cond_net, idx)
+    Vec_PtrForEachEntry(
+        abc::Abc_Obj_t*, gate_cond_nets.get(), gate_cond_net, idx)
     {
       if (idx == 0) {
         combined_gate_name = abc::Abc_ObjName(gate_cond_net);
@@ -1050,7 +1054,6 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
                               + std::string(abc::Abc_ObjName(gate_cond_net));
       }
     }
-    abc::Vec_PtrFree(gate_cond_nets);
 
     abc_network = WrapUnique(abc::Abc_NtkToLogic(abc_network.get()));
 
@@ -1346,9 +1349,9 @@ void ClockGating::dumpAbc(const char* const name, abc::Abc_Ntk_t* const network)
   if (!dump_dir_) {
     return;
   }
-  abc::Vec_Ptr_t* nodes = Abc_NtkCollectObjects(network);
+  auto nodes = WrapUnique(Abc_NtkCollectObjects(network));
   Io_WriteDotNtk(network,
-                 nodes,
+                 nodes.get(),
                  nullptr,
                  getAbcGraphvizDumpPath(name).generic_string().data(),
                  true,
@@ -1358,7 +1361,6 @@ void ClockGating::dumpAbc(const char* const name, abc::Abc_Ntk_t* const network)
   if (!abc::Abc_NtkIsNetlist(network)) {
     netlist = abc::Abc_NtkToNetlist(network);
   }
-  Vec_PtrFree(nodes);
   if (!abc::Abc_NtkHasMapping(netlist) && !abc::Abc_NtkHasAig(netlist)) {
     abc::Abc_NtkToAig(netlist);
   }
