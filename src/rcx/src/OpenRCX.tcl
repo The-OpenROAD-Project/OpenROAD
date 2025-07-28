@@ -390,7 +390,7 @@ proc write_rules { args } {
     set filename $keys(-file)
   }
 
-  set dir "./"
+  set dir "."
   if { [info exists keys(-dir)] } {
     set dir $keys(-dir)
   }
