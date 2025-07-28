@@ -61,11 +61,6 @@ using odb::uint;
 using upf::eval_upf;
 
 namespace {
-// for the polygoin points vector buffer
-static std::vector<odb::Point> die_polygon_buf_;
-}  // namespace
-
-namespace {
 void validateCoreSpacing(odb::dbBlock* block,
                          utl::Logger* logger,
                          int core_space_bottom,
@@ -166,11 +161,6 @@ void InitFloorplan::makeDieUtilization(double utilization,
   const int die_uy = core_uy + core_space_top;
 
   makeDie({die_lx, die_ly, die_ux, die_uy});
-}
-
-void InitFloorplan::clearPolygonData()
-{
-  die_polygon_buf_.clear();
 }
 
 void InitFloorplan::makeDie(const odb::Rect& die)
@@ -1122,7 +1112,6 @@ void InitFloorplan::makePolygonRowsScanline(
             block_->dbuToMicrons(site->getHeight()),
             base_site->getName(),
             block_->dbuToMicrons(base_site->getHeight()));
-        continue;
       }
       makeUniformRowsPolygon(
           site, core_polygon, snapped_bbox, row_parity, flipped_sites);

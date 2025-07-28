@@ -186,12 +186,6 @@ odb::dbSite* find_site(ord::Design* design,
   return site;
 }
 
-
-void clear_polygon_data(ord::Design* design)
-{
-  design->getFloorplan().clearPolygonData();
-}
-
 void make_polygon_die(ord::Design* design, std::vector<odb::Point>& points)
 {
   design->getFloorplan().makePolygonDie(points);
