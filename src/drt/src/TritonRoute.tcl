@@ -122,10 +122,12 @@ proc detailed_route { args } {
     set or_k 0
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    utl::error DRT 509 "-bottom_routing_layer is deprecated. Use set_routing_layers command instead."
+    utl::error DRT 509 "-bottom_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
-    utl::error DRT 510 "-top_routing_layer is deprecated. Use set_routing_layers command instead."
+    utl::error DRT 510 "-top_routing_layer is deprecated.\
+      Use set_routing_layers command instead."
   }
   if { [info exists keys(-verbose)] } {
     sta::check_positive_integer "-verbose" $keys(-verbose)
@@ -292,10 +294,12 @@ proc pin_access { args } {
     set db_process_node ""
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    utl::error DRT 511 "-bottom_routing_layer is deprecated. Use set_routing_layers command instead."
+    utl::error DRT 511 "-bottom_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
-    utl::error DRT 514 "-top_routing_layer is deprecated. Use set_routing_layers command instead."
+    utl::error DRT 514 "-top_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-via_access_layer)] } {
     set via_access_layer $keys(-via_access_layer)
