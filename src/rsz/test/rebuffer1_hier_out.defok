@@ -63,8 +63,8 @@ NETS 30 ;
     - m2_out1 ( u_mid2/dff_out1 Q ) ( buf2 A ) + USE SIGNAL ;
     - n1 ( dff_out1 D ) ( buf1 Z ) + USE SIGNAL ;
     - n2 ( dff_out2 D ) ( buf2 Z ) + USE SIGNAL ;
-    - net2 ( u_mid1/dff_load8 D ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load9 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load4 D ) ( u_mid1/dff_load2 D )
-      ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) ( u_mid1/u_leaf2/place1 Z ) + USE SIGNAL ;
+    - net1 ( u_mid1/u_leaf2/place1 Z ) ( u_mid1/dff_load8 D ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load9 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load4 D )
+      ( u_mid1/dff_load2 D ) ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) + USE SIGNAL ;
     - out1 ( PIN out1 ) ( dff_out1 Q ) + USE SIGNAL ;
     - out2 ( PIN out2 ) ( dff_out2 Q ) + USE SIGNAL ;
     - u_mid1/l1_out ( u_mid1/u_leaf1/dff2 Q ) ( u_mid1/dff_out1 D ) + USE SIGNAL ;
