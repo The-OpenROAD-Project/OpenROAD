@@ -7,12 +7,7 @@ read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog rebuffer1_hier.v
 link_design top -hier
-
-#place the design
-initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
-global_placement -skip_nesterov_place
-detailed_placement
+read_def -incr rebuffer1_hier.def
 
 #sdc
 create_clock -period 0.3 clk
@@ -42,3 +37,7 @@ diff_file ${rebuffered_def_filename}ok $rebuffered_def_filename
 
 # TODO: there is an issue that the name name (\u_mid1/l2_out1) of
 #       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong
+
+# TODO: the output .v and .def are not consistent
+
+# TODO: no ROW statement in the output .def

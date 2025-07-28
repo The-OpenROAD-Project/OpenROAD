@@ -7,12 +7,13 @@ read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog repair_setup9.v
 link_design top
+read_def -incr repair_setup9.def
 
 #place the design
-initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
-global_placement -skip_nesterov_place
-detailed_placement
+#initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
+#  -site FreePDK45_38x28_10R_NP_162NW_34O
+#global_placement -skip_nesterov_place
+#detailed_placement
 
 #sdc
 create_clock -period 0.3 clk
@@ -40,8 +41,3 @@ diff_file ${repaired_verilog_filename}ok $repaired_verilog_filename
 set repaired_def_filename "repair_setup9_out.def"
 write_def $repaired_def_filename
 diff_file ${repaired_def_filename}ok $repaired_def_filename
-
-# TODO: there is an issue that the name name (\u_mid1/l2_out1) of
-#       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong
-
-# TODO: there is an issue that the new buffer input u_mid1/u_leaf2/split2/A input is floating.

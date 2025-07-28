@@ -7,12 +7,13 @@ read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog repair_setup9_hier.v
 link_design top -hier
+read_def -incr repair_setup9_hier.def
 
 #place the design
-initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
-global_placement -skip_nesterov_place
-detailed_placement
+#initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
+#  -site FreePDK45_38x28_10R_NP_162NW_34O
+#global_placement -skip_nesterov_place
+#detailed_placement
 
 #sdc
 create_clock -period 0.3 clk
@@ -45,3 +46,7 @@ diff_file ${repaired_def_filename}ok $repaired_def_filename
 #       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong
 
 # TODO: there is an issue that the new buffer input u_mid1/u_leaf2/split2/A input is floating.
+
+# TODO: the output .v and .def are not consistent
+
+# TODO: no ROW statement in the output .def
