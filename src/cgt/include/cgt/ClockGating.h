@@ -122,13 +122,13 @@ class ClockGating
   size_t rejected_sim_count_ = 0;
   size_t rejected_sat_count_ = 0;
   size_t accepted_count_ = 0;
-  size_t reuse_check_time_us_ = 0;
-  size_t search_time_us_ = 0;
-  size_t exist_check_time_us_ = 0;
-  size_t network_export_time_us_ = 0;
-  size_t network_build_time_us_ = 0;
-  size_t sim_time_us_ = 0;
-  size_t sat_time_us_ = 0;
+  double reuse_check_time_ = 0;
+  double search_time_ = 0;
+  double exist_check_time_ = 0;
+  double network_export_time_ = 0;
+  double network_build_time_ = 0;
+  double sim_time_ = 0;
+  double sat_time_ = 0;
 
   // Generator for unique net/instance names
   std::unordered_map<std::string, size_t> unique_names_;

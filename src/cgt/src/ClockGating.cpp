@@ -4,7 +4,6 @@
 #include "cgt/ClockGating.h"
 
 #include <algorithm>
-#include <chrono>
 #include <fstream>
 #include <unordered_set>
 
@@ -27,8 +26,10 @@
 #include "sta/Sequential.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 using utl::CGT;
+using utl::DebugScopedTimer;
 using utl::UniquePtrWithDeleter;
 
 // Headers have duplicate declarations so we include
@@ -124,33 +125,6 @@ static void dumpGraphviz(sta::dbNetwork* const network,
     dumpGraphviz(network, child, out);
   }
   out << "}\n";
-}
-
-// Times the given function `f` and logs the time taken. Aggregates the time in
-// microseconds.
-template <typename F>
-static auto timed(Logger* const logger,
-                  size_t& total_us,
-                  const char* const label,
-                  F f)
-{
-  auto start = std::chrono::steady_clock::now();
-  const auto end_timer = [&] {
-    auto end = std::chrono::steady_clock::now() - start;
-    auto time_us
-        = std::chrono::duration_cast<std::chrono::microseconds>(end).count();
-    debugPrint(
-        logger, utl::CGT, "clock_gating", 2, "{} time: {} μs", label, time_us);
-    total_us += time_us;
-  };
-  if constexpr (std::is_void_v<decltype(f())>) {
-    f();
-    end_timer();
-  } else {
-    auto result = f();
-    end_timer();
-    return result;
-  }
 }
 
 // Returns the output pin of a register cell, if it exists.
@@ -429,10 +403,7 @@ void ClockGating::run()
                gate_cond_cover.size(),
                network->name(instance));
 
-    auto abc_network
-        = timed(logger_, network_export_time_us_, "Network export ", [&] {
-            return exportToAbc(instance, gate_cond_cover);
-          });
+    auto abc_network = exportToAbc(instance, gate_cond_cover);
 
     if (gate_cond_cover.empty()) {
       logger_->warn(CGT,
@@ -444,46 +415,47 @@ void ClockGating::run()
 
     bool inserted = false;
     std::vector<AcceptedIndex> accepted_idxs;
-    timed(logger_,
-          reuse_check_time_us_,
-          "Existing gating conditions reuse check",
-          [&] {
-            auto related_nets = upstreamNets(sta_, gate_cond_cover);
-            for (auto net : related_nets) {
-              for (auto idx : net_to_accepted[net]) {
-                auto it = std::lower_bound(
-                    accepted_idxs.begin(), accepted_idxs.end(), idx);
-                if (it == accepted_idxs.end() || *it != idx) {
-                  accepted_idxs.insert(it, idx);
-                }
-              }
-            }
-            for (auto idx : accepted_idxs) {
-              auto& [conds, insts, en] = accepted_gates[idx];
-              if (isCorrectClockGate(instance, conds, *abc_network, en)) {
-                debugPrint(
-                    logger_,
-                    CGT,
-                    "clock_gating",
-                    1,
-                    "Found existing clock gate condition: {} for instance {}",
-                    combinedGatingCondNames(
-                        network, conds.begin(), conds.end(), en),
-                    network->name(instance));
-                insts.insert(insts.end(), instance);
-                inserted = true;
-                break;
-              }
-            }
-            debugPrint(
-                logger_,
-                CGT,
-                "clock_gating",
-                1,
-                "Checked {} existing clock gate conditions for instance {}",
-                accepted_idxs.size(),
-                network->name(instance));
-          });
+    {
+      DebugScopedTimer timer(reuse_check_time_,
+                             logger_,
+                             CGT,
+                             "clock_gating",
+                             3,
+                             "Existing gating conditions reuse check time: {}");
+      auto related_nets = upstreamNets(sta_, gate_cond_cover);
+      for (auto net : related_nets) {
+        for (auto idx : net_to_accepted[net]) {
+          auto it = std::lower_bound(
+              accepted_idxs.begin(), accepted_idxs.end(), idx);
+          if (it == accepted_idxs.end() || *it != idx) {
+            accepted_idxs.insert(it, idx);
+          }
+        }
+      }
+      for (auto idx : accepted_idxs) {
+        auto& [conds, insts, en] = accepted_gates[idx];
+        if (isCorrectClockGate(instance, conds, *abc_network, en)) {
+          debugPrint(
+              logger_,
+              CGT,
+              "clock_gating",
+              1,
+              "Found existing clock gate condition: {} for instance {}",
+              combinedGatingCondNames(network, conds.begin(), conds.end(), en),
+              network->name(instance));
+          insts.insert(insts.end(), instance);
+          inserted = true;
+          break;
+        }
+      }
+      debugPrint(logger_,
+                 CGT,
+                 "clock_gating",
+                 1,
+                 "Checked {} existing clock gate conditions for instance {}",
+                 accepted_idxs.size(),
+                 network->name(instance));
+    }
     if (inserted) {
       continue;
     }
@@ -491,7 +463,14 @@ void ClockGating::run()
     bool clk_enable = false;
 
     std::vector<sta::Net*> correct_conds;
-    timed(logger_, search_time_us_, "Clock gate condition search", [&] {
+
+    {
+      DebugScopedTimer timer(search_time_,
+                             logger_,
+                             CGT,
+                             "clock_gating",
+                             3,
+                             "Clock gate condition search time: {}");
       if (isCorrectClockGate(instance, gate_cond_cover, *abc_network, true)) {
         clk_enable = true;
       } else if (isCorrectClockGate(
@@ -504,7 +483,7 @@ void ClockGating::run()
                    1,
                    "Clock gating failed for instance {}",
                    network->name(instance));
-        return;
+        continue;
       }
 
       correct_conds = gate_cond_cover;
@@ -514,7 +493,7 @@ void ClockGating::run()
                        correct_conds.end(),
                        *abc_network,
                        clk_enable);
-    });
+    }
     if (correct_conds.empty()) {
       continue;
     }
@@ -528,47 +507,49 @@ void ClockGating::run()
             network, correct_conds.begin(), correct_conds.end(), clk_enable),
         network->name(instance));
 
-    timed(logger_,
-          exist_check_time_us_,
-          "Check if gate condition already exists",
-          [&] {
+    {
+      DebugScopedTimer timer(exist_check_time_,
+                             logger_,
+                             CGT,
+                             "clock_gating",
+                             3,
+                             "Check if gate condition already exists time: {}");
+      for (auto net : correct_conds) {
+        for (auto idx : net_to_accepted[net]) {
+          auto& [conds, insts, en] = accepted_gates[idx];
+          if (clk_enable == en
+              && std::includes(correct_conds.begin(),
+                               correct_conds.end(),
+                               conds.begin(),
+                               conds.end())) {
+            logger_->info(CGT,
+                          5,
+                          "Extending previously accepted clock {} '{}' to '{}'",
+                          clk_enable ? "enable" : "disable",
+                          combinedGatingCondNames(
+                              network, conds.begin(), conds.end(), clk_enable),
+                          combinedGatingCondNames(network,
+                                                  correct_conds.begin(),
+                                                  correct_conds.end(),
+                                                  clk_enable));
+            conds = correct_conds;
             for (auto net : correct_conds) {
-              for (auto idx : net_to_accepted[net]) {
-                auto& [conds, insts, en] = accepted_gates[idx];
-                if (clk_enable == en
-                    && std::includes(correct_conds.begin(),
-                                     correct_conds.end(),
-                                     conds.begin(),
-                                     conds.end())) {
-                  logger_->info(
-                      CGT,
-                      5,
-                      "Extending previously accepted clock {} '{}' to '{}'",
-                      clk_enable ? "enable" : "disable",
-                      combinedGatingCondNames(
-                          network, conds.begin(), conds.end(), clk_enable),
-                      combinedGatingCondNames(network,
-                                              correct_conds.begin(),
-                                              correct_conds.end(),
-                                              clk_enable));
-                  conds = correct_conds;
-                  for (auto net : correct_conds) {
-                    auto& gates = net_to_accepted[net];
-                    auto it = std::lower_bound(gates.begin(), gates.end(), idx);
-                    if (it == gates.end() || *it != idx) {
-                      gates.insert(it, idx);
-                    }
-                  }
-                  insts.insert(insts.end(), instance);
-                  inserted = true;
-                  break;
-                }
-              }
-              if (inserted) {
-                break;
+              auto& gates = net_to_accepted[net];
+              auto it = std::lower_bound(gates.begin(), gates.end(), idx);
+              if (it == gates.end() || *it != idx) {
+                gates.insert(it, idx);
               }
             }
-          });
+            insts.insert(insts.end(), instance);
+            inserted = true;
+            break;
+          }
+        }
+        if (inserted) {
+          break;
+        }
+      }
+    }
     if (!inserted) {
       accepted_gates.emplace_back(
           correct_conds, std::vector<sta::Instance*>{instance}, clk_enable);
@@ -614,43 +595,39 @@ void ClockGating::run()
              "clock_gating",
              2,
              "Total gate condition reuse check time: {} s",
-             reuse_check_time_us_ / 1000 / 1000);
+             reuse_check_time_);
   debugPrint(logger_,
              CGT,
              "clock_gating",
              2,
              "Total gate condition search time: {} s",
-             search_time_us_ / 1000 / 1000);
+             search_time_);
   debugPrint(logger_,
              CGT,
              "clock_gating",
              2,
              "Total existing gate condition check time: {} s",
-             exist_check_time_us_ / 1000 / 1000);
+             exist_check_time_);
   debugPrint(logger_,
              CGT,
              "clock_gating",
              2,
              "Total network export time: {} s",
-             network_export_time_us_ / 1000 / 1000);
+             network_export_time_);
   debugPrint(logger_,
              CGT,
              "clock_gating",
              2,
              "Total network build time: {} s",
-             network_build_time_us_ / 1000 / 1000);
+             network_build_time_);
   debugPrint(logger_,
              CGT,
              "clock_gating",
              2,
              "Total simulation time: {} s",
-             sim_time_us_ / 1000 / 1000);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total SAT time: {} s",
-             sat_time_us_ / 1000 / 1000);
+             sim_time_);
+  debugPrint(
+      logger_, CGT, "clock_gating", 2, "Total SAT time: {} s", sat_time_);
 }
 
 // Returns a sequence of nets that excludes the range [begin, end) from the
@@ -927,6 +904,12 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
     abc::Abc_Ntk_t& abc_network_ref,
     const bool clk_enable)
 {
+  DebugScopedTimer timer(network_export_time_,
+                         logger_,
+                         CGT,
+                         "clock_gating",
+                         3,
+                         "Network build for sim/SAT time: {}");
   auto abc_network = WrapUnique(Abc_NtkDupNetlist(&abc_network_ref));
   abc::Abc_NtkMapToSop(abc_network.get());
   {
@@ -1081,6 +1064,8 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
 bool ClockGating::simulationTest(abc::Abc_Ntk_t* const abc_network,
                                  const std::string& combined_gate_name)
 {
+  DebugScopedTimer timer(
+      sim_time_, logger_, CGT, "clock_gating", 3, "Simulation time: {}");
   abc::Abc_Obj_t* obj;
   int idx;
   std::vector<int> sim_input;
@@ -1118,6 +1103,8 @@ bool ClockGating::simulationTest(abc::Abc_Ntk_t* const abc_network,
 bool ClockGating::satTest(abc::Abc_Ntk_t* const abc_network,
                           const std::string& combined_gate_name)
 {
+  DebugScopedTimer timer(
+      sat_time_, logger_, CGT, "clock_gating", 3, "SAT time: {}");
   if (!abc::Abc_NtkMiterSat(abc_network, 0, 0, 0, nullptr, nullptr)) {
     // 0 is SAT
     debugPrint(logger_,
@@ -1162,28 +1149,21 @@ bool ClockGating::isCorrectClockGate(
           network, gate_cond_nets.begin(), gate_cond_nets.end(), clk_enable),
       network->name(instance));
 
-  auto abc_network = timed(
-      logger_, network_build_time_us_, "Network build for sim/SAT", [&] {
-        return makeTestNetwork(
-            instance, gate_cond_nets, abc_network_ref, clk_enable);
-      });
+  auto abc_network
+      = makeTestNetwork(instance, gate_cond_nets, abc_network_ref, clk_enable);
   if (!abc_network) {
     return false;
   }
 
   dumpAbc("simsat", abc_network.get());
 
-  if (!timed(logger_, sim_time_us_, "Simulation", [&] {
-        // Simulate with random stimuli
-        return simulationTest(abc_network.get(), "");
-      })) {
+  // Simulate with random stimuli
+  if (!simulationTest(abc_network.get(), "")) {
     return false;
   }
 
-  if (!timed(logger_, sat_time_us_, "SAT", [&] {
-        // SAT prove correctness of selected clock gate
-        return satTest(abc_network.get(), "");
-      })) {
+  // SAT prove correctness of selected clock gate
+  if (!satTest(abc_network.get(), "")) {
     return false;
   }
 
@@ -1275,6 +1255,12 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
     sta::Instance* const instance,
     const std::vector<sta::Net*>& gate_cond_nets)
 {
+  utl::DebugScopedTimer timer(network_export_time_,
+                              logger_,
+                              CGT,
+                              "clock_gating",
+                              3,
+                              "Network export time: {}");
   auto network = sta_->getDbNetwork();
   auto graph = sta_->graph();
   std::unordered_set<sta::Vertex*> endpoints;
