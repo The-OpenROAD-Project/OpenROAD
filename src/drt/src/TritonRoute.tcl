@@ -15,8 +15,6 @@ sta::define_cmd_args "detailed_route" {
     [-via_access_layer layer]
     [-or_seed seed]
     [-or_k k]
-    [-bottom_routing_layer layer]
-    [-top_routing_layer layer]
     [-verbose level]
     [-distributed]
     [-remote_host rhost]
@@ -35,8 +33,8 @@ proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
     keys {-output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
-      -via_in_pin_top_layer -via_access_layer -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
+      -via_in_pin_top_layer -via_access_layer -or_seed -or_k \
+      -verbose -remote_host -remote_port -shared_volume \
       -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access \
            -single_step_dr -save_guide_updates}
@@ -121,16 +119,6 @@ proc detailed_route { args } {
   } else {
     set or_k 0
   }
-  if { [info exists keys(-bottom_routing_layer)] } {
-    set bottom_routing_layer $keys(-bottom_routing_layer)
-  } else {
-    set bottom_routing_layer ""
-  }
-  if { [info exists keys(-top_routing_layer)] } {
-    set top_routing_layer $keys(-top_routing_layer)
-  } else {
-    set top_routing_layer ""
-  }
   if { [info exists keys(-verbose)] } {
     sta::check_positive_integer "-verbose" $keys(-verbose)
     set verbose $keys(-verbose)
@@ -169,7 +157,7 @@ proc detailed_route { args } {
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
-    $via_access_layer $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
+    $via_access_layer $or_seed $or_k $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
     $save_guide_updates $repair_pdn_vias $drc_report_iter_step
 }
@@ -270,8 +258,6 @@ proc detailed_route_debug { args } {
 
 sta::define_cmd_args "pin_access" {
     [-db_process_node name]
-    [-bottom_routing_layer layer]
-    [-top_routing_layer layer]
     [-via_access_layer layer]
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
@@ -285,7 +271,7 @@ sta::define_cmd_args "pin_access" {
 }
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
-    keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
+    keys {-db_process_node -verbose \
           -min_access_points -remote_host -remote_port -shared_volume -cloud_size \
           -via_access_layer -via_in_pin_bottom_layer -via_in_pin_top_layer} \
     flags {-distributed}
@@ -294,16 +280,6 @@ proc pin_access { args } {
     set db_process_node $keys(-db_process_node)
   } else {
     set db_process_node ""
-  }
-  if { [info exists keys(-bottom_routing_layer)] } {
-    set bottom_routing_layer $keys(-bottom_routing_layer)
-  } else {
-    set bottom_routing_layer ""
-  }
-  if { [info exists keys(-top_routing_layer)] } {
-    set top_routing_layer $keys(-top_routing_layer)
-  } else {
-    set top_routing_layer ""
   }
   if { [info exists keys(-via_access_layer)] } {
     set via_access_layer $keys(-via_access_layer)
@@ -355,8 +331,8 @@ proc pin_access { args } {
     }
     drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
-  drt::pin_access_cmd $db_process_node $bottom_routing_layer \
-    $top_routing_layer $via_access_layer $verbose $min_access_points \
+  drt::pin_access_cmd $db_process_node \
+    $via_access_layer $verbose $min_access_points \
     $via_in_pin_bottom_layer $via_in_pin_top_layer
 }
 
