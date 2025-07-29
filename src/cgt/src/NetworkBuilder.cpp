@@ -60,7 +60,15 @@ void NetworkBuilder::init(Logger* const logger, sta::dbNetwork* const network)
       if (cell->dontUse()) {
         continue;
       }
-      if (!clkgate_cell_ && cell->isClockGateLatchPosedge()) {
+      if (!clkgate_cell_ && cell->isClockGate()) {
+        if (!cell->isClockGateLatchPosedge()) {
+          logger_->warn(CGT,
+                        11,
+                        "Skipping clock gate cell {}. Clock gates other than "
+                        "with posedge latches are not supported",
+                        cell->name());
+          continue;
+        }
         clkgate_cell_ = cell;
         sta::LibertyCellPortIterator port_iter(cell);
         while (port_iter.hasNext()) {
