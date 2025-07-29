@@ -757,6 +757,7 @@ void Resizer::findBuffers()
   // There may be multiple cell sites like short, tall, short+tall, etc.
   // Pick two sites that are the most dominant.  Most likely, short and tall.
   std::vector<std::pair<odb::dbSite*, float>> site_list;
+  site_list.reserve(lib_data.site_data.size());
   for (const auto& [site_type, count] : lib_data.site_data) {
     site_list.emplace_back(site_type, (float) count / buffer_list.size());
   }
@@ -1714,9 +1715,7 @@ void Resizer::reportBuffers()
     return;
   }
 
-  logger_->report(
-      "**********************************************************************"
-      "**********");
+  logger_->report("{:*>80}", "");
   logger_->report("Buffer Report:");
   logger_->report(
       "There are {} buffers that are not marked as dont-use, multi-voltage\n"
@@ -1748,18 +1747,14 @@ void Resizer::reportBuffers()
                     count,
                     ((float) count) / buffer_list.size() * 100);
   }
-  logger_->report(
-      "----------------------------------------------------------------------"
-      "------------");
+  logger_->report("{:->80}", "");
   logger_->report(
       "Cell                                        Drive Drive    Leak "
       "  Site Cell   VT");
   logger_->report(
       "                                            Res   Res*Cin       "
       "   Ht Footpt Type");
-  logger_->report(
-      "----------------------------------------------------------------------"
-      "------------");
+  logger_->report("{:->80}", "");
   for (LibertyCell* buffer : buffer_list) {
     float drive_res = bufferDriveResistance(buffer);
     LibertyPort *input, *output;
@@ -1777,9 +1772,7 @@ void Resizer::reportBuffers()
                     (buffer->footprint() ? buffer->footprint() : "N/A"),
                     cellVTType(master).second);
   }
-  logger_->report(
-      "**********************************************************************"
-      "**********");
+  logger_->report("{:*>80}", "");
 }
 
 void Resizer::getBufferList(LibertyCellSeq& buffer_list,
