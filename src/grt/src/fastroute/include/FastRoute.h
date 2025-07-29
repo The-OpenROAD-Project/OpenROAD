@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractMakeWireParasitics.h"
 #include "DataType.h"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
@@ -45,8 +44,6 @@ using boost::icl::interval;
 using boost::icl::interval_set;
 
 class AbstractFastRouteRenderer;
-class MakeWireParasitics;
-
 // Debug mode settings
 struct DebugSetting
 {
@@ -186,7 +183,6 @@ class FastRouteCore
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
-  void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
@@ -633,7 +629,7 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  AbstractMakeWireParasitics* parasitics_builder_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   std::unique_ptr<DebugSetting> debug_;
 

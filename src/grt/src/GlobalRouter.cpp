@@ -28,7 +28,6 @@
 #include "AbstractRoutingCongestionDataSource.h"
 #include "FastRoute.h"
 #include "Grid.h"
-#include "MakeWireParasitics.h"
 #include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
@@ -469,11 +468,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
-    MakeWireParasitics builder(
-        logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
-    fastroute_->setMakeWireParasiticsBuilder(&builder);
     routes = fastroute_->run();
-    fastroute_->setMakeWireParasiticsBuilder(nullptr);
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
     for (auto& net_route : routes) {
@@ -486,46 +481,63 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
-{
-  // Remove any existing parasitics.
-  sta_->deleteParasitics();
-
-  // Make separate parasitics for each corner.
-  sta_->setParasiticAnalysisPts(true);
-
-  MakeWireParasitics builder(
-      logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
-
-  for (auto& [db_net, route] : routes_) {
-    if (!route.empty()) {
-      Net* net = getNet(db_net);
-      builder.estimateParasitics(db_net, net->getPins(), route, spef_writer);
-    }
-  }
-}
-
-void GlobalRouter::estimateRC(odb::dbNet* db_net)
-{
-  MakeWireParasitics builder(
-      logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
-  auto iter = routes_.find(db_net);
-  if (iter == routes_.end()) {
-    return;
-  }
-  GRoute& route = iter->second;
-  if (!route.empty()) {
-    Net* net = getNet(db_net);
-    builder.estimateParasitics(db_net, net->getPins(), route);
-  }
-}
-
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
+  odb::dbTech* tech = db_->getTech();
   loadGuidesFromDB();
-  MakeWireParasitics builder(
-      logger_, estimate_parasitics_, sta_, db_->getTech(), block_, this);
-  return builder.routeLayerLengths(db_net);
+  NetRouteMap& routes = routes_;
+
+  // dbu wirelength for wires, via count for vias
+  std::vector<int> layer_lengths(tech->getLayerCount());
+
+  if (!db_net->getSigType().isSupply()) {
+    GRoute& route = routes[db_net];
+    std::set<RoutePt> route_pts;
+    for (GSegment& segment : route) {
+      if (segment.isVia()) {
+        auto& s = segment;
+        // Mimic makeRouteParasitics
+        int min_layer = std::min(s.init_layer, s.final_layer);
+        odb::dbTechLayer* cut_layer
+            = tech->findRoutingLayer(min_layer)->getUpperLayer();
+        layer_lengths[cut_layer->getNumber()] += 1;
+        route_pts.insert(RoutePt(s.init_x, s.init_y, s.init_layer));
+        route_pts.insert(RoutePt(s.final_x, s.final_y, s.final_layer));
+      } else {
+        int layer = segment.init_layer;
+        layer_lengths[tech->findRoutingLayer(layer)->getNumber()]
+            += segment.length();
+        route_pts.insert(RoutePt(segment.init_x, segment.init_y, layer));
+        route_pts.insert(RoutePt(segment.final_x, segment.final_y, layer));
+      }
+    }
+
+    Net* net = getNet(db_net);
+    for (Pin& pin : net->getPins()) {
+      int layer = pin.getConnectionLayer() + 1;
+      odb::Point grid_pt = pin.getOnGridPosition();
+      odb::Point pt = pin.getPosition();
+
+      std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+      bool has_access_points = findPinAccessPointPositions(pin, ap_positions);
+      if (has_access_points) {
+        auto ap_position = ap_positions.front();
+        pt = ap_position.first;
+        grid_pt = ap_position.second;
+      }
+
+      RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
+      auto pt_itr = route_pts.find(grid_route);
+      if (pt_itr == route_pts.end()) {
+        layer--;
+      }
+      int wire_length_dbu
+          = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
+      layer_lengths[tech->findRoutingLayer(layer)->getNumber()]
+          += wire_length_dbu;
+    }
+  }
+  return layer_lengths;
 }
 
 ////////////////////////////////////////////////////////////////

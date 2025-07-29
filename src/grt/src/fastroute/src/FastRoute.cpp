@@ -59,7 +59,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       stt_builder_(stt_builder),
       debug_(new DebugSetting())
 {
-  parasitics_builder_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -1429,12 +1428,6 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
-}
-
-void FastRouteCore::setMakeWireParasiticsBuilder(
-    AbstractMakeWireParasitics* builder)
-{
-  parasitics_builder_ = builder;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)
