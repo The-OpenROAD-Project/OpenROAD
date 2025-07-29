@@ -51,6 +51,8 @@ detailed_route
     [-via_access_layer layer]
     [-or_seed seed]
     [-or_k k]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
     [-verbose level]
     [-distributed]
     [-remote_host rhost]
@@ -83,6 +85,8 @@ detailed_route
 | `-min_access_points` | Refer to pin access arguments [here](#pin-access-arguments). |
 | `-or_seed` | Refer to developer arguments [here](#developer-arguments). |
 | `-or_k` | Refer to developer arguments [here](#developer-arguments). |
+| `-bottom_routing_layer` | Deprecated. Use the `set_routing_layers` command instead. |
+| `-top_routing_layer` | Deprecated. Use the `set_routing_layers` command instead. |
 | `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-remote_host` | Refer to distributed arguments [here](#distributed-arguments). |
@@ -156,6 +160,7 @@ This function checks pin access.
 ```tcl
 pin_access
     [-db_process_node name]
+    [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-via_access_layer layer]
     [-via_in_pin_bottom_layer layer]
@@ -174,6 +179,8 @@ pin_access
 | Switch Name | Description |
 | ----- | ----- |
 | `-db_process_node` | Specify process node. |
+| `-bottom_routing_layer` | Deprecated. Use the `set_routing_layers` command instead. |
+| `-top_routing_layer` | Deprecated. Use the `set_routing_layers` command instead. |
 | `-via_access_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
 | `-via_in_pin_bottom_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
 | `-via_in_pin_top_layer` | Refer to pin access arguments [here](#pin-access-arguments). |
