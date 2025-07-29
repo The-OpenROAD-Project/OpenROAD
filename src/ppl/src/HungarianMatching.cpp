@@ -5,9 +5,16 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <limits>
 #include <vector>
 
+#include "Core.h"
+#include "Netlist.h"
+#include "Slots.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ppl {

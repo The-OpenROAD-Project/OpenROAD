@@ -2743,14 +2743,6 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
   }
 
   sprintf(_wireDirName,
-          "%s_%s_W%gW%g_S%gS%g",
-          _patternName,
-          overUnder,
-          get_nm(m, m->_w_m),
-          get_nm(m, m->_w2_m),
-          get_nm(m, m->_s_m),
-          get_nm(m, m->_s2_m));
-  sprintf(_wireDirName,
           "%s_%s_W%gW%g_S%05dS%05d",
           _patternName,
           overUnder,

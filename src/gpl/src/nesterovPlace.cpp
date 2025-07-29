@@ -471,15 +471,15 @@ void NesterovPlace::runTimingDriven(const int iter,
 
         nesterov->setTargetDensity(
             static_cast<float>(nbc_->getDeltaArea()
-                               + nesterov->nesterovInstsArea()
+                               + nesterov->getNesterovInstsArea()
                                + nesterov->getTotalFillerArea())
-            / static_cast<float>(nesterov->whiteSpaceArea()));
+            / static_cast<float>(nesterov->getWhiteSpaceArea()));
 
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
             = (nbc_->getDeltaArea()
-               / static_cast<float>(nesterov->nesterovInstsArea()))
+               / static_cast<float>(nesterov->getNesterovInstsArea()))
               * 100.0f;
         log_->info(
             GPL,
@@ -505,7 +505,7 @@ void NesterovPlace::runTimingDriven(const int iter,
         log_->info(GPL,
                    110,
                    "Timing-driven: new target density: {}",
-                   nesterov->targetDensity());
+                   nesterov->getTargetDensity());
         nbc_->resetDeltaArea();
         nbc_->resetNewGcellsCount();
         nesterov->updateAreas();
@@ -551,7 +551,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
       diverge_snapshot_WlCoefX = wireLengthCoefX_;
       diverge_snapshot_WlCoefY = wireLengthCoefY_;
       for (auto& nb : nbVec_) {
-        nb->snapshot();
+        nb->saveSnapshot();
       }
       is_diverge_snapshot_saved = true;
     }
@@ -639,7 +639,7 @@ void NesterovPlace::routabilitySnapshot(
     is_routability_snapshot_saved = true;
 
     for (auto& nb : nbVec_) {
-      nb->snapshot();
+      nb->saveSnapshot();
     }
 
     log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);
@@ -755,7 +755,7 @@ void NesterovPlace::runRoutability(const int iter,
 
     if (!is_routability_need_) {
       for (auto& nb : nbVec_) {
-        end_routability_area += nb->nesterovInstsArea();
+        end_routability_area += nb->getNesterovInstsArea();
       }
     }
   }
@@ -913,7 +913,7 @@ void NesterovPlace::reportResults(const int nesterov_iter,
 
   int64_t new_area = 0;
   for (auto& nb : nbVec_) {
-    new_area += nb->nesterovInstsArea();
+    new_area += nb->getNesterovInstsArea();
   }
   const float placement_diff
       = 100.0 * (new_area - original_area) / original_area;
@@ -961,7 +961,7 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
     nb->setIter(start_iter);
     nb->setMaxPhiCoefChanged(false);
     nb->resetMinSumOverflow();
-    original_area += nb->nesterovInstsArea();
+    original_area += nb->getNesterovInstsArea();
   }
 
   if (!npVars_.routability_driven_mode) {
@@ -1186,7 +1186,7 @@ void NesterovPlace::createGNet(odb::dbNet* db_net)
   if (!isValidSigType(netType)) {
     return;
   }
-  nbc_->createCbkGNet(db_net, pbc_->skipIoMode());
+  nbc_->createCbkGNet(db_net, pbc_->isSkipIoMode());
 }
 
 void NesterovPlace::destroyCbkGNet(odb::dbNet* db_net)

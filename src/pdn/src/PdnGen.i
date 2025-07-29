@@ -267,12 +267,13 @@ void make_connect(const char* grid_name,
                   const std::vector<odb::dbTechLayer*>& ongrid,
                   const std::vector<odb::dbTechLayer*>& split_cuts_layers,
                   const std::vector<int>& split_cut_pitches,
+                  const bool split_cut_stagger,
                   const char* dont_use_vias)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  std::map<odb::dbTechLayer*, int> split_cuts;
+  std::map<odb::dbTechLayer*, std::pair<int, bool>> split_cuts;
   for (size_t i = 0; i < split_cuts_layers.size(); i++) {
-    split_cuts[split_cuts_layers[i]] = split_cut_pitches[i];
+    split_cuts[split_cuts_layers[i]] = {split_cut_pitches[i], split_cut_stagger};
   }
   for (auto* grid : pdngen->findGrid(grid_name)) {
     pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, split_cuts, dont_use_vias);

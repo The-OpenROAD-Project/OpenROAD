@@ -3,7 +3,7 @@
 
 #include "Core.h"
 
-#include <algorithm>
+#include "odb/geom.h"
 
 namespace ppl {
 

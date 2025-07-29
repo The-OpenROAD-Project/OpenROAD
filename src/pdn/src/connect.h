@@ -7,6 +7,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,12 @@ namespace pdn {
 class Connect
 {
  public:
+  struct SplitCut
+  {
+    int pitch{0};
+    bool stagger{false};
+  };
+
   Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1);
 
   void addFixedVia(odb::dbTechViaGenerateRule* via);
@@ -36,8 +43,9 @@ class Connect
 
   void setOnGrid(const std::vector<odb::dbTechLayer*>& layers);
 
-  void setSplitCuts(const std::map<odb::dbTechLayer*, int>& splits);
+  void setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits);
   int getSplitCutPitch(odb::dbTechLayer* layer) const;
+  bool getSplitCutStagger(odb::dbTechLayer* layer) const;
 
   void report() const;
 
@@ -98,11 +106,11 @@ class Connect
   int max_columns_ = 0;
 
   std::set<odb::dbTechLayer*> ongrid_;
-  std::map<odb::dbTechLayer*, int> split_cuts_;
+  std::map<odb::dbTechLayer*, SplitCut> split_cuts_;
 
   // map of built vias, where the key is the width and height of the via
   // intersection, and the value points of the associated via stack.
-  using ViaIndex = std::pair<int, int>;
+  using ViaIndex = std::tuple<odb::dbNet*, int, int>;
   std::map<ViaIndex, std::unique_ptr<DbGenerateStackedVia>> vias_;
   std::vector<odb::dbTechViaGenerateRule*> generate_via_rules_;
   std::vector<odb::dbTechVia*> tech_vias_;
@@ -114,6 +122,7 @@ class Connect
       failed_vias_;
 
   DbVia* makeSingleLayerVia(
+      odb::dbNet* net,
       odb::dbBlock* block,
       odb::dbTechLayer* lower,
       const std::set<odb::Rect>& lower_rects,
@@ -133,9 +142,10 @@ class Connect
                        odb::dbTechLayer* lower,
                        odb::dbTechLayer* upper) const;
 
-  int getSplitCut(odb::dbTechLayer* layer) const;
+  SplitCut getSplitCut(odb::dbTechLayer* layer) const;
 
   DbVia* generateDbVia(
+      odb::dbNet* net,
       const std::vector<std::shared_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
 
