@@ -152,6 +152,10 @@ void ClockTreeRenderer::resetTree()
 
 void ClockTreeRenderer::setMaxColorDepth(int depth)
 {
+  if (depth < 1) {
+    return;
+  }
+
   max_depth_ = depth;
   redraw();
 }
@@ -1651,7 +1655,8 @@ void ClockWidget::postReadLiberty()
   }
 }
 
-void ClockWidget::selectClock(const std::string& clock_name)
+void ClockWidget::selectClock(const std::string& clock_name,
+                              std::optional<int> depth)
 {
   setVisible(true);
 
@@ -1662,6 +1667,9 @@ void ClockWidget::selectClock(const std::string& clock_name)
   for (auto& view : views_) {
     if (view->getClockName() == clock_name) {
       clocks_tab_->setCurrentWidget(view.get());
+      if (depth) {
+        view->updateColorDepth(*depth);
+      }
 
       return;
     }

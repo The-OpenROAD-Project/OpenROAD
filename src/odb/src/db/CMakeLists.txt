@@ -161,6 +161,7 @@ add_library(db
     dbModulePortItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
+    dbScanListScanInstItr.cpp
     # Generator Code End cpp
 )
 

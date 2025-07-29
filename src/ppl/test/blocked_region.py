@@ -11,7 +11,7 @@ tech.readLef("blocked_region.lef")
 design = helpers.make_design(tech)
 design.readDef("blocked_region.def")
 
-ppl_aux.place_pins(design, hor_layers="met3", ver_layers="met2", random=True)
+ppl_aux.place_pins(design, hor_layers="met3", ver_layers="met2")
 
 def_file = helpers.make_result_file("blocked_region.def")
 design.writeDef(def_file)

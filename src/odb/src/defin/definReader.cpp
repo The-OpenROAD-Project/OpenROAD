@@ -1427,6 +1427,12 @@ int definReader::scanchainsCallback(
                        out_pin_name,
                        bits[i]);
     }
+
+    dbSet<dbScanInst> db_scan_insts = db_scan_list->getScanInsts();
+
+    if (db_scan_insts.reversible() && db_scan_insts.orderReversed()) {
+      db_scan_insts.reverse();
+    }
   }
 
   return PARSE_OK;

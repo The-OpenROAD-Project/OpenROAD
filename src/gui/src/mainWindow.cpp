@@ -184,6 +184,19 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
         addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
       });
 
+  connect(viewers_,
+          &LayoutTabs::focusNetsChanged,
+          inspector_,
+          &Inspector::loadActions);
+  connect(viewers_,
+          &LayoutTabs::routeGuidesChanged,
+          inspector_,
+          &Inspector::loadActions);
+  connect(viewers_,
+          &LayoutTabs::netTracksChanged,
+          inspector_,
+          &Inspector::loadActions);
+
   connect(
       this, &MainWindow::selectionChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(
@@ -223,14 +236,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(inspector_, &Inspector::focus, viewers_, &LayoutTabs::selectionFocus);
   connect(
       drc_viewer_, &DRCWidget::focus, viewers_, &LayoutTabs::selectionFocus);
-  connect(this,
-          &MainWindow::highlightChanged,
-          inspector_,
-          &Inspector::highlightChanged);
+  connect(
+      this, &MainWindow::highlightChanged, inspector_, &Inspector::loadActions);
   connect(viewers_,
           &LayoutTabs::focusNetsChanged,
           inspector_,
-          &Inspector::focusNetsChanged);
+          &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
           [=](const QList<const Selected*>& selected) {
@@ -551,6 +562,9 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbMarkerCategoryDescriptor(db_));
   gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
   gui->registerDescriptor<odb::dbScanInst*>(new DbScanInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
+  gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
+      new DbBoxDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(

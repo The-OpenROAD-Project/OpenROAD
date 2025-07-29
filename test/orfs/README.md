@@ -62,13 +62,27 @@ The `WORK_HOME` is in `/tmp/place/_main`:
     Archiving issue to global_place_skip_io_Element_asap7_base_2025-07-16_08-44.tar.gz
     Using pigz to compress tar file
 
-To use a local ORFS and OpenROAD built by CMake:
+## Using a local ORFS
+
+bazel-orfs can set up ORFS design files locally for debugging purposes, leaving bazel-orfs entirely out of the equation when chasing down issues. Such a setup is most often a lot more convenient than using `--sandbox_debug`.
+
+NOTE! keep in mind that these local ORFS design files have the depndencies `_deps` to run a particular stage only. Hence, use the `do-` prefix for doing `do-place`, `do-2_1_floorplan`, etc. so that `make` dependency checking is not used. If you use `make floorplan`, this will try to run synthesis first and not find the prequisite files, nor variables in config.mk, for synthesis and it will fail with bogus and confusing error messages.
+
+If you're interested in some other stage, replace `place` with `synth`, `floorplan`, `cts`, `grt`, `route` or `final` below.
+
+The `/tmp/place/make` script, if `FLOW_HOME` is set, will use a local ORFS and OpenROAD built by CMake:
 
     $ . ~/OpenROAD-flow-scripts/env.sh
     $ /tmp/place/make print-FLOW_HOME print-OPENROAD_EXE
     [deleted]
     FLOW_HOME = /home/<username>/OpenROAD-flow-scripts/flow
     OPENROAD_EXE = /home/<username>/OpenROAD-flow-scripts/tools/install/OpenROAD/bin/openroad
+
+More explictly ORFS only:
+
+    make --file=~/OpenROAD-flow-scripts/flow/Makefile -C /tmp/place/_main WORK_HOME=test/orfs/mock-array DESIGN_CONFIG=config.mk do-place
+
+This is a bit more verbose, but eliminates any concerns about what the `/tmp/place/make` might be doing differently than ORFS only.
 
 ## Running a `make issue` with `cfg=exec` configuraiton
 

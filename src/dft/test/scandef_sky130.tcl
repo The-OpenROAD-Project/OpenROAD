@@ -8,5 +8,6 @@ read_verilog scan_inserted_design_sky130.v
 link_design scan_inserted_design
 
 read_def -incremental scan_inserted_design_sky130.scandef
-write_def scan_inserted_design_sky130.out.def
-diff_files scan_inserted_design_sky130.out.def scan_inserted_design_sky130.def.ok
+set result_def [make_result_file scandef_sky130.def]
+write_def $result_def
+diff_files $result_def "scandef_sky130.defok"

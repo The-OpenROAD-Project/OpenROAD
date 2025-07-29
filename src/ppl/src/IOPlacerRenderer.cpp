@@ -5,6 +5,10 @@
 
 #include <vector>
 
+#include "Netlist.h"
+#include "gui/gui.h"
+#include "odb/geom.h"
+
 namespace ppl {
 
 IOPlacerRenderer::IOPlacerRenderer()

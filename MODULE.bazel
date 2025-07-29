@@ -114,7 +114,7 @@ bazel_dep(name = "toolchains_llvm", version = "1.4.0")
 # Configure and register the toolchain.
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
-    llvm_version = "20.1.0",
+    llvm_version = "20.1.2",
 )
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
@@ -151,7 +151,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "f8e4ced47dc2c9d15aea97d734eba55a50f35666",
+    commit = "abacf584d7515bebec96491c757a806431b7f9f7",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -160,10 +160,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3444-g669e62e5",
+    image = "docker.io/openroad/orfs:v3.0-3503-gd7c7e73f",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "9f9c6c0817eba504c56cdf613bf1bcc00054164500a276de894a4cb1f48b69a6",
+    sha256 = "d5539ade517724de3765362589be443afb2624b14391b365612c8949a7c99a19",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -195,12 +195,13 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "openroad_maven",
     artifacts = [
-        "org.chipsalliance:chisel_2.13:7.0.0-RC1+22-2cb90ea2-SNAPSHOT",
-        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC1+22-2cb90ea2-SNAPSHOT",
+        "org.chipsalliance:chisel_2.13:7.0.0-RC3",
+        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC3",
     ],
     repositories = [
-        "https://s01.oss.sonatype.org/content/repositories/snapshots",
         "https://repo1.maven.org/maven2",
+        "https://s01.oss.sonatype.org/content/repositories/releases",
+        "https://s01.oss.sonatype.org/content/repositories/snapshots",
     ],
 )
 use_repo(maven, "openroad_maven")

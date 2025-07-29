@@ -9,7 +9,28 @@ proc get_db_tech_checked { } {
   }
   return $tech
 }
+
+proc parse_buffer_cell { keys_var } {
+  upvar 1 $keys_var keys
+  set buffer_cell "NULL"
+
+  if { [info exists keys(-buffer_cell)] } {
+    set buffer_cell_name $keys(-buffer_cell)
+    if { $buffer_cell_name ne "" } {
+      set buffer_cell [sta::get_lib_cell_error "-buffer_cell" $buffer_cell_name]
+
+      # the lib cell is a buffer?
+      if { $buffer_cell ne "NULL" && ![get_property $buffer_cell is_buffer] } {
+        utl::error RSZ 211 "[get_name $buffer_cell] is not a buffer."
+      }
+    }
+  }
+  return $buffer_cell
 }
+
+# namespace eval rsz
+}
+
 
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
 sta::define_cmd_args "set_layer_rc" { [-layer layer]\
@@ -441,13 +462,14 @@ proc report_dont_touch { args } {
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                       [-max_utilization util]\
-                                       [-buffer_cell buf_cell]}
+                                     [-max_utilization util]\
+                                     [-buffer_cell buf_cell]\
+                                     [-verbose]}
 
 proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
     keys {-buffer_cell -max_utilization} \
-    flags {-inputs -outputs}
+    flags {-inputs -outputs -verbose}
 
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
@@ -455,14 +477,19 @@ proc buffer_ports { args } {
     set buffer_inputs 1
     set buffer_outputs 1
   }
+
+  set verbose [info exists flags(-verbose)]
+
   sta::check_argc_eq0 "buffer_ports" $args
 
   rsz::set_max_utilization [rsz::parse_max_util keys]
+  set buffer_cell [rsz::parse_buffer_cell keys]
+
   if { $buffer_inputs } {
-    rsz::buffer_inputs
+    rsz::buffer_inputs $buffer_cell $verbose
   }
   if { $buffer_outputs } {
-    rsz::buffer_outputs
+    rsz::buffer_outputs $buffer_cell $verbose
   }
 }
 
@@ -1056,7 +1083,7 @@ proc replace_arith_modules { args } {
   if { [info exists keys(-target)] } {
     set target $keys(-target)
     if { [lsearch -exact {setup hold power area} $target] == -1 } {
-      util::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
+      utl::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
     }
   } else {
     set target "setup"

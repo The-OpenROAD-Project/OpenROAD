@@ -349,6 +349,10 @@ proc place_io_terminals { args } {
     keys {} \
     flags {-allow_non_top_layer}
 
+  if { [llength $args] == 0 } {
+    utl::error PAD 8 "place_io_terminals requires at least one terminal"
+  }
+
   set iterms []
   foreach pin [get_pins {*}$args] {
     lappend iterms [sta::sta_to_db_pin $pin]

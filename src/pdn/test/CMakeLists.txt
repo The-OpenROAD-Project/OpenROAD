@@ -17,6 +17,7 @@ or_integration_tests(
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
     asap7_M1_M3_followpins
+    asap7_M1_M3_followpins_staggered
     bpin_removal
     core_grid
     core_grid_adjacentcuts
@@ -24,6 +25,7 @@ or_integration_tests(
     core_grid_auto_domain_multiple_nets
     core_grid_bad_metal_specs
     core_grid_check_connect_layers
+    core_grid_check_connect_layers_at_setup
     core_grid_cut_pitch
     core_grid_dual_followpins
     core_grid_dual_followpins_error

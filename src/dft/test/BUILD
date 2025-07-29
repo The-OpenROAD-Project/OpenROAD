@@ -62,8 +62,6 @@ filegroup(
         "register_bank_cores.lef",
         "register_bank_top.v",
         "scan_architect_sky130.v",
-        "scan_inserted_design_sky130.def.ok",
-        "scan_inserted_design_sky130.out.def",
         "scan_inserted_design_sky130.scandef",
         "scan_inserted_design_sky130.v",
         "scan_inserted_register_bank.v",
