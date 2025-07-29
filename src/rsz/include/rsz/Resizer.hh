@@ -179,9 +179,9 @@ struct LibraryAnalysisData
   // How many cells in each VT category, total and average leakage per VT
   std::map<std::pair<int, std::string>, OneVTLeakage> vt_leak_data;
   // How many cells with liberty cell_footprint attributes
-  std::unordered_map<std::string, int> footprint_data;
+  std::map<std::string, int> footprint_data;
   // How many cells with different LEF cell sites (short, tall, etc.)
-  std::unordered_map<odb::dbSite*, int> site_data;
+  std::map<odb::dbSite*, int> site_data;
   // Sorted VT categories to determine HVT/RVT/LVT/uLVT order
   std::vector<std::pair<std::pair<int, std::string>, OneVTLeakage>> vt_sorted;
 };
@@ -485,7 +485,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
                             float max_drive_resist);
   void findBuffers();
   void findFastBuffers();
-  void findFastBuffersOld();
   LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();

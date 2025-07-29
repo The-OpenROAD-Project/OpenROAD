@@ -625,169 +625,7 @@ bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
   return true;
 }
 
-#define debugRDPrint1(format_str, ...) \
-  debugPrint(logger_, utl::RSZ, "resizer", 1, format_str, ##__VA_ARGS__)
-// debugPrint for replace_design level 2
-#define debugRDPrint2(format_str, ...) \
-  debugPrint(logger_, utl::RSZ, "resizer", 2, format_str, ##__VA_ARGS__)
-
 void Resizer::findFastBuffers()
-{
-  if (!buffer_fast_sizes_.empty()) {
-    return;
-  }
-
-  LibertyCellSeq buffer_list;
-  LibraryAnalysisData lib_data;
-  getBufferList(buffer_list, lib_data);
-
-  // Pick the right cell footprint to avoid delay cells
-  std::string best_footprint;
-  if (lib_data.footprint_data.size() > 1) {
-    for (const auto& [footprint_type, count] : lib_data.footprint_data) {
-      float ratio = (float) count / buffer_list.size();
-      // Some PDK libs have a distinct footprint for each drive strength
-      // Pick a footprint that dominates
-      if (ratio > 0.5) {
-        best_footprint = footprint_type;
-        debugRDPrint2("findBestBuffers: Best footprint is {}", footprint_type);
-        break;
-      }
-    }
-  }
-
-  // Pick the second most leaky VT for multiple VTs
-  int best_vt_index = -1;
-  int num_vt = lib_data.vt_sorted.size();
-  if (num_vt > 1) {
-    best_vt_index = lib_data.vt_sorted[num_vt - 2].first.first;
-    debugRDPrint2("findBestBuffers: Best VT index is {} [{}]",
-                  best_vt_index,
-                  lib_data.vt_sorted[num_vt - 2].first.second);
-  } else if (num_vt == 1) {
-    best_vt_index = 1;
-    debugRDPrint2("findBestBuffers: Best VT index is 1");
-  } else {
-    debugRDPrint2("findBestBuffers: Best VT index is -1");
-  }
-
-  // There may be multiple cell sites like short, tall, short+tall, etc.
-  // Pick two sites that are the most dominant.  Most likely, short and tall.
-  std::vector<std::pair<odb::dbSite*, float>> site_list;
-  for (const auto& [site_type, count] : lib_data.site_data) {
-    site_list.emplace_back(site_type, (float) count / buffer_list.size());
-  }
-  std::sort(site_list.begin(),
-            site_list.end(),
-            [](const auto& a, const auto& b) { return a.second > b.second; });
-  int num_best_sites = std::min(2, (int) lib_data.site_data.size());
-  for (int i = 0; i < num_best_sites; i++) {
-    debugRDPrint2("findBestBuffers: {} is a dominant site",
-                  site_list[i].first->getName());
-  }
-
-  LibertyCellSeq new_buffer_list;
-  for (LibertyCell* buffer : buffer_list) {
-    const char* footprint = buffer->footprint();
-    odb::dbMaster* master = db_network_->staToDb(buffer);
-    auto vt_type = cellVTType(master);
-    bool footprint_matches
-        = best_footprint.empty() || (footprint && best_footprint == footprint);
-    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
-
-    if (footprint_matches && vt_matches) {
-      new_buffer_list.emplace_back(buffer);
-      debugRDPrint2("findBestBuffers: Adding {} to new buffer list",
-                    buffer->name());
-    }
-  }
-  debugRDPrint2("findBestBuffers: new buffer list has {} buffers",
-                new_buffer_list.size());
-
-  // The buffer list is already sorted in ascending order of drive resistance.
-  // Divide buffers into 5 buckets based on drive resistance.
-  // Each bucket is a proxy for drive strength group.
-  // We want to pick 2 best buffers from each bucket using drive resistance *
-  // c_in.  The lower the RC product, the better.
-  const int num_buckets = 5;
-  const int bucket_size = new_buffer_list.size() / num_buckets;
-  const int remainder = new_buffer_list.size() % num_buckets;
-
-  LibertyCellSeq final_buffer_list;
-  for (int bucket = 0; bucket < num_buckets; bucket++) {
-    // Calculate bucket boundaries
-    int start_idx = bucket * bucket_size + std::min(bucket, remainder);
-    int end_idx = start_idx + bucket_size + (bucket < remainder ? 1 : 0);
-
-    // Create a vector for this bucket with drive_res * input_cap values
-    std::vector<std::pair<LibertyCell*, float>> bucket_buffers;
-    bucket_buffers.reserve(bucket_size);
-
-    for (int i = start_idx; i < end_idx && i < new_buffer_list.size(); i++) {
-      LibertyCell* buffer = new_buffer_list[i];
-      LibertyPort *input, *output;
-      buffer->bufferPorts(input, output);
-      float metric = bufferDriveResistance(buffer) * input->capacitance();
-      bucket_buffers.emplace_back(buffer, metric);
-    }
-
-    // Sort this bucket by drive_res * input_cap (ascending)
-    std::sort(bucket_buffers.begin(),
-              bucket_buffers.end(),
-              [](const auto& a, const auto& b) {
-                return a.second < b.second;  // Compare by R * C
-              });
-
-    // Select up to 2 best buffers from this bucket
-    if (num_best_sites == 1) {
-      int buffers_to_select
-          = std::min(2, static_cast<int>(bucket_buffers.size()));
-      for (int i = 0; i < buffers_to_select; i++) {
-        final_buffer_list.emplace_back(bucket_buffers[i].first);
-        debugRDPrint2(
-            "findBestBuffers: Buffer {} with RC={:.2e} is selected for bucket "
-            "{}",
-            bucket_buffers[i].first->name(),
-            bucket_buffers[i].second,
-            bucket);
-      }
-    } else {
-      // Try to choose one for each dominant site
-      // It's possible that there are no buffers matching the sites in this
-      // bucket
-      for (int site_idx = 0; site_idx < 2 && site_idx < site_list.size();
-           site_idx++) {
-        for (const auto& pair : bucket_buffers) {
-          odb::dbMaster* master = db_network_->staToDb(pair.first);
-          if (master->getSite() == site_list[site_idx].first) {
-            final_buffer_list.emplace_back(pair.first);
-            debugRDPrint2(
-                "findBestBuffers: Buffer {} with RC={:.2e} is selected for "
-                "bucket {} and site "
-                "{}",
-                pair.first->name(),
-                pair.second,
-                bucket,
-                master->getSite()->getName());
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  debugRDPrint2(
-      "findBestBuffers: Selected {} buffers total from {} original buffers in "
-      "{} buckets",
-      final_buffer_list.size(),
-      new_buffer_list.size(),
-      num_buckets);
-
-  // final_buffer_list now contains up to 10 buffers (2 from each of 5 buckets)
-  buffer_fast_sizes_ = {final_buffer_list.begin(), final_buffer_list.end()};
-}
-
-void Resizer::findFastBuffersOld()
 {
   if (!buffer_fast_sizes_.empty()) {
     return;
@@ -869,42 +707,182 @@ void Resizer::reportFastBufferSizes()
       "--------");
 }
 
+#define debugRDPrint1(format_str, ...) \
+  debugPrint(logger_, utl::RSZ, "resizer", 1, format_str, ##__VA_ARGS__)
+// debugPrint for replace_design level 2
+#define debugRDPrint2(format_str, ...) \
+  debugPrint(logger_, utl::RSZ, "resizer", 2, format_str, ##__VA_ARGS__)
+
 void Resizer::findBuffers()
 {
-  if (buffer_cells_.empty()) {
-    LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  if (!buffer_cells_.empty()) {
+    return;
+  }
 
-    while (lib_iter->hasNext()) {
-      LibertyLibrary* lib = lib_iter->next();
+  LibertyCellSeq buffer_list;
+  LibraryAnalysisData lib_data;
+  getBufferList(buffer_list, lib_data);
 
-      for (LibertyCell* buffer : *lib->buffers()) {
-        if (exclude_clock_buffers_) {
-          BufferUse buffer_use = sta_->getBufferUse(buffer);
+  // Pick the right cell footprint to avoid delay cells
+  std::string best_footprint;
+  if (lib_data.footprint_data.size() > 1) {
+    for (const auto& [footprint_type, count] : lib_data.footprint_data) {
+      float ratio = (float) count / buffer_list.size();
+      // Some PDK libs have a distinct footprint for each drive strength
+      // Pick a footprint that dominates
+      if (ratio > 0.5) {
+        best_footprint = footprint_type;
+        debugRDPrint2("findBuffers: Best footprint is {}", footprint_type);
+        break;
+      }
+    }
+  }
 
-          if (buffer_use == CLOCK) {
-            continue;
+  // Pick the second most leaky VT for multiple VTs
+  int best_vt_index = -1;
+  int num_vt = lib_data.vt_sorted.size();
+  if (num_vt > 1) {
+    best_vt_index = lib_data.vt_sorted[num_vt - 2].first.first;
+    debugRDPrint2("findBuffers: Best VT index is {} [{}] among {} VTs",
+                  best_vt_index,
+                  lib_data.vt_sorted[num_vt - 2].first.second,
+                  num_vt);
+  } else if (num_vt == 1) {
+    best_vt_index = lib_data.vt_sorted[0].first.first;
+    debugRDPrint2("findBuffers: Best VT index is {} among 1 VT", best_vt_index);
+  } else {
+    debugRDPrint2("findBuffers: Best VT index is {} among 0 VT", best_vt_index);
+  }
+
+  // There may be multiple cell sites like short, tall, short+tall, etc.
+  // Pick two sites that are the most dominant.  Most likely, short and tall.
+  std::vector<std::pair<odb::dbSite*, float>> site_list;
+  for (const auto& [site_type, count] : lib_data.site_data) {
+    site_list.emplace_back(site_type, (float) count / buffer_list.size());
+  }
+  std::sort(site_list.begin(),
+            site_list.end(),
+            [](const auto& a, const auto& b) { return a.second > b.second; });
+  int num_best_sites = std::min(2, (int) lib_data.site_data.size());
+  for (int i = 0; i < num_best_sites; i++) {
+    debugRDPrint2("findBuffers: {} is a dominant site",
+                  site_list[i].first->getName());
+  }
+
+  LibertyCellSeq new_buffer_list;
+  for (LibertyCell* buffer : buffer_list) {
+    const char* footprint = buffer->footprint();
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+    auto vt_type = cellVTType(master);
+    bool footprint_matches
+        = best_footprint.empty() || (footprint && best_footprint == footprint);
+    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+
+    if (footprint_matches && vt_matches) {
+      new_buffer_list.emplace_back(buffer);
+      debugRDPrint2("findBuffers: Adding {} to new buffer list",
+                    buffer->name());
+    } else {
+      debugRDPrint2(
+          "findBuffers: {} is not added because VT {} and CF {} [VT index = "
+          "{}, best VT index = {}]",
+          buffer->name(),
+          (vt_matches ? "matches" : "doesn't match"),
+          (footprint_matches ? "matches" : "doesn't match"),
+          vt_type.first,
+          best_vt_index);
+    }
+  }
+  debugRDPrint2("findBuffers: new buffer list has {} buffers",
+                new_buffer_list.size());
+
+  // The buffer list is already sorted in ascending order of drive resistance.
+  // Divide buffers into 5 buckets based on drive resistance.
+  // Each bucket is a proxy for drive strength group.
+  // We want to pick 2 best buffers from each bucket using drive resistance *
+  // c_in.  The lower the RC product, the better.
+  const int num_buckets = 5;
+  const int bucket_size = new_buffer_list.size() / num_buckets;
+  const int remainder = new_buffer_list.size() % num_buckets;
+
+  LibertyCellSeq final_buffer_list;
+  for (int bucket = 0; bucket < num_buckets; bucket++) {
+    // Calculate bucket boundaries
+    int start_idx = bucket * bucket_size + std::min(bucket, remainder);
+    int end_idx = start_idx + bucket_size + (bucket < remainder ? 1 : 0);
+
+    // Create a vector for this bucket with drive_res * input_cap values
+    std::vector<std::pair<LibertyCell*, float>> bucket_buffers;
+    bucket_buffers.reserve(bucket_size);
+
+    for (int i = start_idx; i < end_idx && i < new_buffer_list.size(); i++) {
+      LibertyCell* buffer = new_buffer_list[i];
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float metric = bufferDriveResistance(buffer) * input->capacitance();
+      bucket_buffers.emplace_back(buffer, metric);
+    }
+
+    // Sort this bucket by drive_res * input_cap (ascending)
+    std::sort(bucket_buffers.begin(),
+              bucket_buffers.end(),
+              [](const auto& a, const auto& b) {
+                return a.second < b.second;  // Compare by R * C
+              });
+
+    // Select up to 2 best buffers from this bucket
+    if (num_best_sites == 1) {
+      int buffers_to_select
+          = std::min(2, static_cast<int>(bucket_buffers.size()));
+      for (int i = 0; i < buffers_to_select; i++) {
+        final_buffer_list.emplace_back(bucket_buffers[i].first);
+        debugRDPrint2(
+            "findBuffers: Buffer {} with RC={:.2e} is selected for bucket "
+            "{}",
+            bucket_buffers[i].first->name(),
+            bucket_buffers[i].second,
+            bucket);
+      }
+    } else {
+      // Try to choose one for each dominant site
+      // It's possible that there are no buffers matching the sites in this
+      // bucket
+      for (int site_idx = 0; site_idx < 2 && site_idx < site_list.size();
+           site_idx++) {
+        for (const auto& pair : bucket_buffers) {
+          odb::dbMaster* master = db_network_->staToDb(pair.first);
+          if (master->getSite() == site_list[site_idx].first) {
+            final_buffer_list.emplace_back(pair.first);
+            debugRDPrint2(
+                "findBuffers: Buffer {} with RC={:.2e} is selected for "
+                "bucket {} and site "
+                "{}",
+                pair.first->name(),
+                pair.second,
+                bucket,
+                master->getSite()->getName());
+            break;
           }
-        }
-
-        if (!dontUse(buffer) && isLinkCell(buffer)) {
-          buffer_cells_.emplace_back(buffer);
         }
       }
     }
+  }
 
-    delete lib_iter;
+  debugRDPrint2(
+      "findBuffers: Selected {} buffers total from {} original buffers in "
+      "{} buckets",
+      final_buffer_list.size(),
+      new_buffer_list.size(),
+      num_buckets);
 
-    if (buffer_cells_.empty()) {
-      logger_->error(RSZ, 22, "no buffers found.");
-    } else {
-      sort(buffer_cells_,
-           [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
-             return bufferDriveResistance(buffer1)
-                    > bufferDriveResistance(buffer2);
-           });
+  // final_buffer_list now contains up to 10 buffers (2 from each of 5 buckets)
+  buffer_cells_.assign(final_buffer_list.begin(), final_buffer_list.end());
 
-      buffer_lowest_drive_ = buffer_cells_[0];
-    }
+  if (buffer_cells_.empty()) {
+    logger_->error(RSZ, 22, "no buffers found.");
+  } else {
+    // find the buffer with the largest drive resistance
+    buffer_lowest_drive_ = buffer_cells_.back();
   }
 }
 
