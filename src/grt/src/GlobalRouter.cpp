@@ -4788,8 +4788,11 @@ std::vector<PinGridLocation> GlobalRouter::getPinGridPositions(
   Net* net = getNet(db_net);
   std::vector<PinGridLocation> pin_locs;
   for (Pin& pin : net->getPins()) {
-    pin_locs.push_back(PinGridLocation(
-        pin.getITerm(), pin.getBTerm(), pin.getOnGridPosition()));
+    pin_locs.push_back(PinGridLocation(pin.getITerm(),
+                                       pin.getBTerm(),
+                                       pin.getPosition(),
+                                       pin.getOnGridPosition(),
+                                       pin.getConnectionLayer()));
   }
   return pin_locs;
 }
