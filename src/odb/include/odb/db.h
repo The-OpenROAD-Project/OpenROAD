@@ -3263,6 +3263,12 @@ class dbInst : public dbObject
   ///
   bool isEndCap() const;
 
+  ///
+  /// Get the scan version of this instance.
+  /// Returns nullptr if this instance has no scan version.
+  ///
+  dbScanInst* getScanInst() const;
+
   void setPinAccessIdx(uint idx);
 
   uint getPinAccessIdx() const;
@@ -3504,7 +3510,9 @@ class dbITerm : public dbObject
   void connect(dbModNet* net);
 
   // simultaneously connect this iterm to both a dbnet and a mod net.
-
+  // but do not do a reassociate (that is done by higher level api
+  // call in dbNetwork::connectPin)
+  //
   void connect(dbNet* db_net, dbModNet* db_mod_net);
 
   ///

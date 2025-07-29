@@ -43,8 +43,14 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 110;  // Current revision number
+const uint db_schema_minor = 111;  // Current revision number
 
+// Revision where the map which associates instances to their
+// scan version was added
+const uint db_schema_map_insts_to_scan_insts = 111;
+
+// Revision where the ownership of the scan insts was changed
+// from the its scan list to the block
 const uint db_schema_block_owns_scan_insts = 110;
 
 // Revision where is_connect_to_term_ flag was added to dbGuide

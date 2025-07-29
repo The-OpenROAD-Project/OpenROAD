@@ -3373,7 +3373,14 @@ string Resizer::makeUniqueNetName(Instance* parent_scope)
     } else {
       node_name = fmt::format("net{}", unique_net_index_++);
     }
-  } while (network_->findNet(top_inst, node_name.c_str()));
+  } while (network_->findNet(top_inst, node_name.c_str())
+           //
+           // in hierarchical mode we check the uniqueness globally.
+           // TODO:change scoping of nets so we never
+           // have to do this, as it is obviously slow.
+           //
+           || (db_network_->hasHierarchy()
+               && db_network_->findNetAllScopes(node_name.c_str())));
   return node_name;
 }
 
