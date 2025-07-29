@@ -1042,7 +1042,7 @@ void DbNetDescriptor::findSourcesAndSinks(
             }
 
             if (!term_targets.empty()) {
-              targets.push_back(term_targets);
+              targets.push_back(std::move(term_targets));
             }
           }
         };
@@ -1057,7 +1057,7 @@ void DbNetDescriptor::findSourcesAndSinks(
               term_targets.emplace(rect, box->getTechLayer());
             }
             if (!term_targets.empty()) {
-              targets.push_back(term_targets);
+              targets.push_back(std::move(term_targets));
             }
           }
         };
