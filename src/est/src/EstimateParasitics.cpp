@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 
+#include "MakeWireParasitics.h"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "est/AbstractSteinerRenderer.h"
@@ -281,10 +282,15 @@ void EstimateParasitics::initBlock()
   if (db_->getChip() == nullptr) {
     logger_->error(EST, 162, "Database does not have a loaded design");
   }
-  block_ = db_->getChip()->getBlock();
+
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+
   if (block_ == nullptr) {
     logger_->error(EST, 163, "Database has no block");
   }
+
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
 }
 
@@ -305,6 +311,7 @@ void EstimateParasitics::estimateParasitics(
     ParasiticsSrc src,
     std::map<Corner*, std::ostream*>& spef_streams)
 {
+  initBlock();
   std::unique_ptr<SpefWriter> spef_writer;
   if (!spef_streams.empty()) {
     spef_writer = std::make_unique<SpefWriter>(logger_, sta_, spef_streams);
@@ -315,7 +322,7 @@ void EstimateParasitics::estimateParasitics(
       estimateWireParasitics(spef_writer.get());
       break;
     case ParasiticsSrc::global_routing:
-      global_router_->estimateRC(spef_writer.get());
+      estimateGlobalRouteRC(spef_writer.get());
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::detailed_routing:
@@ -358,7 +365,7 @@ void EstimateParasitics::updateParasitics(bool save_guides)
       // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes(save_guides);
       for (const Net* net : parasitics_invalid_) {
-        global_router_->estimateRC(db_network_->staToDb(net));
+        estimateGlobalRouteRC(db_network_->staToDb(net));
       }
       break;
     }
@@ -401,7 +408,7 @@ void EstimateParasitics::ensureWireParasitic(const Pin* drvr_pin,
         break;
       case ParasiticsSrc::global_routing: {
         incr_groute_->updateRoutes();
-        global_router_->estimateRC(db_network_->staToDb(net));
+        estimateGlobalRouteRC(db_network_->staToDb(net));
         parasitics_invalid_.erase(net);
         break;
       }
@@ -412,6 +419,55 @@ void EstimateParasitics::ensureWireParasitic(const Pin* drvr_pin,
         break;
     }
   }
+}
+
+void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
+{
+  // Remove any existing parasitics.
+  sta_->deleteParasitics();
+
+  // Make separate parasitics for each corner.
+  sta_->setParasiticAnalysisPts(true);
+
+  MakeWireParasitics builder(
+      logger_, this, sta_, db_->getTech(), block_, global_router_);
+
+  for (auto& [db_net, route] : global_router_->getRoutes()) {
+    if (!route.empty()) {
+      builder.estimateParasitics(db_net, route, spef_writer);
+    }
+  }
+}
+
+void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
+{
+  MakeWireParasitics builder(
+      logger_, this, sta_, db_->getTech(), block_, global_router_);
+  auto& routes = global_router_->getRoutes();
+  auto iter = routes.find(db_net);
+  if (iter == routes.end()) {
+    return;
+  }
+  grt::GRoute& route = iter->second;
+  if (!route.empty()) {
+    builder.estimateParasitics(db_net, route);
+  }
+}
+
+void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
+                                                       grt::GRoute& route)
+{
+  initBlock();
+  MakeWireParasitics builder(
+      logger_, this, sta_, db_->getTech(), block_, global_router_);
+  builder.estimateParasitics(net, route);
+}
+
+void EstimateParasitics::clearParasitics()
+{
+  MakeWireParasitics builder(
+      logger_, this, sta_, db_->getTech(), block_, global_router_);
+  builder.clearParasitics();
 }
 
 ////////////////////////////////////////////////////////////////

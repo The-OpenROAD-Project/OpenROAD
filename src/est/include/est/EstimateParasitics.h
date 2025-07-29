@@ -196,6 +196,12 @@ class EstimateParasitics : public dbStaState
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
   void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; };
 
+  // Functions to estimate RC from global routing results
+  void estimateGlobalRouteRC(sta::SpefWriter* spef_writer = nullptr);
+  void estimateGlobalRouteRC(odb::dbNet* db_net);
+  void estimateGlobalRouteParasitics(odb::dbNet* net, grt::GRoute& route);
+  void clearParasitics();
+
   ////////////////////////////////////////////////////////////////
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
   SteinerTree* makeSteinerTree(Point drvr_location,
