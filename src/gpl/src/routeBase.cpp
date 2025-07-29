@@ -667,13 +667,16 @@ std::pair<bool, bool> RouteBase::routability(
   // rc not improvement detection -- (not improved the RC values 3 times in a
   // row)
   //
-  if (nbVec_[0]->getTargetDensity() > rbVars_.maxDensity
-      || min_RC_violated_cnt_ >= max_routability_no_improvement_) {
-    bool density_exceeded = nbVec_[0]->getTargetDensity() > rbVars_.maxDensity;
-    bool congestion_not_improving
-        = min_RC_violated_cnt_ >= max_routability_no_improvement_;
+  bool is_max_density_exceeded
+      = nbVec_[0]->getTargetDensity() > rbVars_.maxDensity;
+  bool congestion_not_improving
+      = min_RC_violated_cnt_ >= max_routability_no_improvement_;
+  bool is_max_routability_revert
+      = routability_driven_revert_count >= max_routability_revert_;
 
-    if (density_exceeded) {
+  if (is_max_density_exceeded || congestion_not_improving
+      || is_max_routability_revert) {
+    if (is_max_density_exceeded) {
       log_->info(GPL,
                  53,
                  "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
