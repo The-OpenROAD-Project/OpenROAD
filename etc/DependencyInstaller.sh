@@ -187,7 +187,7 @@ _installCommonDev() {
             ARGS_KOKKOSFFT=" -DCMAKE_BUILD_TYPE=Release -DKokkos_ENABLE_OPENMP=ON -DKokkosFFT_ENABLE_INTERNAL_KOKKOS=ON"
             if [[ ${gpuDeps} == "nvidia" && -n "$(lspci -vnnn 2>/dev/null | grep -i vga.*nvidia*)" ]]; then
                 ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON "
-                ARGS_KOKKOSFFT+=" -DKokkosFFT_ENABLE_HOST_AND_DEVICE=ON" # we always do fft on CPU for result constistency
+                ARGS_KOKKOSFFT+=" -DKokkosFFT_ENABLE_FFTW=ON -DKokkosFFT_ENABLE_CUFFT=OFF " # we always do fft on CPU for result constistency
                 if [[ -z "$(which g++-10)" ]]; then
                     export PATH=$(pwd)/tpls/kokkos/bin:$PATH
                     ARGS_KOKKOSFFT+=" -DCMAKE_CXX_COMPILER=nvcc_wrapper "
