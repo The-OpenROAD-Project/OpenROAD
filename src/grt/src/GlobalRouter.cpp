@@ -105,9 +105,10 @@ void GlobalRouter::init(utl::Logger* logger,
   stt_builder_ = stt_builder;
   antenna_checker_ = antenna_checker;
   opendp_ = opendp;
-  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = sta;
   estimate_parasitics_ = estimate_parasitics;
+  fastroute_ = new FastRouteCore(
+      db_, logger_, stt_builder_, estimate_parasitics_, sta_);
 
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();

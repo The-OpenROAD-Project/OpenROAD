@@ -37,6 +37,14 @@ namespace gui {
 class Gui;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
+namespace sta {
+class dbSta;
+}
+
 namespace grt {
 
 using boost::multi_array;
@@ -85,7 +93,9 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder);
+                stt::SteinerTreeBuilder* stt_builder,
+                est::EstimateParasitics* estimate_parasitics,
+                sta::dbSta* sta);
   ~FastRouteCore();
 
   void clear();
@@ -483,6 +493,7 @@ class FastRouteCore
   void checkRoute3D();
   void StNetOrder();
   float CalculatePartialSlack();
+  float getNetSlack(odb::dbNet* net);
   /**
    * @brief Validates the routing of edges for a specified net.
    *
@@ -630,6 +641,7 @@ class FastRouteCore
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   est::EstimateParasitics* estimate_parasitics_;
+  sta::dbSta* sta_;
 
   std::unique_ptr<DebugSetting> debug_;
 

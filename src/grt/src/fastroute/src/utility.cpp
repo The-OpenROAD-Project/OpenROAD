@@ -13,6 +13,8 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -1237,7 +1239,7 @@ void FastRouteCore::StNetOrder()
 
 float FastRouteCore::CalculatePartialSlack()
 {
-  parasitics_builder_->clearParasitics();
+  estimate_parasitics_->clearParasitics();
   auto partial_routes = getPlanarRoutes();
 
   std::vector<float> slacks;
@@ -1246,13 +1248,15 @@ float FastRouteCore::CalculatePartialSlack()
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     if (!route.empty()) {
-      parasitics_builder_->estimateParasitics(db_net, route);
+      // TODO: remove the EstimateParasitics dependency and update the
+      // parasitics using callbacks
+      estimate_parasitics_->estimateGlobalRouteParasitics(db_net, route);
     }
   }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
-    float slack = parasitics_builder_->getNetSlack(db_net);
+    float slack = getNetSlack(db_net);
     slacks.push_back(slack);
     fr_net->setSlack(slack);
   }
@@ -1274,6 +1278,14 @@ float FastRouteCore::CalculatePartialSlack()
   }
 
   return slack_th;
+}
+
+float FastRouteCore::getNetSlack(odb::dbNet* net)
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Net* sta_net = network->dbToSta(net);
+  float slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  return slack;
 }
 
 void FastRouteCore::recoverEdge(const int netID, const int edgeID)

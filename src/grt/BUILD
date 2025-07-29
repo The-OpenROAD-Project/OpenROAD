@@ -50,7 +50,6 @@ cc_library(
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
-        "src/fastroute/include/AbstractMakeWireParasitics.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
     ],
@@ -78,8 +77,6 @@ cc_library(
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
-        "src/MakeWireParasitics.cpp",
-        "src/MakeWireParasitics.h",
         "src/Net.cpp",
         "src/Net.h",
         "src/Pin.cpp",

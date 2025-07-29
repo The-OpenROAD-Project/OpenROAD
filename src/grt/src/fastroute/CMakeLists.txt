@@ -27,6 +27,7 @@ target_include_directories(FastRoute4.1
 
 target_link_libraries(FastRoute4.1
   PRIVATE
+    est_lib
     utl_lib
     stt_lib
     odb
