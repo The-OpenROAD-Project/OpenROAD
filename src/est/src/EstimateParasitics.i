@@ -97,7 +97,7 @@ using est::ParasiticsSrc;
   else {
     Logger* logger = ord::getLogger();
     try {
-      logger->error(utl::RSZ, 19, "Unknown parasitics source '{}'.", arg);
+      logger->error(utl::EST, 19, "Unknown parasitics source '{}'.", arg);
     } catch (const std::exception &e) {
       Tcl_SetResult(interp, const_cast<char*>(e.what()), TCL_STATIC);
       return TCL_ERROR;
@@ -251,7 +251,7 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
           spef_files[corner] = std::move(file);
         } else {
           Logger* logger = ord::getLogger();
-          logger->error(utl::RSZ,
+          logger->error(utl::EST,
                         7,
                         "Can't open file " + file_path);
         }

@@ -20,10 +20,6 @@ namespace grt {
 class GlobalRouter;
 }
 
-namespace rsz {
-class Resizer;
-}
-
 namespace est {
 
 class EstimateParasitics;

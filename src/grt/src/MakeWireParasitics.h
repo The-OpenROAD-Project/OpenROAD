@@ -34,10 +34,6 @@ namespace sta {
 class SpefWriter;
 }
 
-namespace rsz {
-class Resizer;
-}
-
 namespace grt {
 class GlobalRouter;
 class MakeWireParasitics : public AbstractMakeWireParasitics

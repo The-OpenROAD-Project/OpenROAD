@@ -20,7 +20,6 @@
 
 namespace grt {
 class GlobalRouter;
-class IncrementalGRoute;
 }  // namespace grt
 
 namespace stt {
@@ -47,7 +46,6 @@ using odb::Rect;
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
-using grt::IncrementalGRoute;
 
 using sta::ArcDelay;
 using sta::Cell;

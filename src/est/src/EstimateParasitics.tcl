@@ -34,10 +34,10 @@ proc estimate_parasitics { args } {
       # should check for layer rc
       est::estimate_parasitics_cmd "global_routing" $filename
     } else {
-      utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
+      utl::error EST 5 "Run global_route before estimating parasitics for global routing."
     }
   } else {
-    utl::error RSZ 3 "missing -placement or -global_routing flag."
+    utl::error EST 3 "missing -placement or -global_routing flag."
   }
 }
 
@@ -378,7 +378,7 @@ proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [est::wire_signal_capacitance $corner] == 0.0 } {
-      utl::warn RSZ 18 "wire capacitance for corner [$corner name] is zero.\
+      utl::warn EST 18 "wire capacitance for corner [$corner name] is zero.\
         Use the set_wire_rc command to set wire resistance and capacitance."
       set have_rc 0
     }
