@@ -375,8 +375,21 @@ void ClockGating::run()
     auto inst_iter = network->childIterator(top);
     while (inst_iter->hasNext()) {
       auto instance = inst_iter->next();
-      if (getClockPin(network, instance)) {
+      auto cell = network->libertyCell(instance);
+      if (!cell) {
+        continue;
+      }
+      size_t num_regs
+          = std::count_if(cell->sequentials().begin(),
+                          cell->sequentials().end(),
+                          [](const auto* seq) { return seq->isRegister(); });
+      if (num_regs == 1) {
         instances.emplace_back(instance);
+      } else if (num_regs > 1) {
+        logger_->warn(CGT,
+                      10,
+                      "Skipping multi-bit instance {}.",
+                      network->name(instance));
       }
     }
     delete inst_iter;
