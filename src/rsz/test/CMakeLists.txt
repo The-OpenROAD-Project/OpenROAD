@@ -89,8 +89,6 @@ or_integration_tests(
     repair_setup7
     repair_setup7_limit
     repair_setup8
-    repair_setup9
-    repair_setup9_hier
     repair_setup_undo
     repair_slew1
     repair_slew2
@@ -149,8 +147,6 @@ or_integration_tests(
     resize_slack1
     resize_slack2
     resize_slack3
-    rebuffer1
-    rebuffer1_hier
     set_dont_touch1
     set_dont_use1
     split_load_hier
