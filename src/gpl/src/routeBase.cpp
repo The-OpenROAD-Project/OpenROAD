@@ -670,7 +670,8 @@ std::pair<bool, bool> RouteBase::routability(
   if (nbVec_[0]->getTargetDensity() > rbVars_.maxDensity
       || min_RC_violated_cnt_ >= max_routability_no_improvement_) {
     bool density_exceeded = nbVec_[0]->getTargetDensity() > rbVars_.maxDensity;
-    bool congestion_not_improving = min_RC_violated_cnt_ >= max_routability_no_improvement_;
+    bool congestion_not_improving
+        = min_RC_violated_cnt_ >= max_routability_no_improvement_;
 
     if (density_exceeded) {
       log_->info(GPL,
