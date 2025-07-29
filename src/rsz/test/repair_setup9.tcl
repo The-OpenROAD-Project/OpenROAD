@@ -7,7 +7,7 @@ read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog repair_setup9.v
 link_design top
-read_def -incr repair_setup9.def
+read_def -floorplan_initialize repair_setup9.def
 
 #place the design
 #initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \

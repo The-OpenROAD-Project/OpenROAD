@@ -7,7 +7,7 @@ read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog rebuffer1_hier.v
 link_design top -hier
-read_def -incr rebuffer1_hier.def
+read_def -floorplan_initialize rebuffer1_hier.def
 
 #sdc
 create_clock -period 0.3 clk
@@ -36,10 +36,3 @@ set def_filename "rebuffer1_hier_out.def"
 set rebuffered_def_filename [make_result_file $def_filename]
 write_def $rebuffered_def_filename
 diff_file ${def_filename}ok $rebuffered_def_filename
-
-# TODO: there is an issue that the name name (\u_mid1/l2_out1) of
-#       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong
-
-# TODO: the output .v and .def are not consistent
-
-# TODO: no ROW statement in the output .def

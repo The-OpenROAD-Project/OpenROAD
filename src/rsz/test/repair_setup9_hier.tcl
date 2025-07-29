@@ -7,7 +7,7 @@ read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog repair_setup9_hier.v
 link_design top -hier
-read_def -incr repair_setup9_hier.def
+read_def -floorplan_initialize repair_setup9_hier.def
 
 #place the design
 #initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
@@ -43,9 +43,6 @@ set def_filename "repair_setup9_hier_out.def"
 set repaired_def_filename [make_result_file $def_filename]
 write_def $repaired_def_filename
 diff_file ${def_filename}ok $repaired_def_filename
-
-# TODO: there is an issue that the name name (\u_mid1/l2_out1) of
-#       the new buffer input u_mid1/u_leaf2/rebuffer1/A is wrong
 
 # TODO: there is an issue that the new buffer input u_mid1/u_leaf2/split2/A input is floating.
 
