@@ -4685,16 +4685,14 @@ bool DbScanListDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   auto scan_list = getObject(object);
   bbox.mergeInit();
 
-  bool has_placed_insts = false;
   for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
     odb::dbInst* inst = scan_inst->getInst();
     if (inst->getPlacementStatus().isPlaced()) {
-      has_placed_insts = true;
       bbox.merge(inst->getBBox()->getBox());
     }
   }
 
-  return has_placed_insts;
+  return !bbox.isInverted();
 }
 
 void DbScanListDescriptor::highlight(std::any object, Painter& painter) const
