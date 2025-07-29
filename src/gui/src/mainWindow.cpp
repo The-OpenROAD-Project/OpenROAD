@@ -562,6 +562,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbMarkerCategoryDescriptor(db_));
   gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
   gui->registerDescriptor<odb::dbScanInst*>(new DbScanInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanList*>(new DbScanListDescriptor(db_));
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));

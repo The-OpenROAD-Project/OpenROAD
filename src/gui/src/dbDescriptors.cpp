@@ -4665,6 +4665,83 @@ Descriptor::Property DbScanInstDescriptor::getScanPinProperty(
 
 //////////////////////////////////////////////////
 
+DbScanListDescriptor::DbScanListDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanList>(db)
+{
+}
+
+std::string DbScanListDescriptor::getName(std::any object) const
+{
+  return "Scan List";
+}
+
+std::string DbScanListDescriptor::getTypeName() const
+{
+  return "Scan List";
+}
+
+bool DbScanListDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto scan_list = getObject(object);
+  bbox.mergeInit();
+
+  for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
+    odb::dbInst* inst = scan_inst->getInst();
+    if (inst->getPlacementStatus().isPlaced()) {
+      bbox.merge(inst->getBBox()->getBox());
+    }
+  }
+
+  return !bbox.isInverted();
+}
+
+void DbScanListDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto scan_list = getObject(object);
+
+  for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
+    odb::dbInst* inst = scan_inst->getInst();
+    if (inst->getPlacementStatus().isPlaced()) {
+      auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+      inst_descriptor->highlight(scan_inst->getInst(), painter);
+    }
+  }
+}
+
+bool DbScanListDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    for (auto* scan_partition : scan_chain->getScanPartitions()) {
+      for (auto* scan_list : scan_partition->getScanLists()) {
+        objects.insert(makeSelected(scan_list));
+      }
+    }
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanListDescriptor::getDBProperties(
+    odb::dbScanList* scan_list) const
+{
+  Properties props;
+
+  auto gui = Gui::get();
+
+  SelectionSet scan_insts;
+  for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
+    scan_insts.insert(gui->makeSelected(scan_inst));
+  }
+  props.push_back({"Scan Insts", scan_insts});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
 DbBoxDescriptor::DbBoxDescriptor(odb::dbDatabase* db)
     : BaseDbDescriptor<odb::dbBox>(db)
 {
