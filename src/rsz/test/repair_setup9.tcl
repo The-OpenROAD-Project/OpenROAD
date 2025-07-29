@@ -34,10 +34,12 @@ repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning \
   -skip_buffer_removal -max_passes 10
 
 # generate .v and .def files
-set repaired_verilog_filename "repair_setup9_out.v"
+set verilog_filename "repair_setup9_out.v"
+set repaired_verilog_filename [make_result_file $verilog_filename]
 write_verilog $repaired_verilog_filename
-diff_file ${repaired_verilog_filename}ok $repaired_verilog_filename
+diff_file ${verilog_filename}ok $repaired_verilog_filename
 
-set repaired_def_filename "repair_setup9_out.def"
+set def_filename "repair_setup9_out.def"
+set repaired_def_filename [make_result_file $def_filename]
 write_def $repaired_def_filename
-diff_file ${repaired_def_filename}ok $repaired_def_filename
+diff_file ${def_filename}ok $repaired_def_filename
