@@ -32,10 +32,6 @@ namespace sta {
 class SpefWriter;
 }
 
-namespace rsz {
-class Resizer;
-}
-
 namespace est {
 class EstimateParasitics;
 
