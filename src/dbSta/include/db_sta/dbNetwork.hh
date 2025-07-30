@@ -344,6 +344,10 @@ class dbNetwork : public ConcreteNetwork
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
 
+  std::string makeUniqueNetName(Instance* parent_scope);
+  std::string makeUniqueInstName(const char* base_name,
+                                 bool underscore = false);
+
   using Network::cell;
   using Network::direction;
   using Network::findCellsMatching;
@@ -377,6 +381,8 @@ class dbNetwork : public ConcreteNetwork
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
   std::set<dbNetworkObserver*> observers_;
+  int unique_net_index_ = 1;
+  int unique_inst_index_ = 1;
 
   // unique addresses for the db objects
   static constexpr unsigned DBITERM_ID = 0x0;

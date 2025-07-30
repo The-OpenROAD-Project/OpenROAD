@@ -4159,4 +4159,52 @@ void dbNetwork::AxiomCheck()
   }
 }
 
+std::string dbNetwork::makeUniqueNetName(Instance* parent_scope)
+{
+  std::string node_name;
+  bool prefix_name = false;
+  if (parent_scope && parent_scope != network_->topInstance()) {
+    prefix_name = true;
+  }
+  Instance* top_inst = prefix_name ? parent_scope : network_->topInstance();
+  do {
+    if (prefix_name) {
+      std::string parent_name = network_->name(parent_scope);
+      node_name = fmt::format("{}/net{}", parent_name, unique_net_index_++);
+    } else {
+      node_name = fmt::format("net{}", unique_net_index_++);
+    }
+  } while (network_->findNet(top_inst, node_name.c_str())
+           //
+           // in hierarchical mode we check the uniqueness globally.
+           // TODO:change scoping of nets so we never
+           // have to do this, as it is obviously slow.
+           //
+           || (hasHierarchy() && findNetAllScopes(node_name.c_str())));
+  return node_name;
+}
+
+std::string dbNetwork::makeUniqueInstName(const char* base_name,
+                                          bool underscore)
+{
+  std::string inst_name;
+  do {
+    // sta::stringPrint can lead to string overflow and fatal
+    if (underscore) {
+      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
+    } else {
+      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
+    }
+    //
+    // NOTE: TODO: The scoping should be within
+    // the dbModule scope for the instance, not the whole network.
+    // dbInsts are already scoped within a dbModule
+    // To get the dbModule for a dbInst used inst -> getModule
+    // then search within that scope. That way the instance name
+    // does not have to be some massive string like root/X/Y/U1.
+    //
+  } while (network_->findInstance(inst_name.c_str()));
+  return inst_name;
+}
+
 }  // namespace sta
