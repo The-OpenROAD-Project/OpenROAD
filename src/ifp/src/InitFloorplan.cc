@@ -172,8 +172,10 @@ void InitFloorplan::makeDie(const odb::Rect& die)
   block_->setDieArea(die_area);
 }
 
-void InitFloorplan::makePolygonDie(std::vector<odb::Point>& points)
+void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
 {
+  auto points = polygon.getPoints();
+
   if (points.empty()) {
     logger_->error(IFP, 987, "No polygon vertices provided.");
     return;
@@ -195,34 +197,36 @@ void InitFloorplan::makePolygonDie(std::vector<odb::Point>& points)
   }
 
   // Set the die area using the polygon
-  block_->setDieArea(mfg_pts);
+  block_->setDieArea(polygon);
 }
 
 void InitFloorplan::makePolygonRows(
-    const std::vector<odb::Point>& core_polygon,
+    const odb::Polygon& core_polygon,
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
-  if (core_polygon.empty()) {
+  auto points = core_polygon.getPoints();
+
+  if (points.empty()) {
     logger_->error(IFP, 991, "No core polygon vertices provided.");
     return;
   }
 
-  if (core_polygon.size() < 4) {
+  if (points.size() < 4) {
     logger_->error(
         IFP,
         992,
         "Core polygon must have at least 4 vertices. Got {} vertices.",
-        core_polygon.size());
+        points.size());
     return;
   }
 
   // Snap all coordinates to manufacturing grid
   std::vector<odb::Point> mfg_pts;
-  mfg_pts.reserve(core_polygon.size());
-  for (const auto& p : core_polygon) {
+  mfg_pts.reserve(points.size());
+  for (const auto& p : points) {
     mfg_pts.emplace_back(snapToMfgGrid(p.x()), snapToMfgGrid(p.y()));
   }
 
@@ -266,12 +270,12 @@ void InitFloorplan::makePolygonRows(
 
   // Use the new scanline-based approach
   makePolygonRowsScanline(
-      mfg_pts, base_site, sites_by_name, row_parity, flipped_sites);
+      core_poly, base_site, sites_by_name, row_parity, flipped_sites);
 
   logger_->info(IFP,
                 997,
                 "Completed polygon-aware row generation using {} vertices",
-                core_polygon.size());
+                points.size() - 1);
 }
 
 double InitFloorplan::designArea()
@@ -1056,22 +1060,20 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
 
 // Scanline-based polygon-aware row generation methods
 void InitFloorplan::makePolygonRowsScanline(
-    const std::vector<odb::Point>& core_polygon,
+    const odb::Polygon& core_polygon,
     odb::dbSite* base_site,
     const SitesByName& sites_by_name,
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
-  // Get the bounding box for the polygon (reuse existing polygon if available)
-  odb::Polygon core_poly(core_polygon);
-  odb::Rect core_bbox = core_poly.getEnclosingRect();
+  // Get the bounding box for the polygon
+  odb::Rect core_bbox = core_polygon.getEnclosingRect();
 
   if (base_site->hasRowPattern()) {
     logger_->error(
         IFP,
         1000,
         "Hybrid rows not yet supported with polygon-aware generation.");
-    return;
   }
 
   if (core_bbox.xMin() >= 0 && core_bbox.yMin() >= 0) {
@@ -1136,9 +1138,10 @@ void InitFloorplan::makePolygonRowsScanline(
 
 std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
     const odb::Rect& row,
-    const std::vector<odb::Point>& polygon)
+    const odb::Polygon& polygon)
 {
   std::vector<odb::Rect> result;
+  auto polygon_points = polygon.getPoints();
 
   // Simple scanline intersection approach - more robust for inflection points
   const int row_y = row.yMin();
@@ -1147,9 +1150,9 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
   // Find all intersections of polygon edges with the row's horizontal strip
   std::vector<int> intersections;
 
-  for (size_t i = 0; i < polygon.size(); ++i) {
-    const odb::Point& p1 = polygon[i];
-    const odb::Point& p2 = polygon[(i + 1) % polygon.size()];
+  for (size_t i = 0; i < polygon_points.size(); ++i) {
+    const odb::Point& p1 = polygon_points[i];
+    const odb::Point& p2 = polygon_points[(i + 1) % polygon_points.size()];
 
     const int y1 = p1.y();
     const int y2 = p2.y();
@@ -1195,7 +1198,7 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
 
 void InitFloorplan::makeUniformRowsPolygon(
     odb::dbSite* site,
-    const std::vector<odb::Point>& core_polygon,
+    const odb::Polygon& core_polygon,
     const odb::Rect& core_bbox,
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)

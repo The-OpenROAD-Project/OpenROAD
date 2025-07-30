@@ -188,7 +188,8 @@ odb::dbSite* find_site(ord::Design* design,
 
 void make_polygon_die(ord::Design* design, std::vector<odb::Point>& points)
 {
-  design->getFloorplan().makePolygonDie(points);
+  odb::Polygon polygon(points);
+  design->getFloorplan().makePolygonDie(polygon);
 }
 
 
@@ -199,9 +200,10 @@ void make_polygon_rows_simple(ord::Design* design,
                               ifp::RowParity row_parity,
                               const std::vector<odb::dbSite*>& flipped_sites)
 {
+  odb::Polygon polygon(core_polygon);
   std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
                                            flipped_sites.end());
-  design->getFloorplan().makePolygonRows(core_polygon, base_site, additional_sites, row_parity, flipped_sites_set);
+  design->getFloorplan().makePolygonRows(polygon, base_site, additional_sites, row_parity, flipped_sites_set);
 }
 
 } // namespace
