@@ -107,6 +107,7 @@ void Replace::addPlacementCluster(const Cluster& cluster)
 
 void Replace::doIncrementalPlace(int threads)
 {
+  log_->info(GPL, 6, "Execute incremental mode global placement.");
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -185,6 +186,7 @@ void Replace::doIncrementalPlace(int threads)
 
 void Replace::doInitialPlace(int threads)
 {
+  log_->info(GPL, 5, "Execute conjugate gradient initial placement.");
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -349,6 +351,8 @@ int Replace::doNesterovPlace(int threads, int start_iter)
   if (!initNesterovPlace(threads)) {
     return 0;
   }
+
+  log_->info(GPL, 7, "Execute nesterov global placement.");
   if (timingDrivenMode_) {
     rs_->resizeSlackPreamble();
   }

@@ -1042,7 +1042,7 @@ void DbNetDescriptor::findSourcesAndSinks(
             }
 
             if (!term_targets.empty()) {
-              targets.push_back(term_targets);
+              targets.push_back(std::move(term_targets));
             }
           }
         };
@@ -1057,7 +1057,7 @@ void DbNetDescriptor::findSourcesAndSinks(
               term_targets.emplace(rect, box->getTechLayer());
             }
             if (!term_targets.empty()) {
-              targets.push_back(term_targets);
+              targets.push_back(std::move(term_targets));
             }
           }
         };
@@ -4736,6 +4736,163 @@ Descriptor::Properties DbScanListDescriptor::getDBProperties(
     scan_insts.insert(gui->makeSelected(scan_inst));
   }
   props.push_back({"Scan Insts", scan_insts});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbScanPartitionDescriptor::DbScanPartitionDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanPartition>(db)
+{
+}
+
+std::string DbScanPartitionDescriptor::getName(std::any object) const
+{
+  auto scan_partition = getObject(object);
+  return scan_partition->getName();
+}
+
+std::string DbScanPartitionDescriptor::getTypeName() const
+{
+  return "Scan Partition";
+}
+
+bool DbScanPartitionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto scan_partition = getObject(object);
+  auto* scan_list_descriptor = Gui::get()->getDescriptor<odb::dbScanList*>();
+  bbox.mergeInit();
+
+  for (auto* scan_list : scan_partition->getScanLists()) {
+    odb::Rect scan_list_bbox;
+    if (scan_list_descriptor->getBBox(scan_list, scan_list_bbox)) {
+      bbox.merge(scan_list_bbox);
+    }
+  }
+
+  return !bbox.isInverted();
+}
+
+void DbScanPartitionDescriptor::highlight(std::any object,
+                                          Painter& painter) const
+{
+  auto scan_partition = getObject(object);
+
+  for (auto* scan_list : scan_partition->getScanLists()) {
+    auto* scan_list_descriptor = Gui::get()->getDescriptor<odb::dbScanList*>();
+    scan_list_descriptor->highlight(scan_list, painter);
+  }
+}
+
+bool DbScanPartitionDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    for (auto* scan_partition : scan_chain->getScanPartitions()) {
+      objects.insert(makeSelected(scan_partition));
+    }
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanPartitionDescriptor::getDBProperties(
+    odb::dbScanPartition* scan_partition) const
+{
+  Properties props;
+
+  auto gui = Gui::get();
+
+  SelectionSet scan_lists;
+  for (odb::dbScanList* scan_list : scan_partition->getScanLists()) {
+    scan_lists.insert(gui->makeSelected(scan_list));
+  }
+  props.push_back({"Scan Lists", scan_lists});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbScanChainDescriptor::DbScanChainDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanChain>(db)
+{
+}
+
+std::string DbScanChainDescriptor::getName(std::any object) const
+{
+  auto scan_chain = getObject(object);
+  return scan_chain->getName();
+}
+
+std::string DbScanChainDescriptor::getTypeName() const
+{
+  return "Scan Chain";
+}
+
+bool DbScanChainDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto scan_chain = getObject(object);
+  auto* scan_partition_descriptor
+      = Gui::get()->getDescriptor<odb::dbScanPartition*>();
+  bbox.mergeInit();
+
+  for (auto* scan_partition : scan_chain->getScanPartitions()) {
+    odb::Rect scan_partition_bbox;
+    if (scan_partition_descriptor->getBBox(scan_partition,
+                                           scan_partition_bbox)) {
+      bbox.merge(scan_partition_bbox);
+    }
+  }
+
+  return !bbox.isInverted();
+}
+
+void DbScanChainDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto scan_chain = getObject(object);
+
+  for (auto* scan_partition : scan_chain->getScanPartitions()) {
+    auto* scan_partition_descriptor
+        = Gui::get()->getDescriptor<odb::dbScanPartition*>();
+    scan_partition_descriptor->highlight(scan_partition, painter);
+  }
+}
+
+bool DbScanChainDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    objects.insert(makeSelected(scan_chain));
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanChainDescriptor::getDBProperties(
+    odb::dbScanChain* scan_chain) const
+{
+  Properties props;
+
+  props.push_back(
+      DbScanInstDescriptor::getScanPinProperty("In", scan_chain->getScanIn()));
+  props.push_back(DbScanInstDescriptor::getScanPinProperty(
+      "Out", scan_chain->getScanOut()));
+  props.push_back(DbScanInstDescriptor::getScanPinProperty(
+      "Enable", scan_chain->getScanEnable()));
+
+  auto gui = Gui::get();
+
+  SelectionSet scan_partitions;
+  for (auto* scan_partition : scan_chain->getScanPartitions()) {
+    scan_partitions.insert(gui->makeSelected(scan_partition));
+  }
+  props.push_back({"Scan Partitions", scan_partitions});
 
   return props;
 }
