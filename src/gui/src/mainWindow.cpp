@@ -565,6 +565,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbScanList*>(new DbScanListDescriptor(db_));
   gui->registerDescriptor<odb::dbScanPartition*>(
       new DbScanPartitionDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanChain*>(new DbScanChainDescriptor(db_));
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));
