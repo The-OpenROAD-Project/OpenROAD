@@ -1726,8 +1726,9 @@ void Resizer::reportBuffers(bool filtered)
       "special cells{}",
       buffer_list.size(),
       (exclude_clock_buffers_ ? " or clock buffers" : ""));
-  
-  logger_->report("\nThere are {} VT types:", lib_data.vt_leakage_by_category.size());
+
+  logger_->report("\nThere are {} VT types:",
+                  lib_data.vt_leakage_by_category.size());
   logger_->report("VT type[index]: # buffers, ave leakage");
   for (const auto& [vt_category, vt_stats] : lib_data.sorted_vt_categories) {
     logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
@@ -1736,7 +1737,7 @@ void Resizer::reportBuffers(bool filtered)
                     vt_stats.cell_count,
                     vt_stats.get_average_leakage());
   }
-  
+
   logger_->report("\nThere are {} cell footprint types:",
                   lib_data.cells_by_footprint.size());
   for (const auto& [footprint_type, count] : lib_data.cells_by_footprint) {
@@ -1745,8 +1746,9 @@ void Resizer::reportBuffers(bool filtered)
                     count,
                     ((float) count) / buffer_list.size() * 100);
   }
-  
-  logger_->report("\nThere are {} cell site types:", lib_data.cells_by_site.size());
+
+  logger_->report("\nThere are {} cell site types:",
+                  lib_data.cells_by_site.size());
   for (const auto& [site_type, count] : lib_data.cells_by_site) {
     logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
                     site_type->getName(),
@@ -1754,7 +1756,7 @@ void Resizer::reportBuffers(bool filtered)
                     count,
                     ((float) count) / buffer_list.size() * 100);
   }
-  
+
   logger_->report("{:->80}", "");
   logger_->report(
       "Cell                                        Drive Drive    Leak "
@@ -1763,7 +1765,7 @@ void Resizer::reportBuffers(bool filtered)
       "                                            Res   Res*Cin       "
       "   Ht Footpt Type");
   logger_->report("{:->80}", "");
-  
+
   for (LibertyCell* buffer : buffer_list) {
     float drive_res = bufferDriveResistance(buffer);
     LibertyPort *input, *output;
@@ -1797,7 +1799,7 @@ void Resizer::reportBuffers(bool filtered)
         "                                            Res   Res*Cin       "
         "   Ht Footpt Type");
     logger_->report("{:->80}", "");
-    
+
     for (LibertyCell* buffer : buffer_cells_) {
       float drive_res = bufferDriveResistance(buffer);
       LibertyPort *input, *output;

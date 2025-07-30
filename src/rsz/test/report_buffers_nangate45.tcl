@@ -5,4 +5,3 @@ read_def reg2.def
 
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
-

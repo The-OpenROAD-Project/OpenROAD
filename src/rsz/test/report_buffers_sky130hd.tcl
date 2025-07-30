@@ -13,4 +13,3 @@ estimate_parasitics -placement
 
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
-
