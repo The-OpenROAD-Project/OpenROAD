@@ -2563,9 +2563,19 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
   return nullptr;
 }
 
-Net* dbNetwork::makeNet(const char* name, Instance* parent)
+// New API that supports hierarchical mode.
+Net* dbNetwork::makeHierNet(Instance* parent, const char* base_name)
 {
-  dbNet* dnet = dbNet::create(block_, name, false);
+  std::string full_name = makeNewNetName(parent, base_name);
+
+  dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
+  return dbToSta(dnet);
+}
+
+// Old API. parent argument is unused.
+Net* dbNetwork::makeNet(const char* full_name, Instance* parent)
+{
+  dbNet* dnet = dbNet::create(block_, full_name, false);
   return dbToSta(dnet);
 }
 
@@ -4179,6 +4189,10 @@ std::string dbNetwork::makeNewNetName(Instance* parent_scope,
   if (parent_scope && parent_scope != topInstance()) {
     parent_hier_name = fmt::format("{}{}", name(parent_scope), pathDivider());
     scope = parent_scope;
+  }
+
+  if (base_name == nullptr) {
+    base_name = "net";
   }
 
   std::string net_name;

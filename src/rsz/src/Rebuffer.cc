@@ -1819,8 +1819,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
           = db_network_->makeNewInstName(instance_base_name);
 
       // HFix: make net in hierarchy
-      std::string net_name = db_network_->makeNewNetName();
-      Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
+      Net* net2 = db_network_->makeHierNet(parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
