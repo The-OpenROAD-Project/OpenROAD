@@ -47,8 +47,6 @@ def detailed_route(
     params.viaInPinTopLayer = via_in_pin_top_layer
     params.orSeed = or_seed
     params.orK = or_k
-    params.bottomRoutingLayer = bottom_routing_layer
-    params.topRoutingLayer = top_routing_layer
     params.verbose = verbose
     params.cleanPatches = clean_patches
     params.doPa = not no_pin_access

@@ -7,7 +7,8 @@ read_guides "top_level_term.guide"
 
 set def_file [make_result_file top_level_term.def]
 
-detailed_route -bottom_routing_layer met1 -top_routing_layer met3 -verbose 0
+set_routing_layers -signal met1-met3
+detailed_route -verbose 0
 
 write_def $def_file
 diff_files top_level_term.defok $def_file
