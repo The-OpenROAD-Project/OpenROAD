@@ -7,13 +7,13 @@ read_verilog reg1.v
 link_design top
 
 # Die: outer T (unchanged, 8 vertices)
-set die_polygon  {150 0   250 0   250 200   400 200   400 300   0 300   0 200   150 200}
+set die_area  {150 0   250 0   250 200   400 200   400 300   0 300   0 200   150 200}
 
 # Core: inner T entirely inside the die (8 vertices)
-set core_polygon {170 20  230 20  230 220  380 220  380 280  20 280  20 220  170 220}
+set core_area {170 20  230 20  230 220  380 220  380 280  20 280  20 220  170 220}
 
-initialize_floorplan -die_polygon $die_polygon \
-  -core_polygon $core_polygon \
+initialize_floorplan -die_area $die_area \
+  -core_area $core_area \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 
 set def_file [make_result_file make_polygon_rows2.def]

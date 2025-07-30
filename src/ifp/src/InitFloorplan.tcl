@@ -4,11 +4,8 @@
 sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-aspect_ratio ratio]\
 					       [-core_space space | {bottom top left right}]\
-					       [-die_area {lx ly ux uy}]\
-					       [-core_area {lx ly ux uy}]\
-                  #  we only plan to use die_polygon and core_polygon combination for maunually specifying the polygon die/core area 
-					       [-die_polygon {x1 y1 x2 y2 ...}]\
-					       [-core_polygon {x1 y1 x2 y2 ...}]\
+					       [-die_area {lx ly ux uy | x1 y1 x2 y2 ...}]\
+					       [-core_area {lx ly ux uy | x1 y1 x2 y2 ...}]\
 					       [-additional_sites site_names]\
 					       [-site site_name]\
 					       [-row_parity NONE|ODD|EVEN]\
@@ -17,7 +14,7 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-    -die_area -core_area -die_polygon -core_polygon \
+    -die_area -core_area \
     -site -additional_sites -row_parity -flip_sites} \
     flags {}
 
@@ -34,19 +31,27 @@ proc initialize_floorplan { args } {
     }
   }
 
-  # New validation for polygon vs rectangular options
-  set has_rect [expr {
-    [info exists keys(-die_area)] || [info exists keys(-core_area)] ||
-    [info exists keys(-utilization)]
-  }]
-  set has_poly [expr { [info exists keys(-die_polygon)] || [info exists keys(-core_polygon)] }]
+  # Check if we're using polygon mode based on coordinate count
+  set is_polygon_mode 0
 
-  if { $has_rect && $has_poly } {
-    utl::error IFP 74 "Cannot specify both rectangular (-die_area/-core_area/-utilization) and polygon (-die_polygon/-core_polygon) options"
+  # Check die_area for polygon mode (more than 4 coordinates)
+  if { [info exists keys(-die_area)] } {
+    set die_coords $keys(-die_area)
+    if { [llength $die_coords] > 4 } {
+      set is_polygon_mode 1
+    }
   }
 
-  # Branch to polygon flow if polygon options present
-  if { $has_poly } {
+  # Check core_area for polygon mode (more than 4 coordinates)  
+  if { [info exists keys(-core_area)] } {
+    set core_coords $keys(-core_area)
+    if { [llength $core_coords] > 4 } {
+      set is_polygon_mode 1
+    }
+  }
+
+  # Branch to polygon flow if polygon mode detected
+  if { $is_polygon_mode } {
     ifp::make_polygon_die_helper [array get keys]
     ifp::make_polygon_rows_helper [array get keys]
     return
@@ -352,16 +357,16 @@ proc make_die_helper { key_array } {
 proc make_polygon_die_helper { key_array } {
   array set keys $key_array
 
-  if { ![info exists keys(-die_polygon)] } {
+  if { ![info exists keys(-die_area)] } {
     utl::error IFP 75 "no -die_polygon specified for polygon floorplan."
   }
-  set die_vertices $keys(-die_polygon)
+  set die_vertices $keys(-die_area)
   if { [llength $die_vertices] % 2 != 0 } {
-    utl::error IFP 76 "-die_polygon must have an even number of coordinates (x y pairs)."
+    utl::error IFP 76 "-die_area must have an even number of coordinates (x y pairs)."
   }
 
   if { [llength $die_vertices] < 8 } {
-    utl::error IFP 77 "-die_polygon must have at least 4 vertices (8 coordinates)."
+    utl::error IFP 77 "-die_area must have at least 4 vertices (8 coordinates)."
   }
 
   # Clear any previous polygon data
@@ -395,9 +400,9 @@ proc make_polygon_die_helper { key_array } {
 proc make_polygon_rows_helper { key_array } {
   array set keys $key_array
 
-  # Validate that core_polygon is specified for polygon floorplan
-  if { ![info exists keys(-core_polygon)] } {
-    utl::error IFP 85 "no -core_polygon specified for polygon floorplan."
+  # Validate that core_area is specified for polygon floorplan
+  if { ![info exists keys(-core_area)] } {
+    utl::error IFP 85 "no -core_area specified for polygonal floorplan."
   }
 
   # Get the site information (required for polygon rows)
@@ -434,14 +439,14 @@ proc make_polygon_rows_helper { key_array } {
   }
 
   # Handle core polygon - this is the key difference from rectangular rows
-  if { [info exists keys(-core_polygon)] } {
-    set core_vertices $keys(-core_polygon)
+  if { [info exists keys(-core_area)] } {
+    set core_vertices $keys(-core_area)
     if { [llength $core_vertices] % 2 != 0 } {
-      utl::error IFP 82 "-core_polygon must have an even number of coordinates (x y pairs)."
+      utl::error IFP 82 "-core_area must have an even number of coordinates (x y pairs)."
     }
 
     if { [llength $core_vertices] < 8 } {
-      utl::error IFP 83 "-core_polygon must have at least 4 vertices (8 coordinates)."
+      utl::error IFP 83 "-core_area must have at least 4 vertices (8 coordinates)."
     }
 
     # Convert micron coordinates to DBU and create polygon vertices list

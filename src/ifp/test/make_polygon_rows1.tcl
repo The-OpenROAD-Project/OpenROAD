@@ -8,14 +8,14 @@ link_design top
 
 # # Die polygon – “horizontal” T (original T rotated 90° CCW)
 # # Die outline — horizontal-T, 8 vertices  
-set die_polygon  {0 0   100 0   100 150   300 150   300 250   100 250   100 400   0 400}
+set die_area  {0 0   100 0   100 150   300 150   300 250   100 250   100 400   0 400}
 
 # Core outline — 20 µm margin inside the die, 8 vertices
-set core_polygon {20 20  80 20  80 170  260 170  260 230  80 230  80 380  20 380}
+set core_area {20 20  80 20  80 170  260 170  260 230  80 230  80 380  20 380}
 
 
-initialize_floorplan -die_polygon $die_polygon \
-  -core_polygon $core_polygon \
+initialize_floorplan -die_area $die_area \
+  -core_area $core_area \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 
 set def_file [make_result_file make_polygon_rows1.def]
