@@ -14,8 +14,14 @@
 
 #include "MplObserver.h"
 #include "db_sta/dbNetwork.hh"
+#include "object.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
+#include "util.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 using utl::MPL;
@@ -189,6 +195,8 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   unsigned int num_macro = 0;
   float macro_area = 0.0;
 
+  const odb::Rect& core = block_->getCoreArea();
+
   for (odb::dbInst* inst : module->getInsts()) {
     if (isIgnoredInst(inst)) {
       continue;
@@ -202,6 +210,19 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 
       auto macro = std::make_unique<HardMacro>(
           inst, tree_->halo_width, tree_->halo_height);
+
+      const int macro_dbu_width = block_->micronsToDbu(macro->getWidth());
+      const int macro_dbu_height = block_->micronsToDbu(macro->getHeight());
+
+      if (macro_dbu_width > core.dx() || macro_dbu_height > core.dy()) {
+        logger_->error(
+            MPL,
+            6,
+            "Found macro that does not fit in the core.\nName: {}\n{}",
+            inst->getName(),
+            generateMacroAndCoreDimensionsTable(macro.get(), core));
+      }
+
       tree_->maps.inst_to_hard[inst] = std::move(macro);
     } else {
       num_std_cell += 1;
@@ -311,6 +332,21 @@ void ClusteringEngine::setBaseThresholds()
 {
   if (tree_->base_max_macro <= 0 || tree_->base_min_macro <= 0
       || tree_->base_max_std_cell <= 0 || tree_->base_min_std_cell <= 0) {
+    // From original implementation: Reset maximum level based on number
+    // of macros.
+    const int min_num_macros_for_multilevel = 150;
+    if (design_metrics_->getNumMacro() <= min_num_macros_for_multilevel) {
+      tree_->max_level = 1;
+      debugPrint(
+          logger_,
+          MPL,
+          "multilevel_autoclustering",
+          1,
+          "Number of macros is below {}. Resetting number of levels to {}",
+          min_num_macros_for_multilevel,
+          tree_->max_level);
+    }
+
     // Set base values for std cell lower/upper thresholds
     const int min_num_std_cells_allowed = 1000;
     tree_->base_min_std_cell
@@ -331,21 +367,6 @@ void ClusteringEngine::setBaseThresholds()
     }
     tree_->base_max_macro
         = tree_->base_min_macro * tree_->cluster_size_ratio / 2.0;
-
-    // From original implementation: Reset maximum level based on number
-    // of macros.
-    const int min_num_macros_for_multilevel = 150;
-    if (design_metrics_->getNumMacro() <= min_num_macros_for_multilevel) {
-      tree_->max_level = 1;
-      debugPrint(
-          logger_,
-          MPL,
-          "multilevel_autoclustering",
-          1,
-          "Number of macros is below {}. Resetting number of levels to {}",
-          min_num_macros_for_multilevel,
-          tree_->max_level);
-    }
   }
 
   // Set sizes for root
@@ -1978,14 +1999,7 @@ void ClusteringEngine::breakMixedLeaves(
 //               A1  A2  A3
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
-  Cluster* parent = mixed_leaf;
-  const float macro_dominated_cluster_ratio = 0.01;
-
-  // Split by replacement if macro dominated.
-  if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_ratio
-      < mixed_leaf->getNumMacro()) {
-    parent = mixed_leaf->getParent();
-  }
+  Cluster* parent = mixed_leaf->getParent();
 
   mapMacroInCluster2HardMacro(mixed_leaf);
 
@@ -2027,12 +2041,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
   // Never use SetInstProperty in the following lines for the reason above!
   std::vector<int> virtual_conn_clusters;
 
-  // Deal with the std cells
-  if (parent == mixed_leaf) {
-    addStdCellClusterToSubTree(parent, mixed_leaf, virtual_conn_clusters);
-  } else {
-    replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
-  }
+  replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
 
   // Deal with the macros
   for (int i = 0; i < macro_class.size(); i++) {
@@ -2256,29 +2265,6 @@ void ClusteringEngine::groupSingleMacroClusters(
   }
 }
 
-void ClusteringEngine::addStdCellClusterToSubTree(
-    Cluster* parent,
-    Cluster* mixed_leaf,
-    std::vector<int>& virtual_conn_clusters)
-{
-  std::string std_cell_cluster_name = mixed_leaf->getName();
-  auto std_cell_cluster
-      = std::make_unique<Cluster>(id_, std_cell_cluster_name, logger_);
-
-  std_cell_cluster->copyInstances(*mixed_leaf);
-  std_cell_cluster->clearLeafMacros();
-  std_cell_cluster->setClusterType(StdCellCluster);
-
-  setClusterMetrics(std_cell_cluster.get());
-
-  virtual_conn_clusters.push_back(std_cell_cluster->getId());
-
-  tree_->maps.id_to_cluster[id_++] = std_cell_cluster.get();
-  std_cell_cluster->setParent(parent);
-  parent->addChild(std::move(std_cell_cluster));
-}
-
-// We don't modify the physical hierarchy when spliting by replacement
 void ClusteringEngine::replaceByStdCellCluster(
     Cluster* mixed_leaf,
     std::vector<int>& virtual_conn_clusters)
@@ -2344,6 +2330,24 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
 }
 
 ///////////////////////////////////////////////
+
+std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
+    const HardMacro* hard_macro,
+    const odb::Rect& core) const
+{
+  std::string table;
+
+  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
+  table += fmt::format("\n-----------------------------------------");
+  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
+                       hard_macro->getWidth(),
+                       block_->dbuToMicrons(core.dx()));
+  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
+                       hard_macro->getHeight(),
+                       block_->dbuToMicrons(core.dy()));
+
+  return table;
+}
 
 void ClusteringEngine::reportThresholds() const
 {

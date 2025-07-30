@@ -100,6 +100,7 @@ BrowserWidget::BrowserWidget(
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
       model_modified_(false),
+      initial_load_(true),
       ignore_selection_(false),
       menu_(new QMenu(this))
 {
@@ -382,7 +383,10 @@ void BrowserWidget::updateModel()
   }
   addInstanceItems(insts, "Physical only", root);
 
-  view_->header()->resizeSections(QHeaderView::ResizeToContents);
+  if (initial_load_) {
+    view_->header()->resizeSections(QHeaderView::ResizeToContents);
+    initial_load_ = false;
+  }
   model_modified_ = false;
   setUpdatesEnabled(true);
   view_->setSortingEnabled(true);

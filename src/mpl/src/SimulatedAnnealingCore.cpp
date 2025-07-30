@@ -9,12 +9,18 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <numeric>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "MplObserver.h"
+#include "clusterEngine.h"
 #include "object.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {

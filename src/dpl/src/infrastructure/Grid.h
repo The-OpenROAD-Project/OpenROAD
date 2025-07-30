@@ -40,6 +40,8 @@ struct Pixel
   bool is_hopeless = false;  // too far from sites for diamond search
   std::map<dbSite*, dbOrientType> sites;
   uint8_t blocked_layers = 0;
+  std::unordered_set<Node*>
+      padding_reserved_by;  // Cells that reserved this pixel for padding
 };
 
 // Return value for grid searches.
@@ -105,10 +107,17 @@ class Grid
 
   void paintPixel(Node* cell, GridX grid_x, GridY grid_y);
   void paintPixel(Node* cell);
+  void paintCellPadding(Node* cell);
+  void paintCellPadding(Node* cell,
+                        GridX grid_x_begin,
+                        GridY grid_y_begin,
+                        GridX grid_x_end,
+                        GridY grid_y_end);
   void erasePixel(Node* cell);
-  void visitCellPixels(Node& cell,
-                       bool padded,
-                       const std::function<void(Pixel* pixel)>& visitor) const;
+  void visitCellPixels(
+      Node& cell,
+      bool padded,
+      const std::function<void(Pixel* pixel, bool padded)>& visitor) const;
   void visitCellBoundaryPixels(
       Node& cell,
       const std::function<

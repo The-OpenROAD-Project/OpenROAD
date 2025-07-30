@@ -115,7 +115,7 @@ void Graphics::initHeatmap()
 void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
-  auto& die = pbc_->die();
+  auto& die = pbc_->getDie();
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
@@ -144,7 +144,7 @@ void Graphics::drawInitial(gui::Painter& painter)
 void Graphics::drawForce(gui::Painter& painter)
 {
   for (const auto& nb : nbVec_) {
-    const auto& bins = nb->bins();
+    const auto& bins = nb->getBins();
     if (bins.empty()) {
       continue;
     }
@@ -270,8 +270,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
     painter.setPen(gui::Painter::kTransparent);
 
     for (const auto& nb : nbVec_) {
-      for (auto& bin : nb->bins()) {
-        int density = bin.density() * 50 + 20;
+      for (auto& bin : nb->getBins()) {
+        int density = bin.getDensity() * 50 + 20;
         gui::Painter::Color color;
         if (density > 255) {
           color = {255, 165, 0, 180};  // orange = out of the range
@@ -304,12 +304,12 @@ void Graphics::drawNesterov(gui::Painter& painter)
   if (selected_ != kInvalidIndex && nbc_->getGCellByIndex(selected_)) {
     painter.setPen(gui::Painter::kYellow, true);
     for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
-      GNet* net = pin->gNet();
+      GNet* net = pin->getGNet();
       if (!net) {
         continue;
       }
-      for (GPin* other_pin : net->gPins()) {
-        GCell* neighbor = other_pin->gCell();
+      for (GPin* other_pin : net->getGPins()) {
+        GCell* neighbor = other_pin->getGCell();
         if (neighbor == nbc_->getGCellByIndex(selected_)) {
           continue;
         }
@@ -368,12 +368,12 @@ void Graphics::reportSelected()
     for (auto& gPin : nbc_->getGCellByIndex(selected_)->gPins()) {
       FloatPoint wlGrad
           = nbc_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
-      const float weight = gPin->gNet()->totalWeight();
+      const float weight = gPin->getGNet()->getTotalWeight();
       logger_->report("          ({:+.2e}, {:+.2e}) (weight = {}) pin {}",
                       wlGrad.x,
                       wlGrad.y,
                       weight,
-                      gPin->pin()->getName());
+                      gPin->getPbPin()->getName());
     }
 
     FloatPoint wlGrad = nbc_->getWireLengthGradientWA(
@@ -487,13 +487,13 @@ void Graphics::status(const std::string& message)
 double Graphics::getGridXSize() const
 {
   const BinGrid& grid = nbVec_[0]->getBinGrid();
-  return grid.binSizeX() / (double) getBlock()->getDbUnitsPerMicron();
+  return grid.getBinSizeX() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
 double Graphics::getGridYSize() const
 {
   const BinGrid& grid = nbVec_[0]->getBinGrid();
-  return grid.binSizeY() / (double) getBlock()->getDbUnitsPerMicron();
+  return grid.getBinSizeY() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
 odb::Rect Graphics::getBounds() const
@@ -510,15 +510,16 @@ bool Graphics::populateMap()
   double max_value = std::numeric_limits<double>::lowest();
 
   if (heatmap_type_ == OverflowMinMax) {
-    for (const Bin& bin : grid.bins()) {
-      int64_t binArea = bin.binArea();
+    for (const Bin& bin : grid.getBins()) {
+      int64_t binArea = bin.getBinArea();
       const float scaledBinArea
-          = static_cast<float>(binArea * bin.targetDensity());
+          = static_cast<float>(binArea * bin.getTargetDensity());
 
-      double value = std::max(
-          0.0f,
-          static_cast<float>(bin.instPlacedAreaUnscaled())
-              + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
+      double value
+          = std::max(0.0f,
+                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                         - scaledBinArea);
       value = block->dbuAreaToMicrons(value);
 
       min_value = std::min(min_value, value);
@@ -526,21 +527,22 @@ bool Graphics::populateMap()
     }
   }
 
-  for (const Bin& bin : grid.bins()) {
+  for (const Bin& bin : grid.getBins()) {
     odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     double value = 0.0;
 
     if (heatmap_type_ == Density) {
-      value = bin.density() * 100.0;
+      value = bin.getDensity() * 100.0;
     } else if (heatmap_type_ == Overflow || heatmap_type_ == OverflowMinMax) {
-      int64_t binArea = bin.binArea();
+      int64_t binArea = bin.getBinArea();
       const float scaledBinArea
-          = static_cast<float>(binArea * bin.targetDensity());
+          = static_cast<float>(binArea * bin.getTargetDensity());
 
-      double raw_value = std::max(
-          0.0f,
-          static_cast<float>(bin.instPlacedAreaUnscaled())
-              + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
+      double raw_value
+          = std::max(0.0f,
+                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                         - scaledBinArea);
       raw_value = block->dbuAreaToMicrons(raw_value);
 
       if (heatmap_type_ == OverflowMinMax && max_value > min_value) {
@@ -559,9 +561,9 @@ bool Graphics::populateMap()
 void Graphics::populateXYGrid()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
-  std::vector<Bin>& bin = grid.bins();
-  int x_grid = grid.binCntX();
-  int y_grid = grid.binCntY();
+  std::vector<Bin>& bin = grid.getBins();
+  int x_grid = grid.getBinCntX();
+  int y_grid = grid.getBinCntY();
 
   std::vector<int> x_grid_set, y_grid_set;
   x_grid_set.reserve(x_grid + 1);

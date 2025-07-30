@@ -7,8 +7,6 @@
 #include <cmath>
 #include <vector>
 
-#include "Slots.h"
-#include "iostream"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {

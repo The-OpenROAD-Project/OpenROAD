@@ -156,8 +156,6 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
-  dbBlock* block = (dbBlock*) (bterm.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &bterm._flags;
   stream << *bit_field;
   stream << bterm._ext_id;
@@ -166,25 +164,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._net;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream << bterm._mnet;
-    stream << bterm._next_modnet_bterm;
-    stream << bterm._prev_modnet_bterm;
-  }
+  stream << bterm._mnet;
+  stream << bterm._next_modnet_bterm;
+  stream << bterm._prev_modnet_bterm;
   stream << bterm._parent_block;
   stream << bterm._parent_iterm;
   stream << bterm._bpins;
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
-    stream << bterm._constraint_region;
-  }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
-    stream << bterm._mirrored_bterm;
-  }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
-    stream << bterm._is_mirrored;
-  }
+  stream << bterm._constraint_region;
+  stream << bterm._mirrored_bterm;
+  stream << bterm._is_mirrored;
 
   return stream;
 }

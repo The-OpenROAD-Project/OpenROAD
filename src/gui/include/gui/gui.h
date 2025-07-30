@@ -216,6 +216,7 @@ class Painter
 
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
+  void drawLine(const odb::Line& line) { drawLine(line.pt0(), line.pt1()); }
 
   // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
@@ -690,7 +691,8 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
-  void selectClockviewerClock(const std::string& clock_name);
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth);
 
   // Save histogram view
   void saveHistogramImage(const std::string& filename,

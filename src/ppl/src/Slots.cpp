@@ -5,8 +5,12 @@
 
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
+#include <cstddef>
 #include <limits>
+#include <tuple>
 #include <vector>
+
+#include "ppl/IOPlacer.h"
 
 namespace ppl {
 

@@ -82,8 +82,11 @@ class HistogramView : public QChartView
       const std::vector<std::vector<const sta::Pin*>>& pin_bins);
   void setVisualConfig();
 
-  std::pair<QBarSet*, QBarSet*> createBarSets();
-  void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
+  std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*> createBarSets();
+  void populateBarSets(QBarSet& neg_set,
+                       QBarSet& pos_set,
+                       QBarSet& neg_set_invisible,
+                       QBarSet& pos_set_invisible);
 
   void setXAxisConfig(int all_bars_count);
   void setXAxisTitle();
@@ -92,7 +95,7 @@ class HistogramView : public QChartView
   int computeMaxYSnap(int largest_slack_count);
   int computeFirstDigit(int value, int digits);
 
-  utl::Logger* logger_;
+  utl::Logger* logger_{nullptr};
   STAGuiInterface* sta_{nullptr};
 
   QChart* chart_;
