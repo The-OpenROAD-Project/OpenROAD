@@ -22,10 +22,10 @@ cc_library(
         "src/SteinerTree.cpp",
     ],
     hdrs = [
-        "include/est/AbstractSteinerRenderer",
+        "include/est/AbstractSteinerRenderer.h",
         "include/est/EstimateParasitics.h",
-        "include/est/MakeEstimateParasitics.hh",
-        "include/est/OdbCallBack.hh",
+        "include/est/MakeEstimateParasitics.h",
+        "include/est/OdbCallBack.h",
         "include/est/SteinerTree.h",
     ],
     includes = [
