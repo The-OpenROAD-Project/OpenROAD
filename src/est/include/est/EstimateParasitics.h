@@ -196,6 +196,22 @@ class EstimateParasitics : public dbStaState
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
   void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; };
 
+  bool isIncrementalParasiticsEnabled() const
+  {
+    return incremental_parasitics_enabled_;
+  }
+  void setIncrementalParasiticsEnabled(bool enabled)
+  {
+    incremental_parasitics_enabled_ = enabled;
+  }
+
+  void removeNetFromParasiticsInvalid(Net* net)
+  {
+    parasitics_invalid_.erase(net);
+  }
+
+  bool hasParasiticsInvalid() const { return !parasitics_invalid_.empty(); }
+
   // Functions to estimate RC from global routing results
   void estimateGlobalRouteRC(sta::SpefWriter* spef_writer = nullptr);
   void estimateGlobalRouteRC(odb::dbNet* db_net);
@@ -224,9 +240,6 @@ class EstimateParasitics : public dbStaState
   void removeDbCbkOwner() { db_cbk_->removeOwner(); }
 
   void initBlock();
-
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
-  bool incremental_parasitics_enabled_ = false;
 
   Logger* getLogger() { return logger_; }
 
@@ -274,9 +287,13 @@ class EstimateParasitics : public dbStaState
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
   const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
 
+  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   int dbu_ = 0;
+
+  bool incremental_parasitics_enabled_ = false;
 
   // constants
   const MinMax* min_ = MinMax::min();

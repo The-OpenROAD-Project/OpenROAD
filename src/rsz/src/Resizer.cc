@@ -2745,7 +2745,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
           // network_->net(tie_pin);
           sta_->deleteNet(tie_net);
-          estimate_parasitics_->parasitics_invalid_.erase(tie_net);
+          estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);
           // Delete the tie instance if no other ports are in use.
           // A tie cell can have both tie hi and low outputs.
           bool has_other_fanout = false;
@@ -3703,7 +3703,7 @@ void Resizer::cloneClkInverter(Instance* inv)
       sta_->disconnectPin(in_pin);
       sta_->disconnectPin(out_pin);
       sta_->deleteNet(out_net);
-      estimate_parasitics_->parasitics_invalid_.erase(out_net);
+      estimate_parasitics_->removeNetFromParasiticsInvalid(out_net);
       sta_->deleteInstance(inv);
     }
   }

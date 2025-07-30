@@ -1038,12 +1038,12 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
     : estimate_parasitics_(estimate_parasitics), need_unregister_(false)
 {
   // check to allow reentrancy
-  if (!estimate_parasitics_->incremental_parasitics_enabled_) {
+  if (!estimate_parasitics_->isIncrementalParasiticsEnabled()) {
     if (!estimate_parasitics_->getBlock()) {
       estimate_parasitics_->initBlock();
     }
 
-    if (!estimate_parasitics_->parasitics_invalid_.empty()) {
+    if (estimate_parasitics_->hasParasiticsInvalid()) {
       estimate_parasitics_->getLogger()->error(
           EST, 104, "inconsistent parasitics state");
     }
@@ -1064,7 +1064,7 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
         break;
     }
 
-    estimate_parasitics_->incremental_parasitics_enabled_ = true;
+    estimate_parasitics_->setIncrementalParasiticsEnabled(true);
     estimate_parasitics_->setDbCbkOwner(estimate_parasitics_->getBlock());
     need_unregister_ = true;
   }
@@ -1094,7 +1094,7 @@ IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
         break;
     }
 
-    estimate_parasitics_->incremental_parasitics_enabled_ = false;
+    estimate_parasitics_->setIncrementalParasiticsEnabled(false);
   }
 }
 

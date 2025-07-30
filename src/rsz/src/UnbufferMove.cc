@@ -419,7 +419,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
   }
 
-  estimate_parasitics_->parasitics_invalid_.erase(removed);
+  estimate_parasitics_->removeNetFromParasiticsInvalid(removed);
   estimate_parasitics_->parasiticsInvalid(survivor);
   estimate_parasitics_->updateParasitics();
 }
