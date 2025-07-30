@@ -1062,11 +1062,12 @@ Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 //
 Net* dbNetwork::findNetAllScopes(const char* net_name) const
 {
+  dbNet* dnet = block_->findNet(net_name);
+  if (dnet) {
+    return dbToSta(dnet);
+  }
+
   for (auto dbm : block_->getModules()) {
-    dbNet* dnet = block_->findNet(net_name);
-    if (dnet) {
-      return dbToSta(dnet);
-    }
     dbModNet* modnet = dbm->getModNet(net_name);
     if (modnet) {
       return dbToSta(modnet);
@@ -4169,7 +4170,8 @@ void dbNetwork::AxiomCheck()
 // method: dbNetwork::name).
 // Currently all nets are scoped within a dbBlock.
 //
-std::string dbNetwork::makeNewNetName(Instance* parent_scope, const char* base_name)
+std::string dbNetwork::makeNewNetName(Instance* parent_scope,
+                                      const char* base_name)
 {
   std::string parent_hier_name;
   const Instance* scope = topInstance();
@@ -4189,18 +4191,30 @@ std::string dbNetwork::makeNewNetName(Instance* parent_scope, const char* base_n
   // in hierarchical mode we check the uniqueness globally.
   // TODO:change scoping of nets so we never
   // have to do this, as it is obviously slow.
-  return net_name;  
+  return net_name;
 }
 
-std::string dbNetwork::makeNewInstName(const char* base_name, bool underscore)
+std::string dbNetwork::makeNewInstName(Instance* parent_scope,
+                                       const char* base_name,
+                                       bool underscore)
 {
+  std::string parent_hier_name;
+  const Instance* scope = topInstance();
+
+  if (parent_scope && parent_scope != topInstance()) {
+    parent_hier_name = fmt::format("{}{}", name(parent_scope), pathDivider());
+    scope = parent_scope;
+  }
+
   std::string inst_name;
   do {
     // sta::stringPrint can lead to string overflow and fatal
     if (underscore) {
-      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
+      inst_name = fmt::format(
+          "{}{}_{}", parent_hier_name, base_name, unique_inst_index_++);
     } else {
-      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
+      inst_name = fmt::format(
+          "{}{}{}", parent_hier_name, base_name, unique_inst_index_++);
     }
     //
     // NOTE: TODO: The scoping should be within
@@ -4210,8 +4224,13 @@ std::string dbNetwork::makeNewInstName(const char* base_name, bool underscore)
     // then search within that scope. That way the instance name
     // does not have to be some massive string like root/X/Y/U1.
     //
-  } while (network_->findInstance(inst_name.c_str()));
+  } while (network_->findInstanceRelative(scope, inst_name.c_str()));
   return inst_name;
+}
+
+std::string dbNetwork::makeNewInstName(const char* full_name, bool underscore)
+{
+  return makeNewInstName(nullptr, full_name, underscore);
 }
 
 }  // namespace sta

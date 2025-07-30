@@ -346,7 +346,10 @@ class dbNetwork : public ConcreteNetwork
 
   std::string makeNewNetName(Instance* parent_scope = nullptr,
                              const char* base_name = "net");
-  std::string makeNewInstName(const char* base_name, bool underscore = false);
+  std::string makeNewInstName(Instance* parent_scope,
+                              const char* base_name,
+                              bool underscore = false);
+  std::string makeNewInstName(const char* full_name, bool underscore = false);
 
   using Network::cell;
   using Network::direction;
