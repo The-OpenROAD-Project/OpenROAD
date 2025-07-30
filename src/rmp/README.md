@@ -51,6 +51,21 @@ restructure
 | `-abc_logfile` | Output file to save abc logs to. |
 | `-work_dir` | Name of the working directory for temporary files. If not provided, `run` directory would be used. |
 
+### Resynth
+
+Resynthesize parts of the design in an attempt to fix negative slack.
+
+```tcl
+resynth
+    [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to use. |
+
 ## Example scripts
 
 Example scripts on running `rmp` for a sample design of `gcd` as follows:
