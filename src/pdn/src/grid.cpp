@@ -1085,12 +1085,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (box->getTechLayer() == nullptr) {
       for (auto* layer : block->getDb()->getTech()->getLayers()) {
         auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
-        obs[layer].push_back(shape);
+        obs[layer].push_back(std::move(shape));
       }
     } else {
       auto shape = std::make_shared<Shape>(
           box->getTechLayer(), obs_rect, Shape::BLOCK_OBS);
-      obs[box->getTechLayer()].push_back(shape);
+      obs[box->getTechLayer()].push_back(std::move(shape));
     }
   }
 
@@ -1148,7 +1148,7 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
             = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
         shape->generateObstruction();
         shape->setRect(shape->getRect());
-        obs[layer].push_back(shape);
+        obs[layer].push_back(std::move(shape));
       }
     }
   }
@@ -1494,7 +1494,7 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    obs[layer].push_back(shape);
+    obs[layer].push_back(std::move(shape));
   }
 
   // generate obstructions based on pins
@@ -1567,7 +1567,7 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
             auto shape = std::make_shared<Shape>(
                 via_box->getTechLayer(), net, box_rect);
             shape->setShapeType(Shape::FIXED);
-            pins.push_back(shape);
+            pins.push_back(std::move(shape));
           }
         } else {
           odb::Rect box_rect = box->getBox();
@@ -1575,7 +1575,7 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
           auto shape
               = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
           shape->setShapeType(Shape::FIXED);
-          pins.push_back(shape);
+          pins.push_back(std::move(shape));
         }
       }
     }
