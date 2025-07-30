@@ -111,6 +111,16 @@ void LatenciesBalancer::buildGraph(odb::dbNet* clkInputNet)
           graph_[sinkId].delay = builerAvgArrival;
           continue;
         }
+
+        if(isSink(sinkIterm)) {
+          // calcula o delay de uma instancia.
+          sta::Pin* pin = network_->dbToSta(sinkIterm);
+          if (pin) {
+            sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
+            float arrival = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
+            graph_[sinkId].delay = arrival;
+          }
+        }
         visitNode.push(sinkId);
       }
     }
