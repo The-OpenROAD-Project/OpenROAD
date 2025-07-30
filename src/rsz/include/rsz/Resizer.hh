@@ -190,10 +190,9 @@ struct VTLeakageStats
     return cell_count > 0 ? total_leakage / cell_count : 0.0f;
   }
 
-  void add_cell_leakage(LibertyCell* cell)
+  void add_cell_leakage(std::optional<float> cell_leak)
   {
     cell_count++;
-    std::optional<float> cell_leak = cellLeakage(cell);
     if (cell_leak.has_value()) {
       total_leakage += *cell_leak;
     }

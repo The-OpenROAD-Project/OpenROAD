@@ -399,7 +399,7 @@ void Resizer::unbufferNet(Net* net)
 
         if (port == in) {
           const Instance* inst = network_->instance(pin);
-          insts.push_back(inst);
+          insts.emplace_back(inst);
           const Pin* out_pin = network_->findPin(inst, out);
           if (out_pin) {
             queue.push_back(network_->net(out_pin));
@@ -1854,7 +1854,7 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list,
 
         // Get or create VT leakage stats for this category
         VTLeakageStats& vt_stats = lib_data.vt_leakage_by_category[vt_category];
-        vt_stats.add_cell_leakage(buffer);
+        vt_stats.add_cell_leakage(cellLeakage(buffer));
       }
     }
   }
