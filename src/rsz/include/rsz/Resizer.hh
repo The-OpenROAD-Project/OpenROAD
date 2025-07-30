@@ -583,10 +583,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  std::string makeUniqueNetName(Instance* parent = nullptr);
   Net* makeUniqueNet();
-  std::string makeUniqueInstName(const char* base_name);
-  std::string makeUniqueInstName(const char* base_name, bool underscore);
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);

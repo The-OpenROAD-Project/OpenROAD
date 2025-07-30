@@ -4159,6 +4159,15 @@ void dbNetwork::AxiomCheck()
   }
 }
 
+////////////////////////////////////////////////////////////////
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module)which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+//(as was done with dbInsts) and will require changing the
+// method: dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
 std::string dbNetwork::makeUniqueNetName(Instance* parent_scope)
 {
   std::string node_name;

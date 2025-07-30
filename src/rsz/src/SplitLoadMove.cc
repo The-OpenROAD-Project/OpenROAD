@@ -123,7 +123,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   odb::dbModNet* db_mod_drvr_net;
   db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
 
-  const string buffer_name = resizer_->makeUniqueInstName("split");
+  const string buffer_name = db_network_->makeUniqueInstName("split");
 
   // H-Fix Use driver parent for hierarchy, not the top instance
   Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
@@ -149,7 +149,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   addMove(buffer);
 
   // H-fix make the out net in the driver parent
-  std::string out_net_name = resizer_->makeUniqueNetName();
+  std::string out_net_name = db_network_->makeUniqueNetName();
   Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
 
   LibertyPort *input, *output;
@@ -229,7 +229,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
-        std::string unique_connection_name = resizer_->makeUniqueNetName();
+        std::string unique_connection_name = db_network_->makeUniqueNetName();
         odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
         odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
         if (load_pin_iterm && buffer_op_pin_iterm) {

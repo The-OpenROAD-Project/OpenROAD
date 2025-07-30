@@ -645,15 +645,15 @@ bool RepairDesign::performGainBuffering(Net* net,
     // backwards compatible. new naming only used for hierarchy code.
 
     std::string net_name = db_network_->hasHierarchy()
-                               ? resizer_->makeUniqueNetName(parent)
-                               : resizer_->makeUniqueNetName();
+                               ? db_network_->makeUniqueNetName(parent)
+                               : db_network_->makeUniqueNetName();
     Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
 
     dbNet* net_db = db_network_->staToDb(net);
     dbNet* new_net_db = db_network_->staToDb(new_net);
     new_net_db->setSigType(net_db->getSigType());
 
-    std::string buffer_name = resizer_->makeUniqueInstName("gain");
+    std::string buffer_name = db_network_->makeUniqueInstName("gain");
     const Point drvr_loc = db_network_->location(drvr_pin);
 
     // create instance in driver parent
@@ -2144,7 +2144,7 @@ bool RepairDesign::makeRepeater(
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  std::string buffer_name = resizer_->makeUniqueInstName(reason);
+  std::string buffer_name = db_network_->makeUniqueInstName(reason);
 
   debugPrint(logger_,
              RSZ,
@@ -2237,8 +2237,8 @@ bool RepairDesign::makeRepeater(
   // make sure any nets created are scoped within hierarchy
   // backwards compatible. new naming only used for hierarchy code.
   std::string net_name = db_network_->hasHierarchy()
-                             ? resizer_->makeUniqueNetName(parent)
-                             : resizer_->makeUniqueNetName();
+                             ? db_network_->makeUniqueNetName(parent)
+                             : db_network_->makeUniqueNetName();
   Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
 
   Net* buffer_ip_net = nullptr;
@@ -2401,7 +2401,7 @@ bool RepairDesign::makeRepeater(
 
         if (driver_instance_parent != load_instance_parent) {
           std::string connection_name;
-          connection_name = resizer_->makeUniqueNetName(parent);
+          connection_name = db_network_->makeUniqueNetName(parent);
           db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
                                            db_network_->flatPin(pin),
                                            connection_name.c_str());
@@ -2519,7 +2519,8 @@ bool RepairDesign::makeRepeater(
           db_network_->connectPin(const_cast<Pin*>(pin), (Net*) buffer_ip_net);
 
           if (driver_instance_parent != load_instance_parent) {
-            std::string connection_name = resizer_->makeUniqueNetName(parent);
+            std::string connection_name
+                = db_network_->makeUniqueNetName(parent);
 
             db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
                                              db_network_->flatPin(pin),
