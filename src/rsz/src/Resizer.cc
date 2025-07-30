@@ -945,7 +945,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   }
 
   // make the buffer and its output net.
-  string buffer_name = db_network_->makeUniqueInstName("input");
+  string buffer_name = db_network_->makeNewInstName("input");
   Instance* parent = db_network_->topInstance();
   Net* buffer_out = makeUniqueNet();
   dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
@@ -1123,7 +1123,7 @@ void Resizer::bufferOutput(const Pin* top_pin,
   assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
-  string buffer_name = db_network_->makeUniqueInstName("output");
+  string buffer_name = db_network_->makeNewInstName("output");
   Net* buffer_out = makeUniqueNet();
   Instance* parent = network->topInstance();
 
@@ -2724,8 +2724,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
               const char* inst_name = network_->name(load_inst);
-              string tie_name
-                  = db_network_->makeUniqueInstName(inst_name, true);
+              string tie_name = db_network_->makeNewInstName(inst_name, true);
               Instance* tie
                   = makeInstance(tie_cell, tie_name.c_str(), top_inst, tie_loc);
 
@@ -3076,7 +3075,7 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
 
 Net* Resizer::makeUniqueNet()
 {
-  string net_name = db_network_->makeUniqueNetName();
+  string net_name = db_network_->makeNewNetName();
   Instance* parent = db_network_->topInstance();
   return db_network_->makeNet(net_name.c_str(), parent);
 }
@@ -3641,7 +3640,7 @@ void Resizer::cloneClkInverter(Instance* inv)
     while (load_iter->hasNext()) {
       const Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        string clone_name = db_network_->makeUniqueInstName(inv_name, true);
+        string clone_name = db_network_->makeNewInstName(inv_name, true);
         Point clone_loc = db_network_->location(load_pin);
         Instance* clone
             = makeInstance(inv_cell, clone_name.c_str(), top_inst, clone_loc);

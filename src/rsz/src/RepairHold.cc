@@ -560,7 +560,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   } else {
     in_net = db_network_->dbToSta(db_drvr_net);
     // make the output net, put in same module as buffer
-    std::string net_name = db_network_->makeUniqueNetName();
+    std::string net_name = db_network_->makeNewNetName();
     out_net = db_network_->makeNet(net_name.c_str(), parent);
   }
 
@@ -588,7 +588,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
 
-  string buffer_name = db_network_->makeUniqueInstName("hold");
+  string buffer_name = db_network_->makeNewInstName("hold");
 
   // make the buffer in the driver pin's parent
   Instance* buffer

@@ -4168,33 +4168,31 @@ void dbNetwork::AxiomCheck()
 //(as was done with dbInsts) and will require changing the
 // method: dbNetwork::name).
 // Currently all nets are scoped within a dbBlock.
-std::string dbNetwork::makeUniqueNetName(Instance* parent_scope)
+//
+std::string dbNetwork::makeNewNetName(Instance* parent_scope, const char* base_name)
 {
-  std::string node_name;
-  bool prefix_name = false;
-  if (parent_scope && parent_scope != network_->topInstance()) {
-    prefix_name = true;
+  std::string parent_hier_name;
+  const Instance* scope = topInstance();
+
+  if (parent_scope && parent_scope != topInstance()) {
+    parent_hier_name = fmt::format("{}{}", name(parent_scope), pathDivider());
+    scope = parent_scope;
   }
-  Instance* top_inst = prefix_name ? parent_scope : network_->topInstance();
+
+  std::string net_name;
   do {
-    if (prefix_name) {
-      std::string parent_name = network_->name(parent_scope);
-      node_name = fmt::format("{}/net{}", parent_name, unique_net_index_++);
-    } else {
-      node_name = fmt::format("net{}", unique_net_index_++);
-    }
-  } while (network_->findNet(top_inst, node_name.c_str())
-           //
-           // in hierarchical mode we check the uniqueness globally.
-           // TODO:change scoping of nets so we never
-           // have to do this, as it is obviously slow.
-           //
-           || (hasHierarchy() && findNetAllScopes(node_name.c_str())));
-  return node_name;
+    net_name = fmt::format(
+        "{}{}{}", parent_hier_name, base_name, unique_net_index_++);
+  } while (findNet(scope, net_name.c_str())
+           || (hasHierarchy() && findNetAllScopes(net_name.c_str())));
+
+  // in hierarchical mode we check the uniqueness globally.
+  // TODO:change scoping of nets so we never
+  // have to do this, as it is obviously slow.
+  return net_name;  
 }
 
-std::string dbNetwork::makeUniqueInstName(const char* base_name,
-                                          bool underscore)
+std::string dbNetwork::makeNewInstName(const char* base_name, bool underscore)
 {
   std::string inst_name;
   do {

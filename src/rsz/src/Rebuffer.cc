@@ -1816,10 +1816,10 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   switch (choice->type()) {
     case BufferedNetType::buffer: {
       std::string buffer_name
-          = db_network_->makeUniqueInstName(instance_base_name);
+          = db_network_->makeNewInstName(instance_base_name);
 
       // HFix: make net in hierarchy
-      std::string net_name = db_network_->makeUniqueNetName();
+      std::string net_name = db_network_->makeNewNetName();
       Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
@@ -1958,7 +1958,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
             std::string preferred_connection_name;
             // always make a unique name to avoid name clashes.
-            preferred_connection_name = db_network_->makeUniqueNetName();
+            preferred_connection_name = db_network_->makeNewNetName();
             db_network_->hierarchicalConnect(
                 mod_net_drvr, load_iterm, preferred_connection_name.c_str());
           } else if (mod_net_in) {  // input hierarchical net
