@@ -16,6 +16,8 @@ class DesignCallBack : public odb::dbBlockCallBackObj
   void inDbPreMoveInst(odb::dbInst* inst) override;
   void inDbPostMoveInst(odb::dbInst* inst) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
+  void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
   void inDbNetCreate(odb::dbNet* net) override;
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net) override;

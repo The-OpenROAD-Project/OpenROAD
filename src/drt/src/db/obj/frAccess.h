@@ -236,6 +236,7 @@ class frPinAccess : public frBlockObject
   void setPin(frPin* in) { pin_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcPinAccess; }
+  void clearAccessPoints() { aps_.clear(); }
 
  private:
   std::vector<std::unique_ptr<frAccessPoint>> aps_;

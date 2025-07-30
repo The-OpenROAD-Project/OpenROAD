@@ -292,7 +292,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     grouter_cbk_->addOwner(block_);
   } else {
     try {
-      block_->updatePinAccess();
+      db_->getChip()->getBlock()->updatePinAccess();
       if (end_incremental) {
         updateDirtyRoutes();
         grouter_cbk_->removeOwner();
@@ -443,7 +443,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
-      block_->updatePinAccess();
+      db_->getChip()->getBlock()->updatePinAccess();
       total_diodes_count_ += repair_antennas_->getDiodesCount();
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());

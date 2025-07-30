@@ -90,11 +90,10 @@ class FlexPA
                       const std::string& shared_vol,
                       int cloud_sz);
 
-  void addInst(frInst* inst);
-  void redoClass(frInst* unique_inst);
   void deleteInst(frInst* inst);
   void removeInstFromInstSet(frInst* inst);
   void addDirtyInst(frInst* inst);
+  void removeDirtyInst(frInst* inst);
   void updateDirtyInsts();
 
   int main();
@@ -122,8 +121,7 @@ class FlexPA
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
-  using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
-  std::map<UniqueMTerm, bool> skip_unique_inst_term_;
+  std::map<frInst*, std::map<frMTerm*, bool>> skip_unique_inst_term_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
@@ -935,6 +933,31 @@ class FlexPA
       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
+
+  /**
+   * @brief Updates the unique_inst pa due to a change in the connections of
+   * the class of the unique instance.
+   *
+   * @param unique_inst The unique instance to redo the class for
+   */
+  void updateUniqueInst(frInst* unique_inst);
+
+  /**
+   * @brief Adds a unique instance to the PA data structure
+   *
+   * @param inst The unique instance to add
+   */
+  void addUniqueInst(frInst* inst);
+
+  /**
+   * @brief Processes an instance in a row
+   * This function retrieves the instances that are adjacent to the passed
+   * instance and then generates the access patterns for them.
+   *
+   * @param inst The instance to process
+   * @param processed_insts The set of processed instances
+   */
+  void processInstInRow(frInst* inst, frOrderedIdSet<frInst*>& processed_insts);
 
   friend class RoutingCallBack;
 };

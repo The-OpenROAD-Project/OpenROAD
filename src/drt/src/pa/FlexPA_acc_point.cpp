@@ -1339,6 +1339,12 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 template <typename T>
 int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
+  // IO term pin always only have one access
+  const int pin_access_idx
+      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
+  if (pin->getPinAccess(pin_access_idx)->getNumAccessPoints() > 0) {
+    pin->getPinAccess(pin_access_idx)->clearAccessPoints();
+  }
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
@@ -1430,9 +1436,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   }
 
   updatePinStats(aps, inst_term);
-  // IO term pin always only have one access
-  const int pin_access_idx
-      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
   // write to pa
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));

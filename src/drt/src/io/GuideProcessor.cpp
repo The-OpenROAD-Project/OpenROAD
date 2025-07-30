@@ -137,7 +137,7 @@ bool isPinCoveredByGuides(const frBlockObject* pin,
   for (const auto& ap_loc : getAccessPoints(pin)) {
     for (const auto& guide : guides) {
       if (guide.getLayerNum() == ap_loc.z()
-          && guide.getBBox().overlaps(ap_loc)) {
+          && guide.getBBox().intersects(ap_loc)) {
         return true;
       }
     }

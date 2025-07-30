@@ -39,7 +39,6 @@ void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
   if (inst == nullptr) {
     return;
   }
-  router_->deleteInstancePAData(inst);
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->removeBlockObj(inst);
   }
@@ -82,6 +81,17 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
   design->getTopBlock()->removeInst(inst);
 }
 
+void DesignCallBack::inDbInstSwapMasterBefore(odb::dbInst* db_inst,
+                                              odb::dbMaster* db_master)
+{
+  inDbInstDestroy(db_inst);
+}
+
+void DesignCallBack::inDbInstSwapMasterAfter(odb::dbInst* db_inst)
+{
+  inDbInstCreate(db_inst);
+  inDbPostMoveInst(db_inst);
+}
 void DesignCallBack::inDbNetCreate(odb::dbNet* db_net)
 {
   auto design = router_->getDesign();
@@ -156,8 +166,6 @@ void DesignCallBack::inDbPinAccessUpdateRequired()
     return;
   }
   router_->updateDirtyPAData();
-  io::Writer writer(design, router_->getLogger());
-  writer.updateDb(router_->getDb(), router_->getRouterConfiguration(), true);
 }
 
 }  // namespace drt

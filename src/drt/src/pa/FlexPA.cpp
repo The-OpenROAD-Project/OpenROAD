@@ -98,16 +98,12 @@ void FlexPA::init()
   unique_insts_.init();
   initAllSkipInstTerm();
 }
-void FlexPA::redoClass(frInst* inst)
+void FlexPA::updateUniqueInst(frInst* unique_inst)
 {
-  auto unique_inst = unique_insts_.getUnique(inst);
-  UniqueInsts::InstSet unique_class = *unique_insts_.getClass(unique_inst);
-  for (auto& child_inst : unique_class) {
-    deleteInst(child_inst);
-  }
-  for (auto& child_inst : unique_class) {
-    addInst(child_inst);
-  }
+  initSkipInstTerm(unique_inst);
+  genInstAccessPoints(unique_inst);
+  prepPatternInst(unique_inst);
+  revertAccessPoints(unique_inst);
 }
 
 void FlexPA::addDirtyInst(frInst* inst)
@@ -115,12 +111,20 @@ void FlexPA::addDirtyInst(frInst* inst)
   dirty_insts_.insert(inst);
 }
 
+void FlexPA::removeDirtyInst(frInst* inst)
+{
+  dirty_insts_.erase(inst);
+}
+
 void FlexPA::updateDirtyInsts()
 {
-  for (auto& inst : dirty_insts_) {
-    insts_set_.insert(inst);
-  }
-  for (auto& inst : dirty_insts_) {
+  frOrderedIdSet<frInst*>
+      dirty_unique_insts;  // list of unique insts that have updated connections
+  frOrderedIdSet<frInst*>
+      new_unique_insts;  // list of compleltely new unique insts
+  frOrderedIdSet<frInst*> pattern_insts
+      = dirty_insts_;  // list of insts that need row pattern generation
+  for (const auto& inst : dirty_insts_) {
     debugPrint(logger_,
                DRT,
                "incr_pin_access",
@@ -129,13 +133,15 @@ void FlexPA::updateDirtyInsts()
                inst->getName(),
                inst->getOrigin(),
                inst->getOrient());
-    auto old_unique_inst = unique_insts_.getUnique(inst);
-    auto unique_class = unique_insts_.computeUniqueClass(inst);
-    frInst* new_unique_inst = nullptr;
+    const auto old_unique_head = unique_insts_.getUnique(inst);
+    const auto& unique_class = unique_insts_.computeUniqueClass(inst);
+    frInst* new_unique_head = nullptr;
     if (unique_class.size() >= 1) {
-      new_unique_inst = unique_insts_.getUnique(*unique_class.begin());
+      new_unique_head = unique_insts_.getUnique(*unique_class.begin());
     }
-    if (new_unique_inst != old_unique_inst) {
+    const bool is_change_unique_head
+        = new_unique_head != old_unique_head || old_unique_head == nullptr;
+    if (is_change_unique_head) {
       debugPrint(logger_,
                  DRT,
                  "incr_pin_access",
@@ -143,34 +149,58 @@ void FlexPA::updateDirtyInsts()
                  "new unique inst: {}",
                  inst->getName());
       deleteInst(inst);
+      const bool is_new_unique = unique_insts_.addInst(inst);
+      if (is_new_unique) {
+        new_unique_insts.insert(inst);
+        continue;
+      }
     }
-    addInst(inst);
+    auto cur_unique_head = unique_insts_.getUnique(inst);
+    if (new_unique_insts.find(cur_unique_head) != new_unique_insts.end()) {
+      continue;
+    }
+    inst->setPinAccessIdx(cur_unique_head->getPinAccessIdx());
+    const bool is_dirty_unique = updateSkipInstTerm(inst);
+    if (is_dirty_unique) {
+      dirty_unique_insts.insert(cur_unique_head);
+      for (auto& child_inst : *unique_insts_.getClass(cur_unique_head)) {
+        pattern_insts.insert(child_inst);
+      }
+    }
+  }
+  for (auto& inst : new_unique_insts) {
+    addUniqueInst(inst);
+  }
+  for (auto& inst : dirty_unique_insts) {
+    updateUniqueInst(inst);
+  }
+  buildInstsSet();
+  frOrderedIdSet<frInst*> processed_insts;
+  for (auto& inst : pattern_insts) {
+    if (processed_insts.find(inst) != processed_insts.end()) {
+      continue;
+    }
+    processInstInRow(inst, processed_insts);
   }
   dirty_insts_.clear();
 }
-void FlexPA::addInst(frInst* inst)
-{
-  const bool new_unique = unique_insts_.addInst(inst);
-  if (new_unique) {
-    unique_insts_.initUniqueInstPinAccess(inst);
-    initSkipInstTerm(inst);
-    genInstAccessPoints(inst);
-    prepPatternInst(inst);
-    revertAccessPoints(inst);
-  } else {
-    if (updateSkipInstTerm(inst)) {
-      // redo the whole class
-      redoClass(inst);
-      return;
-    }
-  }
-  inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
 
-  insts_set_.insert(inst);
+void FlexPA::addUniqueInst(frInst* inst)
+{
+  unique_insts_.initUniqueInstPinAccess(inst);
+  updateUniqueInst(inst);
+}
+
+void FlexPA::processInstInRow(frInst* inst,
+                              frOrderedIdSet<frInst*>& processed_insts)
+{
   if (isSkipInst(inst)) {
     return;
   }
   std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
+  for (auto& child_inst : inst_row) {
+    processed_insts.insert(child_inst);
+  }
   genInstRowPattern(inst_row);
 }
 
@@ -183,20 +213,20 @@ void FlexPA::deleteInst(frInst* inst)
   const bool is_class_head = (inst == unique_inst);
 
   // if inst is the class head the new head will be returned by deleteInst()
-  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   frInst* class_head = unique_insts_.deleteInst(inst);
 
   // whole class has to be deleted
   if (!class_head) {
     unique_inst_patterns_.erase(inst);
-    for (auto& inst_term : inst->getInstTerms()) {
-      skip_unique_inst_term_.erase({unique_class, inst_term->getTerm()});
-    }
+    skip_unique_inst_term_.erase(inst);
   }
   // new class representative has to be chosen
   else if (is_class_head) {
     unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
     unique_inst_patterns_.erase(inst);
+    skip_unique_inst_term_[class_head]
+        = std::move(skip_unique_inst_term_[inst]);
+    skip_unique_inst_term_.erase(inst);
   }
   removeInstFromInstSet(inst);
 }
@@ -376,13 +406,13 @@ bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
 
 bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
-  auto inst_class = unique_insts_.getClass(in->getInst());
-  if (inst_class == nullptr) {
+  auto unique_inst = unique_insts_.getUnique(in->getInst());
+  if (unique_inst == nullptr) {
     return isSkipInstTermLocal(in);
   }
 
   // This should be already computed in initSkipInstTerm()
-  return skip_unique_inst_term_.at({inst_class, in->getTerm()});
+  return skip_unique_inst_term_.at(unique_inst).at(in->getTerm());
 }
 
 bool FlexPA::isSkipInst(frInst* inst)
