@@ -2,7 +2,6 @@
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
 namespace eval rsz {
-
 proc parse_buffer_cell { keys_var } {
   upvar 1 $keys_var keys
   set buffer_cell "NULL"

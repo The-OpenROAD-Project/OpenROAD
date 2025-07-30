@@ -373,7 +373,6 @@ proc set_wire_rc { args } {
 }
 
 namespace eval est {
-
 proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::corners] {
