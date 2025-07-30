@@ -598,7 +598,13 @@ cell footprint and leakage are also reported.
 
 ```tcl
 report_buffers
+    [-filtered]
 ```
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-filtered` | Report buffers after filtering based on threshold voltage, cell footprint, drive strength and cell site.  Subset of filtered buffers are used for rebuffering. |
 
 ### Optimizing Arithmetic Modules
 

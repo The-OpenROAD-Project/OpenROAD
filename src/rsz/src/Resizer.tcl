@@ -1098,11 +1098,12 @@ proc replace_arith_modules { args } {
   rsz::swap_arith_modules_cmd $path_count $target $slack_margin
 }
 
-sta::define_cmd_args "report_buffers" {}
+sta::define_cmd_args "report_buffers" { [-filtered] }
 
 proc report_buffers { args } {
-  sta::parse_key_args "report_buffers" args keys {} flags {}
-  rsz::report_buffers_cmd
+  sta::parse_key_args "report_buffers" args keys {} flags {-filtered}
+  set filtered [info exists flags(-filtered)]
+  rsz::report_buffers_cmd $filtered
 }
 
 namespace eval rsz {

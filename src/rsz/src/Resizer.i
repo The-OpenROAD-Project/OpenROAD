@@ -803,11 +803,11 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint, bool r
   resizer->reportEquivalentCells(cell, match_cell_footprint, report_all_cells);
 }
 
-void report_buffers_cmd()
+void report_buffers_cmd(bool filtered)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
-  resizer->reportBuffers();
+  resizer->reportBuffers(filtered);
 }
 
 void
