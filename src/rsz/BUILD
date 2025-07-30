@@ -22,7 +22,6 @@ cc_library(
         "src/CloneMove.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
-        "src/EstimateWireParasitics.cc",
         "src/OdbCallBack.cc",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
@@ -44,7 +43,6 @@ cc_library(
         "src/SizeUpMove.hh",
         "src/SplitLoadMove.cc",
         "src/SplitLoadMove.hh",
-        "src/SteinerTree.cc",
         "src/SwapArithModules.hh",
         "src/SwapPinsMove.cc",
         "src/SwapPinsMove.hh",
@@ -55,7 +53,6 @@ cc_library(
         "include/rsz/MakeResizer.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
-        "include/rsz/SteinerTree.hh",
     ],
     includes = [
         "include",
@@ -63,6 +60,7 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dpl",
+        "//src/est",
         "//src/grt:types",
         "//src/gui",
         "//src/odb",
@@ -89,7 +87,6 @@ cc_library(
         "include/rsz/MakeResizer.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
-        "include/rsz/SteinerTree.hh",
     ],
     copts = [
         "-Isrc/rsz/src",
@@ -101,6 +98,7 @@ cc_library(
         "//:ord",
         "//src/dbSta",
         "//src/dpl",
+        "//src/est",
         "//src/grt:types",
         "//src/gui",
         "//src/odb",
