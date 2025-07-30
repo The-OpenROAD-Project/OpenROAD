@@ -292,7 +292,6 @@ void GlobalRouter::globalRoute(bool save_guides,
     grouter_cbk_->addOwner(block_);
   } else {
     try {
-      db_->getChip()->getBlock()->updatePinAccess();
       if (end_incremental) {
         updateDirtyRoutes();
         grouter_cbk_->removeOwner();
@@ -4857,6 +4856,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
+  db_->getChip()->getBlock()->updatePinAccess();
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
