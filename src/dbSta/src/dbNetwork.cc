@@ -2179,7 +2179,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 // Edit functions
 
 Instance* dbNetwork::makeInstance(LibertyCell* cell,
-                                  const char* name,
+                                  const char* name,  // full_name
                                   Instance* parent)
 {
   const char* cell_name = cell->name();
@@ -2567,7 +2567,6 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
 Net* dbNetwork::makeHierNet(Instance* parent, const char* base_name)
 {
   std::string full_name = makeNewNetName(parent, base_name);
-
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
   return dbToSta(dnet);
 }

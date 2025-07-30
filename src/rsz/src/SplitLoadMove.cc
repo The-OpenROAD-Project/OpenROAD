@@ -149,8 +149,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   addMove(buffer);
 
   // H-fix make the out net in the driver parent
-  std::string out_net_name = db_network_->makeNewNetName();
-  Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+  Net* out_net = db_network_->makeHierNet(parent);
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);

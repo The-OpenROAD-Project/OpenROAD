@@ -1816,7 +1816,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   switch (choice->type()) {
     case BufferedNetType::buffer: {
       std::string buffer_name
-          = db_network_->makeNewInstName(instance_base_name);
+          = db_network_->makeNewInstName(parent, instance_base_name);
 
       // HFix: make net in hierarchy
       Net* net2 = db_network_->makeHierNet(parent);

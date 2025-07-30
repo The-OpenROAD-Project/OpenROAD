@@ -310,7 +310,7 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
-  Net* makeHierNet(Instance* parent, const char* base_name = nullptr);
+  Net* makeHierNet(Instance* parent = nullptr, const char* base_name = nullptr);
   Net* makeNet(const char* name, Instance* parent) override;
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;

@@ -947,7 +947,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   // make the buffer and its output net.
   string buffer_name = db_network_->makeNewInstName("input");
   Instance* parent = db_network_->topInstance();
-  Net* buffer_out = makeUniqueNet();
+  Net* buffer_out = db_network_->makeHierNet(parent);
   dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
   Point pin_loc = db_network_->location(top_pin);
   Instance* buffer
@@ -1124,8 +1124,8 @@ void Resizer::bufferOutput(const Pin* top_pin,
   buffer_cell->bufferPorts(input, output);
 
   string buffer_name = db_network_->makeNewInstName("output");
-  Net* buffer_out = makeUniqueNet();
   Instance* parent = network->topInstance();
+  Net* buffer_out = db_network_->makeHierNet(parent);
 
   Point pin_loc = db_network_->location(top_pin);
   // buffer made in top level.
@@ -2737,7 +2737,8 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               }
 
               // Make tie output net.
-              Net* load_net = makeUniqueNet();
+              Net* load_net
+                  = db_network_->makeHierNet();  // TODO: parent may be needed
 
               // Connect tie inst output.
               sta_->connectPin(tie, tie_port, load_net);
@@ -3071,13 +3072,6 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
   }
   sort(overdriven_nets, sta::NetPathNameLess(network_));
   return overdriven_nets;
-}
-
-Net* Resizer::makeUniqueNet()
-{
-  string net_name = db_network_->makeNewNetName();
-  Instance* parent = db_network_->topInstance();
-  return db_network_->makeNet(net_name.c_str(), parent);
 }
 
 float Resizer::portFanoutLoad(LibertyPort* port) const
@@ -3646,7 +3640,7 @@ void Resizer::cloneClkInverter(Instance* inv)
             = makeInstance(inv_cell, clone_name.c_str(), top_inst, clone_loc);
         journalMakeBuffer(clone);
 
-        Net* clone_out_net = makeUniqueNet();
+        Net* clone_out_net = db_network_->makeHierNet(top_inst);
         dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 

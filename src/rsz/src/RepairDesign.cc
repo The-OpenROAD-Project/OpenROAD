@@ -641,14 +641,7 @@ bool RepairDesign::performGainBuffering(Net* net,
                                  db_network_->dbToSta(driver_mod_net));
     }
 
-    // make sure any nets created are scoped within hierarchy
-    // backwards compatible. new naming only used for hierarchy code.
-
-    std::string net_name = db_network_->hasHierarchy()
-                               ? db_network_->makeNewNetName(parent)
-                               : db_network_->makeNewNetName();
-    Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
-
+    Net* new_net = db_network_->makeHierNet(parent);
     dbNet* net_db = db_network_->staToDb(net);
     dbNet* new_net_db = db_network_->staToDb(new_net);
     new_net_db->setSigType(net_db->getSigType());
@@ -2234,12 +2227,7 @@ bool RepairDesign::makeRepeater(
   buffer_op_pin = nullptr;
   resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
-  // make sure any nets created are scoped within hierarchy
-  // backwards compatible. new naming only used for hierarchy code.
-  std::string net_name = db_network_->hasHierarchy()
-                             ? db_network_->makeNewNetName(parent)
-                             : db_network_->makeNewNetName();
-  Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
+  Net* new_net = db_network_->makeHierNet(parent);
 
   Net* buffer_ip_net = nullptr;
   Net* buffer_op_net = nullptr;

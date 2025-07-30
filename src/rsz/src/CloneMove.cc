@@ -200,8 +200,7 @@ bool CloneMove::doMove(const Path* drvr_path,
   // Hierarchy fix, make out_net in parent.
 
   //  Net* out_net = resizer_->makeUniqueNet();
-  std::string out_net_name = db_network_->makeNewNetName();
-  Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+  Net* out_net = db_network_->makeHierNet(parent);
 
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
       network_->pinIterator(drvr_inst)};
