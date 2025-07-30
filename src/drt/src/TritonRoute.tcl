@@ -122,7 +122,7 @@ proc detailed_route { args } {
     set or_k 0
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    utl::error DRT 509 "-bottom_routing_layer is deprecated.\
+    utl::warn DRT 509 "-bottom_routing_layer is deprecated.\
         Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
@@ -139,17 +139,17 @@ proc detailed_route { args } {
     if { [info exists keys(-remote_host)] } {
       set rhost $keys(-remote_host)
     } else {
-      utl::error DRT 506 "-remote_host is required for distributed routing."
+      utl::warn DRT 506 "-remote_host is required for distributed routing."
     }
     if { [info exists keys(-remote_port)] } {
       set rport $keys(-remote_port)
     } else {
-      utl::error DRT 507 "-remote_port is required for distributed routing."
+      utl::warn DRT 507 "-remote_port is required for distributed routing."
     }
     if { [info exists keys(-shared_volume)] } {
       set vol $keys(-shared_volume)
     } else {
-      utl::error DRT 508 "-shared_volume is required for distributed routing."
+      utl::warn DRT 508 "-shared_volume is required for distributed routing."
     }
     if { [info exists keys(-cloud_size)] } {
       set cloudsz $keys(-cloud_size)
