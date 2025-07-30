@@ -6,7 +6,9 @@ load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
-    features = ["layering_check"],
+    # ABC headers have duplicate declarations which cause warnings/compile errors.
+    # This was solved by including more specific individual headers, but those are private, so the layering check is disabled.
+    # features = ["layering_check"],
 )
 
 cc_library(
