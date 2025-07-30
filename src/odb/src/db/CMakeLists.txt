@@ -75,7 +75,6 @@ add_library(db
     dbTechViaGenerateRule.cpp 
     dbViaParams.cpp 
     dbNameCache.cpp 
-    dbProperty.cpp 
     dbPropertyItr.cpp 
     geom.cpp
     tmg_conn.cpp
@@ -118,6 +117,7 @@ add_library(db
     dbPolygon.cpp
     dbPowerDomain.cpp
     dbPowerSwitch.cpp
+    dbProperty.cpp
     dbScanChain.cpp
     dbScanInst.cpp
     dbScanList.cpp
