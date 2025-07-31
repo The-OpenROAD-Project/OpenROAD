@@ -1275,12 +1275,6 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
   router_cfg_->OR_SEED = params.orSeed;
   router_cfg_->OR_K = params.orK;
-  if (!params.bottomRoutingLayer.empty()) {
-    router_cfg_->BOTTOM_ROUTING_LAYER_NAME = params.bottomRoutingLayer;
-  }
-  if (!params.topRoutingLayer.empty()) {
-    router_cfg_->TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
-  }
   if (params.minAccessPoints > 0) {
     router_cfg_->MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
     router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;

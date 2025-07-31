@@ -194,7 +194,7 @@ class EstimateParasitics : public dbStaState
   bool parasiticsValid() const;
 
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
-  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; };
+  void setParasiticsSrc(ParasiticsSrc src);
 
   bool isIncrementalParasiticsEnabled() const
   {

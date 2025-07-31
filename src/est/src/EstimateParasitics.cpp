@@ -878,6 +878,18 @@ void EstimateParasitics::parasiticsInvalid(const dbNet* net)
   parasiticsInvalid(db_network_->dbToSta(net));
 }
 
+void EstimateParasitics::setParasiticsSrc(ParasiticsSrc src)
+{
+  if (incremental_parasitics_enabled_) {
+    logger_->error(EST,
+                   108,
+                   "cannot change parasitics source while incremental "
+                   "parasitics enabled");
+  }
+
+  parasitics_src_ = src;
+}
+
 void EstimateParasitics::eraseParasitics(const Net* net)
 {
   parasitics_invalid_.erase(net);
