@@ -42,7 +42,7 @@ proc initialize_floorplan { args } {
     }
   }
 
-  # Check core_area for polygon mode (more than 4 coordinates)  
+  # Check core_area for polygon mode (more than 4 coordinates)
   if { [info exists keys(-core_area)] } {
     set core_coords $keys(-core_area)
     if { [llength $core_coords] > 4 } {
@@ -379,7 +379,8 @@ proc make_polygon_die_helper { key_array } {
   foreach {x y} $die_vertices {
     # Validate coordinates are numeric
     if { ![string is double -strict $x] || ![string is double -strict $y] } {
-      utl::error IFP 78 "Invalid die polygon coordinate at position [expr $point_count*2]: '$x $y' - must be numeric"
+      utl::error IFP 78 "Invalid die polygon coordinate\
+      at position [expr $point_count*2]: '$x $y' - must be numeric"
     }
     # Check for negative coordinates
     # if {$x < 0 || $y < 0} {
@@ -455,7 +456,8 @@ proc make_polygon_rows_helper { key_array } {
     foreach {x y} $core_vertices {
       # Validate coordinates are numeric
       if { ![string is double -strict $x] || ![string is double -strict $y] } {
-        utl::error IFP 84 "Invalid core polygon coordinate at position [expr $point_count*2]: '$x $y' - must be numeric"
+        utl::error IFP 84 "Invalid core polygon coordinate\
+        at position [expr $point_count*2]: '$x $y' - must be numeric"
       }
 
       # Convert micron input to DBU

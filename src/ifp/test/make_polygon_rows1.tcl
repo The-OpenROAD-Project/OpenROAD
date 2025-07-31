@@ -7,7 +7,7 @@ read_verilog reg1.v
 link_design top
 
 # # Die polygon – “horizontal” T (original T rotated 90° CCW)
-# # Die outline — horizontal-T, 8 vertices  
+# # Die outline — horizontal-T, 8 vertices
 set die_area {0 0   100 0   100 150   300 150   300 250   100 250   100 400   0 400}
 
 # Core outline — 20 µm margin inside the die, 8 vertices
