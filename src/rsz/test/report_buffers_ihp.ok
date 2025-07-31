@@ -55,7 +55,7 @@ sg13g2_buf_2                                  9.1 2.7e-15 5.1e-11  2037.1
 sg13g2_buf_4                                 14.5 3.9e-15 6.0e-11  1017.5
 sg13g2_buf_8                                 23.6 8.7e-15 5.4e-11   510.2
 --------------------------------------------------------------------------------
-[INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers to be used for setup/hold/logical DRC fixing
+[INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
 *******************************************
 Optimization config:
 -limit_sizing_area:                 4.0
