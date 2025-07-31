@@ -150,12 +150,14 @@ void FastRouteCore::fixOverlappingEdge(
         if (treeedge->route.gridsY[k] != treeedge->route.gridsY[k + 1]) {
           const int min_y = std::min(treeedge->route.gridsY[k],
                                      treeedge->route.gridsY[k + 1]);
-          v_edges_[min_y][treeedge->route.gridsX[k]].usage -= edgeCost;
+          v_edges_[min_y][treeedge->route.gridsX[k]].usage -= 
+                getEdgeCostNDRAware(v_edges_[min_y][treeedge->route.gridsX[k]], edgeCost);
         }
       } else {
         const int min_x = std::min(treeedge->route.gridsX[k],
                                    treeedge->route.gridsX[k + 1]);
-        h_edges_[treeedge->route.gridsY[k]][min_x].usage -= edgeCost;
+        h_edges_[treeedge->route.gridsY[k]][min_x].usage -= 
+              getEdgeCostNDRAware(h_edges_[treeedge->route.gridsY[k]][min_x], edgeCost);
       }
     }
     for (int k = 0; k < new_route_x.size() - 1;
@@ -163,12 +165,14 @@ void FastRouteCore::fixOverlappingEdge(
       if (new_route_x[k] == new_route_x[k + 1]) {
         if (new_route_y[k] != new_route_y[k + 1]) {
           const int min_y = std::min(new_route_y[k], new_route_y[k + 1]);
-          v_edges_[min_y][new_route_x[k]].usage += edgeCost;
+          v_edges_[min_y][new_route_x[k]].usage += 
+                getEdgeCostNDRAware(v_edges_[min_y][new_route_x[k]], edgeCost);
           v_used_ggrid_.insert(std::make_pair(min_y, new_route_x[k]));
         }
       } else {
         const int min_x = std::min(new_route_x[k], new_route_x[k + 1]);
-        h_edges_[new_route_y[k]][min_x].usage += edgeCost;
+        h_edges_[new_route_y[k]][min_x].usage += 
+              getEdgeCostNDRAware(h_edges_[new_route_y[k]][min_x], edgeCost);
         h_used_ggrid_.insert(std::make_pair(new_route_y[k], min_x));
       }
     }
@@ -1779,12 +1783,12 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         if (gridsX[i] == gridsX[i + 1])  // a vertical edge
         {
           const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-          v_edges_[min_y][gridsX[i]].usage += edgeCost;
+          v_edges_[min_y][gridsX[i]].usage += getEdgeCostNDRAware(v_edges_[min_y][gridsX[i]], edgeCost);
           v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
         } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
         {
           const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-          h_edges_[gridsY[i]][min_x].usage += edgeCost;
+          h_edges_[gridsY[i]][min_x].usage += getEdgeCostNDRAware(h_edges_[gridsY[i]][min_x], edgeCost);
           h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
         }
       }
@@ -2002,7 +2006,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += h_edges_[i][j].usage;
     const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
     if (overflow > 0) {
-      // logger_->report(">>> 2D H Overflow: x{} y{}",i,j);
+      logger_->report(">>> 2D H Overflow: x{} y{}",i,j);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -2013,7 +2017,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += v_edges_[i][j].usage;
     const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
     if (overflow > 0) {
-      // logger_->report(">>> 2D V Overflow: x{} y{}",i,j);
+      logger_->report(">>> 2D V Overflow: x{} y{}",i,j);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -2078,6 +2082,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
     hCap += h_edges_[i][j].cap;
     if (overflow > 0) {
+      logger_->report(">>> 2D H Overflow: x{} y{}",i,j);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -2089,6 +2094,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
     vCap += v_edges_[i][j].cap;
     if (overflow > 0) {
+      logger_->report(">>> 2D V Overflow: x{} y{}",i,j);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;

@@ -27,24 +27,24 @@ void FastRouteCore::estimateOneSeg(const Segment* seg)
   // (x2,y1)-(x2,y2)
   if (seg->x1 == seg->x2) {  // a vertical segment
     for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x1].est_usage += edgeCost;
+      v_edges_[i][seg->x1].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost);
       v_used_ggrid_.insert({i, seg->x1});
     }
   } else if (seg->y1 == seg->y2) {  // a horizontal segment
     for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y1][i].est_usage += edgeCost;
+      h_edges_[seg->y1][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost);
       h_used_ggrid_.insert({seg->y1, i});
     }
   } else {  // a diagonal segment
     for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x1].est_usage += edgeCost / 2.0f;
-      v_edges_[i][seg->x2].est_usage += edgeCost / 2.0f;
+      v_edges_[i][seg->x1].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost) / 2.0f;
+      v_edges_[i][seg->x2].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x2], edgeCost) / 2.0f;
       v_used_ggrid_.insert({i, seg->x1});
       v_used_ggrid_.insert({i, seg->x2});
     }
     for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y1][i].est_usage += edgeCost / 2.0f;
-      h_edges_[seg->y2][i].est_usage += edgeCost / 2.0f;
+      h_edges_[seg->y1][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost) / 2.0f;
+      h_edges_[seg->y2][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y2][i], edgeCost) / 2.0f;
       h_used_ggrid_.insert({seg->y1, i});
       h_used_ggrid_.insert({seg->y2, i});
     }
@@ -59,7 +59,7 @@ void FastRouteCore::routeSegV(const Segment* seg)
   const int ymax = std::max(seg->y1, seg->y2);
 
   for (int i = ymin; i < ymax; i++) {
-    v_edges_[i][seg->x1].est_usage += edgeCost;
+    v_edges_[i][seg->x1].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost);
     v_used_ggrid_.insert({i, seg->x1});
   }
 }
@@ -69,7 +69,7 @@ void FastRouteCore::routeSegH(const Segment* seg)
   const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
   for (int i = seg->x1; i < seg->x2; i++) {
-    h_edges_[seg->y1][i].est_usage += edgeCost;
+    h_edges_[seg->y1][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost);
     h_used_ggrid_.insert({seg->y1, i});
   }
 }
@@ -92,21 +92,21 @@ void FastRouteCore::routeSegL(Segment* seg)
 
     for (int i = ymin; i < ymax; i++) {
       const double tmp1 = v_edges_[i][seg->x1].est_usage_red() - v_capacity_lb_;
-      if (tmp1 > 0) {
+      if (tmp1 > 0 || v_edges_[i][seg->x1].max_layer_cap < edgeCost) {
         costL1 += tmp1;
       }
       const double tmp2 = v_edges_[i][seg->x2].est_usage_red() - v_capacity_lb_;
-      if (tmp2 > 0) {
+      if (tmp2 > 0 || v_edges_[i][seg->x2].max_layer_cap < edgeCost) {
         costL2 += tmp2;
       }
     }
     for (int i = seg->x1; i < seg->x2; i++) {
       const double tmp1 = h_edges_[seg->y2][i].est_usage_red() - h_capacity_lb_;
-      if (tmp1 > 0) {
+      if (tmp1 > 0 || h_edges_[seg->y2][i].max_layer_cap < edgeCost) {
         costL1 += tmp1;
       }
       const double tmp2 = h_edges_[seg->y1][i].est_usage_red() - h_capacity_lb_;
-      if (tmp2 > 0) {
+      if (tmp2 > 0 || h_edges_[seg->y1][i].max_layer_cap < edgeCost) {
         costL2 += tmp2;
       }
     }
@@ -114,11 +114,11 @@ void FastRouteCore::routeSegL(Segment* seg)
     if (costL1 < costL2) {
       // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
       for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][seg->x1].est_usage += edgeCost;
+        v_edges_[i][seg->x1].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost);
         v_used_ggrid_.insert({i, seg->x1});
       }
       for (int i = seg->x1; i < seg->x2; i++) {
-        h_edges_[seg->y2][i].est_usage += edgeCost;
+        h_edges_[seg->y2][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y2][i], edgeCost);
         h_used_ggrid_.insert({seg->y2, i});
       }
       seg->xFirst = false;
@@ -126,11 +126,11 @@ void FastRouteCore::routeSegL(Segment* seg)
     else {
       // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
       for (int i = seg->x1; i < seg->x2; i++) {
-        h_edges_[seg->y1][i].est_usage += edgeCost;
+        h_edges_[seg->y1][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost);
         h_used_ggrid_.insert({seg->y1, i});
       }
       for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][seg->x2].est_usage += edgeCost;
+        v_edges_[i][seg->x2].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x2], edgeCost);
         v_used_ggrid_.insert({i, seg->y2});
       }
       seg->xFirst = true;
@@ -178,26 +178,26 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
     for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x1].est_usage += edgeCost / 2.0f;
-      v_edges_[i][seg->x2].est_usage -= edgeCost / 2.0f;
+      v_edges_[i][seg->x1].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost) / 2.0f;
+      v_edges_[i][seg->x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][seg->x2], edgeCost) / 2.0f;
       v_used_ggrid_.insert({i, seg->x1});
     }
     for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y2][i].est_usage += edgeCost / 2.0f;
-      h_edges_[seg->y1][i].est_usage -= edgeCost / 2.0f;
+      h_edges_[seg->y2][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y2][i], edgeCost) / 2.0f;
+      h_edges_[seg->y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost) / 2.0f;
       h_used_ggrid_.insert({seg->y2, i});
     }
     seg->xFirst = false;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
     for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y1][i].est_usage += edgeCost / 2.0f;
-      h_edges_[seg->y2][i].est_usage -= edgeCost / 2.0f;
+      h_edges_[seg->y1][i].est_usage += getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost) / 2.0f;
+      h_edges_[seg->y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[seg->y2][i], edgeCost) / 2.0f;
       h_used_ggrid_.insert({seg->y1, i});
     }
     for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x2].est_usage += edgeCost / 2.0f;
-      v_edges_[i][seg->x1].est_usage -= edgeCost / 2.0f;
+      v_edges_[i][seg->x2].est_usage += getEdgeCostNDRAware(v_edges_[i][seg->x2], edgeCost) / 2.0f;
+      v_edges_[i][seg->x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost) / 2.0f;
       v_used_ggrid_.insert({i, seg->x2});
     }
     seg->xFirst = true;
@@ -219,7 +219,9 @@ void FastRouteCore::routeLAll(const bool firstTime)
     for (const int netID : net_ids_) {
       for (auto& seg : seglist_[netID]) {
         // no need to reroute the H or V segs
-        if (seg.x1 != seg.x2 || seg.y1 != seg.y2) {
+        if (seg.x1 != seg.x2 && seg.y1 != seg.y2) {
+          if(debug_->net_ == nets_[seg.netID]->getDbNet())
+            logger_->report("--- No H or V {} x1/y1:{}/{} x2/y2:{}/{}", seg.netID, seg.x1, seg.y1, seg.x2, seg.y2);
           routeSegLFirstTime(&seg);
         }
       }
@@ -228,7 +230,7 @@ void FastRouteCore::routeLAll(const bool firstTime)
     for (const int netID : net_ids_) {
       for (auto& seg : seglist_[netID]) {
         // no need to reroute the H or V segs
-        if (seg.x1 != seg.x2 || seg.y1 != seg.y2) {
+        if (seg.x1 != seg.x2 && seg.y1 != seg.y2) {
           ripupSegL(&seg);
           routeSegL(&seg);
         }
@@ -272,7 +274,7 @@ void FastRouteCore::newrouteL(const int netID,
       treeedge->route.type = RouteType::LRoute;
       if (x1 == x2) {  // V-routing
         for (int j = ymin; j < ymax; j++) {
-          v_edges_[j][x1].est_usage += edgeCost;
+          v_edges_[j][x1].est_usage += getEdgeCostNDRAware(v_edges_[j][x1],edgeCost);
           v_used_ggrid_.insert({j, x1});
         }
         treeedge->route.xFirst = false;
@@ -284,7 +286,7 @@ void FastRouteCore::newrouteL(const int netID,
         }
       } else if (y1 == y2) {  // H-routing
         for (int j = x1; j < x2; j++) {
-          h_edges_[y1][j].est_usage += edgeCost;
+          h_edges_[y1][j].est_usage += getEdgeCostNDRAware(h_edges_[y1][j],edgeCost);
           h_used_ggrid_.insert({y1, j});
         }
         treeedge->route.xFirst = true;
@@ -322,21 +324,21 @@ void FastRouteCore::newrouteL(const int netID,
 
         for (int j = ymin; j < ymax; j++) {
           const double tmp1 = v_edges_[j][x1].est_usage_red() - v_capacity_lb_;
-          if (tmp1 > 0) {
+          if (tmp1 > 0 || v_edges_[j][x1].max_layer_cap < edgeCost) {
             costL1 += tmp1;
           }
           const double tmp2 = v_edges_[j][x2].est_usage_red() - v_capacity_lb_;
-          if (tmp2 > 0) {
+          if (tmp2 > 0 || v_edges_[j][x2].max_layer_cap < edgeCost) {
             costL2 += tmp2;
           }
         }
         for (int j = x1; j < x2; j++) {
           const double tmp1 = h_edges_[y2][j].est_usage_red() - h_capacity_lb_;
-          if (tmp1 > 0) {
+          if (tmp1 > 0 || h_edges_[y2][j].max_layer_cap < edgeCost) {
             costL1 += tmp1;
           }
           const double tmp2 = h_edges_[y1][j].est_usage_red() - h_capacity_lb_;
-          if (tmp2 > 0) {
+          if (tmp2 > 0 || h_edges_[y1][j].max_layer_cap < edgeCost){
             costL2 += tmp2;
           }
         }
@@ -351,11 +353,11 @@ void FastRouteCore::newrouteL(const int netID,
 
           // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
           for (int j = ymin; j < ymax; j++) {
-            v_edges_[j][x1].est_usage += edgeCost;
+            v_edges_[j][x1].est_usage += getEdgeCostNDRAware(v_edges_[j][x1], edgeCost);
             v_used_ggrid_.insert({j, x1});
           }
           for (int j = x1; j < x2; j++) {
-            h_edges_[y2][j].est_usage += edgeCost;
+            h_edges_[y2][j].est_usage += getEdgeCostNDRAware(h_edges_[y2][j], edgeCost);
             h_used_ggrid_.insert({y2, j});
           }
           treeedge->route.xFirst = false;
@@ -369,11 +371,11 @@ void FastRouteCore::newrouteL(const int netID,
 
           // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
           for (int j = x1; j < x2; j++) {
-            h_edges_[y1][j].est_usage += edgeCost;
+            h_edges_[y1][j].est_usage += getEdgeCostNDRAware(h_edges_[y1][j], edgeCost);
             h_used_ggrid_.insert({y1, j});
           }
           for (int j = ymin; j < ymax; j++) {
-            v_edges_[j][x2].est_usage += edgeCost;
+            v_edges_[j][x2].est_usage += getEdgeCostNDRAware(v_edges_[j][x2], edgeCost);
             v_used_ggrid_.insert({j, x2});
           }
           treeedge->route.xFirst = true;
@@ -513,15 +515,15 @@ void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
   }
 
   for (int i = x1; i < bestZ; i++) {
-    h_edges_[y1][i].est_usage += edgeCost;
+    h_edges_[y1][i].est_usage += getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
     h_used_ggrid_.insert({y1, i});
   }
   for (int i = bestZ; i < x2; i++) {
-    h_edges_[y2][i].est_usage += edgeCost;
+    h_edges_[y2][i].est_usage += getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
     h_used_ggrid_.insert({y2, i});
   }
   for (int i = ymin; i < ymax; i++) {
-    v_edges_[i][bestZ].est_usage += edgeCost;
+    v_edges_[i][bestZ].est_usage += getEdgeCostNDRAware(v_edges_[i][bestZ], edgeCost);
     v_used_ggrid_.insert({i, bestZ});
   }
   treeedge->route.HVH = true;
@@ -705,7 +707,7 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
           }
         } else {
           for (int j = y2; j < y1; j++) {
-            const double tmp = v_edges_[j][x1].est_usage - v_capacity_lb_;
+            const double tmp = v_edges_[j][x1].est_usage_red() - v_capacity_lb_;
             if (tmp > 0) {
               cost_lr_[0] += tmp;
             }
@@ -764,15 +766,15 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
           treenodes[n2a].hID++;
 
           for (int i = x1; i < bestZ; i++) {
-            h_edges_[y1][i].est_usage += edgeCost;
+            h_edges_[y1][i].est_usage += getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
             h_used_ggrid_.insert({y1, i});
           }
           for (int i = bestZ; i < x2; i++) {
-            h_edges_[y2][i].est_usage += edgeCost;
+            h_edges_[y2][i].est_usage += getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
             h_used_ggrid_.insert({y2, i});
           }
           for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][bestZ].est_usage += edgeCost;
+            v_edges_[i][bestZ].est_usage += getEdgeCostNDRAware(v_edges_[i][bestZ], edgeCost);
             v_used_ggrid_.insert({i, bestZ});
           }
           treeedge->route.HVH = HVH;
@@ -789,30 +791,30 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
           treenodes[n2a].lID++;
           if (y1Smaller) {
             for (int i = y1; i < bestZ; i++) {
-              v_edges_[i][x1].est_usage += edgeCost;
+              v_edges_[i][x1].est_usage += getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
               v_used_ggrid_.insert({i, x1});
             }
             for (int i = bestZ; i < y2; i++) {
-              v_edges_[i][x2].est_usage += edgeCost;
+              v_edges_[i][x2].est_usage += getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
               v_used_ggrid_.insert({i, x2});
             }
             for (int i = x1; i < x2; i++) {
-              h_edges_[bestZ][i].est_usage += edgeCost;
+              h_edges_[bestZ][i].est_usage += getEdgeCostNDRAware(h_edges_[bestZ][i], edgeCost);
               h_used_ggrid_.insert({bestZ, i});
             }
             treeedge->route.HVH = HVH;
             treeedge->route.Zpoint = bestZ;
           } else {
             for (int i = y2; i < bestZ; i++) {
-              v_edges_[i][x2].est_usage += edgeCost;
+              v_edges_[i][x2].est_usage += getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
               v_used_ggrid_.insert({i, x2});
             }
             for (int i = bestZ; i < y1; i++) {
-              v_edges_[i][x1].est_usage += edgeCost;
+              v_edges_[i][x1].est_usage += getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
               v_used_ggrid_.insert({i, x1});
             }
             for (int i = x1; i < x2; i++) {
-              h_edges_[bestZ][i].est_usage += edgeCost;
+              h_edges_[bestZ][i].est_usage += getEdgeCostNDRAware(h_edges_[bestZ][i], edgeCost);
               h_used_ggrid_.insert({bestZ, i});
             }
             treeedge->route.HVH = HVH;
@@ -877,7 +879,7 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
   treeedge->route.type = RouteType::LRoute;
   if (x1 == x2) {  // V-routing
     for (int j = ymin; j < ymax; j++) {
-      v_edges_[j][x1].est_usage += edgeCost;
+      v_edges_[j][x1].est_usage += getEdgeCostNDRAware(v_edges_[j][x1], edgeCost);
       v_used_ggrid_.insert({j, x1});
     }
     treeedge->route.xFirst = false;
@@ -896,7 +898,7 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
     }
   } else if (y1 == y2) {  // H-routing
     for (int j = x1; j < x2; j++) {
-      h_edges_[y1][j].est_usage += edgeCost;
+      h_edges_[y1][j].est_usage += getEdgeCostNDRAware(h_edges_[y1][j], edgeCost);
       h_used_ggrid_.insert({y1, j});
     }
     treeedge->route.xFirst = true;
@@ -935,21 +937,21 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
 
     for (int j = ymin; j < ymax; j++) {
       const double tmp1 = v_edges_[j][x1].est_usage_red() - v_capacity_lb_;
-      if (tmp1 > 0) {
+      if (tmp1 > 0 || v_edges_[j][x1].max_layer_cap < edgeCost) {
         costL1 += tmp1;
       }
       const double tmp2 = v_edges_[j][x2].est_usage_red() - v_capacity_lb_;
-      if (tmp2 > 0) {
+      if (tmp2 > 0 || v_edges_[j][x2].max_layer_cap < edgeCost) {
         costL2 += tmp2;
       }
     }
     for (int j = x1; j < x2; j++) {
       const double tmp1 = h_edges_[y2][j].est_usage_red() - h_capacity_lb_;
-      if (tmp1 > 0) {
+      if (tmp1 > 0 || h_edges_[y2][j].max_layer_cap < edgeCost) {
         costL1 += tmp1;
       }
       const double tmp2 = h_edges_[y1][j].est_usage_red() - h_capacity_lb_;
-      if (tmp2 > 0) {
+      if (tmp2 > 0 || h_edges_[y1][j].max_layer_cap < edgeCost) {
         costL2 += tmp2;
       }
     }
@@ -973,11 +975,11 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
 
       // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
       for (int j = ymin; j < ymax; j++) {
-        v_edges_[j][x1].est_usage += edgeCost;
+        v_edges_[j][x1].est_usage += getEdgeCostNDRAware(v_edges_[j][x1], edgeCost);
         v_used_ggrid_.insert({j, x1});
       }
       for (int j = x1; j < x2; j++) {
-        h_edges_[y2][j].est_usage += edgeCost;
+        h_edges_[y2][j].est_usage += getEdgeCostNDRAware(h_edges_[y2][j], edgeCost);
         h_used_ggrid_.insert({y2, j});
       }
       treeedge->route.xFirst = false;
@@ -1001,11 +1003,11 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
 
       // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
       for (int j = x1; j < x2; j++) {
-        h_edges_[y1][j].est_usage += edgeCost;
+        h_edges_[y1][j].est_usage += getEdgeCostNDRAware(h_edges_[y1][j], edgeCost);
         h_used_ggrid_.insert({y1, j});
       }
       for (int j = ymin; j < ymax; j++) {
-        v_edges_[j][x2].est_usage += edgeCost;
+        v_edges_[j][x2].est_usage += getEdgeCostNDRAware(v_edges_[j][x2], edgeCost);
         v_used_ggrid_.insert({j, x2});
       }
       treeedge->route.xFirst = true;
@@ -1173,6 +1175,13 @@ void FastRouteCore::routeMonotonic(const int netID,
   const int x2 = treenodes[n2].x;
   const int y2 = treenodes[n2].y;
 
+  FrNet* net = nets_[netID];
+  bool is_ndr = net->getDbNet()->getNonDefaultRule() ? true : false;
+  if (is_ndr && net->getDbNet() == debug_->net_) {
+        logger_->report("Before ripup");
+        printEdge(netID,edgeID);
+  }
+
   // ripup the original routing
   if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, 0, netID, edgeID)) {
     return;
@@ -1258,7 +1267,7 @@ void FastRouteCore::routeMonotonic(const int netID,
           = std::abs(d2[y2][i] - d2[j][i]) + std::abs(d1[y2][i] - d1[y2][x2]);
       const double tmp4
           = std::abs(d2[y2][x2] - d2[j][x2])
-            + std::abs(d1[j][x2] - d1[j][i]);  // xifrst for mid point
+            + std::abs(d1[j][x2] - d1[j][i]);  // xfirst for mid point
 
       double tmp = tmp1 + tmp4;
       bool LH1 = false;
@@ -1303,7 +1312,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = x1; i < bestp1x; i++) {
         gridsX[cnt] = i;
         gridsY[cnt] = y1;
-        h_edges_[y1][i].usage += edgeCost;
+        h_edges_[y1][i].usage += getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
         h_used_ggrid_.insert({y1, i});
         cnt++;
       }
@@ -1311,7 +1320,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = x1; i > bestp1x; i--) {
         gridsX[cnt] = i;
         gridsY[cnt] = y1;
-        h_edges_[y1][i - 1].usage += edgeCost;
+        h_edges_[y1][i - 1].usage += getEdgeCostNDRAware(h_edges_[y1][i - 1], edgeCost);
         h_used_ggrid_.insert({y1, i - 1});
         cnt++;
       }
@@ -1321,7 +1330,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = bestp1x;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[i][bestp1x].usage += edgeCost;
+        v_edges_[i][bestp1x].usage += getEdgeCostNDRAware(v_edges_[i][bestp1x], edgeCost);
         v_used_ggrid_.insert({i, bestp1x});
       }
     } else {
@@ -1329,7 +1338,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = bestp1x;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[(i - 1)][bestp1x].usage += edgeCost;
+        v_edges_[(i - 1)][bestp1x].usage += getEdgeCostNDRAware(v_edges_[(i - 1)][bestp1x], edgeCost);
         v_used_ggrid_.insert({i - 1, bestp1x});
       }
     }
@@ -1339,7 +1348,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = x1;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[i][x1].usage += edgeCost;
+        v_edges_[i][x1].usage += getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
         v_used_ggrid_.insert({i, x1});
       }
     } else {
@@ -1347,7 +1356,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = x1;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[(i - 1)][x1].usage += edgeCost;
+        v_edges_[(i - 1)][x1].usage += getEdgeCostNDRAware(v_edges_[(i - 1)][x1], edgeCost);
         v_used_ggrid_.insert({i - 1, x1});
       }
     }
@@ -1355,7 +1364,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = x1; i < bestp1x; i++) {
         gridsX[cnt] = i;
         gridsY[cnt] = bestp1y;
-        h_edges_[bestp1y][i].usage += edgeCost;
+        h_edges_[bestp1y][i].usage += getEdgeCostNDRAware(h_edges_[bestp1y][i], edgeCost);
         h_used_ggrid_.insert({bestp1y, i});
         cnt++;
       }
@@ -1363,7 +1372,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = x1; i > bestp1x; i--) {
         gridsX[cnt] = i;
         gridsY[cnt] = bestp1y;
-        h_edges_[bestp1y][(i - 1)].usage += edgeCost;
+        h_edges_[bestp1y][(i - 1)].usage += getEdgeCostNDRAware(h_edges_[bestp1y][(i - 1)], edgeCost);
         h_used_ggrid_.insert({bestp1y, i - 1});
         cnt++;
       }
@@ -1375,7 +1384,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = bestp1x; i < x2; i++) {
         gridsX[cnt] = i;
         gridsY[cnt] = bestp1y;
-        h_edges_[bestp1y][i].usage += edgeCost;
+        h_edges_[bestp1y][i].usage += getEdgeCostNDRAware(h_edges_[bestp1y][(i)], edgeCost);
         h_used_ggrid_.insert({bestp1y, i});
         cnt++;
       }
@@ -1383,7 +1392,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = bestp1x; i > x2; i--) {
         gridsX[cnt] = i;
         gridsY[cnt] = bestp1y;
-        h_edges_[bestp1y][i - 1].usage += edgeCost;
+        h_edges_[bestp1y][i - 1].usage += getEdgeCostNDRAware(h_edges_[bestp1y][i - 1], edgeCost);
         h_used_ggrid_.insert({bestp1y, i - 1});
         cnt++;
       }
@@ -1394,7 +1403,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = x2;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[i][x2].usage += edgeCost;
+        v_edges_[i][x2].usage += getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
         v_used_ggrid_.insert({i, x2});
       }
     } else {
@@ -1402,7 +1411,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = x2;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[(i - 1)][x2].usage += edgeCost;
+        v_edges_[(i - 1)][x2].usage += getEdgeCostNDRAware(v_edges_[i-1][x2], edgeCost);
         v_used_ggrid_.insert({i - 1, x2});
       }
     }
@@ -1412,7 +1421,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = bestp1x;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[i][bestp1x].usage += edgeCost;
+        v_edges_[i][bestp1x].usage += getEdgeCostNDRAware(v_edges_[i][bestp1x], edgeCost);
         v_used_ggrid_.insert({i, bestp1x});
       }
     } else {
@@ -1420,7 +1429,7 @@ void FastRouteCore::routeMonotonic(const int netID,
         gridsX[cnt] = bestp1x;
         gridsY[cnt] = i;
         cnt++;
-        v_edges_[(i - 1)][bestp1x].usage += edgeCost;
+        v_edges_[(i - 1)][bestp1x].usage += getEdgeCostNDRAware(v_edges_[(i - 1)][bestp1x], edgeCost);
         v_used_ggrid_.insert({i - 1, bestp1x});
       }
     }
@@ -1428,7 +1437,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = bestp1x; i < x2; i++) {
         gridsX[cnt] = i;
         gridsY[cnt] = y2;
-        h_edges_[y2][i].usage += edgeCost;
+        h_edges_[y2][i].usage += getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
         h_used_ggrid_.insert({y2, i});
         cnt++;
       }
@@ -1436,7 +1445,7 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int i = bestp1x; i > x2; i--) {
         gridsX[cnt] = i;
         gridsY[cnt] = y2;
-        h_edges_[y2][(i - 1)].usage += edgeCost;
+        h_edges_[y2][(i - 1)].usage += getEdgeCostNDRAware(h_edges_[y2][(i - 1)], edgeCost);
         h_used_ggrid_.insert({y2, i - 1});
         cnt++;
       }
@@ -1451,6 +1460,11 @@ void FastRouteCore::routeMonotonic(const int netID,
 
   gridsX.resize(cnt);
   gridsY.resize(cnt);
+
+  if (is_ndr && net->getDbNet() == debug_->net_) {
+        logger_->report("After reroute monotonic");
+        printEdge(netID,edgeID);
+  }
 }
 
 void FastRouteCore::routeMonotonicAll(const int threshold,
@@ -1519,13 +1533,13 @@ void FastRouteCore::newrouteLInMaze(const int netID)
     treeedge->route.type = RouteType::LRoute;
     if (x1 == x2) {  // V-routing
       for (int j = ymin; j < ymax; j++) {
-        v_edges_[j][x1].usage += edgeCost;
+        v_edges_[j][x1].usage += getEdgeCostNDRAware(v_edges_[j][x1], edgeCost);
         v_used_ggrid_.insert({j, x1});
       }
       treeedge->route.xFirst = false;
     } else if (y1 == y2) {  // H-routing
       for (int j = x1; j < x2; j++) {
-        h_edges_[y1][j].usage += edgeCost;
+        h_edges_[y1][j].usage += getEdgeCostNDRAware(h_edges_[y1][j], edgeCost);
         h_used_ggrid_.insert({y1, j});
       }
       treeedge->route.xFirst = true;
@@ -1557,22 +1571,22 @@ void FastRouteCore::newrouteLInMaze(const int netID)
       if (costL1 < costL2) {
         // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
         for (int j = ymin; j < ymax; j++) {
-          v_edges_[j][x1].usage += edgeCost;
+          v_edges_[j][x1].usage += getEdgeCostNDRAware(v_edges_[j][x1], edgeCost);
           v_used_ggrid_.insert({j, x1});
         }
         for (int j = x1; j < x2; j++) {
-          h_edges_[y2][j].usage += edgeCost;
+          h_edges_[y2][j].usage += getEdgeCostNDRAware(h_edges_[y2][j], edgeCost);
           h_used_ggrid_.insert({y2, j});
         }
         treeedge->route.xFirst = false;
       } else {
         // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
         for (int j = x1; j < x2; j++) {
-          h_edges_[y1][j].usage += edgeCost;
+          h_edges_[y1][j].usage += getEdgeCostNDRAware(h_edges_[y1][j], edgeCost);
           h_used_ggrid_.insert({y1, j});
         }
         for (int j = ymin; j < ymax; j++) {
-          v_edges_[j][x2].usage += edgeCost;
+          v_edges_[j][x2].usage += getEdgeCostNDRAware(v_edges_[j][x2], edgeCost);
           v_used_ggrid_.insert({j, x2});
         }
         treeedge->route.xFirst = true;

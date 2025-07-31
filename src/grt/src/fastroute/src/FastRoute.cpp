@@ -409,6 +409,39 @@ void FastRouteCore::initEdges()
   }
 }
 
+// Update maximum single layer capacity useful for NDR nets
+void FastRouteCore::initEdgesMaxCapPerLayer()
+{
+  for (int i = 0; i < y_grid_; i++) {
+    for (int j = 0; j < x_grid_; j++) {
+      int max_h_single_layer_cap = 0;
+      int max_v_single_layer_cap = 0;
+      for (int l = 0; l < num_layers_; l++) {
+          max_h_single_layer_cap = std::max(max_h_single_layer_cap, 
+                                    (int)h_edges_3D_[l][i][j].cap);
+          max_v_single_layer_cap = std::max(max_v_single_layer_cap, 
+                                    (int)v_edges_3D_[l][i][j].cap);
+          if(j==152 && i==55)
+            logger_->report("==== x{} y{} l{} CapV:{} CapH:{}",
+                  j,i,l+1,v_edges_3D_[l][i][j].cap,h_edges_3D_[l][i][j].cap);
+      }
+      // if(max_h_single_layer_cap < 3 || max_v_single_layer_cap < 3)
+      //   logger_->report("==== x{} y{}",j,i);
+      // 2D edge update
+      if (j < x_grid_ - 1) {
+        h_edges_[i][j].max_layer_cap = max_h_single_layer_cap;
+        // if(max_h_single_layer_cap < 3)
+        //   logger_->report("== H max cap {}",h_edges_[i][j].max_layer_cap);
+      }
+      if (i < y_grid_ - 1) {
+        v_edges_[i][j].max_layer_cap = max_v_single_layer_cap;
+        // if(max_v_single_layer_cap < 3)
+        //   logger_->report("== V max cap {}",v_edges_[i][j].max_layer_cap);
+      }
+    }
+  }
+}
+
 void FastRouteCore::setNumAdjustments(int nAdjustments)
 {
   num_adjust_ = nAdjustments;
@@ -648,10 +681,10 @@ bool FastRouteCore::verifyNDRCapacity(FrNet* net,
                                    EdgeDirection direction)
 {  
   // Check if this is an NDR net
-  bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+  bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
   int ndr_cost=0;
   
-  if (has_ndr) {
+  if (is_ndr) {
       // For NDR nets, we need at least one layer with sufficient capacity
       int max_single_layer_cap = 0;
       for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
@@ -664,6 +697,8 @@ bool FastRouteCore::verifyNDRCapacity(FrNet* net,
         }
         max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
       }
+
+      // logger_->report("=== Max Layer Cap: {} x{} y{} max {}",net->getName(), x1, y1, max_single_layer_cap);
       
       // No single layer can accommodate this NDR net
       if (max_single_layer_cap < ndr_cost) {
@@ -671,6 +706,48 @@ bool FastRouteCore::verifyNDRCapacity(FrNet* net,
       }
   }
   return true;
+}
+
+int FastRouteCore::getEdgeCapacityNDRAware(FrNet* net,
+                                   int x1,
+                                   int y1,
+                                   EdgeDirection direction)
+{
+  int cap = 0;
+    
+  // Check if this is an NDR net
+  bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+  int ndr_cost = net->getEdgeCost();
+  
+  if (is_ndr) {
+      // For NDR nets, we need at least one layer with sufficient capacity
+      int max_single_layer_cap = 0;
+      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+          int layer_cap = 0;
+          if (direction == EdgeDirection::Horizontal) {
+              layer_cap = h_edges_3D_[l][y1][x1].cap;
+          } else {
+              layer_cap = v_edges_3D_[l][y1][x1].cap;
+          }
+          max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
+      }
+      
+      // No single layer can accommodate this NDR net
+      if (max_single_layer_cap < ndr_cost) {
+          return 0; 
+      }
+  }
+
+  // get 2D edge capacity respecting layer restrictions
+  for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+    if (direction == EdgeDirection::Horizontal) {
+      cap += h_edges_3D_[l][y1][x1].cap;
+    } else {
+      cap += v_edges_3D_[l][y1][x1].cap;
+    }
+  }
+
+  return cap;
 }
 
 int FastRouteCore::getEdgeCapacity(FrNet* net,
@@ -1093,20 +1170,56 @@ NetRouteMap FastRouteCore::run()
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
 
   via_cost_ = 0;
+  initEdgesMaxCapPerLayer();
   gen_brk_RSMT(false, false, false, false, noADJ);
   logger_->report("=== Before pattern routing phases ===");
+
   routeLAll(true);
   logger_->report("=== After routeLAll ===");
+
   gen_brk_RSMT(true, true, true, false, noADJ);
+  logger_->report("=== After gen_brk_RSMT 2 ===");
+  // Debug Tree 2D
+  if (debug_->isOn()) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        printTree2D(netID);
+      }
+    }
+  }
 
   getOverflow2D(&maxOverflow);
   newrouteLAll(false, true);
   logger_->report("=== After newrouteLAll ===");
+  // Debug Tree 2D
+  if (debug_->isOn()) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        printTree2D(netID);
+      }
+    }
+  }
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
   logger_->report("=== After spiralRouteAll ===");
+  // Debug Tree 2D
+  if (debug_->isOn()) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        printTree2D(netID);
+      }
+    }
+  }
   newrouteZAll(10);
   logger_->report("=== After newrouteZAll ===");
+  // Debug Tree 2D
+  if (debug_->isOn()) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
+        printTree2D(netID);
+      }
+    }
+  }
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();

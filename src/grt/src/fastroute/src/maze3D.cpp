@@ -763,7 +763,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
     FrNet* net = nets_[netID];
-
+    bool is_ndr = net->getDbNet()->getNonDefaultRule() ? true : false;
     int ndr_extra_cost = 0;
 
     int enlarge = expand;
@@ -775,6 +775,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
 
+      // if (!is_ndr && (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb)) {
       if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
         continue;
       }
@@ -808,16 +809,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         continue;
       }
       // DEBUG clknet
-      if(net->getDbNet() == debug_->net_){
-        logger_->report("xxx After newRipup3DType3 xxx");
-        if (debug_->isOn() && debug_->rectilinearSTree_) {
-          for (const int& netID : net_ids_) {
-            if (nets_[netID]->getDbNet() == debug_->net_) {
-              StTreeVisualization(sttrees_[netID], nets_[netID], true);
-            }
-          }
-        }
-      }
+      // if(net->getDbNet() == debug_->net_){
+      //   logger_->report("xxx After newRipup3DType3 xxx");
+      //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+      //     for (const int& netID : net_ids_) {
+      //       if (nets_[netID]->getDbNet() == debug_->net_) {
+      //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+      //       }
+      //     }
+      //   }
+      // }
       enlarge = std::min(origEng, treeedge->route.routelen);
 
       const int regionX1 = std::max(0, xmin - enlarge);
@@ -883,7 +884,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         ndr_extra_cost = net->getLayerEdgeCost(curL);
         // ndr_extra_cost = net->getEdgeCost();
 
-        // if(curX == 30 && (curY == 35 || curY == 34)){
+        // if(curX == 152 && curY == 55){
         //     logger_->report("zzz Net at x{} y{}: {} {} {}", curX, curY, net->getName(), curL, (net->getDbNet()->getNonDefaultRule()!=nullptr));
         // }
 
@@ -982,6 +983,17 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             }
           }
         } else {
+          // if(net->getDbNet() == debug_->net_){
+          //   logger_->report(">>> {} curY:{} regionY1/Y2:{}/{} ExtraCost:{} South:{} North:{} Up:{} Down:{}",
+          //       net->getName(),curY, regionY1, regionY2, ndr_extra_cost,
+          //     directions_3D_[curL][curY][curX] == Direction::South, 
+          //     directions_3D_[curL][curY][curX] == Direction::North,
+          //     directions_3D_[curL][curY][curX] == Direction::Up,
+          //     directions_3D_[curL][curY][curX] == Direction::Down);
+          //     logger_->report(">>> Usage/Cap: {}/{} Usage/Cap: {}/{}",
+          //         v_edges_3D_[curL][curY][curX].usage, v_edges_3D_[curL][curY][curX].cap,
+          //         v_edges_3D_[curL][curY-1][curX].usage, v_edges_3D_[curL][curY-1][curX].cap);
+          // }
           // bottom
           if (!Horizontal && curY > regionY1
               && directions_3D_[curL][curY][curX] != Direction::South) {
@@ -1283,16 +1295,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
 
           // DEBUG clknet
-          if(net->getDbNet() == debug_->net_){
-            logger_->report("xxx Before updateRouteType13D 1261 xxx");
-            if (debug_->isOn() && debug_->rectilinearSTree_) {
-              for (const int& netID : net_ids_) {
-                if (nets_[netID]->getDbNet() == debug_->net_) {
-                  StTreeVisualization(sttrees_[netID], nets_[netID], true);
-                }
-              }
-            }
-          }
+          // if(net->getDbNet() == debug_->net_){
+          //   logger_->report("xxx Before updateRouteType13D 1261 xxx");
+          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+          //     for (const int& netID : net_ids_) {
+          //       if (nets_[netID]->getDbNet() == debug_->net_) {
+          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+          //       }
+          //     }
+          //   }
+          // }
           // update route for edge (n1, A1), (n1, A2)
           updateRouteType13D(netID,
                              treenodes,
@@ -1317,16 +1329,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const int edge_C1C2 = corr_edge_3D_[origL][E1y][E1x];
 
           // DEBUG clknet
-          if(net->getDbNet() == debug_->net_){
-            logger_->report("xxx Before updateRouteType23D 1285 xxx");
-            if (debug_->isOn() && debug_->rectilinearSTree_) {
-              for (const int& netID : net_ids_) {
-                if (nets_[netID]->getDbNet() == debug_->net_) {
-                  StTreeVisualization(sttrees_[netID], nets_[netID], true);
-                }
-              }
-            }
-          }
+          // if(net->getDbNet() == debug_->net_){
+          //   logger_->report("xxx Before updateRouteType23D 1285 xxx");
+          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+          //     for (const int& netID : net_ids_) {
+          //       if (nets_[netID]->getDbNet() == debug_->net_) {
+          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+          //       }
+          //     }
+          //   }
+          // }
 
           // update route for edge (n1, C1), (n1, C2) and (A1, A2)
           updateRouteType23D(netID,
@@ -1464,16 +1476,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
 
           // DEBUG clknet
-          if(net->getDbNet() == debug_->net_){
-            logger_->report("xxx Before updateRouteType13D 1431 xxx");
-            if (debug_->isOn() && debug_->rectilinearSTree_) {
-              for (const int& netID : net_ids_) {
-                if (nets_[netID]->getDbNet() == debug_->net_) {
-                  StTreeVisualization(sttrees_[netID], nets_[netID], true);
-                }
-              }
-            }
-          }
+          // if(net->getDbNet() == debug_->net_){
+          //   logger_->report("xxx Before updateRouteType13D 1431 xxx");
+          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+          //     for (const int& netID : net_ids_) {
+          //       if (nets_[netID]->getDbNet() == debug_->net_) {
+          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+          //       }
+          //     }
+          //   }
+          // }
           // update route for edge (n2, B1), (n2, B2)
           updateRouteType13D(netID,
                              treenodes,
@@ -1487,16 +1499,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              edge_n2B2);
 
           // DEBUG clknet
-          if(net->getDbNet() == debug_->net_){
-            logger_->report("xxx After updateRouteType13D 1431 xxx");
-            if (debug_->isOn() && debug_->rectilinearSTree_) {
-              for (const int& netID : net_ids_) {
-                if (nets_[netID]->getDbNet() == debug_->net_) {
-                  StTreeVisualization(sttrees_[netID], nets_[netID], true);
-                }
-              }
-            }
-          }
+          // if(net->getDbNet() == debug_->net_){
+          //   logger_->report("xxx After updateRouteType13D 1431 xxx");
+          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+          //     for (const int& netID : net_ids_) {
+          //       if (nets_[netID]->getDbNet() == debug_->net_) {
+          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+          //       }
+          //     }
+          //   }
+          // }
 
           // update position for n2
           treenodes[n2].assigned = true;
@@ -1507,16 +1519,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const int D2 = endpt2;
           const int edge_D1D2 = corr_edge_3D_[origL][E2y][E2x];
           // DEBUG clknet
-          if(net->getDbNet() == debug_->net_){
-            logger_->report("xxx Before updateRouteType23D 1462 xxx");
-            if (debug_->isOn() && debug_->rectilinearSTree_) {
-              for (const int& netID : net_ids_) {
-                if (nets_[netID]->getDbNet() == debug_->net_) {
-                  StTreeVisualization(sttrees_[netID], nets_[netID], true);
-                }
-              }
-            }
-          }
+          // if(net->getDbNet() == debug_->net_){
+          //   logger_->report("xxx Before updateRouteType23D 1462 xxx");
+          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+          //     for (const int& netID : net_ids_) {
+          //       if (nets_[netID]->getDbNet() == debug_->net_) {
+          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+          //       }
+          //     }
+          //   }
+          // }
           // update route for edge (n2, d1_3D), (n2, d2_3D) and (B1, B2)
           updateRouteType23D(netID,
                              treenodes,
@@ -1594,16 +1606,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }
 
       // DEBUG clknet
-      if(net->getDbNet() == debug_->net_){
-        logger_->report("xxx DEBUG1 xxx");
-        if (debug_->isOn() && debug_->rectilinearSTree_) {
-          for (const int& netID : net_ids_) {
-            if (nets_[netID]->getDbNet() == debug_->net_) {
-              StTreeVisualization(sttrees_[netID], nets_[netID], true);
-            }
-          }
-        }
-      }
+      // if(net->getDbNet() == debug_->net_){
+      //   logger_->report("xxx DEBUG1 xxx");
+      //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+      //     for (const int& netID : net_ids_) {
+      //       if (nets_[netID]->getDbNet() == debug_->net_) {
+      //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+      //       }
+      //     }
+      //   }
+      // }
 
       const int newcnt_n1n2 = tailRoom - headRoom + 1;
 
@@ -1647,21 +1659,21 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }
 
       
-      if(net->getDbNet() == debug_->net_){
-        logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === Before update", net->getName(), expand, ripupTHlb, ripupTHub);
-        logger_->report("x1/x2: {}/{} y1/y2: {}/{}",xmin, xmax, ymin, ymax);
-        int maxO, tU;
-        getOverflow3D();
-        getOverflow2Dmaze(&maxO,&tU);
-        // logger_->report("=== 3D/2D cong: {}/{}", total_overflow_, getOverflow2Dmaze(&maxO,&tU));
-        if (debug_->isOn() && debug_->rectilinearSTree_) {
-          for (const int& netID : net_ids_) {
-            if (nets_[netID]->getDbNet() == debug_->net_) {
-              StTreeVisualization(sttrees_[netID], nets_[netID], true);
-            }
-          }
-        }
-      }
+      // if(net->getDbNet() == debug_->net_){
+      //   logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === Before update", net->getName(), expand, ripupTHlb, ripupTHub);
+      //   logger_->report("x1/x2: {}/{} y1/y2: {}/{}",xmin, xmax, ymin, ymax);
+      //   int maxO, tU;
+      //   getOverflow3D();
+      //   getOverflow2Dmaze(&maxO,&tU);
+      //   // logger_->report("=== 3D/2D cong: {}/{}", total_overflow_, getOverflow2Dmaze(&maxO,&tU));
+      //   if (debug_->isOn() && debug_->rectilinearSTree_) {
+      //     for (const int& netID : net_ids_) {
+      //       if (nets_[netID]->getDbNet() == debug_->net_) {
+      //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
+      //       }
+      //     }
+      //   }
+      // }
 
       // update edge usage
       for (int i = headRoom; i < tailRoom; i++) {

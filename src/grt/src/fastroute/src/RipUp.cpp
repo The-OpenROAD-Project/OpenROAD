@@ -25,17 +25,17 @@ void FastRouteCore::ripupSegL(const Segment* seg)
   // remove L routing
   if (seg->xFirst) {
     for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y1][i].est_usage -= edgeCost;
+      h_edges_[seg->y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost);
     }
     for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x2].est_usage -= edgeCost;
+      v_edges_[i][seg->x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][seg->x2], edgeCost);
     }
   } else {
     for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x1].est_usage -= edgeCost;
+      v_edges_[i][seg->x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost);
     }
     for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y2][i].est_usage -= edgeCost;
+      h_edges_[seg->y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[seg->y2][i], edgeCost);
     }
   }
 }
@@ -60,17 +60,17 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
   {
     if (treeedge->route.xFirst) {
       for (int i = x1; i < x2; i++) {
-        h_edges_[y1][i].est_usage -= edgeCost;
+        h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
       }
       for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][x2].est_usage -= edgeCost;
+        v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][x1].est_usage -= edgeCost;
+        v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
       }
       for (int i = x1; i < x2; i++) {
-        h_edges_[y2][i].est_usage -= edgeCost;
+        h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
       }
     }
   } else if (ripuptype == RouteType::ZRoute) {
@@ -78,34 +78,34 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
     const int Zpoint = treeedge->route.Zpoint;
     if (treeedge->route.HVH) {
       for (int i = x1; i < Zpoint; i++) {
-        h_edges_[y1][i].est_usage -= edgeCost;
+        h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
       }
       for (int i = Zpoint; i < x2; i++) {
-        h_edges_[y2][i].est_usage -= edgeCost;
+        h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
       }
       for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][Zpoint].est_usage -= edgeCost;
+        v_edges_[i][Zpoint].est_usage -= getEdgeCostNDRAware(v_edges_[i][Zpoint], edgeCost);
       }
     } else {
       if (y1 < y2) {
         for (int i = y1; i < Zpoint; i++) {
-          v_edges_[i][x1].est_usage -= edgeCost;
+          v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
         }
         for (int i = Zpoint; i < y2; i++) {
-          v_edges_[i][x2].est_usage -= edgeCost;
+          v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
         }
         for (int i = x1; i < x2; i++) {
-          h_edges_[Zpoint][i].est_usage -= edgeCost;
+          h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
         }
       } else {
         for (int i = y2; i < Zpoint; i++) {
-          v_edges_[i][x2].est_usage -= edgeCost;
+          v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
         }
         for (int i = Zpoint; i < y1; i++) {
-          v_edges_[i][x1].est_usage -= edgeCost;
+          v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
         }
         for (int i = x1; i < x2; i++) {
-          h_edges_[Zpoint][i].est_usage -= edgeCost;
+          h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
         }
       }
     }
@@ -115,10 +115,10 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        v_edges_[ymin][gridsX[i]].est_usage -= edgeCost;
+        v_edges_[ymin][gridsX[i]].est_usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        h_edges_[gridsY[i]][xmin].est_usage -= edgeCost;
+        h_edges_[gridsY[i]][xmin].est_usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
       } else {
         logger_->error(GRT, 225, "Maze ripup wrong in newRipup.");
       }
@@ -144,6 +144,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
   const int ymax = std::max(y1, y2);
 
   FrNet* net = nets_[netID];
+  int edgeCost = net->getEdgeCost();
 
   bool needRipup = false;
   if (ripuptype == RouteType::LRoute) {  // remove L routing
@@ -151,7 +152,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
       for (int i = x1; i < x2; i++) {
         const int cap
             = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
-        if (h_edges_[y1][i].est_usage > cap || !verifyNDRCapacity(net,i,y1,EdgeDirection::Horizontal)) {
+        if (h_edges_[y1][i].est_usage > cap || (h_edges_[y1][i].max_layer_cap < edgeCost)) {
           needRipup = true;
           break;
         }
@@ -160,7 +161,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
       for (int i = ymin; i < ymax; i++) {
         const int cap
             = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
-        if (v_edges_[i][x2].est_usage > cap || !verifyNDRCapacity(net,x2,i,EdgeDirection::Vertical)) {
+        if (v_edges_[i][x2].est_usage > cap || (v_edges_[i][x2].max_layer_cap < edgeCost)) {
           needRipup = true;
           break;
         }
@@ -169,7 +170,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
       for (int i = ymin; i < ymax; i++) {
         const int cap
             = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
-        if (v_edges_[i][x1].est_usage > cap || !verifyNDRCapacity(net,x1,i,EdgeDirection::Vertical)) {
+        if (v_edges_[i][x1].est_usage > cap || (v_edges_[i][x1].max_layer_cap < edgeCost)) {
           needRipup = true;
           break;
         }
@@ -177,7 +178,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
       for (int i = x1; i < x2; i++) {
         const int cap
             = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
-        if (h_edges_[y2][i].est_usage > cap || !verifyNDRCapacity(net,i,y2,EdgeDirection::Horizontal)) {
+        if (h_edges_[y2][i].est_usage > cap || (h_edges_[y2][i].max_layer_cap < edgeCost)) {
           needRipup = true;
           break;
         }
@@ -196,10 +197,10 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
         treenodes[n2].status -= 1;
 
         for (int i = x1; i < x2; i++) {
-          h_edges_[y1][i].est_usage -= edgeCost;
+          h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
         }
         for (int i = ymin; i < ymax; i++) {
-          v_edges_[i][x2].est_usage -= edgeCost;
+          v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
         }
       } else {
         if (n2 >= deg) {
@@ -208,10 +209,10 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
         treenodes[n1].status -= 1;
 
         for (int i = ymin; i < ymax; i++) {
-          v_edges_[i][x1].est_usage -= edgeCost;
+          v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
         }
         for (int i = x1; i < x2; i++) {
-          h_edges_[y2][i].est_usage -= edgeCost;
+          h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
         }
       }
     }
@@ -240,11 +241,13 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
 
   bool needRipup = false;
   auto* net = nets_[netID];
-  // if (net->getDbNet()->getNonDefaultRule()) {
+  bool is_ndr = net->getDbNet()->getNonDefaultRule() ? true : false;
+  // if (is_ndr && net->getDbNet() == debug_->net_) {
   //   logger_->report("[DEBUG] Clock net {} edge {} x1/y1: {}/{} x2/y2: {}/{} Critical slack: {} - checking ripup", 
   //                   nets_[netID]->getName(), edgeID, x1,y1,x2,y2, critical_slack);
   //   logger_->report("  Capacity H:{} V:{}, Threshold:{}, isCritical: {}", 
   //                   h_capacity_, v_capacity_, ripup_threshold, nets_[netID]->isCritical());
+  //   printEdge(netID,edgeID);
   // }
 
   if (treeedge->route.type == RouteType::MazeRoute) {
@@ -254,7 +257,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]); 
         // DEBUG V
-        // if (net->getDbNet()->getNonDefaultRule()) {
+        // if (is_ndr) {
         //   logger_->report("\tV: {}/{} {} - usage_red {} - capacity-ripup_threshold {}", gridsX[i], ymin, nets_[netID]->getName(),
         //                   v_edges_[ymin][gridsX[i]].usage_red(), v_capacity_ - ripup_threshold);
 
@@ -279,13 +282,16 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         if ((v_edges_[ymin][gridsX[i]].usage_red()
             >= v_capacity_ - ripup_threshold) ||
           !verifyNDRCapacity(net,gridsX[i],ymin,EdgeDirection::Vertical)) {
+          if (is_ndr) {
+            logger_->report("-- newRipupCheck V {} x{} y{}",net->getName(),gridsX[i],ymin);
+          }
           needRipup = true;
           break;
         }
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
         // DEBUG H
-        // if (net->getDbNet()->getNonDefaultRule()) {
+        // if (is_ndr) {
         //   logger_->report("\tH: {} {} Clk net - usage_red {} - capacity-ripup_threshold {}", gridsY[i], xmin,
         //                   h_edges_[gridsY[i]][xmin].usage_red(), h_capacity_ - ripup_threshold);
         // }       
@@ -293,6 +299,9 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         if (h_edges_[gridsY[i]][xmin].usage_red()
             >= h_capacity_ - ripup_threshold ||
           !verifyNDRCapacity(net,xmin,gridsY[i],EdgeDirection::Horizontal)) {
+          if (is_ndr) {
+            logger_->report("-- newRipupCheck H {} x{} y{}",net->getName(),xmin,gridsY[i]);
+          }
           needRipup = true;
           break;
         }
@@ -314,17 +323,17 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
       const int edgeCost = nets_[netID]->getEdgeCost();
 
       if (net->getDbNet()->getNonDefaultRule()) {
-        logger_->report("\tRipping up clock net {} with edge cost {}", 
+        logger_->report("\tRipping up net {} with edge cost {}", 
                         net->getName(), edgeCost);
       }
 
       for (int i = 0; i < treeedge->route.routelen; i++) {
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          v_edges_[ymin][gridsX[i]].usage -= edgeCost;
+          v_edges_[ymin][gridsX[i]].usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
         } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          h_edges_[gridsY[i]][xmin].usage -= edgeCost;
+          h_edges_[gridsY[i]][xmin].usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
         }
       }
       return true;
@@ -433,16 +442,16 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
     if (gridsL[i] == gridsL[i + 1]) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (net->getDbNet()->getNonDefaultRule())
+        if (net->getDbNet() == debug_->net_)
           logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), gridsX[i], ymin, gridsL[i]+1);
-        v_edges_[ymin][gridsX[i]].usage -= net->getEdgeCost();
+        v_edges_[ymin][gridsX[i]].usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]],net->getEdgeCost());
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        if (net->getDbNet()->getNonDefaultRule())
+        if (net->getDbNet() == debug_->net_)
           logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), xmin, gridsY[i], gridsL[i]+1);
-        h_edges_[gridsY[i]][xmin].usage -= net->getEdgeCost();
+        h_edges_[gridsY[i]][xmin].usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin],net->getEdgeCost());
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else {
@@ -482,13 +491,13 @@ void FastRouteCore::releaseNetResources(const int netID)
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           edge = &v_edges_[ymin][gridsX[i]];
           edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
-          edge->usage -= edgeCost;
+          edge->usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
           edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           edge = &h_edges_[gridsY[i]][xmin];
           edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
-          edge->usage -= edgeCost;
+          edge->usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
           edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }
       }
@@ -504,11 +513,11 @@ void FastRouteCore::newRipupNet(const int netID)
   const auto& treenodes = sttrees_[netID].nodes;
   const int num_edges = sttrees_[netID].num_edges();
 
-  // auto* net = nets_[netID];
-  // if(net->getDbNet()->getNonDefaultRule()){
-  //   logger_->report("=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===", 
-  //       net->getName(), num_edges, edgeCost);
-  // }
+  FrNet* net = nets_[netID];
+  if(net->getDbNet() == debug_->net_){
+    logger_->report("=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===", 
+        net->getName(), num_edges, edgeCost);
+  }
 
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     const TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -532,17 +541,17 @@ void FastRouteCore::newRipupNet(const int netID)
         // }
         if (treeedge->route.xFirst) {
           for (int i = x1; i < x2; i++) {
-            h_edges_[y1][i].est_usage -= edgeCost;
+            h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
           }
           for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][x2].est_usage -= edgeCost;
+            v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
           }
         } else {
           for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][x1].est_usage -= edgeCost;
+            v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
           }
           for (int i = x1; i < x2; i++) {
-            h_edges_[y2][i].est_usage -= edgeCost;
+            h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
           }
         }
       } else if (ripuptype == RouteType::ZRoute) {
@@ -550,34 +559,34 @@ void FastRouteCore::newRipupNet(const int netID)
         const int Zpoint = treeedge->route.Zpoint;
         if (treeedge->route.HVH) {
           for (int i = x1; i < Zpoint; i++) {
-            h_edges_[y1][i].est_usage -= edgeCost;
+            h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
           }
           for (int i = Zpoint; i < x2; i++) {
-            h_edges_[y2][i].est_usage -= edgeCost;
+            h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
           }
           for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][Zpoint].est_usage -= edgeCost;
+            v_edges_[i][Zpoint].est_usage -= getEdgeCostNDRAware(v_edges_[i][Zpoint], edgeCost);
           }
         } else {
           if (y1 < y2) {
             for (int i = y1; i < Zpoint; i++) {
-              v_edges_[i][x1].est_usage -= edgeCost;
+              v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
             }
             for (int i = Zpoint; i < y2; i++) {
-              v_edges_[i][x2].est_usage -= edgeCost;
+              v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
             }
             for (int i = x1; i < x2; i++) {
-              h_edges_[Zpoint][i].est_usage -= edgeCost;
+              h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
             }
           } else {
             for (int i = y2; i < Zpoint; i++) {
-              v_edges_[i][x2].est_usage -= edgeCost;
+              v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
             }
             for (int i = Zpoint; i < y1; i++) {
-              v_edges_[i][x1].est_usage -= edgeCost;
+              v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
             }
             for (int i = x1; i < x2; i++) {
-              h_edges_[Zpoint][i].est_usage -= edgeCost;
+              h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
             }
           }
         }
@@ -587,10 +596,10 @@ void FastRouteCore::newRipupNet(const int netID)
         for (int i = 0; i < treeedge->route.routelen; i++) {
           if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
             const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-            v_edges_[ymin][gridsX[i]].est_usage -= edgeCost;
+            v_edges_[ymin][gridsX[i]].est_usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
           } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
             const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-            h_edges_[gridsY[i]][xmin].est_usage -= edgeCost;
+            h_edges_[gridsY[i]][xmin].est_usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
           } else {
             logger_->error(GRT,
                            123,
@@ -600,6 +609,11 @@ void FastRouteCore::newRipupNet(const int netID)
         }
       }
     }
+  }
+  
+  if(net->getDbNet() == debug_->net_){
+    int maxOverflow;
+    getOverflow2D(&maxOverflow);
   }
 }
 

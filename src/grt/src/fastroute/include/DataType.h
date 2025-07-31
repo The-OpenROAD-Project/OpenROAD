@@ -115,6 +115,7 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t red;
   int16_t last_usage;
   double est_usage;  // the estimated usage of the edge
+  uint16_t max_layer_cap = 0; // max capacity in a single layer
 
   uint16_t usage_red() const { return usage + red; }
   double est_usage_red() const { return est_usage + red; }
