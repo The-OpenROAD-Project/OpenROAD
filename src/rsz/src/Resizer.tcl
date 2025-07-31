@@ -961,7 +961,7 @@ proc set_opt_config { args } {
         "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
     } else {
       utl::info RSZ 167 \
-        "Buffer pruning will be enabled to optimize runtime and QoR for repair_design and repair_timing"
+        "Buffer pruning will be enabled for repair_design and repair_timing"
     }
   }
 }
