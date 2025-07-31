@@ -217,12 +217,13 @@ void SACoreSoftMacro::saveState()
     return;
   }
 
-  // Keep back up
   pre_macros_ = macros_;
   pre_pos_seq_ = pos_seq_;
   pre_neg_seq_ = neg_seq_;
+
   pre_width_ = width_;
   pre_height_ = height_;
+
   pre_outline_penalty_ = outline_penalty_;
   pre_wirelength_ = wirelength_;
   pre_guidance_penalty_ = guidance_penalty_;
@@ -252,8 +253,10 @@ void SACoreSoftMacro::restoreState()
   }
 
   macros_ = pre_macros_;
+
   width_ = pre_width_;
   height_ = pre_height_;
+  
   outline_penalty_ = pre_outline_penalty_;
   wirelength_ = pre_wirelength_;
   guidance_penalty_ = pre_guidance_penalty_;
