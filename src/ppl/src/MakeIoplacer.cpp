@@ -3,6 +3,8 @@
 
 #include "ppl/MakeIoplacer.h"
 
+#include <tcl.h>
+
 #include "ppl/IOPlacer.h"
 #include "utl/decode.h"
 

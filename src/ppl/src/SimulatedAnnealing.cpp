@@ -4,12 +4,23 @@
 #include "SimulatedAnnealing.h"
 
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
+#include <cmath>
 #include <memory>
+#include <numeric>
+#include <random>
 #include <set>
 #include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
+#include "Core.h"
+#include "Netlist.h"
+#include "Slots.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "ppl/IOPlacer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 

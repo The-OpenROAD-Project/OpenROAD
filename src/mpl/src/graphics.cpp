@@ -7,12 +7,17 @@
 #include <limits>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "clusterEngine.h"
+#include "gui/gui.h"
 #include "object.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {

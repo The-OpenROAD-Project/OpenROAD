@@ -463,7 +463,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
         shape->setShapeType(Shape::OBS);
       }
       shape->generateObstruction();
-      map[layer].push_back(shape);
+      map[layer].push_back(std::move(shape));
     }
   }
 }

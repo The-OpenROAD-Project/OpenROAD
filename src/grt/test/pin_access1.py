@@ -25,9 +25,7 @@ grt_aux.set_global_routing_layer_adjustment(design, "*", 0.5)
 
 grt_aux.set_routing_layers(design, signal="met1-met5", clock="met3-met5")
 
-design.evalTclString(
-    "pin_access -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0"
-)
+design.evalTclString("pin_access -verbose 0")
 
 gr.setVerbose(True)
 gr.globalRoute(True)

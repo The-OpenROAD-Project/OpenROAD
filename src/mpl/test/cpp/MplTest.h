@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
 #include <memory>
 
 #include "../../src/hier_rtlmp.h"

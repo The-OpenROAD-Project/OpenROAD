@@ -5,15 +5,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <limits>
 #include <map>
 #include <memory>
-#include <random>
 #include <set>
-#include <sstream>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -24,9 +22,13 @@
 #include "SimulatedAnnealing.h"
 #include "Slots.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "ord/OpenRoad.hh"
+#include "ppl/IOPlacer.h"
+#include "ppl/Parameters.h"
 #include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "utl/validation.h"
 
 namespace ppl {
 

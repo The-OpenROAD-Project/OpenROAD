@@ -599,18 +599,19 @@ void PdnGen::makeStrap(Grid* grid,
   grid->addStrap(std::move(strap));
 }
 
-void PdnGen::makeConnect(Grid* grid,
-                         odb::dbTechLayer* layer0,
-                         odb::dbTechLayer* layer1,
-                         int cut_pitch_x,
-                         int cut_pitch_y,
-                         const std::vector<odb::dbTechViaGenerateRule*>& vias,
-                         const std::vector<odb::dbTechVia*>& techvias,
-                         int max_rows,
-                         int max_columns,
-                         const std::vector<odb::dbTechLayer*>& ongrid,
-                         const std::map<odb::dbTechLayer*, int>& split_cuts,
-                         const std::string& dont_use_vias)
+void PdnGen::makeConnect(
+    Grid* grid,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    const std::map<odb::dbTechLayer*, std::pair<int, bool>>& split_cuts,
+    const std::string& dont_use_vias)
 {
   auto con = std::make_unique<Connect>(grid, layer0, layer1);
   con->setCutPitch(cut_pitch_x, cut_pitch_y);
@@ -626,7 +627,13 @@ void PdnGen::makeConnect(Grid* grid,
   con->setMaxRows(max_rows);
   con->setMaxColumns(max_columns);
   con->setOnGrid(ongrid);
-  con->setSplitCuts(split_cuts);
+
+  std::map<odb::dbTechLayer*, Connect::SplitCut> split_cuts_map;
+  for (const auto& [layer, cut_def] : split_cuts) {
+    split_cuts_map[layer]
+        = Connect::SplitCut{std::get<0>(cut_def), std::get<1>(cut_def)};
+  }
+  con->setSplitCuts(split_cuts_map);
 
   if (!dont_use_vias.empty()) {
     con->filterVias(dont_use_vias);

@@ -67,8 +67,6 @@ struct ParamStruct
   std::string viaAccessLayer;
   int orSeed = 0;
   double orK = 0;
-  std::string bottomRoutingLayer;
-  std::string topRoutingLayer;
   int verbose = 1;
   bool cleanPatches = false;
   bool doPa = false;

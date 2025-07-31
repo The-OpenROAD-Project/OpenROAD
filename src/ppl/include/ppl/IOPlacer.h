@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 

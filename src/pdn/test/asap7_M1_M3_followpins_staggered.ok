@@ -1,0 +1,32 @@
+[INFO ODB-0227] LEF file: asap7_vias/asap7_tech_1x.lef, created 25 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7_vias/asap7sc7p5t_27_R_1x.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 406 components and 1816 component-terminals.
+[INFO ODB-0133]     Created 361 nets and 1004 connections.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: M1
+    Width: 0.0720
+    Spacing: 0.0000
+    Pitch: 0.5400
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Followpin
+    Layer: M3
+    Width: 0.0900
+    Spacing: 0.0000
+    Pitch: 0.5400
+    Offset: 0.0000
+    Snap to grid: false
+Connect:
+  Connect layers M1 -> M3
+    Split cuts:
+      Layer: M2 with pitch 1.0000 staggered
+[INFO PDN-0001] Inserting grid: Core
+No differences found.

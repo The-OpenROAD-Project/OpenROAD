@@ -7,11 +7,13 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "object.h"
+#include "odb/db.h"
 #include "util.h"
 
 namespace par {
@@ -169,6 +171,8 @@ class ClusteringEngine
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
   void setDieArea();
   void setFloorplanShape();

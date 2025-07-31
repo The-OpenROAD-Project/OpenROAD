@@ -41,7 +41,6 @@ Straps:
     Snap to grid: false
 Connect:
   Connect layers met1 -> met4
-  Connect layers met2 -> met4
   Connect layers met4 -> met5
 Switched power cell: POWER_SWITCH
   Control net: nPWRUP

@@ -256,11 +256,6 @@ RouteBase::~RouteBase() = default;
 void RouteBase::resetRoutabilityResources()
 {
   inflatedAreaDelta_ = 0;
-
-  if (!rbVars_.useRudy) {
-    grouter_->clear();
-  }
-  tg_.reset();
 }
 
 void RouteBase::init()
@@ -512,7 +507,8 @@ void RouteBase::updateGrtRoute()
 // first: is Routability Need
 // second: reverting procedure init need
 //          (e.g. calling NesterovPlace's init())
-std::pair<bool, bool> RouteBase::routability()
+std::pair<bool, bool> RouteBase::routability(
+    int routability_driven_revert_count)
 {
   increaseCounter();
 
@@ -550,22 +546,22 @@ std::pair<bool, bool> RouteBase::routability()
                curRc,
                minRc_);
     minRc_ = curRc;
-    minRcTargetDensity_ = nbVec_[0]->targetDensity();
-    minRcViolatedCnt_ = 0;
+    minRcTargetDensity_ = nbVec_[0]->getTargetDensity();
+    min_RC_violated_cnt_ = 0;
     nbVec_[0]->clearRemovedFillers();
 
     // save cell size info
     nbc_->updateMinRcCellSize();
 
   } else {
-    minRcViolatedCnt_++;
+    min_RC_violated_cnt_++;
     log_->info(GPL,
                49,
                "Routing congestion ({:.4f}) higher than minimum ({:.4f}). "
                "Consecutive non-improvement count: {}.",
                curRc,
                minRc_,
-               minRcViolatedCnt_);
+               min_RC_violated_cnt_);
   }
 
   // set inflated ratio
@@ -632,8 +628,8 @@ std::pair<bool, bool> RouteBase::routability()
 
   // TODO: will be implemented
   if (inflatedAreaDelta_ > targetInflationDeltaAreaRatio
-                               * (nbVec_[0]->whiteSpaceArea()
-                                  - (nbVec_[0]->nesterovInstsArea()
+                               * (nbVec_[0]->getWhiteSpaceArea()
+                                  - (nbVec_[0]->getNesterovInstsArea()
                                      + nbVec_[0]->getTotalFillerArea()))) {
     // TODO dynamic inflation procedure?
   }
@@ -642,7 +638,7 @@ std::pair<bool, bool> RouteBase::routability()
   float inflated_area_delta_microns
       = block->dbuAreaToMicrons(inflatedAreaDelta_);
   float inflated_area_delta_percentage = (static_cast<float>(inflatedAreaDelta_)
-                                          / nbVec_[0]->nesterovInstsArea())
+                                          / nbVec_[0]->getNesterovInstsArea())
                                          * 100.0f;
   log_->info(GPL,
              51,
@@ -654,13 +650,13 @@ std::pair<bool, bool> RouteBase::routability()
              52,
              format_label_float,
              "Placement target density:",
-             nbVec_[0]->targetDensity());
+             nbVec_[0]->getTargetDensity());
 
-  double prev_white_space_area = nbVec_[0]->whiteSpaceArea();
-  double prev_movable_area = nbVec_[0]->movableArea();
+  double prev_white_space_area = nbVec_[0]->getWhiteSpaceArea();
+  double prev_movable_area = nbVec_[0]->getMovableArea();
   double prev_total_filler_area = nbVec_[0]->getTotalFillerArea();
   double prev_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
+      = nbVec_[0]->getNesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
   double prev_expected_gcells_area
       = inflatedAreaDelta_ + prev_total_gcells_area;
 
@@ -671,24 +667,35 @@ std::pair<bool, bool> RouteBase::routability()
   // rc not improvement detection -- (not improved the RC values 3 times in a
   // row)
   //
-  if (nbVec_[0]->targetDensity() > rbVars_.maxDensity
-      || minRcViolatedCnt_ >= 3) {
-    bool density_exceeded = nbVec_[0]->targetDensity() > rbVars_.maxDensity;
-    bool congestion_not_improving = minRcViolatedCnt_ >= 3;
+  bool is_max_density_exceeded
+      = nbVec_[0]->getTargetDensity() > rbVars_.maxDensity;
+  bool congestion_not_improving
+      = min_RC_violated_cnt_ >= max_routability_no_improvement_;
+  bool is_max_routability_revert
+      = routability_driven_revert_count >= max_routability_revert_;
 
-    if (density_exceeded) {
+  if (is_max_density_exceeded || congestion_not_improving
+      || is_max_routability_revert) {
+    if (is_max_density_exceeded) {
       log_->info(GPL,
                  53,
                  "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
-                 nbVec_[0]->targetDensity(),
+                 nbVec_[0]->getTargetDensity(),
                  rbVars_.maxDensity);
     }
     if (congestion_not_improving) {
       log_->info(GPL,
                  54,
                  "No improvement in routing congestion for {} consecutive "
-                 "iterations (limit is 3).",
-                 minRcViolatedCnt_);
+                 "iterations (limit is {}).",
+                 min_RC_violated_cnt_,
+                 max_routability_no_improvement_);
+    }
+    if (is_max_routability_revert) {
+      log_->info(GPL,
+                 91,
+                 "Routability mode reached the maximum allowed reverts {}",
+                 routability_driven_revert_count);
     }
 
     log_->info(
@@ -716,7 +723,7 @@ std::pair<bool, bool> RouteBase::routability()
   nbVec_[0]->updateAreas();
 
   double new_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
+      = nbVec_[0]->getNesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
   double new_expected_gcells_area = inflatedAreaDelta_ + new_total_gcells_area;
 
   auto percentDiff = [](double old_value, double new_value) -> double {
@@ -726,19 +733,20 @@ std::pair<bool, bool> RouteBase::routability()
     return ((new_value - old_value) / old_value) * 100.0;
   };
 
-  log_->info(GPL,
-             58,
-             format_label_um2_with_delta,
-             "White space area:",
-             block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()),
-             percentDiff(prev_white_space_area, nbVec_[0]->whiteSpaceArea()));
+  log_->info(
+      GPL,
+      58,
+      format_label_um2_with_delta,
+      "White space area:",
+      block->dbuAreaToMicrons(nbVec_[0]->getWhiteSpaceArea()),
+      percentDiff(prev_white_space_area, nbVec_[0]->getWhiteSpaceArea()));
 
   log_->info(GPL,
              59,
              format_label_um2_with_delta,
              "Movable instances area:",
-             block->dbuAreaToMicrons(nbVec_[0]->movableArea()),
-             percentDiff(prev_movable_area, nbVec_[0]->movableArea()));
+             block->dbuAreaToMicrons(nbVec_[0]->getMovableArea()),
+             percentDiff(prev_movable_area, nbVec_[0]->getMovableArea()));
 
   log_->info(
       GPL,
@@ -766,7 +774,7 @@ std::pair<bool, bool> RouteBase::routability()
              63,
              format_label_float,
              "New Target Density:",
-             nbVec_[0]->targetDensity());
+             nbVec_[0]->getTargetDensity());
 
   // update densitySizes for all gCell
   nbVec_[0]->updateDensitySize();
@@ -777,7 +785,7 @@ std::pair<bool, bool> RouteBase::routability()
   return std::make_pair(true, true);
 }
 
-float RouteBase::getRudyRC() const
+float RouteBase::getRudyRC(bool verbose) const
 {
   grt::Rudy* rudy = grouter_->getRudy();
   double totalRouteOverflow = 0;
@@ -797,13 +805,15 @@ float RouteBase::getRudyRC() const
     }
   }
 
-  log_->info(GPL, 41, "Total routing overflow: {:.4f}", totalRouteOverflow);
-  log_->info(
-      GPL,
-      42,
-      "Number of overflowed tiles: {} ({:.2f}%)",
-      overflowTileCnt,
-      (static_cast<double>(overflowTileCnt) / tg_->tiles().size()) * 100);
+  if (verbose) {
+    log_->info(GPL, 41, "Total routing overflow: {:.4f}", totalRouteOverflow);
+    log_->info(
+        GPL,
+        42,
+        "Number of overflowed tiles: {} ({:.2f}%)",
+        overflowTileCnt,
+        (static_cast<double>(overflowTileCnt) / tg_->tiles().size()) * 100);
+  }
 
   int arraySize = edgeCongArray.size();
   std::sort(edgeCongArray.rbegin(), edgeCongArray.rend());
@@ -832,20 +842,24 @@ float RouteBase::getRudyRC() const
   avg010RC /= ceil(0.010 * arraySize);
   avg020RC /= ceil(0.020 * arraySize);
   avg050RC /= ceil(0.050 * arraySize);
-
-  log_->info(GPL, 43, "Average top 0.5% routing congestion: {:.4f}", avg005RC);
-  log_->info(GPL, 44, "Average top 1.0% routing congestion: {:.4f}", avg010RC);
-  log_->info(GPL, 45, "Average top 2.0% routing congestion: {:.4f}", avg020RC);
-  log_->info(GPL, 46, "Average top 5.0% routing congestion: {:.4f}", avg050RC);
-
   float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
                    + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL,
-             47,
-             "Routability iteration weighted routing congestion: {:.4f}",
-             finalRC);
+  if (verbose) {
+    log_->info(
+        GPL, 43, "Average top 0.5% routing congestion: {:.4f}", avg005RC);
+    log_->info(
+        GPL, 44, "Average top 1.0% routing congestion: {:.4f}", avg010RC);
+    log_->info(
+        GPL, 45, "Average top 2.0% routing congestion: {:.4f}", avg020RC);
+    log_->info(
+        GPL, 46, "Average top 5.0% routing congestion: {:.4f}", avg050RC);
+    log_->info(GPL,
+               47,
+               "Routability iteration weighted routing congestion: {:.4f}",
+               finalRC);
+  }
   return finalRC;
 }
 

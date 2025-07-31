@@ -1069,7 +1069,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "iyNJmQefNHFxk2IZ05Ws8xMhCV33ensoUHYLn+DsXWA=",
-        "usagesDigest": "KSf9vXfosDpGwuZeSI2UEu0aboZvi2QWPQExtXYiXMw=",
+        "usagesDigest": "p4zEoA3yxHDfZI6Em7ff1/fttWfPccHMpPHS2H2v2pI=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1087,8 +1087,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-3455-g9638e97b",
-              "sha256": "7d6478d96c474f29f21e700f723d30b70d44e88686c3801688a22b35c35698e7",
+              "image": "docker.io/openroad/orfs:v3.0-3503-gd7c7e73f",
+              "sha256": "d5539ade517724de3765362589be443afb2624b14391b365612c8949a7c99a19",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -16570,7 +16570,7 @@
     "@@toolchains_llvm+//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
         "bzlTransitiveDigest": "n8WR0DxEQ5FgfuREm47KayUAJKtFHcMNZLKerT+ixFY=",
-        "usagesDigest": "ut1qxhMyPypzFBhIA+NHgzwFGWz/uvzn4lzy6tZgZoA=",
+        "usagesDigest": "VKQxj4MBsYty6GXafMItgMJRG2E9FbjgL/PDzLm5AX0=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -16585,7 +16585,7 @@
               "exec_os": "",
               "libclang_rt": {},
               "llvm_mirror": "",
-              "llvm_version": "20.1.0",
+              "llvm_version": "20.1.2",
               "llvm_versions": {},
               "netrc": "",
               "sha256": {},
@@ -16613,7 +16613,7 @@
               "link_flags": {},
               "link_libs": {},
               "llvm_versions": {
-                "": "20.1.0"
+                "": "20.1.2"
               },
               "opt_compile_flags": {},
               "opt_link_flags": {},

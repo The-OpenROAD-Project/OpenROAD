@@ -192,6 +192,7 @@ class OpenRoad
                         int bloat_factor,
                         bool bloat_occupied_layers);
 
+  void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
                 const string& version);

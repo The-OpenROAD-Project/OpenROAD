@@ -1138,7 +1138,7 @@ ConeDepthMapPinSet STAGuiInterface::getFaninCone(const sta::Pin* pin) const
                                   true);  // thru_constants
 
   ConeDepthMapPinSet depth_map;
-  for (auto& [level, pin_list] : getCone(pin, pins, true)) {
+  for (auto& [level, pin_list] : getCone(pin, std::move(pins), true)) {
     depth_map[-level].insert(pin_list.begin(), pin_list.end());
   }
 

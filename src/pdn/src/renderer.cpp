@@ -98,7 +98,7 @@ void PDNRenderer::update()
                                    channel.target->getName(),
                                    nets);
 
-        repair_.push_back(channel);
+        repair_.push_back(std::move(channel));
       }
     }
   }

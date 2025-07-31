@@ -1,7 +1,5 @@
 source ../script/user_env.tcl
 
-set golden_spef ../../test/generate_pattern.spefok
-
 read_lef $TECH_LEF
 
 read_def EXT/patterns.def

@@ -71,6 +71,10 @@ class PdnGen
                              odb::dbMTerm* switched_power,
                              odb::dbMTerm* alwayson_power,
                              odb::dbMTerm* ground);
+  const std::vector<std::unique_ptr<PowerCell>>& getSwitchedPowerCells() const
+  {
+    return switched_power_cells_;
+  }
 
   // Domains
   std::vector<VoltageDomain*> getDomains() const;
@@ -141,18 +145,19 @@ class PdnGen
                  StartsWith starts_with,
                  ExtensionMode extend,
                  const std::vector<odb::dbNet*>& nets);
-  void makeConnect(Grid* grid,
-                   odb::dbTechLayer* layer0,
-                   odb::dbTechLayer* layer1,
-                   int cut_pitch_x,
-                   int cut_pitch_y,
-                   const std::vector<odb::dbTechViaGenerateRule*>& vias,
-                   const std::vector<odb::dbTechVia*>& techvias,
-                   int max_rows,
-                   int max_columns,
-                   const std::vector<odb::dbTechLayer*>& ongrid,
-                   const std::map<odb::dbTechLayer*, int>& split_cuts,
-                   const std::string& dont_use_vias);
+  void makeConnect(
+      Grid* grid,
+      odb::dbTechLayer* layer0,
+      odb::dbTechLayer* layer1,
+      int cut_pitch_x,
+      int cut_pitch_y,
+      const std::vector<odb::dbTechViaGenerateRule*>& vias,
+      const std::vector<odb::dbTechVia*>& techvias,
+      int max_rows,
+      int max_columns,
+      const std::vector<odb::dbTechLayer*>& ongrid,
+      const std::map<odb::dbTechLayer*, std::pair<int, bool>>& split_cuts,
+      const std::string& dont_use_vias);
 
   void writeToDb(bool add_pins, const std::string& report_file = "") const;
   void ripUp(odb::dbNet* net);

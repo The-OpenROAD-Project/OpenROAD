@@ -95,7 +95,7 @@ class HistogramView : public QChartView
   int computeMaxYSnap(int largest_slack_count);
   int computeFirstDigit(int value, int digits);
 
-  utl::Logger* logger_;
+  utl::Logger* logger_{nullptr};
   STAGuiInterface* sta_{nullptr};
 
   QChart* chart_;

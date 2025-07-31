@@ -12,9 +12,11 @@
 
 #include "Hungarian.h"
 
+#include <algorithm>
 #include <cfloat>  // for DBL_MAX
 #include <cmath>   // for fabs()
 #include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <vector>
 

@@ -273,6 +273,12 @@ void dbITerm::clearConnected()
   iterm->_flags._connected = 0;
 }
 
+/*
+Warning: this does not do a reassociate. Specifically it will
+not make sure that every dbModNet has just one dbNet associated
+with it. To assure that, use dbNetwork::connectPin
+*/
+
 void dbITerm::connect(dbNet* db_net, dbModNet* db_mod_net)
 {
   connect(db_net);

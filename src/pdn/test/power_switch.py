@@ -44,7 +44,6 @@ pdn_aux.add_pdn_stripe(design, layer="met4", width=1.600, pitch=27.140, offset=1
 pdn_aux.add_pdn_stripe(design, layer="met5", width=1.600, pitch=27.200, offset=13.600)
 
 pdn_aux.add_pdn_connect(design, layers=["met1", "met4"])
-pdn_aux.add_pdn_connect(design, layers=["met2", "met4"])
 pdn_aux.add_pdn_connect(design, layers=["met4", "met5"])
 
 design.getPdnGen().report()

@@ -1707,7 +1707,7 @@ void RenderThread::drawIOPins(Painter& painter,
       } else {
         pin_specs.rect = odb::Rect();
       }
-      pin_text_spec.push_back(pin_specs);
+      pin_text_spec.push_back(std::move(pin_specs));
     }
   }
 
