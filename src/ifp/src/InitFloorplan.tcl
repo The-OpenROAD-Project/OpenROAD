@@ -358,7 +358,7 @@ proc make_polygon_die_helper { key_array } {
   array set keys $key_array
 
   if { ![info exists keys(-die_area)] } {
-    utl::error IFP 75 "no -die_polygon specified for polygon floorplan."
+    utl::error IFP 75 "no -die_area specified for polygon floorplan."
   }
   set die_vertices $keys(-die_area)
   if { [llength $die_vertices] % 2 != 0 } {

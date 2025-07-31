@@ -7,7 +7,7 @@ read_verilog reg1.v
 link_design top
 
 # Die: A U-shape with the bottom-left corner at the origin.
-set die_area  {0 300   400 300   400 0   300 0   300 200   100 200   100 0   0 0}
+set die_area {0 300   400 300   400 0   300 0   300 200   100 200   100 0   0 0}
 # Core: An inner U-shape, inset by 20 units from the die boundary.
 set core_area {20 280   380 280   380 20   320 20   320 220   80 220   80 20   20 20}
 

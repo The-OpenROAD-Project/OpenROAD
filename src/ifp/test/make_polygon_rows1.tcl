@@ -8,7 +8,7 @@ link_design top
 
 # # Die polygon – “horizontal” T (original T rotated 90° CCW)
 # # Die outline — horizontal-T, 8 vertices  
-set die_area  {0 0   100 0   100 150   300 150   300 250   100 250   100 400   0 400}
+set die_area {0 0   100 0   100 150   300 150   300 250   100 250   100 400   0 400}
 
 # Core outline — 20 µm margin inside the die, 8 vertices
 set core_area {20 20  80 20  80 170  260 170  260 230  80 230  80 380  20 380}
