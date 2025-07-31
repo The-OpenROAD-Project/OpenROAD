@@ -18,10 +18,10 @@
 
 #include "connection.h"
 #include "db_sta/dbNetwork.hh"
+#include "est/EstimateParasitics.h"
 #include "ir_network.h"
 #include "node.h"
 #include "odb/dbShape.h"
-#include "rsz/Resizer.hh"
 #include "shape.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -388,7 +388,7 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
                utl::PSM,
                "resistance",
                2,
-               "Resizer resistance for {} = {}",
+               "Estimate parasitics resistance for {} = {}",
                layer->getName(),
                res);
     if (res == 0.0) {
