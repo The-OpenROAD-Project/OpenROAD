@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "DataType.h"
+#include "Graph2D.h"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
@@ -252,7 +253,6 @@ class FastRouteCore
                      const CostParams& cost_params,
                      float& slack_th);
   void convertToMazeroute();
-  void updateCongestionHistory(int up_type, bool stop_decreasing, int& max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
@@ -261,9 +261,6 @@ class FastRouteCore
                          int& posY,
                          int dir,
                          int& radius);
-  void str_accu(int rnd);
-  void InitLastUsage(int upType);
-  void InitEstUsage();
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,
@@ -607,18 +604,17 @@ class FastRouteCore
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
   std::vector<OrderNetEdge> net_eo_;
-  std::vector<std::vector<int>>
-      gxs_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<int>>
-      gys_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<int>>
-      gs_;  // the copy of vertical sequence for nets, used for second FLUTE
+  // the copy of xs for nets, used for second FLUTE
+  std::vector<std::vector<int>> gxs_;
+  // the copy of xs for nets, used for second FLUTE
+  std::vector<std::vector<int>> gys_;
+  // the copy of vertical sequence for nets, used for second FLUTE
+  std::vector<std::vector<int>> gs_;
   std::vector<std::vector<Segment>> seglist_;  // indexed by netID, segID
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
-  multi_array<Edge, 2> v_edges_;       // The way it is indexed is (Y, X)
-  multi_array<Edge, 2> h_edges_;       // The way it is indexed is (Y, X)
+  Graph2D graph2d_;
   multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<int, 2> corr_edge_;
@@ -645,8 +641,6 @@ class FastRouteCore
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       horizontal_blocked_intervals_;
 
-  std::set<std::pair<int, int>> h_used_ggrid_;
-  std::set<std::pair<int, int>> v_used_ggrid_;
   std::vector<int> net_ids_;
 
   // Maze 3D variables

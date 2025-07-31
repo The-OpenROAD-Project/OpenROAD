@@ -42,6 +42,7 @@ cc_library(
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
+        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/RSMT.cpp",
         "src/fastroute/src/RipUp.cpp",
         "src/fastroute/src/maze.cpp",
@@ -52,6 +53,7 @@ cc_library(
     hdrs = [
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
+        "src/fastroute/include/Graph2D.h",
     ],
     includes = [
         "src/fastroute/include",
