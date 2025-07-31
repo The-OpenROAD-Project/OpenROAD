@@ -48,6 +48,8 @@ cc_library(
     srcs = [
         "src/EstimateParasitics.cpp",
         "src/MakeEstimateParasitics.cpp",
+        "src/MakeWireParasitics.cpp",
+        "src/MakeWireParasitics.h",
         "src/SteinerRenderer.cpp",
         "src/SteinerRenderer.h",
         "src/SteinerTree.cpp",
