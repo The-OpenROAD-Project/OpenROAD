@@ -256,7 +256,7 @@ void SACoreSoftMacro::restoreState()
 
   width_ = pre_width_;
   height_ = pre_height_;
-  
+
   outline_penalty_ = pre_outline_penalty_;
   wirelength_ = pre_wirelength_;
   guidance_penalty_ = pre_guidance_penalty_;
@@ -549,6 +549,8 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
+  // Macros need to be saved (and restored) since alignMacroClusters and
+  // fillDeadSpace move them
   std::vector<SoftMacro> pre_macros = macros_;
   // align macro clusters to reduce notches
   alignMacroClusters();
