@@ -953,10 +953,16 @@ proc set_opt_config { args } {
   }
 
   if { [info exists keys(-disable_buffer_pruning)] } {
-    rsz::set_boolean_prop $keys(-disable_buffer_pruning) "-disable_buffer_pruning" \
+    set disable_val $keys(-disable_buffer_pruning)
+    rsz::set_boolean_prop $disable_val "-disable_buffer_pruning" \
       "disable_buffer_pruning"
-    utl::info RSZ 165 \
-      "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
+    if { $disable_val } {
+      utl::info RSZ 165 \
+        "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
+    } else {
+      utl::info RSZ 167 \
+        "Buffer pruning will be enabled to optimize runtime and QoR for repair_design and repair_timing"
+    }
   }
 }
 
@@ -1058,7 +1064,8 @@ proc report_opt_config { args } {
     set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
   }
 
-  set disable_buffer_pruning "false"
+  # Temporary WA
+  set disable_buffer_pruning "true"
   set no_buffer_pruning [odb::dbBoolProperty_find $block "disable_buffer_pruning"]
   if { $no_buffer_pruning ne "NULL" && $no_buffer_pruning ne "" } {
     set no_buffer_pruning_value [$no_buffer_pruning getValue]

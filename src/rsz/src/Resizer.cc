@@ -339,13 +339,17 @@ void Resizer::initBlock()
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = disable_pruning_prop->getValue();
-  } else {
+  }
+  // Temporary WA: default is to disable buffer pruning
+#ifdef TEMP
+  else {
     if (disable_buffer_pruning_ != false) {
       swappable_cells_cache_.clear();
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
   }
+#endif
 }
 
 void Resizer::init()

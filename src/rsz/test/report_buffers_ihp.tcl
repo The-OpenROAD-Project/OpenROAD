@@ -7,10 +7,12 @@ read_lef ihp-sg13g2/sg13g2_stdcell.lef
 read_verilog gcd_ihp.v
 link gcd
 
+report_opt_config
+
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
 
-set_opt_config -disable_buffer_pruning true
+set_opt_config -disable_buffer_pruning false
 report_opt_config
 
 report_buffers -filtered
