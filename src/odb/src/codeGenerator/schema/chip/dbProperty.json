@@ -1,7 +1,6 @@
 {
   "name": "dbProperty",
   "type": "dbObject",
-  "needs_non_default_destructor" : "true",
   "do_not_generate_compare" : "true",
   "fields": [
     {

@@ -168,10 +168,6 @@ void _dbProperty::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
-_dbProperty::~_dbProperty()
-{
-}
-
 // User Code Begin PrivateMethods
 _dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
     : flags_(n.flags_),

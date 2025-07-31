@@ -44,8 +44,6 @@ class _dbProperty : public _dbObject
  public:
   _dbProperty(_dbDatabase*);
 
-  ~_dbProperty();
-
   bool operator==(const _dbProperty& rhs) const;
   bool operator!=(const _dbProperty& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbProperty& rhs) const;
