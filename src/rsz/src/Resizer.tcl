@@ -953,9 +953,10 @@ proc set_opt_config { args } {
   }
 
   if { [info exists keys(-disable_buffer_pruning)] } {
-    rsz::set_boolean_prop $keys(-disable_buffer_pruning) "-disable_buffer_pruning" "disable_buffer_pruning"
+    rsz::set_boolean_prop $keys(-disable_buffer_pruning) "-disable_buffer_pruning" \
+      "disable_buffer_pruning"
     utl::info RSZ 165 \
-      "Buffer pruning will be disabled to enable all buffers to be used for setup/hold/logical DRC fixing"
+      "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
   }
 }
 
