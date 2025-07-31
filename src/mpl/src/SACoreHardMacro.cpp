@@ -147,7 +147,8 @@ void SACoreHardMacro::perturb()
   calPenalty();
 }
 
-void SACoreHardMacro::saveState() {
+void SACoreHardMacro::saveState()
+{
   if (macros_.empty()) {
     return;
   }

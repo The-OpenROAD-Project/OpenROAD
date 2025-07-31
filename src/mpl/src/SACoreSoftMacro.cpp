@@ -211,7 +211,8 @@ void SACoreSoftMacro::perturb()
   calPenalty();
 }
 
-void SACoreSoftMacro::saveState() {
+void SACoreSoftMacro::saveState()
+{
   if (macros_.empty()) {
     return;
   }
@@ -241,7 +242,7 @@ void SACoreSoftMacro::restoreState()
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
 
-   if (action_id_ == 1) {
+  if (action_id_ == 1) {
     pos_seq_ = pre_pos_seq_;
   } else if (action_id_ == 2) {
     neg_seq_ = pre_neg_seq_;
