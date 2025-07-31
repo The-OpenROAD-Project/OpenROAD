@@ -54,7 +54,10 @@ cc_library(
     ],
     hdrs = [
         "include/est/AbstractSteinerRenderer.h",
+        "include/est/EstimateParasitics.h",
         "include/est/MakeEstimateParasitics.h",
+        "include/est/OdbCallBack.h",
+        "include/est/SteinerTree.h",
     ],
     copts = [
         "-Isrc/est/src",
