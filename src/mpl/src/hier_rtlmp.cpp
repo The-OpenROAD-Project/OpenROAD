@@ -7,10 +7,13 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <queue>
+#include <regex>
 #include <set>
 #include <string>
 #include <thread>
@@ -20,12 +23,15 @@
 #include "MplObserver.h"
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
+#include "SimulatedAnnealingCore.h"
+#include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
-#include "sta/Liberty.hh"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {

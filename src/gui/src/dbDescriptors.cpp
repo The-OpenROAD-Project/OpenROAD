@@ -22,6 +22,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "options.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -624,6 +625,23 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     props.push_back({"Scan Inst", gui->makeSelected(scan_inst)});
   }
 
+  Descriptor::PropertyList obs_layers;
+  const auto xform = inst->getTransform();
+  for (auto* obs : inst->getMaster()->getObstructions()) {
+    if (auto* layer = obs->getTechLayer()) {
+      obs_layers.push_back(
+          {gui->makeSelected(layer),
+           gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform})});
+    } else if (auto* via = obs->getTechVia()) {
+      obs_layers.push_back(
+          {gui->makeSelected(via),
+           gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform})});
+    }
+  }
+  if (!obs_layers.empty()) {
+    props.push_back({"Obstructions", obs_layers});
+  }
+
   return props;
 }
 
@@ -1024,7 +1042,7 @@ void DbNetDescriptor::findSourcesAndSinks(
             }
 
             if (!term_targets.empty()) {
-              targets.push_back(term_targets);
+              targets.push_back(std::move(term_targets));
             }
           }
         };
@@ -1039,7 +1057,7 @@ void DbNetDescriptor::findSourcesAndSinks(
               term_targets.emplace(rect, box->getTechLayer());
             }
             if (!term_targets.empty()) {
-              targets.push_back(term_targets);
+              targets.push_back(std::move(term_targets));
             }
           }
         };
@@ -4186,6 +4204,19 @@ Descriptor::Properties DbSiteDescriptor::getDBProperties(
   }
   props.push_back({"Symmetry", symmetry});
 
+  auto* gui = Gui::get();
+  SelectionSet masters;
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      if (master->getSite() == site) {
+        masters.insert(gui->makeSelected(master));
+      }
+    }
+  }
+  if (!masters.empty()) {
+    props.push_back({"Masters", masters});
+  }
+
   return props;
 }
 
@@ -4630,6 +4661,409 @@ Descriptor::Property DbScanInstDescriptor::getScanPinProperty(
              pin);
 
   return property;
+}
+
+//////////////////////////////////////////////////
+
+DbScanListDescriptor::DbScanListDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanList>(db)
+{
+}
+
+std::string DbScanListDescriptor::getName(std::any object) const
+{
+  return "Scan List";
+}
+
+std::string DbScanListDescriptor::getTypeName() const
+{
+  return "Scan List";
+}
+
+bool DbScanListDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto scan_list = getObject(object);
+  bbox.mergeInit();
+
+  for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
+    odb::dbInst* inst = scan_inst->getInst();
+    if (inst->getPlacementStatus().isPlaced()) {
+      bbox.merge(inst->getBBox()->getBox());
+    }
+  }
+
+  return !bbox.isInverted();
+}
+
+void DbScanListDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto scan_list = getObject(object);
+
+  for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
+    odb::dbInst* inst = scan_inst->getInst();
+    if (inst->getPlacementStatus().isPlaced()) {
+      auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+      inst_descriptor->highlight(scan_inst->getInst(), painter);
+    }
+  }
+}
+
+bool DbScanListDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    for (auto* scan_partition : scan_chain->getScanPartitions()) {
+      for (auto* scan_list : scan_partition->getScanLists()) {
+        objects.insert(makeSelected(scan_list));
+      }
+    }
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanListDescriptor::getDBProperties(
+    odb::dbScanList* scan_list) const
+{
+  Properties props;
+
+  auto gui = Gui::get();
+
+  SelectionSet scan_insts;
+  for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
+    scan_insts.insert(gui->makeSelected(scan_inst));
+  }
+  props.push_back({"Scan Insts", scan_insts});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbScanPartitionDescriptor::DbScanPartitionDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanPartition>(db)
+{
+}
+
+std::string DbScanPartitionDescriptor::getName(std::any object) const
+{
+  auto scan_partition = getObject(object);
+  return scan_partition->getName();
+}
+
+std::string DbScanPartitionDescriptor::getTypeName() const
+{
+  return "Scan Partition";
+}
+
+bool DbScanPartitionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto scan_partition = getObject(object);
+  auto* scan_list_descriptor = Gui::get()->getDescriptor<odb::dbScanList*>();
+  bbox.mergeInit();
+
+  for (auto* scan_list : scan_partition->getScanLists()) {
+    odb::Rect scan_list_bbox;
+    if (scan_list_descriptor->getBBox(scan_list, scan_list_bbox)) {
+      bbox.merge(scan_list_bbox);
+    }
+  }
+
+  return !bbox.isInverted();
+}
+
+void DbScanPartitionDescriptor::highlight(std::any object,
+                                          Painter& painter) const
+{
+  auto scan_partition = getObject(object);
+
+  for (auto* scan_list : scan_partition->getScanLists()) {
+    auto* scan_list_descriptor = Gui::get()->getDescriptor<odb::dbScanList*>();
+    scan_list_descriptor->highlight(scan_list, painter);
+  }
+}
+
+bool DbScanPartitionDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    for (auto* scan_partition : scan_chain->getScanPartitions()) {
+      objects.insert(makeSelected(scan_partition));
+    }
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanPartitionDescriptor::getDBProperties(
+    odb::dbScanPartition* scan_partition) const
+{
+  Properties props;
+
+  auto gui = Gui::get();
+
+  SelectionSet scan_lists;
+  for (odb::dbScanList* scan_list : scan_partition->getScanLists()) {
+    scan_lists.insert(gui->makeSelected(scan_list));
+  }
+  props.push_back({"Scan Lists", scan_lists});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbScanChainDescriptor::DbScanChainDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbScanChain>(db)
+{
+}
+
+std::string DbScanChainDescriptor::getName(std::any object) const
+{
+  auto scan_chain = getObject(object);
+  return scan_chain->getName();
+}
+
+std::string DbScanChainDescriptor::getTypeName() const
+{
+  return "Scan Chain";
+}
+
+bool DbScanChainDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto scan_chain = getObject(object);
+  auto* scan_partition_descriptor
+      = Gui::get()->getDescriptor<odb::dbScanPartition*>();
+  bbox.mergeInit();
+
+  for (auto* scan_partition : scan_chain->getScanPartitions()) {
+    odb::Rect scan_partition_bbox;
+    if (scan_partition_descriptor->getBBox(scan_partition,
+                                           scan_partition_bbox)) {
+      bbox.merge(scan_partition_bbox);
+    }
+  }
+
+  return !bbox.isInverted();
+}
+
+void DbScanChainDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto scan_chain = getObject(object);
+
+  for (auto* scan_partition : scan_chain->getScanPartitions()) {
+    auto* scan_partition_descriptor
+        = Gui::get()->getDescriptor<odb::dbScanPartition*>();
+    scan_partition_descriptor->highlight(scan_partition, painter);
+  }
+}
+
+bool DbScanChainDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* db_dft = block->getDft();
+
+  for (auto* scan_chain : db_dft->getScanChains()) {
+    objects.insert(makeSelected(scan_chain));
+  }
+
+  return true;
+}
+
+Descriptor::Properties DbScanChainDescriptor::getDBProperties(
+    odb::dbScanChain* scan_chain) const
+{
+  Properties props;
+
+  props.push_back(
+      DbScanInstDescriptor::getScanPinProperty("In", scan_chain->getScanIn()));
+  props.push_back(DbScanInstDescriptor::getScanPinProperty(
+      "Out", scan_chain->getScanOut()));
+  props.push_back(DbScanInstDescriptor::getScanPinProperty(
+      "Enable", scan_chain->getScanEnable()));
+
+  auto gui = Gui::get();
+
+  SelectionSet scan_partitions;
+  for (auto* scan_partition : scan_chain->getScanPartitions()) {
+    scan_partitions.insert(gui->makeSelected(scan_partition));
+  }
+  props.push_back({"Scan Partitions", scan_partitions});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbBoxDescriptor::DbBoxDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbBox>(db)
+{
+}
+
+std::string DbBoxDescriptor::getName(std::any object) const
+{
+  odb::Rect box;
+  getBBox(object, box);
+
+  std::string shape_text
+      = fmt::format("({}, {}), ({}, {})",
+                    Property::convert_dbu(box.xMin(), false),
+                    Property::convert_dbu(box.yMin(), false),
+                    Property::convert_dbu(box.xMax(), false),
+                    Property::convert_dbu(box.yMax(), false));
+
+  return fmt::format("Box of {}: {}",
+                     getObject(object)->getOwnerType().getString(),
+                     shape_text);
+}
+
+std::string DbBoxDescriptor::getTypeName() const
+{
+  return "Box";
+}
+
+bool DbBoxDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  bbox = getObject(object)->getBox();
+  const auto xform = getTransform(object);
+  xform.apply(bbox);
+  return true;
+}
+
+Selected DbBoxDescriptor::makeSelected(std::any object) const
+{
+  Selected box_selected = BaseDbDescriptor::makeSelected(object);
+  if (box_selected) {
+    return box_selected;
+  }
+
+  if (auto box = std::any_cast<BoxWithTransform>(&object)) {
+    return Selected(*box, this);
+  }
+  return Selected();
+}
+
+void DbBoxDescriptor::highlight(std::any object, Painter& painter) const
+{
+  odb::Rect bbox = getObject(object)->getBox();
+  const auto xform = getTransform(object);
+  xform.apply(bbox);
+
+  painter.drawRect(bbox);
+}
+
+bool DbBoxDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  return false;
+}
+
+bool DbBoxDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_net = getObject(l);
+  auto r_net = getObject(r);
+  return BaseDbDescriptor::lessThan(l_net, r_net);
+}
+
+Descriptor::Properties DbBoxDescriptor::getDBProperties(odb::dbBox* box) const
+{
+  Properties props;
+
+  auto* gui = Gui::get();
+
+  switch (box->getOwnerType()) {
+    case odb::dbBoxOwner::BLOCK:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbBlock*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::INST:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbInst*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::BTERM:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbBTerm*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::BPIN:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbBPin*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::VIA:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbVia*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::OBSTRUCTION:
+      props.push_back(
+          {"Owner",
+           gui->makeSelected((odb::dbObstruction*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::BLOCKAGE:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbBlockage*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::SWIRE:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbSWire*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::MASTER:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbMaster*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::MPIN:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbMPin*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::PBOX:
+      props.push_back({"Owner", "PBOX"});
+      break;
+    case odb::dbBoxOwner::TECH_VIA:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbTechVia*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::REGION:
+      props.push_back(
+          {"Owner", gui->makeSelected((odb::dbRegion*) box->getBoxOwner())});
+      break;
+    case odb::dbBoxOwner::UNKNOWN:
+      props.push_back({"Owner", "Unknown"});
+      break;
+  }
+
+  if (auto* layer = box->getTechLayer()) {
+    props.push_back({"Layer", gui->makeSelected(layer)});
+    if (box->getLayerMask() > 0) {
+      props.push_back({"Mask", box->getLayerMask()});
+    }
+    props.push_back({"Design rule width",
+                     Property::convert_dbu(box->getDesignRuleWidth(), true)});
+  } else if (auto* via = box->getTechVia()) {
+    props.push_back({"Tech via", gui->makeSelected(via)});
+  } else if (auto* via = box->getBlockVia()) {
+    props.push_back({"Block via", gui->makeSelected(via)});
+  }
+
+  return props;
+}
+
+odb::dbBox* DbBoxDescriptor::getObject(const std::any& object) const
+{
+  odb::dbBox* const* box = std::any_cast<odb::dbBox*>(&object);
+  if (box != nullptr) {
+    return *box;
+  }
+  return std::any_cast<BoxWithTransform>(object).box;
+}
+
+odb::dbTransform DbBoxDescriptor::getTransform(const std::any& object) const
+{
+  const BoxWithTransform* box_xform = std::any_cast<BoxWithTransform>(&object);
+  if (box_xform != nullptr) {
+    return box_xform->xform;
+  }
+  return odb::dbTransform();
 }
 
 }  // namespace gui

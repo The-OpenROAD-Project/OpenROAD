@@ -60,8 +60,6 @@ void detailed_route_cmd(const char* outputMazeFile,
                         const char* viaAccessLayer,
                         int orSeed,
                         double orK,
-                        const char* bottomRoutingLayer,
-                        const char* topRoutingLayer,
                         int verbose,
                         bool cleanPatches,
                         bool noPa,
@@ -90,8 +88,6 @@ void detailed_route_cmd(const char* outputMazeFile,
                     viaAccessLayer,
                     orSeed,
                     orK,
-                    bottomRoutingLayer,
-                    topRoutingLayer,
                     verbose,
                     cleanPatches,
                     !noPa,
@@ -105,8 +101,6 @@ void detailed_route_cmd(const char* outputMazeFile,
 }
 
 void pin_access_cmd(const char* dbProcessNode,
-                    const char* bottomRoutingLayer,
-                    const char* topRoutingLayer,
                     const char* viaAccessLayer,
                     int verbose,
                     int minAccessPoints,
@@ -116,8 +110,6 @@ void pin_access_cmd(const char* dbProcessNode,
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   drt::ParamStruct params;
   params.dbProcessNode = dbProcessNode;
-  params.bottomRoutingLayer = bottomRoutingLayer;
-  params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
   params.viaAccessLayer = viaAccessLayer;
   params.minAccessPoints = minAccessPoints;

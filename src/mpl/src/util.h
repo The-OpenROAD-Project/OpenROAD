@@ -3,13 +3,18 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <limits>
 #include <map>
 #include <string>
-#include <utility>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shapes.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 struct BoundaryRegion;

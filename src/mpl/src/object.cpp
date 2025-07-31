@@ -6,12 +6,16 @@
 #include <algorithm>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "util.h"
 #include "utl/Logger.h"
 

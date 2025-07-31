@@ -44,12 +44,9 @@ using Requireds = std::array<Required, RiseFall::index_count>;
 class FixedDelay
 {
  public:
-  explicit FixedDelay(sta::Delay float_value)
-  {
-    value_fs_ = float_value * second_;
-  }
-
-  sta::Delay toSeconds() { return ((float) value_fs_) / second_; }
+  FixedDelay();
+  explicit FixedDelay(sta::Delay float_value, Resizer* resizer);
+  sta::Delay toSeconds() const { return ((float) value_fs_) / second_; }
 
   // 100 seconds
   static const FixedDelay INF;
@@ -94,7 +91,7 @@ class FixedDelay
  private:
   static FixedDelay fromFs(int64_t v)
   {
-    FixedDelay ret(0);
+    FixedDelay ret;
     ret.value_fs_ = v;
     return ret;
   }
