@@ -13,8 +13,8 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -1239,20 +1239,9 @@ void FastRouteCore::StNetOrder()
 
 float FastRouteCore::CalculatePartialSlack()
 {
-  estimate_parasitics_->clearParasitics();
-  auto partial_routes = getPlanarRoutes();
-
   std::vector<float> slacks;
   slacks.reserve(netCount());
-  for (auto& net_route : partial_routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
-    if (!route.empty()) {
-      // TODO: remove the EstimateParasitics dependency and update the
-      // parasitics using callbacks
-      estimate_parasitics_->estimateGlobalRouteParasitics(db_net, route);
-    }
-  }
+  db_->getChip()->getBlock()->updateParasitics();
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();

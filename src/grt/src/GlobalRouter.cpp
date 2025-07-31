@@ -34,7 +34,6 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
 #include "grt/GRoute.h"
 #include "grt/Rudy.h"
 #include "odb/db.h"
@@ -59,7 +58,6 @@ GlobalRouter::GlobalRouter()
       stt_builder_(nullptr),
       antenna_checker_(nullptr),
       opendp_(nullptr),
-      estimate_parasitics_(nullptr),
       fastroute_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
@@ -91,7 +89,6 @@ void GlobalRouter::init(utl::Logger* logger,
                         stt::SteinerTreeBuilder* stt_builder,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
-                        est::EstimateParasitics* estimate_parasitics,
                         ant::AntennaChecker* antenna_checker,
                         dpl::Opendp* opendp,
                         std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -106,9 +103,8 @@ void GlobalRouter::init(utl::Logger* logger,
   antenna_checker_ = antenna_checker;
   opendp_ = opendp;
   sta_ = sta;
-  estimate_parasitics_ = estimate_parasitics;
   fastroute_ = new FastRouteCore(
-      db_, logger_, stt_builder_, estimate_parasitics_, sta_);
+      db_, logger_, stt_builder_, sta_);
 
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
@@ -194,6 +190,16 @@ void GlobalRouter::saveCongestion()
 {
   is_congested_ = fastroute_->totalOverflow() > 0;
   fastroute_->saveCongestion();
+}
+
+NetRouteMap& GlobalRouter::getRoutes()
+{
+  partial_routes_.clear();
+  if (routes_.empty()) {
+    partial_routes_ = fastroute_->getPlanarRoutes();
+    return partial_routes_;
+  }
+  return routes_;
 }
 
 bool GlobalRouter::haveRoutes()

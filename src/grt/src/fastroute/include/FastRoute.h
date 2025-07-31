@@ -37,10 +37,6 @@ namespace gui {
 class Gui;
 }
 
-namespace est {
-class EstimateParasitics;
-}
-
 namespace sta {
 class dbSta;
 }
@@ -94,7 +90,6 @@ class FastRouteCore
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
                 stt::SteinerTreeBuilder* stt_builder,
-                est::EstimateParasitics* estimate_parasitics,
                 sta::dbSta* sta);
   ~FastRouteCore();
 
@@ -233,6 +228,8 @@ class FastRouteCore
     return debug_->renderer.get();
   }
 
+  NetRouteMap getPlanarRoutes();
+
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
@@ -241,7 +238,6 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  NetRouteMap getPlanarRoutes();
 
   // maze functions
   // Maze-routing in different orders
@@ -640,7 +636,6 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* sta_;
 
   std::unique_ptr<DebugSetting> debug_;

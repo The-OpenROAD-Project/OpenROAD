@@ -24,7 +24,6 @@ using utl::GRT;
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
                              stt::SteinerTreeBuilder* stt_builder,
-                             est::EstimateParasitics* estimate_parasitics,
                              sta::dbSta* sta)
     : max_degree_(0),
       db_(db),
@@ -59,7 +58,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       regular_y_(false),
       logger_(log),
       stt_builder_(stt_builder),
-      estimate_parasitics_(estimate_parasitics),
       sta_(sta),
       debug_(new DebugSetting())
 {

@@ -44,10 +44,6 @@ namespace dpl {
 class Opendp;
 }
 
-namespace est {
-class EstimateParasitics;
-}  // namespace est
-
 namespace sta {
 class dbSta;
 class dbNetwork;
@@ -117,7 +113,6 @@ class GlobalRouter
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            est::EstimateParasitics* estimate_parasitics,
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -175,7 +170,7 @@ class GlobalRouter
                    bool start_incremental = false,
                    bool end_incremental = false);
   void saveCongestion();
-  NetRouteMap& getRoutes() { return routes_; }
+  NetRouteMap& getRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
   bool isNonLeafClock(odb::dbNet* db_net);
@@ -440,12 +435,12 @@ class GlobalRouter
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
-  est::EstimateParasitics* estimate_parasitics_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
+  NetRouteMap partial_routes_;
 
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
