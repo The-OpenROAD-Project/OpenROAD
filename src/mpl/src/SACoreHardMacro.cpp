@@ -159,7 +159,7 @@ void SACoreHardMacro::saveState()
 
   pre_width_ = width_;
   pre_height_ = height_;
-  
+
   pre_outline_penalty_ = outline_penalty_;
   pre_wirelength_ = wirelength_;
   pre_guidance_penalty_ = guidance_penalty_;
