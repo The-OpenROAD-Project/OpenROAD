@@ -13,7 +13,6 @@ cc_library(
     name = "est",
     srcs = [
         "src/EstimateParasitics.cpp",
-        "src/MakeEstimateParasitics.cpp",
         "src/MakeWireParasitics.cpp",
         "src/MakeWireParasitics.h",
         "src/OdbCallBack.cpp",
@@ -22,11 +21,44 @@ cc_library(
         "src/SteinerTree.cpp",
     ],
     hdrs = [
-        "include/est/AbstractSteinerRenderer.h",
         "include/est/EstimateParasitics.h",
-        "include/est/MakeEstimateParasitics.h",
         "include/est/OdbCallBack.h",
         "include/est/SteinerTree.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/grt:types",
+        "//src/gui",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
+        "@boost.container_hash",
+        "@boost.multi_array",
+        "@spdlog",
+        "@tk_tcl//:tcl",
+    ],
+)
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/EstimateParasitics.cpp",
+        "src/MakeEstimateParasitics.cpp",
+        "src/SteinerRenderer.cpp",
+        "src/SteinerRenderer.h",
+        "src/SteinerTree.cpp",
+    ],
+    hdrs = [
+        "include/est/AbstractSteinerRenderer.h",
+        "include/est/MakeEstimateParasitics.h",
+    ],
+    copts = [
+        "-Isrc/est/src",
+        "-Wno-missing-braces",  # from TCL swigging
+        "-fopenmp",
     ],
     includes = [
         "include",
