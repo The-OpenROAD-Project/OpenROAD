@@ -292,6 +292,9 @@ void EstimateParasitics::initBlock()
   }
 
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
+  if (!db_cbk_->hasOwner()) {
+    db_cbk_->addOwner(block_);
+  }
 }
 
 void EstimateParasitics::ensureParasitics()

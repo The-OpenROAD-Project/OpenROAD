@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "est/EstimateParasitics.h"
+#include "grt/GlobalRouter.h"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 
@@ -135,6 +136,15 @@ void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
       odb::dbNet* db_net = db_network_->flatNet(net);
       estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_net));
     }
+  }
+}
+
+void OdbCallBack::inDbEstimateParasiticsRequired()
+{
+  estimate_parasitics_->clearParasitics();
+  auto routes = estimate_parasitics_->getGlobalRouter()->getRoutes();
+  for (auto& [db_net, route] : routes) {
+    estimate_parasitics_->estimateGlobalRouteParasitics(db_net, route);
   }
 }
 
