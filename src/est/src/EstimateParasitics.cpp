@@ -453,7 +453,7 @@ void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
   }
   grt::GRoute& route = iter->second;
   if (!route.empty()) {
-    builder.estimateParasitics(db_net, route);
+    builder.estimateParasitics(db_net, route, nullptr);
   }
 }
 
