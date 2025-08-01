@@ -198,7 +198,7 @@ LibertyCell* RepairHold::findHoldBuffer()
 // common   7 nm:  DLY
 //         12 nm:  DLY
 // skywater130hs:  dlygate
-bool isDelayCell(std::string cell_name)
+bool isDelayCell(const std::string& cell_name)
 {
   if (!cell_name.empty()
       && (cell_name.find("DEL") != std::string::npos
