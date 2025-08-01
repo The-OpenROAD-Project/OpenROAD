@@ -106,7 +106,7 @@ struct SlackEstimatorParams
 class BaseMove : public sta::dbStaState
 {
  public:
-  BaseMove(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
+  BaseMove(Resizer* resizer);
   ~BaseMove() override = default;
 
   virtual bool doMove(const Path* drvr_path,

@@ -28,9 +28,7 @@ using sta::Slew;
 using sta::TimingArc;
 using sta::Vertex;
 
-BufferMove::BufferMove(Resizer* resizer,
-                       est::EstimateParasitics* estimate_parasitics)
-    : BaseMove(resizer, estimate_parasitics)
+BufferMove::BufferMove(Resizer* resizer) : BaseMove(resizer)
 {
 }
 

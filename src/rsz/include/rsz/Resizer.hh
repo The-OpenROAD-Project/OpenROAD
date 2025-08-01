@@ -426,6 +426,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(Pin* pin);
 
+  est::EstimateParasitics* getEstimateParasitics()
+  {
+    return estimate_parasitics_;
+  }
+
  protected:
   void init();
   double computeDesignArea();

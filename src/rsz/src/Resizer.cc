@@ -150,14 +150,13 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
-  buffer_move_ = std::make_unique<BufferMove>(this, estimate_parasitics_);
-  clone_move_ = std::make_unique<CloneMove>(this, estimate_parasitics_);
-  size_down_move_ = std::make_unique<SizeDownMove>(this, estimate_parasitics_);
-  size_up_move_ = std::make_unique<SizeUpMove>(this, estimate_parasitics_);
-  split_load_move_
-      = std::make_unique<SplitLoadMove>(this, estimate_parasitics_);
-  swap_pins_move_ = std::make_unique<SwapPinsMove>(this, estimate_parasitics_);
-  unbuffer_move_ = std::make_unique<UnbufferMove>(this, estimate_parasitics_);
+  buffer_move_ = std::make_unique<BufferMove>(this);
+  clone_move_ = std::make_unique<CloneMove>(this);
+  size_down_move_ = std::make_unique<SizeDownMove>(this);
+  size_up_move_ = std::make_unique<SizeUpMove>(this);
+  split_load_move_ = std::make_unique<SplitLoadMove>(this);
+  swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
+  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this, estimate_parasitics_);
   repair_design_ = std::make_unique<RepairDesign>(this, estimate_parasitics_);

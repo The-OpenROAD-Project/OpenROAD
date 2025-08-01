@@ -44,11 +44,10 @@ using sta::VertexOutEdgeIterator;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
-BaseMove::BaseMove(Resizer* resizer,
-                   est::EstimateParasitics* estimate_parasitics)
+BaseMove::BaseMove(Resizer* resizer)
 {
   resizer_ = resizer;
-  estimate_parasitics_ = estimate_parasitics;
+  estimate_parasitics_ = resizer_->getEstimateParasitics();
   logger_ = resizer_->logger_;
   network_ = resizer_->network_;
   db_ = resizer_->db_;

@@ -28,7 +28,7 @@ using sta::Vertex;
 class BufferMove : public BaseMove
 {
  public:
-  BufferMove(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
+  BufferMove(Resizer* resizer);
 
   bool doMove(const Path* drvr_path,
               int drvr_index,
