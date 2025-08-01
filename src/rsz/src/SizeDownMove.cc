@@ -9,7 +9,10 @@
 
 #include "BaseMove.hh"
 #include "ord/Timing.h"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/DelayFloat.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/PortDirection.hh"
 
 namespace rsz {
 
@@ -180,7 +183,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
   LibertyCell* load_cell = load_port->libertyCell();
   const char* load_port_name = load_port->name();
 
-  LibertyCellSeq swappable_cells = getSwappableCells(load_cell);
+  LibertyCellSeq swappable_cells = BaseMove::getSwappableCells(load_cell);
   LibertyCell* best_cell = nullptr;
 
   if (swappable_cells.size() > 1) {
@@ -309,57 +312,24 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
       continue;
     }
 
-    // Max capacitance checking
+    // Max capacitance and slew checking
     bool skip_cell = false;
     for (int i = 0; i < output_pins.size(); i++) {
       LibertyPort* output_port
           = swappable->findLibertyPort(output_port_names[i]);
-      float max_cap;
-      bool cap_limit_exists;
-      output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
-      debugPrint(logger_,
-                 RSZ,
-                 "size_down",
-                 3,
-                 " fanout pin {} cap {} new_cap {} ",
-                 output_port_names[i],
-                 max_cap,
-                 new_input_cap);
 
-      if (cap_limit_exists && max_cap > 0.0 && output_caps[i] > max_cap) {
-        debugPrint(logger_,
-                   RSZ,
-                   "size_down",
-                   2,
-                   "  skip based on max cap {} gate={} cap={} max_cap={}",
-                   network_->pathName(load_pin),
-                   swappable->name(),
-                   output_caps[i],
-                   max_cap);
+      // Check for max capacitance violation
+      if (checkMaxCapViolation(output_pins[i], output_port, output_caps[i])) {
         skip_cell = true;
         break;
       }
-      // Max slew checking
-      float output_res = output_port->driveResistance();
-      float output_slew = output_slew_factors[i] * output_res * output_caps[i];
-      float max_slew;
-      bool slew_limit_exists;
-      sta_->findSlewLimit(output_port,
-                          dcalc_ap->corner(),
-                          resizer_->max_,
-                          max_slew,
-                          slew_limit_exists);
 
-      if (output_slew > max_slew) {
-        debugPrint(logger_,
-                   RSZ,
-                   "size_down",
-                   2,
-                   "  skip based on max slew {} gate={} slew={} max_slew={}",
-                   network_->pathName(load_pin),
-                   swappable->name(),
-                   output_slew,
-                   max_slew);
+      // Check for max slew violation
+      if (checkMaxSlewViolation(output_pins[i],
+                                output_port,
+                                output_slew_factors[i],
+                                output_caps[i],
+                                dcalc_ap)) {
         skip_cell = true;
         break;
       }
@@ -374,8 +344,8 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
     // not just the critical one. This prevents missing timing violations
     // that could emerge on previously non-critical paths after downsizing.
 
-    float drvr_delta_delay
-        = computeDriverDelayChange(drvr_port, load_input_cap, new_input_cap);
+    float drvr_res = drvr_port->driveResistance();
+    float drvr_delta_delay = -drvr_res * (load_input_cap - new_input_cap);
     float worst_delay_change = -sta::INF;
 
     // Check delay change for each output pin
@@ -437,9 +407,9 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
                           = old_input_port->cornerPort(lib_ap)->capacitance();
                       float new_cap
                           = new_input_port->cornerPort(lib_ap)->capacitance();
-                      float other_drvr_delta = computeDriverDelayChange(
-                          other_drvr_port, old_cap, new_cap);
-
+                      float other_drvr_res = other_drvr_port->driveResistance();
+                      float other_drvr_delta
+                          = -other_drvr_res * (old_cap - new_cap);
                       // Gate delay change is the same for all inputs since
                       // gateDelay considers the worst-case input timing
                       input_delay_change
@@ -534,32 +504,6 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
     return best_cell;
   }
   return nullptr;
-}
-
-LibertyCellSeq SizeDownMove::getSwappableCells(LibertyCell* base)
-{
-  if (base->isBuffer()) {
-    // Do this once to populate the set
-    if (buffer_sizes_.empty()) {
-      for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
-        buffer_sizes_.push_back(buffer);
-      }
-    }
-    if (resizer_->buffer_fast_sizes_.count(base) == 0) {
-      return LibertyCellSeq();
-    }
-    return buffer_sizes_;
-  }
-  return resizer_->getSwappableCells(base);
-}
-
-// Helper function implementation
-float SizeDownMove::computeDriverDelayChange(const LibertyPort* drvr_port,
-                                             float old_cap,
-                                             float new_cap)
-{
-  float drvr_res = drvr_port->driveResistance();
-  return -drvr_res * (old_cap - new_cap);
 }
 
 }  // namespace rsz

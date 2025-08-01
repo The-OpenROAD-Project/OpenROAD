@@ -36,14 +36,6 @@ class SizeDownMove : public BaseMove
                             const Pin* load_pin,
                             const DcalcAnalysisPt* dcalc_ap,
                             float slack_margin);
-
-  // Helper function for cleaner code structure
-  float computeDriverDelayChange(const LibertyPort* drvr_port,
-                                 float old_cap,
-                                 float new_cap);
-
-  LibertyCellSeq getSwappableCells(LibertyCell* base);
-  LibertyCellSeq buffer_sizes_;
 };
 
 }  // namespace rsz
