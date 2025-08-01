@@ -129,6 +129,12 @@ void RepairHold::repairHold(const Pin* end_pin,
   }
 }
 
+LibertyCell* RepairHold::reportHoldBuffer()
+{
+  init();
+  return findHoldBuffer();
+}
+
 // Find a good hold buffer using delay/area as the metric.
 LibertyCell* RepairHold::findHoldBuffer()
 {
@@ -139,7 +145,16 @@ LibertyCell* RepairHold::findHoldBuffer()
     LibertyCell* cell;
   };
   std::vector<MetricBuffer> buffers;
-  for (LibertyCell* buffer : resizer_->buffer_cells_) {
+  LibertyCellSeq* hold_buffers = nullptr;
+  LibertyCellSeq buffer_list;
+  if (resizer_->disable_buffer_pruning_) {
+    hold_buffers = &resizer_->buffer_cells_;
+  } else {
+    filterHoldBuffers(buffer_list);
+    hold_buffers = &buffer_list;
+  }
+
+  for (LibertyCell* buffer : *hold_buffers) {
     const float buffer_area = buffer->area();
     if (buffer_area != 0.0) {
       const float buffer_cost = bufferHoldDelay(buffer) / buffer_area;
@@ -176,6 +191,58 @@ LibertyCell* RepairHold::findHoldBuffer()
   }
 
   return best_buffer.cell;
+}
+
+void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
+{
+  LibertyCellSeq buffer_list;
+  LibraryAnalysisData lib_data;
+  resizer_->getBufferList(buffer_list, lib_data);
+
+  // Pick the least leaky VT for multiple VTs
+  int best_vt_index = -1;
+  int num_vt = lib_data.sorted_vt_categories.size();
+  if (num_vt > 0) {
+    best_vt_index = lib_data.sorted_vt_categories[0].first.vt_index;
+  }
+
+  // Pick the shortest cell site because this offers the most flexibility for
+  // hold fixing
+  int smallestHt = std::numeric_limits<int>::max();
+  odb::dbSite* smallest_site = nullptr;
+  for (const auto& site_data : lib_data.cells_by_site) {
+    int height = site_data.first->getHeight();
+    if (height < smallestHt) {
+      smallestHt = height;
+      smallest_site = site_data.first;
+    }
+  }
+
+  for (LibertyCell* buffer : buffer_list) {
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+
+    bool site_matches = master->getSite() == smallest_site;
+
+    auto vt_type = resizer_->cellVTType(master);
+    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+
+    // Use DELAY cell footprint if available
+    // These are the known cell attributes in existing PDKs
+    // We want to match DLY1/DLY2/DLY4 with DLY
+    const char* footprint_cstr = buffer->footprint();
+    std::string footprint = footprint_cstr ? footprint_cstr : "";
+    bool footprint_matches
+        = lib_data.cells_by_footprint.size() <= 1
+          || (!footprint.empty()
+              && (footprint.find("DLY") != std::string::npos
+                  || footprint.find("DEL") != std::string::npos
+                  || footprint.find("delay") != std::string::npos));
+
+    if (site_matches && vt_matches && footprint_matches) {
+      hold_buffers.emplace_back(buffer);
+      logger_->report("{} added to hold buffer", buffer->name());
+    }
+  }
 }
 
 float RepairHold::bufferHoldDelay(LibertyCell* buffer)

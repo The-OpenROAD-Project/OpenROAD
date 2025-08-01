@@ -20,6 +20,7 @@ using sta::dbNetwork;
 using sta::dbSta;
 using sta::Delay;
 using sta::LibertyCell;
+using sta::LibertyCellSeq;
 using sta::MinMax;
 using sta::Pin;
 using sta::PinSeq;
@@ -49,10 +50,12 @@ class RepairHold : public sta::dbStaState
                   float max_buffer_percent,
                   int max_passes);
   int holdBufferCount() const { return inserted_buffer_count_; }
+  LibertyCell* reportHoldBuffer();
 
  private:
   void init();
   LibertyCell* findHoldBuffer();
+  void filterHoldBuffers(LibertyCellSeq& hold_buffers);
   float bufferHoldDelay(LibertyCell* buffer);
   void bufferHoldDelays(LibertyCell* buffer,
                         // Return values.
