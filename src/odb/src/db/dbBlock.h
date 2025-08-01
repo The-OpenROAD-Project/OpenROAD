@@ -297,6 +297,7 @@ class _dbBlock : public _dbObject
   dbJournal* _journal;
   dbJournal* _journal_pending;
   uint _unique_net_index{1};
+  uint _unique_inst_index{1};
 
   _dbBlock(_dbDatabase* db);
   ~_dbBlock();

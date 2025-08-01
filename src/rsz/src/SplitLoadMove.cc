@@ -123,7 +123,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   odb::dbModNet* db_mod_drvr_net;
   db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
 
-  const string buffer_name = db_network_->makeNewInstName("split");
+  const string buffer_name = db_network_->block()->makeNewInstName("split");
 
   // H-Fix Use driver parent for hierarchy, not the top instance
   Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);

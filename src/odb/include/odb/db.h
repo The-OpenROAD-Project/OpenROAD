@@ -1618,6 +1618,10 @@ class dbBlock : public dbObject
   ///
   std::string makeNewNetName(dbModInst* parent_scope = nullptr,
                              const char* base_name = nullptr);
+  std::string makeNewInstName(dbModInst* parent_scope,
+                              const char* base_name,
+                              bool underscore = false);
+  std::string makeNewInstName(const char* base_name, bool underscore = false);
 
   ///
   /// return the regions of this design

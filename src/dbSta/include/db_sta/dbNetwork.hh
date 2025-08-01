@@ -347,11 +347,6 @@ class dbNetwork : public ConcreteNetwork
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
 
-  std::string makeNewInstName(Instance* parent_scope,
-                              const char* base_name,
-                              bool underscore = false);
-  std::string makeNewInstName(const char* full_name, bool underscore = false);
-
   using Network::cell;
   using Network::direction;
   using Network::findCellsMatching;

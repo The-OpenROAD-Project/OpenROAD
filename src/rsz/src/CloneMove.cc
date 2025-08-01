@@ -153,7 +153,7 @@ bool CloneMove::doMove(const Path* drvr_path,
     return false;
   }
 
-  const string buffer_name = db_network_->makeNewInstName("clone");
+  const string buffer_name = db_network_->block()->makeNewInstName("clone");
 
   // Hierarchy fix
   Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);

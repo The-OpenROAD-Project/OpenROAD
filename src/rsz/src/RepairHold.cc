@@ -587,7 +587,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
 
-  string buffer_name = db_network_->makeNewInstName("hold");
+  string buffer_name = db_network_->block()->makeNewInstName("hold");
 
   // make the buffer in the driver pin's parent
   Instance* buffer

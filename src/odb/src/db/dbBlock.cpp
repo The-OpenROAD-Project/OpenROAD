@@ -3710,4 +3710,56 @@ std::string dbBlock::makeNewNetName(dbModInst* parent_scope,
   return net_name;
 }
 
+////////////////////////////////////////////////////////////////
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module)which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+//(as was done with dbInsts) and will require changing the
+// method: dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
+//
+std::string dbBlock::makeNewInstName(dbModInst* parent_scope,
+                                     const char* base_name,
+                                     bool underscore)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  std::string parent_hier_name;
+
+  if (parent_scope) {
+    parent_hier_name = fmt::format(
+        "{}{}", parent_scope->getHierarchicalName(), getHierarchyDelimiter());
+  }
+
+  if (base_name == nullptr) {
+    base_name = "inst";
+  }
+
+  std::string inst_name;
+  do {
+    if (underscore) {
+      inst_name = fmt::format(
+          "{}{}_{}", parent_hier_name, base_name, block->_unique_inst_index++);
+    } else {
+      inst_name = fmt::format(
+          "{}{}{}", parent_hier_name, base_name, block->_unique_inst_index++);
+    }
+  } while (findInst(inst_name.c_str()) || findModInst(inst_name.c_str()));
+
+  // NOTE: TODO: The scoping should be within
+  // the dbModule scope for the instance, not the whole network.
+  // dbInsts are already scoped within a dbModule
+  // To get the dbModule for a dbInst used inst -> getModule
+  // then search within that scope. That way the instance name
+  // does not have to be some massive string like root/X/Y/U1.
+  //
+  return inst_name;
+}
+
+std::string dbBlock::makeNewInstName(const char* base_name, bool underscore)
+{
+  return makeNewInstName(nullptr, base_name, underscore);
+}
+
 }  // namespace odb

@@ -646,7 +646,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     dbNet* new_net_db = db_network_->staToDb(new_net);
     new_net_db->setSigType(net_db->getSigType());
 
-    std::string buffer_name = db_network_->makeNewInstName("gain");
+    std::string buffer_name = db_network_->block()->makeNewInstName("gain");
     const Point drvr_loc = db_network_->location(drvr_pin);
 
     // create instance in driver parent
@@ -2137,7 +2137,7 @@ bool RepairDesign::makeRepeater(
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  std::string buffer_name = db_network_->makeNewInstName(reason);
+  std::string buffer_name = db_network_->block()->makeNewInstName(reason);
 
   debugPrint(logger_,
              RSZ,

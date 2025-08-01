@@ -945,7 +945,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   }
 
   // make the buffer and its output net.
-  string buffer_name = db_network_->makeNewInstName("input");
+  string buffer_name = block_->makeNewInstName("input");
   Instance* parent = db_network_->topInstance();
   Net* buffer_out = db_network_->makeNetInParent(parent);
   dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
@@ -1123,7 +1123,7 @@ void Resizer::bufferOutput(const Pin* top_pin,
   assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
-  string buffer_name = db_network_->makeNewInstName("output");
+  string buffer_name = block_->makeNewInstName("output");
   Instance* parent = network->topInstance();
   Net* buffer_out = db_network_->makeNetInParent(parent);
 
@@ -2724,7 +2724,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
               const char* inst_name = network_->name(load_inst);
-              string tie_name = db_network_->makeNewInstName(inst_name, true);
+              string tie_name = block_->makeNewInstName(inst_name, true);
               Instance* tie
                   = makeInstance(tie_cell, tie_name.c_str(), top_inst, tie_loc);
 
@@ -3635,7 +3635,7 @@ void Resizer::cloneClkInverter(Instance* inv)
     while (load_iter->hasNext()) {
       const Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        string clone_name = db_network_->makeNewInstName(inv_name, true);
+        string clone_name = block_->makeNewInstName(inv_name, true);
         Point clone_loc = db_network_->location(load_pin);
         Instance* clone
             = makeInstance(inv_cell, clone_name.c_str(), top_inst, clone_loc);
