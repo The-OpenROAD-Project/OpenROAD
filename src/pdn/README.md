@@ -247,7 +247,7 @@ add_sroute_connect  -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {2
 
 ```tcl
 add_sroute_connect
-    -cut_pitch pitch_value
+    -cut_pitch list_of_2_pitch_values
     -layers list_of_2_layers
     -net net
     [-fixed_vias list_of_vias]
@@ -264,7 +264,7 @@ add_sroute_connect
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-cut_pitch` | Distance between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. (Default:200 200) |
+| `-cut_pitch` | Distances in x and y between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. |
 | `-layers` |  The metal layers for vertical stripes within inner power ring. |
 | `-net` | The inner net where the power ring exists. |
 | `[-fixed_vias]` | List of fixed vias to be used to form the via stack. |

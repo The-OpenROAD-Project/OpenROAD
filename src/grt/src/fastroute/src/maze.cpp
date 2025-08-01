@@ -150,12 +150,12 @@ void FastRouteCore::fixOverlappingEdge(
         if (treeedge->route.gridsY[k] != treeedge->route.gridsY[k + 1]) {
           const int min_y = std::min(treeedge->route.gridsY[k],
                                      treeedge->route.gridsY[k + 1]);
-          v_edges_[min_y][treeedge->route.gridsX[k]].usage -= edgeCost;
+          graph2d_.addUsageV(treeedge->route.gridsX[k], min_y, -edgeCost);
         }
       } else {
         const int min_x = std::min(treeedge->route.gridsX[k],
                                    treeedge->route.gridsX[k + 1]);
-        h_edges_[treeedge->route.gridsY[k]][min_x].usage -= edgeCost;
+        graph2d_.addUsageH(min_x, treeedge->route.gridsY[k], -edgeCost);
       }
     }
     for (int k = 0; k < new_route_x.size() - 1;
@@ -163,13 +163,11 @@ void FastRouteCore::fixOverlappingEdge(
       if (new_route_x[k] == new_route_x[k + 1]) {
         if (new_route_y[k] != new_route_y[k + 1]) {
           const int min_y = std::min(new_route_y[k], new_route_y[k + 1]);
-          v_edges_[min_y][new_route_x[k]].usage += edgeCost;
-          v_used_ggrid_.insert(std::make_pair(min_y, new_route_x[k]));
+          graph2d_.addUsageV(new_route_x[k], min_y, edgeCost);
         }
       } else {
         const int min_x = std::min(new_route_x[k], new_route_x[k + 1]);
-        h_edges_[new_route_y[k]][min_x].usage += edgeCost;
-        h_used_ggrid_.insert(std::make_pair(new_route_y[k], min_x));
+        graph2d_.addUsageH(min_x, new_route_y[k], edgeCost);
       }
     }
     treeedge->route.routelen = new_route_x.size() - 1;
@@ -404,19 +402,7 @@ void FastRouteCore::convertToMazeroute()
     convertToMazerouteNet(netID);
   }
 
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
-      // Add to keep the usage values of the last incremental routing performed
-      h_edges_[i][j].usage += h_edges_[i][j].est_usage;
-    }
-  }
-
-  for (int i = 0; i < y_grid_ - 1; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      // Add to keep the usage values of the last incremental routing performed
-      v_edges_[i][j].usage += v_edges_[i][j].est_usage;
-    }
-  }
+  graph2d_.addEstUsageToUsage();
 
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
@@ -473,48 +459,6 @@ static void removeMin(std::vector<double*>& array)
   array[0] = array.back();
   heapify(array);
   array.pop_back();
-}
-
-/*
- * num_iteration : the total number of iterations for maze route to run
- * round : the number of maze route stages runned
- */
-
-void FastRouteCore::updateCongestionHistory(const int up_type,
-                                            bool stop_decreasing,
-                                            int& max_adj)
-{
-  int maxlimit = 0;
-
-  if (up_type == 2) {
-    stop_decreasing = max_adj < ahth_;
-  }
-
-  auto updateEdges = [&](const auto& grid, auto& edges) {
-    for (const auto& [i, j] : grid) {
-      const int overflow = edges[i][j].usage - edges[i][j].cap;
-      if (overflow > 0) {
-        edges[i][j].congCNT++;
-        edges[i][j].last_usage += overflow;
-      } else if (!stop_decreasing) {
-        if (up_type != 1) {
-          edges[i][j].congCNT = std::max<int>(0, edges[i][j].congCNT - 1);
-        }
-        if (up_type != 3) {
-          edges[i][j].last_usage *= 0.9;
-        } else {
-          edges[i][j].last_usage
-              = std::max<int>(edges[i][j].last_usage + overflow, 0);
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, edges[i][j].last_usage);
-    }
-  };
-
-  updateEdges(h_used_ggrid_, h_edges_);
-  updateEdges(v_used_ggrid_, v_edges_);
-
-  max_adj = maxlimit;
 }
 
 // ripup a tree edge according to its ripup type and Z-route it
@@ -1080,22 +1024,22 @@ void FastRouteCore::reInitTree(const int netID)
 }
 
 double FastRouteCore::getCost(const int index,
-                              bool is_horizontal,
+                              const bool is_horizontal,
                               const CostParams& cost_params)
 {
   const auto& cost_table = is_horizontal ? h_cost_table_ : v_cost_table_;
-  const auto& capacity = is_horizontal ? h_capacity_ : v_capacity_;
+  const int capacity = is_horizontal ? h_capacity_ : v_capacity_;
 
   if (index < cost_table.size()) {
     return cost_table[index];
   }
 
-  double cost = 0;
   const int slope = cost_params.slope;
   const double logistic_coef = cost_params.logistic_coef;
   const double cost_height = cost_params.cost_height;
 
-  cost = cost_height / (std::exp((capacity - index) * logistic_coef) + 1) + 1;
+  double cost
+      = cost_height / (std::exp((capacity - index) * logistic_coef) + 1) + 1;
   if (index >= capacity) {
     cost += (cost_height / slope * (index - capacity));
   }
@@ -1209,7 +1153,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                            const bool maybe_hyper,
                            const int net_id) {
     const bool is_horizontal = d_x != 0;
-    const auto& edges = is_horizontal ? h_edges_ : v_edges_;
     auto& hyper = is_horizontal ? hyper_h_ : hyper_v_;
 
     const int p1_x = cur_x - (d_x == -1);
@@ -1217,8 +1160,12 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     const int p2_x = cur_x - (d_x == 1);
     const int p2_y = cur_y - (d_y == 1);
 
-    const int pos1
-        = edges[p1_y][p1_x].usage_red() + L * edges[p1_y][p1_x].last_usage;
+    auto usage_red
+        = is_horizontal ? &Graph2D::getUsageRedH : &Graph2D::getUsageRedV;
+    auto last_usage
+        = is_horizontal ? &Graph2D::getLastUsageH : &Graph2D::getLastUsageV;
+    const int pos1 = (graph2d_.*usage_red)(p1_x, p1_y)
+                     + L * (graph2d_.*last_usage)(p1_x, p1_y);
 
     double cost1 = getCost(pos1, is_horizontal, cost_params);
 
@@ -1228,8 +1175,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       tmp += via;
 
       if (maybe_hyper) {
-        const int pos2
-            = edges[p2_y][p2_x].usage_red() + L * edges[p2_y][p2_x].last_usage;
+        const int pos2 = (graph2d_.*usage_red)(p2_x, p2_y)
+                         + L * (graph2d_.*last_usage)(p2_x, p2_y);
 
         double cost2 = getCost(pos2, is_horizontal, cost_params);
 
@@ -1290,11 +1237,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }
 
       // ripup the routing for the edge
-      const int ymin = std::min(n1y, n2y);
-      const int ymax = std::max(n1y, n2y);
-
-      const int xmin = std::min(n1x, n2x);
-      const int xmax = std::max(n1x, n2x);
+      const auto [ymin, ymax] = std::minmax(n1y, n2y);
+      const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
       enlarge_ = std::min(origENG, (iter / 6 + 3) * treeedge->route.routelen);
 
@@ -1774,13 +1718,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         if (gridsX[i] == gridsX[i + 1])  // a vertical edge
         {
           const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-          v_edges_[min_y][gridsX[i]].usage += edgeCost;
-          v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
+          graph2d_.addUsageV(gridsX[i], min_y, edgeCost);
         } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
         {
           const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-          h_edges_[gridsY[i]][min_x].usage += edgeCost;
-          h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
+          graph2d_.addUsageH(min_x, gridsY[i], edgeCost);
         }
       }
     }  // loop edgeID
@@ -1852,12 +1794,12 @@ void FastRouteCore::getCongestionGrid(
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+      const int overflow = graph2d_.getOverflowH(j, i);
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
         const int yreal = tile_size_ * (i + 0.5) + y_corner_;
-        const int usage = h_edges_[i][j].usage;
-        const int capacity = h_edges_[i][j].cap;
+        const int usage = graph2d_.getUsageH(j, i);
+        const int capacity = graph2d_.getCapH(j, i);
         nets_in_congested_edges[{xreal, yreal}].congestion = {capacity, usage};
       }
     }
@@ -1875,12 +1817,12 @@ void FastRouteCore::getCongestionGrid(
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+      const int overflow = graph2d_.getOverflowV(j, i);
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
         const int yreal = tile_size_ * (i + 0.5) + y_corner_;
-        const int usage = v_edges_[i][j].usage;
-        const int capacity = v_edges_[i][j].cap;
+        const int usage = graph2d_.getUsageV(j, i);
+        const int capacity = graph2d_.getCapV(j, i);
         nets_in_congested_edges[{xreal, yreal}].congestion = {capacity, usage};
       }
     }
@@ -1948,21 +1890,21 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
   std::vector<int> xs, ys, dirs;
   int n = 0;
   // Find horizontal ggrids with congestion
-  for (const auto& [i, j] : h_used_ggrid_) {
-    const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      xs.push_back(j);
-      ys.push_back(i);
+      xs.push_back(x);
+      ys.push_back(y);
       dirs.push_back(1);
       n++;
     }
   }
   // Find vertical ggrids with congestion
-  for (const auto& [i, j] : v_used_ggrid_) {
-    const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      xs.push_back(j);
-      ys.push_back(i);
+      xs.push_back(x);
+      ys.push_back(y);
       dirs.push_back(0);
       n++;
     }
@@ -1993,9 +1935,9 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   check2DEdgesUsage();
 
   int total_usage = 0;
-  for (const auto& [i, j] : h_used_ggrid_) {
-    total_usage += h_edges_[i][j].usage;
-    const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    total_usage += graph2d_.getUsageH(x, y);
+    const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
@@ -2003,9 +1945,9 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     }
   }
 
-  for (const auto& [i, j] : v_used_ggrid_) {
-    total_usage += v_edges_[i][j].usage;
-    const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    total_usage += graph2d_.getUsageV(x, y);
+    const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2056,10 +1998,10 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
 
   int total_usage = 0;
 
-  for (const auto& [i, j] : h_used_ggrid_) {
-    total_usage += h_edges_[i][j].est_usage;
-    const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
-    hCap += h_edges_[i][j].cap;
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    total_usage += graph2d_.getEstUsageH(x, y);
+    const int overflow = graph2d_.getEstUsageH(x, y) - graph2d_.getCapH(x, y);
+    hCap += graph2d_.getCapH(x, y);
     if (overflow > 0) {
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
@@ -2067,10 +2009,10 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     }
   }
 
-  for (const auto& [i, j] : v_used_ggrid_) {
-    total_usage += v_edges_[i][j].est_usage;
-    const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
-    vCap += v_edges_[i][j].cap;
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    total_usage += graph2d_.getEstUsageH(x, y);
+    const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
+    vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2117,18 +2059,18 @@ int FastRouteCore::getOverflow3D()
   int total_usage = 0;
 
   for (int k = 0; k < num_layers_; k++) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      total_usage += h_edges_3D_[k][i][j].usage;
-      overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
+    for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+      total_usage += h_edges_3D_[k][y][x].usage;
+      overflow = h_edges_3D_[k][y][x].usage - h_edges_3D_[k][y][x].cap;
 
       if (overflow > 0) {
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
       }
     }
-    for (const auto& [i, j] : v_used_ggrid_) {
-      total_usage += v_edges_3D_[k][i][j].usage;
-      overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
+    for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+      total_usage += v_edges_3D_[k][y][x].usage;
+      overflow = v_edges_3D_[k][y][x].usage - v_edges_3D_[k][y][x].cap;
       if (overflow > 0) {
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2139,83 +2081,6 @@ int FastRouteCore::getOverflow3D()
   total_overflow_ = H_overflow + V_overflow;
 
   return total_usage;
-}
-
-void FastRouteCore::InitEstUsage()
-{
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
-      h_edges_[i][j].est_usage = 0;
-    }
-  }
-
-  for (int i = 0; i < y_grid_ - 1; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      v_edges_[i][j].est_usage = 0;
-    }
-  }
-}
-
-void FastRouteCore::str_accu(const int rnd)
-{
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-      if (overflow > 0 || h_edges_[i][j].congCNT > rnd) {
-        h_edges_[i][j].last_usage += h_edges_[i][j].congCNT * overflow / 2;
-      }
-    }
-  }
-
-  for (int i = 0; i < y_grid_ - 1; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-      if (overflow > 0 || v_edges_[i][j].congCNT > rnd) {
-        v_edges_[i][j].last_usage += v_edges_[i][j].congCNT * overflow / 2;
-      }
-    }
-  }
-}
-
-void FastRouteCore::InitLastUsage(const int upType)
-{
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
-      h_edges_[i][j].last_usage = 0;
-    }
-  }
-
-  for (int i = 0; i < y_grid_ - 1; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      v_edges_[i][j].last_usage = 0;
-    }
-  }
-
-  if (upType == 1) {
-    for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
-        h_edges_[i][j].congCNT = 0;
-      }
-    }
-
-    for (int i = 0; i < y_grid_ - 1; i++) {
-      for (int j = 0; j < x_grid_; j++) {
-        v_edges_[i][j].congCNT = 0;
-      }
-    }
-  } else if (upType == 2) {
-    for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
-        h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.2;
-      }
-    }
-
-    for (int i = 0; i < y_grid_ - 1; i++) {
-      for (int j = 0; j < x_grid_; j++) {
-        v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.2;
-      }
-    }
-  }
 }
 
 void FastRouteCore::SaveLastRouteLen()
