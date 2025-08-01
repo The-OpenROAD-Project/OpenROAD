@@ -628,6 +628,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     FrNet* net = nets_[netID];
 
     int d = net->getNumPins();
+    int maxOverflow;
+    if(getOverflow2D(&maxOverflow))
+      logger_->report("Here 1 {}", net->getName());
 
     if (reRoute) {
       if (newType) {
@@ -653,6 +656,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         }
       }
     }
+    
+    if(getOverflow2D(&maxOverflow))
+      logger_->report("Here 2 {}", net->getName());
 
     // check net alpha because FastRoute has a special implementation of flute
     // TODO: move this flute implementation to SteinerTreeBuilder

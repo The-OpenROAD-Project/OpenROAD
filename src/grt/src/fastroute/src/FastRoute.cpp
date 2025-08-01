@@ -410,6 +410,7 @@ void FastRouteCore::initEdges()
 }
 
 // Update maximum single layer capacity useful for NDR nets
+// TODO: need to capture the max_layer_cap for the net->getMinLayer()
 void FastRouteCore::initEdgesMaxCapPerLayer()
 {
   for (int i = 0; i < y_grid_; i++) {

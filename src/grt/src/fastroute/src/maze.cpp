@@ -2082,7 +2082,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
     hCap += h_edges_[i][j].cap;
     if (overflow > 0) {
-      logger_->report(">>> 2D H Overflow: x{} y{}",i,j);
+     // logger_->report(">>> 2D H Overflow: x{} y{}",i,j);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -2094,7 +2094,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
     vCap += v_edges_[i][j].cap;
     if (overflow > 0) {
-      logger_->report(">>> 2D V Overflow: x{} y{}",i,j);
+     // logger_->report(">>> 2D V Overflow: x{} y{}",i,j);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
