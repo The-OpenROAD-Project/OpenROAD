@@ -405,18 +405,12 @@ void FastRouteCore::initEdgesMaxCapPerLayer()
             logger_->report("==== x{} y{} l{} CapV:{} CapH:{}",
                   j,i,l+1,v_edges_3D_[l][i][j].cap,h_edges_3D_[l][i][j].cap);
       }
-      // if(max_h_single_layer_cap < 3 || max_v_single_layer_cap < 3)
-      //   logger_->report("==== x{} y{}",j,i);
-      // 2D edge update
+
       if (j < x_grid_ - 1) {
-        h_edges_[i][j].max_layer_cap = max_h_single_layer_cap;
-        // if(max_h_single_layer_cap < 3)
-        //   logger_->report("== H max cap {}",h_edges_[i][j].max_layer_cap);
+        //h_edges_[i][j].max_layer_cap = max_h_single_layer_cap;
       }
       if (i < y_grid_ - 1) {
-        v_edges_[i][j].max_layer_cap = max_v_single_layer_cap;
-        // if(max_v_single_layer_cap < 3)
-        //   logger_->report("== V max cap {}",v_edges_[i][j].max_layer_cap);
+        //v_edges_[i][j].max_layer_cap = max_v_single_layer_cap;
       }
     }
   }
@@ -1157,7 +1151,7 @@ NetRouteMap FastRouteCore::run()
   // Debug Tree 2D
   if (debug_->isOn()) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         printTree2D(netID);
       }
     }
@@ -1169,7 +1163,7 @@ NetRouteMap FastRouteCore::run()
   // Debug Tree 2D
   if (debug_->isOn()) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         printTree2D(netID);
       }
     }
@@ -1180,7 +1174,7 @@ NetRouteMap FastRouteCore::run()
   // Debug Tree 2D
   if (debug_->isOn()) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         printTree2D(netID);
       }
     }
@@ -1190,7 +1184,7 @@ NetRouteMap FastRouteCore::run()
   // Debug Tree 2D
   if (debug_->isOn()) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         printTree2D(netID);
       }
     }
@@ -1504,9 +1498,9 @@ NetRouteMap FastRouteCore::run()
     logger_->report("=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - OverflowIncreases {} - MaxOverIncr {} ===",
         i, total_overflow_, overflow_iterations_, overflow_increases, max_overflow_increases);
     // debug mode Rectilinear Steiner Tree before overflow iterations
-    if (debug_->isOn() && debug_->rectilinearSTree_) {
+    if (debug_->isOn() && debug_->rectilinearSTree) {
       for (const int& netID : net_ids_) {
-        if (nets_[netID]->getDbNet() == debug_->net_) {
+        if (nets_[netID]->getDbNet() == debug_->net) {
           StTreeVisualization(sttrees_[netID], nets_[netID], false);
         }
       }
@@ -1558,10 +1552,10 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
-  if (debug_->isOn() && debug_->rectilinearSTree_) {
+  if (debug_->isOn() && debug_->rectilinearSTree) {
     logger_->report("Tree before layerAssignment");
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1573,11 +1567,10 @@ NetRouteMap FastRouteCore::run()
   // logger_->report("Total Over: {}",total_overflow_);
 
   logger_->report("After LayerAssignment - 2D/3D cong: {}/{}", past_cong, total_overflow_);
-  // logger_->report("After LayerAssignment - 3D cong: {}", total_overflow_);
   // debug mode Rectilinear Steiner Tree before overflow iterations
-  if (debug_->isOn() && debug_->rectilinearSTree_) {
+  if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -1595,9 +1588,9 @@ NetRouteMap FastRouteCore::run()
   // logger_->report("After MazeRoute3D - 2D/3Dcong: {}/{}", getOverflow2Dmaze(&maxOverflow, &tUsage), total_overflow_);
   logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
   // debug mode Rectilinear Steiner Tree before overflow iterations
-  if (debug_->isOn() && debug_->rectilinearSTree_) {
+  if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net_) {
+      if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
