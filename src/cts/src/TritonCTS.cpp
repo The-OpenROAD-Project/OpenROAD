@@ -1239,8 +1239,12 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
+      sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
+      sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
       // Treat clock gaters like macro sink
-      if (hasInsertionDelay(inst, mterm) || !isSink(iterm) || inst->isBlock()) {
+      if (hasInsertionDelay(inst, mterm)
+          || (!isSink(iterm) && !libertyCell->isInverter())
+          || inst->isBlock()) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
