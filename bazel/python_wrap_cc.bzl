@@ -1,16 +1,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
-"""A TCL SWIG wrapping rule for google3.
+"""A Python SWIG wrapping rule
 
 These rules generate a C++ src file that is expected to be used as srcs in
 cc_library or cc_binary rules. See below for expected usage.
-
-cc_library(srcs=[":tcl_foo"])
-tcl_wrap_cc(name = "tcl_foo", srcs=["exception.i"],...)
+cc_library(srcs=[":python_foo"])
+python_wrap_cc(name = "python_foo", srcs=["exception.i"],...)
 """
-TclSwigInfo = provider(
-    "TclSwigInfo for taking dependencies on other swig info rules",
+PythonSwigInfo = provider(
+    "PythonSwigInfo for taking dependencies on other swig info rules",
     fields = [
         "transitive_srcs",
         "includes",
@@ -21,31 +20,32 @@ TclSwigInfo = provider(
 def _get_transitive_srcs(srcs, deps):
     return depset(
         srcs,
-        transitive = [dep[TclSwigInfo].transitive_srcs for dep in deps],
+        transitive = [dep[PythonSwigInfo].transitive_srcs for dep in deps],
     )
 
 def _get_transitive_includes(local_includes, deps):
     return depset(
         local_includes,
-        transitive = [dep[TclSwigInfo].includes for dep in deps],
+        transitive = [dep[PythonSwigInfo].includes for dep in deps],
     )
 
 def _get_transitive_options(options, deps):
     return depset(
         options,
-        transitive = [dep[TclSwigInfo].swig_options for dep in deps],
+        transitive = [dep[PythonSwigInfo].swig_options for dep in deps],
     )
 
-def _tcl_wrap_cc_impl(ctx):
-    """Generates a single C++ file from the provided srcs in a DefaultInfo.
-    """
+def _python_wrap_cc_impl(ctx):
+    """Generates a single C++ file from the provided srcs in a DefaultInfo."""
     if len(ctx.files.srcs) > 1 and not ctx.attr.root_swig_src:
         fail("If multiple src files are provided, root_swig_src must be specified.")
 
     root_file = ctx.file.root_swig_src or ctx.files.srcs[0]
 
-    outfile_name = ctx.attr.out or (ctx.attr.name + ".cc")
-    output_file = ctx.actions.declare_file(outfile_name)
+    cc_outfile_name = ctx.attr.out or (ctx.attr.name + ".cc")
+    cc_output_file = ctx.actions.declare_file(cc_outfile_name)
+    py_outfile_name = ctx.attr.module + ".py"
+    py_output_file = ctx.actions.declare_file(py_outfile_name)
 
     include_root_directory = ""
     if ctx.label.package:
@@ -59,73 +59,44 @@ def _tcl_wrap_cc_impl(ctx):
     swig_options = _get_transitive_options(ctx.attr.swig_options, ctx.attr.deps)
 
     args = ctx.actions.args()
-    args.add("-tcl8")
+    args.add("-python")
     args.add("-c++")
-    if ctx.attr.module:
-        args.add("-module")
-        args.add(ctx.attr.module)
-    if ctx.attr.namespace_prefix:
-        args.add("-namespace")
-        args.add("-prefix")
-        args.add(ctx.attr.namespace_prefix)
+    args.add("-flatstaticmethod")
+    args.add("-module")
+    args.add(ctx.attr.module)
     args.add_all(swig_options.to_list())
     args.add_all(includes_paths.to_list(), format_each = "-I%s")
     args.add("-o")
-    args.add(output_file.path)
+    args.add(cc_output_file.path)
     args.add(root_file.path)
 
     ctx.actions.run(
-        outputs = [output_file],
+        outputs = [cc_output_file, py_output_file],
         inputs = src_inputs,
         arguments = [args],
         tools = ctx.files._swig,
         executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
     )
-
-    output_files = [output_file]
-
-    if ctx.attr.runtime_header:
-        runtime_header = ctx.actions.declare_file(ctx.attr.runtime_header)
-        runtime_args = ctx.actions.args()
-        runtime_args.add("-tcl8")
-        runtime_args.add("-external-runtime")
-        runtime_args.add(runtime_header)
-        ctx.actions.run(
-            outputs = [runtime_header],
-            inputs = [],
-            arguments = [runtime_args],
-            tools = [ctx.attr._swig.files_to_run],
-            executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
-            toolchain = None,
-        )
-        output_files.append(runtime_header)
-
     return [
-        DefaultInfo(files = depset(output_files)),
-        TclSwigInfo(
+        DefaultInfo(files = depset([cc_output_file, py_output_file])),
+        PythonSwigInfo(
             transitive_srcs = src_inputs,
             includes = includes_paths,
             swig_options = swig_options,
         ),
     ]
 
-tcl_wrap_cc = rule(
-    implementation = _tcl_wrap_cc_impl,
+python_wrap_cc = rule(
+    implementation = _python_wrap_cc_impl,
     attrs = {
         "deps": attr.label_list(
             allow_empty = True,
-            doc = "tcl_wrap_cc dependencies",
-            providers = [TclSwigInfo],
+            doc = "python_wrap_cc dependencies",
+            providers = [PythonSwigInfo],
         ),
         "module": attr.string(
-            mandatory = False,
-            default = "",
+            mandatory = True,
             doc = "swig module",
-        ),
-        "namespace_prefix": attr.string(
-            mandatory = False,
-            default = "",
-            doc = "swig namespace prefix",
         ),
         "out": attr.string(
             doc = "The name of the C++ source file generated by these rules. If not set, defaults to '<name>.cc'.",
@@ -147,7 +118,6 @@ tcl_wrap_cc = rule(
         "swig_options": attr.string_list(
             doc = "args to pass directly to the swig binary",
         ),
-        "runtime_header": attr.string(),
         "_swig": attr.label(
             default = "@org_swig//:swig_stable",
             allow_files = True,

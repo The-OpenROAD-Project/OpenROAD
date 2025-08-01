@@ -50,12 +50,26 @@ class BazelInitializer
     }
 
     // Set the TCL_LIBRARY environment variable
-    std::string path = runfiles->Rlocation("tk_tcl/library/");
-    if (!path.empty()) {
-      setenv("TCL_LIBRARY", path.c_str(), 0);
+    const std::string tcl_path = runfiles->Rlocation("tk_tcl/library/");
+    if (!tcl_path.empty()) {
+      setenv("TCL_LIBRARY", tcl_path.c_str(), 0);
     } else {
       std::cerr << "Error: Could not locate 'tk_tcl/library/' in runfiles."
                 << std::endl;
+      std::exit(1);
+    }
+
+    // Set the PYTHONPATH environment variable.  Pretty ugly but functional
+    const char* import_path
+        = "rules_python++python+python_3_13_x86_64-unknown-linux-gnu/lib/"
+          "python3.13";
+    const std::string python_path = runfiles->Rlocation(import_path);
+
+    if (!python_path.empty()) {
+      setenv("PYTHONPATH", python_path.c_str(), 0);
+    } else {
+      std::cerr << "Error: Could not locate '" << import_path
+                << "' in runfiles." << std::endl;
       std::exit(1);
     }
 

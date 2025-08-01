@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -54,6 +55,8 @@ cc_library(
     srcs = [
         "src/MakeAntennaChecker.cc",
         ":swig",
+        ":swig-py",
+        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -67,6 +70,7 @@ cc_library(
         "//src/utl",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -91,4 +95,31 @@ tcl_wrap_cc(
     swig_includes = [
         "src",
     ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/ant/AntennaChecker.hh",
+        "src/AntennaChecker.i",
+        "//:error_swig-py",
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
+    module = "ant_py",
+    root_swig_src = "src/AntennaChecker-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+)
+
+tcl_encode(
+    name = "python",
+    srcs = [
+        ":swig-py",
+    ],
+    char_array_name = "ant_py_python_inits",
+    namespace = "ant",
 )
