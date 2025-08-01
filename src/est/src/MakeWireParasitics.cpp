@@ -24,7 +24,7 @@
 
 namespace est {
 
-using utl::GRT;
+using utl::EST;
 
 using std::abs;
 using std::min;
@@ -54,8 +54,8 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
                                             grt::GRoute& route,
                                             sta::SpefWriter* spef_writer)
 {
-  debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
-  if (logger_->debugCheck(GRT, "est_rc", 2)) {
+  debugPrint(logger_, EST, "est_rc", 1, "net {}", net->getConstName());
+  if (logger_->debugCheck(EST, "est_rc", 2)) {
     for (grt::GSegment& segment : route) {
       logger_->report(
           "({:.2f}, {:.2f}) {:2d} -> ({:.2f}, {:.2f}) {:2d} l={:.2f}",
@@ -97,8 +97,8 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
 
 void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
 {
-  debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
-  if (logger_->debugCheck(GRT, "est_rc", 2)) {
+  debugPrint(logger_, EST, "est_rc", 1, "net {}", net->getConstName());
+  if (logger_->debugCheck(EST, "est_rc", 2)) {
     for (grt::GSegment& segment : route) {
       logger_->report(
           "({:.2f}, {:.2f}) {:2d} -> ({:.2f}, {:.2f}) {:2d} l={:.2f}",
@@ -203,7 +203,7 @@ void MakeWireParasitics::makeRouteParasitics(
           = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
       res = getCutLayerRes(cut_layer, corner);
       debugPrint(logger_,
-                 GRT,
+                 EST,
                  "est_rc",
                  1,
                  "{} -> {} via {}-{} r={}",
@@ -215,7 +215,7 @@ void MakeWireParasitics::makeRouteParasitics(
     } else if (segment.init_layer == segment.final_layer) {
       layerRC(wire_length_dbu, segment.init_layer, corner, res, cap);
       debugPrint(logger_,
-                 GRT,
+                 EST,
                  "est_rc",
                  1,
                  "{} -> {} {:.2f}u layer={} r={} c={}",
@@ -226,7 +226,7 @@ void MakeWireParasitics::makeRouteParasitics(
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
     } else {
-      logger_->warn(GRT,
+      logger_->warn(EST,
                     25,
                     "Non wire or via route found on net {}.",
                     net->getConstName());
@@ -299,7 +299,7 @@ void MakeWireParasitics::makeParasiticsToPin(
     sta::Units* units = sta_->units();
     debugPrint(
         logger_,
-        GRT,
+        EST,
         "est_rc",
         1,
         "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
@@ -314,7 +314,7 @@ void MakeWireParasitics::makeParasiticsToPin(
         units->capacitanceUnit()->asString(cap));
 
     debugPrint(logger_,
-               GRT,
+               EST,
                "est_rc",
                1,
                "pin {} -> to grid {}u layer={} r={} via_res={} c={}",
@@ -333,7 +333,7 @@ void MakeWireParasitics::makeParasiticsToPin(
         parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
     parasitics_->incrCap(grid_node, cap / 2.0);
   } else {
-    logger_->warn(GRT,
+    logger_->warn(EST,
                   26,
                   "Missing route to pin {} in net {}.",
                   pin_name,
@@ -406,7 +406,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     sta::Units* units = sta_->units();
     debugPrint(
         logger_,
-        GRT,
+        EST,
         "est_rc",
         1,
         "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
@@ -421,7 +421,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
         units->capacitanceUnit()->asString(cap));
 
     debugPrint(logger_,
-               GRT,
+               EST,
                "est_rc",
                1,
                "pin {} -> to grid {}u layer={} r={} via_res={} c={}",
@@ -440,7 +440,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
         parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
     parasitics_->incrCap(grid_node, cap / 2.0);
   } else {
-    logger_->warn(GRT, 350, "Missing route to pin {}.", pin_name);
+    logger_->warn(EST, 350, "Missing route to pin {}.", pin_name);
   }
 }
 
