@@ -244,7 +244,7 @@ class BaseMove : public sta::dbStaState
 
   // Experiment flag: when true, only consider the direct input pin for delay
   // change when false (default), analyze all input pins for worst delay change
-  static constexpr bool use_direct_pin_only_for_delay_change_ = false;
+  static constexpr bool use_direct_pin_only_for_delay_change_ = true;
 
   vector<const Pin*> getOutputPins(const Instance* inst);
   LibertyCellSeq getSwappableCells(LibertyCell* base);
