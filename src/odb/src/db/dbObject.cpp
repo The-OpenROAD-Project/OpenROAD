@@ -84,6 +84,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbPolygon",
                                  "dbPowerDomain",
                                  "dbPowerSwitch",
+                                 "dbProperty",
                                  "dbScanChain",
                                  "dbScanInst",
                                  "dbScanList",
@@ -136,7 +137,6 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechViaGenerateRule",
                                  "dbTechViaLayerRule",
 
-                                 "dbProperty",
                                  "dbName"};
 
 const char* dbObject::getTypeName() const

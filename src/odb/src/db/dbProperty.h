@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Generator Code Begin Header
 #pragma once
 
 #include <string>
@@ -12,14 +13,22 @@
 #include "odb/odb.h"
 
 namespace odb {
-
-class _dbDatabase;
-class _dbProperty;
-class dbPropertyItr;
 class dbIStream;
 class dbOStream;
+class _dbDatabase;
+// User Code Begin Classes
 class _dbNameCache;
+class dbPropertyItr;
+// User Code End Classes
 
+struct dbPropertyFlags
+{
+  uint _type : 4;
+  uint _owner_type : 8;
+  uint _spare_bits : 20;
+};
+
+// User Code Begin Structs
 enum _PropTypeEnum
 {
   // Do not change the order of this enum.
@@ -28,42 +37,34 @@ enum _PropTypeEnum
   DB_INT_PROP = 2,
   DB_DOUBLE_PROP = 3
 };
-
-struct _dbPropertyFlags
-{
-  _PropTypeEnum _type : 4;
-  uint _owner_type : 8;
-  uint _spare_bits : 20;
-};
+// User Code End Structs
 
 class _dbProperty : public _dbObject
 {
  public:
-  _dbPropertyFlags _flags;
-  uint _name;
-  dbId<_dbProperty> _next;
-  uint _owner;
-
-  std::variant<std::string, bool, int, double> _value;
-
   _dbProperty(_dbDatabase*);
-  _dbProperty(_dbDatabase*, const _dbProperty& n);
-  ~_dbProperty();
 
   bool operator==(const _dbProperty& rhs) const;
   bool operator!=(const _dbProperty& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbProperty& rhs) const;
   void collectMemInfo(MemInfo& info);
-
+  // User Code Begin Methods
+  _dbProperty(_dbDatabase*, const _dbProperty& n);
   static dbTable<_dbProperty>* getPropTable(dbObject* object);
   static _dbNameCache* getNameCache(dbObject* object);
   static dbPropertyItr* getItr(dbObject* object);
   static _dbProperty* createProperty(dbObject* object,
                                      const char* name,
                                      _PropTypeEnum type);
+  // User Code End Methods
+
+  dbPropertyFlags flags_;
+  uint _name;
+  dbId<_dbProperty> _next;
+  uint _owner;
+  std::variant<std::string, bool, int, double> _value;
 };
-
-dbOStream& operator<<(dbOStream& stream, const _dbProperty& prop);
-dbIStream& operator>>(dbIStream& stream, _dbProperty& prop);
-
+dbIStream& operator>>(dbIStream& stream, _dbProperty& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj);
 }  // namespace odb
+// Generator Code End Header

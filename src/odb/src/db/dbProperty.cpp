@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Generator Code Begin Cpp
 #include "dbProperty.h"
 
-#include <spdlog/fmt/ostr.h>
-
-#include <sstream>
+#include <cstdint>
+#include <cstring>
 #include <string>
+#include <variant>
 
 #include "dbBlock.h"
 #include "dbChip.h"
@@ -19,124 +20,94 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <spdlog/fmt/ostr.h>
 
+#include <sstream>
+// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbProperty>;
-
-_dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
-    : _flags(n._flags),
-      _name(n._name),
-      _next(n._next),
-      _owner(n._owner),
-      _value(n._value)
-{
-}
-
-_dbProperty::_dbProperty(_dbDatabase*)
-{
-  _flags._type = DB_STRING_PROP;
-  _flags._spare_bits = 0;
-  _name = 0;
-  _owner = 0;
-}
-
-_dbProperty::~_dbProperty()
-{
-}
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
-  if (_flags._type != rhs._flags._type) {
+  if (flags_._type != rhs.flags_._type) {
     return false;
   }
-
-  if (_flags._owner_type != rhs._flags._owner_type) {
+  if (flags_._owner_type != rhs.flags_._owner_type) {
     return false;
   }
-
   if (_name != rhs._name) {
     return false;
   }
+  if (_next != rhs._next) {
+    return false;
+  }
 
-  if (_flags._owner_type
+  // User Code Begin ==
+  if (flags_._owner_type
       != dbDatabaseObj) {  // database owners are never the same...
     if (_owner != rhs._owner) {
       return false;
     }
   }
-
-  if (_next != rhs._next) {
-    return false;
-  }
-
   if (_value != rhs._value) {
     return false;
   }
-
+  // User Code End ==
   return true;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbProperty& prop)
+bool _dbProperty::operator<(const _dbProperty& rhs) const
 {
-  uint* bit_field = (uint*) &prop._flags;
-  stream << *bit_field;
-  stream << prop._name;
-  stream << prop._next;
-  stream << prop._owner;
-
-  switch (prop._flags._type) {
-    case DB_BOOL_PROP:
-      // Older versions of the spec treated bools as uints
-      // retain backwards compatability
-      stream << static_cast<uint>(std::get<bool>(prop._value));
-      break;
-
-    case DB_INT_PROP:
-      stream << std::get<int>(prop._value);
-      break;
-
-    case DB_STRING_PROP:
-      stream << std::get<std::string>(prop._value).c_str();
-      break;
-
-    case DB_DOUBLE_PROP:
-      stream << std::get<double>(prop._value);
-      break;
+  // User Code Begin <
+  if (_name >= rhs._name) {
+    return false;
   }
-
-  return stream;
+  // User Code End <
+  return true;
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
+_dbProperty::_dbProperty(_dbDatabase* db)
 {
-  uint* bit_field = (uint*) &prop._flags;
-  stream >> *bit_field;
-  stream >> prop._name;
-  stream >> prop._next;
-  stream >> prop._owner;
+  flags_ = {};
+  _owner = 0;
+  // User Code Begin Constructor
+  flags_._type = DB_STRING_PROP;
+  _name = 0;
+  // User Code End Constructor
+}
 
-  switch (prop._flags._type) {
+dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
+{
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  stream >> obj._name;
+  stream >> obj._next;
+  stream >> obj._owner;
+  // User Code Begin >>
+  switch (obj.flags_._type) {
     case DB_BOOL_PROP: {
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
       uint boolean;
       stream >> boolean;
-      prop._value = static_cast<bool>(boolean);
+      obj._value = static_cast<bool>(boolean);
       break;
     }
     case DB_INT_PROP: {
       int integer;
       stream >> integer;
-      prop._value = integer;
+      obj._value = integer;
       break;
     }
     case DB_STRING_PROP: {
       char* char_string;
       stream >> char_string;
-      prop._value = "";
+      obj._value = "";
       if (char_string != nullptr) {
-        prop._value = std::string(char_string);
+        obj._value = std::string(char_string);
         free(char_string);
       }
       break;
@@ -144,19 +115,68 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
     case DB_DOUBLE_PROP: {
       double double_property;
       stream >> double_property;
-      prop._value = double_property;
+      obj._value = double_property;
       break;
     }
   }
-
+  // User Code End >>
   return stream;
 }
 
-bool _dbProperty::operator<(const _dbProperty& rhs) const
+dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj)
 {
-  return _name < rhs._name;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
+  stream << obj._name;
+  stream << obj._next;
+  stream << obj._owner;
+  // User Code Begin <<
+  switch (obj.flags_._type) {
+    case DB_BOOL_PROP:
+      // Older versions of the spec treated bools as uints
+      // retain backwards compatability
+      stream << static_cast<uint>(std::get<bool>(obj._value));
+      break;
+
+    case DB_INT_PROP:
+      stream << std::get<int>(obj._value);
+      break;
+
+    case DB_STRING_PROP:
+      stream << std::get<std::string>(obj._value).c_str();
+      break;
+
+    case DB_DOUBLE_PROP:
+      stream << std::get<double>(obj._value);
+      break;
+  }
+  // User Code End <<
+  return stream;
 }
 
+void _dbProperty::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  if (flags_._type == DB_STRING_PROP) {
+    info.children_["string"].add(std::get<std::string>(_value));
+  }
+  // User Code End collectMemInfo
+}
+
+// User Code Begin PrivateMethods
+_dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
+    : flags_(n.flags_),
+      _name(n._name),
+      _next(n._next),
+      _owner(n._owner),
+      _value(n._value)
+{
+}
 dbPropertyItr* _dbProperty::getItr(dbObject* object)
 {
 next_object:
@@ -281,8 +301,8 @@ _dbProperty* _dbProperty::createProperty(dbObject* object_,
   // Create property
   _dbProperty* prop = propTable->create();
   uint oid = object->getOID();
-  prop->_flags._type = type;
-  prop->_flags._owner_type = object->getType();
+  prop->flags_._type = type;
+  prop->flags_._owner_type = object->getType();
   prop->_owner = oid;
 
   // Get name-id, increment reference count
@@ -298,15 +318,20 @@ _dbProperty* _dbProperty::createProperty(dbObject* object_,
   table->setPropList(oid, propList);
   return prop;
 }
+// User Code End PrivateMethods
 
-/////////////////////////////////////////////
-// property
-/////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+//
+// dbProperty - Methods
+//
+////////////////////////////////////////////////////////////////////
+
+// User Code Begin dbPropertyPublicMethods
 
 dbProperty::Type dbProperty::getType()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return (dbProperty::Type) prop->_flags._type;
+  return (dbProperty::Type) prop->flags_._type;
 }
 
 std::string dbProperty::getName()
@@ -321,7 +346,7 @@ dbObject* dbProperty::getPropOwner()
 {
   _dbProperty* prop = (_dbProperty*) this;
   dbObjectTable* table = prop->getTable()->getObjectTable(
-      (dbObjectType) prop->_flags._owner_type);
+      (dbObjectType) prop->flags_._owner_type);
   return table->getObject(prop->_owner);
 }
 
@@ -360,7 +385,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
     _dbProperty* p_impl = (_dbProperty*) p;
 
     if ((p_impl->_name == name_id)
-        && (p_impl->_flags._type == (_PropTypeEnum) type)) {
+        && (p_impl->flags_._type == (_PropTypeEnum) type)) {
       return p;
     }
   }
@@ -381,7 +406,7 @@ void dbProperty::destroy(dbProperty* prop_)
   // unlink property from owner
   dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(prop);
   dbObjectTable* ownerTable = prop->getTable()->getObjectTable(
-      (dbObjectType) prop->_flags._owner_type);
+      (dbObjectType) prop->flags_._owner_type);
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->_owner);
   dbId<_dbProperty> cur = propList;
@@ -623,15 +648,6 @@ std::string dbProperty::writeProperties(dbObject* object)
 
   return out.str();
 }
-
-void _dbProperty::collectMemInfo(MemInfo& info)
-{
-  info.cnt++;
-  info.size += sizeof(*this);
-
-  if (_flags._type == DB_STRING_PROP) {
-    info.children_["string"].add(std::get<std::string>(_value));
-  }
-}
-
+// User Code End dbPropertyPublicMethods
 }  // namespace odb
+// Generator Code End Cpp
