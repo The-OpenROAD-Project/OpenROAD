@@ -4171,4 +4171,19 @@ void dbNetwork::AxiomCheck()
   }
 }
 
+Net* dbNetwork::getFlatNet(Net* net) const
+{
+  if (!net) {
+    return nullptr;
+  }
+  // Convert net to a flat net, if not already
+  dbNet* db_net;
+  dbModNet* db_mod_net;
+  staToDb(net, db_net, db_mod_net);
+  if (db_mod_net) {
+    db_net = findRelatedDbNet(db_mod_net);
+  }
+  return dbToSta(db_net);
+}
+
 }  // namespace sta
