@@ -1,5 +1,13 @@
-# SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2019-2025, The OpenROAD Authors
+# Find this section:
+set(DBSTA_SOURCES
+    # ... existing files ...
+)
 
-add_subdirectory(src)
-add_subdirectory(test)
+# Add this line:
+set(DBSTA_SOURCES
+    ${DBSTA_SOURCES}
+    pin_checker.cc
+)
+
+# Ensure it's included in the library:
+add_library(dbSta ${DBSTA_SOURCES})
