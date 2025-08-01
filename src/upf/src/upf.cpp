@@ -312,8 +312,7 @@ bool use_interface_cell(utl::Logger* logger,
     return false;
   }
 
-  std::string _cell(cell);
-  iso->addIsolationCell(_cell);
+  iso->addIsolationCell(cell);
 
   return true;
 }
@@ -541,8 +540,7 @@ static bool add_insts_to_group(
     if (mod == block->getTopModule()) {
       found = (module_to_domain.find(".") != module_to_domain.end());
     } else {
-      auto modInst = mod->getModInst();
-      path = modInst->getHierarchicalName();
+      path = mod->getModInst()->getHierarchicalName();
       found = (module_to_domain.find(path) != module_to_domain.end());
     }
 
@@ -574,13 +572,13 @@ static bool find_smallest_inverter(sta::dbNetwork* network,
   for (auto&& lib : libs) {
     auto masters = lib->getMasters();
     for (auto&& master : masters) {
-      auto master_cell_ = network->dbToSta(master);
-      auto libcell_ = network->libertyCell(master_cell_);
+      auto master_cell = network->dbToSta(master);
+      auto lib_cell = network->libertyCell(master_cell);
 
-      if (libcell_ && libcell_->isInverter()
-          && libcell_->area() < smallest_area) {
-        smallest_area = libcell_->area();
-        smallest_inverter = libcell_;
+      if (lib_cell && lib_cell->isInverter()
+          && lib_cell->area() < smallest_area) {
+        smallest_area = lib_cell->area();
+        smallest_inverter = lib_cell;
         smallest_inverter->bufferPorts(inverter_input, inverter_output);
         inverter_m = network->staToDb(smallest_inverter);
         input_m = network->staToDb(inverter_input);
@@ -624,8 +622,8 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
   }
 
   for (auto&& iso_cell : iso_cells) {
-    sta::Cell* masterCell = network->dbToSta(iso_cell);
-    sta::LibertyCell* libertyCell = network->libertyCell(masterCell);
+    sta::Cell* master_cell = network->dbToSta(iso_cell);
+    sta::LibertyCell* liberty_cell = network->libertyCell(master_cell);
 
     // Find enable & data pins for the isolation cell
     sta::LibertyPort* tmp_enable_lib_port = nullptr;
@@ -636,7 +634,7 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
 
     for (auto&& term : iso_cell->getMTerms()) {
       sta::LibertyPort* lib_port
-          = libertyCell->findLibertyPort(term->getName().c_str());
+          = liberty_cell->findLibertyPort(term->getName().c_str());
 
       if (!lib_port) {
         continue;
@@ -678,7 +676,7 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     }
 
     // Update the smallest_area
-    float tmp_area = libertyCell->area();
+    float tmp_area = liberty_cell->area();
     if (tmp_invert_control || tmp_invert_output) {
       if (!inverter_m) {
         continue;
@@ -921,28 +919,28 @@ get_connected_terms(odb::dbBlock* block, odb::dbITerm* iterm)
     return external_iterms;
   }
 
-  auto connectedIterms = net->getITerms();
+  auto connected_iterms = net->getITerms();
 
-  if (connectedIterms.size() < 2) {
+  if (connected_iterms.size() < 2) {
     return external_iterms;
   }
 
-  for (auto&& connectedIterm : connectedIterms) {
-    if (connectedIterm == iterm) {
+  for (auto&& connected_iterm : connected_iterms) {
+    if (connected_iterm == iterm) {
       continue;
     }
 
-    auto connectedInst = connectedIterm->getInst();
-    // TODO: if connectedInst is isolation cell or level shifting cell
+    auto connected_inst = connected_iterm->getInst();
+    // TODO: if connected_inst is isolation cell or level shifting cell
     // then ignore it
 
-    if (connectedInst->getGroup() != iterm->getInst()->getGroup()) {
-      odb::dbPowerDomain* connectedDomain = nullptr;
-      if (connectedInst->getGroup()) {
-        connectedDomain
-            = block->findPowerDomain(connectedInst->getGroup()->getName());
+    if (connected_inst->getGroup() != iterm->getInst()->getGroup()) {
+      odb::dbPowerDomain* connected_domain = nullptr;
+      if (connected_inst->getGroup()) {
+        connected_domain
+            = block->findPowerDomain(connected_inst->getGroup()->getName());
       }
-      external_iterms.emplace_back(connectedIterm, connectedDomain);
+      external_iterms.emplace_back(connected_iterm, connected_domain);
     }
   }
 

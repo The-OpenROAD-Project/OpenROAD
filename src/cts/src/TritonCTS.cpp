@@ -111,12 +111,15 @@ void TritonCTS::runTritonCts()
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
                                    Clock& net,
+                                   odb::dbNet* topInputNet,
                                    TreeBuilder* parent,
                                    utl::Logger* logger,
                                    odb::dbDatabase* db)
 {
   auto builder
       = std::make_unique<HTreeBuilder>(options, net, parent, logger, db);
+
+  builder->setTopInputNet(topInputNet);
   builders_.emplace_back(std::move(builder));
   return builders_.back().get();
 }
@@ -1178,15 +1181,15 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     options_->setNumSinks(totalSinks);
     incrementNumClocks();
     clockNet.setNetObj(firstNet);
-    return addBuilder(options_, clockNet, parentBuilder, logger_, db_);
+    return addBuilder(
+        options_, clockNet, clkInputNet, parentBuilder, logger_, db_);
   }
 
   // add macro sinks to existing firstNet
-  TreeBuilder* firstBuilder
-      = addClockSinks(clockNet, firstNet, macroSinks, parentBuilder, "macros");
+  TreeBuilder* firstBuilder = addClockSinks(
+      clockNet, clkInputNet, firstNet, macroSinks, parentBuilder, "macros");
   if (firstBuilder) {
     firstBuilder->setTreeType(TreeType::MacroTree);
-    firstBuilder->setTopInputNet(clkInputNet);
   }
 
   // create a new net 'secondNet' to drive register sinks
@@ -1198,6 +1201,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
   // add register sinks to secondNet
   TreeBuilder* secondBuilder
       = addClockSinks(clockNet2,
+                      clkInputNet,
                       secondNet,
                       registerSinks,
                       firstBuilder ? firstBuilder : parentBuilder,
@@ -1206,10 +1210,9 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     secondBuilder->setTreeType(TreeType::RegisterTree);
     secondBuilder->setTopBufferName(std::move(topBufferName));
     secondBuilder->setDrivingNet(firstNet);
-    secondBuilder->setTopInputNet(clkInputNet);
   }
 
-  return secondBuilder;
+  return firstBuilder;
 }
 
 // Separate sinks into registers (no insertion delay) and macros (insertion
@@ -1250,6 +1253,7 @@ bool TritonCTS::separateMacroRegSinks(
 
 TreeBuilder* TritonCTS::addClockSinks(
     Clock& clockNet,
+    odb::dbNet* topInputNet,
     odb::dbNet* physicalNet,
     const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
     TreeBuilder* parentBuilder,
@@ -1276,7 +1280,8 @@ TreeBuilder* TritonCTS::addClockSinks(
   options_->setNumSinks(totalSinks);
   incrementNumClocks();
   clockNet.setNetObj(physicalNet);
-  return addBuilder(options_, clockNet, parentBuilder, logger_, db_);
+  return addBuilder(
+      options_, clockNet, topInputNet, parentBuilder, logger_, db_);
 }
 
 Clock TritonCTS::forkRegisterClockNetwork(
@@ -2484,7 +2489,7 @@ bool TritonCTS::propagateClock(odb::dbITerm* input)
 
   // Clock Gater / Latch improvised as clock gater
   if (inputPort) {
-    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+    return inputPort->isClockGateClock() || inputPort->isLatchData();
   }
 
   return false;
@@ -2569,7 +2574,9 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   driverOutputTerm->disconnect();
   // hierarchical fix. guarded by network has hierarchy
   if (candidate_hier_net && network_->hasHierarchy()) {
-    driverOutputTerm->connect(orig_flat_net, candidate_hier_net);
+    network_->connectPin((sta::Pin*) driverOutputTerm,
+                         (sta::Net*) orig_flat_net,
+                         (sta::Net*) candidate_hier_net);
   } else {
     driverOutputTerm->connect(outputNet);
   }
@@ -2578,13 +2585,8 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
 void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
-  std::string topBufferName;
-  if (builder->getTreeType() == TreeType::RegisterTree) {
-    topBufferName = builder->getTopBufferName();
-  } else {
-    topBufferName = "clkbuf_0_" + clock.getName();
-  }
-  odb::dbInst* topBuffer = block_->findInst(topBufferName.c_str());
+  odb::dbInst* topBuffer
+      = block_->findInst(builder->getTopBufferName().c_str());
   if (topBuffer) {
     builder->setTopBuffer(topBuffer);
     odb::dbITerm* inputTerm = getFirstInput(topBuffer);

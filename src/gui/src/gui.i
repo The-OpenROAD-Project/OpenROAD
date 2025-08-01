@@ -310,13 +310,17 @@ void save_clocktree_image(const char* filename, const char* clock_name, const ch
   gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
 }
 
-void select_clockviewer_clock(const char* clock_name)
+void select_clockviewer_clock(const char* clock_name, int depth = 0)
 {
   if (!check_gui("select_clockviewer_clock")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->selectClockviewerClock(clock_name);
+  std::optional<int> clock_depth;
+  if (depth > 0) {
+    clock_depth = depth;
+  }
+  gui->selectClockviewerClock(clock_name, clock_depth);
 }
 
 void save_histogram_image(const char* filename, const char* mode, int width_px = 0, int height_px = 0)

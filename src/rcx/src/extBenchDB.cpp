@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cfloat>
 #include <map>
 #include <vector>
 
@@ -496,7 +497,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
         double s = pitch * ii;
         double s1 = s - minWidth;
 
-        if (spacing != s1) {
+        if (std::fabs(spacing - s1) > DBL_EPSILON) {
           spaceTable->add(s1);
         }
         spaceTable->add(s);

@@ -189,8 +189,8 @@ void FlexPA::prep()
       }
     }
 
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
+    dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                        dst::JobMessage::kBroadcast),
         result;
     std::unique_ptr<PinAccessJobDescription> uDesc
         = std::make_unique<PinAccessJobDescription>();
@@ -249,8 +249,8 @@ void FlexPA::prepPattern()
     logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
   }
   if (isDistributed()) {
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
+    dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                        dst::JobMessage::kBroadcast),
         result;
     std::unique_ptr<PinAccessJobDescription> uDesc
         = std::make_unique<PinAccessJobDescription>();

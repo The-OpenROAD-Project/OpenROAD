@@ -57,10 +57,6 @@ source $tracks_file
 remove_buffers
 
 ################################################################
-# IO Placement (random)
-place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
-
-################################################################
 # Macro Placement
 if { [have_macros] } {
   lassign $macro_place_halo halo_x halo_y
@@ -89,11 +85,16 @@ set_routing_layers -signal $global_routing_layers \
   -clock $global_routing_clock_layers
 set_macro_extension 2
 
-global_placement -routability_driven -density $global_place_density \
-  -pad_left $global_place_pad -pad_right $global_place_pad
+# Global placement skip IOs
+global_placement -density $global_place_density \
+  -pad_left $global_place_pad -pad_right $global_place_pad -skip_io
 
 # IO Placement
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
+
+# Global placement with placed IOs and routability-driven
+global_placement -routability_driven -density $global_place_density \
+  -pad_left $global_place_pad -pad_right $global_place_pad
 
 # checkpoint
 set global_place_db [make_result_file ${design}_${platform}_global_place.db]
@@ -197,8 +198,7 @@ write_verilog $verilog_file
 ################################################################
 # Global routing
 
-pin_access -bottom_routing_layer $min_routing_layer \
-  -top_routing_layer $max_routing_layer
+pin_access
 
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
@@ -221,14 +221,11 @@ utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
 # Detailed routing
 
 # Run pin access again after inserting diodes and moving cells
-pin_access -bottom_routing_layer $min_routing_layer \
-  -top_routing_layer $max_routing_layer
+pin_access
 
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
   -output_maze [make_result_file "${design}_${platform}_maze.log"] \
   -no_pin_access \
-  -bottom_routing_layer $min_routing_layer \
-  -top_routing_layer $max_routing_layer \
   -verbose 0
 
 write_guides [make_result_file "${design}_${platform}_output_guide.mod"]
@@ -253,8 +250,6 @@ while { [check_antennas] && $repair_antennas_iters < 5 } {
 
   detailed_route -output_drc [make_result_file "${design}_${platform}_ant_fix_drc.rpt"] \
     -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
-    -bottom_routing_layer $min_routing_layer \
-    -top_routing_layer $max_routing_layer \
     -verbose 0
 
   incr repair_antennas_iters

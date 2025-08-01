@@ -339,3 +339,23 @@ Now start the bisection as usual with a bad and good commit from the above list:
 Use `git bisect --skip` if the version does not build or otherwise should not be tested.
 
 OpenSTA has an additional challenge in that only the https://github.com/The-OpenROAD-Project/OpenSTA fork has the Bazel BUILD file. To bisect the https://github.com/parallaxsw/OpenSTA branch, check out the branch you want, then check out BUILD from the fork and do a `git reset HEAD`. This will leave BUILD as a local file, because it is not in the upstream repository and bisection can be done on the upstream master branch.
+
+## Testing the GUI with gcd on a pull request by number
+
+To test a PR with the GUI on gcd, run:
+
+```
+    $ git fetch origin pull/7856/head
+    $ git checkout FETCH_HEAD
+    $ bazelisk run test/orfs/gcd:gcd_final /tmp/gcd -- gui_final
+```
+
+This will:
+
+- fetch and checkout pull request 7856
+- build OpenROAD
+- run bazel-orfs flow on gcd
+- create a /tmp/gcd folder with the ORFS project
+- launch the GUI opening gui_final gcd
+
+`bazelisk run test/orfs/gcd:gcd_final` run alone would create the `/tmp/gcd` folder and the arguments. The arguments after `--` are forwarded to the `/tmp/gcd/make` script that invokes make with the gcd ORFS project set up in `/tmp/gcd/_main/config.mk`.

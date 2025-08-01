@@ -24,8 +24,8 @@ namespace {
 
 enum class TypeOfCell
 {
-  OneBitCell,
-  NotSupported
+  kOneBitCell,
+  kNotSupported
 };
 
 sta::LibertyCell* GetLibertyCell(odb::dbMaster* master,
@@ -63,9 +63,9 @@ TypeOfCell IdentifyCell(odb::dbInst* inst, sta::dbSta* sta)
   if (liberty_cell->hasSequentials() && !inst->getMaster()->isBlock()) {
     // we assume that we are only dealing with one bit cells, but in the future
     // we could deal with multibit cells too
-    return TypeOfCell::OneBitCell;
+    return TypeOfCell::kOneBitCell;
   }
-  return TypeOfCell::NotSupported;
+  return TypeOfCell::kNotSupported;
 }
 
 std::unique_ptr<ClockDomain> GetClockDomainFromClock(
@@ -163,7 +163,7 @@ std::unique_ptr<ScanCell> ScanCellFactory(odb::dbInst* inst,
   TypeOfCell type_of_cell = IdentifyCell(inst, sta);
 
   switch (type_of_cell) {
-    case TypeOfCell::OneBitCell:
+    case TypeOfCell::kOneBitCell:
       return CreateOneBitCell(inst, sta, logger);
     default:
       return nullptr;

@@ -1162,7 +1162,7 @@ void FlexTAWorker::assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS)
     return;
   }
   for (auto& iroute : pinS) {
-    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode) {
+    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode_) {
       continue;
     }
     removeFromReassignIroutes(iroute);

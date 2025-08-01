@@ -160,7 +160,7 @@ void FastRouteCore::fillVIA()
 
   for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
-    int num_terminals = sttrees_[netID].num_terminals;
+    const int num_terminals = sttrees_[netID].num_terminals;
     const auto& treenodes = sttrees_[netID].nodes;
 
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
@@ -1217,13 +1217,13 @@ void FastRouteCore::StNetOrder()
           const int cap = getEdgeCapacity(
               nets_[netID], gridsX[i], min_y, EdgeDirection::Vertical);
           tree_order_cong_[j].xmin
-              += std::max(0, v_edges_[min_y][gridsX[i]].usage - cap);
+              += std::max(0, graph2d_.getUsageV(gridsX[i], min_y) - cap);
         } else {  // a horizontal edge
           const int min_x = std::min(gridsX[i], gridsX[i + 1]);
           const int cap = getEdgeCapacity(
               nets_[netID], min_x, gridsY[i], EdgeDirection::Horizontal);
           tree_order_cong_[j].xmin
-              += std::max(0, h_edges_[gridsY[i]][min_x].usage - cap);
+              += std::max(0, graph2d_.getUsageH(min_x, gridsY[i]) - cap);
         }
       }
     }
@@ -1353,15 +1353,13 @@ void FastRouteCore::recoverEdge(const int netID, const int edgeID)
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        v_edges_[ymin][gridsX[i]].usage += getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]],net->getEdgeCost());
-        v_used_ggrid_.insert(std::make_pair(ymin, gridsX[i]));
+        graph2d_.addUsageV(gridsX[i], ymin, net->getEdgeCost());
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             += net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        h_edges_[gridsY[i]][xmin].usage += getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin],net->getEdgeCost());
-        h_used_ggrid_.insert(std::make_pair(gridsY[i], xmin));
+        graph2d_.addUsageH(xmin, gridsY[i], net->getEdgeCost());
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             += net->getLayerEdgeCost(gridsL[i]);
       }
@@ -1393,11 +1391,11 @@ void FastRouteCore::removeLoops()
               if (gridsX[k] == gridsX[k + 1]) {
                 if (gridsY[k] != gridsY[k + 1]) {
                   const int min_y = std::min(gridsY[k], gridsY[k + 1]);
-                  v_edges_[min_y][gridsX[k]].usage -= getEdgeCostNDRAware(v_edges_[min_y][gridsX[k]], edgeCost);
+                  graph2d_.addUsageV(gridsX[k], min_y, -edgeCost);
                 }
               } else {
                 const int min_x = std::min(gridsX[k], gridsX[k + 1]);
-                h_edges_[gridsY[k]][min_x].usage -= getEdgeCostNDRAware(h_edges_[gridsY[k]][min_x], edgeCost);
+                graph2d_.addUsageH(min_x, gridsY[k], -edgeCost);
               }
             }
 
@@ -1442,23 +1440,22 @@ void FastRouteCore::verify2DEdgesUsage()
       const int x2 = treenodes[n2].x;
       const int y2 = treenodes[n2].y;
 
-      const int ymin = std::min(y1, y2);
-      const int ymax = std::max(y1, y2);
+      const auto [ymin, ymax] = std::minmax(y1, y2);
 
       if (treeedge->route.type == RouteType::LRoute) {
         if (treeedge->route.xFirst) {  // horizontal first
           for (int j = x1; j < x2; j++) {
-            h_edges[y1][j] += getEdgeCostNDRAware(h_edges_[y1][j],edgeCost);
+            h_edges[y1][j] += edgeCost;
           }
           for (int j = ymin; j < ymax; j++) {
-            v_edges[j][x2] += getEdgeCostNDRAware(v_edges_[j][x2],edgeCost);
+            v_edges[j][x2] += edgeCost;
           }
         } else {  // vertical first
           for (int j = ymin; j < ymax; j++) {
-            v_edges[j][x1] += getEdgeCostNDRAware(v_edges_[j][x1],edgeCost);
+            v_edges[j][x1] += edgeCost;
           }
           for (int j = x1; j < x2; j++) {
-            h_edges[y2][j] += getEdgeCostNDRAware(h_edges_[y2][j],edgeCost);
+            h_edges[y2][j] += edgeCost;
           }
         }
       } else if (treeedge->route.type == RouteType::ZRoute) {
@@ -1466,34 +1463,34 @@ void FastRouteCore::verify2DEdgesUsage()
         if (treeedge->route.HVH)  // HVH
         {
           for (int i = x1; i < Zpoint; i++) {
-            h_edges[y1][i] += getEdgeCostNDRAware(h_edges_[y1][i],edgeCost);
+            h_edges[y1][i] += edgeCost;
           }
           for (int i = Zpoint; i < x2; i++) {
-            h_edges[y2][i] += getEdgeCostNDRAware(h_edges_[y2][i],edgeCost);
+            h_edges[y2][i] += edgeCost;
           }
           for (int i = ymin; i < ymax; i++) {
-            v_edges[i][Zpoint] += getEdgeCostNDRAware(v_edges_[i][Zpoint],edgeCost);
+            v_edges[i][Zpoint] += edgeCost;
           }
         } else {  // VHV
           if (y1 <= y2) {
             for (int i = y1; i < Zpoint; i++) {
-              v_edges[i][x1] += getEdgeCostNDRAware(v_edges_[i][x1],edgeCost);
+              v_edges[i][x1] += edgeCost;
             }
             for (int i = Zpoint; i < y2; i++) {
-              v_edges[i][x2] += getEdgeCostNDRAware(v_edges_[i][x2],edgeCost);
+              v_edges[i][x2] += edgeCost;
             }
             for (int i = x1; i < x2; i++) {
-              h_edges[Zpoint][i] += getEdgeCostNDRAware(h_edges_[Zpoint][i],edgeCost);
+              h_edges[Zpoint][i] += edgeCost;
             }
           } else {
             for (int i = y2; i < Zpoint; i++) {
-              v_edges[i][x2] += getEdgeCostNDRAware(v_edges_[i][x2],edgeCost);
+              v_edges[i][x2] += edgeCost;
             }
             for (int i = Zpoint; i < y1; i++) {
-              v_edges[i][x1] += getEdgeCostNDRAware(v_edges_[i][x1],edgeCost);
+              v_edges[i][x1] += edgeCost;
             }
             for (int i = x1; i < x2; i++) {
-              h_edges[Zpoint][i] += getEdgeCostNDRAware(h_edges_[Zpoint][i],edgeCost);
+              h_edges[Zpoint][i] += edgeCost;
             }
           }
         }
@@ -1502,23 +1499,23 @@ void FastRouteCore::verify2DEdgesUsage()
   }
   for (int y = 0; y < y_grid_ - 1; ++y) {
     for (int x = 0; x < x_grid_; ++x) {
-      if (v_edges[y][x] != v_edges_[y][x].est_usage) {
+      if (v_edges[y][x] != graph2d_.getEstUsageV(x, y)) {
         logger_->error(GRT,
                        247,
                        "v_edge mismatch {} vs {}",
                        v_edges[y][x],
-                       v_edges_[y][x].est_usage);
+                       graph2d_.getEstUsageV(x, y));
       }
     }
   }
   for (int y = 0; y < y_grid_; ++y) {
     for (int x = 0; x < x_grid_ - 1; ++x) {
-      if (h_edges[y][x] != h_edges_[y][x].est_usage) {
+      if (h_edges[y][x] != graph2d_.getEstUsageH(x, y)) {
         logger_->error(GRT,
                        248,
                        "h_edge mismatch {} vs {}",
                        h_edges[y][x],
-                       h_edges_[y][x].est_usage);
+                       graph2d_.getEstUsageH(x, y));
       }
     }
   }
@@ -1560,13 +1557,13 @@ void FastRouteCore::verify3DEdgesUsage()
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           s_v_edges[ymin][gridsX[i]].insert(netID);
-          v_edges[ymin][gridsX[i]] += getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]],edgeCost);
+          v_edges[ymin][gridsX[i]] += edgeCost;
           v_edges_3D[gridsL[i]][ymin][gridsX[i]]
               += nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           s_h_edges[gridsY[i]][xmin].insert(netID);
-          h_edges[gridsY[i]][xmin] += getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin],edgeCost);
+          h_edges[gridsY[i]][xmin] += edgeCost;
           h_edges_3D[gridsL[i]][gridsY[i]][xmin]
               += nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }
@@ -1609,29 +1606,29 @@ void FastRouteCore::check2DEdgesUsage()
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
 
   // check horizontal edges
-  for (const auto& [i, j] : h_used_ggrid_) {
-    if (h_edges_[i][j].usage > max_h_edge_usage) {
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    if (graph2d_.getUsageH(x, y) > max_h_edge_usage) {
       logger_->error(GRT,
                      228,
                      "Horizontal edge usage exceeds the maximum allowed. "
                      "({}, {}) usage={} limit={}",
-                     i,
-                     j,
-                     h_edges_[i][j].usage,
+                     x,
+                     y,
+                     graph2d_.getUsageH(x, y),
                      max_h_edge_usage);
     }
   }
 
   // check vertical edges
-  for (const auto& [i, j] : v_used_ggrid_) {
-    if (v_edges_[i][j].usage > max_v_edge_usage) {
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    if (graph2d_.getUsageV(x, y) > max_v_edge_usage) {
       logger_->error(GRT,
                      229,
                      "Vertical edge usage exceeds the maximum allowed. "
                      "({}, {}) usage={} limit={}",
-                     i,
-                     j,
-                     v_edges_[i][j].usage,
+                     x,
+                     y,
+                     graph2d_.getUsageV(x, y),
                      max_v_edge_usage);
     }
   }
@@ -1877,10 +1874,10 @@ void FastRouteCore::copyBR()
             }
             if (gridsX[i] == gridsX[i + 1]) {
               const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-              v_edges_[min_y][gridsX[i]].usage -= getEdgeCostNDRAware(v_edges_[min_y][gridsX[i]], edgeCost);
+              graph2d_.addUsageV(gridsX[i], min_y, -edgeCost);
             } else {
               const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-              h_edges_[gridsY[i]][min_x].usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][min_x], edgeCost);
+              graph2d_.addUsageH(min_x, gridsY[i], -edgeCost);
             }
           }
         }
@@ -1964,12 +1961,10 @@ void FastRouteCore::copyBR()
             }
             if (gridsX[i] == gridsX[i + 1]) {
               const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-              v_edges_[min_y][gridsX[i]].usage += getEdgeCostNDRAware(v_edges_[min_y][gridsX[i]], edgeCost);
-              v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
+              graph2d_.addUsageV(gridsX[i], min_y, edgeCost);
             } else {
               const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-              h_edges_[gridsY[i]][min_x].usage += getEdgeCostNDRAware(h_edges_[gridsY[i]][min_x], edgeCost);
-              h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
+              graph2d_.addUsageH(min_x, gridsY[i], edgeCost);
             }
           }
         }
@@ -2161,7 +2156,7 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
           for (int j = minY; j <= maxY; j++) {
             costH[j] = 0;
             for (int k = t.branch[n1].x; k < t.branch[n2].x; k++) {
-              costH[j] += h_edges_[j][k].est_usage;
+              costH[j] += graph2d_.getEstUsageH(k, j);
             }
             // add the cost of all edges adjacent to the two steiner nodes
             for (int l = 0; l < nbrCnt[n1]; l++) {
@@ -2188,12 +2183,12 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
                 int cost1 = 0;
                 int cost2 = 0;
                 for (int m = smallX; m < bigX; m++) {
-                  cost1 += h_edges_[smallY][m].est_usage;
-                  cost2 += h_edges_[bigY][m].est_usage;
+                  cost1 += graph2d_.getEstUsageH(m, smallY);
+                  cost2 += graph2d_.getEstUsageH(m, bigY);
                 }
                 for (int m = smallY; m < bigY; m++) {
-                  cost1 += v_edges_[m][bigX].est_usage;
-                  cost2 += v_edges_[m][smallX].est_usage;
+                  cost1 += graph2d_.getEstUsageV(bigX, m);
+                  cost2 += graph2d_.getEstUsageV(smallX, m);
                 }
                 costH[j] += std::min(cost1, cost2);
               }
@@ -2222,12 +2217,12 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
                 int cost1 = 0;
                 int cost2 = 0;
                 for (int m = smallX; m < bigX; m++) {
-                  cost1 += h_edges_[smallY][m].est_usage;
-                  cost2 += h_edges_[bigY][m].est_usage;
+                  cost1 += graph2d_.getEstUsageH(m, smallY);
+                  cost2 += graph2d_.getEstUsageH(m, bigY);
                 }
                 for (int m = smallY; m < bigY; m++) {
-                  cost1 += v_edges_[m][bigX].est_usage;
-                  cost2 += v_edges_[m][smallX].est_usage;
+                  cost1 += graph2d_.getEstUsageV(bigX, m);
+                  cost2 += graph2d_.getEstUsageV(smallX, m);
                 }
                 costH[j] += std::min(cost1, cost2);
               }
@@ -2281,7 +2276,7 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
           for (int j = minX; j <= maxX; j++) {
             costV[j] = 0;
             for (int k = t.branch[n1].y; k < t.branch[n2].y; k++) {
-              costV[j] += v_edges_[k][j].est_usage;
+              costV[j] += graph2d_.getEstUsageV(j, k);
             }
             // add the cost of all edges adjacent to the two steiner nodes
             for (int l = 0; l < nbrCnt[n1]; l++) {
@@ -2309,12 +2304,12 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
                 int cost1 = 0;
                 int cost2 = 0;
                 for (int m = smallX; m < bigX; m++) {
-                  cost1 += h_edges_[smallY][m].est_usage;
-                  cost2 += h_edges_[bigY][m].est_usage;
+                  cost1 += graph2d_.getEstUsageH(m, smallY);
+                  cost2 += graph2d_.getEstUsageH(m, bigY);
                 }
                 for (int m = smallY; m < bigY; m++) {
-                  cost1 += v_edges_[m][bigX].est_usage;
-                  cost2 += v_edges_[m][smallX].est_usage;
+                  cost1 += graph2d_.getEstUsageV(bigX, m);
+                  cost2 += graph2d_.getEstUsageV(smallX, m);
                 }
                 costV[j] += std::min(cost1, cost2);
               }
@@ -2343,12 +2338,12 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
                 int cost1 = 0;
                 int cost2 = 0;
                 for (int m = smallX; m < bigX; m++) {
-                  cost1 += h_edges_[smallY][m].est_usage;
-                  cost2 += h_edges_[bigY][m].est_usage;
+                  cost1 += graph2d_.getEstUsageH(m, smallY);
+                  cost2 += graph2d_.getEstUsageH(m, bigY);
                 }
                 for (int m = smallY; m < bigY; m++) {
-                  cost1 += v_edges_[m][bigX].est_usage;
-                  cost2 += v_edges_[m][smallX].est_usage;
+                  cost1 += graph2d_.getEstUsageV(bigX, m);
+                  cost2 += graph2d_.getEstUsageV(smallX, m);
                 }
                 costV[j] += std::min(cost1, cost2);
               }
@@ -2531,7 +2526,7 @@ double FastRouteCore::dbuToMicrons(const int dbu)
 void FastRouteCore::saveCongestion(const int iter)
 {
   std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
-  if (!h_edges_.empty() && !v_edges_.empty()) {
+  if (graph2d_.hasEdges()) {
     getCongestionGrid(congestionGridsV, congestionGridsH);
 
     std::mt19937 g;

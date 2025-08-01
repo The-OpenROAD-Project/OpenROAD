@@ -166,8 +166,8 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/cts",
-        "//src/grt",
         "//src/utl",
+        "//src/grt",  # work around cyclic dependncy between rsz and grt
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

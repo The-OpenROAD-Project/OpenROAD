@@ -786,18 +786,15 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       const int n2x = treenodes[n2].x;
       const int n2y = treenodes[n2].y;
 
-      const int ymin = std::min(n1y, n2y);
-      const int ymax = std::max(n1y, n2y);
+      const auto [ymin, ymax] = std::minmax(n1y, n2y);
+      const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
-      const int xmin = std::min(n1x, n2x);
-      const int xmax = std::max(n1x, n2x);
-
-      if(net->getDbNet() == debug_->net_){
+      if(net->getDbNet() == debug_->net){
         logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === Before newRipup3D", net->getName(), expand, ripupTHlb, ripupTHub);
         logger_->report("x1/x2: {}/{} y1/y2: {}/{} Treeedge_len: {}",xmin, xmax, ymin, ymax, treeedge->len);
-        if (debug_->isOn() && debug_->rectilinearSTree_) {
+        if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
-            if (nets_[netID]->getDbNet() == debug_->net_) {
+            if (nets_[netID]->getDbNet() == debug_->net) {
               StTreeVisualization(sttrees_[netID], nets_[netID], true);
             }
           }
@@ -1639,11 +1636,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);
 
       // DEBUG clknet
-      if(net->getDbNet() == debug_->net_){
+      if(net->getDbNet() == debug_->net){
         logger_->report("xxx DEBUG2 xxx");
-        if (debug_->isOn() && debug_->rectilinearSTree_) {
+        if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
-            if (nets_[netID]->getDbNet() == debug_->net_) {
+            if (nets_[netID]->getDbNet() == debug_->net) {
               StTreeVisualization(sttrees_[netID], nets_[netID], true);
             }
           }
@@ -1681,29 +1678,27 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (gridsX[i] == gridsX[i + 1])  // a vertical edge
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-            v_edges_[min_y][gridsX[i]].usage += net->getLayerEdgeCost(gridsL[i]);
-            v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
+            graph2d_.addUsageV(gridsX[i], min_y, net->getLayerEdgeCost(gridsL[i]));
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-            h_edges_[gridsY[i]][min_x].usage += net->getLayerEdgeCost(gridsL[i]);
-            h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
+            graph2d_.addUsageH(min_x, gridsY[i], net->getLayerEdgeCost(gridsL[i]));
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           }
         }
       }
 
-      if(net->getDbNet() == debug_->net_){
+      if(net->getDbNet() == debug_->net){
         logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === After update", net->getName(), expand, ripupTHlb, ripupTHub);
         int maxO, tU;
         getOverflow3D();
         getOverflow2Dmaze(&maxO,&tU);
-        if (debug_->isOn() && debug_->rectilinearSTree_) {
+        if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
-            if (nets_[netID]->getDbNet() == debug_->net_) {
+            if (nets_[netID]->getDbNet() == debug_->net) {
               StTreeVisualization(sttrees_[netID], nets_[netID], true);
             }
           }

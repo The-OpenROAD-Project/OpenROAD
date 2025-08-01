@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -16,7 +13,6 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "shapes.h"
 #include "util.h"
 
@@ -172,6 +168,8 @@ class Cluster
   void setAsIOPadCluster(const std::pair<float, float>& pos,
                          float width,
                          float height);
+  bool isIOBundle() const { return is_io_bundle_; }
+  void setAsIOBundle(const Point& pos, float width, float height);
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -261,8 +259,9 @@ class Cluster
   bool is_cluster_of_unplaced_io_pins_{false};
   bool is_cluster_of_unconstrained_io_pins_{false};
   bool is_io_pad_cluster_{false};
+  bool is_io_bundle_{false};
 
-  bool is_array_of_interconnected_macros = false;
+  bool is_array_of_interconnected_macros_ = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
@@ -544,97 +543,6 @@ struct BundledNet
   // Thus each net must have both src_cluster_id and target_cluster_id
   int src_cluster_id = -1;
   int target_cluster_id = -1;
-};
-
-// Here we redefine the Rect class
-// odb::Rect use database unit
-// Rect class use float type for Micron unit
-struct Rect
-{
-  Rect() = default;
-  Rect(const float lx,
-       const float ly,
-       const float ux,
-       const float uy,
-       bool fixed_flag = false)
-      : lx(lx), ly(ly), ux(ux), uy(uy), fixed_flag(fixed_flag)
-  {
-  }
-
-  float xMin() const { return lx; }
-  float yMin() const { return ly; }
-  float xMax() const { return ux; }
-  float yMax() const { return uy; }
-
-  void setXMin(float lx) { this->lx = lx; }
-  void setYMin(float ly) { this->ly = ly; }
-  void setXMax(float ux) { this->ux = ux; }
-  void setYMax(float uy) { this->uy = uy; }
-
-  float xCenter() const { return (lx + ux) / 2.0; }
-  float yCenter() const { return (ly + uy) / 2.0; }
-
-  float getWidth() const { return ux - lx; }
-  float getHeight() const { return uy - ly; }
-
-  float getPerimeter() const { return 2 * getWidth() + 2 * getHeight(); }
-  float getArea() const { return getWidth() * getHeight(); }
-
-  void moveHor(float dist)
-  {
-    lx = lx + dist;
-    ux = ux + dist;
-  }
-
-  void moveVer(float dist)
-  {
-    ly = ly + dist;
-    uy = uy + dist;
-  }
-
-  bool isValid() const { return (lx < ux) && (ly < uy); }
-
-  void mergeInit()
-  {
-    lx = std::numeric_limits<float>::max();
-    ly = lx;
-    ux = std::numeric_limits<float>::lowest();
-    uy = ux;
-  }
-
-  void merge(const Rect& rect)
-  {
-    lx = std::min(lx, rect.lx);
-    ly = std::min(ly, rect.ly);
-    ux = std::max(ux, rect.ux);
-    uy = std::max(uy, rect.uy);
-  }
-
-  void relocate(float outline_lx,
-                float outline_ly,
-                float outline_ux,
-                float outline_uy)
-  {
-    if (!isValid()) {
-      return;
-    }
-
-    lx = std::max(lx, outline_lx);
-    ly = std::max(ly, outline_ly);
-    ux = std::min(ux, outline_ux);
-    uy = std::min(uy, outline_uy);
-    lx -= outline_lx;
-    ly -= outline_ly;
-    ux -= outline_lx;
-    uy -= outline_ly;
-  }
-
-  float lx = 0.0;
-  float ly = 0.0;
-  float ux = 0.0;
-  float uy = 0.0;
-
-  bool fixed_flag = false;
 };
 
 struct SequencePair

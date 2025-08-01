@@ -40,9 +40,9 @@ class ColorGenerator;
 
 enum class RendererState
 {
-  OnlyShowOnActiveWidget,
-  AlwaysShow,
-  NeverShow
+  kOnlyShowOnActiveWidget,
+  kAlwaysShow,
+  kNeverShow
 };
 
 class ClockTreeRenderer : public Renderer
@@ -67,8 +67,8 @@ class ClockTreeRenderer : public Renderer
 
   odb::dbITerm* path_to_;
 
-  static constexpr int pen_width_ = 2;
-  static constexpr const char* render_label_ = "Clock trees";
+  static constexpr int kPenWidth = 2;
+  static constexpr const char* kRenderLabel = "Clock trees";
 
   void drawTree(Painter& painter,
                 const Descriptor* descriptor,
@@ -104,8 +104,8 @@ class ClockNetGraphicsViewItem : public QGraphicsItem
 
   QPainterPath path_;
 
-  constexpr static qreal trunk_rounding_ = 0.1;
-  constexpr static qreal leaf_rounding_ = 0.1;
+  constexpr static qreal kTrunkRounding = 0.1;
+  constexpr static qreal kLeafRounding = 0.1;
 
   void buildTrunkJunction(const std::vector<ClockNodeGraphicsViewItem*>& nodes,
                           bool top_anchor,
@@ -155,15 +155,15 @@ class ClockNodeGraphicsViewItem : public QGraphicsObject
   void setName(odb::dbITerm* term);
   void setName(odb::dbBTerm* term);
 
-  constexpr static Qt::GlobalColor buffer_color_ = Qt::blue;
-  constexpr static Qt::GlobalColor inverter_color_ = Qt::darkCyan;
-  constexpr static Qt::GlobalColor root_color_ = Qt::red;
-  constexpr static Qt::GlobalColor clock_gate_color_ = Qt::magenta;
-  constexpr static Qt::GlobalColor unknown_color_ = Qt::darkGray;
-  constexpr static Qt::GlobalColor leaf_register_color_ = Qt::red;
-  constexpr static Qt::GlobalColor leaf_macro_color_ = Qt::darkCyan;
+  constexpr static Qt::GlobalColor kBufferColor = Qt::blue;
+  constexpr static Qt::GlobalColor kInverterColor = Qt::darkCyan;
+  constexpr static Qt::GlobalColor kRootColor = Qt::red;
+  constexpr static Qt::GlobalColor kClockGateColor = Qt::magenta;
+  constexpr static Qt::GlobalColor kUnknownColor = Qt::darkGray;
+  constexpr static Qt::GlobalColor kLeafRegisterColor = Qt::red;
+  constexpr static Qt::GlobalColor kLeafMacroColor = Qt::darkCyan;
 
-  constexpr static qreal default_size_ = 100.0;
+  constexpr static qreal kDefaultSize = 100.0;
 
   static QString getITermName(odb::dbITerm* term);
   static QString getITermInstName(odb::dbITerm* term);
@@ -205,7 +205,7 @@ class ClockRootNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QPointF getBottomAnchor() const override;
 
   QString getType() const override { return "Root"; }
-  QColor getColor() const override { return root_color_; }
+  QColor getColor() const override { return kRootColor; }
 
   QPainterPath shape() const override;
 
@@ -228,7 +228,7 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QString getType() const override { return inverter_ ? "Inverter" : "Buffer"; }
   QColor getColor() const override
   {
-    return inverter_ ? inverter_color_ : buffer_color_;
+    return inverter_ ? kInverterColor : kBufferColor;
   }
 
   QPointF getBottomAnchor() const override;
@@ -245,7 +245,7 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 
   bool inverter_;
 
-  constexpr static qreal bar_scale_size_ = 0.1;
+  constexpr static qreal kBarScaleSize = 0.1;
 };
 
 // Handles drawing macro or register leaf cell
@@ -286,7 +286,7 @@ class ClockRegisterNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
   }
   ~ClockRegisterNodeGraphicsViewItem() override = default;
   QString getType() const override { return "Register"; }
-  QColor getColor() const override { return leaf_register_color_; }
+  QColor getColor() const override { return kLeafRegisterColor; }
 };
 
 // Handles drawing macro cell node for a tree
@@ -302,7 +302,7 @@ class ClockMacroNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
   }
   ~ClockMacroNodeGraphicsViewItem() override = default;
   QString getType() const override { return "Macro"; }
-  QColor getColor() const override { return leaf_macro_color_; }
+  QColor getColor() const override { return kLeafMacroColor; }
 
  protected:
   QRectF getOutlineRect() const override;
@@ -325,7 +325,7 @@ class ClockGateNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QString getType() const override;
   QColor getColor() const override
   {
-    return is_clock_gate_ ? clock_gate_color_ : unknown_color_;
+    return is_clock_gate_ ? kClockGateColor : kUnknownColor;
   }
 
   QPointF getBottomAnchor() const override;
@@ -365,7 +365,7 @@ class ClockTreeScene : public QGraphicsScene
 
  protected:
   void contextMenuEvent(
-      QGraphicsSceneContextMenuEvent* contextMenuEvent) override;
+      QGraphicsSceneContextMenuEvent* context_menu_event) override;
 
  private:
   QMenu* menu_;
@@ -404,12 +404,12 @@ class ClockTreeView : public QGraphicsView
   void setRendererState(RendererState state);
   void fit();
   void save(const QString& path = "");
+  void updateColorDepth(int depth);
 
  private slots:
   void selectionChanged();
   void highlightTo(odb::dbITerm* term);
   void clearHighlightTo();
-  void updateColorDepth(int depth);
 
  protected:
   void wheelEvent(QWheelEvent* event) override;
@@ -472,9 +472,9 @@ class ClockTreeView : public QGraphicsView
                const QString& tooltip,
                sta::Delay delay);
 
-  constexpr static int default_scene_height_
-      = 75.0 * ClockNodeGraphicsViewItem::default_size_;
-  constexpr static qreal node_spacing_ = 0.2;
+  constexpr static int kDefaultSceneHeight
+      = 75.0 * ClockNodeGraphicsViewItem::kDefaultSize;
+  constexpr static qreal kNodeSpacing = 0.2;
 
   qreal convertDelayToY(sta::Delay delay) const;
   sta::Delay convertYToDelay(qreal y) const;
@@ -516,7 +516,8 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
                  const std::string& corner,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
-  void selectClock(const std::string& clock_name);
+  void selectClock(const std::string& clock_name,
+                   std::optional<int> depth = {});
 
   void postReadLiberty() override;
 

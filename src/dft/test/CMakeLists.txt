@@ -16,5 +16,5 @@ or_integration_tests(
 #dft_man_tcl_check
 #dft_readme_msgs_check
 
-find_package(Boost)
+find_package(Boost CONFIG)
 add_subdirectory(cpp)

@@ -12,6 +12,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"
 
 namespace odb {
@@ -178,11 +179,23 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   using Node = odb::dbWireGraph::Node;
   using NodeList = std::set<const Node*>;
   using NodeMap = std::map<const Node*, NodeList>;
+  using PointList = std::set<odb::Point>;
+  using PointMap = std::map<odb::Point, PointList>;
   using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
+  using DbTargets = std::map<const odb::dbObject*, std::set<odb::Point>>;
 
-  void drawPathSegment(odb::dbNet* net,
-                       const odb::dbObject* sink,
-                       Painter& painter) const;
+  std::set<odb::Line> convertGuidesToLines(odb::dbNet* net,
+                                           DbTargets& sources,
+                                           DbTargets& sinks) const;
+
+  void drawPathSegmentWithGraph(odb::dbNet* net,
+                                const odb::dbObject* sink,
+                                Painter& painter) const;
+  void drawPathSegmentWithGuides(const std::set<odb::Line>& lines,
+                                 DbTargets& sources,
+                                 DbTargets& sinks,
+                                 const odb::dbObject* sink,
+                                 Painter& painter) const;
   void findSourcesAndSinksInGraph(odb::dbNet* net,
                                   const odb::dbObject* sink,
                                   odb::dbWireGraph* graph,
@@ -196,6 +209,10 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
                 const Node* source,
                 const Node* sink,
                 std::vector<odb::Point>& path) const;
+  void findPath(PointMap& graph,
+                const odb::Point& source,
+                const odb::Point& sink,
+                std::vector<odb::Point>& path) const;
 
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
@@ -205,14 +222,15 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
 
   odb::dbObject* getSink(const std::any& object) const;
 
-  static const int max_iterms_ = 10000;
+  static const int kMaxIterms = 10000;
+  static constexpr double kMinGuidePixelWidth = 10.0;
 };
 
 class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
 {
  public:
   DbITermDescriptor(odb::dbDatabase* db,
-                    std::function<bool()> usingPolyDecompView);
+                    std::function<bool()> using_poly_decomp_view);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -229,7 +247,7 @@ class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
   Properties getDBProperties(odb::dbITerm* iterm) const override;
 
  private:
-  std::function<bool()> usingPolyDecompView_;
+  std::function<bool()> using_poly_decomp_view_;
 };
 
 class DbBTermDescriptor : public BaseDbDescriptor<odb::dbBTerm>
@@ -273,7 +291,7 @@ class DbMTermDescriptor : public BaseDbDescriptor<odb::dbMTerm>
 {
  public:
   DbMTermDescriptor(odb::dbDatabase* db,
-                    std::function<bool()> usingPolyDecompView);
+                    std::function<bool()> using_poly_decomp_view);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -288,7 +306,7 @@ class DbMTermDescriptor : public BaseDbDescriptor<odb::dbMTerm>
   Properties getDBProperties(odb::dbMTerm* mterm) const override;
 
  private:
-  std::function<bool()> usingPolyDecompView_;
+  std::function<bool()> using_poly_decomp_view_;
 };
 
 class DbViaDescriptor : public BaseDbDescriptor<odb::dbVia>
@@ -371,12 +389,12 @@ struct DbTermAccessPoint
   odb::dbAccessPoint* ap{nullptr};
   odb::dbITerm* iterm{nullptr};
   odb::dbBTerm* bterm{nullptr};
-  DbTermAccessPoint(odb::dbAccessPoint* apIn, odb::dbITerm* itermIn)
-      : ap(apIn), iterm(itermIn)
+  DbTermAccessPoint(odb::dbAccessPoint* ap, odb::dbITerm* iterm)
+      : ap(ap), iterm(iterm)
   {
   }
-  DbTermAccessPoint(odb::dbAccessPoint* apIn, odb::dbBTerm* btermIn)
-      : ap(apIn), bterm(btermIn)
+  DbTermAccessPoint(odb::dbAccessPoint* ap, odb::dbBTerm* bterm)
+      : ap(ap), bterm(bterm)
   {
   }
 };
@@ -697,6 +715,114 @@ class DbMarkerDescriptor : public BaseDbDescriptor<odb::dbMarker>
 
  protected:
   Properties getDBProperties(odb::dbMarker* marker) const override;
+};
+
+class DbScanInstDescriptor : public BaseDbDescriptor<odb::dbScanInst>
+{
+ public:
+  DbScanInstDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+  static Descriptor::Property getScanPinProperty(
+      const std::string& name,
+      const std::variant<odb::dbBTerm*, odb::dbITerm*>& pin);
+
+ protected:
+  Properties getDBProperties(odb::dbScanInst* scan_inst) const override;
+};
+
+class DbScanListDescriptor : public BaseDbDescriptor<odb::dbScanList>
+{
+ public:
+  DbScanListDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbScanList* scan_list) const override;
+};
+
+class DbScanPartitionDescriptor : public BaseDbDescriptor<odb::dbScanPartition>
+{
+ public:
+  DbScanPartitionDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ protected:
+  Properties getDBProperties(
+      odb::dbScanPartition* scan_partition) const override;
+};
+
+class DbScanChainDescriptor : public BaseDbDescriptor<odb::dbScanChain>
+{
+ public:
+  DbScanChainDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbScanChain* scan_chain) const override;
+};
+
+class DbBoxDescriptor : public BaseDbDescriptor<odb::dbBox>
+{
+ public:
+  struct BoxWithTransform
+  {
+    odb::dbBox* box;
+    odb::dbTransform xform;
+  };
+
+  DbBoxDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  Selected makeSelected(std::any obj) const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbBox* box) const override;
+
+ private:
+  odb::dbBox* getObject(const std::any& object) const override;
+  odb::dbTransform getTransform(const std::any& object) const;
 };
 
 };  // namespace gui

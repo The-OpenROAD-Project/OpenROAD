@@ -75,6 +75,7 @@ class Replace
   void setBinGridCnt(int binGridCntX, int binGridCntY);
 
   void setTargetDensity(float density);
+  // Execute gpl with uniform density as target density
   void setUniformTargetDensityMode(bool mode);
   void setTargetOverflow(float overflow);
   void setInitDensityPenalityFactor(float penaltyFactor);
@@ -82,6 +83,7 @@ class Replace
   void setMinPhiCoef(float minPhiCoef);
   void setMaxPhiCoef(float maxPhiCoef);
 
+  // Query for uniform density value
   float getUniformTargetDensity(int threads);
 
   // HPWL: half-parameter wire length.
@@ -195,8 +197,8 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
-  bool gui_debug_generate_images = false;
-  std::string gui_debug_images_path = "REPORTS_DIR";
+  bool gui_debug_generate_images_ = false;
+  std::string gui_debug_images_path_ = "REPORTS_DIR";
 };
 
 inline constexpr const char* format_label_int = "{:27} {:10}";

@@ -27,7 +27,7 @@ Node::CompareInformation Node::compareTuple() const
 
 Node::CompareInformation Node::dummyCompareTuple()
 {
-  return {-1, 0, 0, NodeType::Unknown, -1};
+  return {-1, 0, 0, NodeType::kUnknown, -1};
 }
 
 bool Node::compare(const Node* other) const
@@ -79,15 +79,15 @@ std::string Node::getName() const
 std::string Node::getTypeName() const
 {
   switch (getType()) {
-    case NodeType::Node:
+    case NodeType::kNode:
       return "Node";
-    case NodeType::Source:
+    case NodeType::kSource:
       return "Source Node";
-    case NodeType::ITerm:
+    case NodeType::kITerm:
       return "ITerm Node";
-    case NodeType::BPin:
+    case NodeType::kBPin:
       return "BPin Node";
-    case NodeType::Unknown:
+    case NodeType::kUnknown:
       return "Unknown";
   }
 

@@ -3263,6 +3263,12 @@ class dbInst : public dbObject
   ///
   bool isEndCap() const;
 
+  ///
+  /// Get the scan version of this instance.
+  /// Returns nullptr if this instance has no scan version.
+  ///
+  dbScanInst* getScanInst() const;
+
   void setPinAccessIdx(uint idx);
 
   uint getPinAccessIdx() const;
@@ -3504,7 +3510,9 @@ class dbITerm : public dbObject
   void connect(dbModNet* net);
 
   // simultaneously connect this iterm to both a dbnet and a mod net.
-
+  // but do not do a reassociate (that is done by higher level api
+  // call in dbNetwork::connectPin)
+  //
   void connect(dbNet* db_net, dbModNet* db_mod_net);
 
   ///
@@ -7665,11 +7673,11 @@ class dbGuide : public dbObject
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
 
-  bool isJumper();
+  bool isJumper() const;
 
   void setIsJumper(bool jumper);
 
-  bool isConnectedToTerm();
+  bool isConnectedToTerm() const;
 
   void setIsConnectedToTerm(bool is_connected);
 
@@ -7709,7 +7717,7 @@ class dbIsolation : public dbObject
 
   void setLocation(const std::string& location);
 
-  void addIsolationCell(std::string& master);
+  void addIsolationCell(const std::string& master);
 
   std::vector<dbMaster*> getIsolationCells();
 
@@ -8424,6 +8432,7 @@ class dbScanInst : public dbObject
 
   void setClockEdge(ClockEdge clock_edge);
   ClockEdge getClockEdge() const;
+  std::string getClockEdgeString() const;
 
   // The number of bits that are in this scan inst from the scan in to the scan
   // out. For simple flops this is just 1.
@@ -8439,6 +8448,8 @@ class dbScanInst : public dbObject
 
   dbInst* getInst() const;
 
+  void insertAtFront(dbScanList* scan_list);
+
   static dbScanInst* create(dbScanList* scan_list, dbInst* inst);
   // User Code End dbScanInst
 };
@@ -8451,9 +8462,8 @@ class dbScanInst : public dbObject
 class dbScanList : public dbObject
 {
  public:
-  dbSet<dbScanInst> getScanInsts() const;
-
   // User Code Begin dbScanList
+  dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList

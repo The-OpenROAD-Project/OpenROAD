@@ -14,22 +14,22 @@ HighlightGroupDialog::HighlightGroupDialog(QWidget* parent) : QDialog(parent)
   setupUi(this);
   grp1RadioButton->setChecked(true);
 
-  setButtonBackground(grp1RadioButton, Painter::highlightColors[0]);
-  setButtonBackground(grp2RadioButton, Painter::highlightColors[1]);
-  setButtonBackground(grp3RadioButton, Painter::highlightColors[2]);
-  setButtonBackground(grp4RadioButton, Painter::highlightColors[3]);
-  setButtonBackground(grp5RadioButton, Painter::highlightColors[4]);
-  setButtonBackground(grp6RadioButton, Painter::highlightColors[5]);
-  setButtonBackground(grp7RadioButton, Painter::highlightColors[6]);
-  setButtonBackground(grp8RadioButton, Painter::highlightColors[7]);
-  setButtonBackground(grp9RadioButton, Painter::highlightColors[8]);
-  setButtonBackground(grp10RadioButton, Painter::highlightColors[9]);
-  setButtonBackground(grp11RadioButton, Painter::highlightColors[10]);
-  setButtonBackground(grp12RadioButton, Painter::highlightColors[11]);
-  setButtonBackground(grp13RadioButton, Painter::highlightColors[12]);
-  setButtonBackground(grp14RadioButton, Painter::highlightColors[13]);
-  setButtonBackground(grp15RadioButton, Painter::highlightColors[14]);
-  setButtonBackground(grp16RadioButton, Painter::highlightColors[15]);
+  setButtonBackground(grp1RadioButton, Painter::kHighlightColors[0]);
+  setButtonBackground(grp2RadioButton, Painter::kHighlightColors[1]);
+  setButtonBackground(grp3RadioButton, Painter::kHighlightColors[2]);
+  setButtonBackground(grp4RadioButton, Painter::kHighlightColors[3]);
+  setButtonBackground(grp5RadioButton, Painter::kHighlightColors[4]);
+  setButtonBackground(grp6RadioButton, Painter::kHighlightColors[5]);
+  setButtonBackground(grp7RadioButton, Painter::kHighlightColors[6]);
+  setButtonBackground(grp8RadioButton, Painter::kHighlightColors[7]);
+  setButtonBackground(grp9RadioButton, Painter::kHighlightColors[8]);
+  setButtonBackground(grp10RadioButton, Painter::kHighlightColors[9]);
+  setButtonBackground(grp11RadioButton, Painter::kHighlightColors[10]);
+  setButtonBackground(grp12RadioButton, Painter::kHighlightColors[11]);
+  setButtonBackground(grp13RadioButton, Painter::kHighlightColors[12]);
+  setButtonBackground(grp14RadioButton, Painter::kHighlightColors[13]);
+  setButtonBackground(grp15RadioButton, Painter::kHighlightColors[14]);
+  setButtonBackground(grp16RadioButton, Painter::kHighlightColors[15]);
 }
 
 void HighlightGroupDialog::setButtonBackground(QRadioButton* button,
@@ -61,7 +61,7 @@ int HighlightGroupDialog::getSelectedHighlightGroup() const
                                                      grp14RadioButton,
                                                      grp15RadioButton,
                                                      grp16RadioButton};
-  for (int i = 0; i < num_highlight_set; ++i) {
+  for (int i = 0; i < kNumHighlightSet; ++i) {
     if (highlight_group_buttons[i]->isChecked()) {
       return i;
     }

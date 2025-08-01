@@ -12,7 +12,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=v0.53
+    yosysVersion=v0.55
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -22,7 +22,7 @@ _equivalenceDeps() {
         cd yosys
         # use of no-register flag is required for some compilers,
         # e.g., gcc and clang from RHEL8
-        make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
+        make -j ${numThreads} PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
         make install
     ) fi
 
@@ -33,7 +33,7 @@ _equivalenceDeps() {
         git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
-        make -j $(nproc) PREFIX="${eqyPrefix}"
+        make -j ${numThreads} PREFIX="${eqyPrefix}"
         make install PREFIX="${eqyPrefix}"
     )
     fi
@@ -45,7 +45,7 @@ _equivalenceDeps() {
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
-        make -j $(nproc) PREFIX="${sbyPrefix}" install
+        make -j ${numThreads} PREFIX="${sbyPrefix}" install
     )
     fi
 }
@@ -64,8 +64,8 @@ _installCommonDev() {
     cmakeVersionSmall=${cmakeVersionBig}.6
     pcreVersion=10.42
     pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
-    swigVersion=4.1.0
-    swigChecksum="794433378154eb61270a3ac127d9c5f3"
+    swigVersion=4.3.0
+    swigChecksum="9f74c7f402aa28d9f75e67d1990ee6fb"
     boostVersionBig=1.86
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="ac857d73bb754b718a039830b07b9624"
@@ -112,7 +112,7 @@ _installCommonDev() {
         tar xf bison-${bisonVersion}.tar.gz
         cd bison-${bisonVersion}
         ./configure --prefix=${bisonPrefix}
-        make -j install
+        make -j ${numThreads} install
         echo "bison ${bisonVersion} installed (from ${bisonInstalledVersion})."
     else
         echo "bison ${bisonVersion} already installed."
@@ -128,8 +128,8 @@ _installCommonDev() {
         tar xf flex-${flexVersion}.tar.gz
         cd flex-${flexVersion}
         ./configure --prefix=${flexPrefix}
-        make -j $(nproc)
-        make -j $(nproc) install
+        make -j ${numThreads}
+        make -j ${numThreads} install
     else
         echo "Flex already installed."
     fi
@@ -154,8 +154,8 @@ _installCommonDev() {
         fi
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
-        make -j $(nproc)
-        make -j $(nproc) install
+        make -j ${numThreads}
+        make -j ${numThreads} install
     else
         echo "Swig already installed."
     fi
@@ -171,7 +171,7 @@ _installCommonDev() {
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh --prefix="${boostPrefix}"
-        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
+        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j ${numThreads}
     else
         echo "Boost already installed."
     fi
@@ -184,7 +184,7 @@ _installCommonDev() {
         git clone --depth=1 -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
         cd eigen
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${eigenPrefix}" -B build .
-        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
+        ${cmakePrefix}/bin/cmake --build build -j ${numThreads} --target install
     else
         echo "Eigen already installed."
     fi
@@ -198,7 +198,7 @@ _installCommonDev() {
         cd cudd
         autoreconf
         ./configure --prefix=${cuddPrefix}
-        make -j $(nproc) install
+        make -j ${numThreads} install
     else
         echo "Cudd already installed."
     fi
@@ -223,7 +223,7 @@ _installCommonDev() {
         git clone --depth=1 -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
         cd lemon-graph
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${lemonPrefix}" -B build .
-        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
+        ${cmakePrefix}/bin/cmake --build build -j ${numThreads} --target install
     else
         echo "Lemon already installed."
     fi
@@ -240,7 +240,7 @@ _installCommonDev() {
         git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
-        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
+        ${cmakePrefix}/bin/cmake --build build -j ${numThreads} --target install
         echo "spdlog ${spdlogVersion} installed (from ${spdlogInstalledVersion})."
     else
         echo "spdlog ${spdlogVersion} already installed."
@@ -329,7 +329,7 @@ _installOrTools() {
         git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
         cd or-tools
         ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
-        ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
+        ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j ${numThreads}
     else
         if [[ $osVersion == rodete ]]; then
             osVersion=11
@@ -587,16 +587,13 @@ Then, rerun this script.
 EOF
         exit 1
     fi
-    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig
 
     # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
 
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
-
-    # Install swig 4.1.1
-    _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
 
 _installDebianCleanUp() {
@@ -688,7 +685,7 @@ _installCI() {
 
     curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
     chmod +x bazelisk
-    mv bazelisk /usr/local/bin/bazel
+    mv bazelisk /usr/local/bin/bazelisk
 
     if command -v docker &> /dev/null; then
         # The user can uninstall docker if they want to reinstall it,
@@ -774,6 +771,9 @@ Usage: $0 -all
        $0 -constant-build-dir
                                 # Use constant build directory, instead of
                                 #    random one.
+       $0 -threads=<N>          #
+                                # Limit number of compiling threads. Default is
+                                # all available numThreads.
 
 EOF
     exit "${1:-1}"
@@ -786,6 +786,7 @@ isLocal="false"
 equivalenceDeps="no"
 CI="no"
 saveDepsPrefixes=""
+numThreads=$(nproc)
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -861,6 +862,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -save-deps-prefixes=*)
             saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
+            ;;
+        -threads=*)
+            numThreads=${1}
             ;;
         *)
             echo "unknown option: ${1}" >&2

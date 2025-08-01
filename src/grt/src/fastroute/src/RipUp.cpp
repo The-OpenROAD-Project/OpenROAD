@@ -19,24 +19,15 @@ void FastRouteCore::ripupSegL(const Segment* seg)
 {
   const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
-  const int ymin = std::min(seg->y1, seg->y2);
-  const int ymax = std::max(seg->y1, seg->y2);
+  const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
   // remove L routing
   if (seg->xFirst) {
-    for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[seg->y1][i], edgeCost);
-    }
-    for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][seg->x2], edgeCost);
-    }
+    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, -edgeCost);
+    graph2d_.addEstUsageV(seg->x2, {ymin, ymax}, -edgeCost);
   } else {
-    for (int i = ymin; i < ymax; i++) {
-      v_edges_[i][seg->x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][seg->x1], edgeCost);
-    }
-    for (int i = seg->x1; i < seg->x2; i++) {
-      h_edges_[seg->y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[seg->y2][i], edgeCost);
-    }
+    graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, -edgeCost);
+    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y2, -edgeCost);
   }
 }
 
@@ -52,61 +43,34 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
   }
 
   const RouteType ripuptype = treeedge->route.type;
-  const int ymin = std::min(y1, y2);
-  const int ymax = std::max(y1, y2);
+  const auto [ymin, ymax] = std::minmax(y1, y2);
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   if (ripuptype == RouteType::LRoute)  // remove L routing
   {
     if (treeedge->route.xFirst) {
-      for (int i = x1; i < x2; i++) {
-        h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
-      }
-      for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-      }
+      graph2d_.addEstUsageH({x1, x2}, y1, -edgeCost);
+      graph2d_.addEstUsageV(x2, {ymin, ymax}, -edgeCost);
     } else {
-      for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-      }
-      for (int i = x1; i < x2; i++) {
-        h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
-      }
+      graph2d_.addEstUsageV(x1, {ymin, ymax}, -edgeCost);
+      graph2d_.addEstUsageH({x1, x2}, y2, -edgeCost);
     }
   } else if (ripuptype == RouteType::ZRoute) {
     // remove Z routing
     const int Zpoint = treeedge->route.Zpoint;
     if (treeedge->route.HVH) {
-      for (int i = x1; i < Zpoint; i++) {
-        h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
-      }
-      for (int i = Zpoint; i < x2; i++) {
-        h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
-      }
-      for (int i = ymin; i < ymax; i++) {
-        v_edges_[i][Zpoint].est_usage -= getEdgeCostNDRAware(v_edges_[i][Zpoint], edgeCost);
-      }
+      graph2d_.addEstUsageH({x1, Zpoint}, y1, -edgeCost);
+      graph2d_.addEstUsageV(Zpoint, {ymin, ymax}, -edgeCost);
+      graph2d_.addEstUsageH({Zpoint, x2}, y2, -edgeCost);
     } else {
       if (y1 < y2) {
-        for (int i = y1; i < Zpoint; i++) {
-          v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-        }
-        for (int i = Zpoint; i < y2; i++) {
-          v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-        }
-        for (int i = x1; i < x2; i++) {
-          h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
-        }
+        graph2d_.addEstUsageV(x1, {y1, Zpoint}, -edgeCost);
+        graph2d_.addEstUsageH({x1, x2}, Zpoint, -edgeCost);
+        graph2d_.addEstUsageV(x2, {Zpoint, y2}, -edgeCost);
       } else {
-        for (int i = y2; i < Zpoint; i++) {
-          v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-        }
-        for (int i = Zpoint; i < y1; i++) {
-          v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-        }
-        for (int i = x1; i < x2; i++) {
-          h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
-        }
+        graph2d_.addEstUsageV(x1, {Zpoint, y1}, -edgeCost);
+        graph2d_.addEstUsageH({x1, x2}, Zpoint, -edgeCost);
+        graph2d_.addEstUsageV(x2, {y2, Zpoint}, -edgeCost);
       }
     }
   } else if (ripuptype == RouteType::MazeRoute) {
@@ -115,10 +79,10 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        v_edges_[ymin][gridsX[i]].est_usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
+        graph2d_.addEstUsageV(gridsX[i], ymin, -edgeCost);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        h_edges_[gridsY[i]][xmin].est_usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
+        graph2d_.addEstUsageH(xmin, gridsY[i], -edgeCost);
       } else {
         logger_->error(GRT, 225, "Maze ripup wrong in newRipup.");
       }
@@ -126,6 +90,7 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
   }
 }
 
+// remove L routing
 bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
                                   std::vector<TreeNode>& treenodes,
                                   const int x1,
@@ -136,93 +101,86 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
                                   const int netID)
 {
   if (treeedge->len == 0) {
-    return false;  // not ripup for degraded edge
+    return false;  // no ripup for degraded edge
   }
 
   const RouteType ripuptype = treeedge->route.type;
-  const int ymin = std::min(y1, y2);
-  const int ymax = std::max(y1, y2);
+  if (ripuptype != RouteType::LRoute) {
+    logger_->error(GRT,
+                   226,
+                   "Net {} ripup type is {}. Expected LRoute.",
+                   nets_[netID]->getName(),
+                   ripuptype);
+  }
+
+  const auto [ymin, ymax] = std::minmax(y1, y2);
 
   FrNet* net = nets_[netID];
   int edgeCost = net->getEdgeCost();
 
   bool needRipup = false;
-  if (ripuptype == RouteType::LRoute) {  // remove L routing
-    if (treeedge->route.xFirst) {
-      for (int i = x1; i < x2; i++) {
-        const int cap
-            = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
-        if (h_edges_[y1][i].est_usage > cap || (h_edges_[y1][i].max_layer_cap < edgeCost)) {
-          needRipup = true;
-          break;
-        }
-      }
 
-      for (int i = ymin; i < ymax; i++) {
-        const int cap
-            = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
-        if (v_edges_[i][x2].est_usage > cap || (v_edges_[i][x2].max_layer_cap < edgeCost)) {
-          needRipup = true;
-          break;
-        }
-      }
-    } else {
-      for (int i = ymin; i < ymax; i++) {
-        const int cap
-            = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
-        if (v_edges_[i][x1].est_usage > cap || (v_edges_[i][x1].max_layer_cap < edgeCost)) {
-          needRipup = true;
-          break;
-        }
-      }
-      for (int i = x1; i < x2; i++) {
-        const int cap
-            = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
-        if (h_edges_[y2][i].est_usage > cap || (h_edges_[y2][i].max_layer_cap < edgeCost)) {
-          needRipup = true;
-          break;
-        }
+  if (treeedge->route.xFirst) {
+    for (int i = x1; i < x2; i++) {
+      const int cap
+          = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
+      if (graph2d_.getEstUsageH(i, y1) > cap) { // || (h_edges_[y1][i].max_layer_cap < edgeCost)) {
+        needRipup = true;
+        break;
       }
     }
 
-    if (needRipup) {
-      const int n1 = treeedge->n1;
-      const int n2 = treeedge->n2;
-      const int edgeCost = net->getEdgeCost();
-
-      if (treeedge->route.xFirst) {
-        if (n1 >= deg) {
-          treenodes[n1].status -= 2;
-        }
-        treenodes[n2].status -= 1;
-
-        for (int i = x1; i < x2; i++) {
-          h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
-        }
-        for (int i = ymin; i < ymax; i++) {
-          v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-        }
-      } else {
-        if (n2 >= deg) {
-          treenodes[n2].status -= 2;
-        }
-        treenodes[n1].status -= 1;
-
-        for (int i = ymin; i < ymax; i++) {
-          v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-        }
-        for (int i = x1; i < x2; i++) {
-          h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
-        }
+    for (int i = ymin; i < ymax; i++) {
+      const int cap
+          = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
+      if (graph2d_.getEstUsageV(x2, i) > cap){// || (v_edges_[i][x2].max_layer_cap < edgeCost)) {
+        needRipup = true;
+        break;
       }
     }
-    return needRipup;
+  } else {
+    for (int i = ymin; i < ymax; i++) {
+      const int cap
+          = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
+      if (graph2d_.getEstUsageV(x1, i) > cap){// || (v_edges_[i][x1].max_layer_cap < edgeCost)) {
+        needRipup = true;
+        break;
+      }
+    }
+    for (int i = x1; i < x2; i++) {
+      const int cap
+          = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
+      if (graph2d_.getEstUsageH(i, y2) > cap){// || (h_edges_[y2][i].max_layer_cap < edgeCost)) {
+        needRipup = true;
+        break;
+      }
+    }
   }
-  logger_->error(GRT,
-                 226,
-                 "Net {} ripup type is {}. Expected LRoute.",
-                 net->getName(),
-                 ripuptype);
+
+  if (needRipup) {
+    const int n1 = treeedge->n1;
+    const int n2 = treeedge->n2;
+    const int edgeCost = nets_[netID]->getEdgeCost();
+
+    if (treeedge->route.xFirst) {
+      if (n1 >= deg) {
+        treenodes[n1].status -= 2;
+      }
+      treenodes[n2].status -= 1;
+
+      graph2d_.addEstUsageH({x1, x2}, y1, -edgeCost);
+      graph2d_.addEstUsageV(x2, {ymin, ymax}, -edgeCost);
+    } else {
+      if (n2 >= deg) {
+        treenodes[n2].status -= 2;
+      }
+      treenodes[n1].status -= 1;
+
+      graph2d_.addEstUsageV(x1, {ymin, ymax}, -edgeCost);
+      graph2d_.addEstUsageH({x1, x2}, y2, -edgeCost);
+    }
+  }
+  return needRipup;
 }
 
 bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
@@ -237,111 +195,60 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
 {
   if (treeedge->len == 0) {
     return false;
-  }  // not ripup for degraded edge
+  }  // no ripup for degraded edge
+
+  if (treeedge->route.type != RouteType::MazeRoute) {
+    printEdge(netID, edgeID);
+    logger_->error(GRT, 500, "Route type is not maze, netID {}.", netID);
+  }
 
   bool needRipup = false;
-  auto* net = nets_[netID];
-  bool is_ndr = net->getDbNet()->getNonDefaultRule() ? true : false;
-  // if (is_ndr && net->getDbNet() == debug_->net_) {
-  //   logger_->report("[DEBUG] Clock net {} edge {} x1/y1: {}/{} x2/y2: {}/{} Critical slack: {} - checking ripup", 
-  //                   nets_[netID]->getName(), edgeID, x1,y1,x2,y2, critical_slack);
-  //   logger_->report("  Capacity H:{} V:{}, Threshold:{}, isCritical: {}", 
-  //                   h_capacity_, v_capacity_, ripup_threshold, nets_[netID]->isCritical());
-  //   printEdge(netID,edgeID);
-  // }
 
-  if (treeedge->route.type == RouteType::MazeRoute) {
-    const std::vector<short>& gridsX = treeedge->route.gridsX;
-    const std::vector<short>& gridsY = treeedge->route.gridsY;
+  const std::vector<short>& gridsX = treeedge->route.gridsX;
+  const std::vector<short>& gridsY = treeedge->route.gridsY;
+  for (int i = 0; i < treeedge->route.routelen; i++) {
+    if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+      const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+      if (graph2d_.getUsageRedV(gridsX[i], ymin)
+          >= v_capacity_ - ripup_threshold) { // || !verifyNDRCapacity(net,gridsX[i],ymin,EdgeDirection::Vertical)
+        needRipup = true;
+        break;
+      }
+    } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
+      const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+      if (graph2d_.getUsageRedH(xmin, gridsY[i])
+          >= h_capacity_ - ripup_threshold) { // || !verifyNDRCapacity(net,xmin,gridsY[i],EdgeDirection::Vertical)
+        needRipup = true;
+        break;
+      }
+    }
+  }
+  if (!needRipup && critical_nets_percentage_ && treeedge->route.last_routelen
+      && critical_slack) {
+    const float delta = (float) treeedge->route.routelen
+                        / (float) treeedge->route.last_routelen;
+    if (nets_[netID]->getSlack() <= critical_slack
+        && (nets_[netID]->getSlack()
+            > std::ceil(std::numeric_limits<float>::lowest()))
+        && (delta >= 2)) {
+      nets_[netID]->setIsCritical(true);
+      needRipup = true;
+    }
+  }
+  if (needRipup) {
+    const int edgeCost = nets_[netID]->getEdgeCost();
+
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
-        const int ymin = std::min(gridsY[i], gridsY[i + 1]); 
-        // DEBUG V
-        // if (is_ndr) {
-        //   logger_->report("\tV: {}/{} {} - usage_red {} - capacity-ripup_threshold {}", gridsX[i], ymin, nets_[netID]->getName(),
-        //                   v_edges_[ymin][gridsX[i]].usage_red(), v_capacity_ - ripup_threshold);
-
-        //     logger_->report("\tClock net at ({},{}) - usage: {}, usage_red: {}, capacity: {}, edge cost: {}",
-        //             gridsX[i], ymin,
-        //             v_edges_[ymin][gridsX[i]].usage,
-        //             v_edges_[ymin][gridsX[i]].usage_red(),
-        //             v_capacity_,
-        //             nets_[netID]->getEdgeCost());
-    
-        //     // Check adjacent tracks
-        //     // if (gridsX[i] > 0) {
-        //     //     logger_->report("\t  Adjacent left track usage_red: {}",
-        //     //                     v_edges_[ymin][gridsX[i]-1].usage_red());
-        //     // }
-        //     // if (gridsX[i] < x_grid_ - 1) {
-        //     //     logger_->report("\t  Adjacent right track usage_red: {}",
-        //     //                     v_edges_[ymin][gridsX[i]+1].usage_red());
-        //     // }
-        // }       
-        ///////////////////////////////////////////////////////////////
-        if ((v_edges_[ymin][gridsX[i]].usage_red()
-            >= v_capacity_ - ripup_threshold) ||
-          !verifyNDRCapacity(net,gridsX[i],ymin,EdgeDirection::Vertical)) {
-          if (is_ndr) {
-            logger_->report("-- newRipupCheck V {} x{} y{}",net->getName(),gridsX[i],ymin);
-          }
-          needRipup = true;
-          break;
-        }
-      } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
+        const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+        graph2d_.addUsageV(gridsX[i], ymin, -edgeCost);
+      } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        // DEBUG H
-        // if (is_ndr) {
-        //   logger_->report("\tH: {} {} Clk net - usage_red {} - capacity-ripup_threshold {}", gridsY[i], xmin,
-        //                   h_edges_[gridsY[i]][xmin].usage_red(), h_capacity_ - ripup_threshold);
-        // }       
-        ///////////////////////////////////////////////////////////////
-        if (h_edges_[gridsY[i]][xmin].usage_red()
-            >= h_capacity_ - ripup_threshold ||
-          !verifyNDRCapacity(net,xmin,gridsY[i],EdgeDirection::Horizontal)) {
-          if (is_ndr) {
-            logger_->report("-- newRipupCheck H {} x{} y{}",net->getName(),xmin,gridsY[i]);
-          }
-          needRipup = true;
-          break;
-        }
+        graph2d_.addUsageH(xmin, gridsY[i], -edgeCost);
       }
     }
-    if (!needRipup && critical_nets_percentage_ && treeedge->route.last_routelen
-        && critical_slack) {
-      const float delta = (float) treeedge->route.routelen
-                          / (float) treeedge->route.last_routelen;
-      if (nets_[netID]->getSlack() <= critical_slack
-          && (nets_[netID]->getSlack()
-              > std::ceil(std::numeric_limits<float>::lowest()))
-          && (delta >= 2)) {
-        nets_[netID]->setIsCritical(true);
-        needRipup = true;
-      }
-    }
-    if (needRipup) {
-      const int edgeCost = nets_[netID]->getEdgeCost();
-
-      if (net->getDbNet()->getNonDefaultRule()) {
-        logger_->report("\tRipping up net {} with edge cost {}", 
-                        net->getName(), edgeCost);
-      }
-
-      for (int i = 0; i < treeedge->route.routelen; i++) {
-        if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
-          const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          v_edges_[ymin][gridsX[i]].usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
-        } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
-          const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          h_edges_[gridsY[i]][xmin].usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
-        }
-      }
-      return true;
-    }
-    return false;
   }
-  printEdge(netID, edgeID);
-  logger_->error(GRT, 500, "Route type is not maze, netID {}.", netID);
+  return needRipup;
 }
 
 bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
@@ -442,16 +349,14 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
     if (gridsL[i] == gridsL[i + 1]) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (net->getDbNet() == debug_->net_)
+        if (net->getDbNet() == debug_->net)
           logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), gridsX[i], ymin, gridsL[i]+1);
-        v_edges_[ymin][gridsX[i]].usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]],net->getEdgeCost());
+        graph2d_.addUsageV(gridsX[i], ymin, -net->getEdgeCost());
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        if (net->getDbNet() == debug_->net_)
-          logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), xmin, gridsY[i], gridsL[i]+1);
-        h_edges_[gridsY[i]][xmin].usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin],net->getEdgeCost());
+        graph2d_.addUsageH(xmin, gridsY[i], -net->getEdgeCost());
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else {
@@ -480,8 +385,6 @@ void FastRouteCore::releaseNetResources(const int netID)
       const std::vector<short>& gridsY = treeedge->route.gridsY;
       const std::vector<short>& gridsL = treeedge->route.gridsL;
       const int routeLen = treeedge->route.routelen;
-      Edge* edge;
-      Edge3D* edge_3D;
 
       for (int i = 0; i < routeLen; i++) {
         if (gridsL[i] != gridsL[i + 1]) {
@@ -489,15 +392,13 @@ void FastRouteCore::releaseNetResources(const int netID)
         }
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          edge = &v_edges_[ymin][gridsX[i]];
-          edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
-          edge->usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
+          graph2d_.addUsageV(gridsX[i], ymin, -edgeCost);
+          Edge3D* edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
           edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          edge = &h_edges_[gridsY[i]][xmin];
-          edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
-          edge->usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
+          graph2d_.addUsageH(xmin, gridsY[i], -edgeCost);
+          Edge3D* edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
           edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }
       }
@@ -514,7 +415,7 @@ void FastRouteCore::newRipupNet(const int netID)
   const int num_edges = sttrees_[netID].num_edges();
 
   FrNet* net = nets_[netID];
-  if(net->getDbNet() == debug_->net_){
+  if(net->getDbNet() == debug_->net){
     logger_->report("=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===", 
         net->getName(), num_edges, edgeCost);
   }
@@ -530,8 +431,7 @@ void FastRouteCore::newRipupNet(const int netID)
       const int y2 = treenodes[n2].y;
 
       const RouteType ripuptype = treeedge->route.type;
-      const int ymin = std::min(y1, y2);
-      const int ymax = std::max(y1, y2);
+      const auto [ymin, ymax] = std::minmax(y1, y2);
 
       if (ripuptype == RouteType::LRoute)  // remove L routing
       {
@@ -540,54 +440,28 @@ void FastRouteCore::newRipupNet(const int netID)
         //   logger_->report("\tx1/y1: {}/{} x2/y2: {}/{}", x1,y1,x2,y2);
         // }
         if (treeedge->route.xFirst) {
-          for (int i = x1; i < x2; i++) {
-            h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
-          }
-          for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-          }
+          graph2d_.addEstUsageH({x1, x2}, y1, -edgeCost);
+          graph2d_.addEstUsageV(x2, {ymin, ymax}, -edgeCost);
         } else {
-          for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-          }
-          for (int i = x1; i < x2; i++) {
-            h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
-          }
+          graph2d_.addEstUsageV(x1, {ymin, ymax}, -edgeCost);
+          graph2d_.addEstUsageH({x1, x2}, y2, -edgeCost);
         }
       } else if (ripuptype == RouteType::ZRoute) {
         // remove Z routing
         const int Zpoint = treeedge->route.Zpoint;
         if (treeedge->route.HVH) {
-          for (int i = x1; i < Zpoint; i++) {
-            h_edges_[y1][i].est_usage -= getEdgeCostNDRAware(h_edges_[y1][i], edgeCost);
-          }
-          for (int i = Zpoint; i < x2; i++) {
-            h_edges_[y2][i].est_usage -= getEdgeCostNDRAware(h_edges_[y2][i], edgeCost);
-          }
-          for (int i = ymin; i < ymax; i++) {
-            v_edges_[i][Zpoint].est_usage -= getEdgeCostNDRAware(v_edges_[i][Zpoint], edgeCost);
-          }
+          graph2d_.addEstUsageH({x1, Zpoint}, y1, -edgeCost);
+          graph2d_.addEstUsageV(Zpoint, {ymin, ymax}, -edgeCost);
+          graph2d_.addEstUsageH({Zpoint, x2}, y2, -edgeCost);
         } else {
           if (y1 < y2) {
-            for (int i = y1; i < Zpoint; i++) {
-              v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-            }
-            for (int i = Zpoint; i < y2; i++) {
-              v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-            }
-            for (int i = x1; i < x2; i++) {
-              h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
-            }
+            graph2d_.addEstUsageV(x1, {y1, Zpoint}, -edgeCost);
+            graph2d_.addEstUsageH({x1, x2}, Zpoint, -edgeCost);
+            graph2d_.addEstUsageV(x2, {Zpoint, y2}, -edgeCost);
           } else {
-            for (int i = y2; i < Zpoint; i++) {
-              v_edges_[i][x2].est_usage -= getEdgeCostNDRAware(v_edges_[i][x2], edgeCost);
-            }
-            for (int i = Zpoint; i < y1; i++) {
-              v_edges_[i][x1].est_usage -= getEdgeCostNDRAware(v_edges_[i][x1], edgeCost);
-            }
-            for (int i = x1; i < x2; i++) {
-              h_edges_[Zpoint][i].est_usage -= getEdgeCostNDRAware(h_edges_[Zpoint][i], edgeCost);
-            }
+            graph2d_.addEstUsageV(x1, {Zpoint, y1}, -edgeCost);
+            graph2d_.addEstUsageH({x1, x2}, Zpoint, -edgeCost);
+            graph2d_.addEstUsageV(x2, {y2, Zpoint}, -edgeCost);
           }
         }
       } else if (ripuptype == RouteType::MazeRoute) {
@@ -596,10 +470,10 @@ void FastRouteCore::newRipupNet(const int netID)
         for (int i = 0; i < treeedge->route.routelen; i++) {
           if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
             const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-            v_edges_[ymin][gridsX[i]].est_usage -= getEdgeCostNDRAware(v_edges_[ymin][gridsX[i]], edgeCost);
+            graph2d_.addEstUsageV(gridsX[i], ymin, -edgeCost);
           } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
             const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-            h_edges_[gridsY[i]][xmin].est_usage -= getEdgeCostNDRAware(h_edges_[gridsY[i]][xmin], edgeCost);
+            graph2d_.addEstUsageH(xmin, gridsY[i], -edgeCost);
           } else {
             logger_->error(GRT,
                            123,
@@ -609,11 +483,6 @@ void FastRouteCore::newRipupNet(const int netID)
         }
       }
     }
-  }
-  
-  if(net->getDbNet() == debug_->net_){
-    int maxOverflow;
-    getOverflow2D(&maxOverflow);
   }
 }
 

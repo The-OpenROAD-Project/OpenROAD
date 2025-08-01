@@ -217,7 +217,7 @@ void dbIsolation::setLocation(const std::string& location)
   obj->_location = location;
 }
 
-void dbIsolation::addIsolationCell(std::string& master)
+void dbIsolation::addIsolationCell(const std::string& master)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   obj->_isolation_cells.push_back(master);

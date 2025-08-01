@@ -22,6 +22,7 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModNet>;
@@ -107,30 +108,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._name;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._parent;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._next_entry;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
-    stream << obj._prev_entry;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._moditerms;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._modbterms;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._iterms;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._bterms;
-  }
+  stream << obj._name;
+  stream << obj._parent;
+  stream << obj._next_entry;
+  stream << obj._prev_entry;
+  stream << obj._moditerms;
+  stream << obj._modbterms;
+  stream << obj._iterms;
+  stream << obj._bterms;
   return stream;
 }
 
@@ -223,6 +208,10 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
     block->_journal->endAction();
   }
 
+  for (auto cb : block->_callbacks) {
+    cb->inDbModNetCreate((dbModNet*) modnet);
+  }
+
   return (dbModNet*) modnet;
 }
 
@@ -240,6 +229,10 @@ void dbModNet::destroy(dbModNet* mod_net)
     block->_journal->pushParam(mod_net->getId());
     block->_journal->pushParam(module->getId());
     block->_journal->endAction();
+  }
+
+  for (auto cb : block->_callbacks) {
+    cb->inDbModNetDestroy(mod_net);
   }
 
   uint prev = _modnet->_prev_entry;

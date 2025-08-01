@@ -187,13 +187,14 @@ class OpenRoad
                         int bloat_factor,
                         bool bloat_occupied_layers);
 
+  void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
                 const string& version);
 
-  void writeCdl(const char* outFilename,
-                const std::vector<const char*>& mastersFilenames,
-                bool includeFillers);
+  void writeCdl(const char* out_filename,
+                const std::vector<const char*>& masters_filenames,
+                bool include_fillers);
 
   void readVerilog(const char* filename);
   void linkDesign(const char* design_name,
@@ -208,8 +209,8 @@ class OpenRoad
   void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 
-  void setThreadCount(int threads, bool printInfo = true);
-  void setThreadCount(const char* threads, bool printInfo = true);
+  void setThreadCount(int threads, bool print_info = true);
+  void setThreadCount(const char* threads, bool print_info = true);
   int getThreadCount();
 
   std::string getExePath() const;

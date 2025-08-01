@@ -3,24 +3,20 @@
 
 #pragma once
 
-#include <limits>
 #include <map>
 #include <memory>
-#include <set>
+#include <queue>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "object.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "shapes.h"
 #include "util.h"
-
-namespace odb {
-class dbBlock;
-class dbDatabase;
-class dbInst;
-class dbModule;
-}  // namespace odb
 
 namespace sta {
 class dbNetwork;
@@ -159,8 +155,10 @@ class HierRTLMP
   bool treeHasConstrainedIOs() const;
   bool treeHasUnconstrainedIOs() const;
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
+  std::vector<Cluster*> getIOBundles() const;
   void createPinAccessBlockage(const BoundaryRegion& region, float depth);
   float computePinAccessBaseDepth(double io_span) const;
+  void createBlockagesForIOBundles();
   void createBlockagesForAvailableRegions();
   void createBlockagesForConstraintRegions();
   void setPlacementBlockages();
@@ -223,17 +221,12 @@ class HierRTLMP
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
-  // Aux for conversion
-  odb::Rect micronsToDbu(const Rect& micron_rect) const;
-  Rect dbuToMicrons(const odb::Rect& dbu_rect) const;
-
   template <typename Macro>
   void createFixedTerminal(Cluster* cluster,
                            const Rect& outline,
                            std::vector<Macro>& macros);
 
   odb::Rect getRect(Boundary boundary) const;
-  bool isVertical(Boundary boundary) const;
 
   std::vector<odb::Rect> subtractOverlapRegion(const odb::Rect& base,
                                                const odb::Rect& overlay) const;

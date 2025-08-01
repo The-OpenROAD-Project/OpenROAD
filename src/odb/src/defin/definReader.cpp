@@ -250,8 +250,6 @@ void definReader::init()
   make(_non_default_ruleR);
   make(_prop_defsR);
   make(_pin_propsR);
-
-  _update = false;
 }
 
 void definReader::setTech(dbTech* tech)
@@ -1429,6 +1427,12 @@ int definReader::scanchainsCallback(
                        out_pin_name,
                        bits[i]);
     }
+
+    dbSet<dbScanInst> db_scan_insts = db_scan_list->getScanInsts();
+
+    if (db_scan_insts.reversible() && db_scan_insts.orderReversed()) {
+      db_scan_insts.reverse();
+    }
   }
 
   return PARSE_OK;
@@ -1491,6 +1495,7 @@ int definReader::unitsCallback(DefParser::defrCallbackType_e type,
                                DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
 
   // Truncation error
   if (d > reader->_tech->getDbUnitsPerMicron()) {
@@ -1509,9 +1514,7 @@ int definReader::unitsCallback(DefParser::defrCallbackType_e type,
     (*itr)->units(d);
   }
 
-  if (!reader->_update) {
-    reader->_block->setDefUnits(d);
-  }
+  reader->_block->setDefUnits(d);
   return PARSE_OK;
 }
 

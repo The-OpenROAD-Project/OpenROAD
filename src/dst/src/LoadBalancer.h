@@ -23,8 +23,8 @@ namespace dst {
 
 namespace ip = asio::ip;
 
-const int workers_discovery_period = 15;  // time in seconds between retrying to
-                                          // find new workers on the network
+const int kWorkersDiscoveryPeriod = 15;  // time in seconds between retrying to
+                                         // find new workers on the network
 class Distributed;
 class LoadBalancer
 {
@@ -46,23 +46,23 @@ class LoadBalancer
   void punishWorker(const ip::address& ip, unsigned short port);
 
  private:
-  struct worker
+  struct Worker
   {
     ip::address ip;
     unsigned short port;
     unsigned short priority;
-    worker(ip::address ipIn, unsigned short portIn, unsigned short priorityIn)
-        : ip(ipIn), port(portIn), priority(priorityIn)
+    Worker(ip::address ip, unsigned short port, unsigned short priority)
+        : ip(ip), port(port), priority(priority)
     {
     }
-    bool operator==(const worker& rhs) const
+    bool operator==(const Worker& rhs) const
     {
       return (ip == rhs.ip && port == rhs.port && priority == rhs.priority);
     }
   };
   struct CompareWorker
   {
-    bool operator()(worker const& w1, worker const& w2)
+    bool operator()(Worker const& w1, Worker const& w2)
     {
       return w1.priority > w2.priority;
     }
@@ -72,17 +72,17 @@ class LoadBalancer
   tcp::acceptor acceptor_;
   asio::io_context* service_;
   utl::Logger* logger_;
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;
   std::unique_ptr<asio::thread_pool> pool_;
   std::mutex pool_mutex_;
   uint32_t jobs_;
-  std::atomic<bool> alive = true;
-  boost::thread workers_lookup_thread;
-  std::vector<std::string> broadcastData;
+  std::atomic<bool> alive_ = true;
+  boost::thread workers_lookup_thread_;
+  std::vector<std::string> broadcastData_;
 
   void start_accept();
-  void handle_accept(const BalancerConnection::pointer& connection,
+  void handle_accept(const BalancerConnection::Pointer& connection,
                      const boost::system::error_code& err);
   void lookUpWorkers(const char* domain, unsigned short port);
   friend class dst::BalancerConnection;

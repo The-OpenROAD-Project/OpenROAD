@@ -3,18 +3,16 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <cstdint>
 #include <limits>
-#include <list>
-#include <utility>
 #include <vector>
 
 #include "Core.h"
 #include "Hungarian.h"
 #include "Netlist.h"
 #include "Slots.h"
+#include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
 namespace utl {

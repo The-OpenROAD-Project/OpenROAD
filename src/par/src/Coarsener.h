@@ -30,10 +30,10 @@ using CoarseningPtr = std::shared_ptr<Coarsener>;
 // the type for vertex ordering
 enum class CoarsenOrder
 {
-  RANDOM,
-  DEGREE,
-  SIZE,
-  DEFAULT
+  kRandom,
+  kDegree,
+  kSize,
+  kDefault
 };
 
 // function : convert CoarsenOrder to string
@@ -183,7 +183,7 @@ class Coarsener
 
   std::vector<float> thr_cluster_weight_;  // the maximum weight of a cluster
   int random_seed_ = 0;
-  CoarsenOrder vertex_order_choice_ = CoarsenOrder::RANDOM;
+  CoarsenOrder vertex_order_choice_ = CoarsenOrder::kRandom;
   EvaluatorPtr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };

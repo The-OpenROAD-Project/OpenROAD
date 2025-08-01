@@ -7,11 +7,13 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "object.h"
+#include "odb/db.h"
 #include "util.h"
 
 namespace par {
@@ -122,6 +124,14 @@ struct PhysicalHierarchy
   // and its corresponding standard-cell cluster to bias
   // the macro placer to place them together.
   const float virtual_weight = 10.0f;
+
+  const int io_bundles_per_edge = 5;
+};
+
+struct IOBundleSpans
+{
+  int x{0};
+  int y{0};
 };
 
 class ClusteringEngine
@@ -161,6 +171,8 @@ class ClusteringEngine
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
   void setDieArea();
   void setFloorplanShape();
@@ -172,6 +184,12 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  bool designHasFixedIOPins() const;
+  IOBundleSpans computeIOBundleSpans() const;
+  void createIOBundles();
+  void createIOBundles(Boundary boundary);
+  void createIOBundle(Boundary boundary, int bundle_index);
+  int findAssociatedBundledIOId(odb::dbBTerm* bterm) const;
   Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm) const;
   void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
@@ -188,6 +206,7 @@ class ClusteringEngine
   void createCluster(odb::dbModule* module, Cluster* parent);
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
+  bool isLargeFlatCluster(const Cluster* cluster) const;
   void breakLargeFlatCluster(Cluster* parent);
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
@@ -215,9 +234,6 @@ class ClusteringEngine
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
-  void addStdCellClusterToSubTree(Cluster* parent,
-                                  Cluster* mixed_leaf,
-                                  std::vector<int>& virtual_conn_clusters);
   void replaceByStdCellCluster(Cluster* mixed_leaf,
                                std::vector<int>& virtual_conn_clusters);
 
@@ -285,6 +301,9 @@ class ClusteringEngine
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
+
+  int first_io_bundle_id_{-1};
+  IOBundleSpans io_bundle_spans_;
 };
 
 }  // namespace mpl

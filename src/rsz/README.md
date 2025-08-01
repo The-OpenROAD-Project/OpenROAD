@@ -95,6 +95,23 @@ set_layer_rc
 | `-capacitance` | Capacitance per unit length, same convention as `set_wire_rc`. |
 | `-corner` | Process corner to use. |
 
+### Report Layer RC
+
+The `report_layer_rc` command reports the layer resistance and capacitance values used
+for parasitics estimation. These values were previously set with the `set_layer_rc`
+command or they originate from the LEF.
+
+```tcl
+report_layer_rc
+    [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to report. |
+
 ### Estimate Parasitics
 
 Estimate RC parasitics based on placed component pin locations. If there are
@@ -191,7 +208,7 @@ The `buffer_ports -inputs` command adds a buffer between the input and its
 loads.  The `buffer_ports -outputs` adds a buffer between the port driver
 and the output port. Inserting buffers on input and output ports makes
 the block input capacitances and output drives independent of the block
-internals.
+internals. It uses the buffer library cell defined by `-buffer_cell` if it is given. 
 
 ```tcl
 buffer_ports 
@@ -199,6 +216,7 @@ buffer_ports
     [-outputs] 
     [-max_utilization util]
     [-buffer_cell buf_cell]
+    [-verbose]
 ```
 
 #### Options
@@ -207,6 +225,8 @@ buffer_ports
 | ----- | ----- |
 | `-inputs`, `-outputs` | Insert a buffer between the input and load, output and load respectively. The default behavior is `-inputs` and `-outputs` set if neither is specified. |
 | `-max_utilization` | Defines the percentage of core area used. |
+| `-buffer_cell`     | Specifies the buffer cell type to be used. |
+| `-verbose`         | Enable verbose logging. |
 
 #### Instance Name Prefixes
 
@@ -496,6 +516,7 @@ set_opt_config
     [-keep_sizing_vt boolean_value]
     [-set_early_sizing_cap_ratio float_value]
     [-set_early_buffer_sizing_cap_ratio float_value]
+    [-disable_buffer_pruning boolean_value]
     [-sizing_area_limit float_value] (deprecated)
     [-sizing_leakage_limit float_value] (deprecated)
 ```
@@ -510,6 +531,7 @@ set_opt_config
 | `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
 | `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
 | `-set_early_buffer_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of buffers. |
+| `-disable_buffer_pruning` | Disable buffer pruning to improve hold fixing by not filtering out delay cells or slow buffers. |
 | `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
@@ -534,6 +556,7 @@ reset_opt_config
     [-keep_sizing_vt]
     [-set_early_sizing_cap_ratio]
     [-set_early_buffer_sizing_cap_ratio]
+    [-disable_buffer_pruning]
     [-sizing_area_limit] (deprecated)
     [-sizing_leakage_limit] (deprecated)
 ```
@@ -548,6 +571,7 @@ reset_opt_config
 | `-keep_sizing_vt` | Remove VT type restriction during sizing. |
 | `-set_early_sizing_cap_ratio` | Remove capacitance ratio setting for early sizing. |
 | `-set_early_buffer_sizing_cap_ratio` | Remove capacitance ratio setting for early buffer sizing. |
+| `-disable_buffer_pruning` | Restore buffer pruning for optimization. |
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
@@ -568,6 +592,23 @@ report_equiv_cells
 | ----- | ----- |
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 | `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
+
+### Reporting Buffers
+
+The `report_buffers` command reports all usable buffers to include for optimization.
+Usable buffers are standard cell buffers that are not clock buffers, always on buffers,
+level shifters, or buffers marked as dont-use.  VT type, cell site,
+cell footprint and leakage are also reported.
+
+```tcl
+report_buffers
+    [-filtered]
+```
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-filtered` | Report buffers after filtering based on threshold voltage, cell footprint, drive strength and cell site.  Subset of filtered buffers are used for rebuffering. |
 
 ### Optimizing Arithmetic Modules
 

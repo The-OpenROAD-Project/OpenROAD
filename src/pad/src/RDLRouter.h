@@ -41,8 +41,8 @@ using GridGraph
 
 using GridWeightMap
     = boost::property_map<GridGraph, boost::edge_weight_t>::type;
-using grid_vertex = GridGraph::vertex_descriptor;
-using grid_edge = GridGraph::edge_descriptor;
+using GridGraphVertex = GridGraph::vertex_descriptor;
+using GridGraphEdge = GridGraph::edge_descriptor;
 
 struct RouteTarget
 {
@@ -78,7 +78,7 @@ class RDLRouter
   };
   struct NetRoute
   {
-    std::vector<grid_vertex> route;
+    std::vector<GridGraphVertex> route;
     std::vector<GridEdge> removed_edges;
     const RouteTarget* source;
     const RouteTarget* target;
@@ -125,13 +125,13 @@ class RDLRouter
       = boost::geometry::index::rtree<ObsValue,
                                       boost::geometry::index::quadratic<16>>;
 
-  using GridValue = std::pair<odb::Rect, grid_vertex>;
+  using GridValue = std::pair<odb::Rect, GridGraphVertex>;
   using GridTree
       = boost::geometry::index::rtree<GridValue,
                                       boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
-  const std::map<grid_vertex, odb::Point>& getVertexMap() const
+  const std::map<GridGraphVertex, odb::Point>& getVertexMap() const
   {
     return vertex_point_map_;
   }
@@ -162,11 +162,11 @@ class RDLRouter
                     float edge_weight_scale = 1.0,
                     bool check_obstructions = true,
                     bool check_routes = true);
-  GridEdge removeGraphEdge(const grid_edge& edge);
+  GridEdge removeGraphEdge(const GridGraphEdge& edge);
 
-  std::vector<grid_vertex> run(const odb::Point& source,
-                               const odb::Point& dest);
-  std::vector<GridEdge> commitRoute(const std::vector<grid_vertex>& route);
+  std::vector<GridGraphVertex> run(const odb::Point& source,
+                                   const odb::Point& dest);
+  std::vector<GridEdge> commitRoute(const std::vector<GridGraphVertex>& route);
   void uncommitRoute(const std::vector<GridEdge>& route);
 
   void writeToDb(odb::dbNet* net,
@@ -195,7 +195,7 @@ class RDLRouter
   std::map<odb::dbITerm*, std::vector<RouteTarget>> generateRoutingTargets(
       odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
-  std::set<grid_edge> getVertexEdges(const grid_vertex& vertex) const;
+  std::set<GridGraphEdge> getVertexEdges(const GridGraphVertex& vertex) const;
 
   void buildIntialRouteSet();
   int reportFailedRoutes(
@@ -225,9 +225,9 @@ class RDLRouter
   ObsTree obstructions_;
 
   // Lookup tables
-  std::map<odb::Point, grid_vertex> point_vertex_map_;
+  std::map<odb::Point, GridGraphVertex> point_vertex_map_;
   GridTree vertex_grid_tree_;
-  std::map<grid_vertex, odb::Point> vertex_point_map_;
+  std::map<GridGraphVertex, odb::Point> vertex_point_map_;
   std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
 
   // Routing grid

@@ -8,7 +8,7 @@ define_pin_shape_pattern -layer metal7 -x_step 5 -y_step 3 \
 
 set_io_pin_constraint -pin_names * -region "up:*"
 
-place_pins -hor_layers metal3 -ver_layers metal2 -random
+place_pins -hor_layers metal3 -ver_layers metal2
 
 set def_file [make_result_file top_layer7.def]
 

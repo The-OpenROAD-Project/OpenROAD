@@ -1,6 +1,37 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+namespace eval rsz {
+proc get_db_tech_checked { } {
+  set tech [ord::get_db_tech]
+  if { $tech == "NULL" } {
+    utl::error RSZ 210 "No technology loaded."
+  }
+  return $tech
+}
+
+proc parse_buffer_cell { keys_var } {
+  upvar 1 $keys_var keys
+  set buffer_cell "NULL"
+
+  if { [info exists keys(-buffer_cell)] } {
+    set buffer_cell_name $keys(-buffer_cell)
+    if { $buffer_cell_name ne "" } {
+      set buffer_cell [sta::get_lib_cell_error "-buffer_cell" $buffer_cell_name]
+
+      # the lib cell is a buffer?
+      if { $buffer_cell ne "NULL" && ![get_property $buffer_cell is_buffer] } {
+        utl::error RSZ 211 "[get_name $buffer_cell] is not a buffer."
+      }
+    }
+  }
+  return $buffer_cell
+}
+
+# namespace eval rsz
+}
+
+
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
 sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-via via_layer]\
@@ -17,7 +48,7 @@ proc set_layer_rc { args } {
   }
 
   set corners [sta::parse_corner_or_all keys]
-  set tech [ord::get_db_tech]
+  set tech [rsz::get_db_tech_checked]
   if { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
     set layer [$tech findLayer $layer_name]
@@ -91,6 +122,57 @@ proc set_layer_rc { args } {
   }
 }
 
+sta::define_cmd_args "report_layer_rc" {[-corner corner]}
+proc report_layer_rc { args } {
+  sta::parse_key_args "report_layer_rc" args \
+    keys {-corner} \
+    flags {}
+  set corner [sta::parse_corner_or_all keys]
+  set tech [rsz::get_db_tech_checked]
+  set no_routing_layers [$tech getRoutingLayerCount]
+  ord::ensure_units_initialized
+  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
+  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
+  set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+  set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+
+  puts "   Layer   | Unit Resistance | Unit Capacitance "
+  puts [format "           | %15s | %16s" [format "(%s)" $res_unit] [format "(%s)" $cap_unit]]
+  puts "------------------------------------------------"
+  for { set i 1 } { $i <= $no_routing_layers } { incr i } {
+    set layer [$tech findRoutingLayer $i]
+    if { $corner == "NULL" } {
+      lassign [rsz::dblayer_wire_rc $layer] layer_wire_res layer_wire_cap
+    } else {
+      set layer_wire_res [rsz::layer_resistance $layer $corner]
+      set layer_wire_cap [rsz::layer_capacitance $layer $corner]
+    }
+    set res_ui [expr $layer_wire_res * $res_convert]
+    set cap_ui [expr $layer_wire_cap * $cap_convert]
+    puts [format "%10s | %15.2e | %16.2e" [$layer getName] $res_ui $cap_ui]
+  }
+  puts "------------------------------------------------"
+
+  set res_unit "[sta::unit_scaled_suffix "resistance"]"
+  set res_convert [sta::resistance_sta_ui 1.0]
+  puts ""
+  puts "   Layer   | Via Resistance "
+  puts [format "           | %14s " [format "(%s)" $res_unit]]
+  puts "----------------------------"
+  # ignore the last routing layer (no via layer above it)
+  for { set i 1 } { $i < $no_routing_layers } { incr i } {
+    set layer [[$tech findRoutingLayer $i] getUpperLayer]
+    if { $corner == "NULL" } {
+      set layer_via_res [$layer getResistance]
+    } else {
+      set layer_via_res [rsz::layer_resistance $layer $corner]
+    }
+    set res_ui [expr $layer_via_res * $res_convert]
+    puts [format "%10s | %14.2e " [$layer getName] $res_ui]
+  }
+  puts "----------------------------"
+}
+
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layers layers]\
                                       [-layer layer]\
@@ -138,7 +220,7 @@ proc set_wire_rc { args } {
     set layers $keys(-layers)
 
     foreach layer_name $layers {
-      set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+      set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error RSZ 2 "layer $layer_name not found."
       }
@@ -179,7 +261,7 @@ proc set_wire_rc { args } {
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
-    set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+    set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
       utl::error RSZ 15 "layer $tec_layer not found."
     }
@@ -380,13 +462,14 @@ proc report_dont_touch { args } {
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                       [-max_utilization util]\
-                                       [-buffer_cell buf_cell]}
+                                     [-max_utilization util]\
+                                     [-buffer_cell buf_cell]\
+                                     [-verbose]}
 
 proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
     keys {-buffer_cell -max_utilization} \
-    flags {-inputs -outputs}
+    flags {-inputs -outputs -verbose}
 
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
@@ -394,14 +477,19 @@ proc buffer_ports { args } {
     set buffer_inputs 1
     set buffer_outputs 1
   }
+
+  set verbose [info exists flags(-verbose)]
+
   sta::check_argc_eq0 "buffer_ports" $args
 
   rsz::set_max_utilization [rsz::parse_max_util keys]
+  set buffer_cell [rsz::parse_buffer_cell keys]
+
   if { $buffer_inputs } {
-    rsz::buffer_inputs
+    rsz::buffer_inputs $buffer_cell $verbose
   }
   if { $buffer_outputs } {
-    rsz::buffer_outputs
+    rsz::buffer_outputs $buffer_cell $verbose
   }
 }
 
@@ -802,12 +890,13 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-sizing_area_limit] \
                                           [-sizing_leakage_limit] \
                                           [-set_early_sizing_cap_ratio] \
-                                          [-set_early_buffer_sizing_cap_ratio]}
+                                          [-set_early_buffer_sizing_cap_ratio] \
+                                          [-disable_buffer_pruning] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt \
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt -disable_buffer_pruning \
       -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
 
   set area_limit "NULL"
@@ -862,6 +951,19 @@ proc set_opt_config { args } {
     utl::info RSZ 147 \
       "Early buffer sizing will use capacitance ratio of value $value"
   }
+
+  if { [info exists keys(-disable_buffer_pruning)] } {
+    set disable_val $keys(-disable_buffer_pruning)
+    rsz::set_boolean_prop $disable_val "-disable_buffer_pruning" \
+      "disable_buffer_pruning"
+    if { $disable_val } {
+      utl::info RSZ 165 \
+        "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
+    } else {
+      utl::info RSZ 167 \
+        "Buffer pruning will be enabled for repair_design and repair_timing"
+    }
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
@@ -871,13 +973,15 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-sizing_area_limit] \
                                             [-sizing_leakage_limit] \
                                             [-set_early_sizing_cap_ratio] \
-                                            [-set_early_buffer_sizing_cap_ratio]}
+                                            [-set_early_buffer_sizing_cap_ratio] \
+                                            [-disable_buffer_pruning] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
                      -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
-                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio}
+                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
+                     -disable_buffer_pruning}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -909,6 +1013,10 @@ proc reset_opt_config { args } {
   if { $reset_all || [info exists flags(-set_early_buffer_sizing_cap_ratio)] } {
     rsz::clear_double_prop "early_buffer_sizing_cap_ratio"
     utl::info RSZ 148 "Capacitance ratio for early buffer sizing has been unset."
+  }
+  if { $reset_all || [info exists flags(-disable_buffer_pruning)] } {
+    rsz::clear_bool_prop "disable_buffer_pruning"
+    utl::info RSZ 166 "Buffer pruning has been enabled."
   }
 }
 
@@ -956,6 +1064,14 @@ proc report_opt_config { args } {
     set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
   }
 
+  # Temporary WA
+  set disable_buffer_pruning "true"
+  set no_buffer_pruning [odb::dbBoolProperty_find $block "disable_buffer_pruning"]
+  if { $no_buffer_pruning ne "NULL" && $no_buffer_pruning ne "" } {
+    set no_buffer_pruning_value [$no_buffer_pruning getValue]
+    set disable_buffer_pruning [expr { $no_buffer_pruning_value ? "true" : "false" }]
+  }
+
   puts "*******************************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:                 $area_limit_value"
@@ -964,6 +1080,7 @@ proc report_opt_config { args } {
   puts "-keep_sizing_vt:                    $keep_sizing_vt"
   puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
   puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
+  puts "-disable_buffer_pruning:            $disable_buffer_pruning"
   puts "*******************************************"
 }
 
@@ -995,7 +1112,7 @@ proc replace_arith_modules { args } {
   if { [info exists keys(-target)] } {
     set target $keys(-target)
     if { [lsearch -exact {setup hold power area} $target] == -1 } {
-      util::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
+      utl::error "RSZ" 164 "-target needs to be one of setup, hold, power, area"
     }
   } else {
     set target "setup"
@@ -1008,6 +1125,14 @@ proc replace_arith_modules { args } {
 
   puts "replace_arith_module -path_count $path_count -target $target -slack_margin $slack_margin"
   rsz::swap_arith_modules_cmd $path_count $target $slack_margin
+}
+
+sta::define_cmd_args "report_buffers" { [-filtered] }
+
+proc report_buffers { args } {
+  sta::parse_key_args "report_buffers" args keys {} flags {-filtered}
+  set filtered [info exists flags(-filtered)]
+  rsz::report_buffers_cmd $filtered
 }
 
 namespace eval rsz {

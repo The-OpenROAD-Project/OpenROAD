@@ -4,6 +4,11 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 #include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <optional>
@@ -114,7 +119,7 @@ StringToDBU Descriptor::Property::convert_string;
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 // https://gist.github.com/mikhailov-work/6a308c20e494d9e0ccc29036b28faa7a
-const unsigned char SpectrumGenerator::spectrum_[256][3]
+const unsigned char SpectrumGenerator::kSpectrum[256][3]
     = {{48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
        {53, 30, 88},   {54, 33, 95},   {55, 36, 102},   {56, 39, 109},
        {57, 42, 115},  {58, 45, 121},  {59, 47, 128},   {60, 50, 134},
@@ -442,10 +447,25 @@ int Gui::select(const std::string& type,
           std::vector<Selected> selected_vector(selected_set.begin(),
                                                 selected_set.end());
           // remove elements
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+          // Define case sensitivity options for QRegularExpression
+          QRegularExpression::PatternOptions options
+              = filter_case_sensitive
+                    ? QRegularExpression::NoPatternOption
+                    : QRegularExpression::CaseInsensitiveOption;
+
+          // Convert the wildcard string to a regex pattern and create the
+          // object
+          QRegularExpression reg_filter(
+              QRegularExpression::wildcardToRegularExpression(
+                  QString::fromStdString(name_filter)),
+              options);
+#else
           QRegExp reg_filter(
               QString::fromStdString(name_filter),
               filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
               QRegExp::WildcardUnix);
+#endif
           auto remove_if = std::remove_if(
               selected_vector.begin(),
               selected_vector.end(),
@@ -455,7 +475,13 @@ int Gui::select(const std::string& type,
                   // direct match, so don't remove
                   return false;
                 }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                return !reg_filter.match(QString::fromStdString(sel_name))
+                            .hasMatch();
+
+#else
                 return !reg_filter.exactMatch(QString::fromStdString(sel_name));
+#endif
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset
@@ -806,12 +832,13 @@ void Gui::saveHistogramImage(const std::string& filename,
       filename, chart_mode, width, height);
 }
 
-void Gui::selectClockviewerClock(const std::string& clock_name)
+void Gui::selectClockviewerClock(const std::string& clock_name,
+                                 std::optional<int> depth)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->selectClock(clock_name);
+  main_window->getClockViewer()->selectClock(clock_name, depth);
 }
 
 static QWidget* findWidget(const std::string& name)
@@ -1123,7 +1150,7 @@ Painter::Color SpectrumGenerator::getColor(double value, int alpha) const
   }
 
   return Painter::Color(
-      spectrum_[index][0], spectrum_[index][1], spectrum_[index][2], alpha);
+      kSpectrum[index][0], kSpectrum[index][1], kSpectrum[index][2], alpha);
 }
 
 void SpectrumGenerator::drawLegend(
@@ -1139,7 +1166,7 @@ void SpectrumGenerator::drawLegend(
   const int legend_top = bounds.yMax() - legend_offset;
   const int legend_right = bounds.xMax() - legend_offset;
   const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
 
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
@@ -1161,8 +1188,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw background
-  painter.setPen(Painter::dark_gray, true);
-  painter.setBrush(Painter::dark_gray);
+  painter.setPen(Painter::kDarkGray, true);
+  painter.setBrush(Painter::kDarkGray);
   painter.drawRect(legend_bounds, 10, 10);
 
   // draw color map
@@ -1177,8 +1204,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw key values
-  painter.setPen(Painter::black, true);
-  painter.setBrush(Painter::transparent);
+  painter.setPen(Painter::kBlack, true);
+  painter.setBrush(Painter::kTransparent);
   for (const auto& [pt, text] : legend_key_points) {
     painter.drawString(pt.x(), pt.y(), key_anchor, text);
   }
@@ -1217,12 +1244,12 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
+void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
 }
 
-void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
   main_window->timingPathsThrough(terms);
 }
@@ -1235,6 +1262,13 @@ void Gui::addFocusNet(odb::dbNet* net)
 void Gui::addRouteGuides(odb::dbNet* net)
 {
   main_window->getLayoutTabs()->addRouteGuides(net);
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
@@ -1443,7 +1477,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
              gif_->filename.c_str(),
              gif_->width,
              gif_->height,
-             delay.value_or(default_gif_delay_));
+             delay.value_or(kDefaultGifDelay));
   } else {
     // scale IMG if not matched
     img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
@@ -1472,7 +1506,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
                 frame.data(),
                 gif_->width,
                 gif_->height,
-                delay.value_or(default_gif_delay_));
+                delay.value_or(kDefaultGifDelay));
 }
 
 void Gui::gifEnd()
@@ -1515,6 +1549,20 @@ int startGui(int& argc,
              bool load_settings,
              bool minimize)
 {
+#ifdef STATIC_QPA_PLUGIN_XCB
+  const char* qt_qpa_platform_env = getenv("QT_QPA_PLATFORM");
+  std::string qpa_platform
+      = qt_qpa_platform_env == nullptr ? "" : qt_qpa_platform_env;
+  if (qpa_platform != "") {
+    if (qpa_platform.find("xcb") == std::string::npos
+        && qpa_platform.find("offscreen") == std::string::npos) {
+      // OpenROAD logger is not available yet, using cout.
+      std::cout << "Your system has set QT_QPA_PLATFORM='" << qpa_platform
+                << "', openroad only supports 'offscreen' and 'xcb', please "
+                   "include one of these plugins in your platform env\n";
+    }
+  }
+#endif
   auto gui = gui::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();

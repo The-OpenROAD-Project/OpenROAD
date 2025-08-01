@@ -34,28 +34,28 @@ bool Ruler::operator==(const Ruler& other) const
 
 bool Ruler::fuzzyIntersection(const odb::Rect& region, int margin) const
 {
-  using point_t = boost::geometry::model::d2::point_xy<int>;
-  using linestring_t = boost::geometry::model::linestring<point_t>;
-  using polygon_t = boost::geometry::model::polygon<point_t>;
+  using PointType = boost::geometry::model::d2::point_xy<int>;
+  using LineStringType = boost::geometry::model::linestring<PointType>;
+  using PolygonType = boost::geometry::model::polygon<PointType>;
 
-  linestring_t ls;
-  boost::geometry::append(ls, point_t(pt0_.x(), pt0_.y()));
+  LineStringType ls;
+  boost::geometry::append(ls, PointType(pt0_.x(), pt0_.y()));
   if (!euclidian_) {
     const auto middle = getManhattanJoinPt();
-    boost::geometry::append(ls, point_t(middle.x(), middle.y()));
+    boost::geometry::append(ls, PointType(middle.x(), middle.y()));
   }
-  boost::geometry::append(ls, point_t(pt1_.x(), pt1_.y()));
-  polygon_t poly;
+  boost::geometry::append(ls, PointType(pt1_.x(), pt1_.y()));
+  PolygonType poly;
   boost::geometry::append(
-      poly, point_t(region.xMin() - margin, region.yMin() - margin));
+      poly, PointType(region.xMin() - margin, region.yMin() - margin));
   boost::geometry::append(
-      poly, point_t(region.xMax() + margin, region.yMin() - margin));
+      poly, PointType(region.xMax() + margin, region.yMin() - margin));
   boost::geometry::append(
-      poly, point_t(region.xMax() + margin, region.yMax() + margin));
+      poly, PointType(region.xMax() + margin, region.yMax() + margin));
   boost::geometry::append(
-      poly, point_t(region.xMin() - margin, region.yMax() + margin));
+      poly, PointType(region.xMin() - margin, region.yMax() + margin));
   boost::geometry::append(
-      poly, point_t(region.xMin() - margin, region.yMin() - margin));
+      poly, PointType(region.xMin() - margin, region.yMin() - margin));
 
   return boost::geometry::intersects(ls, poly);
 }

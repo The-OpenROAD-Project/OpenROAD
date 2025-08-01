@@ -85,7 +85,6 @@ cc_library(
         "runtime/src/ompt-event-specific.h",
         "runtime/src/ompt-general.cpp",
         "runtime/src/ompt-internal.h",
-        "runtime/src/ompt-specific.cpp",
         "runtime/src/ompt-specific.h",
         "runtime/src/test-touch.c",
         "runtime/src/z_Linux_asm.S",

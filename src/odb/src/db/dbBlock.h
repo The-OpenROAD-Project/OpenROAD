@@ -33,6 +33,8 @@ class _dbITerm;
 class _dbNet;
 class _dbInst;
 class _dbInstHdr;
+class _dbScanInst;
+class dbScanListScanInstItr;
 class _dbWire;
 class _dbVia;
 class _dbGCellGrid;
@@ -200,6 +202,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbNet>* _net_tbl;
   dbTable<_dbInstHdr>* _inst_hdr_tbl;
   dbTable<_dbInst>* _inst_tbl;
+  dbTable<_dbScanInst>* _scan_inst_tbl;
   dbTable<_dbBox, 1024>* _box_tbl;
   dbTable<_dbVia, 1024>* _via_tbl;
   dbTable<_dbGCellGrid>* _gcell_grid_tbl;
@@ -251,6 +254,7 @@ class _dbBlock : public _dbObject
   dbNetBTermItr* _net_bterm_itr;
   dbNetITermItr* _net_iterm_itr;
   dbInstITermItr* _inst_iterm_itr;
+  dbScanListScanInstItr* _scan_list_scan_inst_itr;
   dbBoxItr<1024>* _box_itr;
   dbSWireItr* _swire_itr;
   dbSBoxItr* _sbox_itr;
@@ -283,6 +287,7 @@ class _dbBlock : public _dbObject
 
   std::unordered_map<std::string, int> _module_name_id_map;
   std::unordered_map<std::string, int> _inst_name_id_map;
+  std::unordered_map<dbId<_dbInst>, dbId<_dbScanInst>> _inst_scan_inst_map;
 
   unsigned char _num_ext_dbs;
 

@@ -9,7 +9,7 @@ project(dst
   LANGUAGES CXX
 )
 
-find_package(Boost REQUIRED COMPONENTS serialization system thread)
+find_package(Boost CONFIG REQUIRED COMPONENTS serialization system thread)
 swig_lib(NAME      dst
          NAMESPACE dst
          I_FILE    src/Distributed.i
