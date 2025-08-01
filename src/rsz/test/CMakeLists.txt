@@ -158,6 +158,7 @@ or_integration_tests(
     report_buffers_gf180
     report_buffers_asap7
     report_buffers_nangate45
+    report_buffers_ihp
   PASSFAIL_TESTS
     cpp_tests
 )

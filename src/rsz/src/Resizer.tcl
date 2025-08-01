@@ -523,12 +523,13 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-sizing_area_limit] \
                                           [-sizing_leakage_limit] \
                                           [-set_early_sizing_cap_ratio] \
-                                          [-set_early_buffer_sizing_cap_ratio]}
+                                          [-set_early_buffer_sizing_cap_ratio] \
+                                          [-disable_buffer_pruning] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt \
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt -disable_buffer_pruning \
       -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
 
   set area_limit "NULL"
@@ -583,6 +584,19 @@ proc set_opt_config { args } {
     utl::info RSZ 147 \
       "Early buffer sizing will use capacitance ratio of value $value"
   }
+
+  if { [info exists keys(-disable_buffer_pruning)] } {
+    set disable_val $keys(-disable_buffer_pruning)
+    rsz::set_boolean_prop $disable_val "-disable_buffer_pruning" \
+      "disable_buffer_pruning"
+    if { $disable_val } {
+      utl::info RSZ 165 \
+        "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
+    } else {
+      utl::info RSZ 167 \
+        "Buffer pruning will be enabled for repair_design and repair_timing"
+    }
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
@@ -592,13 +606,15 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-sizing_area_limit] \
                                             [-sizing_leakage_limit] \
                                             [-set_early_sizing_cap_ratio] \
-                                            [-set_early_buffer_sizing_cap_ratio]}
+                                            [-set_early_buffer_sizing_cap_ratio] \
+                                            [-disable_buffer_pruning] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
                      -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
-                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio}
+                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
+                     -disable_buffer_pruning}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -630,6 +646,10 @@ proc reset_opt_config { args } {
   if { $reset_all || [info exists flags(-set_early_buffer_sizing_cap_ratio)] } {
     rsz::clear_double_prop "early_buffer_sizing_cap_ratio"
     utl::info RSZ 148 "Capacitance ratio for early buffer sizing has been unset."
+  }
+  if { $reset_all || [info exists flags(-disable_buffer_pruning)] } {
+    rsz::clear_bool_prop "disable_buffer_pruning"
+    utl::info RSZ 166 "Buffer pruning has been enabled."
   }
 }
 
@@ -677,6 +697,14 @@ proc report_opt_config { args } {
     set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
   }
 
+  # Temporary WA
+  set disable_buffer_pruning "true"
+  set no_buffer_pruning [odb::dbBoolProperty_find $block "disable_buffer_pruning"]
+  if { $no_buffer_pruning ne "NULL" && $no_buffer_pruning ne "" } {
+    set no_buffer_pruning_value [$no_buffer_pruning getValue]
+    set disable_buffer_pruning [expr { $no_buffer_pruning_value ? "true" : "false" }]
+  }
+
   puts "*******************************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:                 $area_limit_value"
@@ -685,6 +713,7 @@ proc report_opt_config { args } {
   puts "-keep_sizing_vt:                    $keep_sizing_vt"
   puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
   puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
+  puts "-disable_buffer_pruning:            $disable_buffer_pruning"
   puts "*******************************************"
 }
 
