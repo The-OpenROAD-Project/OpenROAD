@@ -3695,17 +3695,21 @@ std::string dbBlock::makeNewNetName(dbModInst* parent_scope,
     base_name = "net";
   }
 
+  // Decide hierarchical name without unique index
   fmt::memory_buffer buf;
+  if (parent_scope) {
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent_scope->getName(),
+                   getHierarchyDelimiter());
+  }
+  fmt::format_to(std::back_inserter(buf), "{}", base_name);
+
+  // Append unique index
+  const size_t prefix_size = buf.size();
   do {
-    buf.clear();
-    if (parent_scope) {
-      fmt::format_to(std::back_inserter(buf),
-                     "{}{}",
-                     parent_scope->getName(),
-                     getHierarchyDelimiter());
-    }
-    fmt::format_to(
-        std::back_inserter(buf), "{}{}", base_name, block->_unique_net_index++);
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", block->_unique_net_index++);
     buf.push_back('\0');  // Null-terminate for findNet
   } while (findNet(buf.data()));
   return std::string(buf.data());
@@ -3731,20 +3735,22 @@ std::string dbBlock::makeNewInstName(dbModInst* parent_scope,
     base_name = "inst";
   }
 
+  // Decide hierarchical name without unique index
   fmt::memory_buffer buf;
-  do {
-    buf.clear();
-    if (parent_scope) {
-      fmt::format_to(std::back_inserter(buf),
-                     "{}{}",
-                     parent_scope->getHierarchicalName(),
-                     getHierarchyDelimiter());
-    }
+  if (parent_scope) {
     fmt::format_to(std::back_inserter(buf),
-                   "{}{}{}",
-                   base_name,
-                   underscore ? "_" : "",
-                   block->_unique_inst_index++);
+                   "{}{}",
+                   parent_scope->getHierarchicalName(),
+                   getHierarchyDelimiter());
+  }
+  fmt::format_to(
+      std::back_inserter(buf), "{}{}", base_name, underscore ? "_" : "");
+
+  // Append unique index
+  const size_t prefix_size = buf.size();
+  do {
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", block->_unique_inst_index++);
     buf.push_back('\0');  // Null-terminate
 
     // NOTE: TODO: The scoping should be within
