@@ -3690,24 +3690,25 @@ std::string dbBlock::makeNewNetName(dbModInst* parent_scope,
                                     const char* base_name)
 {
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  std::string parent_hier_name;
-
-  if (parent_scope) {
-    parent_hier_name
-        = fmt::format("{}{}", parent_scope->getName(), getHierarchyDelimiter());
-  }
 
   if (base_name == nullptr) {
     base_name = "net";
   }
 
-  std::string net_name;
+  fmt::memory_buffer buf;
   do {
-    net_name = fmt::format(
-        "{}{}{}", parent_hier_name, base_name, block->_unique_net_index++);
-  } while (findNet(net_name.c_str()));
-
-  return net_name;
+    buf.clear();
+    if (parent_scope) {
+      fmt::format_to(std::back_inserter(buf),
+                     "{}{}",
+                     parent_scope->getName(),
+                     getHierarchyDelimiter());
+    }
+    fmt::format_to(
+        std::back_inserter(buf), "{}{}", base_name, block->_unique_net_index++);
+    buf.push_back('\0');  // Null-terminate for findNet
+  } while (findNet(buf.data()));
+  return std::string(buf.data());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3725,36 +3726,36 @@ std::string dbBlock::makeNewInstName(dbModInst* parent_scope,
                                      bool underscore)
 {
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  std::string parent_hier_name;
-
-  if (parent_scope) {
-    parent_hier_name = fmt::format(
-        "{}{}", parent_scope->getHierarchicalName(), getHierarchyDelimiter());
-  }
 
   if (base_name == nullptr) {
     base_name = "inst";
   }
 
-  std::string inst_name;
+  fmt::memory_buffer buf;
   do {
-    if (underscore) {
-      inst_name = fmt::format(
-          "{}{}_{}", parent_hier_name, base_name, block->_unique_inst_index++);
-    } else {
-      inst_name = fmt::format(
-          "{}{}{}", parent_hier_name, base_name, block->_unique_inst_index++);
+    buf.clear();
+    if (parent_scope) {
+      fmt::format_to(std::back_inserter(buf),
+                     "{}{}",
+                     parent_scope->getHierarchicalName(),
+                     getHierarchyDelimiter());
     }
-  } while (findInst(inst_name.c_str()) || findModInst(inst_name.c_str()));
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}{}",
+                   base_name,
+                   underscore ? "_" : "",
+                   block->_unique_inst_index++);
+    buf.push_back('\0');  // Null-terminate
 
-  // NOTE: TODO: The scoping should be within
-  // the dbModule scope for the instance, not the whole network.
-  // dbInsts are already scoped within a dbModule
-  // To get the dbModule for a dbInst used inst -> getModule
-  // then search within that scope. That way the instance name
-  // does not have to be some massive string like root/X/Y/U1.
-  //
-  return inst_name;
+    // NOTE: TODO: The scoping should be within
+    // the dbModule scope for the instance, not the whole network.
+    // dbInsts are already scoped within a dbModule
+    // To get the dbModule for a dbInst used inst -> getModule
+    // then search within that scope. That way the instance name
+    // does not have to be some massive string like root/X/Y/U1.
+    //
+  } while (findInst(buf.data()) || findModInst(buf.data()));
+  return std::string(buf.data());
 }
 
 std::string dbBlock::makeNewInstName(const char* base_name, bool underscore)
