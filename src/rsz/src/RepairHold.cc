@@ -193,6 +193,22 @@ LibertyCell* RepairHold::findHoldBuffer()
   return best_buffer.cell;
 }
 
+// Only DEL, DLY, and dlygate are supported in current PDKs
+// leading  3 nm:  DEL
+// common   7 nm:  DLY
+//         12 nm:  DLY
+// skywater130hs:  dlygate
+bool isDelayCell(std::string cell_name)
+{
+  if (!cell_name.empty()
+      && (cell_name.find("DEL") != std::string::npos
+          || cell_name.find("DLY") != std::string::npos
+          || cell_name.find("dlygate") != std::string::npos)) {
+    return true;
+  }
+  return false;
+}
+
 void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
 {
   LibertyCellSeq buffer_list;
@@ -208,41 +224,112 @@ void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
 
   // Pick the shortest cell site because this offers the most flexibility for
   // hold fixing
-  int smallestHt = std::numeric_limits<int>::max();
-  odb::dbSite* smallest_site = nullptr;
+  int best_height = std::numeric_limits<int>::max();
+  odb::dbSite* best_site = nullptr;
   for (const auto& site_data : lib_data.cells_by_site) {
     int height = site_data.first->getHeight();
-    if (height < smallestHt) {
-      smallestHt = height;
-      smallest_site = site_data.first;
+    if (height < best_height) {
+      best_height = height;
+      best_site = site_data.first;
     }
   }
 
+  // Use DELAY cell footprint if available
+  bool lib_has_footprints = false;
+  for (const auto& [ft_str, count] : lib_data.cells_by_footprint) {
+    if (isDelayCell(ft_str)) {
+      lib_has_footprints = true;
+      break;
+    }
+  }
+
+  // Match site, footprint and vt
+  if (!addMatchingBuffers(buffer_list,
+                          hold_buffers,
+                          best_vt_index,
+                          best_site,
+                          lib_has_footprints,
+                          true /* match_site */,
+                          true /* match_vt */,
+                          true /* match_footprint */)) {
+    // Match footprint and vt only
+    if (!addMatchingBuffers(buffer_list,
+                            hold_buffers,
+                            best_vt_index,
+                            best_site,
+                            lib_has_footprints,
+                            false /* match_site */,
+                            true /* match_vt */,
+                            true /* match_footprint */)) {
+      // Match footprint only
+      if (!addMatchingBuffers(buffer_list,
+                              hold_buffers,
+                              best_vt_index,
+                              best_site,
+                              lib_has_footprints,
+                              false /* match_site */,
+                              false /* match_vt */,
+                              true /* match_footprint */)) {
+        // Relax all
+        if (!addMatchingBuffers(buffer_list,
+                                hold_buffers,
+                                best_vt_index,
+                                best_site,
+                                lib_has_footprints,
+                                false /* match_site */,
+                                false /* match_vt */,
+                                false /* match_footprint */)) {
+          logger_->error(RSZ, 167, "No suitable hold buffers have been found");
+        }
+      }
+    }
+  }
+}
+
+bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
+                                    LibertyCellSeq& hold_buffers,
+                                    int best_vt_index,
+                                    odb::dbSite* best_site,
+                                    bool lib_has_footprints,
+                                    bool match_site,
+                                    bool match_vt,
+                                    bool match_footprint)
+{
+  bool hold_buffer_found = false;
   for (LibertyCell* buffer : buffer_list) {
     odb::dbMaster* master = db_network_->staToDb(buffer);
 
-    bool site_matches = master->getSite() == smallest_site;
+    bool site_matches = true;
+    if (match_site) {
+      site_matches = master->getSite() == best_site;
+    }
 
-    auto vt_type = resizer_->cellVTType(master);
-    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+    bool vt_matches = true;
+    if (match_vt) {
+      auto vt_type = resizer_->cellVTType(master);
+      vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+    }
 
-    // Use DELAY cell footprint if available
-    // These are the known cell attributes in existing PDKs
-    // We want to match DLY1/DLY2/DLY4 with DLY
-    const char* footprint_cstr = buffer->footprint();
-    std::string footprint = footprint_cstr ? footprint_cstr : "";
-    bool footprint_matches
-        = lib_data.cells_by_footprint.size() <= 1
-          || (!footprint.empty()
-              && (footprint.find("DLY") != std::string::npos
-                  || footprint.find("DEL") != std::string::npos
-                  || footprint.find("delay") != std::string::npos));
+    bool footprint_matches = true;
+    if (match_footprint) {
+      const char* footprint_cstr = buffer->footprint();
+      std::string footprint = footprint_cstr ? footprint_cstr : "";
+      footprint_matches = !lib_has_footprints || isDelayCell(footprint);
+    }
 
     if (site_matches && vt_matches && footprint_matches) {
       hold_buffers.emplace_back(buffer);
-      logger_->report("{} added to hold buffer", buffer->name());
+      debugPrint(logger_,
+                 RSZ,
+                 "resizer",
+                 1,
+                 "{} added to hold buffer",
+                 buffer->name());
+      hold_buffer_found = true;
     }
   }
+
+  return hold_buffer_found;
 }
 
 float RepairHold::bufferHoldDelay(LibertyCell* buffer)
@@ -773,9 +860,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
     logger_->report(
         "Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   "
         "|   TNS   | Endpoint");
-    logger_->report(
-        "----------------------------------------------------------------------"
-        "----------------");
+    logger_->report("{:->86}", "");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -806,9 +891,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
   }
 
   if (end) {
-    logger_->report(
-        "----------------------------------------------------------------------"
-        "----------------");
+    logger_->report("{:->86}", "");
   }
 }
 
