@@ -149,7 +149,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   addMove(buffer);
 
   // H-fix make the out net in the driver parent
-  Net* out_net = db_network_->makeHierNet(parent);
+  Net* out_net = db_network_->makeNetInParent(parent);
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -228,7 +228,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
-        std::string unique_connection_name = db_network_->makeNewNetName();
+        std::string unique_connection_name
+            = db_network_->getBlockOf(load_pin)->makeNewNetName();
         odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
         odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
         if (load_pin_iterm && buffer_op_pin_iterm) {
@@ -242,8 +243,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
           // hierarchical net and the modnet to make sure they
           // get reassociated. (so all modnet pins refer to flat net).
           load_iterm->disconnect();
-          db_network_->connectPin(
-              load_pin, (Net*) out_net, (Net*) db_mod_load_net);
+          db_network_->connectPin(load_pin, out_net, (Net*) db_mod_load_net);
           //          iterm->connect(db_mod_load_net);
         }
       }

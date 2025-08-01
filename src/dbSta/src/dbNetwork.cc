@@ -2564,14 +2564,19 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
 }
 
 // New API that supports hierarchical mode.
-Net* dbNetwork::makeHierNet(Instance* parent, const char* base_name)
+// TODO: Replace original API to this API after all callers have been addressed
+// properly with parent. Will use original API name "makeNet".
+Net* dbNetwork::makeNetInParent(Instance* parent, const char* base_name)
 {
-  std::string full_name = makeNewNetName(parent, base_name);
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(parent, db_inst, mod_inst);
+  std::string full_name = block_->makeNewNetName(mod_inst, base_name);
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
   return dbToSta(dnet);
 }
 
-// Old API. parent argument is unused.
+// Original API. parent argument is unused.
 Net* dbNetwork::makeNet(const char* full_name, Instance* parent)
 {
   dbNet* dnet = dbNet::create(block_, full_name, false);
@@ -2714,6 +2719,28 @@ dbModITerm* dbNetwork::hierPin(const Pin* pin) const
   (void) iterm;
   (void) bterm;
   return moditerm;
+}
+
+dbBlock* dbNetwork::getBlockOf(const Pin* pin) const
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+
+  dbBlock* block = nullptr;
+  if (iterm) {
+    block = iterm->getInst()->getBlock();
+  } else if (bterm) {
+    block = bterm->getBlock();
+  } else if (moditerm) {
+    // moditerm->parent is dbModInst
+    // moditerm->parent->parent is dbModule
+    // dbModule->owner is dbBlock
+    block = moditerm->getParent()->getParent()->getOwner();
+  }
+  assert(block != nullptr && "Pin must belong to a block.");
+  return block;
 }
 
 void dbNetwork::staToDb(const Pin* pin,
@@ -4179,33 +4206,6 @@ void dbNetwork::AxiomCheck()
 // method: dbNetwork::name).
 // Currently all nets are scoped within a dbBlock.
 //
-std::string dbNetwork::makeNewNetName(Instance* parent_scope,
-                                      const char* base_name)
-{
-  std::string parent_hier_name;
-  const Instance* scope = topInstance();
-
-  if (parent_scope && parent_scope != topInstance()) {
-    parent_hier_name = fmt::format("{}{}", name(parent_scope), pathDivider());
-    scope = parent_scope;
-  }
-
-  if (base_name == nullptr) {
-    base_name = "net";
-  }
-
-  std::string net_name;
-  do {
-    net_name = fmt::format(
-        "{}{}{}", parent_hier_name, base_name, unique_net_index_++);
-  } while (findNet(scope, net_name.c_str())
-           || (hasHierarchy() && findNetAllScopes(net_name.c_str())));
-
-  // in hierarchical mode we check the uniqueness globally.
-  // TODO:change scoping of nets so we never
-  // have to do this, as it is obviously slow.
-  return net_name;
-}
 
 std::string dbNetwork::makeNewInstName(Instance* parent_scope,
                                        const char* base_name,

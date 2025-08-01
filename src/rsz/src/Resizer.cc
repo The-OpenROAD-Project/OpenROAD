@@ -947,7 +947,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   // make the buffer and its output net.
   string buffer_name = db_network_->makeNewInstName("input");
   Instance* parent = db_network_->topInstance();
-  Net* buffer_out = db_network_->makeHierNet(parent);
+  Net* buffer_out = db_network_->makeNetInParent(parent);
   dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
   Point pin_loc = db_network_->location(top_pin);
   Instance* buffer
@@ -1125,7 +1125,7 @@ void Resizer::bufferOutput(const Pin* top_pin,
 
   string buffer_name = db_network_->makeNewInstName("output");
   Instance* parent = network->topInstance();
-  Net* buffer_out = db_network_->makeHierNet(parent);
+  Net* buffer_out = db_network_->makeNetInParent(parent);
 
   Point pin_loc = db_network_->location(top_pin);
   // buffer made in top level.
@@ -2738,7 +2738,8 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
               // Make tie output net.
               Net* load_net
-                  = db_network_->makeHierNet();  // TODO: parent may be needed
+                  = db_network_
+                        ->makeNetInParent();  // TODO: parent may be needed
 
               // Connect tie inst output.
               sta_->connectPin(tie, tie_port, load_net);
@@ -3640,7 +3641,7 @@ void Resizer::cloneClkInverter(Instance* inv)
             = makeInstance(inv_cell, clone_name.c_str(), top_inst, clone_loc);
         journalMakeBuffer(clone);
 
-        Net* clone_out_net = db_network_->makeHierNet(top_inst);
+        Net* clone_out_net = db_network_->makeNetInParent(top_inst);
         dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 

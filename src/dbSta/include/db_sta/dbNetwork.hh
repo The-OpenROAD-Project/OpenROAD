@@ -233,6 +233,7 @@ class dbNetwork : public ConcreteNetwork
   dbModNet* hierNet(const Pin* pin) const;
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
+  dbBlock* getBlockOf(const Pin* pin) const;
 
   bool isFlat(const Pin* pin) const;
   bool isFlat(const Net* net) const;
@@ -310,7 +311,8 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
-  Net* makeHierNet(Instance* parent = nullptr, const char* base_name = nullptr);
+  Net* makeNetInParent(Instance* parent = nullptr,
+                       const char* base_name = nullptr);
   Net* makeNet(const char* name, Instance* parent) override;
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;
@@ -345,8 +347,6 @@ class dbNetwork : public ConcreteNetwork
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
 
-  std::string makeNewNetName(Instance* parent_scope = nullptr,
-                             const char* base_name = nullptr);
   std::string makeNewInstName(Instance* parent_scope,
                               const char* base_name,
                               bool underscore = false);

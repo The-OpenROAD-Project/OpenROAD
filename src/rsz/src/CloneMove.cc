@@ -200,7 +200,7 @@ bool CloneMove::doMove(const Path* drvr_path,
   // Hierarchy fix, make out_net in parent.
 
   //  Net* out_net = resizer_->makeUniqueNet();
-  Net* out_net = db_network_->makeHierNet(parent);
+  Net* out_net = db_network_->makeNetInParent(parent);
 
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
       network_->pinIterator(drvr_inst)};
@@ -274,7 +274,8 @@ bool CloneMove::doMove(const Path* drvr_path,
       // hierarchy fix: if load and clone in different modules
       // do the cross module wiring.
       if (load_parent_inst != parent) {
-        std::string unique_connection_name = db_network_->makeNewNetName();
+        std::string unique_connection_name
+            = db_network_->getBlockOf(load_pin)->makeNewNetName();
         db_network_->hierarchicalConnect(
             clone_output_iterm, load_iterm, unique_connection_name.c_str());
       } else {

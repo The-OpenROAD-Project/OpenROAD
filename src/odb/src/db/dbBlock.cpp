@@ -3686,4 +3686,28 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
   }
 }
 
+std::string dbBlock::makeNewNetName(dbModInst* parent_scope,
+                                    const char* base_name)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  std::string parent_hier_name;
+
+  if (parent_scope) {
+    parent_hier_name
+        = fmt::format("{}{}", parent_scope->getName(), getHierarchyDelimiter());
+  }
+
+  if (base_name == nullptr) {
+    base_name = "net";
+  }
+
+  std::string net_name;
+  do {
+    net_name = fmt::format(
+        "{}{}{}", parent_hier_name, base_name, block->_unique_net_index++);
+  } while (findNet(net_name.c_str()));
+
+  return net_name;
+}
+
 }  // namespace odb
