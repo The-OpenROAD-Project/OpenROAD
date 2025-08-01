@@ -242,6 +242,10 @@ class BaseMove : public sta::dbStaState
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float rebuffer_relaxation_factor_ = 0.03;
 
+  // Experiment flag: when true, only consider the direct input pin for delay
+  // change when false (default), analyze all input pins for worst delay change
+  static constexpr bool use_direct_pin_only_for_delay_change_ = false;
+
   vector<const Pin*> getOutputPins(const Instance* inst);
   LibertyCellSeq getSwappableCells(LibertyCell* base);
 

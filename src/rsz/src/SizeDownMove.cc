@@ -361,74 +361,97 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
         // Sequential elements: output timing determined by clock, not inputs
         delay_change = drvr_delta_delay - output_delays[output_index];
       } else {
-        // Combinational logic: analyze delay changes through ALL input pins
-        Instance* fanout_inst = network_->instance(load_pin);
-        InstancePinIterator* pin_iter = network_->pinIterator(fanout_inst);
-        float worst_input_delay_change = -sta::INF;
+        if (use_direct_pin_only_for_delay_change_) {
+          // EXPERIMENT OPTION 1: Only consider the direct input pin (load_pin)
+          // This is our modified pin: driver + gate delay changes
+          delay_change
+              = new_load_delay + drvr_delta_delay - output_delays[output_index];
 
-        while (pin_iter->hasNext()) {
-          Pin* input_pin = pin_iter->next();
-          if (!network_->direction(input_pin)->isInput()) {
-            continue;
-          }
+          debugPrint(logger_,
+                     RSZ,
+                     "size_down",
+                     4,
+                     " [EXPERIMENT] Using direct pin only: delay_change={}",
+                     delayAsString(delay_change, sta_, 3));
+        } else {
+          // EXPERIMENT OPTION 2 (DEFAULT): Analyze delay changes through ALL
+          // input pins
+          Instance* fanout_inst = network_->instance(load_pin);
+          InstancePinIterator* pin_iter = network_->pinIterator(fanout_inst);
+          float worst_input_delay_change = -sta::INF;
 
-          LibertyPort* input_port = network_->libertyPort(input_pin);
-          if (!input_port) {
-            continue;
-          }
+          while (pin_iter->hasNext()) {
+            Pin* input_pin = pin_iter->next();
+            if (!network_->direction(input_pin)->isInput()) {
+              continue;
+            }
 
-          float input_delay_change = 0.0;
+            LibertyPort* input_port = network_->libertyPort(input_pin);
+            if (!input_port) {
+              continue;
+            }
 
-          if (input_pin == load_pin) {
-            // This is our modified pin: driver + gate delay changes
-            input_delay_change = new_load_delay + drvr_delta_delay
-                                 - output_delays[output_index];
-          } else {
-            // Other input pins: consider their driver delay changes
-            Vertex* input_vertex = graph_->pinLoadVertex(input_pin);
-            if (input_vertex) {
-              sta::VertexInEdgeIterator edge_iter(input_vertex, graph_);
-              if (edge_iter.hasNext()) {
-                Edge* edge = edge_iter.next();
-                if (edge->isWire()) {
-                  Vertex* driver_vertex = edge->from(graph_);
-                  Pin* driver_pin = driver_vertex->pin();
-                  LibertyPort* other_drvr_port
-                      = network_->libertyPort(driver_pin);
+            float input_delay_change = 0.0;
 
-                  if (other_drvr_port) {
-                    LibertyPort* old_input_port
-                        = load_cell->findLibertyPort(input_port->name());
-                    LibertyPort* new_input_port
-                        = swappable->findLibertyPort(input_port->name());
+            if (input_pin == load_pin) {
+              // This is our modified pin: driver + gate delay changes
+              input_delay_change = new_load_delay + drvr_delta_delay
+                                   - output_delays[output_index];
+            } else {
+              // Other input pins: consider their driver delay changes
+              Vertex* input_vertex = graph_->pinLoadVertex(input_pin);
+              if (input_vertex) {
+                sta::VertexInEdgeIterator edge_iter(input_vertex, graph_);
+                if (edge_iter.hasNext()) {
+                  Edge* edge = edge_iter.next();
+                  if (edge->isWire()) {
+                    Vertex* driver_vertex = edge->from(graph_);
+                    Pin* driver_pin = driver_vertex->pin();
+                    LibertyPort* other_drvr_port
+                        = network_->libertyPort(driver_pin);
 
-                    if (old_input_port && new_input_port) {
-                      float old_cap
-                          = old_input_port->cornerPort(lib_ap)->capacitance();
-                      float new_cap
-                          = new_input_port->cornerPort(lib_ap)->capacitance();
-                      float other_drvr_res = other_drvr_port->driveResistance();
-                      float other_drvr_delta
-                          = -other_drvr_res * (old_cap - new_cap);
-                      // Gate delay change is the same for all inputs since
-                      // gateDelay considers the worst-case input timing
-                      input_delay_change
-                          = other_drvr_delta
-                            + (new_load_delay - output_delays[output_index]);
+                    if (other_drvr_port) {
+                      LibertyPort* old_input_port
+                          = load_cell->findLibertyPort(input_port->name());
+                      LibertyPort* new_input_port
+                          = swappable->findLibertyPort(input_port->name());
+
+                      if (old_input_port && new_input_port) {
+                        float old_cap
+                            = old_input_port->cornerPort(lib_ap)->capacitance();
+                        float new_cap
+                            = new_input_port->cornerPort(lib_ap)->capacitance();
+                        float other_drvr_res
+                            = other_drvr_port->driveResistance();
+                        float other_drvr_delta
+                            = -other_drvr_res * (old_cap - new_cap);
+                        // Gate delay change is the same for all inputs since
+                        // gateDelay considers the worst-case input timing
+                        input_delay_change
+                            = other_drvr_delta
+                              + (new_load_delay - output_delays[output_index]);
+                      }
                     }
                   }
                 }
               }
             }
+
+            // Track worst delay change across all input pins
+            worst_input_delay_change
+                = std::max(worst_input_delay_change, input_delay_change);
           }
 
-          // Track worst delay change across all input pins
-          worst_input_delay_change
-              = std::max(worst_input_delay_change, input_delay_change);
-        }
+          delete pin_iter;
+          delay_change = worst_input_delay_change;
 
-        delete pin_iter;
-        delay_change = worst_input_delay_change;
+          debugPrint(logger_,
+                     RSZ,
+                     "size_down",
+                     4,
+                     " [EXPERIMENT] Using all pins: delay_change={}",
+                     delayAsString(delay_change, sta_, 3));
+        }
       }
 
       // Track worst delay change across all outputs
