@@ -26,8 +26,7 @@ class dbSta;
 class Pin;
 }  // namespace sta
 
-namespace rmp {
-
+namespace cut {
 using utl::Logger;
 
 class Blif
@@ -63,4 +62,4 @@ class Blif
   int call_id_;
 };
 
-}  // namespace rmp
+}  // namespace cut

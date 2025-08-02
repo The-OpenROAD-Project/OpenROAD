@@ -14,7 +14,7 @@
 #include "sta/SearchPred.hh"
 #include "utl/Logger.h"
 
-namespace rmp {
+namespace cut {
 
 // This class is an implementation of an sta::SearchPred that constrains
 // the edges BfsBwkIterators are allowed to traverse. In this case this
@@ -63,9 +63,6 @@ class LogicExtractorFactory
       sta::InstanceSet& cut_instances);
   std::vector<sta::Net*> ConvertIoPinsToNets(
       std::vector<sta::Pin*>& primary_io_pins);
-  void RemovePrimaryOutputInstances(
-      sta::InstanceSet& cut_instances,
-      std::vector<sta::Pin*>& primary_output_pins);
   std::vector<sta::Vertex*> AddMissingVertices(
       std::vector<sta::Vertex*>& cut_vertices,
       AbcLibrary& abc_library);
@@ -74,4 +71,4 @@ class LogicExtractorFactory
   sta::dbSta* open_sta_;
   utl::Logger* logger_;
 };
-}  // namespace rmp
+}  // namespace cut

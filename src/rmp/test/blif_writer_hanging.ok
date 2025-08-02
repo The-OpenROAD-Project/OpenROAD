@@ -3,5 +3,5 @@
 [INFO ODB-0130]     Created 5 pins.
 [INFO ODB-0131]     Created 3 components and 15 component-terminals.
 [INFO ODB-0133]     Created 6 nets and 8 connections.
-[INFO RMP-0002] Blif writer successfully dumped file with 3 instances.
+[INFO CUT-0002] Blif writer successfully dumped file with 3 instances.
 No differences found.

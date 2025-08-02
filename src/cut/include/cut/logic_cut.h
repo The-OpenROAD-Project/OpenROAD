@@ -9,13 +9,12 @@
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbNetwork.hh"
-#include "rmp/unique_name.h"
-#include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+#include "utl/unique_name.h"
 
-namespace rmp {
+namespace cut {
 class LogicCut
 {
  public:
@@ -53,7 +52,7 @@ class LogicCut
   void InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
                               AbcLibrary& abc_library,
                               sta::dbNetwork* network,
-                              UniqueName& unique_name,
+                              utl::UniqueName& unique_name,
                               utl::Logger* logger);
 
  private:
@@ -61,4 +60,4 @@ class LogicCut
   std::vector<sta::Net*> primary_outputs_;
   sta::InstanceSet cut_instances_;
 };
-}  // namespace rmp
+}  // namespace cut
