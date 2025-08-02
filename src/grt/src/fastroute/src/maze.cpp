@@ -2010,7 +2010,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   }
 
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
-    total_usage += graph2d_.getEstUsageH(x, y);
+    total_usage += graph2d_.getEstUsageV(x, y);
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
