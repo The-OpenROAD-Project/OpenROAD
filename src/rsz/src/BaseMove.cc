@@ -3,6 +3,10 @@
 
 #include "BaseMove.hh"
 
+#include "sta/Fuzzy.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/PortDirection.hh"
+
 namespace rsz {
 
 using std::max;
@@ -684,7 +688,7 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
   return false;
 }
 
-vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
+vector<const Pin*> BaseMove::getOutputPins(const Instance* inst)
 {
   vector<const Pin*> fanouts;
 
@@ -698,6 +702,114 @@ vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
   }
 
   return fanouts;
+}
+
+bool BaseMove::checkMaxCapViolation(const Pin* output_pin,
+                                    LibertyPort* output_port,
+                                    float output_cap)
+{
+  float max_cap;
+  bool cap_limit_exists;
+  output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
+
+  debugPrint(logger_,
+             RSZ,
+             "size_down",
+             3,
+             " fanout pin {} cap {} output_cap {} ",
+             output_port->name(),
+             max_cap,
+             output_cap);
+
+  if (cap_limit_exists && max_cap > 0.0 && output_cap > max_cap) {
+    debugPrint(logger_,
+               RSZ,
+               "size_down",
+               2,
+               "  skip based on max cap {} gate={} cap={} max_cap={}",
+               network_->pathName(output_pin),
+               output_port->libertyCell()->name(),
+               output_cap,
+               max_cap);
+    return true;
+  }
+
+  return false;
+}
+
+bool BaseMove::checkMaxSlewViolation(const Pin* output_pin,
+                                     LibertyPort* output_port,
+                                     float output_slew_factor,
+                                     float output_cap,
+                                     const DcalcAnalysisPt* dcalc_ap)
+{
+  float output_res = output_port->driveResistance();
+  float output_slew = output_slew_factor * output_res * output_cap;
+  float max_slew;
+  bool slew_limit_exists;
+
+  sta_->findSlewLimit(output_port,
+                      dcalc_ap->corner(),
+                      resizer_->max_,
+                      max_slew,
+                      slew_limit_exists);
+
+  if (output_slew > max_slew) {
+    debugPrint(logger_,
+               RSZ,
+               "size_down",
+               2,
+               "  skip based on max slew {} gate={} slew={} max_slew={}",
+               network_->pathName(output_pin),
+               output_port->libertyCell()->name(),
+               output_slew,
+               max_slew);
+    return true;
+  }
+
+  return false;
+}
+
+float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
+                                        LibertyPort* output_port,
+                                        float output_load_cap)
+{
+  float elmore_slew_factor = 0.0;
+
+  // Get the vertex for the output pin
+  Vertex* output_vertex = graph_->pinLoadVertex(output_pin);
+
+  // Get the output slew
+  const Slew output_slew = sta_->vertexSlew(output_vertex, resizer_->max_);
+
+  // Get the output resistance
+  float output_res = output_port->driveResistance();
+
+  // Can have gates without fanout (e.g. QN of flop) which have no load
+  if (output_res > 0.0 && output_load_cap > 0.0) {
+    elmore_slew_factor = output_slew / (output_res * output_load_cap);
+  }
+
+  return elmore_slew_factor;
+}
+
+////////////////////////////////////////////////////////////////
+
+LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
+{
+  if (base->isBuffer()) {
+    // Do this once to populate the set
+    if (buffer_sizes_.empty()) {
+      for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
+        buffer_sizes_.push_back(buffer);
+      }
+    }
+    if (resizer_->buffer_fast_sizes_.count(base) == 0) {
+      return LibertyCellSeq();
+    }
+    return buffer_sizes_;
+  }
+  return resizer_->getSwappableCells(base);
 }
 
 ////////////////////////////////////////////////////////////////
