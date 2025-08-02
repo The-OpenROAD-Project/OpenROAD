@@ -35,12 +35,15 @@ cell footprint, drive strength and cell site
 Cell                                        Drive Drive    Leak   Site Cell   VT
                                             Res   Res*Cin          Ht Footpt Type
 --------------------------------------------------------------------------------
-BUF_X1                                     2327.9 2.3e-12 2.1e-08 2800 N/A     -
-BUF_X2                                     1166.3 2.1e-12 4.3e-08 2800 N/A     -
-BUF_X4                                      583.6 2.0e-12 8.6e-08 2800 N/A     -
-BUF_X8                                      292.9 1.9e-12 1.7e-07 2800 N/A     -
 BUF_X16                                     147.8 1.8e-12 3.4e-07 2800 N/A     -
 BUF_X32                                      76.8 2.1e-12 6.9e-07 2800 N/A     -
+BUF_X8                                      292.9 1.9e-12 1.7e-07 2800 N/A     -
+BUF_X4                                      583.6 2.0e-12 8.6e-08 2800 N/A     -
+BUF_X2                                     1166.3 2.1e-12 4.3e-08 2800 N/A     -
+BUF_X1                                     2327.9 2.3e-12 2.1e-08 2800 N/A     -
+
+Hold Buffer Report:
+BUF_X1 is the buffer chosen for hold fixing
 ********************************************************************************
 
 Fast Buffer Report:
