@@ -20,6 +20,7 @@ set_dont_use {sky130_fd_sc_hd__probe_*
 set_dont_touch _53_
 
 report_checks -fields {fanout}
+#set_debug_level RSZ early_sizing 2
 repair_design -pre_placement
 report_checks -fields {fanout}
 set verilog_file [make_result_file gain_buffering1_hier_out.v]
