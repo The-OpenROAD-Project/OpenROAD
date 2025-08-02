@@ -8,6 +8,10 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -34,7 +38,7 @@ using Slacks = Slack[RiseFall::index_count][MinMax::index_count];
 class RepairHold : public sta::dbStaState
 {
  public:
-  RepairHold(Resizer* resizer);
+  RepairHold(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
   bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -97,6 +101,7 @@ class RepairHold : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

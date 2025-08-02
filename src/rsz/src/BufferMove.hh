@@ -3,6 +3,10 @@
 
 #include "BaseMove.hh"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 using std::string;

@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace rsz {
+namespace est {
 
 class SteinerTree;
 
@@ -14,4 +14,4 @@ class AbstractSteinerRenderer
   virtual void highlight(SteinerTree* tree) = 0;
 };
 
-}  // namespace rsz
+}  // namespace est

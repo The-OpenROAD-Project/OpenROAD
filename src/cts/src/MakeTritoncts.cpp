@@ -27,13 +27,15 @@ void initTritonCts(cts::TritonCTS* cts,
                    sta::dbSta* sta,
                    stt::SteinerTreeBuilder* stt_builder,
                    rsz::Resizer* resizer,
+                   est::EstimateParasitics* estimate_parasitics,
                    utl::Logger* logger,
                    Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Cts_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, cts::cts_tcl_inits);
-  cts->init(logger, db, network, sta, stt_builder, resizer);
+  cts->init(
+      logger, db, network, sta, stt_builder, resizer, estimate_parasitics);
 }
 
 void deleteTritonCts(cts::TritonCTS* tritoncts)

@@ -12,7 +12,6 @@ package(
 cc_library(
     name = "rsz",
     srcs = [
-        "src/AbstractSteinerRenderer.h",
         "src/BaseMove.cc",
         "src/BaseMove.hh",
         "src/BufferMove.cc",
@@ -23,7 +22,6 @@ cc_library(
         "src/CloneMove.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
-        "src/EstimateWireParasitics.cc",
         "src/OdbCallBack.cc",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
@@ -45,8 +43,6 @@ cc_library(
         "src/SizeUpMove.hh",
         "src/SplitLoadMove.cc",
         "src/SplitLoadMove.hh",
-        "src/SteinerTree.cc",
-        "src/SteinerTree.hh",
         "src/SwapArithModules.hh",
         "src/SwapPinsMove.cc",
         "src/SwapPinsMove.hh",
@@ -64,6 +60,7 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dpl",
+        "//src/est",
         "//src/grt:types",
         "//src/gui",
         "//src/odb",
@@ -79,14 +76,10 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/AbstractSteinerRenderer.h",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",
         "src/ResizerObserver.hh",
-        "src/SteinerRenderer.cc",
-        "src/SteinerRenderer.h",
-        "src/SteinerTree.hh",
         ":swig",
         ":tcl",
     ],
@@ -105,6 +98,7 @@ cc_library(
         "//:ord",
         "//src/dbSta",
         "//src/dpl",
+        "//src/est",
         "//src/grt:types",
         "//src/gui",
         "//src/odb",

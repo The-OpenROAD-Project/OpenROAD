@@ -25,8 +25,8 @@ class Corner;
 namespace utl {
 class Logger;
 }
-namespace rsz {
-class Resizer;
+namespace est {
+class EstimateParasitics;
 }
 namespace dpl {
 class Opendp;
@@ -69,7 +69,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   void init(utl::Logger* logger,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            rsz::Resizer* resizer,
+            est::EstimateParasitics* estimate_parasitics,
             dpl::Opendp* opendp);
 
   void setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage);
@@ -129,7 +129,7 @@ class PDNSim : public odb::dbBlockCallBackObj
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
-  rsz::Resizer* resizer_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 

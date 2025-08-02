@@ -140,12 +140,6 @@ global_route(bool start_incremental, bool end_incremental)
   getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
 }
 
-void
-estimate_rc()
-{
-  getGlobalRouter()->estimateRC();
-}
-
 std::vector<int>
 route_layer_lengths(odb::dbNet* db_net)
 {

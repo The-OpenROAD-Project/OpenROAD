@@ -7,9 +7,8 @@
 #include <map>
 #include <vector>
 
-#include "AbstractMakeWireParasitics.h"
-#include "Pin.h"
 #include "db_sta/dbSta.hh"
+#include "grt/GlobalRouter.h"
 #include "grt/RoutePt.h"
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
@@ -33,40 +32,35 @@ namespace sta {
 class SpefWriter;
 }
 
-namespace rsz {
-class Resizer;
-}
+namespace est {
+class EstimateParasitics;
 
-namespace grt {
-class GlobalRouter;
-class MakeWireParasitics : public AbstractMakeWireParasitics
+class MakeWireParasitics
 {
  public:
   MakeWireParasitics(utl::Logger* logger,
-                     rsz::Resizer* resizer,
+                     est::EstimateParasitics* estimate_parasitics,
                      sta::dbSta* sta,
                      odb::dbTech* tech,
                      odb::dbBlock* block,
-                     GlobalRouter* grouter);
+                     grt::GlobalRouter* grouter);
   void estimateParasitics(odb::dbNet* net,
-                          std::vector<Pin>& pins,
-                          GRoute& route,
-                          sta::SpefWriter* spef_writer = nullptr);
-  void estimateParasitics(odb::dbNet* net, GRoute& route) override;
+                          grt::GRoute& route,
+                          sta::SpefWriter* spef_writer);
+  void estimateParasitics(odb::dbNet* net, grt::GRoute& route);
 
-  void clearParasitics() override;
-  // Return GRT layer lengths in dbu's for db_net's route indexed by routing
-  // layer.
-  std::vector<int> routeLayerLengths(odb::dbNet* db_net) const;
+  void clearParasitics();
+
   // Return the Slack of a given net
-  float getNetSlack(odb::dbNet* net) override;
+  float getNetSlack(odb::dbNet* net);
+
+  using NodeRoutePtMap = std::map<grt::RoutePt, sta::ParasiticNode*>;
 
  private:
-  using NodeRoutePtMap = std::map<RoutePt, sta::ParasiticNode*>;
-
-  sta::Pin* staPin(Pin& pin) const;
+  sta::Pin* staPin(odb::dbBTerm* bterm) const;
+  sta::Pin* staPin(odb::dbITerm* iterm) const;
   void makeRouteParasitics(odb::dbNet* net,
-                           GRoute& route,
+                           grt::GRoute& route,
                            sta::Net* sta_net,
                            sta::Corner* corner,
                            sta::ParasiticAnalysisPt* analysis_point,
@@ -78,25 +72,26 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                                           NodeRoutePtMap& node_map,
                                           sta::Parasitic* parasitic,
                                           sta::Net* net) const;
-  void makeParasiticsToPins(std::vector<Pin>& pins,
-                            odb::dbNet* net,
+  void makeParasiticsToPins(odb::dbNet* net,
+                            std::vector<grt::PinGridLocation>& pin_grid_locs,
                             NodeRoutePtMap& node_map,
                             sta::Corner* corner,
                             sta::ParasiticAnalysisPt* analysis_point,
                             sta::Parasitic* parasitic);
-  void makeParasiticsToPin(Pin& pin,
-                           odb::dbNet* net,
+  void makeParasiticsToPin(odb::dbNet* net,
+                           grt::PinGridLocation& pin_loc,
                            NodeRoutePtMap& node_map,
                            sta::Corner* corner,
                            sta::ParasiticAnalysisPt* analysis_point,
                            sta::Parasitic* parasitic);
-  void makePartialParasiticsToPins(std::vector<Pin>& pins,
-                                   NodeRoutePtMap& node_map,
-                                   sta::Corner* corner,
-                                   sta::ParasiticAnalysisPt* analysis_point,
-                                   sta::Parasitic* parasitic,
-                                   odb::dbNet* net);
-  void makePartialParasiticsToPin(Pin& pin,
+  void makePartialParasiticsToPins(
+      std::vector<grt::PinGridLocation>& pin_grid_locs,
+      NodeRoutePtMap& node_map,
+      sta::Corner* corner,
+      sta::ParasiticAnalysisPt* analysis_point,
+      sta::Parasitic* parasitic,
+      odb::dbNet* net);
+  void makePartialParasiticsToPin(grt::PinGridLocation& pin_loc,
                                   NodeRoutePtMap& node_map,
                                   sta::Corner* corner,
                                   sta::ParasiticAnalysisPt* analysis_point,
@@ -114,11 +109,11 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   double dbuToMeters(int dbu) const;
 
   // Variables common to all nets.
-  GlobalRouter* grouter_;
+  grt::GlobalRouter* global_router_;
+  est::EstimateParasitics* estimate_parasitics_;
   odb::dbTech* tech_;
   odb::dbBlock* block_;
   utl::Logger* logger_;
-  rsz::Resizer* resizer_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   sta::Parasitics* parasitics_;
@@ -127,4 +122,4 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   size_t resistor_id_;
 };
 
-}  // namespace grt
+}  // namespace est

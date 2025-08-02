@@ -28,6 +28,10 @@ class dbNet;
 class dbITerm;
 }  // namespace odb
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace sta {
 class dbSta;
 }  // namespace sta
@@ -56,7 +60,8 @@ class Restructure
   void init(utl::Logger* logger,
             sta::dbSta* open_sta,
             odb::dbDatabase* db,
-            rsz::Resizer* resizer);
+            rsz::Resizer* resizer,
+            est::EstimateParasitics* estimate_parasitics);
   void reset();
   void resynth(sta::Corner* corner);
   void run(char* liberty_file_name,
@@ -96,6 +101,7 @@ class Restructure
   sta::dbSta* open_sta_;
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   odb::dbBlock* block_ = nullptr;
 
   std::string input_blif_file_name_;
