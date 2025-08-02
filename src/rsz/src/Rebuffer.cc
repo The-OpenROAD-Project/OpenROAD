@@ -1820,12 +1820,15 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name
-          = resizer_->makeUniqueInstName(instance_base_name);
+      // TODO: Make an API to get the parent dbModInst*
+      odb::dbInst* parent_db_inst = nullptr;
+      odb::dbModInst* parent_mod_inst = nullptr;
+      db_network_->staToDb(parent, parent_db_inst, parent_mod_inst);
+      std::string buffer_name = db_network_->block()->makeNewInstName(
+          parent_mod_inst, instance_base_name);
 
       // HFix: make net in hierarchy
-      std::string net_name = resizer_->makeUniqueNetName();
-      Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
+      Net* net2 = db_network_->makeNetInParent(parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
@@ -1963,7 +1966,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
             std::string preferred_connection_name;
             // always make a unique name to avoid name clashes.
-            preferred_connection_name = resizer_->makeUniqueNetName();
+            preferred_connection_name
+                = db_network_->getBlockOf(load_pin)->makeNewNetName();
             db_network_->hierarchicalConnect(
                 mod_net_drvr, load_iterm, preferred_connection_name.c_str());
           } else if (mod_net_in) {  // input hierarchical net

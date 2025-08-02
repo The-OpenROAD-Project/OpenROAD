@@ -641,19 +641,12 @@ bool RepairDesign::performGainBuffering(Net* net,
                                  db_network_->dbToSta(driver_mod_net));
     }
 
-    // make sure any nets created are scoped within hierarchy
-    // backwards compatible. new naming only used for hierarchy code.
-
-    std::string net_name = db_network_->hasHierarchy()
-                               ? resizer_->makeUniqueNetName(parent)
-                               : resizer_->makeUniqueNetName();
-    Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
-
+    Net* new_net = db_network_->makeNetInParent(parent);
     dbNet* net_db = db_network_->staToDb(net);
     dbNet* new_net_db = db_network_->staToDb(new_net);
     new_net_db->setSigType(net_db->getSigType());
 
-    std::string buffer_name = resizer_->makeUniqueInstName("gain");
+    std::string buffer_name = db_network_->block()->makeNewInstName("gain");
     const Point drvr_loc = db_network_->location(drvr_pin);
 
     // create instance in driver parent
@@ -2144,7 +2137,7 @@ bool RepairDesign::makeRepeater(
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  std::string buffer_name = resizer_->makeUniqueInstName(reason);
+  std::string buffer_name = db_network_->block()->makeNewInstName(reason);
 
   debugPrint(logger_,
              RSZ,
@@ -2234,12 +2227,7 @@ bool RepairDesign::makeRepeater(
   buffer_op_pin = nullptr;
   resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
-  // make sure any nets created are scoped within hierarchy
-  // backwards compatible. new naming only used for hierarchy code.
-  std::string net_name = db_network_->hasHierarchy()
-                             ? resizer_->makeUniqueNetName(parent)
-                             : resizer_->makeUniqueNetName();
-  Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
+  Net* new_net = db_network_->makeNetInParent(parent);
 
   Net* buffer_ip_net = nullptr;
   Net* buffer_op_net = nullptr;
@@ -2400,13 +2388,16 @@ bool RepairDesign::makeRepeater(
         db_network_->disconnectPin(const_cast<Pin*>(pin));
 
         if (driver_instance_parent != load_instance_parent) {
-          std::string connection_name;
-          connection_name = resizer_->makeUniqueNetName(parent);
+          odb::dbInst* parent_db_inst = nullptr;
+          odb::dbModInst* parent_mod_inst = nullptr;
+          db_network_->staToDb(parent, parent_db_inst, parent_mod_inst);
+          std::string connection_name = db_network_->getBlockOf(buffer_op_pin)
+                                            ->makeNewNetName(parent_mod_inst);
           db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
                                            db_network_->flatPin(pin),
                                            connection_name.c_str());
         } else {
-          db_network_->connectPin(const_cast<Pin*>(pin), (Net*) buffer_op_net);
+          db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
         }
       }
 
@@ -2519,7 +2510,11 @@ bool RepairDesign::makeRepeater(
           db_network_->connectPin(const_cast<Pin*>(pin), (Net*) buffer_ip_net);
 
           if (driver_instance_parent != load_instance_parent) {
-            std::string connection_name = resizer_->makeUniqueNetName(parent);
+            odb::dbInst* parent_db_inst2 = nullptr;
+            odb::dbModInst* parent_mod_inst2 = nullptr;
+            db_network_->staToDb(parent, parent_db_inst2, parent_mod_inst2);
+            std::string connection_name
+                = db_network_->block()->makeNewNetName(parent_mod_inst2, "net");
 
             db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
                                              db_network_->flatPin(pin),

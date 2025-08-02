@@ -1062,11 +1062,12 @@ Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 //
 Net* dbNetwork::findNetAllScopes(const char* net_name) const
 {
+  dbNet* dnet = block_->findNet(net_name);
+  if (dnet) {
+    return dbToSta(dnet);
+  }
+
   for (auto dbm : block_->getModules()) {
-    dbNet* dnet = block_->findNet(net_name);
-    if (dnet) {
-      return dbToSta(dnet);
-    }
     dbModNet* modnet = dbm->getModNet(net_name);
     if (modnet) {
       return dbToSta(modnet);
@@ -2178,7 +2179,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 // Edit functions
 
 Instance* dbNetwork::makeInstance(LibertyCell* cell,
-                                  const char* name,
+                                  const char* name,  // full_name
                                   Instance* parent)
 {
   const char* cell_name = cell->name();
@@ -2562,9 +2563,23 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
   return nullptr;
 }
 
-Net* dbNetwork::makeNet(const char* name, Instance* parent)
+// New API that supports hierarchical mode.
+// TODO: Replace original API to this API after all callers have been addressed
+// properly with parent. Will use original API name "makeNet".
+Net* dbNetwork::makeNetInParent(Instance* parent, const char* base_name)
 {
-  dbNet* dnet = dbNet::create(block_, name, false);
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(parent, db_inst, mod_inst);
+  std::string full_name = block_->makeNewNetName(mod_inst, base_name);
+  dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
+  return dbToSta(dnet);
+}
+
+// Original API. parent argument is unused.
+Net* dbNetwork::makeNet(const char* full_name, Instance* parent)
+{
+  dbNet* dnet = dbNet::create(block_, full_name, false);
   return dbToSta(dnet);
 }
 
@@ -2706,6 +2721,28 @@ dbModITerm* dbNetwork::hierPin(const Pin* pin) const
   (void) iterm;
   (void) bterm;
   return moditerm;
+}
+
+dbBlock* dbNetwork::getBlockOf(const Pin* pin) const
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+
+  dbBlock* block = nullptr;
+  if (iterm) {
+    block = iterm->getInst()->getBlock();
+  } else if (bterm) {
+    block = bterm->getBlock();
+  } else if (moditerm) {
+    // moditerm->parent is dbModInst
+    // moditerm->parent->parent is dbModule
+    // dbModule->owner is dbBlock
+    block = moditerm->getParent()->getParent()->getOwner();
+  }
+  assert(block != nullptr && "Pin must belong to a block.");
+  return block;
 }
 
 void dbNetwork::staToDb(const Pin* pin,

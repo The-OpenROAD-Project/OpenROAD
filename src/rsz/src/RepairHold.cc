@@ -551,7 +551,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // to be preserved.
     // Move the driver pin over to gensym'd net.
     //
-    in_net = resizer_->makeUniqueNet();
+    in_net = db_network_->makeNetInParent();  // TODO: parent may be needed
     Port* drvr_port = network_->port(drvr_pin);
     Instance* drvr_inst = network_->instance(drvr_pin);
     sta_->disconnectPin(drvr_pin);
@@ -560,8 +560,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   } else {
     in_net = db_network_->dbToSta(db_drvr_net);
     // make the output net, put in same module as buffer
-    std::string net_name = resizer_->makeUniqueNetName();
-    out_net = db_network_->makeNet(net_name.c_str(), parent);
+    out_net = db_network_->makeNetInParent(parent);
   }
 
   dbNet* in_net_db = db_network_->staToDb(in_net);
@@ -588,7 +587,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
 
-  string buffer_name = resizer_->makeUniqueInstName("hold");
+  string buffer_name = db_network_->block()->makeNewInstName("hold");
 
   // make the buffer in the driver pin's parent
   Instance* buffer

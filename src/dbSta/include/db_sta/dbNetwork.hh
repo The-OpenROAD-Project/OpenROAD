@@ -233,6 +233,7 @@ class dbNetwork : public ConcreteNetwork
   dbModNet* hierNet(const Pin* pin) const;
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
+  dbBlock* getBlockOf(const Pin* pin) const;
 
   bool isFlat(const Pin* pin) const;
   bool isFlat(const Net* net) const;
@@ -311,6 +312,8 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
+  Net* makeNetInParent(Instance* parent = nullptr,
+                       const char* base_name = nullptr);
   Net* makeNet(const char* name, Instance* parent) override;
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;
@@ -378,6 +381,8 @@ class dbNetwork : public ConcreteNetwork
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
   std::set<dbNetworkObserver*> observers_;
+  int unique_net_index_ = 1;
+  int unique_inst_index_ = 1;
 
   // unique addresses for the db objects
   static constexpr unsigned DBITERM_ID = 0x0;
