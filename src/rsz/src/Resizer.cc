@@ -2790,7 +2790,9 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 
 bool Resizer::dontTouch(const Net* net)
 {
-  dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = nullptr;
+  odb::dbModNet* db_mod_net = nullptr;
+  db_network_->staToDb(net, db_net, db_mod_net);
   if (db_net == nullptr) {
     return false;
   }
