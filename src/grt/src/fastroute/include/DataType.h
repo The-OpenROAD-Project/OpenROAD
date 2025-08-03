@@ -189,6 +189,7 @@ struct TreeEdge
   int n1, n1a;
   int n2, n2a;
   Route route;
+  void convertToMazerouteNet(const TreeNode& p1, const TreeNode& p2);
 };
 
 struct StTree

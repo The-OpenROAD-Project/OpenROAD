@@ -265,29 +265,35 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
   auto& treenodes = sttrees_[netID].nodes;
   for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
     TreeEdge* treeedge = &(sttrees_[netID].edges[edgeID]);
-    const int edgelength = treeedge->len;
     const int n1 = treeedge->n1;
     const int n2 = treeedge->n2;
-    const int x1 = treenodes[n1].x;
-    const int y1 = treenodes[n1].y;
-    const int x2 = treenodes[n2].x;
-    const int y2 = treenodes[n2].y;
-    treeedge->route.gridsX.resize(edgelength + 1, 0);
-    treeedge->route.gridsY.resize(edgelength + 1, 0);
-    std::vector<short>& gridsX = treeedge->route.gridsX;
-    std::vector<short>& gridsY = treeedge->route.gridsY;
-    treeedge->len = abs(x1 - x2) + abs(y1 - y2);
+    treeedge->convertToMazerouteNet(treenodes[n1], treenodes[n2]);
+  }
+}
+
+void TreeEdge::convertToMazerouteNet(const TreeNode& p1, const TreeNode& p2)
+{
+    const int edgelength = len;
+    const int x1 = p1.x;
+    const int y1 = p1.y;
+    const int x2 = p2.x;
+    const int y2 = p2.y;
+    route.gridsX.resize(edgelength + 1, 0);
+    route.gridsY.resize(edgelength + 1, 0);
+    std::vector<short>& gridsX = route.gridsX;
+    std::vector<short>& gridsY = route.gridsY;
+    len = abs(x1 - x2) + abs(y1 - y2);
 
     int cnt = 0;
-    if (treeedge->route.type == RouteType::NoRoute) {
+    if (route.type == RouteType::NoRoute) {
       gridsX[0] = x1;
       gridsY[0] = y1;
-      treeedge->route.type = RouteType::MazeRoute;
-      treeedge->route.routelen = 0;
-      treeedge->len = 0;
+      route.type = RouteType::MazeRoute;
+      route.routelen = 0;
+      len = 0;
       cnt++;
-    } else if (treeedge->route.type == RouteType::LRoute) {
-      if (treeedge->route.xFirst) {  // horizontal first
+    } else if (route.type == RouteType::LRoute) {
+      if (route.xFirst) {  // horizontal first
         for (int i = x1; i <= x2; i++) {
           gridsX[cnt] = i;
           gridsY[cnt] = y1;
@@ -326,9 +332,9 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
           cnt++;
         }
       }
-    } else if (treeedge->route.type == RouteType::ZRoute) {
-      const int Zpoint = treeedge->route.Zpoint;
-      if (treeedge->route.HVH)  // HVH
+    } else if (route.type == RouteType::ZRoute) {
+      const int Zpoint = route.Zpoint;
+      if (route.HVH)  // HVH
       {
         for (int i = x1; i < Zpoint; i++) {
           gridsX[cnt] = i;
@@ -390,10 +396,8 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
       }
     }
 
-    treeedge->route.type = RouteType::MazeRoute;
-    treeedge->route.routelen = edgelength;
-
-  }  // loop for all the edges
+    route.type = RouteType::MazeRoute;
+    route.routelen = edgelength;
 }
 
 void FastRouteCore::convertToMazeroute()
