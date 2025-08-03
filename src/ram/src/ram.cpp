@@ -87,28 +87,6 @@ dbInst* RamGen::makeInst(
     return inst;
 }
 
-dbInst* RamGen::makeCellInst(
-    Cell* cell,
-    const std::string& prefix,
-    const std::string& name,
-    dbMaster* master,
-    const vector<std::pair<std::string, dbNet*>>& connections) {
-    const auto inst_name = fmt::format("{}.{}", prefix, name);
-    auto inst = dbInst::create(block_, master, inst_name.c_str());
-    for (auto& [mterm_name, net] : connections) {
-        auto mterm = master->findMTerm(mterm_name.c_str());
-        if (!mterm) {
-            logger_->error(
-               RAM, 11, "term {} of cell {} not found.", name, master->getName());
-        }
-        auto iterm = inst->getITerm(mterm);
-        iterm->connect(net);
-    }
-
-   cell->addInst(inst);
-    return inst;
-}
-
 
 dbNet* RamGen::makeNet(const std::string& prefix, const std::string& name) {
     const auto net_name = fmt::format("{}.{}", prefix, name);
@@ -596,27 +574,6 @@ void RamGen::generate(const int bytes_per_word,
 
     auto cellBTerm  = makeBTerm ("cell_in");
     auto cellNet = makeNet ("net", "cell_out");
-
-    auto test_layout = std::make_unique<CellLayout>(odb::vertical);
-    auto test_cell = std::make_unique<Cell>(); 
-
-    vector<std::unique_ptr<CellLayout>> cell_layouts_;
-   
-    for (int layouts = 0; layouts < 4; ++layouts) {
-	    auto new_layouts = std::make_unique<CellLayout>(odb::vertical);
-       for (int cell = 0; cell < 4; ++cell) {
-	       auto new_cells = std::make_unique<Cell>();
-       makeCellInst(new_cells.get(), fmt::format("test{}", layouts), 
-		       fmt::format("inst_{}", cell), inv_cell_,
-		       {{"A", cellBTerm}, {"Y", cellNet}});
-       new_layouts->addCell(std::move(new_cells)); 
-       }
-       cell_layouts_.push_back(std::move(new_layouts));
-    }
-    for (int lay = 0; lay < cell_layouts_.size(); ++lay) {
-      cell_layouts_[lay]->setOrigin(odb::Point (10000 * lay, 0));
-      cell_layouts_[lay]->placeLayout();
-    } 
 
 
     //layout.position(odb::Point(0, 0));
