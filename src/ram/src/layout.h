@@ -102,7 +102,7 @@ class CellLayout
 {
  public:
   CellLayout(odb::Orientation2D orientation);
-
+  
   void setOrigin(odb::Point position);
 
   odb::Rect placeLayout();
