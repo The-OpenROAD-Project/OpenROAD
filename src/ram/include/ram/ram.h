@@ -59,7 +59,6 @@ using utl::Logger;
 class Element;
 class Layout;
 class Cell;
-class GridLayout;
 
 class RamGen
 {

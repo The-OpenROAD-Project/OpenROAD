@@ -105,6 +105,7 @@ void Layout::addElement(std::unique_ptr<Element> element)
   elements_.push_back(std::move(element));
 }
 
+<<<<<<< HEAD
 
 Cell::Cell(Point origin, int cell_width, int cell_height) : 
 	origin_(origin), cell_width_(cell_width), cell_height_(cell_height) {}
@@ -187,4 +188,92 @@ void GridLayout::setCellWidth(int new_width) {
   cell_width_ = new_width;
 }
 
+=======
+Cell::Cell(odb::dbInst* inst) {
+ if (inst){
+   insts_.push_back(inst);
+ }
+}
+
+
+void Cell::setOrigin(odb::Point global_pos) {
+ origin_ = global_pos;
+}
+
+void Cell::setInstPosition() {
+ bbox = Rect(origin_, origin_);
+ Point global_pos = origin_;
+ for (auto& inst: insts_) {
+    inst->setLocation(global_pos.getX(), global_pos.getY());
+    Rect inst_rect = inst->getBBox()->getBox();
+    bbox.merge(inst_rect);
+    global_pos = bbox.lr();
+ }
+}
+
+Rect Cell::placeCell () {
+ for (auto& inst : insts_){
+   inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+ }
+ return bbox;
+}
+
+void Cell::addInst (dbInst* inst) {
+ insts_.push_back(inst);
+}
+
+int Cell::getWidth() {
+ return bbox.dx();
+}
+
+int Cell::getHeight() {
+ return bbox.dy();
+}
+
+CellLayout::CellLayout(odb::Orientation2D orientation) : 
+	orientation_(orientation) {}
+
+void CellLayout::setOrigin(odb::Point position) {
+ origin_ = position;
+}
+
+odb::Rect CellLayout::placeLayout() {
+ bbox = Rect(origin_, origin_);
+ Point global_pos = origin_;
+ for (auto& cell : cells_) {
+   cell->setOrigin(global_pos);
+   cell->setInstPosition();
+   bbox.merge(cell->placeCell());
+   if (orientation_ == odb::vertical) {
+     global_pos = bbox.ul();
+   } else {
+     global_pos = bbox.lr();
+   }
+ }
+
+ return bbox;
+}
+
+void CellLayout::addCell (std::unique_ptr<Cell> cell) {
+  cells_.push_back(std::move(cell));
+}
+
+int CellLayout::getWidth() {
+ if (orientation_ == odb::horizontal) {
+   return bbox.dx() / cells_.size();
+ } else {
+   return bbox.dx();
+ }
+}
+
+int CellLayout::getHeight() {
+ if (orientation_ == odb::vertical) {
+   return bbox.dy() / cells_.size();
+ } else {
+   return bbox.dy();
+ }
+}
+
+
+>>>>>>> clean_layout
 }  // namespace ram

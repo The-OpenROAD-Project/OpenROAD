@@ -74,54 +74,63 @@ class Layout
   std::vector<std::unique_ptr<Element>> elements_;
 };
 
-class Cell {
-public:
+class Cell 
+{
+ public:
+   Cell(odb::dbInst* inst = nullptr);
 
- Cell(odb::Point origin, int cell_width = 0, int cell_height = 0);
+   void setOrigin (odb::Point global_pos);
 
- int getWidth();
+   void setInstPosition();
 
- int getHeight();
+   odb::Rect placeCell();
 
- void setWidth(int width);
+   void addInst (odb::dbInst* inst);
 
- void  setHeight(int height);
+   int getWidth();
 
- odb::Point getOrigin();
-
- void setOrigin(odb::Point origin);
-
- void addElement(std::unique_ptr<Element> element);
-
- odb::Rect placeCell(odb::Point place);
-
-
-
-private:
- odb::Point origin_;
- std::vector<std::unique_ptr<Element>> elements_;
- int cell_width_;
- int cell_height_;
-
-};
-
-class GridLayout {
- public: 
-  GridLayout(odb::Orientation2D orientation);
-
-  void addLayout(std::unique_ptr<Layout> track);
-
-  odb::Rect placeGrid(odb::Point origin);
-
-  int getCellWidth();
-
-  void setCellWidth(int new_width);
+   int getHeight();
 
  private:
-  std::vector<std::unique_ptr<Layout>> grid_;
-  int cell_width_;
-  odb::Orientation2D orientation_; //direction in which layout is built
-
+   std::vector<odb::dbInst*> insts_;
+   odb::Point origin_;
+   odb::Rect bbox;
 
 };
+
+class CellLayout
+{
+ public:
+  CellLayout(odb::Orientation2D orientation);
+
+  void setOrigin(odb::Point position);
+
+  odb::Rect placeLayout();
+  
+  void addCell(std::unique_ptr<Cell> cell);
+
+  int getWidth();
+
+  int getHeight(); 
+
+ private:
+  odb::Orientation2D orientation_;
+  odb::Point origin_;
+  odb::Rect bbox;
+  std::vector<std::unique_ptr<Cell>> cells_;
+};
+
+class Grid 
+{
+ public:
+  Grid(odb::Orientation2D orientation);
+
+ private:
+  odb::Orientation2D orientation_;
+  odb::Rect origin;
+  std::vector<std::unique_ptr<CellLayout>> layouts_;
+
+};
+
+
 }  // namespace ram

@@ -99,14 +99,13 @@ dbInst* RamGen::makeCellInst(
         auto mterm = master->findMTerm(mterm_name.c_str());
         if (!mterm) {
             logger_->error(
-                RAM, 17, "term {} of cell {} not found. (cellInst)", name, master->getName());
+               RAM, 11, "term {} of cell {} not found.", name, master->getName());
         }
         auto iterm = inst->getITerm(mterm);
         iterm->connect(net);
     }
 
-
-    cell->addElement(std::make_unique<Element>(inst));
+   cell->addInst(inst);
     return inst;
 }
 
@@ -561,6 +560,14 @@ void RamGen::generate(const int bytes_per_word,
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
             { {"A", D[bit]}, {"X", D_nets[bit]} });
+<<<<<<< HEAD
+=======
+	   int x = bit * 10 ;
+	   int y = 200;
+	   buffer_inst->setLocation(x,y);
+
+        
+>>>>>>> clean_layout
 	}
 
 //	input_buffer_layer.position(odb::Point(0,0), 7900); //tester for offset for buffer
@@ -594,29 +601,31 @@ void RamGen::generate(const int bytes_per_word,
     //adds column of inverters
     layout.addElement(std::make_unique<Element>(std::move(inv_layer)));
 
+    auto cellBTerm  = makeBTerm ("cell_in");
+    auto cellNet = makeNet ("net", "cell_out");
 
-    auto cellTestBTerm = makeBTerm("cell_test_in");
-    auto cellTestNet = makeNet("cell_test", "out");
-    Cell new_cell (odb::Point(0,0));
-    makeCellInst(&new_cell, "cell_test", "inst", inv_cell_,
-		    {{"A", cellTestBTerm}, {"Y", cellTestNet}});
+   vector <CellLayout> vect_layouts;
 
-    makeCellInst(&new_cell, "cell_test", "inst_2", inv_cell_,
-		    {{"A", cellTestBTerm}, {"Y", cellTestNet}});
+    for (int layout = 0; layout < 2; ++layout) {
+      CellLayout test_layout (odb::vertical);
+      for (int cell = 0; cell < 4; ++cell) {
+	auto test_cell = std::make_unique<Cell>();
+        for (int inst = 0; inst < 4; ++inst){
+           makeCellInst(test_cell.get(), fmt::format("layout_{}.cell_{}", layout, cell), 
+		       fmt::format("inst_{}", inst),
+		       inv_cell_, {{"A", cellBTerm}, {"Y", cellNet}});
+        }
+	test_layout.addCell(std::move(test_cell));
+      }
+      vect_layouts.push_back(test_layout);
+    }
 
-    new_cell.placeCell(odb::Point(10000, 12000)); 
-
-  // layout.position(odb::Point(0, 0));
-
-   GridLayout gridTest(odb::vertical);
-
-
-   gridTest.setCellWidth(7820);
-   gridTest.addLayout(std::make_unique<Layout> (std::move(layout)));
-   gridTest.addLayout(std::make_unique<Layout> (std::move(input_buffer_layer)));
-
-
-   gridTest.placeGrid (odb::Point (0,0));
+    for (int lay = 0; lay < vect_layouts.size(); ++lay) {
+      vect_layouts[lay].setOrigin(odb::Point(lay * 10000, 0));
+     //vect_layouts[lay].placeLayout();
+    }
+ 
+    //layout.position(odb::Point(0, 0));
 }
 
 }  // namespace ram
