@@ -95,8 +95,6 @@ void FastRouteCore::clear()
   parent_x3_.resize(boost::extents[0][0]);
   parent_y3_.resize(boost::extents[0][0]);
 
-  net_eo_.clear();
-
   xcor_.clear();
   ycor_.clear();
   dcor_.clear();
@@ -984,7 +982,6 @@ NetRouteMap FastRouteCore::run()
   xcor_.resize(max_degree2);
   ycor_.resize(max_degree2);
   dcor_.resize(max_degree2);
-  net_eo_.reserve(max_degree2);
 
   int THRESH_M = 20;
   const int ENLARGE = 15;  // 5
@@ -1390,7 +1387,6 @@ NetRouteMap FastRouteCore::run()
   }
 
   NetRouteMap routes = getRoutes();
-  net_eo_.clear();
   net_ids_.clear();
   return routes;
 }

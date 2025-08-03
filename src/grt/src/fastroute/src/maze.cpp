@@ -1190,6 +1190,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     updateAdjacent(cur_x, cur_y, cur_x + d_x, cur_y + d_y, tmp, net_id);
   };
 
+  std::vector<OrderNetEdge> net_eo;
+  net_eo.reserve(2 * max_degree_);
+
   for (int nidRPC = 0; nidRPC < net_ids_.size(); nidRPC++) {
     const int netID
         = ordering ? tree_order_cong_[nidRPC].treeIndex : net_ids_[nidRPC];
@@ -1198,14 +1201,14 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     const int origENG = expand;
 
-    netedgeOrderDec(netID);
+    netedgeOrderDec(netID, net_eo);
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
     // loop for all the tree edges
     const int num_edges = sttrees_[netID].num_edges();
     for (int edgeREC = 0; edgeREC < num_edges; edgeREC++) {
-      const int edgeID = net_eo_[edgeREC].edgeID;
+      const int edgeID = net_eo[edgeREC].edgeID;
       TreeEdge* treeedge = &(treeedges[edgeID]);
 
       int n1 = treeedge->n1;

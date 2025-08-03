@@ -497,7 +497,7 @@ class FastRouteCore
    */
   bool checkRoute2DTree(int netID);
   void removeLoops();
-  void netedgeOrderDec(int netID);
+  void netedgeOrderDec(int netID, std::vector<OrderNetEdge>& net_eo);
   void printTree2D(int netID);
   void printEdge2D(int netID, int edgeID);
   void printEdge3D(int netID, int edgeID);
@@ -600,7 +600,6 @@ class FastRouteCore
 
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
-  std::vector<OrderNetEdge> net_eo_;
   // the copy of xs for nets, used for second FLUTE
   std::vector<std::vector<int>> gxs_;
   // the copy of xs for nets, used for second FLUTE

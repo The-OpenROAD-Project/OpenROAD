@@ -1618,20 +1618,20 @@ static bool compareEdgeLen(const OrderNetEdge& a, const OrderNetEdge& b)
   return a.length > b.length;
 }
 
-void FastRouteCore::netedgeOrderDec(const int netID)
+void FastRouteCore::netedgeOrderDec(const int netID, std::vector<OrderNetEdge>& net_eo)
 {
   const int numTreeedges = sttrees_[netID].num_edges();
 
-  net_eo_.clear();
+ net_eo.clear();
 
-  for (int j = 0; j < numTreeedges; j++) {
+ for (int j = 0; j < numTreeedges; j++) {
     OrderNetEdge orderNet;
     orderNet.length = sttrees_[netID].edges[j].route.routelen;
     orderNet.edgeID = j;
-    net_eo_.push_back(orderNet);
+    net_eo.push_back(orderNet);
   }
 
-  std::stable_sort(net_eo_.begin(), net_eo_.end(), compareEdgeLen);
+  std::stable_sort(net_eo.begin(), net_eo.end(), compareEdgeLen);
 }
 
 void FastRouteCore::printEdge2D(const int netID, const int edgeID)
