@@ -87,15 +87,45 @@ class Cell {
      void placeCell();
 
      void setOrigin(odb::Point position);
+
+     const int getHeight();
+     
+     const int getWidth();
+
   private:
      odb::Point origin_;
-     int cell_height;
-     int cell_width;
+     int height;
+     int width;
      std::vector<odb::dbInst*> insts_;
 };
 
+class CellLayout {
+  public:
+    CellLayout(odb::Orientation2D orientation);
 
-}
+    CellLayout(odb::Orientation2D orientation, odb::Point origin);
 
+    void addCell(std::unique_ptr<Cell> cell);
+
+    void layoutInit();
+
+    void placeLayout();
+
+    void setOrigin(odb::Point position);
+
+    const int getHeight();
+
+    const int getWidth();
+  private:
+     odb::Orientation2D orientation_;
+     odb::Point origin_;
+     int cell_height;
+     int cell_width;
+     std::vector<std::unique_ptr<Cell>> cells_;
+
+
+
+
+};
 
 }  // namespace ram

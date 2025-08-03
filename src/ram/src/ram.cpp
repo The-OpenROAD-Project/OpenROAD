@@ -596,17 +596,33 @@ void RamGen::generate(const int bytes_per_word,
 
     auto cellBTerm  = makeBTerm ("cell_in");
     auto cellNet = makeNet ("net", "cell_out");
+   
+    vector<std::unique_ptr<CellLayout>> cell_layouts;
+    for (int num_layouts = 0; num_layouts < 4; ++num_layouts) {
+        auto new_layout = std::make_unique<CellLayout>(odb::vertical);
+	for (int num_cells = 0; num_cells < 4; ++num_cells) {
+	   auto new_cell = std::make_unique<Cell>();
+	   for (int num_inst = 0; num_inst < 4; ++num_inst) {
+	      makeCellInst(new_cell.get(), fmt::format("layout_{}", num_layouts),
+			   fmt::format("cell_{}inst{}", num_cells, num_inst), inv_cell_, 
+			   {{"A", cellBTerm}, {"Y", cellNet}});
+	   }
+        new_layout->addCell(std::move (new_cell));
+	}
+    cell_layouts.push_back(std::move(new_layout));       
+    } 
+
+    odb::Point layout_orig (0,0);
+    for (int i = 0; i < cell_layouts.size(); ++i) {
+       cell_layouts[i]->setOrigin(layout_orig);
+       cell_layouts[i]->layoutInit();
+       cell_layouts[i]->placeLayout();
+
+       layout_orig.addX(cell_layouts[i]->getWidth());
+    
+    }
     
 
-   Cell new_cell (odb::Point(0,0));
-    makeCellInst(&new_cell, "cell_test", "inst", inv_cell_,
-		    {{"A", cellBTerm}, {"Y", cellNet}});
-
-    makeCellInst(&new_cell, "cell_test", "inst_2", inv_cell_,
-		    {{"A", cellBTerm}, {"Y", cellNet}});
-
-    new_cell.cellInit();
-    new_cell.placeCell();
 
     //layout.position(odb::Point(0, 0));
 }

@@ -119,7 +119,8 @@ void Cell::addInst(dbInst* inst){
 void Cell::cellInit() {
    for (auto& inst : insts_) {
       Rect inst_box = inst->getBBox()->getBox();
-      cell_width += inst_box.dx(); 
+      width += inst_box.dx();
+      height = inst_box.dy(); 
    }
 
 }
@@ -135,8 +136,69 @@ void Cell::placeCell() {
 
 }
 
-void setOrigin(Point position) {
+void Cell::setOrigin(Point position) {
    origin_ = position;
 }
+
+const int Cell::getHeight() {
+   return height;
+}
+
+const int Cell::getWidth() {
+   return width;
+}
+
+/////////////////////////////////////////////////////////////
+
+CellLayout::CellLayout(odb::Orientation2D orientation) : orientation_ (orientation){}
+
+CellLayout::CellLayout(odb::Orientation2D orientation, Point origin) : 
+	orientation_(orientation), origin_(origin) {}
+
+void CellLayout::addCell(std::unique_ptr<Cell> cell){
+    cells_.push_back(std::move(cell));
+
+}
+
+void CellLayout::layoutInit() {
+    for (auto& cell : cells_) {
+       if (cell) {
+          cell->cellInit();
+       }
+    }
+
+    cell_height = cells_[0]->getHeight();
+    cell_width = cells_[0]->getWidth();
+
+}
+
+void CellLayout::placeLayout() {
+    Point position = origin_;
+    for (auto& cell : cells_) {
+      if (cell) {
+         cell->setOrigin(position);
+	 cell->placeCell();
+      }
+      if (orientation_ == odb::vertical) {
+         position.addY(cell_height);
+      } else {
+         position.addX(cell_width);
+      }
+    }
+}
+
+void CellLayout::setOrigin(odb::Point position) {
+   origin_ = position;
+}
+
+const int CellLayout::getHeight() { 
+   return cell_height; 
+}
+
+const int CellLayout::getWidth() {
+   return cell_width; 
+}
+
+
 
 }  // namespace ram
