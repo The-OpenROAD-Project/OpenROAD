@@ -105,7 +105,6 @@ void Layout::addElement(std::unique_ptr<Element> element)
   elements_.push_back(std::move(element));
 }
 
-<<<<<<< HEAD
 
 Cell::Cell(Point origin, int cell_width, int cell_height) : 
 	origin_(origin), cell_width_(cell_width), cell_height_(cell_height) {}
@@ -275,5 +274,4 @@ int CellLayout::getHeight() {
 }
 
 
->>>>>>> clean_layout
 }  // namespace ram
