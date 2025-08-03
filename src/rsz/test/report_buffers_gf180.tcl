@@ -14,4 +14,3 @@ set_opt_config -disable_buffer_pruning true
 
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
-
