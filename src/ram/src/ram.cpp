@@ -560,11 +560,7 @@ void RamGen::generate(const int bytes_per_word,
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
             { {"A", D[bit]}, {"X", D_nets[bit]} });
-	   int x = bit * 10 ;
-	   int y = 200;
-	   buffer_inst->setLocation(x,y);
 
-        
 	}
 
 //	input_buffer_layer.position(odb::Point(0,0), 7900); //tester for offset for buffer
