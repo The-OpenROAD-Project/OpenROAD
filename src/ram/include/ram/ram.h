@@ -84,6 +84,12 @@ class RamGen
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
+  odb::dbInst* makeCellInst(
+      Cell* cell,
+      const std::string& prefix,
+      const std::string& name,
+      odb::dbMaster* master,
+      const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
   odb::dbNet* makeBTerm(const std::string& name);
   odb::dbNet* makeOutputBTerm(const std::string& name);
 

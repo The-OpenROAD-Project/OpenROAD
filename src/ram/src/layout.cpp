@@ -104,4 +104,39 @@ void Layout::addElement(std::unique_ptr<Element> element)
 {
   elements_.push_back(std::move(element));
 }
+
+//////////////////////////////////////////////////////////////
+
+
+Cell::Cell() : origin_(0,0) {}
+
+Cell::Cell(Point position) : origin_(position) {}
+
+void Cell::addInst(dbInst* inst){
+   insts_.push_back(inst);
+}
+
+void Cell::cellInit() {
+   for (auto& inst : insts_) {
+      Rect inst_box = inst->getBBox()->getBox();
+      cell_width += inst_box.dx(); 
+   }
+
+}
+
+void Cell::placeCell() {
+   Point global_pos = origin_; 
+  for (auto& inst : insts_) {
+      inst->setLocation(global_pos.getX(), global_pos.getY());
+      Rect inst_box = inst->getBBox()->getBox();
+      global_pos.addX(inst_box.dx());
+      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+}
+
+void setOrigin(Point position) {
+   origin_ = position;
+}
+
 }  // namespace ram

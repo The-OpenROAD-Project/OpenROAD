@@ -74,5 +74,28 @@ class Layout
   std::vector<std::unique_ptr<Element>> elements_;
 };
 
+class Cell {
+  public: 
+     Cell();
+
+     Cell(odb::Point position);
+
+     void addInst(odb::dbInst* inst);
+
+     void cellInit();
+
+     void placeCell();
+
+     void setOrigin(odb::Point position);
+  private:
+     odb::Point origin_;
+     int cell_height;
+     int cell_width;
+     std::vector<odb::dbInst*> insts_;
+};
+
+
+}
+
 
 }  // namespace ram

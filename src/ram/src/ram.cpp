@@ -87,6 +87,28 @@ dbInst* RamGen::makeInst(
     return inst;
 }
 
+dbInst* RamGen::makeCellInst(
+    Cell* cell,
+    const std::string& prefix,
+    const std::string& name,
+    dbMaster* master,
+    const vector<std::pair<std::string, dbNet*>>& connections) {
+    const auto inst_name = fmt::format("{}.{}", prefix, name);
+    auto inst = dbInst::create(block_, master, inst_name.c_str());
+    for (auto& [mterm_name, net] : connections) {
+        auto mterm = master->findMTerm(mterm_name.c_str());
+        if (!mterm) {
+            logger_->error(
+               RAM, 11, "term {} of cell {} not found.", name, master->getName());
+        }
+        auto iterm = inst->getITerm(mterm);
+        iterm->connect(net);
+    }
+
+   cell->addInst(inst);
+    return inst;
+}
+
 
 dbNet* RamGen::makeNet(const std::string& prefix, const std::string& name) {
     const auto net_name = fmt::format("{}.{}", prefix, name);
@@ -574,7 +596,17 @@ void RamGen::generate(const int bytes_per_word,
 
     auto cellBTerm  = makeBTerm ("cell_in");
     auto cellNet = makeNet ("net", "cell_out");
+    
 
+   Cell new_cell (odb::Point(0,0));
+    makeCellInst(&new_cell, "cell_test", "inst", inv_cell_,
+		    {{"A", cellBTerm}, {"Y", cellNet}});
+
+    makeCellInst(&new_cell, "cell_test", "inst_2", inv_cell_,
+		    {{"A", cellBTerm}, {"Y", cellNet}});
+
+    new_cell.cellInit();
+    new_cell.placeCell();
 
     //layout.position(odb::Point(0, 0));
 }
