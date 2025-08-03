@@ -11,5 +11,10 @@ read_verilog gcd_asap7.v
 link gcd
 
 report_buffers -filtered
-
 rsz::report_fast_buffer_sizes
+
+set_opt_config -disable_buffer_pruning true
+
+report_buffers -filtered
+rsz::report_fast_buffer_sizes
+
