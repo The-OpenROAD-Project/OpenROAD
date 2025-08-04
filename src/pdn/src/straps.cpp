@@ -2183,7 +2183,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       }
       channel.obs_area = channel.obs_area.intersect(grid_core);
 
-      channels.push_back(channel);
+      channels.push_back(std::move(channel));
     }
   }
 

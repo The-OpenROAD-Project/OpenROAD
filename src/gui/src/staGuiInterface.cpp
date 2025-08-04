@@ -723,10 +723,8 @@ void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
 sta::Net* ClockTree::getNet(const sta::Pin* pin) const
 {
   sta::Term* term = network_->term(pin);
-  if (term != nullptr) {
-    return network_->net(term);
-  }
-  return network_->net(pin);
+  sta::Net* net = term ? network_->net(term) : network_->net(pin);
+  return network_->getFlatNet(net);
 }
 
 bool ClockTree::isLeaf(const sta::Pin* pin) const
@@ -1138,7 +1136,7 @@ ConeDepthMapPinSet STAGuiInterface::getFaninCone(const sta::Pin* pin) const
                                   true);  // thru_constants
 
   ConeDepthMapPinSet depth_map;
-  for (auto& [level, pin_list] : getCone(pin, pins, true)) {
+  for (auto& [level, pin_list] : getCone(pin, std::move(pins), true)) {
     depth_map[-level].insert(pin_list.begin(), pin_list.end());
   }
 

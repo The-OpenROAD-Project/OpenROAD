@@ -123,6 +123,7 @@ class Rebuffer : public sta::dbStaState
     LibertyCell* cell;
     FixedDelay intrinsic_delay;
     float margined_max_cap;
+    float driver_resistance;
   };
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,

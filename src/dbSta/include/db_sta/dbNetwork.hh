@@ -4,6 +4,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_set>
 
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
@@ -66,6 +67,7 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
+  void AxiomCheck();
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
@@ -275,6 +277,7 @@ class dbNetwork : public ConcreteNetwork
   // Net functions
   ObjectId id(const Net* net) const override;
   Net* findNet(const Instance* instance, const char* net_name) const override;
+  Net* findNetAllScopes(const char* net_name) const;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
                             // Return value.
@@ -288,6 +291,7 @@ class dbNetwork : public ConcreteNetwork
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
   dbNet* flatNet(const Net* net) const;
+  Net* getFlatNet(Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
@@ -326,6 +330,13 @@ class dbNetwork : public ConcreteNetwork
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
                               dbNet* orig_flat_net);
+
+  void reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net);
+
+  void accumulateFlatLoadPinsOnNet(
+      Net* net,
+      Pin* drvr_pin,
+      std::unordered_set<const Pin*>& accumulated_pins);
 
   int fromIndex(const Port* port) const override;
   int toIndex(const Port* port) const override;

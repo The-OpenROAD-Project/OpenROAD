@@ -751,8 +751,6 @@ void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
   (ar) & router_cfg->MTSAFEDIST;
   (ar) & router_cfg->DRCSAFEDIST;
   (ar) & router_cfg->VERBOSE;
-  (ar) & router_cfg->BOTTOM_ROUTING_LAYER_NAME;
-  (ar) & router_cfg->TOP_ROUTING_LAYER_NAME;
   (ar) & router_cfg->BOTTOM_ROUTING_LAYER;
   (ar) & router_cfg->TOP_ROUTING_LAYER;
   (ar) & router_cfg->ALLOW_PIN_AS_FEEDTHROUGH;

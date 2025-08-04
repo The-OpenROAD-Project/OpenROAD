@@ -516,6 +516,7 @@ set_opt_config
     [-keep_sizing_vt boolean_value]
     [-set_early_sizing_cap_ratio float_value]
     [-set_early_buffer_sizing_cap_ratio float_value]
+    [-disable_buffer_pruning boolean_value]
     [-sizing_area_limit float_value] (deprecated)
     [-sizing_leakage_limit float_value] (deprecated)
 ```
@@ -530,6 +531,7 @@ set_opt_config
 | `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
 | `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
 | `-set_early_buffer_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of buffers. |
+| `-disable_buffer_pruning` | Disable buffer pruning to improve hold fixing by not filtering out delay cells or slow buffers. |
 | `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
@@ -554,6 +556,7 @@ reset_opt_config
     [-keep_sizing_vt]
     [-set_early_sizing_cap_ratio]
     [-set_early_buffer_sizing_cap_ratio]
+    [-disable_buffer_pruning]
     [-sizing_area_limit] (deprecated)
     [-sizing_leakage_limit] (deprecated)
 ```
@@ -568,6 +571,7 @@ reset_opt_config
 | `-keep_sizing_vt` | Remove VT type restriction during sizing. |
 | `-set_early_sizing_cap_ratio` | Remove capacitance ratio setting for early sizing. |
 | `-set_early_buffer_sizing_cap_ratio` | Remove capacitance ratio setting for early buffer sizing. |
+| `-disable_buffer_pruning` | Restore buffer pruning for optimization. |
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
@@ -588,6 +592,23 @@ report_equiv_cells
 | ----- | ----- |
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 | `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
+
+### Reporting Buffers
+
+The `report_buffers` command reports all usable buffers to include for optimization.
+Usable buffers are standard cell buffers that are not clock buffers, always on buffers,
+level shifters, or buffers marked as dont-use.  VT type, cell site,
+cell footprint and leakage are also reported.
+
+```tcl
+report_buffers
+    [-filtered]
+```
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-filtered` | Report buffers after filtering based on threshold voltage, cell footprint, drive strength and cell site.  Subset of filtered buffers are used for rebuffering. |
 
 ### Optimizing Arithmetic Modules
 

@@ -14,6 +14,7 @@ Optimization config:
 -keep_sizing_vt:                    false
 -set_early_sizing_cap_ratio:        unset
 -set_early_buffer_sizing_cap_ratio: unset
+-disable_buffer_pruning:            true
 *******************************************
 worst slack max -1.95
 [INFO RSZ-0100] Repair move sequence: SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
