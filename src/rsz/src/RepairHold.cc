@@ -200,13 +200,10 @@ LibertyCell* RepairHold::findHoldBuffer()
 // skywater130hs:  dlygate
 bool isDelayCell(const std::string& cell_name)
 {
-  if (!cell_name.empty()
-      && (cell_name.find("DEL") != std::string::npos
-          || cell_name.find("DLY") != std::string::npos
-          || cell_name.find("dlygate") != std::string::npos)) {
-    return true;
-  }
-  return false;
+  return (!cell_name.empty()
+          && (cell_name.find("DEL") != std::string::npos
+              || cell_name.find("DLY") != std::string::npos
+              || cell_name.find("dlygate") != std::string::npos));
 }
 
 void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
@@ -243,35 +240,40 @@ void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
     }
   }
 
+  bool match = false;
   // Match site, footprint and vt
-  if (!addMatchingBuffers(buffer_list,
-                          hold_buffers,
-                          best_vt_index,
-                          best_site,
-                          lib_has_footprints,
-                          true /* match_site */,
-                          true /* match_vt */,
-                          true /* match_footprint */)) {
+  if (addMatchingBuffers(buffer_list,
+                         hold_buffers,
+                         best_vt_index,
+                         best_site,
+                         lib_has_footprints,
+                         true /* match_site */,
+                         true /* match_vt */,
+                         true /* match_footprint */)) {
+    match = true;
     // Match footprint and vt only
-    if (!addMatchingBuffers(buffer_list,
-                            hold_buffers,
-                            best_vt_index,
-                            best_site,
-                            lib_has_footprints,
-                            false /* match_site */,
-                            true /* match_vt */,
-                            true /* match_footprint */)) {
-      // Match footprint only
-      if (!addMatchingBuffers(buffer_list,
-                              hold_buffers,
-                              best_vt_index,
-                              best_site,
-                              lib_has_footprints,
-                              false /* match_site */,
-                              false /* match_vt */,
-                              true /* match_footprint */)) {
-        // Relax all
-        if (!addMatchingBuffers(buffer_list,
+  } else if (addMatchingBuffers(buffer_list,
+                                hold_buffers,
+                                best_vt_index,
+                                best_site,
+                                lib_has_footprints,
+                                false /* match_site */,
+                                true /* match_vt */,
+                                true /* match_footprint */)) {
+    match = true;
+    // Match footprint only
+  } else if (addMatchingBuffers(buffer_list,
+                                hold_buffers,
+                                best_vt_index,
+                                best_site,
+                                lib_has_footprints,
+                                false /* match_site */,
+                                false /* match_vt */,
+                                true /* match_footprint */)) {
+    match = true;
+    // Relax all
+  } else if (addMatchingBuffers(buffer_list,
+
                                 hold_buffers,
                                 best_vt_index,
                                 best_site,
@@ -279,10 +281,11 @@ void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
                                 false /* match_site */,
                                 false /* match_vt */,
                                 false /* match_footprint */)) {
-          logger_->error(RSZ, 167, "No suitable hold buffers have been found");
-        }
-      }
-    }
+    match = true;
+  }
+
+  if (!match) {
+    logger_->error(RSZ, 167, "No suitable hold buffers have been found");
   }
 }
 
