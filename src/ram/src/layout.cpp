@@ -203,6 +203,15 @@ const int CellLayout::getWidth() {
 
 Grid::Grid(odb::Orientation2D orientation) : orientation_(orientation) {}
 
+Grid::Grid(odb::Orientation2D orientation, int tracks) : orientation_(orientation) {
+   for (int i = 0; i < tracks; ++i) {
+       if (orientation_ == odb::horizontal) {
+           layouts_.push_back(std::make_unique<CellLayout> (odb::vertical));
+       }
+   }
+
+}
+
 Grid::Grid (odb::Orientation2D orientation, Point origin) : 
 	orientation_(orientation), origin_(origin) {};
 

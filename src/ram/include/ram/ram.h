@@ -59,6 +59,8 @@ using utl::Logger;
 class Element;
 class Layout;
 class Cell;
+class CellLayout;
+class Grid;
 
 class RamGen
 {
@@ -90,6 +92,23 @@ class RamGen
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
+std::unique_ptr<Cell> makeCellBit(
+       const std::string& prefix,
+       const int read_ports,
+       odb::dbNet* clock,
+       std::vector<odb::dbNet*>& select,
+       odb::dbNet* data_input,
+       std::vector<odb::dbNet*>& data_output);  
+  void makeCellByte(Grid& ram_grid,
+       const int byte_number,
+       const std::string& prefix,
+       const int read_ports,
+       odb::dbNet* clock,
+       odb::dbNet* write_enable,
+       const std::vector<odb::dbNet*>& selects,
+       const std::array<odb::dbNet*, 8>& data_input, 
+       const std::vector<std::array<odb::dbNet*, 8>>& data_output);
+
   odb::dbNet* makeBTerm(const std::string& name);
   odb::dbNet* makeOutputBTerm(const std::string& name);
 

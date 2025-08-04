@@ -128,6 +128,8 @@ class Grid {
   public:
 
      Grid(odb::Orientation2D orientation);
+
+     Grid(odb::Orientation2D orientation, int tracks);
      
      Grid(odb::Orientation2D orientation, odb::Point origin);
 
