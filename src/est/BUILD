@@ -81,6 +81,7 @@ cc_library(
         "//src/utl",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@boost.stacktrace",
         "@spdlog",
         "@tk_tcl//:tcl",
     ],
