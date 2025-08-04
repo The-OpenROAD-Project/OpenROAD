@@ -10,26 +10,34 @@ package(
 )
 
 cc_library(
+    name = "private_hdrs",
+    hdrs = [
+        "src/AbstractSteinerRenderer.h",
+        "src/MakeWireParasitics.h",
+        "src/OdbCallBack.h",
+        "src/SteinerRenderer.h",
+    ],
+    visibility = ["//visibility:private"],
+    deps = ["//src/sta:opensta_lib"],
+)
+
+cc_library(
     name = "est",
     srcs = [
         "src/EstimateParasitics.cpp",
         "src/MakeWireParasitics.cpp",
-        "src/MakeWireParasitics.h",
         "src/OdbCallBack.cpp",
-        "src/SteinerRenderer.cpp",
-        "src/SteinerRenderer.h",
         "src/SteinerTree.cpp",
     ],
     hdrs = [
-        "include/est/AbstractSteinerRenderer.h",
         "include/est/EstimateParasitics.h",
-        "include/est/OdbCallBack.h",
         "include/est/SteinerTree.h",
     ],
     includes = [
         "include",
     ],
     deps = [
+        ":private_hdrs",
         "//src/dbSta",
         "//src/grt:types",
         "//src/gui",
@@ -45,22 +53,14 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/EstimateParasitics.cpp",
         "src/MakeEstimateParasitics.cpp",
-        "src/MakeWireParasitics.cpp",
-        "src/MakeWireParasitics.h",
         "src/SteinerRenderer.cpp",
-        "src/SteinerRenderer.h",
-        "src/SteinerTree.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/est/AbstractSteinerRenderer.h",
         "include/est/EstimateParasitics.h",
         "include/est/MakeEstimateParasitics.h",
-        "include/est/OdbCallBack.h",
-        "include/est/SteinerTree.h",
     ],
     copts = [
         "-Isrc/est/src",
@@ -71,11 +71,13 @@ cc_library(
         "include",
     ],
     deps = [
+        ":est",
+        ":private_hdrs",
+        "//:ord",
         "//src/dbSta",
         "//src/grt:types",
         "//src/gui",
         "//src/odb",
-        "//:ord",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
