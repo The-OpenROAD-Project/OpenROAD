@@ -1055,10 +1055,10 @@ void FastRouteCore::routeMonotonic(const int netID,
   const auto& treenodes = sttrees_[netID].nodes;
   const int n1 = treeedge->n1;
   const int n2 = treeedge->n2;
-  const int x1 = treenodes[n1].x;
-  const int y1 = treenodes[n1].y;
-  const int x2 = treenodes[n2].x;
-  const int y2 = treenodes[n2].y;
+  const int16_t x1 = treenodes[n1].x;
+  const int16_t y1 = treenodes[n1].y;
+  const int16_t x2 = treenodes[n2].x;
+  const int16_t y2 = treenodes[n2].y;
 
   // ripup the original routing
   if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, 0, netID, edgeID)) {
@@ -1129,8 +1129,8 @@ void FastRouteCore::routeMonotonic(const int netID,
   }
 
   double best = BIG_INT;
-  int bestp1x = 0;
-  int bestp1y = 0;
+  int16_t bestp1x = 0;
+  int16_t bestp1y = 0;
   bool BL1 = false;
   bool BL2 = false;
 
@@ -1179,70 +1179,60 @@ void FastRouteCore::routeMonotonic(const int netID,
     }
   }
   int cnt = 0;
-  std::vector<short int>& gridsX = treeedge->route.gridsX;
-  gridsX.resize(x_range_ + y_range_);
-  std::vector<short int>& gridsY = treeedge->route.gridsY;
-  gridsY.resize(x_range_ + y_range_);
+  std::vector<GPoint3D>& grids = treeedge->route.grids;
+  grids.resize(x_range_ + y_range_);
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   if (BL1) {
     if (bestp1x > x1) {
-      for (int i = x1; i < bestp1x; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y1;
+      for (int16_t i = x1; i < bestp1x; i++) {
+        grids[cnt] = {i, y1};
         graph2d_.addUsageH(i, y1, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = x1; i > bestp1x; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y1;
+      for (int16_t i = x1; i > bestp1x; i--) {
+        grids[cnt] = {i, y1};
         graph2d_.addUsageH(i - 1, y1, edgeCost);
         cnt++;
       }
     }
     if (bestp1y > y1) {
-      for (int i = y1; i < bestp1y; i++) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i < bestp1y; i++) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.addUsageV(bestp1x, i, edgeCost);
       }
     } else {
-      for (int i = y1; i > bestp1y; i--) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i > bestp1y; i--) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.addUsageV(bestp1x, i - 1, edgeCost);
       }
     }
   } else {
     if (bestp1y > y1) {
-      for (int i = y1; i < bestp1y; i++) {
-        gridsX[cnt] = x1;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i < bestp1y; i++) {
+        grids[cnt] = {x1, i};
         cnt++;
         graph2d_.addUsageV(x1, i, edgeCost);
       }
     } else {
-      for (int i = y1; i > bestp1y; i--) {
-        gridsX[cnt] = x1;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i > bestp1y; i--) {
+        grids[cnt] = {x1, i};
         cnt++;
         graph2d_.addUsageV(x1, i - 1, edgeCost);
       }
     }
     if (bestp1x > x1) {
-      for (int i = x1; i < bestp1x; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = x1; i < bestp1x; i++) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.addUsageH(i, bestp1y, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = x1; i > bestp1x; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = x1; i > bestp1x; i--) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.addUsageH(i - 1, bestp1y, edgeCost);
         cnt++;
       }
@@ -1251,77 +1241,67 @@ void FastRouteCore::routeMonotonic(const int netID,
 
   if (BL2) {
     if (bestp1x < x2) {
-      for (int i = bestp1x; i < x2; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = bestp1x; i < x2; i++) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.addUsageH(i, bestp1y, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = bestp1x; i > x2; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = bestp1x; i > x2; i--) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.addUsageH(i - 1, bestp1y, edgeCost);
         cnt++;
       }
     }
 
     if (y2 > bestp1y) {
-      for (int i = bestp1y; i < y2; i++) {
-        gridsX[cnt] = x2;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i < y2; i++) {
+        grids[cnt] = {x2, i};
         cnt++;
         graph2d_.addUsageV(x2, i, edgeCost);
       }
     } else {
-      for (int i = bestp1y; i > y2; i--) {
-        gridsX[cnt] = x2;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i > y2; i--) {
+        grids[cnt] = {x2, i};
         cnt++;
         graph2d_.addUsageV(x2, i - 1, edgeCost);
       }
     }
   } else {
     if (y2 > bestp1y) {
-      for (int i = bestp1y; i < y2; i++) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i < y2; i++) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.addUsageV(bestp1x, i, edgeCost);
       }
     } else {
-      for (int i = bestp1y; i > y2; i--) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i > y2; i--) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.addUsageV(bestp1x, i - 1, edgeCost);
       }
     }
     if (x2 > bestp1x) {
-      for (int i = bestp1x; i < x2; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y2;
+      for (int16_t i = bestp1x; i < x2; i++) {
+        grids[cnt] = {i, y2};
         graph2d_.addUsageH(i, y2, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = bestp1x; i > x2; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y2;
+      for (int16_t i = bestp1x; i > x2; i--) {
+        grids[cnt] = {i, y2};
         graph2d_.addUsageH(i - 1, y2, edgeCost);
         cnt++;
       }
     }
   }
 
-  gridsX[cnt] = x2;
-  gridsY[cnt] = y2;
+  grids[cnt] = {x2, y2};
   cnt++;
 
   treeedge->route.routelen = cnt - 1;
 
-  gridsX.resize(cnt);
-  gridsY.resize(cnt);
+  grids.resize(cnt);
 }
 
 void FastRouteCore::routeMonotonicAll(const int threshold,
