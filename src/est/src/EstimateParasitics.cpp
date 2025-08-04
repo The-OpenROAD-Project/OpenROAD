@@ -416,10 +416,10 @@ void EstimateParasitics::ensureWireParasitic(const Pin* drvr_pin,
   // Sufficient to check for parasitic for one corner because
   // they are all made at the same time.
   const Corner* corner = sta_->corners()->findCorner(0);
-  const ParasiticAnalysisPt* parasitic_ap
+  const sta::ParasiticAnalysisPt* parasitic_ap
       = corner->findParasiticAnalysisPt(max_);
   if (parasitics_invalid_.hasKey(net)
-      || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(), parasitic_ap)
+      || parasitics_->findPiElmore(drvr_pin, sta::RiseFall::rise(), parasitic_ap)
              == nullptr) {
     switch (parasitics_src_) {
       case ParasiticsSrc::placement:
@@ -499,7 +499,7 @@ void EstimateParasitics::estimateWireParasitics(SpefWriter* spef_writer)
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
-    LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
+    sta::LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
     // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
     // This is because netlist changes may invalidate cached net driver pin data
     network_->Network::clear();
@@ -559,7 +559,7 @@ void EstimateParasitics::makeWireParasitic(Net* net,
                                            const Corner* corner,
                                            Parasitics* parasitics)
 {
-  const ParasiticAnalysisPt* parasitics_ap
+  const sta::ParasiticAnalysisPt* parasitics_ap
       = corner->findParasiticAnalysisPt(max_);
   Parasitic* parasitic
       = parasitics->makeParasiticNetwork(net, false, parasitics_ap);
@@ -589,7 +589,7 @@ void EstimateParasitics::makePadParasitic(const Net* net,
   const Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
   for (Corner* corner : *sta_->corners()) {
-    const ParasiticAnalysisPt* parasitics_ap
+    const sta::ParasiticAnalysisPt* parasitics_ap
         = corner->findParasiticAnalysisPt(max_);
     Parasitic* parasitic
         = sta_->makeParasiticNetwork(net, false, parasitics_ap);
@@ -622,7 +622,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
                "estimate wire {}",
                sdc_network_->pathName(net));
     for (Corner* corner : *sta_->corners()) {
-      const ParasiticAnalysisPt* parasitics_ap
+      const sta::ParasiticAnalysisPt* parasitics_ap
           = corner->findParasiticAnalysisPt(max_);
       Parasitic* parasitic
           = sta_->makeParasiticNetwork(net, false, parasitics_ap);
@@ -703,10 +703,10 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
 float EstimateParasitics::pinCapacitance(const Pin* pin,
                                          const DcalcAnalysisPt* dcalc_ap) const
 {
-  LibertyPort* port = network_->libertyPort(pin);
+  sta::LibertyPort* port = network_->libertyPort(pin);
   if (port) {
     int lib_ap = dcalc_ap->libertyIndex();
-    LibertyPort* corner_port = port->cornerPort(lib_ap);
+    sta::LibertyPort* corner_port = port->cornerPort(lib_ap);
     return corner_port->capacitance();
   }
   return 0.0;
@@ -916,13 +916,13 @@ static void connectedPins(const Net* net,
                           Network* network,
                           dbNetwork* db_network,
                           // Return value.
-                          Vector<PinLoc>& pins);
+                          sta::Vector<PinLoc>& pins);
 
 static void connectedPins(const Net* net,
                           Network* network,
                           dbNetwork* db_network,
                           // Return value.
-                          Vector<PinLoc>& pins)
+                          sta::Vector<PinLoc>& pins)
 {
   NetConnectedPinIterator* pin_iter = network->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
@@ -948,7 +948,7 @@ SteinerTree* EstimateParasitics::makeSteinerTree(
     const std::vector<Point>& sink_locations)
 {
   SteinerTree* tree = new SteinerTree(drvr_location, logger_);
-  Vector<PinLoc>& pinlocs = tree->pinlocs();
+  sta::Vector<PinLoc>& pinlocs = tree->pinlocs();
   for (auto loc : sink_locations) {
     pinlocs.push_back(PinLoc{nullptr, loc});
   }
@@ -996,7 +996,7 @@ SteinerTree* EstimateParasitics::makeSteinerTree(const Pin* drvr_pin)
 
   debugPrint(logger_, EST, "steiner", 1, "Net {}", sdc_network->pathName(net));
   SteinerTree* tree = new SteinerTree(drvr_pin, db_network_, logger_);
-  Vector<PinLoc>& pinlocs = tree->pinlocs();
+  sta::Vector<PinLoc>& pinlocs = tree->pinlocs();
   // Find all the connected pins
   connectedPins(net, network_, db_network_, pinlocs);
   // Sort pins by location because connectedPins order is not deterministic.
