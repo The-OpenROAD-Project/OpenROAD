@@ -118,6 +118,24 @@ void Dft::executeDftPlan()
       auto scan_out_term = scan_cell->getScanOut().getValue();
       db_scaninst->setAccessPins(
           {.scan_in = scan_in_term, .scan_out = scan_out_term});
+
+      const ClockDomain& clock_domain = scan_cell->getClockDomain();
+      db_scaninst->setScanClock(clock_domain.getClockName());
+      odb::dbScanInst::ClockEdge edge;
+      switch (clock_domain.getClockEdge()) {
+        case ClockEdge::Rising:
+          edge = odb::dbScanInst::ClockEdge::Rising;
+          break;
+        case ClockEdge::Falling:
+          edge = odb::dbScanInst::ClockEdge::Falling;
+          break;
+        default:
+          // TODO: std::unreachable() once we reach c++23
+          // For now, intentionally leave the behavior undefined
+          break;
+      }
+
+      db_scaninst->setClockEdge(edge);
     }
 
     std::optional<ScanDriver> sc_enable_driver = chain->getScanEnable();
