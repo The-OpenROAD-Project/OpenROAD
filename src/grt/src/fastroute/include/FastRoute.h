@@ -226,6 +226,8 @@ class FastRouteCore
   {
     return debug_->renderer.get();
   }
+  void getOverflowPositions(
+      std::vector<std::pair<odb::Point, bool>>& overflow_pos);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);

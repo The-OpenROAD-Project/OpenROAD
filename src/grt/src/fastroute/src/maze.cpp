@@ -1942,6 +1942,26 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
   }
 }
 
+// Get overflow positions
+void FastRouteCore::getOverflowPositions(
+    std::vector<std::pair<odb::Point, bool>>& overflow_pos)
+{
+  // Find horizontal ggrids with congestion
+  for (const auto& [i, j] : h_used_ggrid_) {
+    const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    if (overflow > 0) {
+      overflow_pos.push_back(std::make_pair(odb::Point(j, i), true));
+    }
+  }
+  // Find vertical ggrids with congestion
+  for (const auto& [i, j] : v_used_ggrid_) {
+    const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    if (overflow > 0) {
+      overflow_pos.push_back(std::make_pair(odb::Point(j, i), false));
+    }
+  }
+}
+
 // The function will add the new nets to the congestion_nets set
 void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 {

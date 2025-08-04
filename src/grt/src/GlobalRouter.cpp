@@ -147,6 +147,8 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
                                               int max_routing_layer)
 {
   fastroute_->clear();
+  h_nets_in_pos_.clear();
+  v_nets_in_pos_.clear();
   ensureLayerForGuideDimension(max_routing_layer);
 
   configFastRoute();
@@ -4191,6 +4193,27 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
       }
     }
     applyObstructionAdjustment(obstruction_rect, tech_layer);
+    // Save position where the net's wires reduced resources
+    odb::Rect first_tile_box, last_tile_box;
+    odb::Point first_tile, last_tile;
+    grid_->getBlockedTiles(
+        obstruction_rect, first_tile_box, last_tile_box, first_tile, last_tile);
+    // Divide by horizontal and vertical resources
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
+        for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+          odb::Point pos = odb::Point(x, y);
+          h_nets_in_pos_[pos].push_back(db_net);
+        }
+      }
+    } else {
+      for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+        for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
+          odb::Point pos = odb::Point(x, y);
+          v_nets_in_pos_[pos].push_back(db_net);
+        }
+      }
+    }
   }
 }
 
@@ -4907,7 +4930,14 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to
         // the set
-        fastroute_->getCongestionNets(congestion_nets);
+        // if the nets have wires
+        if (haveDetailedRoutes()) {
+          // find nets on congestion areas using wires
+          findNetsWithWiresOnCongestion(congestion_nets);
+        } else {
+          // find nets on congestion areas using guides
+          fastroute_->getCongestionNets(congestion_nets);
+        }
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
@@ -4954,6 +4984,38 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   return dirty_nets;
+}
+
+void GlobalRouter::findNetsWithWiresOnCongestion(
+    std::set<odb::dbNet*>& congestion_nets)
+{
+  std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
+  // Get GCell positions with congestion
+  fastroute_->getOverflowPositions(pos_with_overflow);
+  for (auto& itr : pos_with_overflow) {
+    odb::Point& position = itr.first;
+    bool& is_horizontal = itr.second;
+    // Find nets with horizontal wires on congestion areas
+    if (is_horizontal
+        && h_nets_in_pos_.find(position) != h_nets_in_pos_.end()) {
+      for (odb::dbNet* db_net : h_nets_in_pos_.at(position)) {
+        // Avoid modifying supply nets
+        if (!db_net->getSigType().isSupply()) {
+          congestion_nets.insert(db_net);
+        }
+      }
+    }
+    // Find nets with vertical wires on congestion areas
+    if (!is_horizontal
+        && v_nets_in_pos_.find(position) != v_nets_in_pos_.end()) {
+      for (odb::dbNet* db_net : v_nets_in_pos_.at(position)) {
+        // Avoid modifying supply nets
+        if (!db_net->getSigType().isSupply()) {
+          congestion_nets.insert(db_net);
+        }
+      }
+    }
+  }
 }
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
