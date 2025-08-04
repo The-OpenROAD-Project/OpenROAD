@@ -40,7 +40,6 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
-        "@tk_tcl//:tcl",
     ],
 )
 cc_library(
@@ -53,6 +52,8 @@ cc_library(
         "src/SteinerRenderer.cpp",
         "src/SteinerRenderer.h",
         "src/SteinerTree.cpp",
+        ":swig",
+        ":tcl",
     ],
     hdrs = [
         "include/est/AbstractSteinerRenderer.h",
