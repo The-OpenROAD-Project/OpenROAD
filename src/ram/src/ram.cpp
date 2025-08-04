@@ -240,7 +240,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
         {{"A", selects[i]}, {"Y", select_b_nets[i]}});
     }
 
-    ram_grid.addCell(std::move(sel_cell), (byte_number * 9) - 1);
+    ram_grid.addCell(std::move(sel_cell), (byte_number * 9) + 8);
 
 
 
@@ -623,9 +623,9 @@ void RamGen::generate(const int bytes_per_word,
             //creates nets that decoders will use
             decoder_select_nets.push_back(word_decoder_nets);
 
-
+            auto cell_name = fmt::format("cell_storage_{}_{}", row, col);
 	    makeCellByte(ram_grid, col, 
-			    name, read_ports, 
+			    cell_name, read_ports, 
 			    clock, write_enable[col], 
 			    word_decoder_nets, D_nets, Q);
 
