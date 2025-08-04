@@ -330,6 +330,26 @@ void Resizer::initBlock()
   } else {
     buffer_sizing_cap_ratio_ = default_buffer_sizing_cap_ratio_;
   }
+
+  dbBoolProperty* disable_pruning_prop
+      = dbBoolProperty::find(block_, "disable_buffer_pruning");
+  if (disable_pruning_prop) {
+    if (disable_buffer_pruning_ != disable_pruning_prop->getValue()) {
+      swappable_cells_cache_.clear();
+      buffer_cells_.clear();
+    }
+    disable_buffer_pruning_ = disable_pruning_prop->getValue();
+  }
+  // Temporary WA: default is to disable buffer pruning
+#ifdef TEMP
+  else {
+    if (disable_buffer_pruning_ != false) {
+      swappable_cells_cache_.clear();
+      buffer_cells_.clear();
+    }
+    disable_buffer_pruning_ = false;
+  }
+#endif
 }
 
 void Resizer::init()
@@ -715,6 +735,11 @@ void Resizer::reportFastBufferSizes()
 
 void Resizer::findBuffers()
 {
+  if (disable_buffer_pruning_) {
+    findBuffersNoPruning();
+    return;
+  }
+
   if (!buffer_cells_.empty()) {
     return;
   }
@@ -888,6 +913,45 @@ void Resizer::findBuffers()
   } else {
     // find the buffer with the largest drive resistance
     buffer_lowest_drive_ = buffer_cells_.back();
+  }
+}
+
+void Resizer::findBuffersNoPruning()
+{
+  if (buffer_cells_.empty()) {
+    LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+
+    while (lib_iter->hasNext()) {
+      LibertyLibrary* lib = lib_iter->next();
+
+      for (LibertyCell* buffer : *lib->buffers()) {
+        if (exclude_clock_buffers_) {
+          BufferUse buffer_use = sta_->getBufferUse(buffer);
+
+          if (buffer_use == CLOCK) {
+            continue;
+          }
+        }
+
+        if (!dontUse(buffer) && isLinkCell(buffer)) {
+          buffer_cells_.emplace_back(buffer);
+        }
+      }
+    }
+
+    delete lib_iter;
+
+    if (buffer_cells_.empty()) {
+      logger_->error(RSZ, 52, "no buffers found.");
+    } else {
+      sort(buffer_cells_,
+           [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+             return bufferDriveResistance(buffer1)
+                    > bufferDriveResistance(buffer2);
+           });
+
+      buffer_lowest_drive_ = buffer_cells_[0];
+    }
   }
 }
 
@@ -1710,6 +1774,8 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
 
 void Resizer::reportBuffers(bool filtered)
 {
+  resizePreamble();
+
   LibertyCellSeq buffer_list;
   LibraryAnalysisData lib_data;
 
@@ -2724,7 +2790,9 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 
 bool Resizer::dontTouch(const Net* net)
 {
-  dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = nullptr;
+  odb::dbModNet* db_mod_net = nullptr;
+  db_network_->staToDb(net, db_net, db_mod_net);
   if (db_net == nullptr) {
     return false;
   }

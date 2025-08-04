@@ -516,6 +516,7 @@ set_opt_config
     [-keep_sizing_vt boolean_value]
     [-set_early_sizing_cap_ratio float_value]
     [-set_early_buffer_sizing_cap_ratio float_value]
+    [-disable_buffer_pruning boolean_value]
     [-sizing_area_limit float_value] (deprecated)
     [-sizing_leakage_limit float_value] (deprecated)
 ```
@@ -530,6 +531,7 @@ set_opt_config
 | `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
 | `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
 | `-set_early_buffer_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of buffers. |
+| `-disable_buffer_pruning` | Disable buffer pruning to improve hold fixing by not filtering out delay cells or slow buffers. |
 | `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
@@ -554,6 +556,7 @@ reset_opt_config
     [-keep_sizing_vt]
     [-set_early_sizing_cap_ratio]
     [-set_early_buffer_sizing_cap_ratio]
+    [-disable_buffer_pruning]
     [-sizing_area_limit] (deprecated)
     [-sizing_leakage_limit] (deprecated)
 ```
@@ -568,6 +571,7 @@ reset_opt_config
 | `-keep_sizing_vt` | Remove VT type restriction during sizing. |
 | `-set_early_sizing_cap_ratio` | Remove capacitance ratio setting for early sizing. |
 | `-set_early_buffer_sizing_cap_ratio` | Remove capacitance ratio setting for early buffer sizing. |
+| `-disable_buffer_pruning` | Restore buffer pruning for optimization. |
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
