@@ -783,11 +783,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       const int n2x = treenodes[n2].x;
       const int n2y = treenodes[n2].y;
 
-      const int ymin = std::min(n1y, n2y);
-      const int ymax = std::max(n1y, n2y);
-
-      const int xmin = std::min(n1x, n2x);
-      const int xmax = std::max(n1x, n2x);
+      const auto [ymin, ymax] = std::minmax(n1y, n2y);
+      const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
       // ripup the routing for the edge
       if (!newRipup3DType3(netID, edgeID)) {
@@ -1536,15 +1533,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (gridsX[i] == gridsX[i + 1])  // a vertical edge
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-            v_edges_[min_y][gridsX[i]].usage += net->getEdgeCost();
-            v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
+            graph2d_.addUsageV(gridsX[i], min_y, net->getEdgeCost());
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-            h_edges_[gridsY[i]][min_x].usage += net->getEdgeCost();
-            h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
+            graph2d_.addUsageH(min_x, gridsY[i], net->getEdgeCost());
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           }

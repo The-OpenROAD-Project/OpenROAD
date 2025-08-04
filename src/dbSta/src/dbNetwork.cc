@@ -2638,7 +2638,9 @@ void dbNetwork::staToDb(const Instance* instance,
 
 dbNet* dbNetwork::staToDb(const Net* net) const
 {
-  return reinterpret_cast<dbNet*>(const_cast<Net*>(net));
+  dbNet* db_net = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
+  assert(!db_net || db_net->getObjectType() == odb::dbNetObj);
+  return db_net;
 }
 
 dbNet* dbNetwork::flatNet(const Net* net) const
@@ -2735,7 +2737,9 @@ void dbNetwork::staToDb(const Pin* pin,
 
 dbBTerm* dbNetwork::staToDb(const Term* term) const
 {
-  return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
+  dbBTerm* bterm = reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
+  assert(!bterm || bterm->getObjectType() == odb::dbBTermObj);
+  return bterm;
 }
 
 void dbNetwork::staToDb(const Term* term,
@@ -2783,20 +2787,26 @@ void dbNetwork::staToDb(const Cell* cell,
 dbMaster* dbNetwork::staToDb(const Cell* cell) const
 {
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
-  return reinterpret_cast<dbMaster*>(ccell->extCell());
+  auto master = reinterpret_cast<dbMaster*>(ccell->extCell());
+  assert(!master || master->getObjectType() == odb::dbMasterObj);
+  return master;
 }
 
 // called only on db cells.
 dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 {
   const ConcreteCell* ccell = cell;
-  return reinterpret_cast<dbMaster*>(ccell->extCell());
+  auto master = reinterpret_cast<dbMaster*>(ccell->extCell());
+  assert(!master || master->getObjectType() == odb::dbMasterObj);
+  return master;
 }
 
 dbMTerm* dbNetwork::staToDb(const Port* port) const
 {
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-  return reinterpret_cast<dbMTerm*>(cport->extPort());
+  auto mterm = reinterpret_cast<dbMTerm*>(cport->extPort());
+  assert(!mterm || mterm->getObjectType() == odb::dbMTermObj);
+  return mterm;
 }
 
 dbBTerm* dbNetwork::isTopPort(const Port* port) const
@@ -2844,7 +2854,9 @@ void dbNetwork::staToDb(const Port* port,
 
 dbMTerm* dbNetwork::staToDb(const LibertyPort* port) const
 {
-  return reinterpret_cast<dbMTerm*>(port->extPort());
+  auto mterm = reinterpret_cast<dbMTerm*>(port->extPort());
+  assert(!mterm || mterm->getObjectType() == odb::dbMTermObj);
+  return mterm;
 }
 
 void dbNetwork::staToDb(PortDirection* dir,
@@ -4160,6 +4172,21 @@ void dbNetwork::AxiomCheck()
   for (auto mod_net : mod_nets) {
     findRelatedDbNet(mod_net);
   }
+}
+
+Net* dbNetwork::getFlatNet(Net* net) const
+{
+  if (!net) {
+    return nullptr;
+  }
+  // Convert net to a flat net, if not already
+  dbNet* db_net;
+  dbModNet* db_mod_net;
+  staToDb(net, db_net, db_mod_net);
+  if (db_mod_net) {
+    db_net = findRelatedDbNet(db_mod_net);
+  }
+  return dbToSta(db_net);
 }
 
 }  // namespace sta
