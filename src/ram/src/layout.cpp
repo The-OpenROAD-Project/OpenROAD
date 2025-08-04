@@ -199,6 +199,62 @@ const int CellLayout::getWidth() {
    return cell_width; 
 }
 
+//////////////////////////////////////////////////////////////
+
+Grid::Grid(odb::Orientation2D orientation) : orientation_(orientation) {}
+
+Grid::Grid (odb::Orientation2D orientation, Point origin) : 
+	orientation_(orientation), origin_(origin) {};
+
+void Grid::addLayout(std::unique_ptr<CellLayout> layout) {
+   layouts_.push_back(std::move(layout));
+
+}
+
+void Grid::addCell(std::unique_ptr<Cell> cell, int track) {
+
+   layouts_[track]->addCell(std::move(cell));
+}
+
+void Grid::gridInit() {
+   for (auto& layout : layouts_) {
+      layout->layoutInit();
+   }
+
+   cell_height = layouts_[0]->getHeight();
+   cell_width = layouts_[0]->getWidth();
+
+}
+
+void Grid::placeGrid() {
+   Point position = origin_;
+   for (auto& layout : layouts_) {
+      layout->setOrigin(position);
+      layout->placeLayout();
+
+      if (orientation_ == odb::horizontal) {
+         position.addX(layout->getWidth());
+      } else {
+         position.addX(layout->getHeight());
+      }
+   }
+}
+
+void Grid::setOrigin(odb::Point position) {
+   origin_ = position;
+}
+
+const int Grid::getHeight() {
+   return cell_height;
+}
+
+const int Grid::getWidth() {
+   return cell_width;
+}
+
+
+
+
 
 
 }  // namespace ram

@@ -466,7 +466,7 @@ void RamGen::generate(const int bytes_per_word,
     }
 
 
-    // //something is wrong here
+    //decoder_layer nets 
     vector<vector<dbNet*>> and_layer_nets(word_count, vector<dbNet*> (numImputs));
     for (int word = 0; word < word_count; ++word) {
         int word_num = word;
@@ -598,6 +598,9 @@ void RamGen::generate(const int bytes_per_word,
     auto cellNet = makeNet ("net", "cell_out");
    
     vector<std::unique_ptr<CellLayout>> cell_layouts;
+
+    Grid new_grid (odb::horizontal);
+
     for (int num_layouts = 0; num_layouts < 4; ++num_layouts) {
         auto new_layout = std::make_unique<CellLayout>(odb::vertical);
 	for (int num_cells = 0; num_cells < 4; ++num_cells) {
@@ -609,18 +612,14 @@ void RamGen::generate(const int bytes_per_word,
 	   }
         new_layout->addCell(std::move (new_cell));
 	}
-    cell_layouts.push_back(std::move(new_layout));       
+    new_grid.addLayout(std::move(new_layout));       
     } 
 
     odb::Point layout_orig (0,0);
-    for (int i = 0; i < cell_layouts.size(); ++i) {
-       cell_layouts[i]->setOrigin(layout_orig);
-       cell_layouts[i]->layoutInit();
-       cell_layouts[i]->placeLayout();
-
-       layout_orig.addX(cell_layouts[i]->getWidth());
+    new_grid.setOrigin(layout_orig);
+    new_grid.gridInit();
+    new_grid.placeGrid();
     
-    }
     
 
 

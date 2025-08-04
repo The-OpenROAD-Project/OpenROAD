@@ -122,10 +122,39 @@ class CellLayout {
      int cell_height;
      int cell_width;
      std::vector<std::unique_ptr<Cell>> cells_;
+};
 
+class Grid {
+  public:
+
+     Grid(odb::Orientation2D orientation);
+     
+     Grid(odb::Orientation2D orientation, odb::Point origin);
+
+     void addLayout(std::unique_ptr<CellLayout> layout);
+
+     void addCell(std::unique_ptr<Cell> cell, int track);
+
+     void gridInit();
+
+     void placeGrid();
+
+     void setOrigin(odb::Point position);
+
+     const int getHeight();
+
+     const int getWidth();
+   private:
+     odb::Orientation2D orientation_;
+     odb::Point origin_;
+     int cell_height;
+     int cell_width;
+     std::vector<std::unique_ptr<CellLayout>> layouts_;
 
 
 
 };
+
+
 
 }  // namespace ram
