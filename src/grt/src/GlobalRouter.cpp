@@ -4184,24 +4184,32 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
     }
     applyObstructionAdjustment(obstruction_rect, tech_layer);
     // Save position where the net's wires reduced resources
-    odb::Rect first_tile_box, last_tile_box;
-    odb::Point first_tile, last_tile;
-    grid_->getBlockedTiles(
-        obstruction_rect, first_tile_box, last_tile_box, first_tile, last_tile);
-    // Divide by horizontal and vertical resources
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
-        for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-          odb::Point pos = odb::Point(x, y);
-          h_nets_in_pos_[pos].push_back(db_net);
-        }
+    savePositionWithReducedResources(obstruction_rect, tech_layer, db_net);
+  }
+}
+
+void GlobalRouter::savePositionWithReducedResources(
+    const odb::Rect& rect,
+    odb::dbTechLayer* tech_layer,
+    odb::dbNet* db_net)
+{
+  odb::Rect first_tile_box, last_tile_box;
+  odb::Point first_tile, last_tile;
+  grid_->getBlockedTiles(
+      rect, first_tile_box, last_tile_box, first_tile, last_tile);
+  // Divide by horizontal and vertical resources
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+        odb::Point pos = odb::Point(x, y);
+        h_nets_in_pos_[pos].push_back(db_net);
       }
-    } else {
-      for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-        for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-          odb::Point pos = odb::Point(x, y);
-          v_nets_in_pos_[pos].push_back(db_net);
-        }
+    }
+  } else {
+    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
+        odb::Point pos = odb::Point(x, y);
+        v_nets_in_pos_[pos].push_back(db_net);
       }
     }
   }
