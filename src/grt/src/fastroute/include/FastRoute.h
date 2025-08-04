@@ -271,8 +271,7 @@ class FastRouteCore
   void routeLShape(const TreeNode& startpoint,
                    const TreeNode& endpoint,
                    std::vector<std::pair<short, short>>& blocked_positions,
-                   std::vector<short>& new_route_x,
-                   std::vector<short>& new_route_y);
+                   std::vector<GPoint3D>& new_route);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
@@ -346,9 +345,7 @@ class FastRouteCore
                   int n2,
                   std::vector<TreeEdge>& treeedges,
                   int edge_n1n2,
-                  std::vector<int>& gridsX_n1n2,
-                  std::vector<int>& gridsY_n1n2,
-                  std::vector<int>& gridsL_n1n2);
+                  std::vector<GPoint3D>& grids_n1n2);
   void updateRouteType13D(int netID,
                           std::vector<TreeNode>& treenodes,
                           int n1,

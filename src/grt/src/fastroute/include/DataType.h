@@ -153,6 +153,13 @@ struct TreeNode
   int stackAlias;
 };
 
+struct GPoint3D
+{
+  int16_t x = 0;
+  int16_t y = 0;
+  int16_t layer = 0;
+};
+
 struct Route
 {
   RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
@@ -171,9 +178,7 @@ struct Route
 
   // valid for MazeRoute: a list of grids (n=routelen+1) the route
   // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  std::vector<int16_t> gridsX;
-  std::vector<int16_t> gridsY;
-  std::vector<int16_t> gridsL;
+  std::vector<GPoint3D> grids;
 
   // valid for MazeRoute: the number of edges in the route
   int routelen;
