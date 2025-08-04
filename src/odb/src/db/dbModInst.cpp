@@ -25,6 +25,7 @@
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
@@ -346,6 +347,15 @@ dbModITerm* dbModInst::findModITerm(const char* name)
 
 void dbModInst::RemoveUnusedPortsAndPins()
 {
+  _dbModInst* obj = (_dbModInst*) this;
+  utl::Logger* logger = obj->getLogger();
+  debugPrint(logger,
+             utl::ODB,
+             "remove_unused_ports",
+             1,
+             "begin RemoveUnusedPortsAndPins for dbModInst '{}'",
+             getName());
+
   std::set<dbModITerm*> kill_set;
   dbModule* module = this->getMaster();
   dbSet<dbModITerm> moditerms = getModITerms();
@@ -414,6 +424,17 @@ void dbModInst::RemoveUnusedPortsAndPins()
   for (auto mod_iterm : kill_set) {
     dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    if (mod_bterm == nullptr) {  // TODO: mod_bterm can be null. Why?
+      debugPrint(
+          logger,
+          utl::ODB,
+          "remove_unused_ports",
+          2,
+          "dbModITerm '{}' of dbModule '{}' has no corresponding dbModBTerm.",
+          mod_iterm->getName(),
+          module->getName());
+      continue;
+    }
 
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
 
@@ -442,6 +463,14 @@ void dbModInst::RemoveUnusedPortsAndPins()
     // Finally the bterm
     dbModBTerm::destroy(mod_bterm);
   }
+  debugPrint(
+      logger,
+      utl::ODB,
+      "remove_unused_ports",
+      1,
+      "end RemoveUnusedPortsAndPins for dbModInst '{}', removed {} iterms",
+      getName(),
+      kill_set.size());
 }
 
 // debugPrint for replace_design level 1
