@@ -419,7 +419,8 @@ void EstimateParasitics::ensureWireParasitic(const Pin* drvr_pin,
   const sta::ParasiticAnalysisPt* parasitic_ap
       = corner->findParasiticAnalysisPt(max_);
   if (parasitics_invalid_.hasKey(net)
-      || parasitics_->findPiElmore(drvr_pin, sta::RiseFall::rise(), parasitic_ap)
+      || parasitics_->findPiElmore(
+             drvr_pin, sta::RiseFall::rise(), parasitic_ap)
              == nullptr) {
     switch (parasitics_src_) {
       case ParasiticsSrc::placement:
