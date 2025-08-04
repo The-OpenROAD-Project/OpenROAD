@@ -4921,6 +4921,13 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
           dirty_nets.push_back(db_net_map_[db_net]);
+          // Remove guides and release resources on FastRouter
+          routes_[db_net].clear();
+          db_net->clearGuides();
+          fastroute_->clearNetRoute(db_net);
+          // if the net has wires, release resources used by wires
+          Net* net = db_net_map_[db_net];
+          destroyNetWire(net);
         }
         // The dirty nets are initialized and then routed
         initFastRouteIncr(dirty_nets);
