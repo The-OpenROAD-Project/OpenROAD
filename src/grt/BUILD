@@ -10,22 +10,6 @@ package(
 )
 
 cc_library(
-    name = "types",
-    hdrs = [
-        "include/grt/GRoute.h",
-        "include/grt/GlobalRouter.h",
-        "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        "//src/odb",
-    ],
-)
-
-cc_library(
     name = "abstract-fastroute",
     hdrs = [
         "src/fastroute/include/AbstractFastRouteRenderer.h",
@@ -51,6 +35,7 @@ cc_library(
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
+        "include/grt/GRoute.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
@@ -60,7 +45,6 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
-        ":types",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
@@ -90,6 +74,10 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
+        "include/grt/GRoute.h",
+        "include/grt/GlobalRouter.h",
+        "include/grt/PinGridLocation.h",
+        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -101,9 +89,7 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":types",
         "//src/ant",
-        "//src/ant:types",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
@@ -138,7 +124,10 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
+        "include/grt/GRoute.h",
+        "include/grt/GlobalRouter.h",
         "include/grt/MakeGlobalRouter.h",
+        "include/grt/PinGridLocation.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -152,7 +141,6 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":types",
         "//:ord",
         "//src/ant",
         "//src/dbSta",

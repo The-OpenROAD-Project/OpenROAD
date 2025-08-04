@@ -39,7 +39,7 @@ cc_library(
     deps = [
         ":private_hdrs",
         "//src/dbSta",
-        "//src/grt:types",
+        "//src/grt",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",
@@ -75,7 +75,7 @@ cc_library(
         ":private_hdrs",
         "//:ord",
         "//src/dbSta",
-        "//src/grt:types",
+        "//src/grt",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",
