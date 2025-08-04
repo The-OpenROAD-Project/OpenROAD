@@ -8,10 +8,11 @@
 #include <map>
 #include <memory>
 
+#include "AbstractSteinerRenderer.h"
 #include "MakeWireParasitics.h"
+#include "OdbCallBack.h"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
-#include "est/AbstractSteinerRenderer.h"
 #include "grt/GlobalRouter.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
@@ -44,13 +45,11 @@ EstimateParasitics::EstimateParasitics()
 
 EstimateParasitics::~EstimateParasitics() = default;
 
-void EstimateParasitics::init(
-    Logger* logger,
-    dbDatabase* db,
-    dbSta* sta,
-    SteinerTreeBuilder* stt_builder,
-    GlobalRouter* global_router,
-    std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)
+void EstimateParasitics::init(Logger* logger,
+                              dbDatabase* db,
+                              dbSta* sta,
+                              SteinerTreeBuilder* stt_builder,
+                              GlobalRouter* global_router)
 {
   logger_ = logger;
   db_ = db;
@@ -58,10 +57,19 @@ void EstimateParasitics::init(
   dbStaState::init(sta);
   stt_builder_ = stt_builder;
   global_router_ = global_router;
-  steiner_renderer_ = std::move(steiner_renderer);
   incr_groute_ = nullptr;
   db_network_ = sta->getDbNetwork();
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+}
+
+void EstimateParasitics::initSteinerRenderer(
+    std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)
+{
+  if (steiner_renderer_) {
+    logger_->warn(EST, 4, "Steiner renderer already initialized.");
+    return;
+  }
+  steiner_renderer_ = std::move(steiner_renderer);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -275,6 +283,15 @@ double EstimateParasitics::wireClkVCapacitance(const Corner* corner) const
 }
 
 ////////////////////////////////////////////////////////////////
+
+void EstimateParasitics::setDbCbkOwner(dbBlock* block)
+{
+  db_cbk_->addOwner(block);
+}
+void EstimateParasitics::removeDbCbkOwner()
+{
+  db_cbk_->removeOwner();
+}
 
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void EstimateParasitics::initBlock()

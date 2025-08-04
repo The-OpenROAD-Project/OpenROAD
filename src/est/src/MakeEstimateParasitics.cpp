@@ -36,12 +36,12 @@ void initEstimateParasitics(est::EstimateParasitics* estimate_parasitics,
                             stt::SteinerTreeBuilder* stt_builder,
                             grt::GlobalRouter* global_router)
 {
+  estimate_parasitics->init(logger, db, sta, stt_builder, global_router);
   std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer;
   if (gui::Gui::enabled()) {
-    steiner_renderer = std::make_unique<est::SteinerRenderer>();
+    steiner_renderer = std::make_unique<SteinerRenderer>();
+    estimate_parasitics->initSteinerRenderer(std::move(steiner_renderer));
   }
-  estimate_parasitics->init(
-      logger, db, sta, stt_builder, global_router, std::move(steiner_renderer));
   // Define swig TCL commands.
   Est_Init(tcl_interp);
   // Eval encoded sta TCL sources.

@@ -11,7 +11,6 @@
 #include "SteinerTree.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/OdbCallBack.h"
 #include "grt/GlobalRouter.h"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
@@ -116,6 +115,7 @@ struct ParasiticsCapacitance
 };
 
 class AbstractSteinerRenderer;
+class OdbCallBack;
 
 class EstimateParasitics : public dbStaState
 {
@@ -126,8 +126,9 @@ class EstimateParasitics : public dbStaState
             dbDatabase* db,
             dbSta* sta,
             SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router,
-            std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
+            GlobalRouter* global_router);
+  void initSteinerRenderer(
+      std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer* layer,
                   const Corner* corner,
                   double res,
@@ -236,8 +237,8 @@ class EstimateParasitics : public dbStaState
   {
     incr_groute_ = incr_groute;
   }
-  void setDbCbkOwner(dbBlock* block) { db_cbk_->addOwner(block); }
-  void removeDbCbkOwner() { db_cbk_->removeOwner(); }
+  void setDbCbkOwner(dbBlock* block);
+  void removeDbCbkOwner();
 
   void initBlock();
 
