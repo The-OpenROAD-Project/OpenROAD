@@ -143,19 +143,20 @@ void FastRouteCore::fixOverlappingEdge(
         startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
     // Updates the usage of the altered edge
-    const int edgeCost = nets_[net_id]->getEdgeCost();
+    FrNet* net = nets_[net_id];
+    const int edgeCost = net->getEdgeCost();
     for (int k = 0; k < treeedge->route.routelen;
          k++) {  // remove the usages of the old edges
       if (treeedge->route.gridsX[k] == treeedge->route.gridsX[k + 1]) {
         if (treeedge->route.gridsY[k] != treeedge->route.gridsY[k + 1]) {
           const int min_y = std::min(treeedge->route.gridsY[k],
                                      treeedge->route.gridsY[k + 1]);
-          graph2d_.addUsageV(treeedge->route.gridsX[k], min_y, -edgeCost);
+          graph2d_.updateUsageV(treeedge->route.gridsX[k], min_y, net, -edgeCost);
         }
       } else {
         const int min_x = std::min(treeedge->route.gridsX[k],
                                    treeedge->route.gridsX[k + 1]);
-        graph2d_.addUsageH(min_x, treeedge->route.gridsY[k], -edgeCost);
+        graph2d_.updateUsageH(min_x, treeedge->route.gridsY[k], net, -edgeCost);
       }
     }
     for (int k = 0; k < new_route_x.size() - 1;
@@ -163,11 +164,11 @@ void FastRouteCore::fixOverlappingEdge(
       if (new_route_x[k] == new_route_x[k + 1]) {
         if (new_route_y[k] != new_route_y[k + 1]) {
           const int min_y = std::min(new_route_y[k], new_route_y[k + 1]);
-          graph2d_.addUsageV(new_route_x[k], min_y, edgeCost);
+          graph2d_.updateUsageV(new_route_x[k], min_y, net, edgeCost);
         }
       } else {
         const int min_x = std::min(new_route_x[k], new_route_x[k + 1]);
-        graph2d_.addUsageH(min_x, new_route_y[k], edgeCost);
+        graph2d_.updateUsageH(min_x, new_route_y[k], net, edgeCost);
       }
     }
     treeedge->route.routelen = new_route_x.size() - 1;
@@ -1716,18 +1717,19 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         treeedges[edge_n1n2].route.gridsY[i] = gridsY[i];
       }
 
-      int edgeCost = nets_[netID]->getEdgeCost();
+      FrNet* net = nets_[netID];
+      int edgeCost = net->getEdgeCost();
 
       // update edge usage
       for (int i = 0; i < cnt_n1n2 - 1; i++) {
         if (gridsX[i] == gridsX[i + 1])  // a vertical edge
         {
           const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-          graph2d_.addUsageV(gridsX[i], min_y, edgeCost);
+          graph2d_.updateUsageV(gridsX[i], min_y, net, edgeCost);
         } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
         {
           const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-          graph2d_.addUsageH(min_x, gridsY[i], edgeCost);
+          graph2d_.updateUsageH(min_x, gridsY[i], net, edgeCost);
         }
       }
     }  // loop edgeID
@@ -2028,7 +2030,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   }
 
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
-    total_usage += graph2d_.getEstUsageH(x, y);
+    total_usage += graph2d_.getEstUsageV(x, y);
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {

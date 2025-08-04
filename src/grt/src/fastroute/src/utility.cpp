@@ -1353,13 +1353,13 @@ void FastRouteCore::recoverEdge(const int netID, const int edgeID)
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        graph2d_.addUsageV(gridsX[i], ymin, net->getEdgeCost());
+        graph2d_.updateUsageV(gridsX[i], ymin, net, net->getEdgeCost());
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             += net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        graph2d_.addUsageH(xmin, gridsY[i], net->getEdgeCost());
+        graph2d_.updateUsageH(xmin, gridsY[i], net, net->getEdgeCost());
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             += net->getLayerEdgeCost(gridsL[i]);
       }
@@ -1372,7 +1372,8 @@ void FastRouteCore::removeLoops()
   for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
 
-    const int edgeCost = nets_[netID]->getEdgeCost();
+    FrNet* net = nets_[netID];
+    const int edgeCost = net->getEdgeCost();
 
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge edge = sttrees_[netID].edges[edgeID];
@@ -1391,11 +1392,11 @@ void FastRouteCore::removeLoops()
               if (gridsX[k] == gridsX[k + 1]) {
                 if (gridsY[k] != gridsY[k + 1]) {
                   const int min_y = std::min(gridsY[k], gridsY[k + 1]);
-                  graph2d_.addUsageV(gridsX[k], min_y, -edgeCost);
+                  graph2d_.updateUsageV(gridsX[k], min_y, net, -edgeCost);
                 }
               } else {
                 const int min_x = std::min(gridsX[k], gridsX[k + 1]);
-                graph2d_.addUsageH(min_x, gridsY[k], -edgeCost);
+                graph2d_.updateUsageH(min_x, gridsY[k], net, -edgeCost);
               }
             }
 
@@ -1861,7 +1862,8 @@ void FastRouteCore::copyBR()
     // Reduce usage with last routes before update
     for (const int& netID : net_ids_) {
       const int numEdges = sttrees_[netID].num_edges();
-      const int edgeCost = nets_[netID]->getEdgeCost();
+      FrNet* net = nets_[netID];
+      const int edgeCost = net->getEdgeCost();
 
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         const TreeEdge& edge = sttrees_[netID].edges[edgeID];
@@ -1874,10 +1876,10 @@ void FastRouteCore::copyBR()
             }
             if (gridsX[i] == gridsX[i + 1]) {
               const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-              graph2d_.addUsageV(gridsX[i], min_y, -edgeCost);
+              graph2d_.updateUsageV(gridsX[i], min_y, net, -edgeCost);
             } else {
               const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-              graph2d_.addUsageH(min_x, gridsY[i], -edgeCost);
+              graph2d_.updateUsageH(min_x, gridsY[i], net, -edgeCost);
             }
           }
         }
@@ -1948,7 +1950,8 @@ void FastRouteCore::copyBR()
     // Increase usage with new routes
     for (const int& netID : net_ids_) {
       const int numEdges = sttrees_[netID].num_edges();
-      const int edgeCost = nets_[netID]->getEdgeCost();
+      FrNet* net = nets_[netID];
+      const int edgeCost = net->getEdgeCost();
 
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         const TreeEdge& edge = sttrees_[netID].edges[edgeID];
@@ -1961,10 +1964,10 @@ void FastRouteCore::copyBR()
             }
             if (gridsX[i] == gridsX[i + 1]) {
               const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-              graph2d_.addUsageV(gridsX[i], min_y, edgeCost);
+              graph2d_.updateUsageV(gridsX[i], min_y, net, edgeCost);
             } else {
               const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-              graph2d_.addUsageH(min_x, gridsY[i], edgeCost);
+              graph2d_.updateUsageH(min_x, gridsY[i], net, edgeCost);
             }
           }
         }
@@ -1974,41 +1977,41 @@ void FastRouteCore::copyBR()
 }
 
 // Get edgeCost considering if there is sufficient capacity in a single layer
-int FastRouteCore::getEdgeCostNDRAware(Edge edge, const int edgeCost)
-{
-  // Check if there is capacity for NDR net in any layer
-  // if not, discourage using this edge
-  if (edge.max_layer_cap < edgeCost){
-    return 100*edgeCost; 
-  }
+// int FastRouteCore::getEdgeCostNDRAware(Edge edge, const int edgeCost)
+// {
+//   // Check if there is capacity for NDR net in any layer
+//   // if not, discourage using this edge
+//   if (edge.max_layer_cap < edgeCost){
+//     return 100*edgeCost; 
+//   }
   
-  return edgeCost;
-}
+//   return edgeCost;
+// }
 
 // Get edgeCost considering if there is sufficient capacity in a single layer
-int FastRouteCore::getEdgeCostNDRAware2(int y, int x, FrNet* net, bool is_vertical)
-{
-  int max_single_layer_cap = 0;
-  const int edgeCost = net->getEdgeCost();
+// int FastRouteCore::getEdgeCostNDRAware2(int y, int x, FrNet* net, bool is_vertical)
+// {
+//   int max_single_layer_cap = 0;
+//   const int edgeCost = net->getEdgeCost();
 
-  // Check if there is capacity for NDR net in any layer
-  // if not, discourage using this edge
-  for (int l = net->getMinLayer(); l < net->getMaxLayer(); l++) {
-    if (is_vertical) {
-      max_single_layer_cap = std::max(max_single_layer_cap, 
-                              (int)v_edges_3D_[l][y][x].cap);
-    }else{
-      max_single_layer_cap = std::max(max_single_layer_cap, 
-                              (int)h_edges_3D_[l][y][x].cap);
-    }
-  }
+//   // Check if there is capacity for NDR net in any layer
+//   // if not, discourage using this edge
+//   for (int l = net->getMinLayer(); l < net->getMaxLayer(); l++) {
+//     if (is_vertical) {
+//       max_single_layer_cap = std::max(max_single_layer_cap, 
+//                               (int)v_edges_3D_[l][y][x].cap);
+//     }else{
+//       max_single_layer_cap = std::max(max_single_layer_cap, 
+//                               (int)h_edges_3D_[l][y][x].cap);
+//     }
+//   }
 
-  if (max_single_layer_cap < edgeCost){
-    return 100*edgeCost; 
-  }
+//   if (max_single_layer_cap < edgeCost){
+//     return 100*edgeCost; 
+//   }
   
-  return edgeCost;
-}
+//   return edgeCost;
+// }
 
 void FastRouteCore::freeRR()
 {
@@ -2026,17 +2029,17 @@ void FastRouteCore::freeRR()
   }
 }
 
-int FastRouteCore::additionalNDRCost(Edge edge, const int netID)
-{
-  FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
-  int ndr_cost = getEdgeCostNDRAware(edge, edgeCost);
+// int FastRouteCore::additionalNDRCost(Edge edge, const int netID)
+// {
+//   FrNet* net = nets_[netID];
+//   const int edgeCost = net->getEdgeCost();
+//   int ndr_cost = getEdgeCostNDRAware(edge, edgeCost);
   
-  if (ndr_cost > edgeCost)
-    return ndr_cost;
+//   if (ndr_cost > edgeCost)
+//     return ndr_cost;
   
-  return 0;
-}
+//   return 0;
+// }
 
 int FastRouteCore::edgeShift(Tree& t, const int net)
 {

@@ -126,7 +126,7 @@ class FastRouteCore
   void clearNetRoute(odb::dbNet* db_net);
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
-  void initEdgesMaxCapPerLayer();
+  void initEdgesCapacityPerLayer();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
                      int y1,
@@ -246,10 +246,10 @@ class FastRouteCore
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCapacityNDRAware(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCostNDRAware(Edge edge, const int edgeCost);
-  int getEdgeCostNDRAware2(int y, int x, FrNet* net, bool is_vertical);
-  int additionalNDRCost(Edge edge, const int netID);
+  // int getEdgeCapacityNDRAware(FrNet* net, int x1, int y1, EdgeDirection direction);
+  // int getEdgeCostNDRAware(Edge edge, const int edgeCost);
+  // int getEdgeCostNDRAware2(int y, int x, FrNet* net, bool is_vertical);
+  // int additionalNDRCost(Edge edge, const int netID);
   bool verifyNDRCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);

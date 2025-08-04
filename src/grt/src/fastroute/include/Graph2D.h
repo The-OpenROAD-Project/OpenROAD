@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "DataType.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
@@ -25,7 +26,7 @@ class Graph2D
     const int hi;
   };
 
-  void init(int x_grid, int y_grid, int h_capacity, int v_capacity);
+  void init(int x_grid, int y_grid, int h_capacity, int v_capacity, int num_layers, utl::Logger* logger);
   void InitEstUsage();
   void InitLastUsage(int upType);
   void clear();
@@ -70,11 +71,34 @@ class Graph2D
                                int& max_adj);
   void str_accu(int rnd);
 
+  void updateCap3D(int x, int y, int layer, EdgeDirection direction, const uint16_t cap);
+  double getCostNDRAware(FrNet* net, int x, int y, const double edgeCost, EdgeDirection direction);
+  int getCostNDRAware(FrNet* net, int x, int y, const int edgeCost, EdgeDirection direction);
+  // void initEdgesMaxCapPerLayer();
+  void updateEstUsageH(const Interval& xi, const int y, FrNet* net, const double edge_cost);
+  void updateEstUsageH(const int x, const int y, FrNet* net, const double edge_cost);
+  void updateEstUsageV(const int x, const Interval& yi, FrNet* net, const double edge_cost);
+  void updateEstUsageV(const int x, const int y, FrNet* net, const double edge_cost);
+  void updateUsageH(const Interval& xi, int y, FrNet* net, const int edge_cost);
+  void updateUsageH(int x, int y, FrNet* net, const int edge_cost);
+  void updateUsageV(int x, const Interval& yi, FrNet* net, const int edge_cost);
+  void updateUsageV(int x, int y, FrNet* net, const int edge_cost);
+  bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
+  void printEdgeCapPerLayer();
+  void initCap3D();
+  
  private:
+  int x_grid_;
+  int y_grid_;
+  int num_layers_;
+
   void foreachEdge(const std::function<void(Edge&)>& func);
 
   multi_array<Edge, 2> v_edges_;  // The way it is indexed is (X, Y)
   multi_array<Edge, 2> h_edges_;  // The way it is indexed is (X, Y)
+  multi_array<uint16_t, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  multi_array<uint16_t, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  utl::Logger* logger_;
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;

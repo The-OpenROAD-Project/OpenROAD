@@ -763,7 +763,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
     FrNet* net = nets_[netID];
-    bool is_ndr = net->getDbNet()->getNonDefaultRule() ? true : false;
     int ndr_extra_cost = 0;
 
     int enlarge = expand;
@@ -879,7 +878,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           // ndr_extra_cost = net->getLayerEdgeCost(curL) - 1;
         // }
         ndr_extra_cost = net->getLayerEdgeCost(curL);
-        // ndr_extra_cost = net->getEdgeCost();
 
         // if(curX == 152 && curY == 55){
         //     logger_->report("zzz Net at x{} y{}: {} {} {}", curX, curY, net->getName(), curL, (net->getDbNet()->getNonDefaultRule()!=nullptr));
@@ -1678,13 +1676,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (gridsX[i] == gridsX[i + 1])  // a vertical edge
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-            graph2d_.addUsageV(gridsX[i], min_y, net->getLayerEdgeCost(gridsL[i]));
+            graph2d_.updateUsageV(gridsX[i], min_y, net, net->getLayerEdgeCost(gridsL[i]));
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-            graph2d_.addUsageH(min_x, gridsY[i], net->getLayerEdgeCost(gridsL[i]));
+            graph2d_.updateUsageH(min_x, gridsY[i], net, net->getLayerEdgeCost(gridsL[i]));
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           }
