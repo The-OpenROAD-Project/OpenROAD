@@ -122,10 +122,9 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
       // that multiple pins can occupy the same location.
       tree->locAddPin(pinloc.loc, pinloc.pin);
     }
-    if (is_placed) {
+    if (is_placed && db_network_->isFlat(net)) {
       stt::Tree ftree = stt_builder_->makeSteinerTree(
           db_network_->staToDb(net), x, y, drvr_idx);
-
       tree->setTree(ftree, db_network_);
       tree->createSteinerPtToPinMap();
       return tree;

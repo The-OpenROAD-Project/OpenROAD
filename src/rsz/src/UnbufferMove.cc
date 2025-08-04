@@ -303,8 +303,15 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  dbNet* in_db_net = db_network_->staToDb(in_net);
-  dbNet* out_db_net = db_network_->staToDb(out_net);
+
+  odb::dbNet* in_db_net = nullptr;
+  odb::dbModNet* in_db_mod_net = nullptr;
+  db_network_->staToDb(in_net, in_db_net, in_db_mod_net);
+
+  odb::dbNet* out_db_net = nullptr;
+  odb::dbModNet* out_db_mod_net = nullptr;
+  db_network_->staToDb(out_net, out_db_net, out_db_mod_net);
+
   // honor net dont-touch on input net or output net
   if ((in_db_net && in_db_net->isDoNotTouch())
       || (out_db_net && out_db_net->isDoNotTouch())) {
@@ -321,26 +328,30 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
+  odb::dbNet* db_net_survivor = nullptr;
+  odb::dbNet* db_net_removed = nullptr;
   if (out_net_ports) {
     if (hasPort(in_net)) {
       return false;
     }
     survivor = out_net;
     removed = in_net;
+    db_net_survivor = out_db_net;
+    db_net_removed = in_db_net;
   } else {
     // default or out_net_ports
     // Default to in_net surviving so drivers (cached in dbNetwork)
     // do not change.
     survivor = in_net;
     removed = out_net;
+    db_net_survivor = in_db_net;
+    db_net_removed = out_db_net;
   }
 
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
       && (!removed || !sdc_->isConstrained(removed))
       && !sdc_->isConstrained(buffer)) {
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return !db_removed || db_survivor->canMergeNet(db_removed);
+    return !db_net_removed || db_net_survivor->canMergeNet(db_net_removed);
   }
   return false;
 }
