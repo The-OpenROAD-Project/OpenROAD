@@ -347,15 +347,16 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
+  LibertyCell* lib_cell = network_->libertyCell(buffer);
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              3,
-             "remove_buffer{}",
-             network_->pathName(buffer));
+             "remove_buffer {} ({})",
+             network_->pathName(buffer),
+             lib_cell->name());
   addMove(buffer);
 
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
 
@@ -386,8 +387,30 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     survivor = in_net;
     removed = out_net;
   }
-  debugPrint(
-      logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
+
+  // If the input net is hierarchical, we need to find the driver pin.
+  // Get the driver pin beforing removing the input net.
+  Pin* driver_pin = nullptr;
+  if (op_modnet) {
+    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+    if (driver_pin == nullptr) {
+      logger_->error(RSZ,
+                     165,
+                     "Cannot find driver pin for hierarchical net {}",
+                     op_modnet->getName());
+    }
+  }
+
+  // Remove buffer from the database and handle the nets
+  debugPrint(logger_,
+             RSZ,
+             "remove_buffer",
+             1,
+             "remove_buffer {} (input net) - {} ({}) - {} (output net)",
+             db_network_->name(in_net),
+             network_->pathName(buffer),
+             lib_cell->name(),
+             db_network_->name(out_net));
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
@@ -412,10 +435,11 @@ void UnbufferMove::removeBuffer(Instance* buffer)
                RSZ,
                "remove_buffer",
                1,
-               "Handling hierarchical net {}",
-               op_modnet->getName());
-    Pin* driver_pin = nullptr;
-    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+               "Handling hierarchical net ({}). Connect driver pin ({}) to the "
+               "load modNet ({}).",
+               op_modnet->getName(),
+               db_network_->name(driver_pin),
+               db_network_->name(in_net));
     db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
   }
 
