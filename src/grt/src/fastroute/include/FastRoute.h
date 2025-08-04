@@ -122,18 +122,29 @@ class FastRouteCore
                      int layer,
                      uint16_t reducedCap,
                      bool isReduce);
+  void releaseResourcesOnInterval(
+      int x,
+      int y,
+      int layer,
+      bool is_horizontal,
+      const interval<int>::type& tile_reduce_interval,
+      const std::vector<int>& track_space);
   void addVerticalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
       const int layer,
       const interval<int>::type& first_tile_reduce_interval,
-      const interval<int>::type& last_tile_reduce_interval);
+      const interval<int>::type& last_tile_reduce_interval,
+      const std::vector<int>& track_space,
+      bool has_release = false);
   void addHorizontalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
       const int layer,
       const interval<int>::type& first_tile_reduce_interval,
-      const interval<int>::type& last_tile_reduce_interval);
+      const interval<int>::type& last_tile_reduce_interval,
+      const std::vector<int>& track_space,
+      bool has_release = false);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();

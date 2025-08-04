@@ -325,7 +325,8 @@ class GlobalRouter
                                 float reduction_percentage);
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer,
-                                  bool is_macro = false);
+                                  bool is_macro = false,
+                                  bool has_release = false);
   void addResourcesForPinAccess();
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);

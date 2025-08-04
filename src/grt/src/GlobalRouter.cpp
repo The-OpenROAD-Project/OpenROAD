@@ -834,29 +834,8 @@ void GlobalRouter::removeWireUsage(odb::dbWire* wire)
 void GlobalRouter::removeRectUsage(const odb::Rect& rect,
                                    odb::dbTechLayer* tech_layer)
 {
-  bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-  int layer_idx = tech_layer->getRoutingLevel();
-  odb::Rect first_tile_box, last_tile_box;
-  odb::Point first_tile, last_tile;
-
-  grid_->getBlockedTiles(
-      rect, first_tile_box, last_tile_box, first_tile, last_tile);
-
-  if (vertical) {
-    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
-        fastroute_->addAdjustment(x, y, x, y + 1, layer_idx, cap + 1, false);
-      }
-    }
-  } else {
-    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
-        fastroute_->addAdjustment(x, y, x + 1, y, layer_idx, cap + 1, false);
-      }
-    }
-  }
+  // Release resources of Rect same like was used
+  applyObstructionAdjustment(rect, tech_layer, false, true);
 }
 
 bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
@@ -1646,7 +1625,8 @@ void GlobalRouter::updateResources(const int& init_x,
 
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                               odb::dbTechLayer* tech_layer,
-                                              bool is_macro)
+                                              bool is_macro,
+                                              bool has_release)
 {
   // compute the intersection between obstruction and the die area
   // only when they are overlapping to avoid assert error during
@@ -1693,6 +1673,12 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          is_macro);
 
   int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
+
+  std::vector<int> track_spaces;
+  if (has_release) {
+    track_spaces = grid_->getTrackPitches();
+  }
+
   if (!vertical) {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
@@ -1705,7 +1691,9 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          last_tile,
                                          layer,
                                          first_tile_reduce_interval,
-                                         last_tile_reduce_interval);
+                                         last_tile_reduce_interval,
+                                         track_spaces,
+                                         has_release);
   } else {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
@@ -1718,7 +1706,9 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                        last_tile,
                                        layer,
                                        first_tile_reduce_interval,
-                                       last_tile_reduce_interval);
+                                       last_tile_reduce_interval,
+                                       track_spaces,
+                                       has_release);
   }
 }
 
