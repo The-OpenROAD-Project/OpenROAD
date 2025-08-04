@@ -75,6 +75,7 @@ cc_library(
         "//src/grt:types",
         "//src/gui",
         "//src/odb",
+        "//:ord",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
