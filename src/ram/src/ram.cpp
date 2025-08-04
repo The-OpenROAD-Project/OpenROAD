@@ -302,18 +302,50 @@ std::unique_ptr<Element> RamGen::make_byte(
         {{"A", selects[i]}, {"Y", select_b_nets[i]}});
     }
 
-    // Make clock inverter
-   // makeInst(layout.get(),
-   //          prefix,
-   //          "clock_inv",
-   //          inv_cell_,
-   // {{"A", clock}, {"Y", clock_b_net}});
-
-
-
     return std::make_unique<Element>(std::move(layout));
 }
+std::unique_ptr<Cell> RamGen::cell_and_layer (const std::string& prefix,
+        const int num_word, const int read_ports, 
+        const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& addr_nets){
+    
+    auto word_cell = std::make_unique<Cell>();
 
+    //can make this an AND gate layer method
+    //places appropriate number of AND gates for each word
+
+    //calculates number of and gate layers needed
+    int layers = std::log2(num_word) - 1;
+
+    dbNet* prev_net = nullptr; //net to store previous and gate output
+  
+    for (int i = 0; i < layers; ++i) {
+        auto input_net = makeNet(prefix, fmt::format("layer_in{}", i));
+        //sets up first AND gate, closest to byte's select + write enable gate
+	if (i == 0 && i == layers - 1) {
+	    makeCellInst (word_cell.get(), prefix, fmt::format("and_layer{}",i), and2_cell_,
+		{{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", selects[0]}});
+	   prev_net = input_net;
+	} else if (i == 0) {
+            makeCellInst(word_cell.get(), prefix, fmt::format("and_layer{}", i), and2_cell_,
+                {{"A", addr_nets[i]}, {"B", input_net}, {"X", selects[0]}});
+            prev_net = input_net;
+        } else if (i == layers - 1) { //last AND gate layer
+            makeCellInst(word_cell.get(), prefix, fmt::format("and_layer{}", i), and2_cell_, 
+		{{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", prev_net}});
+            prev_net = input_net;
+        } else { //middle AND gate layers
+            makeCellInst(word_cell.get(), prefix, fmt::format("and_layer{}", i), and2_cell_,
+               {{"A", addr_nets[i]}, {"B", input_net}, {"X", prev_net}});
+            prev_net = input_net;
+        }
+
+
+    }
+
+    return word_cell;
+
+
+}
 std::unique_ptr<Element> RamGen::create_and_layer (const std::string& prefix,
         const int word_count, const int read_ports,
         const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& addr_nets) {
@@ -530,7 +562,7 @@ void RamGen::generate(const int bytes_per_word,
     Layout layout(odb::horizontal);
     // 9 tracks for 8 bits per word plus 
     // cell for WE AND gate/inverter
-    Grid ram_grid (odb::horizontal, bytes_per_word * 9);
+    Grid ram_grid (odb::horizontal, bytes_per_word * 9 + 1);
 
     auto clock = makeBTerm("clk");
 
@@ -628,9 +660,11 @@ void RamGen::generate(const int bytes_per_word,
 			    cell_name, read_ports, 
 			    clock, write_enable[col], 
 			    word_decoder_nets, D_nets, Q);
+	    auto decoder_name = fmt::format("cell_decoder_{}_{}", row, col);
+	    auto and_layer_cell = cell_and_layer(decoder_name, word_count, read_ports,
+			    word_decoder_nets, and_layer_nets[row]);
 
- 
-
+	    ram_grid.addCell(std::move(and_layer_cell), (bytes_per_word * 9));
             //makes bytes
             column->addElement(make_byte(
                                    name,
@@ -651,41 +685,48 @@ void RamGen::generate(const int bytes_per_word,
         }
 
         for (int bit = 0; bit < 8; ++bit) {
-           makeInst(&input_buffer_layer,
+           auto buffer_cell = std::make_unique<Cell>();
+	    makeCellInst(buffer_cell.get(),
                      "buffer",
                      fmt::format("in[{}]", bit),
                      buffer_cell_,
             { {"A", D[bit]}, {"X", D_nets[bit]} });
-
+	    ram_grid.addCell(std::move(buffer_cell), bit);
 	}
 
-//	input_buffer_layer.position(odb::Point(0,0), 7900); //tester for offset for buffer
-	//adds input buffer layer to column
-        //column->addElement(std::make_unique<Element>(std::move(input_buffer_layer)));
-
-        //places byte first
+	//places byte first
         layout.addElement(std::make_unique<Element>(std::move(column)));
         //places inverters
         layout.addElement(std::make_unique<Element>(std::move(and_layer)));
 
     }
 
+    auto cell_inv_layout = std::make_unique<CellLayout> (odb::vertical);
     //check for AND gate, specific case for 2 words
     if (numImputs > 1) {
-        for (int i = 0; i < numImputs; ++i) {
-            makeInst(inv_layer.get(),
+        for (int i = numImputs - 1; i >= 0; --i) {
+	    auto inv_cell = std::make_unique<Cell>();
+            makeCellInst(inv_cell.get(),
                      "decoder",
                      fmt::format("inv_{}", i),
                      inv_cell_,
             {{"A", addr[i]}, {"Y", inv_addr[i]}});
+	    cell_inv_layout->addCell(std::move(inv_cell));
+	    for (int filler_count = 0; filler_count < numImputs - 1; ++filler_count) {
+	       cell_inv_layout->addCell(nullptr);
+	    }
         }
     } else  {
-        makeInst (inv_layer.get(),
+	auto inv_cell = std::make_unique<Cell>();
+        makeCellInst (inv_cell.get(),
                   "decoder",
                   fmt::format("inv_{}", 0),
                   inv_cell_,
         {{"A", addr[0]}, {"Y", inv_addr[0]}});
+	cell_inv_layout->addCell(std::move(inv_cell));
     }
+
+    ram_grid.addLayout(std::move(cell_inv_layout));
 
     //adds column of inverters
     layout.addElement(std::make_unique<Element>(std::move(inv_layer)));

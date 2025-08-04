@@ -127,7 +127,11 @@ std::unique_ptr<Cell> makeCellBit(
       const std::vector<odb::dbNet*>& select,
       const std::array<odb::dbNet*, 8>& data_input,
       const std::vector<std::array<odb::dbNet*, 8>>& data_output);
-  
+  std::unique_ptr<Cell> cell_and_layer (const std::string& prefix,
+      const int num_word, const int read_ports, 
+      const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& ram_inputs
+  );
+
   std::unique_ptr<Element> create_and_layer (const std::string& prefix,
       const int word_count, const int read_ports, 
       const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& ram_inputs

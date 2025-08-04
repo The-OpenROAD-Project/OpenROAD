@@ -221,7 +221,16 @@ void Grid::addLayout(std::unique_ptr<CellLayout> layout) {
 }
 
 void Grid::addCell(std::unique_ptr<Cell> cell, int track) {
-
+   if (track >= layouts_.size()) {
+       for (int size = layouts_.size(); size <= track; ++size) {
+           if (orientation_ == odb::horizontal){
+	       layouts_.push_back(std::make_unique<CellLayout>(odb::vertical));
+	   } else {
+	       layouts_.push_back(std::make_unique<CellLayout>(odb::horizontal));
+	   }
+       
+       }
+   }
    layouts_[track]->addCell(std::move(cell));
 }
 
@@ -261,6 +270,9 @@ const int Grid::getWidth() {
    return cell_width;
 }
 
+const int Grid::numLayouts() {
+   return layouts_.size();
+}
 
 
 

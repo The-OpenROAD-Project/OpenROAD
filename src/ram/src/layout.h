@@ -146,6 +146,8 @@ class Grid {
      const int getHeight();
 
      const int getWidth();
+
+     const int numLayouts();
    private:
      odb::Orientation2D orientation_;
      odb::Point origin_;
