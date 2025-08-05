@@ -462,6 +462,11 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
   }
   // treat this as a hierarchical network.
   if (hierarchy) {
+    logger_->warn(ORD,
+                  10,
+                  "Hierarchical flow (-hier) is under development and it can "
+                  "cause multiple issues. Do not use this for production.");
+
     sta::dbSta* sta = getSta();
     // After streaming in the last thing we do is build the hashes
     // we cannot rely on orders to do this during stream in
@@ -523,6 +528,11 @@ void OpenRoad::linkDesign(const char* design_name,
   }
 
   if (hierarchy) {
+    logger_->warn(ORD,
+                  9,
+                  "Hierarchical flow (-hier) is under development and it can "
+                  "cause multiple issues. Do not use this for production.");
+
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();
   }
