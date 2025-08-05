@@ -1,6 +1,8 @@
 #include "GeoTypes.h"
 
-utils::BoxT<DBU> getBoxFromRsynBounds(const Bounds& bounds)
+namespace grt {
+
+BoxT<DBU> getBoxFromRsynBounds(const Bounds& bounds)
 {
   return {bounds.getLower().x,
           bounds.getLower().y,
@@ -20,3 +22,5 @@ ostream& operator<<(ostream& os, const BoxOnLayer& box)
   os << "box(l=" << box.layerIdx << ", x=" << box[0] << ", y=" << box[1] << ")";
   return os;
 }
+
+}  // namespace grt

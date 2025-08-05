@@ -2,6 +2,8 @@
 #include "GeoTypes.h"
 #include "global.h"
 
+namespace grt {
+
 struct PinReference
 {
   int instanceIndex;
@@ -30,3 +32,5 @@ class Net
   std::string name;
   std::vector<PinReference> pinRefs;
 };
+
+}  // namespace grt

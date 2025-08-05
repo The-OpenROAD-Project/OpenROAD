@@ -2,21 +2,24 @@
 
 #include <chrono>
 
+#include "Design.h"
 #include "MazeRoute.h"
 #include "PatternRoute.h"
 
-GlobalRouter::GlobalRouter(const Design& design, const Parameters& params)
+namespace grt {
+
+CUGR::CUGR(const Design* design, const Parameters& params)
     : gridGraph(design, params), parameters(params)
 {
   // Instantiate the global routing netlist
-  const std::vector<Net>& baseNets = design.getAllNets();
+  const std::vector<Net>& baseNets = design->getAllNets();
   nets.reserve(baseNets.size());
   for (const Net& baseNet : baseNets) {
     nets.emplace_back(baseNet, design, gridGraph);
   }
 }
 
-void GlobalRouter::route()
+void CUGR::route()
 {
   int n1 = 0, n2 = 0, n3 = 0;
   double t1 = 0, t2 = 0, t3 = 0;
@@ -154,7 +157,7 @@ void GlobalRouter::route()
   }
 }
 
-void GlobalRouter::sortNetIndices(std::vector<int>& netIndices) const
+void CUGR::sortNetIndices(std::vector<int>& netIndices) const
 {
   std::vector<int> halfParameters(nets.size());
   for (int netIndex : netIndices) {
@@ -166,9 +169,8 @@ void GlobalRouter::sortNetIndices(std::vector<int>& netIndices) const
   });
 }
 
-void GlobalRouter::getGuides(
-    const GRNet& net,
-    std::vector<std::pair<int, utils::BoxT<int>>>& guides)
+void CUGR::getGuides(const GRNet& net,
+                     std::vector<std::pair<int, BoxT<int>>>& guides)
 {
   auto& routingTree = net.getRoutingTree();
   if (!routingTree) {
@@ -179,16 +181,16 @@ void GlobalRouter::getGuides(
     for (const auto& child : node->children) {
       if (node->layerIdx == child->layerIdx) {
         guides.emplace_back(node->layerIdx,
-                            utils::BoxT<int>(min(node->x, child->x),
-                                             min(node->y, child->y),
-                                             max(node->x, child->x),
-                                             max(node->y, child->y)));
+                            BoxT<int>(min(node->x, child->x),
+                                      min(node->y, child->y),
+                                      max(node->x, child->x),
+                                      max(node->y, child->y)));
       } else {
         int maxLayerIndex = max(node->layerIdx, child->layerIdx);
         for (int layerIdx = min(node->layerIdx, child->layerIdx);
              layerIdx <= maxLayerIndex;
              layerIdx++) {
-          guides.emplace_back(layerIdx, utils::BoxT<int>(node->x, node->y));
+          guides.emplace_back(layerIdx, BoxT<int>(node->x, node->y));
         }
       }
     }
@@ -227,11 +229,10 @@ void GlobalRouter::getGuides(
              layerIdx++) {
           guides.emplace_back(
               layerIdx,
-              utils::BoxT<int>(
-                  max(gpt.x - padding, 0),
-                  max(gpt.y - padding, 0),
-                  min(gpt.x + padding, (int) gridGraph.getSize(0) - 1),
-                  min(gpt.y + padding, (int) gridGraph.getSize(1) - 1)));
+              BoxT<int>(max(gpt.x - padding, 0),
+                        max(gpt.y - padding, 0),
+                        min(gpt.x + padding, (int) gridGraph.getSize(0) - 1),
+                        min(gpt.y + padding, (int) gridGraph.getSize(1) - 1)));
           areaOfPinPatches += (guides.back().second.x.range() + 1)
                               * (guides.back().second.y.range() + 1);
         }
@@ -262,8 +263,7 @@ void GlobalRouter::getGuides(
                 continue;
               }
               if (getSpareResource({layerIndex, point.x, point.y}) >= 1.0) {
-                guides.emplace_back(layerIndex,
-                                    utils::BoxT<int>(point.x, point.y));
+                guides.emplace_back(layerIndex, BoxT<int>(point.x, point.y));
                 areaOfWirePatches += 1;
                 patched = true;
               }
@@ -280,7 +280,7 @@ void GlobalRouter::getGuides(
   });
 }
 
-void GlobalRouter::printStatistics() const
+void CUGR::printStatistics() const
 {
   log() << "routing statistics" << std::endl;
   loghline();
@@ -353,7 +353,7 @@ void GlobalRouter::printStatistics() const
   logeol();
 }
 
-void GlobalRouter::write(std::string guide_file)
+void CUGR::write(std::string guide_file)
 {
   log() << "generating route guides..." << std::endl;
   if (guide_file == "") {
@@ -364,7 +364,7 @@ void GlobalRouter::write(std::string guide_file)
   areaOfWirePatches = 0;
   std::stringstream ss;
   for (const GRNet& net : nets) {
-    std::vector<std::pair<int, utils::BoxT<int>>> guides;
+    std::vector<std::pair<int, BoxT<int>>> guides;
     getGuides(net, guides);
 
     ss << net.getName() << std::endl;
@@ -389,3 +389,5 @@ void GlobalRouter::write(std::string guide_file)
   fout.close();
   log() << "finished writing output..." << std::endl;
 }
+
+}  // namespace grt

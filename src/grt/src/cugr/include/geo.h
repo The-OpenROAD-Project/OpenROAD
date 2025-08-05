@@ -11,7 +11,7 @@
 #include <limits>
 #include <vector>
 
-namespace utils {
+namespace grt {
 
 // Point template
 template <typename T>
@@ -505,4 +505,4 @@ class SegmentT : public BoxT<T>
   bool IsRectilinear() const { return BoxT<T>::x() == 0 || BoxT<T>::y() == 0; }
 };
 
-}  // namespace utils
+}  // namespace grt

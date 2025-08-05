@@ -4,10 +4,12 @@
 #include "PatternRoute.h"
 #include "global.h"
 
+namespace grt {
+
 struct SparseGrid
 {
-  utils::PointT<int> interval;
-  utils::PointT<int> offset;
+  PointT<int> interval;
+  PointT<int> offset;
   SparseGrid(int xInterval, int yInterval, int xOffset, int yOffset)
       : interval(xInterval, yInterval), offset(xOffset, yOffset)
   {
@@ -35,8 +37,7 @@ class SparseGraph
   void init(GridGraphView<CostT>& wireCostView, SparseGrid& grid);
   int getNumVertices() const { return vertices.size(); }
   int getNumPseudoPins() const { return pseudoPins.size(); }
-  std::pair<utils::PointT<int>, utils::IntervalT<int>> getPseudoPin(
-      int pinIndex) const
+  std::pair<PointT<int>, IntervalT<int>> getPseudoPin(int pinIndex) const
   {
     return pseudoPins[pinIndex];
   }
@@ -61,7 +62,7 @@ class SparseGraph
   const GridGraph& gridGraph;
   GRNet& net;
 
-  std::vector<std::pair<utils::PointT<int>, utils::IntervalT<int>>> pseudoPins;
+  std::vector<std::pair<PointT<int>, IntervalT<int>>> pseudoPins;
 
   std::vector<int> xs;
   std::vector<int> ys;
@@ -118,3 +119,5 @@ class MazeRoute
 
   std::vector<std::shared_ptr<Solution>> solutions;
 };
+
+}  // namespace grt

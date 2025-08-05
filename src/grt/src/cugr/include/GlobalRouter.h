@@ -1,13 +1,14 @@
 #pragma once
-#include "Design.h"
 #include "GRNet.h"
 #include "GridGraph.h"
 #include "global.h"
 
-class GlobalRouter
+namespace grt {
+
+class CUGR
 {
  public:
-  GlobalRouter(const Design& design, const Parameters& params);
+  CUGR(const Design* design, const Parameters& params);
   void route();
   void write(std::string guide_file = "");
 
@@ -21,6 +22,8 @@ class GlobalRouter
 
   void sortNetIndices(std::vector<int>& netIndices) const;
   void getGuides(const GRNet& net,
-                 std::vector<std::pair<int, utils::BoxT<int>>>& guides);
+                 std::vector<std::pair<int, grt::BoxT<int>>>& guides);
   void printStatistics() const;
 };
+
+}  // namespace grt

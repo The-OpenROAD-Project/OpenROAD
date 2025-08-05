@@ -1,13 +1,15 @@
 #pragma once
 #include "global.h"
 
-class GRPoint : public utils::PointT<int>
+namespace grt {
+
+class GRPoint : public PointT<int>
 {
  public:
   // int x
   // int y
   int layerIdx;
-  GRPoint(int l, int _x, int _y) : layerIdx(l), utils::PointT<int>(_x, _y) {}
+  GRPoint(int l, int _x, int _y) : layerIdx(l), PointT<int>(_x, _y) {}
   friend inline std::ostream& operator<<(std::ostream& os, const GRPoint& pt)
   {
     os << "(" << pt.layerIdx << ", " << pt.x << ", " << pt.y << ")";
@@ -27,3 +29,5 @@ class GRTreeNode : public GRPoint
                        std::function<void(std::shared_ptr<GRTreeNode>)> visit);
   static void print(std::shared_ptr<GRTreeNode> node);
 };
+
+}  // namespace grt

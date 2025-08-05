@@ -1,6 +1,8 @@
 #pragma once
 #include "global.h"
 
+namespace grt {
+
 class MetalLayer
 {
  public:
@@ -14,8 +16,8 @@ class MetalLayer
   DBU getWidth() const { return width; }
   DBU getPitch() const { return pitch; }
   DBU getTrackLocation(const int trackIndex) const;
-  utils::IntervalT<int> rangeSearchTracks(const utils::IntervalT<DBU>& locRange,
-                                          bool includeBound = true) const;
+  IntervalT<int> rangeSearchTracks(const IntervalT<DBU>& locRange,
+                                   bool includeBound = true) const;
 
   // Design rule related methods
   DBU getMinLength() const { return minLength; }
@@ -55,3 +57,5 @@ class MetalLayer
 
   // Corner spacing
 };
+
+}  // namespace grt

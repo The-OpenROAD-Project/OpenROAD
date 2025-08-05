@@ -3,15 +3,17 @@
 #include "geo.h"
 #include "global.h"
 
-class SteinerTreeNode : public utils::PointT<int>
+namespace grt {
+
+class SteinerTreeNode : public PointT<int>
 {
  public:
   std::vector<std::shared_ptr<SteinerTreeNode>> children;
-  utils::IntervalT<int> fixedLayers;
+  IntervalT<int> fixedLayers;
 
-  SteinerTreeNode(utils::PointT<int> point) : utils::PointT<int>(point) {}
-  SteinerTreeNode(utils::PointT<int> point, utils::IntervalT<int> _fixedLayers)
-      : utils::PointT<int>(point), fixedLayers(_fixedLayers)
+  SteinerTreeNode(PointT<int> point) : PointT<int>(point) {}
+  SteinerTreeNode(PointT<int> point, IntervalT<int> _fixedLayers)
+      : PointT<int>(point), fixedLayers(_fixedLayers)
   {
   }
 
@@ -21,7 +23,7 @@ class SteinerTreeNode : public utils::PointT<int>
   static std::string getPythonString(std::shared_ptr<SteinerTreeNode> node);
 };
 
-class PatternRoutingNode : public utils::PointT<int>
+class PatternRoutingNode : public PointT<int>
 {
  public:
   const int index;
@@ -30,7 +32,7 @@ class PatternRoutingNode : public utils::PointT<int>
   std::vector<std::shared_ptr<PatternRoutingNode>> children;
   std::vector<std::vector<std::shared_ptr<PatternRoutingNode>>> paths;
   // childIndex -> pathIndex -> path
-  utils::IntervalT<int> fixedLayers;
+  IntervalT<int> fixedLayers;
   // layers that must be visited in order to connect all the pins
   std::vector<CostT> costs;  // layerIndex -> cost
   std::vector<std::vector<std::pair<int, int>>> bestPaths;
@@ -38,16 +40,14 @@ class PatternRoutingNode : public utils::PointT<int>
   // layerIndex)
   bool optional;
 
-  PatternRoutingNode(utils::PointT<int> point,
-                     int _index,
-                     bool _optional = false)
-      : utils::PointT<int>(point), index(_index), optional(_optional)
+  PatternRoutingNode(PointT<int> point, int _index, bool _optional = false)
+      : PointT<int>(point), index(_index), optional(_optional)
   {
   }
-  PatternRoutingNode(utils::PointT<int> point,
-                     utils::IntervalT<int> _fixedLayers,
+  PatternRoutingNode(PointT<int> point,
+                     IntervalT<int> _fixedLayers,
                      int _index = 0)
-      : utils::PointT<int>(point),
+      : PointT<int>(point),
         fixedLayers(_fixedLayers),
         index(_index),
         optional(false)
@@ -89,3 +89,5 @@ class PatternRoute
       std::shared_ptr<PatternRoutingNode>& node,
       int parentLayerIndex = -1);
 };
+
+}  // namespace grt

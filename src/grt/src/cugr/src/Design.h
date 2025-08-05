@@ -5,6 +5,8 @@
 #include "Net.h"
 #include "global.h"
 
+namespace grt {
+
 using CostT = double;
 
 class Design
@@ -38,14 +40,14 @@ class Design
     return gridlines;
   }
   const std::vector<Net>& getAllNets() const { return nets; }
-  void getAllObstacles(std::vector<std::vector<utils::BoxT<DBU>>>& allObstacles,
+  void getAllObstacles(std::vector<std::vector<BoxT<DBU>>>& allObstacles,
                        bool skipM1 = true) const;
 
  private:
   const Parameters& parameters;
 
   DBU libDBU;
-  utils::BoxT<DBU> dieRegion;
+  BoxT<DBU> dieRegion;
   std::vector<MetalLayer> layers;
   std::vector<Macro> macros;  // macros with a SPECIFIC orientation
   std::vector<Instance> instances;
@@ -64,3 +66,5 @@ class Design
   void read(std::string lef_file, std::string def_file);
   void setUnitCosts();
 };
+
+}  // namespace grt

@@ -1,5 +1,7 @@
 #include "Layers.h"
 
+namespace grt {
+
 MetalLayer::MetalLayer(const Rsyn::PhysicalLayer& rsynLayer,
                        const std::vector<Rsyn::PhysicalTracks>& rsynTracks,
                        const DBU libDBU)
@@ -101,11 +103,10 @@ DBU MetalLayer::getTrackLocation(const int trackIndex) const
   return firstTrackLoc + trackIndex * pitch;
 }
 
-utils::IntervalT<int> MetalLayer::rangeSearchTracks(
-    const utils::IntervalT<DBU>& locRange,
-    bool includeBound) const
+IntervalT<int> MetalLayer::rangeSearchTracks(const IntervalT<DBU>& locRange,
+                                             bool includeBound) const
 {
-  utils::IntervalT<int> trackRange(
+  IntervalT<int> trackRange(
       ceil(double(max(locRange.low, firstTrackLoc) - firstTrackLoc)
            / double(pitch)),
       floor(double(min(locRange.high, lastTrackLoc) - firstTrackLoc)
@@ -139,3 +140,5 @@ DBU MetalLayer::getParallelSpacing(const DBU width, const DBU length) const
   }
   return parallelSpacing[w][l];
 }
+
+}  // namespace grt

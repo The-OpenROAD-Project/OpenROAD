@@ -3,6 +3,8 @@
 #include "GRTree.h"
 #include "global.h"
 
+namespace grt {
+
 using CapacityT = double;
 class GRNet;
 template <typename Type>
@@ -48,8 +50,8 @@ class GridGraph
   {
     return gridlines[dimension][index];
   }
-  utils::BoxT<DBU> getCellBox(utils::PointT<int> point) const;
-  utils::BoxT<int> rangeSearchCells(const utils::BoxT<DBU>& box) const;
+  BoxT<DBU> getCellBox(PointT<int> point) const;
+  BoxT<int> rangeSearchCells(const BoxT<DBU>& box) const;
   inline GraphEdge getEdge(const int layerIndex, const int x, const int y) const
   {
     return graphEdges[layerIndex][x][y];
@@ -58,17 +60,16 @@ class GridGraph
   // Costs
   DBU getEdgeLength(unsigned direction, unsigned edgeIndex) const;
   CostT getWireCost(const int layerIndex,
-                    const utils::PointT<int> u,
-                    const utils::PointT<int> v) const;
-  CostT getViaCost(const int layerIndex, const utils::PointT<int> loc) const;
+                    const PointT<int> u,
+                    const PointT<int> v) const;
+  CostT getViaCost(const int layerIndex, const PointT<int> loc) const;
   inline CostT getUnitViaCost() const { return unit_via_cost; }
 
   // Misc
   void selectAccessPoints(
       GRNet& net,
-      robin_hood::unordered_map<
-          uint64_t,
-          std::pair<utils::PointT<int>, utils::IntervalT<int>>>&
+      robin_hood::unordered_map<uint64_t,
+                                std::pair<PointT<int>, IntervalT<int>>>&
           selectedAccessPoints) const;
 
   // Methods for updating demands
@@ -83,8 +84,8 @@ class GridGraph
     return getEdge(layerIndex, x, y).getResource() < 0.0;
   }
   int checkOverflow(const int layerIndex,
-                    const utils::PointT<int> u,
-                    const utils::PointT<int> v) const;  // Check wire overflow
+                    const PointT<int> u,
+                    const PointT<int> v) const;  // Check wire overflow
   int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
       const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
@@ -126,13 +127,11 @@ class GridGraph
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
 
-  utils::IntervalT<int> rangeSearchGridlines(
-      const unsigned dimension,
-      const utils::IntervalT<DBU>& locInterval) const;
+  IntervalT<int> rangeSearchGridlines(const unsigned dimension,
+                                      const IntervalT<DBU>& locInterval) const;
   // Find the gridlines within [locInterval.low, locInterval.high]
-  utils::IntervalT<int> rangeSearchRows(
-      const unsigned dimension,
-      const utils::IntervalT<DBU>& locInterval) const;
+  IntervalT<int> rangeSearchRows(const unsigned dimension,
+                                 const IntervalT<DBU>& locInterval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
@@ -145,18 +144,18 @@ class GridGraph
 
   inline double logistic(const CapacityT& input, const double slope) const;
   CostT getWireCost(const int layerIndex,
-                    const utils::PointT<int> lower,
+                    const PointT<int> lower,
                     const CapacityT demand = 1.0) const;
 
   // Methods for updating demands
   void commit(const int layerIndex,
-              const utils::PointT<int> lower,
+              const PointT<int> lower,
               const CapacityT demand);
   void commitWire(const int layerIndex,
-                  const utils::PointT<int> lower,
+                  const PointT<int> lower,
                   const bool reverse = false);
   void commitVia(const int layerIndex,
-                 const utils::PointT<int> loc,
+                 const PointT<int> loc,
                  const bool reverse = false);
 };
 
@@ -164,7 +163,7 @@ template <typename Type>
 class GridGraphView : public std::vector<std::vector<vector<Type>>>
 {
  public:
-  bool check(const utils::PointT<int>& u, const utils::PointT<int>& v) const
+  bool check(const PointT<int>& u, const PointT<int>& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     if (u.y == v.y) {
@@ -185,7 +184,7 @@ class GridGraphView : public std::vector<std::vector<vector<Type>>>
     return false;
   }
 
-  Type sum(const utils::PointT<int>& u, const utils::PointT<int>& v) const
+  Type sum(const PointT<int>& u, const PointT<int>& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     Type res = 0;
@@ -203,3 +202,5 @@ class GridGraphView : public std::vector<std::vector<vector<Type>>>
     return res;
   }
 };
+
+}  // namespace grt

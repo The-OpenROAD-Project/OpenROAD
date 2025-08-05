@@ -1,5 +1,7 @@
 #include "Design.h"
 
+namespace grt {
+
 void Design::read(std::string lef_file, std::string def_file)
 {
   log() << "parsing..." << std::endl;
@@ -67,7 +69,7 @@ void Design::read(std::string lef_file, std::string def_file)
       instances.emplace_back(instanceIndex,
                              rsynInstance.getName(),
                              macroIndices[macroHash],
-                             utils::PointT<DBU>(position.x, position.y));
+                             PointT<DBU>(position.x, position.y));
     } else if (rsynInstance.getType() == Rsyn::PORT) {
       numPorts++;
       const Rsyn::Port& port = rsynInstance.asPort();
@@ -166,10 +168,10 @@ void Design::read(std::string lef_file, std::string def_file)
             obstacles.emplace_back(box);
           }
           if (via.hasViaRule()) {
-            const utils::PointT<int> numRowCol
+            const PointT<int> numRowCol
                 = via.hasRowCol()
-                      ? utils::PointT<int>(via.getNumCols(), via.getNumRows())
-                      : utils::PointT<int>(1, 1);
+                      ? PointT<int>(via.getNumCols(), via.getNumRows())
+                      : PointT<int>(1, 1);
             BoxOnLayer botBox(botLayerIdx);
             BoxOnLayer topBox(topLayerIdx);
             for (unsigned dimIdx = 0; dimIdx != 2; ++dimIdx) {
@@ -285,7 +287,7 @@ void Design::getPinShapes(const PinReference& pinRef,
   const auto& instance = instances[pinRef.instanceIndex];
   if (instance.isCell()) {
     const Macro& macro = macros[instance.getMacroIndex()];
-    const utils::PointT<DBU> position = instance.getPosition();
+    const PointT<DBU> position = instance.getPosition();
     const std::vector<BoxOnLayer>& macroPins
         = macro.getPinShapes(pinRef.pinIndex);
     for (const auto& macroPin : macroPins) {
@@ -297,9 +299,8 @@ void Design::getPinShapes(const PinReference& pinRef,
   }
 }
 
-void Design::getAllObstacles(
-    std::vector<std::vector<utils::BoxT<DBU>>>& allObstacles,
-    bool skipM1) const
+void Design::getAllObstacles(std::vector<std::vector<BoxT<DBU>>>& allObstacles,
+                             bool skipM1) const
 {
   allObstacles.resize(getNumLayers());
   // cell obstacles
@@ -307,7 +308,7 @@ void Design::getAllObstacles(
     if (!instance.isCell()) {
       continue;
     }
-    utils::PointT<DBU> position = instance.getPosition();
+    PointT<DBU> position = instance.getPosition();
     const auto& macro = macros[instance.getMacroIndex()];
     const std::vector<BoxOnLayer>& macroObstacles = macro.getObstacles();
     for (const BoxOnLayer& obs : macroObstacles) {
@@ -324,3 +325,5 @@ void Design::getAllObstacles(
     }
   }
 }
+
+}  // namespace grt

@@ -1,5 +1,7 @@
 #include "GRTree.h"
 
+namespace grt {
+
 void GRTreeNode::preorder(
     std::shared_ptr<GRTreeNode> node,
     std::function<void(std::shared_ptr<GRTreeNode>)> visit)
@@ -20,3 +22,5 @@ void GRTreeNode::print(std::shared_ptr<GRTreeNode> node)
     std::cout << std::endl;
   });
 }
+
+}  // namespace grt

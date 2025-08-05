@@ -3,6 +3,8 @@
 #include "GridGraph.h"
 #include "global.h"
 
+namespace grt {
+
 class GRNet
 {
  public:
@@ -15,12 +17,12 @@ class GRNet
   {
     return pinAccessPoints;
   }
-  const utils::BoxT<int>& getBoundingBox() const { return boundingBox; }
+  const BoxT<int>& getBoundingBox() const { return boundingBox; }
   const std::shared_ptr<GRTreeNode>& getRoutingTree() const
   {
     return routingTree;
   }
-  // void getGuides(std::vector<std::pair<int, utils::BoxT<int>>>& guides)
+  // void getGuides(std::vector<std::pair<int, BoxT<int>>>& guides)
   // const;
 
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree) { routingTree = tree; }
@@ -30,6 +32,8 @@ class GRNet
   int index;
   std::string name;
   std::vector<std::vector<GRPoint>> pinAccessPoints;
-  utils::BoxT<int> boundingBox;
+  BoxT<int> boundingBox;
   std::shared_ptr<GRTreeNode> routingTree;
 };
+
+}  // namespace grt

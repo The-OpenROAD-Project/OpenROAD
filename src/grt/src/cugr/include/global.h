@@ -27,12 +27,16 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/icl/split_interval_map.hpp>
 
+namespace grt {
+
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 using boostPoint = bg::model::point<DBU, 2, bg::cs::cartesian>;
 using boostBox = bg::model::box<boostPoint>;
 using RTree = bgi::rtree<std::pair<boostBox, int>, bgi::rstar<32>>;
+
+using DBU = std::int64_t;
 
 struct Parameters
 {
@@ -88,3 +92,5 @@ struct Parameters
     log() << std::endl;
   }
 };
+
+}  // namespace grt

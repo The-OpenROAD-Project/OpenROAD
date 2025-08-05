@@ -1,6 +1,6 @@
 #include "global.h"
 #include "Design.h"
-#include "GlobalRouter.h"
+#include "CUGR.h"
 
 int main(int argc, char* argv[]) {
     logeol(2);
@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     Design design(parameters);
     
     // Global router
-    GlobalRouter globalRouter(design, parameters);
+    CUGR globalRouter(design, parameters);
     globalRouter.route();
     globalRouter.write();
     

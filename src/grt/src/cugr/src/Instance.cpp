@@ -1,5 +1,7 @@
 #include "Instance.h"
 
+namespace grt {
+
 Macro::Macro(int idx,
              const Rsyn::Cell& cell,
              const Rsyn::PhysicalDesign& physicalDesign)
@@ -99,3 +101,5 @@ Instance::Instance(int idx,
   port = BoxOnLayer(phyPort.getLayer().getRelativeIndex(),
                     getBoxFromRsynBounds(bounds));
 }
+
+}  // namespace grt

@@ -1,5 +1,7 @@
 #include "GRNet.h"
 
+namespace grt {
+
 GRNet::GRNet(const Net& baseNet,
              const Design& design,
              const GridGraph& gridGraph)
@@ -14,7 +16,7 @@ GRNet::GRNet(const Net& baseNet,
     design.getPinShapes(pinRefs[pinIndex], pinShapes);
     robin_hood::unordered_set<uint64_t> included;
     for (const auto& pinShape : pinShapes) {
-      utils::BoxT<int> cells = gridGraph.rangeSearchCells(pinShape);
+      BoxT<int> cells = gridGraph.rangeSearchCells(pinShape);
       for (int x = cells.x.low; x <= cells.x.high; x++) {
         for (int y = cells.y.low; y <= cells.y.high; y++) {
           GRPoint point(pinShape.layerIdx, x, y);
@@ -34,7 +36,7 @@ GRNet::GRNet(const Net& baseNet,
   }
 }
 
-// void GRNet::getGuides(std::vector<std::pair<int, utils::BoxT<int>>>& guides)
+// void GRNet::getGuides(std::vector<std::pair<int, BoxT<int>>>& guides)
 // const
 // {
 //     if (!routingTree) return;
@@ -42,7 +44,7 @@ GRNet::GRNet(const Net& baseNet,
 //         for (const auto& child : node->children) {
 //             if (node->layerIdx == child->layerIdx) {
 //                 guides.emplace_back(
-//                     node->layerIdx, utils::BoxT<int>(
+//                     node->layerIdx, BoxT<int>(
 //                         min(node->x, child->x), min(node->y, child->y),
 //                         max(node->x, child->x), max(node->y, child->y)
 //                     )
@@ -51,10 +53,12 @@ GRNet::GRNet(const Net& baseNet,
 //                 int maxLayerIndex = max(node->layerIdx, child->layerIdx);
 //                 for (int layerIdx = min(node->layerIdx, child->layerIdx);
 //                 layerIdx <= maxLayerIndex; layerIdx++) {
-//                     guides.emplace_back(layerIdx, utils::BoxT<int>(node->x,
+//                     guides.emplace_back(layerIdx, BoxT<int>(node->x,
 //                     node->y));
 //                 }
 //             }
 //         }
 //     });
 // }
+
+}  // namespace grt
