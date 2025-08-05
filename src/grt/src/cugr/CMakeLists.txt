@@ -3,17 +3,16 @@
 #########
 
 add_library(CUGR
-  src/GlobalRouter.cpp
-  src/GridGraph.cpp
-  src/GRNet.cpp
-  src/GRTree.cpp
-  src/MazeRoute.cpp
-  src/PatternRoute.cpp
   src/Design.cpp
   src/GeoTypes.cpp
+  src/GlobalRouter.cpp
+  src/GRNet.cpp
+  src/GRTree.cpp
+  src/GridGraph.cpp
   src/Instance.cpp
   src/Layers.cpp
-  src/Net.cpp
+  src/MazeRoute.cpp
+  src/PatternRoute.cpp
 )
 
 target_compile_options(CUGR
