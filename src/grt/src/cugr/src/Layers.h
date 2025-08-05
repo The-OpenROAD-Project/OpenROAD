@@ -1,59 +1,59 @@
 #pragma once
-#include "global.h"
+
+#include "geo.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
 class MetalLayer
 {
  public:
-  const static unsigned H = 0;
-  const static unsigned V = 1;
-  MetalLayer(const Rsyn::PhysicalLayer& rsynLayer,
-             const std::vector<Rsyn::PhysicalTracks>& rsynTracks,
-             const DBU libDBU);
+  MetalLayer(odb::dbTechLayer* tech_layer,
+             odb::dbTrackGrid* track_grid);
   std::string getName() const { return name; }
   unsigned getDirection() const { return direction; }
-  DBU getWidth() const { return width; }
-  DBU getPitch() const { return pitch; }
-  DBU getTrackLocation(const int trackIndex) const;
-  IntervalT<int> rangeSearchTracks(const IntervalT<DBU>& locRange,
+  int getWidth() const { return width; }
+  int getPitch() const { return pitch; }
+  int getTrackLocation(const int trackIndex) const;
+  IntervalT<int> rangeSearchTracks(const IntervalT<int>& locRange,
                                    bool includeBound = true) const;
 
   // Design rule related methods
-  DBU getMinLength() const { return minLength; }
-  DBU getDefaultSpacing() const { return defaultSpacing; }
-  DBU getParallelSpacing(const DBU width, const DBU length = 0) const;
-  DBU getMaxEolSpacing() const { return maxEolSpacing; }
+  int getMinLength() const { return minLength; }
+  int getDefaultSpacing() const { return defaultSpacing; }
+  int getParallelSpacing(const int width, const int length = 0) const;
+  int getMaxEolSpacing() const { return maxEolSpacing; }
 
  private:
   std::string name;
   int index;
-  unsigned direction;
-  DBU width;
-  DBU minWidth;
+  odb::dbTechLayerDir direction;
+  int width;
+  int minWidth;
 
   // tracks
-  DBU firstTrackLoc;
-  DBU lastTrackLoc;
-  DBU pitch;
+  int firstTrackLoc;
+  int lastTrackLoc;
+  int pitch;
   int numTracks;
 
   // Design rules
   // Min area
-  DBU minArea;
-  DBU minLength;
+  int minArea;
+  int minLength;
 
   // Parallel run spacing
-  std::vector<DBU> parallelWidth = {0};
-  std::vector<DBU> parallelLength = {0};
-  std::vector<std::vector<DBU>> parallelSpacing
+  std::vector<int> parallelWidth = {0};
+  std::vector<int> parallelLength = {0};
+  std::vector<std::vector<int>> parallelSpacing
       = {{0}};  // width, length -> spacing
-  DBU defaultSpacing = 0;
+  int defaultSpacing = 0;
 
   // End-of-line spacing
-  DBU maxEolSpacing = 0;
-  DBU maxEolWidth = 0;
-  DBU maxEolWithin = 0;
+  int maxEolSpacing = 0;
+  int maxEolWidth = 0;
+  int maxEolWithin = 0;
 
   // Corner spacing
 };
