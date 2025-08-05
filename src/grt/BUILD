@@ -41,6 +41,7 @@ cc_library(
         "src/fastroute/include/Graph2D.h",
     ],
     includes = [
+        "include",
         "src/fastroute/include",
     ],
     deps = [
@@ -128,6 +129,7 @@ cc_library(
         "include/grt/GlobalRouter.h",
         "include/grt/MakeGlobalRouter.h",
         "include/grt/PinGridLocation.h",
+        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
