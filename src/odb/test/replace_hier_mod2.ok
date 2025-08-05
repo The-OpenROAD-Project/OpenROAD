@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 Startpoint: dpath.b_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)
