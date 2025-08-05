@@ -292,8 +292,7 @@ class FastRouteCore
   void routeLShape(const TreeNode& startpoint,
                    const TreeNode& endpoint,
                    std::vector<std::pair<short, short>>& blocked_positions,
-                   std::vector<short>& new_route_x,
-                   std::vector<short>& new_route_y);
+                   std::vector<GPoint3D>& new_route);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
@@ -367,9 +366,7 @@ class FastRouteCore
                   int n2,
                   std::vector<TreeEdge>& treeedges,
                   int edge_n1n2,
-                  std::vector<int>& gridsX_n1n2,
-                  std::vector<int>& gridsY_n1n2,
-                  std::vector<int>& gridsL_n1n2);
+                  std::vector<GPoint3D>& grids_n1n2);
   void updateRouteType13D(int netID,
                           std::vector<TreeNode>& treenodes,
                           int n1,
@@ -518,7 +515,7 @@ class FastRouteCore
    */
   bool checkRoute2DTree(int netID);
   void removeLoops();
-  void netedgeOrderDec(int netID);
+  void netedgeOrderDec(int netID, std::vector<OrderNetEdge>& net_eo);
   void printTree2D(int netID);
   void printEdge2D(int netID, int edgeID);
   void printEdge3D(int netID, int edgeID);
@@ -621,7 +618,6 @@ class FastRouteCore
 
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
-  std::vector<OrderNetEdge> net_eo_;
   // the copy of xs for nets, used for second FLUTE
   std::vector<std::vector<int>> gxs_;
   // the copy of xs for nets, used for second FLUTE

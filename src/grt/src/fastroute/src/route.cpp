@@ -1064,17 +1064,13 @@ void FastRouteCore::routeMonotonic(const int netID,
   const auto& treenodes = sttrees_[netID].nodes;
   const int n1 = treeedge->n1;
   const int n2 = treeedge->n2;
-  const int x1 = treenodes[n1].x;
-  const int y1 = treenodes[n1].y;
-  const int x2 = treenodes[n2].x;
-  const int y2 = treenodes[n2].y;
+  const int16_t x1 = treenodes[n1].x;
+  const int16_t y1 = treenodes[n1].y;
+  const int16_t x2 = treenodes[n2].x;
+  const int16_t y2 = treenodes[n2].y;
 
   FrNet* net = nets_[netID];
-  bool is_ndr = net->getDbNet()->getNonDefaultRule() ? true : false;
-  if (is_ndr && net->getDbNet() == debug_->net) {
-        logger_->report("Before ripup");
-        printEdge(netID,edgeID);
-  }
+  bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
 
   // ripup the original routing
   if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, 0, netID, edgeID)) {
@@ -1145,8 +1141,8 @@ void FastRouteCore::routeMonotonic(const int netID,
   }
 
   double best = BIG_INT;
-  int bestp1x = 0;
-  int bestp1y = 0;
+  int16_t bestp1x = 0;
+  int16_t bestp1y = 0;
   bool BL1 = false;
   bool BL2 = false;
 
@@ -1195,70 +1191,60 @@ void FastRouteCore::routeMonotonic(const int netID,
     }
   }
   int cnt = 0;
-  std::vector<short int>& gridsX = treeedge->route.gridsX;
-  gridsX.resize(x_range_ + y_range_);
-  std::vector<short int>& gridsY = treeedge->route.gridsY;
-  gridsY.resize(x_range_ + y_range_);
+  std::vector<GPoint3D>& grids = treeedge->route.grids;
+  grids.resize(x_range_ + y_range_);
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   if (BL1) {
     if (bestp1x > x1) {
-      for (int i = x1; i < bestp1x; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y1;
+      for (int16_t i = x1; i < bestp1x; i++) {
+        grids[cnt] = {i, y1};
         graph2d_.updateUsageH(i, y1, net, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = x1; i > bestp1x; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y1;
+      for (int16_t i = x1; i > bestp1x; i--) {
+        grids[cnt] = {i, y1};
         graph2d_.updateUsageH(i - 1, y1, net, edgeCost);
         cnt++;
       }
     }
     if (bestp1y > y1) {
-      for (int i = y1; i < bestp1y; i++) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i < bestp1y; i++) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.updateUsageV(bestp1x, i, net, edgeCost);
       }
     } else {
-      for (int i = y1; i > bestp1y; i--) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i > bestp1y; i--) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.updateUsageV(bestp1x, i - 1, net, edgeCost);
       }
     }
   } else {
     if (bestp1y > y1) {
-      for (int i = y1; i < bestp1y; i++) {
-        gridsX[cnt] = x1;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i < bestp1y; i++) {
+        grids[cnt] = {x1, i};
         cnt++;
         graph2d_.updateUsageV(x1, i, net, edgeCost);
       }
     } else {
-      for (int i = y1; i > bestp1y; i--) {
-        gridsX[cnt] = x1;
-        gridsY[cnt] = i;
+      for (int16_t i = y1; i > bestp1y; i--) {
+        grids[cnt] = {x1, i};
         cnt++;
         graph2d_.updateUsageV(x1, i - 1, net, edgeCost);
       }
     }
     if (bestp1x > x1) {
-      for (int i = x1; i < bestp1x; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = x1; i < bestp1x; i++) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.updateUsageH(i, bestp1y, net, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = x1; i > bestp1x; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = x1; i > bestp1x; i--) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.updateUsageH(i - 1, bestp1y, net, edgeCost);
         cnt++;
       }
@@ -1267,77 +1253,67 @@ void FastRouteCore::routeMonotonic(const int netID,
 
   if (BL2) {
     if (bestp1x < x2) {
-      for (int i = bestp1x; i < x2; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = bestp1x; i < x2; i++) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.updateUsageH(i, bestp1y, net, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = bestp1x; i > x2; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = bestp1y;
+      for (int16_t i = bestp1x; i > x2; i--) {
+        grids[cnt] = {i, bestp1y};
         graph2d_.updateUsageH(i - 1, bestp1y, net, edgeCost);
         cnt++;
       }
     }
 
     if (y2 > bestp1y) {
-      for (int i = bestp1y; i < y2; i++) {
-        gridsX[cnt] = x2;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i < y2; i++) {
+        grids[cnt] = {x2, i};
         cnt++;
         graph2d_.updateUsageV(x2, i, net, edgeCost);
       }
     } else {
-      for (int i = bestp1y; i > y2; i--) {
-        gridsX[cnt] = x2;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i > y2; i--) {
+        grids[cnt] = {x2, i};
         cnt++;
         graph2d_.updateUsageV(x2, i - 1, net, edgeCost);
       }
     }
   } else {
     if (y2 > bestp1y) {
-      for (int i = bestp1y; i < y2; i++) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i < y2; i++) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.updateUsageV(bestp1x, i, net, edgeCost);
       }
     } else {
-      for (int i = bestp1y; i > y2; i--) {
-        gridsX[cnt] = bestp1x;
-        gridsY[cnt] = i;
+      for (int16_t i = bestp1y; i > y2; i--) {
+        grids[cnt] = {bestp1x, i};
         cnt++;
         graph2d_.updateUsageV(bestp1x, i - 1, net, edgeCost);
       }
     }
     if (x2 > bestp1x) {
-      for (int i = bestp1x; i < x2; i++) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y2;
+      for (int16_t i = bestp1x; i < x2; i++) {
+        grids[cnt] = {i, y2};
         graph2d_.updateUsageH(i, y2, net, edgeCost);
         cnt++;
       }
     } else {
-      for (int i = bestp1x; i > x2; i--) {
-        gridsX[cnt] = i;
-        gridsY[cnt] = y2;
+      for (int16_t i = bestp1x; i > x2; i--) {
+        grids[cnt] = {i, y2};
         graph2d_.updateUsageH(i - 1, y2, net, edgeCost);
         cnt++;
       }
     }
   }
 
-  gridsX[cnt] = x2;
-  gridsY[cnt] = y2;
+  grids[cnt] = {x2, y2};
   cnt++;
 
   treeedge->route.routelen = cnt - 1;
 
-  gridsX.resize(cnt);
-  gridsY.resize(cnt);
+  grids.resize(cnt);
 
   if (is_ndr && net->getDbNet() == debug_->net) {
         logger_->report("After reroute monotonic");

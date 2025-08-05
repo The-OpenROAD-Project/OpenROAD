@@ -339,17 +339,13 @@ void Resizer::initBlock()
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = disable_pruning_prop->getValue();
-  }
-  // Temporary WA: default is to disable buffer pruning
-#ifdef TEMP
-  else {
+  } else {
     if (disable_buffer_pruning_ != false) {
       swappable_cells_cache_.clear();
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
   }
-#endif
 }
 
 void Resizer::init()
@@ -1853,10 +1849,17 @@ void Resizer::reportBuffers(bool filtered)
   if (filtered) {
     findBuffers();
     logger_->report("\nFiltered Buffer Report:");
-    logger_->report(
-        "There are {} buffers after filtering based on threshold voltage,"
-        "\ncell footprint, drive strength and cell site",
-        buffer_cells_.size());
+    if (disable_buffer_pruning_) {
+      logger_->report(
+          "All {} buffers are available because buffer pruning has been "
+          "disabled",
+          buffer_cells_.size());
+    } else {
+      logger_->report(
+          "There are {} buffers after filtering based on threshold voltage,"
+          "\ncell footprint, drive strength and cell site",
+          buffer_cells_.size());
+    }
     logger_->report("{:->80}", "");
     logger_->report(
         "Cell                                        Drive Drive    Leak "
@@ -1885,6 +1888,10 @@ void Resizer::reportBuffers(bool filtered)
     }
   }
 
+  LibertyCell* hold_buffer = repair_hold_->reportHoldBuffer();
+  logger_->report("\nHold Buffer Report:");
+  logger_->report("{} is the buffer chosen for hold fixing",
+                  (hold_buffer ? hold_buffer->name() : "-"));
   logger_->report("{:*>80}", "");
 }
 
@@ -2790,7 +2797,9 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 
 bool Resizer::dontTouch(const Net* net)
 {
-  dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = nullptr;
+  odb::dbModNet* db_mod_net = nullptr;
+  db_network_->staToDb(net, db_net, db_mod_net);
   if (db_net == nullptr) {
     return false;
   }
