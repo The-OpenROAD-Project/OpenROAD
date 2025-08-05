@@ -169,4 +169,7 @@ class dbObject
   ~dbObject() = default;
 };
 
+dbIStream& operator>>(dbIStream& stream, dbObjectType& type);
+dbOStream& operator<<(dbOStream& stream, dbObjectType type);
+
 }  // namespace odb
