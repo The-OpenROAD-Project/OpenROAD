@@ -9,7 +9,7 @@
 [INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
 >> read_verilog jpeg.v
 >> link_design jpeg_encoder -hier
-[WARNING ORD-0011] Hierarchical flow (-hier) is under development and it can cause multiple issues. Do not use this for production.
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 >> read_sdc jpeg.sdc
 number instances in verilog is 39260
 wns max -85.02
