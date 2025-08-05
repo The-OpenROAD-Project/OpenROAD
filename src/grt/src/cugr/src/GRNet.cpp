@@ -10,7 +10,7 @@ GRNet::GRNet(const Net& baseNet,
   int numPins = pinRefs.size();
   pinAccessPoints.resize(numPins);
   for (int pinIndex = 0; pinIndex < pinRefs.size(); pinIndex++) {
-    vector<BoxOnLayer> pinShapes;
+    std::vector<BoxOnLayer> pinShapes;
     design.getPinShapes(pinRefs[pinIndex], pinShapes);
     robin_hood::unordered_set<uint64_t> included;
     for (const auto& pinShape : pinShapes) {
@@ -34,7 +34,8 @@ GRNet::GRNet(const Net& baseNet,
   }
 }
 
-// void GRNet::getGuides(vector<std::pair<int, utils::BoxT<int>>>& guides) const
+// void GRNet::getGuides(std::vector<std::pair<int, utils::BoxT<int>>>& guides)
+// const
 // {
 //     if (!routingTree) return;
 //     GRTreeNode::preorder(routingTree, [&](std::shared_ptr<GRTreeNode> node) {

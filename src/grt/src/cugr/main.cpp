@@ -1,6 +1,6 @@
 #include "global.h"
-#include "obj/Design.h"
-#include "gr/GlobalRouter.h"
+#include "Design.h"
+#include "GlobalRouter.h"
 
 int main(int argc, char* argv[]) {
     logeol(2);

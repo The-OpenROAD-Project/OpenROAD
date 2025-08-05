@@ -1,7 +1,7 @@
 #include "Layers.h"
 
 MetalLayer::MetalLayer(const Rsyn::PhysicalLayer& rsynLayer,
-                       const vector<Rsyn::PhysicalTracks>& rsynTracks,
+                       const std::vector<Rsyn::PhysicalTracks>& rsynTracks,
                        const DBU libDBU)
 {
   lefiLayer* layer = rsynLayer.getLayer();

@@ -109,20 +109,20 @@ class GridGraph
   unsigned nLayers;
   unsigned xSize;
   unsigned ySize;
-  vector<vector<DBU>> gridlines;
-  vector<vector<DBU>> gridCenters;
-  vector<std::string> layerNames;
-  vector<unsigned> layerDirections;
-  vector<DBU> layerMinLengths;
+  std::vector<std::vector<DBU>> gridlines;
+  std::vector<std::vector<DBU>> gridCenters;
+  std::vector<std::string> layerNames;
+  std::vector<unsigned> layerDirections;
+  std::vector<DBU> layerMinLengths;
 
   // Unit costs
   CostT unit_length_wire_cost;
   CostT unit_via_cost;
-  vector<CostT> unit_length_short_costs;
+  std::vector<CostT> unit_length_short_costs;
 
   DBU totalLength = 0;
   int totalNumVias = 0;
-  vector<vector<vector<GraphEdge>>> graphEdges;
+  std::vector<std::vector<vector<GraphEdge>>> graphEdges;
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
 
@@ -161,7 +161,7 @@ class GridGraph
 };
 
 template <typename Type>
-class GridGraphView : public vector<vector<vector<Type>>>
+class GridGraphView : public std::vector<std::vector<vector<Type>>>
 {
  public:
   bool check(const utils::PointT<int>& u, const utils::PointT<int>& v) const

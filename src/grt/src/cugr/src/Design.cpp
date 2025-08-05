@@ -280,13 +280,14 @@ void Design::setUnitCosts()
 }
 
 void Design::getPinShapes(const PinReference& pinRef,
-                          vector<BoxOnLayer>& pinShapes) const
+                          std::vector<BoxOnLayer>& pinShapes) const
 {
   const auto& instance = instances[pinRef.instanceIndex];
   if (instance.isCell()) {
     const Macro& macro = macros[instance.getMacroIndex()];
     const utils::PointT<DBU> position = instance.getPosition();
-    const vector<BoxOnLayer>& macroPins = macro.getPinShapes(pinRef.pinIndex);
+    const std::vector<BoxOnLayer>& macroPins
+        = macro.getPinShapes(pinRef.pinIndex);
     for (const auto& macroPin : macroPins) {
       pinShapes.push_back(macroPin);
       pinShapes.back().ShiftBy(position);
@@ -296,8 +297,9 @@ void Design::getPinShapes(const PinReference& pinRef,
   }
 }
 
-void Design::getAllObstacles(vector<vector<utils::BoxT<DBU>>>& allObstacles,
-                             bool skipM1) const
+void Design::getAllObstacles(
+    std::vector<std::vector<utils::BoxT<DBU>>>& allObstacles,
+    bool skipM1) const
 {
   allObstacles.resize(getNumLayers());
   // cell obstacles
@@ -307,7 +309,7 @@ void Design::getAllObstacles(vector<vector<utils::BoxT<DBU>>>& allObstacles,
     }
     utils::PointT<DBU> position = instance.getPosition();
     const auto& macro = macros[instance.getMacroIndex()];
-    const vector<BoxOnLayer>& macroObstacles = macro.getObstacles();
+    const std::vector<BoxOnLayer>& macroObstacles = macro.getObstacles();
     for (const BoxOnLayer& obs : macroObstacles) {
       if (obs.layerIdx > 0 || !skipM1) {
         allObstacles[obs.layerIdx].emplace_back(obs.x, obs.y);

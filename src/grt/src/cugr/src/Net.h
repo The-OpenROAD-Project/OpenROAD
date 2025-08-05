@@ -23,10 +23,10 @@ class Net
 
   int getIndex() const { return index; }
   std::string getName() const { return name; }
-  const vector<PinReference>& getAllPinRefs() const { return pinRefs; }
+  const std::vector<PinReference>& getAllPinRefs() const { return pinRefs; }
 
  private:
   int index;
   std::string name;
-  vector<PinReference> pinRefs;
+  std::vector<PinReference> pinRefs;
 };

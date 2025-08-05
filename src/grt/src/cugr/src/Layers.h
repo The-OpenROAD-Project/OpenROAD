@@ -7,7 +7,7 @@ class MetalLayer
   const static unsigned H = 0;
   const static unsigned V = 1;
   MetalLayer(const Rsyn::PhysicalLayer& rsynLayer,
-             const vector<Rsyn::PhysicalTracks>& rsynTracks,
+             const std::vector<Rsyn::PhysicalTracks>& rsynTracks,
              const DBU libDBU);
   std::string getName() const { return name; }
   unsigned getDirection() const { return direction; }
@@ -42,9 +42,10 @@ class MetalLayer
   DBU minLength;
 
   // Parallel run spacing
-  vector<DBU> parallelWidth = {0};
-  vector<DBU> parallelLength = {0};
-  vector<vector<DBU>> parallelSpacing = {{0}};  // width, length -> spacing
+  std::vector<DBU> parallelWidth = {0};
+  std::vector<DBU> parallelLength = {0};
+  std::vector<std::vector<DBU>> parallelSpacing
+      = {{0}};  // width, length -> spacing
   DBU defaultSpacing = 0;
 
   // End-of-line spacing

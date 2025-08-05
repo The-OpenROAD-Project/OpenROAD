@@ -61,18 +61,18 @@ class SparseGraph
   const GridGraph& gridGraph;
   GRNet& net;
 
-  vector<std::pair<utils::PointT<int>, utils::IntervalT<int>>> pseudoPins;
+  std::vector<std::pair<utils::PointT<int>, utils::IntervalT<int>>> pseudoPins;
 
-  vector<int> xs;
-  vector<int> ys;
+  std::vector<int> xs;
+  std::vector<int> ys;
 
-  vector<GRPoint> vertices;
-  vector<std::array<int, 3>> edges;
-  vector<std::array<CostT, 3>> costs;
-  // robin_hood::unordered_map<int, vector<int>> vertexPins;
-  // vector<vector<int>> pinVertices;
+  std::vector<GRPoint> vertices;
+  std::vector<std::array<int, 3>> edges;
+  std::vector<std::array<CostT, 3>> costs;
+  // robin_hood::unordered_map<int, std::vector<int>> vertexPins;
+  // std::vector<std::vector<int>> pinVertices;
   robin_hood::unordered_map<int, int> vertexPin;
-  vector<int> pinVertex;
+  std::vector<int> pinVertex;
 
   inline int getVertexIndex(int direction, int xi, int yi) const
   {
@@ -116,5 +116,5 @@ class MazeRoute
   GRNet& net;
   SparseGraph graph;
 
-  vector<std::shared_ptr<Solution>> solutions;
+  std::vector<std::shared_ptr<Solution>> solutions;
 };

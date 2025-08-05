@@ -1,17 +1,12 @@
 #pragma once
 #include "GRNet.h"
-#include "flute.h"
+#include "geo.h"
 #include "global.h"
-
-extern "C" {
-void readLUT();
-Tree flute(int d, DTYPE x[], DTYPE y[], int acc);
-}
 
 class SteinerTreeNode : public utils::PointT<int>
 {
  public:
-  vector<std::shared_ptr<SteinerTreeNode>> children;
+  std::vector<std::shared_ptr<SteinerTreeNode>> children;
   utils::IntervalT<int> fixedLayers;
 
   SteinerTreeNode(utils::PointT<int> point) : utils::PointT<int>(point) {}
@@ -32,13 +27,13 @@ class PatternRoutingNode : public utils::PointT<int>
   const int index;
   // int x
   // int y
-  vector<std::shared_ptr<PatternRoutingNode>> children;
-  vector<vector<std::shared_ptr<PatternRoutingNode>>> paths;
+  std::vector<std::shared_ptr<PatternRoutingNode>> children;
+  std::vector<std::vector<std::shared_ptr<PatternRoutingNode>>> paths;
   // childIndex -> pathIndex -> path
   utils::IntervalT<int> fixedLayers;
   // layers that must be visited in order to connect all the pins
-  vector<CostT> costs;  // layerIndex -> cost
-  vector<vector<std::pair<int, int>>> bestPaths;
+  std::vector<CostT> costs;  // layerIndex -> cost
+  std::vector<std::vector<std::pair<int, int>>> bestPaths;
   // best path for each child; layerIndex -> childIndex -> (pathIndex,
   // layerIndex)
   bool optional;
@@ -65,8 +60,6 @@ class PatternRoutingNode : public utils::PointT<int>
 class PatternRoute
 {
  public:
-  static void readFluteLUT() { readLUT(); };
-
   PatternRoute(GRNet& _net, const GridGraph& graph, const Parameters& param)
       : net(_net), gridGraph(graph), parameters(param), numDagNodes(0)
   {

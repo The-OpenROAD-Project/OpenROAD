@@ -11,7 +11,7 @@ class GRNet
   int getIndex() const { return index; }
   std::string getName() const { return name; }
   int getNumPins() const { return pinAccessPoints.size(); }
-  const vector<vector<GRPoint>>& getPinAccessPoints() const
+  const std::vector<std::vector<GRPoint>>& getPinAccessPoints() const
   {
     return pinAccessPoints;
   }
@@ -20,7 +20,8 @@ class GRNet
   {
     return routingTree;
   }
-  // void getGuides(vector<std::pair<int, utils::BoxT<int>>>& guides) const;
+  // void getGuides(std::vector<std::pair<int, utils::BoxT<int>>>& guides)
+  // const;
 
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree) { routingTree = tree; }
   void clearRoutingTree() { routingTree = nullptr; }
@@ -28,7 +29,7 @@ class GRNet
  private:
   int index;
   std::string name;
-  vector<vector<GRPoint>> pinAccessPoints;
+  std::vector<std::vector<GRPoint>> pinAccessPoints;
   utils::BoxT<int> boundingBox;
   std::shared_ptr<GRTreeNode> routingTree;
 };

@@ -9,7 +9,7 @@ GlobalRouter::GlobalRouter(const Design& design, const Parameters& params)
     : gridGraph(design, params), parameters(params)
 {
   // Instantiate the global routing netlist
-  const vector<Net>& baseNets = design.getAllNets();
+  const std::vector<Net>& baseNets = design.getAllNets();
   nets.reserve(baseNets.size());
   for (const Net& baseNet : baseNets) {
     nets.emplace_back(baseNet, design, gridGraph);
@@ -23,7 +23,7 @@ void GlobalRouter::route()
 
   auto t = std::chrono::high_resolution_clock::now();
 
-  vector<int> netIndices;
+  std::vector<int> netIndices;
   netIndices.reserve(nets.size());
   for (const auto& net : nets) {
     netIndices.push_back(net.getIndex());
@@ -154,9 +154,9 @@ void GlobalRouter::route()
   }
 }
 
-void GlobalRouter::sortNetIndices(vector<int>& netIndices) const
+void GlobalRouter::sortNetIndices(std::vector<int>& netIndices) const
 {
-  vector<int> halfParameters(nets.size());
+  std::vector<int> halfParameters(nets.size());
   for (int netIndex : netIndices) {
     auto& net = nets[netIndex];
     halfParameters[netIndex] = net.getBoundingBox().hp();
@@ -166,8 +166,9 @@ void GlobalRouter::sortNetIndices(vector<int>& netIndices) const
   });
 }
 
-void GlobalRouter::getGuides(const GRNet& net,
-                             vector<std::pair<int, utils::BoxT<int>>>& guides)
+void GlobalRouter::getGuides(
+    const GRNet& net,
+    std::vector<std::pair<int, utils::BoxT<int>>>& guides)
 {
   auto& routingTree = net.getRoutingTree();
   if (!routingTree) {
@@ -287,10 +288,11 @@ void GlobalRouter::printStatistics() const
   // wire length and via count
   uint64_t wireLength = 0;
   int viaCount = 0;
-  vector<vector<vector<int>>> wireUsage;
-  wireUsage.assign(gridGraph.getNumLayers(),
-                   vector<vector<int>>(gridGraph.getSize(0),
-                                       vector<int>(gridGraph.getSize(1), 0)));
+  std::vector<std::vector<vector<int>>> wireUsage;
+  wireUsage.assign(
+      gridGraph.getNumLayers(),
+      std::vector<std::vector<int>>(gridGraph.getSize(0),
+                                    std::vector<int>(gridGraph.getSize(1), 0)));
   for (const auto& net : nets) {
     GRTreeNode::preorder(
         net.getRoutingTree(), [&](std::shared_ptr<GRTreeNode> node) {
@@ -362,7 +364,7 @@ void GlobalRouter::write(std::string guide_file)
   areaOfWirePatches = 0;
   std::stringstream ss;
   for (const GRNet& net : nets) {
-    vector<std::pair<int, utils::BoxT<int>>> guides;
+    std::vector<std::pair<int, utils::BoxT<int>>> guides;
     getGuides(net, guides);
 
     ss << net.getName() << std::endl;

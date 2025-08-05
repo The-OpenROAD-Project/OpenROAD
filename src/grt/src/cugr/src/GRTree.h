@@ -18,7 +18,7 @@ class GRPoint : public utils::PointT<int>
 class GRTreeNode : public GRPoint
 {
  public:
-  vector<std::shared_ptr<GRTreeNode>> children;
+  std::vector<std::shared_ptr<GRTreeNode>> children;
 
   GRTreeNode(int l, int _x, int _y) : GRPoint(l, _x, _y) {}
   GRTreeNode(const GRPoint& point) : GRPoint(point) {}

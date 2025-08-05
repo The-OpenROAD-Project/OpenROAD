@@ -30,12 +30,15 @@ class Design
     return layers[layerIndex];
   }
   void getPinShapes(const PinReference& pinRef,
-                    vector<BoxOnLayer>& pinShapes) const;
+                    std::vector<BoxOnLayer>& pinShapes) const;
 
   // For global routing
-  const vector<vector<DBU>>& getGridlines() const { return gridlines; }
-  const vector<Net>& getAllNets() const { return nets; }
-  void getAllObstacles(vector<vector<utils::BoxT<DBU>>>& allObstacles,
+  const std::vector<std::vector<DBU>>& getGridlines() const
+  {
+    return gridlines;
+  }
+  const std::vector<Net>& getAllNets() const { return nets; }
+  void getAllObstacles(std::vector<std::vector<utils::BoxT<DBU>>>& allObstacles,
                        bool skipM1 = true) const;
 
  private:
@@ -43,20 +46,20 @@ class Design
 
   DBU libDBU;
   utils::BoxT<DBU> dieRegion;
-  vector<MetalLayer> layers;
-  vector<Macro> macros;  // macros with a SPECIFIC orientation
-  vector<Instance> instances;
-  vector<Net> nets;
-  vector<BoxOnLayer> obstacles;
+  std::vector<MetalLayer> layers;
+  std::vector<Macro> macros;  // macros with a SPECIFIC orientation
+  std::vector<Instance> instances;
+  std::vector<Net> nets;
+  std::vector<BoxOnLayer> obstacles;
 
   // For detailed routing
   CostT unit_length_wire_cost;
   CostT unit_via_cost;
-  vector<CostT> unit_length_short_costs;
+  std::vector<CostT> unit_length_short_costs;
 
   // For global routing
   const static int defaultGridlineSpacing = 3000;
-  vector<vector<DBU>> gridlines;
+  std::vector<std::vector<DBU>> gridlines;
 
   void read(std::string lef_file, std::string def_file);
   void setUnitCosts();

@@ -43,9 +43,10 @@ GridGraph::GridGraph(const Design& design, const Parameters& params)
   }
 
   // Init grid graph edges
-  vector<vector<int>> gridTracks(nLayers);
+  std::vector<std::vector<int>> gridTracks(nLayers);
   graphEdges.assign(nLayers,
-                    vector<vector<GraphEdge>>(xSize, vector<GraphEdge>(ySize)));
+                    std::vector<std::vector<GraphEdge>>(
+                        xSize, std::vector<GraphEdge>(ySize)));
   for (int layerIndex = 0; layerIndex < nLayers; layerIndex++) {
     const MetalLayer& layer = design.getLayer(layerIndex);
     const unsigned direction = layer.getDirection();
@@ -87,7 +88,7 @@ GridGraph::GridGraph(const Design& design, const Parameters& params)
   }
 
   // Deduct obstacles usage for layers EXCEPT Metal 1
-  vector<vector<utils::BoxT<DBU>>> obstacles(nLayers);
+  std::vector<std::vector<utils::BoxT<DBU>>> obstacles(nLayers);
   design.getAllObstacles(obstacles, true);
   for (int layerIndex = 1; layerIndex < nLayers; layerIndex++) {
     const MetalLayer& layer = design.getLayer(layerIndex);
@@ -100,7 +101,7 @@ GridGraph::GridGraph(const Design& design, const Parameters& params)
                           gridCenters[direction][edgeIndex + 1]
                               - gridCenters[direction][edgeIndex]);
     }
-    vector<vector<
+    std::vector<std::vector<
         std::shared_ptr<std::pair<utils::BoxT<DBU>, utils::IntervalT<int>>>>>
         obstaclesInGrid(nGrids);  // obstacle indices sorted in track grids
     // Sort obstacles in track grids
@@ -145,7 +146,7 @@ GridGraph::GridGraph(const Design& design, const Parameters& params)
       if (obstaclesInGrid[gridIndex].size() == 0) {
         continue;
       }
-      vector<vector<
+      std::vector<std::vector<
           std::shared_ptr<std::pair<utils::BoxT<DBU>, utils::IntervalT<int>>>>>
           obstaclesAtEdge(nEdges);
       for (auto& obstacle : obstaclesInGrid[gridIndex]) {
@@ -167,7 +168,7 @@ GridGraph::GridGraph(const Design& design, const Parameters& params)
             gridCenters[direction][edgeIndex],
             gridCenters[direction][edgeIndex + 1]);
         // Update cpacity
-        vector<utils::IntervalT<DBU>> usableIntervals(
+        std::vector<utils::IntervalT<DBU>> usableIntervals(
             gridTrackRange.range() + 1, edgeInterval);
         for (auto& obstacle : obstaclesAtEdge[edgeIndex]) {
           utils::IntervalT<int> affectedTrackRange
@@ -534,7 +535,7 @@ int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
 std::string GridGraph::getPythonString(
     const std::shared_ptr<GRTreeNode>& routingTree) const
 {
-  vector<std::tuple<utils::PointT<int>, utils::PointT<int>, bool>> edges;
+  std::vector<std::tuple<utils::PointT<int>, utils::PointT<int>, bool>> edges;
   GRTreeNode::preorder(routingTree, [&](std::shared_ptr<GRTreeNode> node) {
     for (auto& child : node->children) {
       if (node->layerIdx == child->layerIdx) {
@@ -583,7 +584,8 @@ std::string GridGraph::getPythonString(
 
 void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
 {
-  view.assign(2, vector<vector<bool>>(xSize, vector<bool>(ySize, true)));
+  view.assign(
+      2, std::vector<std::vector<bool>>(xSize, std::vector<bool>(ySize, true)));
   for (int layerIndex = parameters.min_routing_layer; layerIndex < nLayers;
        layerIndex++) {
     unsigned direction = getLayerDirection(layerIndex);
@@ -599,7 +601,9 @@ void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
 
 void GridGraph::extractCongestionView(GridGraphView<bool>& view) const
 {
-  view.assign(2, vector<vector<bool>>(xSize, vector<bool>(ySize, false)));
+  view.assign(
+      2,
+      std::vector<std::vector<bool>>(xSize, std::vector<bool>(ySize, false)));
   for (int layerIndex = parameters.min_routing_layer; layerIndex < nLayers;
        layerIndex++) {
     unsigned direction = getLayerDirection(layerIndex);
@@ -617,10 +621,10 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
 {
   view.assign(
       2,
-      vector<vector<CostT>>(
-          xSize, vector<CostT>(ySize, std::numeric_limits<CostT>::max())));
+      std::vector<std::vector<CostT>>(
+          xSize, std::vector<CostT>(ySize, std::numeric_limits<CostT>::max())));
   for (unsigned direction = 0; direction < 2; direction++) {
-    vector<int> layerIndices;
+    std::vector<int> layerIndices;
     CostT unitLengthShortCost = std::numeric_limits<CostT>::max();
     for (int layerIndex = parameters.min_routing_layer;
          layerIndex < getNumLayers();
@@ -662,8 +666,8 @@ void GridGraph::updateWireCostView(
     GridGraphView<CostT>& view,
     std::shared_ptr<GRTreeNode> routingTree) const
 {
-  vector<vector<int>> sameDirectionLayers(2);
-  vector<CostT> unitLengthShortCost(2, std::numeric_limits<CostT>::max());
+  std::vector<std::vector<int>> sameDirectionLayers(2);
+  std::vector<CostT> unitLengthShortCost(2, std::numeric_limits<CostT>::max());
   for (int layerIndex = parameters.min_routing_layer;
        layerIndex < getNumLayers();
        layerIndex++) {

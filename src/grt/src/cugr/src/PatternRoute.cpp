@@ -13,7 +13,7 @@ void SteinerTreeNode::preorder(
 std::string SteinerTreeNode::getPythonString(
     std::shared_ptr<SteinerTreeNode> node)
 {
-  vector<std::pair<utils::PointT<int>, utils::PointT<int>>> edges;
+  std::vector<std::pair<utils::PointT<int>, utils::PointT<int>>> edges;
   preorder(node, [&](std::shared_ptr<SteinerTreeNode> node) {
     for (auto child : node->children) {
       edges.emplace_back(*node, *child);
@@ -32,7 +32,7 @@ std::string SteinerTreeNode::getPythonString(
 std::string PatternRoutingNode::getPythonString(
     std::shared_ptr<PatternRoutingNode> routingDag)
 {
-  vector<std::pair<utils::PointT<int>, utils::PointT<int>>> edges;
+  std::vector<std::pair<utils::PointT<int>, utils::PointT<int>>> edges;
   std::function<void(std::shared_ptr<PatternRoutingNode>)> getEdges
       = [&](std::shared_ptr<PatternRoutingNode> node) {
           for (auto& childPaths : node->paths) {
@@ -80,9 +80,9 @@ void PatternRoute::constructSteinerTree()
     }
     Tree flutetree = flute(degree, xs, ys, ACCURACY);
     const int numBranches = degree + degree - 2;
-    vector<utils::PointT<int>> steinerPoints;
+    std::vector<utils::PointT<int>> steinerPoints;
     steinerPoints.reserve(numBranches);
-    vector<vector<int>> adjacentList(numBranches);
+    std::vector<std::vector<int>> adjacentList(numBranches);
     for (int branchIndex = 0; branchIndex < numBranches; branchIndex++) {
       const Branch& branch = flutetree.branch[branchIndex];
       steinerPoints.emplace_back(branch.x, branch.y);
@@ -251,9 +251,9 @@ accessPoint.second.second, numDagNodes++);
         }
         Tree flutetree = flute(degree, xs, ys, ACCURACY);
         const int numBranches = degree + degree - 2;
-        vector<utils::PointT<int>> steinerPoints;
+        std::vector<utils::PointT<int>> steinerPoints;
         steinerPoints.reserve(numBranches);
-        vector<vector<int>> adjacentList(numBranches);
+        std::vector<std::vector<int>> adjacentList(numBranches);
         for (int branchIndex = 0; branchIndex < numBranches; branchIndex++) {
             const Branch& branch = flutetree.branch[branchIndex];
             steinerPoints.emplace_back(branch.x, branch.y);
@@ -323,7 +323,7 @@ void PatternRoute::constructPaths(std::shared_ptr<PatternRoutingNode>& start,
     childIndex = start->paths.size();
     start->paths.emplace_back();
   }
-  vector<std::shared_ptr<PatternRoutingNode>>& childPaths
+  std::vector<std::shared_ptr<PatternRoutingNode>>& childPaths
       = start->paths[childIndex];
   if (start->x == end->x || start->y == end->y) {
     childPaths.push_back(end);
@@ -346,16 +346,16 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
   struct ScaffoldNode
   {
     std::shared_ptr<PatternRoutingNode> node;
-    vector<std::shared_ptr<ScaffoldNode>> children;
+    std::vector<std::shared_ptr<ScaffoldNode>> children;
     ScaffoldNode(std::shared_ptr<PatternRoutingNode> n) : node(n) {}
   };
 
-  vector<vector<std::shared_ptr<ScaffoldNode>>> scaffolds(2);
-  vector<vector<std::shared_ptr<ScaffoldNode>>> scaffoldNodes(
+  std::vector<std::vector<std::shared_ptr<ScaffoldNode>>> scaffolds(2);
+  std::vector<std::vector<std::shared_ptr<ScaffoldNode>>> scaffoldNodes(
       2,
-      vector<std::shared_ptr<ScaffoldNode>>(
+      std::vector<std::shared_ptr<ScaffoldNode>>(
           numDagNodes, nullptr));  // direction -> numDagNodes -> scaffold node
-  vector<bool> visited(numDagNodes, false);
+  std::vector<bool> visited(numDagNodes, false);
 
   std::function<void(std::shared_ptr<PatternRoutingNode>)> buildScaffolds
       = [&](std::shared_ptr<PatternRoutingNode> node) {
@@ -456,12 +456,12 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
 
   std::function<void(std::shared_ptr<ScaffoldNode>,
                      utils::IntervalT<int>&,
-                     vector<int>&,
+                     std::vector<int>&,
                      unsigned,
                      bool)>
       getTrunkAndStems = [&](std::shared_ptr<ScaffoldNode> scaffoldNode,
                              utils::IntervalT<int>& trunk,
-                             vector<int>& stems,
+                             std::vector<int>& stems,
                              unsigned direction,
                              bool starting) {
         if (starting) {
@@ -494,7 +494,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
         }
       };
 
-  auto getTotalStemLength = [&](const vector<int>& stems, const int pos) {
+  auto getTotalStemLength = [&](const std::vector<int>& stems, const int pos) {
     int length = 0;
     for (int stem : stems) {
       length += abs(stem - pos);
@@ -564,7 +564,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
       assert(scaffold->children.size() == 1);
 
       utils::IntervalT<int> trunk;
-      vector<int> stems;
+      std::vector<int> stems;
       getTrunkAndStems(scaffold, trunk, stems, direction, true);
       std::sort(stems.begin(), stems.end());
       int trunkPos = (*scaffold->children[0]->node)[1 - direction];
@@ -668,7 +668,7 @@ void PatternRoute::calculateRoutingCosts(
   if (node->costs.size() != 0) {
     return;
   }
-  vector<vector<std::pair<CostT, int>>>
+  std::vector<std::vector<std::pair<CostT, int>>>
       childCosts;  // childIndex -> layerIndex -> (cost, pathIndex)
   // Calculate child costs
   if (node->paths.size() > 0) {
@@ -709,7 +709,7 @@ void PatternRoute::calculateRoutingCosts(
     }
   }
   // Calculate the partial sum of the via costs
-  vector<CostT> viaCosts(gridGraph.getNumLayers());
+  std::vector<CostT> viaCosts(gridGraph.getNumLayers());
   viaCosts[0] = 0;
   for (int layerIndex = 1; layerIndex < gridGraph.getNumLayers();
        layerIndex++) {
@@ -723,8 +723,8 @@ void PatternRoute::calculateRoutingCosts(
 
   for (int lowLayerIndex = 0; lowLayerIndex <= fixedLayers.low;
        lowLayerIndex++) {
-    vector<CostT> minChildCosts;
-    vector<std::pair<int, int>> bestPaths;
+    std::vector<CostT> minChildCosts;
+    std::vector<std::pair<int, int>> bestPaths;
     if (node->paths.size() > 0) {
       minChildCosts.assign(node->paths.size(),
                            std::numeric_limits<CostT>::max());
@@ -782,7 +782,7 @@ std::shared_ptr<GRTreeNode> PatternRoute::getRoutingTree(
   std::shared_ptr<GRTreeNode> highestRoutingNode = routingNode;
   if (node->paths.size() > 0) {
     int pathIndex, layerIndex;
-    vector<vector<std::shared_ptr<PatternRoutingNode>>> pathsOnLayer(
+    std::vector<std::vector<std::shared_ptr<PatternRoutingNode>>> pathsOnLayer(
         gridGraph.getNumLayers());
     for (int childIndex = 0; childIndex < node->paths.size(); childIndex++) {
       std::tie(pathIndex, layerIndex)

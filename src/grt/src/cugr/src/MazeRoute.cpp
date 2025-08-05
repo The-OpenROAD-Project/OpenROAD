@@ -16,8 +16,8 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   }
 
   // 1. Collect additional routing grid lines
-  vector<int> pxs;
-  vector<int> pys;
+  std::vector<int> pxs;
+  std::vector<int> pys;
   pxs.reserve(net.getNumPins());
   pys.reserve(net.getNumPins());
   for (const auto& pin : pseudoPins) {
@@ -145,15 +145,15 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
 
 void MazeRoute::run()
 {
-  vector<CostT> minCosts(graph.getNumVertices(),
-                         std::numeric_limits<CostT>::max());
+  std::vector<CostT> minCosts(graph.getNumVertices(),
+                              std::numeric_limits<CostT>::max());
   solutions.reserve(net.getNumPins());
   auto compareSolution = [&](const std::shared_ptr<Solution>& lhs,
                              const std::shared_ptr<Solution>& rhs) {
     return lhs->cost > rhs->cost;
   };
   std::priority_queue<std::shared_ptr<Solution>,
-                      vector<std::shared_ptr<Solution>>,
+                      std::vector<std::shared_ptr<Solution>>,
                       decltype(compareSolution)>
       queue(compareSolution);
   auto updateSolution = [&](const std::shared_ptr<Solution>& solution) {
@@ -163,7 +163,7 @@ void MazeRoute::run()
     }
   };
 
-  vector<bool> visited(net.getNumPins(), false);
+  std::vector<bool> visited(net.getNumPins(), false);
   const int startPinIndex = 0;
   visited[startPinIndex] = true;
   int numDetached = graph.getNumPseudoPins() - 1;
@@ -226,7 +226,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
     return tree;
   }
 
-  vector<bool> visited(net.getNumPins(), false);
+  std::vector<bool> visited(net.getNumPins(), false);
   robin_hood::unordered_map<int, std::shared_ptr<SteinerTreeNode>> created;
   for (auto& solution : solutions) {
     std::shared_ptr<Solution> temp = solution;

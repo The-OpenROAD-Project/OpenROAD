@@ -10,8 +10,8 @@ class Macro
         const Rsyn::Cell& cell,
         const Rsyn::PhysicalDesign& physicalDesign);
   int getPinIndex(std::string pinName);
-  const vector<BoxOnLayer>& getObstacles() const { return obstacles; }
-  const vector<BoxOnLayer>& getPinShapes(int pinIndex) const
+  const std::vector<BoxOnLayer>& getObstacles() const { return obstacles; }
+  const std::vector<BoxOnLayer>& getPinShapes(int pinIndex) const
   {
     return pins[pinIndex];
   }
@@ -21,8 +21,8 @@ class Macro
   int orientation;
   int index;
   robin_hood::unordered_map<std::string, int> pinIndices;
-  vector<vector<BoxOnLayer>> pins;
-  vector<BoxOnLayer> obstacles;
+  std::vector<std::vector<BoxOnLayer>> pins;
+  std::vector<BoxOnLayer> obstacles;
 };
 
 class Instance
