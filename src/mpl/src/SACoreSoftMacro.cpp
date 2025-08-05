@@ -559,18 +559,6 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
-<<<<<<< HEAD
-  // Macros need to be saved (and restored) since alignMacroClusters and
-  // fillDeadSpace move them
-  std::vector<SoftMacro> pre_macros = macros_;
-=======
-  std::vector<SoftMacro> pre_macros = macros_;
-
->>>>>>> cc2e688b57 (mpl: update calNotchPenalty)
-  // align macro clusters to reduce notches
-  alignMacroClusters();
-  // Fill dead space
-  fillDeadSpace();
   // Create grids based on location of MixedCluster and HardMacroCluster
   std::set<float> x_point;
   std::set<float> y_point;
@@ -654,8 +642,6 @@ void SACoreSoftMacro::calNotchPenalty()
       }
     }
   }
-
-  notch_penalty_ *= notch_weight_;
 
   if (graphics_) {
     graphics_->setNotchPenalty(
