@@ -403,6 +403,18 @@ void dbModInst::RemoveUnusedPortsAndPins()
 
   for (dbModITerm* mod_iterm : moditerms) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    if (mod_bterm == nullptr) {  // TODO: mod_bterm can be null. Why?
+      debugPrint(
+          logger,
+          utl::ODB,
+          "remove_unused_ports",
+          2,
+          "dbModITerm '{}' of dbModule '{}' has no corresponding dbModBTerm.",
+          mod_iterm->getName(),
+          module->getName());
+      continue;
+    }
+
     if (busmodbterms.find(mod_bterm) != busmodbterms.end()) {
       continue;
     }

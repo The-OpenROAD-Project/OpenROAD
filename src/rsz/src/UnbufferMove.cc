@@ -327,7 +327,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     }
   }
   bool out_net_ports = hasPort(out_net);
-  // Net *survivor = nullptr;
   Net* removed = nullptr;
   odb::dbNet* db_net_survivor = nullptr;
   odb::dbNet* db_net_removed = nullptr;
@@ -335,7 +334,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     if (hasPort(in_net)) {
       return false;
     }
-    // survivor = out_net;
     removed = in_net;
     db_net_survivor = out_db_net;
     db_net_removed = in_db_net;
@@ -343,7 +341,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     // default or out_net_ports
     // Default to in_net surviving so drivers (cached in dbNetwork)
     // do not change.
-    // survivor = in_net;
     removed = out_net;
     db_net_survivor = in_db_net;
     db_net_removed = out_db_net;
