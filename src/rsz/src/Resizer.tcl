@@ -697,8 +697,7 @@ proc report_opt_config { args } {
     set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
   }
 
-  # Temporary WA
-  set disable_buffer_pruning "true"
+  set disable_buffer_pruning "false"
   set no_buffer_pruning [odb::dbBoolProperty_find $block "disable_buffer_pruning"]
   if { $no_buffer_pruning ne "NULL" && $no_buffer_pruning ne "" } {
     set no_buffer_pruning_value [$no_buffer_pruning getValue]
