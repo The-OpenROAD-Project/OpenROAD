@@ -909,7 +909,7 @@ bool Opendp::checkPixels(const Node* cell,
     }
   }
   dbSite* site = cell->getDbInst()->getMaster()->getSite();
-  const auto& orient = grid_->getSiteOrientation(x, y, site).value();
+  const auto orient = grid_->getSiteOrientation(x, y, site).value();
   return drc_engine_->checkDRC(cell, x, y, orient);
 }
 
