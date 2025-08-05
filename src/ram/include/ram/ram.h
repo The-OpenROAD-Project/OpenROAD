@@ -56,10 +56,8 @@ namespace ram {
 using utl::Logger;
 
 ////////////////////////////////////////////////////////////////
-class Element;
-class Layout;
 class Cell;
-class CellLayout;
+class Layout;
 class Grid;
 
 class RamGen
@@ -112,32 +110,12 @@ std::unique_ptr<Cell> makeCellBit(
   odb::dbNet* makeBTerm(const std::string& name);
   odb::dbNet* makeOutputBTerm(const std::string& name);
 
-  std::unique_ptr<Element> make_bit(const std::string& prefix,
-                                    const int read_ports,
-                                    odb::dbNet* clock,
-                                    std::vector<odb::dbNet*>& select,
-                                    odb::dbNet* data_input,
-                                    std::vector<odb::dbNet*>& data_output);
-
-  std::unique_ptr<Element> make_byte(
-      const std::string& prefix,
-      const int read_ports,
-      odb::dbNet* clock,
-      odb::dbNet* write_enable,
-      const std::vector<odb::dbNet*>& select,
-      const std::array<odb::dbNet*, 8>& data_input,
-      const std::vector<std::array<odb::dbNet*, 8>>& data_output);
-  std::unique_ptr<Cell> cell_and_layer (const std::string& prefix,
+  std::unique_ptr<Cell> makeDecoder (const std::string& prefix,
       const int num_word, const int read_ports, 
       const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& ram_inputs
   );
 
-  std::unique_ptr<Element> create_and_layer (const std::string& prefix,
-      const int word_count, const int read_ports, 
-      const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& ram_inputs
-  );
-
-  std::vector<odb::dbNet*> decoder_selects(const std::string& prefix, const int port_index);
+  std::vector<odb::dbNet*> selectNets(const std::string& prefix, const int read_ports);
   
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
