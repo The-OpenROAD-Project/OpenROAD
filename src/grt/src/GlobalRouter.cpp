@@ -1623,10 +1623,11 @@ void GlobalRouter::updateResources(const int& init_x,
       grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
 }
 
+// Use release flag to increase rather than reduce resources on obstruction
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                               odb::dbTechLayer* tech_layer,
                                               bool is_macro,
-                                              bool has_release)
+                                              bool release)
 {
   // compute the intersection between obstruction and the die area
   // only when they are overlapping to avoid assert error during
@@ -1675,7 +1676,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
 
   std::vector<int> track_spaces;
-  if (has_release) {
+  if (release) {
     track_spaces = grid_->getTrackPitches();
   }
 
@@ -1693,7 +1694,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          first_tile_reduce_interval,
                                          last_tile_reduce_interval,
                                          track_spaces,
-                                         has_release);
+                                         release);
   } else {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
@@ -1708,7 +1709,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                        first_tile_reduce_interval,
                                        last_tile_reduce_interval,
                                        track_spaces,
-                                       has_release);
+                                       release);
   }
 }
 
@@ -4931,7 +4932,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         // if the nets have wires
         if (haveDetailedRoutes()) {
           // find nets on congestion areas using wires
-          findNetsWithWiresOnCongestion(congestion_nets);
+          getCongestionNets(congestion_nets);
         } else {
           // find nets on congestion areas using guides
           fastroute_->getCongestionNets(congestion_nets);
@@ -4982,8 +4983,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   return dirty_nets;
 }
 
-void GlobalRouter::findNetsWithWiresOnCongestion(
-    std::set<odb::dbNet*>& congestion_nets)
+// Get the nets that pass through the congestion area based on their wires
+void GlobalRouter::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 {
   std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
   // Get GCell positions with congestion

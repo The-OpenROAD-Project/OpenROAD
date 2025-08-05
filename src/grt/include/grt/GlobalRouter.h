@@ -295,7 +295,7 @@ class GlobalRouter
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
 
-  void findNetsWithWiresOnCongestion(std::set<odb::dbNet*>& congestion_nets);
+  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -326,7 +326,7 @@ class GlobalRouter
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer,
                                   bool is_macro = false,
-                                  bool has_release = false);
+                                  bool release = false);
   void savePositionWithReducedResources(const odb::Rect& rect,
                                         odb::dbTechLayer* tech_layer,
                                         odb::dbNet* db_net);

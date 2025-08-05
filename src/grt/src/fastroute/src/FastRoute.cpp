@@ -524,13 +524,13 @@ void FastRouteCore::addVerticalAdjustments(
     const interval<int>::type& first_tile_reduce_interval,
     const interval<int>::type& last_tile_reduce_interval,
     const std::vector<int>& track_space,
-    bool has_release)
+    bool release)
 {
   // Add intervals to set or release resources for each tile
   for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
       if (x == first_tile.getX()) {
-        if (has_release) {
+        if (release) {
           releaseResourcesOnInterval(
               x, y, layer, false, first_tile_reduce_interval, track_space);
         } else {
@@ -538,7 +538,7 @@ void FastRouteCore::addVerticalAdjustments(
               += first_tile_reduce_interval;
         }
       } else if (x == last_tile.getX()) {
-        if (has_release) {
+        if (release) {
           releaseResourcesOnInterval(
               x, y, layer, false, last_tile_reduce_interval, track_space);
         } else {
@@ -547,7 +547,7 @@ void FastRouteCore::addVerticalAdjustments(
         }
       } else {
         // Restore capacity removed by blockage
-        if (has_release) {
+        if (release) {
           int reduced = v_edges_3D_[layer - 1][y][x].red;
           addAdjustment(x, y, x, y + 1, layer, reduced, false);
         } else {
@@ -565,13 +565,13 @@ void FastRouteCore::addHorizontalAdjustments(
     const interval<int>::type& first_tile_reduce_interval,
     const interval<int>::type& last_tile_reduce_interval,
     const std::vector<int>& track_space,
-    bool has_release)
+    bool release)
 {
   // Add intervals to set or release resources for each tile
   for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
       if (y == first_tile.getY()) {
-        if (has_release) {
+        if (release) {
           releaseResourcesOnInterval(
               x, y, layer, true, first_tile_reduce_interval, track_space);
         } else {
@@ -579,7 +579,7 @@ void FastRouteCore::addHorizontalAdjustments(
               += first_tile_reduce_interval;
         }
       } else if (y == last_tile.getY()) {
-        if (has_release) {
+        if (release) {
           releaseResourcesOnInterval(
               x, y, layer, true, last_tile_reduce_interval, track_space);
         } else {
@@ -588,7 +588,7 @@ void FastRouteCore::addHorizontalAdjustments(
         }
       } else {
         // Restore capacity removed by blockage
-        if (has_release) {
+        if (release) {
           int reduced = h_edges_3D_[layer - 1][y][x].red;
           addAdjustment(x, y, x + 1, y, layer, reduced, false);
         } else {

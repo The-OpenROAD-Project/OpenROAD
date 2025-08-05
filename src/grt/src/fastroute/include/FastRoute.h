@@ -137,7 +137,7 @@ class FastRouteCore
       const interval<int>::type& first_tile_reduce_interval,
       const interval<int>::type& last_tile_reduce_interval,
       const std::vector<int>& track_space,
-      bool has_release = false);
+      bool release = false);
   void addHorizontalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
@@ -145,7 +145,7 @@ class FastRouteCore
       const interval<int>::type& first_tile_reduce_interval,
       const interval<int>::type& last_tile_reduce_interval,
       const std::vector<int>& track_space,
-      bool has_release = false);
+      bool release = false);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();
