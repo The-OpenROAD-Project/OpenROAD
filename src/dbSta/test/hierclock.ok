@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING ORD-0009] Hierarchical flow (-hier) is under development and it can cause multiple issues. Do not use this for production.
+[WARNING ORD-0011] Hierarchical flow (-hier) is under development and it can cause multiple issues. Do not use this for production.
 Startpoint: U2/_66_ (rising edge-triggered flip-flop clocked by clk1)
 Endpoint: U2/_66_ (rising edge-triggered flip-flop clocked by clk1)
 Path Group: clk1

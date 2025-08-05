@@ -463,7 +463,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
   // treat this as a hierarchical network.
   if (hierarchy) {
     logger_->warn(ORD,
-                  10,
+                  12,
                   "Hierarchical flow (-hier) is under development and it can "
                   "cause multiple issues. Do not use this for production.");
 
@@ -529,7 +529,7 @@ void OpenRoad::linkDesign(const char* design_name,
 
   if (hierarchy) {
     logger_->warn(ORD,
-                  9,
+                  11,
                   "Hierarchical flow (-hier) is under development and it can "
                   "cause multiple issues. Do not use this for production.");
 
