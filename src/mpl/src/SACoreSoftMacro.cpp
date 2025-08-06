@@ -555,7 +555,7 @@ void SACoreSoftMacro::calNotchPenalty()
   if (!isValid(outline_)) {;
     width = std::max(width_, outline_.getWidth());
     height = std::max(height_, outline_.getHeight());
-    notch_penalty_ = calSingleNotchPenalty(width, height) * notch_weight_;
+    notch_penalty_ = calSingleNotchPenalty(width, height);
     return;
   }
 

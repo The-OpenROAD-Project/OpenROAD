@@ -718,10 +718,6 @@ void SimulatedAnnealingCore<T>::fastSA()
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
 
-  // Used to ensure notch penalty is used only in the latter steps
-  // as it is too expensive
-  // notch_weight_ = 0.0;
-
   if (isValid()) {
     updateBestValidResult(cost);
   }
