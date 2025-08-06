@@ -1924,7 +1924,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageH(x, y);
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      logger_->report(">>> 2D H Overflow: x{} y{}",x,y);
+      //logger_->report(">>> 2D H Overflow: x{} y{}",x,y);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -1935,7 +1935,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageV(x, y);
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      logger_->report(">>> 2D V Overflow: x{} y{}",x,y);
+      //logger_->report(">>> 2D V Overflow: x{} y{}",x,y);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -1982,7 +1982,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 int FastRouteCore::getOverflow2D(int* maxOverflow)
 {
   // check 2D edges for invalid usage values
-  check2DEdgesUsage();
+  //check2DEdgesUsage(); // TODO: check est_usage instead of usage for this
 
   // get overflow
   int H_overflow = 0;
@@ -2100,6 +2100,7 @@ int FastRouteCore::getOverflow3D()
       overflow = h_edges_3D_[k][y][x].usage - h_edges_3D_[k][y][x].cap;
 
       if (overflow > 0) {
+        logger_->report(">>> 3D H Overflow: x{} y{} l{}",x,y,k);
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
       }
@@ -2108,6 +2109,7 @@ int FastRouteCore::getOverflow3D()
       total_usage += v_edges_3D_[k][y][x].usage;
       overflow = v_edges_3D_[k][y][x].usage - v_edges_3D_[k][y][x].cap;
       if (overflow > 0) {
+        logger_->report(">>> 3D V Overflow: x{} y{} l{}",x,y,k);
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
       }

@@ -881,7 +881,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             }
           }
         } else {
-          // if(net->getDbNet() == debug_->net_){
+          // if(net->getDbNet() == debug_->net){
           //   logger_->report(">>> {} curY:{} regionY1/Y2:{}/{} ExtraCost:{} South:{} North:{} Up:{} Down:{}",
           //       net->getName(),curY, regionY1, regionY2, ndr_extra_cost,
           //     directions_3D_[curL][curY][curX] == Direction::South, 

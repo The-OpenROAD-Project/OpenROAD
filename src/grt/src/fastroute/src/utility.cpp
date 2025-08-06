@@ -433,10 +433,10 @@ void FastRouteCore::assignEdge(const int netID,
         } else {
           layer_grid[l][k] = std::numeric_limits<int>::min();
         }
-        if(min_y == 55 && grids[k].x==152){
-          logger_->report("--- {} x{} y{} V:{} best_cost:{} layer_grid:{}", 
-                          net->getName(), grids[k].x, min_y, is_vertical, best_cost, layer_grid[l][k]);
-        }
+        // if(min_y == 55 && grids[k].x==152){
+        //   logger_->report("--- {} x{} y{} V:{} best_cost:{} layer_grid:{}", 
+        //                   net->getName(), grids[k].x, min_y, is_vertical, best_cost, layer_grid[l][k]);
+        // }
       }
 
       // assigning the edge to the layer range would cause overflow try to
@@ -1634,7 +1634,7 @@ void FastRouteCore::printTree2D(const int netID)
   }
 
   for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
-    printEdge2D(netID, edgeID);
+    // printEdge2D(netID, edgeID);
   }
 }
 

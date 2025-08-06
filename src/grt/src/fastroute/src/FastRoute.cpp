@@ -1106,11 +1106,11 @@ NetRouteMap FastRouteCore::run()
   // graph2d_.printEdgeCapPerLayer();
   gen_brk_RSMT(false, false, false, false, noADJ);
   logger_->report("=== Before pattern routing phases ===");
-  getOverflow2D(&maxOverflow);
+  //getOverflow2D(&maxOverflow);
 
   routeLAll(true);
   logger_->report("=== After routeLAll ===");
-  getOverflow2D(&maxOverflow);
+  //getOverflow2D(&maxOverflow);
 
   gen_brk_RSMT(true, true, true, false, noADJ);
   logger_->report("=== After gen_brk_RSMT 2 ===");
@@ -1536,7 +1536,7 @@ NetRouteMap FastRouteCore::run()
   via_cost_ = 1;
 
   if (goingLV && past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 20);
+    mazeRouteMSMDOrder3D(enlarge_, 0, 40); // TODO: check this value 20 -> 40
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
 
