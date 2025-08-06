@@ -2178,11 +2178,34 @@ void GlobalRouter::loadGuidesFromDB()
     mergeSegments(pins, route);
   }
 
+  for (auto& [db_net, groute] : routes_) {
+    ensurePinsPositions(db_net);
+  }
+
   updateEdgesUsage();
   if (block_->getGCellGrid() == nullptr) {
     updateDbCongestion();
   }
   heatmap_->update();
+}
+
+void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
+{
+  std::string pins_not_covered;
+  netIsCovered(db_net, pins_not_covered);
+  if (!pins_not_covered.empty()) {
+    Net* net = db_net_map_[db_net];
+    for (Pin& pin : net->getPins()) {
+      if (pins_not_covered.find(pin.getName()) != std::string::npos) {
+        bool has_aps;
+        odb::Point pos_on_grid;
+        std::vector<odb::Point> pin_positions_on_grid
+            = findOnGridPositions(pin, has_aps, pos_on_grid, true);
+        computePinPositionOnGrid(
+            pin_positions_on_grid, pin, pos_on_grid, has_aps);
+      }
+    }
+  }
 }
 
 void GlobalRouter::updateVias()
