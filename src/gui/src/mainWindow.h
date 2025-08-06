@@ -276,6 +276,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // used to check if user intends to close Openroad or just the GUI.
   void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
  private slots:
   void setBlock(odb::dbBlock* block);
@@ -306,6 +307,10 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   Labels labels_;
 
   int arrow_keys_scroll_step_;
+
+  bool first_show_{true};
+  std::optional<QByteArray> saved_geometry_;
+  std::optional<QByteArray> saved_state_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.

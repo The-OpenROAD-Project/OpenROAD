@@ -92,16 +92,6 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
-  // Size and position the window
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QSize size = screen()->availableGeometry().size();
-#else
-  QSize size = QDesktopWidget().availableGeometry(this).size();
-#endif
-
-  resize(size * 0.8);
-  move(size.width() * 0.1, size.height() * 0.1);
-
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
   script_->setWidgetFont(font);
@@ -399,8 +389,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
     // Restore the settings (if none this is a no-op)
     QSettings settings("OpenRoad Project", "openroad");
     settings.beginGroup("main");
-    restoreGeometry(settings.value("geometry").toByteArray());
-    restoreState(settings.value("state").toByteArray());
+    // Save these for the showEvent as the window manager may not respect them
+    // if restore here.
+    saved_geometry_ = settings.value("geometry").toByteArray();
+    saved_state_ = settings.value("state").toByteArray();
     QApplication::setFont(
         settings.value("font", QApplication::font()).value<QFont>());
     hide_option_->setChecked(
@@ -436,6 +428,31 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       = [this](const std::string& value, bool* ok) -> int {
     return convertStringToDBU(value, ok);
   };
+}
+
+void MainWindow::showEvent(QShowEvent* event)
+{
+  QWidget::showEvent(event);
+
+  if (!first_show_) {
+    return;
+  }
+
+  if (saved_geometry_.has_value() && saved_state_.has_value()) {
+    restoreGeometry(saved_geometry_.value());
+    restoreState(saved_state_.value());
+  } else {
+    // Default size and position the window
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QSize size = screen()->availableGeometry().size();
+#else
+    QSize size = QDesktopWidget().availableGeometry(this).size();
+#endif
+
+    resize(size * 0.8);
+    move(size.width() * 0.1, size.height() * 0.1);
+  }
+  first_show_ = false;
 }
 
 MainWindow::~MainWindow()
