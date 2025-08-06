@@ -346,7 +346,7 @@ class GlobalRouter
   void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
-                                const bool has_access_points);
+                                bool has_access_points);
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
                          int& root_idx);
