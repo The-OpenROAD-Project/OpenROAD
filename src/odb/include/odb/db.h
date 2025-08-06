@@ -8088,7 +8088,7 @@ class dbModInst : public dbObject
 
   dbSet<dbModITerm> getModITerms();
 
-  void RemoveUnusedPortsAndPins();
+  void removeUnusedPortsAndPins();
 
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.

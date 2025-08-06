@@ -345,7 +345,7 @@ dbModITerm* dbModInst::findModITerm(const char* name)
   return nullptr;
 }
 
-void dbModInst::RemoveUnusedPortsAndPins()
+void dbModInst::removeUnusedPortsAndPins()
 {
   _dbModInst* obj = (_dbModInst*) this;
   utl::Logger* logger = obj->getLogger();

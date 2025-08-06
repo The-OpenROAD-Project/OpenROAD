@@ -291,7 +291,10 @@ class dbNetwork : public ConcreteNetwork
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
   dbNet* flatNet(const Net* net) const;
-  Net* getFlatNet(Net* net) const;
+  Net* getOrFindFlatNet(const Net* net) const;
+  dbNet* getOrFindFlatDbNet(const Net* net) const;
+  Net* getOrFindFlatNet(const Pin* pin) const;
+  dbNet* getOrFindFlatDbNet(const Pin* pin) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
