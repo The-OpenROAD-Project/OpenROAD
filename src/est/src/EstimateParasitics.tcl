@@ -385,6 +385,12 @@ proc check_corner_wire_caps { } {
   return $have_rc
 }
 
+proc check_parasitics { } {
+  if { ![est::have_estimated_parasitics] } {
+    utl::warn EST 27 "no estimated parasitics. Using wire load models."
+  }
+}
+
 proc dblayer_wire_rc { layer } {
   set layer_width_dbu [$layer getWidth]
   set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]

@@ -167,7 +167,7 @@ proc repair_design { args } {
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
-  rsz::check_parasitics
+  est::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
@@ -186,7 +186,7 @@ proc repair_clock_nets { args } {
 
 
   sta::check_argc_eq0 "repair_clock_nets" $args
-  rsz::check_parasitics
+  est::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length true]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
@@ -343,7 +343,7 @@ proc repair_timing { args } {
   }
 
   sta::check_argc_eq0 "repair_timing" $args
-  rsz::check_parasitics
+  est::check_parasitics
 
   set recovered_power 0
   set repaired_setup 0
@@ -770,7 +770,7 @@ proc report_buffers { args } {
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
-  check_parasitics
+  est::check_parasitics
   repair_setup_pin_cmd $end_pin
 }
 
@@ -791,12 +791,6 @@ proc set_debug { args } {
 
 proc report_swappable_pins { } {
   report_swappable_pins_cmd
-}
-
-proc check_parasitics { } {
-  if { ![est::have_estimated_parasitics] } {
-    utl::warn RSZ 21 "no estimated parasitics. Using wire load models."
-  }
 }
 
 proc parse_time_margin_arg { key keys_var } {
