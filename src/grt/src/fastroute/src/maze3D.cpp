@@ -666,7 +666,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
     FrNet* net = nets_[netID];
-    int ndr_extra_cost = 0;
+    int extra_cost = 0;
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -776,15 +776,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
         removeMin3D(src_heap_3D_);
 
-        // If Net has NDR, get its cost - default cost = extra cost
-        // if(net->getDbNet()->getNonDefaultRule()){
-          // ndr_extra_cost = net->getLayerEdgeCost(curL) - 1;
-        // }
-        ndr_extra_cost = net->getLayerEdgeCost(curL);
-
-        // if(curX == 152 && curY == 55){
-        //     logger_->report("zzz Net at x{} y{}: {} {} {}", curX, curY, net->getName(), curL, (net->getDbNet()->getNonDefaultRule()!=nullptr));
-        // }
+        // If Net has NDR, use its cost as extra cost
+        extra_cost = net->getLayerEdgeCost(curL);
 
         const bool Horizontal
             = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
@@ -794,7 +787,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (curX > regionX1
               && directions_3D_[curL][curY][curX] != Direction::East) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
-            if (h_edges_3D_[curL][curY][curX - 1].usage + ndr_extra_cost
+            if (h_edges_3D_[curL][curY][curX - 1].usage + extra_cost
                     <= h_edges_3D_[curL][curY][curX - 1].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               const int tmpX = curX - 1;  // the left neighbor
@@ -841,7 +834,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpX = curX + 1;  // the right neighbor
 
-            if (h_edges_3D_[curL][curY][curX].usage + ndr_extra_cost
+            if (h_edges_3D_[curL][curY][curX].usage + extra_cost
                     <= h_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][curY][tmpX]
@@ -883,7 +876,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         } else {
           // if(net->getDbNet() == debug_->net){
           //   logger_->report(">>> {} curY:{} regionY1/Y2:{}/{} ExtraCost:{} South:{} North:{} Up:{} Down:{}",
-          //       net->getName(),curY, regionY1, regionY2, ndr_extra_cost,
+          //       net->getName(),curY, regionY1, regionY2, extra_cost,
           //     directions_3D_[curL][curY][curX] == Direction::South, 
           //     directions_3D_[curL][curY][curX] == Direction::North,
           //     directions_3D_[curL][curY][curX] == Direction::Up,
@@ -897,7 +890,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D_[curL][curY][curX] != Direction::South) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY - 1;  // the bottom neighbor
-            if (v_edges_3D_[curL][curY - 1][curX].usage + ndr_extra_cost
+            if (v_edges_3D_[curL][curY - 1][curX].usage + extra_cost
                     <= v_edges_3D_[curL][curY - 1][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
@@ -941,7 +934,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D_[curL][curY][curX] != Direction::North) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY + 1;  // the top neighbor
-            if (v_edges_3D_[curL][curY][curX].usage + ndr_extra_cost
+            if (v_edges_3D_[curL][curY][curX].usage + extra_cost
                     <= v_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
@@ -1185,17 +1178,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             std::swap(edge_n1A1, edge_n1A2);
           }
 
-          // DEBUG clknet
-          // if(net->getDbNet() == debug_->net_){
-          //   logger_->report("xxx Before updateRouteType13D 1261 xxx");
-          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-          //     for (const int& netID : net_ids_) {
-          //       if (nets_[netID]->getDbNet() == debug_->net_) {
-          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-          //       }
-          //     }
-          //   }
-          // }
           // update route for edge (n1, A1), (n1, A2)
           updateRouteType13D(netID,
                              treenodes,
@@ -1218,18 +1200,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const int C1 = endpt1;
           const int C2 = endpt2;
           const int edge_C1C2 = corr_edge_3D_[origL][E1y][E1x];
-
-          // DEBUG clknet
-          // if(net->getDbNet() == debug_->net_){
-          //   logger_->report("xxx Before updateRouteType23D 1285 xxx");
-          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-          //     for (const int& netID : net_ids_) {
-          //       if (nets_[netID]->getDbNet() == debug_->net_) {
-          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-          //       }
-          //     }
-          //   }
-          // }
 
           // update route for edge (n1, C1), (n1, C2) and (A1, A2)
           updateRouteType23D(netID,
@@ -1366,17 +1336,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             std::swap(edge_n2B1, edge_n2B2);
           }
 
-          // DEBUG clknet
-          // if(net->getDbNet() == debug_->net_){
-          //   logger_->report("xxx Before updateRouteType13D 1431 xxx");
-          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-          //     for (const int& netID : net_ids_) {
-          //       if (nets_[netID]->getDbNet() == debug_->net_) {
-          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-          //       }
-          //     }
-          //   }
-          // }
           // update route for edge (n2, B1), (n2, B2)
           updateRouteType13D(netID,
                              treenodes,
@@ -1389,17 +1348,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              edge_n2B1,
                              edge_n2B2);
 
-          // DEBUG clknet
-          // if(net->getDbNet() == debug_->net_){
-          //   logger_->report("xxx After updateRouteType13D 1431 xxx");
-          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-          //     for (const int& netID : net_ids_) {
-          //       if (nets_[netID]->getDbNet() == debug_->net_) {
-          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-          //       }
-          //     }
-          //   }
-          // }
 
           // update position for n2
           treenodes[n2].assigned = true;
@@ -1409,17 +1357,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const int D1 = endpt1;
           const int D2 = endpt2;
           const int edge_D1D2 = corr_edge_3D_[origL][E2y][E2x];
-          // DEBUG clknet
-          // if(net->getDbNet() == debug_->net_){
-          //   logger_->report("xxx Before updateRouteType23D 1462 xxx");
-          //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-          //     for (const int& netID : net_ids_) {
-          //       if (nets_[netID]->getDbNet() == debug_->net_) {
-          //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-          //       }
-          //     }
-          //   }
-          // }
+
           // update route for edge (n2, d1_3D), (n2, d2_3D) and (B1, B2)
           updateRouteType23D(netID,
                              treenodes,
@@ -1496,18 +1434,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         newUpdateNodeLayers(treenodes, edge_n1n2, n2a, lastL);
       }
 
-      // DEBUG clknet
-      // if(net->getDbNet() == debug_->net_){
-      //   logger_->report("xxx DEBUG1 xxx");
-      //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-      //     for (const int& netID : net_ids_) {
-      //       if (nets_[netID]->getDbNet() == debug_->net_) {
-      //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-      //       }
-      //     }
-      //   }
-      // }
-
       const int newcnt_n1n2 = tailRoom - headRoom + 1;
 
       // update route for edge (n1, n2) and edge usage
@@ -1527,7 +1453,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       // DEBUG clknet
       if(net->getDbNet() == debug_->net){
-        logger_->report("xxx DEBUG2 xxx");
+        logger_->report("xxx maze3D before resource update xxx");
         if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
             if (nets_[netID]->getDbNet() == debug_->net) {
@@ -1543,33 +1469,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         j++;
       }
 
-      
-      // if(net->getDbNet() == debug_->net_){
-      //   logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === Before update", net->getName(), expand, ripupTHlb, ripupTHub);
-      //   logger_->report("x1/x2: {}/{} y1/y2: {}/{}",xmin, xmax, ymin, ymax);
-      //   int maxO, tU;
-      //   getOverflow3D();
-      //   getOverflow2Dmaze(&maxO,&tU);
-      //   // logger_->report("=== 3D/2D cong: {}/{}", total_overflow_, getOverflow2Dmaze(&maxO,&tU));
-      //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-      //     for (const int& netID : net_ids_) {
-      //       if (nets_[netID]->getDbNet() == debug_->net_) {
-      //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-      //       }
-      //     }
-      //   }
-      // }
-
       // update edge usage
       for (int i = headRoom; i < tailRoom; i++) {
         if (grids[i].layer == grids[i + 1].layer) {
           if (grids[i].x == grids[i + 1].x)  // a vertical edge
           {
             const int min_y = std::min(grids[i].y, grids[i + 1].y);
-            graph2d_.updateUsageV(grids[i].x, min_y, net, net->getLayerEdgeCost(grids[i].layer));
+            graph2d_.updateUsageV(grids[i].x, min_y, net, net->getEdgeCost());
             v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
                 += net->getLayerEdgeCost(grids[i].layer);
-          } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
+          } else  /// if(grids[i].y==grids[i+1].y)// a horizontal edge
           {
             const int min_x = std::min(grids[i].x, grids[i + 1].x);
             graph2d_.updateUsageH(min_x, grids[i].y, net, net->getLayerEdgeCost(grids[i].layer));
@@ -1580,7 +1489,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }
 
       if(net->getDbNet() == debug_->net){
-        logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === After update", net->getName(), expand, ripupTHlb, ripupTHub);
+        logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === maze3D After update", net->getName(), expand, ripupTHlb, ripupTHub);
         int maxO, tU;
         getOverflow3D();
         getOverflow2Dmaze(&maxO,&tU);

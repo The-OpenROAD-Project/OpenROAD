@@ -171,7 +171,7 @@ void Graph2D::addEstUsageH(const Interval& xi, const int y, const double usage)
 {
   for (int x = xi.lo; x < xi.hi; x++) {
     h_edges_[x][y].est_usage += usage;
-    if (usage != 0) { // TODO: check if the correct is ">" or "!="
+    if (usage > 0) { // TODO: check if the correct is ">" or "!="
       h_used_ggrid_.insert({x, y});
     }
   }
@@ -183,8 +183,6 @@ void Graph2D::updateEstUsageH(const Interval& xi, const int y, FrNet* net, const
 {
   for (int x = xi.lo; x < xi.hi; x++) {
     updateEstUsageH(x, y, net, edge_cost);
-
-    // logger_->report("EstUsage: {} x{} y{} - {}", net->getName(), x, y, getEstUsageH(x,y));
   }
 }
 
@@ -199,7 +197,7 @@ void Graph2D::updateEstUsageH(const int x, const int y, FrNet* net, const double
 void Graph2D::addEstUsageH(const int x, const int y, const double usage)
 {
   h_edges_[x][y].est_usage += usage;
-  if (usage != 0) {
+  if (usage > 0) {
     h_used_ggrid_.insert({x, y});
   }
 }
@@ -213,7 +211,7 @@ void Graph2D::addEstUsageV(const int x, const Interval& yi, const double usage)
 {
   for (int y = yi.lo; y < yi.hi; y++) {
     v_edges_[x][y].est_usage += usage;
-    if (usage != 0) {
+    if (usage > 0) {
       v_used_ggrid_.insert({x, y});
     }
   }
@@ -223,7 +221,6 @@ void Graph2D::updateEstUsageV(const int x, const Interval& yi, FrNet* net, const
 {
   for (int y = yi.lo; y < yi.hi; y++) {
     updateEstUsageV(x, y, net, edge_cost);
-    // logger_->report("EstUsage: {} x{} y{} - {}", net->getName(), x, y, getEstUsageV(x,y));
   }
 }
 
@@ -231,7 +228,7 @@ void Graph2D::updateEstUsageV(const int x, const int y, FrNet* net, const double
 {
   double usage = getCostNDRAware(net, x, y, edge_cost, EdgeDirection::Vertical);
   v_edges_[x][y].est_usage += usage;
-  if (usage != 0) {
+  if (usage > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }
@@ -239,7 +236,7 @@ void Graph2D::updateEstUsageV(const int x, const int y, FrNet* net, const double
 void Graph2D::addEstUsageV(const int x, const int y, const double usage)
 {
   v_edges_[x][y].est_usage += usage;
-  if (usage != 0) {
+  if (usage > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }
@@ -260,7 +257,7 @@ void Graph2D::addUsageH(const Interval& xi, const int y, const int used)
 {
   for (int x = xi.lo; x < xi.hi; x++) {
     h_edges_[x][y].usage += used;
-    if (used != 0) {
+    if (used > 0) {
       h_used_ggrid_.insert({x, y});
     }
   }
@@ -270,7 +267,7 @@ void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
 {
   for (int y = yi.lo; y < yi.hi; y++) {
     v_edges_[x][y].usage += used;
-    if (used != 0) {
+    if (used > 0) {
       v_used_ggrid_.insert({x, y});
     }
   }
@@ -279,7 +276,7 @@ void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
 void Graph2D::addUsageH(const int x, const int y, const int used)
 {
   h_edges_[x][y].usage += used;
-  if (used != 0) {
+  if (used > 0) {
     h_used_ggrid_.insert({x, y});
   }
 }
@@ -288,7 +285,7 @@ void Graph2D::updateUsageH(const int x, const int y, FrNet* net, const int used)
 {
   int usage = getCostNDRAware(net, x, y, used, EdgeDirection::Horizontal);
   h_edges_[x][y].usage += usage;
-  if (usage != 0) {
+  if (usage > 0) {
     h_used_ggrid_.insert({x, y});
   }
 }
@@ -303,16 +300,16 @@ void Graph2D::updateUsageH(const Interval& xi, const int y, FrNet* net, const in
 void Graph2D::addUsageV(const int x, const int y, const int used)
 {
   v_edges_[x][y].usage += used;
-  if (used != 0) {
+  if (used > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }
 
 void Graph2D::updateUsageV(const int x, const int y, FrNet* net, const int used)
 {
-  int usage = getCostNDRAware(net, x, y, used, EdgeDirection::Vertical);
+  uint16_t usage = getCostNDRAware(net, x, y, used, EdgeDirection::Vertical);
   v_edges_[x][y].usage += usage;
-  if (usage != 0) {
+  if (usage > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }

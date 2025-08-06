@@ -386,8 +386,8 @@ void FastRouteCore::initEdges()
   }
 }
 
-// useful to prevent NDR nets to be assigned to 3D edges with insufficient capacity
-// need to be initialized after all the adjustments
+// Useful to prevent NDR nets to be assigned to 3D edges with insufficient capacity.
+// Need to be initialized after all the adjustments
 void FastRouteCore::initEdgesCapacityPerLayer()
 {
   graph2d_.initCap3D();
@@ -636,81 +636,6 @@ int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
       214,
       "Cannot get edge capacity: edge is not vertical or horizontal.");
 }
-
-bool FastRouteCore::verifyNDRCapacity(FrNet* net,
-                                   int x1,
-                                   int y1,
-                                   EdgeDirection direction)
-{  
-  // Check if this is an NDR net
-  bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
-  int ndr_cost=0;
-  
-  if (is_ndr) {
-      // For NDR nets, we need at least one layer with sufficient capacity
-      int max_single_layer_cap = 0;
-      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-        ndr_cost = net->getLayerEdgeCost(l);
-        int layer_cap = 0;
-        if (direction == EdgeDirection::Horizontal) {
-            layer_cap = h_edges_3D_[l][y1][x1].cap;
-        } else {
-            layer_cap = v_edges_3D_[l][y1][x1].cap;
-        }
-        max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
-      }
-
-      // logger_->report("=== Max Layer Cap: {} x{} y{} max {}",net->getName(), x1, y1, max_single_layer_cap);
-      
-      // No single layer can accommodate this NDR net
-      if (max_single_layer_cap < ndr_cost) {
-          return false; 
-      }
-  }
-  return true;
-}
-
-// int FastRouteCore::getEdgeCapacityNDRAware(FrNet* net,
-//                                    int x1,
-//                                    int y1,
-//                                    EdgeDirection direction)
-// {
-//   int cap = 0;
-    
-//   // Check if this is an NDR net
-//   bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
-//   int ndr_cost = net->getEdgeCost();
-  
-//   if (is_ndr) {
-//       // For NDR nets, we need at least one layer with sufficient capacity
-//       int max_single_layer_cap = 0;
-//       for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-//           int layer_cap = 0;
-//           if (direction == EdgeDirection::Horizontal) {
-//               layer_cap = h_edges_3D_[l][y1][x1].cap;
-//           } else {
-//               layer_cap = v_edges_3D_[l][y1][x1].cap;
-//           }
-//           max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
-//       }
-      
-//       // No single layer can accommodate this NDR net
-//       if (max_single_layer_cap < ndr_cost) {
-//           return 0; 
-//       }
-//   }
-
-//   // get 2D edge capacity respecting layer restrictions
-//   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-//     if (direction == EdgeDirection::Horizontal) {
-//       cap += h_edges_3D_[l][y1][x1].cap;
-//     } else {
-//       cap += v_edges_3D_[l][y1][x1].cap;
-//     }
-//   }
-
-//   return cap;
-// }
 
 int FastRouteCore::getEdgeCapacity(FrNet* net,
                                    int x1,
@@ -1106,55 +1031,22 @@ NetRouteMap FastRouteCore::run()
   // graph2d_.printEdgeCapPerLayer();
   gen_brk_RSMT(false, false, false, false, noADJ);
   logger_->report("=== Before pattern routing phases ===");
-  //getOverflow2D(&maxOverflow);
 
   routeLAll(true);
   logger_->report("=== After routeLAll ===");
-  //getOverflow2D(&maxOverflow);
 
   gen_brk_RSMT(true, true, true, false, noADJ);
   logger_->report("=== After gen_brk_RSMT 2 ===");
-  // Debug Tree 2D
-  if (debug_->isOn()) {
-    for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net) {
-        printTree2D(netID);
-      }
-    }
-  }
 
   getOverflow2D(&maxOverflow);
   newrouteLAll(false, true);
   logger_->report("=== After newrouteLAll ===");
-  // Debug Tree 2D
-  if (debug_->isOn()) {
-    for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net) {
-        printTree2D(netID);
-      }
-    }
-  }
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
   logger_->report("=== After spiralRouteAll ===");
-  // Debug Tree 2D
-  if (debug_->isOn()) {
-    for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net) {
-        printTree2D(netID);
-      }
-    }
-  }
   newrouteZAll(10);
   logger_->report("=== After newrouteZAll ===");
-  // Debug Tree 2D
-  if (debug_->isOn()) {
-    for (const int& netID : net_ids_) {
-      if (nets_[netID]->getDbNet() == debug_->net) {
-        printTree2D(netID);
-      }
-    }
-  }
+
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
@@ -1452,7 +1344,8 @@ NetRouteMap FastRouteCore::run()
 
     logger_->report("=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - OverflowIncreases {} - MaxOverIncr {} ===",
         i, total_overflow_, overflow_iterations_, overflow_increases, max_overflow_increases);
-    // debug mode Rectilinear Steiner Tree before overflow iterations
+
+    // debug mode Rectilinear Steiner Tree during overflow iterations
     if (debug_->isOn() && debug_->rectilinearSTree) {
       for (const int& netID : net_ids_) {
         if (nets_[netID]->getDbNet() == debug_->net) {
@@ -1540,7 +1433,6 @@ NetRouteMap FastRouteCore::run()
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
 
-  // logger_->report("After MazeRoute3D - 2D/3Dcong: {}/{}", getOverflow2Dmaze(&maxOverflow, &tUsage), total_overflow_);
   logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree) {
@@ -1562,7 +1454,6 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
   }
 
-  // logger_->report("Tree 3D after layer assignment - Overflow (2D/3D): {}/{}", getOverflow2Dmaze(&maxOverflow, &tUsage), total_overflow_);
   logger_->report("Tree 3D after layer assignment - Overflow (3D): {}", total_overflow_);
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D) {

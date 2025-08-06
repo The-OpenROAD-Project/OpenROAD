@@ -1924,7 +1924,6 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageH(x, y);
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      //logger_->report(">>> 2D H Overflow: x{} y{}",x,y);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -1935,7 +1934,6 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageV(x, y);
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      //logger_->report(">>> 2D V Overflow: x{} y{}",x,y);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -1958,16 +1956,6 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     logger_->report("Final overflow       : {}\n", total_overflow_);
   }
 
-  // std::set<odb::dbNet*> congestion_nets;
-  // getCongestionNets(congestion_nets);
-
-  // // ==> DEBUGGING PRINT <==
-  // logger_->report("DEBUG: Nets involved in overflow:");
-  // for (odb::dbNet* net : congestion_nets) {
-  //     logger_->report(" - {}", net->getConstName());
-  // }
-  // // ==> DEBUGGING PRINT <==
-
   *tUsage = total_usage;
 
   if (total_usage > 800000) {
@@ -1982,7 +1970,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 int FastRouteCore::getOverflow2D(int* maxOverflow)
 {
   // check 2D edges for invalid usage values
-  //check2DEdgesUsage(); // TODO: check est_usage instead of usage for this
+  check2DEdgesUsage(); // TODO: check est_usage instead of usage for this
 
   // get overflow
   int H_overflow = 0;
@@ -2000,7 +1988,6 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = graph2d_.getEstUsageH(x, y) - graph2d_.getCapH(x, y);
     hCap += graph2d_.getCapH(x, y);
     if (overflow > 0) {
-     // logger_->report(">>> 2D H Overflow: x{} y{}",i,j);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -2012,7 +1999,6 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
-     // logger_->report(">>> 2D V Overflow: x{} y{}",i,j);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -2045,43 +2031,6 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
 
   return total_overflow_;
 }
-
-// int FastRouteCore::getOverflow3D()
-// {
-//   // get overflow
-//   int overflow = 0;
-//   int H_overflow = 0;
-//   int V_overflow = 0;
-//   int max_H_overflow = 0;
-//   int max_V_overflow = 0;
-
-//   int total_usage = 0;
-//   /// Get location and nets involved  
-
-//   for (int k = 0; k < num_layers_; k++) {
-//     for (const auto& [i, j] : h_used_ggrid_) {
-//       total_usage += h_edges_3D_[k][i][j].usage;
-//       overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
-
-//       if (overflow > 0) {
-//         H_overflow += overflow;
-//         max_H_overflow = std::max(max_H_overflow, overflow);
-//       }
-//     }
-//     for (const auto& [i, j] : v_used_ggrid_) {
-//       total_usage += v_edges_3D_[k][i][j].usage;
-//       overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
-//       if (overflow > 0) {
-//         V_overflow += overflow;
-//         max_V_overflow = std::max(max_V_overflow, overflow);
-//       }
-//     }
-//   }
-
-//   total_overflow_ = H_overflow + V_overflow;
-
-//   return total_usage;
-// }
 
 int FastRouteCore::getOverflow3D()
 {
@@ -2118,13 +2067,14 @@ int FastRouteCore::getOverflow3D()
 
     total_overflow_ = H_overflow + V_overflow;
     
-    logger_->report("=== Total 3D Overflow Summary ===");
-    logger_->report("Total H overflow: {}", H_overflow);
-    logger_->report("Total V overflow: {}", V_overflow);
-    logger_->report("Max H overflow: {}", max_H_overflow);
-    logger_->report("Max V overflow: {}", max_V_overflow);
-    logger_->report("Total overflow: {}", total_overflow_);
-    //logger_->report("Number of overflow locations: {}", overflow_locations.size());
+    if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+      logger_->report("=== Total 3D Overflow Summary ===");
+      logger_->report("Total H overflow: {}", H_overflow);
+      logger_->report("Total V overflow: {}", V_overflow);
+      logger_->report("Max H overflow: {}", max_H_overflow);
+      logger_->report("Max V overflow: {}", max_V_overflow);
+      logger_->report("Total overflow: {}", total_overflow_);
+    }
 
     return total_usage;
 }

@@ -1268,15 +1268,7 @@ void GlobalRouter::computeTrackConsumption(
       int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
-      // if (consumption >= 2) {
-      //   consumption++;
-      // }
-      // Needs two times the spacing to block adjacent tracks
-      // int consumption = std::round(2*(float) ndr_pitch / default_pitch);
-      // int consumption = std::round((float) ndr_pitch / default_pitch);
-      // int consumption = ndr_pitch / default_pitch;
-      // consumption = (consumption == 0) ? 1 : consumption;
-      
+            
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
       track_consumption = std::max(track_consumption, consumption);
@@ -4923,13 +4915,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         // The nets that cross the congestion area are obtained and added to
         // the set
         fastroute_->getCongestionNets(congestion_nets);
-
-        // ==> DEBUGGING PRINT <==
-        // logger_->report("DEBUG: Nets selected for rerouting in this iteration:");
-        // for (odb::dbNet* net : congestion_nets) {
-        //     logger_->report(" - {}", net->getConstName());
-        // }
-        // ==> DEBUGGING PRINT <==
 
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
