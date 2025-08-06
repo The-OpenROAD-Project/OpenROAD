@@ -369,6 +369,9 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
 
   std::unique_ptr<utl::Progress> cli_progress_ = nullptr;
+
+  std::unique_ptr<QTimer> selection_timer_;
+  std::unique_ptr<QTimer> highlight_timer_;
 };
 
 }  // namespace gui
