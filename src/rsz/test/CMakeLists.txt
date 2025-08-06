@@ -161,10 +161,12 @@ or_integration_tests(
     repair_setup7_multi
     report_equiv_cells
     replace_arith_modules1
-    report_buffers_sky130hd
-    report_buffers_gf180
     report_buffers_asap7
     report_buffers_nangate45
+    report_buffers_ihp
+    report_buffers_sky130hs
+    report_buffers_sky130hd
+    report_buffers_gf180
   PASSFAIL_TESTS
     cpp_tests
 )

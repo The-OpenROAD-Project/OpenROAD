@@ -30,3 +30,4 @@
 [DEBUG ODB-dbReadVerilog] created mod_net clk in module block1_b2
 [DEBUG ODB-dbReadVerilog] created mod_net out in module top
 [DEBUG ODB-dbReadVerilog] created mod_net out in module block1_b2
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.

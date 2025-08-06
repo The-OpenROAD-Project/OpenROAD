@@ -528,6 +528,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                             LibertyCell* better,
                             float max_drive_resist);
   void findBuffers();
+  void findBuffersNoPruning();
   void findFastBuffers();
   LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
@@ -875,6 +876,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool default_sizing_leakage_limit_set_ = true;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
+  bool disable_buffer_pruning_ = false;
 
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;

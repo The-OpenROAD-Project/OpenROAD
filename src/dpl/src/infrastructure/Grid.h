@@ -35,11 +35,11 @@ struct Pixel
 {
   Node* cell = nullptr;
   Group* group = nullptr;
-  double util = 0.0;
+  float util = 0.0;
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
-  std::map<dbSite*, dbOrientType> sites;
   uint8_t blocked_layers = 0;
+  std::map<dbSite*, dbOrientType> sites;
   std::unordered_set<Node*>
       padding_reserved_by;  // Cells that reserved this pixel for padding
 };
