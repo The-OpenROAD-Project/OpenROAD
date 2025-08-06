@@ -40,7 +40,6 @@ cc_library(
         ":private_hdrs",
         "//src/dbSta",
         "//src/grt",
-        "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/stt",
