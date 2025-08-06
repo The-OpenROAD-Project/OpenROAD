@@ -337,9 +337,15 @@ class GlobalRouter
   // aux functions
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
                                               bool& has_access_points,
-                                              odb::Point& pos_on_grid);
+                                              odb::Point& pos_on_grid,
+                                              bool ignore_db_access_points
+                                              = false);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
+  void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
+                                Pin& pin,
+                                odb::Point& pos_on_grid,
+                                const bool has_access_points);
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
                          int& root_idx);
