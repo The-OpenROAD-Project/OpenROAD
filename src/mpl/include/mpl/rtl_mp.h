@@ -72,7 +72,8 @@ class MacroPlacer
              float target_util,
              float target_dead_space,
              float min_ar,
-             const char* report_directory);
+             const char* report_directory,
+             bool keep_clustering_data);
 
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
