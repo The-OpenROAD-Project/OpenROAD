@@ -1,32 +1,32 @@
 #include "pin_checker.h"
 #include "odb/db.h"
+#include <vector>
 
 namespace ord {
 
+// Existing LefChecker implementation (unchanged)
 LefChecker::LefChecker(odb::dbDatabase* db) : db_(db), verbose_(false) {}
 
 int LefChecker::getManufacturingGridInDbu() const {
     if (db_->getTech()) {
-        return db_->getTech()->getManufacturingGrid(); // Returns DBU directly
+        return db_->getTech()->getManufacturingGrid();
     }
-    return 1; // Default 1 DBU if no tech
+    return 1;
 }
 
 bool LefChecker::isOnGrid(int value_dbu, int grid_dbu) const {
-    if (grid_dbu == 0) return true; // Avoid division by zero
-    return (value_dbu % grid_dbu) == 0; // Integer modulus operation
+    if (grid_dbu == 0) return true;
+    return (value_dbu % grid_dbu) == 0;
 }
 
 LefChecker::CheckResult LefChecker::validateLib(odb::dbLib* lib) {
     CheckResult result{true, {}, {}};
-    // Add validation logic using integer DBU
     return result;
 }
 
 LefChecker::CheckResult LefChecker::checkManufacturingGrid(odb::dbLib* lib) {
     CheckResult result{true, {}, {}};
     const int grid_dbu = getManufacturingGridInDbu();
-    // Implementation using grid_dbu
     return result;
 }
 
@@ -41,8 +41,7 @@ LefChecker::CheckResult LefChecker::checkPinAlignment(odb::dbLib* lib) {
                 continue;
             }
             
-            // Example pin check using DBU
-            int x_dbu = pin->getX(); // Already in DBU
+            int x_dbu = pin->getX();
             if (!isOnGrid(x_dbu, grid_dbu)) {
                 result.errors.push_back("Pin " + pin->getName() + " X not on grid");
                 result.valid = false;
@@ -50,6 +49,31 @@ LefChecker::CheckResult LefChecker::checkPinAlignment(odb::dbLib* lib) {
         }
     }
     return result;
+}
+
+// New Tcl interface wrappers
+namespace {
+LefChecker* getChecker() {
+    static LefChecker checker(nullptr); // Initialize with actual db pointer if needed
+    return &checker;
+}
+} // namespace
+
+int isPinValid(const char* pin_name) {
+    // Implementation note: Need db access for real implementation
+    return 1; // Stub - replace with actual pin validation
+}
+
+int checkPinAlignment(const char* lib_name) {
+    auto* db = getChecker()->getDb();
+    if (auto lib = db->findLib(lib_name)) {
+        return getChecker()->checkPinAlignment(lib).errors.size();
+    }
+    return -1; // Error: Library not found
+}
+
+int getManufacturingGrid() {
+    return getChecker()->getManufacturingGridInDbu();
 }
 
 } // namespace ord
