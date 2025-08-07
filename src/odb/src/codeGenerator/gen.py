@@ -27,6 +27,7 @@ from helper import (
     is_set_by_ref,
     is_ref,
     std,
+    fnv1a_32,
 )
 
 # map types to their header if it isn't equal to their name
@@ -291,6 +292,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
     generate_relations(schema)
 
     to_be_merged = []
+    hash_dict = {}
     for klass in schema["classes"]:
         # Adding functional name to fields and extracting field components
         flags_struct = {
@@ -311,6 +313,19 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
                 if "odb/db.h" not in klass["h_includes"]:
                     klass["h_includes"].append("odb/db.h")
                 break
+        # Add hash to class
+        if "hash" not in klass:
+            hash_value = fnv1a_32(klass["name"])
+        else:
+            hash_value = int(klass["hash"], 16)
+
+        if hash_value in hash_dict:
+            # Collision detected, error out
+            raise ValueError(
+                f"Collision detected for {klass['name']} with {hash_dict[hash_value]}"
+            )
+        hash_dict[hash_value] = klass["name"]
+        klass["hash"] = f"0x{hash_value:08X}"
 
         # Generating files
         for template_file in ["impl.h", "impl.cpp"]:
