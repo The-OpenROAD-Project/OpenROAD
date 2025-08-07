@@ -649,7 +649,7 @@ proc add_pdn_connect { args } {
 
 sta::define_cmd_args "add_sroute_connect" {-net net \
                                            -layers list_of_2_layers \
-                                           -cut_pitch pitch_value \
+                                           -cut_pitch list_of_2_pitch_values \
                                            [-outerNet outerNet] \
                                            [-fixed_vias list_of_vias] \
                                            [-max_rows rows] \

@@ -1,0 +1,141 @@
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
+*******************************************
+Optimization config:
+-limit_sizing_area:                 undefined
+-limit_sizing_leakage:              undefined
+-keep_sizing_site:                  false
+-keep_sizing_vt:                    false
+-set_early_sizing_cap_ratio:        unset
+-set_early_buffer_sizing_cap_ratio: unset
+-disable_buffer_pruning:            false
+*******************************************
+********************************************************************************
+Buffer Report:
+There are 8 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 8, 4.4e-10
+
+There are 4 cell footprint types:
+  BU    : 5 [62.50%]
+  DLY1  : 1 [12.50%]
+  DLY2  : 1 [12.50%]
+  DLY4  : 1 [12.50%]
+
+There are 1 cell site types:
+  CoreSite [H=3780]: 8 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sg13g2_buf_16                               255.4 4.4e-12 1.4e-09 3780 BU      -
+sg13g2_buf_8                                510.2 4.5e-12 6.9e-10 3780 BU      -
+sg13g2_buf_4                               1017.5 4.0e-12 3.4e-10 3780 BU      -
+sg13g2_buf_2                               2037.1 5.4e-12 1.8e-10 3780 BU      -
+sg13g2_dlygate4sd1_1                       4051.4 6.0e-12 1.9e-10 3780 DLY1    -
+sg13g2_dlygate4sd2_1                       4053.8 6.1e-12 1.9e-10 3780 DLY2    -
+sg13g2_dlygate4sd3_1                       4063.7 6.2e-12 4.0e-10 3780 DLY4    -
+sg13g2_buf_1                               4066.0 9.6e-12 1.1e-10 3780 BU      -
+
+Filtered Buffer Report:
+There are 5 buffers after filtering based on threshold voltage,
+cell footprint, drive strength and cell site
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sg13g2_buf_16                               255.4 4.4e-12 1.4e-09 3780 BU      -
+sg13g2_buf_8                                510.2 4.5e-12 6.9e-10 3780 BU      -
+sg13g2_buf_4                               1017.5 4.0e-12 3.4e-10 3780 BU      -
+sg13g2_buf_2                               2037.1 5.4e-12 1.8e-10 3780 BU      -
+sg13g2_buf_1                               4066.0 9.6e-12 1.1e-10 3780 BU      -
+
+Hold Buffer Report:
+sg13g2_dlygate4sd3_1 is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 4 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+sg13g2_buf_1                                  7.3 2.4e-15 4.3e-11  4066.0
+sg13g2_buf_2                                  9.1 2.7e-15 5.1e-11  2037.1
+sg13g2_buf_4                                 14.5 3.9e-15 6.0e-11  1017.5
+sg13g2_buf_8                                 23.6 8.7e-15 5.4e-11   510.2
+--------------------------------------------------------------------------------
+[INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
+*******************************************
+Optimization config:
+-limit_sizing_area:                 4.0
+-limit_sizing_leakage:              4.0
+-keep_sizing_site:                  false
+-keep_sizing_vt:                    false
+-set_early_sizing_cap_ratio:        unset
+-set_early_buffer_sizing_cap_ratio: unset
+-disable_buffer_pruning:            true
+*******************************************
+********************************************************************************
+Buffer Report:
+There are 8 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 8, 4.4e-10
+
+There are 4 cell footprint types:
+  BU    : 5 [62.50%]
+  DLY1  : 1 [12.50%]
+  DLY2  : 1 [12.50%]
+  DLY4  : 1 [12.50%]
+
+There are 1 cell site types:
+  CoreSite [H=3780]: 8 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sg13g2_buf_16                               255.4 4.4e-12 1.4e-09 3780 BU      -
+sg13g2_buf_8                                510.2 4.5e-12 6.9e-10 3780 BU      -
+sg13g2_buf_4                               1017.5 4.0e-12 3.4e-10 3780 BU      -
+sg13g2_buf_2                               2037.1 5.4e-12 1.8e-10 3780 BU      -
+sg13g2_dlygate4sd1_1                       4051.4 6.0e-12 1.9e-10 3780 DLY1    -
+sg13g2_dlygate4sd2_1                       4053.8 6.1e-12 1.9e-10 3780 DLY2    -
+sg13g2_dlygate4sd3_1                       4063.7 6.2e-12 4.0e-10 3780 DLY4    -
+sg13g2_buf_1                               4066.0 9.6e-12 1.1e-10 3780 BU      -
+
+Filtered Buffer Report:
+All 8 buffers are available because buffer pruning has been disabled
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sg13g2_buf_1                               4066.0 9.6e-12 1.1e-10 3780 BU      -
+sg13g2_dlygate4sd3_1                       4063.7 6.2e-12 4.0e-10 3780 DLY4    -
+sg13g2_dlygate4sd2_1                       4053.8 6.1e-12 1.9e-10 3780 DLY2    -
+sg13g2_dlygate4sd1_1                       4051.4 6.0e-12 1.9e-10 3780 DLY1    -
+sg13g2_buf_2                               2037.1 5.4e-12 1.8e-10 3780 BU      -
+sg13g2_buf_4                               1017.5 4.0e-12 3.4e-10 3780 BU      -
+sg13g2_buf_8                                510.2 4.5e-12 6.9e-10 3780 BU      -
+sg13g2_buf_16                               255.4 4.4e-12 1.4e-09 3780 BU      -
+
+Hold Buffer Report:
+sg13g2_dlygate4sd3_1 is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 4 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+sg13g2_buf_1                                  7.3 2.4e-15 4.3e-11  4066.0
+sg13g2_buf_2                                  9.1 2.7e-15 5.1e-11  2037.1
+sg13g2_buf_4                                 14.5 3.9e-15 6.0e-11  1017.5
+sg13g2_buf_8                                 23.6 8.7e-15 5.4e-11   510.2
+--------------------------------------------------------------------------------

@@ -7,7 +7,8 @@ read_guides "obstruction.guide"
 
 set def_file [make_result_file obstruction.def]
 
-detailed_route -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0
+set_routing_layers -signal met1-met5
+detailed_route -verbose 0
 
 write_def $def_file
 diff_files obstruction.defok $def_file

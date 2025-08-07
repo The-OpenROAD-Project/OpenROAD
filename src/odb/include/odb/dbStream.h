@@ -141,12 +141,6 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(dbObjectType c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
   template <class T1, class T2>
   dbOStream& operator<<(const std::pair<T1, T2>& p)
   {
@@ -372,12 +366,6 @@ class dbIStream
       _f.read(c, l);
     }
 
-    return *this;
-  }
-
-  dbIStream& operator>>(dbObjectType& c)
-  {
-    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
