@@ -205,6 +205,9 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
 {
   std::map<PinType, std::vector<int>, PinTypeCmp> pin_nbrs;
   std::vector<int> ids;
+  // struct to save pin polygons
+  using LayerAndPin = std::pair<int, PinType>;
+  std::vector<LayerAndPin> pin_polys;
   // iterate all instance pins
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     odb::dbMTerm* mterm = iterm->getMTerm();
@@ -229,6 +232,8 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
         transform.apply(pin_rect);
         // convert rect -> polygon
         Polygon pin_pol = rectToPolygon(pin_rect);
+        // Save polygon to add on DSU
+        pin_polys.push_back(std::make_pair(tech_layer->getRoutingLevel(), pin));
         // if has wire on same layer connect to pin
         ids = findNodesWithIntersection(node_by_layer_map[tech_layer], pin_pol);
         for (const int& index : ids) {
@@ -253,6 +258,13 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
       }
     }
   }
+  // Sort pin polygon based by layer level (greatest first)
+  std::sort(pin_polys.begin(),
+            pin_polys.end(),
+            [](const LayerAndPin& a, const LayerAndPin& b) {
+              return a.first > b.first;
+            });
+
   // run DSU from min_layer to max_layer
   std::vector<int> dsu_parent(node_count);
   std::vector<int> dsu_size(node_count);
@@ -267,12 +279,30 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
   odb::dbTechLayer* iter = tech->findRoutingLayer(1);
   odb::dbTechLayer* lower_layer;
   while (iter) {
-    // iterate each node of this layer to union set
-    for (auto& node_it : node_by_layer_map[iter]) {
-      int id_u = node_it->id;
-      // if has lower layer
-      lower_layer = iter->getLowerLayer();
-      if (lower_layer) {
+    // Get lower layer
+    lower_layer = iter->getLowerLayer();
+    if (lower_layer) {
+      // Check only vias layer to add pin connections
+      if (lower_layer->getRoutingLevel() != 0) {
+        int layer_level = lower_layer->getRoutingLevel();
+        // only include pin on layer below to the current
+        while (!pin_polys.empty() && layer_level >= pin_polys.back().first) {
+          PinType pin = pin_polys.back().second;
+          int last_id = -1;
+          pin_polys.pop_back();
+          // Set union of all wires connected to pin
+          for (const int& nbr_id : pin_nbrs[pin]) {
+            if (last_id != -1
+                && dsu.find_set(last_id) != dsu.find_set(nbr_id)) {
+              dsu.union_set(last_id, nbr_id);
+            }
+            last_id = nbr_id;
+          }
+        }
+      }
+      // iterate each node of this layer to union set
+      for (auto& node_it : node_by_layer_map[iter]) {
+        int id_u = node_it->id;
         // get lower neighbors and union
         for (const int& lower_it : node_it->low_adj) {
           int id_v = node_by_layer_map[lower_layer][lower_it]->id;
