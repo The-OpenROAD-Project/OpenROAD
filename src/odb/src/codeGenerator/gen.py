@@ -292,6 +292,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
     generate_relations(schema)
 
     to_be_merged = []
+    hash_dict = {}
     for klass in schema["classes"]:
         # Adding functional name to fields and extracting field components
         flags_struct = {
@@ -313,7 +314,6 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
                     klass["h_includes"].append("odb/db.h")
                 break
         # Add hash to class
-        hash_dict = {}
         if "hash" not in klass:
             hash_value = fnv1a_32(klass["name"])
         else:
