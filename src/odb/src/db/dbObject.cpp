@@ -200,6 +200,7 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x110F3173, dbPolygonObj},
        {0x7352FE40, dbPowerDomainObj},
        {0x7D280800, dbPowerSwitchObj},
+       {0x00000066, dbPropertyObj},
        {0xBF9698BF, dbScanChainObj},
        {0x05CD9D4A, dbScanInstObj},
        {0xD398101E, dbScanListObj},
@@ -252,7 +253,6 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x64, dbTechViaGenerateRuleObj},
        {0x65, dbTechViaLayerRuleObj},
 
-       {0x66, dbPropertyObj},
        {0x67, dbNameObj}};
 
 static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
@@ -315,6 +315,7 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbPolygonObj, 0x110F3173},
        {dbPowerDomainObj, 0x7352FE40},
        {dbPowerSwitchObj, 0x7D280800},
+       {dbPropertyObj, 0x00000066},
        {dbScanChainObj, 0xBF9698BF},
        {dbScanInstObj, 0x05CD9D4A},
        {dbScanListObj, 0xD398101E},
@@ -367,7 +368,6 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbTechViaGenerateRuleObj, 0x64},
        {dbTechViaLayerRuleObj, 0x65},
 
-       {dbPropertyObj, 0x66},
        {dbNameObj, 0x67}};
 
 const char* dbObject::getTypeName() const

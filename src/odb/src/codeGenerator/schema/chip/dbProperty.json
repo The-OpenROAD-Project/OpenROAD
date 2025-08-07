@@ -1,6 +1,7 @@
 {
   "name": "dbProperty",
   "type": "dbObject",
+  "hash": "0x66",
   "do_not_generate_compare" : "true",
   "fields": [
     {
