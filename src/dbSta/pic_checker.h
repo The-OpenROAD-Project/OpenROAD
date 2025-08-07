@@ -25,8 +25,8 @@ private:
     odb::dbDatabase* db_;
     bool verbose_;
     
-    double getManufacturingGrid() const;
-    bool isOnGrid(double value, double grid) const;
+    int getManufacturingGridInDbu() const;  // Changed return type to int
+    bool isOnGrid(int value_dbu, int grid_dbu) const;  // Changed to integer DBU parameters
 };
 
 } // namespace ord
