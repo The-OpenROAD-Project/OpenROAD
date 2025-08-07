@@ -79,7 +79,8 @@ class LabelDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   static bool editPoint(std::any value, odb::Point& pt, bool is_x);

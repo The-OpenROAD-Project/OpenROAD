@@ -35,7 +35,8 @@ class LibertyLibraryDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   sta::dbSta* sta_;
@@ -56,7 +57,8 @@ class LibertyCellDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   sta::dbSta* sta_;
@@ -77,7 +79,8 @@ class LibertyPortDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   sta::dbSta* sta_;
@@ -98,7 +101,8 @@ class LibertyPgPortDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   odb::dbMTerm* getMTerm(const std::any& object) const;
@@ -121,7 +125,8 @@ class CornerDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   sta::dbSta* sta_;
@@ -142,7 +147,8 @@ class StaInstanceDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   sta::dbSta* sta_;
@@ -165,7 +171,8 @@ class ClockDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   sta::dbSta* sta_;
