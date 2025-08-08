@@ -8193,6 +8193,7 @@ class dbModule : public dbObject
   int getDbInstCount();
 
   const dbModBTerm* getHeadDbModBTerm() const;
+  bool canSwapWith(dbModule* new_module, utl::Logger* logger);
 
   static dbModule* create(dbBlock* block, const char* name);
 
