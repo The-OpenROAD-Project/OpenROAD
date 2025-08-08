@@ -171,10 +171,11 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       stagui_(nullptr),
       chart_tabs_(new QTabWidget(this)),
       mode_menu_(new QComboBox(this)),
-      filters_menu_(new QComboBox(this)),
+      path_group_menu_(new QComboBox(this)),
+      clock_menu_(new QComboBox(this)),
       display_(new HistogramView(this)),
       refresh_filters_button_(new QPushButton("Refresh Filters", this)),
-      prev_filter_index_(0),  // start with no filter
+      clock_filter_(nullptr),
       resetting_menu_(false),
       label_(new QLabel(this))
 {
@@ -186,8 +187,10 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 
   controls_layout->addWidget(mode_menu_);
   setModeMenu();
-  controls_layout->addWidget(filters_menu_);
-  filters_menu_->hide();
+  controls_layout->addWidget(path_group_menu_);
+  path_group_menu_->hide();
+  controls_layout->addWidget(clock_menu_);
+  clock_menu_->hide();
   controls_layout->addWidget(refresh_filters_button_);
   refresh_filters_button_->hide();
   controls_layout->insertStretch(2);
@@ -222,7 +225,12 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           this,
           &ChartsWidget::reportEndPoints);
 
-  connect(filters_menu_,
+  connect(path_group_menu_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &ChartsWidget::changePathGroupFilter);
+
+  connect(clock_menu_,
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
           &ChartsWidget::changePathGroupFilter);
@@ -242,10 +250,7 @@ Chart* ChartsWidget::addChart(const std::string& name,
 
 void ChartsWidget::changeMode()
 {
-  filters_menu_->clear();
-  display_->clear();
-
-  resetting_menu_ = true;
+  clearMenus();
 
   const Mode mode = static_cast<Mode>(mode_menu_->currentIndex());
 
@@ -260,18 +265,14 @@ void ChartsWidget::changeMode()
       break;
   }
 
-  setSlackHistogramLayout();
-
   switch (mode) {
     case kSelect:
       break;
     case kSetupSlack:
     case kHoldSlack:
-      setSlackHistogram();
+      setSlackHistogramLayout();
       break;
   }
-
-  resetting_menu_ = false;
 }
 
 ChartsWidget::Mode ChartsWidget::modeFromString(const std::string& mode) const
@@ -299,8 +300,24 @@ void ChartsWidget::setMode(Mode mode)
 void ChartsWidget::setSlackHistogramLayout()
 {
   updatePathGroupMenuIndexes();  // so that the user doesn't have to refresh
-  filters_menu_->show();
+  path_group_menu_->show();
+  clock_menu_->show();
   refresh_filters_button_->show();
+}
+
+void ChartsWidget::clearMenus()
+{
+  display_->clear();
+
+  path_group_menu_->clear();
+  clock_menu_->clear();
+
+  filter_index_to_path_group_name_.clear();
+  clock_index_to_clock_.clear();
+
+  path_group_name_.clear();
+  clock_filter_ = nullptr;
+  all_clocks_.clear();
 }
 
 void ChartsWidget::setModeMenu()
@@ -317,34 +334,30 @@ void ChartsWidget::setModeMenu()
 
 void ChartsWidget::updatePathGroupMenuIndexes()
 {
-  if (filters_menu_->count() != 0) {
-    filters_menu_->clear();
-    path_group_name_.clear();
-  }
+  resetting_menu_ = true;
 
-  filters_menu_->addItem("No Path Group");  // Index 0
+  path_group_menu_->addItem("No Path Group");  // Index 0
+  filter_index_to_path_group_name_[0] = "";
+
+  clock_menu_->addItem("All Clocks");  // Index 0
+  clock_index_to_clock_[0] = nullptr;
 
   int filter_index = 1;
   for (const std::string& name : stagui_->getGroupPathsNames()) {
-    filters_menu_->addItem(name.c_str());
+    path_group_menu_->addItem(name.c_str());
     filter_index_to_path_group_name_[filter_index] = name;
     ++filter_index;
   }
-}
 
-void ChartsWidget::setSlackHistogram()
-{
-  SlackHistogramData data = fetchSlackHistogramData();
-
-  if (data.constrained_pins.size() == 0) {
-    logger_->warn(utl::GUI,
-                  97,
-                  "All pins are unconstrained. Cannot plot histogram. Check if "
-                  "timing data is loaded!");
-    return;
+  filter_index = 1;
+  for (sta::Clock* clock : *stagui_->getClocks()) {
+    clock_menu_->addItem(clock->name());
+    clock_index_to_clock_[filter_index] = clock;
+    all_clocks_.insert(clock);
+    ++filter_index;
   }
-
-  display_->setData(data);
+  resetting_menu_ = false;
+  changePathGroupFilter();
 }
 
 SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
@@ -353,9 +366,7 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
 
   removeUnconstrainedPinsAndSetLimits(data);
 
-  for (sta::Clock* clock : *stagui_->getClocks()) {
-    data.clocks.insert(clock);
-  }
+  data.clocks = all_clocks_;
 
   return data;
 }
@@ -433,28 +444,45 @@ void ChartsWidget::changePathGroupFilter()
     return;
   }
 
-  const int filter_index = filters_menu_->currentIndex();
-
-  if (filter_index > 0) {
-    path_group_name_ = filter_index_to_path_group_name_.at(filter_index);
-  } else {
-    path_group_name_.clear();
+  const int path_menu_index = path_group_menu_->currentIndex();
+  if (path_menu_index < 0) {
+    return;
+  }
+  const int clock_menu_index = clock_menu_->currentIndex();
+  if (clock_menu_index < 0) {
+    return;
   }
 
-  setData(display_, path_group_name_);
+  path_group_name_ = filter_index_to_path_group_name_.at(path_menu_index);
+  clock_filter_ = clock_index_to_clock_.at(clock_menu_index);
 
-  prev_filter_index_ = filter_index;
+  setData(display_, path_group_name_, clock_filter_);
 }
 
 void ChartsWidget::setData(HistogramView* view,
-                           const std::string& path_group) const
+                           const std::string& path_group,
+                           sta::Clock* clock)
 {
   view->clear();
 
-  if (path_group.empty()) {
-    view->setData(fetchSlackHistogramData());
+  if (!path_group.empty()) {
+    view->setData(stagui_->getEndPointToSlackMap(path_group), &all_clocks_);
+  } else if (clock != nullptr) {
+    sta::ClockSet clocks;
+    clocks.insert(clock);
+    view->setData(stagui_->getEndPointToSlackMap(clock), &clocks);
   } else {
-    view->setData(stagui_->getEndPointToSlackMap(path_group));
+    SlackHistogramData data = fetchSlackHistogramData();
+
+    if (data.constrained_pins.size() == 0) {
+      logger_->warn(
+          utl::GUI,
+          97,
+          "All pins are unconstrained. Cannot plot histogram. Check if "
+          "timing data is loaded!");
+      return;
+    }
+    view->setData(data);
   }
 }
 
@@ -474,7 +502,7 @@ void ChartsWidget::saveImage(const std::string& path,
   HistogramView print_view(this);
   print_view.setLogger(logger_);
   print_view.setSTA(stagui_.get());
-  setData(&print_view, path_group_name_);
+  setData(&print_view, path_group_name_, clock_filter_);
   QSize view_size(500, 500);
   if (width_px.has_value()) {
     view_size.setWidth(width_px.value());
@@ -538,10 +566,8 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
 
       if (bar_index >= num_of_neg_buckets) {
         num = buckets_.positive[bar_index - num_of_neg_buckets].size();
-        ;
       } else {
         num = buckets_.negative[bar_index].size();
-        ;
       }
     }
 
@@ -624,9 +650,11 @@ void HistogramView::setData(const SlackHistogramData& data)
   setVisualConfig();
 }
 
-void HistogramView::setData(const EndPointSlackMap& data)
+void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
 {
   clear();
+
+  clocks_ = *clocks;
 
   histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
 
