@@ -1245,7 +1245,7 @@ bool TritonCTS::separateMacroRegSinks(
       bool nonSinkMacro = !isSink(iterm);
       sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
       sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
-      if (libertyCell->isInverter()) {
+      if (libertyCell && libertyCell->isInverter()) {
         odb::dbITerm* invertedTerm
             = inst->getFirstOutput()->getNet()->get1stSignalInput(false);
         nonSinkMacro &= invertedTerm->getInst()->isBlock();
