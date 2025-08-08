@@ -497,16 +497,21 @@ int Gui::select(const std::string& type,
     descriptor->visitAllObjects([&](const Selected& sel) {
       if (!name_filter.empty()) {
         const std::string sel_name = sel.getName();
-        if (sel_name != name_filter
-            && (is_simple ||
+        if (is_simple) {
+          if (sel_name != name_filter) {
+            return;
+          }
+        } else {
+          if (
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-                !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
+              !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
 
 #else
-                !reg_filter.exactMatch(QString::fromStdString(sel_name))
+              !reg_filter.exactMatch(QString::fromStdString(sel_name))
 #endif
-                    )) {
-          return;  // name doesn't match the filter
+          ) {
+            return;
+          }
         }
       }
 
