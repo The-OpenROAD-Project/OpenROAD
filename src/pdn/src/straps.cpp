@@ -293,8 +293,8 @@ void Straps::makeStraps(int x_start,
         // no portion of the strap is inside the limit
         return;
       }
-      if (group_pos > pos_end) {
-        // strap center is outside of alotted area
+      if (strap_end > pos_end) {
+        // strap end is outside of alotted area
         return;
       }
 
