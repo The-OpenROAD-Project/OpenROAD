@@ -50,9 +50,9 @@ class NodeDescriptor : public SolverDescriptor
   std::string getTypeName() const override { return "PSM Node"; }
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  bool getAllObjects(gui::SelectionSet& /* objects */) const override
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
   {
-    return false;
   }
   gui::Descriptor::Properties getProperties(std::any object) const override;
   gui::Selected makeSelected(std::any object) const override;
@@ -105,9 +105,9 @@ class ConnectionDescriptor : public SolverDescriptor
   std::string getTypeName() const override { return "PSM Connection"; }
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  bool getAllObjects(gui::SelectionSet& /* objects */) const override
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
   {
-    return false;
   }
   gui::Descriptor::Properties getProperties(std::any object) const override;
   gui::Selected makeSelected(std::any object) const override;
