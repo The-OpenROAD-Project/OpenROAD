@@ -289,10 +289,6 @@ void Straps::makeStraps(int x_start,
                  layer.dbuToMicron(strap_start),
                  layer.dbuToMicron(strap_end));
 
-      if (strap_start >= pos_end) {
-        // no portion of the strap is inside the limit
-        return;
-      }
       if (strap_end > pos_end) {
         // strap end is outside of alotted area
         return;
