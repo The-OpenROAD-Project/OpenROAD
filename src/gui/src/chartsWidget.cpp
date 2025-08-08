@@ -183,9 +183,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   chart_tabs_->setTabBarAutoHide(true);
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(label_);
-
   controls_layout->addWidget(mode_menu_);
+  controls_layout->addWidget(label_);
   setModeMenu();
   controls_layout->addWidget(path_group_menu_);
   path_group_menu_->hide();
@@ -250,27 +249,25 @@ Chart* ChartsWidget::addChart(const std::string& name,
 
 void ChartsWidget::changeMode()
 {
-  clearMenus();
+  display_->clear();
 
   const Mode mode = static_cast<Mode>(mode_menu_->currentIndex());
 
   switch (mode) {
     case kSetupSlack:
       stagui_->setUseMax(true);
+      setSlackHistogramLayout();
       break;
     case kHoldSlack:
       stagui_->setUseMax(false);
-      break;
-    case kSelect:
-      break;
-  }
-
-  switch (mode) {
-    case kSelect:
-      break;
-    case kSetupSlack:
-    case kHoldSlack:
       setSlackHistogramLayout();
+      break;
+    case kSelect:
+      clearMenus();
+      path_group_menu_->hide();
+      clock_menu_->hide();
+      refresh_filters_button_->hide();
+      label_->hide();
       break;
   }
 }
@@ -303,12 +300,11 @@ void ChartsWidget::setSlackHistogramLayout()
   path_group_menu_->show();
   clock_menu_->show();
   refresh_filters_button_->show();
+  label_->show();
 }
 
 void ChartsWidget::clearMenus()
 {
-  display_->clear();
-
   path_group_menu_->clear();
   clock_menu_->clear();
 
@@ -335,6 +331,7 @@ void ChartsWidget::setModeMenu()
 void ChartsWidget::updatePathGroupMenuIndexes()
 {
   resetting_menu_ = true;
+  clearMenus();
 
   path_group_menu_->addItem("No Path Group");  // Index 0
   filter_index_to_path_group_name_[0] = "";
