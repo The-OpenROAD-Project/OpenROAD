@@ -915,7 +915,8 @@ bool GlobalRouter::findPinAccessPointPositions(
 std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     const Pin& pin,
     bool& has_access_points,
-    odb::Point& pos_on_grid)
+    odb::Point& pos_on_grid,
+    bool ignore_db_access_points)
 {
   std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
 
@@ -925,7 +926,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 
   std::vector<odb::Point> positions_on_grid;
 
-  if (has_access_points) {
+  if (has_access_points && !ignore_db_access_points) {
     for (const auto& ap_position : ap_positions) {
       pos_on_grid = ap_position.second;
       positions_on_grid.push_back(pos_on_grid);
@@ -957,6 +958,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
         }
       }
       positions_on_grid.push_back(pos_on_grid);
+      has_access_points = false;
     }
   }
 
@@ -971,36 +973,46 @@ void GlobalRouter::findPins(Net* net)
     std::vector<odb::Point> pin_positions_on_grid
         = findOnGridPositions(pin, has_access_points, pos_on_grid);
 
-    int votes = -1;
-
-    odb::Point pin_position;
-    for (odb::Point pos : pin_positions_on_grid) {
-      int equals = std::count(
-          pin_positions_on_grid.begin(), pin_positions_on_grid.end(), pos);
-      if (equals > votes) {
-        pin_position = pos;
-        votes = equals;
-      }
-    }
-
-    // check if the pin has access points to avoid changing the position on grid
-    // when the pin overlaps with a single track.
-    // this way, the result based on drt APs is maintained
-    if (!has_access_points && pinOverlapsWithSingleTrack(pin, pos_on_grid)) {
-      const int conn_layer = pin.getConnectionLayer();
-      odb::dbTechLayer* layer = routing_layers_[conn_layer];
-      pos_on_grid = grid_->getPositionOnGrid(pos_on_grid);
-      if (!(pos_on_grid == pin_position)
-          && ((layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
-               && pos_on_grid.y() != pin_position.y())
-              || (layer->getDirection() == odb::dbTechLayerDir::VERTICAL
-                  && pos_on_grid.x() != pin_position.x()))) {
-        pin_position = pos_on_grid;
-      }
-    }
-
-    pin.setOnGridPosition(pin_position);
+    computePinPositionOnGrid(
+        pin_positions_on_grid, pin, pos_on_grid, has_access_points);
   }
+}
+
+void GlobalRouter::computePinPositionOnGrid(
+    std::vector<odb::Point>& pin_positions_on_grid,
+    Pin& pin,
+    odb::Point& pos_on_grid,
+    const bool has_access_points)
+{
+  int votes = -1;
+
+  odb::Point pin_position;
+  for (odb::Point pos : pin_positions_on_grid) {
+    int equals = std::count(
+        pin_positions_on_grid.begin(), pin_positions_on_grid.end(), pos);
+    if (equals > votes) {
+      pin_position = pos;
+      votes = equals;
+    }
+  }
+
+  // check if the pin has access points to avoid changing the position on grid
+  // when the pin overlaps with a single track.
+  // this way, the result based on drt APs is maintained
+  if (!has_access_points && pinOverlapsWithSingleTrack(pin, pos_on_grid)) {
+    const int conn_layer = pin.getConnectionLayer();
+    odb::dbTechLayer* layer = routing_layers_[conn_layer];
+    pos_on_grid = grid_->getPositionOnGrid(pos_on_grid);
+    if (!(pos_on_grid == pin_position)
+        && ((layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+             && pos_on_grid.y() != pin_position.y())
+            || (layer->getDirection() == odb::dbTechLayerDir::VERTICAL
+                && pos_on_grid.x() != pin_position.x()))) {
+      pin_position = pos_on_grid;
+    }
+  }
+
+  pin.setOnGridPosition(pin_position);
 }
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
@@ -2166,11 +2178,34 @@ void GlobalRouter::loadGuidesFromDB()
     mergeSegments(pins, route);
   }
 
+  for (auto& [db_net, groute] : routes_) {
+    ensurePinsPositions(db_net);
+  }
+
   updateEdgesUsage();
   if (block_->getGCellGrid() == nullptr) {
     updateDbCongestion();
   }
   heatmap_->update();
+}
+
+void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
+{
+  std::string pins_not_covered;
+  netIsCovered(db_net, pins_not_covered);
+  if (!pins_not_covered.empty()) {
+    Net* net = db_net_map_[db_net];
+    for (Pin& pin : net->getPins()) {
+      if (pins_not_covered.find(pin.getName()) != std::string::npos) {
+        bool has_aps;
+        odb::Point pos_on_grid;
+        std::vector<odb::Point> pin_positions_on_grid
+            = findOnGridPositions(pin, has_aps, pos_on_grid, true);
+        computePinPositionOnGrid(
+            pin_positions_on_grid, pin, pos_on_grid, has_aps);
+      }
+    }
+  }
 }
 
 void GlobalRouter::updateVias()

@@ -210,7 +210,8 @@ bool LibertyLibraryDescriptor::lessThan(std::any l, std::any r) const
   return l_library->id() < r_library->id();
 }
 
-bool LibertyLibraryDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyLibraryDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -218,10 +219,8 @@ bool LibertyLibraryDescriptor::getAllObjects(SelectionSet& objects) const
 
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* library = lib_iter->next();
-    objects.insert(makeSelected(library));
+    func({library, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -346,7 +345,8 @@ bool LibertyCellDescriptor::lessThan(std::any l, std::any r) const
   return l_cell->id() < r_cell->id();
 }
 
-bool LibertyCellDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyCellDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -357,11 +357,9 @@ bool LibertyCellDescriptor::getAllObjects(SelectionSet& objects) const
     sta::LibertyCellIterator cell_iter(library);
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
-      objects.insert(makeSelected(cell));
+      func({cell, this});
     }
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -506,7 +504,8 @@ bool LibertyPortDescriptor::lessThan(std::any l, std::any r) const
   return l_port->id() < r_port->id();
 }
 
-bool LibertyPortDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyPortDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -520,12 +519,10 @@ bool LibertyPortDescriptor::getAllObjects(SelectionSet& objects) const
       sta::LibertyCellPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         sta::LibertyPort* port = port_iter.next();
-        objects.insert(makeSelected(port));
+        func({port, this});
       }
     }
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -623,7 +620,8 @@ bool LibertyPgPortDescriptor::lessThan(std::any l, std::any r) const
   return strcmp(l_port->name(), r_port->name()) < 0;
 }
 
-bool LibertyPgPortDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyPgPortDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -637,12 +635,10 @@ bool LibertyPgPortDescriptor::getAllObjects(SelectionSet& objects) const
       sta::LibertyCellPgPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         sta::LibertyPgPort* port = port_iter.next();
-        objects.insert(makeSelected(port));
+        func({port, this});
       }
     }
   }
-
-  return true;
 }
 
 odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
@@ -711,13 +707,12 @@ bool CornerDescriptor::lessThan(std::any l, std::any r) const
   return strcmp(l_corner->name(), r_corner->name()) < 0;
 }
 
-bool CornerDescriptor::getAllObjects(SelectionSet& objects) const
+void CornerDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto* corner : *sta_->corners()) {
-    objects.insert(makeSelected(corner));
+    func({corner, this});
   }
-
-  return true;
 }
 
 StaInstanceDescriptor::StaInstanceDescriptor(sta::dbSta* sta) : sta_(sta)
@@ -872,17 +867,16 @@ bool StaInstanceDescriptor::lessThan(std::any l, std::any r) const
   return network->id(l_inst) < network->id(r_inst);
 }
 
-bool StaInstanceDescriptor::getAllObjects(SelectionSet& objects) const
+void StaInstanceDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LeafInstanceIterator> lib_iter(
       network->leafInstanceIterator());
 
   while (lib_iter->hasNext()) {
-    objects.insert(makeSelected(lib_iter->next()));
+    func({lib_iter->next(), this});
   }
-
-  return true;
 }
 
 ClockDescriptor::ClockDescriptor(sta::dbSta* sta) : sta_(sta)
@@ -1064,9 +1058,9 @@ bool ClockDescriptor::lessThan(std::any l, std::any r) const
   return strcmp(l_clock->name(), r_clock->name()) < 0;
 }
 
-bool ClockDescriptor::getAllObjects(SelectionSet& objects) const
+void ClockDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
-  return false;
 }
 
 }  // namespace gui

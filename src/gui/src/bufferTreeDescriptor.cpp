@@ -199,24 +199,23 @@ bool BufferTreeDescriptor::lessThan(std::any l, std::any r) const
   return l_bnet->getName() < r_bnet->getName();
 }
 
-bool BufferTreeDescriptor::getAllObjects(SelectionSet& objects) const
+void BufferTreeDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* net : block->getNets()) {
     if (BufferTree::isAggregate(net)) {
-      objects.insert(makeSelected(BufferTree(net)));
+      func({BufferTree(net), this});
     }
   }
-
-  return true;
 }
 
 Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
