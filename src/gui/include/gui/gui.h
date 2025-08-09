@@ -312,7 +312,9 @@ class Descriptor
   virtual bool isInst(std::any /* object */) const { return false; }
   virtual bool isNet(std::any /* object */) const { return false; }
 
-  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+  virtual void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const
+      = 0;
 
   // A property is a name and a value.
   struct Property

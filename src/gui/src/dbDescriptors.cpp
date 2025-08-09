@@ -386,14 +386,14 @@ Descriptor::Properties DbTechDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto tech = db_->getTech();
   if (tech == nullptr) {
-    return false;
+    return;
   }
-  objects.insert(makeSelected(tech));
-  return true;
+  func({tech, this});
 }
 
 //////////////////////////////////////////////////
@@ -514,15 +514,15 @@ Descriptor::Properties DbBlockDescriptor::getDBProperties(
   return props;
 }
 
-bool DbBlockDescriptor::getAllObjects(SelectionSet& objects) const
+void DbBlockDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto block = chip->getBlock();
-  objects.insert(makeSelected(block));
-  return true;
+  func({block, this});
 }
 
 //////////////////////////////////////////////////
@@ -775,21 +775,21 @@ bool DbInstDescriptor::setNewLocation(odb::dbInst* inst,
   return true;
 }
 
-bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
+void DbInstDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* inst : block->getInsts()) {
-    objects.insert(makeSelected(inst));
+    func({inst, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -930,24 +930,24 @@ void DbMasterDescriptor::getInstances(odb::dbMaster* master,
   }
 }
 
-bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
+void DbMasterDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   std::vector<odb::dbMaster*> masters;
   block->getMasters(masters);
 
   for (auto* master : masters) {
-    objects.insert(makeSelected(master));
+    func({master, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -1974,21 +1974,21 @@ bool DbNetDescriptor::lessThan(std::any l, std::any r) const
   return BaseDbDescriptor::lessThan(l_net, r_net);
 }
 
-bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
+void DbNetDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* net : block->getNets()) {
-    objects.insert(makeSelected(net));
+    func({net, this});
   }
-  return true;
 }
 
 odb::dbNet* DbNetDescriptor::getObject(const std::any& object) const
@@ -2116,21 +2116,21 @@ Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
   return actions;
 }
 
-bool DbITermDescriptor::getAllObjects(SelectionSet& objects) const
+void DbITermDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* term : block->getITerms()) {
-    objects.insert(makeSelected(term));
+    func({term, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -2224,21 +2224,21 @@ Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
   return actions;
 }
 
-bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
+void DbBTermDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* term : block->getBTerms()) {
-    objects.insert(makeSelected(term));
+    func({term, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -2309,23 +2309,23 @@ Descriptor::Properties DbBPinDescriptor::getDBProperties(
   return props;
 }
 
-bool DbBPinDescriptor::getAllObjects(SelectionSet& objects) const
+void DbBPinDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* term : block->getBTerms()) {
     for (auto* pin : term->getBPins()) {
-      objects.insert(makeSelected(pin));
+      func({pin, this});
     }
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -2428,17 +2428,16 @@ Descriptor::Properties DbMTermDescriptor::getDBProperties(
   return props;
 }
 
-bool DbMTermDescriptor::getAllObjects(SelectionSet& objects) const
+void DbMTermDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto* lib : db_->getLibs()) {
     for (auto* master : lib->getMasters()) {
       for (auto* mterm : master->getMTerms()) {
-        objects.insert(makeSelected(mterm));
+        func({mterm, this});
       }
     }
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -2563,23 +2562,22 @@ Descriptor::Properties DbViaDescriptor::getDBProperties(odb::dbVia* via) const
   return props;
 }
 
-bool DbViaDescriptor::getAllObjects(SelectionSet& objects) const
+void DbViaDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
 
   auto block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto via : block->getVias()) {
-    objects.insert(makeSelected(via));
+    func({via, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -2677,21 +2675,21 @@ Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
   return editors;
 }
 
-bool DbBlockageDescriptor::getAllObjects(SelectionSet& objects) const
+void DbBlockageDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* blockage : block->getBlockages()) {
-    objects.insert(makeSelected(blockage));
+    func({blockage, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -2791,21 +2789,21 @@ Descriptor::Actions DbObstructionDescriptor::getActions(std::any object) const
         }}});
 }
 
-bool DbObstructionDescriptor::getAllObjects(SelectionSet& objects) const
+void DbObstructionDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* obs : block->getObstructions()) {
-    objects.insert(makeSelected(obs));
+    func({obs, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3055,17 +3053,17 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechLayerDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* tech = db_->getTech();
   if (tech == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* layer : tech->getLayers()) {
-    objects.insert(makeSelected(layer));
+    func({layer, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3186,21 +3184,22 @@ bool DbTermAccessPointDescriptor::lessThan(std::any l, std::any r) const
   return l_term_ap.ap->getId() < r_term_ap.ap->getId();
 }
 
-bool DbTermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTermAccessPointDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* iterm : block->getITerms()) {
     for (const auto& [mpin, aps] : iterm->getAccessPoints()) {
       for (auto* ap : aps) {
-        objects.insert(makeSelected(DbTermAccessPoint{ap, iterm}));
+        func({DbTermAccessPoint{ap, iterm}, this});
       }
     }
   }
@@ -3208,11 +3207,10 @@ bool DbTermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
   for (auto* bterm : block->getBTerms()) {
     for (auto* pin : bterm->getBPins()) {
       for (auto* ap : pin->getAccessPoints()) {
-        objects.insert(makeSelected(DbTermAccessPoint{ap, bterm}));
+        func({DbTermAccessPoint{ap, bterm}, this});
       }
     }
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3303,21 +3301,21 @@ Descriptor::Properties DbGroupDescriptor::getDBProperties(
   return props;
 }
 
-bool DbGroupDescriptor::getAllObjects(SelectionSet& objects) const
+void DbGroupDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* group : block->getGroups()) {
-    objects.insert(makeSelected(group));
+    func({group, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3396,21 +3394,21 @@ Descriptor::Properties DbRegionDescriptor::getDBProperties(
   return props;
 }
 
-bool DbRegionDescriptor::getAllObjects(SelectionSet& objects) const
+void DbRegionDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* region : block->getRegions()) {
-    objects.insert(makeSelected(region));
+    func({region, this});
   }
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3518,29 +3516,29 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
   return props;
 }
 
-bool DbModuleDescriptor::getAllObjects(SelectionSet& objects) const
+void DbModuleDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
-  getModules(block->getTopModule(), objects);
-
-  return true;
+  getModules(block->getTopModule(), func);
 }
 
-void DbModuleDescriptor::getModules(odb::dbModule* module,
-                                    SelectionSet& objects) const
+void DbModuleDescriptor::getModules(
+    odb::dbModule* module,
+    const std::function<void(const Selected&)>& func) const
 {
-  objects.insert(makeSelected(module));
+  func({module, this});
 
   for (auto* mod_inst : module->getChildren()) {
-    getModules(mod_inst->getMaster(), objects);
+    getModules(mod_inst->getMaster(), func);
   }
 }
 
@@ -3623,15 +3621,14 @@ Descriptor::Properties DbTechViaDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechViaDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechViaDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* tech = db_->getTech();
 
   for (auto* via : tech->getVias()) {
-    objects.insert(makeSelected(via));
+    func({via, this});
   }
-
-  return true;
 }
 //////////////////////////////////////////////////
 
@@ -3684,15 +3681,14 @@ Descriptor::Properties DbTechViaRuleDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechViaRuleDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechViaRuleDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* tech = db_->getTech();
 
   for (auto via_rule : tech->getViaRules()) {
-    objects.insert(makeSelected(via_rule));
+    func({via_rule, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3800,7 +3796,8 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechViaLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechViaLayerRuleDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto tech = db_->getTech();
 
@@ -3808,11 +3805,9 @@ bool DbTechViaLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
     for (uint via_layer_index = 0;
          via_layer_index < via_rule->getViaLayerRuleCount();
          via_layer_index++) {
-      objects.insert(makeSelected(via_rule->getViaLayerRule(via_layer_index)));
+      func({via_rule->getViaLayerRule(via_layer_index), this});
     }
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3862,15 +3857,14 @@ Descriptor::Properties DbMetalWidthViaMapDescriptor::getDBProperties(
   return props;
 }
 
-bool DbMetalWidthViaMapDescriptor::getAllObjects(SelectionSet& objects) const
+void DbMetalWidthViaMapDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* tech = db_->getTech();
 
   for (auto* map : tech->getMetalWidthViaMap()) {
-    objects.insert(makeSelected(map));
+    func({map, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -3939,15 +3933,14 @@ Descriptor::Properties DbGenerateViaDescriptor::getDBProperties(
   return props;
 }
 
-bool DbGenerateViaDescriptor::getAllObjects(SelectionSet& objects) const
+void DbGenerateViaDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* tech = db_->getTech();
 
   for (auto* via : tech->getViaGenerateRules()) {
-    objects.insert(makeSelected(via));
+    func({via, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -4014,26 +4007,25 @@ Descriptor::Properties DbNonDefaultRuleDescriptor::getDBProperties(
   return props;
 }
 
-bool DbNonDefaultRuleDescriptor::getAllObjects(SelectionSet& objects) const
+void DbNonDefaultRuleDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* rule : db_->getTech()->getNonDefaultRules()) {
-    objects.insert(makeSelected(rule));
+    func({rule, this});
   }
 
   for (auto* rule : block->getNonDefaultRules()) {
-    objects.insert(makeSelected(rule));
+    func({rule, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -4082,9 +4074,9 @@ Descriptor::Properties DbTechLayerRuleDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechLayerRuleDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
-  return false;
 }
 
 //////////////////////////////////////////////////
@@ -4132,9 +4124,9 @@ Descriptor::Properties DbTechSameNetRuleDescriptor::getDBProperties(
   return props;
 }
 
-bool DbTechSameNetRuleDescriptor::getAllObjects(SelectionSet& objects) const
+void DbTechSameNetRuleDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
-  return false;
 }
 
 //////////////////////////////////////////////////
@@ -4244,15 +4236,14 @@ bool DbSiteDescriptor::lessThan(std::any l, std::any r) const
   return l_rect < r_rect;
 }
 
-bool DbSiteDescriptor::getAllObjects(SelectionSet& objects) const
+void DbSiteDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto* lib : db_->getLibs()) {
     for (auto* site : lib->getSites()) {
-      objects.insert(makeSelected(site));
+      func({site, this});
     }
   }
-
-  return true;
 }
 
 odb::dbSite* DbSiteDescriptor::getObject(const std::any& object) const
@@ -4332,15 +4323,14 @@ Descriptor::Properties DbRowDescriptor::getDBProperties(odb::dbRow* row) const
   return props;
 }
 
-bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
+void DbRowDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
 
   for (auto* row : block->getRows()) {
-    objects.insert(makeSelected(row));
+    func({row, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -4431,15 +4421,14 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getDBProperties(
   return props;
 }
 
-bool DbMarkerCategoryDescriptor::getAllObjects(SelectionSet& objects) const
+void DbMarkerCategoryDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
 
   for (auto* category : block->getMarkerCategories()) {
-    objects.insert(makeSelected(category));
+    func({category, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -4533,17 +4522,16 @@ Descriptor::Properties DbMarkerDescriptor::getDBProperties(
   return props;
 }
 
-bool DbMarkerDescriptor::getAllObjects(SelectionSet& objects) const
+void DbMarkerDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
 
   for (auto* category : block->getMarkerCategories()) {
     for (odb::dbMarker* marker : category->getAllMarkers()) {
-      objects.insert(makeSelected(marker));
+      func({marker, this});
     }
   }
-
-  return true;
 }
 
 void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
@@ -4607,7 +4595,8 @@ void DbScanInstDescriptor::highlight(std::any object, Painter& painter) const
   inst_descriptor->highlight(scan_inst->getInst(), painter);
 }
 
-bool DbScanInstDescriptor::getAllObjects(SelectionSet& objects) const
+void DbScanInstDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
   auto* db_dft = block->getDft();
@@ -4616,13 +4605,11 @@ bool DbScanInstDescriptor::getAllObjects(SelectionSet& objects) const
     for (auto* scan_partition : scan_chain->getScanPartitions()) {
       for (auto* scan_list : scan_partition->getScanLists()) {
         for (auto* scan_inst : scan_list->getScanInsts()) {
-          objects.insert(makeSelected(scan_inst));
+          func({scan_inst, this});
         }
       }
     }
   }
-
-  return true;
 }
 
 Descriptor::Properties DbScanInstDescriptor::getDBProperties(
@@ -4708,7 +4695,8 @@ void DbScanListDescriptor::highlight(std::any object, Painter& painter) const
   }
 }
 
-bool DbScanListDescriptor::getAllObjects(SelectionSet& objects) const
+void DbScanListDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
   auto* db_dft = block->getDft();
@@ -4716,12 +4704,10 @@ bool DbScanListDescriptor::getAllObjects(SelectionSet& objects) const
   for (auto* scan_chain : db_dft->getScanChains()) {
     for (auto* scan_partition : scan_chain->getScanPartitions()) {
       for (auto* scan_list : scan_partition->getScanLists()) {
-        objects.insert(makeSelected(scan_list));
+        func({scan_list, this});
       }
     }
   }
-
-  return true;
 }
 
 Descriptor::Properties DbScanListDescriptor::getDBProperties(
@@ -4785,18 +4771,17 @@ void DbScanPartitionDescriptor::highlight(std::any object,
   }
 }
 
-bool DbScanPartitionDescriptor::getAllObjects(SelectionSet& objects) const
+void DbScanPartitionDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
   auto* db_dft = block->getDft();
 
   for (auto* scan_chain : db_dft->getScanChains()) {
     for (auto* scan_partition : scan_chain->getScanPartitions()) {
-      objects.insert(makeSelected(scan_partition));
+      func({scan_partition, this});
     }
   }
-
-  return true;
 }
 
 Descriptor::Properties DbScanPartitionDescriptor::getDBProperties(
@@ -4862,16 +4847,15 @@ void DbScanChainDescriptor::highlight(std::any object, Painter& painter) const
   }
 }
 
-bool DbScanChainDescriptor::getAllObjects(SelectionSet& objects) const
+void DbScanChainDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* block = db_->getChip()->getBlock();
   auto* db_dft = block->getDft();
 
   for (auto* scan_chain : db_dft->getScanChains()) {
-    objects.insert(makeSelected(scan_chain));
+    func({scan_chain, this});
   }
-
-  return true;
 }
 
 Descriptor::Properties DbScanChainDescriptor::getDBProperties(
@@ -4956,9 +4940,9 @@ void DbBoxDescriptor::highlight(std::any object, Painter& painter) const
   painter.drawRect(bbox);
 }
 
-bool DbBoxDescriptor::getAllObjects(SelectionSet& objects) const
+void DbBoxDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
-  return false;
 }
 
 bool DbBoxDescriptor::lessThan(std::any l, std::any r) const

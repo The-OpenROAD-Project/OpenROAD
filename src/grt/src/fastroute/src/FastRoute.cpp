@@ -235,7 +235,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              int min_layer,
                              int max_layer,
                              float slack,
-                             std::vector<int>* edge_cost_per_layer)
+                             std::vector<int8_t>* edge_cost_per_layer)
 {
   int netID;
   bool exists;
@@ -1582,7 +1582,7 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 ////////////////////////////////////////////////////////////////
 
-int FrNet::getLayerEdgeCost(int layer) const
+int8_t FrNet::getLayerEdgeCost(int layer) const
 {
   if (edge_cost_per_layer_) {
     return (*edge_cost_per_layer_)[layer];
@@ -1605,7 +1605,7 @@ void FrNet::reset(odb::dbNet* db_net,
                   int min_layer,
                   int max_layer,
                   float slack,
-                  std::vector<int>* edge_cost_per_layer)
+                  std::vector<int8_t>* edge_cost_per_layer)
 {
   db_net_ = db_net;
   is_critical_ = false;

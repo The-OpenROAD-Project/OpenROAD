@@ -228,12 +228,12 @@ bool RulerDescriptor::lessThan(std::any l, std::any r) const
   return l_ruler->getName() < r_ruler->getName();
 }
 
-bool RulerDescriptor::getAllObjects(SelectionSet& objects) const
+void RulerDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto& ruler : rulers_) {
-    objects.insert(makeSelected(ruler.get()));
+    func({ruler.get(), this});
   }
-  return true;
 }
 
 }  // namespace gui

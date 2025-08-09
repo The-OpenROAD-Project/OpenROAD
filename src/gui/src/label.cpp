@@ -190,12 +190,12 @@ bool LabelDescriptor::lessThan(std::any l, std::any r) const
   return l_label->getName() < r_label->getName();
 }
 
-bool LabelDescriptor::getAllObjects(SelectionSet& objects) const
+void LabelDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto& label : labels_) {
-    objects.insert(makeSelected(label.get()));
+    func({label.get(), this});
   }
-  return true;
 }
 
 }  // namespace gui

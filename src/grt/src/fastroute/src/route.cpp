@@ -19,7 +19,7 @@ using utl::GRT;
 // possible L for L segments
 void FastRouteCore::estimateOneSeg(const Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -39,7 +39,7 @@ void FastRouteCore::estimateOneSeg(const Segment* seg)
 
 void FastRouteCore::routeSegV(const Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -48,7 +48,7 @@ void FastRouteCore::routeSegV(const Segment* seg)
 
 void FastRouteCore::routeSegH(const Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, edgeCost);
 }
@@ -56,7 +56,7 @@ void FastRouteCore::routeSegH(const Segment* seg)
 // L-route, based on previous L route
 void FastRouteCore::routeSegL(Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -137,7 +137,7 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
     }
   }
 
-  const int edgeCost = nets_[seg->netID]->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)

@@ -56,7 +56,8 @@ class DbTechDescriptor : public BaseDbDescriptor<odb::dbTech>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTech* tech) const override;
@@ -73,7 +74,8 @@ class DbBlockDescriptor : public BaseDbDescriptor<odb::dbBlock>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBlock* block) const override;
@@ -95,7 +97,8 @@ class DbInstDescriptor : public BaseDbDescriptor<odb::dbInst>
   Actions getActions(std::any object) const override;
   Editors getEditors(std::any object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbInst* inst) const override;
@@ -123,7 +126,8 @@ class DbMasterDescriptor : public BaseDbDescriptor<odb::dbMaster>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
   static void getMasterEquivalent(sta::dbSta* sta,
                                   odb::dbMaster* master,
@@ -167,7 +171,8 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   Selected makeSelected(std::any obj) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   odb::dbNet* getObject(const std::any& object) const override;
@@ -241,7 +246,8 @@ class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
 
   Actions getActions(std::any object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbITerm* iterm) const override;
@@ -264,7 +270,8 @@ class DbBTermDescriptor : public BaseDbDescriptor<odb::dbBTerm>
   Editors getEditors(std::any object) const override;
   Actions getActions(std::any object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBTerm* bterm) const override;
@@ -281,7 +288,8 @@ class DbBPinDescriptor : public BaseDbDescriptor<odb::dbBPin>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBPin* bpin) const override;
@@ -300,7 +308,8 @@ class DbMTermDescriptor : public BaseDbDescriptor<odb::dbMTerm>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbMTerm* mterm) const override;
@@ -320,7 +329,8 @@ class DbViaDescriptor : public BaseDbDescriptor<odb::dbVia>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbVia* via) const override;
@@ -340,7 +350,8 @@ class DbBlockageDescriptor : public BaseDbDescriptor<odb::dbBlockage>
   Actions getActions(std::any object) const override;
   Editors getEditors(std::any object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBlockage* blockage) const override;
@@ -359,7 +370,8 @@ class DbObstructionDescriptor : public BaseDbDescriptor<odb::dbObstruction>
 
   Actions getActions(std::any object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbObstruction* obs) const override;
@@ -376,7 +388,8 @@ class DbTechLayerDescriptor : public BaseDbDescriptor<odb::dbTechLayer>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechLayer* layer) const override;
@@ -414,7 +427,8 @@ class DbTermAccessPointDescriptor : public Descriptor
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   odb::dbDatabase* db_;
@@ -431,7 +445,8 @@ class DbGroupDescriptor : public BaseDbDescriptor<odb::dbGroup>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbGroup* group) const override;
@@ -448,7 +463,8 @@ class DbRegionDescriptor : public BaseDbDescriptor<odb::dbRegion>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbRegion* region) const override;
@@ -466,13 +482,15 @@ class DbModuleDescriptor : public BaseDbDescriptor<odb::dbModule>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbModule* module) const override;
 
  private:
-  void getModules(odb::dbModule* module, SelectionSet& objects) const;
+  void getModules(odb::dbModule* module,
+                  const std::function<void(const Selected&)>& func) const;
 };
 
 class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>
@@ -487,7 +505,8 @@ class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechVia* via) const override;
@@ -505,7 +524,8 @@ class DbTechViaRuleDescriptor : public BaseDbDescriptor<odb::dbTechViaRule>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechViaRule* via_rule) const override;
@@ -524,7 +544,8 @@ class DbTechViaLayerRuleDescriptor
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(
@@ -544,7 +565,8 @@ class DbMetalWidthViaMapDescriptor
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbMetalWidthViaMap* via_map) const override;
@@ -563,7 +585,8 @@ class DbGenerateViaDescriptor
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechViaGenerateRule* via) const override;
@@ -582,7 +605,8 @@ class DbNonDefaultRuleDescriptor
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechNonDefaultRule* rule) const override;
@@ -600,7 +624,8 @@ class DbTechLayerRuleDescriptor : public BaseDbDescriptor<odb::dbTechLayerRule>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechLayerRule* rule) const override;
@@ -619,7 +644,8 @@ class DbTechSameNetRuleDescriptor
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechSameNetRule* rule) const override;
@@ -648,7 +674,8 @@ class DbSiteDescriptor : public BaseDbDescriptor<odb::dbSite>
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   odb::dbSite* getObject(const std::any& object) const override;
@@ -672,7 +699,8 @@ class DbRowDescriptor : public BaseDbDescriptor<odb::dbRow>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbRow* row) const override;
@@ -691,7 +719,8 @@ class DbMarkerCategoryDescriptor
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbMarkerCategory* category) const override;
@@ -709,7 +738,8 @@ class DbMarkerDescriptor : public BaseDbDescriptor<odb::dbMarker>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
   void paintMarker(odb::dbMarker* marker, Painter& painter) const;
 
@@ -729,7 +759,8 @@ class DbScanInstDescriptor : public BaseDbDescriptor<odb::dbScanInst>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
   static Descriptor::Property getScanPinProperty(
       const std::string& name,
@@ -751,7 +782,8 @@ class DbScanListDescriptor : public BaseDbDescriptor<odb::dbScanList>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbScanList* scan_list) const override;
@@ -769,7 +801,8 @@ class DbScanPartitionDescriptor : public BaseDbDescriptor<odb::dbScanPartition>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(
@@ -788,7 +821,8 @@ class DbScanChainDescriptor : public BaseDbDescriptor<odb::dbScanChain>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbScanChain* scan_chain) const override;
@@ -814,7 +848,9 @@ class DbBoxDescriptor : public BaseDbDescriptor<odb::dbBox>
 
   void highlight(std::any object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
   bool lessThan(std::any l, std::any r) const override;
 
  protected:
