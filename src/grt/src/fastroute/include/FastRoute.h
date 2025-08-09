@@ -123,18 +123,29 @@ class FastRouteCore
                      int layer,
                      uint16_t reducedCap,
                      bool isReduce);
+  void releaseResourcesOnInterval(
+      int x,
+      int y,
+      int layer,
+      bool is_horizontal,
+      const interval<int>::type& tile_reduce_interval,
+      const std::vector<int>& track_space);
   void addVerticalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
       const int layer,
       const interval<int>::type& first_tile_reduce_interval,
-      const interval<int>::type& last_tile_reduce_interval);
+      const interval<int>::type& last_tile_reduce_interval,
+      const std::vector<int>& track_space,
+      bool has_release = false);
   void addHorizontalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
       const int layer,
       const interval<int>::type& first_tile_reduce_interval,
-      const interval<int>::type& last_tile_reduce_interval);
+      const interval<int>::type& last_tile_reduce_interval,
+      const std::vector<int>& track_space,
+      bool has_release = false);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();
@@ -227,6 +238,8 @@ class FastRouteCore
   {
     return debug_->renderer.get();
   }
+  void getOverflowPositions(
+      std::vector<std::pair<odb::Point, bool>>& overflow_pos);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -254,11 +267,10 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
-                         int& posX,
-                         int& posY,
-                         int dir,
-                         int& radius);
+  void findNetsNearPosition(std::set<odb::dbNet*>& congestion_nets,
+                            const odb::Point& position,
+                            bool is_horizontal,
+                            int& radius);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,

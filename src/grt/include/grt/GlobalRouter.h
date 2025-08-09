@@ -296,6 +296,7 @@ class GlobalRouter
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
 
+  void findNetsWithWiresOnCongestion(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -325,7 +326,11 @@ class GlobalRouter
                                 float reduction_percentage);
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer,
-                                  bool is_macro = false);
+                                  bool is_macro = false,
+                                  bool has_release = false);
+  void savePositionWithReducedResources(const odb::Rect& rect,
+                                        odb::dbTechLayer* tech_layer,
+                                        odb::dbNet* db_net);
   void addResourcesForPinAccess();
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
@@ -486,6 +491,10 @@ class GlobalRouter
 
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> pad_pins_connections_;
+
+  // Saving the positions used by nets
+  std::map<odb::Point, std::vector<odb::dbNet*>> h_nets_in_pos_;
+  std::map<odb::Point, std::vector<odb::dbNet*>> v_nets_in_pos_;
 
   // db variables
   sta::dbSta* sta_;
