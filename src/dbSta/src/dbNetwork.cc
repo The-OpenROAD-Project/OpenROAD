@@ -4163,12 +4163,15 @@ void dbNetwork::accumulateFlatLoadPinsOnNet(
   visitConnectedPins(net, rp, visited_nets);
 }
 
-void dbNetwork::AxiomCheck()
+// Use this API to check if flat & hier connectivities are ok
+void dbNetwork::checkAxioms()
 {
-  dbSet<dbModNet> mod_nets = block()->getModNets();
-  for (auto mod_net : mod_nets) {
-    findRelatedDbNet(mod_net);
-  }
+  checkSanityNetConnectivity();
+  checkSanityModBTerms();
+  checkSanityModITerms();
+  checkSanityModuleInsts();
+  checkSanityTermConnectivity();
+  checkSanityModInstTerms();
 }
 
 Net* dbNetwork::getFlatNet(Net* net) const
@@ -4184,6 +4187,125 @@ Net* dbNetwork::getFlatNet(Net* net) const
     db_net = findRelatedDbNet(db_mod_net);
   }
   return dbToSta(db_net);
+}
+
+void dbNetwork::checkSanityNetConnectivity()
+{
+  // Check for hier net and flat net connectivity
+  dbSet<dbModNet> mod_nets = block()->getModNets();
+  for (auto mod_net : mod_nets) {
+    findRelatedDbNet(mod_net);
+  }
+
+  // Check for incomplete flat net connections
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->getITerms().size() + net->getBTerms().size() < 2) {
+      logger_->warn(ORD,
+                    2039,
+                    "SanityCheck: Net {} has less than 2 connections.",
+                    net->getName());
+    }
+  }
+}
+
+void dbNetwork::checkSanityModBTerms()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModule* module : block_->getModules()) {
+    std::set<std::string> bterm_names;
+    for (odb::dbModBTerm* bterm : module->getModBTerms()) {
+      const std::string bterm_name = bterm->getName();
+      if (bterm_names.find(bterm_name) != bterm_names.end()) {
+        logger_->error(
+            ORD,
+            2036,
+            "SanityCheck: Duplicate dbModBTerm name '{}' in module '{}'.",
+            bterm_name,
+            module->getName());
+      }
+      bterm_names.insert(bterm_name);
+    }
+  }
+}
+
+void sta::dbNetwork::checkSanityModITerms()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    std::set<std::string> iterm_names;
+    for (odb::dbModITerm* iterm : mod_inst->getModITerms()) {
+      const std::string iterm_name = iterm->getName();
+      if (iterm_names.find(iterm_name) != iterm_names.end()) {
+        logger_->error(ORD,
+                       2037,
+                       "SanityCheck: Duplicate dbModITerm name '{}' in module "
+                       "instance '{}'.",
+                       iterm_name,
+                       mod_inst->getName());
+      }
+      iterm_names.insert(iterm_name);
+    }
+  }
+}
+
+void dbNetwork::checkSanityModuleInsts()
+{
+  for (odb::dbModule* module : block_->getModules()) {
+    if (module->getModInsts().empty()) {
+      logger_->warn(ORD,
+                    2038,
+                    "SanityCheck: Module {} has no instances.",
+                    module->getHierarchicalName());
+    }
+  }
+}
+
+void dbNetwork::checkSanityTermConnectivity()
+{
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getNet() == nullptr) {
+      logger_->warn(ORD,
+                    2040,
+                    "SanityCheck: BTerm {} is not connected to any net.",
+                    bterm->getName());
+    }
+  }
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() == nullptr) {
+        logger_->warn(ORD,
+                      2041,
+                      "SanityCheck: ITerm {}/{} is not connected to any net.",
+                      inst->getName(),
+                      iterm->getMTerm()->getName());
+      }
+    }
+  }
+}
+
+void dbNetwork::checkSanityModInstTerms()
+{
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    odb::dbModule* master = mod_inst->getMaster();
+    if (master) {
+      if (mod_inst->getModITerms().size() != master->getModBTerms().size()) {
+        logger_->warn(ORD,
+                      2042,
+                      "SanityCheck: Module instance {} has {} ITerms, but its "
+                      "master {} has "
+                      "{} BTerms.",
+                      mod_inst->getHierarchicalName(),
+                      mod_inst->getModITerms().size(),
+                      master->getHierarchicalName(),
+                      master->getModBTerms().size());
+      }
+    }
+  }
 }
 
 }  // namespace sta
