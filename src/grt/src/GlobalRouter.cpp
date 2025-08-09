@@ -1162,7 +1162,7 @@ void GlobalRouter::makeFastrouteNet(Net* net)
   findFastRoutePins(net, pins_on_grid, root_idx);
 
   bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-  std::vector<int>* edge_cost_per_layer;
+  std::vector<int8_t>* edge_cost_per_layer;
   int edge_cost_for_net;
   computeTrackConsumption(net, edge_cost_for_net, edge_cost_per_layer);
 
@@ -1250,7 +1250,7 @@ void GlobalRouter::getCapacityReductionData(CapacityReductionData& cap_red_data)
 void GlobalRouter::computeTrackConsumption(
     const Net* net,
     int& track_consumption,
-    std::vector<int>*& edge_costs_per_layer)
+    std::vector<int8_t>*& edge_costs_per_layer)
 {
   edge_costs_per_layer = nullptr;
   track_consumption = 1;
@@ -1262,7 +1262,7 @@ void GlobalRouter::computeTrackConsumption(
   odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
   if (ndr) {
     int num_layers = grid_->getNumLayers();
-    edge_costs_per_layer = new std::vector<int>(num_layers + 1, 1);
+    edge_costs_per_layer = new std::vector<int8_t>(num_layers + 1, 1);
     std::vector<odb::dbTechLayerRule*> layer_rules;
     ndr->getLayerRules(layer_rules);
 
@@ -1280,6 +1280,13 @@ void GlobalRouter::computeTrackConsumption(
       int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      if (consumption > std::numeric_limits<int8_t>::max()) {
+        logger_->error(GRT,
+                       272,
+                       "NDR consumption {} exceeds {} and is unsupported",
+                       consumption,
+                       std::numeric_limits<int8_t>::max());
+      }
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
       track_consumption = std::max(track_consumption, consumption);

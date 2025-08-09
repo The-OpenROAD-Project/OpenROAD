@@ -47,12 +47,11 @@ enum class EdgeDirection
 
 struct Segment  // A Segment is a 2-pin connection
 {
-  bool xFirst;  // route x-direction first (only for L route)
-  bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
-
   int16_t x1, y1, x2, y2;  // coordinates of two endpoints
-  int netID;               // the netID of the net this segment belonging to
-  int16_t Zpoint;  // The coordinates of Z point (x for HVH and y for VHV)
+  int16_t Zpoint;   // The coordinates of Z point (x for HVH and y for VHV)
+  int8_t cost;      // the netID of the net this segment belonging to
+  bool xFirst : 1;  // route x-direction first (only for L route)
+  bool HVH : 1;     // TRUE = HVH or false = VHV (only for Z route)
 };
 
 struct FrNet  // A Net is a set of connected MazePoints
@@ -67,7 +66,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int getMaxLayer() const { return max_layer_; }
   int getMinLayer() const { return min_layer_; }
   int getNumPins() const { return pin_x_.size(); }
-  int getLayerEdgeCost(int layer) const;
+  int8_t getLayerEdgeCost(int layer) const;
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
@@ -84,7 +83,7 @@ struct FrNet  // A Net is a set of connected MazePoints
              int min_layer,
              int max_layer,
              float slack,
-             std::vector<int>* edge_cost_per_layer);
+             std::vector<int8_t>* edge_cost_per_layer);
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
@@ -103,7 +102,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int max_layer_;
   float slack_;
   // Non-null when an NDR has been applied to the net.
-  std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
+  std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };
 
 struct Edge  // An Edge is the routing track holder between two adjacent
