@@ -190,6 +190,8 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
                                const char* name,
                                dbModBTerm* modbterm)
 {
+  assert(parentInstance->findModITerm(name) == nullptr);
+
   _dbModInst* parent = (_dbModInst*) parentInstance;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModITerm* moditerm = block->_moditerm_tbl->create();
