@@ -28,21 +28,21 @@ class GridGraphDescriptor : public gui::Descriptor
     const frDesign* design;
   };
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const gui::Selected&)>& func) const override;
 };
 
-std::string GridGraphDescriptor::getName(std::any object) const
+std::string GridGraphDescriptor::getName(const std::any& object) const
 {
   auto data = std::any_cast<Data>(object);
   return "<" + std::to_string(data.x) + ", " + std::to_string(data.y) + ", "
@@ -54,7 +54,7 @@ std::string GridGraphDescriptor::getTypeName() const
   return "Grid Graph Node";
 }
 
-bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool GridGraphDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto data = std::any_cast<Data>(object);
   auto* graph = data.graph;
@@ -64,7 +64,7 @@ bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void GridGraphDescriptor::highlight(std::any object,
+void GridGraphDescriptor::highlight(const std::any& object,
                                     gui::Painter& painter) const
 {
   odb::Rect bbox;
@@ -76,7 +76,7 @@ void GridGraphDescriptor::highlight(std::any object,
 }
 
 gui::Descriptor::Properties GridGraphDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto data = std::any_cast<Data>(object);
   auto* graph = data.graph;
@@ -169,7 +169,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
   return props;
 }
 
-gui::Selected GridGraphDescriptor::makeSelected(std::any object) const
+gui::Selected GridGraphDescriptor::makeSelected(const std::any& object) const
 {
   if (auto data = std::any_cast<Data>(&object)) {
     return gui::Selected(*data, this);
@@ -177,7 +177,7 @@ gui::Selected GridGraphDescriptor::makeSelected(std::any object) const
   return gui::Selected();
 }
 
-bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
+bool GridGraphDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_grid = std::any_cast<Data>(l);
   auto r_grid = std::any_cast<Data>(r);
