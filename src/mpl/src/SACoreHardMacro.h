@@ -55,7 +55,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void calPenalty() override;
 
   void perturb() override;
-  void restore() override;
+  void saveState() override;
+  void restoreState() override;
   // actions used
   void flipAllMacros();
 
