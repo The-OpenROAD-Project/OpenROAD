@@ -1612,6 +1612,18 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
+  /// Make a unique net name
+  /// If parent_scope is nullptr, the net name will be unique in top module.
+  /// If base_name is nullptr, the default net name will be used.
+  ///
+  std::string makeNewNetName(dbModInst* parent_scope = nullptr,
+                             const char* base_name = nullptr);
+  std::string makeNewInstName(dbModInst* parent_scope,
+                              const char* base_name,
+                              bool underscore = false);
+  std::string makeNewInstName(const char* base_name, bool underscore = false);
+
+  ///
   /// return the regions of this design
   ///
   dbSet<dbRegion> getRegions();

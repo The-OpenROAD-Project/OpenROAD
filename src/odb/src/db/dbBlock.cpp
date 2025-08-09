@@ -3686,4 +3686,87 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
   }
 }
 
+std::string dbBlock::makeNewNetName(dbModInst* parent_scope,
+                                    const char* base_name)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+
+  if (base_name == nullptr) {
+    base_name = "net";
+  }
+
+  // Decide hierarchical name without unique index
+  fmt::memory_buffer buf;
+  if (parent_scope) {
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent_scope->getName(),
+                   getHierarchyDelimiter());
+  }
+  fmt::format_to(std::back_inserter(buf), "{}", base_name);
+
+  // Append unique index
+  const size_t prefix_size = buf.size();
+  do {
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", block->_unique_net_index++);
+    buf.push_back('\0');  // Null-terminate for findNet
+  } while (findNet(buf.data()));
+  return std::string(buf.data());
+}
+
+////////////////////////////////////////////////////////////////
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module)which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+//(as was done with dbInsts) and will require changing the
+// method: dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
+//
+std::string dbBlock::makeNewInstName(dbModInst* parent_scope,
+                                     const char* base_name,
+                                     bool underscore)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+
+  if (base_name == nullptr) {
+    base_name = "inst";
+  }
+
+  // Decide hierarchical name without unique index
+  fmt::memory_buffer buf;
+  if (parent_scope) {
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent_scope->getHierarchicalName(),
+                   getHierarchyDelimiter());
+  }
+  fmt::format_to(
+      std::back_inserter(buf), "{}{}", base_name, underscore ? "_" : "");
+
+  // Append unique index
+  const size_t prefix_size = buf.size();
+  do {
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", block->_unique_inst_index++);
+    buf.push_back('\0');  // Null-terminate
+
+    // NOTE: TODO: The scoping should be within
+    // the dbModule scope for the instance, not the whole network.
+    // dbInsts are already scoped within a dbModule
+    // To get the dbModule for a dbInst used inst -> getModule
+    // then search within that scope. That way the instance name
+    // does not have to be some massive string like root/X/Y/U1.
+    //
+  } while (findInst(buf.data()) || findModInst(buf.data()));
+  return std::string(buf.data());
+}
+
+std::string dbBlock::makeNewInstName(const char* base_name, bool underscore)
+{
+  return makeNewInstName(nullptr, base_name, underscore);
+}
+
 }  // namespace odb
