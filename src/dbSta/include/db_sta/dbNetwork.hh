@@ -67,7 +67,15 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
-  void AxiomCheck();
+  // sanity checkers
+  void checkAxioms();
+  void checkSanityNetConnectivity();
+  void checkSanityModBTerms();
+  void checkSanityModITerms();
+  void checkSanityModuleInsts();
+  void checkSanityTermConnectivity();
+  void checkSanityModInstTerms();
+
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
