@@ -25,13 +25,6 @@ or_integration_tests(
     gain_buffering1
     gcd_resize
     liberty_dont_use
-    make_parasitics1
-    make_parasitics2
-    make_parasitics3
-    make_parasitics4
-    make_parasitics5
-    make_parasitics6
-    make_parasitics7
     pin_swap1
     pinswap_flat
     pinswap_hier

@@ -54,7 +54,6 @@ cc_library(
         "//:ord",
         "//src/dbSta",
         "//src/grt",
-        "//src/grt:types",
         "//src/gui",
         "//src/odb",
         "//src/rsz",

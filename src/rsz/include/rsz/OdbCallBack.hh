@@ -23,12 +23,7 @@ class OdbCallBack : public dbBlockCallBackObj
  public:
   OdbCallBack(Resizer* resizer, Network* network, dbNetwork* db_network);
 
-  void inDbInstCreate(dbInst* inst) override;
-  void inDbNetCreate(dbNet* net) override;
   void inDbNetDestroy(dbNet* net) override;
-  void inDbITermPostConnect(dbITerm* iterm) override;
-  void inDbITermPostDisconnect(dbITerm* iterm, dbNet* net) override;
-  void inDbInstSwapMasterAfter(dbInst* inst) override;
 
  private:
   Resizer* resizer_;

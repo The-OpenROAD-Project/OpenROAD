@@ -21,6 +21,10 @@ namespace rsz {
 class Resizer;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rmp {
 
 class Restructure;
@@ -32,6 +36,7 @@ void initRestructure(rmp::Restructure* restructure,
                      sta::dbSta* sta,
                      odb::dbDatabase* db,
                      rsz::Resizer* resizer,
+                     est::EstimateParasitics* estimate_parasitics,
                      Tcl_Interp* tcl_interp);
 
 void deleteRestructure(rmp::Restructure* restructure);

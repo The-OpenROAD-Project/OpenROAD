@@ -6,7 +6,7 @@
 #include "AbstractSteinerRenderer.h"
 #include "gui/gui.h"
 
-namespace rsz {
+namespace est {
 
 class SteinerRenderer : public gui::Renderer, public AbstractSteinerRenderer
 {
@@ -20,4 +20,4 @@ class SteinerRenderer : public gui::Renderer, public AbstractSteinerRenderer
   SteinerTree* tree_ = nullptr;
 };
 
-}  // namespace rsz
+}  // namespace est

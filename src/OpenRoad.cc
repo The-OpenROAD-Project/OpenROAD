@@ -24,6 +24,8 @@
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
 #include "dst/MakeDistributed.h"
+#include "est/EstimateParasitics.h"
+#include "est/MakeEstimateParasitics.h"
 #include "exa/MakeExample.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
@@ -114,6 +116,7 @@ OpenRoad::~OpenRoad()
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
+  est::deleteEstimateParasitics(estimate_parasitics_);
   delete logger_;
   delete verilog_reader_;
 }
@@ -184,6 +187,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   distributer_ = dst::makeDistributed();
   stt_builder_ = stt::makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
+  estimate_parasitics_ = est::makeEstimateParasitics();
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -204,7 +208,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
               sta_,
               stt_builder_,
               global_router_,
-              opendp_);
+              opendp_,
+              estimate_parasitics_);
   initDbVerilogNetwork(verilog_network_, sta_);
   initIoplacer(ioPlacer_, db_, logger_, tcl_interp);
   initReplace(
@@ -214,7 +219,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initGlobalRouter(global_router_,
                    db_,
                    sta_,
-                   resizer_,
                    antenna_checker_,
                    opendp_,
                    stt_builder_,
@@ -226,6 +230,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                 sta_,
                 stt_builder_,
                 resizer_,
+                estimate_parasitics_,
                 logger_,
                 tcl_interp);
   initTapcell(tapcell_, db_, logger_, tcl_interp);
@@ -239,10 +244,17 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initExample(example_, db_, logger_, tcl_interp);
   initOpenRCX(extractor_, db_, logger_, getVersion(), tcl_interp);
   initICeWall(icewall_, db_, logger_, tcl_interp);
-  initRestructure(restructure_, logger_, sta_, db_, resizer_, tcl_interp);
+  initRestructure(restructure_,
+                  logger_,
+                  sta_,
+                  db_,
+                  resizer_,
+                  estimate_parasitics_,
+                  tcl_interp);
   initTritonRoute(
       detailed_router_, db_, logger_, distributer_, stt_builder_, tcl_interp);
-  initPDNSim(pdnsim_, logger_, db_, sta_, resizer_, opendp_, tcl_interp);
+  initPDNSim(
+      pdnsim_, logger_, db_, sta_, estimate_parasitics_, opendp_, tcl_interp);
   initAntennaChecker(antenna_checker_, db_, logger_, tcl_interp);
   initPartitionMgr(
       partitionMgr_, db_, getDbNetwork(), sta_, logger_, tcl_interp);
@@ -250,6 +262,13 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initDistributed(distributer_, logger_, tcl_interp);
   initSteinerTreeBuilder(stt_builder_, db_, logger_, tcl_interp);
   dft::initDft(dft_, db_, sta_, logger_, tcl_interp);
+  initEstimateParasitics(estimate_parasitics_,
+                         tcl_interp,
+                         logger_,
+                         db_,
+                         sta_,
+                         stt_builder_,
+                         global_router_);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

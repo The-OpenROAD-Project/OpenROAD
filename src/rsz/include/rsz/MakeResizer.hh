@@ -24,6 +24,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -39,6 +43,7 @@ void initResizer(rsz::Resizer* resizer,
                  sta::dbSta* sta,
                  stt::SteinerTreeBuilder* stt_builder,
                  grt::GlobalRouter* global_router,
-                 dpl::Opendp* dp);
+                 dpl::Opendp* dp,
+                 est::EstimateParasitics* estimate_parasitics);
 
 }  // namespace rsz

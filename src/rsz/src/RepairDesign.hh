@@ -14,6 +14,10 @@
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -50,7 +54,8 @@ class LoadRegion
 class RepairDesign : dbStaState
 {
  public:
-  explicit RepairDesign(Resizer* resizer);
+  explicit RepairDesign(Resizer* resizer,
+                        est::EstimateParasitics* estimate_parasitics);
   ~RepairDesign() override;
   void repairDesign(double max_wire_length,
                     double slew_margin,
@@ -220,9 +225,10 @@ class RepairDesign : dbStaState
   dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   int dbu_ = 0;
   double initial_design_area_ = 0;
-  ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
+  est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::none;
 
   // Gain buffering
   std::vector<LibertyCell*> buffer_sizes_;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "SteinerTree.hh"
+#include "est/SteinerTree.h"
 
 #include <cmath>
 #include <cstddef>
@@ -9,158 +9,22 @@
 #include <string>
 #include <vector>
 
-#include "AbstractSteinerRenderer.h"
 #include "db_sta/dbNetwork.hh"
-#include "rsz/Resizer.hh"
 #include "sta/NetworkCmp.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
-namespace rsz {
+namespace est {
 
 using std::abs;
 using std::string;
 
-using utl::RSZ;
+using utl::EST;
 
 using sta::NetConnectedPinIterator;
 using sta::stringPrintTmp;
 
-static void connectedPins(const Net* net,
-                          Network* network,
-                          dbNetwork* db_network,
-                          // Return value.
-                          Vector<PinLoc>& pins);
-
-SteinerTree* Resizer::makeSteinerTree(Point drvr_location,
-                                      const std::vector<Point>& sink_locations)
-{
-  SteinerTree* tree = new SteinerTree(drvr_location, this);
-  Vector<PinLoc>& pinlocs = tree->pinlocs();
-  for (auto loc : sink_locations) {
-    pinlocs.push_back(PinLoc{nullptr, loc});
-  }
-  // Sort pins by location
-  sort(pinlocs, [=](const PinLoc& pin1, const PinLoc& pin2) {
-    return pin1.loc.getX() < pin2.loc.getX()
-           || (pin1.loc.getX() == pin2.loc.getX()
-               && pin1.loc.getY() < pin2.loc.getY());
-  });
-  int pin_count = pinlocs.size();
-  if (pin_count >= 1) {
-    // Two separate vectors of coordinates needed by flute.
-    std::vector<int> x, y;
-    int drvr_idx = pinlocs.size();
-    pinlocs.push_back(PinLoc{nullptr, drvr_location});
-    for (int i = 0; i < pin_count + 1; i++) {
-      const PinLoc& pinloc = pinlocs[i];
-      x.push_back(pinloc.loc.x());
-      y.push_back(pinloc.loc.y());
-    }
-    stt::Tree ftree = stt_builder_->makeSteinerTree(x, y, drvr_idx);
-    tree->setTree(ftree, db_network_);
-    tree->populateSides();
-    return tree;
-  }
-  delete tree;
-  return nullptr;
-}
-
-// Returns nullptr if net has less than 2 pins or any pin is not placed.
-SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
-{
-  Network* sdc_network = network_->sdcNetwork();
-
-  /*
-    Handle hierarchy. Make sure all traversal on dbNets.
-   */
-  odb::dbNet* db_net = db_network_->flatNet(drvr_pin);
-
-  Net* net
-      = network_->isTopLevelPort(drvr_pin)
-            ? network_->net(network_->term(drvr_pin))
-            // original code, could retrun a mod net  : network_->net(drvr_pin);
-            : db_network_->dbToSta(db_net);
-
-  debugPrint(logger_, RSZ, "steiner", 1, "Net {}", sdc_network->pathName(net));
-  SteinerTree* tree = new SteinerTree(drvr_pin, this);
-  Vector<PinLoc>& pinlocs = tree->pinlocs();
-  // Find all the connected pins
-  connectedPins(net, network_, db_network_, pinlocs);
-  // Sort pins by location because connectedPins order is not deterministic.
-  sort(pinlocs, [=](const PinLoc& pin1, const PinLoc& pin2) {
-    return pin1.loc.getX() < pin2.loc.getX()
-           || (pin1.loc.getX() == pin2.loc.getX()
-               && pin1.loc.getY() < pin2.loc.getY());
-  });
-  int pin_count = pinlocs.size();
-  bool is_placed = true;
-  if (pin_count >= 2) {
-    std::vector<int> x;  // Two separate vectors of coordinates needed by flute.
-    std::vector<int> y;
-    int drvr_idx = 0;  // The "driver_pin" or the root of the Steiner tree.
-    for (int i = 0; i < pin_count; i++) {
-      const PinLoc& pinloc = pinlocs[i];
-      if (pinloc.pin == drvr_pin) {
-        drvr_idx = i;  // drvr_index is needed by flute.
-      }
-      x.push_back(pinloc.loc.x());
-      y.push_back(pinloc.loc.y());
-      debugPrint(logger_,
-                 RSZ,
-                 "steiner",
-                 3,
-                 " {} ({} {})",
-                 sdc_network->pathName(pinloc.pin),
-                 pinloc.loc.x(),
-                 pinloc.loc.y());
-      // Track that all our pins are placed.
-      is_placed &= db_network_->isPlaced(pinloc.pin);
-
-      // Flute may reorder the input points, so it takes some unravelling
-      // to find the mapping back to the original pins. The complication is
-      // that multiple pins can occupy the same location.
-      tree->locAddPin(pinloc.loc, pinloc.pin);
-    }
-    if (is_placed) {
-      stt::Tree ftree = stt_builder_->makeSteinerTree(
-          db_network_->staToDb(net), x, y, drvr_idx);
-
-      tree->setTree(ftree, db_network_);
-      tree->createSteinerPtToPinMap();
-      return tree;
-    }
-  }
-  delete tree;
-  return nullptr;
-}
-
-static void connectedPins(const Net* net,
-                          Network* network,
-                          dbNetwork* db_network,
-                          // Return value.
-                          Vector<PinLoc>& pins)
-{
-  NetConnectedPinIterator* pin_iter = network->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    odb::dbITerm* iterm;
-    odb::dbBTerm* bterm;
-    odb::dbModITerm* moditerm;
-    db_network->staToDb(pin, iterm, bterm, moditerm);
-    //
-    // only accumuate the flat pins (in hierarchical mode we may
-    // hit moditerms/modbterms).
-    //
-    if (iterm || bterm) {
-      Point loc = db_network->location(pin);
-      pins.push_back({pin, loc});
-    }
-  }
-  delete pin_iter;
-}
-
-void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
+void SteinerTree::setTree(const stt::Tree& tree)
 {
   tree_ = tree;
 
@@ -179,17 +43,15 @@ void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
   }
 }
 
-SteinerTree::SteinerTree(const Pin* drvr_pin, Resizer* resizer)
-    : drvr_location_(resizer->getDbNetwork()->location(drvr_pin)),
-      resizer_(resizer),
-      logger_(resizer->logger())
+SteinerTree::SteinerTree(const Pin* drvr_pin,
+                         sta::dbNetwork* db_network,
+                         Logger* logger)
+    : drvr_location_(db_network->location(drvr_pin)), logger_(logger)
 {
 }
 
-SteinerTree::SteinerTree(Point drvr_location, Resizer* resizer)
-    : drvr_location_(drvr_location),
-      resizer_(resizer),
-      logger_(resizer->logger())
+SteinerTree::SteinerTree(Point drvr_location, Logger* logger)
+    : drvr_location_(drvr_location), logger_(logger)
 {
 }
 
@@ -326,7 +188,7 @@ void SteinerTree::validatePoint(const SteinerPt pt) const
 {
   if (pt < 0 || pt >= branchCount()) {
     logger_->error(
-        RSZ,
+        EST,
         93,
         "Invalid Steiner point {} requested. 0 <= Valid values <  {}.",
         pt,
@@ -396,7 +258,7 @@ void SteinerTree::populateSides(const SteinerPt from,
 {
   if (adj != from && adj != SteinerNull) {
     if (adj == to) {
-      logger_->error(RSZ, 92, "Steiner tree creation error.");
+      logger_->error(EST, 92, "Steiner tree creation error.");
     }
     if (left_[to] == SteinerNull) {
       left_[to] = adj;
@@ -452,19 +314,6 @@ const Pin* SteinerTree::pin(const SteinerPt pt) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::highlightSteiner(const Pin* drvr)
-{
-  if (steiner_renderer_) {
-    SteinerTree* tree = nullptr;
-    if (drvr) {
-      tree = makeSteinerTree(drvr);
-    }
-    steiner_renderer_->highlight(tree);
-  }
-}
-
-////////////////////////////////////////////////////////////////
-
 size_t PointHash::operator()(const Point& pt) const
 {
   size_t hash = sta::hash_init_value;
@@ -478,4 +327,4 @@ bool PointEqual::operator()(const Point& pt1, const Point& pt2) const
   return pt1.x() == pt2.x() && pt1.y() == pt2.y();
 }
 
-}  // namespace rsz
+}  // namespace est

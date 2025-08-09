@@ -18,6 +18,10 @@ namespace utl {
 class Logger;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 class Resizer;
 }
@@ -60,7 +64,8 @@ class TritonCTS
             sta::dbNetwork* network,
             sta::dbSta* sta,
             stt::SteinerTreeBuilder* st_builder,
-            rsz::Resizer* resizer);
+            rsz::Resizer* resizer,
+            est::EstimateParasitics* estimate_parasitics);
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
@@ -208,6 +213,7 @@ class TritonCTS
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   std::vector<std::unique_ptr<TreeBuilder>> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;

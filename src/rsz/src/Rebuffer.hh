@@ -10,6 +10,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 using utl::Logger;
@@ -41,7 +45,7 @@ using BufferedNetSeq = std::vector<BufferedNetPtr>;
 class Rebuffer : public sta::dbStaState
 {
  public:
-  Rebuffer(Resizer* resizer);
+  Rebuffer(Resizer* resizer, est::EstimateParasitics* estimate_parasitics_);
   void fullyRebuffer(Pin* user_pin = nullptr);
 
  protected:
@@ -136,6 +140,7 @@ class Rebuffer : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   std::vector<BufferSize> buffer_sizes_;
   std::map<LibertyCell*, BufferSize*> buffer_sizes_index_;

@@ -87,6 +87,13 @@ getResizer()
   return openroad->getResizer();
 }
 
+est::EstimateParasitics *
+getEstimateParasitics()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getEstimateParasitics();
+}
+
 rmp::Restructure *
 getRestructure()
 {

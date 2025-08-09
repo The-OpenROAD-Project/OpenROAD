@@ -53,7 +53,9 @@ using sta::TimingArcSet;
 using sta::TimingRole;
 using sta::VertexInEdgeIterator;
 
-RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
+RepairDesign::RepairDesign(Resizer* resizer,
+                           est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -66,7 +68,7 @@ void RepairDesign::init()
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
   pre_checks_ = std::make_unique<PreChecks>(resizer_);
-  parasitics_src_ = resizer_->getParasiticsSrc();
+  parasitics_src_ = estimate_parasitics_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
 }
 
@@ -249,7 +251,7 @@ void RepairDesign::repairDesign(
   }
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int print_iteration = 0;
     if (resizer_->level_drvr_vertices_.size()
         > size_t(5) * max_print_interval_) {
@@ -303,7 +305,7 @@ void RepairDesign::repairDesign(
         logger_->setDebugLevel(RSZ, "repair_net", 0);
       }
     }
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     printProgress(print_iteration, true, true, repaired_net_count);
   }
 
@@ -344,7 +346,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
   resizer_->resized_multi_output_insts_.clear();
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int max_length = resizer_->metersToDbu(max_wire_length);
     for (Clock* clk : sdc_->clks()) {
       const PinSet* clk_pins = sta_->pins(clk);
@@ -419,7 +421,7 @@ void RepairDesign::repairNet(Net* net,
   sta_->checkFanoutLimitPreamble();
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int max_length = resizer_->metersToDbu(max_wire_length);
     PinSet* drivers = network_->drivers(net);
     if (drivers && !drivers->empty()) {
@@ -810,7 +812,7 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
   LibertyCell* cell = network_->libertyCell(inst);
 
   float load_cap;
-  resizer_->ensureWireParasitic(drvr_pin);
+  estimate_parasitics_->ensureWireParasitic(drvr_pin);
   load_cap
       = graph_delay_calc_->loadCap(drvr_pin, corner->findDcalcAnalysisPt(max_));
 
@@ -921,14 +923,14 @@ void RepairDesign::repairNet(Net* net,
 
     // TO BE REMOVED: Resize the driver to normalize slews before repairing
     // limit violations.
-    if (parasitics_src_ == ParasiticsSrc::placement && resize_drvr) {
+    if (parasitics_src_ == est::ParasiticsSrc::placement && resize_drvr) {
       resize_count_ += resizer_->resizeToCapRatio(drvr_pin, false);
     }
 
     float max_cap = INF;
     bool repair_cap = false, repair_load_slew = false, repair_wire = false;
 
-    resizer_->ensureWireParasitic(drvr_pin, net);
+    estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
     if (check_slew) {
@@ -1229,7 +1231,7 @@ void RepairDesign::repairNetWire(
              units_->distanceUnit()->asString(dbuToMeters(length), 1));
   double length1 = dbuToMeters(length);
   double wire_res, wire_cap;
-  bnet->wireRC(corner_, resizer_, wire_res, wire_cap);
+  bnet->wireRC(corner_, resizer_, estimate_parasitics_, wire_res, wire_cap);
   // ref_cap includes ref's wire cap
   double ref_cap = bnet->ref()->cap();
   double load_cap = length1 * wire_cap + ref_cap;
@@ -1436,7 +1438,7 @@ void RepairDesign::repairNetJunc(
              bnet->to_string(resizer_));
   Point loc = bnet->location();
   double wire_res, wire_cap;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
 
   BufferedNetPtr left = bnet->ref();
   int wire_length_left = 0;

@@ -26,8 +26,8 @@ class dbSta;
 class Corner;
 }  // namespace sta
 
-namespace rsz {
-class Resizer;
+namespace est {
+class EstimateParasitics;
 }
 
 namespace psm {
@@ -65,7 +65,7 @@ class IRSolver
       odb::dbNet* net,
       bool floorplanning,
       sta::dbSta* sta,
-      rsz::Resizer* resizer,
+      est::EstimateParasitics* estimate_parasitics,
       utl::Logger* logger,
       const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>&
           user_voltages,
@@ -204,7 +204,7 @@ class IRSolver
   odb::dbNet* net_;
 
   utl::Logger* logger_;
-  rsz::Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* sta_;
 
   std::unique_ptr<IRNetwork> network_;

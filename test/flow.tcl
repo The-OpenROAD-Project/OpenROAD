@@ -200,6 +200,8 @@ write_verilog $verilog_file
 
 pin_access
 
+# estimate parasitics for timing-driven global routing
+estimate_parasitics -placement
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
   -congestion_iterations 100 -verbose

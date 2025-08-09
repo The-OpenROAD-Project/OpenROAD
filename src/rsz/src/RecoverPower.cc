@@ -35,8 +35,11 @@ using sta::Edge;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
-RecoverPower::RecoverPower(Resizer* resizer)
-    : resizer_(resizer), bad_vertices_(resizer->graph_)
+RecoverPower::RecoverPower(Resizer* resizer,
+                           est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer),
+      estimate_parasitics_(estimate_parasitics),
+      bad_vertices_(resizer->graph_)
 {
 }
 
@@ -98,7 +101,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 
   int end_index = 0;
   int failed_move_threshold = 0;
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   for (Vertex* end : ends_with_slack) {
     resizer_->journalBegin();
     const Slack end_slack_before = sta_->vertexSlack(end, max_);
@@ -125,7 +128,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     Path* end_path = sta_->vertexWorstSlackPath(end, max_);
     Vertex* const changed = recoverPower(end_path, end_slack_before);
     if (changed) {
-      resizer_->updateParasitics(true);
+      estimate_parasitics_->updateParasitics(true);
       sta_->findRequireds();
       const Slack end_slack_after = sta_->vertexSlack(end, max_);
 
@@ -222,7 +225,7 @@ Vertex* RecoverPower::recoverPower(const Pin* end_pin)
   Vertex* drvr_vertex;
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     drvr_vertex = recoverPower(path, slack);
   }
 

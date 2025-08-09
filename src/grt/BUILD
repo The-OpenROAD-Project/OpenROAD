@@ -10,22 +10,6 @@ package(
 )
 
 cc_library(
-    name = "types",
-    hdrs = [
-        "include/grt/GRoute.h",
-        "include/grt/GlobalRouter.h",
-        "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        "//src/odb",
-    ],
-)
-
-cc_library(
     name = "abstract-fastroute",
     hdrs = [
         "src/fastroute/include/AbstractFastRouteRenderer.h",
@@ -51,17 +35,18 @@ cc_library(
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
-        "src/fastroute/include/AbstractMakeWireParasitics.h",
+        "include/grt/GRoute.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
     ],
     includes = [
+        "include",
         "src/fastroute/include",
     ],
     deps = [
         ":abstract-fastroute",
-        ":types",
+        "//src/dbSta",
         "//src/gui",
         "//src/odb",
         "//src/stt",
@@ -80,8 +65,6 @@ cc_library(
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
-        "src/MakeWireParasitics.cpp",
-        "src/MakeWireParasitics.h",
         "src/Net.cpp",
         "src/Net.h",
         "src/Pin.cpp",
@@ -92,6 +75,10 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
+        "include/grt/GRoute.h",
+        "include/grt/GlobalRouter.h",
+        "include/grt/PinGridLocation.h",
+        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -103,14 +90,11 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":types",
         "//src/ant",
-        "//src/ant:types",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -141,7 +125,11 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
+        "include/grt/GRoute.h",
+        "include/grt/GlobalRouter.h",
         "include/grt/MakeGlobalRouter.h",
+        "include/grt/PinGridLocation.h",
+        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -155,14 +143,12 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":types",
         "//:ord",
         "//src/ant",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",

@@ -62,6 +62,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/drt:ui",
     "//src/dst",
     "//src/dst:ui",
+    "//src/est",
+    "//src/est:ui",
     "//src/exa",
     "//src/exa:ui",
     "//src/fin",

@@ -240,6 +240,7 @@ Tool namespaces are usually three-lettered lowercase letters.
 - Macro Placer ([mpl](../main/src/mpl/README.md))
 - RePlAce Global Placer ([gpl](../main/src/gpl/README.md))
 - Gate resizing and buffering ([rsz](../main/src/rsz/README.md))
+- Parasitics estimation ([est](../main/src/est/README.md))
 - Detailed placement ([dpl](../main/src/dpl/README.md))
 - Clock tree synthesis ([cts](../main/src/cts/README.md))
 - FastRoute Global routing ([grt](../main/src/grt/README.md))
