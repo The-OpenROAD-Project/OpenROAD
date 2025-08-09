@@ -112,24 +112,6 @@ void Opendp::setGridCells()
   }
 }
 
-// Select the site and orientation to fill this row with.  Use the shortest
-// site.
-std::pair<dbSite*, dbOrientType> Opendp::fillSite(Pixel* pixel)
-{
-  dbSite* selected_site = nullptr;
-  dbOrientType selected_orient;
-  DbuY min_height{std::numeric_limits<int>::max()};
-  for (const auto& [site, orient] : pixel->sites) {
-    DbuY site_height{site->getHeight()};
-    if (site_height < min_height) {
-      min_height = site_height;
-      selected_site = site;
-      selected_orient = orient;
-    }
-  }
-  return {selected_site, selected_orient};
-}
-
 void Opendp::placeRowFillers(GridY row,
                              const std::string& prefix,
                              const MasterByImplant& filler_masters_by_implant)
@@ -145,7 +127,9 @@ void Opendp::placeRowFillers(GridY row,
       ++j;
       continue;
     }
-    auto [site, orient] = fillSite(pixel);
+    // Select the site and orientation to fill this row with.  Use the shortest
+    // site.
+    auto [site, orient] = grid_->getShortestSite(j, row);
     GridX k = j;
     while (k < row_site_count && grid_->gridPixel(k, row)->cell == nullptr
            && grid_->gridPixel(k, row)->is_valid) {

@@ -86,6 +86,7 @@ cc_library(
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
+        "@boost.icl",
         "@boost.polygon",
         "@boost.property_tree",
         "@boost.random",

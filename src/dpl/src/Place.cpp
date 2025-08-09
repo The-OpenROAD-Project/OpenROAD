@@ -872,7 +872,7 @@ bool Opendp::checkPixels(const Node* cell,
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group != cell->getGroup())
           || (!cell->inGroup() && pixel->group)
-          || (first_row && pixel->sites.find(site) == pixel->sites.end())) {
+          || (first_row && !grid_->getSiteOrientation(x1, y1, site))) {
         return false;
       }
     }
@@ -908,8 +908,8 @@ bool Opendp::checkPixels(const Node* cell,
       }
     }
   }
-  const auto& orient = grid_->gridPixel(x, y)->sites.at(
-      cell->getDbInst()->getMaster()->getSite());
+  dbSite* site = cell->getDbInst()->getMaster()->getSite();
+  const auto orient = grid_->getSiteOrientation(x, y, site).value();
   return drc_engine_->checkDRC(cell, x, y, orient);
 }
 
@@ -1200,8 +1200,8 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   setGridLoc(cell, x, y);
   grid_->paintPixel(cell);
   cell->setPlaced(true);
-  cell->setOrient(grid_->gridPixel(x, y)->sites.at(
-      cell->getDbInst()->getMaster()->getSite()));
+  dbSite* site = cell->getDbInst()->getMaster()->getSite();
+  cell->setOrient(grid_->getSiteOrientation(x, y, site).value());
   if (journal_) {
     MoveCellAction action(cell,
                           original_x,
