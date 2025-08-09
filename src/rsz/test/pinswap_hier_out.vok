@@ -26,7 +26,7 @@ module td1 (a1,
  AND2_X4 U5 (.A1(a3),
     .A2(n1),
     .ZN(net1));
- BUF_X8 wire1 (.A(net2),
+ BUF_X2 wire1 (.A(net2),
     .Z(y1));
  pinswap U4 (.ip0(a6),
     .ip1(a4),
