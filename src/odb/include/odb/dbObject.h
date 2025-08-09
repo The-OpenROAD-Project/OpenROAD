@@ -90,6 +90,7 @@ enum dbObjectType
   dbPolygonObj,
   dbPowerDomainObj,
   dbPowerSwitchObj,
+  dbPropertyObj,
   dbScanChainObj,
   dbScanInstObj,
   dbScanListObj,
@@ -143,7 +144,6 @@ enum dbObjectType
   dbTechViaLayerRuleObj,
 
   // Property
-  dbPropertyObj,
   dbNameObj
 };
 
