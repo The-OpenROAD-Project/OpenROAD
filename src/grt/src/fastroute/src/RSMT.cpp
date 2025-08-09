@@ -732,7 +732,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
           seg.y2 = y1;
         }
 
-        seg.netID = netID;
+        seg.cost = nets_[netID]->getEdgeCost();
       }
     }  // loop j
 
