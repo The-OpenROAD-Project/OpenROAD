@@ -60,7 +60,8 @@ TypeOfCell IdentifyCell(odb::dbInst* inst, sta::dbSta* sta)
   sta::dbNetwork* db_network = sta->getDbNetwork();
   sta::LibertyCell* liberty_cell
       = GetLibertyCell(inst->getMaster(), db_network);
-  if (liberty_cell->hasSequentials() && !inst->getMaster()->isBlock()) {
+  if (liberty_cell != nullptr && liberty_cell->hasSequentials()
+      && !inst->getMaster()->isBlock()) {
     // we assume that we are only dealing with one bit cells, but in the future
     // we could deal with multibit cells too
     return TypeOfCell::kOneBitCell;
