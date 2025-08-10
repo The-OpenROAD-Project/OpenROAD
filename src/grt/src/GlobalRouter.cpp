@@ -1163,7 +1163,7 @@ void GlobalRouter::makeFastrouteNet(Net* net)
 
   bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
   std::vector<int8_t>* edge_cost_per_layer;
-  int edge_cost_for_net;
+  int8_t edge_cost_for_net;
   computeTrackConsumption(net, edge_cost_for_net, edge_cost_per_layer);
 
   // set layer restriction only to clock nets that are not connected to
@@ -1249,7 +1249,7 @@ void GlobalRouter::getCapacityReductionData(CapacityReductionData& cap_red_data)
 
 void GlobalRouter::computeTrackConsumption(
     const Net* net,
-    int& track_consumption,
+    int8_t& track_consumption,
     std::vector<int8_t>*& edge_costs_per_layer)
 {
   edge_costs_per_layer = nullptr;
@@ -1289,7 +1289,8 @@ void GlobalRouter::computeTrackConsumption(
       }
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
-      track_consumption = std::max(track_consumption, consumption);
+      track_consumption
+          = std::max(track_consumption, static_cast<int8_t>(consumption));
     }
   }
 }
