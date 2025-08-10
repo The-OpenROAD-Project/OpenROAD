@@ -60,6 +60,7 @@ class Core
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
+  std::vector<odb::Line> getDieAreaEdges(odb::Polygon poly);
 
  private:
   Rect boundary_;
@@ -74,6 +75,7 @@ class Core
   std::map<int, int> min_width_x_;
   std::map<int, int> min_width_y_;
   int database_unit_;
+  std::vector<odb::Line> polygon_edges_;  // stores edges of the polygon
 };
 
 }  // namespace ppl
