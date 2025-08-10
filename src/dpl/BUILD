@@ -127,6 +127,7 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.geometry",
+        "@boost.icl",
         "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
