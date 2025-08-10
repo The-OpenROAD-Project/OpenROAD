@@ -66,7 +66,8 @@ enum class Edge
   bottom,
   left,
   right,
-  invalid
+  invalid,
+  polygonEdge
 };
 
 enum class Direction
@@ -148,12 +149,15 @@ class IOPlacer
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
+  void findSlotsPolygon(const std::set<int>& layers, odb::Line line);
   std::vector<Point> findLayerSlots(int layer, Edge edge);
+  std::vector<Point> findLayerSlotsPolygon(int layer, odb::Line line);
   void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
   void defineSlots();
+  void defineSlotsPolygon();
   void findSections(int begin,
                     int end,
                     Edge edge,
@@ -210,6 +214,7 @@ class IOPlacer
                       const Rect& die_boundary);
   Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
   bool checkBlocked(Edge edge, const odb::Point& pos, int layer);
+  bool checkBlockedPolygon(odb::Line& line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
