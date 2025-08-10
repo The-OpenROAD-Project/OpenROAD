@@ -406,8 +406,7 @@ std::string Gui::addLabel(int x,
                           std::optional<Painter::Anchor> anchor,
                           const std::optional<std::string>& name)
 {
-  return main_window->addLabel(
-      x, y, text, color, size, anchor, std::move(name));
+  return main_window->addLabel(x, y, text, color, size, anchor, name);
 }
 
 void Gui::deleteLabel(const std::string& name)
