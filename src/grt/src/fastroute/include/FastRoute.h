@@ -438,14 +438,14 @@ class FastRouteCore
                      const int netID,
                      const int edgeID);
 
-  bool newRipupType2(const TreeEdge* treeedge,
-                     std::vector<TreeNode>& treenodes,
-                     const int x1,
-                     const int y1,
-                     const int x2,
-                     const int y2,
-                     const int deg,
-                     const int netID);
+  bool newRipupCongestedL(const TreeEdge* treeedge,
+                          std::vector<TreeNode>& treenodes,
+                          const int x1,
+                          const int y1,
+                          const int x2,
+                          const int y2,
+                          const int deg,
+                          const int netID);
   bool newRipup3DType3(const int netID, const int edgeID);
   void newRipupNet(const int netID);
   void releaseNetResources(const int netID);
