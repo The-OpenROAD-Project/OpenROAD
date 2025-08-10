@@ -115,9 +115,9 @@ BufferTreeDescriptor::BufferTreeDescriptor(
   BufferTree::setSTA(sta);
 }
 
-std::string BufferTreeDescriptor::getName(std::any object) const
+std::string BufferTreeDescriptor::getName(const std::any& object) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
   return bnet->getName();
 }
 
@@ -126,9 +126,10 @@ std::string BufferTreeDescriptor::getTypeName() const
   return "Buffer Tree";
 }
 
-bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool BufferTreeDescriptor::getBBox(const std::any& object,
+                                   odb::Rect& bbox) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
   bbox.mergeInit();
   for (auto* net : bnet->getNets()) {
     odb::Rect box;
@@ -139,9 +140,10 @@ bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
+void BufferTreeDescriptor::highlight(const std::any& object,
+                                     Painter& painter) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
 
   ColorGenerator generator;
   painter.saveState();
@@ -153,9 +155,9 @@ void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
 }
 
 Descriptor::Properties BufferTreeDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
   Properties props;
 
   auto gui = Gui::get();
@@ -184,7 +186,7 @@ Descriptor::Properties BufferTreeDescriptor::getProperties(
   return props;
 }
 
-Selected BufferTreeDescriptor::makeSelected(std::any object) const
+Selected BufferTreeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto* bnet = std::any_cast<BufferTree>(&object)) {
     return Selected(*bnet, this);
@@ -192,10 +194,10 @@ Selected BufferTreeDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool BufferTreeDescriptor::lessThan(std::any l, std::any r) const
+bool BufferTreeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
-  BufferTree* l_bnet = std::any_cast<BufferTree>(&l);
-  BufferTree* r_bnet = std::any_cast<BufferTree>(&r);
+  const BufferTree* l_bnet = std::any_cast<BufferTree>(&l);
+  const BufferTree* r_bnet = std::any_cast<BufferTree>(&r);
   return l_bnet->getName() < r_bnet->getName();
 }
 
@@ -218,7 +220,8 @@ void BufferTreeDescriptor::visitAllObjects(
   }
 }
 
-Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
+Descriptor::Actions BufferTreeDescriptor::getActions(
+    const std::any& object) const
 {
   BufferTree bnet = *std::any_cast<BufferTree>(&object);
 

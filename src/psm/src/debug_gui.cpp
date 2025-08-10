@@ -54,20 +54,21 @@ NodeDescriptor::NodeDescriptor(
 {
 }
 
-std::string NodeDescriptor::getName(std::any object) const
+std::string NodeDescriptor::getName(const std::any& object) const
 {
   auto node = std::any_cast<Node*>(object);
   return node->getName();
 }
 
-bool NodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool NodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<Node*>(object);
   bbox = odb::Rect(node->getPoint(), node->getPoint());
   return true;
 }
 
-gui::Descriptor::Properties NodeDescriptor::getProperties(std::any object) const
+gui::Descriptor::Properties NodeDescriptor::getProperties(
+    const std::any& object) const
 {
   auto node = std::any_cast<Node*>(object);
 
@@ -120,7 +121,7 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(std::any object) const
   return props;
 }
 
-gui::Selected NodeDescriptor::makeSelected(std::any object) const
+gui::Selected NodeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto node = std::any_cast<Node*>(&object)) {
     return gui::Selected(*node, this);
@@ -128,14 +129,15 @@ gui::Selected NodeDescriptor::makeSelected(std::any object) const
   return gui::Selected();
 }
 
-bool NodeDescriptor::lessThan(std::any l, std::any r) const
+bool NodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<Node*>(l);
   auto r_node = std::any_cast<Node*>(r);
   return l_node->compare(r_node);
 }
 
-void NodeDescriptor::highlight(std::any object, gui::Painter& painter) const
+void NodeDescriptor::highlight(const std::any& object,
+                               gui::Painter& painter) const
 {
   auto node = std::any_cast<Node*>(object);
   auto& pt = node->getPoint();
@@ -150,13 +152,13 @@ ITermNodeDescriptor::ITermNodeDescriptor(
 {
 }
 
-std::string ITermNodeDescriptor::getName(std::any object) const
+std::string ITermNodeDescriptor::getName(const std::any& object) const
 {
   auto node = std::any_cast<ITermNode*>(object);
   return node->getName();
 }
 
-bool ITermNodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool ITermNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<ITermNode*>(object);
   bbox = node->getShape();
@@ -164,7 +166,7 @@ bool ITermNodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 gui::Descriptor::Properties ITermNodeDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto node = std::any_cast<ITermNode*>(object);
 
@@ -176,7 +178,7 @@ gui::Descriptor::Properties ITermNodeDescriptor::getProperties(
   return props;
 }
 
-gui::Selected ITermNodeDescriptor::makeSelected(std::any object) const
+gui::Selected ITermNodeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto node = std::any_cast<ITermNode*>(&object)) {
     return gui::Selected(*node, this);
@@ -184,14 +186,14 @@ gui::Selected ITermNodeDescriptor::makeSelected(std::any object) const
   return gui::Selected();
 }
 
-bool ITermNodeDescriptor::lessThan(std::any l, std::any r) const
+bool ITermNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<ITermNode*>(l);
   auto r_node = std::any_cast<ITermNode*>(r);
   return l_node->compare(r_node);
 }
 
-void ITermNodeDescriptor::highlight(std::any object,
+void ITermNodeDescriptor::highlight(const std::any& object,
                                     gui::Painter& painter) const
 {
   auto node = std::any_cast<ITermNode*>(object);
@@ -206,13 +208,13 @@ BPinNodeDescriptor::BPinNodeDescriptor(
 {
 }
 
-std::string BPinNodeDescriptor::getName(std::any object) const
+std::string BPinNodeDescriptor::getName(const std::any& object) const
 {
   auto node = std::any_cast<BPinNode*>(object);
   return node->getName();
 }
 
-bool BPinNodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool BPinNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<BPinNode*>(object);
   bbox = node->getShape();
@@ -220,7 +222,7 @@ bool BPinNodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 gui::Descriptor::Properties BPinNodeDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto node = std::any_cast<BPinNode*>(object);
 
@@ -232,7 +234,7 @@ gui::Descriptor::Properties BPinNodeDescriptor::getProperties(
   return props;
 }
 
-gui::Selected BPinNodeDescriptor::makeSelected(std::any object) const
+gui::Selected BPinNodeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto node = std::any_cast<BPinNode*>(&object)) {
     return gui::Selected(*node, this);
@@ -240,14 +242,15 @@ gui::Selected BPinNodeDescriptor::makeSelected(std::any object) const
   return gui::Selected();
 }
 
-bool BPinNodeDescriptor::lessThan(std::any l, std::any r) const
+bool BPinNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<BPinNode*>(l);
   auto r_node = std::any_cast<BPinNode*>(r);
   return l_node->compare(r_node);
 }
 
-void BPinNodeDescriptor::highlight(std::any object, gui::Painter& painter) const
+void BPinNodeDescriptor::highlight(const std::any& object,
+                                   gui::Painter& painter) const
 {
   auto node = std::any_cast<BPinNode*>(object);
   NodeDescriptor::highlight(static_cast<Node*>(node), painter);
@@ -261,13 +264,14 @@ ConnectionDescriptor::ConnectionDescriptor(
 {
 }
 
-std::string ConnectionDescriptor::getName(std::any object) const
+std::string ConnectionDescriptor::getName(const std::any& object) const
 {
   auto conn = std::any_cast<Connection*>(object);
   return conn->getNode0()->getName() + "->" + conn->getNode1()->getName();
 }
 
-bool ConnectionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool ConnectionDescriptor::getBBox(const std::any& object,
+                                   odb::Rect& bbox) const
 {
   auto conn = std::any_cast<Connection*>(object);
   bbox = odb::Rect(conn->getNode0()->getPoint(), conn->getNode1()->getPoint());
@@ -275,7 +279,7 @@ bool ConnectionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 gui::Descriptor::Properties ConnectionDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto conn = std::any_cast<Connection*>(object);
 
@@ -328,7 +332,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
   return props;
 }
 
-gui::Selected ConnectionDescriptor::makeSelected(std::any object) const
+gui::Selected ConnectionDescriptor::makeSelected(const std::any& object) const
 {
   if (auto conn = std::any_cast<Connection*>(&object)) {
     return gui::Selected(*conn, this);
@@ -336,14 +340,14 @@ gui::Selected ConnectionDescriptor::makeSelected(std::any object) const
   return gui::Selected();
 }
 
-bool ConnectionDescriptor::lessThan(std::any l, std::any r) const
+bool ConnectionDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_conn = std::any_cast<Connection*>(l);
   auto r_conn = std::any_cast<Connection*>(r);
   return l_conn->compare(r_conn);
 }
 
-void ConnectionDescriptor::highlight(std::any object,
+void ConnectionDescriptor::highlight(const std::any& object,
                                      gui::Painter& painter) const
 {
   auto conn = std::any_cast<Connection*>(object);
