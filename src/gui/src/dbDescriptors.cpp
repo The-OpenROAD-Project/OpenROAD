@@ -2616,7 +2616,7 @@ void DbBlockageDescriptor::highlight(const std::any& object,
                                      Painter& painter) const
 {
   odb::Rect rect;
-  getBBox(std::move(object), rect);
+  getBBox(object, rect);
   painter.drawRect(rect);
 }
 
@@ -2733,7 +2733,7 @@ void DbObstructionDescriptor::highlight(const std::any& object,
                                         Painter& painter) const
 {
   odb::Rect rect;
-  getBBox(std::move(object), rect);
+  getBBox(object, rect);
   painter.drawRect(rect);
 }
 
