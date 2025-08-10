@@ -134,7 +134,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     }
 
     if (!graph->hasEdge(x, y, z, dir)) {
-      props.push_back({name, "<none>"});
+      props.push_back({std::move(name), "<none>"});
       continue;
     }
 
