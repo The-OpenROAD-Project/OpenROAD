@@ -1015,7 +1015,9 @@ void PlacerBase::init()
       continue;
     }
 
-    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
+    if ((inst->dbInst() && inst->dbInst()->getGroup() != group_)
+        && inst->dbInst()->getGroup()->getType()
+               != odb::dbGroupType::VISUAL_DEBUG) {
       continue;
     }
 
@@ -1196,7 +1198,9 @@ void PlacerBase::initInstsForUnusableSites()
     if (!inst->isFixed()) {
       continue;
     }
-    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
+    if ((inst->dbInst() && inst->dbInst()->getGroup() != group_)
+        && inst->dbInst()->getGroup()->getType()
+               != odb::dbGroupType::VISUAL_DEBUG) {
       continue;
     }
     std::pair<int, int> pairX = getMinMaxIdx(
