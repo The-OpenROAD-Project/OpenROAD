@@ -332,7 +332,7 @@ class GlobalRouter
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
-                               int& track_consumption,
+                               int8_t& track_consumption,
                                std::vector<int8_t>*& edge_costs_per_layer);
 
   // aux functions

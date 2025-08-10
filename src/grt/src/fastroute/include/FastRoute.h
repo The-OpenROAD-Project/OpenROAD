@@ -104,7 +104,7 @@ class FastRouteCore
                 bool is_clock,
                 bool is_local,
                 int driver_idx,
-                int cost,
+                int8_t cost,
                 int min_layer,
                 int max_layer,
                 float slack,
