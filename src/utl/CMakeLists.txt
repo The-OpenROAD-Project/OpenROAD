@@ -36,6 +36,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 endif()
 
 add_library(utl_lib
+  src/CallBackHandler.cpp
   src/Metrics.cpp
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp

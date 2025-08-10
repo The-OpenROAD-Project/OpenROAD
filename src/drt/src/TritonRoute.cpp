@@ -18,6 +18,7 @@
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
+#include "PACallBack.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -41,6 +42,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "utl/CallBackHandler.h"
 #include "utl/ScopedTemporaryFile.h"
 
 namespace drt {
@@ -48,6 +50,7 @@ namespace drt {
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
+      pa_callback_(std::make_unique<PACallBack>(this)),
       router_cfg_(std::make_unique<RouterConfiguration>())
 {
   if (distributed_) {
@@ -55,7 +58,10 @@ TritonRoute::TritonRoute()
   }
 }
 
-TritonRoute::~TritonRoute() = default;
+TritonRoute::~TritonRoute()
+{
+  callback_handler_->removeCallBack(pa_callback_.get());
+}
 
 void TritonRoute::setDebugDR(bool on)
 {
@@ -526,17 +532,20 @@ void TritonRoute::applyUpdates(
 void TritonRoute::init(
     odb::dbDatabase* db,
     Logger* logger,
+    utl::CallBackHandler* callback_handler,
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,
     std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
 {
   db_ = db;
   logger_ = logger;
+  callback_handler_ = callback_handler;
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
+  callback_handler_->addCallBack(pa_callback_.get());
 }
 
 bool TritonRoute::initGuide()

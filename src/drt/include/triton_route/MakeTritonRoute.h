@@ -11,7 +11,8 @@ class dbDatabase;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace dst {
 class Distributed;
@@ -32,6 +33,7 @@ void deleteTritonRoute(drt::TritonRoute* router);
 void initTritonRoute(drt::TritonRoute* router,
                      odb::dbDatabase* db,
                      utl::Logger* logger,
+                     utl::CallBackHandler* callback_handler,
                      dst::Distributed* dist,
                      stt::SteinerTreeBuilder* stt_builder,
                      Tcl_Interp* tcl_interp);

@@ -26,7 +26,8 @@ class dbWire;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -41,6 +42,7 @@ namespace drt {
 class frDesign;
 class frInst;
 class DesignCallBack;
+class PACallBack;
 class FlexDR;
 class FlexPA;
 class FlexTA;
@@ -84,6 +86,7 @@ class TritonRoute
   ~TritonRoute();
   void init(odb::dbDatabase* db,
             utl::Logger* logger,
+            utl::CallBackHandler* callback_handler,
             dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder,
             std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
@@ -185,9 +188,11 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
+  std::unique_ptr<PACallBack> pa_callback_;
   std::unique_ptr<RouterConfiguration> router_cfg_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
+  utl::CallBackHandler* callback_handler_{nullptr};
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_{nullptr};
   int num_drvs_{-1};
