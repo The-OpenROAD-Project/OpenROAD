@@ -58,10 +58,7 @@ TritonRoute::TritonRoute()
   }
 }
 
-TritonRoute::~TritonRoute()
-{
-  callback_handler_->removeCallBack(pa_callback_.get());
-}
+TritonRoute::~TritonRoute() = default;
 
 void TritonRoute::setDebugDR(bool on)
 {
@@ -545,7 +542,7 @@ void TritonRoute::init(
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
-  callback_handler_->addCallBack(pa_callback_.get());
+  pa_callback_->setOwner(callback_handler);
 }
 
 bool TritonRoute::initGuide()

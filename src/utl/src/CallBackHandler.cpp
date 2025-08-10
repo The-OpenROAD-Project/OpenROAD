@@ -3,10 +3,20 @@
 
 #include "utl/CallBackHandler.h"
 
+#include "utl/CallBack.h"
+#include "utl/Logger.h"
+
 namespace utl {
+
+CallBackHandler::CallBackHandler(utl::Logger* logger) : logger_(logger)
+{
+}
 
 void CallBackHandler::addCallBack(CallBack* callback)
 {
+  if (callback == nullptr) {
+    logger_->error(utl::UTL, 200, "Registering null callback is not allowed");
+  }
   callbacks_.insert(callback);
 }
 
@@ -18,9 +28,7 @@ void CallBackHandler::removeCallBack(CallBack* callback)
 void CallBackHandler::triggerOnPinAccessUpdateRequired()
 {
   for (CallBack* callback : callbacks_) {
-    if (callback != nullptr) {
-      callback->onPinAccessUpdateRequired();
-    }
+    callback->onPinAccessUpdateRequired();
   }
 }
 

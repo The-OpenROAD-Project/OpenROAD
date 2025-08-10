@@ -162,7 +162,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
   logger_ = utl::makeLogger(log_filename, metrics_filename);
-  callback_handler_ = new utl::CallBackHandler();
+  callback_handler_ = new utl::CallBackHandler(logger_);
   db_->setLogger(logger_);
   sta_ = sta::makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
