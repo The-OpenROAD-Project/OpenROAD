@@ -90,7 +90,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       charts_widget_(new ChartsWidget(this)),
       help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
-      goto_dialog_(new GotoLocationDialog(this, viewers_))
+      goto_dialog_(new GotoLocationDialog(this, viewers_)),
+      selection_timer_(std::make_unique<QTimer>()),
+      highlight_timer_(std::make_unique<QTimer>())
 {
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
@@ -379,6 +381,13 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::displayUnitsChanged,
           goto_dialog_,
           &GotoLocationDialog::updateUnits);
+  connect(selection_timer_.get(), &QTimer::timeout, [this]() {
+    emit selectionChanged();
+  });
+  connect(highlight_timer_.get(),
+          &QTimer::timeout,
+          this,
+          &MainWindow::highlightChanged);
 
   createActions();
   createToolbars();
@@ -428,6 +437,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       = [this](const std::string& value, bool* ok) -> int {
     return convertStringToDBU(value, ok);
   };
+
+  selection_timer_->setSingleShot(true);
+  highlight_timer_->setSingleShot(true);
+
+  selection_timer_->setInterval(100 /* ms */);
+  highlight_timer_->setInterval(100 /* ms */);
 }
 
 void MainWindow::showEvent(QShowEvent* event)
@@ -1134,7 +1149,7 @@ void MainWindow::addSelected(const SelectionSet& selections, bool find_in_cts)
   }
   status(std::string("Added ")
          + std::to_string(selected_.size() - prev_selected_size));
-  emit selectionChanged();
+  selection_timer_->start();
 
   if (find_in_cts) {
     emit findInCts(selections);
@@ -1178,7 +1193,7 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
       group.insert(highlight);
     }
   }
-  emit highlightChanged();
+  highlight_timer_->start();
 }
 
 std::string MainWindow::addLabel(int x,

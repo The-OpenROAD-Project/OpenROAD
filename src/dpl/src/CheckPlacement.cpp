@@ -344,8 +344,7 @@ bool Opendp::checkInRows(const Node& cell) const
       if (pixel == nullptr || !pixel->is_valid) {
         return false;
       }
-      if (first_row
-          && pixel->sites.find(cell.getSite()) == pixel->sites.end()) {
+      if (first_row && !grid_->getSiteOrientation(x, y, cell.getSite())) {
         return false;
       }
     }
