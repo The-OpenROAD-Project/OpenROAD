@@ -232,11 +232,11 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              bool is_clock,
                              bool is_local,
                              int driver_idx,
-                             int cost,
+                             int8_t cost,
                              int min_layer,
                              int max_layer,
                              float slack,
-                             std::vector<int>* edge_cost_per_layer)
+                             std::vector<int8_t>* edge_cost_per_layer)
 {
   int netID;
   bool exists;
@@ -993,7 +993,6 @@ NetRouteMap FastRouteCore::run()
   int L = 0;
   int VIA = 2;
   const int Ripvalue = -1;
-  const bool goingLV = true;
   const bool noADJ = false;
   const int thStep1 = 10;
   const int thStep2 = 4;
@@ -1359,7 +1358,7 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  if (goingLV && past_cong == 0) {
+  if (past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
@@ -1577,7 +1576,7 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 ////////////////////////////////////////////////////////////////
 
-int FrNet::getLayerEdgeCost(int layer) const
+int8_t FrNet::getLayerEdgeCost(int layer) const
 {
   if (edge_cost_per_layer_) {
     return (*edge_cost_per_layer_)[layer];
@@ -1596,11 +1595,11 @@ void FrNet::addPin(int x, int y, int layer)
 void FrNet::reset(odb::dbNet* db_net,
                   bool is_clock,
                   int driver_idx,
-                  int edge_cost,
+                  int8_t edge_cost,
                   int min_layer,
                   int max_layer,
                   float slack,
-                  std::vector<int>* edge_cost_per_layer)
+                  std::vector<int8_t>* edge_cost_per_layer)
 {
   db_net_ = db_net;
   is_critical_ = false;

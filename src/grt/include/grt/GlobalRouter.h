@@ -150,6 +150,7 @@ class GlobalRouter
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
+  void ensurePinsPositions(odb::dbNet* db_net);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -324,15 +325,21 @@ class GlobalRouter
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
-                               int& track_consumption,
-                               std::vector<int>*& edge_costs_per_layer);
+                               int8_t& track_consumption,
+                               std::vector<int8_t>*& edge_costs_per_layer);
 
   // aux functions
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
                                               bool& has_access_points,
-                                              odb::Point& pos_on_grid);
+                                              odb::Point& pos_on_grid,
+                                              bool ignore_db_access_points
+                                              = false);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
+  void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
+                                Pin& pin,
+                                odb::Point& pos_on_grid,
+                                bool has_access_points);
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
                          int& root_idx);
