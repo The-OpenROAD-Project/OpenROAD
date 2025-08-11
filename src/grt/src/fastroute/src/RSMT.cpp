@@ -19,7 +19,7 @@ struct Pnt
   int o;
 };
 
-int orderx(const Pnt* a, const Pnt* b)
+static int orderx(const Pnt* a, const Pnt* b)
 {
   return a->x < b->x;
 }
@@ -148,46 +148,13 @@ void FastRouteCore::fluteNormal(const int netID,
     t.branch[1].n = 1;
   } else if (d == 3) {
     t.deg = 3;
-    int x_max, x_min, x_mid;
-    if (x[0] < x[1]) {
-      if (x[0] < x[2]) {
-        x_min = x[0];
-        std::tie(x_mid, x_max) = std::minmax(x[1], x[2]);
-      } else {
-        x_min = x[2];
-        x_mid = x[0];
-        x_max = x[1];
-      }
-    } else {
-      if (x[0] < x[2]) {
-        x_min = x[1];
-        x_mid = x[0];
-        x_max = x[2];
-      } else {
-        std::tie(x_min, x_mid) = std::minmax(x[1], x[2]);
-        x_max = x[0];
-      }
-    }
-    int y_max, y_min, y_mid;
-    if (y[0] < y[1]) {
-      if (y[0] < y[2]) {
-        y_min = y[0];
-        std::tie(y_mid, y_max) = std::minmax(y[1], y[2]);
-      } else {
-        y_min = y[2];
-        y_mid = y[0];
-        y_max = y[1];
-      }
-    } else {
-      if (y[0] < y[2]) {
-        y_min = y[1];
-        y_mid = y[0];
-        y_max = y[2];
-      } else {
-        std::tie(y_min, y_mid) = std::minmax(y[1], y[2]);
-        y_max = y[0];
-      }
-    }
+    auto sort = [](const std::vector<int>& v) {
+      std::array<int, 3> tmp{v[0], v[1], v[2]};
+      std::sort(tmp.begin(), tmp.end());
+      return tmp;
+    };
+    auto [x_min, x_mid, x_max] = sort(x);
+    auto [y_min, y_mid, y_max] = sort(y);
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
     t.branch.resize(4);
