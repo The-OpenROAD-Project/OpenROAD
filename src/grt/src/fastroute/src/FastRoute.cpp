@@ -992,7 +992,6 @@ NetRouteMap FastRouteCore::run()
   int L = 0;
   int VIA = 2;
   const int Ripvalue = -1;
-  const bool goingLV = true;
   const bool noADJ = false;
   const int thStep1 = 10;
   const int thStep2 = 4;
@@ -1358,7 +1357,7 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  if (goingLV && past_cong == 0) {
+  if (past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
