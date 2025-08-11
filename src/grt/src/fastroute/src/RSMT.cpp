@@ -19,7 +19,7 @@ struct Pnt
   int o;
 };
 
-static int orderx(const Pnt* a, const Pnt* b)
+int orderx(const Pnt* a, const Pnt* b)
 {
   return a->x < b->x;
 }
@@ -138,26 +138,71 @@ void FastRouteCore::fluteNormal(const int netID,
 
   if (d == 2) {
     t.deg = 2;
-    t.length = std::abs(x[0] - x[1]) + std::abs(y[0] - y[1]);
+    t.length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
     t.branch.resize(2);
-    t.branch[0] = {x[0], y[0], 1};
-    t.branch[1] = {x[1], y[1], 1};
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 1;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 1;
   } else if (d == 3) {
     t.deg = 3;
-    auto sort = [](const std::vector<int>& v) {
-      std::array<int, 3> tmp{v[0], v[1], v[2]};
-      std::sort(tmp.begin(), tmp.end());
-      return tmp;
-    };
-    auto [x_min, x_mid, x_max] = sort(x);
-    auto [y_min, y_mid, y_max] = sort(y);
+    int x_max, x_min, x_mid;
+    if (x[0] < x[1]) {
+      if (x[0] < x[2]) {
+        x_min = x[0];
+        std::tie(x_mid, x_max) = std::minmax(x[1], x[2]);
+      } else {
+        x_min = x[2];
+        x_mid = x[0];
+        x_max = x[1];
+      }
+    } else {
+      if (x[0] < x[2]) {
+        x_min = x[1];
+        x_mid = x[0];
+        x_max = x[2];
+      } else {
+        std::tie(x_min, x_mid) = std::minmax(x[1], x[2]);
+        x_max = x[0];
+      }
+    }
+    int y_max, y_min, y_mid;
+    if (y[0] < y[1]) {
+      if (y[0] < y[2]) {
+        y_min = y[0];
+        std::tie(y_mid, y_max) = std::minmax(y[1], y[2]);
+      } else {
+        y_min = y[2];
+        y_mid = y[0];
+        y_max = y[1];
+      }
+    } else {
+      if (y[0] < y[2]) {
+        y_min = y[1];
+        y_mid = y[0];
+        y_max = y[2];
+      } else {
+        std::tie(y_min, y_mid) = std::minmax(y[1], y[2]);
+        y_max = y[0];
+      }
+    }
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
     t.branch.resize(4);
-    t.branch[0] = {x[0], y[0], 3};
-    t.branch[1] = {x[1], y[1], 3};
-    t.branch[2] = {x[2], y[2], 3};
-    t.branch[3] = {x_mid, y_mid, 3};
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 3;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 3;
+    t.branch[2].x = x[2];
+    t.branch[2].y = y[2];
+    t.branch[2].n = 3;
+    t.branch[3].x = x_mid;
+    t.branch[3].y = y_mid;
+    t.branch[3].n = 3;
   } else {
     std::vector<int> xs(d);
     std::vector<int> ys(d);
@@ -165,7 +210,7 @@ void FastRouteCore::fluteNormal(const int netID,
     std::vector<int> tmp_xs(d);
     std::vector<int> tmp_ys(d);
     std::vector<int> s(d);
-    std::vector<Pnt> pt(d);
+    Pnt* pt = new Pnt[d];
     std::vector<Pnt*> ptp(d);
 
     for (int i = 0; i < d; i++) {
@@ -239,6 +284,8 @@ void FastRouteCore::fluteNormal(const int netID,
       branch.x /= 100;
       branch.y /= ((int) (100 * coeffV));
     }
+
+    delete[] pt;
   }
 }
 
@@ -256,24 +303,69 @@ void FastRouteCore::fluteCongest(const int netID,
     t.deg = 2;
     t.length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
     t.branch.resize(2);
-    t.branch[0] = {x[0], y[0], 1};
-    t.branch[1] = {x[1], y[1], 1};
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 1;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 1;
   } else if (d == 3) {
     t.deg = 3;
-    auto sort = [](const std::vector<int>& v) {
-      std::array<int, 3> tmp{v[0], v[1], v[2]};
-      std::sort(tmp.begin(), tmp.end());
-      return tmp;
-    };
-    auto [x_min, x_mid, x_max] = sort(x);
-    auto [y_min, y_mid, y_max] = sort(y);
+    int x_max, x_min, x_mid;
+    if (x[0] < x[1]) {
+      if (x[0] < x[2]) {
+        x_min = x[0];
+        std::tie(x_mid, x_max) = std::minmax(x[1], x[2]);
+      } else {
+        x_min = x[2];
+        x_mid = x[0];
+        x_max = x[1];
+      }
+    } else {
+      if (x[0] < x[2]) {
+        x_min = x[1];
+        x_mid = x[0];
+        x_max = x[2];
+      } else {
+        std::tie(x_min, x_mid) = std::minmax(x[1], x[2]);
+        x_max = x[0];
+      }
+    }
+    int y_max, y_min, y_mid;
+    if (y[0] < y[1]) {
+      if (y[0] < y[2]) {
+        y_min = y[0];
+        std::tie(y_mid, y_max) = std::minmax(y[1], y[2]);
+      } else {
+        y_min = y[2];
+        y_mid = y[0];
+        y_max = y[1];
+      }
+    } else {
+      if (y[0] < y[2]) {
+        y_min = y[1];
+        y_mid = y[0];
+        y_max = y[2];
+      } else {
+        std::tie(y_min, y_mid) = std::minmax(y[1], y[2]);
+        y_max = y[0];
+      }
+    }
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
     t.branch.resize(4);
-    t.branch[0] = {x[0], y[0], 3};
-    t.branch[1] = {x[1], y[1], 3};
-    t.branch[2] = {x[2], y[2], 3};
-    t.branch[3] = {x_mid, y_mid, 3};
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 3;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 3;
+    t.branch[2].x = x[2];
+    t.branch[2].y = y[2];
+    t.branch[2].n = 3;
+    t.branch[3].x = x_mid;
+    t.branch[3].y = y_mid;
+    t.branch[3].n = 3;
   } else {
     std::vector<int> xs(d);
     std::vector<int> ys(d);
@@ -386,48 +478,105 @@ bool FastRouteCore::netCongestion(const int netID)
 
 bool FastRouteCore::VTreeSuite(const int netID)
 {
-  const odb::Rect bbox = nets_[netID]->getPinBBox();
-  return bbox.dy() > 3 * bbox.dx();
+  int xmax = 0;
+  int ymax = 0;
+  int xmin = BIG_INT;
+  int ymin = BIG_INT;
+
+  const int deg = nets_[netID]->getNumPins();
+  for (int i = 0; i < deg; i++) {
+    if (xmin > nets_[netID]->getPinX(i)) {
+      xmin = nets_[netID]->getPinX(i);
+    }
+    if (xmax < nets_[netID]->getPinX(i)) {
+      xmax = nets_[netID]->getPinX(i);
+    }
+    if (ymin > nets_[netID]->getPinY(i)) {
+      ymin = nets_[netID]->getPinY(i);
+    }
+    if (ymax < nets_[netID]->getPinY(i)) {
+      ymax = nets_[netID]->getPinY(i);
+    }
+  }
+
+  return (ymax - ymin) > 3 * (xmax - xmin);
 }
 
 bool FastRouteCore::HTreeSuite(const int netID)
 {
-  const odb::Rect bbox = nets_[netID]->getPinBBox();
-  return 5 * bbox.dy() < bbox.dx();
+  int xmax = 0;
+  int ymax = 0;
+  int xmin = BIG_INT;
+  int ymin = BIG_INT;
+
+  const int deg = nets_[netID]->getNumPins();
+  for (int i = 0; i < deg; i++) {
+    if (xmin > nets_[netID]->getPinX(i)) {
+      xmin = nets_[netID]->getPinX(i);
+    }
+    if (xmax < nets_[netID]->getPinX(i)) {
+      xmax = nets_[netID]->getPinX(i);
+    }
+    if (ymin > nets_[netID]->getPinY(i)) {
+      ymin = nets_[netID]->getPinY(i);
+    }
+    if (ymax < nets_[netID]->getPinY(i)) {
+      ymax = nets_[netID]->getPinY(i);
+    }
+  }
+
+  return 5 * (ymax - ymin) < (xmax - xmin);
 }
 
 float FastRouteCore::coeffADJ(const int netID)
 {
-  const odb::Rect bbox = nets_[netID]->getPinBBox();
+  const int deg = nets_[netID]->getNumPins();
+  int xmax = 0;
+  int ymax = 0;
+  int xmin = BIG_INT;
+  int ymin = BIG_INT;
+
+  for (int i = 0; i < deg; i++) {
+    if (xmin > nets_[netID]->getPinX(i)) {
+      xmin = nets_[netID]->getPinX(i);
+    }
+    if (xmax < nets_[netID]->getPinX(i)) {
+      xmax = nets_[netID]->getPinX(i);
+    }
+    if (ymin > nets_[netID]->getPinY(i)) {
+      ymin = nets_[netID]->getPinY(i);
+    }
+    if (ymax < nets_[netID]->getPinY(i)) {
+      ymax = nets_[netID]->getPinY(i);
+    }
+  }
 
   int Hcap = 0;
   int Vcap = 0;
   float Husage = 0;
   float Vusage = 0;
   float coef;
-  if (bbox.dx() == 0) {
-    for (int j = bbox.yMin(); j < bbox.yMax(); j++) {
-      Vcap += getEdgeCapacity(
-          nets_[netID], bbox.xMin(), j, EdgeDirection::Vertical);
-      Vusage += graph2d_.getEstUsageV(bbox.xMin(), j);
+  if (xmin == xmax) {
+    for (int j = ymin; j < ymax; j++) {
+      Vcap += getEdgeCapacity(nets_[netID], xmin, j, EdgeDirection::Vertical);
+      Vusage += graph2d_.getEstUsageV(xmin, j);
     }
     coef = 1;
-  } else if (bbox.dy() == 0) {
-    for (int i = bbox.xMin(); i < bbox.xMax(); i++) {
-      Hcap += getEdgeCapacity(
-          nets_[netID], i, bbox.yMin(), EdgeDirection::Horizontal);
-      Husage += graph2d_.getEstUsageH(i, bbox.yMin());
+  } else if (ymin == ymax) {
+    for (int i = xmin; i < xmax; i++) {
+      Hcap += getEdgeCapacity(nets_[netID], i, ymin, EdgeDirection::Horizontal);
+      Husage += graph2d_.getEstUsageH(i, ymin);
     }
     coef = 1;
   } else {
-    for (int j = bbox.yMin(); j <= bbox.yMax(); j++) {
-      for (int i = bbox.xMin(); i < bbox.xMax(); i++) {
+    for (int j = ymin; j <= ymax; j++) {
+      for (int i = xmin; i < xmax; i++) {
         Hcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Horizontal);
         Husage += graph2d_.getEstUsageH(i, j);
       }
     }
-    for (int j = bbox.yMin(); j < bbox.yMax(); j++) {
-      for (int i = bbox.xMin(); i <= bbox.xMax(); i++) {
+    for (int j = ymin; j < ymax; j++) {
+      for (int i = xmin; i <= xmax; i++) {
         Vcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Vertical);
         Vusage += graph2d_.getEstUsageV(i, j);
       }
