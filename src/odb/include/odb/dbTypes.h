@@ -161,7 +161,8 @@ class dbGroupType
   {
     PHYSICAL_CLUSTER,
     VOLTAGE_DOMAIN,
-    POWER_DOMAIN
+    POWER_DOMAIN,
+    VISUAL_DEBUG
   };
 
   ///
