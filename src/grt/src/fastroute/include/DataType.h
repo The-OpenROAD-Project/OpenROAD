@@ -49,7 +49,7 @@ enum class EdgeDirection
 struct Segment  // A Segment is a 2-pin connection
 {
   Segment(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int8_t cost)
-      : x1(x1), y1(y1), x2(x2), y2(y2), cost(cost)
+      : x1(x1), y1(y1), x2(x2), y2(y2), cost(cost), xFirst(false), HVH(false)
   {
   }
   const int16_t x1, y1, x2, y2;  // coordinates of two endpoints (x1 <= x2)
