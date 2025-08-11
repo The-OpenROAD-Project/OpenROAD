@@ -90,6 +90,7 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void runHungarianMatching();
+  void runHungarianMatchingPolygon();
   void runAnnealing();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
