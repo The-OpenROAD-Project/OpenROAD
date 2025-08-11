@@ -263,8 +263,8 @@ def generate_relations(schema):
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)
 
+
 def preprocess_klass(klass):
-    # Insert at the beginning to guarantee position 0
     klass["declared_classes"].insert(0, "dbIStream")
     klass["declared_classes"].insert(1, "dbOStream")
     if klass["name"] != "dbDatabase":
@@ -274,18 +274,19 @@ def preprocess_klass(klass):
     klass["h_includes"].insert(1, "odb/odb.h")
     name = klass["name"]
     klass["cpp_includes"].extend(["dbTable.h", "dbTable.hpp", "odb/db.h", f"{name}.h"])
-    if klass['hasBitFields']:
-        klass['cpp_sys_includes'].extend(["cstdint", "cstring"])
+    if klass["hasBitFields"]:
+        klass["cpp_sys_includes"].extend(["cstdint", "cstring"])
     for field in klass["fields"]:
-        if field.get('table', False):
-            page_size_part = f", {field['page_size']}" if 'page_size' in field else ""
+        if field.get("table", False):
+            page_size_part = f", {field['page_size']}" if "page_size" in field else ""
             # setting default value for table fields
             this_or_db = "this" if klass["name"] == "dbDatabase" else "db"
-            field['default'] = f"new dbTable<_{field['type']}{page_size_part}>({this_or_db}, this, (GetObjTbl_t) &_{klass['name']}::getObjectTable, {field['type']}Obj)"
+            field["default"] = (
+                f"new dbTable<_{field['type']}{page_size_part}>({this_or_db}, this, (GetObjTbl_t) &_{klass['name']}::getObjectTable, {field['type']}Obj)"
+            )
             # setting table identifier for table fields
-            field['table_base_type'] = field['type']
-            field['type'] = f"dbTable<_{field['type']}{page_size_part}>*"
-   
+            field["table_base_type"] = field["type"]
+            field["type"] = f"dbTable<_{field['type']}{page_size_part}>*"
 
 
 def generate(schema, env, includeDir, srcDir, keep_empty):
