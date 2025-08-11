@@ -2442,7 +2442,7 @@ bool RepairDesign::makeRepeater(
                                            db_network_->flatPin(pin),
                                            connection_name.c_str());
         } else {
-          db_network_->connectPin(const_cast<Pin*>(pin), (Net*) buffer_op_net);
+          db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
         }
       }
 

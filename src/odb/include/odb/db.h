@@ -7958,7 +7958,7 @@ class dbModInst : public dbObject
 
   dbSet<dbModITerm> getModITerms();
 
-  void RemoveUnusedPortsAndPins();
+  void removeUnusedPortsAndPins();
 
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
@@ -8063,6 +8063,7 @@ class dbModule : public dbObject
   int getDbInstCount();
 
   const dbModBTerm* getHeadDbModBTerm() const;
+  bool canSwapWith(dbModule* new_module, utl::Logger* logger);
 
   static dbModule* create(dbBlock* block, const char* name);
 
