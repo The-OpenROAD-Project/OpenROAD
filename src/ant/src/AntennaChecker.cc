@@ -233,7 +233,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
         // convert rect -> polygon
         Polygon pin_pol = rectToPolygon(pin_rect);
         // Save polygon to add on DSU
-        pin_polys.push_back(std::make_pair(tech_layer->getRoutingLevel(), pin));
+        pin_polys.emplace_back(tech_layer->getRoutingLevel(), pin);
         // if has wire on same layer connect to pin
         ids = findNodesWithIntersection(node_by_layer_map[tech_layer], pin_pol);
         for (const int& index : ids) {
