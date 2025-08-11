@@ -105,8 +105,8 @@ class TritonCTS
   int applyNDRToClockLevelRange(odb::dbBlock* block_,
                                 odb::dbTechNonDefaultRule* clockNDR,
                                 const std::set<odb::dbNet*>& clkLeafNets,
-                                const int minLevel,
-                                const int maxLevel);
+                                int minLevel,
+                                int maxLevel);
   int applyNDRToFirstHalfLevels(odb::dbBlock* block_,
                                 odb::dbTechNonDefaultRule* clockNDR,
                                 const std::set<odb::dbNet*>& clkLeafNets);

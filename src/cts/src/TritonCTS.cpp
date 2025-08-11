@@ -1579,7 +1579,6 @@ int TritonCTS::applyNDRToClockLevels(odb::dbBlock* block_,
                                      const std::set<odb::dbNet*>& clkLeafNets,
                                      const std::vector<int>& targetLevels)
 {
-  int totalClkNets = 0;
   int ndrAppliedNets = 0;
 
   // clang-format off
@@ -1593,7 +1592,6 @@ int TritonCTS::applyNDRToClockLevels(odb::dbBlock* block_,
   for (odb::dbNet* net : block_->getNets()) {
     if (net->getSigType() == odb::dbSigType::CLOCK
         && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      totalClkNets++;
       std::string netName = net->getConstName();
       int level = extractClockTreeLevelFromNetName(netName);
 
