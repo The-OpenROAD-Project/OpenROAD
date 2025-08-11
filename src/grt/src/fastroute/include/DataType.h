@@ -47,11 +47,15 @@ enum class EdgeDirection
 
 struct Segment  // A Segment is a 2-pin connection
 {
-  int16_t x1, y1, x2, y2;  // coordinates of two endpoints
-  int16_t Zpoint;   // The coordinates of Z point (x for HVH and y for VHV)
-  int8_t cost;      // the netID of the net this segment belonging to
-  bool xFirst : 1;  // route x-direction first (only for L route)
-  bool HVH : 1;     // TRUE = HVH or false = VHV (only for Z route)
+  Segment(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int8_t cost)
+      : x1(x1), y1(y1), x2(x2), y2(y2), cost(cost)
+  {
+  }
+  const int16_t x1, y1, x2, y2;  // coordinates of two endpoints (x1 <= x2)
+  int16_t Zpoint;     // The coordinates of Z point (x for HVH and y for VHV)
+  const int8_t cost;  // the netID of the net this segment belonging to
+  bool xFirst : 1;    // route x-direction first (only for L route)
+  bool HVH : 1;       // TRUE = HVH or false = VHV (only for Z route)
 };
 
 struct FrNet  // A Net is a set of connected MazePoints
@@ -61,7 +65,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   int getDriverIdx() const { return driver_idx_; }
-  int getEdgeCost() const { return edge_cost_; }
+  int8_t getEdgeCost() const { return edge_cost_; }
   const char* getName() const;
   int getMaxLayer() const { return max_layer_; }
   int getMinLayer() const { return min_layer_; }
@@ -79,7 +83,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   void reset(odb::dbNet* db_net,
              bool is_clock,
              int driver_idx,
-             int edge_cost,
+             int8_t edge_cost,
              int min_layer,
              int max_layer,
              float slack,
@@ -97,7 +101,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool is_clock_;           // flag that indicates if net is a clock net
   bool is_critical_;
   int driver_idx_;
-  int edge_cost_;
+  int8_t edge_cost_;
   int min_layer_;
   int max_layer_;
   float slack_;
