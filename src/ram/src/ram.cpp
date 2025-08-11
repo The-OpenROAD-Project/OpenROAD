@@ -480,18 +480,18 @@ void RamGen::generate(const int bytes_per_word,
 
         for (int row = 0; row < word_count; ++row) {
 
-
+	    auto cell_name = fmt::format("storage_{}_{}", row, col);
             if (word_count == 2) {
                 decoder_output_nets.clear();
                 decoder_output_nets.push_back(row == 0 ? inv_addr[0] : addr[0]);
             } else {
-                decoder_output_nets = selectNets(name, read_ports);
+                decoder_output_nets = selectNets(cell_name, read_ports);
 
             }
                 //creates nets that decoders will use
             select_nets.push_back(decoder_output_nets);
 
-            auto cell_name = fmt::format("storage_{}_{}", row, col);
+            
             makeCellByte(ram_grid, col,
                 cell_name, read_ports,
                 clock, write_enable[col],

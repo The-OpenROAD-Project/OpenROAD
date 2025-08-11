@@ -1,5 +1,5 @@
 $date
-	Tue Jul 15 16:02:42 2025
+	Mon Aug 11 04:56:44 2025
 $end
 $version
 	Icarus Verilog
@@ -206,7 +206,7 @@ $var wire 1 @" Y $end
 $var wire 1 A" not0_out_Y $end
 $upscope $end
 $upscope $end
-$scope module decoder0.and_layer0 $end
+$scope module decoder_0_0.and_layer0 $end
 $var wire 1 B" A $end
 $var wire 1 C" B $end
 $var wire 1 D" VGND $end
@@ -221,7 +221,7 @@ $var wire 1 P X $end
 $var wire 1 H" and0_out_X $end
 $upscope $end
 $upscope $end
-$scope module decoder1.and_layer0 $end
+$scope module decoder_1_0.and_layer0 $end
 $var wire 1 I" A $end
 $var wire 1 J" B $end
 $var wire 1 K" VGND $end
@@ -236,7 +236,7 @@ $var wire 1 D X $end
 $var wire 1 O" and0_out_X $end
 $upscope $end
 $upscope $end
-$scope module decoder2.and_layer0 $end
+$scope module decoder_2_0.and_layer0 $end
 $var wire 1 P" A $end
 $var wire 1 Q" B $end
 $var wire 1 R" VGND $end
@@ -251,7 +251,7 @@ $var wire 1 8 X $end
 $var wire 1 V" and0_out_X $end
 $upscope $end
 $upscope $end
-$scope module decoder3.and_layer0 $end
+$scope module decoder_3_0.and_layer0 $end
 $var wire 1 W" A $end
 $var wire 1 X" B $end
 $var wire 1 Y" VGND $end
@@ -2163,27 +2163,27 @@ zm%
 1c%
 0`&
 1e&
-1P"
-1B"
 1J"
 1C"
+1P"
+1B"
 0D
 08
 0,
-19"
-b11 Y
 1@"
+b11 Y
+19"
 0O"
 0V"
 0]"
-1:"
 1A"
+1:"
 0I"
 0Q"
 0W"
 0X"
-04"
 0;"
+04"
 1T#
 0O
 1V$
@@ -2346,27 +2346,27 @@ zi#
 1V"
 0\$
 1a$
-1P"
-1B"
 0J"
 0C"
+1P"
+1B"
 0D
-19"
-b1 Y
 0@"
+b1 Y
+19"
 0a
 1`
 0O"
-1:"
 0A"
+1:"
 0g
 1m
 0I"
 1Q"
 0W"
 1X"
-04"
 1;"
+04"
 0b
 1h
 1T#
@@ -2525,24 +2525,24 @@ zm%
 1*
 1H"
 1e&
-1P"
-1B"
 1J"
 1C"
+1P"
+1B"
 0,
-19"
-b11 Y
 1@"
+b11 Y
+19"
 0]"
-1:"
 1A"
+1:"
 0)
 0I"
 0Q"
 0W"
 0X"
-04"
 0;"
+04"
 0`&
 1T#
 1V$
@@ -2632,23 +2632,23 @@ zi#
 1B
 1V"
 1a$
-1P"
-1B"
 0J"
 0C"
+1P"
+1B"
 0D
-19"
-b1 Y
 0@"
+b1 Y
+19"
 0O"
-1:"
 0A"
+1:"
 0I"
 1Q"
 0W"
 1X"
-04"
 1;"
+04"
 1T#
 1V$
 1X%

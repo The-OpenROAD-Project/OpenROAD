@@ -106,12 +106,14 @@ namespace ram {
       for (auto& cell : cells_) {
          if (cell) {
             cell->cellInit();
+	    if (cell_height < cell->getHeight()) {
+	       cell_height = cell->getHeight();  
+	    }
+	    if (cell_width < cell->getWidth()) {
+	       cell_width = cell->getWidth();
+	    }
          }
-      }
-
-      cell_height = cells_[0]->getHeight();
-      cell_width = cells_[0]->getWidth();
-
+      } 
    }
 
    void Layout::placeLayout() {
