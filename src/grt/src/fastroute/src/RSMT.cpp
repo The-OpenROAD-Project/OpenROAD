@@ -490,53 +490,36 @@ bool FastRouteCore::HTreeSuite(const int netID)
 
 float FastRouteCore::coeffADJ(const int netID)
 {
-  const int deg = nets_[netID]->getNumPins();
-  int xmax = 0;
-  int ymax = 0;
-  int xmin = BIG_INT;
-  int ymin = BIG_INT;
-
-  for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
-  }
+  const odb::Rect bbox = nets_[netID]->getPinBBox();
 
   int Hcap = 0;
   int Vcap = 0;
   float Husage = 0;
   float Vusage = 0;
   float coef;
-  if (xmin == xmax) {
-    for (int j = ymin; j < ymax; j++) {
-      Vcap += getEdgeCapacity(nets_[netID], xmin, j, EdgeDirection::Vertical);
-      Vusage += graph2d_.getEstUsageV(xmin, j);
+  if (bbox.dx() == 0) {
+    for (int j = bbox.yMin(); j < bbox.yMax(); j++) {
+      Vcap += getEdgeCapacity(
+          nets_[netID], bbox.xMin(), j, EdgeDirection::Vertical);
+      Vusage += graph2d_.getEstUsageV(bbox.xMin(), j);
     }
     coef = 1;
-  } else if (ymin == ymax) {
-    for (int i = xmin; i < xmax; i++) {
-      Hcap += getEdgeCapacity(nets_[netID], i, ymin, EdgeDirection::Horizontal);
-      Husage += graph2d_.getEstUsageH(i, ymin);
+  } else if (bbox.dy() == 0) {
+    for (int i = bbox.xMin(); i < bbox.xMax(); i++) {
+      Hcap += getEdgeCapacity(
+          nets_[netID], i, bbox.yMin(), EdgeDirection::Horizontal);
+      Husage += graph2d_.getEstUsageH(i, bbox.yMin());
     }
     coef = 1;
   } else {
-    for (int j = ymin; j <= ymax; j++) {
-      for (int i = xmin; i < xmax; i++) {
+    for (int j = bbox.yMin(); j <= bbox.yMax(); j++) {
+      for (int i = bbox.xMin(); i < bbox.xMax(); i++) {
         Hcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Horizontal);
         Husage += graph2d_.getEstUsageH(i, j);
       }
     }
-    for (int j = ymin; j < ymax; j++) {
-      for (int i = xmin; i <= xmax; i++) {
+    for (int j = bbox.yMin(); j < bbox.yMax(); j++) {
+      for (int i = bbox.xMin(); i <= bbox.xMax(); i++) {
         Vcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Vertical);
         Vusage += graph2d_.getEstUsageV(i, j);
       }
