@@ -104,11 +104,11 @@ class FastRouteCore
                 bool is_clock,
                 bool is_local,
                 int driver_idx,
-                int cost,
+                int8_t cost,
                 int min_layer,
                 int max_layer,
                 float slack,
-                std::vector<int>* edge_cost_per_layer);
+                std::vector<int8_t>* edge_cost_per_layer);
   void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   void mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net);

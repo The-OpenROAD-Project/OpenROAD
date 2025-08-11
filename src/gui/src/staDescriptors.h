@@ -25,15 +25,15 @@ class LibertyLibraryDescriptor : public Descriptor
  public:
   LibertyLibraryDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
@@ -47,15 +47,15 @@ class LibertyCellDescriptor : public Descriptor
  public:
   LibertyCellDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
@@ -69,15 +69,15 @@ class LibertyPortDescriptor : public Descriptor
  public:
   LibertyPortDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
@@ -91,15 +91,15 @@ class LibertyPgPortDescriptor : public Descriptor
  public:
   LibertyPgPortDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
@@ -115,15 +115,15 @@ class CornerDescriptor : public Descriptor
  public:
   CornerDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
@@ -137,15 +137,15 @@ class StaInstanceDescriptor : public Descriptor
  public:
   StaInstanceDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
@@ -161,15 +161,15 @@ class ClockDescriptor : public Descriptor
  public:
   ClockDescriptor(sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
