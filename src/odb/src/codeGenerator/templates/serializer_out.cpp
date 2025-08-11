@@ -2,6 +2,9 @@
   {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
   dbOStream& operator<<(dbOStream& stream, const {{sname}}& obj)
   {
+    {% if klass.ostream_scope %}
+    dbOStreamScope scope(stream, "{{klass.name}}");
+    {% endif %}
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {% if field.numBits == 32 %}
@@ -23,3 +26,4 @@
     return stream;
   }
 {%- endmacro %}
+

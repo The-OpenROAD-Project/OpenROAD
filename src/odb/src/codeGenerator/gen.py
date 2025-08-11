@@ -58,6 +58,8 @@ def make_parent_field(parent, relation):
     field["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
         "flags", []
     )
+    if "page_size" in relation:
+        field["page_size"] = relation["page_size"]
     if "schema" in relation:
         field["schema"] = relation["schema"]
 
@@ -261,6 +263,30 @@ def generate_relations(schema):
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)
 
+def preprocess_klass(klass):
+    # Insert at the beginning to guarantee position 0
+    klass["declared_classes"].insert(0, "dbIStream")
+    klass["declared_classes"].insert(1, "dbOStream")
+    if klass["name"] != "dbDatabase":
+        klass["declared_classes"].insert(2, "_dbDatabase")
+        klass["cpp_includes"].append("dbDatabase.h")
+    klass["h_includes"].insert(0, "dbCore.h")
+    klass["h_includes"].insert(1, "odb/odb.h")
+    name = klass["name"]
+    klass["cpp_includes"].extend(["dbTable.h", "dbTable.hpp", "odb/db.h", f"{name}.h"])
+    if klass['hasBitFields']:
+        klass['cpp_sys_includes'].extend(["cstdint", "cstring"])
+    for field in klass["fields"]:
+        if field.get('table', False):
+            page_size_part = f", {field['page_size']}" if 'page_size' in field else ""
+            # setting default value for table fields
+            this_or_db = "this" if klass["name"] == "dbDatabase" else "db"
+            field['default'] = f"new dbTable<_{field['type']}{page_size_part}>({this_or_db}, this, (GetObjTbl_t) &_{klass['name']}::getObjectTable, {field['type']}Obj)"
+            # setting table identifier for table fields
+            field['table_base_type'] = field['type']
+            field['type'] = f"dbTable<_{field['type']}{page_size_part}>*"
+   
+
 
 def generate(schema, env, includeDir, srcDir, keep_empty):
     """Generate generate code based on the schema and templates"""
@@ -326,7 +352,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
             )
         hash_dict[hash_value] = klass["name"]
         klass["hash"] = f"0x{hash_value:08X}"
-
+        preprocess_klass(klass)
         # Generating files
         for template_file in ["impl.h", "impl.cpp"]:
             template = env.get_template(template_file)
