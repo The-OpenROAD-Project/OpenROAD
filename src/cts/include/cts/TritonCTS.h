@@ -93,6 +93,24 @@ class TritonCTS
   void buildClockTrees();
   void writeDataToDb();
 
+  // NDR functions
+  int extractClockTreeLevelFromNetName(const std::string& netName);
+  std::vector<int> getAllClockTreeLevels(
+      odb::dbBlock* block_,
+      const std::set<odb::dbNet*>& clkLeafNets);
+  int applyNDRToClockLevels(odb::dbBlock* block_,
+                            odb::dbTechNonDefaultRule* clockNDR,
+                            const std::set<odb::dbNet*>& clkLeafNets,
+                            const std::vector<int>& targetLevels);
+  int applyNDRToClockLevelRange(odb::dbBlock* block_,
+                                odb::dbTechNonDefaultRule* clockNDR,
+                                const std::set<odb::dbNet*>& clkLeafNets,
+                                const int minLevel,
+                                const int maxLevel);
+  int applyNDRToFirstHalfLevels(odb::dbBlock* block_,
+                                odb::dbTechNonDefaultRule* clockNDR,
+                                const std::set<odb::dbNet*>& clkLeafNets);
+
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
