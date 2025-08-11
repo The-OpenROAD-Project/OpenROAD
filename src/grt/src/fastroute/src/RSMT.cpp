@@ -478,54 +478,14 @@ bool FastRouteCore::netCongestion(const int netID)
 
 bool FastRouteCore::VTreeSuite(const int netID)
 {
-  int xmax = 0;
-  int ymax = 0;
-  int xmin = BIG_INT;
-  int ymin = BIG_INT;
-
-  const int deg = nets_[netID]->getNumPins();
-  for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
-  }
-
-  return (ymax - ymin) > 3 * (xmax - xmin);
+  const odb::Rect bbox = nets_[netID]->getPinBBox();
+  return bbox.dy() > 3 * bbox.dx();
 }
 
 bool FastRouteCore::HTreeSuite(const int netID)
 {
-  int xmax = 0;
-  int ymax = 0;
-  int xmin = BIG_INT;
-  int ymin = BIG_INT;
-
-  const int deg = nets_[netID]->getNumPins();
-  for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
-  }
-
-  return 5 * (ymax - ymin) < (xmax - xmin);
+  const odb::Rect bbox = nets_[netID]->getPinBBox();
+  return 5 * bbox.dy() < bbox.dx();
 }
 
 float FastRouteCore::coeffADJ(const int netID)
