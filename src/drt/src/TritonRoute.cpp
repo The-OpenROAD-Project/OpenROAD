@@ -536,7 +536,6 @@ void TritonRoute::init(
 {
   db_ = db;
   logger_ = logger;
-  callback_handler_ = callback_handler;
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
