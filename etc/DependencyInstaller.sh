@@ -933,11 +933,13 @@ case "${os}" in
             _installOrTools "ubuntu" "${ubuntuVersion}" "amd64"
         fi
         ;;
-    "Red Hat Enterprise Linux" | "Rocky Linux")
+    "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
     if [[ "${os}" == "Red Hat Enterprise Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' redhat-release | cut -d. -f1)
     elif  [[ "${os}" == "Rocky Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' rocky-release | cut -d. -f1)
+    elif [[ "${os}" == "AlmaLinux" ]]; then
+        rhelVersion=$(rpm -q --queryformat '%{VERSION}' almalinux-release | cut -d. -f1)
     fi
         if [[ "${rhelVersion}" != "8" ]] && [[ "${rhelVersion}" != "9" ]]; then
             echo "ERROR: Unsupported ${rhelVersion} version. Versions '8' and '9' are supported."
@@ -1018,4 +1020,8 @@ esac
 if [[ ! -z ${saveDepsPrefixes} ]]; then
     mkdir -p "$(dirname $saveDepsPrefixes)"
     echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
+    # Fix permissions if running as root to allow user access
+    if [[ $(id -u) == 0 && ! -z "$SUDO_USER" ]]; then
+        chown "$SUDO_USER:$(id -gn "$SUDO_USER")" "$saveDepsPrefixes" 2>/dev/null || true
+    fi
 fi
