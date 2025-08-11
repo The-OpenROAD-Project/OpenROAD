@@ -216,7 +216,8 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-exclude region]\
                                   [-group_pins pin_list]\
                                   [-annealing] \
-                                  [-write_pin_placement file_name]
+                                  [-write_pin_placement file_name]\
+                                  [is_rectilinear_die]
 } ;# checker off
 
 proc place_pins { args } {
@@ -224,9 +225,17 @@ proc place_pins { args } {
   sta::parse_key_args "place_pins" args \
     keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
           -min_distance -write_pin_placement} \
-    flags {-random -min_distance_in_tracks -annealing} ;# checker off
+    flags {-random -min_distance_in_tracks -annealing -is_rectilinear_die} ;# checker off
 
   sta::check_argc_eq0 "place_pins" $args
+
+  set is_polygon_mode 0
+
+  # Check to switch to polygon mode
+  if { [info exists flags(-is_rectilinear_die)] } {
+    set is_polygon_mode 1
+    utl::report "Switching to polygon mode for pin placement."
+  }
 
   if { [info exists flags(-random)] || [info exists keys(-random_seed)] } {
     utl::warn PPL 113 "-random and -random_seed are obsolete. Skipping random pin placement."
@@ -364,7 +373,11 @@ proc place_pins { args } {
     if { [info exists flags(-annealing)] } {
       ppl::run_annealing
     } else {
-      ppl::run_hungarian_matching
+      if { $is_polygon_mode } {
+        ppl::run_hungarian_matching_polygon
+      } else {
+        ppl::run_hungarian_matching
+      }
     }
   }
 }
