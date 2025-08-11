@@ -12,7 +12,8 @@ link_design top
 # error, and we want to continue to check all messages.
 set status [catch { sta::check_axioms } msg]
 
-# check_axioms cannot detect unused_module. It is because odb does not keep unused modules in its database.
+# check_axioms cannot detect unused_module.
+# - It is because odb does not keep unused modules in its database.
 
 # Check for expected messages.
 #[WARNING ORD-2038] SanityCheck: Module i_empty has no instances.
