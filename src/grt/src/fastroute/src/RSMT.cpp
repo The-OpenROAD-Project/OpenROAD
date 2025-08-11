@@ -138,14 +138,10 @@ void FastRouteCore::fluteNormal(const int netID,
 
   if (d == 2) {
     t.deg = 2;
-    t.length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
+    t.length = std::abs(x[0] - x[1]) + std::abs(y[0] - y[1]);
     t.branch.resize(2);
-    t.branch[0].x = x[0];
-    t.branch[0].y = y[0];
-    t.branch[0].n = 1;
-    t.branch[1].x = x[1];
-    t.branch[1].y = y[1];
-    t.branch[1].n = 1;
+    t.branch[0] = {x[0], y[0], 1};
+    t.branch[1] = {x[1], y[1], 1};
   } else if (d == 3) {
     t.deg = 3;
     auto sort = [](const std::vector<int>& v) {
@@ -158,18 +154,10 @@ void FastRouteCore::fluteNormal(const int netID,
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
     t.branch.resize(4);
-    t.branch[0].x = x[0];
-    t.branch[0].y = y[0];
-    t.branch[0].n = 3;
-    t.branch[1].x = x[1];
-    t.branch[1].y = y[1];
-    t.branch[1].n = 3;
-    t.branch[2].x = x[2];
-    t.branch[2].y = y[2];
-    t.branch[2].n = 3;
-    t.branch[3].x = x_mid;
-    t.branch[3].y = y_mid;
-    t.branch[3].n = 3;
+    t.branch[0] = {x[0], y[0], 3};
+    t.branch[1] = {x[1], y[1], 3};
+    t.branch[2] = {x[2], y[2], 3};
+    t.branch[3] = {x_mid, y_mid, 3};
   } else {
     std::vector<int> xs(d);
     std::vector<int> ys(d);
