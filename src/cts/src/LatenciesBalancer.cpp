@@ -33,6 +33,10 @@ void LatenciesBalancer::run()
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());
+  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
+  sta::Cell* masterCell = network_->dbToSta(master);
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+  buffer_delay_ = computeBufferDelay(libertyCell, 0);
   balanceLatencies(0);
   debugPrint(logger_,
              CTS,
@@ -49,6 +53,46 @@ void LatenciesBalancer::initSta()
   openSta_->ensureClkNetwork();
   openSta_->updateTiming(false);
   timingGraph_ = openSta_->graph();
+}
+
+sta::ArcDelay LatenciesBalancer::computeBufferDelay(sta::LibertyCell *buffer_cell, float extra_out_cap)
+{
+  sta::ArcDelay max_rise_delay = 0;
+
+  sta::LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  for (sta::Corner* corner : *openSta_->corners()) {
+    const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(sta::MinMax::max());
+    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+
+    for (sta::TimingArcSet* arc_set : buffer_cell->timingArcSets(input, output)) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
+        sta::GateTimingModel* model = dynamic_cast<sta::GateTimingModel*>(arc->model());
+        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
+        // Only look at rise-rise arcs
+        if (model != nullptr &&
+            in_rf == sta::RiseFall::rise() &&
+            out_rf == sta::RiseFall::rise()) {
+          float in_cap = input->capacitance(in_rf, sta::MinMax::max());
+          float load_cap = in_cap + extra_out_cap;
+          sta::ArcDelay arc_delay;
+          sta::Slew arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          // Cycle the arc_slew through the gate delay calculator once more
+          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          // and once more
+          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+
+          if (arc_delay > max_rise_delay) {
+            max_rise_delay = arc_delay;
+          }
+        }
+      }
+    }
+  }
+
+  return max_rise_delay;
 }
 
 void LatenciesBalancer::findLeafBuilders(TreeBuilder* builder)
@@ -113,13 +157,13 @@ void LatenciesBalancer::buildGraph(odb::dbNet* clkInputNet)
         }
 
         if(isSink(sinkIterm)) {
-          // calcula o delay de uma instancia.
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
             float arrival = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
             graph_[sinkId].delay = arrival;
           }
+          continue;
         }
         visitNode.push(sinkId);
       }
@@ -287,9 +331,9 @@ void LatenciesBalancer::balanceLatencies(int nodeId)
                  3,
                  "For node {}, isert {:2f} buffers",
                  node->name,
-                 (worseDelay_ - node->delay) / root_->getTopBufferDelay());
+                 (worseDelay_ - node->delay) / buffer_delay_);
       node->nBuffInsert
-          = (int) ((worseDelay_ - node->delay) / root_->getTopBufferDelay());
+          = (int) ((worseDelay_ - node->delay) / buffer_delay_);
     }
     return;
   }

@@ -77,6 +77,7 @@ class LatenciesBalancer
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
                             odb::dbITerm* iterm);
+  sta::ArcDelay computeBufferDelay(sta::LibertyCell *buffer_cell, float extra_out_cap);
   float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
@@ -111,6 +112,7 @@ class LatenciesBalancer
   sta::Graph* timingGraph_ = nullptr;
   double wireSegmentUnit_;
   float worseDelay_;
+  float buffer_delay_;
   int delayBufIndex_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;
