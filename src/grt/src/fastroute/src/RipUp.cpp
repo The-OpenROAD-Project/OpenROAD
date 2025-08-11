@@ -191,15 +191,15 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
   for (int i = 0; i < treeedge->route.routelen; i++) {
     if (grids[i].x == grids[i + 1].x) {  // a vertical edge
       const int ymin = std::min(grids[i].y, grids[i + 1].y);
-      if (graph2d_.getUsageRedV(grids[i].x, ymin)
-          >= v_capacity_ - ripup_threshold) {
+      if (graph2d_.getUsageRedV(grids[i].x, ymin) - v_capacity_
+          < ripup_threshold) {
         needRipup = true;
         break;
       }
     } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
       const int xmin = std::min(grids[i].x, grids[i + 1].x);
-      if (graph2d_.getUsageRedH(xmin, grids[i].y)
-          >= h_capacity_ - ripup_threshold) {
+      if (graph2d_.getUsageRedH(xmin, grids[i].y) - h_capacity_
+          < ripup_threshold) {
         needRipup = true;
         break;
       }

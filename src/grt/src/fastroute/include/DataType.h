@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -48,7 +49,7 @@ enum class EdgeDirection
 struct Segment  // A Segment is a 2-pin connection
 {
   Segment(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int8_t cost)
-      : x1(x1), y1(y1), x2(x2), y2(y2), cost(cost)
+      : x1(x1), y1(y1), x2(x2), y2(y2), cost(cost), xFirst(false), HVH(false)
   {
   }
   const int16_t x1, y1, x2, y2;  // coordinates of two endpoints (x1 <= x2)
@@ -78,6 +79,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
+  odb::Rect getPinBBox() const;
 
   void addPin(int x, int y, int layer);
   void reset(odb::dbNet* db_net,

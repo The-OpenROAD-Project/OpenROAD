@@ -1620,4 +1620,18 @@ void FrNet::reset(odb::dbNet* db_net,
   pin_l_.clear();
 }
 
+odb::Rect FrNet::getPinBBox() const
+{
+  odb::Rect rect;
+  rect.mergeInit();
+
+  const int deg = getNumPins();
+  for (int i = 0; i < deg; i++) {
+    const int x = getPinX(i);
+    const int y = getPinY(i);
+    rect.merge({x, y});
+  }
+  return rect;
+}
+
 }  // namespace grt
