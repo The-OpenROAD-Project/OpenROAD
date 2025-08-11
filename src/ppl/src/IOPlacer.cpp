@@ -747,6 +747,17 @@ void IOPlacer::findSlotsPolygon(const std::set<int>& layers, odb::Line line)
   for (int layer : layers) {
     std::vector<Point> slots = findLayerSlotsPolygon(layer, line);
 
+    // Skip if no slots are found for this layer - not adding this caused a crash :((
+    if (slots.empty()) {
+      printf("No slots found for layer %d for polygon edge (%d, %d) to (%d, %d)\n",
+             layer,
+             line.pt0().getX(),
+             line.pt0().getY(),
+             line.pt1().getX(),
+             line.pt1().getY());
+      continue;
+    }
+
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
     int slot_count = 0;
@@ -783,6 +794,10 @@ void IOPlacer::findSlotsPolygon(const std::set<int>& layers, odb::Line line)
     for (const Point& pos : slots) {
       bool blocked = checkBlockedPolygon(line, pos, layer);
       slots_.push_back({blocked, false, pos, layer, Edge::polygonEdge});
+      printf("slot added at coordinates (%d, %d) in layer %d\n",
+             pos.getX(),
+             pos.getY(),
+             layer);
     }
   }
 }
@@ -1096,16 +1111,20 @@ void IOPlacer::defineSlotsPolygon()
     for (int layer_idx : ver_layers_) {
       std::vector<int> layer_min_distances
           = core_->getMinDstPinsX().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
-      min_dist = std::max(layer_min_dist, min_dist);
+      if (!layer_min_distances.empty()) {
+        const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                      layer_min_distances.end()));
+        min_dist = std::max(layer_min_dist, min_dist);
+      }
     }
     for (int layer_idx : hor_layers_) {
       std::vector<int> layer_min_distances
           = core_->getMinDstPinsY().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
-      min_dist = std::max(layer_min_dist, min_dist);
+      if (!layer_min_distances.empty()) {
+        const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                      layer_min_distances.end()));
+        min_dist = std::max(layer_min_dist, min_dist);
+      }
     }
 
     const int64_t die_margin = getBlock()->getDieArea().margin();
@@ -2348,6 +2367,101 @@ void IOPlacer::runHungarianMatching()
   if (assignment_.size() != static_cast<int>(netlist_->numIOPins())) {
     logger_->error(PPL,
                    39,
+                   "Assigned {} pins out of {} IO pins.",
+                   assignment_.size(),
+                   netlist_->numIOPins());
+  }
+
+  reportHPWL();
+
+  checkPinPlacement();
+  commitIOPlacementToDB(assignment_);
+  writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
+  clear();
+}
+
+void IOPlacer::runHungarianMatchingPolygon()
+{
+  slots_per_section_ = parms_->getSlotsPerSection();
+  initExcludedIntervals();
+  initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegionsFromMacros();
+
+  defineSlotsPolygon();
+
+  initMirroredPins();
+  initConstraints();
+
+  int constrained_pins_cnt = 0;
+  int mirrored_pins_cnt = 0;
+  printConfig();
+
+  // add groups to fallback
+  for (const auto& io_group : netlist_->getIOGroups()) {
+    if (io_group.pin_indices.size() > slots_per_section_) {
+      debugPrint(logger_,
+                 utl::PPL,
+                 "pin_groups",
+                 1,
+                 "Pin group of size {} does not fit any section. Adding "
+                 "to fallback mode.",
+                 io_group.pin_indices.size());
+      addGroupToFallback(io_group.pin_indices, io_group.order);
+    }
+  }
+  constrained_pins_cnt += placeFallbackPins();
+
+  for (bool mirrored_only : {true, false}) {
+    for (Constraint& constraint : constraints_) {
+      updateConstraintSections(constraint);
+      std::vector<Section> sections_for_constraint
+          = assignConstrainedPinsToSections(
+              constraint, mirrored_pins_cnt, mirrored_only);
+
+      int slots_available = 0;
+      for (auto& sec : sections_for_constraint) {
+        slots_available += sec.num_slots - sec.used_slots;
+      }
+
+      if (slots_available < 0) {
+        std::string edge_str = getEdgeString(constraint.interval.getEdge());
+        logger_->error(
+            PPL,
+            388,
+            "Cannot assign {} constrained pins to region {:.2f}u-{:.2f}u "
+            "at edge {}. Not "
+            "enough space in the defined region.",
+            constraint.pin_list.size(),
+            static_cast<float>(
+                getBlock()->dbuToMicrons(constraint.interval.getBegin())),
+            static_cast<float>(
+                getBlock()->dbuToMicrons(constraint.interval.getEnd())),
+            edge_str);
+      }
+
+      findPinAssignment(sections_for_constraint, mirrored_only);
+      updateSlots();
+
+      for (Section& sec : sections_for_constraint) {
+        constrained_pins_cnt += sec.pin_indices.size();
+      }
+      constrained_pins_cnt += mirrored_pins_cnt;
+      mirrored_pins_cnt = 0;
+    }
+  }
+  constrained_pins_cnt += placeFallbackPins();
+
+  assignPinsToSections(constrained_pins_cnt);
+  findPinAssignment(sections_, false);
+
+  for (auto& pin : assignment_) {
+    updateOrientation(pin);
+    updatePinArea(pin);
+  }
+
+  if (assignment_.size() != static_cast<int>(netlist_->numIOPins())) {
+    logger_->error(PPL,
+                   339,
                    "Assigned {} pins out of {} IO pins.",
                    assignment_.size(),
                    netlist_->numIOPins());
