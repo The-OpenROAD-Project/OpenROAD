@@ -69,12 +69,13 @@ class dbNetwork : public ConcreteNetwork
 
   // sanity checkers
   void checkAxioms();
-  void checkSanityNetConnectivity();
   void checkSanityModBTerms();
   void checkSanityModITerms();
   void checkSanityModuleInsts();
-  void checkSanityTermConnectivity();
   void checkSanityModInstTerms();
+  void checkSanityUnusedModules();
+  void checkSanityTermConnectivity();
+  void checkSanityNetConnectivity();
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
