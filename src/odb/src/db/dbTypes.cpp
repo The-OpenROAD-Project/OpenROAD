@@ -328,6 +328,10 @@ const char* dbGroupType::getString() const
     case POWER_DOMAIN:
       value = "POWER_DOMAIN";
       break;
+
+    case VISUAL_DEBUG:
+      value = "VISUAL_DEBUG";
+      break;
   }
 
   return value;
