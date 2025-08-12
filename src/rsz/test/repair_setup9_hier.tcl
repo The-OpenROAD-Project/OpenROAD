@@ -1,4 +1,4 @@
-# check physical hierarchy of new buffer
+# check physical hierarchy of new buffer in hierarchical flow
 source "helpers.tcl"
 
 define_corners fast slow

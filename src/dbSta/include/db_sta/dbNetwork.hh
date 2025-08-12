@@ -395,8 +395,6 @@ class dbNetwork : public ConcreteNetwork
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
   std::set<dbNetworkObserver*> observers_;
-  int unique_net_index_ = 1;
-  int unique_inst_index_ = 1;
 
   // unique addresses for the db objects
   static constexpr unsigned DBITERM_ID = 0x0;
