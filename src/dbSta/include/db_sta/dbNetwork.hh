@@ -76,6 +76,8 @@ class dbNetwork : public ConcreteNetwork
   void checkSanityUnusedModules();
   void checkSanityTermConnectivity();
   void checkSanityNetConnectivity();
+  void checkSanityInstNames();
+  void checkSanityNetNames();
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);

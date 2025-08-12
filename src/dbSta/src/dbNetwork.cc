@@ -4214,6 +4214,8 @@ void dbNetwork::checkAxioms()
   checkSanityUnusedModules();
   checkSanityTermConnectivity();
   checkSanityNetConnectivity();
+  checkSanityInstNames();
+  checkSanityNetNames();
 }
 
 Net* dbNetwork::getFlatNet(Net* net) const
@@ -4375,6 +4377,11 @@ void dbNetwork::checkSanityTermConnectivity()
 
   for (odb::dbInst* inst : block_->getInsts()) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getSigType() == dbSigType::POWER
+          || iterm->getSigType() == dbSigType::GROUND) {
+        continue;  // Skip power/ground pins
+      }
+
       if (iterm->getIoType() != dbIoType::OUTPUT
           && iterm->getNet() == nullptr) {
         logger_->error(ORD,
@@ -4404,6 +4411,13 @@ void dbNetwork::checkSanityNetConnectivity()
       continue;
     }
 
+    // Skip power/ground net
+    if (net->getSigType() == odb::dbSigType::POWER
+        || net->getSigType() == odb::dbSigType::GROUND) {
+      continue;  // OK: Unconnected power/ground net
+    }
+
+    // A net connected to 1 terminal
     if (iterm_count == 1) {
       odb::dbITerm* iterm = *(net->getITerms().begin());
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -4418,8 +4432,82 @@ void dbNetwork::checkSanityNetConnectivity()
 
     logger_->error(ORD,
                    2039,
-                   "SanityCheck: Net '{}' has less than 2 connections.",
-                   net->getName());
+                   "SanityCheck: Net '{}' has less than 2 connections (# of "
+                   "ITerms = {}, # of BTerms = {}).",
+                   net->getName(),
+                   iterm_count,
+                   bterm_count);
+  }
+}
+
+void dbNetwork::checkSanityInstNames()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // Check for duplicate instance names
+  std::set<std::string> inst_names;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    const std::string inst_name = inst->getName();
+    if (inst_names.find(inst_name) != inst_names.end()) {
+      logger_->error(ORD,
+                     2044,
+                     "SanityCheck: Duplicate instance name '{}' in block '{}'.",
+                     inst_name,
+                     block_->getName());
+    }
+    inst_names.insert(inst_name);
+  }
+
+  // Check for duplicate module instance names
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    const std::string mod_inst_name = mod_inst->getName();
+    if (inst_names.find(mod_inst_name) != inst_names.end()) {
+      logger_->error(ORD,
+                     2045,
+                     "SanityCheck: Duplicate module instance name '{}' in "
+                     "block '{}'.",
+                     mod_inst_name,
+                     block_->getName());
+    }
+    inst_names.insert(mod_inst_name);
+  }
+}
+
+void dbNetwork::checkSanityNetNames()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // Check for duplicate flat net names
+  std::set<std::string> net_names;
+  for (odb::dbNet* net : block_->getNets()) {
+    const std::string net_name = net->getName();
+    if (net_names.find(net_name) != net_names.end()) {
+      logger_->error(ORD,
+                     2046,
+                     "SanityCheck: Duplicate net name '{}' in block '{}'.",
+                     net_name,
+                     block_->getName());
+    }
+    net_names.insert(net_name);
+  }
+
+  // Check for duplicate module net names
+  std::set<std::string> mod_net_names;
+  for (odb::dbModNet* mod_net : block_->getModNets()) {
+    const std::string mod_net_name = mod_net->getName();
+    if (mod_net_names.find(mod_net_name) != mod_net_names.end()) {
+      logger_->error(
+          ORD,
+          2047,
+          "SanityCheck: Duplicate module net name '{}' in block '{}'.",
+          mod_net_name,
+          block_->getName());
+    }
+    mod_net_names.insert(mod_net_name);
   }
 }
 
