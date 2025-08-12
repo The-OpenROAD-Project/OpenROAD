@@ -4291,6 +4291,7 @@ void sta::dbNetwork::checkSanityModITerms()
 
 void dbNetwork::checkSanityModuleInsts()
 {
+  int inst_count = 0;
   for (odb::dbModule* module : block_->getModules()) {
     if (module->getModInsts().empty() && module->getInsts().empty()) {
       logger_->warn(ORD,
@@ -4298,6 +4299,19 @@ void dbNetwork::checkSanityModuleInsts()
                     "SanityCheck: Module '{}' has no instances.",
                     module->getHierarchicalName());
     }
+
+    inst_count += module->getInsts().size();
+  }
+
+  // Check for # of instances in the block and in all modules.
+  if (inst_count != block_->getInsts().size()) {
+    logger_->error(ORD,
+                   2048,
+                   "SanityCheck: Total instance count in block '{}' is {} but "
+                   "sum of instance counts in all module is {}.",
+                   block_->getName(),
+                   block_->getInsts().size(),
+                   inst_count);
   }
 }
 
