@@ -3686,12 +3686,12 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
   }
 }
 
-// If force_uniq_postfix is false, unique postfix will be added only when
+// If uniquify is IF_NEEDED, unique postfix will be added only when
 // necessary. This is added to cover the existing multiple use cases of making a
 // new net name w/ and w/o unique postfix.
 std::string dbBlock::makeNewNetName(dbModInst* parent,
                                     const char* base_name,
-                                    bool force_uniq_postfix)
+                                    const dbNameUniquifyType& uniquify)
 {
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
 
@@ -3710,9 +3710,10 @@ std::string dbBlock::makeNewNetName(dbModInst* parent,
   fmt::format_to(std::back_inserter(buf), "{}", base_name);
   buf.push_back('\0');  // Null-terminate for findNet
 
-  // if force_uniq_postfix is false, unique postfix will not be added when the
+  // If uniquify is IF_NEEDED, unique postfix will not be added when the
   // name is unique already.
-  if (force_uniq_postfix == false && findNet(buf.data()) == nullptr) {
+  if (uniquify == dbNameUniquifyType::IF_NEEDED
+      && findNet(buf.data()) == nullptr) {
     return std::string(buf.data());
   }
 

@@ -2220,4 +2220,21 @@ const char* dbAccessType::getString() const
   return value;
 }
 
+const char* dbNameUniquifyType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case ALWAYS:
+      value = "ALWAYS";
+      break;
+
+    case IF_NEEDED:
+      value = "IF_NEEDED";
+      break;
+  }
+
+  return value;
+}
+
 }  // namespace odb

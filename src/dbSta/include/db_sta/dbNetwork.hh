@@ -201,6 +201,7 @@ class dbNetwork : public ConcreteNetwork
   // Instance functions
   // Top level instance of the design (defined after link).
   Instance* topInstance() const override;
+  bool isTopInstanceOrNull(const Instance* instance) const;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
@@ -328,7 +329,7 @@ class dbNetwork : public ConcreteNetwork
   Net* makeNet(const char* name, Instance* parent) override;
   Net* makeNet(const char* base_name,
                Instance* parent,
-               bool force_uniq_postfix);
+               const odb::dbNameUniquifyType& uniquify);
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;
   void deleteNet(Net* net) override;

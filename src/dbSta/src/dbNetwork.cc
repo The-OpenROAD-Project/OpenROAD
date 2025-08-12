@@ -53,6 +53,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -577,6 +578,11 @@ Instance* dbNetwork::topInstance() const
     return top_instance_;
   }
   return nullptr;
+}
+
+bool dbNetwork::isTopInstanceOrNull(const Instance* instance) const
+{
+  return (instance == nullptr) || (instance == top_instance_);
 }
 
 double dbNetwork::dbuToMeters(int dist) const
@@ -2182,7 +2188,7 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
                                   Instance* parent)
 {
   const char* cell_name = cell->name();
-  if (parent == nullptr || parent == top_instance_) {
+  if (isTopInstanceOrNull(parent)) {
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
       dbInst* inst = dbInst::create(block_, master, name);
@@ -2564,23 +2570,23 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
 
 Net* dbNetwork::makeNet(Instance* parent)
 {
-  return makeNet(nullptr, parent, true);
+  return makeNet(nullptr, parent, odb::dbNameUniquifyType::ALWAYS);
 }
 
 Net* dbNetwork::makeNet(const char* base_name, Instance* parent)
 {
-  return makeNet(base_name, parent, true);
+  return makeNet(base_name, parent, odb::dbNameUniquifyType::ALWAYS);
 }
 
-// If force_uniq_postfix is false, unique postfix will be added only when
+// If uniquify is IF_NEEDED, unique postfix will be added only when
 // necessary.
 Net* dbNetwork::makeNet(const char* base_name,
                         Instance* parent,
-                        bool force_uniq_postfix)
+                        const odb::dbNameUniquifyType& uniquify)
 {
   // Create a unique full name for a new net
-  std::string full_name = block_->makeNewNetName(
-      getModInst(parent), base_name, force_uniq_postfix);
+  std::string full_name
+      = block_->makeNewNetName(getModInst(parent), base_name, uniquify);
 
   // Create a new net
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);

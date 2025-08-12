@@ -30,6 +30,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -2513,8 +2514,8 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
       = (module == nullptr || (module == block_->getTopModule()))
             ? network_->topInstance()
             : (sta::Instance*) (module->getModInst());
-  odb::dbNet* newNet
-      = network_->staToDb(network_->makeNet(newNetName.c_str(), scope, false));
+  odb::dbNet* newNet = network_->staToDb(network_->makeNet(
+      newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
 
   newNet->setSigType(odb::dbSigType::CLOCK);
 

@@ -1490,7 +1490,8 @@ class dbBlock : public dbObject
   ///
   std::string makeNewNetName(dbModInst* parent = nullptr,
                              const char* base_name = nullptr,
-                             bool force_uniq_postfix = true);
+                             const dbNameUniquifyType& uniquify
+                             = dbNameUniquifyType::ALWAYS);
   std::string makeNewInstName(dbModInst* parent,
                               const char* base_name,
                               bool underscore = false);
