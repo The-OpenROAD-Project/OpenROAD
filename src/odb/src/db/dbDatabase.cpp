@@ -5,6 +5,7 @@
 #include "dbDatabase.h"
 
 #include "dbChip.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -65,6 +66,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*_chip_tbl != *rhs._chip_tbl) {
     return false;
   }
+  if (*_prop_tbl != *rhs._prop_tbl) {
+    return false;
+  }
 
   // User Code Begin ==
   //
@@ -81,10 +85,6 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
     return false;
   }
   if (*_gds_lib_tbl != *rhs._gds_lib_tbl) {
-    return false;
-  }
-
-  if (*_prop_tbl != *rhs._prop_tbl) {
     return false;
   }
 
@@ -112,6 +112,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
 {
   _chip_tbl = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
+  _prop_tbl = new dbTable<_dbProperty>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
   // User Code Begin Constructor
   _magic1 = DB_MAGIC1;
   _magic2 = DB_MAGIC2;
@@ -129,9 +131,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
 
   _lib_tbl = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
-
-  _prop_tbl = new dbTable<_dbProperty>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
 
   _name_cache = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
@@ -249,6 +248,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
   switch (type) {
     case dbChipObj:
       return _chip_tbl;
+    case dbPropertyObj:
+      return _prop_tbl;
       // User Code Begin getObjectTable
     case dbTechObj:
       return _tech_tbl;
@@ -258,9 +259,6 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 
     case dbGdsLibObj:
       return _gds_lib_tbl;
-
-    case dbPropertyObj:
-      return _prop_tbl;
     // User Code End getObjectTable
     default:
       break;
@@ -274,11 +272,12 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   _chip_tbl->collectMemInfo(info.children_["_chip_tbl"]);
 
+  _prop_tbl->collectMemInfo(info.children_["_prop_tbl"]);
+
   // User Code Begin collectMemInfo
   _tech_tbl->collectMemInfo(info.children_["tech"]);
   _lib_tbl->collectMemInfo(info.children_["lib"]);
   _gds_lib_tbl->collectMemInfo(info.children_["gds_lib"]);
-  _prop_tbl->collectMemInfo(info.children_["prop"]);
   _name_cache->collectMemInfo(info.children_["name_cache"]);
   // User Code End collectMemInfo
 }
@@ -286,11 +285,11 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 _dbDatabase::~_dbDatabase()
 {
   delete _chip_tbl;
+  delete _prop_tbl;
   // User Code Begin Destructor
   delete _tech_tbl;
   delete _lib_tbl;
   delete _gds_lib_tbl;
-  delete _prop_tbl;
   delete _name_cache;
   delete _prop_itr;
   // User Code End Destructor
@@ -359,6 +358,12 @@ dbSet<dbChip> dbDatabase::getChips() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbChip>(obj, obj->_chip_tbl);
+}
+
+dbSet<dbProperty> dbDatabase::getProperties() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbProperty>(obj, obj->_prop_tbl);
 }
 
 // User Code Begin dbDatabasePublicMethods

@@ -7010,6 +7010,8 @@ class dbDatabase : public dbObject
  public:
   dbSet<dbChip> getChips() const;
 
+  dbSet<dbProperty> getProperties() const;
+
   // User Code Begin dbDatabase
   ///
   /// Return the libs contained in the database. A database can contain
@@ -7427,7 +7429,7 @@ class dbGDSStructure : public dbObject
  public:
   char* getName() const;
 
-  dbSet<dbGDSBoundary> getGDSBoundarys() const;
+  dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
@@ -7828,7 +7830,7 @@ class dbMarkerCategory : public dbObject
 
   dbSet<dbMarker> getMarkers() const;
 
-  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbMarkerCategory* findMarkerCategory(const char* name) const;
 

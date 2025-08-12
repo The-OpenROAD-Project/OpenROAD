@@ -379,6 +379,13 @@
       "tbl_name":"_chip_tbl",
       "flags": ["no-serial"],
       "page_size": 2
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbProperty",
+      "type":"1_n",
+      "tbl_name":"_prop_tbl",
+      "flags": ["no-serial"]
     }
   ]
 }
