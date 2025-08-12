@@ -2,6 +2,7 @@
   "name": "dbChip",
   "type": "dbObject",
   "ostream_scope": true,
+  "hash" : "0x1",
   "enums": [
     {
       "name": "ChipType",
