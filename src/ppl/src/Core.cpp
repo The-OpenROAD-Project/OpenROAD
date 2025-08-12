@@ -20,15 +20,9 @@ int Core::getPerimeter() const
   return (x + y) * 2;
 }
 
-std::vector<odb::Line> Core::getDieAreaEdges(odb::Polygon poly)
+std::vector<odb::Line> Core::getDieAreaEdges()
 {
-  const std::vector<odb::Point>& points = poly.getPoints();
-  polygon_edges_.clear();  // Clear existing edges
-  polygon_edges_.reserve(points.size());
-
-  for (size_t i = points.size() - 1; i >= 1; i--) {
-    polygon_edges_.emplace_back(points[i], points[i - 1]);
-  }
+  return polygon_edges_;
 }
 
 odb::Point Core::getMirroredPosition(const odb::Point& position) const

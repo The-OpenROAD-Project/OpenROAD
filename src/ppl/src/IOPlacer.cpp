@@ -747,15 +747,13 @@ void IOPlacer::findSlotsPolygon(const std::set<int>& layers, odb::Line line)
   for (int layer : layers) {
     std::vector<Point> slots = findLayerSlotsPolygon(layer, line);
 
-    // Skip if no slots are found for this layer - not adding this caused a crash :((
-    if (slots.empty()) {
-      printf("No slots found for layer %d for polygon edge (%d, %d) to (%d, %d)\n",
+    if (!slots.empty()) {
+      printf("Slots found for layer %d for polygon edge (%d, %d) to (%d, %d)\n",
              layer,
              line.pt0().getX(),
              line.pt0().getY(),
              line.pt1().getX(),
              line.pt1().getY());
-      continue;
     }
 
     // Remove slots that violates the min distance before reversing the vector.
@@ -920,10 +918,18 @@ std::vector<Point> IOPlacer::findLayerSlotsPolygon(const int layer,
                          : std::max(edge_start.getY(), edge_end.getY());
 
   corner_avoidance_ = parms_->getCornerAvoidance();
+  printf("corner_avoidance_ = %d\n", vertical_pin);
+  printf("Core size X %d \n", core_->getMinDstPinsX().size());
+  printf("Core size Y %d \n", core_->getMinDstPinsY().size());
 
+  printf("Layer %d", layer);
+  for (auto [key, value] : core_->getMinDstPinsX()) {
+    printf("Core X layer %d min distances: %d\n", key, value.size());
+  }
   const std::vector<int>& layer_min_distances
       = vertical_pin ? core_->getMinDstPinsX().at(layer)
                      : core_->getMinDstPinsY().at(layer);
+  printf("Layer %d min distances: %d", layer, layer_min_distances[0]);
 
   const std::vector<int>& layer_init_tracks
       = vertical_pin ? core_->getInitTracksX().at(layer)
@@ -1092,10 +1098,12 @@ void IOPlacer::defineSlots()
 
 void IOPlacer::defineSlotsPolygon()
 {
-  odb::Polygon test_poly = getBlock()->getDieAreaPolygon();
-
-  for (auto line : core_->getDieAreaEdges(test_poly)) {
-    findSlotsPolygon(hor_layers_, line);
+  for (auto line : core_->getDieAreaEdges()) {
+    bool is_vertical_pin = (line.pt0().getY() == line.pt1().getY());
+    if (is_vertical_pin) {
+      findSlotsPolygon(ver_layers_, line);
+    } else {
+    findSlotsPolygon(hor_layers_, line);}
   }
 
   int regular_pin_count
@@ -2376,12 +2384,15 @@ void IOPlacer::runHungarianMatching()
 void IOPlacer::runHungarianMatchingPolygon()
 {
   slots_per_section_ = parms_->getSlotsPerSection();
+  printf("Slots per section: %d\n", slots_per_section_);
   initExcludedIntervals();
+  printf("Excluded intervals initialized.\n");
   initNetlistAndCore(hor_layers_, ver_layers_);
+  printf("Netlist and core initialized.\n");
   getBlockedRegionsFromMacros();
-
+  printf("Blocked regions from macros retrieved.\n");
   defineSlotsPolygon();
-
+  printf("Slots defined.\n");
   initMirroredPins();
   initConstraints();
 
@@ -2979,6 +2990,14 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     num_tracks_x[ver_layer_idx] = std::move(num_track_x);
   }
 
+  const std::vector<odb::Point>& points = getBlock()->getDieAreaPolygon().getPoints();
+  std::vector<odb::Line> polygon_edges;
+  polygon_edges.reserve(points.size());
+
+  for (size_t i = points.size() - 1; i >= 1; i--) {
+    polygon_edges.emplace_back(points[i], points[i - 1]);
+  }
+
   *core_ = Core(boundary,
                 min_spacings_x,
                 min_spacings_y,
@@ -2990,7 +3009,9 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                 min_areas_y,
                 min_widths_x,
                 min_widths_y,
-                database_unit);
+                database_unit,
+                polygon_edges
+              );
 }
 
 void IOPlacer::initTopLayerGrid()
