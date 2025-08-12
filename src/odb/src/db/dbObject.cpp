@@ -26,11 +26,7 @@ dbObjectType dbObject::getObjectType() const
 //
 // NOTE: The name declaration order MUST match the enumeration order.
 //
-static const char* name_tbl[] = {"dbDatabase",
-
-                                 // Design Objects
-                                 "dbChip",
-                                 "dbGDSLib",
+static const char* name_tbl[] = {"dbGDSLib",
                                  "dbBlock",
                                  "dbInstHdr",
                                  "dbInst",
@@ -57,6 +53,8 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbAccessPoint",
                                  "dbBusPort",
                                  "dbCellEdgeSpacing",
+                                 "dbChip",
+                                 "dbDatabase",
                                  "dbDft",
                                  "dbGCellGrid",
                                  "dbGDSARef",
@@ -141,11 +139,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbName"};
 
 static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
-    = {{0x0, dbDatabaseObj},
-
-       // Design Objects
-       {0x1, dbChipObj},
-       {0x2, dbGdsLibObj},
+    = {{0x2, dbGdsLibObj},
        {0x3, dbBlockObj},
        {0x4, dbInstHdrObj},
        {0x5, dbInstObj},
@@ -172,6 +166,8 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x663302D5, dbAccessPointObj},
        {0x12B22B2C, dbBusPortObj},
        {0xEE4BAB67, dbCellEdgeSpacingObj},
+       {0xAFBA2989, dbChipObj},
+       {0x00000000, dbDatabaseObj},
        {0x7C713BD7, dbDftObj},
        {0x645E6090, dbGCellGridObj},
        {0xCC5EB4AD, dbGDSARefObj},
@@ -256,11 +252,7 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x67, dbNameObj}};
 
 static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
-    = {{dbDatabaseObj, 0x0},
-
-       // Design Objects
-       {dbChipObj, 0x1},
-       {dbGdsLibObj, 0x2},
+    = {{dbGdsLibObj, 0x2},
        {dbBlockObj, 0x3},
        {dbInstHdrObj, 0x4},
        {dbInstObj, 0x5},
@@ -287,6 +279,8 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbAccessPointObj, 0x663302D5},
        {dbBusPortObj, 0x12B22B2C},
        {dbCellEdgeSpacingObj, 0xEE4BAB67},
+       {dbChipObj, 0xAFBA2989},
+       {dbDatabaseObj, 0x00000000},
        {dbDftObj, 0x7C713BD7},
        {dbGCellGridObj, 0x645E6090},
        {dbGDSARefObj, 0xCC5EB4AD},
