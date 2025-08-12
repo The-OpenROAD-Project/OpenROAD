@@ -1054,7 +1054,9 @@ class NesterovBase
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
 
-  bool checkConvergence();
+  bool checkConvergence(int gpl_iter_count,
+                        int routability_gpl_iter_count,
+                        RouteBase* rb);
   bool checkDivergence();
   void saveSnapshot();
   bool revertToSnapshot();

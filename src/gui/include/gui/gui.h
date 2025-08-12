@@ -297,22 +297,24 @@ class Descriptor
 {
  public:
   virtual ~Descriptor() = default;
-  virtual std::string getName(std::any object) const = 0;
-  virtual std::string getShortName(std::any object) const
+  virtual std::string getName(const std::any& object) const = 0;
+  virtual std::string getShortName(const std::any& object) const
   {
-    return getName(std::move(object));
+    return getName(object);
   }
   virtual std::string getTypeName() const = 0;
-  virtual std::string getTypeName(std::any /* object */) const
+  virtual std::string getTypeName(const std::any& /* object */) const
   {
     return getTypeName();
   }
-  virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
+  virtual bool getBBox(const std::any& object, odb::Rect& bbox) const = 0;
 
-  virtual bool isInst(std::any /* object */) const { return false; }
-  virtual bool isNet(std::any /* object */) const { return false; }
+  virtual bool isInst(const std::any& /* object */) const { return false; }
+  virtual bool isNet(const std::any& /* object */) const { return false; }
 
-  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+  virtual void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const
+      = 0;
 
   // A property is a name and a value.
   struct Property
@@ -356,13 +358,19 @@ class Descriptor
   };
   using Editors = std::map<std::string, Editor>;
 
-  virtual Properties getProperties(std::any object) const = 0;
-  virtual Actions getActions(std::any /* object */) const { return Actions(); }
-  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
+  virtual Properties getProperties(const std::any& object) const = 0;
+  virtual Actions getActions(const std::any& /* object */) const
+  {
+    return Actions();
+  }
+  virtual Editors getEditors(const std::any& /* object */) const
+  {
+    return Editors();
+  }
 
-  virtual Selected makeSelected(std::any object) const = 0;
+  virtual Selected makeSelected(const std::any& object) const = 0;
 
-  virtual bool lessThan(std::any l, std::any r) const = 0;
+  virtual bool lessThan(const std::any& l, const std::any& r) const = 0;
 
   static Editor makeEditor(const EditorCallback& func,
                            const std::vector<EditorOption>& options)
@@ -376,8 +384,11 @@ class Descriptor
 
   // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
-  virtual void highlight(std::any object, Painter& painter) const = 0;
-  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
+  virtual void highlight(const std::any& object, Painter& painter) const = 0;
+  virtual bool isSlowHighlight(const std::any& /* object */) const
+  {
+    return false;
+  }
 
   static std::string convertUnits(double value,
                                   bool area = false,
@@ -412,7 +423,7 @@ class Selected
 
   bool isInst() const { return descriptor_->isInst(object_); }
   bool isNet() const { return descriptor_->isNet(object_); }
-  std::any getObject() const { return object_; }
+  const std::any& getObject() const { return object_; }
 
   // If the select_flag is false, the drawing will happen in highlight mode.
   // Highlight shapes are persistent which will not get removed from

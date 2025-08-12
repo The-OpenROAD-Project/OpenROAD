@@ -49,7 +49,6 @@ class dbBox;
 class dbJournalEntry;
 
 // Property objects
-class dbProperty;
 class dbBoolProperty;
 class dbStringProperty;
 class dbIntProperty;
@@ -136,6 +135,7 @@ class dbNetTrack;
 class dbPolygon;
 class dbPowerDomain;
 class dbPowerSwitch;
+class dbProperty;
 class dbScanChain;
 class dbScanInst;
 class dbScanList;
@@ -169,136 +169,6 @@ class dbExtControl;
 
 // Custom iterators
 class dbModuleBusPortModBTermItr;
-///
-/// dbProperty - Property base class.
-///
-class dbProperty : public dbObject
-{
- public:
-  enum Type
-  {
-    // Do not change the order or the values of this enum.
-    STRING_PROP = 0,
-    BOOL_PROP = 1,
-    INT_PROP = 2,
-    DOUBLE_PROP = 3
-  };
-
-  /// Get the type of this property.
-  Type getType();
-
-  /// Get thetname of this property.
-  std::string getName();
-
-  /// Get the owner of this property
-  dbObject* getPropOwner();
-
-  /// Find the named property. Returns nullptr if the property does not exist.
-  static dbProperty* find(dbObject* object, const char* name);
-
-  /// Find the named property of the specified type. Returns nullptr if the
-  /// property does not exist.
-  static dbProperty* find(dbObject* object, const char* name, Type type);
-
-  /// Destroy a specific property
-  static void destroy(dbProperty* prop);
-  /// Destroy all properties of the specific object
-  static void destroyProperties(dbObject* obj);
-  static dbSet<dbProperty> getProperties(dbObject* object);
-  static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
-  // 5.8
-  static std::string writeProperties(dbObject* object);
-  static std::string writePropValue(dbProperty* prop);
-};
-
-///
-/// dbProperty - Boolean property.
-///
-class dbBoolProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  bool getValue();
-
-  /// Set the value of this property.
-  void setValue(bool value);
-
-  /// Create a bool property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbBoolProperty* create(dbObject* object, const char* name, bool value);
-
-  /// Find the named property of type bool. Returns nullptr if the property does
-  /// not exist.
-  static dbBoolProperty* find(dbObject* object, const char* name);
-};
-
-///
-/// dbProperty - String property.
-///
-class dbStringProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  std::string getValue();
-
-  /// Set the value of this property.
-  void setValue(const char* value);
-
-  /// Create a string property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbStringProperty* create(dbObject* object,
-                                  const char* name,
-                                  const char* value);
-
-  /// Find the named property of type string. Returns nullptr if the property
-  /// does not exist.
-  static dbStringProperty* find(dbObject* object, const char* name);
-};
-
-///
-/// dbProperty - Int property.
-///
-class dbIntProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  int getValue();
-
-  /// Set the value of this property.
-  void setValue(int value);
-
-  /// Create a int property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbIntProperty* create(dbObject* object, const char* name, int value);
-
-  /// Find the named property of type int. Returns nullptr if the property does
-  /// not exist.
-  static dbIntProperty* find(dbObject* object, const char* name);
-};
-
-///
-/// dbProperty - Double property.
-///
-class dbDoubleProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  double getValue();
-
-  /// Set the value of this property.
-  void setValue(double value);
-
-  /// Create a double property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbDoubleProperty* create(dbObject* object,
-                                  const char* name,
-                                  double value);
-
-  /// Find the named property of type double. Returns nullptr if the property
-  /// does not exist.
-  static dbDoubleProperty* find(dbObject* object, const char* name);
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// This class encapsulates a persitant ADS database.
@@ -8365,6 +8235,47 @@ class dbPowerSwitch : public dbObject
   // User Code End dbPowerSwitch
 };
 
+class dbProperty : public dbObject
+{
+ public:
+  // User Code Begin dbProperty
+  enum Type
+  {
+    // Do not change the order or the values of this enum.
+    STRING_PROP = 0,
+    BOOL_PROP = 1,
+    INT_PROP = 2,
+    DOUBLE_PROP = 3
+  };
+
+  /// Get the type of this property.
+  Type getType();
+
+  /// Get thetname of this property.
+  std::string getName();
+
+  /// Get the owner of this property
+  dbObject* getPropOwner();
+
+  /// Find the named property. Returns nullptr if the property does not exist.
+  static dbProperty* find(dbObject* object, const char* name);
+
+  /// Find the named property of the specified type. Returns nullptr if the
+  /// property does not exist.
+  static dbProperty* find(dbObject* object, const char* name, Type type);
+
+  /// Destroy a specific property
+  static void destroy(dbProperty* prop);
+  /// Destroy all properties of the specific object
+  static void destroyProperties(dbObject* obj);
+  static dbSet<dbProperty> getProperties(dbObject* object);
+  static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
+  // 5.8
+  static std::string writeProperties(dbObject* object);
+  static std::string writePropValue(dbProperty* prop);
+  // User Code End dbProperty
+};
+
 // A scan chain is a collection of dbScanLists that contains dbScanInsts.  Here,
 // scan_in, scan_out and scan_enable are the top level ports/pins to where this
 // scan chain is connected.  Each scan chain is also associated with a
@@ -10675,6 +10586,93 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 };
 
 // Generator Code End ClassDefinition
+///
+/// dbProperty - Boolean property.
+///
+class dbBoolProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  bool getValue();
+
+  /// Set the value of this property.
+  void setValue(bool value);
+
+  /// Create a bool property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbBoolProperty* create(dbObject* object, const char* name, bool value);
+
+  /// Find the named property of type bool. Returns nullptr if the property does
+  /// not exist.
+  static dbBoolProperty* find(dbObject* object, const char* name);
+};
+
+///
+/// dbProperty - String property.
+///
+class dbStringProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  std::string getValue();
+
+  /// Set the value of this property.
+  void setValue(const char* value);
+
+  /// Create a string property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbStringProperty* create(dbObject* object,
+                                  const char* name,
+                                  const char* value);
+
+  /// Find the named property of type string. Returns nullptr if the property
+  /// does not exist.
+  static dbStringProperty* find(dbObject* object, const char* name);
+};
+
+///
+/// dbProperty - Int property.
+///
+class dbIntProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  int getValue();
+
+  /// Set the value of this property.
+  void setValue(int value);
+
+  /// Create a int property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbIntProperty* create(dbObject* object, const char* name, int value);
+
+  /// Find the named property of type int. Returns nullptr if the property does
+  /// not exist.
+  static dbIntProperty* find(dbObject* object, const char* name);
+};
+
+///
+/// dbProperty - Double property.
+///
+class dbDoubleProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  double getValue();
+
+  /// Set the value of this property.
+  void setValue(double value);
+
+  /// Create a double property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbDoubleProperty* create(dbObject* object,
+                                  const char* name,
+                                  double value);
+
+  /// Find the named property of type double. Returns nullptr if the property
+  /// does not exist.
+  static dbDoubleProperty* find(dbObject* object, const char* name);
+};
 
 }  // namespace odb
 

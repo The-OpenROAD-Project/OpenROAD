@@ -21,6 +21,7 @@ namespace rsz {
 
 using odb::dbSigType;
 using sta::ArcDcalcResult;
+using sta::Arrival;
 using sta::Edge;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
@@ -241,8 +242,12 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
                                        load_pin_index_map,
                                        dcalc_ap);
       rf_delay = dcalc_result.gateDelay();
-      rf_correction = arrival_path->arrival()
-                      - (driver_path->arrival() + dcalc_result.gateDelay());
+
+      Arrival prev_arrival = driver_path->isClock(sta_)
+                                 ? search_->clkPathArrival(driver_path)
+                                 : driver_path->arrival();
+      rf_correction
+          = arrival_path->arrival() - (prev_arrival + dcalc_result.gateDelay());
       rf_slew = dcalc_result.drvrSlew();
     } else {
       rf_delay = 0;

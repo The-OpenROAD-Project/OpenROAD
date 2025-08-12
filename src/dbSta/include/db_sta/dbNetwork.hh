@@ -67,7 +67,16 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
-  void AxiomCheck();
+  // sanity checkers
+  void checkAxioms();
+  void checkSanityModBTerms();
+  void checkSanityModITerms();
+  void checkSanityModuleInsts();
+  void checkSanityModInstTerms();
+  void checkSanityUnusedModules();
+  void checkSanityTermConnectivity();
+  void checkSanityNetConnectivity();
+
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
@@ -291,6 +300,7 @@ class dbNetwork : public ConcreteNetwork
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
   dbNet* flatNet(const Net* net) const;
+  Net* getFlatNet(Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions

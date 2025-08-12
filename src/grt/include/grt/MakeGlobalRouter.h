@@ -31,7 +31,8 @@ class SteinerTreeBuilder;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace grt {
 
@@ -47,6 +48,7 @@ void initGlobalRouter(grt::GlobalRouter* grt,
                       dpl::Opendp* dpl,
                       stt::SteinerTreeBuilder* stt_builder,
                       utl::Logger* logger,
+                      utl::CallBackHandler* callback_handler,
                       Tcl_Interp* tcl_interp);
 
 void deleteGlobalRouter(grt::GlobalRouter* global_router);

@@ -1,0 +1,116 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 27 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+********************************************************************************
+Buffer Report:
+There are 6 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 6, 2.3e-07
+
+There are 0 cell footprint types:
+
+There are 1 cell site types:
+  FreePDK45_38x28_10R_NP_162NW_34O [H=2800]: 6 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUF_X32                                      76.8 2.1e-12 6.9e-07 2800 N/A     -
+BUF_X16                                     147.8 1.8e-12 3.4e-07 2800 N/A     -
+BUF_X8                                      292.9 1.9e-12 1.7e-07 2800 N/A     -
+BUF_X4                                      583.6 2.0e-12 8.6e-08 2800 N/A     -
+BUF_X2                                     1166.3 2.1e-12 4.3e-08 2800 N/A     -
+BUF_X1                                     2327.9 2.3e-12 2.1e-08 2800 N/A     -
+
+Filtered Buffer Report:
+There are 6 buffers after filtering based on threshold voltage,
+cell footprint, drive strength and cell site
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUF_X16                                     147.8 1.8e-12 3.4e-07 2800 N/A     -
+BUF_X32                                      76.8 2.1e-12 6.9e-07 2800 N/A     -
+BUF_X8                                      292.9 1.9e-12 1.7e-07 2800 N/A     -
+BUF_X4                                      583.6 2.0e-12 8.6e-08 2800 N/A     -
+BUF_X2                                     1166.3 2.1e-12 4.3e-08 2800 N/A     -
+BUF_X1                                     2327.9 2.3e-12 2.1e-08 2800 N/A     -
+
+Hold Buffer Report:
+BUF_X1 is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 6 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+BUF_X1                                        0.8 9.7e-16 1.9e-11  2327.9
+BUF_X2                                        1.1 1.8e-15 1.8e-11  1166.3
+BUF_X4                                        1.9 3.4e-15 1.7e-11   583.6
+BUF_X8                                        3.5 6.6e-15 1.7e-11   292.9
+BUF_X16                                       6.7 1.2e-14 1.8e-11   147.8
+BUF_X32                                      13.0 2.7e-14 1.8e-11    76.8
+--------------------------------------------------------------------------------
+[INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
+********************************************************************************
+Buffer Report:
+There are 6 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 6, 2.3e-07
+
+There are 0 cell footprint types:
+
+There are 1 cell site types:
+  FreePDK45_38x28_10R_NP_162NW_34O [H=2800]: 6 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUF_X32                                      76.8 2.1e-12 6.9e-07 2800 N/A     -
+BUF_X16                                     147.8 1.8e-12 3.4e-07 2800 N/A     -
+BUF_X8                                      292.9 1.9e-12 1.7e-07 2800 N/A     -
+BUF_X4                                      583.6 2.0e-12 8.6e-08 2800 N/A     -
+BUF_X2                                     1166.3 2.1e-12 4.3e-08 2800 N/A     -
+BUF_X1                                     2327.9 2.3e-12 2.1e-08 2800 N/A     -
+
+Filtered Buffer Report:
+All 6 buffers are available because buffer pruning has been disabled
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUF_X1                                     2327.9 2.3e-12 2.1e-08 2800 N/A     -
+BUF_X2                                     1166.3 2.1e-12 4.3e-08 2800 N/A     -
+BUF_X4                                      583.6 2.0e-12 8.6e-08 2800 N/A     -
+BUF_X8                                      292.9 1.9e-12 1.7e-07 2800 N/A     -
+BUF_X16                                     147.8 1.8e-12 3.4e-07 2800 N/A     -
+BUF_X32                                      76.8 2.1e-12 6.9e-07 2800 N/A     -
+
+Hold Buffer Report:
+BUF_X1 is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 6 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+BUF_X1                                        0.8 9.7e-16 1.9e-11  2327.9
+BUF_X2                                        1.1 1.8e-15 1.8e-11  1166.3
+BUF_X4                                        1.9 3.4e-15 1.7e-11   583.6
+BUF_X8                                        3.5 6.6e-15 1.7e-11   292.9
+BUF_X16                                       6.7 1.2e-14 1.8e-11   147.8
+BUF_X32                                      13.0 2.7e-14 1.8e-11    76.8
+--------------------------------------------------------------------------------

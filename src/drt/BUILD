@@ -86,6 +86,7 @@ cc_library(
         "src/AbstractGraphicsFactory.h",
         "src/DesignCallBack.cpp",
         "src/DesignCallBack.h",
+        "src/PACallBack.h",
         "src/TritonRoute.cpp",
         "src/db/drObj/drAccessPattern.cpp",
         "src/db/drObj/drNet.cpp",
