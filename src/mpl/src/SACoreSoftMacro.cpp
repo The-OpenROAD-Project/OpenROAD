@@ -181,19 +181,6 @@ void SACoreSoftMacro::perturb()
     return;
   }
 
-  // Keep back up
-  pre_pos_seq_ = pos_seq_;
-  pre_neg_seq_ = neg_seq_;
-  pre_width_ = width_;
-  pre_height_ = height_;
-  pre_outline_penalty_ = outline_penalty_;
-  pre_wirelength_ = wirelength_;
-  pre_guidance_penalty_ = guidance_penalty_;
-  pre_fence_penalty_ = fence_penalty_;
-  pre_boundary_penalty_ = boundary_penalty_;
-  pre_macro_blockage_penalty_ = macro_blockage_penalty_;
-  pre_notch_penalty_ = notch_penalty_;
-
   // generate random number (0 - 1) to determine actions
   const float op = distribution_(generator_);
   const float action_prob_1 = pos_swap_prob_;
@@ -215,7 +202,6 @@ void SACoreSoftMacro::perturb()
     exchangeMacros();  // exchange two macros in the sequence pair
   } else {
     action_id_ = 5;
-    pre_macros_ = macros_;
     resizeOneCluster();
   }
 
@@ -225,7 +211,29 @@ void SACoreSoftMacro::perturb()
   calPenalty();
 }
 
-void SACoreSoftMacro::restore()
+void SACoreSoftMacro::saveState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  pre_macros_ = macros_;
+  pre_pos_seq_ = pos_seq_;
+  pre_neg_seq_ = neg_seq_;
+
+  pre_width_ = width_;
+  pre_height_ = height_;
+
+  pre_outline_penalty_ = outline_penalty_;
+  pre_wirelength_ = wirelength_;
+  pre_guidance_penalty_ = guidance_penalty_;
+  pre_fence_penalty_ = fence_penalty_;
+  pre_boundary_penalty_ = boundary_penalty_;
+  pre_macro_blockage_penalty_ = macro_blockage_penalty_;
+  pre_notch_penalty_ = notch_penalty_;
+}
+
+void SACoreSoftMacro::restoreState()
 {
   if (macros_.empty()) {
     return;
@@ -234,19 +242,21 @@ void SACoreSoftMacro::restore()
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 5) {
-    macros_[macro_id_] = pre_macros_[macro_id_];
-  } else if (action_id_ == 1) {
+
+  if (action_id_ == 1) {
     pos_seq_ = pre_pos_seq_;
   } else if (action_id_ == 2) {
     neg_seq_ = pre_neg_seq_;
-  } else {
+  } else if (action_id_ == 3 || action_id_ == 4) {
     pos_seq_ = pre_pos_seq_;
     neg_seq_ = pre_neg_seq_;
   }
 
+  macros_ = pre_macros_;
+
   width_ = pre_width_;
   height_ = pre_height_;
+
   outline_penalty_ = pre_outline_penalty_;
   wirelength_ = pre_wirelength_;
   guidance_penalty_ = pre_guidance_penalty_;
@@ -539,7 +549,9 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
-  pre_macros_ = macros_;
+  // Macros need to be saved (and restored) since alignMacroClusters and
+  // fillDeadSpace move them
+  std::vector<SoftMacro> pre_macros = macros_;
   // align macro clusters to reduce notches
   alignMacroClusters();
   // Fill dead space
@@ -709,7 +721,7 @@ void SACoreSoftMacro::calNotchPenalty()
           += (y_grid[y_end_new] - y_grid[y_end]) * macros_[macro_id].getWidth();
     }
   }
-  macros_ = pre_macros_;
+  macros_ = pre_macros;
   // normalization
   notch_penalty_
       = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
