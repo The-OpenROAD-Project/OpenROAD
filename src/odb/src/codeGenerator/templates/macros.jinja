@@ -34,7 +34,7 @@
 {% macro getter_signature(field, klass=None) -%}
   {% if klass %}{% set prefix = klass.name + "::" %}{% endif %}
   {% if field.dbSetGetter %}
-    dbSet<{{field.type}}> {{prefix}}get{{field.functional_name}}() const
+    dbSet<{{field.table_base_type}}> {{prefix}}get{{field.functional_name}}() const
   {% elif field.isPassByRef %}
     void {{prefix}}{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
   {% elif field.isHashTable %}
