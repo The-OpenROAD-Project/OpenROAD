@@ -504,7 +504,6 @@ int Gui::select(const std::string& type,
           if (
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
               !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
-
 #else
               !reg_filter.exactMatch(QString::fromStdString(sel_name))
 #endif
@@ -516,7 +515,8 @@ int Gui::select(const std::string& type,
 
       if (!attribute.empty()) {
         bool is_valid_attribute = false;
-        Descriptor::Properties properties = descriptor->getProperties(sel);
+        Descriptor::Properties properties
+            = descriptor->getProperties(sel.getObject());
         if (filterSelectionProperties(
                 properties, attribute, value, is_valid_attribute)) {
           return;  // doesn't match the attribute filter
