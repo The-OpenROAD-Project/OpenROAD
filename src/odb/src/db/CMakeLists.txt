@@ -10,8 +10,6 @@ add_library(db
     dbBlockItr.cpp 
     dbBox.cpp 
     dbBoxItr.cpp 
-    dbChip.cpp 
-    dbDatabase.cpp 
     dbITerm.cpp 
     dbITermItr.cpp 
     dbInst.cpp 
@@ -89,6 +87,8 @@ add_library(db
     dbAccessPoint.cpp
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
+    dbChip.cpp
+    dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSARef.cpp
