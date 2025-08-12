@@ -4163,12 +4163,16 @@ void dbNetwork::accumulateFlatLoadPinsOnNet(
   visitConnectedPins(net, rp, visited_nets);
 }
 
-void dbNetwork::AxiomCheck()
+// Use this API to check if flat & hier connectivities are ok
+void dbNetwork::checkAxioms()
 {
-  dbSet<dbModNet> mod_nets = block()->getModNets();
-  for (auto mod_net : mod_nets) {
-    findRelatedDbNet(mod_net);
-  }
+  checkSanityModBTerms();
+  checkSanityModITerms();
+  checkSanityModuleInsts();
+  checkSanityModInstTerms();
+  checkSanityUnusedModules();
+  checkSanityTermConnectivity();
+  checkSanityNetConnectivity();
 }
 
 Net* dbNetwork::getFlatNet(Net* net) const
@@ -4184,6 +4188,186 @@ Net* dbNetwork::getFlatNet(Net* net) const
     db_net = findRelatedDbNet(db_mod_net);
   }
   return dbToSta(db_net);
+}
+
+void dbNetwork::checkSanityModBTerms()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModule* module : block_->getModules()) {
+    std::set<std::string> bterm_names;
+    for (odb::dbModBTerm* bterm : module->getModBTerms()) {
+      const std::string bterm_name = bterm->getName();
+      if (bterm_names.find(bterm_name) != bterm_names.end()) {
+        logger_->error(
+            ORD,
+            2036,
+            "SanityCheck: Duplicate dbModBTerm name '{}' in module '{}'.",
+            bterm_name,
+            module->getName());
+      }
+      bterm_names.insert(bterm_name);
+    }
+  }
+}
+
+void sta::dbNetwork::checkSanityModITerms()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    std::set<std::string> iterm_names;
+    for (odb::dbModITerm* iterm : mod_inst->getModITerms()) {
+      const std::string iterm_name = iterm->getName();
+      if (iterm_names.find(iterm_name) != iterm_names.end()) {
+        logger_->error(ORD,
+                       2037,
+                       "SanityCheck: Duplicate dbModITerm name '{}' in module "
+                       "instance '{}'.",
+                       iterm_name,
+                       mod_inst->getName());
+      }
+      iterm_names.insert(iterm_name);
+    }
+  }
+}
+
+void dbNetwork::checkSanityModuleInsts()
+{
+  for (odb::dbModule* module : block_->getModules()) {
+    if (module->getModInsts().empty() && module->getInsts().empty()) {
+      logger_->warn(ORD,
+                    2038,
+                    "SanityCheck: Module '{}' has no instances.",
+                    module->getHierarchicalName());
+    }
+  }
+}
+
+void dbNetwork::checkSanityModInstTerms()
+{
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    odb::dbModule* master = mod_inst->getMaster();
+    if (master) {
+      if (mod_inst->getModITerms().size() != master->getModBTerms().size()) {
+        logger_->warn(
+            ORD,
+            2042,
+            "SanityCheck: Module instance '{}' has {} ITerms, but its "
+            "master '{}' has {} BTerms.",
+            mod_inst->getHierarchicalName(),
+            mod_inst->getModITerms().size(),
+            master->getHierarchicalName(),
+            master->getModBTerms().size());
+      }
+    }
+  }
+}
+
+void dbNetwork::checkSanityUnusedModules()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // 1. Collect all modules from the top block and its children.
+  // Unused modules may be placed in child blocks.
+  std::vector<odb::dbModule*> all_modules;
+  for (odb::dbModule* module : block_->getModules()) {
+    all_modules.push_back(module);
+  }
+  for (odb::dbBlock* child_block : block_->getChildren()) {
+    for (odb::dbModule* module : child_block->getModules()) {
+      all_modules.push_back(module);
+    }
+  }
+
+  // 2. Create a set of all instantiated module masters.
+  std::set<odb::dbModule*> instantiated_masters;
+  for (odb::dbModule* module : all_modules) {
+    for (odb::dbModInst* mod_inst : module->getModInsts()) {
+      instantiated_masters.insert(mod_inst->getMaster());
+    }
+  }
+
+  // 3. Iterate through all collected modules to check for usage.
+  odb::dbModule* top_module = block_->getTopModule();
+  for (odb::dbModule* module : all_modules) {
+    // A module is unused if it's not the top module and it's not a master
+    // for any module instance.
+    if (module != top_module
+        && instantiated_masters.find(module) == instantiated_masters.end()) {
+      logger_->warn(
+          ORD,
+          2043,
+          "SanityCheck: Module '{}' is defined but never instantiated.",
+          module->getName());
+    }
+  }
+}
+
+void dbNetwork::checkSanityTermConnectivity()
+{
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getIoType() != dbIoType::INPUT && bterm->getNet() == nullptr) {
+      logger_->error(
+          ORD,
+          2040,
+          "SanityCheck: non-input BTerm '{}' is not connected to any net.",
+          bterm->getName());
+    }
+  }
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getIoType() != dbIoType::OUTPUT
+          && iterm->getNet() == nullptr) {
+        logger_->error(ORD,
+                       2041,
+                       "SanityCheck: non-output ITerm '{}/{}' is not connected "
+                       "to any net.",
+                       inst->getName(),
+                       iterm->getMTerm()->getName());
+      }
+    }
+  }
+}
+
+void dbNetwork::checkSanityNetConnectivity()
+{
+  // Check for hier net and flat net connectivity
+  dbSet<dbModNet> mod_nets = block()->getModNets();
+  for (auto mod_net : mod_nets) {
+    findRelatedDbNet(mod_net);
+  }
+
+  // Check for incomplete flat net connections
+  for (odb::dbNet* net : block_->getNets()) {
+    const auto iterm_count = net->getITerms().size();
+    const auto bterm_count = net->getBTerms().size();
+    if (iterm_count + bterm_count >= 2) {
+      continue;
+    }
+
+    if (iterm_count == 1) {
+      odb::dbITerm* iterm = *(net->getITerms().begin());
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        continue;  // OK: Unconnected output pin
+      }
+    } else if (bterm_count == 1) {  // This is a top level port
+      odb::dbBTerm* bterm = *(net->getBTerms().begin());
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        continue;  // OK: Unconnected input port
+      }
+    }
+
+    logger_->error(ORD,
+                   2039,
+                   "SanityCheck: Net '{}' has less than 2 connections.",
+                   net->getName());
+  }
 }
 
 }  // namespace sta

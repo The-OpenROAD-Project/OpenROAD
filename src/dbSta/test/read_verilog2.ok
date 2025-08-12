@@ -1,4 +1,5 @@
 [INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 r1
 b1out
 Instance b1/r1

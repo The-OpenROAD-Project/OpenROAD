@@ -54,6 +54,7 @@
 #include "tap/MakeTapcell.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "upf/MakeUpf.h"
+#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/Progress.h"
@@ -116,6 +117,7 @@ OpenRoad::~OpenRoad()
   dft::deleteDft(dft_);
   delete logger_;
   delete verilog_reader_;
+  delete callback_handler_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
@@ -160,6 +162,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
   logger_ = utl::makeLogger(log_filename, metrics_filename);
+  callback_handler_ = new utl::CallBackHandler(logger_);
   db_->setLogger(logger_);
   sta_ = sta::makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
@@ -219,6 +222,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                    opendp_,
                    stt_builder_,
                    logger_,
+                   callback_handler_,
                    tcl_interp);
   initTritonCts(tritonCts_,
                 db_,
@@ -240,8 +244,13 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initOpenRCX(extractor_, db_, logger_, getVersion(), tcl_interp);
   initICeWall(icewall_, db_, logger_, tcl_interp);
   initRestructure(restructure_, logger_, sta_, db_, resizer_, tcl_interp);
-  initTritonRoute(
-      detailed_router_, db_, logger_, distributer_, stt_builder_, tcl_interp);
+  initTritonRoute(detailed_router_,
+                  db_,
+                  logger_,
+                  callback_handler_,
+                  distributer_,
+                  stt_builder_,
+                  tcl_interp);
   initPDNSim(pdnsim_, logger_, db_, sta_, resizer_, opendp_, tcl_interp);
   initAntennaChecker(antenna_checker_, db_, logger_, tcl_interp);
   initPartitionMgr(
@@ -462,6 +471,12 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
   }
   // treat this as a hierarchical network.
   if (hierarchy) {
+    logger_->warn(
+        ORD,
+        12,
+        "Hierarchical flow (-hier) is currently in development and may cause "
+        "multiple issues. Do not use in production environments.");
+
     sta::dbSta* sta = getSta();
     // After streaming in the last thing we do is build the hashes
     // we cannot rely on orders to do this during stream in
@@ -523,6 +538,12 @@ void OpenRoad::linkDesign(const char* design_name,
   }
 
   if (hierarchy) {
+    logger_->warn(
+        ORD,
+        11,
+        "Hierarchical flow (-hier) is currently in development and may cause "
+        "multiple issues. Do not use in production environments.");
+
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();
   }

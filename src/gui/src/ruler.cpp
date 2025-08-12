@@ -99,7 +99,7 @@ RulerDescriptor::RulerDescriptor(
 {
 }
 
-std::string RulerDescriptor::getName(std::any object) const
+std::string RulerDescriptor::getName(const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   return ruler->getName();
@@ -110,14 +110,14 @@ std::string RulerDescriptor::getTypeName() const
   return "Ruler";
 }
 
-bool RulerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool RulerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   bbox = odb::Rect(ruler->getPt0(), ruler->getPt1());
   return true;
 }
 
-void RulerDescriptor::highlight(std::any object, Painter& painter) const
+void RulerDescriptor::highlight(const std::any& object, Painter& painter) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   if (ruler->isEuclidian()) {
@@ -129,7 +129,8 @@ void RulerDescriptor::highlight(std::any object, Painter& painter) const
   }
 }
 
-Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
+Descriptor::Properties RulerDescriptor::getProperties(
+    const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   return {{"Label", ruler->getLabel()},
@@ -147,10 +148,10 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
           {"Euclidian", ruler->isEuclidian()}};
 }
 
-Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
+Descriptor::Editors RulerDescriptor::getEditors(const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  return {{"Name", makeEditor([this, ruler](std::any value) {
+  return {{"Name", makeEditor([this, ruler](const std::any& value) {
              auto new_name = std::any_cast<const std::string>(value);
              if (new_name.empty()) {
                return false;
@@ -163,7 +164,7 @@ Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
              ruler->setName(new_name);
              return true;
            })},
-          {"Label", makeEditor([ruler](std::any value) {
+          {"Label", makeEditor([ruler](const std::any& value) {
              ruler->setLabel(std::any_cast<const std::string>(value));
              return true;
            })},
@@ -186,7 +187,9 @@ Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
            })}};
 }
 
-bool RulerDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
+bool RulerDescriptor::editPoint(const std::any& value,
+                                odb::Point& pt,
+                                bool is_x)
 {
   bool accept;
   const int new_val = Descriptor::Property::convert_string(
@@ -202,7 +205,7 @@ bool RulerDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
   return true;
 }
 
-Descriptor::Actions RulerDescriptor::getActions(std::any object) const
+Descriptor::Actions RulerDescriptor::getActions(const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
 
@@ -212,7 +215,7 @@ Descriptor::Actions RulerDescriptor::getActions(std::any object) const
            }}};
 }
 
-Selected RulerDescriptor::makeSelected(std::any object) const
+Selected RulerDescriptor::makeSelected(const std::any& object) const
 {
   if (auto ruler = std::any_cast<Ruler*>(&object)) {
     return Selected(*ruler, this);
@@ -220,7 +223,7 @@ Selected RulerDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool RulerDescriptor::lessThan(std::any l, std::any r) const
+bool RulerDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_ruler = std::any_cast<Ruler*>(l);
   auto r_ruler = std::any_cast<Ruler*>(r);
@@ -228,12 +231,12 @@ bool RulerDescriptor::lessThan(std::any l, std::any r) const
   return l_ruler->getName() < r_ruler->getName();
 }
 
-bool RulerDescriptor::getAllObjects(SelectionSet& objects) const
+void RulerDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto& ruler : rulers_) {
-    objects.insert(makeSelected(ruler.get()));
+    func({ruler.get(), this});
   }
-  return true;
 }
 
 }  // namespace gui

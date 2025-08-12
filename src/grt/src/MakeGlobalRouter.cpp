@@ -38,12 +38,14 @@ void initGlobalRouter(grt::GlobalRouter* grt,
                       dpl::Opendp* dpl,
                       stt::SteinerTreeBuilder* stt_builder,
                       utl::Logger* logger,
+                      utl::CallBackHandler* callback_handler,
                       Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, grt::grt_tcl_inits);
   grt->init(logger,
+            callback_handler,
             stt_builder,
             db,
             sta,
