@@ -654,10 +654,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  std::string makeUniqueNetName(Instance* parent = nullptr);
-  Net* makeUniqueNet();
-  std::string makeUniqueInstName(const char* base_name);
-  std::string makeUniqueInstName(const char* base_name, bool underscore);
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);
@@ -723,6 +719,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          const char* name,
                          Instance* parent,
                          const Point& loc);
+  Instance* makeInstance(LibertyCell* cell,
+                         const char* name,
+                         Instance* parent,
+                         const Point& loc,
+                         bool underscore);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,
@@ -835,8 +836,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;
-  int unique_net_index_ = 1;
-  int unique_inst_index_ = 1;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;

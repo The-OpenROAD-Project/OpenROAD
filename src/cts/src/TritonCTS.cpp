@@ -2514,7 +2514,7 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
             ? network_->topInstance()
             : (sta::Instance*) (module->getModInst());
   odb::dbNet* newNet
-      = network_->staToDb(network_->makeNet(newNetName.c_str(), scope));
+      = network_->staToDb(network_->makeNet(newNetName.c_str(), scope, false));
 
   newNet->setSigType(odb::dbSigType::CLOCK);
 

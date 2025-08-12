@@ -2178,11 +2178,11 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 // Edit functions
 
 Instance* dbNetwork::makeInstance(LibertyCell* cell,
-                                  const char* name,
+                                  const char* name,  // full_name
                                   Instance* parent)
 {
   const char* cell_name = cell->name();
-  if (parent == top_instance_) {
+  if (parent == nullptr || parent == top_instance_) {
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
       dbInst* inst = dbInst::create(block_, master, name);
@@ -2562,9 +2562,28 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
   return nullptr;
 }
 
-Net* dbNetwork::makeNet(const char* name, Instance* parent)
+Net* dbNetwork::makeNet(Instance* parent)
 {
-  dbNet* dnet = dbNet::create(block_, name, false);
+  return makeNet(nullptr, parent, true);
+}
+
+Net* dbNetwork::makeNet(const char* base_name, Instance* parent)
+{
+  return makeNet(base_name, parent, true);
+}
+
+// If force_uniq_postfix is false, unique postfix will be added only when
+// necessary.
+Net* dbNetwork::makeNet(const char* base_name,
+                        Instance* parent,
+                        bool force_uniq_postfix)
+{
+  // Create a unique full name for a new net
+  std::string full_name = block_->makeNewNetName(
+      getModInst(parent), base_name, force_uniq_postfix);
+
+  // Create a new net
+  dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
   return dbToSta(dnet);
 }
 
@@ -2706,6 +2725,28 @@ dbModITerm* dbNetwork::hierPin(const Pin* pin) const
   (void) iterm;
   (void) bterm;
   return moditerm;
+}
+
+dbBlock* dbNetwork::getBlockOf(const Pin* pin) const
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+
+  dbBlock* block = nullptr;
+  if (iterm) {
+    block = iterm->getInst()->getBlock();
+  } else if (bterm) {
+    block = bterm->getBlock();
+  } else if (moditerm) {
+    // moditerm->parent is dbModInst
+    // moditerm->parent->parent is dbModule
+    // dbModule->owner is dbBlock
+    block = moditerm->getParent()->getParent()->getOwner();
+  }
+  assert(block != nullptr && "Pin must belong to a block.");
+  return block;
 }
 
 void dbNetwork::staToDb(const Pin* pin,
@@ -4188,6 +4229,18 @@ Net* dbNetwork::getFlatNet(Net* net) const
     db_net = findRelatedDbNet(db_mod_net);
   }
   return dbToSta(db_net);
+}
+
+dbModInst* dbNetwork::getModInst(Instance* inst) const
+{
+  if (!inst) {
+    return nullptr;
+  }
+
+  dbInst* db_inst = nullptr;
+  dbModInst* db_mod_inst = nullptr;
+  staToDb(inst, db_inst, db_mod_inst);
+  return db_mod_inst;
 }
 
 void dbNetwork::checkSanityModBTerms()

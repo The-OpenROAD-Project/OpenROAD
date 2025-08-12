@@ -3686,4 +3686,100 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
   }
 }
 
+// If force_uniq_postfix is false, unique postfix will be added only when
+// necessary. This is added to cover the existing multiple use cases of making a
+// new net name w/ and w/o unique postfix.
+std::string dbBlock::makeNewNetName(dbModInst* parent,
+                                    const char* base_name,
+                                    bool force_uniq_postfix)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+
+  if (base_name == nullptr) {
+    base_name = "net";
+  }
+
+  // Decide hierarchical name without unique index
+  fmt::memory_buffer buf;
+  if (parent) {
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent->getHierarchicalName(),
+                   getHierarchyDelimiter());
+  }
+  fmt::format_to(std::back_inserter(buf), "{}", base_name);
+  buf.push_back('\0');  // Null-terminate for findNet
+
+  // if force_uniq_postfix is false, unique postfix will not be added when the
+  // name is unique already.
+  if (force_uniq_postfix == false && findNet(buf.data()) == nullptr) {
+    return std::string(buf.data());
+  }
+
+  // Append unique index if there is a name collision.
+  const size_t prefix_size = buf.size() - 1;  // -1: exclude null terminator
+  do {
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", block->_unique_net_index++);
+    buf.push_back('\0');  // Null-terminate for findNet
+  } while (findNet(buf.data()));
+  return std::string(buf.data());
+}
+
+////////////////////////////////////////////////////////////////
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module) which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+// (as was done with dbInsts) and will require changing the
+// method: (dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
+//
+std::string dbBlock::makeNewInstName(dbModInst* parent,
+                                     const char* base_name,
+                                     bool underscore)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+
+  if (base_name == nullptr) {
+    base_name = "inst";
+  }
+
+  // Decide hierarchical name without unique index
+  fmt::memory_buffer buf;
+  if (parent) {
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent->getHierarchicalName(),
+                   getHierarchyDelimiter());
+  }
+
+  // Handle underscore option
+  fmt::format_to(
+      std::back_inserter(buf), "{}{}", base_name, underscore ? "_" : "");
+
+  // Append unique index
+  const size_t prefix_size = buf.size();
+  do {
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", block->_unique_inst_index++);
+    buf.push_back('\0');  // Null-terminate
+
+    // NOTE: TODO: The scoping should be within
+    // the dbModule scope for the instance, not the whole network.
+    // dbInsts are already scoped within a dbModule
+    // To get the dbModule for a dbInst used inst -> getModule
+    // then search within that scope. That way the instance name
+    // does not have to be some massive string like root/X/Y/U1.
+    //
+  } while (findInst(buf.data()) || findModInst(buf.data()));
+  return std::string(buf.data());  // returns a new unique full name
+}
+
+std::string dbBlock::makeNewInstName(const char* base_name, bool underscore)
+{
+  return makeNewInstName(nullptr, base_name, underscore);
+}
+
 }  // namespace odb
