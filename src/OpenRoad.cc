@@ -56,6 +56,7 @@
 #include "tap/MakeTapcell.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "upf/MakeUpf.h"
+#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/Progress.h"
@@ -119,6 +120,7 @@ OpenRoad::~OpenRoad()
   est::deleteEstimateParasitics(estimate_parasitics_);
   delete logger_;
   delete verilog_reader_;
+  delete callback_handler_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
@@ -163,6 +165,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
   logger_ = utl::makeLogger(log_filename, metrics_filename);
+  callback_handler_ = new utl::CallBackHandler(logger_);
   db_->setLogger(logger_);
   sta_ = sta::makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
@@ -223,6 +226,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                    opendp_,
                    stt_builder_,
                    logger_,
+                   callback_handler_,
                    tcl_interp);
   initTritonCts(tritonCts_,
                 db_,
@@ -251,8 +255,13 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                   resizer_,
                   estimate_parasitics_,
                   tcl_interp);
-  initTritonRoute(
-      detailed_router_, db_, logger_, distributer_, stt_builder_, tcl_interp);
+  initTritonRoute(detailed_router_,
+                  db_,
+                  logger_,
+                  callback_handler_,
+                  distributer_,
+                  stt_builder_,
+                  tcl_interp);
   initPDNSim(
       pdnsim_, logger_, db_, sta_, estimate_parasitics_, opendp_, tcl_interp);
   initAntennaChecker(antenna_checker_, db_, logger_, tcl_interp);

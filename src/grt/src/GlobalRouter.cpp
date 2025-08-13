@@ -45,6 +45,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -86,6 +87,7 @@ GlobalRouter::GlobalRouter()
 }
 
 void GlobalRouter::init(utl::Logger* logger,
+                        utl::CallBackHandler* callback_handler,
                         stt::SteinerTreeBuilder* stt_builder,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
@@ -97,6 +99,7 @@ void GlobalRouter::init(utl::Logger* logger,
                             routing_congestion_data_source_rudy)
 {
   logger_ = logger;
+  callback_handler_ = callback_handler;
   stt_builder_ = stt_builder;
   db_ = db;
   stt_builder_ = stt_builder;
@@ -4919,6 +4922,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
+  callback_handler_->triggerOnPinAccessUpdateRequired();
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);

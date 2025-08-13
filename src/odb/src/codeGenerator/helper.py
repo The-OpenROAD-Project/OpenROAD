@@ -3,6 +3,7 @@
 
 _comparable = [
     "Point",
+    "Point3D",
     "Rect",
     "Polygon",
     "Line",
@@ -23,6 +24,7 @@ _comparable = [
     "string",
     "uint",
     "unint_32t",
+    "uint8_t",
 ]
 std = [
     "bool",
@@ -42,6 +44,7 @@ std = [
     "string",
     "uint",
     "unint_32t",
+    "uint8_t",
 ]
 
 _removable = ["const", "static", "unsigned"]
