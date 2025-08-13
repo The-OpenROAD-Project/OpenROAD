@@ -250,6 +250,44 @@ void RepairDesign::repairDesign(
     performEarlySizingRound(repaired_net_count);
   }
 
+  // keep track of annotations which were added by us
+  std::set<Vertex*> annotations_to_clean_up;
+  VertexSeq load_vertices = resizer_->orderedLoadPinVertices();
+
+  // Forward pass: whenever we see violating input pin slew we override
+  // it in the graph. This is in order to prevent second order upsizing.
+  // The load pin slew will get repaired so we shouldn't propagate it
+  // downstream.
+  for (auto vertex : load_vertices) {
+    if (!vertex->slewAnnotated()) {
+      sta_->findDelays(vertex);
+      LibertyPort* port = network_->libertyPort(vertex->pin());
+      if (port) {
+        for (auto corner : *sta_->corners()) {
+          const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+          float limit = resizer_->maxInputSlew(port, corner);
+          for (const RiseFall* rf : RiseFall::range()) {
+            float actual = graph_->slew(vertex, rf, dcalc_ap->index());
+            if (actual > limit) {
+              sta_->setAnnotatedSlew(vertex,
+                                     corner,
+                                     max_->asMinMaxAll(),
+                                     rf->asRiseFallBoth(),
+                                     limit);
+              annotations_to_clean_up.insert(vertex);
+            }
+          }
+        }
+      }
+    }
+  }
+  debugPrint(logger_,
+             RSZ,
+             "repair_design",
+             1,
+             "annotated slew to non-violating value on {} load vertices",
+             annotations_to_clean_up.size());
+
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int print_iteration = 0;
@@ -307,6 +345,18 @@ void RepairDesign::repairDesign(
     }
     estimate_parasitics_->updateParasitics();
     printProgress(print_iteration, true, true, repaired_net_count);
+  }
+
+  if (!annotations_to_clean_up.empty()) {
+    for (auto vertex : annotations_to_clean_up) {
+      for (auto corner : *sta_->corners()) {
+        const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+        for (const RiseFall* rf : RiseFall::range()) {
+          vertex->setSlewAnnotated(false, rf, dcalc_ap->index());
+        }
+      }
+    }
+    sta_->delaysInvalid();
   }
 
   if (inserted_buffer_count_ > 0) {

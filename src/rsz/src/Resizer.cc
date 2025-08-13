@@ -215,6 +215,22 @@ bool VertexLevelLess::operator()(const Vertex* vertex1,
                            network_->pathName(vertex2->pin())));
 }
 
+VertexSeq Resizer::orderedLoadPinVertices()
+{
+  VertexSeq loads;
+  VertexIterator vertex_iter(graph_);
+  while (vertex_iter.hasNext()) {
+    Vertex* vertex = vertex_iter.next();
+    PortDirection* dir = network_->direction(vertex->pin());
+    bool top_level = network_->isTopLevelPort(vertex->pin());
+    if (!top_level && dir->isAnyInput()) {
+      loads.emplace_back(vertex);
+    }
+  }
+  sort(loads, VertexLevelLess(network_));
+  return loads;
+}
+
 ////////////////////////////////////////////////////////////////
 constexpr static double double_equal_tolerance
     = std::numeric_limits<double>::epsilon() * 10;
