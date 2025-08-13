@@ -2570,7 +2570,7 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
 
 Net* dbNetwork::makeNet(Instance* parent)
 {
-  return makeNet(nullptr, parent, odb::dbNameUniquifyType::ALWAYS);
+  return makeNet("net", parent, odb::dbNameUniquifyType::ALWAYS);
 }
 
 Net* dbNetwork::makeNet(const char* base_name, Instance* parent)

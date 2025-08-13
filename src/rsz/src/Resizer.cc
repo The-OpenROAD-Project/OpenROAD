@@ -3112,8 +3112,12 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
               const char* inst_name = network_->name(load_inst);
-              Instance* tie
-                  = makeInstance(tie_cell, inst_name, top_inst, tie_loc, true);
+              Instance* tie = makeInstance(
+                  tie_cell,
+                  inst_name,
+                  top_inst,
+                  tie_loc,
+                  odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
 
               // Put the tie cell instance in the same module with the load
               // it drives.
@@ -4022,7 +4026,11 @@ void Resizer::cloneClkInverter(Instance* inv)
       if (load_pin != out_pin) {
         Point clone_loc = db_network_->location(load_pin);
         Instance* clone
-            = makeInstance(inv_cell, inv_name, top_inst, clone_loc, true);
+            = makeInstance(inv_cell,
+                           inv_name,
+                           top_inst,
+                           clone_loc,
+                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
         journalMakeBuffer(clone);
 
         Net* clone_out_net = db_network_->makeNet(top_inst);
@@ -4430,30 +4438,20 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
-Instance* Resizer::makeInstance(LibertyCell* cell,
-                                const char* name,
-                                Instance* parent,
-                                const Point& loc)
-{
-  return makeInstance(cell, name, parent, loc, false);
-}
-
 // If underscore is true, an underscore will be used to concat unique instance
 // index. This is added to cover the existing usage.
 Instance* Resizer::makeInstance(LibertyCell* cell,
                                 const char* name,
                                 Instance* parent,
                                 const Point& loc,
-                                bool underscore)
+                                const odb::dbNameUniquifyType& uniquify)
 {
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
 
   // make new instance name
-  dbInst* parent_inst = nullptr;
-  dbModInst* parent_mod_inst = nullptr;
-  db_network_->staToDb(parent, parent_inst, parent_mod_inst);
+  dbModInst* parent_mod_inst = db_network_->getModInst(parent);
   std::string full_name
-      = block_->makeNewInstName(parent_mod_inst, name, underscore);
+      = block_->makeNewInstName(parent_mod_inst, name, uniquify);
 
   // make new instance
   Instance* inst = db_network_->makeInstance(cell, full_name.c_str(), parent);

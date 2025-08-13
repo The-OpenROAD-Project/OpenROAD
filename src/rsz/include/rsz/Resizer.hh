@@ -12,6 +12,7 @@
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "grt/GlobalRouter.h"
+#include "odb/dbTypes.h"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
@@ -718,12 +719,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
-                         const Point& loc);
-  Instance* makeInstance(LibertyCell* cell,
-                         const char* name,
-                         Instance* parent,
                          const Point& loc,
-                         bool underscore);
+                         const odb::dbNameUniquifyType& uniquify
+                         = odb::dbNameUniquifyType::ALWAYS);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,

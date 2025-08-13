@@ -1482,20 +1482,21 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
-  /// Make a unique net name
+  /// Make a unique net/instance name
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
-  /// If force_uniq_postfix is false, unique postfix will be added only when
-  /// necessary.
+  /// If uniquify is IF_NEEDED*, unique postfix will be added only when
+  /// If uniquify is *_WITH_UNDERSCORE, underscore will be added before adding
+  /// unique postfix
   ///
   std::string makeNewNetName(dbModInst* parent = nullptr,
-                             const char* base_name = nullptr,
+                             const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
                              = dbNameUniquifyType::ALWAYS);
-  std::string makeNewInstName(dbModInst* parent,
-                              const char* base_name,
-                              bool underscore = false);
-  std::string makeNewInstName(const char* base_name, bool underscore = false);
+  std::string makeNewInstName(dbModInst* parent = nullptr,
+                              const char* base_name = "inst",
+                              const dbNameUniquifyType& uniquify
+                              = dbNameUniquifyType::ALWAYS);
 
   ///
   /// return the regions of this design
@@ -1590,6 +1591,11 @@ class dbBlock : public dbObject
 
  private:
   void ComputeBBox();
+  std::string makeNewName(dbModInst* parent,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify,
+                          uint& unique_index,
+                          const std::function<bool(const char*)>& exists);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

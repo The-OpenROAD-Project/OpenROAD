@@ -1380,8 +1380,10 @@ class dbNameUniquifyType
  public:
   enum Value
   {
-    ALWAYS,     // Add unique suffix always
-    IF_NEEDED,  // Add unique suffix if needed
+    ALWAYS,                     // Add unique suffix always
+    ALWAYS_WITH_UNDERSCORE,     // Add unique suffix with underscore always
+    IF_NEEDED,                  // Add unique suffix if needed
+    IF_NEEDED_WITH_UNDERSCORE,  // Add unique suffix with underscore if needed
   };
 
   ///

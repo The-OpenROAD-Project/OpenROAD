@@ -195,6 +195,8 @@ class _dbBlock : public _dbObject
   int _max_layer_for_clock;
   std::vector<_dbBTermGroup> _bterm_groups;
   _dbBTermTopLayerGrid _bterm_top_layer_grid;
+  uint _unique_net_index{1};   // unique index used to create a new net name
+  uint _unique_inst_index{1};  // unique index used to create a new inst name
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -296,8 +298,6 @@ class _dbBlock : public _dbObject
 
   dbJournal* _journal;
   dbJournal* _journal_pending;
-  uint _unique_net_index{1};   // unique index used to create a new net name
-  uint _unique_inst_index{1};  // unique index used to create a new inst name
 
   _dbBlock(_dbDatabase* db);
   ~_dbBlock();
