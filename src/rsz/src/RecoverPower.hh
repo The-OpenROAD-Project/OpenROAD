@@ -10,6 +10,10 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace sta {
 class PathExpanded;
 }
@@ -44,7 +48,7 @@ using BufferedNetSeq = std::vector<BufferedNetPtr>;
 class RecoverPower : public sta::dbStaState
 {
  public:
-  RecoverPower(Resizer* resizer);
+  RecoverPower(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
   bool recoverPower(float recover_power_percent, bool verbose);
   // For testing.
   Vertex* recoverPower(const Pin* end_pin);
@@ -85,6 +89,7 @@ class RecoverPower : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   const Corner* corner_ = nullptr;
   int resize_count_ = 0;
   const MinMax* max_ = MinMax::max();

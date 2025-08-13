@@ -21,6 +21,10 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 class Resizer;
 }
@@ -40,6 +44,7 @@ void initTritonCts(cts::TritonCTS* cts,
                    sta::dbSta* sta,
                    stt::SteinerTreeBuilder* stt_builder,
                    rsz::Resizer* resizer,
+                   est::EstimateParasitics* estimate_parasitics,
                    utl::Logger* logger,
                    Tcl_Interp* tcl_interp);
 

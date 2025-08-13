@@ -42,7 +42,9 @@ using sta::PathExpanded;
 using sta::Port;
 using sta::VertexOutEdgeIterator;
 
-RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
+RepairHold::RepairHold(Resizer* resizer,
+                       est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -82,7 +84,7 @@ bool RepairHold::repairHold(
   max_buffer_count = std::max(max_buffer_count, 100);
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repaired = repairHold(ends1,
                           buffer_cell,
                           setup_margin,
@@ -117,7 +119,7 @@ void RepairHold::repairHold(const Pin* end_pin,
   const int max_buffer_count = max_buffer_percent * network_->instanceCount();
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repairHold(ends,
                buffer_cell,
                setup_margin,
@@ -488,7 +490,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 bool verbose,
                                 int& pass)
 {
-  resizer_->updateParasitics();
+  estimate_parasitics_->updateParasitics();
   sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
@@ -497,7 +499,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
       printProgress(pass, false, false);
     }
 
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
@@ -816,12 +818,12 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
-  resizer_->updateParasitics();
+  estimate_parasitics_->updateParasitics();
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.
   sta_->findDelays(buffer_out_vertex);
   if (!checkMaxSlewCap(buffer_out_pin)
       && resizer_->resizeToTargetSlew(buffer_out_pin)) {
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     resize_count_++;
   }
 }

@@ -23,7 +23,9 @@ using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
-                             stt::SteinerTreeBuilder* stt_builder)
+                             utl::CallBackHandler* callback_handler,
+                             stt::SteinerTreeBuilder* stt_builder,
+                             sta::dbSta* sta)
     : max_degree_(0),
       db_(db),
       overflow_iterations_(0),
@@ -55,11 +57,12 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       regular_x_(false),
       regular_y_(false),
+      callback_handler_(callback_handler),
       logger_(log),
       stt_builder_(stt_builder),
+      sta_(sta),
       debug_(new DebugSetting())
 {
-  parasitics_builder_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -1395,12 +1398,6 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
-}
-
-void FastRouteCore::setMakeWireParasiticsBuilder(
-    AbstractMakeWireParasitics* builder)
-{
-  parasitics_builder_ = builder;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)

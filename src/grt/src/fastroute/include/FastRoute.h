@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractMakeWireParasitics.h"
 #include "DataType.h"
 #include "Graph2D.h"
 #include "grt/GRoute.h"
@@ -22,8 +21,9 @@
 #include "stt/SteinerTreeBuilder.h"
 
 namespace utl {
+class CallBackHandler;
 class Logger;
-}
+}  // namespace utl
 
 namespace odb {
 class dbDatabase;
@@ -39,6 +39,10 @@ namespace gui {
 class Gui;
 }
 
+namespace sta {
+class dbSta;
+}
+
 namespace grt {
 
 using boost::multi_array;
@@ -46,8 +50,6 @@ using boost::icl::interval;
 using boost::icl::interval_set;
 
 class AbstractFastRouteRenderer;
-class MakeWireParasitics;
-
 // Debug mode settings
 struct DebugSetting
 {
@@ -87,7 +89,9 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder);
+                utl::CallBackHandler* callback_handler,
+                stt::SteinerTreeBuilder* stt_builder,
+                sta::dbSta* sta);
   ~FastRouteCore();
 
   void clear();
@@ -185,7 +189,6 @@ class FastRouteCore
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
-  void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
@@ -226,6 +229,8 @@ class FastRouteCore
     return debug_->renderer.get();
   }
 
+  NetRouteMap getPlanarRoutes();
+
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
@@ -234,7 +239,6 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  NetRouteMap getPlanarRoutes();
 
   // maze functions
   // Maze-routing in different orders
@@ -479,6 +483,7 @@ class FastRouteCore
   void checkRoute3D();
   void StNetOrder();
   float CalculatePartialSlack();
+  float getNetSlack(odb::dbNet* net);
   /**
    * @brief Validates the routing of edges for a specified net.
    *
@@ -621,9 +626,10 @@ class FastRouteCore
   std::vector<StTree> sttrees_;  // the Steiner trees
   std::vector<StTree> sttrees_bk_;
 
+  utl::CallBackHandler* callback_handler_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  AbstractMakeWireParasitics* parasitics_builder_;
+  sta::dbSta* sta_;
 
   std::unique_ptr<DebugSetting> debug_;
 
