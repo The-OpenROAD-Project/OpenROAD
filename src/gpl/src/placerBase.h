@@ -12,11 +12,12 @@
 namespace odb {
 class dbDatabase;
 
-class dbInst;
-class dbITerm;
 class dbBTerm;
-class dbNet;
 class dbGroup;
+class dbITerm;
+class dbInst;
+class dbNet;
+class dbObject;
 
 class dbPlacementStatus;
 class dbSigType;
@@ -91,10 +92,10 @@ class Instance
   int64_t area() const;
 
   void setExtId(int extId);
-  int extId() const { return extId_; }
+  int getExtId() const { return extId_; }
 
   void addPin(Pin* pin);
-  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
 
  private:
@@ -117,8 +118,8 @@ class Pin
   Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
   ~Pin();
 
-  odb::dbITerm* dbITerm() const;
-  odb::dbBTerm* dbBTerm() const;
+  odb::dbITerm* getDbITerm() const;
+  odb::dbBTerm* getDbBTerm() const;
 
   bool isITerm() const;
   bool isBTerm() const;
@@ -141,8 +142,8 @@ class Pin
   int cx() const;
   int cy() const;
 
-  int offsetCx() const;
-  int offsetCy() const;
+  int getOffsetCx() const;
+  int getOffsetCy() const;
 
   void updateLocation(const Instance* inst);
 
@@ -151,14 +152,14 @@ class Pin
 
   bool isPlaceInstConnected() const;
 
-  Instance* instance() const { return inst_; }
-  Net* net() const { return net_; }
-  std::string name() const;
+  Instance* getInstance() const { return inst_; }
+  Net* getNet() const { return net_; }
+  std::string getName() const;
 
   void updateCoordi(odb::dbITerm* iTerm);
 
  private:
-  void* term_ = nullptr;
+  odb::dbObject* term_ = nullptr;
   Instance* inst_ = nullptr;
   Net* net_ = nullptr;
 
@@ -199,13 +200,13 @@ class Net
   int cy() const;
 
   // HPWL: half-parameter-wire-length
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
 
   void updateBox(bool skipIoMode = false);
 
-  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
-  odb::dbNet* dbNet() const { return net_; }
+  odb::dbNet* getDbNet() const { return net_; }
   odb::dbSigType getSigType() const;
 
   void addPin(Pin* pin);
@@ -285,11 +286,11 @@ class PlacerBaseCommon
   ~PlacerBaseCommon();
 
   const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
-  const std::vector<Instance*>& insts() const { return insts_; }
-  const std::vector<Pin*>& pins() const { return pins_; }
-  const std::vector<Net*>& nets() const { return nets_; }
+  const std::vector<Instance*>& getInsts() const { return insts_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
+  const std::vector<Net*>& getNets() const { return nets_; }
 
-  Die& die() { return die_; }
+  Die& getDie() { return die_; }
 
   // Pb : PlacerBase
   Instance* dbToPb(odb::dbInst* inst) const;
@@ -300,14 +301,14 @@ class PlacerBaseCommon
   int siteSizeX() const { return siteSizeX_; }
   int siteSizeY() const { return siteSizeY_; }
 
-  int padLeft() const { return pbVars_.padLeft; }
-  int padRight() const { return pbVars_.padRight; }
-  bool skipIoMode() const { return pbVars_.skipIoMode; }
+  int getPadLeft() const { return pbVars_.padLeft; }
+  int getPadRight() const { return pbVars_.padRight; }
+  bool isSkipIoMode() const { return pbVars_.skipIoMode; }
 
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
   void printInfo() const;
 
-  int64_t macroInstsArea() const { return macroInstsArea_; }
+  int64_t getMacroInstsArea() const { return macroInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
 
@@ -332,7 +333,8 @@ class PlacerBaseCommon
   std::vector<Instance*> placeInsts_;
 
   std::unordered_map<odb::dbInst*, Instance*> instMap_;
-  std::unordered_map<void*, Pin*> pinMap_;
+  // The key is a dbITerm or a dbBTerm
+  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
   std::unordered_map<odb::dbNet*, Net*> netMap_;
 
   int siteSizeX_ = 0;
@@ -355,7 +357,7 @@ class PlacerBase
              odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
-  const std::vector<Instance*>& insts() const { return insts_; }
+  const std::vector<Instance*>& getInsts() const { return insts_; }
 
   //
   // placeInsts : a real instance that need to be placed
@@ -369,12 +371,12 @@ class PlacerBase
   const std::vector<Instance*>& dummyInsts() const { return dummyInsts_; }
   const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
 
-  Die& die() { return die_; }
+  Die& getDie() { return die_; }
 
-  int siteSizeX() const { return siteSizeX_; }
-  int siteSizeY() const { return siteSizeY_; }
+  int getSiteSizeX() const { return siteSizeX_; }
+  int getSiteSizeY() const { return siteSizeY_; }
 
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
   void printInfo() const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }

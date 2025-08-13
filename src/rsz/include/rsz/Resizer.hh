@@ -163,6 +163,73 @@ enum class MoveType
   SPLIT
 };
 
+// Voltage Threshold (VT) category identifier
+struct VTCategory
+{
+  int vt_index;
+  std::string vt_name;
+
+  // Enable use as map key
+  bool operator<(const VTCategory& other) const
+  {
+    if (vt_index != other.vt_index) {
+      return vt_index < other.vt_index;
+    }
+    return vt_name < other.vt_name;
+  }
+};
+
+// Leakage statistics for cells in a single VT category
+struct VTLeakageStats
+{
+  int cell_count = 0;
+  float total_leakage = 0.0f;
+
+  float get_average_leakage() const
+  {
+    return cell_count > 0 ? total_leakage / cell_count : 0.0f;
+  }
+
+  void add_cell_leakage(std::optional<float> cell_leak)
+  {
+    cell_count++;
+    if (cell_leak.has_value()) {
+      total_leakage += *cell_leak;
+    }
+  }
+};
+
+// Complete analysis data for a library
+struct LibraryAnalysisData
+{
+  // VT category leakage analysis
+  std::map<VTCategory, VTLeakageStats> vt_leakage_by_category;
+  // Cell footprint distribution (footprint_name -> count)
+  std::map<std::string, int> cells_by_footprint;
+  // LEF site usage distribution (site -> count)
+  std::map<odb::dbSite*, int> cells_by_site;
+  // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
+  std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
+
+  // Helper methods for common operations
+  void sort_vt_categories()
+  {
+    sorted_vt_categories.clear();
+    sorted_vt_categories.reserve(vt_leakage_by_category.size());
+    for (const auto& vt_pair : vt_leakage_by_category) {
+      sorted_vt_categories.push_back(vt_pair);
+    }
+
+    // Sort by average leakage (ascending order - least leaky to most leaky)
+    std::sort(sorted_vt_categories.begin(),
+              sorted_vt_categories.end(),
+              [](const auto& a, const auto& b) {
+                return a.second.get_average_leakage()
+                       < b.second.get_average_leakage();
+              });
+  }
+};
+
 class OdbCallBack;
 
 class Resizer : public dbStaState, public dbNetworkObserver
@@ -259,8 +326,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts);
   void unbufferNet(Net* net);
-  void bufferInputs();
-  void bufferOutputs();
+  void bufferInputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
+  void bufferOutputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
 
   // from sta::dbNetworkObserver callbacks
   void postReadLiberty() override;
@@ -435,6 +502,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void reportEquivalentCells(LibertyCell* base_cell,
                              bool match_cell_footprint,
                              bool report_all_cells);
+  void reportBuffers(bool filtered);
+  void getBufferList(LibertyCellSeq& buffer_list,
+                     LibraryAnalysisData& lib_data);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static MoveType parseMove(const std::string& s);
@@ -446,8 +516,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
-  Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
-  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell);
+  Instance* bufferInput(const Pin* top_pin,
+                        LibertyCell* buffer_cell,
+                        bool verbose);
+  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
@@ -456,7 +528,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
                             LibertyCell* better,
                             float max_drive_resist);
   void findBuffers();
+  void findBuffersNoPruning();
   void findFastBuffers();
+  LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
@@ -802,6 +876,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool default_sizing_leakage_limit_set_ = true;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
+  bool disable_buffer_pruning_ = false;
 
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;

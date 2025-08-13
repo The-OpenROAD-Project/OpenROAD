@@ -6,12 +6,16 @@
 #include <algorithm>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "util.h"
 #include "utl/Logger.h"
 
@@ -198,6 +202,10 @@ std::string Cluster::getClusterTypeString() const
 {
   std::string cluster_type;
 
+  if (is_io_bundle_) {
+    return "IO Bundle";
+  }
+
   if (is_cluster_of_unconstrained_io_pins_) {
     return "Unconstrained IOs";
   }
@@ -288,9 +296,15 @@ void Cluster::setAsIOPadCluster(const std::pair<float, float>& pos,
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
+void Cluster::setAsIOBundle(const Point& pos, float width, float height)
+{
+  is_io_bundle_ = true;
+  soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
+}
+
 bool Cluster::isIOCluster() const
 {
-  return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_;
+  return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_ || is_io_bundle_;
 }
 
 bool Cluster::isClusterOfUnconstrainedIOPins() const
@@ -305,12 +319,12 @@ bool Cluster::isClusterOfUnplacedIOPins() const
 
 void Cluster::setAsArrayOfInterconnectedMacros()
 {
-  is_array_of_interconnected_macros = true;
+  is_array_of_interconnected_macros_ = true;
 }
 
 bool Cluster::isArrayOfInterconnectedMacros() const
 {
-  return is_array_of_interconnected_macros;
+  return is_array_of_interconnected_macros_;
 }
 
 bool Cluster::isEmpty() const

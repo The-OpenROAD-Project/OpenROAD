@@ -32,7 +32,6 @@ cc_library(
         "src/lefin/*.cpp",
         "src/lefin/*.h",
         "src/lefout/*.cpp",
-        "src/swig/tcl/MakeOdb.cpp",
         "src/swig/common/swig_common.cpp",
         "src/swig/common/swig_common.h",
     ]),
@@ -78,6 +77,7 @@ cc_library(
     srcs = [
         "include/odb/geom.h",
         "src/swig/common/swig_common.h",
+        "src/swig/tcl/MakeOdb.cpp",
         ":swig",
         ":tcl",
     ],
@@ -94,9 +94,12 @@ cc_library(
         "-use_header_modules",
     ],
     deps = [
+        ":odb",
         "//:ord",
         "//src/utl",
         "@boost.container",
+        "@boost.polygon",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

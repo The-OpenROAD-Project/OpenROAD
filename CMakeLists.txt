@@ -216,3 +216,7 @@ link_directories(${CAPNP_LIBRARY_DIR})
 # set(FLEX_INCLUDE_DIR /opt/homebrew/opt/flex/include)
 
 
+####################################################################
+# Add a configuration for ReleaseWithAsserts
+set(CMAKE_CXX_FLAGS_RELEASEWITHASSERTS "${CMAKE_CXX_FLAGS_RELEASE} -UNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_RELEASEWITHASSERTS "${CMAKE_C_FLAGS_RELEASE} -UNDEBUG" CACHE STRING "" FORCE)

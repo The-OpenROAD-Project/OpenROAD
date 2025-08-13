@@ -1,6 +1,6 @@
 # This test case places both long macros at the right
 # side, while the normal result have one at each side
-# A guidance weight of 30 had to be used to outweight 
+# A guidance weight of 30 had to be used to outweight
 # the wirelength penalty
 source "helpers.tcl"
 

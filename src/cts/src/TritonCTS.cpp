@@ -111,12 +111,15 @@ void TritonCTS::runTritonCts()
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
                                    Clock& net,
+                                   odb::dbNet* topInputNet,
                                    TreeBuilder* parent,
                                    utl::Logger* logger,
                                    odb::dbDatabase* db)
 {
   auto builder
       = std::make_unique<HTreeBuilder>(options, net, parent, logger, db);
+
+  builder->setTopInputNet(topInputNet);
   builders_.emplace_back(std::move(builder));
   return builders_.back().get();
 }
@@ -1178,15 +1181,15 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     options_->setNumSinks(totalSinks);
     incrementNumClocks();
     clockNet.setNetObj(firstNet);
-    return addBuilder(options_, clockNet, parentBuilder, logger_, db_);
+    return addBuilder(
+        options_, clockNet, clkInputNet, parentBuilder, logger_, db_);
   }
 
   // add macro sinks to existing firstNet
-  TreeBuilder* firstBuilder
-      = addClockSinks(clockNet, firstNet, macroSinks, parentBuilder, "macros");
+  TreeBuilder* firstBuilder = addClockSinks(
+      clockNet, clkInputNet, firstNet, macroSinks, parentBuilder, "macros");
   if (firstBuilder) {
     firstBuilder->setTreeType(TreeType::MacroTree);
-    firstBuilder->setTopInputNet(clkInputNet);
   }
 
   // create a new net 'secondNet' to drive register sinks
@@ -1198,6 +1201,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
   // add register sinks to secondNet
   TreeBuilder* secondBuilder
       = addClockSinks(clockNet2,
+                      clkInputNet,
                       secondNet,
                       registerSinks,
                       firstBuilder ? firstBuilder : parentBuilder,
@@ -1206,10 +1210,9 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     secondBuilder->setTreeType(TreeType::RegisterTree);
     secondBuilder->setTopBufferName(std::move(topBufferName));
     secondBuilder->setDrivingNet(firstNet);
-    secondBuilder->setTopInputNet(clkInputNet);
   }
 
-  return secondBuilder;
+  return firstBuilder;
 }
 
 // Separate sinks into registers (no insertion delay) and macros (insertion
@@ -1235,9 +1238,20 @@ bool TritonCTS::separateMacroRegSinks(
     }
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
+      // Cells with insertion delay, macros, clock gaters and inverters that
+      // drive macros are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
-      // Treat clock gaters like macro sink
-      if (hasInsertionDelay(inst, mterm) || !isSink(iterm) || inst->isBlock()) {
+
+      bool nonSinkMacro = !isSink(iterm);
+      sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
+      sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+      if (libertyCell && libertyCell->isInverter()) {
+        odb::dbITerm* invertedTerm
+            = inst->getFirstOutput()->getNet()->get1stSignalInput(false);
+        nonSinkMacro &= invertedTerm->getInst()->isBlock();
+      }
+
+      if (hasInsertionDelay(inst, mterm) || nonSinkMacro || inst->isBlock()) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
@@ -1250,6 +1264,7 @@ bool TritonCTS::separateMacroRegSinks(
 
 TreeBuilder* TritonCTS::addClockSinks(
     Clock& clockNet,
+    odb::dbNet* topInputNet,
     odb::dbNet* physicalNet,
     const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
     TreeBuilder* parentBuilder,
@@ -1276,7 +1291,8 @@ TreeBuilder* TritonCTS::addClockSinks(
   options_->setNumSinks(totalSinks);
   incrementNumClocks();
   clockNet.setNetObj(physicalNet);
-  return addBuilder(options_, clockNet, parentBuilder, logger_, db_);
+  return addBuilder(
+      options_, clockNet, topInputNet, parentBuilder, logger_, db_);
 }
 
 Clock TritonCTS::forkRegisterClockNetwork(
@@ -2359,7 +2375,7 @@ bool TritonCTS::propagateClock(odb::dbITerm* input)
 
   // Clock Gater / Latch improvised as clock gater
   if (inputPort) {
-    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+    return inputPort->isClockGateClock() || inputPort->isLatchData();
   }
 
   return false;
@@ -2406,6 +2422,14 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   odb::dbITerm* driverOutputTerm = driver->getFirstOutput();
   odb::dbNet* outputNet = driverOutputTerm->getNet();
 
+  // hierarchy support:
+  // Get the hierarchical net if any and propagate to end of chain
+  sta::Pin* op_pin = network_->dbToSta(driverOutputTerm);
+  odb::dbModNet* candidate_hier_net = network_->hasHierarchicalElements()
+                                          ? network_->hierNet(op_pin)
+                                          : nullptr;
+  odb::dbNet* orig_flat_net = network_->flatNet(op_pin);
+
   // get bbox of current load pins without driver output pin
   driverOutputTerm->disconnect();
   odb::Rect bbox = outputNet->getTermBBox();
@@ -2434,19 +2458,21 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   // driver is now the last delay buffer
   driverOutputTerm = driver->getFirstOutput();
   driverOutputTerm->disconnect();
-  driverOutputTerm->connect(outputNet);
+  // hierarchical fix. guarded by network has hierarchy
+  if (candidate_hier_net && network_->hasHierarchy()) {
+    network_->connectPin((sta::Pin*) driverOutputTerm,
+                         (sta::Net*) orig_flat_net,
+                         (sta::Net*) candidate_hier_net);
+  } else {
+    driverOutputTerm->connect(outputNet);
+  }
 }
 
 void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
-  std::string topBufferName;
-  if (builder->getTreeType() == TreeType::RegisterTree) {
-    topBufferName = builder->getTopBufferName();
-  } else {
-    topBufferName = "clkbuf_0_" + clock.getName();
-  }
-  odb::dbInst* topBuffer = block_->findInst(topBufferName.c_str());
+  odb::dbInst* topBuffer
+      = block_->findInst(builder->getTopBufferName().c_str());
   if (topBuffer) {
     builder->setTopBuffer(topBuffer);
     odb::dbITerm* inputTerm = getFirstInput(topBuffer);
@@ -2482,18 +2508,36 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
                                           const std::string& clockName,
                                           int locX,
                                           int locY)
+
 {
   // creat a new input net
   std::string newNetName
       = "delaynet_" + std::to_string(delayBufIndex_) + "_" + clockName;
-  odb::dbNet* newNet = odb::dbNet::create(block_, newNetName.c_str());
+
+  // hierarchy fix, make the net in the right scope
+  odb::dbModule* module = driver->getModule();
+  if (module == nullptr) {
+    // if none put in top level
+    module = block_->getTopModule();
+  }
+  sta::Instance* scope
+      = (module == nullptr || (module == block_->getTopModule()))
+            ? network_->topInstance()
+            : (sta::Instance*) (module->getModInst());
+  odb::dbNet* newNet
+      = network_->staToDb(network_->makeNet(newNetName.c_str(), scope));
+
   newNet->setSigType(odb::dbSigType::CLOCK);
 
   // create a new delay buffer
   std::string newBufName
       = "delaybuf_" + std::to_string(delayBufIndex_++) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-  odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
+
+  // fix: make buffer in same hierarchical module as driver
+
+  odb::dbInst* newBuf
+      = odb::dbInst::create(block_, master, newBufName.c_str(), false, module);
 
   newBuf->setSourceType(odb::dbSourceType::TIMING);
   newBuf->setLocation(locX, locY);
@@ -2502,6 +2546,7 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
   // connect driver output with new buffer input
   odb::dbITerm* driverOutTerm = driver->getFirstOutput();
   odb::dbITerm* newBufInTerm = getFirstInput(newBuf);
+
   driverOutTerm->disconnect();
   driverOutTerm->connect(newNet);
   newBufInTerm->connect(newNet);
@@ -2517,5 +2562,4 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
 
   return newBuf;
 }
-
 }  // namespace cts

@@ -43,7 +43,7 @@ void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
       const int y2 = neighbor.y;
       lines.emplace_back(odb::Point(x1, y1), odb::Point(x2, y2));
     }
-    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);
+    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::kRed);
   }
 }
 

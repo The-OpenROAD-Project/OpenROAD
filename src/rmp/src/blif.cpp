@@ -51,12 +51,12 @@ Blif::Blif(Logger* logger,
 
 void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
 {
-  instances_to_optimize = insts;
+  instances_to_optimize_ = insts;
 }
 
 void Blif::addReplaceableInstance(odb::dbInst* inst)
 {
-  instances_to_optimize.insert(inst);
+  instances_to_optimize_.insert(inst);
 }
 
 bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
@@ -75,7 +75,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     return false;
   }
 
-  std::set<odb::dbInst*>& insts = this->instances_to_optimize;
+  std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
   std::map<odb::uint, odb::dbInst*> instMap;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
@@ -95,7 +95,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
     std::string currentGate
         = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
-    std::string currentConnections = "", currentClock = "";
+    std::string currentConnections, currentClock;
     std::set<std::string> currentClocks;
 
     auto iterms = inst->getITerms();
@@ -105,8 +105,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       auto net = iterm->getNet();
 
       if (iterm->getSigType() == odb::dbSigType::POWER
-          || iterm->getSigType() == odb::dbSigType::GROUND)
+          || iterm->getSigType() == odb::dbSigType::GROUND) {
         continue;
+      }
 
       sta::Vertex *vertex, *bidirect_drvr_vertex;
       auto pin_ = open_sta_->getDbNetwork()->dbToSta(iterm);
@@ -224,10 +225,11 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
                   && port_->tristateEnable() == nullptr
                   && (expr->op() == sta::FuncExpr::op_zero
                       || expr->op() == sta::FuncExpr::op_one)) {
-                if (expr->op() == sta::FuncExpr::op_zero)
+                if (expr->op() == sta::FuncExpr::op_zero) {
                   const0.insert(netName);
-                else
+                } else {
                   const1.insert(netName);
+                }
 
               } else {
                 inputs.insert(netName);
@@ -247,10 +249,12 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
     currentGate += currentConnections;
 
-    if (cell->hasSequentials() && currentClocks.size() != 1)
+    if (cell->hasSequentials() && currentClocks.size() != 1) {
       continue;
-    if (cell->hasSequentials())
+    }
+    if (cell->hasSequentials()) {
       currentGate += " " + currentClock;
+    }
 
     subckts[instIndex++] = std::move(currentGate);
   }
@@ -273,8 +277,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
   for (auto& input : inputs) {
     if (const0.find(input) != const0.end()
-        || const1.find(input) != const1.end())
+        || const1.find(input) != const1.end()) {
       continue;
+    }
 
     f << " " << input;
   }
@@ -364,8 +369,9 @@ bool Blif::inspectBlif(const char* file_name, int& numInstances)
 
   bool isValid = blif.parse(fileString);
 
-  if (isValid)
+  if (isValid) {
     numInstances = blif.getGates().size();
+  }
   return isValid;
 }
 
@@ -390,7 +396,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     logger_->error(RMP,
                    34,
                    "Blif parser failed. File doesn't follow blif spec.",
-                   instances_to_optimize.size());
+                   instances_to_optimize_.size());
     return false;
   }
 
@@ -398,7 +404,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   logger_->info(RMP,
                 5,
                 "Blif parsed successfully, will destroy {} existing instances.",
-                instances_to_optimize.size());
+                instances_to_optimize_.size());
   logger_->info(RMP,
                 6,
                 "Found {} inputs, {} outputs, {} clocks, {} combinational "
@@ -409,7 +415,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getCombGateCount(),
                 blif.getFlopCount());
 
-  for (auto& inst : instances_to_optimize) {
+  for (auto& inst : instances_to_optimize_) {
     std::set<odb::dbNet*> connectedNets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
@@ -428,9 +434,9 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   std::map<std::string, int> instIds;
 
   for (auto&& gate : gates) {
-    GateType masterType = gate.type_;
-    std::string masterName = gate.master_;
-    std::vector<std::string> connections = gate.connections_;
+    GateType masterType = gate.type;
+    std::string masterName = gate.master;
+    std::vector<std::string> connections = gate.connections;
     odb::dbMaster* master = nullptr;
 
     for (auto&& lib : block->getDb()->getLibs()) {
@@ -518,7 +524,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     for (auto&& connection : connections) {
       auto equalSignPos = connection.find("=");
 
-      std::string mtermName = "", netName = "";
+      std::string mtermName, netName;
 
       if (equalSignPos == std::string::npos && masterType == GateType::Mlatch) {
         // Identified clock net!
@@ -556,8 +562,9 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         std::string net_name_modified
             = std::string("or_") + std::to_string(call_id_) + netName;
         net = block->findNet(net_name_modified.c_str());
-        if (!net)
+        if (!net) {
           net = odb::dbNet::create(block, net_name_modified.c_str());
+        }
       }
 
       if (mtermName == "") {
@@ -609,16 +616,18 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
 
 void Blif::addArrival(sta::Pin* pin, std::string netName)
 {
-  if (arrivals_.find(netName) == arrivals_.end())
+  if (arrivals_.find(netName) == arrivals_.end()) {
     arrivals_[netName] = std::pair<float, float>(
         getArrivalTime(pin, true) * 1e12, getArrivalTime(pin, false) * 1e12);
+  }
 }
 
 void Blif::addRequired(sta::Pin* pin, std::string netName)
 {
-  if (requireds_.find(netName) == requireds_.end())
+  if (requireds_.find(netName) == requireds_.end()) {
     requireds_[netName] = std::pair<float, float>(
         getRequiredTime(pin, true) * 1e12, getRequiredTime(pin, false) * 1e12);
+  }
 }
 
 }  // namespace rmp

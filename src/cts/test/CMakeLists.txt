@@ -25,7 +25,9 @@ or_integration_tests(
     dummy_load
     find_clock
     find_clock_pad
+    hier_insertion_delay
     insertion_delay
+    inverters
     lvt_lib
     max_cap
     no_clocks

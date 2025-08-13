@@ -18,6 +18,7 @@
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -103,12 +104,19 @@ void RepairDesign::repairDesign(double max_wire_length,
 
 void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 {
+  debugPrint(logger_, RSZ, "early_sizing", 1, "Performing early sizing round.");
   // keep track of user annotations so we don't remove them
   std::set<std::pair<Vertex*, int>> slew_user_annotated;
 
   // We need to override slews in order to get good required time estimates.
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
+    debugPrint(logger_,
+               RSZ,
+               "early_sizing",
+               2,
+               "Annotating slew for driver {}",
+               network_->pathName(drvr->pin()));
     for (auto rf : {RiseFall::rise(), RiseFall::fall()}) {
       if (!drvr->slewAnnotated(rf, min_) && !drvr->slewAnnotated(rf, max_)) {
         sta_->setAnnotatedSlew(drvr,
@@ -129,6 +137,12 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
+    debugPrint(logger_,
+               RSZ,
+               "early_sizing",
+               2,
+               "Processing driver {}",
+               network_->pathName(drvr_pin));
     // Always get the flat net for the top level port.
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
@@ -136,23 +150,45 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
     if (!net) {
       continue;
     }
-    dbNet* net_db = db_network_->staToDb(net);
+
+    odb::dbNet* net_db = nullptr;
+    odb::dbModNet* mod_net_db = nullptr;
+    db_network_->staToDb(net, net_db, mod_net_db);
     search_->findRequireds(drvr->level() + 1);
 
-    if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+    bool not_abut_connection = net_db && !net_db->isConnectedByAbutment();
+    if (net && !resizer_->dontTouch(net) && not_abut_connection
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant()) {
+      debugPrint(logger_,
+                 RSZ,
+                 "early_sizing",
+                 2,
+                 "  Net {} is eligible for repair.",
+                 network_->pathName(net));
       float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
       bool repaired_net = false;
 
       if (performGainBuffering(net, drvr_pin, max_fanout)) {
+        debugPrint(logger_,
+                   RSZ,
+                   "early_sizing",
+                   2,
+                   "  Gain buffering applied to net {}.",
+                   network_->pathName(net));
         repaired_net = true;
       }
 
       if (resizer_->resizeToCapRatio(drvr_pin, false)) {
+        debugPrint(logger_,
+                   RSZ,
+                   "early_sizing",
+                   2,
+                   "  Resized driver {}.",
+                   network_->pathName(drvr_pin));
         repaired_net = true;
       }
 
@@ -171,6 +207,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
       }
     }
   }
+  debugPrint(logger_, RSZ, "early_sizing", 1, "Early sizing round finished.");
 
   resizer_->level_drvr_vertices_valid_ = false;
   resizer_->ensureLevelDrvrVertices();
@@ -732,7 +769,6 @@ bool RepairDesign::performGainBuffering(Net* net,
 
 void RepairDesign::checkDriverArcSlew(const Corner* corner,
                                       const Instance* inst,
-                                      const Edge* edge,
                                       const TimingArc* arc,
                                       float load_cap,
                                       float limit,
@@ -744,11 +780,15 @@ void RepairDesign::checkDriverArcSlew(const Corner* corner,
   Pin* in_pin = network_->findPin(inst, arc->from()->name());
 
   if (model && in_pin) {
-    Vertex* vertex = graph_->pinLoadVertex(in_pin);
-    // edgeFromSlew returns the graph slew value for the pin, or the ideal
-    // clock slew if applicable
+    const bool use_ideal_clk_slew
+        = arc->set()->role()->genericRole() == TimingRole::regClkToQ()
+          && clk_network_->isIdealClock(in_pin);
     Slew in_slew
-        = graph_delay_calc_->edgeFromSlew(vertex, in_rf, edge, dcalc_ap);
+        = use_ideal_clk_slew
+              ? clk_network_->idealClkSlew(
+                    in_pin, in_rf, dcalc_ap->slewMinMax())
+              : graph_->slew(
+                    graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap->index());
     const Pvt* pvt = dcalc_ap->operatingConditions();
 
     ArcDelay arc_delay;
@@ -791,26 +831,15 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
 
         if (limit_exists) {
           float limit_w_margin = maxSlewMargined(limit);
-
-          VertexInEdgeIterator edge_iter(graph_->pinDrvrVertex(drvr_pin),
-                                         graph_);
-          while (edge_iter.hasNext()) {
-            Edge* edge = edge_iter.next();
-            TimingArcSet* arc_set = edge->timingArcSet();
+          for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
             const TimingRole* role = arc_set->role();
             if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
                 && role != TimingRole::tristateEnable()
                 && role != TimingRole::clockTreePathMin()
                 && role != TimingRole::clockTreePathMax()) {
-              TimingArcSet* size_arc_set = size_cell->findTimingArcSet(arc_set);
-              for (TimingArc* arc : size_arc_set->arcs()) {
-                checkDriverArcSlew(corner,
-                                   inst,
-                                   edge,
-                                   arc,
-                                   load_cap,
-                                   limit_w_margin,
-                                   violation);
+              for (TimingArc* arc : arc_set->arcs()) {
+                checkDriverArcSlew(
+                    corner, inst, arc, load_cap, limit_w_margin, violation);
               }
             }
           }

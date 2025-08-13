@@ -20,9 +20,9 @@ LayoutTabs::LayoutTabs(Options* options,
                        const std::vector<std::unique_ptr<Ruler>>& rulers,
                        const std::vector<std::unique_ptr<Label>>& labels,
                        Gui* gui,
-                       std::function<bool()> usingDBU,
-                       std::function<bool()> usingPolyDecompView,
-                       std::function<bool()> showRulerAsEuclidian,
+                       std::function<bool()> using_dbu,
+                       std::function<bool()> using_poly_decomp_view,
+                       std::function<bool()> show_ruler_as_euclidian,
                        std::function<bool()> default_mouse_wheel_zoom,
                        std::function<int()> arrow_keys_scroll_step,
                        QWidget* parent)
@@ -34,9 +34,9 @@ LayoutTabs::LayoutTabs(Options* options,
       rulers_(rulers),
       labels_(labels),
       gui_(gui),
-      usingDBU_(std::move(usingDBU)),
-      usingPolyDecompView_(std::move(usingPolyDecompView)),
-      showRulerAsEuclidian_(std::move(showRulerAsEuclidian)),
+      using_dbu_(std::move(using_dbu)),
+      using_poly_decomp_view_(std::move(using_poly_decomp_view)),
+      show_ruler_as_euclidian_(std::move(show_ruler_as_euclidian)),
       default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
       arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
       logger_(nullptr)
@@ -82,9 +82,9 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  route_guides_,
                                  net_tracks_,
                                  gui_,
-                                 usingDBU_,
-                                 showRulerAsEuclidian_,
-                                 usingPolyDecompView_,
+                                 using_dbu_,
+                                 show_ruler_as_euclidian_,
+                                 using_poly_decomp_view_,
                                  this);
   viewer->setLogger(logger_);
   viewers_.push_back(viewer);
@@ -258,6 +258,7 @@ void LayoutTabs::addRouteGuides(odb::dbNet* net)
 {
   const auto& [itr, inserted] = route_guides_.insert(net);
   if (inserted) {
+    emit routeGuidesChanged();
     fullRepaint();
   }
 }
@@ -266,6 +267,7 @@ void LayoutTabs::addNetTracks(odb::dbNet* net)
 {
   const auto& [itr, inserted] = net_tracks_.insert(net);
   if (inserted) {
+    emit netTracksChanged();
     fullRepaint();
   }
 }
@@ -281,6 +283,7 @@ void LayoutTabs::removeFocusNet(odb::dbNet* net)
 void LayoutTabs::removeRouteGuides(odb::dbNet* net)
 {
   if (route_guides_.erase(net) > 0) {
+    emit routeGuidesChanged();
     fullRepaint();
   }
 }
@@ -288,6 +291,7 @@ void LayoutTabs::removeRouteGuides(odb::dbNet* net)
 void LayoutTabs::removeNetTracks(odb::dbNet* net)
 {
   if (net_tracks_.erase(net) > 0) {
+    emit netTracksChanged();
     fullRepaint();
   }
 }
@@ -305,6 +309,7 @@ void LayoutTabs::clearRouteGuides()
 {
   if (!route_guides_.empty()) {
     route_guides_.clear();
+    emit routeGuidesChanged();
     fullRepaint();
   }
 }
@@ -313,6 +318,7 @@ void LayoutTabs::clearNetTracks()
 {
   if (!net_tracks_.empty()) {
     net_tracks_.clear();
+    emit netTracksChanged();
     fullRepaint();
   }
 }

@@ -46,19 +46,20 @@ class NodeDescriptor : public SolverDescriptor
   NodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM Node"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  bool getAllObjects(gui::SelectionSet& /* objects */) const override
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
   {
-    return false;
   }
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class ITermNodeDescriptor : public NodeDescriptor
@@ -67,15 +68,16 @@ class ITermNodeDescriptor : public NodeDescriptor
   ITermNodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM ITerm Node"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class BPinNodeDescriptor : public NodeDescriptor
@@ -84,15 +86,16 @@ class BPinNodeDescriptor : public NodeDescriptor
   BPinNodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM BPin Node"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class ConnectionDescriptor : public SolverDescriptor
@@ -101,19 +104,20 @@ class ConnectionDescriptor : public SolverDescriptor
   ConnectionDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM Connection"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  bool getAllObjects(gui::SelectionSet& /* objects */) const override
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
   {
-    return false;
   }
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class DebugGui : public gui::Renderer
@@ -207,19 +211,19 @@ class DebugGui : public gui::Renderer
   std::set<const Node*> selected_nodes_;
   std::set<const Connection*> selected_connections_;
 
-  static constexpr const char* shapes_text_ = "Shapes";
-  static constexpr const char* nodes_text_ = "Nodes";
-  static constexpr const char* iterm_nodes_text_ = "ITerm nodes";
-  static constexpr const char* bpin_nodes_text_ = "BPin nodes";
-  static constexpr const char* connectivity_text_ = "Node connectivity";
-  static constexpr const char* source_text_ = "Source nodes";
-  static constexpr const char* source_shape_text_ = "Source shapes";
+  static constexpr const char* kShapesText = "Shapes";
+  static constexpr const char* kNodesText = "Nodes";
+  static constexpr const char* kItermNodesText = "ITerm nodes";
+  static constexpr const char* kBpinNodesText = "BPin nodes";
+  static constexpr const char* kConnectivityText = "Node connectivity";
+  static constexpr const char* kSourceText = "Source nodes";
+  static constexpr const char* kSourceShapeText = "Source shapes";
 
-  static constexpr int bold_multiplier_ = 2;
-  static constexpr int node_pen_width_ = 2;
-  static constexpr int node_size_ = 10;
-  static constexpr int via_size_ = 10;
-  static constexpr int src_node_max_size_ = 25;
+  static constexpr int kBoldMultiplier = 2;
+  static constexpr int kNodePenWidth = 2;
+  static constexpr int kNodeSize = 10;
+  static constexpr int kViaSize = 10;
+  static constexpr int kSrcNodeMaxSize = 25;
 };
 
 }  // namespace psm

@@ -257,7 +257,7 @@ EXTERN int lefiLayer_numProps(const lefiLayer* obj);
 EXTERN const char* lefiLayer_propName(const lefiLayer* obj, int index);
 EXTERN const char* lefiLayer_propValue(const lefiLayer* obj, int index);
 EXTERN double lefiLayer_propNumber(const lefiLayer* obj, int index);
-EXTERN const char lefiLayer_propType(const lefiLayer* obj, int index);
+EXTERN char lefiLayer_propType(const lefiLayer* obj, int index);
 EXTERN int lefiLayer_propIsNumber(const lefiLayer* obj, int index);
 EXTERN int lefiLayer_propIsString(const lefiLayer* obj, int index);
 

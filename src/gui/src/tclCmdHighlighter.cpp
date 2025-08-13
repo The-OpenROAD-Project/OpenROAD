@@ -228,13 +228,13 @@ void TclCmdHighlighter::initOther()
   std::string not_escaped = "(?<!\\\\)";
 
   // string
-  string_rule.rules.push_back(
-      buildRule("\".*?" + not_escaped + "\""));        // complete string
-  string_rule.rules.push_back(buildRule("(\".*?$)"));  // string at end of line
-  string_rule.rules.push_back(
-      buildRule("^.*?" + not_escaped + "\""));   // start of line
-  string_rule.rules.push_back(buildRule(".*"));  // whole line
-  string_rule.format = &string_format_;
+  string_rule_.rules.push_back(
+      buildRule("\".*?" + not_escaped + "\""));         // complete string
+  string_rule_.rules.push_back(buildRule("(\".*?$)"));  // string at end of line
+  string_rule_.rules.push_back(
+      buildRule("^.*?" + not_escaped + "\""));    // start of line
+  string_rule_.rules.push_back(buildRule(".*"));  // whole line
+  string_rule_.format = &string_format_;
 
   std::vector<CommandRulePtr> rules;
 
@@ -254,7 +254,7 @@ void TclCmdHighlighter::initOther()
   addRuleGroup(syntax_rules_, rules, &comment_format_);
 }
 
-const std::string TclCmdHighlighter::escape(const std::string& preregex)
+std::string TclCmdHighlighter::escape(const std::string& preregex)
 {
   QString escaped = QRegularExpression::escape(preregex.c_str());
 
@@ -409,25 +409,25 @@ void TclCmdHighlighter::highlightBlockWithString(const QString& text)
   if (previousBlockState() > 0) {
     // check if string ended
     offset = highlightBlockWithRule(
-        text, 0, string_rule.rules[2]->pattern, string_rule.format);
+        text, 0, string_rule_.rules[2]->pattern, string_rule_.format);
     if (offset != -1) {
       setCurrentBlockState(-1);
     } else {
       highlightBlockWithRule(
-          text, 0, string_rule.rules[3]->pattern, string_rule.format);
+          text, 0, string_rule_.rules[3]->pattern, string_rule_.format);
       setCurrentBlockState(2);
     }
   }
 
   if (currentBlockState() != 2) {
     int complete_offset = highlightBlockWithRule(
-        text, offset, string_rule.rules[0]->pattern, string_rule.format);
+        text, offset, string_rule_.rules[0]->pattern, string_rule_.format);
     if (complete_offset != -1) {
       offset = complete_offset;
     }
 
     if (highlightBlockWithRule(
-            text, offset, string_rule.rules[1]->pattern, string_rule.format)
+            text, offset, string_rule_.rules[1]->pattern, string_rule_.format)
         != -1) {
       setCurrentBlockState(1);
     } else {
@@ -444,11 +444,11 @@ int TclCmdHighlighter::highlightBlockWithRule(const QString& text,
                                               const QTextCharFormat* format)
 {
   int last_match = -1;
-  QRegularExpressionMatchIterator matchIterator
+  QRegularExpressionMatchIterator match_iterator
       = rule->globalMatch(text, start_idx);
 
-  while (matchIterator.hasNext()) {
-    QRegularExpressionMatch match = matchIterator.next();
+  while (match_iterator.hasNext()) {
+    QRegularExpressionMatch match = match_iterator.next();
 
     int groups_start = 0;
     if (match.lastCapturedIndex() > 0) {

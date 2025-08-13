@@ -77,12 +77,13 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
   int d, i, j, k, kk, ns, nn;
 
   for (i = 0; i <= 255; i++) {
-    if ('0' <= i && i <= '9')
+    if ('0' <= i && i <= '9') {
       charnum[i] = i - '0';
-    else if (i >= 'A')
+    } else if (i >= 'A') {
       charnum[i] = i - 'A' + 10;
-    else  // if (i=='$' || i=='\n' || ... )
+    } else {  // if (i=='$' || i=='\n' || ... )
       charnum[i] = 0;
+    }
   }
 
   fpwv = fopen(FLUTE_POWVFILE, "r");
@@ -170,7 +171,7 @@ extern const char* powv9[];
 
 void Flute::readLUT()
 {
-  makeLUT(LUT, numsoln);
+  makeLUT(LUT_, numsoln_);
 
 #if LUT_SOURCE == LUT_FILE
   readLUTfiles(LUT, numsoln);
@@ -178,7 +179,7 @@ void Flute::readLUT()
 
 #elif LUT_SOURCE == LUT_VAR
   // Only init to d=8 on startup because d=9 is big and slow.
-  initLUT(lut_initial_d, LUT, numsoln);
+  initLUT(lut_initial_d, LUT_, numsoln_);
 
 #elif LUT_SOURCE == LUT_VAR_CHECK
   readLUTfiles(LUT, numsoln);
@@ -204,7 +205,7 @@ void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 
 void Flute::deleteLUT()
 {
-  deleteLUT(LUT, numsoln);
+  deleteLUT(LUT_, numsoln_);
 }
 
 void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
@@ -321,16 +322,16 @@ void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
       }
     }
   }
-  lut_valid_d = to_d;
+  lut_valid_d_ = to_d;
 }
 
 void Flute::ensureLUT(int d)
 {
-  if (LUT == nullptr) {
+  if (LUT_ == nullptr) {
     readLUT();
   }
-  if (d > lut_valid_d && d <= FLUTE_D) {
-    initLUT(FLUTE_D, LUT, numsoln);
+  if (d > lut_valid_d_ && d <= FLUTE_D) {
+    initLUT(FLUTE_D, LUT_, numsoln_);
   }
 }
 
@@ -344,28 +345,34 @@ static void checkLUT(LUT_TYPE LUT1,
     for (int k = 0; k < numgrp[d]; k++) {
       int ns1 = numsoln1[d][k];
       int ns2 = numsoln2[d][k];
-      if (ns1 != ns2)
+      if (ns1 != ns2) {
         printf("numsoln[%d][%d] mismatch\n", d, k);
+      }
       struct csoln* soln1 = LUT1[d][k].get();
       struct csoln* soln2 = LUT2[d][k].get();
-      if (soln1->parent != soln2->parent)
+      if (soln1->parent != soln2->parent) {
         printf("LUT[%d][%d]->parent mismatch\n", d, k);
+      }
       for (int j = 0; soln1->seg[j] != 0; j++) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 10; soln1->seg[j] != 0; j--) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       int nn = 2 * d - 2;
       for (int j = d; j < nn; j++) {
-        if (soln1->rowcol[j - d] != soln2->rowcol[j - d])
+        if (soln1->rowcol[j - d] != soln2->rowcol[j - d]) {
           printf("LUT[%d][%d]->rowcol[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 0; j < nn; j++) {
-        if (soln1->neighbor[j] != soln2->neighbor[j])
+        if (soln1->neighbor[j] != soln2->neighbor[j]) {
           printf("LUT[%d][%d]->neighbor[%d] mismatch\n", d, k, j);
+        }
       }
     }
   }
@@ -440,11 +447,14 @@ int Flute::flute_wl(int d,
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -571,14 +581,14 @@ int Flute::flutes_wl_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = (*LUT)[d][k].get();
+    rlist = (*LUT_)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
 
     l[1] = minl;
     j = 2;
-    while (j <= numsoln[d][k]) {
+    while (j <= numsoln_[d][k]) {
       rlist++;
       sum = l[rlist->parent];
       for (i = 0; rlist->seg[i] > 0; i++) {
@@ -968,11 +978,14 @@ Tree Flute::flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -1133,14 +1146,14 @@ Tree Flute::flutes_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = (*LUT)[d][k].get();
+    rlist = (*LUT_)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
     bestrlist = rlist;
     l[1] = minl;
     j = 2;
-    while (j <= numsoln[d][k]) {
+    while (j <= numsoln_[d][k]) {
       rlist++;
       sum = l[rlist->parent];
       for (i = 0; rlist->seg[i] > 0; i++) {

@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -43,8 +44,8 @@ tns max -1.578
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.564 |       -1.6 |      6 | r2/D
         1 |       0 |       0 |        1 |      0 |     0 |    +1.4% |   -0.545 |       -1.4 |      6 | r2/D
-    final |       0 |       0 |        1 |      0 |     0 |    +1.8% |   -0.547 |       -1.4 |      6 | r2/D
+    final |       0 |       0 |        3 |      0 |     0 |    +6.4% |   -0.519 |       -1.9 |      6 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0040] Inserted 3 buffers.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

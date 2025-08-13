@@ -7,4 +7,3 @@ link_design top -hier
 set v_file [make_result_file hier2_out.v]
 write_verilog $v_file
 diff_files $v_file hier2_out.vok
-

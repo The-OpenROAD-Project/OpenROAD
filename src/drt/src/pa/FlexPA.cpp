@@ -46,7 +46,13 @@ static inline void serializePatterns(
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
   registerTypes(ar);
-  ar << patterns;
+  int sz = patterns.size();
+  ar << sz;
+  for (auto& [inst, pattern] : patterns) {
+    frBlockObject* obj = (frBlockObject*) inst;
+    serializeBlockObject(ar, obj);
+    ar << pattern;
+  }
   file.close();
 }
 
@@ -141,7 +147,14 @@ void FlexPA::applyPatternsFile(const char* file_path)
   frIArchive ar(file);
   ar.setDesign(design_);
   registerTypes(ar);
-  ar >> unique_inst_patterns_;
+  int sz = 0;
+  ar >> sz;
+  while (sz--) {
+    frBlockObject* obj;
+    serializeBlockObject(ar, obj);
+    auto& pattern = unique_inst_patterns_[static_cast<frInst*>(obj)];
+    ar >> pattern;
+  }
   file.close();
 }
 
@@ -176,8 +189,8 @@ void FlexPA::prep()
       }
     }
 
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
+    dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                        dst::JobMessage::kBroadcast),
         result;
     std::unique_ptr<PinAccessJobDescription> uDesc
         = std::make_unique<PinAccessJobDescription>();
@@ -236,8 +249,8 @@ void FlexPA::prepPattern()
     logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
   }
   if (isDistributed()) {
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
+    dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                        dst::JobMessage::kBroadcast),
         result;
     std::unique_ptr<PinAccessJobDescription> uDesc
         = std::make_unique<PinAccessJobDescription>();

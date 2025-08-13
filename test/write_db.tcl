@@ -19,8 +19,8 @@ set db1 [exec md5sum [string range $db_gzip_file 0 end-3]]
 # Remove filename from output
 set db0 [string range $db0 0 32]
 set db1 [string range $db1 0 32]
-if {$db0 == $db1} {
-    puts "Matched"
+if { $db0 == $db1 } {
+  puts "Matched"
 } else {
-    puts "Differences found in dbs"
+  puts "Differences found in dbs"
 }

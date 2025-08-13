@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -16,7 +17,6 @@
 #include "placerBase.h"
 #include "point.h"
 #include "routeBase.h"
-
 namespace odb {
 class dbInst;
 class dbITerm;
@@ -64,7 +64,7 @@ class GCell
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
-  std::string name() const;
+  std::string getName() const;
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
@@ -109,9 +109,9 @@ class GCell
   void setGradientX(float gradientX);
   void setGradientY(float gradientY);
 
-  float gradientX() const { return gradientX_; }
-  float gradientY() const { return gradientY_; }
-  float densityScale() const { return densityScale_; }
+  float getGradientX() const { return gradientX_; }
+  float getGradientY() const { return gradientY_; }
+  float getDensityScale() const { return densityScale_; }
 
   bool isInstance() const;
   bool isFiller() const;
@@ -120,7 +120,7 @@ class GCell
   bool contains(odb::dbInst* db_inst) const;
 
   void print(utl::Logger* logger, bool print_only_name) const;
-  void printToFile(std::ostream& out, bool print_only_name = true) const;
+  void writeAttributesToCSV(std::ostream& out) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -227,9 +227,9 @@ class GNet
   GNet(Net* net);
   GNet(const std::vector<Net*>& nets);
 
-  Net* net() const;
-  const std::vector<Net*>& nets() const { return nets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  Net* getPbNet() const;
+  const std::vector<Net*>& getPbNets() const { return nets_; }
+  const std::vector<GPin*>& getGPins() const { return gPins_; }
 
   int lx() const;
   int ly() const;
@@ -239,14 +239,14 @@ class GNet
   void setTimingWeight(float timingWeight);
   void setCustomWeight(float customWeight);
 
-  float totalWeight() const { return timingWeight_ * customWeight_; }
-  float timingWeight() const { return timingWeight_; }
-  float customWeight() const { return customWeight_; }
+  float getTotalWeight() const { return timingWeight_ * customWeight_; }
+  float getTimingWeight() const { return timingWeight_; }
+  float getCustomWeight() const { return customWeight_; }
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
   void updateBox();
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
 
   void setDontCare();
   bool isDontCare() const;
@@ -438,11 +438,11 @@ class GPin
   GPin(Pin* pin);
   GPin(const std::vector<Pin*>& pins);
 
-  Pin* pin() const;
-  const std::vector<Pin*>& pins() const { return pins_; }
+  Pin* getPbPin() const;
+  const std::vector<Pin*>& getPbPins() const { return pins_; }
 
-  GCell* gCell() const { return gCell_; }
-  GNet* gNet() const { return gNet_; }
+  GCell* getGCell() const { return gCell_; }
+  GNet* getGNet() const { return gNet_; }
 
   void setGCell(GCell* gCell);
   void setGNet(GNet* gNet);
@@ -530,8 +530,8 @@ class Bin
   float electroPhi() const;
   float electroForceX() const;
   float electroForceY() const;
-  float targetDensity() const;
-  float density() const;
+  float getTargetDensity() const;
+  float getDensity() const;
 
   void setDensity(float density);
   void setTargetDensity(float density);
@@ -552,13 +552,13 @@ class Bin
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
 
-  int64_t binArea() const;
-  int64_t nonPlaceArea() const { return nonPlaceArea_; }
+  int64_t getBinArea() const;
+  int64_t getNonPlaceArea() const { return nonPlaceArea_; }
   int64_t instPlacedArea() const { return instPlacedArea_; }
-  int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
+  int64_t getNonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  int64_t getInstPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
-  int64_t fillerArea() const { return fillerArea_; }
+  int64_t getFillerArea() const { return fillerArea_; }
 
  private:
   // index
@@ -685,13 +685,13 @@ class BinGrid
   int dx() const;
   int dy() const;
 
-  int binCntX() const;
-  int binCntY() const;
-  double binSizeX() const;
-  double binSizeY() const;
+  int getBinCntX() const;
+  int getBinCntY() const;
+  double getBinSizeX() const;
+  double getBinSizeY() const;
 
-  int64_t overflowArea() const;
-  int64_t overflowAreaUnscaled() const;
+  int64_t getOverflowArea() const;
+  int64_t getOverflowAreaUnscaled() const;
 
   // return bins_ index with given gcell
   std::pair<int, int> getDensityMinMaxIdxX(const GCell* gcell) const;
@@ -700,8 +700,8 @@ class BinGrid
   std::pair<int, int> getMinMaxIdxX(const Instance* inst) const;
   std::pair<int, int> getMinMaxIdxY(const Instance* inst) const;
 
-  std::vector<Bin>& bins();
-  const std::vector<Bin>& binsConst() const { return bins_; };
+  std::vector<Bin>& getBins();
+  const std::vector<Bin>& getBinsConst() const { return bins_; };
 
   void updateBinsNonPlaceArea();
 
@@ -724,7 +724,7 @@ class BinGrid
   int num_threads_ = 1;
 };
 
-inline std::vector<Bin>& BinGrid::bins()
+inline std::vector<Bin>& BinGrid::getBins()
 {
   return bins_;
 }
@@ -855,17 +855,10 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  GCell& getGCell(size_t index) { return gCellStor_[index]; }
-
-  size_t getGCellIndex(const GCell* gCell) const
-  {
-    return std::distance(gCellStor_.data(), gCell);
-  }
+  GCell& getGCell(size_t index);
+  size_t getGCellIndex(const GCell* gCell) const;
 
   void printGCells();
-  void printGCellsToFile(const std::string& filename,
-                         bool print_only_name = true,
-                         bool also_print_minRc = false);
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -897,6 +890,7 @@ class NesterovBaseCommon
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
   std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
+  std::unordered_map<odb::dbBTerm*, size_t> db_bterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -923,7 +917,7 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
+  GCell& getFillerGCell(size_t index);
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -940,25 +934,25 @@ class NesterovBase
 
   void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
 
-  int binCntX() const;
-  int binCntY() const;
-  double binSizeX() const;
-  double binSizeY() const;
-  int64_t overflowArea() const;
-  int64_t overflowAreaUnscaled() const;
+  int getBinCntX() const;
+  int getBinCntY() const;
+  double getBinSizeX() const;
+  double getBinSizeY() const;
+  int64_t getOverflowArea() const;
+  int64_t getOverflowAreaUnscaled() const;
 
-  std::vector<Bin>& bins();
-  const std::vector<Bin>& binsConst() const { return bg_.binsConst(); };
+  std::vector<Bin>& getBins();
+  const std::vector<Bin>& getBinsConst() const { return bg_.getBinsConst(); };
 
   // filler cells / area control
   // will be used in Routability-driven loop
-  int fillerDx() const;
-  int fillerDy() const;
+  int getFillerDx() const;
+  int getFillerDy() const;
   int getFillerCnt() const;
-  int64_t fillerCellArea() const;
-  int64_t whiteSpaceArea() const;
-  int64_t movableArea() const;
-  int64_t totalFillerArea() const;
+  int64_t getFillerCellArea() const;
+  int64_t getWhiteSpaceArea() const;
+  int64_t getMovableArea() const;
+  int64_t getTotalFillerArea() const;
 
   // update
   // fillerArea, whiteSpaceArea, movableArea
@@ -970,26 +964,26 @@ class NesterovBase
 
   // should be separately defined.
   // This is mainly used for NesterovLoop
-  int64_t nesterovInstsArea() const;
+  int64_t getNesterovInstsArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
   // sum phi and target density
   // used in NesterovPlace
-  float sumPhi() const;
+  float getSumPhi() const;
 
   //
   // return uniform (lower bound) target density
   // LB of target density is required for massive runs.
   //
-  float uniformTargetDensity() const;
+  float getUniformTargetDensity() const;
 
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and
   // would be changed dynamically in RD loop
   //
   float initTargetDensity() const;
-  float targetDensity() const;
+  float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
 
@@ -1057,13 +1051,14 @@ class NesterovBase
                       const std::vector<FloatPoint>& curSLPSumGrads_);
 
   void updateNextIter(int iter);
-  void setTrueReprintIterHeader() { reprint_iter_header = true; }
+  void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
 
-  void snapshot();
-
-  bool checkConvergence();
+  bool checkConvergence(int gpl_iter_count,
+                        int routability_gpl_iter_count,
+                        RouteBase* rb);
   bool checkDivergence();
+  void saveSnapshot();
   bool revertToSnapshot();
 
   void updateDensityCenterCur();
@@ -1083,13 +1078,21 @@ class NesterovBase
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   void destroyCbkGCell(odb::dbInst* db_inst);
-  void destroyFillerGCell(size_t index_remove);
 
-  // Resets all pointers to storages of gcells, gpins, and gnets.
-  void fixPointers(std::vector<size_t> new_gcells);
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
   void updateGCellState(float wlCoeffX, float wlCoeffY);
+
+  void destroyFillerGCell(size_t index_remove);
+  void restoreRemovedFillers();
+  void clearRemovedFillers() { removed_fillers_.clear(); }
+
+  void appendGCellCSVNote(const std::string& filename,
+                          int iteration,
+                          const std::string& message) const;
+  void writeGCellVectorsToCSV(const std::string& filename,
+                              int iteration,
+                              bool write_header) const;
 
  private:
   NesterovBaseVars nbVars_;
@@ -1105,6 +1108,7 @@ class NesterovBase
   int64_t whiteSpaceArea_ = 0;
   int64_t movableArea_ = 0;
   int64_t totalFillerArea_ = 0;
+  int64_t initial_filler_area_ = 0;
 
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
@@ -1112,10 +1116,36 @@ class NesterovBase
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
+  std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
   // used to update gcell states after fixPointers() is called
-  std::vector<odb::dbInst*> new_instances;
+  std::vector<odb::dbInst*> new_instances_;
+
+  struct RemovedFillerState
+  {
+    GCell gcell;
+    FloatPoint curSLPCoordi;
+    FloatPoint curSLPWireLengthGrads;
+    FloatPoint curSLPDensityGrads;
+    FloatPoint curSLPSumGrads;
+    FloatPoint nextSLPCoordi;
+    FloatPoint nextSLPWireLengthGrads;
+    FloatPoint nextSLPDensityGrads;
+    FloatPoint nextSLPSumGrads;
+    FloatPoint prevSLPCoordi;
+    FloatPoint prevSLPWireLengthGrads;
+    FloatPoint prevSLPDensityGrads;
+    FloatPoint prevSLPSumGrads;
+    FloatPoint curCoordi;
+    FloatPoint nextCoordi;
+    FloatPoint initCoordi;
+    FloatPoint snapshotCoordi;
+    FloatPoint snapshotSLPCoordi;
+    FloatPoint snapshotSLPSumGrads;
+  };
+
+  std::vector<RemovedFillerState> removed_fillers_;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
@@ -1161,6 +1191,7 @@ class NesterovBase
                   size_t remove_index,
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
+  void appendParallelVectors();
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1184,7 +1215,7 @@ class NesterovBase
 
   bool isDiverged_ = false;
 
-  NesterovPlaceVars* npVars_;
+  NesterovPlaceVars* npVars_ = nullptr;
 
   bool isMaxPhiCoefChanged_ = false;
 
@@ -1192,14 +1223,14 @@ class NesterovBase
   float hpwlWithMinSumOverflow_ = 1e30;
   int iter_ = 0;
   bool isConverged_ = false;
-  bool reprint_iter_header;
+  bool reprint_iter_header_ = false;
 
   void initFillerGCells();
 };
 
-inline std::vector<Bin>& NesterovBase::bins()
+inline std::vector<Bin>& NesterovBase::getBins()
 {
-  return bg_.bins();
+  return bg_.getBins();
 }
 
 class biNormalParameters
@@ -1218,10 +1249,14 @@ class biNormalParameters
 class GCellHandle
 {
  public:
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx)
+      : storage_(nbc), storage_index_(idx)
   {
   }
-  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
+
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
+  {
+  }
 
   // Non-const versions
   GCell* operator->() { return &getGCell(); }
@@ -1238,8 +1273,19 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  void updateIndex(size_t new_index) { index_ = new_index; }
-  size_t getIndex() const { return index_; }
+  void updateHandle(NesterovBaseCommon* nbc, size_t new_index)
+  {
+    storage_ = nbc;
+    storage_index_ = new_index;
+  }
+
+  void updateHandle(NesterovBase* nb, size_t new_index)
+  {
+    storage_ = nb;
+    storage_index_ = new_index;
+  }
+
+  size_t getStorageIndex() const { return storage_index_; }
 
  private:
   using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
@@ -1247,13 +1293,13 @@ class GCellHandle
   GCell& getGCell() const
   {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
-      return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
+      return std::get<NesterovBaseCommon*>(storage_)->getGCell(storage_index_);
     }
-    return std::get<NesterovBase*>(storage_)->getFillerGCell(index_);
+    return std::get<NesterovBase*>(storage_)->getFillerGCell(storage_index_);
   }
 
   StorageVariant storage_;
-  size_t index_;
+  size_t storage_index_;
 };
 
 inline bool isValidSigType(const odb::dbSigType& db_type)

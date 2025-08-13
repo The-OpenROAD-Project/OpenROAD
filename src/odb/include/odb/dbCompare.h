@@ -76,15 +76,6 @@ struct less<odb::dbDoubleProperty*>
 };
 
 template <>
-struct less<odb::dbDatabase*>
-{
-  bool operator()(const odb::dbDatabase* lhs, const odb::dbDatabase* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
 struct less<odb::dbBox*>
 {
   bool operator()(const odb::dbBox* lhs, const odb::dbBox* rhs) const
@@ -97,15 +88,6 @@ template <>
 struct less<odb::dbSBox*>
 {
   bool operator()(const odb::dbSBox* lhs, const odb::dbSBox* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
-struct less<odb::dbChip*>
-{
-  bool operator()(const odb::dbChip* lhs, const odb::dbChip* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }
@@ -483,6 +465,24 @@ struct less<odb::dbCellEdgeSpacing*>
 {
   bool operator()(const odb::dbCellEdgeSpacing* lhs,
                   const odb::dbCellEdgeSpacing* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbChip*>
+{
+  bool operator()(const odb::dbChip* lhs, const odb::dbChip* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbDatabase*>
+{
+  bool operator()(const odb::dbDatabase* lhs, const odb::dbDatabase* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

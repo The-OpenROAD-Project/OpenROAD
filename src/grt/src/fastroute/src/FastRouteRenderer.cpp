@@ -76,8 +76,8 @@ void FastRouteRenderer::drawLineObject(int x1,
       painter.setPen(layer);
       painter.setBrush(layer);
     } else {
-      painter.setPen(gui::Painter::cyan);
-      painter.setBrush(gui::Painter::cyan);
+      painter.setPen(gui::Painter::kCyan);
+      painter.setBrush(gui::Painter::kCyan);
     }
     painter.setPenWidth(700);
     painter.drawLine(x1, y1, x2, y2);
@@ -92,24 +92,22 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
     }
 
     int routeLen = treeEdge.route.routelen;
-    const std::vector<short>& gridsX = treeEdge.route.gridsX;
-    const std::vector<short>& gridsY = treeEdge.route.gridsY;
-    const std::vector<short>& gridsL = treeEdge.route.gridsL;
-    int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
-    int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
+    const std::vector<GPoint3D>& grids = treeEdge.route.grids;
+    int lastX = tile_size_ * (grids[0].x + 0.5) + x_corner_;
+    int lastY = tile_size_ * (grids[0].y + 0.5) + y_corner_;
 
     if (is3DVisualization_) {
-      lastL = gridsL[0];
+      lastL = grids[0].layer;
     }
 
     for (int i = 1; i <= routeLen; i++) {
-      const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
-      const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
+      const int xreal = tile_size_ * (grids[i].x + 0.5) + x_corner_;
+      const int yreal = tile_size_ * (grids[i].y + 0.5) + y_corner_;
 
       if (is3DVisualization_) {
         drawLineObject(
-            lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1, painter);
-        lastL = gridsL[i];
+            lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1, painter);
+        lastL = grids[i].layer;
       } else {
         drawLineObject(
             lastX, lastY, -1, xreal, yreal, -1, painter);  // -1 to 2D Trees
@@ -136,8 +134,8 @@ void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 void FastRouteRenderer::drawObjects(gui::Painter& painter)
 {
   if (treeStructure_ == TreeStructure::steinerTreeByStt) {
-    painter.setPen(gui::Painter::white);
-    painter.setBrush(gui::Painter::white);
+    painter.setPen(gui::Painter::kWhite);
+    painter.setBrush(gui::Painter::kWhite);
     painter.setPenWidth(700);
 
     for (int i = 0; i < stree_.branchCount(); i++) {

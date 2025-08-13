@@ -15,6 +15,8 @@ package(
 cc_library(
     name = "utl",
     srcs = [
+        "src/CallBack.cpp",
+        "src/CallBackHandler.cpp",
         "src/CFileUtils.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
@@ -30,6 +32,8 @@ cc_library(
         "src/timer.cpp",
     ],
     hdrs = [
+        "include/utl/CallBack.h",
+        "include/utl/CallBackHandler.h",
         "include/utl/CFileUtils.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
@@ -85,6 +89,8 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
+        "include/utl/CallBack.h",
+        "include/utl/CallBackHandler.h",
         "include/utl/CFileUtils.h",
         "include/utl/Logger.h",
         "include/utl/MakeLogger.h",
@@ -124,11 +130,12 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
-        "//src/sta:opensta_lib",
         "//:ord",
+        "//src/sta:opensta_lib",
         "@boost.asio",
         "@boost.beast",
         "@boost.core",
+        "@boost.stacktrace",
         "@spdlog",
         "@tk_tcl//:tcl",
     ],

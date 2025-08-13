@@ -89,7 +89,11 @@ messages(
 )
 
 else()
-  message(STATUS "GUI is not enabled")
+  if(BUILD_GUI)
+    message(STATUS "QT5 not found. GUI is disabled")
+  else()
+    message(STATUS "GUI is not enabled")
+  endif()
   add_library(gui 
     src/stub.cpp 
     src/stub_heatMap.cpp

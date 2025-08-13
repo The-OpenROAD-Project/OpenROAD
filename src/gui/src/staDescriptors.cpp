@@ -74,7 +74,7 @@ LibertyLibraryDescriptor::LibertyLibraryDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string LibertyLibraryDescriptor::getName(std::any object) const
+std::string LibertyLibraryDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::LibertyLibrary*>(object)->name();
 }
@@ -84,12 +84,13 @@ std::string LibertyLibraryDescriptor::getTypeName() const
   return "Liberty library";
 }
 
-bool LibertyLibraryDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool LibertyLibraryDescriptor::getBBox(const std::any& object,
+                                       odb::Rect& bbox) const
 {
   return false;
 }
 
-void LibertyLibraryDescriptor::highlight(std::any object,
+void LibertyLibraryDescriptor::highlight(const std::any& object,
                                          Painter& painter) const
 {
   auto library = std::any_cast<sta::LibertyLibrary*>(object);
@@ -111,7 +112,7 @@ void LibertyLibraryDescriptor::highlight(std::any object,
 }
 
 Descriptor::Properties LibertyLibraryDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto library = std::any_cast<sta::LibertyLibrary*>(object);
 
@@ -195,7 +196,7 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
   return props;
 }
 
-Selected LibertyLibraryDescriptor::makeSelected(std::any object) const
+Selected LibertyLibraryDescriptor::makeSelected(const std::any& object) const
 {
   if (auto library = std::any_cast<sta::LibertyLibrary*>(&object)) {
     return Selected(*library, this);
@@ -203,14 +204,16 @@ Selected LibertyLibraryDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool LibertyLibraryDescriptor::lessThan(std::any l, std::any r) const
+bool LibertyLibraryDescriptor::lessThan(const std::any& l,
+                                        const std::any& r) const
 {
   auto l_library = std::any_cast<sta::LibertyLibrary*>(l);
   auto r_library = std::any_cast<sta::LibertyLibrary*>(r);
   return l_library->id() < r_library->id();
 }
 
-bool LibertyLibraryDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyLibraryDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -218,10 +221,8 @@ bool LibertyLibraryDescriptor::getAllObjects(SelectionSet& objects) const
 
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* library = lib_iter->next();
-    objects.insert(makeSelected(library));
+    func({library, this});
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -230,7 +231,7 @@ LibertyCellDescriptor::LibertyCellDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string LibertyCellDescriptor::getName(std::any object) const
+std::string LibertyCellDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::LibertyCell*>(object)->name();
 }
@@ -240,12 +241,14 @@ std::string LibertyCellDescriptor::getTypeName() const
   return "Liberty cell";
 }
 
-bool LibertyCellDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool LibertyCellDescriptor::getBBox(const std::any& object,
+                                    odb::Rect& bbox) const
 {
   return false;
 }
 
-void LibertyCellDescriptor::highlight(std::any object, Painter& painter) const
+void LibertyCellDescriptor::highlight(const std::any& object,
+                                      Painter& painter) const
 {
   auto cell = std::any_cast<sta::LibertyCell*>(object);
   auto* network = sta_->getDbNetwork();
@@ -256,7 +259,7 @@ void LibertyCellDescriptor::highlight(std::any object, Painter& painter) const
 }
 
 Descriptor::Properties LibertyCellDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto cell = std::any_cast<sta::LibertyCell*>(object);
 
@@ -331,7 +334,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   return props;
 }
 
-Selected LibertyCellDescriptor::makeSelected(std::any object) const
+Selected LibertyCellDescriptor::makeSelected(const std::any& object) const
 {
   if (auto cell = std::any_cast<sta::LibertyCell*>(&object)) {
     return Selected(*cell, this);
@@ -339,14 +342,15 @@ Selected LibertyCellDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool LibertyCellDescriptor::lessThan(std::any l, std::any r) const
+bool LibertyCellDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_cell = std::any_cast<sta::LibertyCell*>(l);
   auto r_cell = std::any_cast<sta::LibertyCell*>(r);
   return l_cell->id() < r_cell->id();
 }
 
-bool LibertyCellDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyCellDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -357,11 +361,9 @@ bool LibertyCellDescriptor::getAllObjects(SelectionSet& objects) const
     sta::LibertyCellIterator cell_iter(library);
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
-      objects.insert(makeSelected(cell));
+      func({cell, this});
     }
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -370,7 +372,7 @@ LibertyPortDescriptor::LibertyPortDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string LibertyPortDescriptor::getName(std::any object) const
+std::string LibertyPortDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::LibertyPort*>(object)->name();
 }
@@ -380,12 +382,14 @@ std::string LibertyPortDescriptor::getTypeName() const
   return "Liberty port";
 }
 
-bool LibertyPortDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool LibertyPortDescriptor::getBBox(const std::any& object,
+                                    odb::Rect& bbox) const
 {
   return false;
 }
 
-void LibertyPortDescriptor::highlight(std::any object, Painter& painter) const
+void LibertyPortDescriptor::highlight(const std::any& object,
+                                      Painter& painter) const
 {
   auto port = std::any_cast<sta::LibertyPort*>(object);
   auto* network = sta_->getDbNetwork();
@@ -398,7 +402,7 @@ void LibertyPortDescriptor::highlight(std::any object, Painter& painter) const
 }
 
 Descriptor::Properties LibertyPortDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto port = std::any_cast<sta::LibertyPort*>(object);
   auto* network = sta_->getDbNetwork();
@@ -491,7 +495,7 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   return props;
 }
 
-Selected LibertyPortDescriptor::makeSelected(std::any object) const
+Selected LibertyPortDescriptor::makeSelected(const std::any& object) const
 {
   if (auto port = std::any_cast<sta::LibertyPort*>(&object)) {
     return Selected(*port, this);
@@ -499,14 +503,15 @@ Selected LibertyPortDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool LibertyPortDescriptor::lessThan(std::any l, std::any r) const
+bool LibertyPortDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_port = std::any_cast<sta::LibertyPort*>(l);
   auto r_port = std::any_cast<sta::LibertyPort*>(r);
   return l_port->id() < r_port->id();
 }
 
-bool LibertyPortDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyPortDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -520,12 +525,10 @@ bool LibertyPortDescriptor::getAllObjects(SelectionSet& objects) const
       sta::LibertyCellPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         sta::LibertyPort* port = port_iter.next();
-        objects.insert(makeSelected(port));
+        func({port, this});
       }
     }
   }
-
-  return true;
 }
 
 //////////////////////////////////////////////////
@@ -563,7 +566,7 @@ LibertyPgPortDescriptor::LibertyPgPortDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string LibertyPgPortDescriptor::getName(std::any object) const
+std::string LibertyPgPortDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::LibertyPgPort*>(object)->name();
 }
@@ -573,12 +576,14 @@ std::string LibertyPgPortDescriptor::getTypeName() const
   return "Liberty PG port";
 }
 
-bool LibertyPgPortDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool LibertyPgPortDescriptor::getBBox(const std::any& object,
+                                      odb::Rect& bbox) const
 {
   return false;
 }
 
-void LibertyPgPortDescriptor::highlight(std::any object, Painter& painter) const
+void LibertyPgPortDescriptor::highlight(const std::any& object,
+                                        Painter& painter) const
 {
   odb::dbMTerm* mterm = getMTerm(object);
 
@@ -589,7 +594,7 @@ void LibertyPgPortDescriptor::highlight(std::any object, Painter& painter) const
 }
 
 Descriptor::Properties LibertyPgPortDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto port = std::any_cast<sta::LibertyPgPort*>(object);
 
@@ -608,7 +613,7 @@ Descriptor::Properties LibertyPgPortDescriptor::getProperties(
   return props;
 }
 
-Selected LibertyPgPortDescriptor::makeSelected(std::any object) const
+Selected LibertyPgPortDescriptor::makeSelected(const std::any& object) const
 {
   if (auto port = std::any_cast<sta::LibertyPgPort*>(&object)) {
     return Selected(*port, this);
@@ -616,14 +621,16 @@ Selected LibertyPgPortDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool LibertyPgPortDescriptor::lessThan(std::any l, std::any r) const
+bool LibertyPgPortDescriptor::lessThan(const std::any& l,
+                                       const std::any& r) const
 {
   auto l_port = std::any_cast<sta::LibertyPgPort*>(l);
   auto r_port = std::any_cast<sta::LibertyPgPort*>(r);
   return strcmp(l_port->name(), r_port->name()) < 0;
 }
 
-bool LibertyPgPortDescriptor::getAllObjects(SelectionSet& objects) const
+void LibertyPgPortDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
@@ -637,12 +644,10 @@ bool LibertyPgPortDescriptor::getAllObjects(SelectionSet& objects) const
       sta::LibertyCellPgPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         sta::LibertyPgPort* port = port_iter.next();
-        objects.insert(makeSelected(port));
+        func({port, this});
       }
     }
   }
-
-  return true;
 }
 
 odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
@@ -658,7 +663,7 @@ CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string CornerDescriptor::getName(std::any object) const
+std::string CornerDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::Corner*>(object)->name();
 }
@@ -668,16 +673,17 @@ std::string CornerDescriptor::getTypeName() const
   return "Timing corner";
 }
 
-bool CornerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool CornerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   return false;
 }
 
-void CornerDescriptor::highlight(std::any object, Painter& painter) const
+void CornerDescriptor::highlight(const std::any& object, Painter& painter) const
 {
 }
 
-Descriptor::Properties CornerDescriptor::getProperties(std::any object) const
+Descriptor::Properties CornerDescriptor::getProperties(
+    const std::any& object) const
 {
   auto corner = std::any_cast<sta::Corner*>(object);
 
@@ -696,7 +702,7 @@ Descriptor::Properties CornerDescriptor::getProperties(std::any object) const
   return props;
 }
 
-Selected CornerDescriptor::makeSelected(std::any object) const
+Selected CornerDescriptor::makeSelected(const std::any& object) const
 {
   if (auto corner = std::any_cast<sta::Corner*>(&object)) {
     return Selected(*corner, this);
@@ -704,27 +710,26 @@ Selected CornerDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool CornerDescriptor::lessThan(std::any l, std::any r) const
+bool CornerDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_corner = std::any_cast<sta::Corner*>(l);
   auto r_corner = std::any_cast<sta::Corner*>(r);
   return strcmp(l_corner->name(), r_corner->name()) < 0;
 }
 
-bool CornerDescriptor::getAllObjects(SelectionSet& objects) const
+void CornerDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto* corner : *sta_->corners()) {
-    objects.insert(makeSelected(corner));
+    func({corner, this});
   }
-
-  return true;
 }
 
 StaInstanceDescriptor::StaInstanceDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string StaInstanceDescriptor::getName(std::any object) const
+std::string StaInstanceDescriptor::getName(const std::any& object) const
 {
   return sta_->network()->name(std::any_cast<sta::Instance*>(object));
 }
@@ -734,12 +739,14 @@ std::string StaInstanceDescriptor::getTypeName() const
   return "Timing/Power";
 }
 
-bool StaInstanceDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool StaInstanceDescriptor::getBBox(const std::any& object,
+                                    odb::Rect& bbox) const
 {
   return false;
 }
 
-void StaInstanceDescriptor::highlight(std::any object, Painter& painter) const
+void StaInstanceDescriptor::highlight(const std::any& object,
+                                      Painter& painter) const
 {
   auto inst = std::any_cast<sta::Instance*>(object);
   odb::dbInst* db_inst = sta_->getDbNetwork()->staToDb(inst);
@@ -749,7 +756,7 @@ void StaInstanceDescriptor::highlight(std::any object, Painter& painter) const
 }
 
 Descriptor::Properties StaInstanceDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto inst = std::any_cast<sta::Instance*>(object);
   auto* network = sta_->getDbNetwork();
@@ -806,7 +813,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
     if (is_lib_port) {
       const std::string freq
-          = Descriptor::convertUnits(power.density(), false, float_precision_);
+          = Descriptor::convertUnits(power.density(), false, kFloatPrecision);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
                                                     100 * power.duty(),
                                                     freq,
@@ -821,7 +828,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 ? "None"
                 : fmt::format(
                       "{} {}",
-                      timeunit->asString(setup_arrival, float_precision_),
+                      timeunit->asString(setup_arrival, kFloatPrecision),
                       timeunit->scaledSuffix());
       port_arrival_setup.push_back({port_id, setup_text});
       const auto hold_arrival
@@ -829,10 +836,9 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       const std::string hold_text
           = is_inf(hold_arrival)
                 ? "None"
-                : fmt::format(
-                      "{} {}",
-                      timeunit->asString(hold_arrival, float_precision_),
-                      timeunit->scaledSuffix());
+                : fmt::format("{} {}",
+                              timeunit->asString(hold_arrival, kFloatPrecision),
+                              timeunit->scaledSuffix());
       port_arrival_hold.push_back({port_id, hold_text});
     }
   }
@@ -845,7 +851,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
     const auto power_info = sta_->power(inst, corner);
     power.push_back(
         {gui->makeSelected(corner),
-         Descriptor::convertUnits(power_info.total(), false, float_precision_)
+         Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
              + "W"});
   }
   props.push_back({"Total power", power});
@@ -857,15 +863,15 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   return props;
 }
 
-Selected StaInstanceDescriptor::makeSelected(std::any object) const
+Selected StaInstanceDescriptor::makeSelected(const std::any& object) const
 {
-  if (auto inst = std::any_cast<sta::Instance*>(&object)) {
-    return Selected(*inst, this);
+  if (auto inst = std::any_cast<sta::Instance*>(object)) {
+    return Selected(inst, this);
   }
   return Selected();
 }
 
-bool StaInstanceDescriptor::lessThan(std::any l, std::any r) const
+bool StaInstanceDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto* network = sta_->getDbNetwork();
   auto l_inst = std::any_cast<sta::Instance*>(l);
@@ -873,24 +879,23 @@ bool StaInstanceDescriptor::lessThan(std::any l, std::any r) const
   return network->id(l_inst) < network->id(r_inst);
 }
 
-bool StaInstanceDescriptor::getAllObjects(SelectionSet& objects) const
+void StaInstanceDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LeafInstanceIterator> lib_iter(
       network->leafInstanceIterator());
 
   while (lib_iter->hasNext()) {
-    objects.insert(makeSelected(lib_iter->next()));
+    func({lib_iter->next(), this});
   }
-
-  return true;
 }
 
 ClockDescriptor::ClockDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string ClockDescriptor::getName(std::any object) const
+std::string ClockDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::Clock*>(object)->name();
 }
@@ -900,12 +905,12 @@ std::string ClockDescriptor::getTypeName() const
   return "Clock";
 }
 
-bool ClockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool ClockDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   return false;
 }
 
-void ClockDescriptor::highlight(std::any object, Painter& painter) const
+void ClockDescriptor::highlight(const std::any& object, Painter& painter) const
 {
   auto clock = std::any_cast<sta::Clock*>(object);
   auto* network = sta_->getDbNetwork();
@@ -961,7 +966,8 @@ std::set<const sta::Pin*> ClockDescriptor::getClockPins(sta::Clock* clock) const
   return pins;
 }
 
-Descriptor::Properties ClockDescriptor::getProperties(std::any object) const
+Descriptor::Properties ClockDescriptor::getProperties(
+    const std::any& object) const
 {
   auto clock = std::any_cast<sta::Clock*>(object);
   auto* network = sta_->getDbNetwork();
@@ -1050,7 +1056,7 @@ Descriptor::Properties ClockDescriptor::getProperties(std::any object) const
   return props;
 }
 
-Selected ClockDescriptor::makeSelected(std::any object) const
+Selected ClockDescriptor::makeSelected(const std::any& object) const
 {
   if (auto clock = std::any_cast<sta::Clock*>(&object)) {
     return Selected(*clock, this);
@@ -1058,16 +1064,16 @@ Selected ClockDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool ClockDescriptor::lessThan(std::any l, std::any r) const
+bool ClockDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_clock = std::any_cast<sta::Clock*>(l);
   auto r_clock = std::any_cast<sta::Clock*>(r);
   return strcmp(l_clock->name(), r_clock->name()) < 0;
 }
 
-bool ClockDescriptor::getAllObjects(SelectionSet& objects) const
+void ClockDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
-  return false;
 }
 
 }  // namespace gui

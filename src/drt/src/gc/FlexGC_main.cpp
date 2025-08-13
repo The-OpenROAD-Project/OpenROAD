@@ -1600,9 +1600,13 @@ gcSegment* bestSuitable(gcSegment* a, gcSegment* b)
   }
   return b;
 }
-void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
+void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin,
+                                                 bool allow_patching)
 {
-  if (ignoreMinArea_ || !targetNet_) {
+  if (ignoreMinArea_) {
+    return;
+  }
+  if (allow_patching && !targetNet_) {
     return;
   }
   auto poly = pin->getPolygon();
@@ -1634,7 +1638,20 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
     }
   }
 
-  checkMetalShape_addPatch(pin, reqArea);
+  if (allow_patching) {
+    checkMetalShape_addPatch(pin, reqArea);
+  } else {
+    auto net = poly->getNet();
+    auto marker = std::make_unique<frMarker>();
+    marker->setBBox(bbox2);
+    marker->setLayerNum(layerNum);
+    marker->setConstraint(con);
+    marker->addSrc(net->getOwner());
+    marker->addVictim(net->getOwner(), std::make_tuple(layerNum, bbox2, false));
+    marker->addAggressor(net->getOwner(),
+                         std::make_tuple(layerNum, bbox2, false));
+    addMarker(std::move(marker));
+  }
 }
 
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
@@ -2361,9 +2378,7 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin, bool allow_patching)
   }
 
   // min area
-  if (allow_patching) {
-    checkMetalShape_minArea(pin);
-  }
+  checkMetalShape_minArea(pin, allow_patching);
 
   // min step
   checkMetalShape_minStep(pin);
@@ -3770,7 +3785,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
   }
 }
 
-// loop through violation and patch C5 enclosure minStep for GF14
+// Patch minStep markers for transition layers vias
 void FlexGCWorker::Impl::patchMetalShape_minStep()
 {
   std::vector<drConnFig*> results;
@@ -3786,7 +3801,8 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     auto layer = tech_->getLayer(lNum);
     if (!layer->hasVia2ViaMinStepViol()
         && !tech_->getLayer(lNum - 1)->hasLef58MaxSpacingConstraints()
-        && !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints()) {
+        && (lNum + 1 >= tech_->getLayers().size()
+            || !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints())) {
       continue;
     }
 

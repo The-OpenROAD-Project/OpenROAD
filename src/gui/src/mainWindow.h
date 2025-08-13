@@ -121,7 +121,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // Label Requested on the Layout
   void labelsChanged();
 
-  void displayUnitsChanged(int dbu_per_micron, bool useDBU);
+  void displayUnitsChanged(int dbu_per_micron, bool use_dbu);
 
   // Find selection in the CTS Viewer
   void findInCts(const Selected& selection);
@@ -254,8 +254,8 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void selectHighlightConnectedBufferTrees(bool select_flag,
                                            int highlight_group = 0);
 
-  void timingCone(Gui::odbTerm term, bool fanin, bool fanout);
-  void timingPathsThrough(const std::set<Gui::odbTerm>& terms);
+  void timingCone(Gui::Term term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<Gui::Term>& terms);
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
@@ -276,6 +276,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // used to check if user intends to close Openroad or just the GUI.
   void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
  private slots:
   void setBlock(odb::dbBlock* block);
@@ -306,6 +307,10 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   Labels labels_;
 
   int arrow_keys_scroll_step_;
+
+  bool first_show_{true};
+  std::optional<QByteArray> saved_geometry_;
+  std::optional<QByteArray> saved_state_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
@@ -369,6 +374,9 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
 
   std::unique_ptr<utl::Progress> cli_progress_ = nullptr;
+
+  std::unique_ptr<QTimer> selection_timer_;
+  std::unique_ptr<QTimer> highlight_timer_;
 };
 
 }  // namespace gui

@@ -225,7 +225,7 @@ void FlexPA::createSingleAccessPoint(
     // rightway on grid only forbid off track rightway planar access
     // horz layer
     if (lower_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
-      if (lower_layer->isUnidirectional()) {
+      if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
@@ -235,7 +235,7 @@ void FlexPA::createSingleAccessPoint(
     }
     // vert layer
     if (lower_layer->getDir() == dbTechLayerDir::VERTICAL) {
-      if (lower_layer->isUnidirectional()) {
+      if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
@@ -1082,9 +1082,9 @@ void FlexPA::filterMultipleAPAccesses(
                     pin,
                     inst_term);
     if (is_std_cell_pin) {
-      has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
+      has_access |= ((layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM
                       && ap->hasAccess(frDirEnum::U))
-                     || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
+                     || (layer_num > router_cfg_->VIA_ACCESS_LAYERNUM
                          && ap->hasAccess()));
     } else {
       has_access |= ap->hasAccess();
@@ -1255,7 +1255,7 @@ bool FlexPA::genPinAccessCostBounded(
     // for stdcell, add (i) planar access if layer_num != VIA_ACCESS_LAYERNUM,
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
-      if (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM
+      if (ap->getLayerNum() <= router_cfg_->VIA_ACCESS_LAYERNUM
           && !ap->hasAccess(frDirEnum::U)) {
         continue;
       }

@@ -12,6 +12,8 @@ or_integration_tests(
     buffer_ports6
     buffer_ports7
     buffer_ports8
+    buffer_ports9
+    buffer_ports10
     buffer_varying_lengths
     clone_flat
     clone_hier
@@ -87,7 +89,6 @@ or_integration_tests(
     repair_setup7
     repair_setup7_limit
     repair_setup8
-    repair_setup9
     repair_setup_undo
     repair_slew1
     repair_slew2
@@ -160,6 +161,12 @@ or_integration_tests(
     repair_setup7_multi
     report_equiv_cells
     replace_arith_modules1
+    report_buffers_asap7
+    report_buffers_nangate45
+    report_buffers_ihp
+    report_buffers_sky130hs
+    report_buffers_sky130hd
+    report_buffers_gf180
   PASSFAIL_TESTS
     cpp_tests
 )

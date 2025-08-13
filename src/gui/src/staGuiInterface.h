@@ -85,8 +85,8 @@ class TimingPathNode
   const sta::Pin* getPinAsSTA() const { return stapin_; }
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
-  const odb::Rect getPinBBox() const;
-  const odb::Rect getPinLargestBox() const;
+  odb::Rect getPinBBox() const;
+  odb::Rect getPinLargestBox() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }
@@ -321,6 +321,14 @@ class STAGuiInterface
 
   bool isUseMax() const { return use_max_; }
   void setUseMax(bool use_max) { use_max_ = use_max; }
+  const sta::MinMaxAll* minMaxAll() const
+  {
+    return use_max_ ? sta::MinMaxAll::max() : sta::MinMaxAll::min();
+  }
+  const sta::MinMax* minMax() const
+  {
+    return use_max_ ? sta::MinMax::max() : sta::MinMax::min();
+  }
 
   int getMaxPathCount() const { return max_path_count_; }
   void setMaxPathCount(int max_paths) { max_path_count_ = max_paths; }

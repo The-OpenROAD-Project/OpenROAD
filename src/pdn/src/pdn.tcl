@@ -6,13 +6,15 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-reset] \
                                [-ripup] \
                                [-report_only] \
+                               [-check_only] \
                                [-failed_via_report file] \
                                [-verbose]
 } ;#checker off
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
-    keys {-failed_via_report} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
+    keys {-failed_via_report} \
+    flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose -check_only}
 
   sta::check_argc_eq0 "pdngen" $args
 
@@ -41,6 +43,13 @@ proc pdngen { args } {
       utl::error PDN 1039 "-report_only flag is mutually exclusive to all other flags"
     }
     pdn::report
+    return
+  }
+  if { [info exists flags(-check_only)] } {
+    if { [array size flags] != 1 } {
+      utl::error PDN 1040 "-check_only flag is mutually exclusive to all other flags"
+    }
+    pdn::check_setup
     return
   }
 
@@ -536,14 +545,15 @@ sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         [-max_rows rows] \
                                         [-max_columns columns] \
                                         [-ongrid ongrid_layers] \
-                                        [-split_cuts split_cuts_mapping]
+                                        [-split_cuts split_cuts_mapping] \
+                                        [-split_cuts_staggered]
 }
 
 proc add_pdn_connect { args } {
   sta::parse_key_args "add_pdn_connect" args \
     keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts \
       -dont_use_vias} \
-    flags {}
+    flags {-split_cuts_staggered}
 
   sta::check_argc_eq0 "add_pdn_connect" $args
 
@@ -607,11 +617,13 @@ proc add_pdn_connect { args } {
 
   set split_cuts_layers {}
   set split_cuts_pitches {}
+  set split_cuts_staggered false
   if { [info exists keys(-split_cuts)] } {
     foreach {l pitch} $keys(-split_cuts) {
       lappend split_cuts_layers [pdn::get_layer $l]
       lappend split_cuts_pitches [ord::microns_to_dbu $pitch]
     }
+    set split_cuts_staggered [info exists flags(-split_cuts_staggered)]
   }
 
   set dont_use ""
@@ -631,13 +643,14 @@ proc add_pdn_connect { args } {
     $ongrid \
     $split_cuts_layers \
     $split_cuts_pitches \
+    $split_cuts_staggered \
     $dont_use
 }
 
-sta::define_cmd_args "add_sroute_connect" {[-net net] \
-                                           [-outerNet outerNet] \
+sta::define_cmd_args "add_sroute_connect" {-net net \
                                            -layers list_of_2_layers \
-                                           -cut_pitch pitch_value \
+                                           -cut_pitch list_of_2_pitch_values \
+                                           [-outerNet outerNet] \
                                            [-fixed_vias list_of_vias] \
                                            [-max_rows rows] \
                                            [-max_columns columns] \

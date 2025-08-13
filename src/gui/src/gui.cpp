@@ -4,6 +4,11 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 #include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <optional>
@@ -114,7 +119,7 @@ StringToDBU Descriptor::Property::convert_string;
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 // https://gist.github.com/mikhailov-work/6a308c20e494d9e0ccc29036b28faa7a
-const unsigned char SpectrumGenerator::spectrum_[256][3]
+const unsigned char SpectrumGenerator::kSpectrum[256][3]
     = {{48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
        {53, 30, 88},   {54, 33, 95},   {55, 36, 102},   {56, 39, 109},
        {57, 42, 115},  {58, 45, 121},  {59, 47, 128},   {60, 50, 134},
@@ -401,8 +406,7 @@ std::string Gui::addLabel(int x,
                           std::optional<Painter::Anchor> anchor,
                           const std::optional<std::string>& name)
 {
-  return main_window->addLabel(
-      x, y, text, color, size, anchor, std::move(name));
+  return main_window->addLabel(x, y, text, color, size, anchor, name);
 }
 
 void Gui::deleteLabel(const std::string& name)
@@ -426,6 +430,38 @@ void Gui::deleteRuler(const std::string& name)
   main_window->deleteRuler(name);
 }
 
+/**
+ * @brief Checks if a Qt wildcard pattern is a simple literal string.
+ *
+ * This function determines if a string intended for use with
+ * QRegExp::WildcardUnix contains any active (i.e., unescaped) wildcard
+ * characters ('*', '?', '[').
+ *
+ * @param pattern The wildcard pattern string to check.
+ * @return True if the pattern has no active wildcards; false otherwise.
+ */
+static bool isSimpleStringPattern(const std::string& pattern)
+{
+  bool previous_was_escape = false;
+  for (const char ch : pattern) {
+    if (previous_was_escape) {
+      // The previous character was '\', so this character is just a literal.
+      previous_was_escape = false;
+      continue;
+    }
+
+    if (ch == '\\') {
+      // This is an escape character for the next character in the loop.
+      previous_was_escape = true;
+    } else if (ch == '*' || ch == '?' || ch == '[') {
+      // Found an unescaped wildcard, so it's not a simple string.
+      return false;
+    }
+  }
+  // If the loop completes, no unescaped wildcards were found.
+  return true;
+}
+
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
                 const std::string& attribute,
@@ -433,69 +469,74 @@ int Gui::select(const std::string& type,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  // Define case sensitivity options for QRegularExpression
+  const QRegularExpression::PatternOptions options
+      = filter_case_sensitive ? QRegularExpression::NoPatternOption
+                              : QRegularExpression::CaseInsensitiveOption;
+
+  // Convert the wildcard string to a regex pattern and create the
+  // object
+  const QRegularExpression reg_filter(
+      QRegularExpression::wildcardToRegularExpression(
+          QString::fromStdString(name_filter)),
+      options);
+#else
+  const QRegExp reg_filter(
+      QString::fromStdString(name_filter),
+      filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
+      QRegExp::WildcardUnix);
+#endif
+  const bool is_simple = isSimpleStringPattern(name_filter);
   for (auto& [object_type, descriptor] : descriptors_) {
-    if (descriptor->getTypeName() == type) {
-      SelectionSet selected_set;
-      if (descriptor->getAllObjects(selected_set)) {
-        if (!name_filter.empty()) {
-          // convert to vector
-          std::vector<Selected> selected_vector(selected_set.begin(),
-                                                selected_set.end());
-          // remove elements
-          QRegExp reg_filter(
-              QString::fromStdString(name_filter),
-              filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
-              QRegExp::WildcardUnix);
-          auto remove_if = std::remove_if(
-              selected_vector.begin(),
-              selected_vector.end(),
-              [&name_filter, &reg_filter](auto sel) -> bool {
-                const std::string sel_name = sel.getName();
-                if (sel_name == name_filter) {
-                  // direct match, so don't remove
-                  return false;
-                }
-                return !reg_filter.exactMatch(QString::fromStdString(sel_name));
-              });
-          selected_vector.erase(remove_if, selected_vector.end());
-          // rebuild selectionset
-          selected_set.clear();
-          selected_set.insert(selected_vector.begin(), selected_vector.end());
-        }
-
-        if (!attribute.empty()) {
-          bool is_valid_attribute = false;
-          for (SelectionSet::iterator selected_iter = selected_set.begin();
-               selected_iter != selected_set.end();) {
-            Descriptor::Properties properties
-                = descriptor->getProperties(selected_iter->getObject());
-            if (filterSelectionProperties(
-                    properties, attribute, value, is_valid_attribute)) {
-              ++selected_iter;
-            } else {
-              selected_iter = selected_set.erase(selected_iter);
-            }
+    if (descriptor->getTypeName() != type) {
+      continue;
+    }
+    SelectionSet selected_set;
+    descriptor->visitAllObjects([&](const Selected& sel) {
+      if (!name_filter.empty()) {
+        const std::string sel_name = sel.getName();
+        if (is_simple) {
+          if (sel_name != name_filter) {
+            return;
           }
-
-          if (!is_valid_attribute) {
-            logger_->error(
-                utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
-          } else if (selected_set.empty()) {
-            logger_->error(utl::GUI,
-                           75,
-                           "Couldn't find any object for the specified value.");
+        } else {
+          if (
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+              !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
+#else
+              !reg_filter.exactMatch(QString::fromStdString(sel_name))
+#endif
+          ) {
+            return;
           }
-        }
-
-        main_window->addSelected(selected_set, true);
-        if (highlight_group != -1) {
-          main_window->addHighlighted(selected_set, highlight_group);
         }
       }
 
-      // already found the descriptor, so return to exit loop
-      return selected_set.size();
+      if (!attribute.empty()) {
+        bool is_valid_attribute = false;
+        Descriptor::Properties properties
+            = descriptor->getProperties(sel.getObject());
+        if (filterSelectionProperties(
+                properties, attribute, value, is_valid_attribute)) {
+          return;  // doesn't match the attribute filter
+        }
+
+        if (!is_valid_attribute) {
+          logger_->error(
+              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+        }
+      }
+      selected_set.insert(sel);
+    });
+
+    main_window->addSelected(selected_set, true);
+    if (highlight_group != -1) {
+      main_window->addHighlighted(selected_set, highlight_group);
     }
+
+    // already found the descriptor, so return to exit loop
+    return selected_set.size();
   }
 
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
@@ -806,12 +847,13 @@ void Gui::saveHistogramImage(const std::string& filename,
       filename, chart_mode, width, height);
 }
 
-void Gui::selectClockviewerClock(const std::string& clock_name)
+void Gui::selectClockviewerClock(const std::string& clock_name,
+                                 std::optional<int> depth)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->selectClock(clock_name);
+  main_window->getClockViewer()->selectClock(clock_name, depth);
 }
 
 static QWidget* findWidget(const std::string& name)
@@ -1123,7 +1165,7 @@ Painter::Color SpectrumGenerator::getColor(double value, int alpha) const
   }
 
   return Painter::Color(
-      spectrum_[index][0], spectrum_[index][1], spectrum_[index][2], alpha);
+      kSpectrum[index][0], kSpectrum[index][1], kSpectrum[index][2], alpha);
 }
 
 void SpectrumGenerator::drawLegend(
@@ -1139,7 +1181,7 @@ void SpectrumGenerator::drawLegend(
   const int legend_top = bounds.yMax() - legend_offset;
   const int legend_right = bounds.xMax() - legend_offset;
   const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
 
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
@@ -1161,8 +1203,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw background
-  painter.setPen(Painter::dark_gray, true);
-  painter.setBrush(Painter::dark_gray);
+  painter.setPen(Painter::kDarkGray, true);
+  painter.setBrush(Painter::kDarkGray);
   painter.drawRect(legend_bounds, 10, 10);
 
   // draw color map
@@ -1177,8 +1219,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw key values
-  painter.setPen(Painter::black, true);
-  painter.setBrush(Painter::transparent);
+  painter.setPen(Painter::kBlack, true);
+  painter.setBrush(Painter::kTransparent);
   for (const auto& [pt, text] : legend_key_points) {
     painter.drawString(pt.x(), pt.y(), key_anchor, text);
   }
@@ -1217,12 +1259,12 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
+void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
 }
 
-void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
   main_window->timingPathsThrough(terms);
 }
@@ -1235,6 +1277,13 @@ void Gui::addFocusNet(odb::dbNet* net)
 void Gui::addRouteGuides(odb::dbNet* net)
 {
   main_window->getLayoutTabs()->addRouteGuides(net);
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
@@ -1443,7 +1492,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
              gif_->filename.c_str(),
              gif_->width,
              gif_->height,
-             delay.value_or(default_gif_delay_));
+             delay.value_or(kDefaultGifDelay));
   } else {
     // scale IMG if not matched
     img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
@@ -1472,7 +1521,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
                 frame.data(),
                 gif_->width,
                 gif_->height,
-                delay.value_or(default_gif_delay_));
+                delay.value_or(kDefaultGifDelay));
 }
 
 void Gui::gifEnd()
@@ -1515,6 +1564,20 @@ int startGui(int& argc,
              bool load_settings,
              bool minimize)
 {
+#ifdef STATIC_QPA_PLUGIN_XCB
+  const char* qt_qpa_platform_env = getenv("QT_QPA_PLATFORM");
+  std::string qpa_platform
+      = qt_qpa_platform_env == nullptr ? "" : qt_qpa_platform_env;
+  if (qpa_platform != "") {
+    if (qpa_platform.find("xcb") == std::string::npos
+        && qpa_platform.find("offscreen") == std::string::npos) {
+      // OpenROAD logger is not available yet, using cout.
+      std::cout << "Your system has set QT_QPA_PLATFORM='" << qpa_platform
+                << "', openroad only supports 'offscreen' and 'xcb', please "
+                   "include one of these plugins in your platform env\n";
+    }
+  }
+#endif
   auto gui = gui::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();

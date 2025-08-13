@@ -73,9 +73,12 @@ void Grid::allocateGrid()
       pixel.util = 0.0;
       pixel.is_valid = false;
       pixel.is_hopeless = false;
-      pixel.blocked_layers_ = 0;
+      pixel.blocked_layers = 0;
     }
   }
+
+  row_sites_.clear();
+  row_sites_.resize(row_count_.v);
 }
 
 void Grid::markHopeless(dbBlock* block,
@@ -101,8 +104,9 @@ void Grid::markHopeless(dbBlock* block,
     for (GridX x{x_start}; x < x_end; x++) {
       Pixel* pixel = gridPixel(x, y_row);
       pixel->is_valid = true;
-      pixel->sites[db_row->getSite()] = db_row->getOrient();
     }
+    row_sites_[y_row.v].add(
+        {{x_start.v, x_end.v}, {{db_row->getSite(), db_row->getOrient()}}});
 
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
@@ -152,7 +156,7 @@ void Grid::markBlocked(dbBlock* block)
             for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
               auto pixel1 = gridPixel(x, y);
               if (pixel1) {
-                pixel1->blocked_layers_ |= 1 << routing_level;
+                pixel1->blocked_layers |= 1 << routing_level;
               }
             }
           }
@@ -211,6 +215,50 @@ void Grid::initGrid(dbDatabase* db,
   markBlocked(block);
 }
 
+std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
+                                                       GridY grid_y)
+{
+  dbSite* selected_site = nullptr;
+  dbOrientType selected_orient;
+  DbuY min_height{std::numeric_limits<int>::max()};
+
+  const RowSitesMap& sites_map = row_sites_[grid_y.v];
+  auto it = sites_map.find(grid_x.v);
+
+  if (it != sites_map.end()) {
+    for (const auto& [site, orient] : it->second) {
+      DbuY site_height{site->getHeight()};
+      if (site_height < min_height) {
+        min_height = site_height;
+        selected_site = site;
+        selected_orient = orient;
+      }
+    }
+  }
+
+  return {selected_site, selected_orient};
+}
+
+std::optional<dbOrientType> Grid::getSiteOrientation(GridX x,
+                                                     GridY y,
+                                                     dbSite* site) const
+{
+  const RowSitesMap& sites_map = row_sites_[y.v];
+  auto interval_it = sites_map.find(x.v);
+
+  if (interval_it == sites_map.end()) {
+    return {};
+  }
+
+  const SiteToOrientation& sites_orient = interval_it->second;
+
+  if (auto it = sites_orient.find(site); it != sites_orient.end()) {
+    return it->second;
+  }
+
+  return {};
+}
+
 Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 {
   if (grid_x >= 0 && grid_x < row_site_count_ && grid_y >= 0
@@ -223,7 +271,7 @@ Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 void Grid::visitCellPixels(
     Node& cell,
     bool padded,
-    const std::function<void(Pixel* pixel)>& visitor) const
+    const std::function<void(Pixel* pixel, bool padded)>& visitor) const
 {
   dbInst* inst = cell.getDbInst();
   auto obstructions = inst->getMaster()->getObstructions();
@@ -244,21 +292,27 @@ void Grid::visitCellPixels(
         for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
           Pixel* pixel = gridPixel(x, y);
           if (pixel) {
-            visitor(pixel);
+            visitor(pixel, false);
           }
         }
       }
     }
   }
   if (!have_obstructions) {
-    const auto grid_box
-        = padded ? gridCoveringPadded(&cell) : gridCovering(&cell);
-    for (GridX x{grid_box.xlo}; x < grid_box.xhi; x++) {
+    const auto grid_box = gridCovering(&cell);
+    auto pad_left = padded ? padding_->padLeft(&cell) : GridX{0};
+    auto pad_right = padded ? padding_->padRight(&cell) : GridX{0};
+
+    auto x_start = grid_box.xlo - pad_left;
+    auto x_end = grid_box.xhi + pad_right;
+    for (GridX x{x_start}; x < x_end; x++) {
       for (GridY y{grid_box.ylo}; y < grid_box.yhi; y++) {
         Pixel* pixel = gridPixel(x, y);
-        if (pixel) {
-          visitor(pixel);
+        if (pixel == nullptr) {
+          continue;
         }
+        const bool within_cell = x >= grid_box.xlo && x < grid_box.xhi;
+        visitor(pixel, !within_cell);
       }
     }
   }
@@ -333,7 +387,7 @@ void Grid::visitCellBoundaryPixels(
 
 void Grid::paintPixel(Node* cell)
 {
-  paintPixel(cell, gridPaddedX(cell), gridSnapDownY(cell));
+  paintPixel(cell, gridX(cell), gridSnapDownY(cell));
 }
 
 void Grid::erasePixel(Node* cell)
@@ -355,32 +409,87 @@ void Grid::erasePixel(Node* cell)
              grid_rect.ylo,
              grid_rect.yhi);
 
+  // Clear cell occupancy and padding reservations for this cell
   for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
     for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
       Pixel* pixel = gridPixel(x, y);
-      if (pixel == nullptr || pixel->cell != cell) {
+      if (pixel == nullptr) {
         continue;
       }
-      pixel->cell = nullptr;
-      pixel->util = 0;
+
+      // Clear cell occupancy
+      if (pixel->cell == cell) {
+        pixel->cell = nullptr;
+        pixel->util = 0;
+      }
+
+      // Clear padding reservations made by this cell
+      if (pixel->padding_reserved_by.find(cell)
+          != pixel->padding_reserved_by.end()) {
+        pixel->padding_reserved_by.erase(cell);
+      }
     }
   }
 }
 
 void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
-  GridX x_end = grid_x + gridPaddedWidth(cell);
-  GridY y_end = gridEndY(gridYToDbu(grid_y) + cell->getHeight());
+  // Paint the actual cell footprint (not including padding)
+  GridX cell_x_end = grid_x + gridWidth(cell);
+  GridY cell_y_end = gridEndY(gridYToDbu(grid_y) + cell->getHeight());
 
-  for (GridX x{grid_x}; x < x_end; x++) {
-    for (GridY y{grid_y}; y < y_end; y++) {
+  // Mark actual cell pixels
+  for (GridX x{grid_x}; x < cell_x_end; x++) {
+    for (GridY y{grid_y}; y < cell_y_end; y++) {
       Pixel* pixel = gridPixel(x, y);
       if (pixel == nullptr) {
-        // This can happen if cell padding is larger than the grid.
         continue;
       }
       pixel->cell = cell;
       pixel->util = 1.0;
+    }
+  }
+
+  // Mark spacing reservations around the cell
+  paintCellPadding(cell, grid_x, grid_y, cell_x_end, cell_y_end);
+}
+void Grid::paintCellPadding(Node* cell)
+{
+  auto grid_x_begin = gridX(cell);
+  auto grid_y_begin = gridSnapDownY(cell);
+  auto grid_x_end = grid_x_begin + gridWidth(cell);
+  auto grid_y_end = gridEndY(gridYToDbu(grid_y_begin) + cell->getHeight());
+
+  paintCellPadding(cell, grid_x_begin, grid_y_begin, grid_x_end, grid_y_end);
+}
+void Grid::paintCellPadding(Node* cell,
+                            const GridX grid_x_begin,
+                            const GridY grid_y_begin,
+                            const GridX grid_x_end,
+                            const GridY grid_y_end)
+{
+  GridX left_pad = padding_->padLeft(cell);
+  GridX right_pad = padding_->padRight(cell);
+
+  // Reserve left spacing pixels
+  for (GridX x{grid_x_begin - left_pad}; x < grid_x_begin; x++) {
+    for (GridY y{grid_y_begin}; y < grid_y_end; y++) {
+      Pixel* pixel = gridPixel(x, y);
+      if (pixel == nullptr) {
+        continue;
+      }
+      pixel->padding_reserved_by.insert(cell);
+    }
+  }
+
+  // Reserve right spacing pixels
+  for (GridX x{grid_x_end}; x < grid_x_end + right_pad; x++) {
+    for (GridY y{grid_y_begin}; y < grid_y_end; y++) {
+      Pixel* pixel = gridPixel(x, y);
+      if (pixel == nullptr) {
+        continue;
+      }
+      pixel->padding_reserved_by.insert(cell);
     }
   }
 }

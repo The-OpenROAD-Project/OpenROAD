@@ -9,12 +9,18 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <numeric>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "MplObserver.h"
+#include "clusterEngine.h"
 #include "object.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -722,6 +728,7 @@ void SimulatedAnnealingCore<T>::fastSA()
 
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
+      saveState();
       perturb();
       cost = calNormCost();
 
@@ -739,7 +746,7 @@ void SimulatedAnnealingCore<T>::fastSA()
       if (num < prob) {
         pre_cost = cost;
       } else {
-        restore();
+        restoreState();
       }
     }
 

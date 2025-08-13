@@ -343,12 +343,12 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
   //
   // Running Docker within a bazel isolated environment introduces lots of
   // problems and is not really done.
-  const char* tclScript = R"(
+  const char* tcl_script = R"(
       namespace eval temp {
         foreach dir $::auto_path {
             set folder [file join $dir]
             set path [file join $folder "tclreadline)" TCLRL_VERSION_STR
-                          R"(" "tclreadlineInit.tcl"]
+                           R"(" "tclreadlineInit.tcl"]
             if {[file exists $path]} {
                 return $path
             }
@@ -357,7 +357,7 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
       }
     )";
 
-  if (Tcl_Eval(interp, tclScript) == TCL_ERROR) {
+  if (Tcl_Eval(interp, tcl_script) == TCL_ERROR) {
     std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
               << std::endl;
     return "";

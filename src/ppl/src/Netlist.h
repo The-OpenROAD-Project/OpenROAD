@@ -3,14 +3,13 @@
 
 #pragma once
 
-#include <functional>
-#include <iostream>
-#include <limits>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
@@ -164,7 +163,7 @@ class Netlist
   int numIOGroups() { return io_groups_.size(); }
   std::vector<IOPin>& getIOPins() { return io_pins_; }
   IOPin& getIoPin(int idx) { return io_pins_[idx]; }
-  int getIoPinIdx(odb::dbBTerm* bterm) { return _db_pin_idx_map[bterm]; }
+  int getIoPinIdx(odb::dbBTerm* bterm) { return db_pin_idx_map_[bterm]; }
   void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int idx, const odb::Point& slot_pos);
@@ -178,7 +177,7 @@ class Netlist
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
   std::vector<PinGroupByIndex> io_groups_;
-  std::map<odb::dbBTerm*, int> _db_pin_idx_map;
+  std::map<odb::dbBTerm*, int> db_pin_idx_map_;
 };
 
 }  // namespace ppl

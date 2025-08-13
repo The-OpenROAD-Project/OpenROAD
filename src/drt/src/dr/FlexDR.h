@@ -83,7 +83,7 @@ class FlexDR
     bool skip_till_changed{false};
     SearchRepairArgs last_args;
     bool fixing_max_spacing{false};
-  } control_;
+  };
 
   // constructors
   FlexDR(TritonRoute* router,
@@ -131,6 +131,7 @@ class FlexDR
   void fixMaxSpacing();
 
  private:
+  IterationsControl control_;
   TritonRoute* router_;
   frDesign* design_;
   Logger* logger_;
@@ -444,10 +445,7 @@ class FlexDRWorker
 
   void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
 
-  const std::vector<Point3D> getSpecialAccessAPs() const
-  {
-    return specialAccessAPs;
-  }
+  std::vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs_; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
   bool isSkipRouting() const { return skipRouting_; }
 
@@ -523,7 +521,7 @@ class FlexDRWorker
   std::unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
-  std::vector<Point3D> specialAccessAPs;
+  std::vector<Point3D> specialAccessAPs_;
 
   // distributed
   dst::Distributed* dist_{nullptr};

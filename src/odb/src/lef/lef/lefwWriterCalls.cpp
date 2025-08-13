@@ -297,8 +297,9 @@ void lefwSetUnusedCallbacks(lefwVoidCbkFnType func)
   int i;
 
   for (i = 0; i < MAXCBS; i++) {
-    if (lefwCallbacksSeq[i] == nullptr)
+    if (lefwCallbacksSeq[i] == nullptr) {
       lefwCallbacksSeq[i] = (lefwVoidCbkFnType) func;
+    }
   }
 }
 
@@ -308,8 +309,9 @@ static int lefwUnusedCount[100];
 int lefwCountFunc(lefwCallbackType_e e, lefiUserData d)
 {
   int i = (int) e;
-  if (lefiDebug(23))
+  if (lefiDebug(23)) {
     printf("count %d 0x%p\n", (int) e, d);
+  }
   if (i >= 0 && i < 100) {
     lefwUnusedCount[i] += 1;
     return 0;
@@ -322,8 +324,9 @@ void lefwSetRegisterUnusedCallbacks()
   int i;
   lefwRegisterUnused = 1;
   lefwSetUnusedCallbacks(lefwCountFunc);
-  for (i = 0; i < 100; i++)
+  for (i = 0; i < 100; i++) {
     lefwUnusedCount[i] = 0;
+  }
 }
 
 void lefwPrintUnusedCallbacks(FILE* f)
@@ -340,10 +343,11 @@ void lefwPrintUnusedCallbacks(FILE* f)
 
   for (i = 0; i < 100; i++) {
     if (lefwUnusedCount[i]) {
-      if (first)
+      if (first) {
         fprintf(f,
                 "INFO (LEFWRIT-4700): LEF items that were present but ignored "
                 "because of no callback were set.\n");
+      }
       first = 0;
       switch ((lefwCallbackType_e) i) {
         case lefwVersionCbkType:

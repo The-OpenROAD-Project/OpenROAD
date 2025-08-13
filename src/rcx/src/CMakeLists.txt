@@ -50,7 +50,7 @@ add_library(rcx_lib
   extmain_v2.cpp
   extmeasure_diag_opt.cpp
   parse.cpp
-  util.cpp
+  find_some_net.cpp
 )
 
 target_include_directories(rcx_lib

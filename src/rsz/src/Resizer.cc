@@ -330,6 +330,22 @@ void Resizer::initBlock()
   } else {
     buffer_sizing_cap_ratio_ = default_buffer_sizing_cap_ratio_;
   }
+
+  dbBoolProperty* disable_pruning_prop
+      = dbBoolProperty::find(block_, "disable_buffer_pruning");
+  if (disable_pruning_prop) {
+    if (disable_buffer_pruning_ != disable_pruning_prop->getValue()) {
+      swappable_cells_cache_.clear();
+      buffer_cells_.clear();
+    }
+    disable_buffer_pruning_ = disable_pruning_prop->getValue();
+  } else {
+    if (disable_buffer_pruning_ != false) {
+      swappable_cells_cache_.clear();
+      buffer_cells_.clear();
+    }
+    disable_buffer_pruning_ = false;
+  }
 }
 
 void Resizer::init()
@@ -399,7 +415,7 @@ void Resizer::unbufferNet(Net* net)
 
         if (port == in) {
           const Instance* inst = network_->instance(pin);
-          insts.push_back(inst);
+          insts.emplace_back(inst);
           const Pin* out_pin = network_->findPin(inst, out);
           if (out_pin) {
             queue.push_back(network_->net(out_pin));
@@ -684,30 +700,219 @@ void Resizer::reportFastBufferSizes()
 {
   resizePreamble();
 
+  logger_->report("\nFast Buffer Report:");
+  logger_->report("There are {} fast buffers", buffer_fast_sizes_.size());
+  logger_->report("{:->80}", "");
   logger_->report(
-      "  Name                    |   Area  | Input cap | Intrin delay | Driver "
-      "resist");
+      "Cell                                        Area  Input  Intrinsic "
+      "Drive ");
   logger_->report(
-      "------------------------------------------------------------------------"
-      "--------");
+      "                                                   Cap    Delay    Res");
+  logger_->report("{:->80}", "");
 
   for (auto size : buffer_fast_sizes_) {
     LibertyPort *in, *out;
     size->bufferPorts(in, out);
-    logger_->report(
-        "  {: <23s} | {: >7s} | {: >9s} | {: >12s} | {: >13s}",
-        size->name(),
-        units_->scalarUnit()->asString(size->area(), 3),
-        units_->capacitanceUnit()->asString(in->capacitance(), 3),
-        delayAsString(out->intrinsicDelay(sta_), sta_, 3),
-        units_->resistanceUnit()->asString(out->driveResistance(), 3));
+    logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>7.1f}",
+                    size->name(),
+                    size->area(),
+                    in->capacitance(),
+                    out->intrinsicDelay(sta_),
+                    out->driveResistance());
   }
-  logger_->report(
-      "------------------------------------------------------------------------"
-      "--------");
+  logger_->report("{:->80}", "");
 }
 
+#define debugRDPrint1(format_str, ...) \
+  debugPrint(logger_, utl::RSZ, "resizer", 1, format_str, ##__VA_ARGS__)
+// debugPrint for replace_design level 2
+#define debugRDPrint2(format_str, ...) \
+  debugPrint(logger_, utl::RSZ, "resizer", 2, format_str, ##__VA_ARGS__)
+
 void Resizer::findBuffers()
+{
+  if (disable_buffer_pruning_) {
+    findBuffersNoPruning();
+    return;
+  }
+
+  if (!buffer_cells_.empty()) {
+    return;
+  }
+
+  LibertyCellSeq buffer_list;
+  LibraryAnalysisData lib_data;
+  getBufferList(buffer_list, lib_data);
+
+  // Pick the right cell footprint to avoid delay cells
+  std::string best_footprint;
+  if (lib_data.cells_by_footprint.size() > 1) {
+    for (const auto& [footprint_type, count] : lib_data.cells_by_footprint) {
+      float ratio = (float) count / buffer_list.size();
+      // Some PDK libs have a distinct footprint for each drive strength
+      // Pick a footprint that dominates
+      if (ratio > 0.5) {
+        best_footprint = footprint_type;
+        debugRDPrint2("findBuffers: Best footprint is {}", footprint_type);
+        break;
+      }
+    }
+  }
+
+  // Pick the second most leaky VT for multiple VTs
+  int best_vt_index = -1;
+  int num_vt = lib_data.sorted_vt_categories.size();
+  if (num_vt > 1) {
+    const std::pair<VTCategory, VTLeakageStats> second_leakiest_vt
+        = lib_data.sorted_vt_categories[num_vt - 2];
+    best_vt_index = second_leakiest_vt.first.vt_index;
+    debugRDPrint2("findBuffers: Best VT index is {} [{}] among {} VTs",
+                  best_vt_index,
+                  second_leakiest_vt.first.vt_name,
+                  num_vt);
+  } else if (num_vt == 1) {
+    const std::pair<VTCategory, VTLeakageStats> only_vt
+        = lib_data.sorted_vt_categories[0];
+    best_vt_index = only_vt.first.vt_index;
+    debugRDPrint2("findBuffers: Best VT index is {} among 1 VT", best_vt_index);
+  } else {
+    debugRDPrint2("findBuffers: Best VT index is {} among 0 VT", best_vt_index);
+  }
+
+  // There may be multiple cell sites like short, tall, short+tall, etc.
+  // Pick two sites that are the most dominant.  Most likely, short and tall.
+  std::vector<std::pair<odb::dbSite*, float>> site_list;
+  site_list.reserve(lib_data.cells_by_site.size());
+  for (const auto& [site_type, count] : lib_data.cells_by_site) {
+    site_list.emplace_back(site_type, (float) count / buffer_list.size());
+  }
+  std::sort(site_list.begin(),
+            site_list.end(),
+            [](const auto& a, const auto& b) { return a.second > b.second; });
+  int num_best_sites = std::min(2, (int) lib_data.cells_by_site.size());
+  for (int i = 0; i < num_best_sites; i++) {
+    debugRDPrint2("findBuffers: {} is a dominant site",
+                  site_list[i].first->getName());
+  }
+
+  LibertyCellSeq new_buffer_list;
+  for (LibertyCell* buffer : buffer_list) {
+    const char* footprint = buffer->footprint();
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+    auto vt_type = cellVTType(master);
+    bool footprint_matches
+        = best_footprint.empty() || (footprint && best_footprint == footprint);
+    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+
+    if (footprint_matches && vt_matches) {
+      new_buffer_list.emplace_back(buffer);
+      debugRDPrint2("findBuffers: Adding {} to new buffer list",
+                    buffer->name());
+    } else {
+      debugRDPrint2(
+          "findBuffers: {} is not added because VT {} and CF {} [VT index = "
+          "{}, best VT index = {}]",
+          buffer->name(),
+          (vt_matches ? "matches" : "doesn't match"),
+          (footprint_matches ? "matches" : "doesn't match"),
+          vt_type.first,
+          best_vt_index);
+    }
+  }
+  debugRDPrint2("findBuffers: new buffer list has {} buffers",
+                new_buffer_list.size());
+
+  // The buffer list is already sorted in ascending order of drive resistance.
+  // Divide buffers into 5 buckets based on drive resistance.
+  // Each bucket is a proxy for drive strength group.
+  // We want to pick 2 best buffers from each bucket using drive resistance *
+  // c_in.  The lower the RC product, the better.
+  const int num_buckets = 5;
+  const int bucket_size = new_buffer_list.size() / num_buckets;
+  const int remainder = new_buffer_list.size() % num_buckets;
+
+  LibertyCellSeq final_buffer_list;
+  for (int bucket = 0; bucket < num_buckets; bucket++) {
+    // Calculate bucket boundaries
+    int start_idx = bucket * bucket_size + std::min(bucket, remainder);
+    int end_idx = start_idx + bucket_size + (bucket < remainder ? 1 : 0);
+
+    // Create a vector for this bucket with drive_res * input_cap values
+    std::vector<std::pair<LibertyCell*, float>> bucket_buffers;
+    bucket_buffers.reserve(bucket_size);
+
+    for (int i = start_idx; i < end_idx && i < new_buffer_list.size(); i++) {
+      LibertyCell* buffer = new_buffer_list[i];
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float metric = bufferDriveResistance(buffer) * input->capacitance();
+      bucket_buffers.emplace_back(buffer, metric);
+    }
+
+    // Sort this bucket by drive_res * input_cap (ascending)
+    std::sort(bucket_buffers.begin(),
+              bucket_buffers.end(),
+              [](const auto& a, const auto& b) {
+                return a.second < b.second;  // Compare by R * C
+              });
+
+    // Select up to 2 best buffers from this bucket
+    if (num_best_sites == 1) {
+      int buffers_to_select
+          = std::min(2, static_cast<int>(bucket_buffers.size()));
+      for (int i = 0; i < buffers_to_select; i++) {
+        final_buffer_list.emplace_back(bucket_buffers[i].first);
+        debugRDPrint2(
+            "findBuffers: Buffer {} with RC={:.2e} is selected for bucket "
+            "{}",
+            bucket_buffers[i].first->name(),
+            bucket_buffers[i].second,
+            bucket);
+      }
+    } else {
+      // Try to choose one for each dominant site
+      // It's possible that there are no buffers matching the sites in this
+      // bucket
+      for (int site_idx = 0; site_idx < 2 && site_idx < site_list.size();
+           site_idx++) {
+        for (const auto& pair : bucket_buffers) {
+          odb::dbMaster* master = db_network_->staToDb(pair.first);
+          if (master->getSite() == site_list[site_idx].first) {
+            final_buffer_list.emplace_back(pair.first);
+            debugRDPrint2(
+                "findBuffers: Buffer {} with RC={:.2e} is selected for "
+                "bucket {} and site "
+                "{}",
+                pair.first->name(),
+                pair.second,
+                bucket,
+                master->getSite()->getName());
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  debugRDPrint2(
+      "findBuffers: Selected {} buffers total from {} original buffers in "
+      "{} buckets",
+      final_buffer_list.size(),
+      new_buffer_list.size(),
+      num_buckets);
+
+  // final_buffer_list now contains up to 10 buffers (2 from each of 5 buckets)
+  buffer_cells_.assign(final_buffer_list.begin(), final_buffer_list.end());
+
+  if (buffer_cells_.empty()) {
+    logger_->error(RSZ, 22, "no buffers found.");
+  } else {
+    // find the buffer with the largest drive resistance
+    buffer_lowest_drive_ = buffer_cells_.back();
+  }
+}
+
+void Resizer::findBuffersNoPruning()
 {
   if (buffer_cells_.empty()) {
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
@@ -733,7 +938,7 @@ void Resizer::findBuffers()
     delete lib_iter;
 
     if (buffer_cells_.empty()) {
-      logger_->error(RSZ, 22, "no buffers found.");
+      logger_->error(RSZ, 52, "no buffers found.");
     } else {
       sort(buffer_cells_,
            [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
@@ -746,6 +951,24 @@ void Resizer::findBuffers()
   }
 }
 
+LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
+{
+  // Prefer user-specified buffer cell if provided.
+  if (user_buffer_cell) {
+    return user_buffer_cell;
+  }
+
+  // Otherwise, find the weakest buffer with the lowest drive resistance.
+  findBuffers();  // updates buffer_lowest_drive_
+
+  // No buffer?
+  if (buffer_lowest_drive_ == nullptr) {
+    logger_->error(RSZ, 41, "No buffers found.");
+  }
+
+  return buffer_lowest_drive_;
+}
+
 bool Resizer::isLinkCell(LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
@@ -753,10 +976,19 @@ bool Resizer::isLinkCell(LibertyCell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::bufferInputs()
+void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
 {
   init();
-  findBuffers();
+
+  // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
+  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  if (verbose) {
+    logger_->info(RSZ,
+                  29,
+                  "Start input port buffering with {}.",
+                  selected_buffer_cell->name());
+  }
+
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
@@ -776,14 +1008,18 @@ void Resizer::bufferInputs()
           // Hands off special nets.
           && !db_network_->isSpecial(net) && hasPins(net)) {
         // repair_design will resize to target slew.
-        bufferInput(pin, buffer_lowest_drive_);
+        bufferInput(pin, selected_buffer_cell, verbose);
       }
     }
   }
 
+  logger_->info(RSZ,
+                27,
+                "Inserted {} {} input buffers.",
+                inserted_buffer_count_,
+                selected_buffer_cell->name());
+
   if (inserted_buffer_count_ > 0) {
-    logger_->info(
-        RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
   }
 }
@@ -852,7 +1088,9 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 Make sure all the top pins are buffered
 */
 
-Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
+Instance* Resizer::bufferInput(const Pin* top_pin,
+                               LibertyCell* buffer_cell,
+                               bool verbose)
 {
   dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
   odb::dbModNet* top_pin_hier_net = db_network_->hierNet(top_pin);
@@ -897,7 +1135,18 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   delete pin_iter;
   // dont buffer, buffers
   if (has_dont_touch || !has_non_buffer) {
+    if (verbose) {
+      logger_->info(RSZ,
+                    213,
+                    "Skipping input port {} buffering.",
+                    network_->name(top_pin));
+    }
     return nullptr;
+  }
+
+  if (verbose) {
+    logger_->info(
+        RSZ, 214, "Buffering input port {}.", network_->name(top_pin));
   }
 
   // make the buffer and its output net.
@@ -972,10 +1221,19 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   return buffer;
 }
 
-void Resizer::bufferOutputs()
+void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
 {
   init();
-  findBuffers();
+
+  // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
+  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  if (verbose) {
+    logger_->info(RSZ,
+                  31,
+                  "Start output port buffering with {}.",
+                  selected_buffer_cell->name());
+  }
+
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
@@ -995,14 +1253,18 @@ void Resizer::bufferOutputs()
           // drivers.
           && !hasTristateOrDontTouchDriver(net) && !vertex->isConstant()
           && hasPins(net)) {
-        bufferOutput(pin, buffer_lowest_drive_);
+        bufferOutput(pin, selected_buffer_cell, verbose);
       }
     }
   }
 
+  logger_->info(RSZ,
+                28,
+                "Inserted {} {} output buffers.",
+                inserted_buffer_count_,
+                selected_buffer_cell->name());
+
   if (inserted_buffer_count_ > 0) {
-    logger_->info(
-        RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
   }
 }
@@ -1039,8 +1301,15 @@ bool Resizer::isTristateDriver(const Pin* pin)
   return port && port->direction()->isAnyTristate();
 }
 
-void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
+void Resizer::bufferOutput(const Pin* top_pin,
+                           LibertyCell* buffer_cell,
+                           bool verbose)
 {
+  if (verbose) {
+    logger_->info(
+        RSZ, 215, "Buffering output port {}.", network_->name(top_pin));
+  }
+
   NetworkEdit* network = networkEdit();
 
   odb::dbITerm* top_pin_op_iterm;
@@ -1056,6 +1325,7 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   sta_->disconnectPin(const_cast<Pin*>(top_pin));
 
   LibertyPort *input, *output;
+  assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
   string buffer_name = makeUniqueInstName("output");
@@ -1498,6 +1768,191 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   }
 }
 
+void Resizer::reportBuffers(bool filtered)
+{
+  resizePreamble();
+
+  LibertyCellSeq buffer_list;
+  LibraryAnalysisData lib_data;
+
+  getBufferList(buffer_list, lib_data);
+  if (buffer_list.empty()) {
+    logger_->error(RSZ, 23, "No buffers are found from the loaded libraries.");
+    return;
+  }
+
+  logger_->report("{:*>80}", "");
+  logger_->report("Buffer Report:");
+  logger_->report(
+      "There are {} buffers that are not marked as dont-use, multi-voltage\n"
+      "special cells{}",
+      buffer_list.size(),
+      (exclude_clock_buffers_ ? " or clock buffers" : ""));
+
+  logger_->report("\nThere are {} VT types:",
+                  lib_data.vt_leakage_by_category.size());
+  logger_->report("VT type[index]: # buffers, ave leakage");
+  for (const auto& [vt_category, vt_stats] : lib_data.sorted_vt_categories) {
+    logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
+                    vt_category.vt_name,
+                    vt_category.vt_index,
+                    vt_stats.cell_count,
+                    vt_stats.get_average_leakage());
+  }
+
+  logger_->report("\nThere are {} cell footprint types:",
+                  lib_data.cells_by_footprint.size());
+  for (const auto& [footprint_type, count] : lib_data.cells_by_footprint) {
+    logger_->report("  {:<6}: {} [{:.2f}%]",
+                    footprint_type,
+                    count,
+                    ((float) count) / buffer_list.size() * 100);
+  }
+
+  logger_->report("\nThere are {} cell site types:",
+                  lib_data.cells_by_site.size());
+  for (const auto& [site_type, count] : lib_data.cells_by_site) {
+    logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
+                    site_type->getName(),
+                    site_type->getHeight(),
+                    count,
+                    ((float) count) / buffer_list.size() * 100);
+  }
+
+  logger_->report("{:->80}", "");
+  logger_->report(
+      "Cell                                        Drive Drive    Leak "
+      "  Site Cell   VT");
+  logger_->report(
+      "                                            Res   Res*Cin       "
+      "   Ht Footpt Type");
+  logger_->report("{:->80}", "");
+
+  for (LibertyCell* buffer : buffer_list) {
+    float drive_res = bufferDriveResistance(buffer);
+    LibertyPort *input, *output;
+    buffer->bufferPorts(input, output);
+    float c_in = input->capacitance();
+    std::optional<float> cell_leak = cellLeakage(buffer);
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+
+    logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
+                    buffer->name(),
+                    drive_res,
+                    drive_res * c_in,
+                    cell_leak.value_or(0.0f),
+                    master->getSite()->getHeight(),
+                    (buffer->footprint() ? buffer->footprint() : "N/A"),
+                    cellVTType(master).second);
+  }
+
+  if (filtered) {
+    findBuffers();
+    logger_->report("\nFiltered Buffer Report:");
+    if (disable_buffer_pruning_) {
+      logger_->report(
+          "All {} buffers are available because buffer pruning has been "
+          "disabled",
+          buffer_cells_.size());
+    } else {
+      logger_->report(
+          "There are {} buffers after filtering based on threshold voltage,"
+          "\ncell footprint, drive strength and cell site",
+          buffer_cells_.size());
+    }
+    logger_->report("{:->80}", "");
+    logger_->report(
+        "Cell                                        Drive Drive    Leak "
+        "  Site Cell   VT");
+    logger_->report(
+        "                                            Res   Res*Cin       "
+        "   Ht Footpt Type");
+    logger_->report("{:->80}", "");
+
+    for (LibertyCell* buffer : buffer_cells_) {
+      float drive_res = bufferDriveResistance(buffer);
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float c_in = input->capacitance();
+      std::optional<float> cell_leak = cellLeakage(buffer);
+      odb::dbMaster* master = db_network_->staToDb(buffer);
+
+      logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
+                      buffer->name(),
+                      drive_res,
+                      drive_res * c_in,
+                      cell_leak.value_or(0.0f),
+                      master->getSite()->getHeight(),
+                      (buffer->footprint() ? buffer->footprint() : "N/A"),
+                      cellVTType(master).second);
+    }
+  }
+
+  LibertyCell* hold_buffer = repair_hold_->reportHoldBuffer();
+  logger_->report("\nHold Buffer Report:");
+  logger_->report("{} is the buffer chosen for hold fixing",
+                  (hold_buffer ? hold_buffer->name() : "-"));
+  logger_->report("{:*>80}", "");
+}
+
+void Resizer::getBufferList(LibertyCellSeq& buffer_list,
+                            LibraryAnalysisData& lib_data)
+{
+  LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* lib = lib_iter->next();
+    for (LibertyCell* buffer : *lib->buffers()) {
+      if (exclude_clock_buffers_) {
+        BufferUse buffer_use = sta_->getBufferUse(buffer);
+        if (buffer_use == CLOCK) {
+          continue;
+        }
+      }
+      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+          && !buffer->isLevelShifter() && isLinkCell(buffer)) {
+        buffer_list.emplace_back(buffer);
+
+        // Track cell footprint distribution
+        if (buffer->footprint()) {
+          lib_data.cells_by_footprint[buffer->footprint()]++;
+        }
+
+        // Track site distribution
+        odb::dbMaster* master = db_network_->staToDb(buffer);
+        lib_data.cells_by_site[master->getSite()]++;
+
+        // Track VT category leakage data
+        auto vt_type = cellVTType(master);
+        VTCategory vt_category{vt_type.first, vt_type.second};
+
+        // Get or create VT leakage stats for this category
+        VTLeakageStats& vt_stats = lib_data.vt_leakage_by_category[vt_category];
+        vt_stats.add_cell_leakage(cellLeakage(buffer));
+      }
+    }
+  }
+  delete lib_iter;
+
+  if (!buffer_list.empty()) {
+    // Sort buffer list by VT type, then by drive resistance
+    sort(buffer_list,
+         [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+           odb::dbMaster* master1 = db_network_->staToDb(buffer1);
+           odb::dbMaster* master2 = db_network_->staToDb(buffer2);
+           auto vt_type1 = cellVTType(master1);
+           auto vt_type2 = cellVTType(master2);
+           if (vt_type1 != vt_type2) {
+             return vt_type1 < vt_type2;
+           }
+           return bufferDriveResistance(buffer1)
+                  < bufferDriveResistance(buffer2);
+         });
+
+    // Sort VT categories by average leakage
+    lib_data.sort_vt_categories();
+  }
+}
+
 // Filter equivalent cells based on the following liberty attributes:
 // - Footprint (Optional - Honored if enforced by user): Cells with the
 //   same footprint have the same layout boundary.
@@ -1624,10 +2079,10 @@ void Resizer::checkLibertyForAllCorners()
 void Resizer::setParasiticsSrc(ParasiticsSrc src)
 {
   if (incremental_parasitics_enabled_) {
-    logger_->error(
-        RSZ,
-        108,
-        "cannot change parasitics source while incremental parasitics enabled");
+    logger_->error(RSZ,
+                   108,
+                   "cannot change parasitics source while incremental "
+                   "parasitics enabled");
   }
 
   parasitics_src_ = src;
@@ -2014,8 +2469,9 @@ void Resizer::resizeSlackPreamble()
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   IncrementalParasiticsGuard guard(this);
-  if (run_journal_restore)
+  if (run_journal_restore) {
     journalBegin();
+  }
   ensureLevelDrvrVertices();
   estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
@@ -2341,7 +2797,9 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 
 bool Resizer::dontTouch(const Net* net)
 {
-  dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = nullptr;
+  odb::dbModNet* db_mod_net = nullptr;
+  db_network_->staToDb(net, db_net, db_mod_net);
   if (db_net == nullptr) {
     return false;
   }
@@ -3034,7 +3492,14 @@ string Resizer::makeUniqueNetName(Instance* parent_scope)
     } else {
       node_name = fmt::format("net{}", unique_net_index_++);
     }
-  } while (network_->findNet(top_inst, node_name.c_str()));
+  } while (network_->findNet(top_inst, node_name.c_str())
+           //
+           // in hierarchical mode we check the uniqueness globally.
+           // TODO:change scoping of nets so we never
+           // have to do this, as it is obviously slow.
+           //
+           || (db_network_->hasHierarchy()
+               && db_network_->findNetAllScopes(node_name.c_str())));
   return node_name;
 }
 
@@ -4121,12 +4586,12 @@ float Resizer::maxInputSlew(const LibertyPort* input,
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
   if (!exists || limit == 0.0) {
     // Fixup for nangate45: This library doesn't specify any max transition on
-    // input pins which indirectly causes issues for the resizer when repairing
-    // driver pin transitions.
+    // input pins which indirectly causes issues for the resizer when
+    // repairing driver pin transitions.
     //
-    // To address, if there's no max tran on the port directly, use the library
-    // default (the default only applies to output pins per the Liberty spec,
-    // as a workaround we apply it to input pins too).
+    // To address, if there's no max tran on the port directly, use the
+    // library default (the default only applies to output pins per the
+    // Liberty spec, as a workaround we apply it to input pins too).
     input->libertyLibrary()->defaultMaxSlew(limit, exists);
     if (!exists) {
       limit = INF;

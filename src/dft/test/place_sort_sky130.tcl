@@ -20,15 +20,15 @@ proc place_inst { inst x y } {
   $db_inst setPlacementStatus PLACED
 }
 
-place_inst ff1_clk1_rising  1000 2000
-place_inst ff2_clk1_rising  5000 6000
-place_inst ff3_clk1_rising  9500 9000
-place_inst ff4_clk1_rising  9000 9000
-place_inst ff5_clk1_rising  1000 1000
-place_inst ff6_clk1_rising  7000 7000
-place_inst ff7_clk1_rising  7500 7000
-place_inst ff8_clk1_rising  4000 3000
-place_inst ff9_clk1_rising  8000 8000
+place_inst ff1_clk1_rising 1000 2000
+place_inst ff2_clk1_rising 5000 6000
+place_inst ff3_clk1_rising 9500 9000
+place_inst ff4_clk1_rising 9000 9000
+place_inst ff5_clk1_rising 1000 1000
+place_inst ff6_clk1_rising 7000 7000
+place_inst ff7_clk1_rising 7500 7000
+place_inst ff8_clk1_rising 4000 3000
+place_inst ff9_clk1_rising 8000 8000
 place_inst ff10_clk1_rising 3000 3000
 
 report_dft_plan -verbose

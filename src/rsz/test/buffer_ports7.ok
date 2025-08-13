@@ -5,4 +5,5 @@
 [INFO ODB-0131]     Created 2 components and 13 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 4 nets and 5 connections.
+[INFO RSZ-0028] Inserted 0 sky130_fd_sc_hs__buf_1 output buffers.
 No differences found.

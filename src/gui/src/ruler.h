@@ -31,9 +31,9 @@ class Ruler
   odb::Point getManhattanJoinPt() const;
   static odb::Point getManhattanJoinPt(const odb::Point& pt0,
                                        const odb::Point& pt1);
-  const std::string getName() const { return name_; }
+  const std::string& getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
-  const std::string getLabel() const { return label_; }
+  const std::string& getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
   bool isEuclidian() const { return euclidian_; }
   void setEuclidian(bool euclidian) { euclidian_ = euclidian; }
@@ -63,22 +63,23 @@ class RulerDescriptor : public Descriptor
   RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers,
                   odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Editors getEditors(std::any object) const override;
-  Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Editors getEditors(const std::any& object) const override;
+  Actions getActions(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
-  static bool editPoint(std::any value, odb::Point& pt, bool is_x);
+  static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   odb::dbDatabase* db_;

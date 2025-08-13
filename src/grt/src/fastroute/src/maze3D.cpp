@@ -44,12 +44,14 @@ static void heapify3D(std::vector<int*>& array)
     int smallest;
     if (l < heapSize && *(array[l]) < *tmp) {
       smallest = l;
-      if (r < heapSize && *(array[r]) < *(array[l]))
+      if (r < heapSize && *(array[r]) < *(array[l])) {
         smallest = r;
+      }
     } else {
       smallest = i;
-      if (r < heapSize && *(array[r]) < *tmp)
+      if (r < heapSize && *(array[r]) < *tmp) {
         smallest = r;
+      }
     }
     if (smallest != i) {
       array[i] = array[smallest];
@@ -154,15 +156,13 @@ void FastRouteCore::addNeighborPoints(const int netID,
         if (route->type == RouteType::MazeRoute) {
           for (int j = 1; j < route->routelen; j++) {
             // don't put edge_n1 and edge_n2 into points_heap_3D
-            const int x_grid = route->gridsX[j];
-            const int y_grid = route->gridsY[j];
-            const int l_grid = route->gridsL[j];
+            const GPoint3D& pt = route->grids[j];
 
-            if (in_region_[y_grid][x_grid]) {
-              dist_3D[l_grid][y_grid][x_grid] = 0;
-              points_heap_3D.push_back(&dist_3D[l_grid][y_grid][x_grid]);
-              directions_3D[l_grid][y_grid][x_grid] = Direction::Origin;
-              corr_edge_3D[l_grid][y_grid][x_grid] = edge;
+            if (in_region_[pt.y][pt.x]) {
+              dist_3D[pt.layer][pt.y][pt.x] = 0;
+              points_heap_3D.push_back(&dist_3D[pt.layer][pt.y][pt.x]);
+              directions_3D[pt.layer][pt.y][pt.x] = Direction::Origin;
+              corr_edge_3D[pt.layer][pt.y][pt.x] = edge;
             }
           }
 
@@ -266,38 +266,31 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
                                int n2,
                                std::vector<TreeEdge>& treeedges,
                                int edge_n1n2,
-                               std::vector<int>& gridsX_n1n2,
-                               std::vector<int>& gridsY_n1n2,
-                               std::vector<int>& gridsL_n1n2)
+                               std::vector<GPoint3D>& grids_n1n2)
 {
-  const int n1x = treenodes[n1].x;
-  const int n1y = treenodes[n1].y;
-  const int n1l = treenodes[n1].botL;
+  const int16_t n1x = treenodes[n1].x;
+  const int16_t n1y = treenodes[n1].y;
+  const int16_t n1l = treenodes[n1].botL;
   const int routelen = treeedges[edge_n1n2].route.routelen;
 
   if (routelen > 0) {
-    gridsX_n1n2.reserve(routelen + 1);
-    gridsY_n1n2.reserve(routelen + 1);
-    gridsL_n1n2.reserve(routelen + 1);
+    grids_n1n2.reserve(routelen + 1);
   }
 
   int cnt = 0;
   if (treeedges[edge_n1n2].n1 == n1) {  // n1 is the first node of (n1, n2)
     if (treeedges[edge_n1n2].route.routelen > 0) {
       for (int i = 0; i <= treeedges[edge_n1n2].route.routelen; i++) {
-        gridsX_n1n2.push_back(treeedges[edge_n1n2].route.gridsX[i]);
-        gridsY_n1n2.push_back(treeedges[edge_n1n2].route.gridsY[i]);
-        gridsL_n1n2.push_back(treeedges[edge_n1n2].route.gridsL[i]);
+        grids_n1n2.push_back({treeedges[edge_n1n2].route.grids[i].x,
+                              treeedges[edge_n1n2].route.grids[i].y,
+                              treeedges[edge_n1n2].route.grids[i].layer});
         cnt++;
       }
     }  // MazeRoute
     else
     // NoRoute
     {
-      fflush(stdout);
-      gridsX_n1n2.push_back(n1x);
-      gridsY_n1n2.push_back(n1y);
-      gridsL_n1n2.push_back(n1l);
+      grids_n1n2.push_back({n1x, n1y, n1l});
       cnt++;
     }
   }  // if n1 is the first node of (n1, n2)
@@ -305,17 +298,15 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
   {
     if (treeedges[edge_n1n2].route.routelen > 0) {
       for (int i = treeedges[edge_n1n2].route.routelen; i >= 0; i--) {
-        gridsX_n1n2.push_back(treeedges[edge_n1n2].route.gridsX[i]);
-        gridsY_n1n2.push_back(treeedges[edge_n1n2].route.gridsY[i]);
-        gridsL_n1n2.push_back(treeedges[edge_n1n2].route.gridsL[i]);
+        grids_n1n2.push_back({treeedges[edge_n1n2].route.grids[i].x,
+                              treeedges[edge_n1n2].route.grids[i].y,
+                              treeedges[edge_n1n2].route.grids[i].layer});
         cnt++;
       }
     }  // MazeRoute
     else  // NoRoute
     {
-      gridsX_n1n2.push_back(n1x);
-      gridsY_n1n2.push_back(n1y);
-      gridsL_n1n2.push_back(n1l);
+      grids_n1n2.push_back({n1x, n1y, n1l});
       cnt++;
     }  // MazeRoute
   }
@@ -334,33 +325,17 @@ void FastRouteCore::updateRouteType13D(int netID,
                                        int edge_n1A1,
                                        int edge_n1A2)
 {
-  std::vector<int> gridsX_n1A1;
-  std::vector<int> gridsY_n1A1;
-  std::vector<int> gridsL_n1A1;
-  std::vector<int> gridsX_n1A2;
-  std::vector<int> gridsY_n1A2;
-  std::vector<int> gridsL_n1A2;
+  std::vector<GPoint3D> grids_n1A1;
+  std::vector<GPoint3D> grids_n1A2;
 
   // copy all the grids on (n1, A1) and (n2, A2) to tmp arrays, and keep the
   // grids order A1->n1->A2 copy (n1, A1)
-  const int cnt_n1A1 = copyGrids3D(treenodes,
-                                   A1,
-                                   n1,
-                                   treeedges,
-                                   edge_n1A1,
-                                   gridsX_n1A1,
-                                   gridsY_n1A1,
-                                   gridsL_n1A1);
+  const int cnt_n1A1
+      = copyGrids3D(treenodes, A1, n1, treeedges, edge_n1A1, grids_n1A1);
 
   // copy (n1, A2)
-  const int cnt_n1A2 = copyGrids3D(treenodes,
-                                   n1,
-                                   A2,
-                                   treeedges,
-                                   edge_n1A2,
-                                   gridsX_n1A2,
-                                   gridsY_n1A2,
-                                   gridsL_n1A2);
+  const int cnt_n1A2
+      = copyGrids3D(treenodes, n1, A2, treeedges, edge_n1A2, grids_n1A2);
 
   if (cnt_n1A1 == 1) {
     logger_->error(
@@ -369,7 +344,7 @@ void FastRouteCore::updateRouteType13D(int netID,
 
   int E1_pos1 = -1;
   for (int i = 0; i < cnt_n1A1; i++) {
-    if (gridsX_n1A1[i] == E1x && gridsY_n1A1[i] == E1y)  // reach the E1
+    if (grids_n1A1[i].x == E1x && grids_n1A1[i].y == E1y)  // reach the E1
     {
       E1_pos1 = i;
       break;
@@ -382,7 +357,7 @@ void FastRouteCore::updateRouteType13D(int netID,
 
   int E1_pos2 = 0;
   for (int i = cnt_n1A1 - 1; i >= 0; i--) {
-    if (gridsX_n1A1[i] == E1x && gridsY_n1A1[i] == E1y)  // reach the E1
+    if (grids_n1A1[i].x == E1x && grids_n1A1[i].y == E1y)  // reach the E1
     {
       E1_pos2 = i;
       break;
@@ -392,13 +367,9 @@ void FastRouteCore::updateRouteType13D(int netID,
   // reallocate memory for route.gridsX and route.gridsY
   if (treeedges[edge_n1A1].route.type == RouteType::MazeRoute
       && treeedges[edge_n1A1].route.routelen > 0) {
-    treeedges[edge_n1A1].route.gridsX.clear();
-    treeedges[edge_n1A1].route.gridsY.clear();
-    treeedges[edge_n1A1].route.gridsL.clear();
+    treeedges[edge_n1A1].route.grids.clear();
   }
-  treeedges[edge_n1A1].route.gridsX.resize(E1_pos1 + 1, 0);
-  treeedges[edge_n1A1].route.gridsY.resize(E1_pos1 + 1, 0);
-  treeedges[edge_n1A1].route.gridsL.resize(E1_pos1 + 1, 0);
+  treeedges[edge_n1A1].route.grids.resize(E1_pos1 + 1);
 
   const int A1x = treenodes[A1].x;
   const int A1y = treenodes[A1].y;
@@ -408,9 +379,7 @@ void FastRouteCore::updateRouteType13D(int netID,
   if (A1x <= E1x) {
     int cnt = 0;
     for (int i = 0; i <= E1_pos1; i++) {
-      treeedges[edge_n1A1].route.gridsX[cnt] = gridsX_n1A1[i];
-      treeedges[edge_n1A1].route.gridsY[cnt] = gridsY_n1A1[i];
-      treeedges[edge_n1A1].route.gridsL[cnt] = gridsL_n1A1[i];
+      treeedges[edge_n1A1].route.grids[cnt] = grids_n1A1[i];
       cnt++;
     }
     treeedges[edge_n1A1].n1 = A1;
@@ -418,9 +387,7 @@ void FastRouteCore::updateRouteType13D(int netID,
   } else {
     int cnt = 0;
     for (int i = E1_pos1; i >= 0; i--) {
-      treeedges[edge_n1A1].route.gridsX[cnt] = gridsX_n1A1[i];
-      treeedges[edge_n1A1].route.gridsY[cnt] = gridsY_n1A1[i];
-      treeedges[edge_n1A1].route.gridsL[cnt] = gridsL_n1A1[i];
+      treeedges[edge_n1A1].route.grids[cnt] = grids_n1A1[i];
       cnt++;
     }
     treeedges[edge_n1A1].n1 = n1;
@@ -434,55 +401,39 @@ void FastRouteCore::updateRouteType13D(int netID,
   // reallocate memory for route.gridsX and route.gridsY
   if (treeedges[edge_n1A2].route.type == RouteType::MazeRoute
       && treeedges[edge_n1A2].route.routelen > 0) {
-    treeedges[edge_n1A2].route.gridsX.clear();
-    treeedges[edge_n1A2].route.gridsY.clear();
-    treeedges[edge_n1A2].route.gridsL.clear();
+    treeedges[edge_n1A2].route.grids.clear();
   }
 
   if (cnt_n1A2 > 1) {
-    treeedges[edge_n1A2].route.gridsX.resize(
+    treeedges[edge_n1A2].route.grids.resize(
         cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-            + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]),
-        0);
-    treeedges[edge_n1A2].route.gridsY.resize(
-        cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-            + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]),
-        0);
-    treeedges[edge_n1A2].route.gridsL.resize(
-        cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-            + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]),
-        0);
+        + abs(grids_n1A1[cnt_n1A1 - 1].layer - grids_n1A2[0].layer));
   } else {
-    treeedges[edge_n1A2].route.gridsX.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1,
-                                             0);
-    treeedges[edge_n1A2].route.gridsY.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1,
-                                             0);
-    treeedges[edge_n1A2].route.gridsL.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1,
-                                             0);
+    treeedges[edge_n1A2].route.grids.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1);
   }
 
   int cnt;
   if (E1x <= A2x) {
     cnt = 0;
     for (int i = E1_pos2; i < cnt_n1A1; i++) {
-      treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A1[i];
-      treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A1[i];
-      treeedges[edge_n1A2].route.gridsL[cnt] = gridsL_n1A1[i];
+      treeedges[edge_n1A2].route.grids[cnt] = grids_n1A1[i];
       cnt++;
     }
     if (cnt_n1A2 > 1) {
-      if (gridsL_n1A1[cnt_n1A1 - 1] > gridsL_n1A2[0]) {
-        for (int l = gridsL_n1A1[cnt_n1A1 - 1] - 1; l >= gridsL_n1A2[0]; l--) {
-          treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A2[0];
-          treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A2[0];
-          treeedges[edge_n1A2].route.gridsL[cnt] = l;
+      if (grids_n1A1[cnt_n1A1 - 1].layer > grids_n1A2[0].layer) {
+        for (int16_t l = grids_n1A1[cnt_n1A1 - 1].layer - 1;
+             l >= grids_n1A2[0].layer;
+             l--) {
+          treeedges[edge_n1A2].route.grids[cnt]
+              = {grids_n1A2[0].x, grids_n1A2[0].y, l};
           cnt++;
         }
-      } else if (gridsL_n1A1[cnt_n1A1 - 1] < gridsL_n1A2[0]) {
-        for (int l = gridsL_n1A1[cnt_n1A1 - 1] + 1; l <= gridsL_n1A2[0]; l++) {
-          treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A2[0];
-          treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A2[0];
-          treeedges[edge_n1A2].route.gridsL[cnt] = l;
+      } else if (grids_n1A1[cnt_n1A1 - 1].layer < grids_n1A2[0].layer) {
+        for (int16_t l = grids_n1A1[cnt_n1A1 - 1].layer + 1;
+             l <= grids_n1A2[0].layer;
+             l++) {
+          treeedges[edge_n1A2].route.grids[cnt]
+              = {grids_n1A2[0].x, grids_n1A2[0].y, l};
           cnt++;
         }
       }
@@ -490,9 +441,7 @@ void FastRouteCore::updateRouteType13D(int netID,
 
     for (int i = 1; i < cnt_n1A2; i++)  // 0 is n1 again, so no repeat
     {
-      treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A2[i];
-      treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A2[i];
-      treeedges[edge_n1A2].route.gridsL[cnt] = gridsL_n1A2[i];
+      treeedges[edge_n1A2].route.grids[cnt] = grids_n1A2[i];
       cnt++;
     }
     treeedges[edge_n1A2].n1 = n1;
@@ -501,33 +450,31 @@ void FastRouteCore::updateRouteType13D(int netID,
     cnt = 0;
     for (int i = cnt_n1A2 - 1; i >= 1; i--)  // 0 is n1 again, so no repeat
     {
-      treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A2[i];
-      treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A2[i];
-      treeedges[edge_n1A2].route.gridsL[cnt] = gridsL_n1A2[i];
+      treeedges[edge_n1A2].route.grids[cnt] = grids_n1A2[i];
       cnt++;
     }
 
     if (cnt_n1A2 > 1) {
-      if (gridsL_n1A1[cnt_n1A1 - 1] > gridsL_n1A2[0]) {
-        for (int l = gridsL_n1A2[0]; l < gridsL_n1A1[cnt_n1A1 - 1]; l++) {
-          treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A2[0];
-          treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A2[0];
-          treeedges[edge_n1A2].route.gridsL[cnt] = l;
+      if (grids_n1A1[cnt_n1A1 - 1].layer > grids_n1A2[0].layer) {
+        for (int16_t l = grids_n1A2[0].layer;
+             l < grids_n1A1[cnt_n1A1 - 1].layer;
+             l++) {
+          treeedges[edge_n1A2].route.grids[cnt]
+              = {grids_n1A2[0].x, grids_n1A2[0].y, l};
           cnt++;
         }
-      } else if (gridsL_n1A1[cnt_n1A1 - 1] < gridsL_n1A2[0]) {
-        for (int l = gridsL_n1A2[0]; l > gridsL_n1A1[cnt_n1A1 - 1]; l--) {
-          treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A2[0];
-          treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A2[0];
-          treeedges[edge_n1A2].route.gridsL[cnt] = l;
+      } else if (grids_n1A1[cnt_n1A1 - 1].layer < grids_n1A2[0].layer) {
+        for (int16_t l = grids_n1A2[0].layer;
+             l > grids_n1A1[cnt_n1A1 - 1].layer;
+             l--) {
+          treeedges[edge_n1A2].route.grids[cnt]
+              = {grids_n1A2[0].x, grids_n1A2[0].y, l};
           cnt++;
         }
       }
     }
     for (int i = cnt_n1A1 - 1; i >= E1_pos2; i--) {
-      treeedges[edge_n1A2].route.gridsX[cnt] = gridsX_n1A1[i];
-      treeedges[edge_n1A2].route.gridsY[cnt] = gridsY_n1A1[i];
-      treeedges[edge_n1A2].route.gridsL[cnt] = gridsL_n1A1[i];
+      treeedges[edge_n1A2].route.grids[cnt] = grids_n1A1[i];
       cnt++;
     }
     treeedges[edge_n1A2].n1 = A2;
@@ -556,15 +503,9 @@ void FastRouteCore::updateRouteType23D(int netID,
                                        int edge_C1C2)
 {
   int cnt;
-  std::vector<int> gridsX_n1A1;
-  std::vector<int> gridsY_n1A1;
-  std::vector<int> gridsL_n1A1;
-  std::vector<int> gridsX_n1A2;
-  std::vector<int> gridsY_n1A2;
-  std::vector<int> gridsL_n1A2;
-  std::vector<int> gridsX_C1C2;
-  std::vector<int> gridsY_C1C2;
-  std::vector<int> gridsL_C1C2;
+  std::vector<GPoint3D> grids_n1A1;
+  std::vector<GPoint3D> grids_n1A2;
+  std::vector<GPoint3D> grids_C1C2;
 
   const int A1x = treenodes[A1].x;
   const int A1y = treenodes[A1].y;
@@ -580,41 +521,21 @@ void FastRouteCore::updateRouteType23D(int netID,
   const int edge_A1A2 = edge_C1C2;
 
   // copy (A1, n1)
-  const int cnt_n1A1 = copyGrids3D(treenodes,
-                                   A1,
-                                   n1,
-                                   treeedges,
-                                   edge_n1A1,
-                                   gridsX_n1A1,
-                                   gridsY_n1A1,
-                                   gridsL_n1A1);
+  const int cnt_n1A1
+      = copyGrids3D(treenodes, A1, n1, treeedges, edge_n1A1, grids_n1A1);
 
   // copy (n1, A2)
-  const int cnt_n1A2 = copyGrids3D(treenodes,
-                                   n1,
-                                   A2,
-                                   treeedges,
-                                   edge_n1A2,
-                                   gridsX_n1A2,
-                                   gridsY_n1A2,
-                                   gridsL_n1A2);
+  const int cnt_n1A2
+      = copyGrids3D(treenodes, n1, A2, treeedges, edge_n1A2, grids_n1A2);
 
   // copy all the grids on (C1, C2) to gridsX_C1C2[] and gridsY_C1C2[]
-  const int cnt_C1C2 = copyGrids3D(treenodes,
-                                   C1,
-                                   C2,
-                                   treeedges,
-                                   edge_C1C2,
-                                   gridsX_C1C2,
-                                   gridsY_C1C2,
-                                   gridsL_C1C2);
+  const int cnt_C1C2
+      = copyGrids3D(treenodes, C1, C2, treeedges, edge_C1C2, grids_C1C2);
 
   // combine grids on original (A1, n1) and (n1, A2) to new (A1, A2)
   // allocate memory for gridsX[] and gridsY[] of edge_A1A2
   if (treeedges[edge_A1A2].route.type == RouteType::MazeRoute) {
-    treeedges[edge_A1A2].route.gridsX.clear();
-    treeedges[edge_A1A2].route.gridsY.clear();
-    treeedges[edge_A1A2].route.gridsL.clear();
+    treeedges[edge_A1A2].route.grids.clear();
   }
   int len_A1A2 = cnt_n1A1 + cnt_n1A2 - 1;
 
@@ -624,12 +545,10 @@ void FastRouteCore::updateRouteType23D(int netID,
   } else {
     int extraLen = 0;
     if (cnt_n1A1 > 1 && cnt_n1A2 > 1) {
-      extraLen = abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]);
+      extraLen = abs(grids_n1A1[cnt_n1A1 - 1].layer - grids_n1A2[0].layer);
       len_A1A2 += extraLen;
     }
-    treeedges[edge_A1A2].route.gridsX.resize(len_A1A2, 0);
-    treeedges[edge_A1A2].route.gridsY.resize(len_A1A2, 0);
-    treeedges[edge_A1A2].route.gridsL.resize(len_A1A2, 0);
+    treeedges[edge_A1A2].route.grids.resize(len_A1A2);
     treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
     treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
@@ -639,26 +558,26 @@ void FastRouteCore::updateRouteType23D(int netID,
     if (cnt_n1A1 > 1) {
       startIND = 1;
       for (int i = 0; i < cnt_n1A1; i++) {
-        treeedges[edge_A1A2].route.gridsX[cnt] = gridsX_n1A1[i];
-        treeedges[edge_A1A2].route.gridsY[cnt] = gridsY_n1A1[i];
-        treeedges[edge_A1A2].route.gridsL[cnt] = gridsL_n1A1[i];
+        treeedges[edge_A1A2].route.grids[cnt] = grids_n1A1[i];
         cnt++;
       }
     }
 
     if (extraLen > 0) {
-      if (gridsL_n1A1[cnt_n1A1 - 1] < gridsL_n1A2[0]) {
-        for (int i = gridsL_n1A1[cnt_n1A1 - 1] + 1; i <= gridsL_n1A2[0]; i++) {
-          treeedges[edge_A1A2].route.gridsX[cnt] = gridsX_n1A2[0];
-          treeedges[edge_A1A2].route.gridsY[cnt] = gridsY_n1A2[0];
-          treeedges[edge_A1A2].route.gridsL[cnt] = i;
+      if (grids_n1A1[cnt_n1A1 - 1].layer < grids_n1A2[0].layer) {
+        for (int16_t i = grids_n1A1[cnt_n1A1 - 1].layer + 1;
+             i <= grids_n1A2[0].layer;
+             i++) {
+          treeedges[edge_A1A2].route.grids[cnt]
+              = {grids_n1A2[0].x, grids_n1A2[0].y, i};
           cnt++;
         }
       } else {
-        for (int i = gridsL_n1A1[cnt_n1A1 - 1] - 1; i >= gridsL_n1A2[1]; i--) {
-          treeedges[edge_A1A2].route.gridsX[cnt] = gridsX_n1A2[0];
-          treeedges[edge_A1A2].route.gridsY[cnt] = gridsY_n1A2[0];
-          treeedges[edge_A1A2].route.gridsL[cnt] = i;
+        for (int16_t i = grids_n1A1[cnt_n1A1 - 1].layer - 1;
+             i >= grids_n1A2[1].layer;
+             i--) {
+          treeedges[edge_A1A2].route.grids[cnt]
+              = {grids_n1A2[0].x, grids_n1A2[0].y, i};
           cnt++;
         }
       }
@@ -666,9 +585,7 @@ void FastRouteCore::updateRouteType23D(int netID,
 
     for (int i = startIND; i < cnt_n1A2; i++)  // do not repeat point n1
     {
-      treeedges[edge_A1A2].route.gridsX[cnt] = gridsX_n1A2[i];
-      treeedges[edge_A1A2].route.gridsY[cnt] = gridsY_n1A2[i];
-      treeedges[edge_A1A2].route.gridsL[cnt] = gridsL_n1A2[i];
+      treeedges[edge_A1A2].route.grids[cnt] = grids_n1A2[i];
       cnt++;
     }
   }
@@ -681,7 +598,7 @@ void FastRouteCore::updateRouteType23D(int netID,
   // find the index of E1 in (C1, C2)
   int E1_pos1 = -1;
   for (int i = 0; i < cnt_C1C2; i++) {
-    if (gridsX_C1C2[i] == E1x && gridsY_C1C2[i] == E1y) {
+    if (grids_C1C2[i].x == E1x && grids_C1C2[i].y == E1y) {
       E1_pos1 = i;
       break;
     }
@@ -690,7 +607,7 @@ void FastRouteCore::updateRouteType23D(int netID,
   int E1_pos2 = -1;
 
   for (int i = cnt_C1C2 - 1; i >= 0; i--) {
-    if (gridsX_C1C2[i] == E1x && gridsY_C1C2[i] == E1y) {
+    if (grids_C1C2[i].x == E1x && grids_C1C2[i].y == E1y) {
       E1_pos2 = i;
       break;
     }
@@ -703,44 +620,32 @@ void FastRouteCore::updateRouteType23D(int netID,
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
   if (treeedges[edge_n1C1].route.type == RouteType::MazeRoute
       && treeedges[edge_n1C1].route.routelen > 0) {
-    treeedges[edge_n1C1].route.gridsX.clear();
-    treeedges[edge_n1C1].route.gridsY.clear();
-    treeedges[edge_n1C1].route.gridsL.clear();
+    treeedges[edge_n1C1].route.grids.clear();
   }
   const int len_n1C1 = E1_pos1 + 1;
 
-  treeedges[edge_n1C1].route.gridsX.resize(len_n1C1, 0);
-  treeedges[edge_n1C1].route.gridsY.resize(len_n1C1, 0);
-  treeedges[edge_n1C1].route.gridsL.resize(len_n1C1, 0);
+  treeedges[edge_n1C1].route.grids.resize(len_n1C1);
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
   treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
   if (treeedges[edge_n1C2].route.type == RouteType::MazeRoute
       && treeedges[edge_n1C2].route.routelen > 0) {
-    treeedges[edge_n1C2].route.gridsX.clear();
-    treeedges[edge_n1C2].route.gridsY.clear();
-    treeedges[edge_n1C2].route.gridsL.clear();
+    treeedges[edge_n1C2].route.grids.clear();
   }
   const int len_n1C2 = cnt_C1C2 - E1_pos2;
 
-  treeedges[edge_n1C2].route.gridsX.resize(len_n1C2, 0);
-  treeedges[edge_n1C2].route.gridsY.resize(len_n1C2, 0);
-  treeedges[edge_n1C2].route.gridsL.resize(len_n1C2, 0);
+  treeedges[edge_n1C2].route.grids.resize(len_n1C2);
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
   treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
   // split original (C1, C2) to (C1, n1) and (n1, C2)
   for (int i = 0; i <= E1_pos1; i++) {
-    treeedges[edge_n1C1].route.gridsX[i] = gridsX_C1C2[i];
-    treeedges[edge_n1C1].route.gridsY[i] = gridsY_C1C2[i];
-    treeedges[edge_n1C1].route.gridsL[i] = gridsL_C1C2[i];
+    treeedges[edge_n1C1].route.grids[i] = grids_C1C2[i];
   }
 
   cnt = 0;
   for (int i = E1_pos2; i < cnt_C1C2; i++) {
-    treeedges[edge_n1C2].route.gridsX[cnt] = gridsX_C1C2[i];
-    treeedges[edge_n1C2].route.gridsY[cnt] = gridsY_C1C2[i];
-    treeedges[edge_n1C2].route.gridsL[cnt] = gridsL_C1C2[i];
+    treeedges[edge_n1C2].route.grids[cnt] = grids_C1C2[i];
     cnt++;
   }
 }
@@ -781,11 +686,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       const int n2x = treenodes[n2].x;
       const int n2y = treenodes[n2].y;
 
-      const int ymin = std::min(n1y, n2y);
-      const int ymax = std::max(n1y, n2y);
-
-      const int xmin = std::min(n1x, n2x);
-      const int xmax = std::max(n1x, n2x);
+      const auto [ymin, ymax] = std::minmax(n1y, n2y);
+      const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
       // ripup the routing for the edge
       if (!newRipup3DType3(netID, edgeID)) {
@@ -1129,21 +1031,21 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       // get the new route for the edge and store it in gridsX[] and
       // gridsY[] temporarily
 
-      const int crossL = ind1 / (grid_hv_);
-      const int crossX = (ind1 % (grid_hv_)) % x_range_;
-      const int crossY = (ind1 % (grid_hv_)) / x_range_;
+      const int16_t crossL = ind1 / (grid_hv_);
+      const int16_t crossX = (ind1 % (grid_hv_)) % x_range_;
+      const int16_t crossY = (ind1 % (grid_hv_)) / x_range_;
 
       int cnt = 0;
-      int curX = crossX;
-      int curY = crossY;
-      int curL = crossL;
+      int16_t curX = crossX;
+      int16_t curY = crossY;
+      int16_t curL = crossL;
 
       if (d1_3D_[curL][curY][curX] == 0) {
         recoverEdge(netID, edgeID);
         break;
       }
 
-      std::vector<int> tmp_gridsX, tmp_gridsY, tmp_gridsL;
+      std::vector<GPoint3D> tmp_grids;
 
       while (d1_3D_[curL][curY][curX] != 0)  // loop until reach subtree1
       {
@@ -1153,21 +1055,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         curX = tmpX;
         curY = tmpY;
         curL = tmpL;
-        fflush(stdout);
-        tmp_gridsX.push_back(curX);
-        tmp_gridsY.push_back(curY);
-        tmp_gridsL.push_back(curL);
+        tmp_grids.push_back({curX, curY, curL});
         cnt++;
       }
 
-      std::vector<int> gridsX(tmp_gridsX.rbegin(), tmp_gridsX.rend());
-      std::vector<int> gridsY(tmp_gridsY.rbegin(), tmp_gridsY.rend());
-      std::vector<int> gridsL(tmp_gridsL.rbegin(), tmp_gridsL.rend());
+      std::vector<GPoint3D> grids(tmp_grids.rbegin(), tmp_grids.rend());
 
       // add the connection point (crossX, crossY)
-      gridsX.push_back(crossX);
-      gridsY.push_back(crossY);
-      gridsL.push_back(crossL);
+      grids.push_back({crossX, crossY, crossL});
       cnt++;
 
       curX = crossX;
@@ -1176,23 +1071,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       const int cnt_n1n2 = cnt;
 
-      const int E1x = gridsX[0];
-      const int E1y = gridsY[0];
-      const int E2x = gridsX.back();
-      const int E2y = gridsY.back();
+      const int E1x = grids[0].x;
+      const int E1y = grids[0].y;
+      const int E2x = grids.back().x;
+      const int E2y = grids.back().y;
 
       int headRoom = 0;
-      int origL = gridsL[0];
+      int origL = grids[0].layer;
 
-      while (headRoom < gridsX.size() && gridsX[headRoom] == E1x
-             && gridsY[headRoom] == E1y) {
+      while (headRoom < grids.size() && grids[headRoom].x == E1x
+             && grids[headRoom].y == E1y) {
         headRoom++;
       }
       if (headRoom > 0) {
         headRoom--;
       }
 
-      int lastL = gridsL[headRoom];
+      int lastL = grids[headRoom].layer;
 
       // change the tree structure according to the new routing for the tree
       // edge find E1 and E2, and the endpoints of the edges they are on
@@ -1342,18 +1237,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         newUpdateNodeLayers(treenodes, edge_n1n2, n1a, lastL);
       }
 
-      origL = gridsL[cnt_n1n2 - 1];
+      origL = grids[cnt_n1n2 - 1].layer;
       int tailRoom = cnt_n1n2 - 1;
 
-      while (tailRoom > 0 && gridsX[tailRoom] == E2x
-             && gridsY[tailRoom] == E2y) {
+      while (tailRoom > 0 && grids[tailRoom].x == E2x
+             && grids[tailRoom].y == E2y) {
         tailRoom--;
       }
       if (tailRoom < cnt_n1n2 - 1) {
         tailRoom++;
       }
 
-      lastL = gridsL[tailRoom];
+      lastL = grids[tailRoom].layer;
 
       // (2) consider subtree2
       if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
@@ -1503,18 +1398,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       // update route for edge (n1, n2) and edge usage
       if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
-        treeedges[edge_n1n2].route.gridsX.clear();
-        treeedges[edge_n1n2].route.gridsY.clear();
-        treeedges[edge_n1n2].route.gridsL.clear();
+        treeedges[edge_n1n2].route.grids.clear();
       }
 
       // avoid resizing vector with negative value.
       // this may happen when all elements of gridsX and gridsY are the
       // same.
       if (newcnt_n1n2 > 0) {
-        treeedges[edge_n1n2].route.gridsX.resize(newcnt_n1n2, 0);
-        treeedges[edge_n1n2].route.gridsY.resize(newcnt_n1n2, 0);
-        treeedges[edge_n1n2].route.gridsL.resize(newcnt_n1n2, 0);
+        treeedges[edge_n1n2].route.grids.resize(newcnt_n1n2);
       }
       treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
       treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
@@ -1522,29 +1413,25 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       int j = headRoom;
       for (int i = 0; i < newcnt_n1n2; i++) {
-        treeedges[edge_n1n2].route.gridsX[i] = gridsX[j];
-        treeedges[edge_n1n2].route.gridsY[i] = gridsY[j];
-        treeedges[edge_n1n2].route.gridsL[i] = gridsL[j];
+        treeedges[edge_n1n2].route.grids[i] = grids[j];
         j++;
       }
 
       // update edge usage
       for (int i = headRoom; i < tailRoom; i++) {
-        if (gridsL[i] == gridsL[i + 1]) {
-          if (gridsX[i] == gridsX[i + 1])  // a vertical edge
+        if (grids[i].layer == grids[i + 1].layer) {
+          if (grids[i].x == grids[i + 1].x)  // a vertical edge
           {
-            const int min_y = std::min(gridsY[i], gridsY[i + 1]);
-            v_edges_[min_y][gridsX[i]].usage += net->getEdgeCost();
-            v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
-            v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
-                += net->getLayerEdgeCost(gridsL[i]);
+            const int min_y = std::min(grids[i].y, grids[i + 1].y);
+            graph2d_.addUsageV(grids[i].x, min_y, net->getEdgeCost());
+            v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
+                += net->getLayerEdgeCost(grids[i].layer);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
-            const int min_x = std::min(gridsX[i], gridsX[i + 1]);
-            h_edges_[gridsY[i]][min_x].usage += net->getEdgeCost();
-            h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
-            h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
-                += net->getLayerEdgeCost(gridsL[i]);
+            const int min_x = std::min(grids[i].x, grids[i + 1].x);
+            graph2d_.addUsageH(min_x, grids[i].y, net->getEdgeCost());
+            h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
+                += net->getLayerEdgeCost(grids[i].layer);
           }
         }
       }

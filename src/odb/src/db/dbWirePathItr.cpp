@@ -354,39 +354,45 @@ void dbWirePath::dump(utl::Logger* logger, const char* group, int level) const
              point.getY());
   if (layer) {
     debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
-  } else
+  } else {
     debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
+  }
 
-  if (rule)
+  if (rule) {
     debugPrint(logger,
                utl::ODB,
                group,
                level,
                "non-default rule {} ",
                rule->getName());
+  }
 
-  if (iterm)
+  if (iterm) {
     debugPrint(logger,
                utl::ODB,
                group,
                level,
                "Connects to Iterm {}  ",
                iterm->getMTerm()->getName());
+  }
 
-  if (bterm)
+  if (bterm) {
     debugPrint(logger,
                utl::ODB,
                group,
                level,
                "Connects to Bterm {}  ",
                bterm->getName());
+  }
 
-  if (is_branch)
+  if (is_branch) {
     debugPrint(logger, utl::ODB, group, level, "is branch  ");
+  }
 
-  if (is_short)
+  if (is_short) {
     debugPrint(
         logger, utl::ODB, group, level, "is short to {} ", short_junction);
+  }
 }
 
 //
@@ -407,10 +413,11 @@ void dbWirePathShape::dump(utl::Logger* logger,
 
   if (layer) {
     debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
-  } else
+  } else {
     debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
+  }
 
-  if (iterm)
+  if (iterm) {
     debugPrint(logger,
                utl::ODB,
                group,
@@ -418,8 +425,9 @@ void dbWirePathShape::dump(utl::Logger* logger,
                "Connects to Iterm {} {}  ",
                iterm->getId(),
                iterm->getMTerm()->getName());
+  }
 
-  if (bterm)
+  if (bterm) {
     debugPrint(logger,
                utl::ODB,
                group,
@@ -427,6 +435,7 @@ void dbWirePathShape::dump(utl::Logger* logger,
                "Connects to Bterm {} {}  ",
                bterm->getId(),
                bterm->getName());
+  }
 
   shape.dump(logger, group, level);
 }

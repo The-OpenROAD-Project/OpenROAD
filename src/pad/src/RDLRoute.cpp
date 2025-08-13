@@ -84,8 +84,8 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
 }
 
 void RDLRoute::setRoute(
-    const std::map<grid_vertex, odb::Point>& vertex_point_map,
-    const std::vector<grid_vertex>& vertex,
+    const std::map<GridGraphVertex, odb::Point>& vertex_point_map,
+    const std::vector<GridGraphVertex>& vertex,
     const std::vector<RDLRouter::GridEdge>& removed_edges,
     const RouteTarget* source,
     const RouteTarget* target,

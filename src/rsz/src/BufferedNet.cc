@@ -35,12 +35,32 @@ namespace rsz {
 using std::make_shared;
 using std::max;
 using std::min;
-
-using sta::INF;
-
 using utl::RSZ;
 
 static const char* to_string(BufferedNetType type);
+
+////////////////////////////////////////////////////////////////
+
+const FixedDelay FixedDelay::INF = FixedDelay(100.0f, nullptr);
+const FixedDelay FixedDelay::ZERO = FixedDelay(0.0f, nullptr);
+
+FixedDelay::FixedDelay() : value_fs_(0)
+{
+}
+
+FixedDelay::FixedDelay(sta::Delay float_value, Resizer* resizer)
+{
+  if (resizer
+      && (float_value > (FixedDelay::INF).toSeconds()
+          || float_value < (-FixedDelay::INF).toSeconds())) {
+    resizer->logger()->error(RSZ,
+                             1008,
+                             "FixedDelay conversion out of range: {}",
+                             delayAsString(float_value, resizer));
+  }
+
+  value_fs_ = float_value * second_;
+}
 
 ////////////////////////////////////////////////////////////////
 
@@ -183,14 +203,14 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
                          x,
                          y,
                          cap,
-                         delayAsString(slack(), resizer),
+                         delayAsString(slack().toSeconds(), resizer),
                          delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::wire:
       return fmt::format("wire ({}, {}) cap {} slack {} buffers {} load sl {}",
                          x,
                          y,
                          cap,
-                         delayAsString(slack(), resizer),
+                         delayAsString(slack().toSeconds(), resizer),
                          bufferCount(),
                          delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::buffer:
@@ -200,7 +220,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
           y,
           buffer_cell_->name(),
           cap,
-          delayAsString(slack(), resizer),
+          delayAsString(slack().toSeconds(), resizer),
           bufferCount(),
           delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::junction:
@@ -209,7 +229,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
           x,
           y,
           cap,
-          delayAsString(slack(), resizer),
+          delayAsString(slack().toSeconds(), resizer),
           bufferCount(),
           delayAsString(maxLoadSlew(), resizer));
   }
@@ -242,17 +262,17 @@ void BufferedNet::setSlackTransition(const sta::RiseFallBoth* transitions)
   slack_transitions_ = transitions;
 }
 
-void BufferedNet::setSlack(Delay slack)
+void BufferedNet::setSlack(FixedDelay slack)
 {
   slack_ = slack;
 }
 
-void BufferedNet::setDelay(Delay delay)
+void BufferedNet::setDelay(FixedDelay delay)
 {
   delay_ = delay;
 }
 
-void BufferedNet::setArrivalDelay(Delay delay)
+void BufferedNet::setArrivalDelay(FixedDelay delay)
 {
   arrival_delay_ = delay;
 }
@@ -714,11 +734,11 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
   bool found_drvr_grid_pt = false;
   Point drvr_grid_pt;
   bool is_local = true;
-  Point first_pin_loc = pin_grid_locs[0].pt_;
+  Point first_pin_loc = pin_grid_locs[0].pt;
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
-    Pin* pin = pin_loc.iterm_ ? db_network_->dbToSta(pin_loc.iterm_)
-                              : db_network_->dbToSta(pin_loc.bterm_);
-    Point& loc = pin_loc.pt_;
+    Pin* pin = pin_loc.iterm ? db_network_->dbToSta(pin_loc.iterm)
+                             : db_network_->dbToSta(pin_loc.bterm);
+    Point& loc = pin_loc.pt;
     is_local = is_local && loc == first_pin_loc;
     debugPrint(logger_,
                RSZ,

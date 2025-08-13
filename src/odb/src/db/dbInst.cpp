@@ -29,6 +29,7 @@
 #include "dbNet.h"
 #include "dbNullIterator.h"
 #include "dbRegion.h"
+#include "dbScanInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -785,6 +786,22 @@ bool dbInst::isEndCap() const
   return getMaster()->isEndCap();
 }
 
+dbScanInst* dbInst::getScanInst() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  _dbBlock* block = (_dbBlock*) inst->getOwner();
+  auto itr = block->_inst_scan_inst_map.find(inst->getId());
+
+  if (itr == block->_inst_scan_inst_map.end()) {
+    return nullptr;
+  }
+
+  dbId<_dbScanInst> scan_inst_id = itr->second;
+  _dbScanInst* scan_inst = block->_scan_inst_tbl->getPtr(scan_inst_id);
+
+  return (dbScanInst*) scan_inst;
+}
+
 dbSet<dbITerm> dbInst::getITerms()
 {
   _dbInst* inst = (_dbInst*) this;
@@ -1409,6 +1426,15 @@ void dbInst::destroy(dbInst* inst_)
                              362,
                              "Attempt to destroy dont_touch instance {}",
                              inst->_name);
+  }
+
+  dbScanInst* scan_inst = inst_->getScanInst();
+  if (scan_inst) {
+    inst->getLogger()->error(
+        utl::ODB,
+        505,
+        "Attempt to destroy instance {} with an associated scan inst.",
+        inst->_name);
   }
 
   uint i;

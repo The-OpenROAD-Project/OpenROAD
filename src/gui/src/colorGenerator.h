@@ -16,14 +16,14 @@ class ColorGenerator
   ColorGenerator();
   ~ColorGenerator() {}
 
-  int getColorCount() const { return colors_.size(); }
+  int getColorCount() const { return kColors.size(); }
   QColor getQColor();
   Painter::Color getColor();
 
   void reset() { index_ = 0; }
 
  private:
-  static const std::array<QColor, 31> colors_;
+  static const std::array<QColor, 31> kColors;
   int index_;
 };
 

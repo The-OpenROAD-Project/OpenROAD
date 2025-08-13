@@ -86,6 +86,7 @@ cc_library(
         "src/AbstractGraphicsFactory.h",
         "src/DesignCallBack.cpp",
         "src/DesignCallBack.h",
+        "src/PACallBack.h",
         "src/TritonRoute.cpp",
         "src/db/drObj/drAccessPattern.cpp",
         "src/db/drObj/drNet.cpp",
@@ -216,6 +217,8 @@ cc_library(
         "@boost.bind",
         "@boost.container",
         "@boost.geometry",
+        "@boost.graph",
+        "@boost.icl",
         "@boost.io",
         "@boost.polygon",
         "@boost.serialization",
@@ -268,6 +271,7 @@ cc_library(
     ],
     deps = [
         ":db_hdrs",
+        ":drt",
         "//:ord",
         "//src/dst",
         "//src/gui",
@@ -278,6 +282,7 @@ cc_library(
         "@boost.geometry",
         "@boost.polygon",
         "@boost.serialization",
+        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )

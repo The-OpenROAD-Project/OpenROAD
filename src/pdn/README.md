@@ -21,6 +21,7 @@ Build a power grid in accordance with the information specified.
 
 ```tcl
 pdngen
+    [-check_only]
     [-dont_add_pins]
     [-failed_via_report file]
     [-report_only]
@@ -36,6 +37,7 @@ pdngen
 | `[-dont_add_pins]` | Prevent the creation of block pins. |
 | `[-failed_via_report]` | Generate a report file which can be viewed in the DRC viewer for all the failed vias (ie. those that did not get built or were removed). |
 | `[-report_only]` | Print the current specifications. |
+| `[-check_only]` | Check the current setup for errors. |
 | `[-reset]` | Reset the grid and domain specifications. |
 | `[-ripup]` | Ripup the existing power grid, as specified by the voltage domains. |
 | `[-skip_trim]` | Skip the metal trim step, which attempts to remove metal stubs. |
@@ -245,15 +247,15 @@ add_sroute_connect  -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {2
 
 ```tcl
 add_sroute_connect
-    -cut_pitch pitch_value
+    -cut_pitch list_of_2_pitch_values
     -layers list_of_2_layers
+    -net net
     [-fixed_vias list_of_vias]
     [-insts inst]
     [-max_columns columns]
     [-max_rows rows]
     [-metalspaces metalspaces]
     [-metalwidths metalwidths]
-    [-net net]
     [-ongrid ongrid_layers]
     [-outerNet outerNet]
 ```
@@ -262,15 +264,15 @@ add_sroute_connect
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-cut_pitch` | Distance between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. (Default:200 200) |
+| `-cut_pitch` | Distances in x and y between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. |
 | `-layers` |  The metal layers for vertical stripes within inner power ring. |
+| `-net` | The inner net where the power ring exists. |
 | `[-fixed_vias]` | List of fixed vias to be used to form the via stack. |
 | `[-insts]` | List of all the instances that contain the pin that needs to get connected with power ring. (Default:nothing) |
 | `[-max_columns]` | Maximum number of columns when adding arrays of vias. (Default:10) |
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. (Default:10) |
 | `[-metalspaces]` | Spacing of each metal layer. |
 | `[-metalwidths]` | Width for each metal layer. |
-| `[-net]` | The inner net where the power ring exists. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `[-outerNet]` | The outer net where instances/pins that need to get connected exist. |
 
@@ -356,6 +358,7 @@ add_pdn_connect
     [-max_rows rows]
     [-ongrid ongrid_layers]
     [-split_cuts split_cuts_mapping]
+    [-split_cuts_staggered]
 ```
 
 #### Options
@@ -371,6 +374,7 @@ add_pdn_connect
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `[-split_cuts]` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
+| `[-split_cuts_staggered]` | Specified if the split cuts should be staggered, ie. the ground vias will appear with an offset of pitch / 2. |
 
 ### Repairing power grid vias after detailed routing
 

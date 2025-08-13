@@ -9,16 +9,17 @@ set ECHO_COMMANDS {
 
 # Save and wrap each command
 foreach cmd $ECHO_COMMANDS {
-    if {[info commands $cmd] != ""} {
-        set orig_cmd "orig_$cmd"
-        if {[info commands $orig_cmd] == ""} {
-            rename $cmd $orig_cmd
-            proc $cmd {args} "
+  if { [info commands $cmd] != "" } {
+    set orig_cmd "orig_$cmd"
+    if { [info commands $orig_cmd] == "" } {
+      rename $cmd $orig_cmd
+      # tclint-disable-next-line command-args
+      proc $cmd {args} "
                 puts \">> $cmd \$args\"
                 ${orig_cmd} {*}\$args
             "
-        }
     }
+  }
 }
 
 source "helpers.tcl"
@@ -31,7 +32,8 @@ link_design jpeg_encoder -hier
 read_sdc jpeg.sdc
 
 #place the design
-#initialize_floorplan -die_area "0 0 40 1200"   -core_area "0 0 40 1200" -site FreePDK45_38x28_10R_NP_162NW_34O
+#initialize_floorplan -die_area "0 0 40 1200"   -core_area "0 0 40 1200" \
+#   -site FreePDK45_38x28_10R_NP_162NW_34O
 #global_placement -skip_nesterov_place
 #detailed_placement
 

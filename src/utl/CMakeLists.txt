@@ -3,7 +3,7 @@
 
 include("openroad")
 
-find_package(Boost 1.78 REQUIRED COMPONENTS iostreams)
+find_package(Boost CONFIG 1.78 REQUIRED COMPONENTS iostreams)
 
 swig_lib(NAME      utl
          NAMESPACE utl
@@ -36,6 +36,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
 endif()
 
 add_library(utl_lib
+  src/CallBackHandler.cpp
+  src/CallBack.cpp
   src/Metrics.cpp
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp

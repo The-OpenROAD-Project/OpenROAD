@@ -27,6 +27,7 @@ from helper import (
     is_set_by_ref,
     is_ref,
     std,
+    fnv1a_32,
 )
 
 # map types to their header if it isn't equal to their name
@@ -57,6 +58,8 @@ def make_parent_field(parent, relation):
     field["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
         "flags", []
     )
+    if "page_size" in relation:
+        field["page_size"] = relation["page_size"]
     if "schema" in relation:
         field["schema"] = relation["schema"]
 
@@ -261,6 +264,31 @@ def generate_relations(schema):
             make_child_next_field(child, relation)
 
 
+def preprocess_klass(klass):
+    klass["declared_classes"].insert(0, "dbIStream")
+    klass["declared_classes"].insert(1, "dbOStream")
+    if klass["name"] != "dbDatabase":
+        klass["declared_classes"].insert(2, "_dbDatabase")
+        klass["cpp_includes"].append("dbDatabase.h")
+    klass["h_includes"].insert(0, "dbCore.h")
+    klass["h_includes"].insert(1, "odb/odb.h")
+    name = klass["name"]
+    klass["cpp_includes"].extend(["dbTable.h", "dbTable.hpp", "odb/db.h", f"{name}.h"])
+    if klass["hasBitFields"]:
+        klass["cpp_sys_includes"].extend(["cstdint", "cstring"])
+    for field in klass["fields"]:
+        if field.get("table", False):
+            page_size_part = f", {field['page_size']}" if "page_size" in field else ""
+            # setting default value for table fields
+            this_or_db = "this" if klass["name"] == "dbDatabase" else "db"
+            field["default"] = (
+                f"new dbTable<_{field['type']}{page_size_part}>({this_or_db}, this, (GetObjTbl_t) &_{klass['name']}::getObjectTable, {field['type']}Obj)"
+            )
+            # setting table identifier for table fields
+            field["table_base_type"] = field["type"]
+            field["type"] = f"dbTable<_{field['type']}{page_size_part}>*"
+
+
 def generate(schema, env, includeDir, srcDir, keep_empty):
     """Generate generate code based on the schema and templates"""
     print("###################Code Generation Begin###################")
@@ -291,6 +319,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
     generate_relations(schema)
 
     to_be_merged = []
+    hash_dict = {}
     for klass in schema["classes"]:
         # Adding functional name to fields and extracting field components
         flags_struct = {
@@ -311,7 +340,20 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
                 if "odb/db.h" not in klass["h_includes"]:
                     klass["h_includes"].append("odb/db.h")
                 break
+        # Add hash to class
+        if "hash" not in klass:
+            hash_value = fnv1a_32(klass["name"])
+        else:
+            hash_value = int(klass["hash"], 16)
 
+        if hash_value in hash_dict:
+            # Collision detected, error out
+            raise ValueError(
+                f"Collision detected for {klass['name']} with {hash_dict[hash_value]}"
+            )
+        hash_dict[hash_value] = klass["name"]
+        klass["hash"] = f"0x{hash_value:08X}"
+        preprocess_klass(klass)
         # Generating files
         for template_file in ["impl.h", "impl.cpp"]:
             template = env.get_template(template_file)

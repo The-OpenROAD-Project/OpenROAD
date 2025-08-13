@@ -53,12 +53,8 @@ initialize_floorplan -site $site \
 
 source $tracks_file
 
-# remove buffers inserted by synthesis 
+# remove buffers inserted by synthesis
 remove_buffers
-
-################################################################
-# IO Placement (random)
-place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
 # Macro Placement
@@ -66,12 +62,12 @@ if { [have_macros] } {
   lassign $macro_place_halo halo_x halo_y
   set report_dir [make_result_file ${design}_${platform}_rtlmp]
   rtl_macro_placer -halo_width $halo_x -halo_height $halo_y \
-      -report_directory $report_dir
+    -report_directory $report_dir
 }
 
 ################################################################
 # Tapcell insertion
-eval tapcell $tapcell_args
+eval tapcell $tapcell_args ;# tclint-disable command-args
 
 ################################################################
 # Power distribution network insertion
@@ -89,11 +85,16 @@ set_routing_layers -signal $global_routing_layers \
   -clock $global_routing_clock_layers
 set_macro_extension 2
 
-global_placement -routability_driven -density $global_place_density \
-  -pad_left $global_place_pad -pad_right $global_place_pad
+# Global placement skip IOs
+global_placement -density $global_place_density \
+  -pad_left $global_place_pad -pad_right $global_place_pad -skip_io
 
 # IO Placement
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
+
+# Global placement with placed IOs and routability-driven
+global_placement -routability_driven -density $global_place_density \
+  -pad_left $global_place_pad -pad_right $global_place_pad
 
 # checkpoint
 set global_place_db [make_result_file ${design}_${platform}_global_place.db]
@@ -103,7 +104,7 @@ write_db $global_place_db
 # Repair max slew/cap/fanout violations and normalize slews
 source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_wire_rc -clock -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
 estimate_parasitics -placement
@@ -197,8 +198,7 @@ write_verilog $verilog_file
 ################################################################
 # Global routing
 
-pin_access -bottom_routing_layer $min_routing_layer \
-           -top_routing_layer $max_routing_layer
+pin_access
 
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
@@ -221,16 +221,12 @@ utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
 # Detailed routing
 
 # Run pin access again after inserting diodes and moving cells
-pin_access -bottom_routing_layer $min_routing_layer \
-           -top_routing_layer $max_routing_layer
+pin_access
 
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
-               -output_maze [make_result_file "${design}_${platform}_maze.log"] \
-               -no_pin_access \
-               -save_guide_updates \
-               -bottom_routing_layer $min_routing_layer \
-               -top_routing_layer $max_routing_layer \
-               -verbose 0
+  -output_maze [make_result_file "${design}_${platform}_maze.log"] \
+  -no_pin_access \
+  -verbose 0
 
 write_guides [make_result_file "${design}_${platform}_output_guide.mod"]
 set drv_count [detailed_route_num_drvs]
@@ -247,17 +243,14 @@ write_def $routed_def
 
 set repair_antennas_iters 0
 utl::set_metrics_stage "drt__repair_antennas__pre_repair__{}"
-while {[check_antennas] && $repair_antennas_iters < 5} {
+while { [check_antennas] && $repair_antennas_iters < 5 } {
   utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
 
   repair_antennas
 
   detailed_route -output_drc [make_result_file "${design}_${platform}_ant_fix_drc.rpt"] \
-                 -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
-                 -save_guide_updates \
-                 -bottom_routing_layer $min_routing_layer \
-                 -top_routing_layer $max_routing_layer \
-                 -verbose 0
+    -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
+    -verbose 0
 
   incr repair_antennas_iters
 }
@@ -268,7 +261,7 @@ check_antennas
 utl::clear_metrics_stage
 utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
 
-if {![design_is_routed]} {
+if { ![design_is_routed] } {
   error "Design has unrouted nets."
 }
 
@@ -324,7 +317,7 @@ utl::metric "DRT::clock_skew" [expr abs([sta::worst_clock_skew -setup])]
 # slew/cap/fanout slack/limit
 utl::metric "DRT::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
 utl::metric "DRT::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]
-utl::metric "DRT::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100];
+utl::metric "DRT::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100]
 # report clock period as a metric for updating limits
 utl::metric "DRT::clock_period" [get_property [lindex [all_clocks] 0] period]
 

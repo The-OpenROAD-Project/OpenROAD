@@ -18,10 +18,11 @@ void paintInGrid(Grid* grid, Node* node)
 {
   const auto grid_x = grid->gridX(DbuX(node->getLeft()));
   const auto grid_y = grid->gridRoundY(DbuY(node->getBottom()));
-  auto pixel = grid->gridPixel(grid_x, grid_y);
+  dbSite* site = node->getDbInst()->getMaster()->getSite();
+  const auto orientation
+      = grid->getSiteOrientation(grid_x, grid_y, site).value();
   grid->paintPixel(node, grid_x, grid_y);
-  node->adjustCurrOrient(
-      pixel->sites.at(node->getDbInst()->getMaster()->getSite()));
+  node->adjustCurrOrient(orientation);
 }
 
 };  // namespace

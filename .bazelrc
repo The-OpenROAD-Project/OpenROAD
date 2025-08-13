@@ -70,9 +70,31 @@ build --incompatible_strict_action_env
 
 test --build_tests_only
 
-# TODO: setup a new cache for OpenROAD
-# Read only remote cache, updated by OpenROAD team members and CI.
-#build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts
-#build --remote_cache_compression=true
+# --- Performance Optimizations ---
+# Use a high number of jobs and let the scheduler manage concurrency
+build --jobs=200
+
+# Enable local disk caching to supplement the remote cache.
+build --disk_cache=~/.cache/bazel-disk-cache
+build --repository_cache=~/.cache/bazel-repository-cache
+
+# --- CI Settings (write access) ---
+build:ci --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
+build:ci --remote_cache_compression=true
+build:ci --remote_upload_local_results=true
+# CI only needs to know if the build succeeded, not the artifacts themselves.
+build:ci --remote_download_minimal
+# Disable disk cache for CI builds
+build:ci --disk_cache=
+
+# --- OpenROAD Developer Settings (read-only access) ---
+build:openroad-dev --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
+build:openroad-dev --remote_cache_compression=true
+build:openroad-dev --remote_upload_local_results=false
+# Developers need the actual output files to run and use them.
+build:openroad-dev --remote_download_toplevel
+build:openroad-dev --google_default_credentials=true
+build:openroad-dev --disk_cache=/workspace/.cache/bazel-disk-cache
+build:openroad-dev --repository_cache=/workspace/.cache/bazel-repository-cache
 
 try-import %workspace%/user.bazelrc

@@ -17,7 +17,7 @@
 #include "dst/JobMessage.h"
 #include "utl/Logger.h"
 namespace dst {
-const int MAX_TRIES = 5;
+const int kMaxTries = 5;
 }
 
 using namespace dst;
@@ -44,9 +44,9 @@ void Distributed::runWorker(const char* ip,
                             bool interactive)
 {
   try {
-    auto uWorker = std::make_unique<Worker>(this, logger_, ip, port);
-    auto worker = uWorker.get();
-    workers_.push_back(std::move(uWorker));
+    auto u_worker = std::make_unique<Worker>(this, logger_, ip, port);
+    auto worker = u_worker.get();
+    workers_.push_back(std::move(u_worker));
     if (interactive) {
       boost::thread t(boost::bind(&Worker::run, worker));
       t.detach();
@@ -81,30 +81,30 @@ void Distributed::addWorkerAddress(const char* address, unsigned short port)
   end_points_.emplace_back(address, port);
 }
 // TODO: exponential backoff
-bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
+bool sendMsg(dst::Socket& sock, const std::string& msg, std::string& error_msg)
 {
   int tries = 0;
-  while (tries++ < MAX_TRIES) {
+  while (tries++ < kMaxTries) {
     boost::system::error_code error;
     sock.wait(asio::ip::tcp::socket::wait_write);
     write(sock, asio::buffer(msg), error);
     if (!error) {
-      errorMsg.clear();
+      error_msg.clear();
       return true;
     }
-    errorMsg = error.message();
+    error_msg = error.message();
   }
   return false;
 }
 
-bool readMsg(dst::socket& sock, std::string& dataStr)
+bool readMsg(dst::Socket& sock, std::string& data_str)
 {
   boost::system::error_code error;
   asio::streambuf receive_buffer;
   sock.wait(asio::ip::tcp::socket::wait_read);
   asio::read(sock, receive_buffer, asio::transfer_all(), error);
   if (error && error != asio::error::eof) {
-    dataStr = error.message();
+    data_str = error.message();
     return false;
   }
 
@@ -115,8 +115,8 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
     result = std::string(asio::buffers_begin(bufs), offset);
   }
 
-  dataStr = result;
-  return !dataStr.empty();
+  data_str = result;
+  return !data_str.empty();
 }
 
 bool Distributed::sendJob(JobMessage& msg,
@@ -125,15 +125,15 @@ bool Distributed::sendJob(JobMessage& msg,
                           JobMessage& result)
 {
   int tries = 0;
-  std::string msgStr;
-  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
+  std::string msg_str;
+  if (!JobMessage::serializeMsg(JobMessage::kWrite, msg, msg_str)) {
     logger_->warn(utl::DST, 112, "Serializing JobMessage failed");
     return false;
   }
-  std::string resultStr;
-  while (tries++ < MAX_TRIES) {
+  std::string result_str;
+  while (tries++ < kMaxTries) {
     asio::io_context service;
-    dst::socket sock(service);
+    dst::Socket sock(service);
     try {
       sock.connect(tcp::endpoint(ip::make_address(ip), port));
     } catch (const boost::system::system_error& ex) {
@@ -144,15 +144,15 @@ bool Distributed::sendJob(JobMessage& msg,
                     ex.what());
       continue;
     }
-    bool ok = sendMsg(sock, msgStr, resultStr);
+    bool ok = sendMsg(sock, msg_str, result_str);
     if (!ok) {
       continue;
     }
-    ok = readMsg(sock, resultStr);
+    ok = readMsg(sock, result_str);
     if (!ok) {
       continue;
     }
-    if (!JobMessage::serializeMsg(JobMessage::READ, result, resultStr)) {
+    if (!JobMessage::serializeMsg(JobMessage::kRead, result, result_str)) {
       continue;
     }
     if (sock.is_open()) {
@@ -160,11 +160,11 @@ bool Distributed::sendJob(JobMessage& msg,
     }
     return true;
   }
-  if (resultStr.empty()) {
-    resultStr = "MAX_TRIES reached";
+  if (result_str.empty()) {
+    result_str = "MAX_TRIES reached";
   }
   logger_->warn(
-      utl::DST, 114, "Sending job failed with message \"{}\"", resultStr);
+      utl::DST, 114, "Sending job failed with message \"{}\"", result_str);
   return false;
 }
 
@@ -186,15 +186,15 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
                                      JobMessage& result)
 {
   int tries = 0;
-  std::string msgStr;
-  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
+  std::string msg_str;
+  if (!JobMessage::serializeMsg(JobMessage::kWrite, msg, msg_str)) {
     logger_->warn(utl::DST, 12, "Serializing JobMessage failed");
     return false;
   }
-  std::string resultStr;
-  while (tries++ < MAX_TRIES) {
+  std::string result_str;
+  while (tries++ < kMaxTries) {
     asio::io_context service;
-    dst::socket sock(service);
+    dst::Socket sock(service);
     try {
       sock.connect(tcp::endpoint(ip::make_address(ip), port));
     } catch (const boost::system::system_error& ex) {
@@ -206,48 +206,48 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
     }
     boost::asio::ip::tcp::no_delay option(true);
     sock.set_option(option);
-    bool ok = sendMsg(sock, msgStr, resultStr);
+    bool ok = sendMsg(sock, msg_str, result_str);
     if (!ok) {
       continue;
     }
-    ok = readMsg(sock, resultStr);
+    ok = readMsg(sock, result_str);
     if (!ok) {
       continue;
     }
     std::string split;
-    while (getNextMsg(resultStr, JobMessage::EOP, split)) {
+    while (getNextMsg(result_str, JobMessage::kEop, split)) {
       JobMessage tmp;
-      if (!JobMessage::serializeMsg(JobMessage::READ, tmp, split)) {
+      if (!JobMessage::serializeMsg(JobMessage::kRead, tmp, split)) {
         logger_->error(utl::DST, 9999, "Problem in deserialize {}", split);
       } else {
         result.addJobDescription(std::move(tmp.getJobDescriptionRef()));
       }
     }
-    result.setJobType(JobMessage::SUCCESS);
+    result.setJobType(JobMessage::kSuccess);
     if (sock.is_open()) {
       sock.close();
     }
     return true;
   }
-  if (resultStr.empty()) {
-    resultStr = "MAX_TRIES reached";
+  if (result_str.empty()) {
+    result_str = "MAX_TRIES reached";
   }
   logger_->warn(
-      utl::DST, 14, "Sending job failed with message \"{}\"", resultStr);
+      utl::DST, 14, "Sending job failed with message \"{}\"", result_str);
   return false;
 }
 
-bool Distributed::sendResult(JobMessage& msg, dst::socket& sock)
+bool Distributed::sendResult(JobMessage& msg, dst::Socket& sock)
 {
-  std::string msgStr;
-  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
+  std::string msg_str;
+  if (!JobMessage::serializeMsg(JobMessage::kWrite, msg, msg_str)) {
     logger_->warn(utl::DST, 20, "Serializing result JobMessage failed");
     return false;
   }
   int tries = 0;
   std::string error;
-  while (tries++ < MAX_TRIES) {
-    if (sendMsg(sock, msgStr, error)) {
+  while (tries++ < kMaxTries) {
+    if (sendMsg(sock, msg_str, error)) {
       return true;
     }
   }

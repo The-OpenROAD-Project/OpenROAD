@@ -34,9 +34,9 @@ read_verilog skywater130_coyote_tc/coyote_tc.v
 link_design coyote_tc
 
 initialize_floorplan \
-  -die_area  "0.0 0.0 5400.0 4616.330" \
+  -die_area "0.0 0.0 5400.0 4616.330" \
   -core_area "200.16 203.13 5199.84 4415.58" \
-  -site      unit
+  -site unit
 
 make_tracks
 
@@ -52,7 +52,6 @@ make_io_sites \
   -horizontal_site IO_SITE \
   -vertical_site IO_SITE \
   -corner_site IO_CSITE \
-  \
   -offset 0 \
   -rotation_horizontal R180 \
   -rotation_vertical R180 \

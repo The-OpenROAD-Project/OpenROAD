@@ -8,12 +8,12 @@ set tech [$lib getTech]
 set vias [$tech getVias]
 
 foreach via $vias {
-    puts [$via getName]
+  puts [$via getName]
 }
 
-if {[llength $vias] != 14} {
-    puts "FAIL: There should be 14 vias"
-    exit 1 
+if { [llength $vias] != 14 } {
+  puts "FAIL: There should be 14 vias"
+  exit 1
 }
 
 puts "pass"

@@ -10,8 +10,6 @@ add_library(db
     dbBlockItr.cpp 
     dbBox.cpp 
     dbBoxItr.cpp 
-    dbChip.cpp 
-    dbDatabase.cpp 
     dbITerm.cpp 
     dbITermItr.cpp 
     dbInst.cpp 
@@ -75,7 +73,6 @@ add_library(db
     dbTechViaGenerateRule.cpp 
     dbViaParams.cpp 
     dbNameCache.cpp 
-    dbProperty.cpp 
     dbPropertyItr.cpp 
     geom.cpp
     tmg_conn.cpp
@@ -90,6 +87,8 @@ add_library(db
     dbAccessPoint.cpp
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
+    dbChip.cpp
+    dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSARef.cpp
@@ -118,6 +117,7 @@ add_library(db
     dbPolygon.cpp
     dbPowerDomain.cpp
     dbPowerSwitch.cpp
+    dbProperty.cpp
     dbScanChain.cpp
     dbScanInst.cpp
     dbScanList.cpp
@@ -161,6 +161,7 @@ add_library(db
     dbModulePortItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
+    dbScanListScanInstItr.cpp
     # Generator Code End cpp
 )
 

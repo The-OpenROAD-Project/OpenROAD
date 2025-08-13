@@ -89,23 +89,29 @@ class extDistRC
   void readRC(Ath__parser* parser, double dbFactor = 1.0);
   void readRC_res2(Ath__parser* parser, double dbFactor = 1.0);
   double getFringe();
+  double getFringeW();
   double getCoupling();
   double getDiag();
   double getRes();
-  double getTotalCap() { return _coupling + _fringe + _diag; };
+  int getSep();
+  double getTotalCap() { return coupling_ + fringe_ + diag_; };
+  void setCoupling(double coupling);
+  void setFringe(double fringe);
+  void setFringeW(double fringew);
+  void setRes(double res);
   void addRC(extDistRC* rcUnit, uint len, bool addCC);
   void writeRC(FILE* fp, bool bin);
   void writeRC();
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
   double interpolate_res(uint d, extDistRC* rc2);
 
- public:
-  int _sep;
-  double _coupling;
-  double _fringe;
-  double _fringeW;
-  double _diag;
-  double _res;
+ private:
+  int sep_;
+  double coupling_;
+  double fringe_;
+  double fringeW_;
+  double diag_;
+  double res_;
   Logger* logger_;
 
   friend class extDistRCTable;
@@ -186,14 +192,14 @@ class extDistRCTable
   void makeCapTableOver();
   void makeCapTableUnder();
 
-  Ath__array1D<extDistRC*>* _measureTable;
-  Ath__array1D<extDistRC*>* _computeTable;
-  Ath__array1D<extDistRC*>* _measureTableR[16];
-  Ath__array1D<extDistRC*>* _computeTableR[16];  // OPTIMIZE
-  bool _measureInR;
-  int _maxDist;
-  uint _distCnt;
-  uint _unit;
+  Ath__array1D<extDistRC*>* measureTable_;
+  Ath__array1D<extDistRC*>* computeTable_;
+  Ath__array1D<extDistRC*>* measureTableR_[16];
+  Ath__array1D<extDistRC*>* computeTableR_[16];  // OPTIMIZE
+  bool measureInR_;
+  int maxDist_;
+  uint distCnt_;
+  uint unit_;
   Logger* logger_;
 };
 
@@ -1699,8 +1705,9 @@ struct BoundaryData
     maxExtractBuffer = ccTrackDist * pitch2;
 
     iterationIncrement = iterationTrackCount * minPitch;
-    if (maxWidth > maxCouplingTracks * maxPitch)
+    if (maxWidth > maxCouplingTracks * maxPitch) {
       iterationIncrement = std::max(ur[1] - ll[1], ur[0] - ll[0]);
+    }
 
     for (uint dir = 0; dir < 2; dir++) {
       lo_gs[dir] = ll[dir];

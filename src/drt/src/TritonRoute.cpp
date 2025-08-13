@@ -12,11 +12,13 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
+#include "PACallBack.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -40,6 +42,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "utl/CallBackHandler.h"
 #include "utl/ScopedTemporaryFile.h"
 
 namespace drt {
@@ -47,6 +50,7 @@ namespace drt {
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
+      pa_callback_(std::make_unique<PACallBack>(this)),
       router_cfg_(std::make_unique<RouterConfiguration>())
 {
   if (distributed_) {
@@ -65,6 +69,11 @@ void TritonRoute::setDebugDumpDR(bool on, const std::string& dumpDir)
 {
   debug_->debugDumpDR = on;
   debug_->dumpDir = dumpDir;
+}
+
+void TritonRoute::setDebugSnapshotDir(const std::string& snapshotDir)
+{
+  debug_->snapshotDir = snapshotDir;
 }
 
 void TritonRoute::setDebugMaze(bool on)
@@ -520,6 +529,7 @@ void TritonRoute::applyUpdates(
 void TritonRoute::init(
     odb::dbDatabase* db,
     Logger* logger,
+    utl::CallBackHandler* callback_handler,
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,
     std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
@@ -531,6 +541,7 @@ void TritonRoute::init(
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
+  pa_callback_->setOwner(callback_handler);
 }
 
 bool TritonRoute::initGuide()
@@ -582,6 +593,18 @@ void TritonRoute::initDesign()
     }
   }
 
+  if (!router_cfg_->VIA_ACCESS_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(router_cfg_->VIA_ACCESS_LAYER_NAME);
+    if (layer) {
+      router_cfg_->VIA_ACCESS_LAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    609,
+                    "via access layer {} not found.",
+                    router_cfg_->VIA_ACCESS_LAYER_NAME);
+    }
+  }
+
   if (!router_cfg_->REPAIR_PDN_LAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(router_cfg_->REPAIR_PDN_LAYER_NAME);
     if (layer) {
@@ -624,6 +647,10 @@ void TritonRoute::ta()
     ta->setDebug(graphics_factory_->makeUniqueTAGraphics());
   }
   ta->main();
+  if (debug_->writeNetTracks) {
+    io::Writer writer(getDesign(), logger_);
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
+  }
 }
 
 void TritonRoute::dr()
@@ -675,9 +702,6 @@ void TritonRoute::endFR()
   dr_.reset();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get());
-  if (debug_->writeNetTracks) {
-    writer.updateTrackAssignment(db_->getChip()->getBlock());
-  }
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -830,9 +854,9 @@ void TritonRoute::sendDesignDist()
 
     db_->write(utl::OutStreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
-    dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                        dst::JobMessage::BROADCAST),
-        result(dst::JobMessage::NONE);
+    dst::JobMessage msg(dst::JobMessage::kUpdateDesign,
+                        dst::JobMessage::kBroadcast),
+        result(dst::JobMessage::kNone);
     std::unique_ptr<dst::JobDescription> desc
         = std::make_unique<RoutingJobDescription>();
     RoutingJobDescription* rjd
@@ -866,9 +890,9 @@ void TritonRoute::sendGlobalsUpdates(const std::string& router_cfg_path,
     return;
   }
   ProfileTask task("DIST: SENDING GLOBALS");
-  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                      dst::JobMessage::BROADCAST),
-      result(dst::JobMessage::NONE);
+  dst::JobMessage msg(dst::JobMessage::kUpdateDesign,
+                      dst::JobMessage::kBroadcast),
+      result(dst::JobMessage::kNone);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
@@ -912,9 +936,9 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
   } else {
     task = std::make_unique<ProfileTask>("DIST: SENDING_UDPATES");
   }
-  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                      dst::JobMessage::BROADCAST),
-      result(dst::JobMessage::NONE);
+  dst::JobMessage msg(dst::JobMessage::kUpdateDesign,
+                      dst::JobMessage::kBroadcast),
+      result(dst::JobMessage::kNone);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
@@ -946,10 +970,8 @@ int TritonRoute::main()
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
-  asio::thread_pool pa_pool(1);
-  if (!distributed_) {
-    pa_pool.join();
-  }
+  std::unique_ptr<std::thread> pa_thread;
+
   if (debug_->debugDumpDR) {
     std::string router_cfg_path
         = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
@@ -957,10 +979,10 @@ int TritonRoute::main()
   }
   if (distributed_) {
     if (router_cfg_->DO_PA) {
-      asio::post(pa_pool, [this]() {
+      pa_thread = std::make_unique<std::thread>([this]() {
         sendDesignDist();
-        dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                            dst::JobMessage::BROADCAST),
+        dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                            dst::JobMessage::kBroadcast),
             result;
         auto uDesc = std::make_unique<PinAccessJobDescription>();
         uDesc->setType(PinAccessJobDescription::INIT_PA);
@@ -993,7 +1015,9 @@ int TritonRoute::main()
     if (debug_->debugPA) {
       pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
     }
-    pa_pool.join();
+    if (pa_thread) {
+      pa_thread->join();
+    }
     pa_->main();
     /// bookmark
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
@@ -1002,8 +1026,8 @@ int TritonRoute::main()
     }
     if (distributed_) {
       asio::post(*dist_pool_, [this]() {
-        dst::JobMessage msg(dst::JobMessage::GRDR_INIT,
-                            dst::JobMessage::BROADCAST),
+        dst::JobMessage msg(dst::JobMessage::kGrdrInit,
+                            dst::JobMessage::kBroadcast),
             result;
         dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
       });
@@ -1037,11 +1061,14 @@ int TritonRoute::main()
 
 void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
 {
+  if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    router_cfg_->USENONPREFTRACKS = false;
+  }
   if (distributed_) {
     asio::post(*dist_pool_, [this]() {
       sendDesignDist();
-      dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                          dst::JobMessage::BROADCAST),
+      dst::JobMessage msg(dst::JobMessage::kPinAccess,
+                          dst::JobMessage::kBroadcast),
           result;
       auto uDesc = std::make_unique<PinAccessJobDescription>();
       uDesc->setType(PinAccessJobDescription::INIT_PA);
@@ -1245,17 +1272,14 @@ void TritonRoute::setParams(const ParamStruct& params)
   if (!params.viaInPinTopLayer.empty()) {
     router_cfg_->VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
   }
+  if (!params.viaAccessLayer.empty()) {
+    router_cfg_->VIA_ACCESS_LAYER_NAME = params.viaAccessLayer;
+  }
   if (params.drouteEndIter >= 0) {
     router_cfg_->END_ITERATION = params.drouteEndIter;
   }
   router_cfg_->OR_SEED = params.orSeed;
   router_cfg_->OR_K = params.orK;
-  if (!params.bottomRoutingLayer.empty()) {
-    router_cfg_->BOTTOM_ROUTING_LAYER_NAME = params.bottomRoutingLayer;
-  }
-  if (!params.topRoutingLayer.empty()) {
-    router_cfg_->TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
-  }
   if (params.minAccessPoints > 0) {
     router_cfg_->MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
     router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;

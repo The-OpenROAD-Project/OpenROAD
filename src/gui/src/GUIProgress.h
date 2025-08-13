@@ -47,7 +47,7 @@ class GUIProgress : public utl::Progress
 
   std::map<utl::ProgressReporter*, ProgressReporterWidget*> widgets_;
 
-  constexpr static int max_combined_name_length_ = 30;
+  constexpr static int kMaxCombinedNameLength = 30;
 
   void updateGUI() const;
 };
@@ -73,7 +73,7 @@ class ProgressWidget : public QWidget
   void updateProgress(int progress);
   void updateRange(int min, int max);
 
- protected:
+ private:
   QProgressBar* progress_bar_;
 };
 

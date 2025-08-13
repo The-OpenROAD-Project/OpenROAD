@@ -37,13 +37,12 @@ void IRNetwork::initMinimumNodePitch()
   min_node_pitch_.clear();
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
-  const int min_pitch = dbus * min_node_pitch_um_;
+  const int min_pitch = dbus * kMinNodePitchInUm;
 
   for (auto* layer : getTech()->getLayers()) {
     if (layer->getRoutingLevel() != 0) {
       min_node_pitch_[layer] = std::min(
-          min_pitch,
-          min_node_pitch_multiplier_ * std::max(1, layer->getPitch()));
+          min_pitch, kMinNodePitchMultiplier * std::max(1, layer->getPitch()));
     }
   }
 
@@ -227,14 +226,14 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   auto* base_layer = getTech()->findRoutingLayer(1);
 
   LayerMap<Polygon90Set> shapes_by_layer;
-  bool floorplan_asseted_ = false;
+  bool floorplan_asseted = false;
   for (auto* iterm : net_->getITerms()) {
     auto* inst = iterm->getInst();
     if (!inst->isPlaced()) {
       continue;
     }
     if (floorplanning_ && !inst->getPlacementStatus().isFixed()) {
-      floorplan_asseted_ = true;
+      floorplan_asseted = true;
       continue;
     }
     const auto transform = inst->getTransform();
@@ -302,7 +301,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
     }
   }
 
-  if (floorplanning_ && !floorplan_asseted_) {
+  if (floorplanning_ && !floorplan_asseted) {
     // Since floorplanning did not impact solution, mark this okay for analysis
     floorplanning_ = false;
   }
@@ -572,9 +571,8 @@ void IRNetwork::generateCutNodesForSBox(
     bottom = block_via->getBottomLayer();
   }
 
-  const int min_pitch_
-      = std::min(min_node_pitch_[bottom], min_node_pitch_[top]);
-  const bool use_single_via = box->getBox().maxDXDY() < min_pitch_;
+  const int min_pitch = std::min(min_node_pitch_[bottom], min_node_pitch_[top]);
+  const bool use_single_via = box->getBox().maxDXDY() < min_pitch;
 
   if (single_via || use_single_via) {
     const odb::Point via_center = box->getViaXY();

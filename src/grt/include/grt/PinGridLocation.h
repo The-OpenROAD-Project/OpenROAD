@@ -9,12 +9,12 @@ namespace grt {
 struct PinGridLocation
 {
   PinGridLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm, odb::Point pt)
-      : iterm_(iterm), bterm_(bterm), pt_(pt)
+      : iterm(iterm), bterm(bterm), pt(pt)
   {
   }
 
-  odb::dbITerm* iterm_;
-  odb::dbBTerm* bterm_;
-  odb::Point pt_;
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::Point pt;
 };
 }  // namespace grt

@@ -22,13 +22,13 @@ enum class GateType
 
 struct Gate
 {
-  GateType type_;
-  std::string master_;
-  std::vector<std::string> connections_;
+  GateType type;
+  std::string master;
+  std::vector<std::string> connections;
   Gate(const GateType& type,
        const std::string& master,
        const std::vector<std::string>& connections)
-      : type_(type), master_(master), connections_(connections)
+      : type(type), master(master), connections(connections)
   {
   }
 };
