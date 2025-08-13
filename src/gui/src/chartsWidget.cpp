@@ -462,12 +462,19 @@ void ChartsWidget::setData(HistogramView* view,
 {
   view->clear();
 
-  if (!path_group.empty()) {
-    view->setData(stagui_->getEndPointToSlackMap(path_group), &all_clocks_);
-  } else if (clock != nullptr) {
+  if (clock != nullptr) {
     sta::ClockSet clocks;
     clocks.insert(clock);
-    view->setData(stagui_->getEndPointToSlackMap(clock), &clocks);
+    if (!path_group.empty()) {
+      // filter by clock and path_group
+      view->setData(stagui_->getEndPointToSlackMap(path_group, clock), &clocks);
+    } else {
+      // filter only by clock
+      view->setData(stagui_->getEndPointToSlackMap(clock), &clocks);
+    }
+  } else if (!path_group.empty()) {
+    // filter only by path_group
+    view->setData(stagui_->getEndPointToSlackMap(path_group), &all_clocks_);
   } else {
     SlackHistogramData data = fetchSlackHistogramData();
 
