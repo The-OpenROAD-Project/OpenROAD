@@ -29,8 +29,8 @@ class CallBack
   /**
    * @brief Called when parasitic estimation is required.
    *
-   * This callback is triggered when modules need to perform parasitic estimation
-   * for timing.
+   * This callback is triggered when modules need to perform parasitic
+   * estimation for timing.
    */
   virtual void onEstimateParasiticsRequired() {}
 
