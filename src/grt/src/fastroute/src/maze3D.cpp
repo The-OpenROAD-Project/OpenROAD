@@ -1481,7 +1481,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           } else  /// if(grids[i].y==grids[i+1].y)// a horizontal edge
           {
             const int min_x = std::min(grids[i].x, grids[i + 1].x);
-            graph2d_.updateUsageH(min_x, grids[i].y, net, net->getLayerEdgeCost(grids[i].layer));
+            graph2d_.updateUsageH(min_x, grids[i].y, net, net->getEdgeCost());
             h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
                 += net->getLayerEdgeCost(grids[i].layer);
           }

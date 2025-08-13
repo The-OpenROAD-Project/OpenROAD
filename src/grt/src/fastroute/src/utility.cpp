@@ -1911,43 +1911,6 @@ void FastRouteCore::copyBR()
   }
 }
 
-// Get edgeCost considering if there is sufficient capacity in a single layer
-// int FastRouteCore::getEdgeCostNDRAware(Edge edge, const int edgeCost)
-// {
-//   // Check if there is capacity for NDR net in any layer
-//   // if not, discourage using this edge
-//   if (edge.max_layer_cap < edgeCost){
-//     return 100*edgeCost; 
-//   }
-  
-//   return edgeCost;
-// }
-
-// Get edgeCost considering if there is sufficient capacity in a single layer
-// int FastRouteCore::getEdgeCostNDRAware2(int y, int x, FrNet* net, bool is_vertical)
-// {
-//   int max_single_layer_cap = 0;
-//   const int edgeCost = net->getEdgeCost();
-
-//   // Check if there is capacity for NDR net in any layer
-//   // if not, discourage using this edge
-//   for (int l = net->getMinLayer(); l < net->getMaxLayer(); l++) {
-//     if (is_vertical) {
-//       max_single_layer_cap = std::max(max_single_layer_cap, 
-//                               (int)v_edges_3D_[l][y][x].cap);
-//     }else{
-//       max_single_layer_cap = std::max(max_single_layer_cap, 
-//                               (int)h_edges_3D_[l][y][x].cap);
-//     }
-//   }
-
-//   if (max_single_layer_cap < edgeCost){
-//     return 100*edgeCost; 
-//   }
-  
-//   return edgeCost;
-// }
-
 void FastRouteCore::freeRR()
 {
   if (!sttrees_bk_.empty()) {
@@ -1962,18 +1925,6 @@ void FastRouteCore::freeRR()
     sttrees_bk_.clear();
   }
 }
-
-// int FastRouteCore::additionalNDRCost(Edge edge, const int netID)
-// {
-//   FrNet* net = nets_[netID];
-//   const int edgeCost = net->getEdgeCost();
-//   int ndr_cost = getEdgeCostNDRAware(edge, edgeCost);
-  
-//   if (ndr_cost > edgeCost)
-//     return ndr_cost;
-  
-//   return 0;
-// }
 
 int FastRouteCore::edgeShift(Tree& t, const int net)
 {

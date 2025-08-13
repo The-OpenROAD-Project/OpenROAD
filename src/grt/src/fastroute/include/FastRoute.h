@@ -84,17 +84,6 @@ struct CostParams
   }
 };
 
-// Structure to hold overflow information with contributing nets
-struct OverflowInfo {
-    int x1, y1, x2, y2;  // Edge coordinates
-    int layer;
-    int capacity;
-    int usage;
-    int overflow;
-    bool isHorizontal;
-    std::vector<std::pair<odb::dbNet*, int>> contributingNets;  // net and usage count
-};
-
 class FastRouteCore
 {
  public:
@@ -230,11 +219,7 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
-  void debugNetsAtOverflowLocations(int targetLayer);
-  void findNetsAtOverflowEdges(std::vector<OverflowInfo>& overflows);
-  void printOverflowReport(const std::vector<OverflowInfo>& overflows);
-
-
+ 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }
   int tile_size() const { return tile_size_; }

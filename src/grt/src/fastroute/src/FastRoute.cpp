@@ -1412,7 +1412,6 @@ NetRouteMap FastRouteCore::run()
   layerAssignment();
   past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
   getOverflow3D();
-  // logger_->report("Total Over: {}",total_overflow_);
 
   logger_->report("After LayerAssignment - 2D/3D cong: {}/{}", past_cong, total_overflow_);
   // debug mode Rectilinear Steiner Tree before overflow iterations

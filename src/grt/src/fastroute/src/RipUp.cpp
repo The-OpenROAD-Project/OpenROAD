@@ -125,8 +125,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
     for (int i = x1; i < x2; i++) {
       const int cap
           = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
-      if (graph2d_.getEstUsageH(i, y1) > cap || 
-          !graph2d_.hasNDRCapacity(net,i,y1,EdgeDirection::Horizontal)) {
+      if (graph2d_.getEstUsageH(i, y1) > cap){
         needRipup = true;
         break;
       }
@@ -135,8 +134,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
     for (int i = ymin; i < ymax; i++) {
       const int cap
           = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
-      if (graph2d_.getEstUsageV(x2, i) > cap || 
-          !graph2d_.hasNDRCapacity(net,x2,i,EdgeDirection::Vertical)){
+      if (graph2d_.getEstUsageV(x2, i) > cap) {
         needRipup = true;
         break;
       }
@@ -145,8 +143,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
     for (int i = ymin; i < ymax; i++) {
       const int cap
           = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
-      if (graph2d_.getEstUsageV(x1, i) > cap || 
-          !graph2d_.hasNDRCapacity(net,x1,i,EdgeDirection::Vertical)){
+    if (graph2d_.getEstUsageV(x1, i) > cap){
         needRipup = true;
         break;
       }
@@ -154,8 +151,7 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
     for (int i = x1; i < x2; i++) {
       const int cap
           = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
-      if (graph2d_.getEstUsageH(i, y2) > cap || 
-          !graph2d_.hasNDRCapacity(net,i,y2,EdgeDirection::Horizontal)){
+      if (graph2d_.getEstUsageH(i, y2) > cap) {
         needRipup = true;
         break;
       }
@@ -214,16 +210,14 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     if (grids[i].x == grids[i + 1].x) {  // a vertical edge
       const int ymin = std::min(grids[i].y, grids[i + 1].y);
       if (graph2d_.getUsageRedV(grids[i].x, ymin)
-          >= v_capacity_ - ripup_threshold 
-          || !graph2d_.hasNDRCapacity(net, grids[i].x, ymin, EdgeDirection::Vertical)) {
+          >= v_capacity_ - ripup_threshold){
         needRipup = true;
         break;
       }
     } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
       const int xmin = std::min(grids[i].x, grids[i + 1].x);
       if (graph2d_.getUsageRedH(xmin, grids[i].y)
-          >= h_capacity_ - ripup_threshold
-          || !graph2d_.hasNDRCapacity(net, xmin, grids[i].y, EdgeDirection::Horizontal)) { 
+          >= h_capacity_ - ripup_threshold){
         needRipup = true;
         break;
       }
@@ -253,11 +247,9 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         graph2d_.updateUsageH(xmin, grids[i].y, net, -edgeCost);
       }
     }
-    // if(net->getDbNet()->getNonDefaultRule()){
-    //   logger_->report(">> newRipupCheck {}", net->getName());
-    //   int maxOv;
-    //   getOverflow2D(&maxOv);
-    // }
+    if(net->getDbNet()->getNonDefaultRule()){
+      logger_->report(">> newRipupCheck {}", net->getName());
+    }
   }
   return needRipup;
 }
