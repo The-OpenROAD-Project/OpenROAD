@@ -36,7 +36,6 @@ proc report_tns_metric { args } {
 
 define_cmd_args "report_worst_slack_metric" {[-setup]|[-hold]}
 proc report_worst_slack_metric { args } {
-  global sta_report_default_digits
   parse_key_args "report_worst_slack_metric" args keys {} flags {-setup -hold}
 
   set min_max "-max"
@@ -53,7 +52,6 @@ proc report_worst_slack_metric { args } {
 
 define_cmd_args "report_worst_negative_slack_metric" {[-setup]|[-hold]}
 proc report_worst_negative_slack_metric { args } {
-  global sta_report_default_digits
   parse_key_args "report_worst_negative_slack_metric" args keys {} flags {-setup -hold}
 
   set min_max "-max"
@@ -66,6 +64,51 @@ proc report_worst_negative_slack_metric { args } {
   }
 
   utl::metric_float $metric_name [worst_negative_slack $min_max]
+}
+
+define_cmd_args "report_fmax_metric" {}
+proc report_fmax_metric { args } {
+  parse_key_args "report_fmax_metric" args keys {} flags {}
+
+  # Taken from: https://github.com/siliconcompiler/siliconcompiler/blob/e46c702df218c93483b951533fe00bcf01cf772d/siliconcompiler/tools/openroad/scripts/common/reports.tcl#L98
+  # Modeled on: https://github.com/The-OpenROAD-Project/OpenSTA/blob/f913c3ddbb3e7b4364ed4437c65ac78c4da9174b/tcl/Search.tcl#L1078
+  set fmax_metric 0
+  foreach clk [sta::sort_by_name [all_clocks]] {
+    set clk_name [get_name $clk]
+    set min_period [sta::find_clk_min_period $clk 1]
+    if { $min_period == 0.0 } {
+      continue
+    }
+    set fmax [expr { 1.0 / $min_period }]
+    utl::metric_float "timing__fmax__clock:${clk_name}" $fmax
+    puts "$clk_name fmax = [format %.2f [expr { $fmax / 1e6 }]] MHz"
+    set fmax_metric [expr { max($fmax_metric, $fmax) }]
+  }
+  if { $fmax_metric == 0 } {
+    # attempt to compute based on combinatorial path
+    set fmax_valid true
+    set max_path [find_timing_paths -unconstrained -path_delay max]
+    if { $max_path == "" } {
+      set fmax_valid false
+    } else {
+      set max_path_delay [$max_path data_arrival_time]
+    }
+    set min_path [find_timing_paths -unconstrained -path_delay min]
+    if { $min_path == "" } {
+      set fmax_valid false
+    } else {
+      set min_path_delay [$min_path data_arrival_time]
+    }
+    if { $fmax_valid } {
+      set path_delay [expr { $max_path_delay - min(0, $min_path_delay) }]
+      if { $path_delay > 0 } {
+        set fmax_metric [expr { 1.0 / $path_delay }]
+      }
+    }
+  }
+  if { $fmax_metric > 0 } {
+    utl::metric_float "timing__fmax" $fmax_metric
+  }
 }
 
 # From https://wiki.tcl-lang.org/page/Inf
