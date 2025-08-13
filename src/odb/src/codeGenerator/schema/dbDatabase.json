@@ -1,0 +1,38 @@
+{
+  "name": "dbDatabase",
+  "type": "dbObject",
+  "ostream_scope": true,
+  "hash" : "0x0",
+  "fields": [
+    {
+      "name": "_magic1",
+      "type": "uint",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "_magic2", 
+      "type": "uint",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "_schema_major",
+      "type": "uint",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "_schema_minor",
+      "type": "uint",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "_master_id",
+      "type": "uint",
+      "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "_chip",
+      "type": "dbId<_dbChip>",
+      "flags": ["private", "no-serial"]
+    }
+  ]
+}

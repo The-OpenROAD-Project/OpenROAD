@@ -3,6 +3,7 @@
 
 _comparable = [
     "Point",
+    "Point3D",
     "Rect",
     "Polygon",
     "Line",
@@ -23,6 +24,7 @@ _comparable = [
     "string",
     "uint",
     "unint_32t",
+    "uint8_t",
 ]
 std = [
     "bool",
@@ -42,6 +44,7 @@ std = [
     "string",
     "uint",
     "unint_32t",
+    "uint8_t",
 ]
 
 _removable = ["const", "static", "unsigned"]
@@ -177,3 +180,13 @@ def get_ref_type(type_name):
         return None
 
     return type_name[6:-1] + "*"
+
+
+def fnv1a_32(string):
+    FNV_prime = 0x01000193
+    hash_value = 0x811C9DC5
+    for c in string:
+        hash_value ^= ord(c)
+        hash_value = (hash_value * FNV_prime) % (1 << 32)
+
+    return hash_value
