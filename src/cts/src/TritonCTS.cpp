@@ -1687,16 +1687,17 @@ void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
 
   int clkNets = 0;
 
+  // TODO: Add user specified args to choose the NDR strategy
   // Option 1: Apply NDR to specific levels
-  // std::vector<int> specificLevels = {0};  // Apply to level 0
-  // clkNets = applyNDRToClockLevels(block_, clockNDR, clkLeafNets, specificLevels);
+  std::vector<int> specificLevels = {0};  // Apply to level 0
+  clkNets = applyNDRToClockLevels(block_, clockNDR, clkLeafNets, specificLevels);
 
   // Option 2: Apply NDR to a range of levels (e.g., Levels 0-3)
   // clkNets = applyNDRToClockLevelRange(block_, clockNDR, clkLeafNets, 0, 3);
 
   // Option 3: Apply NDR to the first half of the clk tree levels (higher
   // levels)
-  clkNets = applyNDRToFirstHalfLevels(block_, clockNDR, clkLeafNets);
+  // clkNets = applyNDRToFirstHalfLevels(block_, clockNDR, clkLeafNets);
 
   // Option 4: Apply NDR to all non-leaf clock nets
   // for (odb::dbNet* net : block_->getNets()) {
