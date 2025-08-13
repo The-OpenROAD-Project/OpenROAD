@@ -25,6 +25,8 @@ module max_chain_count(port1,
   output output9;
   output output10;
 
+  // A cell without a lib view to ensure those don't cause a crash
+  sky130_fd_sc_hd__tapvpwrvgnd_1 tap();
 
   // Rising edge flops
   sky130_fd_sc_hd__dfstp_1 ff1_clk1_rising(

@@ -11,6 +11,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
 #include "odb/dbTypes.h"
 #include "rsz/OdbCallBack.hh"
@@ -20,7 +21,6 @@
 
 namespace grt {
 class GlobalRouter;
-class IncrementalGRoute;
 }  // namespace grt
 
 namespace stt {
@@ -47,7 +47,6 @@ using odb::Rect;
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
-using grt::IncrementalGRoute;
 
 using sta::ArcDelay;
 using sta::Cell;
@@ -96,8 +95,6 @@ using LibertyPortTuple = std::tuple<LibertyPort*, LibertyPort*>;
 using InstanceTuple = std::tuple<Instance*, Instance*>;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 
-class AbstractSteinerRenderer;
-class SteinerTree;
 using SteinerPt = int;
 
 class BufferedNet;
@@ -131,26 +128,6 @@ class NetHash
 
 using CellTargetLoadMap = Map<LibertyCell*, float>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
-
-enum class ParasiticsSrc
-{
-  none,
-  placement,
-  global_routing,
-  detailed_routing
-};
-
-struct ParasiticsResistance
-{
-  double h_res;
-  double v_res;
-};
-
-struct ParasiticsCapacitance
-{
-  double h_cap;
-  double v_cap;
-};
 
 enum class MoveType
 {
@@ -244,64 +221,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
             SteinerTreeBuilder* stt_builder,
             GlobalRouter* global_router,
             dpl::Opendp* opendp,
-            std::unique_ptr<AbstractSteinerRenderer> steiner_renderer);
-  void setLayerRC(dbTechLayer* layer,
-                  const Corner* corner,
-                  double res,
-                  double cap);
-  void layerRC(dbTechLayer* layer,
-               const Corner* corner,
-               // Return values.
-               double& res,
-               double& cap) const;
-  // Set the resistance and capacitance used for horizontal parasitics on signal
-  // nets.
-  void setHWireSignalRC(const Corner* corner,
-                        double res,   // ohms/meter
-                        double cap);  // farads/meter
-  // Set the resistance and capacitance used for vertical wires parasitics on
-  // signal nets.
-  void setVWireSignalRC(const Corner* corner,
-                        double res,   // ohms/meter
-                        double cap);  // farads/meter
-  // Set the resistance and capacitance used for parasitics on clock nets.
-  void setHWireClkRC(const Corner* corner,
-                     double res,
-                     double cap);  // farads/meter
-  // Set the resistance and capacitance used for parasitics on clock nets.
-  void setVWireClkRC(const Corner* corner,
-                     double res,
-                     double cap);  // farads/meter
-  // ohms/meter, farads/meter
-  void wireSignalRC(const Corner* corner,
-                    // Return values.
-                    double& res,
-                    double& cap) const;
-  double wireSignalResistance(const Corner* corner) const;
-  double wireSignalHResistance(const Corner* corner) const;
-  double wireSignalVResistance(const Corner* corner) const;
-  double wireClkResistance(const Corner* corner) const;
-  double wireClkHResistance(const Corner* corner) const;
-  double wireClkVResistance(const Corner* corner) const;
-  // farads/meter
-  double wireSignalCapacitance(const Corner* corner) const;
-  double wireSignalHCapacitance(const Corner* corner) const;
-  double wireSignalVCapacitance(const Corner* corner) const;
-  double wireClkCapacitance(const Corner* corner) const;
-  double wireClkHCapacitance(const Corner* corner) const;
-  double wireClkVCapacitance(const Corner* corner) const;
-  void estimateParasitics(ParasiticsSrc src);
-  void estimateParasitics(ParasiticsSrc src,
-                          std::map<Corner*, std::ostream*>& spef_streams_);
-  void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Pin* drvr_pin,
-                             const Net* net,
-                             SpefWriter* spef_writer = nullptr);
-  bool haveEstimatedParasitics() const;
-  void parasiticsInvalid(const Net* net);
-  void parasiticsInvalid(const dbNet* net);
-  bool parasiticsValid() const;
+            est::EstimateParasitics* estimate_parasitics);
 
   // Core area (meters).
   double coreArea() const;
@@ -480,11 +400,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   PinSet findFanins(PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
-  void highlightSteiner(const Pin* drvr);
-
   dbNetwork* getDbNetwork() { return db_network_; }
-  ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
-  void setParasiticsSrc(ParasiticsSrc src);
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -496,7 +412,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void journalBeginTest();
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
-  void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
@@ -511,6 +426,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(Pin* pin);
+
+  est::EstimateParasitics* getEstimateParasitics()
+  {
+    return estimate_parasitics_;
+  }
 
  protected:
   void init();
@@ -687,19 +607,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance* inv);
 
-  void incrementalParasiticsBegin();
-  void incrementalParasiticsEnd();
-  void ensureParasitics();
-  void updateParasitics(bool save_guides = false);
-  void ensureWireParasitic(const Pin* drvr_pin);
-  void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
-  void estimateWireParasiticSteiner(const Pin* drvr_pin,
-                                    const Net* net,
-                                    SpefWriter* spef_writer);
-  float totalLoad(SteinerTree* tree) const;
-  float subtreeLoad(SteinerTree* tree,
-                    float cap_per_micron,
-                    SteinerPt pt) const;
   void makePadParasitic(const Net* net, SpefWriter* spef_writer);
   bool isPadNet(const Net* net) const;
   bool isPadPin(const Pin* pin) const;
@@ -707,7 +614,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
-                                SteinerTree* tree,
+                                est::SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id);
 
@@ -732,10 +639,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,
                               bool revisiting_inst);
-  // Returns nullptr if net has less than 2 pins or any pin is not placed.
-  SteinerTree* makeSteinerTree(Point drvr_location,
-                               const std::vector<Point>& sink_locations);
-  SteinerTree* makeSteinerTree(const Pin* drvr_pin);
   BufferedNetPtr makeBufferedNet(const Pin* drvr_pin, const Corner* corner);
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
                                         const Corner* corner);
@@ -781,25 +684,16 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unique_ptr<RepairSetup> repair_setup_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
-  std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
   std::unique_ptr<Rebuffer> rebuffer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
-  std::vector<std::vector<double>> layer_res_;  // ohms/meter
-  std::vector<std::vector<double>> layer_cap_;  // Farads/meter
-  // Signal wire RC indexed by corner->index
-  std::vector<ParasiticsResistance> wire_signal_res_;   // ohms/metre
-  std::vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
-  // Clock wire RC.
-  std::vector<ParasiticsResistance> wire_clk_res_;   // ohms/metre
-  std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 
   Logger* logger_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
-  IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
@@ -808,10 +702,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   Rect core_;
   bool core_exists_ = false;
-
-  ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
-  bool incremental_parasitics_enabled_ = false;
 
   double design_area_ = 0.0;
   const MinMax* min_ = MinMax::min();
@@ -907,7 +797,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
-  friend class SteinerTree;
   friend class BaseMove;
   friend class BufferMove;
   friend class SizeDownMove;
@@ -918,23 +807,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class UnbufferMove;
   friend class SwapArithModules;
   friend class ConcreteSwapArithModules;
-  friend class IncrementalParasiticsGuard;
   friend class Rebuffer;
   friend class OdbCallBack;
-};
-
-class IncrementalParasiticsGuard
-{
- public:
-  IncrementalParasiticsGuard(Resizer* resizer);
-  ~IncrementalParasiticsGuard();
-
-  // calls resizer_->updateParasitics()
-  void update();
-
- private:
-  Resizer* resizer_;
-  bool need_unregister_;
 };
 
 }  // namespace rsz

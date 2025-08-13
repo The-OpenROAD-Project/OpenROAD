@@ -419,9 +419,9 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
   }
 
-  resizer_->parasitics_invalid_.erase(removed);
-  resizer_->parasiticsInvalid(survivor);
-  resizer_->updateParasitics();
+  estimate_parasitics_->removeNetFromParasiticsInvalid(removed);
+  estimate_parasitics_->parasiticsInvalid(survivor);
+  estimate_parasitics_->updateParasitics();
 }
 
 }  // namespace rsz
