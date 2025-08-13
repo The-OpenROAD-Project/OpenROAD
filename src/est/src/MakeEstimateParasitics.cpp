@@ -31,12 +31,14 @@ void deleteEstimateParasitics(est::EstimateParasitics* estimate_parasitics)
 void initEstimateParasitics(est::EstimateParasitics* estimate_parasitics,
                             Tcl_Interp* tcl_interp,
                             utl::Logger* logger,
+                            utl::CallBackHandler* callback_handler,
                             odb::dbDatabase* db,
                             sta::dbSta* sta,
                             stt::SteinerTreeBuilder* stt_builder,
                             grt::GlobalRouter* global_router)
 {
-  estimate_parasitics->init(logger, db, sta, stt_builder, global_router);
+  estimate_parasitics->init(
+      logger, callback_handler, db, sta, stt_builder, global_router);
   std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer;
   if (gui::Gui::enabled()) {
     steiner_renderer = std::make_unique<SteinerRenderer>();

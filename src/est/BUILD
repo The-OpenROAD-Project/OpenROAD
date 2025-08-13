@@ -13,6 +13,7 @@ cc_library(
     name = "private_hdrs",
     hdrs = [
         "src/AbstractSteinerRenderer.h",
+        "src/EstimateParasiticsCallBack.h",
         "src/MakeWireParasitics.h",
         "src/OdbCallBack.h",
         "src/SteinerRenderer.h",
@@ -25,6 +26,7 @@ cc_library(
     name = "est",
     srcs = [
         "src/EstimateParasitics.cpp",
+        "src/EstimateParasiticsCallBack.cpp",
         "src/MakeWireParasitics.cpp",
         "src/OdbCallBack.cpp",
         "src/SteinerTree.cpp",

@@ -25,6 +25,10 @@ namespace stt {
 class SteinerTreeBuilder;
 }  // namespace stt
 
+namespace utl {
+class CallBackHandler;
+}  // namespace utl
+
 namespace est {
 
 using utl::Logger;
@@ -97,6 +101,7 @@ struct ParasiticsCapacitance
 
 class AbstractSteinerRenderer;
 class OdbCallBack;
+class EstimateParasiticsCallBack;
 
 class EstimateParasitics : public dbStaState
 {
@@ -104,6 +109,7 @@ class EstimateParasitics : public dbStaState
   EstimateParasitics();
   ~EstimateParasitics() override;
   void init(Logger* logger,
+            utl::CallBackHandler* callback_handler,
             dbDatabase* db,
             dbSta* sta,
             SteinerTreeBuilder* stt_builder,
@@ -248,6 +254,7 @@ class EstimateParasitics : public dbStaState
   double dbuToMeters(int dist) const;
 
   Logger* logger_ = nullptr;
+  std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;

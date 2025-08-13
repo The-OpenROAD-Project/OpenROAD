@@ -20,6 +20,10 @@ namespace grt {
 class GlobalRouter;
 }
 
+namespace utl {
+class CallBackHandler;
+}
+
 namespace est {
 
 class EstimateParasitics;
@@ -31,6 +35,7 @@ void deleteEstimateParasitics(est::EstimateParasitics* estimate_parasitics);
 void initEstimateParasitics(est::EstimateParasitics* estimate_parasitics,
                             Tcl_Interp* tcl_interp,
                             utl::Logger* logger,
+                            utl::CallBackHandler* callback_handler,
                             odb::dbDatabase* db,
                             sta::dbSta* sta,
                             stt::SteinerTreeBuilder* stt_builder,

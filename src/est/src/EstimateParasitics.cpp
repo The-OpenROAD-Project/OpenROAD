@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "AbstractSteinerRenderer.h"
+#include "EstimateParasiticsCallBack.h"
 #include "MakeWireParasitics.h"
 #include "OdbCallBack.h"
 #include "db_sta/SpefWriter.hh"
@@ -21,6 +22,7 @@
 #include "sta/Report.hh"
 #include "sta/Sdc.hh"
 #include "sta/Units.hh"
+#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
 namespace est {
@@ -36,7 +38,9 @@ using odb::dbMasterType;
 using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics()
-    : wire_signal_res_(0.0),
+    : estimate_parasitics_cbk_(
+          std::make_unique<EstimateParasiticsCallBack>(this)),
+      wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
       wire_clk_cap_(0.0)
@@ -46,12 +50,14 @@ EstimateParasitics::EstimateParasitics()
 EstimateParasitics::~EstimateParasitics() = default;
 
 void EstimateParasitics::init(Logger* logger,
+                              utl::CallBackHandler* callback_handler,
                               dbDatabase* db,
                               dbSta* sta,
                               SteinerTreeBuilder* stt_builder,
                               GlobalRouter* global_router)
 {
   logger_ = logger;
+  estimate_parasitics_cbk_->setOwner(callback_handler);
   db_ = db;
   block_ = nullptr;
   dbStaState::init(sta);
