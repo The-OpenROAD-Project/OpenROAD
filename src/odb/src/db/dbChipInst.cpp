@@ -12,6 +12,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbChip.h"
+#include "odb/dbTransform.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipInst>;
@@ -137,17 +138,34 @@ dbOrientType dbChipInst::getOrient() const
   return obj->orient_;
 }
 
-dbChipInst* dbChipInst::create(dbChip* parentChip,
-                               dbChip* masterChip,
+dbTransform dbChipInst::getTransform() const
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+  return dbTransform(obj->orient_, obj->loc_);
+}
+
+dbChipInst* dbChipInst::create(dbChip* parent_chip,
+                               dbChip* master_chip,
                                const std::string& name)
 {
-  if (parentChip == nullptr || masterChip == nullptr) {
+  if (parent_chip == nullptr || master_chip == nullptr) {
     return nullptr;
   }
-
-  _dbChip* parent = (_dbChip*) parentChip;
-  _dbChip* master = (_dbChip*) masterChip;
-  _dbDatabase* db = (_dbDatabase*) parent->getOwner();
+  _dbChip* _parent = (_dbChip*) parent_chip;
+  _dbChip* _master = (_dbChip*) master_chip;
+  _dbDatabase* db = (_dbDatabase*) _parent->getOwner();
+  if (parent_chip->getChipType() != dbChip::ChipType::HIER) {
+    db->getLogger()->error(
+        utl::ODB,
+        506,
+        "Cannot create chip instance {} in non-hierarchy chip {}",
+        name,
+        parent_chip->getName());
+  }
+  if (parent_chip == master_chip) {
+    db->getLogger()->error(
+        utl::ODB, 507, "Cannot create chip instance {} in itself", name);
+  }
 
   // Create a new chip instance
   _dbChipInst* chipinst = db->chip_inst_tbl_->create();
@@ -157,12 +175,12 @@ dbChipInst* dbChipInst::create(dbChip* parentChip,
   chipinst->loc_ = Point3D(0, 0, 0);  // Default location
   chipinst->orient_
       = dbOrientType::R0;  // Default orientation (already set in constructor)
-  chipinst->master_chip_ = master->getOID();
-  chipinst->parent_chip_ = parent->getOID();
+  chipinst->master_chip_ = _master->getOID();
+  chipinst->parent_chip_ = _parent->getOID();
 
   // Link the chip instance to the parent chip's linked list
-  chipinst->chipinst_next_ = parent->chipinsts_;
-  parent->chipinsts_ = chipinst->getOID();
+  chipinst->chipinst_next_ = _parent->chipinsts_;
+  _parent->chipinsts_ = chipinst->getOID();
 
   return (dbChipInst*) chipinst;
 }

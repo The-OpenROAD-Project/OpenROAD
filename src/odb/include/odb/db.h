@@ -7029,8 +7029,10 @@ class dbChipInst : public dbObject
 
   dbOrientType getOrient() const;
 
-  static odb::dbChipInst* create(dbChip* parentChip,
-                                 dbChip* masterChip,
+  dbTransform getTransform() const;
+
+  static odb::dbChipInst* create(dbChip* parent_chip,
+                                 dbChip* master_chip,
                                  const std::string& name);
 
   static void destroy(dbChipInst* chipInst);
