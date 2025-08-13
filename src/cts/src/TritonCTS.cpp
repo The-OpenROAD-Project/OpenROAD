@@ -1581,9 +1581,8 @@ int TritonCTS::applyNDRToClockLevels(odb::dbBlock* block_,
 {
   int ndrAppliedNets = 0;
 
-  // clang-format off
-  debugPrint(logger_, CTS, "clustering", 1, "Applying NDR to clock tree levels: ");
-  // clang-format on
+  debugPrint(
+      logger_, CTS, "clustering", 1, "Applying NDR to clock tree levels: ");
   for (int level : targetLevels) {
     debugPrint(logger_, CTS, "clustering", 1, "{} ", level);
   }
@@ -1592,8 +1591,8 @@ int TritonCTS::applyNDRToClockLevels(odb::dbBlock* block_,
   for (odb::dbNet* net : block_->getNets()) {
     if (net->getSigType() == odb::dbSigType::CLOCK
         && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      std::string netName = net->getConstName();
-      int level = extractClockTreeLevelFromNetName(netName);
+      const std::string netName = net->getConstName();
+      const int level = extractClockTreeLevelFromNetName(netName);
 
       // Apply NDR if this level is in the target list
       if (std::find(targetLevels.begin(), targetLevels.end(), level)
@@ -1601,7 +1600,7 @@ int TritonCTS::applyNDRToClockLevels(odb::dbBlock* block_,
         net->setNonDefaultRule(clockNDR);
         ndrAppliedNets++;
         // clang-format off
-        debugPrint(logger_, CTS, "clustering", 1, 
+        debugPrint(logger_, CTS, "clustering", 1,
             "Applied NDR to: {} (level {})", netName, level);
         // clang-format on
       }
@@ -1634,17 +1633,17 @@ int TritonCTS::applyNDRToFirstHalfLevels(
     const std::set<odb::dbNet*>& clkLeafNets)
 {
   // Get all unique levels in the design
-  std::vector<int> allLevels = getAllClockTreeLevels(block_, clkLeafNets);
+  const std::vector<int> allLevels = getAllClockTreeLevels(block_, clkLeafNets);
 
   // Calculate first half (rounding up if odd number of levels)
-  size_t halfCount = (allLevels.size() + 1) / 2;
+  const size_t halfCount = (allLevels.size() + 1) / 2;
 
   // Create vector with first half of levels
   std::vector<int> firstHalfLevels(allLevels.begin(),
                                    allLevels.begin() + halfCount);
 
   // clang-format off
-  debugPrint(logger_, CTS, "clustering", 1, "Total clock tree levels found: {}" 
+  debugPrint(logger_, CTS, "clustering", 1, "Total clock tree levels found: {}"
         "Applying NDR to first {} levels", allLevels.size(), halfCount);
   // clang-format on
 
