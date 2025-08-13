@@ -45,9 +45,11 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 112;  // Current revision number
+const uint db_schema_minor = 113;  // Current revision number
 
 //
+const uint db_schema_chip_inst = 113;
+
 const uint db_schema_chip_extended = 112;
 
 // Revision where the map which associates instances to their
@@ -219,8 +221,10 @@ class dbIStream;
 class dbOStream;
 class _dbChip;
 class _dbProperty;
+class _dbChipInst;
 // User Code Begin Classes
 class dbPropertyItr;
+class dbChipInstItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
@@ -254,6 +258,7 @@ class _dbDatabase : public _dbObject
   dbId<_dbChip> _chip;
   dbTable<_dbChip, 2>* _chip_tbl;
   dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbChipInst>* chip_inst_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
@@ -261,6 +266,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
+  dbChipInstItr* chip_inst_itr_;
   int _unique_id;
 
   utl::Logger* _logger;

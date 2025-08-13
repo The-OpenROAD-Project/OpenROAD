@@ -17,6 +17,10 @@
 #include "dbTech.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include "dbChipInst.h"
+#include "dbChipInstItr.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
 
@@ -71,6 +75,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
     return false;
   }
   if (_top != rhs._top) {
+    return false;
+  }
+  if (chipinsts_ != rhs.chipinsts_) {
     return false;
   }
   if (*_prop_tbl != *rhs._prop_tbl) {
@@ -179,6 +186,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
     stream >> obj.tsv_;
   }
   stream >> obj._top;
+  if (obj.getDatabase()->isSchema(db_schema_chip_inst)) {
+    stream >> obj.chipinsts_;
+  }
   // User Code Begin >>
   stream >> *obj._block_tbl;
   stream >> *obj._prop_tbl;
@@ -207,6 +217,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.scribe_line_south_;
   stream << obj.tsv_;
   stream << obj._top;
+  stream << obj.chipinsts_;
   // User Code Begin <<
   stream << *obj._block_tbl;
   stream << NamedTable("prop_tbl", obj._prop_tbl);
@@ -457,6 +468,13 @@ dbBlock* dbChip::getBlock()
   }
 
   return (dbBlock*) chip->_block_tbl->getPtr(chip->_top);
+}
+
+dbSet<dbChipInst> dbChip::getChipInsts() const
+{
+  _dbChip* chip = (_dbChip*) this;
+  _dbDatabase* db = (_dbDatabase*) chip->getOwner();
+  return dbSet<dbChipInst>(chip, db->chip_inst_itr_);
 }
 
 dbChip* dbChip::create(dbDatabase* db_)

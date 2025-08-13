@@ -106,6 +106,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -6986,6 +6987,8 @@ class dbChip : public dbObject
   ///
   dbBlock* getBlock();
 
+  dbSet<dbChipInst> getChipInsts() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if a chip already exists.
@@ -7005,12 +7008,40 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipInst : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setLoc(Point3D loc);
+
+  Point3D getLoc() const;
+
+  dbChip* getMasterChip() const;
+
+  dbChip* getParentChip() const;
+
+  // User Code Begin dbChipInst
+  void setOrient(dbOrientType orient);
+
+  dbOrientType getOrient() const;
+
+  static odb::dbChipInst* create(dbChip* parentChip,
+                                 dbChip* masterChip,
+                                 const std::string& name);
+
+  static void destroy(dbChipInst* chipInst);
+  // User Code End dbChipInst
+};
+
 class dbDatabase : public dbObject
 {
  public:
   dbSet<dbChip> getChips() const;
 
   dbSet<dbProperty> getProperties() const;
+
+  dbSet<dbChipInst> getChipInsts() const;
 
   // User Code Begin dbDatabase
   ///

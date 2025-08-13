@@ -141,6 +141,12 @@
       "name": "_prop_itr",
       "type": "dbPropertyItr*",
       "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "chipinsts_",
+      "type": "dbId<_dbChipInst>",
+      "flags": ["private"],
+      "schema":"db_schema_chip_inst"
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],

@@ -19,6 +19,7 @@ class _dbNameCache;
 class dbBlockItr;
 class _dbProperty;
 class _dbBlock;
+class _dbChipInst;
 
 class _dbChip : public _dbObject
 {
@@ -55,6 +56,7 @@ class _dbChip : public _dbObject
   _dbNameCache* _name_cache;
   dbBlockItr* _block_itr;
   dbPropertyItr* _prop_itr;
+  dbId<_dbChipInst> chipinsts_;
   dbTable<_dbProperty>* _prop_tbl;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj);

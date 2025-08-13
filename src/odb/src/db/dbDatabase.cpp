@@ -5,6 +5,7 @@
 #include "dbDatabase.h"
 
 #include "dbChip.h"
+#include "dbChipInst.h"
 #include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -23,6 +24,7 @@
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
+#include "dbChipInstItr.h"
 #include "dbGDSLib.h"
 #include "dbITerm.h"
 #include "dbJournal.h"
@@ -38,7 +40,6 @@
 #include "odb/dbExtControl.h"
 #include "odb/dbStream.h"
 #include "utl/Logger.h"
-
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbDatabase>;
@@ -67,6 +68,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
     return false;
   }
   if (*_prop_tbl != *rhs._prop_tbl) {
+    return false;
+  }
+  if (*chip_inst_tbl_ != *rhs.chip_inst_tbl_) {
     return false;
   }
 
@@ -114,6 +118,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
   _prop_tbl = new dbTable<_dbProperty>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
+  chip_inst_tbl_ = new dbTable<_dbChipInst>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipInstObj);
   // User Code Begin Constructor
   _magic1 = DB_MAGIC1;
   _magic2 = DB_MAGIC2;
@@ -136,6 +142,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
+
+  chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
   // User Code End Constructor
 }
 
@@ -191,6 +199,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   }
   stream >> *obj._prop_tbl;
   stream >> *obj._name_cache;
+  if (obj.isSchema(db_schema_chip_inst)) {
+    stream >> *obj.chip_inst_tbl_;
+  }
 
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
@@ -238,7 +249,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj._gds_lib_tbl;
   stream << NamedTable("prop_tbl", obj._prop_tbl);
   stream << *obj._name_cache;
-  stream << *obj._gds_lib_tbl;
+  stream << *obj.chip_inst_tbl_;
   // User Code End <<
   return stream;
 }
@@ -250,6 +261,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return _chip_tbl;
     case dbPropertyObj:
       return _prop_tbl;
+    case dbChipInstObj:
+      return chip_inst_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return _tech_tbl;
@@ -274,6 +287,8 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   _prop_tbl->collectMemInfo(info.children_["_prop_tbl"]);
 
+  chip_inst_tbl_->collectMemInfo(info.children_["chip_inst_tbl_"]);
+
   // User Code Begin collectMemInfo
   _tech_tbl->collectMemInfo(info.children_["tech"]);
   _lib_tbl->collectMemInfo(info.children_["lib"]);
@@ -286,12 +301,14 @@ _dbDatabase::~_dbDatabase()
 {
   delete _chip_tbl;
   delete _prop_tbl;
+  delete chip_inst_tbl_;
   // User Code Begin Destructor
   delete _tech_tbl;
   delete _lib_tbl;
   delete _gds_lib_tbl;
   delete _name_cache;
   delete _prop_itr;
+  delete chip_inst_itr_;
   // User Code End Destructor
 }
 
@@ -329,6 +346,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
+
+  chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -364,6 +383,12 @@ dbSet<dbProperty> dbDatabase::getProperties() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbProperty>(obj, obj->_prop_tbl);
+}
+
+dbSet<dbChipInst> dbDatabase::getChipInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbChipInst>(obj, obj->chip_inst_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods
