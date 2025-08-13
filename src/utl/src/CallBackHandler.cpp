@@ -32,4 +32,11 @@ void CallBackHandler::triggerOnPinAccessUpdateRequired()
   }
 }
 
+void CallBackHandler::triggerOnEstimateParasiticsRequired()
+{
+  for (CallBack* callback : callbacks_) {
+    callback->onEstimateParasiticsRequired();
+  }
+}
+
 }  // namespace utl
