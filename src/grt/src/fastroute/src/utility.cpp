@@ -16,6 +16,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -1189,7 +1190,7 @@ float FastRouteCore::CalculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(netCount());
-  db_->getChip()->getBlock()->updateParasitics();
+  callback_handler_->triggerOnEstimateParasiticsRequired();
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();

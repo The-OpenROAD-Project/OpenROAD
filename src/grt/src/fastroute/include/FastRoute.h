@@ -21,8 +21,9 @@
 #include "stt/SteinerTreeBuilder.h"
 
 namespace utl {
+class CallBackHandler;
 class Logger;
-}
+}  // namespace utl
 
 namespace odb {
 class dbDatabase;
@@ -88,6 +89,7 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
+                utl::CallBackHandler* callback_handler,
                 stt::SteinerTreeBuilder* stt_builder,
                 sta::dbSta* sta);
   ~FastRouteCore();
@@ -624,6 +626,7 @@ class FastRouteCore
   std::vector<StTree> sttrees_;  // the Steiner trees
   std::vector<StTree> sttrees_bk_;
 
+  utl::CallBackHandler* callback_handler_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;

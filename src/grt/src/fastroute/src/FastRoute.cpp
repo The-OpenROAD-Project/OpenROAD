@@ -23,6 +23,7 @@ using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
+                             utl::CallBackHandler* callback_handler,
                              stt::SteinerTreeBuilder* stt_builder,
                              sta::dbSta* sta)
     : max_degree_(0),
@@ -57,6 +58,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       regular_x_(false),
       regular_y_(false),
       logger_(log),
+      callback_handler_(callback_handler),
       stt_builder_(stt_builder),
       sta_(sta),
       debug_(new DebugSetting())
