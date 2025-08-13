@@ -160,12 +160,12 @@ def add_field_attributes(field, klass, flags_struct, schema):
     if field.get("table", False):
         klass["hasTables"] = True
         if field["type"].startswith("db"):
-            field["functional_name"] = get_plural_name(field['type'][2:])
+            field["functional_name"] = get_plural_name(field["type"][2:])
         else:
-            field["functional_name"] = get_plural_name(field['type'])
+            field["functional_name"] = get_plural_name(field["type"])
         field["components"] = [field["name"]]
     elif field["isHashTable"]:
-        field["functional_name"] = get_plural_name(field['type'][2:])
+        field["functional_name"] = get_plural_name(field["type"][2:])
     else:
         field["functional_name"] = get_functional_name(field["name"])
         field["components"] = components(klass["structs"], field["name"], field["type"])
