@@ -1525,7 +1525,7 @@ dbChip* dbBlock::getChip()
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = block->getDatabase();
-  _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  _dbChip* chip = db->chip_tbl_->getPtr(block->_chip);
   return (dbChip*) chip;
 }
 
@@ -1533,7 +1533,7 @@ dbBlock* dbBlock::getParent()
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = block->getDatabase();
-  _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  _dbChip* chip = db->chip_tbl_->getPtr(block->_chip);
   if (!block->_parent.isValid()) {
     return nullptr;
   }
@@ -1565,7 +1565,7 @@ dbSet<dbBlock> dbBlock::getChildren()
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = getImpl()->getDatabase();
-  _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  _dbChip* chip = db->chip_tbl_->getPtr(block->_chip);
   return dbSet<dbBlock>(block, chip->_block_itr);
 }
 

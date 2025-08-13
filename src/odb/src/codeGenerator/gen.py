@@ -21,7 +21,8 @@ from helper import (
     get_hash_table_type,
     get_ref_type,
     get_table_name,
-    get_template_type,
+    is_template_type,
+    get_template_types,
     is_bit_fields,
     is_hash_table,
     is_pass_by_ref,
@@ -56,9 +57,7 @@ def make_parent_field(parent, relation):
     field["table"] = True
     field["dbSetGetter"] = True
     field["components"] = [field["name"]]
-    field["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
-        "flags", []
-    )
+    field["flags"] = ["no-set"] + relation.get("flags", [])
     if "page_size" in relation:
         field["page_size"] = relation["page_size"]
     if "schema" in relation:
@@ -75,10 +74,12 @@ def make_parent_hash_field(parent, relation, parent_field):
     """Adds a hash table field to the parent of a hashed relationsip"""
     field = {}
     field["name"] = parent_field["name"][:-4] + "hash_"
-    field["type"] = "dbHashTable<_" + relation["child"] + ">"
+    page_size_part = f", {relation['page_size']}" if "page_size" in relation else ""
+    field["type"] = f"dbHashTable<_{relation['child']}{page_size_part}>"
     field["components"] = [field["name"]]
     field["table_name"] = parent_field["name"]
-    field["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    field["flags"] = ["no-set"]
+    field["flags"].extend(relation.get("flags", []))
     parent["fields"].append(field)
     if "dbHashTable.h" not in parent["h_includes"]:
         parent["h_includes"].append("dbHashTable.h")
@@ -90,7 +91,8 @@ def make_child_next_field(child, relation):
     """Adds a next entry field to the child of a hashed relationsip"""
     inChildNextEntry = {"name": "_next_entry"}
     inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
-    inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
+    inChildNextEntry["flags"] = ["private"]
+    inChildNextEntry["flags"].extend(relation.get("flags", []))
     child["fields"].append(inChildNextEntry)
     logging.debug(f"Add hash field {inChildNextEntry['name']} to {relation['child']}")
 
@@ -139,21 +141,20 @@ def add_field_attributes(field, klass, flags_struct, schema):
     #
     # This needs documentation
     #
-    template_class_name = None
-    tmp = get_template_type(field["type"])
-    while tmp is not None:
-        template_class_name = tmp
-        tmp = get_template_type(tmp)
-
-    if template_class_name is not None:
-        if (
-            template_class_name not in klass["declared_classes"]
-            and template_class_name not in std
-            and "no-template" not in field["flags"]
-            and klass["name"] != template_class_name[1:]
-            and klass["name"] + "::" != template_class_name[0 : len(klass["name"]) + 2]
-        ):
-            klass["declared_classes"].append(template_class_name)
+    if is_template_type(field["type"]):
+        for template_class_name in get_template_types(field["type"]):
+            if (
+                template_class_name not in klass["declared_classes"]
+                and template_class_name not in std
+                and not template_class_name.isdigit()
+                and template_class_name != "false"
+                and template_class_name != "true"
+                and "no-template" not in field["flags"]
+                and klass["name"] != template_class_name[1:]
+                and klass["name"] + "::"
+                != template_class_name[0 : len(klass["name"]) + 2]
+            ):
+                klass["declared_classes"].append(template_class_name)
     ####
     ####
     ####

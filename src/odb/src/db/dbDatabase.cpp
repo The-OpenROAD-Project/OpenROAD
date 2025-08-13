@@ -63,7 +63,10 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (_chip != rhs._chip) {
     return false;
   }
-  if (*_chip_tbl != *rhs._chip_tbl) {
+  if (*chip_tbl_ != *rhs.chip_tbl_) {
+    return false;
+  }
+  if (chip_hash_ != rhs.chip_hash_) {
     return false;
   }
   if (*_prop_tbl != *rhs._prop_tbl) {
@@ -110,8 +113,9 @@ bool _dbDatabase::operator<(const _dbDatabase& rhs) const
 
 _dbDatabase::_dbDatabase(_dbDatabase* db)
 {
-  _chip_tbl = new dbTable<_dbChip, 2>(
+  chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
+  chip_hash_.setTable(chip_tbl_);
   _prop_tbl = new dbTable<_dbProperty>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
   // User Code Begin Constructor
@@ -185,17 +189,19 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   }
   stream >> *obj._tech_tbl;
   stream >> *obj._lib_tbl;
-  stream >> *obj._chip_tbl;
+  stream >> *obj.chip_tbl_;
   if (obj.isSchema(db_schema_gds_lib_in_block)) {
     stream >> *obj._gds_lib_tbl;
   }
   stream >> *obj._prop_tbl;
   stream >> *obj._name_cache;
-
+  if (obj.isSchema(db_schema_chip_hash_table)) {
+    stream >> obj.chip_hash_;
+  }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
     if (obj._chip) {
-      _dbChip* chip = obj._chip_tbl->getPtr(obj._chip);
+      _dbChip* chip = obj.chip_tbl_->getPtr(obj._chip);
       if (chip->_top) {
         chip->_block_tbl->getPtr(chip->_top)->_tech = old_db_tech;
       }
@@ -234,11 +240,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << obj._chip;
   stream << *obj._tech_tbl;
   stream << *obj._lib_tbl;
-  stream << *obj._chip_tbl;
+  stream << *obj.chip_tbl_;
   stream << *obj._gds_lib_tbl;
   stream << NamedTable("prop_tbl", obj._prop_tbl);
   stream << *obj._name_cache;
-  stream << *obj._gds_lib_tbl;
+  stream << obj.chip_hash_;
   // User Code End <<
   return stream;
 }
@@ -247,7 +253,7 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
     case dbChipObj:
-      return _chip_tbl;
+      return chip_tbl_;
     case dbPropertyObj:
       return _prop_tbl;
       // User Code Begin getObjectTable
@@ -270,7 +276,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  _chip_tbl->collectMemInfo(info.children_["_chip_tbl"]);
+  chip_tbl_->collectMemInfo(info.children_["chip_tbl_"]);
 
   _prop_tbl->collectMemInfo(info.children_["_prop_tbl"]);
 
@@ -284,7 +290,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
 _dbDatabase::~_dbDatabase()
 {
-  delete _chip_tbl;
+  delete chip_tbl_;
   delete _prop_tbl;
   // User Code Begin Destructor
   delete _tech_tbl;
@@ -310,7 +316,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _logger = nullptr;
   _unique_id = id;
 
-  _chip_tbl = new dbTable<_dbChip, 2>(
+  chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
 
   _gds_lib_tbl = new dbTable<_dbGDSLib, 2>(
@@ -357,7 +363,13 @@ utl::Logger* _dbObject::getLogger() const
 dbSet<dbChip> dbDatabase::getChips() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return dbSet<dbChip>(obj, obj->_chip_tbl);
+  return dbSet<dbChip>(obj, obj->chip_tbl_);
+}
+
+dbChip* dbDatabase::findChip(const char* name) const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return (dbChip*) obj->chip_hash_.find(name);
 }
 
 dbSet<dbProperty> dbDatabase::getProperties() const
@@ -367,6 +379,13 @@ dbSet<dbProperty> dbDatabase::getProperties() const
 }
 
 // User Code Begin dbDatabasePublicMethods
+
+void dbDatabase::setTopChip(dbChip* chip)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  db->_chip = chip->getImpl()->getOID();
+}
+
 dbSet<dbLib> dbDatabase::getLibs()
 {
   _dbDatabase* db = (_dbDatabase*) this;
@@ -462,7 +481,7 @@ dbChip* dbDatabase::getChip()
     return nullptr;
   }
 
-  return (dbChip*) db->_chip_tbl->getPtr(db->_chip);
+  return (dbChip*) db->chip_tbl_->getPtr(db->_chip);
 }
 
 dbTech* dbDatabase::getTech()
