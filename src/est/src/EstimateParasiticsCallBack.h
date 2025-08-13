@@ -22,7 +22,7 @@ class EstimateParasiticsCallBack : public utl::CallBack
 
   ~EstimateParasiticsCallBack() override = default;
 
-  void onPinAccessUpdateRequired() override;
+  void onEstimateParasiticsRequired() override;
 
  private:
   EstimateParasitics* estimate_parasitics_;

@@ -10,7 +10,7 @@
 
 namespace est {
 
-void EstimateParasiticsCallBack::onPinAccessUpdateRequired()
+void EstimateParasiticsCallBack::onEstimateParasiticsRequired()
 {
   estimate_parasitics_->clearParasitics();
   auto routes = estimate_parasitics_->getGlobalRouter()->getRoutes();
