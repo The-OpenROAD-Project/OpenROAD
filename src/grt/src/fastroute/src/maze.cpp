@@ -1870,14 +1870,14 @@ void FastRouteCore::getOverflowPositions(
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      overflow_pos.push_back(std::make_pair(odb::Point(x, y), true));
+      overflow_pos.emplace_back(odb::Point(x, y), true);
     }
   }
   // Find vertical ggrids with congestion
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      overflow_pos.push_back(std::make_pair(odb::Point(x, y), false));
+      overflow_pos.emplace_back(odb::Point(x, y), false);
     }
   }
 }
