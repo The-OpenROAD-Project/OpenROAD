@@ -1,0 +1,43 @@
+{
+  "name": "dbChipInst",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags":["cmpgt", "no-set"]
+    },
+    {
+      "name": "loc_",
+      "type": "Point3D",
+      "flags":["cmpgt"]
+    },
+    {
+      "name": "orient_",
+      "type": "dbOrientType::Value",
+      "flags": ["private" ,"cmpgt", "no-serial"]
+    },
+    {
+      "name": "master_chip_",
+      "type": "dbId<_dbChip>",
+      "flags": ["no-set"],
+      "parent" : "dbDatabase"
+    },
+    {
+      "name": "parent_chip_",
+      "type": "dbId<_dbChip>",
+      "flags": ["no-set"],
+      "parent":"dbDatabase"
+    },
+    {
+      "name":"chipinst_next_",
+      "type":"dbId<_dbChipInst>",
+      "flags":["private"]
+    }
+  ],
+  "h_includes": [
+    "odb/geom.h",
+    "odb/dbTypes.h"
+  ],
+  "cpp_includes": []
+}

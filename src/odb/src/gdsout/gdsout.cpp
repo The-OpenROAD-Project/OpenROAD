@@ -200,7 +200,7 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
   r2.data8 = str->getName();
   writeRecord(r2);
 
-  for (auto boundary : str->getGDSBoundarys()) {
+  for (auto boundary : str->getGDSBoundaries()) {
     writeBoundary(boundary);
   }
 

@@ -169,7 +169,7 @@ char* dbGDSStructure::getName() const
   return obj->_name;
 }
 
-dbSet<dbGDSBoundary> dbGDSStructure::getGDSBoundarys() const
+dbSet<dbGDSBoundary> dbGDSStructure::getGDSBoundaries() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
   return dbSet<dbGDSBoundary>(obj, obj->boundaries_);

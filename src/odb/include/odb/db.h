@@ -106,6 +106,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -6921,7 +6922,7 @@ class dbChip : public dbObject
     HIER
   };
 
-  std::string getName() const;
+  const char* getName() const;
 
   void setOffset(Point offset);
 
@@ -6980,18 +6981,23 @@ class dbChip : public dbObject
   bool isTsv() const;
 
   // User Code Begin dbChip
+
+  ChipType getChipType() const;
   ///
   /// Get the top-block of this chip.
   /// Returns nullptr if a top-block has NOT been created.
   ///
   dbBlock* getBlock();
 
+  dbSet<dbChipInst> getChipInsts() const;
+
   ///
   /// Create a new chip.
-  /// Returns nullptr if a chip already exists.
   /// Returns nullptr if there is no database technology.
   ///
-  static dbChip* create(dbDatabase* db);
+  static dbChip* create(dbDatabase* db,
+                        const std::string& name = "",
+                        ChipType type = ChipType::DIE);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7005,12 +7011,48 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipInst : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setLoc(Point3D loc);
+
+  Point3D getLoc() const;
+
+  dbChip* getMasterChip() const;
+
+  dbChip* getParentChip() const;
+
+  // User Code Begin dbChipInst
+  void setOrient(dbOrientType orient);
+
+  dbOrientType getOrient() const;
+
+  dbTransform getTransform() const;
+
+  static odb::dbChipInst* create(dbChip* parent_chip,
+                                 dbChip* master_chip,
+                                 const std::string& name);
+
+  static void destroy(dbChipInst* chipInst);
+  // User Code End dbChipInst
+};
+
 class dbDatabase : public dbObject
 {
  public:
   dbSet<dbChip> getChips() const;
 
+  dbChip* findChip(const char* name) const;
+
+  dbSet<dbProperty> getProperties() const;
+
+  dbSet<dbChipInst> getChipInsts() const;
+
   // User Code Begin dbDatabase
+
+  void setTopChip(dbChip* chip);
   ///
   /// Return the libs contained in the database. A database can contain
   /// multiple libs.
@@ -7427,7 +7469,7 @@ class dbGDSStructure : public dbObject
  public:
   char* getName() const;
 
-  dbSet<dbGDSBoundary> getGDSBoundarys() const;
+  dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
@@ -7828,7 +7870,7 @@ class dbMarkerCategory : public dbObject
 
   dbSet<dbMarker> getMarkers() const;
 
-  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbMarkerCategory* findMarkerCategory(const char* name) const;
 

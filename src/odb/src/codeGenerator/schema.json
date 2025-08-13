@@ -162,6 +162,15 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbScanList.h", "dbScanInst.h"]
+    },
+    {
+      "name": "dbChipInstItr",
+      "parentObject": "dbChipInst",
+      "tableName": "chip_inst_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipInst.h", "dbChip.h"]
     }
   ],
   "relations":[
@@ -376,9 +385,25 @@
       "parent":"dbDatabase",
       "child":"dbChip",
       "type":"1_n",
-      "tbl_name":"_chip_tbl",
+      "tbl_name":"chip_tbl_",
       "flags": ["no-serial"],
-      "page_size": 2
+      "page_size": 2,
+      "hash": true
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbProperty",
+      "type":"1_n",
+      "tbl_name":"_prop_tbl",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipInst",
+      "type":"1_n",
+      "tbl_name":"chip_inst_tbl_",
+      "schema":"db_schema_chip_inst",
+      "flags": ["no-serial"]
     }
   ]
 }

@@ -19,9 +19,10 @@
   ],
   "fields": [
     {
-      "name": "name_",
-      "type": "std::string",
+      "name": "_name",
+      "type": "char *",
       "schema": "db_schema_chip_extended",
+      "default": "nullptr",
       "flags": ["no-set"]
     },
     {
@@ -141,6 +142,12 @@
       "name": "_prop_itr",
       "type": "dbPropertyItr*",
       "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "chipinsts_",
+      "type": "dbId<_dbChipInst>",
+      "flags": ["private"],
+      "schema":"db_schema_chip_inst"
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],
