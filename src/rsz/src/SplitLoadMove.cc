@@ -188,7 +188,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   sta_->connectPin(buffer, input, db_network_->dbToSta(db_drvr_net));
 
   // invalidate the dbNet
-  resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
 
   // out_net is the db net
   sta_->connectPin(buffer, output, out_net);
@@ -251,8 +251,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   resizer_->resizeToTargetSlew(buffer_out_pin);
   // H-Fix, only invalidate db nets.
   // resizer_->parasiticsInvalid(net);
-  resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
-  resizer_->parasiticsInvalid(out_net);
+  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+  estimate_parasitics_->parasiticsInvalid(out_net);
 
   return true;
 }
