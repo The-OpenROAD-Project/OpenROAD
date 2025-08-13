@@ -475,7 +475,7 @@ dbBlock* dbChip::getBlock()
   return (dbBlock*) chip->_block_tbl->getPtr(chip->_top);
 }
 
-dbChip* dbChip::create(dbDatabase* db_, std::string name, ChipType type)
+dbChip* dbChip::create(dbDatabase* db_, const std::string& name, ChipType type)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   _dbChip* chip = db->chip_tbl_->create();

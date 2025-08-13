@@ -6993,7 +6993,7 @@ class dbChip : public dbObject
   /// Returns nullptr if there is no database technology.
   ///
   static dbChip* create(dbDatabase* db,
-                        std::string name = "",
+                        const std::string& name = "",
                         ChipType type = ChipType::DIE);
 
   ///
