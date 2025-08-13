@@ -36,6 +36,7 @@
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/CallBackHandler.h"
 #include "utl/deleter.h"
 
 namespace rsz {
@@ -216,7 +217,8 @@ TEST_F(BufRemTest, SlackImproves)
   grt::GlobalRouter* grt = new grt::GlobalRouter;
   dpl::Opendp* dp = new dpl::Opendp;
   est::EstimateParasitics* ep = new est::EstimateParasitics;
-  ep->init(&logger_, db_.get(), sta_.get(), stt, grt);
+  utl::CallBackHandler* callback_handler_ = new utl::CallBackHandler(&logger_);
+  ep->init(&logger_, callback_handler_, db_.get(), sta_.get(), stt, grt);
   resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, ep);
 
   float origArrival
