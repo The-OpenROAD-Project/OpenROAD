@@ -5,6 +5,7 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbHashTable.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <iostream>
@@ -45,11 +46,15 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 113;  // Current revision number
+const uint db_schema_minor = 114;  // Current revision number
 
-//
-const uint db_schema_chip_inst = 113;
+// Revision where dbChipInst was added
+const uint db_schema_chip_inst = 114;
 
+// Revision where dbChip hash table was added
+const uint db_schema_chip_hash_table = 113;
+
+// Revision where dbChip was extended with new fields
 const uint db_schema_chip_extended = 112;
 
 // Revision where the map which associates instances to their
@@ -256,7 +261,8 @@ class _dbDatabase : public _dbObject
   uint _schema_minor;
   uint _master_id;
   dbId<_dbChip> _chip;
-  dbTable<_dbChip, 2>* _chip_tbl;
+  dbTable<_dbChip, 2>* chip_tbl_;
+  dbHashTable<_dbChip, 2> chip_hash_;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbChipInst>* chip_inst_tbl_;
 

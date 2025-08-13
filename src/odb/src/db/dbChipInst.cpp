@@ -111,7 +111,7 @@ dbChip* dbChipInst::getMasterChip() const
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChip*) par->_chip_tbl->getPtr(obj->master_chip_);
+  return (dbChip*) par->chip_tbl_->getPtr(obj->master_chip_);
 }
 
 dbChip* dbChipInst::getParentChip() const
@@ -121,7 +121,7 @@ dbChip* dbChipInst::getParentChip() const
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChip*) par->_chip_tbl->getPtr(obj->parent_chip_);
+  return (dbChip*) par->chip_tbl_->getPtr(obj->parent_chip_);
 }
 
 // User Code Begin dbChipInstPublicMethods
@@ -177,7 +177,7 @@ void dbChipInst::destroy(dbChipInst* chipInst)
   _dbDatabase* db = (_dbDatabase*) inst->getOwner();
 
   // Get parent chip
-  _dbChip* parent = db->_chip_tbl->getPtr(inst->parent_chip_);
+  _dbChip* parent = db->chip_tbl_->getPtr(inst->parent_chip_);
 
   // Remove from parent's linked list
   if (parent->chipinsts_ == inst->getOID()) {
