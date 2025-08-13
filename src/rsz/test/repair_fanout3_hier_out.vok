@@ -4,25 +4,25 @@ module hi_fanout (clk1,
  output net0;
 
 
- BUF_X2 fanout10 (.A(net1),
+ BUF_X1 fanout10 (.A(net1),
     .Z(net126));
- BUF_X2 fanout9 (.A(net126),
+ BUF_X1 fanout9 (.A(net126),
     .Z(net115));
- BUF_X2 fanout8 (.A(net1),
+ BUF_X1 fanout8 (.A(net1),
     .Z(net113));
- BUF_X2 fanout7 (.A(net113),
+ BUF_X1 fanout7 (.A(net113),
     .Z(net107));
  BUF_X1 fanout6 (.A(net107),
     .Z(net101));
- BUF_X2 fanout5 (.A(net107),
+ BUF_X1 fanout5 (.A(net107),
     .Z(net90));
  BUF_X1 fanout4 (.A(net113),
     .Z(net83));
- BUF_X2 fanout3 (.A(net113),
+ BUF_X1 fanout3 (.A(net113),
     .Z(net72));
- BUF_X2 fanout2 (.A(net113),
+ BUF_X1 fanout2 (.A(net113),
     .Z(net64));
- BUF_X2 fanout1 (.A(net113),
+ BUF_X1 fanout1 (.A(net113),
     .Z(net0));
  DFF_X1 drvr (.CK(clk1),
     .Q(net1));
