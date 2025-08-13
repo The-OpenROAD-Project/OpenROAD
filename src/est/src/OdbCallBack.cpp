@@ -139,13 +139,4 @@ void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
   }
 }
 
-void OdbCallBack::inDbEstimateParasiticsRequired()
-{
-  estimate_parasitics_->clearParasitics();
-  auto routes = estimate_parasitics_->getGlobalRouter()->getRoutes();
-  for (auto& [db_net, route] : routes) {
-    estimate_parasitics_->estimateGlobalRouteParasitics(db_net, route);
-  }
-}
-
 }  // namespace est

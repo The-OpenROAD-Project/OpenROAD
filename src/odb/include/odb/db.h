@@ -1303,10 +1303,6 @@ class dbBlock : public dbObject
 
   std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
 
-  // Function used to trigger the callback for global route parasitics update.
-  // Should be removed once we have a callback funcionality under utl.
-  void updateParasitics();
-
  public:
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already

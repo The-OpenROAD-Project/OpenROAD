@@ -186,10 +186,6 @@ class dbBlockCallBackObj
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
 
-  // Estimate parasitics start
-  virtual void inDbEstimateParasiticsRequired() {}
-  // Estimate parasitics end
-
   // allow ECO client initialization - payam
   virtual dbBlockCallBackObj& operator()() { return *this; }
 
