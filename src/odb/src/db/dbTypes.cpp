@@ -2229,8 +2229,16 @@ const char* dbNameUniquifyType::getString() const
       value = "ALWAYS";
       break;
 
+    case ALWAYS_WITH_UNDERSCORE:
+      value = "ALWAYS_WITH_UNDERSCORE";
+      break;
+
     case IF_NEEDED:
       value = "IF_NEEDED";
+      break;
+
+    case IF_NEEDED_WITH_UNDERSCORE:
+      value = "IF_NEEDED_WITH_UNDERSCORE";
       break;
   }
 

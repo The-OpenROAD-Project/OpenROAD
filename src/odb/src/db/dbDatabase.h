@@ -43,10 +43,13 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 112;  // Current revision number
+const uint db_schema_minor = 113;  // Current revision number
 
 // Revision where unique net/inst indices were added to dbBlock
-const uint db_schema_unique_indices = 112;
+const uint db_schema_unique_indices = 113;
+
+//
+const uint db_schema_chip_extended = 112;
 
 // Revision where the map which associates instances to their
 // scan version was added

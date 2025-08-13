@@ -3703,10 +3703,12 @@ std::string dbBlock::makeNewName(dbModInst* parent,
   // Decide hierarchical name without unique index
   fmt::memory_buffer buf;
   if (parent) {
-    buf.append(parent->getHierarchicalName());
-    buf.push_back(getHierarchyDelimiter());
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent->getHierarchicalName(),
+                   getHierarchyDelimiter());
   }
-  buf.append(std::string_view(base_name));
+  buf.append(base_name, base_name + std::strlen(base_name));
   buf.push_back('\0');  // Null-terminate for find* functions
 
   // If uniquify is IF_NEEDED*, check for uniqueness before adding a postfix.
