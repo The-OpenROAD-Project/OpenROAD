@@ -1263,9 +1263,9 @@ class dbBlock : public dbObject
   /// Make a unique net/instance name
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
-  /// If uniquify is IF_NEEDED*, unique postfix will be added only when
-  /// If uniquify is *_WITH_UNDERSCORE, underscore will be added before adding
-  /// unique postfix
+  /// If uniquify is IF_NEEDED*, unique suffix will be added when necessary.
+  /// If uniquify is *_WITH_UNDERSCORE, an underscore will be added before the
+  /// unique suffix.
   ///
   std::string makeNewNetName(dbModInst* parent = nullptr,
                              const char* base_name = "net",
@@ -1366,14 +1366,6 @@ class dbBlock : public dbObject
   //
   void debugPrintContent(std::ostream& str_db);
   void debugPrintContent() { debugPrintContent(std::cout); }
-
- private:
-  void ComputeBBox();
-  std::string makeNewName(dbModInst* parent,
-                          const char* base_name,
-                          const dbNameUniquifyType& uniquify,
-                          uint& unique_index,
-                          const std::function<bool(const char*)>& exists);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

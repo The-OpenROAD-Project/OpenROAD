@@ -2578,8 +2578,7 @@ Net* dbNetwork::makeNet(const char* base_name, Instance* parent)
   return makeNet(base_name, parent, odb::dbNameUniquifyType::ALWAYS);
 }
 
-// If uniquify is IF_NEEDED, unique postfix will be added only when
-// necessary.
+// If uniquify is IF_NEEDED, unique suffix will be added when necessary.
 Net* dbNetwork::makeNet(const char* base_name,
                         Instance* parent,
                         const odb::dbNameUniquifyType& uniquify)

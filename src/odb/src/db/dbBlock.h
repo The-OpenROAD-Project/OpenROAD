@@ -321,6 +321,12 @@ class _dbBlock : public _dbObject
   void collectMemInfo(MemInfo& info);
   void clearSystemBlockagesAndObstructions();
   void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
+  void ComputeBBox();
+  std::string makeNewName(dbModInst* parent,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify,
+                          uint& unique_index,
+                          const std::function<bool(const char*)>& exists);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);

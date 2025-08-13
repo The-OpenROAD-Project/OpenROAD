@@ -1468,27 +1468,26 @@ dbBox* dbBlock::getBBox()
   _dbBlock* block = (_dbBlock*) this;
 
   if (block->_flags._valid_bbox == 0) {
-    ComputeBBox();
+    block->ComputeBBox();
   }
 
   _dbBox* bbox = block->_box_tbl->getPtr(block->_bbox);
   return (dbBox*) bbox;
 }
 
-void dbBlock::ComputeBBox()
+void _dbBlock::ComputeBBox()
 {
-  _dbBlock* block = (_dbBlock*) this;
-  _dbBox* bbox = block->_box_tbl->getPtr(block->_bbox);
+  _dbBox* bbox = _box_tbl->getPtr(_bbox);
   bbox->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
 
-  for (dbInst* inst : getInsts()) {
+  for (dbInst* inst : dbSet<dbInst>(this, _inst_tbl)) {
     if (inst->isPlaced()) {
       _dbBox* box = (_dbBox*) inst->getBBox();
       bbox->_shape._rect.merge(box->_shape._rect);
     }
   }
 
-  for (dbBTerm* bterm : getBTerms()) {
+  for (dbBTerm* bterm : dbSet<dbBTerm>(this, _bterm_tbl)) {
     for (dbBPin* bp : bterm->getBPins()) {
       if (bp->getPlacementStatus().isPlaced()) {
         for (dbBox* box : bp->getBoxes()) {
@@ -1499,17 +1498,17 @@ void dbBlock::ComputeBBox()
     }
   }
 
-  for (dbObstruction* obs : getObstructions()) {
+  for (dbObstruction* obs : dbSet<dbObstruction>(this, _obstruction_tbl)) {
     _dbBox* box = (_dbBox*) obs->getBBox();
     bbox->_shape._rect.merge(box->_shape._rect);
   }
 
-  for (dbSBox* box : dbSet<dbSBox>(block, block->_sbox_tbl)) {
+  for (dbSBox* box : dbSet<dbSBox>(this, _sbox_tbl)) {
     Rect rect = box->getBox();
     bbox->_shape._rect.merge(rect);
   }
 
-  for (dbWire* wire : dbSet<dbWire>(block, block->_wire_tbl)) {
+  for (dbWire* wire : dbSet<dbWire>(this, _wire_tbl)) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
       bbox->_shape._rect.merge(opt_bbox.value());
@@ -1520,7 +1519,7 @@ void dbBlock::ComputeBBox()
     bbox->_shape._rect.reset(0, 0, 0, 0);
   }
 
-  block->_flags._valid_bbox = 1;
+  _flags._valid_bbox = 1;
 }
 
 dbDatabase* dbBlock::getDataBase()
@@ -3694,24 +3693,27 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
   }
 }
 
-std::string dbBlock::makeNewName(dbModInst* parent,
-                                 const char* base_name,
-                                 const dbNameUniquifyType& uniquify,
-                                 uint& unique_index,
-                                 const std::function<bool(const char*)>& exists)
+std::string _dbBlock::makeNewName(
+    dbModInst* parent,
+    const char* base_name,
+    const dbNameUniquifyType& uniquify,
+    uint& unique_index,
+    const std::function<bool(const char*)>& exists)
 {
+  dbBlock* block = (dbBlock*) this;
+
   // Decide hierarchical name without unique index
   fmt::memory_buffer buf;
   if (parent) {
     fmt::format_to(std::back_inserter(buf),
                    "{}{}",
                    parent->getHierarchicalName(),
-                   getHierarchyDelimiter());
+                   block->getHierarchyDelimiter());
   }
   buf.append(base_name, base_name + std::strlen(base_name));
   buf.push_back('\0');  // Null-terminate for find* functions
 
-  // If uniquify is IF_NEEDED*, check for uniqueness before adding a postfix.
+  // If uniquify is IF_NEEDED*, check for uniqueness before adding a suffix.
   bool uniquify_if_needed
       = (dbNameUniquifyType::IF_NEEDED == uniquify)
         || (dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE == uniquify);
@@ -3749,16 +3751,16 @@ std::string dbBlock::makeNewName(dbModInst* parent,
 // Currently all nets are scoped within a dbBlock.
 //
 
-// If uniquify is IF_NEEDED, unique postfix will be added only when
-// necessary. This is added to cover the existing multiple use cases of making a
-// new net name w/ and w/o unique postfix.
+// If uniquify is IF_NEEDED, unique suffix will be added when necessary.
+// This is added to cover the existing multiple use cases of making a
+// new net name w/ and w/o unique suffix.
 std::string dbBlock::makeNewNetName(dbModInst* parent,
                                     const char* base_name,
                                     const dbNameUniquifyType& uniquify)
 {
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
   auto exists = [this](const char* name) { return findNet(name) != nullptr; };
-  return makeNewName(
+  return block->makeNewName(
       parent, base_name, uniquify, block->_unique_net_index, exists);
 }
 
@@ -3777,7 +3779,7 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
   auto exists = [this](const char* name) {
     return findInst(name) != nullptr || findModInst(name) != nullptr;
   };
-  return makeNewName(
+  return block->makeNewName(
       parent, base_name, uniquify, block->_unique_inst_index, exists);
 }
 
