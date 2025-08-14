@@ -252,6 +252,7 @@ void RepairDesign::repairDesign(
 
   // keep track of annotations which were added by us
   std::set<Vertex*> annotations_to_clean_up;
+  std::map<Vertex*, Corner*> drvr_with_load_slew_viol;
   VertexSeq load_vertices = resizer_->orderedLoadPinVertices();
 
   // Forward pass: whenever we see violating input pin slew we override
@@ -275,6 +276,13 @@ void RepairDesign::repairDesign(
                                      rf->asRiseFallBoth(),
                                      limit);
               annotations_to_clean_up.insert(vertex);
+              PinSet* drivers = network_->drivers(vertex->pin());
+              if (drivers) {
+                for (const Pin* drvr_pin : *drivers) {
+                  drvr_with_load_slew_viol[graph_->pinDrvrVertex(drvr_pin)]
+                      = corner;
+                }
+              }
             }
           }
         }
@@ -333,6 +341,9 @@ void RepairDesign::repairDesign(
                   true,
                   max_length,
                   true,
+                  drvr_with_load_slew_viol.count(drvr)
+                      ? drvr_with_load_slew_viol.at(drvr)
+                      : nullptr,
                   repaired_net_count,
                   slew_violations,
                   cap_violations,
@@ -419,6 +430,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
                       false,
                       max_length,
                       false,
+                      nullptr,
                       repaired_net_count,
                       slew_violations,
                       cap_violations,
@@ -486,6 +498,7 @@ void RepairDesign::repairNet(Net* net,
                 true,
                 max_length,
                 true,
+                nullptr,
                 repaired_net_count,
                 slew_violations,
                 cap_violations,
@@ -923,6 +936,7 @@ void RepairDesign::repairNet(Net* net,
                              bool check_fanout,
                              int max_length,  // dbu
                              bool resize_drvr,
+                             Corner* corner_w_load_slew_viol,
                              int& repaired_net_count,
                              int& slew_violations,
                              int& cap_violations,
@@ -989,6 +1003,7 @@ void RepairDesign::repairNet(Net* net,
         slew_violation = true;
         if (repairDriverSlew(corner1, drvr_pin)) {
           resize_count_++;
+          graph_delay_calc_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
         }
 
@@ -1018,13 +1033,19 @@ void RepairDesign::repairNet(Net* net,
                      network_->name(drvr_pin),
                      delayAsString(slew1, this, 3),
                      delayAsString(max_slew1, this, 3));
-
           slew_violation = true;
           repair_load_slew = true;
           // If repair_cap is true, corner is already set to correspond
           // to a max_cap violation, do not override in that case
           if (!repair_cap) {
             corner = corner1;
+          }
+        } else if (corner_w_load_slew_viol) {
+          // There's a violation hidden by an annotation. Repair still
+          slew_violation = true;
+          repair_load_slew = true;
+          if (!repair_cap) {
+            corner = corner_w_load_slew_viol;
           }
         }
       }
@@ -1848,6 +1869,7 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
             false /* check_fanout */,
             max_length,
             resize_drvr,
+            nullptr,
             repaired_net_count,
             slew_violations,
             cap_violations,
