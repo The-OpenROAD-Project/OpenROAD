@@ -344,24 +344,29 @@ dbModITerm* dbModInst::findModITerm(const char* name)
   return nullptr;
 }
 
-void dbModInst::RemoveUnusedPortsAndPins()
+void dbModInst::removeUnusedPortsAndPins()
 {
-  std::set<dbModITerm*> kill_set;
+  _dbModInst* obj = (_dbModInst*) this;
+  utl::Logger* logger = obj->getLogger();
+  debugPrint(logger,
+             utl::ODB,
+             "remove_unused_ports",
+             1,
+             "begin RemoveUnusedPortsAndPins for dbModInst '{}'",
+             getName());
+
   dbModule* module = this->getMaster();
-  dbSet<dbModITerm> moditerms = getModITerms();
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
   std::set<dbModBTerm*> busmodbterms;  // harvest the bus modbterms
 
+  // 1. Traverse in modbterm order so we can skip over any unused pins in a bus.
   int bus_ix = 0;
-
-  // traverse in modbterm order so we can skip over
-  // any unused pins in a bus.
-
   for (dbModBTerm* mod_bterm : modbterms) {
-    dbModNet* mod_net = nullptr;
     // Avoid removing unused ports from a bus
     // when we hit a bus port, we count down from the size
     // skipping the bus elements
+    // Note that dbSet<dbModBTerm> preserves the insertion order.
+    //
     // Layout:
     // mod_bterm (head_element describing size)
     // mod_bterm[size-1],...mod_bterm[0] -- bus elements
@@ -373,47 +378,44 @@ void dbModInst::RemoveUnusedPortsAndPins()
       continue;
     }
     if (bus_ix != 0) {
-      bus_ix = bus_ix - 1;
+      bus_ix--;
       busmodbterms.insert(mod_bterm);
-      continue;
-    }
-
-    dbModITerm* mod_iterm = mod_bterm->getParentModITerm();
-    mod_net = mod_bterm->getModNet();
-    if (mod_net) {
-      dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
-      dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
-      dbSet<dbITerm> dest_iterms = mod_net->getITerms();
-      if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
-          && dest_iterms.size() == 0) {
-        kill_set.insert(mod_iterm);
-      }
     }
   }
 
-  for (dbModITerm* mod_iterm : moditerms) {
+  // 2. Find unused ports that do not have internal connections
+  std::set<dbModITerm*> kill_set;
+  for (dbModITerm* mod_iterm : getModITerms()) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
-    if (busmodbterms.find(mod_bterm) != busmodbterms.end()) {
-      continue;
+    assert(mod_bterm != nullptr);
+
+    if (busmodbterms.count(mod_bterm) > 0) {
+      continue;  // Do not remove bus ports
     }
 
-    dbModNet* mod_net = mod_bterm->getModNet();
-    if (mod_net) {
-      dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
-      dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
-      dbSet<dbITerm> dest_iterms = mod_net->getITerms();
-      if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
-          && dest_iterms.size() == 0) {
-        kill_set.insert(mod_iterm);
+    // Check internal connectivity (inside the dbModule master).
+    bool unused_in_module = true;
+    if (dbModNet* int_net = mod_bterm->getModNet()) {
+      bool has_int_mod_inst_connection = !int_net->getModITerms().empty();
+      bool has_top_port_connection = !int_net->getBTerms().empty();
+      bool has_int_inst_connection = !int_net->getITerms().empty();
+      bool has_feedthrough_connection = int_net->getModBTerms().size() > 1;
+      if (has_int_mod_inst_connection || has_top_port_connection
+          || has_int_inst_connection || has_feedthrough_connection) {
+        unused_in_module = false;
       }
+    }
+
+    if (unused_in_module) {
+      kill_set.insert(mod_iterm);
     }
   }
 
-  moditerms = getModITerms();
-  modbterms = module->getModBTerms();
+  // 3. Remove unused ports in kill_set
   for (auto mod_iterm : kill_set) {
     dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    assert(mod_bterm != nullptr);
 
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
 
@@ -433,15 +435,26 @@ void dbModInst::RemoveUnusedPortsAndPins()
 
     // Now destroy the iterm
     dbModITerm::destroy(mod_iterm);
+
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0
         && modbterm_m_net->getModITerms().size() == 0
         && modbterm_m_net->getModBTerms().size() == 0) {
       dbModNet::destroy(modbterm_m_net);
     }
+
     // Finally the bterm
     dbModBTerm::destroy(mod_bterm);
   }
+
+  debugPrint(
+      logger,
+      utl::ODB,
+      "remove_unused_ports",
+      1,
+      "end RemoveUnusedPortsAndPins for dbModInst '{}', removed {} iterms",
+      getName(),
+      kill_set.size());
 }
 
 // debugPrint for replace_design level 1
@@ -451,95 +464,6 @@ void dbModInst::RemoveUnusedPortsAndPins()
 #define debugRDPrint2(format_str, ...) \
   debugPrint(logger, utl::ODB, "replace_design", 2, format_str, ##__VA_ARGS__)
 
-// Check if two hierarchical modules are swappable.
-// Two modules must have identical number of ports and port names need to match.
-// Functional equivalence is not required.
-bool canSwapModules(dbModule* old_module,
-                    dbModule* new_module,
-                    utl::Logger* logger)
-{
-  std::string old_module_name = old_module->getName();
-  std::string new_module_name = new_module->getName();
-
-  // Check if module names differ
-  if (old_module_name == new_module_name) {
-    logger->warn(utl::ODB,
-                 470,
-                 "The modules cannot be swapped because the new module {} is "
-                 "identical to the existing module",
-                 new_module_name);
-    return false;
-  }
-
-  // Check if number of module ports match
-  dbSet<dbModBTerm> old_bterms = old_module->getModBTerms();
-  dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
-  if (old_bterms.size() != new_bterms.size()) {
-    logger->warn(utl::ODB,
-                 453,
-                 "The modules cannot be swapped because module {} "
-                 "has {} ports but module {} has {} ports",
-                 old_module_name,
-                 old_bterms.size(),
-                 new_module_name,
-                 new_bterms.size());
-    return false;
-  }
-
-  // Check if module port names match
-  std::vector<_dbModBTerm*> old_ports, new_ports;
-  for (auto bterm : old_bterms) {
-    old_ports.push_back((_dbModBTerm*) bterm);
-  }
-  for (auto bterm : new_bterms) {
-    new_ports.push_back((_dbModBTerm*) bterm);
-  }
-  std::sort(new_ports.begin(),
-            new_ports.end(),
-            [](_dbModBTerm* port1, _dbModBTerm* port2) {
-              return strcmp(port1->_name, port2->_name) < 0;
-            });
-  std::sort(old_ports.begin(),
-            old_ports.end(),
-            [](_dbModBTerm* port1, _dbModBTerm* port2) {
-              return strcmp(port1->_name, port2->_name) < 0;
-            });
-  std::vector<_dbModBTerm*>::iterator i1 = new_ports.begin();
-  std::vector<_dbModBTerm*>::iterator i2 = old_ports.begin();
-  for (; i1 != new_ports.end() && i2 != old_ports.end(); ++i1, ++i2) {
-    _dbModBTerm* t1 = *i1;
-    _dbModBTerm* t2 = *i2;
-    if (t1 == nullptr) {
-      logger->error(
-          utl::ODB, 464, "Module {} has a null port", new_module_name);
-    }
-    if (t2 == nullptr) {
-      logger->error(
-          utl::ODB, 465, "Module {} has a null port", old_module_name);
-    }
-    if (strcmp(t1->_name, t2->_name) != 0) {
-      break;
-    }
-  }
-  if (i1 != new_ports.end() || i2 != old_ports.end()) {
-    const char* new_port_name
-        = (i1 != new_ports.end() && *i1) ? (*i1)->_name : "N/A";
-    const char* old_port_name
-        = (i2 != old_ports.end() && *i2) ? (*i2)->_name : "N/A";
-    logger->warn(utl::ODB,
-                 454,
-                 "The modules cannot be swapped because module {} "
-                 "has port {} but module {} has port {}",
-                 old_module_name,
-                 old_port_name,
-                 new_module_name,
-                 new_port_name);
-    return false;
-  }
-
-  return true;
-}
-
 // Swap one hierarchical module with another one.
 // New module is not allowed to have multiple levels of hierarchy for now.
 // Newly instantiated modules are uniquified.
@@ -548,7 +472,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   dbModule* old_module = getMaster();
   utl::Logger* logger = getImpl()->getLogger();
 
-  if (!canSwapModules(old_module, new_module, logger)) {
+  if (!old_module->canSwapWith(new_module, logger)) {
     return nullptr;
   }
 

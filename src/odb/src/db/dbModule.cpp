@@ -560,6 +560,93 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
   return module;
 }
 
+// Check if two hierarchical modules are swappable.
+// Two modules must have identical number of ports and port names need to match.
+// Functional equivalence is not required.
+bool dbModule::canSwapWith(dbModule* new_module, utl::Logger* logger)
+{
+  std::string old_module_name = getName();
+  std::string new_module_name = new_module->getName();
+
+  // Check if module names differ
+  if (old_module_name == new_module_name) {
+    logger->warn(utl::ODB,
+                 470,
+                 "The modules cannot be swapped because the new module {} is "
+                 "identical to the existing module",
+                 new_module_name);
+    return false;
+  }
+
+  // Check if number of module ports match
+  dbSet<dbModBTerm> old_bterms = getModBTerms();
+  dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
+  if (old_bterms.size() != new_bterms.size()) {
+    logger->warn(utl::ODB,
+                 453,
+                 "The modules cannot be swapped because module {} "
+                 "has {} ports but module {} has {} ports",
+                 old_module_name,
+                 old_bterms.size(),
+                 new_module_name,
+                 new_bterms.size());
+    return false;
+  }
+
+  // Check if module port names match
+  std::vector<_dbModBTerm*> old_ports, new_ports;
+  for (auto bterm : old_bterms) {
+    old_ports.push_back((_dbModBTerm*) bterm);
+  }
+  for (auto bterm : new_bterms) {
+    new_ports.push_back((_dbModBTerm*) bterm);
+  }
+  std::sort(new_ports.begin(),
+            new_ports.end(),
+            [](_dbModBTerm* port1, _dbModBTerm* port2) {
+              return strcmp(port1->_name, port2->_name) < 0;
+            });
+  std::sort(old_ports.begin(),
+            old_ports.end(),
+            [](_dbModBTerm* port1, _dbModBTerm* port2) {
+              return strcmp(port1->_name, port2->_name) < 0;
+            });
+  std::vector<_dbModBTerm*>::iterator i1 = new_ports.begin();
+  std::vector<_dbModBTerm*>::iterator i2 = old_ports.begin();
+  for (; i1 != new_ports.end() && i2 != old_ports.end(); ++i1, ++i2) {
+    _dbModBTerm* t1 = *i1;
+    _dbModBTerm* t2 = *i2;
+    if (t1 == nullptr) {
+      logger->error(
+          utl::ODB, 464, "Module {} has a null port", new_module_name);
+    }
+    if (t2 == nullptr) {
+      logger->error(
+          utl::ODB, 465, "Module {} has a null port", old_module_name);
+    }
+    if (strcmp(t1->_name, t2->_name) != 0) {
+      break;
+    }
+  }
+  if (i1 != new_ports.end() || i2 != old_ports.end()) {
+    const char* new_port_name
+        = (i1 != new_ports.end() && *i1) ? (*i1)->_name : "N/A";
+    const char* old_port_name
+        = (i2 != old_ports.end() && *i2) ? (*i2)->_name : "N/A";
+    logger->warn(utl::ODB,
+                 454,
+                 "The modules cannot be swapped because module {} "
+                 "has port {} but module {} has port {}",
+                 old_module_name,
+                 old_port_name,
+                 new_module_name,
+                 new_port_name);
+    return false;
+  }
+
+  return true;
+}
+
 // Do a "deep" copy of old_module based on its instance context into new_module.
 // All ports, instances, mod nets and parent/child IO will be copied.
 // Connections that span multiple modules needs to be done outside this API.

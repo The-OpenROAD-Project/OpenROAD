@@ -993,13 +993,8 @@ SteinerTree* EstimateParasitics::makeSteinerTree(const Pin* drvr_pin)
   /*
     Handle hierarchy. Make sure all traversal on dbNets.
    */
-  odb::dbNet* db_net = db_network_->flatNet(drvr_pin);
-
-  Net* net
-      = network_->isTopLevelPort(drvr_pin)
-            ? network_->net(network_->term(drvr_pin))
-            // original code, could retrun a mod net  : network_->net(drvr_pin);
-            : db_network_->dbToSta(db_net);
+  odb::dbNet* db_net = db_network_->getOrFindFlatDbNet(drvr_pin);
+  Net* net = db_network_->dbToSta(db_net);
 
   debugPrint(logger_, EST, "steiner", 1, "Net {}", sdc_network->pathName(net));
   SteinerTree* tree = new SteinerTree(drvr_pin, db_network_, logger_);
@@ -1042,8 +1037,7 @@ SteinerTree* EstimateParasitics::makeSteinerTree(const Pin* drvr_pin)
       tree->locAddPin(pinloc.loc, pinloc.pin);
     }
     if (is_placed) {
-      stt::Tree ftree = stt_builder_->makeSteinerTree(
-          db_network_->staToDb(net), x, y, drvr_idx);
+      stt::Tree ftree = stt_builder_->makeSteinerTree(db_net, x, y, drvr_idx);
 
       tree->setTree(ftree);
       tree->createSteinerPtToPinMap();
