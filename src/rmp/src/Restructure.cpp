@@ -43,12 +43,14 @@ namespace rmp {
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
                        odb::dbDatabase* db,
-                       rsz::Resizer* resizer)
+                       rsz::Resizer* resizer,
+                       est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;
   open_sta_ = open_sta;
   resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
 
   ord::abcInit();
 }
@@ -138,8 +140,9 @@ void Restructure::getBlob(unsigned max_depth)
 
 void Restructure::runABC()
 {
-  input_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
-                          + "_crit_path.blif";
+  const std::string prefix
+      = work_dir_name_ + std::string(block_->getConstName());
+  input_blif_file_name_ = prefix + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
   debugPrint(logger_,
@@ -181,15 +184,14 @@ void Restructure::runABC()
   for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size();
        curr_mode_idx++) {
     output_blif_file_name_
-        = work_dir_name_ + std::string(block_->getConstName())
-          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+        = prefix + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
 
     opt_mode_ = modes[curr_mode_idx];
 
     const std::string abc_script_file
-        = work_dir_name_ + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
+        = prefix + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
     if (logfile_ == "") {
-      logfile_ = work_dir_name_ + "abc.log";
+      logfile_ = prefix + "abc.log";
     }
 
     debugPrint(logger_,
@@ -224,8 +226,7 @@ void Restructure::runABC()
     }
 
     output_blif_file_name_
-        = work_dir_name_ + std::string(block_->getConstName())
-          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+        = prefix + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
     const std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
 
     int level_gain = 0;
@@ -290,7 +291,7 @@ void Restructure::runABC()
 void Restructure::postABC(float worst_slack)
 {
   // Leave the parasitics up to date.
-  resizer_->estimateWireParasitics();
+  estimate_parasitics_->estimateWireParasitics();
 }
 void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,

@@ -8,6 +8,10 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -20,6 +24,7 @@ using sta::dbNetwork;
 using sta::dbSta;
 using sta::Delay;
 using sta::LibertyCell;
+using sta::LibertyCellSeq;
 using sta::MinMax;
 using sta::Pin;
 using sta::PinSeq;
@@ -34,7 +39,7 @@ using Slacks = Slack[RiseFall::index_count][MinMax::index_count];
 class RepairHold : public sta::dbStaState
 {
  public:
-  RepairHold(Resizer* resizer);
+  RepairHold(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
   bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -49,10 +54,20 @@ class RepairHold : public sta::dbStaState
                   float max_buffer_percent,
                   int max_passes);
   int holdBufferCount() const { return inserted_buffer_count_; }
+  LibertyCell* reportHoldBuffer();
 
  private:
   void init();
   LibertyCell* findHoldBuffer();
+  void filterHoldBuffers(LibertyCellSeq& hold_buffers);
+  bool addMatchingBuffers(const LibertyCellSeq& buffer_list,
+                          LibertyCellSeq& hold_buffers,
+                          int best_vt_index,
+                          odb::dbSite* best_site,
+                          bool lib_has_footprints,
+                          bool match_site,
+                          bool match_vt,
+                          bool match_footprint);
   float bufferHoldDelay(LibertyCell* buffer);
   void bufferHoldDelays(LibertyCell* buffer,
                         // Return values.
@@ -97,6 +112,7 @@ class RepairHold : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

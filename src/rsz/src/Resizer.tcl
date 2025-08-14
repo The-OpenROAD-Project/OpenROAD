@@ -2,14 +2,6 @@
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
 namespace eval rsz {
-proc get_db_tech_checked { } {
-  set tech [ord::get_db_tech]
-  if { $tech == "NULL" } {
-    utl::error RSZ 210 "No technology loaded."
-  }
-  return $tech
-}
-
 proc parse_buffer_cell { keys_var } {
   upvar 1 $keys_var keys
   set buffer_cell "NULL"
@@ -29,365 +21,6 @@ proc parse_buffer_cell { keys_var } {
 }
 
 # namespace eval rsz
-}
-
-
-# Units are from OpenSTA (ie Liberty file or set_cmd_units).
-sta::define_cmd_args "set_layer_rc" { [-layer layer]\
-                                        [-via via_layer]\
-                                        [-capacitance cap]\
-                                        [-resistance res]\
-                                        [-corner corner]}
-proc set_layer_rc { args } {
-  sta::parse_key_args "set_layer_rc" args \
-    keys {-layer -via -capacitance -resistance -corner} \
-    flags {}
-
-  if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    utl::error "ORD" 201 "Use -layer or -via but not both."
-  }
-
-  set corners [sta::parse_corner_or_all keys]
-  set tech [rsz::get_db_tech_checked]
-  if { [info exists keys(-layer)] } {
-    set layer_name $keys(-layer)
-    set layer [$tech findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error "ORD" 202 "layer $layer_name not found."
-    }
-
-    if { [$layer getRoutingLevel] == 0 } {
-      utl::error "ORD" 203 "$layer_name is not a routing layer."
-    }
-
-    if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-      utl::error "ORD" 204 "missing -capacitance or -resistance argument."
-    }
-
-    set cap 0.0
-    if { [info exists keys(-capacitance)] } {
-      set cap $keys(-capacitance)
-      sta::check_positive_float "-capacitance" $cap
-      # F/m
-      set cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
-    }
-
-    set res 0.0
-    if { [info exists keys(-resistance)] } {
-      set res $keys(-resistance)
-      sta::check_positive_float "-resistance" $res
-      # ohm/m
-      set res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
-    }
-
-    if { $corners == "NULL" } {
-      set corners [sta::corners]
-      # Only update the db layers if -corner not specified.
-      rsz::set_dblayer_wire_rc $layer $res $cap
-    }
-
-    foreach corner $corners {
-      rsz::set_layer_rc_cmd $layer $corner $res $cap
-    }
-  } elseif { [info exists keys(-via)] } {
-    set layer_name $keys(-via)
-    set layer [$tech findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error "ORD" 205 "via $layer_name not found."
-    }
-
-    if { [info exists keys(-capacitance)] } {
-      utl::warn "ORD" 206 "-capacitance not supported for vias."
-    }
-
-    if { [info exists keys(-resistance)] } {
-      set res $keys(-resistance)
-      sta::check_positive_float "-resistance" $res
-      set res [sta::resistance_ui_sta $res]
-
-      if { $corners == "NULL" } {
-        set corners [sta::corners]
-        # Only update the db layers if -corner not specified.
-        rsz::set_dbvia_wire_r $layer $res
-      }
-
-      foreach corner $corners {
-        rsz::set_layer_rc_cmd $layer $corner $res 0.0
-      }
-    } else {
-      utl::error "ORD" 208 "no -resistance specified for via."
-    }
-  } else {
-    utl::error "ORD" 209 "missing -layer or -via argument."
-  }
-}
-
-sta::define_cmd_args "report_layer_rc" {[-corner corner]}
-proc report_layer_rc { args } {
-  sta::parse_key_args "report_layer_rc" args \
-    keys {-corner} \
-    flags {}
-  set corner [sta::parse_corner_or_all keys]
-  set tech [rsz::get_db_tech_checked]
-  set no_routing_layers [$tech getRoutingLayerCount]
-  ord::ensure_units_initialized
-  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
-  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
-  set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
-  set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
-
-  puts "   Layer   | Unit Resistance | Unit Capacitance "
-  puts [format "           | %15s | %16s" [format "(%s)" $res_unit] [format "(%s)" $cap_unit]]
-  puts "------------------------------------------------"
-  for { set i 1 } { $i <= $no_routing_layers } { incr i } {
-    set layer [$tech findRoutingLayer $i]
-    if { $corner == "NULL" } {
-      lassign [rsz::dblayer_wire_rc $layer] layer_wire_res layer_wire_cap
-    } else {
-      set layer_wire_res [rsz::layer_resistance $layer $corner]
-      set layer_wire_cap [rsz::layer_capacitance $layer $corner]
-    }
-    set res_ui [expr $layer_wire_res * $res_convert]
-    set cap_ui [expr $layer_wire_cap * $cap_convert]
-    puts [format "%10s | %15.2e | %16.2e" [$layer getName] $res_ui $cap_ui]
-  }
-  puts "------------------------------------------------"
-
-  set res_unit "[sta::unit_scaled_suffix "resistance"]"
-  set res_convert [sta::resistance_sta_ui 1.0]
-  puts ""
-  puts "   Layer   | Via Resistance "
-  puts [format "           | %14s " [format "(%s)" $res_unit]]
-  puts "----------------------------"
-  # ignore the last routing layer (no via layer above it)
-  for { set i 1 } { $i < $no_routing_layers } { incr i } {
-    set layer [[$tech findRoutingLayer $i] getUpperLayer]
-    if { $corner == "NULL" } {
-      set layer_via_res [$layer getResistance]
-    } else {
-      set layer_via_res [rsz::layer_resistance $layer $corner]
-    }
-    set res_ui [expr $layer_via_res * $res_convert]
-    puts [format "%10s | %14.2e " [$layer getName] $res_ui]
-  }
-  puts "----------------------------"
-}
-
-sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
-                                      [-layers layers]\
-                                      [-layer layer]\
-                                      [-h_resistance h_res]\
-                                      [-h_capacitance h_cap]\
-                                      [-v_resistance v_res]\
-                                      [-v_capacitance v_cap]\
-                                      [-resistance res]\
-                                      [-capacitance cap]\
-                                      [-corner corner]}
-
-proc set_wire_rc { args } {
-  sta::parse_key_args "set_wire_rc" args \
-    keys {-layer -layers -resistance -capacitance -corner \
-          -h_resistance -h_capacitance -v_resistance -v_capacitance} \
-    flags {-clock -signal -data}
-
-  set corner [sta::parse_corner_or_all keys]
-
-  set h_wire_res 0.0
-  set h_wire_cap 0.0
-  set v_wire_res 0.0
-  set v_wire_cap 0.0
-
-  if { [info exists keys(-layers)] } {
-    if {
-      [info exists keys(-h_resistance)]
-      || [info exists keys(-h_capacitance)]
-      || [info exists keys(-v_resistance)]
-      || [info exists keys(-v_capacitance)]
-    } {
-      utl::error RSZ 1 "Use -layers or -resistance/-capacitance but not both."
-    }
-    if { [info exists keys(-layer)] } {
-      utl::error RSZ 6 "Use -layers or -layer but not both."
-    }
-    set total_h_wire_res 0.0
-    set total_h_wire_cap 0.0
-    set total_v_wire_res 0.0
-    set total_v_wire_cap 0.0
-
-    set h_layers 0
-    set v_layers 0
-
-    set layers $keys(-layers)
-
-    foreach layer_name $layers {
-      set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
-      if { $tec_layer == "NULL" } {
-        utl::error RSZ 2 "layer $layer_name not found."
-      }
-      if { $corner == "NULL" } {
-        lassign [rsz::dblayer_wire_rc $tec_layer] layer_wire_res layer_wire_cap
-      } else {
-        set layer_wire_res [rsz::layer_resistance $tec_layer $corner]
-        set layer_wire_cap [rsz::layer_capacitance $tec_layer $corner]
-      }
-      set layer_direction [$tec_layer getDirection]
-      if { $layer_direction == "HORIZONTAL" } {
-        set total_h_wire_res [expr { $total_h_wire_res + $layer_wire_res }]
-        set total_h_wire_cap [expr { $total_h_wire_cap + $layer_wire_cap }]
-        incr h_layers
-      } elseif { $layer_direction == "VERTICAL" } {
-        set total_v_wire_res [expr { $total_v_wire_res + $layer_wire_res }]
-        set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
-        incr v_layers
-      } else {
-        set total_h_wire_res [expr { $total_h_wire_res + $layer_wire_res }]
-        set total_h_wire_cap [expr { $total_h_wire_cap + $layer_wire_cap }]
-        incr h_layers
-        set total_v_wire_res [expr { $total_v_wire_res + $layer_wire_res }]
-        set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
-        incr v_layers
-      }
-    }
-    if { $h_layers == 0 } {
-      utl::error RSZ 16 "No horizontal layer specified."
-    }
-    if { $v_layers == 0 } {
-      utl::error RSZ 17 "No vertical layer specified."
-    }
-
-    set h_wire_res [expr $total_h_wire_res / $h_layers]
-    set h_wire_cap [expr $total_h_wire_cap / $h_layers]
-    set v_wire_res [expr $total_v_wire_res / $v_layers]
-    set v_wire_cap [expr $total_v_wire_cap / $v_layers]
-  } elseif { [info exists keys(-layer)] } {
-    set layer_name $keys(-layer)
-    set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
-    if { $tec_layer == "NULL" } {
-      utl::error RSZ 15 "layer $tec_layer not found."
-    }
-
-    if { $corner == "NULL" } {
-      lassign [rsz::dblayer_wire_rc $tec_layer] h_wire_res h_wire_cap
-      lassign [rsz::dblayer_wire_rc $tec_layer] v_wire_res v_wire_cap
-    } else {
-      set h_wire_res [rsz::layer_resistance $tec_layer $corner]
-      set v_wire_res [rsz::layer_resistance $tec_layer $corner]
-      set h_wire_cap [rsz::layer_capacitance $tec_layer $corner]
-      set v_wire_cap [rsz::layer_capacitance $tec_layer $corner]
-    }
-  } else {
-    ord::ensure_units_initialized
-    if { [info exists keys(-resistance)] } {
-      set res $keys(-resistance)
-      sta::check_positive_float "-resistance" $res
-      set h_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
-      set v_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
-    }
-
-    if { [info exists keys(-capacitance)] } {
-      set cap $keys(-capacitance)
-      sta::check_positive_float "-capacitance" $cap
-      set h_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
-      set v_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
-    }
-
-    if { [info exists keys(-h_resistance)] } {
-      set h_res $keys(-h_resistance)
-      sta::check_positive_float "-h_resistance" $h_res
-      set h_wire_res [expr [sta::resistance_ui_sta $h_res] / [sta::distance_ui_sta 1.0]]
-    }
-
-    if { [info exists keys(-h_capacitance)] } {
-      set h_cap $keys(-h_capacitance)
-      sta::check_positive_float "-h_capacitance" $h_cap
-      set h_wire_cap [expr [sta::capacitance_ui_sta $h_cap] / [sta::distance_ui_sta 1.0]]
-    }
-
-    if { [info exists keys(-v_resistance)] } {
-      set v_res $keys(-v_resistance)
-      sta::check_positive_float "-v_resistance" $v_res
-      set v_wire_res [expr [sta::resistance_ui_sta $v_res] / [sta::distance_ui_sta 1.0]]
-    }
-
-    if { [info exists keys(-v_capacitance)] } {
-      set v_cap $keys(-v_capacitance)
-      sta::check_positive_float "-v_capacitance" $v_cap
-      set v_wire_cap [expr [sta::capacitance_ui_sta $v_cap] / [sta::distance_ui_sta 1.0]]
-    }
-  }
-
-  sta::check_argc_eq0 "set_wire_rc" $args
-
-  set signal [info exists flags(-signal)]
-  set clk [info exists flags(-clock)]
-  if { !$signal && !$clk } {
-    set signal 1
-    set clk 1
-  }
-
-  if { $signal && $clk } {
-    set signal_clk "Signal/clock"
-  } elseif { $signal } {
-    set signal_clk "Signal"
-  } elseif { $clk } {
-    set signal_clk "Clock"
-  }
-
-  if { $h_wire_res == 0.0 } {
-    utl::warn RSZ 10 "$signal_clk horizontal wire resistance is 0."
-  }
-  if { $v_wire_res == 0.0 } {
-    utl::warn RSZ 11 "$signal_clk vertical wire resistance is 0."
-  }
-  if { $h_wire_cap == 0.0 } {
-    utl::warn RSZ 12 "$signal_clk horizontal wire capacitance is 0."
-  }
-  if { $v_wire_cap == 0.0 } {
-    utl::warn RSZ 13 "$signal_clk vertical wire capacitance is 0."
-  }
-
-  set corners $corner
-  if { $corner == "NULL" } {
-    set corners [sta::corners]
-  }
-  foreach corner $corners {
-    if { $signal } {
-      rsz::set_h_wire_signal_rc_cmd $corner $h_wire_res $h_wire_cap
-      rsz::set_v_wire_signal_rc_cmd $corner $v_wire_res $v_wire_cap
-    }
-    if { $clk } {
-      rsz::set_h_wire_clk_rc_cmd $corner $h_wire_res $h_wire_cap
-      rsz::set_v_wire_clk_rc_cmd $corner $v_wire_res $v_wire_cap
-    }
-  }
-}
-
-sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
-                                            [-spef_file filename]}
-
-proc estimate_parasitics { args } {
-  sta::parse_key_args "estimate_parasitics" args \
-    keys {-spef_file} flags {-placement -global_routing}
-
-  set filename ""
-  if { [info exists keys(-spef_file)] } {
-    set filename $keys(-spef_file)
-  }
-
-  if { [info exists flags(-placement)] } {
-    if { [rsz::check_corner_wire_cap] } {
-      rsz::estimate_parasitics_cmd "placement" $filename
-    }
-  } elseif { [info exists flags(-global_routing)] } {
-    if { [grt::have_routes] } {
-      # should check for layer rc
-      rsz::estimate_parasitics_cmd "global_routing" $filename
-    } else {
-      utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
-    }
-  } else {
-    utl::error RSZ 3 "missing -placement or -global_routing flag."
-  }
 }
 
 sta::define_cmd_args "set_dont_use" {lib_cells}
@@ -534,7 +167,7 @@ proc repair_design { args } {
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
-  rsz::check_parasitics
+  est::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
@@ -553,7 +186,7 @@ proc repair_clock_nets { args } {
 
 
   sta::check_argc_eq0 "repair_clock_nets" $args
-  rsz::check_parasitics
+  est::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length true]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
@@ -701,7 +334,7 @@ proc repair_timing { args } {
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   if { [design_is_routed] } {
-    rsz::set_parasitics_src "detailed_routing"
+    est::set_parasitics_src "detailed_routing"
   }
 
   set max_repairs_per_pass 1
@@ -710,7 +343,7 @@ proc repair_timing { args } {
   }
 
   sta::check_argc_eq0 "repair_timing" $args
-  rsz::check_parasitics
+  est::check_parasitics
 
   set recovered_power 0
   set repaired_setup 0
@@ -890,12 +523,13 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-sizing_area_limit] \
                                           [-sizing_leakage_limit] \
                                           [-set_early_sizing_cap_ratio] \
-                                          [-set_early_buffer_sizing_cap_ratio]}
+                                          [-set_early_buffer_sizing_cap_ratio] \
+                                          [-disable_buffer_pruning] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt \
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt -disable_buffer_pruning \
       -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
 
   set area_limit "NULL"
@@ -950,6 +584,19 @@ proc set_opt_config { args } {
     utl::info RSZ 147 \
       "Early buffer sizing will use capacitance ratio of value $value"
   }
+
+  if { [info exists keys(-disable_buffer_pruning)] } {
+    set disable_val $keys(-disable_buffer_pruning)
+    rsz::set_boolean_prop $disable_val "-disable_buffer_pruning" \
+      "disable_buffer_pruning"
+    if { $disable_val } {
+      utl::info RSZ 165 \
+        "Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing"
+    } else {
+      utl::info RSZ 167 \
+        "Buffer pruning will be enabled for repair_design and repair_timing"
+    }
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
@@ -959,13 +606,15 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-sizing_area_limit] \
                                             [-sizing_leakage_limit] \
                                             [-set_early_sizing_cap_ratio] \
-                                            [-set_early_buffer_sizing_cap_ratio]}
+                                            [-set_early_buffer_sizing_cap_ratio] \
+                                            [-disable_buffer_pruning] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
                      -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
-                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio}
+                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
+                     -disable_buffer_pruning}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -997,6 +646,10 @@ proc reset_opt_config { args } {
   if { $reset_all || [info exists flags(-set_early_buffer_sizing_cap_ratio)] } {
     rsz::clear_double_prop "early_buffer_sizing_cap_ratio"
     utl::info RSZ 148 "Capacitance ratio for early buffer sizing has been unset."
+  }
+  if { $reset_all || [info exists flags(-disable_buffer_pruning)] } {
+    rsz::clear_bool_prop "disable_buffer_pruning"
+    utl::info RSZ 166 "Buffer pruning has been enabled."
   }
 }
 
@@ -1044,6 +697,13 @@ proc report_opt_config { args } {
     set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
   }
 
+  set disable_buffer_pruning "false"
+  set no_buffer_pruning [odb::dbBoolProperty_find $block "disable_buffer_pruning"]
+  if { $no_buffer_pruning ne "NULL" && $no_buffer_pruning ne "" } {
+    set no_buffer_pruning_value [$no_buffer_pruning getValue]
+    set disable_buffer_pruning [expr { $no_buffer_pruning_value ? "true" : "false" }]
+  }
+
   puts "*******************************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:                 $area_limit_value"
@@ -1052,6 +712,7 @@ proc report_opt_config { args } {
   puts "-keep_sizing_vt:                    $keep_sizing_vt"
   puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
   puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
+  puts "-disable_buffer_pruning:            $disable_buffer_pruning"
   puts "*******************************************"
 }
 
@@ -1098,10 +759,18 @@ proc replace_arith_modules { args } {
   rsz::swap_arith_modules_cmd $path_count $target $slack_margin
 }
 
+sta::define_cmd_args "report_buffers" { [-filtered] }
+
+proc report_buffers { args } {
+  sta::parse_key_args "report_buffers" args keys {} flags {-filtered}
+  set filtered [info exists flags(-filtered)]
+  rsz::report_buffers_cmd $filtered
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
-  check_parasitics
+  est::check_parasitics
   repair_setup_pin_cmd $end_pin
 }
 
@@ -1122,12 +791,6 @@ proc set_debug { args } {
 
 proc report_swappable_pins { } {
   report_swappable_pins_cmd
-}
-
-proc check_parasitics { } {
-  if { ![have_estimated_parasitics] } {
-    utl::warn RSZ 21 "no estimated parasitics. Using wire load models."
-  }
 }
 
 proc parse_time_margin_arg { key keys_var } {
@@ -1177,20 +840,8 @@ proc parse_max_wire_length { keys_var } {
   return $max_wire_length
 }
 
-proc check_corner_wire_caps { } {
-  set have_rc 1
-  foreach corner [sta::corners] {
-    if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
-      utl::warn RSZ 18 "wire capacitance for corner [$corner name] is zero.\
-        Use the set_wire_rc command to set wire resistance and capacitance."
-      set have_rc 0
-    }
-  }
-  return $have_rc
-}
-
 proc check_max_wire_length { max_wire_length use_default } {
-  if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
+  if { [est::wire_signal_resistance [sta::cmd_corner]] > 0 } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {
@@ -1206,40 +857,6 @@ proc check_max_wire_length { max_wire_length use_default } {
     }
   }
   return $max_wire_length
-}
-
-proc dblayer_wire_rc { layer } {
-  set layer_width_dbu [$layer getWidth]
-  set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
-  set res_ohm_per_sq [$layer getResistance]
-  set res_ohm_per_micron [expr $res_ohm_per_sq / $layer_width_micron]
-  set cap_area_pf_per_sq_micron [$layer getCapacitance]
-  set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
-  set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
-    + $cap_edge_pf_per_micron * 2]
-  # ohms/meter
-  set wire_res [expr $res_ohm_per_micron * 1e+6]
-  # farads/meter
-  set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
-  return [list $wire_res $wire_cap]
-}
-
-# Set DB layer RC
-proc set_dblayer_wire_rc { layer res cap } {
-  # Zero the edge cap and just use the user given value
-  $layer setEdgeCapacitance 0
-  set wire_width [ord::dbu_to_microns [$layer getWidth]]
-  # Convert wire capacitance/wire_length to capacitance/area (pF/um)
-  set cap_per_square [expr $cap * 1e+6 / $wire_width]
-  $layer setCapacitance $cap_per_square
-
-  # Convert resistance/wire_length (ohms/micron) to ohms/square
-  set res_per_square [expr $wire_width * 1e-6 * $res]
-  $layer setResistance $res_per_square
-}
-
-proc set_dbvia_wire_r { layer res } {
-  $layer setResistance $res
 }
 
 # namespace

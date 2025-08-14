@@ -12,6 +12,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"
 
 namespace odb {
@@ -32,10 +33,10 @@ class BaseDbDescriptor : public Descriptor
  public:
   BaseDbDescriptor(odb::dbDatabase* db);
 
-  Properties getProperties(std::any object) const override;
+  Properties getProperties(const std::any& object) const override;
 
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
  protected:
   odb::dbDatabase* db_;
@@ -49,13 +50,14 @@ class DbTechDescriptor : public BaseDbDescriptor<odb::dbTech>
  public:
   DbTechDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTech* tech) const override;
@@ -66,13 +68,14 @@ class DbBlockDescriptor : public BaseDbDescriptor<odb::dbBlock>
  public:
   DbBlockDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBlock* block) const override;
@@ -83,18 +86,19 @@ class DbInstDescriptor : public BaseDbDescriptor<odb::dbInst>
  public:
   DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool isInst(std::any object) const override;
+  bool isInst(const std::any& object) const override;
 
-  Actions getActions(std::any object) const override;
-  Editors getEditors(std::any object) const override;
+  Actions getActions(const std::any& object) const override;
+  Editors getEditors(const std::any& object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbInst* inst) const override;
@@ -116,13 +120,14 @@ class DbMasterDescriptor : public BaseDbDescriptor<odb::dbMaster>
  public:
   DbMasterDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
   static void getMasterEquivalent(sta::dbSta* sta,
                                   odb::dbMaster* master,
@@ -152,21 +157,22 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
                   const std::set<odb::dbNet*>& guide_nets,
                   const std::set<odb::dbNet*>& tracks_nets);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
-  bool isSlowHighlight(std::any object) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
+  bool isSlowHighlight(const std::any& object) const override;
 
-  bool isNet(std::any object) const override;
+  bool isNet(const std::any& object) const override;
 
-  Editors getEditors(std::any object) const override;
-  Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any obj) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Editors getEditors(const std::any& object) const override;
+  Actions getActions(const std::any& object) const override;
+  Selected makeSelected(const std::any& obj) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   odb::dbNet* getObject(const std::any& object) const override;
@@ -231,16 +237,17 @@ class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
   DbITermDescriptor(odb::dbDatabase* db,
                     std::function<bool()> using_poly_decomp_view);
 
-  std::string getName(std::any object) const override;
-  std::string getShortName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Actions getActions(std::any object) const override;
+  Actions getActions(const std::any& object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbITerm* iterm) const override;
@@ -254,16 +261,17 @@ class DbBTermDescriptor : public BaseDbDescriptor<odb::dbBTerm>
  public:
   DbBTermDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Editors getEditors(std::any object) const override;
-  Actions getActions(std::any object) const override;
+  Editors getEditors(const std::any& object) const override;
+  Actions getActions(const std::any& object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBTerm* bterm) const override;
@@ -274,13 +282,14 @@ class DbBPinDescriptor : public BaseDbDescriptor<odb::dbBPin>
  public:
   DbBPinDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBPin* bpin) const override;
@@ -292,14 +301,15 @@ class DbMTermDescriptor : public BaseDbDescriptor<odb::dbMTerm>
   DbMTermDescriptor(odb::dbDatabase* db,
                     std::function<bool()> using_poly_decomp_view);
 
-  std::string getName(std::any object) const override;
-  std::string getShortName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbMTerm* mterm) const override;
@@ -313,13 +323,14 @@ class DbViaDescriptor : public BaseDbDescriptor<odb::dbVia>
  public:
   DbViaDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbVia* via) const override;
@@ -330,16 +341,17 @@ class DbBlockageDescriptor : public BaseDbDescriptor<odb::dbBlockage>
  public:
   DbBlockageDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Actions getActions(std::any object) const override;
-  Editors getEditors(std::any object) const override;
+  Actions getActions(const std::any& object) const override;
+  Editors getEditors(const std::any& object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbBlockage* blockage) const override;
@@ -350,15 +362,16 @@ class DbObstructionDescriptor : public BaseDbDescriptor<odb::dbObstruction>
  public:
   DbObstructionDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Actions getActions(std::any object) const override;
+  Actions getActions(const std::any& object) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbObstruction* obs) const override;
@@ -369,13 +382,14 @@ class DbTechLayerDescriptor : public BaseDbDescriptor<odb::dbTechLayer>
  public:
   DbTechLayerDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechLayer* layer) const override;
@@ -403,17 +417,18 @@ class DbTermAccessPointDescriptor : public Descriptor
  public:
   DbTermAccessPointDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  private:
   odb::dbDatabase* db_;
@@ -424,13 +439,14 @@ class DbGroupDescriptor : public BaseDbDescriptor<odb::dbGroup>
  public:
   DbGroupDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbGroup* group) const override;
@@ -441,13 +457,14 @@ class DbRegionDescriptor : public BaseDbDescriptor<odb::dbRegion>
  public:
   DbRegionDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbRegion* region) const override;
@@ -458,20 +475,22 @@ class DbModuleDescriptor : public BaseDbDescriptor<odb::dbModule>
  public:
   DbModuleDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
-  std::string getShortName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbModule* module) const override;
 
  private:
-  void getModules(odb::dbModule* module, SelectionSet& objects) const;
+  void getModules(odb::dbModule* module,
+                  const std::function<void(const Selected&)>& func) const;
 };
 
 class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>
@@ -479,14 +498,15 @@ class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>
  public:
   DbTechViaDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechVia* via) const override;
@@ -497,14 +517,15 @@ class DbTechViaRuleDescriptor : public BaseDbDescriptor<odb::dbTechViaRule>
  public:
   DbTechViaRuleDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechViaRule* via_rule) const override;
@@ -516,14 +537,15 @@ class DbTechViaLayerRuleDescriptor
  public:
   DbTechViaLayerRuleDescriptor(odb::dbDatabase*);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(
@@ -536,14 +558,15 @@ class DbMetalWidthViaMapDescriptor
  public:
   DbMetalWidthViaMapDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbMetalWidthViaMap* via_map) const override;
@@ -555,14 +578,15 @@ class DbGenerateViaDescriptor
  public:
   DbGenerateViaDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechViaGenerateRule* via) const override;
@@ -574,14 +598,16 @@ class DbNonDefaultRuleDescriptor
  public:
   DbNonDefaultRuleDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any /* object */, odb::Rect& /* bbox */) const override;
+  bool getBBox(const std::any& /* object */,
+               odb::Rect& /* bbox */) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechNonDefaultRule* rule) const override;
@@ -592,14 +618,16 @@ class DbTechLayerRuleDescriptor : public BaseDbDescriptor<odb::dbTechLayerRule>
  public:
   DbTechLayerRuleDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any /* object */, odb::Rect& /* bbox */) const override;
+  bool getBBox(const std::any& /* object */,
+               odb::Rect& /* bbox */) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechLayerRule* rule) const override;
@@ -611,14 +639,16 @@ class DbTechSameNetRuleDescriptor
  public:
   DbTechSameNetRuleDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any /* object */, odb::Rect& /* bbox */) const override;
+  bool getBBox(const std::any& /* object */,
+               odb::Rect& /* bbox */) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbTechSameNetRule* rule) const override;
@@ -636,18 +666,19 @@ class DbSiteDescriptor : public BaseDbDescriptor<odb::dbSite>
 
   DbSiteDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   odb::dbSite* getObject(const std::any& object) const override;
@@ -664,14 +695,15 @@ class DbRowDescriptor : public BaseDbDescriptor<odb::dbRow>
  public:
   DbRowDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbRow* row) const override;
@@ -683,14 +715,15 @@ class DbMarkerCategoryDescriptor
  public:
   DbMarkerCategoryDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
  protected:
   Properties getDBProperties(odb::dbMarkerCategory* category) const override;
@@ -701,14 +734,15 @@ class DbMarkerDescriptor : public BaseDbDescriptor<odb::dbMarker>
  public:
   DbMarkerDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
   void paintMarker(odb::dbMarker* marker, Painter& painter) const;
 
@@ -721,14 +755,15 @@ class DbScanInstDescriptor : public BaseDbDescriptor<odb::dbScanInst>
  public:
   DbScanInstDescriptor(odb::dbDatabase* db);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
 
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, Painter& painter) const override;
+  void highlight(const std::any& object, Painter& painter) const override;
 
-  bool getAllObjects(SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
 
   static Descriptor::Property getScanPinProperty(
       const std::string& name,
@@ -736,6 +771,97 @@ class DbScanInstDescriptor : public BaseDbDescriptor<odb::dbScanInst>
 
  protected:
   Properties getDBProperties(odb::dbScanInst* scan_inst) const override;
+};
+
+class DbScanListDescriptor : public BaseDbDescriptor<odb::dbScanList>
+{
+ public:
+  DbScanListDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbScanList* scan_list) const override;
+};
+
+class DbScanPartitionDescriptor : public BaseDbDescriptor<odb::dbScanPartition>
+{
+ public:
+  DbScanPartitionDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(
+      odb::dbScanPartition* scan_partition) const override;
+};
+
+class DbScanChainDescriptor : public BaseDbDescriptor<odb::dbScanChain>
+{
+ public:
+  DbScanChainDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbScanChain* scan_chain) const override;
+};
+
+class DbBoxDescriptor : public BaseDbDescriptor<odb::dbBox>
+{
+ public:
+  struct BoxWithTransform
+  {
+    odb::dbBox* box;
+    odb::dbTransform xform;
+  };
+
+  DbBoxDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  Selected makeSelected(const std::any& obj) const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+  bool lessThan(const std::any& l, const std::any& r) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbBox* box) const override;
+
+ private:
+  odb::dbBox* getObject(const std::any& object) const override;
+  odb::dbTransform getTransform(const std::any& object) const;
 };
 
 };  // namespace gui

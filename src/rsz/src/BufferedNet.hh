@@ -15,6 +15,10 @@
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 using utl::Logger;
@@ -44,12 +48,9 @@ using Requireds = std::array<Required, RiseFall::index_count>;
 class FixedDelay
 {
  public:
-  explicit FixedDelay(sta::Delay float_value)
-  {
-    value_fs_ = float_value * second_;
-  }
-
-  sta::Delay toSeconds() { return ((float) value_fs_) / second_; }
+  FixedDelay();
+  explicit FixedDelay(sta::Delay float_value, Resizer* resizer);
+  sta::Delay toSeconds() const { return ((float) value_fs_) / second_; }
 
   // 100 seconds
   static const FixedDelay INF;
@@ -94,7 +95,7 @@ class FixedDelay
  private:
   static FixedDelay fromFs(int64_t v)
   {
-    FixedDelay ret(0);
+    FixedDelay ret;
     ret.value_fs_ = v;
     return ret;
   }
@@ -131,7 +132,8 @@ class BufferedNet
               int layer,
               const BufferedNetPtr& ref,
               const Corner* corner,
-              const Resizer* resizer);
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics);
   // junc
   BufferedNet(BufferedNetType type,
               const Point& location,
@@ -144,7 +146,8 @@ class BufferedNet
               LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
               const Corner* corner,
-              const Resizer* resizer);
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics);
   std::string to_string(const Resizer* resizer) const;
   void reportTree(const Resizer* resizer) const;
   void reportTree(int level, const Resizer* resizer) const;
@@ -168,6 +171,7 @@ class BufferedNet
   int layer() const { return layer_; }
   void wireRC(const Corner* corner,
               const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics,
               // Return values.
               double& res,
               double& cap);

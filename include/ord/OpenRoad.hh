@@ -105,7 +105,8 @@ class ICeWall;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace dst {
 class Distributed;
@@ -116,6 +117,10 @@ class SteinerTreeBuilder;
 
 namespace dft {
 class Dft;
+}
+
+namespace est {
+class EstimateParasitics;
 }
 
 namespace ord {
@@ -141,6 +146,7 @@ class OpenRoad
 
   Tcl_Interp* tclInterp() { return tcl_interp_; }
   utl::Logger* getLogger() { return logger_; }
+  utl::CallBackHandler* getCallBackHandler() { return callback_handler_; }
   odb::dbDatabase* getDb() { return db_; }
   sta::dbSta* getSta() { return sta_; }
   sta::dbNetwork* getDbNetwork();
@@ -167,6 +173,10 @@ class OpenRoad
   dst::Distributed* getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
   dft::Dft* getDft() { return dft_; }
+  est::EstimateParasitics* getEstimateParasitics()
+  {
+    return estimate_parasitics_;
+  }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -192,6 +202,7 @@ class OpenRoad
                         int bloat_factor,
                         bool bloat_occupied_layers);
 
+  void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
                 const string& version);
@@ -261,6 +272,8 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
+  utl::CallBackHandler* callback_handler_ = nullptr;
 
   int threads_ = 1;
 

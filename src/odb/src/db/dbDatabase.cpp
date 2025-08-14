@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Generator Code Begin Cpp
 #include "dbDatabase.h"
 
+#include "dbChip.h"
+#include "dbTable.h"
+#include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+// User Code Begin Includes
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -15,7 +22,6 @@
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
-#include "dbChip.h"
 #include "dbGDSLib.h"
 #include "dbITerm.h"
 #include "dbJournal.h"
@@ -25,47 +31,48 @@
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
-#include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbWire.h"
-#include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbStream.h"
 #include "utl/Logger.h"
 
+// User Code End Includes
 namespace odb {
-
+template class dbTable<_dbDatabase>;
+// User Code Begin Static
 //
 // Magic number is: ATHENADB
 //
 constexpr int DB_MAGIC1 = 0x41544845;  // ATHE
 constexpr int DB_MAGIC2 = 0x4E414442;  // NADB
 
-template class dbTable<_dbDatabase>;
-
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
 static std::mutex* db_tbl_mutex = new std::mutex;
 static std::atomic<uint> db_unique_id = 0;
+// User Code End Static
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
+  if (_master_id != rhs._master_id) {
+    return false;
+  }
+  if (_chip != rhs._chip) {
+    return false;
+  }
+  if (*_chip_tbl != *rhs._chip_tbl) {
+    return false;
+  }
+
+  // User Code Begin ==
   //
   // For the time being the fields,
   // magic1, magic2, schema_major, schema_minor,
   // unique_id, and file,
   // are not used for comparison.
   //
-  if (_master_id != rhs._master_id) {
-    return false;
-  }
-
-  if (_chip != rhs._chip) {
-    return false;
-  }
-
   if (*_tech_tbl != *rhs._tech_tbl) {
     return false;
   }
@@ -73,11 +80,6 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*_lib_tbl != *rhs._lib_tbl) {
     return false;
   }
-
-  if (*_chip_tbl != *rhs._chip_tbl) {
-    return false;
-  }
-
   if (*_gds_lib_tbl != *rhs._gds_lib_tbl) {
     return false;
   }
@@ -89,47 +91,28 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*_name_cache != *rhs._name_cache) {
     return false;
   }
-
+  // User Code End ==
   return true;
 }
 
-dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
+bool _dbDatabase::operator<(const _dbDatabase& rhs) const
 {
-  switch (type) {
-    case dbTechObj:
-      return _tech_tbl;
-
-    case dbLibObj:
-      return _lib_tbl;
-
-    case dbChipObj:
-      return _chip_tbl;
-
-    case dbGdsLibObj:
-      return _gds_lib_tbl;
-
-    case dbPropertyObj:
-      return _prop_tbl;
-    default:
-      getLogger()->critical(
-          utl::ODB,
-          438,
-          "Internal inconsistency: no table found for type {}",
-          type);
-      break;
+  // User Code Begin <
+  if (_master_id >= rhs._master_id) {
+    return false;
   }
-
-  return nullptr;
+  if (_chip >= rhs._chip) {
+    return false;
+  }
+  // User Code End <
+  return true;
 }
 
-////////////////////////////////////////////////////////////////////
-//
-// _dbDatabase - Methods
-//
-////////////////////////////////////////////////////////////////////
-
-_dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
+_dbDatabase::_dbDatabase(_dbDatabase* db)
 {
+  _chip_tbl = new dbTable<_dbChip, 2>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
+  // User Code Begin Constructor
   _magic1 = DB_MAGIC1;
   _magic2 = DB_MAGIC2;
   _schema_major = db_schema_major;
@@ -137,9 +120,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _master_id = 0;
   _logger = nullptr;
   _unique_id = db_unique_id++;
-
-  _chip_tbl = new dbTable<_dbChip, 2>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
 
   _gds_lib_tbl = new dbTable<_dbGDSLib, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
@@ -157,8 +137,166 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
+  // User Code End Constructor
 }
 
+dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
+{
+  // User Code Begin >>
+  stream >> obj._magic1;
+
+  if (obj._magic1 != DB_MAGIC1) {
+    throw std::runtime_error("database file is not an OpenDB Database");
+  }
+
+  stream >> obj._magic2;
+
+  if (obj._magic2 != DB_MAGIC2) {
+    throw std::runtime_error("database file is not an OpenDB Database");
+  }
+
+  stream >> obj._schema_major;
+
+  if (obj._schema_major != db_schema_major) {
+    throw std::runtime_error("Incompatible database schema revision");
+  }
+
+  stream >> obj._schema_minor;
+
+  if (obj._schema_minor < db_schema_initial) {
+    throw std::runtime_error("incompatible database schema revision");
+  }
+
+  if (obj._schema_minor > db_schema_minor) {
+    throw std::runtime_error(
+        fmt::format("incompatible database schema revision {}.{} > {}.{}",
+                    obj._schema_major,
+                    obj._schema_minor,
+                    db_schema_major,
+                    db_schema_minor));
+  }
+
+  stream >> obj._master_id;
+
+  stream >> obj._chip;
+
+  dbId<_dbTech> old_db_tech;
+  if (!obj.isSchema(db_schema_block_tech)) {
+    stream >> old_db_tech;
+  }
+  stream >> *obj._tech_tbl;
+  stream >> *obj._lib_tbl;
+  stream >> *obj._chip_tbl;
+  if (obj.isSchema(db_schema_gds_lib_in_block)) {
+    stream >> *obj._gds_lib_tbl;
+  }
+  stream >> *obj._prop_tbl;
+  stream >> *obj._name_cache;
+
+  // Set the _tech on the block & libs now they are loaded
+  if (!obj.isSchema(db_schema_block_tech)) {
+    if (obj._chip) {
+      _dbChip* chip = obj._chip_tbl->getPtr(obj._chip);
+      if (chip->_top) {
+        chip->_block_tbl->getPtr(chip->_top)->_tech = old_db_tech;
+      }
+    }
+
+    auto db_public = (dbDatabase*) &obj;
+    for (auto lib : db_public->getLibs()) {
+      _dbLib* lib_impl = (_dbLib*) lib;
+      lib_impl->_tech = old_db_tech;
+    }
+  }
+
+  // Fix up the owner id of properties of this db, this value changes.
+  const uint oid = obj.getId();
+
+  for (_dbProperty* p : dbSet<_dbProperty>(&obj, obj._prop_tbl)) {
+    p->_owner = oid;
+  }
+
+  // Set the revision of the database to the current revision
+  obj._schema_major = db_schema_major;
+  obj._schema_minor = db_schema_minor;
+  // User Code End >>
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
+{
+  dbOStreamScope scope(stream, "dbDatabase");
+  // User Code Begin <<
+  stream << obj._magic1;
+  stream << obj._magic2;
+  stream << obj._schema_major;
+  stream << obj._schema_minor;
+  stream << obj._master_id;
+  stream << obj._chip;
+  stream << *obj._tech_tbl;
+  stream << *obj._lib_tbl;
+  stream << *obj._chip_tbl;
+  stream << *obj._gds_lib_tbl;
+  stream << NamedTable("prop_tbl", obj._prop_tbl);
+  stream << *obj._name_cache;
+  stream << *obj._gds_lib_tbl;
+  // User Code End <<
+  return stream;
+}
+
+dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbChipObj:
+      return _chip_tbl;
+      // User Code Begin getObjectTable
+    case dbTechObj:
+      return _tech_tbl;
+
+    case dbLibObj:
+      return _lib_tbl;
+
+    case dbGdsLibObj:
+      return _gds_lib_tbl;
+
+    case dbPropertyObj:
+      return _prop_tbl;
+    // User Code End getObjectTable
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
+}
+void _dbDatabase::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  _chip_tbl->collectMemInfo(info.children_["_chip_tbl"]);
+
+  // User Code Begin collectMemInfo
+  _tech_tbl->collectMemInfo(info.children_["tech"]);
+  _lib_tbl->collectMemInfo(info.children_["lib"]);
+  _gds_lib_tbl->collectMemInfo(info.children_["gds_lib"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+  // User Code End collectMemInfo
+}
+
+_dbDatabase::~_dbDatabase()
+{
+  delete _chip_tbl;
+  // User Code Begin Destructor
+  delete _tech_tbl;
+  delete _lib_tbl;
+  delete _gds_lib_tbl;
+  delete _prop_tbl;
+  delete _name_cache;
+  delete _prop_itr;
+  // User Code End Destructor
+}
+
+// User Code Begin PrivateMethods
 //
 // This constructor is use by dbDatabase::clear(), so the the unique-id is
 // reset.
@@ -194,116 +332,22 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }
 
-_dbDatabase::~_dbDatabase()
+utl::Logger* _dbDatabase::getLogger() const
 {
-  delete _tech_tbl;
-  delete _lib_tbl;
-  delete _chip_tbl;
-  delete _gds_lib_tbl;
-  delete _prop_tbl;
-  delete _name_cache;
-  delete _prop_itr;
+  if (!_logger) {
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
+              << std::endl;
+    exit(1);
+  }
+  return _logger;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
+utl::Logger* _dbObject::getLogger() const
 {
-  dbOStreamScope scope(stream, "dbDatabase");
-  stream << db._magic1;
-  stream << db._magic2;
-  stream << db._schema_major;
-  stream << db._schema_minor;
-  stream << db._master_id;
-  stream << db._chip;
-  stream << *db._tech_tbl;
-  stream << *db._lib_tbl;
-  stream << *db._chip_tbl;
-  stream << *db._gds_lib_tbl;
-  stream << NamedTable("prop_tbl", db._prop_tbl);
-  stream << *db._name_cache;
-  stream << *db._gds_lib_tbl;
-  return stream;
+  return getDatabase()->getLogger();
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
-{
-  stream >> db._magic1;
-
-  if (db._magic1 != DB_MAGIC1) {
-    throw std::runtime_error("database file is not an OpenDB Database");
-  }
-
-  stream >> db._magic2;
-
-  if (db._magic2 != DB_MAGIC2) {
-    throw std::runtime_error("database file is not an OpenDB Database");
-  }
-
-  stream >> db._schema_major;
-
-  if (db._schema_major != db_schema_major) {
-    throw std::runtime_error("Incompatible database schema revision");
-  }
-
-  stream >> db._schema_minor;
-
-  if (db._schema_minor < db_schema_initial) {
-    throw std::runtime_error("incompatible database schema revision");
-  }
-
-  if (db._schema_minor > db_schema_minor) {
-    throw std::runtime_error(
-        fmt::format("incompatible database schema revision {}.{} > {}.{}",
-                    db._schema_major,
-                    db._schema_minor,
-                    db_schema_major,
-                    db_schema_minor));
-  }
-
-  stream >> db._master_id;
-
-  stream >> db._chip;
-
-  dbId<_dbTech> old_db_tech;
-  if (!db.isSchema(db_schema_block_tech)) {
-    stream >> old_db_tech;
-  }
-  stream >> *db._tech_tbl;
-  stream >> *db._lib_tbl;
-  stream >> *db._chip_tbl;
-  if (db.isSchema(db_schema_gds_lib_in_block)) {
-    stream >> *db._gds_lib_tbl;
-  }
-  stream >> *db._prop_tbl;
-  stream >> *db._name_cache;
-
-  // Set the _tech on the block & libs now they are loaded
-  if (!db.isSchema(db_schema_block_tech)) {
-    if (db._chip) {
-      _dbChip* chip = db._chip_tbl->getPtr(db._chip);
-      if (chip->_top) {
-        chip->_block_tbl->getPtr(chip->_top)->_tech = old_db_tech;
-      }
-    }
-
-    auto db_public = (dbDatabase*) &db;
-    for (auto lib : db_public->getLibs()) {
-      _dbLib* lib_impl = (_dbLib*) lib;
-      lib_impl->_tech = old_db_tech;
-    }
-  }
-
-  // Fix up the owner id of properties of this db, this value changes.
-  const uint oid = db.getId();
-
-  for (_dbProperty* p : dbSet<_dbProperty>(&db, db._prop_tbl)) {
-    p->_owner = oid;
-  }
-
-  // Set the revision of the database to the current revision
-  db._schema_major = db_schema_major;
-  db._schema_minor = db_schema_minor;
-  return stream;
-}
+// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -311,6 +355,13 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 //
 ////////////////////////////////////////////////////////////////////
 
+dbSet<dbChip> dbDatabase::getChips() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbChip>(obj, obj->_chip_tbl);
+}
+
+// User Code Begin dbDatabasePublicMethods
 dbSet<dbLib> dbDatabase::getLibs()
 {
   _dbDatabase* db = (_dbDatabase*) this;
@@ -390,12 +441,6 @@ int dbDatabase::removeUnusedMasters()
     dbMaster::destroy(elem);
   }
   return unused_masters.size();
-}
-
-dbSet<dbChip> dbDatabase::getChips()
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  return dbSet<dbChip>(db, db->_chip_tbl);
 }
 
 uint dbDatabase::getNumberOfMasters()
@@ -605,34 +650,6 @@ dbDatabase* dbObject::getDb() const
   return (dbDatabase*) getImpl()->getDatabase();
 }
 
-utl::Logger* _dbDatabase::getLogger() const
-{
-  if (!_logger) {
-    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
-              << std::endl;
-    exit(1);
-  }
-  return _logger;
-}
-
-utl::Logger* _dbObject::getLogger() const
-{
-  return getDatabase()->getLogger();
-}
-
-void _dbDatabase::collectMemInfo(MemInfo& info)
-{
-  info.cnt++;
-  info.size += sizeof(*this);
-
-  _tech_tbl->collectMemInfo(info.children_["tech"]);
-  _lib_tbl->collectMemInfo(info.children_["lib"]);
-  _chip_tbl->collectMemInfo(info.children_["chip"]);
-  _gds_lib_tbl->collectMemInfo(info.children_["gds_lib"]);
-  _prop_tbl->collectMemInfo(info.children_["prop"]);
-  _name_cache->collectMemInfo(info.children_["name_cache"]);
-}
-
 void dbDatabase::report()
 {
   _dbDatabase* db = (_dbDatabase*) this;
@@ -704,4 +721,6 @@ void dbDatabase::triggerPostReadDb()
   }
 }
 
+// User Code End dbDatabasePublicMethods
 }  // namespace odb
+// Generator Code End Cpp

@@ -22,7 +22,8 @@ using AdjacencyList = std::vector<std::vector<int>>;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace odb {
 class dbDatabase;
@@ -43,10 +44,6 @@ class AntennaChecker;
 namespace dpl {
 class Opendp;
 }
-
-namespace rsz {
-class Resizer;
-}  // namespace rsz
 
 namespace sta {
 class dbSta;
@@ -114,10 +111,10 @@ class GlobalRouter
   ~GlobalRouter();
 
   void init(utl::Logger* logger,
+            utl::CallBackHandler* callback_handler,
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            rsz::Resizer* resizer,
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -155,6 +152,7 @@ class GlobalRouter
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
+  void ensurePinsPositions(odb::dbNet* db_net);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -168,8 +166,6 @@ class GlobalRouter
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
-  void estimateRC(sta::SpefWriter* spef_writer = nullptr);
-  void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
@@ -177,7 +173,7 @@ class GlobalRouter
                    bool start_incremental = false,
                    bool end_incremental = false);
   void saveCongestion();
-  NetRouteMap& getRoutes() { return routes_; }
+  NetRouteMap& getRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
   bool isNonLeafClock(odb::dbNet* db_net);
@@ -331,15 +327,21 @@ class GlobalRouter
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
-                               int& track_consumption,
-                               std::vector<int>*& edge_costs_per_layer);
+                               int8_t& track_consumption,
+                               std::vector<int8_t>*& edge_costs_per_layer);
 
   // aux functions
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
                                               bool& has_access_points,
-                                              odb::Point& pos_on_grid);
+                                              odb::Point& pos_on_grid,
+                                              bool ignore_db_access_points
+                                              = false);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
+  void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
+                                Pin& pin,
+                                odb::Point& pos_on_grid,
+                                bool has_access_points);
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
                          int& root_idx);
@@ -439,15 +441,16 @@ class GlobalRouter
   void configFastRoute();
 
   utl::Logger* logger_;
+  utl::CallBackHandler* callback_handler_;
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
-  rsz::Resizer* resizer_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
+  NetRouteMap partial_routes_;
 
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;

@@ -35,6 +35,7 @@ void deleteTritonRoute(drt::TritonRoute* router)
 void initTritonRoute(drt::TritonRoute* router,
                      odb::dbDatabase* db,
                      utl::Logger* logger,
+                     utl::CallBackHandler* callback_handler,
                      dst::Distributed* dist,
                      stt::SteinerTreeBuilder* stt_builder,
                      Tcl_Interp* tcl_interp)
@@ -46,7 +47,12 @@ void initTritonRoute(drt::TritonRoute* router,
   std::unique_ptr<drt::AbstractGraphicsFactory> graphics_factory
       = std::make_unique<drt::GraphicsFactory>();
 
-  router->init(db, logger, dist, stt_builder, std::move(graphics_factory));
+  router->init(db,
+               logger,
+               callback_handler,
+               dist,
+               stt_builder,
+               std::move(graphics_factory));
 }
 
 }  // namespace drt

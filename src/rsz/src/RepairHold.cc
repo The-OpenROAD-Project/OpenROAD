@@ -42,7 +42,9 @@ using sta::PathExpanded;
 using sta::Port;
 using sta::VertexOutEdgeIterator;
 
-RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
+RepairHold::RepairHold(Resizer* resizer,
+                       est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -82,7 +84,7 @@ bool RepairHold::repairHold(
   max_buffer_count = std::max(max_buffer_count, 100);
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repaired = repairHold(ends1,
                           buffer_cell,
                           setup_margin,
@@ -117,7 +119,7 @@ void RepairHold::repairHold(const Pin* end_pin,
   const int max_buffer_count = max_buffer_percent * network_->instanceCount();
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repairHold(ends,
                buffer_cell,
                setup_margin,
@@ -127,6 +129,12 @@ void RepairHold::repairHold(const Pin* end_pin,
                max_passes,
                false);
   }
+}
+
+LibertyCell* RepairHold::reportHoldBuffer()
+{
+  init();
+  return findHoldBuffer();
 }
 
 // Find a good hold buffer using delay/area as the metric.
@@ -139,7 +147,16 @@ LibertyCell* RepairHold::findHoldBuffer()
     LibertyCell* cell;
   };
   std::vector<MetricBuffer> buffers;
-  for (LibertyCell* buffer : resizer_->buffer_cells_) {
+  LibertyCellSeq* hold_buffers = nullptr;
+  LibertyCellSeq buffer_list;
+  if (resizer_->disable_buffer_pruning_) {
+    hold_buffers = &resizer_->buffer_cells_;
+  } else {
+    filterHoldBuffers(buffer_list);
+    hold_buffers = &buffer_list;
+  }
+
+  for (LibertyCell* buffer : *hold_buffers) {
     const float buffer_area = buffer->area();
     if (buffer_area != 0.0) {
       const float buffer_cost = bufferHoldDelay(buffer) / buffer_area;
@@ -176,6 +193,148 @@ LibertyCell* RepairHold::findHoldBuffer()
   }
 
   return best_buffer.cell;
+}
+
+// Only DEL, DLY, and dlygate are supported in current PDKs
+// leading  3 nm:  DEL
+// common   7 nm:  DLY
+//         12 nm:  DLY
+// skywater130hs:  dlygate
+bool isDelayCell(const std::string& cell_name)
+{
+  return (!cell_name.empty()
+          && (cell_name.find("DEL") != std::string::npos
+              || cell_name.find("DLY") != std::string::npos
+              || cell_name.find("dlygate") != std::string::npos));
+}
+
+void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
+{
+  LibertyCellSeq buffer_list;
+  LibraryAnalysisData lib_data;
+  resizer_->getBufferList(buffer_list, lib_data);
+
+  // Pick the least leaky VT for multiple VTs
+  int best_vt_index = -1;
+  int num_vt = lib_data.sorted_vt_categories.size();
+  if (num_vt > 0) {
+    best_vt_index = lib_data.sorted_vt_categories[0].first.vt_index;
+  }
+
+  // Pick the shortest cell site because this offers the most flexibility for
+  // hold fixing
+  int best_height = std::numeric_limits<int>::max();
+  odb::dbSite* best_site = nullptr;
+  for (const auto& site_data : lib_data.cells_by_site) {
+    int height = site_data.first->getHeight();
+    if (height < best_height) {
+      best_height = height;
+      best_site = site_data.first;
+    }
+  }
+
+  // Use DELAY cell footprint if available
+  bool lib_has_footprints = false;
+  for (const auto& [ft_str, count] : lib_data.cells_by_footprint) {
+    if (isDelayCell(ft_str)) {
+      lib_has_footprints = true;
+      break;
+    }
+  }
+
+  bool match = false;
+  // Match site, footprint and vt
+  if (addMatchingBuffers(buffer_list,
+                         hold_buffers,
+                         best_vt_index,
+                         best_site,
+                         lib_has_footprints,
+                         true /* match_site */,
+                         true /* match_vt */,
+                         true /* match_footprint */)) {
+    match = true;
+    // Match footprint and vt only
+  } else if (addMatchingBuffers(buffer_list,
+                                hold_buffers,
+                                best_vt_index,
+                                best_site,
+                                lib_has_footprints,
+                                false /* match_site */,
+                                true /* match_vt */,
+                                true /* match_footprint */)) {
+    match = true;
+    // Match footprint only
+  } else if (addMatchingBuffers(buffer_list,
+                                hold_buffers,
+                                best_vt_index,
+                                best_site,
+                                lib_has_footprints,
+                                false /* match_site */,
+                                false /* match_vt */,
+                                true /* match_footprint */)) {
+    match = true;
+    // Relax all
+  } else if (addMatchingBuffers(buffer_list,
+
+                                hold_buffers,
+                                best_vt_index,
+                                best_site,
+                                lib_has_footprints,
+                                false /* match_site */,
+                                false /* match_vt */,
+                                false /* match_footprint */)) {
+    match = true;
+  }
+
+  if (!match) {
+    logger_->error(RSZ, 167, "No suitable hold buffers have been found");
+  }
+}
+
+bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
+                                    LibertyCellSeq& hold_buffers,
+                                    int best_vt_index,
+                                    odb::dbSite* best_site,
+                                    bool lib_has_footprints,
+                                    bool match_site,
+                                    bool match_vt,
+                                    bool match_footprint)
+{
+  bool hold_buffer_found = false;
+  for (LibertyCell* buffer : buffer_list) {
+    odb::dbMaster* master = db_network_->staToDb(buffer);
+
+    bool site_matches = true;
+    if (match_site) {
+      site_matches = master->getSite() == best_site;
+    }
+
+    bool vt_matches = true;
+    if (match_vt) {
+      auto vt_type = resizer_->cellVTType(master);
+      vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+    }
+
+    bool footprint_matches = true;
+    if (match_footprint) {
+      const char* footprint_cstr = buffer->footprint();
+      std::string footprint = footprint_cstr ? footprint_cstr : "";
+      footprint_matches = !lib_has_footprints || isDelayCell(footprint);
+    }
+
+    if (site_matches && vt_matches && footprint_matches) {
+      hold_buffers.emplace_back(buffer);
+      debugPrint(logger_,
+                 RSZ,
+                 "resizer",
+                 1,
+                 "{} added to hold buffer",
+                 buffer->name());
+      hold_buffer_found = true;
+    }
+  }
+
+  return hold_buffer_found;
 }
 
 float RepairHold::bufferHoldDelay(LibertyCell* buffer)
@@ -331,7 +490,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 bool verbose,
                                 int& pass)
 {
-  resizer_->updateParasitics();
+  estimate_parasitics_->updateParasitics();
   sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
@@ -340,7 +499,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
       printProgress(pass, false, false);
     }
 
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
@@ -551,7 +710,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // to be preserved.
     // Move the driver pin over to gensym'd net.
     //
-    in_net = resizer_->makeUniqueNet();
+    in_net = db_network_->makeNet();
     Port* drvr_port = network_->port(drvr_pin);
     Instance* drvr_inst = network_->instance(drvr_pin);
     sta_->disconnectPin(drvr_pin);
@@ -560,8 +719,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   } else {
     in_net = db_network_->dbToSta(db_drvr_net);
     // make the output net, put in same module as buffer
-    std::string net_name = resizer_->makeUniqueNetName();
-    out_net = db_network_->makeNet(net_name.c_str(), parent);
+    out_net = db_network_->makeNet(parent);
   }
 
   dbNet* in_net_db = db_network_->staToDb(in_net);
@@ -588,11 +746,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
 
-  string buffer_name = resizer_->makeUniqueInstName("hold");
-
   // make the buffer in the driver pin's parent
-  Instance* buffer
-      = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, loc);
+  Instance* buffer = resizer_->makeBuffer(buffer_cell, "hold", parent, loc);
   inserted_buffer_count_++;
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
@@ -659,12 +814,12 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
-  resizer_->updateParasitics();
+  estimate_parasitics_->updateParasitics();
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.
   sta_->findDelays(buffer_out_vertex);
   if (!checkMaxSlewCap(buffer_out_pin)
       && resizer_->resizeToTargetSlew(buffer_out_pin)) {
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     resize_count_++;
   }
 }
@@ -706,9 +861,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
     logger_->report(
         "Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   "
         "|   TNS   | Endpoint");
-    logger_->report(
-        "----------------------------------------------------------------------"
-        "----------------");
+    logger_->report("{:->86}", "");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -739,9 +892,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
   }
 
   if (end) {
-    logger_->report(
-        "----------------------------------------------------------------------"
-        "----------------");
+    logger_->report("{:->86}", "");
   }
 }
 

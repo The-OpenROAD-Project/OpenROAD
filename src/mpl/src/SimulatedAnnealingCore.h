@@ -3,14 +3,16 @@
 
 #pragma once
 
+#include <limits>
 #include <map>
 #include <random>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "object.h"
+#include "odb/db.h"
 #include "util.h"
 
 namespace utl {
@@ -120,7 +122,8 @@ class SimulatedAnnealingCore
   // operations
   void packFloorplan();
   virtual void perturb() = 0;
-  virtual void restore() = 0;
+  virtual void saveState() = 0;
+  virtual void restoreState() = 0;
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();

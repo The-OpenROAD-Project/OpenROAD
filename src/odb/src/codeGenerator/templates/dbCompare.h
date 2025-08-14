@@ -1,5 +1,6 @@
 //Generator Code Begin Less
 {% for klass in schema.classes|sort(attribute='name') %}
+{% if not klass.do_not_generate_compare %}
 template <>
 struct less<odb::{{klass.name}}*>
 {
@@ -10,5 +11,6 @@ struct less<odb::{{klass.name}}*>
   }
 };
 
+{% endif %}
 {% endfor %}
 //Generator Code End Less

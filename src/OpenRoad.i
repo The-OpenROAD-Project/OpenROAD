@@ -94,6 +94,13 @@ getClockGating()
   return openroad->getClockGating();
 }
 
+est::EstimateParasitics *
+getEstimateParasitics()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getEstimateParasitics();
+}
+
 rmp::Restructure *
 getRestructure()
 {

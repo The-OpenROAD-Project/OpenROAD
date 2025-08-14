@@ -647,6 +647,101 @@ void Grid::checkSetup() const
       }
     }
   }
+
+  // Check connectivity
+  std::set<odb::dbTechLayer*> check_layers;
+  for (const auto& ring : rings_) {
+    for (auto* layer : ring->getLayers()) {
+      check_layers.insert(layer);
+    }
+  }
+  for (const auto& strap : straps_) {
+    check_layers.insert(strap->getLayer());
+  }
+
+  // Check that pin layers actually exists in stack
+  for (auto* layer : pin_layers_) {
+    if (check_layers.find(layer) == check_layers.end()) {
+      getLogger()->error(utl::PDN,
+                         111,
+                         "Pin layer {} is not a valid shape in {}",
+                         layer->getName(),
+                         name_);
+    }
+  }
+
+  // add instance layers
+  const auto nets_vec = getNets();
+  const std::set<odb::dbNet*> nets(nets_vec.begin(), nets_vec.end());
+
+  for (auto* inst : getInstances()) {
+    if (!inst->isFixed()) {
+      continue;
+    }
+    for (auto* iterm : inst->getITerms()) {
+      if (nets.find(iterm->getNet()) != nets.end()) {
+        for (const auto& [layer, shape] : iterm->getGeometries()) {
+          check_layers.insert(layer);
+        }
+      }
+    }
+  }
+  if (domain_->hasSwitchedPower()) {
+    for (const auto& powercell :
+         domain_->getPDNGen()->getSwitchedPowerCells()) {
+      for (auto* mterm : powercell->getMaster()->getMTerms()) {
+        for (auto* mpin : mterm->getMPins()) {
+          for (auto* box : mpin->getGeometry()) {
+            auto* layer = box->getTechLayer();
+            if (layer) {
+              check_layers.insert(layer);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // add bterms and exisiting routing
+  for (auto* net : nets) {
+    for (auto* swire : net->getSWires()) {
+      for (auto* box : swire->getWires()) {
+        auto* layer = box->getTechLayer();
+        if (layer) {
+          check_layers.insert(layer);
+        }
+      }
+    }
+    for (auto* bterm : net->getBTerms()) {
+      for (auto* bpin : bterm->getBPins()) {
+        if (!bpin->getPlacementStatus().isFixed()) {
+          continue;
+        }
+        for (auto* box : bpin->getBoxes()) {
+          auto* layer = box->getTechLayer();
+          if (layer) {
+            check_layers.insert(layer);
+          }
+        }
+      }
+    }
+  }
+
+  // Check that connect statement actually point to something
+  for (const auto& connect : connect_) {
+    if (check_layers.find(connect->getLowerLayer()) == check_layers.end()) {
+      getLogger()->error(utl::PDN,
+                         112,
+                         "Cannot find shapes to connect to on {}",
+                         connect->getLowerLayer()->getName());
+    }
+    if (check_layers.find(connect->getUpperLayer()) == check_layers.end()) {
+      getLogger()->error(utl::PDN,
+                         113,
+                         "Cannot find shapes to connect to on {}",
+                         connect->getUpperLayer()->getName());
+    }
+  }
 }
 
 void Grid::getObstructions(Shape::ObstructionTreeMap& obstructions) const
@@ -990,12 +1085,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (box->getTechLayer() == nullptr) {
       for (auto* layer : block->getDb()->getTech()->getLayers()) {
         auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
-        obs[layer].push_back(shape);
+        obs[layer].push_back(std::move(shape));
       }
     } else {
       auto shape = std::make_shared<Shape>(
           box->getTechLayer(), obs_rect, Shape::BLOCK_OBS);
-      obs[box->getTechLayer()].push_back(shape);
+      obs[box->getTechLayer()].push_back(std::move(shape));
     }
   }
 
@@ -1053,7 +1148,7 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
             = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
         shape->generateObstruction();
         shape->setRect(shape->getRect());
-        obs[layer].push_back(shape);
+        obs[layer].push_back(std::move(shape));
       }
     }
   }
@@ -1399,7 +1494,7 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    obs[layer].push_back(shape);
+    obs[layer].push_back(std::move(shape));
   }
 
   // generate obstructions based on pins
@@ -1472,7 +1567,7 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
             auto shape = std::make_shared<Shape>(
                 via_box->getTechLayer(), net, box_rect);
             shape->setShapeType(Shape::FIXED);
-            pins.push_back(shape);
+            pins.push_back(std::move(shape));
           }
         } else {
           odb::Rect box_rect = box->getBox();
@@ -1480,7 +1575,7 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
           auto shape
               = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
           shape->setShapeType(Shape::FIXED);
-          pins.push_back(shape);
+          pins.push_back(std::move(shape));
         }
       }
     }
