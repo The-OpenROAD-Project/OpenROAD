@@ -10,19 +10,6 @@ package(
 )
 
 cc_library(
-    name = "types",
-    hdrs = [
-        "include/ant/AntennaChecker.hh",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        "//src/odb",
-    ],
-)
-
-cc_library(
     name = "ant",
     srcs = [
         "src/AntennaChecker.cc",
@@ -32,6 +19,9 @@ cc_library(
         "src/WireBuilder.cc",
         "src/WireBuilder.hh",
     ],
+    hdrs = [
+        "include/ant/AntennaChecker.hh",
+    ],
     copts = [
         "-fopenmp",
     ],
@@ -39,7 +29,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":types",
         "//src/odb",
         "//src/utl",
         "@boost.container_hash",

@@ -45,10 +45,6 @@ namespace dpl {
 class Opendp;
 }
 
-namespace rsz {
-class Resizer;
-}  // namespace rsz
-
 namespace sta {
 class dbSta;
 class dbNetwork;
@@ -119,7 +115,6 @@ class GlobalRouter
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            rsz::Resizer* resizer,
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -171,8 +166,6 @@ class GlobalRouter
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
-  void estimateRC(sta::SpefWriter* spef_writer = nullptr);
-  void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
@@ -180,7 +173,7 @@ class GlobalRouter
                    bool start_incremental = false,
                    bool end_incremental = false);
   void saveCongestion();
-  NetRouteMap& getRoutes() { return routes_; }
+  NetRouteMap& getRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
   bool isNonLeafClock(odb::dbNet* db_net);
@@ -457,12 +450,12 @@ class GlobalRouter
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
-  rsz::Resizer* resizer_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
+  NetRouteMap partial_routes_;
 
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;

@@ -37,7 +37,7 @@ target_link_libraries(psm
     OpenSTA
     dbSta
     dpl_lib
-    rsz_lib
+    est_lib
     Eigen3::Eigen
     gui
     Boost::boost
