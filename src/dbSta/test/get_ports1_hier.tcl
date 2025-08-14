@@ -1,19 +1,22 @@
-# get_ports on a bus
+# get_ports on a bus in hierarchical flow
 source "helpers.tcl"
+
+# tclint-disable
+proc print_info { objs } {
+  set obj_names {}
+  foreach obj $objs {
+    lappend obj_names [get_name $obj]
+  }
+  puts "[lsort $obj_names]"
+  puts "count: [llength $objs]"
+  puts ""
+}
+# tclint-enable
+
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_verilog get_ports1.v
 link_design top -hier
-
-proc print_info {objs} {
-    set obj_names {}
-    foreach obj $objs {
-        lappend obj_names [get_name $obj]
-    }
-    puts "[lsort $obj_names]"
-    puts "count: [llength $objs]"
-    puts ""
-}
 
 print_info [get_ports *]
 
