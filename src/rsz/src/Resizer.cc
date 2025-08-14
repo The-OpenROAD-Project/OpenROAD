@@ -388,6 +388,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   unbuffer_move_->commitMoves();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
+  guard.end();
 }
 
 void Resizer::unbufferNet(Net* net)
@@ -1006,6 +1007,7 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
         bufferInput(pin, selected_buffer_cell, verbose);
       }
     }
+    guard.end();
   }
 
   logger_->info(RSZ,
@@ -1249,6 +1251,7 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
         bufferOutput(pin, selected_buffer_cell, verbose);
       }
     }
+    guard.end();
   }
 
   logger_->info(RSZ,
@@ -2476,6 +2479,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     journalRestore();
     level_drvr_vertices_valid_ = false;
   }
+  guard.end();
 }
 
 void Resizer::findResizeSlacks1()

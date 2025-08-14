@@ -307,6 +307,7 @@ void RepairDesign::repairDesign(
     }
     estimate_parasitics_->updateParasitics();
     printProgress(print_iteration, true, true, repaired_net_count);
+    guard.end();
   }
 
   if (inserted_buffer_count_ > 0) {
@@ -378,6 +379,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
         }
       }
     }
+    guard.end();
   }
 
   if (length_violations > 0) {
@@ -442,6 +444,7 @@ void RepairDesign::repairNet(Net* net,
                 fanout_violations,
                 length_violations);
     }
+    guard.end();
   }
 
   reportViolationCounters(true,

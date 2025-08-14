@@ -500,6 +500,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     logger_->error(RSZ, 25, "max utilization reached.");
   }
 
+  guard.end();
   return repaired;
 }
 
@@ -525,6 +526,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repairPath(path, slack, 0.0);
+    guard.end();
   }
 
   int unbuffer_moves_ = resizer_->unbuffer_move_->numCommittedMoves();

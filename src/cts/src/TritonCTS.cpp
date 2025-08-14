@@ -2223,6 +2223,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
       }
     }
   }
+
+  parasitics_guard.end();
 }
 
 float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,

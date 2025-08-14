@@ -2394,6 +2394,8 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   debugPrint(
       logger_, RSZ, "rebuffer", 1, "Buffer for timing {:.2f}", bft_runtime);
   debugPrint(logger_, RSZ, "rebuffer", 1, "Recover area {:.2f}", ra_runtime);
+
+  guard.end();
 }
 
 bool Rebuffer::hasTopLevelOutputPort(Net* net)
@@ -2566,6 +2568,7 @@ void BufferMove::rebufferNet(const Pin* drvr_pin)
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int inserted_buffer_count_ = rebuffer->rebufferPin(drvr_pin);
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
+  guard.end();
 }
 
 };  // namespace rsz

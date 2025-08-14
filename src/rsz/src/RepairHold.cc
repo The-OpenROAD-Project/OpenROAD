@@ -93,6 +93,7 @@ bool RepairHold::repairHold(
                           max_buffer_count,
                           max_passes,
                           verbose);
+    guard.end();
   }
 
   return repaired;
@@ -128,6 +129,7 @@ void RepairHold::repairHold(const Pin* end_pin,
                max_buffer_count,
                max_passes,
                false);
+    guard.end();
   }
 }
 

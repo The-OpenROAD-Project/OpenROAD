@@ -210,6 +210,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     logger_->error(RSZ, 125, "max utilization reached.");
   }
 
+  guard.end();
   return recovered;
 }
 
@@ -227,11 +228,13 @@ Vertex* RecoverPower::recoverPower(const Pin* end_pin)
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     drvr_vertex = recoverPower(path, slack);
+    guard.end();
   }
 
   if (resize_count_ > 0) {
     logger_->info(RSZ, 3111, "Resized {} instances.", resize_count_);
   }
+
   return drvr_vertex;
 }
 
