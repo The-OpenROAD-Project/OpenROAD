@@ -2460,6 +2460,8 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
+  initBlock();
+
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
@@ -2489,7 +2491,9 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 
   findResizeSlacks1();
   if (run_journal_restore) {
+    db_cbk_->addOwner(block_);
     journalRestore();
+    db_cbk_->removeOwner();
     level_drvr_vertices_valid_ = false;
   }
 }
