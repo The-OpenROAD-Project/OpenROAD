@@ -81,7 +81,6 @@ proc report_fmax_metric { args } {
     }
     set fmax [expr { 1.0 / $min_period }]
     utl::metric_float "timing__fmax__clock:${clk_name}" $fmax
-    puts "$clk_name fmax = [format %.2f [expr { $fmax / 1e6 }]] MHz"
     set fmax_metric [expr { max($fmax_metric, $fmax) }]
   }
   if { $fmax_metric == 0 } {
