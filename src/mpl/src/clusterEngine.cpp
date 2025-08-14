@@ -2052,7 +2052,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
     }
 
     setClusterMetrics(macro_clusters[i]);
-    virtual_conn_clusters.push_back(mixed_leaf->getId());
+    virtual_conn_clusters.push_back(macro_clusters[i]->getId());
   }
 
   // add virtual connections
