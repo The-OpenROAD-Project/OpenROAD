@@ -29,7 +29,6 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
                                  float neg_swap_prob,
                                  float double_swap_prob,
                                  float exchange_prob,
-                                 float flip_prob,
                                  // Fast SA hyperparameter
                                  float init_prob,
                                  int max_num_step,
@@ -54,7 +53,6 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
                                         logger,
                                         block)
 {
-  flip_prob_ = flip_prob;
 }
 
 void SACoreHardMacro::run()
@@ -104,13 +102,6 @@ void SACoreHardMacro::calPenalty()
   }
 }
 
-void SACoreHardMacro::flipAllMacros()
-{
-  for (auto& macro_id : pos_seq_) {
-    macros_[macro_id].flip(false);
-  }
-}
-
 void SACoreHardMacro::perturb()
 {
   if (macros_.empty()) {
@@ -133,12 +124,9 @@ void SACoreHardMacro::perturb()
     action_id_ = 3;
     doubleSeqSwap();  // Swap two macros in pos_seq_ and
                       // other two macros in neg_seq_
-  } else if (op <= action_prob_4) {
+  } else {
     action_id_ = 4;
     exchangeMacros();  // exchange two macros in the sequence pair
-  } else {
-    action_id_ = 5;
-    flipAllMacros();
   }
 
   // update the macro locations based on Sequence Pair

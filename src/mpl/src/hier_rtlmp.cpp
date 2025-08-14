@@ -299,7 +299,6 @@ void HierRTLMP::resetSAParameters()
   neg_swap_prob_ = 0.2;
   double_swap_prob_ = 0.2;
   exchange_swap_prob_ = 0.2;
-  flip_prob_ = 0.2;
   resize_prob_ = 0.0;
 
   placement_core_weights_.fence = 0.0;
@@ -727,7 +726,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
                                               exchange_swap_prob_ / action_sum,
-                                              0.0,  // no flip
                                               init_prob_,
                                               max_num_step_,
                                               num_perturb_per_step,
@@ -782,7 +780,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
                                               exchange_swap_prob_ / action_sum,
-                                              0.0,
                                               init_prob_,
                                               max_num_step_,
                                               num_perturb_per_step,
@@ -2459,14 +2456,12 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   // set the action probabilities (summation to 1.0)
   const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
-                           + double_swap_prob_ + exchange_swap_prob
-                           + flip_prob_;
+                           + double_swap_prob_ + exchange_swap_prob;
 
   float pos_swap_prob = pos_swap_prob_ * 10 / action_sum;
   float neg_swap_prob = neg_swap_prob_ * 10 / action_sum;
   float double_swap_prob = double_swap_prob_ / action_sum;
   exchange_swap_prob = exchange_swap_prob / action_sum;
-  float flip_prob = flip_prob_ / action_sum;
 
   const int macros_to_place = static_cast<int>(hard_macros.size());
 
@@ -2481,8 +2476,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     pos_swap_prob = 0.0f;
     neg_swap_prob = 0.0f;
     double_swap_prob = 0.0f;
-    exchange_swap_prob = 0.95;
-    flip_prob = 0.05;
+    exchange_swap_prob = 1.0f;
 
     // Large arrays need more steps to properly converge.
     if (num_perturb_per_step > macros_to_place) {
@@ -2520,7 +2514,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               neg_swap_prob,
                                               double_swap_prob,
                                               exchange_swap_prob,
-                                              flip_prob,
                                               init_prob_,
                                               max_num_step_,
                                               num_perturb_per_step,
