@@ -1114,7 +1114,7 @@ void IncrementalParasiticsGuard::update()
   estimate_parasitics_->updateParasitics();
 }
 
-IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
+void IncrementalParasiticsGuard::end()
 {
   if (need_unregister_) {
     estimate_parasitics_->removeDbCbkOwner();

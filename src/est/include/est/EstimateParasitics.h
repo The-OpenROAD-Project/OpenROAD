@@ -293,10 +293,11 @@ class IncrementalParasiticsGuard
 {
  public:
   IncrementalParasiticsGuard(est::EstimateParasitics* estimate_parasitics);
-  ~IncrementalParasiticsGuard();
+  ~IncrementalParasiticsGuard() = default;
 
   // calls estimate_parasitics_->updateParasitics()
   void update();
+  void end();
 
  private:
   est::EstimateParasitics* estimate_parasitics_;
