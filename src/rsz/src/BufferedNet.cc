@@ -746,6 +746,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
   const Net* net = network_->isTopLevelPort(drvr_pin)
                        ? network_->net(db_network_->term(drvr_pin))
                        : network_->net(drvr_pin);
+  net = db_network_->getFlatNet(const_cast<Net*>(net));
   dbNet* db_net = db_network_->staToDb(net);
   std::vector<grt::PinGridLocation> pin_grid_locs
       = global_router_->getPinGridPositions(db_net);

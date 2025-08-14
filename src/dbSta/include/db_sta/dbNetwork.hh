@@ -76,6 +76,8 @@ class dbNetwork : public ConcreteNetwork
   void checkSanityUnusedModules();
   void checkSanityTermConnectivity();
   void checkSanityNetConnectivity();
+  void checkSanityInstNames();
+  void checkSanityNetNames();
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -199,6 +201,7 @@ class dbNetwork : public ConcreteNetwork
   // Instance functions
   // Top level instance of the design (defined after link).
   Instance* topInstance() const override;
+  bool isTopInstanceOrNull(const Instance* instance) const;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
@@ -242,6 +245,7 @@ class dbNetwork : public ConcreteNetwork
   dbModNet* hierNet(const Pin* pin) const;
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
+  dbBlock* getBlockOf(const Pin* pin) const;
 
   bool isFlat(const Pin* pin) const;
   bool isFlat(const Net* net) const;
@@ -301,6 +305,7 @@ class dbNetwork : public ConcreteNetwork
   bool isSpecial(Net* net);
   dbNet* flatNet(const Net* net) const;
   Net* getFlatNet(Net* net) const;
+  dbModInst* getModInst(Instance* inst) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
@@ -320,7 +325,11 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
+  Net* makeNet(Instance* parent = nullptr);
   Net* makeNet(const char* name, Instance* parent) override;
+  Net* makeNet(const char* base_name,
+               Instance* parent,
+               const odb::dbNameUniquifyType& uniquify);
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;
   void deleteNet(Net* net) override;
