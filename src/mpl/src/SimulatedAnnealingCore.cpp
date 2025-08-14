@@ -753,7 +753,6 @@ void SimulatedAnnealingCore<T>::fastSA()
     T_list_.push_back(temperature);
 
     if (step == max_num_step_ - macros_.size() * 2) {
-      notch_weight_ = original_notch_weight_;
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();

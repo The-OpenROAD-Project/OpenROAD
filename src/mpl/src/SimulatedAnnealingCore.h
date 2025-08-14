@@ -154,9 +154,6 @@ class SimulatedAnnealingCore
 
   SACoreWeights core_weights_;
 
-  float original_notch_weight_ = 0.0;
-  float notch_weight_ = 0.0;
-
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
   float init_temperature_ = 1.0;

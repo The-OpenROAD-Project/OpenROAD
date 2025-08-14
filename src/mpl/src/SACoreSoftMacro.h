@@ -117,6 +117,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // additional penalties
   float boundary_weight_ = 0.0;
   float macro_blockage_weight_ = 0.0;
+  float notch_weight_ = 0.0;
 
   float boundary_penalty_ = 0.0;
   float notch_penalty_ = 0.0;

@@ -68,7 +68,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
 {
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;
-  original_notch_weight_ = notch_weight;
+  notch_weight_ = notch_weight;
   resize_prob_ = resize_prob;
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;
@@ -547,9 +547,9 @@ void SACoreSoftMacro::calNotchPenalty()
   float width = 0;
   float height = 0;
 
-  if (notch_weight_ <= 0.0) {
-    return;
-  }
+  // if (notch_weight_ <= 0.0) {
+  //   return;
+  // }
   // If the floorplan cannot fit into the outline
   // We think the entire floorplan is a "huge" notch
   if (!isValid(outline_)) {;
@@ -642,6 +642,11 @@ void SACoreSoftMacro::calNotchPenalty()
       }
     }
   }
+
+  for (auto& line : grid) {
+  	logger_->report("{}", line);
+  }
+  logger_->report("NOTCH {} WT {}", notch_penalty_, notch_weight_);
 
   if (graphics_) {
     graphics_->setNotchPenalty(
