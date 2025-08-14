@@ -145,6 +145,8 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
                                               int max_routing_layer)
 {
   fastroute_->clear();
+  h_nets_in_pos_.clear();
+  v_nets_in_pos_.clear();
   ensureLayerForGuideDimension(max_routing_layer);
 
   configFastRoute();
@@ -853,29 +855,8 @@ void GlobalRouter::removeWireUsage(odb::dbWire* wire)
 void GlobalRouter::removeRectUsage(const odb::Rect& rect,
                                    odb::dbTechLayer* tech_layer)
 {
-  bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-  int layer_idx = tech_layer->getRoutingLevel();
-  odb::Rect first_tile_box, last_tile_box;
-  odb::Point first_tile, last_tile;
-
-  grid_->getBlockedTiles(
-      rect, first_tile_box, last_tile_box, first_tile, last_tile);
-
-  if (vertical) {
-    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
-        fastroute_->addAdjustment(x, y, x, y + 1, layer_idx, cap + 1, false);
-      }
-    }
-  } else {
-    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
-        fastroute_->addAdjustment(x, y, x + 1, y, layer_idx, cap + 1, false);
-      }
-    }
-  }
+  // Release resources of Rect same like was used
+  applyObstructionAdjustment(rect, tech_layer, false, true);
 }
 
 bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
@@ -1683,9 +1664,11 @@ void GlobalRouter::updateResources(const int& init_x,
       grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
 }
 
+// Use release flag to increase rather than reduce resources on obstruction
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                               odb::dbTechLayer* tech_layer,
-                                              bool is_macro)
+                                              bool is_macro,
+                                              bool release)
 {
   // compute the intersection between obstruction and the die area
   // only when they are overlapping to avoid assert error during
@@ -1732,6 +1715,12 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          is_macro);
 
   int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
+
+  std::vector<int> track_spaces;
+  if (release) {
+    track_spaces = grid_->getTrackPitches();
+  }
+
   if (!vertical) {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
@@ -1744,7 +1733,9 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          last_tile,
                                          layer,
                                          first_tile_reduce_interval,
-                                         last_tile_reduce_interval);
+                                         last_tile_reduce_interval,
+                                         track_spaces,
+                                         release);
   } else {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
@@ -1757,7 +1748,9 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                        last_tile,
                                        layer,
                                        first_tile_reduce_interval,
-                                       last_tile_reduce_interval);
+                                       last_tile_reduce_interval,
+                                       track_spaces,
+                                       release);
   }
 }
 
@@ -4255,6 +4248,35 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
       }
     }
     applyObstructionAdjustment(obstruction_rect, tech_layer);
+    // Save position where the net's wires reduced resources
+    savePositionWithReducedResources(obstruction_rect, tech_layer, db_net);
+  }
+}
+
+void GlobalRouter::savePositionWithReducedResources(
+    const odb::Rect& rect,
+    odb::dbTechLayer* tech_layer,
+    odb::dbNet* db_net)
+{
+  odb::Rect first_tile_box, last_tile_box;
+  odb::Point first_tile, last_tile;
+  grid_->getBlockedTiles(
+      rect, first_tile_box, last_tile_box, first_tile, last_tile);
+  // Divide by horizontal and vertical resources
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+        odb::Point pos = odb::Point(x, y);
+        h_nets_in_pos_[pos].push_back(db_net);
+      }
+    }
+  } else {
+    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
+        odb::Point pos = odb::Point(x, y);
+        v_nets_in_pos_[pos].push_back(db_net);
+      }
+    }
   }
 }
 
@@ -4975,7 +4997,14 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to
         // the set
-        fastroute_->getCongestionNets(congestion_nets);
+        // if the nets have wires
+        if (haveDetailedRoutes()) {
+          // find nets on congestion areas using wires
+          getCongestionNets(congestion_nets);
+        } else {
+          // find nets on congestion areas using guides
+          fastroute_->getCongestionNets(congestion_nets);
+        }
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
@@ -4989,6 +5018,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
           dirty_nets.push_back(db_net_map_[db_net]);
+          // Release resources on FastRouter
+          fastroute_->clearNetRoute(db_net);
+          // if the net has wires, release resources used by wires
+          Net* net = db_net_map_[db_net];
+          destroyNetWire(net);
         }
         // The dirty nets are initialized and then routed
         initFastRouteIncr(dirty_nets);
@@ -5015,6 +5049,38 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   return dirty_nets;
+}
+
+// Get the nets that pass through the congestion area based on their wires
+void GlobalRouter::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+{
+  std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
+  // Get GCell positions with congestion
+  fastroute_->getOverflowPositions(pos_with_overflow);
+  for (auto& itr : pos_with_overflow) {
+    odb::Point& position = itr.first;
+    bool& is_horizontal = itr.second;
+    // Find nets with horizontal wires on congestion areas
+    if (is_horizontal
+        && h_nets_in_pos_.find(position) != h_nets_in_pos_.end()) {
+      for (odb::dbNet* db_net : h_nets_in_pos_.at(position)) {
+        // Avoid modifying supply nets
+        if (!db_net->getSigType().isSupply()) {
+          congestion_nets.insert(db_net);
+        }
+      }
+    }
+    // Find nets with vertical wires on congestion areas
+    if (!is_horizontal
+        && v_nets_in_pos_.find(position) != v_nets_in_pos_.end()) {
+      for (odb::dbNet* db_net : v_nets_in_pos_.at(position)) {
+        // Avoid modifying supply nets
+        if (!db_net->getSigType().isSupply()) {
+          congestion_nets.insert(db_net);
+        }
+      }
+    }
+  }
 }
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
