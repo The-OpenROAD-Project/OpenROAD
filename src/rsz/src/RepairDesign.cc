@@ -528,7 +528,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
       int nports = 0;
       while (port_iter.hasNext()) {
         const LibertyPort* port = port_iter.next();
-        if (port->direction() == sta::PortDirection::input()) {
+        if (port->direction() == PortDirection::input()) {
           size_cin += port->capacitance();
           nports++;
         }
@@ -557,7 +557,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
     int nports = 0;
     while (port_iter.hasNext()) {
       const LibertyPort* port = port_iter.next();
-      if (port->direction() == sta::PortDirection::input()) {
+      if (port->direction() == PortDirection::input()) {
         cin += port->capacitance();
         nports++;
       }
@@ -650,7 +650,7 @@ bool RepairDesign::performGainBuffering(Net* net,
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin != drvr_pin && !network_->isTopLevelPort(pin)
-        && network_->direction(pin) == sta::PortDirection::input()
+        && network_->direction(pin) == PortDirection::input()
         && network_->libertyPort(pin)) {
       Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {

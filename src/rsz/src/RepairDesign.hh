@@ -37,7 +37,6 @@ using sta::PortDirection;
 using sta::Slew;
 using sta::StaState;
 using sta::Vertex;
-using sta::VertexIterator;
 
 using odb::Rect;
 
