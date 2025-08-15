@@ -1953,8 +1953,8 @@ void HTreeBuilder::createClockSubNets()
                              this);
       
       // Set clock tree level the first time only.
-      if (builder.getSubNetTreeLevel() < 0)
-        builder.setSubNetTreeLevel(levelIdx);
+      if (builder.getDrivingSubNet()->getTreeLevel() < 0)
+        builder.getDrivingSubNet()->setTreeLevel(levelIdx);
 
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
