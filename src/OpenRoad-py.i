@@ -24,13 +24,13 @@ openroad_version();
 const char *
 openroad_git_describe();
 
-const bool
+bool
 openroad_gpu_compiled();
 
-const bool 
+bool 
 openroad_python_compiled();
 
-const bool
+bool
 openroad_gui_compiled();
 
 odb::dbDatabase *
