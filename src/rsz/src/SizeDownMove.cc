@@ -12,7 +12,6 @@
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/DelayFloat.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/PortDirection.hh"
 
 namespace rsz {
 
@@ -198,30 +197,33 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
 
            const float cap1 = port1->capacitance();
            const float cap2 = port2->capacitance();
-           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+
+           const ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
+           const ArcDelay intrinsic2 = getWorstIntrinsicDelay(port2);
            return (std::tie(cap1, intrinsic2) < std::tie(cap2, intrinsic1));
          });
   }
 
-  string swappable_names;
-  for (LibertyCell* swappable : swappable_cells) {
-    if (swappable == load_cell) {
-      swappable_names += "*";
+  if (logger_->debugCheck(RSZ, "size_down", 3)) {
+    string swappable_names;
+    for (LibertyCell* swappable : swappable_cells) {
+      if (swappable == load_cell) {
+        swappable_names += "*";
+      }
+      swappable_names += swappable->name();
+      if (swappable == load_cell) {
+        swappable_names += "*";
+      }
+      swappable_names += " ";
     }
-    swappable_names += swappable->name();
-    if (swappable == load_cell) {
-      swappable_names += "*";
-    }
-    swappable_names += " ";
+    debugPrint(logger_,
+               RSZ,
+               "size_down",
+               3,
+               "size_down fanout {} swaps={}",
+               network_->pathName(load_pin),
+               swappable_names.c_str());
   }
-  debugPrint(logger_,
-             RSZ,
-             "size_down",
-             3,
-             "size_down fanout {} swaps={}",
-             network_->pathName(load_pin),
-             swappable_names.c_str());
 
   const float load_input_cap = load_port->cornerPort(lib_ap)->capacitance();
 
@@ -318,13 +320,12 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
       LibertyPort* output_port
           = swappable->findLibertyPort(output_port_names[i]);
 
-      // Check for max capacitance violation
+      // FIXME: Only applies to current corner
       if (checkMaxCapViolation(output_pins[i], output_port, output_caps[i])) {
         skip_cell = true;
         break;
       }
 
-      // Check for max slew violation
       if (checkMaxSlewViolation(output_pins[i],
                                 output_port,
                                 output_slew_factors[i],
@@ -352,10 +353,12 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
       float new_load_delay = resizer_->gateDelay(
           output_port, output_caps[output_index], dcalc_ap);
       float delay_change = 0.0;
+      float actual_slack_margin = slack_margin;
 
       if (load_cell->hasSequentials()) {
         // Sequential elements: output timing determined by clock, not inputs
-        delay_change = drvr_delta_delay - output_delays[output_index];
+        delay_change = new_load_delay - output_delays[output_index];
+        actual_slack_margin = getWorstOutputSlack(output_port);
       } else {
         delay_change
             = new_load_delay + drvr_delta_delay - output_delays[output_index];

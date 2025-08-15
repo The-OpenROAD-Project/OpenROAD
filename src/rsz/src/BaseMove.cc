@@ -687,21 +687,64 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
   }
   return false;
 }
+Delay BaseMove::getWorstOutputSlack(const LibertyCell* cell)
+{
+  Delay worst_slack = INF;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const LibertyPort* port = port_iter.next();
+    if (port->direction()->isOutput()) {
+      Vertex* vertex = graph_->pinLoadVertex(port->pin());
+      worst_slack = min(worst_slack, sta_->vertexSlack(vertex, max_));
+    }
+  }
+}
+
+ArcDelay BaseMove::getWorstIntrinsicDelay(const LibertyPort* input_port)
+{
+  const LibertyCell* cell = input_port->libertyCell();
+  vector<const LibertyPort*> output_ports = getOutputPorts(cell);
+
+  // Just return the worst of all the outputs, if there's more than one
+  ArcDelay worst_intrinsic_delay = -INF;
+  for (const LibertyPort* output_port : output_ports) {
+    if (output_port->direction()->isOutput()) {
+      worst_intrinsic_delay
+          = max(worst_intrinsic_delay, output_port->intrinsicDelay(nullptr));
+    }
+  }
+  return worst_intrinsic_delay;
+}
+
+vector<const LibertyPort*> BaseMove::getOutputPorts(const LibertyCell* cell)
+{
+  vector<const LibertyPort*> fanouts;
+
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const LibertyPort* port = port_iter.next();
+    if (port->direction()->isOutput()) {
+      fanouts.push_back(port);
+    }
+  }
+
+  return fanouts;
+}
 
 vector<const Pin*> BaseMove::getOutputPins(const Instance* inst)
 {
-  vector<const Pin*> fanouts;
+  vector<const Pin*> outputs;
 
   auto pin_iter
       = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isOutput()) {
-      fanouts.push_back(pin);
+      outputs.push_back(pin);
     }
   }
 
-  return fanouts;
+  return outputs;
 }
 
 bool BaseMove::checkMaxCapViolation(const Pin* output_pin,
@@ -710,6 +753,7 @@ bool BaseMove::checkMaxCapViolation(const Pin* output_pin,
 {
   float max_cap;
   bool cap_limit_exists;
+  // FIXME: Can we update to consider multiple corners?
   output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
 
   debugPrint(logger_,
@@ -777,7 +821,7 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
   float elmore_slew_factor = 0.0;
 
   // Get the vertex for the output pin
-  Vertex* output_vertex = graph_->pinLoadVertex(output_pin);
+  Vertex* output_vertex = graph_->pinDrvrVertex(output_pin);
 
   // Get the output slew
   const Slew output_slew = sta_->vertexSlew(output_vertex, resizer_->max_);
@@ -797,17 +841,15 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
 
 LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
 {
+  LibertyCellSeq buffer_sizes;
   if (base->isBuffer()) {
-    // Do this once to populate the set
-    if (buffer_sizes_.empty()) {
-      for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
-        buffer_sizes_.push_back(buffer);
-      }
+    for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
+      buffer_sizes.push_back(buffer);
     }
     if (resizer_->buffer_fast_sizes_.count(base) == 0) {
       return LibertyCellSeq();
     }
-    return buffer_sizes_;
+    return buffer_sizes;
   }
   return resizer_->getSwappableCells(base);
 }
