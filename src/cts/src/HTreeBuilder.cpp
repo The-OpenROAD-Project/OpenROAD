@@ -222,6 +222,7 @@ void HTreeBuilder::preSinkClustering(
       for (ClockInst* clockInstObj : clusterClockInsts) {
         clockSubNet.addInst(*clockInstObj);
       }
+      clockSubNet.setTreeLevel(0);
       if (!secondLevel) {
         clockSubNet.setLeafLevel(true);
       }
@@ -1849,6 +1850,7 @@ void HTreeBuilder::createClockSubNets()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
+  rootClockSubNet.setTreeLevel(0);
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -1949,6 +1951,10 @@ void HTreeBuilder::createClockSubNets()
                              *techChar_,
                              wireSegmentUnit_,
                              this);
+      
+      // Set clock tree level the first time only.
+      if (builder.getSubNetTreeLevel() < 0)
+        builder.setSubNetTreeLevel(levelIdx);
 
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
@@ -2017,6 +2023,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
+  clockSubNet.setTreeLevel(0);
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });

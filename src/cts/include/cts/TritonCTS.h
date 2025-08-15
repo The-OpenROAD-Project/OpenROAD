@@ -98,10 +98,13 @@ class TritonCTS
   std::vector<int> getAllClockTreeLevels(
       odb::dbBlock* block_,
       const std::set<odb::dbNet*>& clkLeafNets);
-  int applyNDRToClockLevels(odb::dbBlock* block_,
-                            odb::dbTechNonDefaultRule* clockNDR,
-                            const std::set<odb::dbNet*>& clkLeafNets,
-                            const std::vector<int>& targetLevels);
+  int applyNDRToClockLevels(Clock& clockNet, odb::dbTechNonDefaultRule* clockNDR, const std::vector<int>& targetLevels);
+
+//   int applyNDRToClockLevels(Clock& clockNet,
+//                             odb::dbBlock* block_,
+//                             odb::dbTechNonDefaultRule* clockNDR,
+//                             const std::set<odb::dbNet*>& clkLeafNets,
+//                             const std::vector<int>& targetLevels);
   int applyNDRToClockLevelRange(odb::dbBlock* block_,
                                 odb::dbTechNonDefaultRule* clockNDR,
                                 const std::set<odb::dbNet*>& clkLeafNets,
@@ -116,7 +119,7 @@ class TritonCTS
   void populateTritonCTS();
   void writeClockNetsToDb(TreeBuilder* builder,
                           std::set<odb::dbNet*>& clkLeafNets);
-  void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNDRsToDb(TreeBuilder* builder, const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }

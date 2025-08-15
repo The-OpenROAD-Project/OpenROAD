@@ -38,6 +38,8 @@ class SegmentBuilder
   ClockSubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
   TreeBuilder* getTree() const { return tree_; }
+  void setSubNetTreeLevel(int level){drivingSubNet_->setTreeLevel(level);}
+  int getSubNetTreeLevel(){return drivingSubNet_->getTreeLevel();}
 
  private:
   const std::string instPrefix_;
