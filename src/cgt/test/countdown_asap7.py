@@ -17,7 +17,9 @@ design.link("countdown")
 
 design.evalTclString("create_clock [get_ports clk] -name clock -period 0.5")
 
-design.getClockGating().run()
+cgt = design.getClockGating()
+cgt.setMinInstances(1)
+cgt.run()
 
 design.evalTclString("write_verilog results/countdown_asap7_gated.v")
 helpers.diff_files("countdown_asap7_gated.vok", "results/countdown_asap7_gated.v")

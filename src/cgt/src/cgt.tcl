@@ -14,10 +14,10 @@ proc clock_gating { args } {
   set dump_dir ""
 
   if { [info exists keys(-min_instances)] } {
-    cgt::set_min_instances $min_instances
+    cgt::set_min_instances $keys(-min_instances)
   }
   if { [info exists keys(-max_cover)] } {
-    cgt::set_max_cover $max_cover
+    cgt::set_max_cover $keys(-max_cover)
   }
   if { [info exists keys(-dump_dir)] } {
     set dump_dir $keys(-dump_dir)

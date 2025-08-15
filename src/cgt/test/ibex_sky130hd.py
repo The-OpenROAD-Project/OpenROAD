@@ -13,7 +13,9 @@ design.link("ibex_core")
 
 design.evalTclString("create_clock [get_ports clk_i] -name core_clock -period 10")
 
-design.getClockGating().run()
+cgt = design.getClockGating()
+cgt.setMaxCover(50)
+cgt.run()
 
 design.evalTclString("write_verilog results/ibex_sky130hd_gated.v")
 helpers.diff_files("ibex_sky130hd_gated.vok", "results/ibex_sky130hd_gated.v")

@@ -5,6 +5,6 @@ read_lef sky130hd/sky130hd_std_cell.lef
 read_verilog ibex_sky130hd.v
 link_design ibex_core
 create_clock [get_ports clk_i] -name core_clock -period 10
-clock_gating
+clock_gating -max_cover 50
 write_verilog results/ibex_sky130hd_gated.v
 diff_file ibex_sky130hd_gated.vok results/ibex_sky130hd_gated.v

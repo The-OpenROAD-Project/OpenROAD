@@ -9,6 +9,6 @@ read_lef asap7/asap7sc7p5t_28_R_1x_220121a.lef
 read_verilog countdown_asap7.v
 link_design countdown
 create_clock [get_ports clk] -name clock -period 0.5
-clock_gating
+clock_gating -min_instances 1
 write_verilog results/countdown_asap7_gated.v
 diff_file countdown_asap7_gated.vok results/countdown_asap7_gated.v
