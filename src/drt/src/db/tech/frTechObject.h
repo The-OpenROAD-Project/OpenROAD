@@ -184,7 +184,14 @@ class frTechObject
     return viaForbiddenThrough_[tableLayerIdx][tableEntryIdx];
   }
 
-  frViaDef* getVia(const frString& name) const { return name2via_.at(name); }
+  frViaDef* getVia(const frString& name) const
+  {
+    auto it = name2via_.find(name);
+    if (it == name2via_.end()) {
+      return nullptr;
+    }
+    return it->second;
+  }
 
   frViaRuleGenerate* getViaRule(const frString& name) const
   {
