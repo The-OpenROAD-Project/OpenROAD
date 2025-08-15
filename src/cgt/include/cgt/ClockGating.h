@@ -9,6 +9,7 @@
 #include "cgt/RandomBits.h"
 #include "db_sta/dbSta.hh"
 #include "utl/deleter.h"
+#include "utl/unique_name.h"
 
 namespace abc {
 using Abc_Ntk_t = struct Abc_Ntk_t_;
@@ -105,8 +106,6 @@ class ClockGating
   std::filesystem::path getAbcGraphvizDumpPath(const char* name);
   std::filesystem::path getAbcVerilogDumpPath(const char* name);
   std::filesystem::path getDumpDir();
-  std::string getUniqueName(const char* name);
-  std::string getUniqueName(const char* prefix, const char* suffix);
 
   // Minimum number of instances that should be gated by one clock gate.
   size_t min_instances_ = 10;
@@ -130,8 +129,10 @@ class ClockGating
   double sim_time_ = 0;
   double sat_time_ = 0;
 
-  // Generator for unique net/instance names
-  std::unordered_map<std::string, size_t> unique_names_;
+  // For unique instance names
+  utl::UniqueName unique_name_cond_;
+  utl::UniqueName unique_name_cond_not_;
+  utl::UniqueName unique_name_gate_;
   // Generates random bits (for random simulation).
   RandomBits rand_bits_;
   // Helper for inserting new instances/nets into a network.

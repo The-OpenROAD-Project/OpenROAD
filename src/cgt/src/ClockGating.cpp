@@ -1215,7 +1215,7 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
 
   auto gate_cond_net = gate_cond_nets[0];
   for (size_t i = 1; i < gate_cond_nets.size(); i++) {
-    auto inst_name = getUniqueName("clk_gate_cond");
+    auto inst_name = unique_name_cond_.GetUniqueName("clk_gate_cond_");
     auto inst_builder = clk_enable ? network_builder_.makeOr(inst_name)
                                    : network_builder_.makeAnd(inst_name);
     gate_cond_net = inst_builder.connectInput<0>(gate_cond_net)
@@ -1224,7 +1224,9 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
   }
 
   if (!clk_enable) {
-    gate_cond_net = network_builder_.makeNot(getUniqueName("clk_gate_cond_not"))
+    gate_cond_net = network_builder_
+                        .makeNot(unique_name_cond_not_.GetUniqueName(
+                            "clk_gate_cond_not_"))
                         .connectInput<0>(gate_cond_net)
                         .makeOutputNet("gate_cond_net_");
   }
@@ -1240,7 +1242,8 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
   }
 
   auto gated_clk
-      = network_builder_.makeClockGate(getUniqueName("clk_gate"))
+      = network_builder_
+            .makeClockGate(unique_name_gate_.GetUniqueName("clk_gate_"))
             .connectClock(clk_net)
             .connectInput<0>(gate_cond_net)
             .makeOutputNet(std::string("gated_") + network->name(clk_net)
@@ -1419,19 +1422,6 @@ std::filesystem::path ClockGating::getDumpDir()
   }
   logger_->error(
       utl::CGT, 1, "Dump directory is not set. Cannot create dump path.");
-}
-
-std::string ClockGating::getUniqueName(const char* const name)
-{
-  // TODO: Avoid name collisions with pre-existing instances/nets
-  auto& count = unique_names_[name];
-  return std::string(name) + "_" + std::to_string(count++);
-}
-
-std::string ClockGating::getUniqueName(const char* const prefix,
-                                       const char* const suffix)
-{
-  return getUniqueName((std::string(prefix) + suffix).c_str());
 }
 
 }  // namespace cgt
