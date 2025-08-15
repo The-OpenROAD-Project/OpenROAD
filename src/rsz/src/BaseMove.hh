@@ -12,6 +12,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -38,6 +39,10 @@
 #include "sta/Transition.hh"
 #include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
+
+namespace est {
+class EstimateParasitics;
+}
 
 namespace rsz {
 
@@ -138,6 +143,7 @@ class BaseMove : public sta::dbStaState
 
  protected:
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   Logger* logger_;
   Network* network_;
   dbNetwork* db_network_;
@@ -213,7 +219,6 @@ class BaseMove : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  bool hasPort(const Net* net);
   void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 

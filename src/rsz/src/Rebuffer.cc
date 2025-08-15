@@ -82,7 +82,9 @@ decltype(auto) visitTree(F&& f, Args&&... args)
   return v(std::forward<Args>(args)...);
 }
 
-Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
+Rebuffer::Rebuffer(Resizer* resizer,
+                   est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -153,7 +155,8 @@ BnetPtr Rebuffer::stripTreeBuffers(const BnetPtr& tree)
                                             node->layer(),
                                             recurse(node->ref()),
                                             corner_,
-                                            resizer_);
+                                            resizer_,
+                                            estimate_parasitics_);
           case BnetType::junction:
             return make_shared<BufferedNet>(BnetType::junction,
                                             node->location(),
@@ -192,7 +195,8 @@ BnetPtr Rebuffer::resteiner(const BnetPtr& tree)
                                                      node->bufferCell(),
                                                      resteiner(node->ref()),
                                                      corner_,
-                                                     resizer_));
+                                                     resizer_,
+                                                     estimate_parasitics_));
             return 1;
           }
           default:
@@ -271,7 +275,7 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
 bool Rebuffer::loadSlewSatisfactory(LibertyPort* driver, const BnetPtr& bnet)
 {
   double wire_res, wire_cap;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
   float r_drvr = driver->driveResistance();
   float load_slew
       = (r_drvr + resizer_->dbuToMeters(bnet->maxLoadWireLength()) * wire_res)
@@ -386,7 +390,7 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
 {
   double wire_res, wire_cap;
   LibertyPort *inp, *outp;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
   size.cell->bufferPorts(inp, outp);
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
@@ -410,7 +414,7 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(LibertyCell* cell)
 
   const float r_drvr = out->driveResistance();
   double wire_res, wire_cap;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
 
   const float max_slew = maxSlewMargined(resizer_->maxInputSlew(in, corner_));
 
@@ -458,7 +462,7 @@ int Rebuffer::wireLengthLimitImpliedByMaxCap(LibertyCell* cell)
 
   if (cap_limit_exists) {
     double wire_res, wire_cap;
-    resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+    estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
     double slack = maxCapMargined(cap_limit) - in->capacitance();
     return std::max(0, resizer_->metersToDbu(slack / wire_cap));
   }
@@ -553,7 +557,8 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
                                                     size.cell,
                                                     junc1,
                                                     corner_,
-                                                    resizer_);
+                                                    resizer_,
+                                                    estimate_parasitics_);
           buffer->setSlack(buffer_slack);
           buffer->setSlackTransition(junc1->slackTransition());
           buffer->setDelay(buffer_delay);
@@ -1124,7 +1129,8 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             int ret = recurse(bnet->ref());
             BnetPtr p = bnet->ref();
             double layer_res, layer_cap;
-            bnet->wireRC(corner_, resizer_, layer_res, layer_cap);
+            bnet->wireRC(
+                corner_, resizer_, estimate_parasitics_, layer_res, layer_cap);
             double wire_length = resizer_->dbuToMeters(bnet->length());
             double wire_res = wire_length * layer_res;
             double wire_cap = wire_length * layer_cap;
@@ -1189,11 +1195,16 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
                           int wire_layer,
                           int level)
 {
-  BnetPtr z = make_shared<BufferedNet>(
-      BnetType::wire, wire_end, wire_layer, p, corner_, resizer_);
+  BnetPtr z = make_shared<BufferedNet>(BnetType::wire,
+                                       wire_end,
+                                       wire_layer,
+                                       p,
+                                       corner_,
+                                       resizer_,
+                                       estimate_parasitics_);
 
   double layer_res, layer_cap;
-  z->wireRC(corner_, resizer_, layer_res, layer_cap);
+  z->wireRC(corner_, resizer_, estimate_parasitics_, layer_res, layer_cap);
   double wire_length = resizer_->dbuToMeters(z->length());
   double wire_res = wire_length * layer_res;
   double wire_cap = wire_length * layer_cap;
@@ -1325,7 +1336,8 @@ void Rebuffer::insertBufferOptions(
                                            buffer_cell,
                                            load_opt,
                                            corner_,
-                                           resizer_);
+                                           resizer_,
+                                           estimate_parasitics_);
       z->setSlack(best_slack);
       z->setSlackTransition(load_opt->slackTransition());
       z->setDelay(load_opt_buffer_delay);
@@ -1377,7 +1389,8 @@ void Rebuffer::insertBufferOptions(
                                                buffer_cell,
                                                load_opt,
                                                corner_,
-                                               resizer_);
+                                               resizer_,
+                                               estimate_parasitics_);
           z->setSlack(load_opt->slack() - buffer_delay);
           z->setSlackTransition(load_opt->slackTransition());
           z->setDelay(buffer_delay);
@@ -1584,7 +1597,8 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
                                               node->layer(),
                                               inner,
                                               corner,
-                                              resizer_);
+                                              resizer_,
+                                              estimate_parasitics_);
             }
             return nullptr;
           }
@@ -1642,7 +1656,8 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
                                             cell,
                                             inner_bnet,
                                             corner,
-                                            resizer_);
+                                            resizer_,
+                                            estimate_parasitics_);
           }
           default:
             logger_->critical(RSZ, 1003, "unhandled BufferedNet type");
@@ -1820,16 +1835,12 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name
-          = resizer_->makeUniqueInstName(instance_base_name);
-
       // HFix: make net in hierarchy
-      std::string net_name = resizer_->makeUniqueNetName();
-      Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
+      Net* net2 = db_network_->makeNet(parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
-          buffer_cell, buffer_name.c_str(), parent, choice->location());
+          buffer_cell, instance_base_name, parent, choice->location());
 
       resizer_->level_drvr_vertices_valid_ = false;
       LibertyPort *input, *output;
@@ -1842,7 +1853,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                  "",
                  level,
                  sdc_network_->pathName(net),
-                 buffer_name.c_str(),
+                 sdc_network_->pathName(buffer),
                  buffer_cell->name(),
                  sdc_network_->pathName(net2));
 
@@ -1963,7 +1974,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
             std::string preferred_connection_name;
             // always make a unique name to avoid name clashes.
-            preferred_connection_name = resizer_->makeUniqueNetName();
+            preferred_connection_name
+                = db_network_->getBlockOf(load_pin)->makeNewNetName();
             db_network_->hierarchicalConnect(
                 mod_net_drvr, load_iterm, preferred_connection_name.c_str());
           } else if (mod_net_in) {  // input hierarchical net
@@ -2138,7 +2150,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   }
 
   initOnCorner(sta_->cmdCorner());
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
@@ -2360,7 +2372,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
         },
         unbuffered_tree);
 
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
 
     {
       ScopedTimer timer(logger_, sta_runtime);
@@ -2445,7 +2457,8 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     annotateLoadSlacks(bnet, drvr);
 
     const bool allow_topology_rewrite
-        = (resizer_->getParasiticsSrc() == ParasiticsSrc::placement);
+        = (estimate_parasitics_->getParasiticsSrc()
+           == est::ParasiticsSrc::placement);
 
     for (int i = 0; i < 3; i++) {
       bnet = bufferForTiming(bnet, allow_topology_rewrite);
@@ -2550,7 +2563,7 @@ void BufferMove::rebufferNet(const Pin* drvr_pin)
   auto& rebuffer = resizer_->rebuffer_;
   rebuffer->init();
   rebuffer->initOnCorner(sta_->cmdCorner());
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int inserted_buffer_count_ = rebuffer->rebufferPin(drvr_pin);
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }
