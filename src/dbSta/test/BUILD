@@ -109,6 +109,7 @@ filegroup(
         "example1_fast.lib",
         "example1_slow.lib",
         "example1_typ.lib",
+        "get_ports1.v",
         "helpers.tcl",
         "hier1.def",
         "hier1.sdc",
