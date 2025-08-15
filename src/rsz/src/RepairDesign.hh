@@ -33,9 +33,11 @@ using sta::MinMax;
 using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
+using sta::PortDirection;
 using sta::Slew;
 using sta::StaState;
 using sta::Vertex;
+using sta::VertexIterator;
 
 using odb::Rect;
 
@@ -104,19 +106,22 @@ class RepairDesign : dbStaState
                           float& violation);
   bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
 
-  void repairNet(Net* net,
-                 const Pin* drvr_pin,
-                 Vertex* drvr,
-                 bool check_slew,
-                 bool check_cap,
-                 bool check_fanout,
-                 int max_length,  // dbu
-                 bool resize_drvr,
-                 int& repaired_net_count,
-                 int& slew_violations,
-                 int& cap_violations,
-                 int& fanout_violations,
-                 int& length_violations);
+  void repairNet(
+      Net* net,
+      const Pin* drvr_pin,
+      Vertex* drvr,
+      bool check_slew,
+      bool check_cap,
+      bool check_fanout,
+      int max_length,  // dbu
+      bool resize_drvr,
+      Corner* corner_w_load_slew_viol,  // if not null, signals a violation
+                                        // hidden by an annotation
+      int& repaired_net_count,
+      int& slew_violations,
+      int& cap_violations,
+      int& fanout_violations,
+      int& length_violations);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,

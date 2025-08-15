@@ -43,18 +43,21 @@ x7/A                                    0.15    0.18   -0.03 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        14
-    final |   +171.7% |       7 |       0 |             0 |         0
+    final |    +60.4% |       7 |       1 |             7 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0034] Found 7 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 7 instances.
+[INFO RSZ-0038] Inserted 1 buffers in 7 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u6/A4                                   0.15    0.11    0.04 (MET)
+u3/ZN                                   0.15    0.10    0.05 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/ZN                                  41.50   36.76    4.74 (MET)
+u1/ZN                                  20.90    9.31   11.59 (MET)
 
