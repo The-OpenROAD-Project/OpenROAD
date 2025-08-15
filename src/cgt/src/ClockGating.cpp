@@ -75,6 +75,7 @@ static void dumpGraphviz(sta::dbNetwork* const network,
             << "\"[shape=invtriangle, color=coral];\n";
       }
     }
+    delete pin_iter;
     out << "}\n{\nrank=max;\n";
     pin_iter = network->pinIterator(inst);
     while (pin_iter->hasNext()) {
@@ -84,6 +85,7 @@ static void dumpGraphviz(sta::dbNetwork* const network,
             << "\"[shape=triangle, color=coral];\n";
       }
     }
+    delete pin_iter;
     out << "}\n";
   } else if (auto cell = network->cell(inst)) {
     out << "subgraph \"" << network->name(inst) << "\" {\n";
@@ -95,6 +97,7 @@ static void dumpGraphviz(sta::dbNetwork* const network,
       auto pin = pin_iter->next();
       out << '"' << network->name(pin) << "\";\n";
     }
+    delete pin_iter;
   }
   auto pin_iter = network->pinIterator(inst);
   while (pin_iter->hasNext()) {
@@ -102,6 +105,7 @@ static void dumpGraphviz(sta::dbNetwork* const network,
     out << '"' << network->name(pin) << "\" [label=\"" << network->portName(pin)
         << "\"];\n";
   }
+  delete pin_iter;
   auto net_iter = network->netIterator(inst);
   while (net_iter->hasNext()) {
     auto net = net_iter->next();
@@ -119,11 +123,13 @@ static void dumpGraphviz(sta::dbNetwork* const network,
       }
     }
   }
+  delete net_iter;
   auto child_iter = network->childIterator(inst);
   while (child_iter->hasNext()) {
     auto child = child_iter->next();
     dumpGraphviz(network, child, out);
   }
+  delete child_iter;
   out << "}\n";
 }
 
@@ -1293,6 +1299,7 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
             endpoints.insert(graph->pinLoadVertex(pin));
           }
         }
+        delete pin_iter;
       } else if (network->direction(pin)->isAnyOutput()) {
         endpoints.insert(graph->pinLoadVertex(pin));
       }
