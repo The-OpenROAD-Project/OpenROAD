@@ -2012,6 +2012,8 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   }
   // Assume msb first busses because LEF has no clue about busses.
   // This generates the top level ports
+  // TODO: MSB first assumption looks risky because there can be LSB first
+  // buses.
   groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
@@ -3237,9 +3239,12 @@ Port* DbNetworkPortMemberIterator::next()
 
 PortMemberIterator* dbNetwork::memberIterator(const Port* port) const
 {
-  if (!hierarchy_) {
+  // top-level port is concrete port. DbNetworkPortMemberIterator cannot handle
+  // it.
+  if (!hierarchy_ || isConcretePort(port)) {
     return ConcreteNetwork::memberIterator(port);
   }
+
   return new DbNetworkPortMemberIterator(port, this);
 }
 
