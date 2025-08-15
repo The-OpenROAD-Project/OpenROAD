@@ -5,24 +5,21 @@
 
 #include <omp.h>
 
+#include <Eigen/IterativeLinearSolvers>
+
 namespace gpl {
 
-ResidualError cpuSparseSolve(int maxSolverIter,
-                             int iter,
-                             SMatrix& placeInstForceMatrixX,
-                             Eigen::VectorXf& fixedInstForceVecX,
-                             Eigen::VectorXf& instLocVecX,
-                             SMatrix& placeInstForceMatrixY,
-                             Eigen::VectorXf& fixedInstForceVecY,
-                             Eigen::VectorXf& instLocVecY,
-                             utl::Logger* logger,
-                             int threads)
-{
+ResidualError cpuSparseSolve(
+    int maxSolverIter, float errorThreshold, SMatrix& placeInstForceMatrixX,
+    Eigen::VectorXf& fixedInstForceVecX, Eigen::VectorXf& instLocVecX,
+    SMatrix& placeInstForceMatrixY, Eigen::VectorXf& fixedInstForceVecY,
+    Eigen::VectorXf& instLocVecY, utl::Logger* logger, int threads) {
   omp_set_num_threads(threads);
 
   ResidualError residual_error;
-  BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
+  Eigen::BiCGSTAB<SMatrix> solver;
   solver.setMaxIterations(maxSolverIter);
+  solver.setTolerance(errorThreshold);
 
   solver.compute(placeInstForceMatrixX);
   instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);

@@ -65,6 +65,8 @@ class Replace
 
   // Initial Place param settings
   void setInitialPlaceMaxIter(int iter);
+  void setInitialResidualThreshold(double threshold);
+  void setInitialHpwlPctChangeThreshold(double threshold);
   void setInitialPlaceMinDiffLength(int length);
   void setInitialPlaceMaxSolverIter(int iter);
   void setInitialPlaceMaxFanout(int fanout);
@@ -142,6 +144,8 @@ class Replace
   std::unique_ptr<NesterovPlace> np_;
 
   int initialPlaceMaxIter_ = 20;
+  double initialResidualThreshold_ = 1.0e-5;
+  double initialPlaceHpwlPctChangeThreshold_ = 1.0;
   int initialPlaceMinDiffLength_ = 1500;
   int initialPlaceMaxSolverIter_ = 100;
   int initialPlaceMaxFanout_ = 200;

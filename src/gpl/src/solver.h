@@ -3,11 +3,9 @@
 
 #pragma once
 
-#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/Core>
 #include <Eigen/SparseCore>
-#include <memory>
 
-#include "graphics.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
@@ -24,20 +22,13 @@ struct ResidualError
   float y;  // The relative residual error for Y
 };
 
-using Eigen::BiCGSTAB;
-using Eigen::IdentityPreconditioner;
 using utl::GPL;
 
 using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
-ResidualError cpuSparseSolve(int maxSolverIter,
-                             int iter,
-                             SMatrix& placeInstForceMatrixX,
-                             Eigen::VectorXf& fixedInstForceVecX,
-                             Eigen::VectorXf& instLocVecX,
-                             SMatrix& placeInstForceMatrixY,
-                             Eigen::VectorXf& fixedInstForceVecY,
-                             Eigen::VectorXf& instLocVecY,
-                             utl::Logger* logger,
-                             int threads);
+ResidualError cpuSparseSolve(
+    int maxSolverIter, float errorThreshold, SMatrix& placeInstForceMatrixX,
+    Eigen::VectorXf& fixedInstForceVecX, Eigen::VectorXf& instLocVecX,
+    SMatrix& placeInstForceMatrixY, Eigen::VectorXf& fixedInstForceVecY,
+    Eigen::VectorXf& instLocVecY, utl::Logger* logger, int threads);
 }  // namespace gpl
