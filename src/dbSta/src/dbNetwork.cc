@@ -4291,6 +4291,24 @@ dbModInst* dbNetwork::getModInst(Instance* inst) const
   return db_mod_inst;
 }
 
+bool dbNetwork::hasPort(const Net* net) const
+{
+  if (!net) {
+    return false;
+  }
+
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
+  staToDb(net, db_net, db_mod_net);
+  if (db_net) {
+    return !db_net->getBTerms().empty();
+  }
+  if (db_mod_net) {
+    return !db_mod_net->getBTerms().empty();
+  }
+  return false;
+}
+
 void dbNetwork::checkSanityModBTerms()
 {
   if (block_ == nullptr) {

@@ -472,7 +472,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   dbModule* old_module = getMaster();
   utl::Logger* logger = getImpl()->getLogger();
 
-  if (!old_module->canSwapWith(new_module, logger)) {
+  if (!old_module->canSwapWith(new_module)) {
     return nullptr;
   }
 

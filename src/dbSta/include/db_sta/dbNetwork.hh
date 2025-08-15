@@ -231,6 +231,7 @@ class dbNetwork : public ConcreteNetwork
   dbNet* findRelatedDbNet(const dbModNet*) const;
   dbModNet* findModNetForPin(const Pin*);
   dbModNet* findRelatedModNet(const dbNet*) const;
+  dbModInst* getModInst(Instance* inst) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -308,7 +309,7 @@ class dbNetwork : public ConcreteNetwork
   dbNet* getOrFindFlatDbNet(const Net* net) const;
   Net* getOrFindFlatNet(const Pin* pin) const;
   dbNet* getOrFindFlatDbNet(const Pin* pin) const;
-  dbModInst* getModInst(Instance* inst) const;
+  bool hasPort(const Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions

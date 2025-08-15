@@ -218,7 +218,7 @@ bool UnbufferMove::bufferBetweenPorts(Instance* buffer)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  return hasPort(in_net) && hasPort(out_net);
+  return db_network_->hasPort(in_net) && db_network_->hasPort(out_net);
 }
 
 // There are two buffer removal modes: auto and manual:
@@ -319,12 +319,12 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
       out_db_net->setDoNotTouch(false);
     }
   }
-  bool out_net_ports = hasPort(out_net);
+  bool out_net_ports = db_network_->hasPort(out_net);
   Net* removed = nullptr;
   odb::dbNet* db_net_survivor = nullptr;
   odb::dbNet* db_net_removed = nullptr;
   if (out_net_ports) {
-    if (hasPort(in_net)) {
+    if (db_network_->hasPort(in_net)) {
       return false;
     }
     removed = in_net;
@@ -378,7 +378,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* in_net = db_network_->dbToSta(in_db_net);
   Net* out_net = db_network_->dbToSta(out_db_net);
 
-  bool out_net_ports = hasPort(out_net);
+  bool out_net_ports = db_network_->hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
     survivor = out_net;
