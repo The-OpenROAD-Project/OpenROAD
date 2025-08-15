@@ -107,7 +107,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
     sprintf(tmp_str,
             "\tModule %s %s\n",
             (cur_obj == block->getTopModule()) ? "(Top Module)" : "",
-            ((dbModule*) cur_obj)->getName());
+            cur_obj->getName());
     str_db << tmp_str;
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == block->getTopModule()) {

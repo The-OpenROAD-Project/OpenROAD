@@ -8025,7 +8025,7 @@ class dbModInst : public dbObject
 
   dbSet<dbModITerm> getModITerms();
 
-  void RemoveUnusedPortsAndPins();
+  void removeUnusedPortsAndPins();
 
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
@@ -8116,7 +8116,7 @@ class dbModule : public dbObject
   // Get the ports of a module (STA world uses ports, which contain members).
   dbSet<dbModBTerm> getPorts();
   // Get the leaf level connections on a module (flat connected view).
-  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbModBTerm> getModBTerms() const;
   dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
 
@@ -8130,6 +8130,7 @@ class dbModule : public dbObject
   int getDbInstCount();
 
   const dbModBTerm* getHeadDbModBTerm() const;
+  bool canSwapWith(dbModule* new_module) const;
 
   static dbModule* create(dbBlock* block, const char* name);
 

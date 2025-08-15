@@ -2557,7 +2557,7 @@ bool RepairDesign::makeRepeater(
       if (driver_pin_mod_net && driver_pin_mod_net->connectionCount() > 1) {
         db_network_->disconnectPin(buffer_op_pin);
         db_network_->connectPin(
-            buffer_op_pin, (Net*) buffer_op_net, (Net*) driver_pin_mod_net);
+            buffer_op_pin, buffer_op_net, (Net*) driver_pin_mod_net);
       }
     }
   }

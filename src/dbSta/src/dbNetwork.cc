@@ -2621,8 +2621,8 @@ Net* dbNetwork::mergedInto(Net*)
 
 bool dbNetwork::isSpecial(Net* net)
 {
-  dbNet* db_net = staToDb(net);
-  return db_net->isSpecial();
+  dbNet* db_net = getOrFindFlatDbNet(net);
+  return (db_net && db_net->isSpecial());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3717,7 +3717,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     for (auto module_to_clean_up : source_parent_tree) {
       dbModInst* mi = module_to_clean_up->getModInst();
       if (mi) {
-        mi->RemoveUnusedPortsAndPins();
+        mi->removeUnusedPortsAndPins();
         cleaned_up.insert(mi);
       }
     }
@@ -3725,7 +3725,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModInst* mi = module_to_clean_up->getModInst();
       if (mi) {
         if (cleaned_up.find(mi) == cleaned_up.end()) {
-          mi->RemoveUnusedPortsAndPins();
+          mi->removeUnusedPortsAndPins();
           cleaned_up.insert(mi);
         }
       }
@@ -3736,7 +3736,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
 {
   for (auto mi : block()->getModInsts()) {
-    mi->RemoveUnusedPortsAndPins();
+    mi->removeUnusedPortsAndPins();
   }
 }
 
@@ -4228,19 +4228,60 @@ void dbNetwork::checkAxioms()
   checkSanityNetNames();
 }
 
-Net* dbNetwork::getFlatNet(Net* net) const
+// Given a net that may be hierarchical, find the corresponding flat net.
+// If the net is already a flat net, it is returned as is.
+// If the net is a hierarchical net (dbModNet), find the associated dbNet and
+// return it as Net*.
+Net* dbNetwork::getOrFindFlatNet(const Net* net) const
+{
+  return dbToSta(getOrFindFlatDbNet(net));
+}
+
+// Given a net that may be hierarchical, find the corresponding flat dbNet.
+// If the net is already a flat net (dbNet), it is returned as is.
+// If the net is a hierarchical net (dbModNet), find the associated dbNet.
+dbNet* dbNetwork::getOrFindFlatDbNet(const Net* net) const
 {
   if (!net) {
     return nullptr;
   }
   // Convert net to a flat net, if not already
-  dbNet* db_net;
-  dbModNet* db_mod_net;
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
   staToDb(net, db_net, db_mod_net);
+
+  if (db_net) {
+    // If it's already a flat net, return it
+    return db_net;
+  }
+
   if (db_mod_net) {
+    // If it's a hierarchical net, find the associated dbNet
+    // by traversing the hierarchy.
     db_net = findRelatedDbNet(db_mod_net);
   }
-  return dbToSta(db_net);
+  return db_net;
+}
+
+// Find the flat net connected to the pin.
+// This function handles both internal instance pins and top-level port pins.
+Net* dbNetwork::getOrFindFlatNet(const Pin* pin) const
+{
+  return dbToSta(getOrFindFlatDbNet(pin));
+}
+
+// Find the flat net (dbNet) connected to the pin in the OpenDB database.
+// This function handles both internal instance pins and top-level port pins.
+dbNet* dbNetwork::getOrFindFlatDbNet(const Pin* pin) const
+{
+  dbNet* db_net = nullptr;
+  if (isTopLevelPort(pin)) {
+    Net* net = this->net(term(pin));
+    db_net = flatNet(net);
+  } else {
+    db_net = flatNet(pin);
+  }
+  return db_net;
 }
 
 dbModInst* dbNetwork::getModInst(Instance* inst) const
@@ -4253,6 +4294,24 @@ dbModInst* dbNetwork::getModInst(Instance* inst) const
   dbModInst* db_mod_inst = nullptr;
   staToDb(inst, db_inst, db_mod_inst);
   return db_mod_inst;
+}
+
+bool dbNetwork::hasPort(const Net* net) const
+{
+  if (!net) {
+    return false;
+  }
+
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
+  staToDb(net, db_net, db_mod_net);
+  if (db_net) {
+    return !db_net->getBTerms().empty();
+  }
+  if (db_mod_net) {
+    return !db_mod_net->getBTerms().empty();
+  }
+  return false;
 }
 
 void dbNetwork::checkSanityModBTerms()

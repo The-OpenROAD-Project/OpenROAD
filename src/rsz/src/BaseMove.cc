@@ -567,16 +567,6 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
   return true;
 }
 
-bool BaseMove::hasPort(const Net* net)
-{
-  if (!net) {
-    return false;
-  }
-
-  dbNet* db_net = db_network_->staToDb(net);
-  return !db_net->getBTerms().empty();
-}
-
 void BaseMove::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
 {
   ip = nullptr;

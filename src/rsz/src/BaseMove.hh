@@ -219,7 +219,6 @@ class BaseMove : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  bool hasPort(const Net* net);
   void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
