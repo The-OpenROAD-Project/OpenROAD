@@ -1215,18 +1215,18 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
 
   auto gate_cond_net = gate_cond_nets[0];
   for (size_t i = 1; i < gate_cond_nets.size(); i++) {
-    auto inst_name = getUniqueName("clk_gate");
+    auto inst_name = getUniqueName("clk_gate_cond");
     auto inst_builder = clk_enable ? network_builder_.makeOr(inst_name)
                                    : network_builder_.makeAnd(inst_name);
     gate_cond_net = inst_builder.connectInput<0>(gate_cond_net)
                         .connectInput<1>(gate_cond_nets[i])
-                        .makeOutputNet(getUniqueName("clk_gate_cond_net"));
+                        .makeOutputNet("clk_gate_cond_net_");
   }
 
   if (!clk_enable) {
     gate_cond_net = network_builder_.makeNot(getUniqueName("clk_gate_cond_not"))
                         .connectInput<0>(gate_cond_net)
-                        .makeOutputNet(getUniqueName("gate_cond_net"));
+                        .makeOutputNet("gate_cond_net_");
   }
 
   sta::Net* clk_net = nullptr;
@@ -1243,7 +1243,8 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
       = network_builder_.makeClockGate(getUniqueName("clk_gate"))
             .connectClock(clk_net)
             .connectInput<0>(gate_cond_net)
-            .makeOutputNet(getUniqueName("gated_", network->name(clk_net)));
+            .makeOutputNet(std::string("gated_") + network->name(clk_net)
+                           + '_');
 
   dump("gate");
 

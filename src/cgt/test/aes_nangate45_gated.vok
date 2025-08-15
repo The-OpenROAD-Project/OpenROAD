@@ -13989,10 +13989,10 @@ module aes_cipher_top (clk,
  wire \u0.w[2][7] ;
  wire \u0.w[2][8] ;
  wire \u0.w[2][9] ;
- wire clk_gate_cond_net_0;
  wire clk_gate_cond_net_1;
  wire clk_gate_cond_net_2;
- wire gated_clk_0;
+ wire clk_gate_cond_net_3;
+ wire gated_clk_4;
 
  BUF_X2 _13542_ (.A(ld),
     .Z(_03935_));
@@ -62500,1031 +62500,1031 @@ module aes_cipher_top (clk,
     .Q(done),
     .QN(_13150_));
  DFF_X1 \ld_r$_DFF_P_  (.D(ld),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(ld_r),
     .QN(_13151_));
  DFF_X1 \sa00_sr[0]$_DFF_P_  (.D(_00032_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[0] ),
     .QN(_13152_));
  DFF_X1 \sa00_sr[1]$_DFF_P_  (.D(_00033_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[1] ),
     .QN(_13153_));
  DFF_X1 \sa00_sr[2]$_DFF_P_  (.D(_00034_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[2] ),
     .QN(_13154_));
  DFF_X1 \sa00_sr[3]$_DFF_P_  (.D(_00035_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[3] ),
     .QN(_13155_));
  DFF_X1 \sa00_sr[4]$_DFF_P_  (.D(_00036_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[4] ),
     .QN(_13156_));
  DFF_X1 \sa00_sr[5]$_DFF_P_  (.D(_00037_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[5] ),
     .QN(_13157_));
  DFF_X1 \sa00_sr[6]$_DFF_P_  (.D(_00038_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[6] ),
     .QN(_13158_));
  DFF_X1 \sa00_sr[7]$_DFF_P_  (.D(_00039_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa00_sr[7] ),
     .QN(_13159_));
  DFF_X1 \sa01_sr[0]$_DFF_P_  (.D(_00040_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[0] ),
     .QN(_13160_));
  DFF_X1 \sa01_sr[1]$_DFF_P_  (.D(_00041_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[1] ),
     .QN(_13161_));
  DFF_X1 \sa01_sr[2]$_DFF_P_  (.D(_00042_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[2] ),
     .QN(_13162_));
  DFF_X1 \sa01_sr[3]$_DFF_P_  (.D(_00043_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[3] ),
     .QN(_13163_));
  DFF_X1 \sa01_sr[4]$_DFF_P_  (.D(_00044_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[4] ),
     .QN(_13164_));
  DFF_X1 \sa01_sr[5]$_DFF_P_  (.D(_00045_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[5] ),
     .QN(_13165_));
  DFF_X1 \sa01_sr[6]$_DFF_P_  (.D(_00046_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[6] ),
     .QN(_13166_));
  DFF_X1 \sa01_sr[7]$_DFF_P_  (.D(_00047_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa01_sr[7] ),
     .QN(_13167_));
  DFF_X1 \sa02_sr[0]$_DFF_P_  (.D(_00048_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[0] ),
     .QN(_13168_));
  DFF_X1 \sa02_sr[1]$_DFF_P_  (.D(_00049_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[1] ),
     .QN(_13169_));
  DFF_X1 \sa02_sr[2]$_DFF_P_  (.D(_00050_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[2] ),
     .QN(_13170_));
  DFF_X1 \sa02_sr[3]$_DFF_P_  (.D(_00051_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[3] ),
     .QN(_13171_));
  DFF_X1 \sa02_sr[4]$_DFF_P_  (.D(_00052_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[4] ),
     .QN(_13172_));
  DFF_X1 \sa02_sr[5]$_DFF_P_  (.D(_00053_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[5] ),
     .QN(_13173_));
  DFF_X1 \sa02_sr[6]$_DFF_P_  (.D(_00054_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[6] ),
     .QN(_13174_));
  DFF_X1 \sa02_sr[7]$_DFF_P_  (.D(_00055_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa02_sr[7] ),
     .QN(_13175_));
  DFF_X1 \sa03_sr[0]$_DFF_P_  (.D(_00056_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[0] ),
     .QN(_13176_));
  DFF_X1 \sa03_sr[1]$_DFF_P_  (.D(_00057_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[1] ),
     .QN(_13177_));
  DFF_X1 \sa03_sr[2]$_DFF_P_  (.D(_00058_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[2] ),
     .QN(_13178_));
  DFF_X1 \sa03_sr[3]$_DFF_P_  (.D(_00059_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[3] ),
     .QN(_13179_));
  DFF_X1 \sa03_sr[4]$_DFF_P_  (.D(_00060_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[4] ),
     .QN(_13180_));
  DFF_X1 \sa03_sr[5]$_DFF_P_  (.D(_00061_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[5] ),
     .QN(_13181_));
  DFF_X1 \sa03_sr[6]$_DFF_P_  (.D(_00062_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[6] ),
     .QN(_13182_));
  DFF_X1 \sa03_sr[7]$_DFF_P_  (.D(_00063_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa03_sr[7] ),
     .QN(_13183_));
  DFF_X1 \sa10_sr[0]$_DFF_P_  (.D(_00072_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[0] ),
     .QN(_13184_));
  DFF_X1 \sa10_sr[1]$_DFF_P_  (.D(_00073_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[1] ),
     .QN(_13185_));
  DFF_X1 \sa10_sr[2]$_DFF_P_  (.D(_00074_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[2] ),
     .QN(_13186_));
  DFF_X1 \sa10_sr[3]$_DFF_P_  (.D(_00075_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[3] ),
     .QN(_13187_));
  DFF_X1 \sa10_sr[4]$_DFF_P_  (.D(_00076_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[4] ),
     .QN(_13188_));
  DFF_X1 \sa10_sr[5]$_DFF_P_  (.D(_00077_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[5] ),
     .QN(_13189_));
  DFF_X1 \sa10_sr[6]$_DFF_P_  (.D(_00078_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[6] ),
     .QN(_13190_));
  DFF_X1 \sa10_sr[7]$_DFF_P_  (.D(_00079_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sr[7] ),
     .QN(_13191_));
  DFF_X1 \sa11_sr[0]$_DFF_P_  (.D(_00080_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[0] ),
     .QN(_13192_));
  DFF_X1 \sa11_sr[1]$_DFF_P_  (.D(_00081_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[1] ),
     .QN(_13193_));
  DFF_X1 \sa11_sr[2]$_DFF_P_  (.D(_00082_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[2] ),
     .QN(_13194_));
  DFF_X1 \sa11_sr[3]$_DFF_P_  (.D(_00083_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[3] ),
     .QN(_13195_));
  DFF_X1 \sa11_sr[4]$_DFF_P_  (.D(_00084_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[4] ),
     .QN(_13196_));
  DFF_X1 \sa11_sr[5]$_DFF_P_  (.D(_00085_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[5] ),
     .QN(_13197_));
  DFF_X1 \sa11_sr[6]$_DFF_P_  (.D(_00086_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[6] ),
     .QN(_13198_));
  DFF_X1 \sa11_sr[7]$_DFF_P_  (.D(_00087_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa11_sr[7] ),
     .QN(_13199_));
  DFF_X1 \sa12_sr[0]$_DFF_P_  (.D(_00088_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[0] ),
     .QN(_13200_));
  DFF_X1 \sa12_sr[1]$_DFF_P_  (.D(_00089_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[1] ),
     .QN(_13201_));
  DFF_X1 \sa12_sr[2]$_DFF_P_  (.D(_00090_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[2] ),
     .QN(_13202_));
  DFF_X1 \sa12_sr[3]$_DFF_P_  (.D(_00091_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[3] ),
     .QN(_13203_));
  DFF_X1 \sa12_sr[4]$_DFF_P_  (.D(_00092_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[4] ),
     .QN(_13204_));
  DFF_X1 \sa12_sr[5]$_DFF_P_  (.D(_00093_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[5] ),
     .QN(_13205_));
  DFF_X1 \sa12_sr[6]$_DFF_P_  (.D(_00094_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[6] ),
     .QN(_13206_));
  DFF_X1 \sa12_sr[7]$_DFF_P_  (.D(_00095_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa12_sr[7] ),
     .QN(_13207_));
  DFF_X1 \sa13_sr[0]$_DFF_P_  (.D(_00064_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[0] ),
     .QN(_13208_));
  DFF_X1 \sa13_sr[1]$_DFF_P_  (.D(_00065_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[1] ),
     .QN(_13209_));
  DFF_X1 \sa13_sr[2]$_DFF_P_  (.D(_00066_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[2] ),
     .QN(_13210_));
  DFF_X1 \sa13_sr[3]$_DFF_P_  (.D(_00067_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[3] ),
     .QN(_13211_));
  DFF_X1 \sa13_sr[4]$_DFF_P_  (.D(_00068_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[4] ),
     .QN(_13212_));
  DFF_X1 \sa13_sr[5]$_DFF_P_  (.D(_00069_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[5] ),
     .QN(_13213_));
  DFF_X1 \sa13_sr[6]$_DFF_P_  (.D(_00070_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[6] ),
     .QN(_13214_));
  DFF_X1 \sa13_sr[7]$_DFF_P_  (.D(_00071_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa10_sub[7] ),
     .QN(_13215_));
  DFF_X1 \sa20_sr[0]$_DFF_P_  (.D(_00112_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[0] ),
     .QN(_13216_));
  DFF_X1 \sa20_sr[1]$_DFF_P_  (.D(_00113_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[1] ),
     .QN(_13217_));
  DFF_X1 \sa20_sr[2]$_DFF_P_  (.D(_00114_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[2] ),
     .QN(_13218_));
  DFF_X1 \sa20_sr[3]$_DFF_P_  (.D(_00115_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[3] ),
     .QN(_13219_));
  DFF_X1 \sa20_sr[4]$_DFF_P_  (.D(_00116_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[4] ),
     .QN(_13220_));
  DFF_X1 \sa20_sr[5]$_DFF_P_  (.D(_00117_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[5] ),
     .QN(_13221_));
  DFF_X1 \sa20_sr[6]$_DFF_P_  (.D(_00118_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[6] ),
     .QN(_13222_));
  DFF_X1 \sa20_sr[7]$_DFF_P_  (.D(_00119_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sr[7] ),
     .QN(_13223_));
  DFF_X1 \sa21_sr[0]$_DFF_P_  (.D(_00120_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[0] ),
     .QN(_13224_));
  DFF_X1 \sa21_sr[1]$_DFF_P_  (.D(_00121_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[1] ),
     .QN(_13225_));
  DFF_X1 \sa21_sr[2]$_DFF_P_  (.D(_00122_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[2] ),
     .QN(_13226_));
  DFF_X1 \sa21_sr[3]$_DFF_P_  (.D(_00123_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[3] ),
     .QN(_13227_));
  DFF_X1 \sa21_sr[4]$_DFF_P_  (.D(_00124_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[4] ),
     .QN(_13228_));
  DFF_X1 \sa21_sr[5]$_DFF_P_  (.D(_00125_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[5] ),
     .QN(_13229_));
  DFF_X1 \sa21_sr[6]$_DFF_P_  (.D(_00126_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[6] ),
     .QN(_13230_));
  DFF_X1 \sa21_sr[7]$_DFF_P_  (.D(_00127_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sr[7] ),
     .QN(_13231_));
  DFF_X1 \sa22_sr[0]$_DFF_P_  (.D(_00096_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[0] ),
     .QN(_13232_));
  DFF_X1 \sa22_sr[1]$_DFF_P_  (.D(_00097_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[1] ),
     .QN(_13233_));
  DFF_X1 \sa22_sr[2]$_DFF_P_  (.D(_00098_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[2] ),
     .QN(_13234_));
  DFF_X1 \sa22_sr[3]$_DFF_P_  (.D(_00099_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[3] ),
     .QN(_13235_));
  DFF_X1 \sa22_sr[4]$_DFF_P_  (.D(_00100_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[4] ),
     .QN(_13236_));
  DFF_X1 \sa22_sr[5]$_DFF_P_  (.D(_00101_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[5] ),
     .QN(_13237_));
  DFF_X1 \sa22_sr[6]$_DFF_P_  (.D(_00102_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[6] ),
     .QN(_13238_));
  DFF_X1 \sa22_sr[7]$_DFF_P_  (.D(_00103_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa20_sub[7] ),
     .QN(_13239_));
  DFF_X1 \sa23_sr[0]$_DFF_P_  (.D(_00104_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[0] ),
     .QN(_13240_));
  DFF_X1 \sa23_sr[1]$_DFF_P_  (.D(_00105_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[1] ),
     .QN(_13241_));
  DFF_X1 \sa23_sr[2]$_DFF_P_  (.D(_00106_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[2] ),
     .QN(_13242_));
  DFF_X1 \sa23_sr[3]$_DFF_P_  (.D(_00107_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[3] ),
     .QN(_13243_));
  DFF_X1 \sa23_sr[4]$_DFF_P_  (.D(_00108_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[4] ),
     .QN(_13244_));
  DFF_X1 \sa23_sr[5]$_DFF_P_  (.D(_00109_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[5] ),
     .QN(_13245_));
  DFF_X1 \sa23_sr[6]$_DFF_P_  (.D(_00110_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[6] ),
     .QN(_13246_));
  DFF_X1 \sa23_sr[7]$_DFF_P_  (.D(_00111_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa21_sub[7] ),
     .QN(_13247_));
  DFF_X1 \sa30_sr[0]$_DFF_P_  (.D(_00152_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[0] ),
     .QN(_13248_));
  DFF_X1 \sa30_sr[1]$_DFF_P_  (.D(_00153_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[1] ),
     .QN(_13249_));
  DFF_X1 \sa30_sr[2]$_DFF_P_  (.D(_00154_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[2] ),
     .QN(_13250_));
  DFF_X1 \sa30_sr[3]$_DFF_P_  (.D(_00155_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[3] ),
     .QN(_13251_));
  DFF_X1 \sa30_sr[4]$_DFF_P_  (.D(_00156_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[4] ),
     .QN(_13252_));
  DFF_X1 \sa30_sr[5]$_DFF_P_  (.D(_00157_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[5] ),
     .QN(_13253_));
  DFF_X1 \sa30_sr[6]$_DFF_P_  (.D(_00158_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[6] ),
     .QN(_13254_));
  DFF_X1 \sa30_sr[7]$_DFF_P_  (.D(_00159_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sr[7] ),
     .QN(_13255_));
  DFF_X1 \sa31_sr[0]$_DFF_P_  (.D(_00128_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[0] ),
     .QN(_13256_));
  DFF_X1 \sa31_sr[1]$_DFF_P_  (.D(_00129_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[1] ),
     .QN(_13257_));
  DFF_X1 \sa31_sr[2]$_DFF_P_  (.D(_00130_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[2] ),
     .QN(_13258_));
  DFF_X1 \sa31_sr[3]$_DFF_P_  (.D(_00131_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[3] ),
     .QN(_13259_));
  DFF_X1 \sa31_sr[4]$_DFF_P_  (.D(_00132_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[4] ),
     .QN(_13260_));
  DFF_X1 \sa31_sr[5]$_DFF_P_  (.D(_00133_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[5] ),
     .QN(_13261_));
  DFF_X1 \sa31_sr[6]$_DFF_P_  (.D(_00134_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[6] ),
     .QN(_13262_));
  DFF_X1 \sa31_sr[7]$_DFF_P_  (.D(_00135_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa30_sub[7] ),
     .QN(_13263_));
  DFF_X1 \sa32_sr[0]$_DFF_P_  (.D(_00136_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[0] ),
     .QN(_13264_));
  DFF_X1 \sa32_sr[1]$_DFF_P_  (.D(_00137_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[1] ),
     .QN(_13265_));
  DFF_X1 \sa32_sr[2]$_DFF_P_  (.D(_00138_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[2] ),
     .QN(_13266_));
  DFF_X1 \sa32_sr[3]$_DFF_P_  (.D(_00139_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[3] ),
     .QN(_13267_));
  DFF_X1 \sa32_sr[4]$_DFF_P_  (.D(_00140_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[4] ),
     .QN(_13268_));
  DFF_X1 \sa32_sr[5]$_DFF_P_  (.D(_00141_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[5] ),
     .QN(_13269_));
  DFF_X1 \sa32_sr[6]$_DFF_P_  (.D(_00142_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[6] ),
     .QN(_13270_));
  DFF_X1 \sa32_sr[7]$_DFF_P_  (.D(_00143_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa31_sub[7] ),
     .QN(_13271_));
  DFF_X1 \sa33_sr[0]$_DFF_P_  (.D(_00144_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[0] ),
     .QN(_13272_));
  DFF_X1 \sa33_sr[1]$_DFF_P_  (.D(_00145_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[1] ),
     .QN(_13273_));
  DFF_X1 \sa33_sr[2]$_DFF_P_  (.D(_00146_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[2] ),
     .QN(_13274_));
  DFF_X1 \sa33_sr[3]$_DFF_P_  (.D(_00147_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[3] ),
     .QN(_13275_));
  DFF_X1 \sa33_sr[4]$_DFF_P_  (.D(_00148_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[4] ),
     .QN(_13276_));
  DFF_X1 \sa33_sr[5]$_DFF_P_  (.D(_00149_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[5] ),
     .QN(_13277_));
  DFF_X1 \sa33_sr[6]$_DFF_P_  (.D(_00150_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[6] ),
     .QN(_13278_));
  DFF_X1 \sa33_sr[7]$_DFF_P_  (.D(_00151_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\sa32_sub[7] ),
     .QN(_13145_));
  DFF_X1 \text_in_r[0]$_DFFE_PP_  (.D(_00501_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[0] ),
     .QN(_00418_));
  DFF_X1 \text_in_r[100]$_DFFE_PP_  (.D(_00502_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[100] ),
     .QN(_13144_));
  DFF_X1 \text_in_r[101]$_DFFE_PP_  (.D(_00503_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[101] ),
     .QN(_13143_));
  DFF_X1 \text_in_r[102]$_DFFE_PP_  (.D(_00504_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[102] ),
     .QN(_13142_));
  DFF_X1 \text_in_r[103]$_DFFE_PP_  (.D(_00505_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[103] ),
     .QN(_13141_));
  DFF_X1 \text_in_r[104]$_DFFE_PP_  (.D(_00506_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[104] ),
     .QN(_00477_));
  DFF_X1 \text_in_r[105]$_DFFE_PP_  (.D(_00507_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[105] ),
     .QN(_00476_));
  DFF_X1 \text_in_r[106]$_DFFE_PP_  (.D(_00508_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[106] ),
     .QN(_00478_));
  DFF_X1 \text_in_r[107]$_DFFE_PP_  (.D(_00509_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[107] ),
     .QN(_13140_));
  DFF_X1 \text_in_r[108]$_DFFE_PP_  (.D(_00510_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[108] ),
     .QN(_13139_));
  DFF_X1 \text_in_r[109]$_DFFE_PP_  (.D(_00511_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[109] ),
     .QN(_13138_));
  DFF_X1 \text_in_r[10]$_DFFE_PP_  (.D(_00512_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[10] ),
     .QN(_00487_));
  DFF_X1 \text_in_r[110]$_DFFE_PP_  (.D(_00513_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[110] ),
     .QN(_13137_));
  DFF_X1 \text_in_r[111]$_DFFE_PP_  (.D(_00514_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[111] ),
     .QN(_13136_));
  DFF_X1 \text_in_r[112]$_DFFE_PP_  (.D(_00515_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[112] ),
     .QN(_00465_));
  DFF_X1 \text_in_r[113]$_DFFE_PP_  (.D(_00516_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[113] ),
     .QN(_00464_));
  DFF_X1 \text_in_r[114]$_DFFE_PP_  (.D(_00517_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[114] ),
     .QN(_00466_));
  DFF_X1 \text_in_r[115]$_DFFE_PP_  (.D(_00518_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[115] ),
     .QN(_13135_));
  DFF_X1 \text_in_r[116]$_DFFE_PP_  (.D(_00519_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[116] ),
     .QN(_13134_));
  DFF_X1 \text_in_r[117]$_DFFE_PP_  (.D(_00520_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[117] ),
     .QN(_13133_));
  DFF_X1 \text_in_r[118]$_DFFE_PP_  (.D(_00521_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[118] ),
     .QN(_13132_));
  DFF_X1 \text_in_r[119]$_DFFE_PP_  (.D(_00522_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[119] ),
     .QN(_13131_));
  DFF_X1 \text_in_r[11]$_DFFE_PP_  (.D(_00523_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[11] ),
     .QN(_13130_));
  DFF_X1 \text_in_r[120]$_DFFE_PP_  (.D(_00524_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[120] ),
     .QN(_00453_));
  DFF_X1 \text_in_r[121]$_DFFE_PP_  (.D(_00525_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[121] ),
     .QN(_00452_));
  DFF_X1 \text_in_r[122]$_DFFE_PP_  (.D(_00526_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[122] ),
     .QN(_00454_));
  DFF_X1 \text_in_r[123]$_DFFE_PP_  (.D(_00527_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[123] ),
     .QN(_13129_));
  DFF_X1 \text_in_r[124]$_DFFE_PP_  (.D(_00528_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[124] ),
     .QN(_13128_));
  DFF_X1 \text_in_r[125]$_DFFE_PP_  (.D(_00529_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[125] ),
     .QN(_13127_));
  DFF_X1 \text_in_r[126]$_DFFE_PP_  (.D(_00530_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[126] ),
     .QN(_13126_));
  DFF_X1 \text_in_r[127]$_DFFE_PP_  (.D(_00531_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[127] ),
     .QN(_13125_));
  DFF_X1 \text_in_r[12]$_DFFE_PP_  (.D(_00532_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[12] ),
     .QN(_13124_));
  DFF_X1 \text_in_r[13]$_DFFE_PP_  (.D(_00533_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[13] ),
     .QN(_13123_));
  DFF_X1 \text_in_r[14]$_DFFE_PP_  (.D(_00534_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[14] ),
     .QN(_13122_));
  DFF_X1 \text_in_r[15]$_DFFE_PP_  (.D(_00535_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[15] ),
     .QN(_13121_));
  DFF_X1 \text_in_r[16]$_DFFE_PP_  (.D(_00536_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[16] ),
     .QN(_00474_));
  DFF_X1 \text_in_r[17]$_DFFE_PP_  (.D(_00537_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[17] ),
     .QN(_00473_));
  DFF_X1 \text_in_r[18]$_DFFE_PP_  (.D(_00538_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[18] ),
     .QN(_00475_));
  DFF_X1 \text_in_r[19]$_DFFE_PP_  (.D(_00539_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[19] ),
     .QN(_13120_));
  DFF_X1 \text_in_r[1]$_DFFE_PP_  (.D(_00540_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[1] ),
     .QN(_00417_));
  DFF_X1 \text_in_r[20]$_DFFE_PP_  (.D(_00541_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[20] ),
     .QN(_13119_));
  DFF_X1 \text_in_r[21]$_DFFE_PP_  (.D(_00542_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[21] ),
     .QN(_13118_));
  DFF_X1 \text_in_r[22]$_DFFE_PP_  (.D(_00543_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[22] ),
     .QN(_13117_));
  DFF_X1 \text_in_r[23]$_DFFE_PP_  (.D(_00544_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[23] ),
     .QN(_13116_));
  DFF_X1 \text_in_r[24]$_DFFE_PP_  (.D(_00545_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[24] ),
     .QN(_00462_));
  DFF_X1 \text_in_r[25]$_DFFE_PP_  (.D(_00546_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[25] ),
     .QN(_00461_));
  DFF_X1 \text_in_r[26]$_DFFE_PP_  (.D(_00547_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[26] ),
     .QN(_00463_));
  DFF_X1 \text_in_r[27]$_DFFE_PP_  (.D(_00548_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[27] ),
     .QN(_13115_));
  DFF_X1 \text_in_r[28]$_DFFE_PP_  (.D(_00549_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[28] ),
     .QN(_13114_));
  DFF_X1 \text_in_r[29]$_DFFE_PP_  (.D(_00550_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[29] ),
     .QN(_13113_));
  DFF_X1 \text_in_r[2]$_DFFE_PP_  (.D(_00551_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[2] ),
     .QN(_00419_));
  DFF_X1 \text_in_r[30]$_DFFE_PP_  (.D(_00552_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[30] ),
     .QN(_13112_));
  DFF_X1 \text_in_r[31]$_DFFE_PP_  (.D(_00553_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[31] ),
     .QN(_13111_));
  DFF_X1 \text_in_r[32]$_DFFE_PP_  (.D(_00554_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[32] ),
     .QN(_00495_));
  DFF_X1 \text_in_r[33]$_DFFE_PP_  (.D(_00555_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[33] ),
     .QN(_00494_));
  DFF_X1 \text_in_r[34]$_DFFE_PP_  (.D(_00556_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[34] ),
     .QN(_00496_));
  DFF_X1 \text_in_r[35]$_DFFE_PP_  (.D(_00557_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[35] ),
     .QN(_13110_));
  DFF_X1 \text_in_r[36]$_DFFE_PP_  (.D(_00558_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[36] ),
     .QN(_13109_));
  DFF_X1 \text_in_r[37]$_DFFE_PP_  (.D(_00559_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[37] ),
     .QN(_13108_));
  DFF_X1 \text_in_r[38]$_DFFE_PP_  (.D(_00560_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[38] ),
     .QN(_13107_));
  DFF_X1 \text_in_r[39]$_DFFE_PP_  (.D(_00561_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[39] ),
     .QN(_13106_));
  DFF_X1 \text_in_r[3]$_DFFE_PP_  (.D(_00562_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[3] ),
     .QN(_13105_));
  DFF_X1 \text_in_r[40]$_DFFE_PP_  (.D(_00563_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[40] ),
     .QN(_00483_));
  DFF_X1 \text_in_r[41]$_DFFE_PP_  (.D(_00564_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[41] ),
     .QN(_00482_));
  DFF_X1 \text_in_r[42]$_DFFE_PP_  (.D(_00565_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[42] ),
     .QN(_00484_));
  DFF_X1 \text_in_r[43]$_DFFE_PP_  (.D(_00566_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[43] ),
     .QN(_13104_));
  DFF_X1 \text_in_r[44]$_DFFE_PP_  (.D(_00567_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[44] ),
     .QN(_13103_));
  DFF_X1 \text_in_r[45]$_DFFE_PP_  (.D(_00568_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[45] ),
     .QN(_13102_));
  DFF_X1 \text_in_r[46]$_DFFE_PP_  (.D(_00569_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[46] ),
     .QN(_13101_));
  DFF_X1 \text_in_r[47]$_DFFE_PP_  (.D(_00570_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[47] ),
     .QN(_13100_));
  DFF_X1 \text_in_r[48]$_DFFE_PP_  (.D(_00571_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[48] ),
     .QN(_00471_));
  DFF_X1 \text_in_r[49]$_DFFE_PP_  (.D(_00572_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[49] ),
     .QN(_00470_));
  DFF_X1 \text_in_r[4]$_DFFE_PP_  (.D(_00573_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[4] ),
     .QN(_13099_));
  DFF_X1 \text_in_r[50]$_DFFE_PP_  (.D(_00574_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[50] ),
     .QN(_00472_));
  DFF_X1 \text_in_r[51]$_DFFE_PP_  (.D(_00575_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[51] ),
     .QN(_13098_));
  DFF_X1 \text_in_r[52]$_DFFE_PP_  (.D(_00576_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[52] ),
     .QN(_13097_));
  DFF_X1 \text_in_r[53]$_DFFE_PP_  (.D(_00577_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[53] ),
     .QN(_13096_));
  DFF_X1 \text_in_r[54]$_DFFE_PP_  (.D(_00578_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[54] ),
     .QN(_13095_));
  DFF_X1 \text_in_r[55]$_DFFE_PP_  (.D(_00579_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[55] ),
     .QN(_13094_));
  DFF_X1 \text_in_r[56]$_DFFE_PP_  (.D(_00580_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[56] ),
     .QN(_00459_));
  DFF_X1 \text_in_r[57]$_DFFE_PP_  (.D(_00581_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[57] ),
     .QN(_00458_));
  DFF_X1 \text_in_r[58]$_DFFE_PP_  (.D(_00582_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[58] ),
     .QN(_00460_));
  DFF_X1 \text_in_r[59]$_DFFE_PP_  (.D(_00583_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[59] ),
     .QN(_13093_));
  DFF_X1 \text_in_r[5]$_DFFE_PP_  (.D(_00584_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[5] ),
     .QN(_13092_));
  DFF_X1 \text_in_r[60]$_DFFE_PP_  (.D(_00585_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[60] ),
     .QN(_13091_));
  DFF_X1 \text_in_r[61]$_DFFE_PP_  (.D(_00586_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[61] ),
     .QN(_13090_));
  DFF_X1 \text_in_r[62]$_DFFE_PP_  (.D(_00587_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[62] ),
     .QN(_13089_));
  DFF_X1 \text_in_r[63]$_DFFE_PP_  (.D(_00588_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[63] ),
     .QN(_13088_));
  DFF_X1 \text_in_r[64]$_DFFE_PP_  (.D(_00589_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[64] ),
     .QN(_00492_));
  DFF_X1 \text_in_r[65]$_DFFE_PP_  (.D(_00590_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[65] ),
     .QN(_00491_));
  DFF_X1 \text_in_r[66]$_DFFE_PP_  (.D(_00591_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[66] ),
     .QN(_00493_));
  DFF_X1 \text_in_r[67]$_DFFE_PP_  (.D(_00592_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[67] ),
     .QN(_13087_));
  DFF_X1 \text_in_r[68]$_DFFE_PP_  (.D(_00593_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[68] ),
     .QN(_13086_));
  DFF_X1 \text_in_r[69]$_DFFE_PP_  (.D(_00594_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[69] ),
     .QN(_13085_));
  DFF_X1 \text_in_r[6]$_DFFE_PP_  (.D(_00595_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[6] ),
     .QN(_13084_));
  DFF_X1 \text_in_r[70]$_DFFE_PP_  (.D(_00596_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[70] ),
     .QN(_13083_));
  DFF_X1 \text_in_r[71]$_DFFE_PP_  (.D(_00597_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[71] ),
     .QN(_13082_));
  DFF_X1 \text_in_r[72]$_DFFE_PP_  (.D(_00598_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[72] ),
     .QN(_00480_));
  DFF_X1 \text_in_r[73]$_DFFE_PP_  (.D(_00599_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[73] ),
     .QN(_00479_));
  DFF_X1 \text_in_r[74]$_DFFE_PP_  (.D(_00600_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[74] ),
     .QN(_00481_));
  DFF_X1 \text_in_r[75]$_DFFE_PP_  (.D(_00601_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[75] ),
     .QN(_13081_));
  DFF_X1 \text_in_r[76]$_DFFE_PP_  (.D(_00602_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[76] ),
     .QN(_13080_));
  DFF_X1 \text_in_r[77]$_DFFE_PP_  (.D(_00603_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[77] ),
     .QN(_13079_));
  DFF_X1 \text_in_r[78]$_DFFE_PP_  (.D(_00604_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[78] ),
     .QN(_13078_));
  DFF_X1 \text_in_r[79]$_DFFE_PP_  (.D(_00605_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[79] ),
     .QN(_13077_));
  DFF_X1 \text_in_r[7]$_DFFE_PP_  (.D(_00606_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[7] ),
     .QN(_13076_));
  DFF_X1 \text_in_r[80]$_DFFE_PP_  (.D(_00607_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[80] ),
     .QN(_00468_));
  DFF_X1 \text_in_r[81]$_DFFE_PP_  (.D(_00608_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[81] ),
     .QN(_00467_));
  DFF_X1 \text_in_r[82]$_DFFE_PP_  (.D(_00609_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[82] ),
     .QN(_00469_));
  DFF_X1 \text_in_r[83]$_DFFE_PP_  (.D(_00610_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[83] ),
     .QN(_13075_));
  DFF_X1 \text_in_r[84]$_DFFE_PP_  (.D(_00611_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[84] ),
     .QN(_13074_));
  DFF_X1 \text_in_r[85]$_DFFE_PP_  (.D(_00612_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[85] ),
     .QN(_13073_));
  DFF_X1 \text_in_r[86]$_DFFE_PP_  (.D(_00613_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[86] ),
     .QN(_13072_));
  DFF_X1 \text_in_r[87]$_DFFE_PP_  (.D(_00614_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[87] ),
     .QN(_13071_));
  DFF_X1 \text_in_r[88]$_DFFE_PP_  (.D(_00615_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[88] ),
     .QN(_00456_));
  DFF_X1 \text_in_r[89]$_DFFE_PP_  (.D(_00616_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[89] ),
     .QN(_00455_));
  DFF_X1 \text_in_r[8]$_DFFE_PP_  (.D(_00617_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[8] ),
     .QN(_00486_));
  DFF_X1 \text_in_r[90]$_DFFE_PP_  (.D(_00618_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[90] ),
     .QN(_00457_));
  DFF_X1 \text_in_r[91]$_DFFE_PP_  (.D(_00619_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[91] ),
     .QN(_13070_));
  DFF_X1 \text_in_r[92]$_DFFE_PP_  (.D(_00620_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[92] ),
     .QN(_13069_));
  DFF_X1 \text_in_r[93]$_DFFE_PP_  (.D(_00621_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[93] ),
     .QN(_13068_));
  DFF_X1 \text_in_r[94]$_DFFE_PP_  (.D(_00622_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[94] ),
     .QN(_13067_));
  DFF_X1 \text_in_r[95]$_DFFE_PP_  (.D(_00623_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[95] ),
     .QN(_13066_));
  DFF_X1 \text_in_r[96]$_DFFE_PP_  (.D(_00624_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[96] ),
     .QN(_00489_));
  DFF_X1 \text_in_r[97]$_DFFE_PP_  (.D(_00625_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[97] ),
     .QN(_00488_));
  DFF_X1 \text_in_r[98]$_DFFE_PP_  (.D(_00626_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[98] ),
     .QN(_00490_));
  DFF_X1 \text_in_r[99]$_DFFE_PP_  (.D(_00627_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[99] ),
     .QN(_13065_));
  DFF_X1 \text_in_r[9]$_DFFE_PP_  (.D(_00628_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\text_in_r[9] ),
     .QN(_00485_));
  DFF_X1 \text_out[0]$_DFF_P_  (.D(_00265_),
@@ -64216,527 +64216,527 @@ module aes_cipher_top (clk,
     .Q(\u0.subword[7] ),
     .QN(_00429_));
  DFF_X1 \u0.w[0][0]$_DFF_P_  (.D(_00289_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][0] ),
     .QN(_13415_));
  DFF_X1 \u0.w[0][10]$_DFF_P_  (.D(_00290_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][10] ),
     .QN(_13416_));
  DFF_X1 \u0.w[0][11]$_DFF_P_  (.D(_00291_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][11] ),
     .QN(_13417_));
  DFF_X1 \u0.w[0][12]$_DFF_P_  (.D(_00292_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][12] ),
     .QN(_13418_));
  DFF_X1 \u0.w[0][13]$_DFF_P_  (.D(_00293_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][13] ),
     .QN(_13419_));
  DFF_X1 \u0.w[0][14]$_DFF_P_  (.D(_00294_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][14] ),
     .QN(_13420_));
  DFF_X1 \u0.w[0][15]$_DFF_P_  (.D(_00295_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][15] ),
     .QN(_13421_));
  DFF_X1 \u0.w[0][16]$_DFF_P_  (.D(_00296_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][16] ),
     .QN(_13422_));
  DFF_X1 \u0.w[0][17]$_DFF_P_  (.D(_00297_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][17] ),
     .QN(_13423_));
  DFF_X1 \u0.w[0][18]$_DFF_P_  (.D(_00298_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][18] ),
     .QN(_13424_));
  DFF_X1 \u0.w[0][19]$_DFF_P_  (.D(_00299_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][19] ),
     .QN(_13425_));
  DFF_X1 \u0.w[0][1]$_DFF_P_  (.D(_00300_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][1] ),
     .QN(_13426_));
  DFF_X1 \u0.w[0][20]$_DFF_P_  (.D(_00301_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][20] ),
     .QN(_13427_));
  DFF_X1 \u0.w[0][21]$_DFF_P_  (.D(_00302_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][21] ),
     .QN(_13428_));
  DFF_X1 \u0.w[0][22]$_DFF_P_  (.D(_00303_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][22] ),
     .QN(_13429_));
  DFF_X1 \u0.w[0][23]$_DFF_P_  (.D(_00304_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][23] ),
     .QN(_13430_));
  DFF_X1 \u0.w[0][24]$_DFF_P_  (.D(_00305_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][24] ),
     .QN(_13431_));
  DFF_X1 \u0.w[0][25]$_DFF_P_  (.D(_00306_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][25] ),
     .QN(_13432_));
  DFF_X1 \u0.w[0][26]$_DFF_P_  (.D(_00307_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][26] ),
     .QN(_13433_));
  DFF_X1 \u0.w[0][27]$_DFF_P_  (.D(_00308_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][27] ),
     .QN(_13434_));
  DFF_X1 \u0.w[0][28]$_DFF_P_  (.D(_00309_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][28] ),
     .QN(_13435_));
  DFF_X1 \u0.w[0][29]$_DFF_P_  (.D(_00310_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][29] ),
     .QN(_13436_));
  DFF_X1 \u0.w[0][2]$_DFF_P_  (.D(_00311_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][2] ),
     .QN(_13437_));
  DFF_X1 \u0.w[0][30]$_DFF_P_  (.D(_00312_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][30] ),
     .QN(_13438_));
  DFF_X1 \u0.w[0][31]$_DFF_P_  (.D(_00313_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][31] ),
     .QN(_13439_));
  DFF_X1 \u0.w[0][3]$_DFF_P_  (.D(_00314_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][3] ),
     .QN(_13440_));
  DFF_X1 \u0.w[0][4]$_DFF_P_  (.D(_00315_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][4] ),
     .QN(_13441_));
  DFF_X1 \u0.w[0][5]$_DFF_P_  (.D(_00316_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][5] ),
     .QN(_13442_));
  DFF_X1 \u0.w[0][6]$_DFF_P_  (.D(_00317_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][6] ),
     .QN(_13443_));
  DFF_X1 \u0.w[0][7]$_DFF_P_  (.D(_00318_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][7] ),
     .QN(_13444_));
  DFF_X1 \u0.w[0][8]$_DFF_P_  (.D(_00319_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][8] ),
     .QN(_13445_));
  DFF_X1 \u0.w[0][9]$_DFF_P_  (.D(_00320_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[0][9] ),
     .QN(_13446_));
  DFF_X1 \u0.w[1][0]$_DFF_P_  (.D(_00321_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][0] ),
     .QN(_13447_));
  DFF_X1 \u0.w[1][10]$_DFF_P_  (.D(_00322_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][10] ),
     .QN(_13448_));
  DFF_X1 \u0.w[1][11]$_DFF_P_  (.D(_00323_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][11] ),
     .QN(_13449_));
  DFF_X1 \u0.w[1][12]$_DFF_P_  (.D(_00324_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][12] ),
     .QN(_13450_));
  DFF_X1 \u0.w[1][13]$_DFF_P_  (.D(_00325_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][13] ),
     .QN(_13451_));
  DFF_X1 \u0.w[1][14]$_DFF_P_  (.D(_00326_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][14] ),
     .QN(_13452_));
  DFF_X1 \u0.w[1][15]$_DFF_P_  (.D(_00327_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][15] ),
     .QN(_13453_));
  DFF_X1 \u0.w[1][16]$_DFF_P_  (.D(_00328_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][16] ),
     .QN(_13454_));
  DFF_X1 \u0.w[1][17]$_DFF_P_  (.D(_00329_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][17] ),
     .QN(_13455_));
  DFF_X1 \u0.w[1][18]$_DFF_P_  (.D(_00330_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][18] ),
     .QN(_13456_));
  DFF_X1 \u0.w[1][19]$_DFF_P_  (.D(_00331_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][19] ),
     .QN(_13457_));
  DFF_X1 \u0.w[1][1]$_DFF_P_  (.D(_00332_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][1] ),
     .QN(_13458_));
  DFF_X1 \u0.w[1][20]$_DFF_P_  (.D(_00333_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][20] ),
     .QN(_13459_));
  DFF_X1 \u0.w[1][21]$_DFF_P_  (.D(_00334_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][21] ),
     .QN(_13460_));
  DFF_X1 \u0.w[1][22]$_DFF_P_  (.D(_00335_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][22] ),
     .QN(_13461_));
  DFF_X1 \u0.w[1][23]$_DFF_P_  (.D(_00336_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][23] ),
     .QN(_13462_));
  DFF_X1 \u0.w[1][24]$_DFF_P_  (.D(_00337_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][24] ),
     .QN(_13463_));
  DFF_X1 \u0.w[1][25]$_DFF_P_  (.D(_00338_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][25] ),
     .QN(_13464_));
  DFF_X1 \u0.w[1][26]$_DFF_P_  (.D(_00339_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][26] ),
     .QN(_13465_));
  DFF_X1 \u0.w[1][27]$_DFF_P_  (.D(_00340_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][27] ),
     .QN(_13466_));
  DFF_X1 \u0.w[1][28]$_DFF_P_  (.D(_00341_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][28] ),
     .QN(_13467_));
  DFF_X1 \u0.w[1][29]$_DFF_P_  (.D(_00342_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][29] ),
     .QN(_13468_));
  DFF_X1 \u0.w[1][2]$_DFF_P_  (.D(_00343_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][2] ),
     .QN(_13469_));
  DFF_X1 \u0.w[1][30]$_DFF_P_  (.D(_00344_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][30] ),
     .QN(_13470_));
  DFF_X1 \u0.w[1][31]$_DFF_P_  (.D(_00345_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][31] ),
     .QN(_13471_));
  DFF_X1 \u0.w[1][3]$_DFF_P_  (.D(_00346_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][3] ),
     .QN(_13472_));
  DFF_X1 \u0.w[1][4]$_DFF_P_  (.D(_00347_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][4] ),
     .QN(_13473_));
  DFF_X1 \u0.w[1][5]$_DFF_P_  (.D(_00348_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][5] ),
     .QN(_13474_));
  DFF_X1 \u0.w[1][6]$_DFF_P_  (.D(_00349_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][6] ),
     .QN(_13475_));
  DFF_X1 \u0.w[1][7]$_DFF_P_  (.D(_00350_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][7] ),
     .QN(_13476_));
  DFF_X1 \u0.w[1][8]$_DFF_P_  (.D(_00351_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][8] ),
     .QN(_13477_));
  DFF_X1 \u0.w[1][9]$_DFF_P_  (.D(_00352_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[1][9] ),
     .QN(_13478_));
  DFF_X1 \u0.w[2][0]$_DFF_P_  (.D(_00353_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][0] ),
     .QN(_13479_));
  DFF_X1 \u0.w[2][10]$_DFF_P_  (.D(_00354_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][10] ),
     .QN(_13480_));
  DFF_X1 \u0.w[2][11]$_DFF_P_  (.D(_00355_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][11] ),
     .QN(_13481_));
  DFF_X1 \u0.w[2][12]$_DFF_P_  (.D(_00356_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][12] ),
     .QN(_13482_));
  DFF_X1 \u0.w[2][13]$_DFF_P_  (.D(_00357_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][13] ),
     .QN(_13483_));
  DFF_X1 \u0.w[2][14]$_DFF_P_  (.D(_00358_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][14] ),
     .QN(_13484_));
  DFF_X1 \u0.w[2][15]$_DFF_P_  (.D(_00359_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][15] ),
     .QN(_13485_));
  DFF_X1 \u0.w[2][16]$_DFF_P_  (.D(_00360_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][16] ),
     .QN(_13486_));
  DFF_X1 \u0.w[2][17]$_DFF_P_  (.D(_00361_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][17] ),
     .QN(_13487_));
  DFF_X1 \u0.w[2][18]$_DFF_P_  (.D(_00362_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][18] ),
     .QN(_13488_));
  DFF_X1 \u0.w[2][19]$_DFF_P_  (.D(_00363_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][19] ),
     .QN(_13489_));
  DFF_X1 \u0.w[2][1]$_DFF_P_  (.D(_00364_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][1] ),
     .QN(_13490_));
  DFF_X1 \u0.w[2][20]$_DFF_P_  (.D(_00365_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][20] ),
     .QN(_13491_));
  DFF_X1 \u0.w[2][21]$_DFF_P_  (.D(_00366_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][21] ),
     .QN(_13492_));
  DFF_X1 \u0.w[2][22]$_DFF_P_  (.D(_00367_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][22] ),
     .QN(_13493_));
  DFF_X1 \u0.w[2][23]$_DFF_P_  (.D(_00368_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][23] ),
     .QN(_13494_));
  DFF_X1 \u0.w[2][24]$_DFF_P_  (.D(_00369_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][24] ),
     .QN(_13495_));
  DFF_X1 \u0.w[2][25]$_DFF_P_  (.D(_00370_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][25] ),
     .QN(_13496_));
  DFF_X1 \u0.w[2][26]$_DFF_P_  (.D(_00371_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][26] ),
     .QN(_13497_));
  DFF_X1 \u0.w[2][27]$_DFF_P_  (.D(_00372_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][27] ),
     .QN(_13498_));
  DFF_X1 \u0.w[2][28]$_DFF_P_  (.D(_00373_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][28] ),
     .QN(_13499_));
  DFF_X1 \u0.w[2][29]$_DFF_P_  (.D(_00374_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][29] ),
     .QN(_13500_));
  DFF_X1 \u0.w[2][2]$_DFF_P_  (.D(_00375_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][2] ),
     .QN(_13501_));
  DFF_X1 \u0.w[2][30]$_DFF_P_  (.D(_00376_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][30] ),
     .QN(_13502_));
  DFF_X1 \u0.w[2][31]$_DFF_P_  (.D(_00377_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][31] ),
     .QN(_13503_));
  DFF_X1 \u0.w[2][3]$_DFF_P_  (.D(_00378_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][3] ),
     .QN(_13504_));
  DFF_X1 \u0.w[2][4]$_DFF_P_  (.D(_00379_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][4] ),
     .QN(_13505_));
  DFF_X1 \u0.w[2][5]$_DFF_P_  (.D(_00380_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][5] ),
     .QN(_13506_));
  DFF_X1 \u0.w[2][6]$_DFF_P_  (.D(_00381_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][6] ),
     .QN(_13507_));
  DFF_X1 \u0.w[2][7]$_DFF_P_  (.D(_00382_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][7] ),
     .QN(_13508_));
  DFF_X1 \u0.w[2][8]$_DFF_P_  (.D(_00383_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][8] ),
     .QN(_13509_));
  DFF_X1 \u0.w[2][9]$_DFF_P_  (.D(_00384_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.w[2][9] ),
     .QN(_13510_));
  DFF_X1 \u0.w[3][0]$_DFF_P_  (.D(_00385_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[0] ),
     .QN(_13511_));
  DFF_X1 \u0.w[3][10]$_DFF_P_  (.D(_00386_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[10] ),
     .QN(_13512_));
  DFF_X1 \u0.w[3][11]$_DFF_P_  (.D(_00387_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[11] ),
     .QN(_13513_));
  DFF_X1 \u0.w[3][12]$_DFF_P_  (.D(_00388_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[12] ),
     .QN(_13514_));
  DFF_X1 \u0.w[3][13]$_DFF_P_  (.D(_00389_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[13] ),
     .QN(_13515_));
  DFF_X1 \u0.w[3][14]$_DFF_P_  (.D(_00390_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[14] ),
     .QN(_13516_));
  DFF_X1 \u0.w[3][15]$_DFF_P_  (.D(_00391_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[15] ),
     .QN(_13517_));
  DFF_X1 \u0.w[3][16]$_DFF_P_  (.D(_00392_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[16] ),
     .QN(_13518_));
  DFF_X1 \u0.w[3][17]$_DFF_P_  (.D(_00393_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[17] ),
     .QN(_13519_));
  DFF_X1 \u0.w[3][18]$_DFF_P_  (.D(_00394_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[18] ),
     .QN(_13520_));
  DFF_X1 \u0.w[3][19]$_DFF_P_  (.D(_00395_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[19] ),
     .QN(_13521_));
  DFF_X1 \u0.w[3][1]$_DFF_P_  (.D(_00396_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[1] ),
     .QN(_13522_));
  DFF_X1 \u0.w[3][20]$_DFF_P_  (.D(_00397_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[20] ),
     .QN(_13523_));
  DFF_X1 \u0.w[3][21]$_DFF_P_  (.D(_00398_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[21] ),
     .QN(_13524_));
  DFF_X1 \u0.w[3][22]$_DFF_P_  (.D(_00399_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[22] ),
     .QN(_13525_));
  DFF_X1 \u0.w[3][23]$_DFF_P_  (.D(_00400_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[23] ),
     .QN(_13526_));
  DFF_X1 \u0.w[3][24]$_DFF_P_  (.D(_00401_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[24] ),
     .QN(_13527_));
  DFF_X1 \u0.w[3][25]$_DFF_P_  (.D(_00402_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[25] ),
     .QN(_13528_));
  DFF_X1 \u0.w[3][26]$_DFF_P_  (.D(_00403_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[26] ),
     .QN(_13529_));
  DFF_X1 \u0.w[3][27]$_DFF_P_  (.D(_00404_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[27] ),
     .QN(_13530_));
  DFF_X1 \u0.w[3][28]$_DFF_P_  (.D(_00405_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[28] ),
     .QN(_13531_));
  DFF_X1 \u0.w[3][29]$_DFF_P_  (.D(_00406_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[29] ),
     .QN(_13532_));
  DFF_X1 \u0.w[3][2]$_DFF_P_  (.D(_00407_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[2] ),
     .QN(_13533_));
  DFF_X1 \u0.w[3][30]$_DFF_P_  (.D(_00408_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[30] ),
     .QN(_13534_));
  DFF_X1 \u0.w[3][31]$_DFF_P_  (.D(_00409_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[31] ),
     .QN(_13535_));
  DFF_X1 \u0.w[3][3]$_DFF_P_  (.D(_00410_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[3] ),
     .QN(_13536_));
  DFF_X1 \u0.w[3][4]$_DFF_P_  (.D(_00411_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[4] ),
     .QN(_13537_));
  DFF_X1 \u0.w[3][5]$_DFF_P_  (.D(_00412_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[5] ),
     .QN(_13538_));
  DFF_X1 \u0.w[3][6]$_DFF_P_  (.D(_00413_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[6] ),
     .QN(_13539_));
  DFF_X1 \u0.w[3][7]$_DFF_P_  (.D(_00414_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[7] ),
     .QN(_13540_));
  DFF_X1 \u0.w[3][8]$_DFF_P_  (.D(_00415_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[8] ),
     .QN(_13541_));
  DFF_X1 \u0.w[3][9]$_DFF_P_  (.D(_00416_),
-    .CK(gated_clk_0),
+    .CK(gated_clk_4),
     .Q(\u0.tmp_w[9] ),
     .QN(_13061_));
- OR2_X4 clk_gate_0 (.A1(_13151_),
+ OR2_X4 clk_gate_cond_0 (.A1(_13151_),
     .A2(ld_r),
-    .ZN(clk_gate_cond_net_0));
- OR2_X4 clk_gate_1 (.A1(clk_gate_cond_net_0),
-    .A2(_07141_),
     .ZN(clk_gate_cond_net_1));
- OR2_X4 clk_gate_2 (.A1(clk_gate_cond_net_1),
-    .A2(_07142_),
+ OR2_X4 clk_gate_cond_1 (.A1(clk_gate_cond_net_1),
+    .A2(_07141_),
     .ZN(clk_gate_cond_net_2));
- CLKGATETST_X1 clk_gate_3 (.CK(clk),
-    .E(clk_gate_cond_net_2),
-    .GCK(gated_clk_0));
+ OR2_X4 clk_gate_cond_2 (.A1(clk_gate_cond_net_2),
+    .A2(_07142_),
+    .ZN(clk_gate_cond_net_3));
+ CLKGATETST_X1 clk_gate_0 (.CK(clk),
+    .E(clk_gate_cond_net_3),
+    .GCK(gated_clk_4));
 endmodule
