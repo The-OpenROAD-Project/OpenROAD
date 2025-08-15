@@ -1951,10 +1951,11 @@ void HTreeBuilder::createClockSubNets()
                              *techChar_,
                              wireSegmentUnit_,
                              this);
-      
+
       // Set clock tree level the first time only.
-      if (builder.getDrivingSubNet()->getTreeLevel() < 0)
+      if (builder.getDrivingSubNet()->getTreeLevel() < 0) {
         builder.getDrivingSubNet()->setTreeLevel(levelIdx);
+      }
 
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());

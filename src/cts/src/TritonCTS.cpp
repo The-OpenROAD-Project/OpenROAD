@@ -1564,7 +1564,7 @@ std::vector<int> TritonCTS::getAllClockTreeLevels(Clock& clockNet)
   std::set<int> uniqueLevels;
 
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
-    if (!subNet.isLeafLevel()){
+    if (!subNet.isLeafLevel()) {
       uniqueLevels.insert(subNet.getTreeLevel());
     }
   });
@@ -1588,8 +1588,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
 
   // Check if the main clock net (level 0) is in the level list
   if (std::find(targetLevels.begin(), targetLevels.end(), 0)
-          != targetLevels.end())
-  {
+      != targetLevels.end()) {
     odb::dbNet* clk_net = clockNet.getNetObj();
     clk_net->setNonDefaultRule(clockNDR);
     ndrAppliedNets++;
@@ -1603,11 +1602,9 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     int level = subNet.getTreeLevel();
     if (std::find(targetLevels.begin(), targetLevels.end(), level)
-          != targetLevels.end())
-    {
+        != targetLevels.end()) {
       odb::dbNet* net = subNet.getNetObj();
-      if (!subNet.isLeafLevel())
-      {
+      if (!subNet.isLeafLevel()) {
         net->setNonDefaultRule(clockNDR);
         ndrAppliedNets++;
         std::string net_name = net->getName();
@@ -1637,7 +1634,8 @@ int TritonCTS::applyNDRToClockLevelRange(Clock& clockNet,
 }
 
 // Function to apply NDR to the first half of clock tree levels
-int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet, odb::dbTechNonDefaultRule* clockNDR)
+int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
+                                         odb::dbTechNonDefaultRule* clockNDR)
 {
   // Get all unique levels in the design
   const std::vector<int> allLevels = getAllClockTreeLevels(clockNet);
@@ -1712,7 +1710,8 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
   // clkNets = applyNDRToFirstHalfLevels(clockNet, clockNDR);
 
   // Option 4: Apply NDR to all non-leaf clock nets (default)
-  clkNets = applyNDRToClockLevels(clockNet, clockNDR, getAllClockTreeLevels(clockNet));
+  clkNets = applyNDRToClockLevels(
+      clockNet, clockNDR, getAllClockTreeLevels(clockNet));
 
   logger_->info(CTS,
                 202,

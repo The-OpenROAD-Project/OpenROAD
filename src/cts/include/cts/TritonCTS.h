@@ -100,8 +100,8 @@ class TritonCTS
 
   // NDR functions
   std::vector<int> getAllClockTreeLevels(Clock& clockNet);
-  int applyNDRToClockLevels(Clock& clockNet, 
-                            odb::dbTechNonDefaultRule* clockNDR, 
+  int applyNDRToClockLevels(Clock& clockNet,
+                            odb::dbTechNonDefaultRule* clockNDR,
                             const std::vector<int>& targetLevels);
 
   int applyNDRToClockLevelRange(Clock& clockNet,
