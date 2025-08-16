@@ -24,6 +24,7 @@
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbRegion.h"
+#include "odb/dbId.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGroup>;
@@ -250,6 +251,19 @@ dbSet<dbModInst> dbGroup::getModInsts()
   return dbSet<dbModInst>(_group, block->_group_modinst_itr);
 }
 
+void dbGroup::clearModInsts() {
+  _dbGroup *_group = (_dbGroup *)this;
+  _dbBlock *block = (_dbBlock *)_group->getOwner();
+
+  while (_group->_modinsts != 0) {
+    _dbModInst *modinst = block->_modinst_tbl->getPtr(_group->_modinsts);
+    dbId<_dbModInst> nextModInstId = modinst->_group_next;
+    modinst->_group = 0;
+    modinst->_group_next = 0;
+    _group->_modinsts = nextModInstId;
+  }
+}
+
 void dbGroup::addInst(dbInst* inst)
 {
   _dbGroup* _group = (_dbGroup*) this;
@@ -297,6 +311,19 @@ dbSet<dbInst> dbGroup::getInsts()
   return dbSet<dbInst>(_group, block->_group_inst_itr);
 }
 
+void dbGroup::clearInsts() {
+  _dbGroup *_group = (_dbGroup *)this;
+  _dbBlock *block = (_dbBlock *)_group->getOwner();
+
+  while (_group->_insts != 0) {
+    _dbInst *inst = block->_inst_tbl->getPtr(_group->_insts);
+    dbId<_dbInst> nextInstId = inst->_group_next;
+    inst->_group = 0;
+    inst->_group_next = 0;
+    _group->_insts = nextInstId;
+  }
+}
+
 void dbGroup::addGroup(dbGroup* child)
 {
   _dbGroup* _group = (_dbGroup*) this;
@@ -342,6 +369,19 @@ dbSet<dbGroup> dbGroup::getGroups()
   _dbGroup* _group = (_dbGroup*) this;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
   return dbSet<dbGroup>(_group, block->_group_itr);
+}
+
+void dbGroup::clearGroups() {
+  _dbGroup *_group = (_dbGroup *)this;
+  _dbBlock *block = (_dbBlock *)_group->getOwner();
+
+  while (_group->_groups != 0) {
+    _dbGroup *group = block->_group_tbl->getPtr(_group->_groups);
+    dbId<_dbGroup> nextGroupId = group->_group_next;
+    group->_parent_group = 0;
+    group->_group_next = 0;
+    _group->_groups = nextGroupId;
+  }
 }
 
 void dbGroup::addPowerNet(dbNet* net)
@@ -489,17 +529,11 @@ void dbGroup::destroy(dbGroup* group)
 {
   _dbGroup* _group = (_dbGroup*) group;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
-  for (auto inst : group->getInsts()) {
-    group->removeInst(inst);
-  }
+  group->clearInsts();
+  group->clearModInsts();
+  group->clearGroups();
   if (_group->region_.isValid()) {
     group->getRegion()->removeGroup(group);
-  }
-  for (auto modinst : group->getModInsts()) {
-    group->removeModInst(modinst);
-  }
-  for (auto child : group->getGroups()) {
-    group->removeGroup(child);
   }
   if (_group->_parent_group.isValid()) {
     group->getParentGroup()->removeGroup(group);

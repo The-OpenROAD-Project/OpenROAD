@@ -7611,17 +7611,23 @@ class dbGroup : public dbObject
 
   dbSet<dbModInst> getModInsts();
 
+  void clearModInsts();
+
   void addInst(dbInst* inst);
 
   void removeInst(dbInst* inst);
 
   dbSet<dbInst> getInsts();
 
+  void clearInsts();
+
   void addGroup(dbGroup* group);
 
   void removeGroup(dbGroup* group);
 
   dbSet<dbGroup> getGroups();
+
+  void clearGroups();
 
   void addPowerNet(dbNet* net);
 
