@@ -113,6 +113,17 @@ BOOST_AUTO_TEST_CASE(test_group_modinst)
   dbGroup::destroy(group);
   BOOST_TEST(i1->getGroup() == nullptr);
 }
+
+BOOST_AUTO_TEST_CASE(test_group_clear_modinst) {
+  auto insts = group->getModInsts();
+  BOOST_TEST(insts.size() == 3);
+  group->clearModInsts();
+  BOOST_TEST(group->getModInsts().size() == 0);
+  BOOST_TEST(i1->getGroup() == nullptr);
+  BOOST_TEST(i2->getGroup() == nullptr);
+  BOOST_TEST(i3->getGroup() == nullptr);
+}
+
 BOOST_AUTO_TEST_CASE(test_group_inst)
 {
   auto insts = group->getInsts();
@@ -129,6 +140,17 @@ BOOST_AUTO_TEST_CASE(test_group_inst)
   dbGroup::destroy(group);
   BOOST_TEST(inst1->getGroup() == nullptr);
 }
+
+BOOST_AUTO_TEST_CASE(test_group_clear_inst) {
+  auto insts = group->getInsts();
+  BOOST_TEST(insts.size() == 3);
+  group->clearInsts();
+  BOOST_TEST(group->getInsts().size() == 0);
+  BOOST_TEST(inst1->getGroup() == nullptr);
+  BOOST_TEST(inst2->getGroup() == nullptr);
+  BOOST_TEST(inst3->getGroup() == nullptr);
+}
+
 BOOST_AUTO_TEST_CASE(test_group_net)
 {
   auto power_nets = domain->getPowerNets();
@@ -163,6 +185,17 @@ BOOST_AUTO_TEST_CASE(test_group_group)
   dbGroup::destroy(group);
   BOOST_TEST(child1->getParentGroup() == nullptr);
 }
+
+BOOST_AUTO_TEST_CASE(test_group_clear_group) {
+  auto groups = group->getGroups();
+  BOOST_TEST(groups.size() == 3);
+  group->clearGroups();
+  BOOST_TEST(group->getGroups().size() == 0);
+  BOOST_TEST(child1->getParentGroup() == nullptr);
+  BOOST_TEST(child2->getParentGroup() == nullptr);
+  BOOST_TEST(child3->getParentGroup() == nullptr);
+}
+
 BOOST_AUTO_TEST_CASE(test_group_modinst_iterator)
 {
   dbSet<dbModInst> modinsts = group->getModInsts();
@@ -249,6 +282,26 @@ BOOST_AUTO_TEST_CASE(test_group_group_iterator)
     }
   }
 }
+
+BOOST_AUTO_TEST_CASE(test_group_destroy) {
+  auto insts = group->getInsts();
+  auto modInsts = group->getModInsts();
+  auto groups = group->getGroups();
+  BOOST_TEST(insts.size() == 3);
+  BOOST_TEST(modInsts.size() == 3);
+  BOOST_TEST(groups.size() == 3);
+  dbGroup::destroy(group);
+  BOOST_TEST(i1->getGroup() == nullptr);
+  BOOST_TEST(i2->getGroup() == nullptr);
+  BOOST_TEST(i3->getGroup() == nullptr);
+  BOOST_TEST(inst1->getGroup() == nullptr);
+  BOOST_TEST(inst2->getGroup() == nullptr);
+  BOOST_TEST(inst3->getGroup() == nullptr);
+  BOOST_TEST(child1->getParentGroup() == nullptr);
+  BOOST_TEST(child2->getParentGroup() == nullptr);
+  BOOST_TEST(child3->getParentGroup() == nullptr);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
