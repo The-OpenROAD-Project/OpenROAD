@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "logic_extractor.h"
+#include "cut/logic_extractor.h"
 
 #include <memory>
 #include <unordered_set>
 #include <vector>
 
-#include "abc_library_factory.h"
+#include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "logic_cut.h"
 #include "sta/Bfs.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -20,7 +20,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/SearchPred.hh"
 
-namespace rmp {
+namespace cut {
 
 bool SearchPredNonReg2AbcSupport::searchThru(sta::Edge* edge)
 {
@@ -52,7 +52,7 @@ LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
 std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     AbcLibrary& abc_network)
 {
-  rmp::SearchPredNonReg2AbcSupport pred(
+  cut::SearchPredNonReg2AbcSupport pred(
       open_sta_, &abc_network, open_sta_->graph());
   sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta_);
   for (const auto& end_point : endpoints_) {
@@ -126,8 +126,8 @@ sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
   sta::PinSet* constant_driver = network->drivers(input_vertex->pin());
   if (constant_driver->size() != 1) {
     logger->error(
-        utl::RMP,
-        1028,
+        utl::CUT,
+        47,
         "constant vertex: {} should have exactly one constant driver. "
         "Has {}, please report this internal error.",
         input_vertex->name(network),
@@ -285,7 +285,9 @@ sta::InstanceSet LogicExtractorFactory::GetCutInstances(
   // want to put those cells in ABC. Remove them.
   for (sta::Vertex* vertex : endpoints_) {
     sta::Instance* endpoint_instance = network->instance(vertex->pin());
-    cut_instances.erase(endpoint_instance);
+    if (network->libertyCell(endpoint_instance)->hasSequentials()) {
+      cut_instances.erase(endpoint_instance);
+    }
   }
 
   return cut_instances;
@@ -346,8 +348,8 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
     }
 
     if (!net) {
-      logger_->error(utl::RMP,
-                     1023,
+      logger_->error(utl::CUT,
+                     48,
                      "primary input pin {} connected to null net",
                      network->name(pin));
     }
@@ -359,17 +361,6 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   result.insert(
       result.end(), primary_input_nets.begin(), primary_input_nets.end());
   return result;
-}
-
-void LogicExtractorFactory::RemovePrimaryOutputInstances(
-    sta::InstanceSet& cut_instances,
-    std::vector<sta::Pin*>& primary_output_pins)
-{
-  sta::dbNetwork* network = open_sta_->getDbNetwork();
-  for (sta::Pin* pin : primary_output_pins) {
-    sta::Instance* instance = network->instance(pin);
-    cut_instances.erase(instance);
-  }
 }
 
 LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
@@ -396,10 +387,7 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
   std::vector<sta::Net*> primary_output_nets
       = ConvertIoPinsToNets(filtered_primary_outputs);
 
-  // Modifies cut_instances in-place
-  RemovePrimaryOutputInstances(cut_instances, primary_outputs);
-
   return LogicCut(primary_input_nets, primary_output_nets, cut_instances);
 }
 
-}  // namespace rmp
+}  // namespace cut

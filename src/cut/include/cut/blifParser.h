@@ -11,7 +11,7 @@ namespace utl {
 class Logger;
 }
 
-namespace rmp {
+namespace cut {
 
 enum class GateType
 {
@@ -65,4 +65,4 @@ class BlifParser
   int flopCount_;
 };
 
-}  // namespace rmp
+}  // namespace cut
