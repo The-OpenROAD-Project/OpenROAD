@@ -26,6 +26,8 @@ class InitialPlaceVars
   int maxIter;
   int minDiffLength;
   int maxSolverIter;
+  double residualThreshold;
+  double hpwlPctChangeThreshold;
   int maxFanout;
   float netWeightScale;
   bool debug;
@@ -43,7 +45,7 @@ class InitialPlace
                std::shared_ptr<PlacerBaseCommon> pbc,
                std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                utl::Logger* logger);
-  void doBicgstabPlace(int threads);
+  void doPlace(int threads);
 
  private:
   InitialPlaceVars ipVars_;

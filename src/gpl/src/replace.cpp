@@ -61,8 +61,10 @@ void Replace::reset()
   rb_.reset();
 
   initialPlaceMaxIter_ = 20;
+  initialResidualThreshold_ = 1.0e-5;
+  initialPlaceHpwlPctChangeThreshold_ = 1.0;
   initialPlaceMinDiffLength_ = 1500;
-  initialPlaceMaxSolverIter_ = 100;
+  initialPlaceMaxSolverIter_ = 30;
   initialPlaceMaxFanout_ = 200;
   initialPlaceNetWeightScale_ = 800;
 
@@ -216,6 +218,8 @@ void Replace::doInitialPlace(int threads)
 
   InitialPlaceVars ipVars;
   ipVars.maxIter = initialPlaceMaxIter_;
+  ipVars.residualThreshold = initialResidualThreshold_;
+  ipVars.hpwlPctChangeThreshold = initialPlaceHpwlPctChangeThreshold_;
   ipVars.minDiffLength = initialPlaceMinDiffLength_;
   ipVars.maxSolverIter = initialPlaceMaxSolverIter_;
   ipVars.maxFanout = initialPlaceMaxFanout_;
@@ -225,7 +229,7 @@ void Replace::doInitialPlace(int threads)
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace(threads);
+  ip_->doPlace(threads);
 }
 
 void Replace::runMBFF(int max_sz,
@@ -382,6 +386,14 @@ int Replace::doNesterovPlace(int threads, int start_iter)
 void Replace::setInitialPlaceMaxIter(int iter)
 {
   initialPlaceMaxIter_ = iter;
+}
+
+void Replace::setInitialResidualThreshold(double threshold) {
+  initialResidualThreshold_ = threshold;
+}
+
+void Replace::setInitialHpwlPctChangeThreshold(double threshold) {
+  initialPlaceHpwlPctChangeThreshold_ = threshold;
 }
 
 void Replace::setInitialPlaceMinDiffLength(int length)
