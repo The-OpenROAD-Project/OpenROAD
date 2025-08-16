@@ -222,7 +222,6 @@ void HTreeBuilder::preSinkClustering(
       for (ClockInst* clockInstObj : clusterClockInsts) {
         clockSubNet.addInst(*clockInstObj);
       }
-      clockSubNet.setTreeLevel(0);
       if (!secondLevel) {
         clockSubNet.setLeafLevel(true);
       }
