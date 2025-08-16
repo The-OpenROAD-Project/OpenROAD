@@ -510,9 +510,7 @@ dbModBTerm* dbModule::findModBTerm(const char* name)
   }
   _dbModule* obj = (_dbModule*) this;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  // TODO: Fix this. But hierarchicalConnect() should be fixed first.
-  // Correct: auto it = obj->_modbterm_hash.find(modbterm_name);
-  auto it = obj->_modbterm_hash.find(name);
+  auto it = obj->_modbterm_hash.find(modbterm_name);
   if (it != obj->_modbterm_hash.end()) {
     auto db_id = (*it).second;
     return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);

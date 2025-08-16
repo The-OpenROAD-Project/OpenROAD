@@ -45,45 +45,45 @@ module mid1 (clk,
  output out1;
  output out2;
 
- wire net67;
- wire net18;
- wire net12;
+ wire net_o_3;
+ wire net_o_1;
+ wire net_o;
  wire l2_out2;
  wire l2_out1;
  wire l1_out;
 
- DFF_X1 dff_load1 (.D(net67),
+ DFF_X1 dff_load1 (.D(net_o_3),
     .CK(clk));
- DFF_X1 dff_load10 (.D(net67),
+ DFF_X1 dff_load10 (.D(net_o_3),
     .CK(clk));
- DFF_X1 dff_load2 (.D(net67),
+ DFF_X1 dff_load2 (.D(net_o_3),
     .CK(clk));
- DFF_X1 dff_load3 (.D(net18),
+ DFF_X1 dff_load3 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load4 (.D(net67),
+ DFF_X1 dff_load4 (.D(net_o_3),
     .CK(clk));
- DFF_X1 dff_load5 (.D(net18),
+ DFF_X1 dff_load5 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load6 (.D(net67),
+ DFF_X1 dff_load6 (.D(net_o_3),
     .CK(clk));
- DFF_X1 dff_load7 (.D(net18),
+ DFF_X1 dff_load7 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load8 (.D(net18),
+ DFF_X1 dff_load8 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load9 (.D(net67),
+ DFF_X1 dff_load9 (.D(net_o_3),
     .CK(clk));
  DFF_X1 dff_out1 (.D(l1_out),
     .CK(clk),
     .Q(out1));
- DFF_X1 dff_out2 (.D(net18),
+ DFF_X1 dff_out2 (.D(net_o_1),
     .CK(clk),
     .Q(out2));
  leaf1 u_leaf1 (.clk(clk),
     .in1(in1),
     .out1(l1_out));
- leaf2 u_leaf2 (.net67_o(net67),
-    .net18_o(net18),
-    .net12_o(net12),
+ leaf2 u_leaf2 (.net_o_3(net_o_3),
+    .net_o_1(net_o_1),
+    .net_o(net_o),
     .clk(clk),
     .in1(in2),
     .out1(l2_out1),
@@ -108,28 +108,28 @@ module leaf1 (clk,
     .CK(clk),
     .Q(out1));
 endmodule
-module leaf2 (net67_o,
-    net18_o,
-    net12_o,
+module leaf2 (net_o_3,
+    net_o_1,
+    net_o,
     clk,
     in1,
     out1,
     out2);
- output net67_o;
- output net18_o;
- output net12_o;
+ output net_o_3;
+ output net_o_1;
+ output net_o;
  input clk;
  input in1;
  output out1;
  output out2;
 
 
- BUF_X4 rebuffer9 (.A(net12_o),
-    .Z(net67_o));
- BUF_X4 split2 (.A(net12_o),
-    .Z(net18_o));
+ BUF_X4 rebuffer9 (.A(net_o),
+    .Z(net_o_3));
+ BUF_X4 split2 (.A(net_o),
+    .Z(net_o_1));
  BUF_X4 rebuffer1 (.A(out1),
-    .Z(net12_o));
+    .Z(net_o));
  BUF_X2 buf1 (.A(n1),
     .Z(n2));
  BUF_X2 buf2 (.A(n1),

@@ -174,9 +174,15 @@ class dbNetwork : public ConcreteNetwork
                                 dbModITerm*& dest_moditerm);
 
   bool connected(Pin* source_pin, Pin* dest_pin);
+  void createHierarchyBottomUp(dbITerm* pin,
+                               dbModule* highest_common_module,
+                               const dbIoType& io_type,
+                               const char* connection_name,
+                               dbModNet*& top_mod_net,
+                               dbModITerm*& top_mod_iterm);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
-                           const char* connection_name);
+                           const char* connection_name = "net");
 
   void getParentHierarchy(dbModule* start_module,
                           std::vector<dbModule*>& parent_hierarchy) const;
@@ -393,6 +399,57 @@ class dbNetwork : public ConcreteNetwork
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
+
+  // Debug log methods
+  void dlogHierConnStart(odb::dbITerm* source_pin,
+                         odb::dbITerm* dest_pin,
+                         const char* connection_name);
+  void dlogHierConnCreateFlatNet(const std::string& flat_name);
+  void dlogHierConnConnectSrcToFlatNet(odb::dbITerm* source_pin,
+                                       const std::string& flat_name);
+  void dlogHierConnConnectDstToFlatNet(odb::dbITerm* dest_pin,
+                                       odb::dbNet* source_db_net);
+  void dlogHierConnReusingConnection(odb::dbModule* dest_db_module,
+                                     odb::dbModNet* dest_mod_net);
+  void dlogHierConnCreatingSrcHierarchy(odb::dbITerm* source_pin,
+                                        odb::dbModule* highest_common_module);
+  void dlogHierConnCreatingDstHierarchy(odb::dbITerm* dest_pin,
+                                        odb::dbModule* highest_common_module);
+  void dlogHierConnConnectingInCommon(const char* connection_name,
+                                      odb::dbModule* highest_common_module);
+  void dlogHierConnCreatingTopNet(const char* connection_name,
+                                  odb::dbModule* highest_common_module);
+  void dlogHierConnConnectingTopDstPin(odb::dbModITerm* top_mod_dest,
+                                       odb::dbModNet* net);
+  void dlogHierConnConnectingDstPin(odb::dbITerm* dest_pin,
+                                    odb::dbModNet* top_net);
+  void dlogHierConnReassociatingDstPin(odb::dbNet* dest_pin_flat_net,
+                                       odb::dbModNet* dest_pin_mod_net);
+  void dlogHierConnReassociatingSrcPin(odb::dbNet* source_pin_flat_net,
+                                       odb::dbModNet* source_pin_mod_net);
+  void dlogHierConnCleaningUpSrc(odb::dbModInst* mi);
+  void dlogHierConnCleaningUpDst(odb::dbModInst* mi);
+  void dlogHierConnDone();
+  void dlogCreateHierBTermAndModNet(int level,
+                                    odb::dbModule* cur_module,
+                                    const std::string& new_term_net_name_i);
+  void dlogCreateHierDisconnectingPin(int level,
+                                      odb::dbModule* cur_module,
+                                      odb::dbITerm* pin,
+                                      odb::dbModNet* pin_mod_net);
+  void dlogCreateHierConnectingPin(int level,
+                                   odb::dbModule* cur_module,
+                                   odb::dbITerm* pin,
+                                   odb::dbModNet* db_mod_net);
+  void dlogCreateHierCreatingITerm(int level,
+                                   odb::dbModule* cur_module,
+                                   odb::dbModInst* parent_inst,
+                                   const std::string& new_term_net_name_i);
+  void dlogCreateHierConnectingITerm(int level,
+                                     odb::dbModule* cur_module,
+                                     odb::dbModInst* parent_inst,
+                                     const std::string& new_term_net_name_i,
+                                     odb::dbModNet* db_mod_net);
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
