@@ -3,6 +3,7 @@
 
 #include "Rebuffer.hh"
 
+#include <limits>
 #include <memory>
 
 #include "BufferMove.hh"
@@ -2009,10 +2010,14 @@ void Rebuffer::printProgress(int iteration,
   if (iteration % print_interval_ == 0 || force || end) {
     const double design_area = resizer_->computeDesignArea();
     const double area_growth = design_area - initial_design_area_;
+    double area_growth_percent = std::numeric_limits<double>::infinity();
+    if (std::abs(initial_design_area_) > 0.0) {
+      area_growth_percent = area_growth / initial_design_area_ * 100.0;
+    }
 
     logger_->report("{: >9s} | {: >+8.1f}% | {: >7d} | {: >8d} | {: >9d}",
                     end ? "final" : std::to_string(iteration),
-                    area_growth / initial_design_area_ * 1e2,
+                    area_growth_percent,
                     removed_count_,
                     inserted_count_,
                     remaining);

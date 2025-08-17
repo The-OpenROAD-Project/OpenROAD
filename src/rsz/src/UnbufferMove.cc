@@ -342,7 +342,8 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
       && (!removed || !sdc_->isConstrained(removed))
       && !sdc_->isConstrained(buffer)) {
-    return !db_net_removed || db_net_survivor->canMergeNet(db_net_removed);
+    return db_net_removed == nullptr
+           || (db_net_survivor && db_net_survivor->canMergeNet(db_net_removed));
   }
   return false;
 }
