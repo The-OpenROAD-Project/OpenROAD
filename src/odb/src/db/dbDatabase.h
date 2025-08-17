@@ -46,7 +46,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 115;  // Current revision number
+const uint db_schema_minor = 116;  // Current revision number
+
+// Revision where dbChipRegion was added
+const uint db_schema_chip_region = 116;
 
 // Revision where dbChipInst was added
 const uint db_schema_chip_inst = 115;

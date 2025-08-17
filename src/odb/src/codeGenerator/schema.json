@@ -382,6 +382,14 @@
       "tbl_name":"_prop_tbl"
     },
     {
+      "parent":"dbChip",
+      "child":"dbChipRegion",
+      "type":"1_n", 
+      "flags": [],
+      "schema":"db_schema_chip_region",
+      "tbl_name":"chip_region_tbl_"
+    },
+    {
       "parent":"dbDatabase",
       "child":"dbChip",
       "type":"1_n",

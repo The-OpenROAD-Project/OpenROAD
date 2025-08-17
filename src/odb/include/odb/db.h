@@ -107,6 +107,7 @@ class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
 class dbChipInst;
+class dbChipRegion;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -6994,6 +6995,8 @@ class dbChip : public dbObject
 
   bool isTsv() const;
 
+  dbSet<dbChipRegion> getChipRegions() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7051,6 +7054,37 @@ class dbChipInst : public dbObject
 
   static void destroy(dbChipInst* chipInst);
   // User Code End dbChipInst
+};
+
+class dbChipRegion : public dbObject
+{
+ public:
+  enum class Side
+  {
+    FRONT,
+    BACK,
+    INTERNAL,
+    INTERNAL_EXT
+  };
+
+  std::string getName() const;
+
+  void setBox(const Rect& box);
+
+  Rect getBox() const;
+
+  // User Code Begin dbChipRegion
+  Side getSide() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbChipRegion* create(dbChip* chip,
+                              const std::string& name,
+                              Side side,
+                              dbTechLayer* layer);
+
+  static void destroy(dbChipRegion* chipRegion);
+  // User Code End dbChipRegion
 };
 
 class dbDatabase : public dbObject
