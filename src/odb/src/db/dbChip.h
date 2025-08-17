@@ -38,7 +38,7 @@ class _dbChip : public _dbObject
   int width_;
   int height_;
   int thickness_;
-  // range ]0, 1]
+  // range (0, 1]
   float shrink_;
   int seal_ring_east_;
   int seal_ring_west_;

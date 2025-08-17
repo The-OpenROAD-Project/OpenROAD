@@ -46,13 +46,16 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 114;  // Current revision number
+const uint db_schema_minor = 115;  // Current revision number
 
 // Revision where dbChipInst was added
-const uint db_schema_chip_inst = 114;
+const uint db_schema_chip_inst = 115;
 
 // Revision where dbChip hash table was added
-const uint db_schema_chip_hash_table = 113;
+const uint db_schema_chip_hash_table = 114;
+
+// Revision where unique net/inst indices were added to dbBlock
+const uint db_schema_unique_indices = 113;
 
 // Revision where dbChip was extended with new fields
 const uint db_schema_chip_extended = 112;

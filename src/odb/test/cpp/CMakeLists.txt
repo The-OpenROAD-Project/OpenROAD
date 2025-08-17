@@ -60,7 +60,7 @@ target_link_libraries(TestChips ${TEST_LIBS})
 # directory.
 gtest_discover_tests(OdbGTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*"
+    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*,-TestChips.*"
 )
 
 add_dependencies(build_and_test 
@@ -72,6 +72,7 @@ add_dependencies(build_and_test
         TestGuide
         TestNetTrack
         TestMaster
+        TestChips
         OdbGTests
 )
 add_subdirectory(helper)

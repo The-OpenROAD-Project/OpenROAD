@@ -1244,13 +1244,13 @@ uint dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
-dbInst* dbInst::create(dbBlock* block_,
-                       dbMaster* master_,
-                       const char* name_,
+dbInst* dbInst::create(dbBlock* block,
+                       dbMaster* master,
+                       const char* name,
                        bool physical_only,
-                       dbModule* target_module)
+                       dbModule* parent_module)
 {
-  return create(block_, master_, name_, nullptr, physical_only, target_module);
+  return create(block, master, name, nullptr, physical_only, parent_module);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
