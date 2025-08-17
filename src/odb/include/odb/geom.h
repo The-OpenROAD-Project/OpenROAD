@@ -73,8 +73,8 @@ class Point3D : public Point
   Point3D(const Point3D& p) : Point(p.getX(), p.getY()), z_(p.getZ()) {}
   Point3D(const Point& p, int z) : Point(p), z_(z) {}
 
-  bool operator==(const Point3D& pIn) const;
-  bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
+  bool operator==(const Point3D& rhs) const;
+  bool operator!=(const Point3D& rhs) const { return !(*this == rhs); }
   bool operator<(const Point3D& rhs) const;
   bool operator>=(const Point3D& rhs) const { return !(*this < rhs); }
 
