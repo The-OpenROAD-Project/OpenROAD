@@ -10,7 +10,7 @@
     {
       "name": "loc_",
       "type": "Point3D",
-      "flags":["cmpgt"]
+      "flags":["cmpgt", "set-const-ref"]
     },
     {
       "name": "orient_",
