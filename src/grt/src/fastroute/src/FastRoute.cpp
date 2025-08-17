@@ -23,7 +23,9 @@ using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
-                             stt::SteinerTreeBuilder* stt_builder)
+                             utl::CallBackHandler* callback_handler,
+                             stt::SteinerTreeBuilder* stt_builder,
+                             sta::dbSta* sta)
     : max_degree_(0),
       db_(db),
       overflow_iterations_(0),
@@ -55,11 +57,12 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       regular_x_(false),
       regular_y_(false),
+      callback_handler_(callback_handler),
       logger_(log),
       stt_builder_(stt_builder),
+      sta_(sta),
       debug_(new DebugSetting())
 {
-  parasitics_builder_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -485,24 +488,74 @@ void FastRouteCore::addAdjustment(int x1,
   }
 }
 
+void FastRouteCore::releaseResourcesOnInterval(
+    int x,
+    int y,
+    int layer,
+    bool is_horizontal,
+    const interval<int>::type& tile_reduce_interval,
+    const std::vector<int>& track_space)
+{
+  int edge_cap;
+  // Get capacity on the position
+  if (is_horizontal) {
+    edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
+  } else {
+    edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
+  }
+  // Get total of resources to release
+  int increase = 0;
+  if (layer > 0 && layer <= track_space.size()) {
+    increase
+        = std::ceil(static_cast<float>(std::abs(tile_reduce_interval.upper()
+                                                - tile_reduce_interval.lower()))
+                    / track_space[layer - 1]);
+  }
+  // increase resource
+  edge_cap += increase;
+  if (is_horizontal) {
+    addAdjustment(x, y, x + 1, y, layer, edge_cap, false);
+  } else {
+    addAdjustment(x, y, x, y + 1, layer, edge_cap, false);
+  }
+}
+
 void FastRouteCore::addVerticalAdjustments(
     const odb::Point& first_tile,
     const odb::Point& last_tile,
     const int layer,
     const interval<int>::type& first_tile_reduce_interval,
-    const interval<int>::type& last_tile_reduce_interval)
+    const interval<int>::type& last_tile_reduce_interval,
+    const std::vector<int>& track_space,
+    bool release)
 {
-  // add intervals to set for each tile
+  // Add intervals to set or release resources for each tile
   for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
       if (x == first_tile.getX()) {
-        vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += first_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, false, first_tile_reduce_interval, track_space);
+        } else {
+          vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += first_tile_reduce_interval;
+        }
       } else if (x == last_tile.getX()) {
-        vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += last_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, false, last_tile_reduce_interval, track_space);
+        } else {
+          vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += last_tile_reduce_interval;
+        }
       } else {
-        addAdjustment(x, y, x, y + 1, layer, 0, true);
+        // Restore capacity removed by blockage
+        if (release) {
+          int reduced = v_edges_3D_[layer - 1][y][x].red;
+          addAdjustment(x, y, x, y + 1, layer, reduced, false);
+        } else {
+          addAdjustment(x, y, x, y + 1, layer, 0, true);
+        }
       }
     }
   }
@@ -513,19 +566,37 @@ void FastRouteCore::addHorizontalAdjustments(
     const odb::Point& last_tile,
     const int layer,
     const interval<int>::type& first_tile_reduce_interval,
-    const interval<int>::type& last_tile_reduce_interval)
+    const interval<int>::type& last_tile_reduce_interval,
+    const std::vector<int>& track_space,
+    bool release)
 {
-  // add intervals to each tiles
+  // Add intervals to set or release resources for each tile
   for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
       if (y == first_tile.getY()) {
-        horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += first_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, true, first_tile_reduce_interval, track_space);
+        } else {
+          horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += first_tile_reduce_interval;
+        }
       } else if (y == last_tile.getY()) {
-        horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += last_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, true, last_tile_reduce_interval, track_space);
+        } else {
+          horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += last_tile_reduce_interval;
+        }
       } else {
-        addAdjustment(x, y, x + 1, y, layer, 0, true);
+        // Restore capacity removed by blockage
+        if (release) {
+          int reduced = h_edges_3D_[layer - 1][y][x].red;
+          addAdjustment(x, y, x + 1, y, layer, reduced, false);
+        } else {
+          addAdjustment(x, y, x + 1, y, layer, 0, true);
+        }
       }
     }
   }
@@ -1395,12 +1466,6 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
-}
-
-void FastRouteCore::setMakeWireParasiticsBuilder(
-    AbstractMakeWireParasitics* builder)
-{
-  parasitics_builder_ = builder;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)

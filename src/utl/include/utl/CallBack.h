@@ -26,6 +26,14 @@ class CallBack
    */
   virtual void onPinAccessUpdateRequired() {}
 
+  /**
+   * @brief Called when parasitic estimation is required.
+   *
+   * This callback is triggered when modules need to perform parasitic
+   * estimation for timing.
+   */
+  virtual void onEstimateParasiticsRequired() {}
+
   void setOwner(CallBackHandler* owner);
   CallBackHandler* getOwner() const { return owner_; }
   void removeOwner();

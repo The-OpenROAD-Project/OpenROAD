@@ -25,16 +25,11 @@ or_integration_tests(
     gain_buffering1
     gcd_resize
     liberty_dont_use
-    make_parasitics1
-    make_parasitics2
-    make_parasitics3
-    make_parasitics4
-    make_parasitics5
-    make_parasitics6
-    make_parasitics7
     pin_swap1
     pinswap_flat
     pinswap_hier
+    rebuffer1
+    rebuffer1_hier
     recover_power_verbose
     remove_buffers1
     remove_buffers2
@@ -89,6 +84,8 @@ or_integration_tests(
     repair_setup7
     repair_setup7_limit
     repair_setup8
+    repair_setup9
+    repair_setup9_hier
     repair_setup_undo
     repair_slew1
     repair_slew2

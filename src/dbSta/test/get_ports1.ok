@@ -1,0 +1,72 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+clk {top_in_bus[0]} {top_in_bus[1]} {top_in_bus[2]} {top_in_bus[3]} {top_in_bus[4]} {top_in_bus[5]} {top_in_bus[6]} {top_in_bus[7]} top_in_single {top_out_bus[0]} {top_out_bus[1]} {top_out_bus[2]} {top_out_bus[3]} {top_out_bus[4]} top_out_single
+count: 16
+
+{top_in_bus[0]} {top_in_bus[1]} {top_in_bus[2]} {top_in_bus[3]} {top_in_bus[4]} {top_in_bus[5]} {top_in_bus[6]} {top_in_bus[7]}
+count: 8
+
+{top_in_bus[0]} {top_in_bus[1]} {top_in_bus[2]} {top_in_bus[3]} {top_in_bus[4]} {top_in_bus[5]} {top_in_bus[6]} {top_in_bus[7]}
+count: 8
+
+top_in_single
+count: 1
+
+top_out_single
+count: 1
+
+{top_in_bus[0]} {top_in_bus[1]} {top_in_bus[2]} {top_in_bus[3]} {top_in_bus[4]} {top_in_bus[5]} {top_in_bus[6]} {top_in_bus[7]} top_in_single
+count: 9
+
+{top_out_bus[0]} {top_out_bus[1]} {top_out_bus[2]} {top_out_bus[3]} {top_out_bus[4]} top_out_single
+count: 6
+
+clk
+count: 1
+
+[WARNING STA-0349] instance 'sub_inst' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/in_bus*' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/out_bus*' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/in_single*' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/out_single*' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/in*' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/out*' not found.
+
+count: 0
+
+[WARNING STA-0363] pin 'sub_inst/*[1]' not found.
+
+count: 0
+
+{top_in_bus[3]}
+count: 1
+
+{top_in_bus[2]}
+count: 1
+
+{top_in_bus[1]}
+count: 1
+
+{top_in_bus[0]}
+count: 1
+
+{top_in_bus[2]} {top_out_bus[2]}
+count: 2
+

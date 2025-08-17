@@ -60,7 +60,7 @@
       "name": "shrink_",
       "type": "float",
       "default": "0.0",
-      "comment": "// range ]0, 1]",
+      "comment": "// range (0, 1]",
       "schema": "db_schema_chip_extended"
     },
     {

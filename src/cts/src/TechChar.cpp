@@ -36,11 +36,13 @@ TechChar::TechChar(CtsOptions* options,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
                    rsz::Resizer* resizer,
+                   est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
                    Logger* logger)
     : options_(options),
       db_(db),
       resizer_(resizer),
+      estimate_parasitics_(estimate_parasitics),
       openSta_(sta),
       openStaChar_(nullptr),
       db_network_(db_network),
@@ -418,8 +420,10 @@ void TechChar::initClockLayerResCap(float dbUnitsPerMicron)
   sta::Corner* corner = openSta_->cmdCorner();
 
   // convert from per meter to per dbu
-  capPerDBU_ = resizer_->wireClkCapacitance(corner) * 1e-6 / dbUnitsPerMicron;
-  resPerDBU_ = resizer_->wireClkResistance(corner) * 1e-6 / dbUnitsPerMicron;
+  capPerDBU_ = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
+               / dbUnitsPerMicron;
+  resPerDBU_ = estimate_parasitics_->wireClkResistance(corner) * 1e-6
+               / dbUnitsPerMicron;
 
   if (resPerDBU_ == 0.0 || capPerDBU_ == 0.0) {
     logger_->warn(CTS,
