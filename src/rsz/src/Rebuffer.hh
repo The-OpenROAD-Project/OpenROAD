@@ -151,7 +151,7 @@ class Rebuffer : public sta::dbStaState
   float drvr_load_high_water_mark_ = 0.0f;
   const Corner* corner_ = nullptr;
   LibertyPort* drvr_port_ = nullptr;
-  Path* arrival_paths_[RiseFall::index_count] = {0};
+  Path* arrival_paths_[RiseFall::index_count] = {nullptr};
 
   int resizer_max_wire_length_ = 0;
   int wire_length_step_ = 0;
