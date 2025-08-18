@@ -171,6 +171,15 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbChipInst.h", "dbChip.h"]
+    },
+    {
+      "name": "dbChipRegionInstItr",
+      "parentObject": "dbChipRegionInst",
+      "tableName": "chip_region_inst_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipInst.h", "dbChip.h"]
     }
   ],
   "relations":[
@@ -411,6 +420,14 @@
       "type":"1_n",
       "tbl_name":"chip_inst_tbl_",
       "schema":"db_schema_chip_inst",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipRegionInst",
+      "type":"1_n",
+      "tbl_name":"chip_region_inst_tbl_",
+      "schema":"db_schema_chip_region",
       "flags": ["no-serial"]
     }
   ]

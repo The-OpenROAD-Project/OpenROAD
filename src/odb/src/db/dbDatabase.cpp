@@ -6,6 +6,7 @@
 
 #include "dbChip.h"
 #include "dbChipInst.h"
+#include "dbChipRegionInst.h"
 #include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -25,6 +26,7 @@
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbChipInstItr.h"
+#include "dbChipRegionInstItr.h"
 #include "dbGDSLib.h"
 #include "dbITerm.h"
 #include "dbJournal.h"
@@ -76,6 +78,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*chip_inst_tbl_ != *rhs.chip_inst_tbl_) {
     return false;
   }
+  if (*chip_region_inst_tbl_ != *rhs.chip_region_inst_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
   //
@@ -124,6 +129,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
   chip_inst_tbl_ = new dbTable<_dbChipInst>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipInstObj);
+  chip_region_inst_tbl_ = new dbTable<_dbChipRegionInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbChipRegionInstObj);
   // User Code Begin Constructor
   _magic1 = DB_MAGIC1;
   _magic2 = DB_MAGIC2;
@@ -148,6 +158,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
+
+  chip_region_inst_itr_ = new dbChipRegionInstItr(chip_region_inst_tbl_);
   // User Code End Constructor
 }
 
@@ -209,7 +221,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(db_schema_chip_inst)) {
     stream >> *obj.chip_inst_tbl_;
   }
-
+  if (obj.isSchema(db_schema_chip_region)) {
+    stream >> *obj.chip_region_inst_tbl_;
+  }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
     if (obj._chip) {
@@ -271,6 +285,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return _prop_tbl;
     case dbChipInstObj:
       return chip_inst_tbl_;
+    case dbChipRegionInstObj:
+      return chip_region_inst_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return _tech_tbl;
@@ -297,6 +313,9 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   chip_inst_tbl_->collectMemInfo(info.children_["chip_inst_tbl_"]);
 
+  chip_region_inst_tbl_->collectMemInfo(
+      info.children_["chip_region_inst_tbl_"]);
+
   // User Code Begin collectMemInfo
   _tech_tbl->collectMemInfo(info.children_["tech"]);
   _lib_tbl->collectMemInfo(info.children_["lib"]);
@@ -310,6 +329,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_tbl_;
   delete _prop_tbl;
   delete chip_inst_tbl_;
+  delete chip_region_inst_tbl_;
   // User Code Begin Destructor
   delete _tech_tbl;
   delete _lib_tbl;
@@ -317,6 +337,7 @@ _dbDatabase::~_dbDatabase()
   delete _name_cache;
   delete _prop_itr;
   delete chip_inst_itr_;
+  delete chip_region_inst_itr_;
   // User Code End Destructor
 }
 
@@ -356,6 +377,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
+
+  chip_region_inst_itr_ = new dbChipRegionInstItr(chip_region_inst_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -403,6 +426,12 @@ dbSet<dbChipInst> dbDatabase::getChipInsts() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbChipInst>(obj, obj->chip_inst_tbl_);
+}
+
+dbSet<dbChipRegionInst> dbDatabase::getChipRegionInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbChipRegionInst>(obj, obj->chip_region_inst_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods

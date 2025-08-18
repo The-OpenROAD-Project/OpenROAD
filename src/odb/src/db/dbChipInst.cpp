@@ -12,6 +12,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbChip.h"
+#include "dbChipRegionInst.h"
 #include "odb/dbTransform.h"
 // User Code End Includes
 namespace odb {
@@ -32,6 +33,9 @@ bool _dbChipInst::operator==(const _dbChipInst& rhs) const
     return false;
   }
   if (chipinst_next_ != rhs.chipinst_next_) {
+    return false;
+  }
+  if (chip_region_insts_ != rhs.chip_region_insts_) {
     return false;
   }
 
@@ -61,6 +65,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj)
   stream >> obj.master_chip_;
   stream >> obj.parent_chip_;
   stream >> obj.chipinst_next_;
+  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+    stream >> obj.chip_region_insts_;
+  }
   return stream;
 }
 
@@ -71,6 +78,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipInst& obj)
   stream << obj.master_chip_;
   stream << obj.parent_chip_;
   stream << obj.chipinst_next_;
+  stream << obj.chip_region_insts_;
   return stream;
 }
 
@@ -144,6 +152,13 @@ dbTransform dbChipInst::getTransform() const
   return dbTransform(obj->orient_, obj->loc_);
 }
 
+dbSet<dbChipRegionInst> dbChipInst::getRegions() const
+{
+  _dbChipInst* _chipinst = (_dbChipInst*) this;
+  _dbDatabase* _db = (_dbDatabase*) _chipinst->getOwner();
+  return dbSet<dbChipRegionInst>(_chipinst, _db->chip_region_inst_itr_);
+}
+
 dbChipInst* dbChipInst::create(dbChip* parent_chip,
                                dbChip* master_chip,
                                const std::string& name)
@@ -182,6 +197,14 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
   chipinst->chipinst_next_ = _parent->chipinsts_;
   _parent->chipinsts_ = chipinst->getOID();
 
+  // create chipRegionInsts
+  for (auto region : master_chip->getChipRegions()) {
+    _dbChipRegionInst* regioninst = db->chip_region_inst_tbl_->create();
+    regioninst->region_ = region->getImpl()->getOID();
+    regioninst->parent_chipinst_ = chipinst->getOID();
+    regioninst->chip_region_inst_next_ = chipinst->chip_region_insts_;
+    chipinst->chip_region_insts_ = regioninst->getOID();
+  }
   return (dbChipInst*) chipinst;
 }
 
@@ -194,6 +217,14 @@ void dbChipInst::destroy(dbChipInst* chipInst)
   _dbChipInst* inst = (_dbChipInst*) chipInst;
   _dbDatabase* db = (_dbDatabase*) inst->getOwner();
 
+  // remove regions
+  uint region_inst_id = inst->chip_region_insts_;
+  while (region_inst_id != 0) {
+    _dbChipRegionInst* region_inst
+        = db->chip_region_inst_tbl_->getPtr(region_inst_id);
+    region_inst_id = region_inst->chip_region_inst_next_;
+    db->chip_region_inst_tbl_->destroy(region_inst);
+  }
   // Get parent chip
   _dbChip* parent = db->chip_tbl_->getPtr(inst->parent_chip_);
 

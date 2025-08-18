@@ -108,6 +108,7 @@ class dbCellEdgeSpacing;
 class dbChip;
 class dbChipInst;
 class dbChipRegion;
+class dbChipRegionInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -7048,6 +7049,8 @@ class dbChipInst : public dbObject
 
   dbTransform getTransform() const;
 
+  dbSet<dbChipRegionInst> getRegions() const;
+
   static odb::dbChipInst* create(dbChip* parent_chip,
                                  dbChip* master_chip,
                                  const std::string& name);
@@ -7087,6 +7090,18 @@ class dbChipRegion : public dbObject
   // User Code End dbChipRegion
 };
 
+class dbChipRegionInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipRegionInst
+
+  dbChipInst* getChipInst() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  // User Code End dbChipRegionInst
+};
+
 class dbDatabase : public dbObject
 {
  public:
@@ -7097,6 +7112,8 @@ class dbDatabase : public dbObject
   dbSet<dbProperty> getProperties() const;
 
   dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipRegionInst> getChipRegionInsts() const;
 
   // User Code Begin dbDatabase
 

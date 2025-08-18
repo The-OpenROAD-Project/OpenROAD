@@ -90,6 +90,7 @@ add_library(db
     dbChip.cpp
     dbChipInst.cpp
     dbChipRegion.cpp
+    dbChipRegionInst.cpp
     dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
@@ -147,6 +148,7 @@ add_library(db
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
     dbChipInstItr.cpp
+    dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
     dbGroupModInstItr.cpp

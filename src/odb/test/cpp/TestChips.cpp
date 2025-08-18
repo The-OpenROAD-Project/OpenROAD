@@ -24,6 +24,10 @@ struct F_CHIP_HIERARCHY
     lib2 = dbLib::create(db, "lib2", tech2, ',');
 
     system_chip = dbChip::create(db, "system_chip", dbChip::ChipType::HIER);
+    system_chip->setWidth(5000);
+    system_chip->setHeight(4000);
+    system_chip->setThickness(500);
+    system_chip->setOffset(Point(10, 0));
     cpu_chip = dbChip::create(db, "cpu_chip", dbChip::ChipType::HIER);
     memory_chip = dbChip::create(db, "memory_chip");
     io_chip = dbChip::create(db, "io_chip");
@@ -31,18 +35,6 @@ struct F_CHIP_HIERARCHY
     // Create blocks
     dbBlock::create(memory_chip, "memory_block", tech1);
     dbBlock::create(io_chip, "io_block", tech2);
-
-    system_chip->setWidth(5000);
-    system_chip->setHeight(4000);
-    system_chip->setThickness(500);
-    system_chip->setOffset(Point(10, 0));
-    // Create chip instances in system
-    cpu_inst = dbChipInst::create(system_chip, cpu_chip, "cpu_inst");
-    memory_inst = dbChipInst::create(system_chip, memory_chip, "memory_inst");
-    io_inst = dbChipInst::create(system_chip, io_chip, "io_inst");
-
-    // Create cache instance in CPU chip (nested hierarchy)
-    cache_inst = dbChipInst::create(cpu_chip, cache_chip, "cache_inst");
 
     // Create chip regions
     memory_chip_region_r1 = dbChipRegion::create(
@@ -53,6 +45,14 @@ struct F_CHIP_HIERARCHY
         memory_chip, "R3", dbChipRegion::Side::INTERNAL, nullptr);
     io_chip_region_r1 = dbChipRegion::create(
         io_chip, "R1", dbChipRegion::Side::FRONT, layer_M1);
+
+    // Create chip instances in system
+    cpu_inst = dbChipInst::create(system_chip, cpu_chip, "cpu_inst");
+    memory_inst = dbChipInst::create(system_chip, memory_chip, "memory_inst");
+    io_inst = dbChipInst::create(system_chip, io_chip, "io_inst");
+
+    // Create cache instance in CPU chip (nested hierarchy)
+    cache_inst = dbChipInst::create(cpu_chip, cache_chip, "cache_inst");
 
     // Position components
     memory_inst->setLoc(Point3D(2500, 500, 0));
@@ -199,6 +199,21 @@ BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)
 }
 BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
 {
+  auto iterateChipRegions = [](dbChip* chip,
+                               std::set<std::string> region_names) {
+    BOOST_TEST(chip->getChipRegions().size() == region_names.size());
+    for (auto region : chip->getChipRegions()) {
+      BOOST_TEST((region_names.find(region->getName()) != region_names.end()));
+    }
+  };
+  auto iterateChipRegionInsts
+      = [](dbChipInst* chipinst, std::set<std::string> region_names) {
+          BOOST_TEST(chipinst->getRegions().size() == region_names.size());
+          for (auto region : chipinst->getRegions()) {
+            BOOST_TEST((region_names.find(region->getChipRegion()->getName())
+                        != region_names.end()));
+          }
+        };
   // Test dbChipRegion methods
   BOOST_TEST(memory_chip_region_r1->getName() == "R1");
   BOOST_TEST((memory_chip_region_r1->getSide() == dbChipRegion::Side::FRONT));
@@ -206,11 +221,19 @@ BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
   BOOST_TEST(
       (memory_chip_region_r3->getSide() == dbChipRegion::Side::INTERNAL));
   BOOST_TEST(memory_chip_region_r3->getLayer() == nullptr);
+  iterateChipRegions(memory_chip, {"R1", "R2", "R3"});
+  iterateChipRegionInsts(memory_inst, {"R1", "R2", "R3"});
+  iterateChipRegions(io_chip, {"R1"});
+  dbChipRegion::destroy(memory_chip_region_r2);
+  iterateChipRegions(memory_chip, {"R1", "R3"});
+  iterateChipRegionInsts(memory_inst, {"R1", "R3"});
+  dbChipRegion::destroy(memory_chip_region_r1);
+  iterateChipRegions(memory_chip, {"R3"});
+  iterateChipRegionInsts(memory_inst, {"R3"});
 
-  BOOST_TEST(memory_chip->getChipRegions().size() == 3);
-  dbChipRegion::destroy(memory_chip_region_r3);
-  BOOST_TEST(memory_chip->getChipRegions().size() == 2);
-
+  dbChipRegion::create(memory_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
+  iterateChipRegions(memory_chip, {"R1", "R3"});
+  iterateChipRegionInsts(memory_inst, {"R1", "R3"});
   try {
     dbChipRegion::create(cpu_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
     BOOST_TEST(false);

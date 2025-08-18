@@ -11,6 +11,7 @@
 #include <iostream>
 #include <set>
 
+#include "dbChipRegionInstItr.h"
 #include "odb/dbDatabaseObserver.h"
 namespace utl {
 class Logger;
@@ -233,9 +234,11 @@ class dbOStream;
 class _dbChip;
 class _dbProperty;
 class _dbChipInst;
+class _dbChipRegionInst;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
+class dbChipRegionInstItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
@@ -271,6 +274,7 @@ class _dbDatabase : public _dbObject
   dbHashTable<_dbChip, 2> chip_hash_;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbChipInst>* chip_inst_tbl_;
+  dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
@@ -279,6 +283,7 @@ class _dbDatabase : public _dbObject
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
   dbChipInstItr* chip_inst_itr_;
+  dbChipRegionInstItr* chip_region_inst_itr_;
   int _unique_id;
 
   utl::Logger* _logger;
