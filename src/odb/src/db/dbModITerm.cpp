@@ -57,6 +57,7 @@ bool _dbModITerm::operator<(const _dbModITerm& rhs) const
 
 _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
+  static_assert(alignof(_dbModITerm) % 8 == 0);
   _name = nullptr;
 }
 
