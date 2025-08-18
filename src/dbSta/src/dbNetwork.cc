@@ -3623,8 +3623,16 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 {
   assert(source_pin != nullptr);
   assert(dest_pin != nullptr);
-  // Connection name should be a base name (not a full name).
-  assert(strchr(connection_name, block()->getHierarchyDelimiter()) == nullptr);
+
+  // If connect_name contains the hierarchy delimiter, use the partial string
+  // after the last occurrence of the hierarchy delimiter.
+  // This prevents a very long term/net name creation when the connection_name
+  // begins with a back-slackslash as "\soc/module1/instance_a/.../clk_port"
+  const char* last_hier_delimiter
+      = strrchr(connection_name, block()->getHierarchyDelimiter());
+  if (last_hier_delimiter != nullptr) {
+    connection_name = last_hier_delimiter + 1;
+  }
 
   dlogHierConnStart(source_pin, dest_pin, connection_name);
 
