@@ -643,11 +643,6 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
-  for (auto& line : grid) {
-  	logger_->report("{}", line);
-  }
-  logger_->report("NOTCH {} WT {}", notch_penalty_, notch_weight_);
-
   if (graphics_) {
     graphics_->setNotchPenalty(
         {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
