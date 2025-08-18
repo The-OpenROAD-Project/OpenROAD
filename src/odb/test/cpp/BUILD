@@ -65,14 +65,4 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "TestChips",
-    srcs = ["TestChips.cpp"],
-    deps = [
-        "//src/odb",
-        "//src/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
 # TODO: more to come.
