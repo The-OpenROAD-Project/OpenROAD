@@ -99,6 +99,12 @@ Rect dbChipRegion::getBox() const
 }
 
 // User Code Begin dbChipRegionPublicMethods
+dbChip* dbChipRegion::getChip() const
+{
+  _dbChipRegion* obj = (_dbChipRegion*) this;
+  return (dbChip*) obj->getOwner();
+}
+
 dbChipRegion::Side dbChipRegion::getSide() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;

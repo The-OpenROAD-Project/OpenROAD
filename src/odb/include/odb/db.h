@@ -7112,6 +7112,8 @@ class dbChipRegion : public dbObject
   Rect getBox() const;
 
   // User Code Begin dbChipRegion
+  dbChip* getChip() const;
+
   Side getSide() const;
 
   dbTechLayer* getLayer() const;

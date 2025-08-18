@@ -218,6 +218,7 @@ BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
   BOOST_TEST(memory_chip_region_r1->getName() == "R1");
   BOOST_TEST((memory_chip_region_r1->getSide() == dbChipRegion::Side::FRONT));
   BOOST_TEST(memory_chip_region_r1->getLayer() == layer_l1);
+  BOOST_TEST(memory_chip_region_r1->getChip() == memory_chip);
   BOOST_TEST(
       (memory_chip_region_r3->getSide() == dbChipRegion::Side::INTERNAL));
   BOOST_TEST(memory_chip_region_r3->getLayer() == nullptr);
