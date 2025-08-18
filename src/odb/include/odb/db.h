@@ -7139,6 +7139,8 @@ class dbChipRegion : public dbObject
   dbSet<dbChipBump> getChipBumps() const;
 
   // User Code Begin dbChipRegion
+  dbChip* getChip() const;
+
   Side getSide() const;
 
   dbTechLayer* getLayer() const;
