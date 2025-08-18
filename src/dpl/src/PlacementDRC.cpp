@@ -302,8 +302,9 @@ bool PlacementDRC::checkPadding(const Node* cell,
     for (GridY grid_y{y}; grid_y < cell_y_end; grid_y++) {
       const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
       if (pixel == nullptr) {  // at the core edge
-        if (!cell->isFixed()) {
-          // Padding violation with the core edge.
+        const bool left_edge = x == 0;
+        const bool right_edge = cell_x_end == grid_->getRowSiteCount();
+        if (!cell->isFixed() && !left_edge && !right_edge) {
           return false;
         }
         continue;
