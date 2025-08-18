@@ -368,6 +368,33 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
 }  // namespace
 #endif
 
+
+static int TraceTclCommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int level,
+    const char *command,
+    Tcl_Command commandToken,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+
+    auto* commands = static_cast<std::set<std::string>*>(clientData);
+    std::string cmd_str;
+    for (int i = 0; i < objc; i++) {
+        cmd_str += Tcl_GetString(objv[i]);
+        if (i < objc - 1) {
+          cmd_str += " ";
+        }
+    }
+    utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+    if(commands->count(Tcl_GetString(objv[0]))){
+      logger->report("[CMD] "+cmd_str);
+    }
+    return TCL_OK;
+}
+
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -427,6 +454,26 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
+    std::set<std::string> commands;
+    if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
+      Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
+      int cmd_size;
+      Tcl_Obj** cmds_objs;
+      if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs)
+          == TCL_OK) {
+        for (int i = 0; i < cmd_size; i++) {
+          commands.insert(Tcl_GetString(cmds_objs[i]));
+        }
+      }
+    }
+    Tcl_CreateObjTrace(
+          interp,
+          0,
+          TCL_ALLOW_INLINE_COMPILATION, //In this case, traces on built-in commands may or may not result in trace callbacks.
+          TraceTclCommand,
+          &commands,
+          nullptr
+    );
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
