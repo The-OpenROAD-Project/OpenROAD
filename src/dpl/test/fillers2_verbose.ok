@@ -6,17 +6,16 @@
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 Placement Analysis
 ---------------------------------
-total displacement          3.7 u
-average displacement        3.7 u
-max displacement            3.7 u
+total displacement          3.3 u
+average displacement        3.3 u
+max displacement            3.3 u
 original HPWL               2.3 u
-legalized HPWL              9.9 u
-delta HPWL                  332 %
+legalized HPWL              9.1 u
+delta HPWL                  299 %
 
-[INFO DPL-0001] Placed 8 filler instances.
+[INFO DPL-0001] Placed 6 filler instances.
 Filler usage:
   FILLCELL_X1:  1
   FILLCELL_X16: 1
-  FILLCELL_X2:  2
   FILLCELL_X32: 3
-  FILLCELL_X4:  1
+  FILLCELL_X8:  1

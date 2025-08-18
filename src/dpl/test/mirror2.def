@@ -35,7 +35,7 @@ VIAS 3 ;
 END VIAS
 COMPONENTS 2 ;
     - b1 BUF_X1 + PLACED ( 3800 2800 ) N ;
-    - block1 BLOCK1 + FIXED ( 4940 2810 ) N ;
+    - block1 BLOCK1 + FIXED ( 4560 2810 ) N ;
 END COMPONENTS
 PINS 2 ;
     - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
