@@ -225,8 +225,8 @@ const uint db_schema_add_global_connect = 58;
 class dbIStream;
 class dbOStream;
 class _dbChip;
-// User Code Begin Classes
 class _dbProperty;
+// User Code Begin Classes
 class dbPropertyItr;
 class _dbNameCache;
 class _dbTech;
@@ -261,12 +261,12 @@ class _dbDatabase : public _dbObject
   dbId<_dbChip> _chip;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;
+  dbTable<_dbProperty>* _prop_tbl;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
   dbTable<_dbLib>* _lib_tbl;
   dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
-  dbTable<_dbProperty>* _prop_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
   int _unique_id;

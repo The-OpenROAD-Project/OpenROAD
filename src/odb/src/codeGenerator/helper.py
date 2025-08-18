@@ -100,6 +100,16 @@ def is_bit_fields(field, structs):
     return False
 
 
+def get_plural_name(name):
+    # if name ends with y, replace it with ies
+    if name.endswith("y"):
+        return name[:-1] + "ies"
+    # if name ends with s, add es
+    elif name.endswith("s"):
+        return name + "es"
+    return name + "s"
+
+
 def get_functional_name(name):
     if name.islower():
         return "".join(

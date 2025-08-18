@@ -7029,6 +7029,8 @@ class dbDatabase : public dbObject
 
   dbChip* findChip(const char* name) const;
 
+  dbSet<dbProperty> getProperties() const;
+
   // User Code Begin dbDatabase
 
   void setTopChip(dbChip* chip);
@@ -7448,7 +7450,7 @@ class dbGDSStructure : public dbObject
  public:
   char* getName() const;
 
-  dbSet<dbGDSBoundary> getGDSBoundarys() const;
+  dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
@@ -7849,7 +7851,7 @@ class dbMarkerCategory : public dbObject
 
   dbSet<dbMarker> getMarkers() const;
 
-  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbMarkerCategory* findMarkerCategory(const char* name) const;
 
