@@ -205,9 +205,9 @@ set_obstruction_aware(bool obs)
 }
 
 void
-set_apply_ndr(bool ndr)
+set_apply_ndr(const char* strategy)
 {
-  getTritonCts()->getParms()->setApplyNDR(ndr);
+  getTritonCts()->getParms()->setApplyNDR(strategy);
 }
 
 void

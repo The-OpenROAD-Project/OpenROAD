@@ -481,7 +481,7 @@ void TritonCTS::writeDataToDb()
 
   for (auto& builder : builders_) {
     writeClockNetsToDb(builder.get(), clkLeafNets);
-    if (options_->applyNDR()) {
+    if (options_->getApplyNdr() != CtsOptions::NdrStrategy::NONE) {
       writeClockNDRsToDb(builder.get());
     }
     if (options_->dummyLoadEnabled()) {
@@ -1697,21 +1697,22 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 
   int clkNets = 0;
 
-  // TODO: Add user specified args to choose the NDR strategy
-  // Option 1: Apply NDR to specific levels
-  // const std::vector<int> specificLevels = {0};  // Apply to level 0
-  // clkNets = applyNDRToClockLevels(clockNet, clockNDR, specificLevels);
-
-  // Option 2: Apply NDR to a range of levels (e.g., Levels 0-3)
-  // clkNets = applyNDRToClockLevelRange(block_, clockNDR, clkLeafNets, 0, 3);
-
-  // Option 3: Apply NDR to the first half of the clk tree levels (higher
-  // levels)
-  // clkNets = applyNDRToFirstHalfLevels(clockNet, clockNDR);
-
-  // Option 4: Apply NDR to all non-leaf clock nets (default)
-  clkNets = applyNDRToClockLevels(
-      clockNet, clockNDR, getAllClockTreeLevels(clockNet));
+  // Apply NDR following the selected strategy (root_only, half, full)
+  switch (options_->getApplyNdr()) {
+    case CtsOptions::NdrStrategy::ROOT_ONLY:
+      clkNets = applyNDRToClockLevels(clockNet, clockNDR, {0});
+      break;
+    case CtsOptions::NdrStrategy::HALF:
+      clkNets = applyNDRToFirstHalfLevels(clockNet, clockNDR);
+      break;
+    case CtsOptions::NdrStrategy::FULL:
+      clkNets = applyNDRToClockLevels(
+          clockNet, clockNDR, getAllClockTreeLevels(clockNet));
+      break;
+    case CtsOptions::NdrStrategy::NONE:
+      // Should not be called
+      break;
+  }
 
   logger_->info(CTS,
                 202,

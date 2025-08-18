@@ -27,6 +27,14 @@ namespace cts {
 class CtsOptions : public odb::dbBlockCallBackObj
 {
  public:
+  enum class NdrStrategy
+  {
+    NONE,
+    ROOT_ONLY,
+    HALF,
+    FULL
+  };
+
   enum class MasterType
   {
     DUMMY,
@@ -222,8 +230,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
   void setObstructionAware(bool obs) { obsAware_ = obs; }
   bool getObstructionAware() const { return obsAware_; }
-  void setApplyNDR(bool ndr) { applyNDR_ = ndr; }
-  bool applyNDR() const { return applyNDR_; }
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
   void setBufferListInferred(bool inferred) { bufferListInferred_ = inferred; }
@@ -263,6 +269,10 @@ class CtsOptions : public odb::dbBlockCallBackObj
 
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
   bool getRepairClockNets() { return repairClockNets_; }
+
+  // NDR strategies
+  void setApplyNDR(const std::string& strategy);
+  NdrStrategy getApplyNdr() const { return ndrStrategy_; }
 
  private:
   std::string clockNets_;
@@ -315,7 +325,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = true;
-  bool applyNDR_ = false;
   bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
@@ -330,6 +339,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   std::string dummyload_prefix_ = "clkload";
   MasterCount dummy_count_;
   bool repairClockNets_ = false;
+  NdrStrategy ndrStrategy_ = NdrStrategy::NONE;
 };
 
 }  // namespace cts
