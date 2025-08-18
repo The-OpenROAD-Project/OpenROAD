@@ -376,9 +376,10 @@
       "parent":"dbDatabase",
       "child":"dbChip",
       "type":"1_n",
-      "tbl_name":"_chip_tbl",
+      "tbl_name":"chip_tbl_",
       "flags": ["no-serial"],
-      "page_size": 2
+      "page_size": 2,
+      "hash": true
     }
   ]
 }

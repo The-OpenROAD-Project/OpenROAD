@@ -6935,7 +6935,7 @@ class dbChip : public dbObject
     HIER
   };
 
-  std::string getName() const;
+  const char* getName() const;
 
   void setOffset(Point offset);
 
@@ -6994,6 +6994,8 @@ class dbChip : public dbObject
   bool isTsv() const;
 
   // User Code Begin dbChip
+
+  ChipType getChipType() const;
   ///
   /// Get the top-block of this chip.
   /// Returns nullptr if a top-block has NOT been created.
@@ -7002,10 +7004,11 @@ class dbChip : public dbObject
 
   ///
   /// Create a new chip.
-  /// Returns nullptr if a chip already exists.
   /// Returns nullptr if there is no database technology.
   ///
-  static dbChip* create(dbDatabase* db);
+  static dbChip* create(dbDatabase* db,
+                        const std::string& name = "",
+                        ChipType type = ChipType::DIE);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7024,7 +7027,11 @@ class dbDatabase : public dbObject
  public:
   dbSet<dbChip> getChips() const;
 
+  dbChip* findChip(const char* name) const;
+
   // User Code Begin dbDatabase
+
+  void setTopChip(dbChip* chip);
   ///
   /// Return the libs contained in the database. A database can contain
   /// multiple libs.
