@@ -82,6 +82,21 @@ void _dbChipBump::collectMemInfo(MemInfo& info)
 ////////////////////////////////////////////////////////////////////
 
 // User Code Begin dbChipBumpPublicMethods
+
+dbChip* dbChipBump::getChip() const
+{
+  _dbChipBump* obj = (_dbChipBump*) this;
+  _dbDatabase* db = obj->getDatabase();
+  return (dbChip*) db->chip_tbl_->getPtr(obj->chip_);
+}
+
+dbChipRegion* dbChipBump::getChipRegion() const
+{
+  _dbChipBump* obj = (_dbChipBump*) this;
+  _dbChip* chip = (_dbChip*) getChip();
+  return (dbChipRegion*) chip->chip_region_tbl_->getPtr(obj->chip_region_);
+}
+
 dbInst* dbChipBump::getInst() const
 {
   _dbChipBump* obj = (_dbChipBump*) this;
@@ -91,13 +106,6 @@ dbInst* dbChipBump::getInst() const
   dbChip* chip = (dbChip*) getChip();
   _dbBlock* block = (_dbBlock*) chip->getBlock();
   return (dbInst*) block->_inst_tbl->getPtr(obj->inst_);
-}
-
-dbChip* dbChipBump::getChip() const
-{
-  _dbChipBump* obj = (_dbChipBump*) this;
-  _dbDatabase* db = obj->getDatabase();
-  return (dbChip*) db->chip_tbl_->getPtr(obj->chip_);
 }
 
 dbNet* dbChipBump::getNet() const
@@ -147,14 +155,14 @@ dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
   utl::Logger* logger = _chip->getLogger();
   if (inst->getBlock() != chip_region->getChip()->getBlock()) {
     logger->error(utl::ODB,
-                  101,
+                  513,
                   "Cannot create chip bump. Inst {} is not in the same block "
                   "as the chip region {}",
                   inst->getName(),
                   chip_region->getName());
     return nullptr;
   }
-  _dbChipBump* obj = _chip->chip_bump_tbl_->create();
+  _dbChipBump* obj = _chip_region->chip_bump_tbl_->create();
   obj->inst_ = _inst->getOID();
   obj->chip_ = _chip->getOID();
   obj->chip_region_ = _chip_region->getOID();
