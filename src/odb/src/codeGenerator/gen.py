@@ -129,7 +129,9 @@ def add_field_attributes(field, klass, flags_struct, schema):
     field["hashTableType"] = get_hash_table_type(field["type"])
     field["isPassByRef"] = is_pass_by_ref(field["type"])
     field.setdefault("flags", [])
-    field["isSetByRef"] = 'set-const-ref' in field['flags'] or is_set_by_ref(field["type"])
+    field["isSetByRef"] = "set-const-ref" in field["flags"] or is_set_by_ref(
+        field["type"]
+    )
     if "argument" not in field:
         field["argument"] = field["name"].strip("_")
     if "private" in field["flags"]:
