@@ -6,11 +6,13 @@
 
 #include <string>
 
+#include "dbChipBump.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbChipInst.h"
@@ -36,6 +38,9 @@ bool _dbChipRegion::operator==(const _dbChipRegion& rhs) const
   if (box_ != rhs.box_) {
     return false;
   }
+  if (*chip_bump_tbl_ != *rhs.chip_bump_tbl_) {
+    return false;
+  }
 
   return true;
 }
@@ -47,6 +52,8 @@ bool _dbChipRegion::operator<(const _dbChipRegion& rhs) const
 
 _dbChipRegion::_dbChipRegion(_dbDatabase* db)
 {
+  chip_bump_tbl_ = new dbTable<_dbChipBump>(
+      db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBumpObj);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
@@ -55,6 +62,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.side_;
   stream >> obj.layer_;
   stream >> obj.box_;
+  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+    stream >> *obj.chip_bump_tbl_;
+  }
   return stream;
 }
 
@@ -64,13 +74,31 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipRegion& obj)
   stream << obj.side_;
   stream << obj.layer_;
   stream << obj.box_;
+  stream << *obj.chip_bump_tbl_;
   return stream;
 }
 
+dbObjectTable* _dbChipRegion::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbChipBumpObj:
+      return chip_bump_tbl_;
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
+}
 void _dbChipRegion::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  chip_bump_tbl_->collectMemInfo(info.children_["chip_bump_tbl_"]);
+}
+
+_dbChipRegion::~_dbChipRegion()
+{
+  delete chip_bump_tbl_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -96,6 +124,12 @@ Rect dbChipRegion::getBox() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   return obj->box_;
+}
+
+dbSet<dbChipBump> dbChipRegion::getChipBumps() const
+{
+  _dbChipRegion* obj = (_dbChipRegion*) this;
+  return dbSet<dbChipBump>(obj, obj->chip_bump_tbl_);
 }
 
 // User Code Begin dbChipRegionPublicMethods

@@ -106,6 +106,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipBump;
 class dbChipConn;
 class dbChipInst;
 class dbChipRegion;
@@ -7032,6 +7033,30 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipBump : public dbObject
+{
+ public:
+  // User Code Begin dbChipBump
+  dbChip* getChip() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  dbInst* getInst() const;
+
+  dbNet* getNet() const;
+
+  dbBTerm* getBTerm() const;
+
+  void setNet(dbNet* net);
+
+  void setBTerm(dbBTerm* bterm);
+
+  static dbChipBump* create(dbChipRegion* chip_region, dbInst* inst);
+
+  static void destroy(dbChipBump* bump);
+  // User Code End dbChipBump
+};
+
 class dbChipConn : public dbObject
 {
  public:
@@ -7110,6 +7135,8 @@ class dbChipRegion : public dbObject
   void setBox(const Rect& box);
 
   Rect getBox() const;
+
+  dbSet<dbChipBump> getChipBumps() const;
 
   // User Code Begin dbChipRegion
   Side getSide() const;

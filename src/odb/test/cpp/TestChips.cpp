@@ -305,6 +305,28 @@ BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
     BOOST_TEST(true);
   }
 }
+
+BOOST_FIXTURE_TEST_CASE(test_chip_bumps, F_CHIP_HIERARCHY)
+{
+  dbMaster* io_master
+      = createMaster1X1(lib2, "io_master", 100, 100, "in", "out");
+  dbInst* io_inst = dbInst::create(io_chip->getBlock(), io_master, "io_inst");
+  dbChipBump* bump = dbChipBump::create(io_chip, io_inst);
+  BOOST_TEST(bump->getInst() == io_inst);
+  BOOST_TEST(bump->getChip() == io_chip);
+  BOOST_TEST(bump->getNet() == nullptr);
+  BOOST_TEST(bump->getBTerm() == nullptr);
+  dbNet* net = dbNet::create(io_chip->getBlock(), "net1");
+  dbBTerm* bterm = dbBTerm::create(net, "bterm1");
+  bump->setNet(net);
+  bump->setBTerm(bterm);
+  BOOST_TEST(bump->getNet() == net);
+  BOOST_TEST(bump->getBTerm() == bterm);
+  BOOST_TEST(io_chip->getChipBumps().size() == 1);
+  dbChipBump::destroy(bump);
+  BOOST_TEST(io_chip->getChipBumps().size() == 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace

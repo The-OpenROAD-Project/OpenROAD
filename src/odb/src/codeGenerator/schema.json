@@ -408,6 +408,14 @@
       "tbl_name":"chip_region_tbl_"
     },
     {
+      "parent":"dbChipRegion",
+      "child":"dbChipBump",
+      "type":"1_n", 
+      "flags": [],
+      "schema":"db_schema_chip_bump",
+      "tbl_name":"chip_bump_tbl_"
+    },
+    {
       "parent":"dbDatabase",
       "child":"dbChip",
       "type":"1_n",
