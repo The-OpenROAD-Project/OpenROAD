@@ -1933,8 +1933,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         return 0;
       }
 
+      Pin* mod_net_drvr_pin = db_network_->dbToSta(mod_net_drvr);
       dbNet* db_load_net = db_network_->flatNet(load_pin);
-      odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
+      odb::dbNet* db_net = db_network_->flatNet(mod_net_drvr_pin);
       if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
