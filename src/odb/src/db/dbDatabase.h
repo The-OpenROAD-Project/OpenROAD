@@ -240,6 +240,7 @@ class _dbChipConn;
 class dbPropertyItr;
 class dbChipInstItr;
 class dbChipRegionInstItr;
+class dbChipConnItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
@@ -286,6 +287,7 @@ class _dbDatabase : public _dbObject
   dbPropertyItr* _prop_itr;
   dbChipInstItr* chip_inst_itr_;
   dbChipRegionInstItr* chip_region_inst_itr_;
+  dbChipConnItr* chip_conn_itr_;
   int _unique_id;
 
   utl::Logger* _logger;

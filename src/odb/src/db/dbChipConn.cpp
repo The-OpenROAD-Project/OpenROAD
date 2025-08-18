@@ -26,6 +26,12 @@ bool _dbChipConn::operator==(const _dbChipConn& rhs) const
   if (thickness_ != rhs.thickness_) {
     return false;
   }
+  if (chip_ != rhs.chip_) {
+    return false;
+  }
+  if (chip_conn_next_ != rhs.chip_conn_next_) {
+    return false;
+  }
   if (top_region_ != rhs.top_region_) {
     return false;
   }
@@ -49,6 +55,8 @@ dbIStream& operator>>(dbIStream& stream, _dbChipConn& obj)
 {
   stream >> obj.name_;
   stream >> obj.thickness_;
+  stream >> obj.chip_;
+  stream >> obj.chip_conn_next_;
   stream >> obj.top_region_;
   stream >> obj.top_region_path_;
   stream >> obj.bottom_region_;
@@ -60,6 +68,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipConn& obj)
 {
   stream << obj.name_;
   stream << obj.thickness_;
+  stream << obj.chip_;
+  stream << obj.chip_conn_next_;
   stream << obj.top_region_;
   stream << obj.top_region_path_;
   stream << obj.bottom_region_;
@@ -99,6 +109,14 @@ int dbChipConn::getThickness() const
 }
 
 // User Code Begin dbChipConnPublicMethods
+
+dbChip* dbChipConn::getParentChip() const
+{
+  _dbChipConn* obj = (_dbChipConn*) this;
+  _dbDatabase* _db = (_dbDatabase*) obj->getOwner();
+  return (dbChip*) _db->chip_tbl_->getPtr(obj->chip_);
+}
+
 dbChipRegionInst* dbChipConn::getTopRegion() const
 {
   _dbChipConn* obj = (_dbChipConn*) this;
@@ -139,28 +157,66 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
   return bottom_region_path;
 }
 
+std::vector<dbId<_dbChipInst>> extractChipInstsPath(
+    dbChip* parent_chip,
+    std::vector<dbChipInst*> chip_insts)
+{
+  _dbDatabase* _db = (_dbDatabase*) parent_chip->getImpl()->getOwner();
+  utl::Logger* logger = _db->getLogger();
+  std::vector<dbId<_dbChipInst>> chip_insts_path;
+  for (auto chipinst : chip_insts) {
+    if (chipinst->getParentChip() != parent_chip) {
+      logger->error(utl::ODB,
+                    510,
+                    "Cannot create chip connection. ChipInst {} is not a child "
+                    "of chip {}",
+                    chipinst->getName(),
+                    parent_chip->getName());
+    }
+    chip_insts_path.push_back(chipinst->getImpl()->getOID());
+    parent_chip = chipinst->getMasterChip();
+  }
+  return chip_insts_path;
+}
+
 dbChipConn* dbChipConn::create(const std::string& name,
-                               dbChipRegionInst* top_region,
-                               dbChipRegionInst* bottom_region,
+                               dbChip* parent_chip,
                                std::vector<dbChipInst*> top_region_path,
-                               std::vector<dbChipInst*> bottom_region_path)
+                               dbChipRegionInst* top_region,
+                               std::vector<dbChipInst*> bottom_region_path,
+                               dbChipRegionInst* bottom_region)
 {
   _dbDatabase* _db = (_dbDatabase*) top_region->getImpl()->getOwner();
+  if (parent_chip == nullptr || top_region_path.empty()
+      || bottom_region_path.empty() || top_region == nullptr
+      || bottom_region == nullptr) {
+    return nullptr;
+  }
+  if (top_region->getChipInst() != top_region_path.back()) {
+    _db->getLogger()->error(utl::ODB,
+                            511,
+                            "Cannot create chip connection. Top region path "
+                            "does not match top region");
+  }
+  if (bottom_region->getChipInst() != bottom_region_path.back()) {
+    _db->getLogger()->error(utl::ODB,
+                            512,
+                            "Cannot create chip connection. Bottom region path "
+                            "does not match bottom region");
+  }
   _dbChipConn* obj = (_dbChipConn*) _db->chip_conn_tbl_->create();
+  _dbChip* chip = (_dbChip*) parent_chip;
   obj->name_ = name;
   obj->thickness_ = 0;
+  obj->chip_ = chip->getOID();
   obj->top_region_ = top_region->getImpl()->getOID();
   obj->bottom_region_ = bottom_region->getImpl()->getOID();
-  std::vector<dbId<_dbChipInst>> top_region_path_ids;
-  for (auto chipinst : top_region_path) {
-    top_region_path_ids.push_back(chipinst->getImpl()->getOID());
-  }
-  obj->top_region_path_ = top_region_path_ids;
-  std::vector<dbId<_dbChipInst>> bottom_region_path_ids;
-  for (auto chipinst : bottom_region_path) {
-    bottom_region_path_ids.push_back(chipinst->getImpl()->getOID());
-  }
-  obj->bottom_region_path_ = bottom_region_path_ids;
+  obj->top_region_path_ = extractChipInstsPath(parent_chip, top_region_path);
+  obj->bottom_region_path_
+      = extractChipInstsPath(parent_chip, bottom_region_path);
+
+  obj->chip_conn_next_ = chip->conns_;
+  chip->conns_ = obj->getOID();
   return (dbChipConn*) obj;
 }
 
@@ -168,6 +224,22 @@ void dbChipConn::destroy(dbChipConn* chipConn)
 {
   _dbChipConn* obj = (_dbChipConn*) chipConn;
   _dbDatabase* _db = (_dbDatabase*) obj->getOwner();
+  // Remove from chip's list of connections
+  _dbChip* chip = (_dbChip*) chipConn->getParentChip();
+  if (chip->conns_ == obj->getOID()) {
+    chip->conns_ = obj->chip_conn_next_;
+  } else {
+    uint id = chip->conns_;
+    while (id != 0) {
+      _dbChipConn* _chipconn = _db->chip_conn_tbl_->getPtr(id);
+      if (_chipconn->chip_conn_next_ == obj->getOID()) {
+        _chipconn->chip_conn_next_ = obj->chip_conn_next_;
+        break;
+      }
+      id = _chipconn->chip_conn_next_;
+    }
+  }
+  // Destroy the connection
   _db->chip_conn_tbl_->destroy(obj);
 }
 

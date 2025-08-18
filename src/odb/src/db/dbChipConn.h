@@ -15,6 +15,7 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
+class _dbChip;
 class _dbChipRegionInst;
 class _dbChipInst;
 
@@ -30,6 +31,8 @@ class _dbChipConn : public _dbObject
 
   std::string name_;
   int thickness_;
+  dbId<_dbChip> chip_;
+  dbId<_dbChipConn> chip_conn_next_;
   dbId<_dbChipRegionInst> top_region_;
   std::vector<dbId<_dbChipInst>> top_region_path_;
   dbId<_dbChipRegionInst> bottom_region_;

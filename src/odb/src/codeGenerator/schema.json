@@ -180,6 +180,15 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbChipInst.h", "dbChip.h"]
+    },
+    {
+      "name": "dbChipConnItr",
+      "parentObject": "dbChipConn",
+      "tableName": "chip_conn_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipConn.h", "dbChip.h"]
     }
   ],
   "relations":[

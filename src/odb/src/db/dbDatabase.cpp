@@ -26,6 +26,7 @@
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
+#include "dbChipConnItr.h"
 #include "dbChipInstItr.h"
 #include "dbChipRegionInstItr.h"
 #include "dbGDSLib.h"
@@ -166,6 +167,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
 
   chip_region_inst_itr_ = new dbChipRegionInstItr(chip_region_inst_tbl_);
+
+  chip_conn_itr_ = new dbChipConnItr(chip_conn_tbl_);
   // User Code End Constructor
 }
 
@@ -354,6 +357,7 @@ _dbDatabase::~_dbDatabase()
   delete _prop_itr;
   delete chip_inst_itr_;
   delete chip_region_inst_itr_;
+  delete chip_conn_itr_;
   // User Code End Destructor
 }
 
@@ -395,6 +399,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
 
   chip_region_inst_itr_ = new dbChipRegionInstItr(chip_region_inst_tbl_);
+
+  chip_conn_itr_ = new dbChipConnItr(chip_conn_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const

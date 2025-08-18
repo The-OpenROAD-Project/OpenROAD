@@ -19,6 +19,7 @@ class _dbProperty;
 class _dbChipRegion;
 class _dbBlock;
 class _dbChipInst;
+class _dbChipConn;
 
 class _dbChip : public _dbObject
 {
@@ -56,6 +57,7 @@ class _dbChip : public _dbObject
   dbBlockItr* _block_itr;
   dbPropertyItr* _prop_itr;
   dbId<_dbChipInst> chipinsts_;
+  dbId<_dbChipConn> conns_;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbChipRegion>* chip_region_tbl_;
   dbId<_dbChip> _next_entry;

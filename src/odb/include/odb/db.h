@@ -7010,6 +7010,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipInst> getChipInsts() const;
 
+  dbSet<dbChipConn> getChipConns() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7041,6 +7043,8 @@ class dbChipConn : public dbObject
 
   // User Code Begin dbChipConn
 
+  dbChip* getParentChip() const;
+
   dbChipRegionInst* getTopRegion() const;
 
   dbChipRegionInst* getBottomRegion() const;
@@ -7050,10 +7054,11 @@ class dbChipConn : public dbObject
   std::vector<dbChipInst*> getBottomRegionPath() const;
 
   static dbChipConn* create(const std::string& name,
-                            dbChipRegionInst* top_region,
-                            dbChipRegionInst* bottom_region,
+                            dbChip* parent_chip,
                             std::vector<dbChipInst*> top_region_path,
-                            std::vector<dbChipInst*> bottom_region_path);
+                            dbChipRegionInst* top_region,
+                            std::vector<dbChipInst*> bottom_region_path,
+                            dbChipRegionInst* bottom_region);
 
   static void destroy(dbChipConn* chipConn);
   // User Code End dbChipConn

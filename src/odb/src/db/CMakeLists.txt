@@ -148,6 +148,7 @@ add_library(db
     dbTechLayerTwoWiresForbiddenSpcRule.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
+    dbChipConnItr.cpp
     dbChipInstItr.cpp
     dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp

@@ -6,6 +6,7 @@
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
+#include "dbChipConn.h"
 #include "dbChipRegion.h"
 #include "dbDatabase.h"
 #include "dbNameCache.h"
@@ -17,6 +18,7 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include "dbChipConnItr.h"
 #include "dbChipInst.h"
 #include "dbChipInstItr.h"
 // User Code End Includes
@@ -77,6 +79,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
     return false;
   }
   if (chipinsts_ != rhs.chipinsts_) {
+    return false;
+  }
+  if (conns_ != rhs.conns_) {
     return false;
   }
   if (*_prop_tbl != *rhs._prop_tbl) {
@@ -198,6 +203,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
     stream >> obj.chipinsts_;
   }
   if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+    stream >> obj.conns_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
     stream >> *obj.chip_region_tbl_;
   }
   // User Code Begin >>
@@ -232,6 +240,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.tsv_;
   stream << obj._top;
   stream << obj.chipinsts_;
+  stream << obj.conns_;
   stream << *obj.chip_region_tbl_;
   // User Code Begin <<
   stream << *obj._block_tbl;
@@ -514,6 +523,13 @@ dbSet<dbChipInst> dbChip::getChipInsts() const
   return dbSet<dbChipInst>(chip, db->chip_inst_itr_);
 }
 
+dbSet<dbChipConn> dbChip::getChipConns() const
+{
+  _dbChip* chip = (_dbChip*) this;
+  _dbDatabase* db = (_dbDatabase*) chip->getOwner();
+  return dbSet<dbChipConn>(chip, db->chip_conn_itr_);
+}
+
 dbChip* dbChip::create(dbDatabase* db_, const std::string& name, ChipType type)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
@@ -540,6 +556,11 @@ void dbChip::destroy(dbChip* chip_)
   dbSet<dbChipRegion> chipRegions = chip_->getChipRegions();
   for (dbChipRegion* chipRegion : chipRegions) {
     dbChipRegion::destroy(chipRegion);
+  }
+  // Destroy chip connections
+  dbSet<dbChipConn> chipConns = chip_->getChipConns();
+  for (dbChipConn* chipConn : chipConns) {
+    dbChipConn::destroy(chipConn);
   }
   // Destroy chip
   _dbDatabase* db = chip->getDatabase();

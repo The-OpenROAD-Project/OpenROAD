@@ -264,10 +264,11 @@ BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
   }
   BOOST_TEST(memory_region_inst_r1 != nullptr);
   odb::dbChipConn* conn = odb::dbChipConn::create("CONN1",
-                                                  cache_region_inst_r1,
-                                                  memory_region_inst_r1,
+                                                  system_chip,
                                                   {cpu_inst, cache_inst},
-                                                  {memory_inst});
+                                                  cache_region_inst_r1,
+                                                  {memory_inst},
+                                                  memory_region_inst_r1);
   BOOST_TEST(conn->getName() == "CONN1");
   BOOST_TEST(conn->getTopRegion() == cache_region_inst_r1);
   BOOST_TEST(conn->getBottomRegion() == memory_region_inst_r1);
@@ -277,8 +278,32 @@ BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
   BOOST_TEST(conn->getTopRegionPath()[1] == cache_inst);
   BOOST_TEST(conn->getBottomRegionPath()[0] == memory_inst);
   BOOST_TEST(db->getChipConns().size() == 1);
+  BOOST_TEST(system_chip->getChipConns().size() == 1);
   dbChipConn::destroy(conn);
   BOOST_TEST(db->getChipConns().size() == 0);
+  BOOST_TEST(system_chip->getChipConns().size() == 0);
+  try {
+    odb::dbChipConn::create("CONN2",
+                            system_chip,
+                            {cache_inst},
+                            cache_region_inst_r1,
+                            {memory_inst},
+                            memory_region_inst_r1);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
+  try {
+    odb::dbChipConn::create("CONN2",
+                            system_chip,
+                            {cache_inst},
+                            memory_region_inst_r1,
+                            {memory_inst},
+                            cache_region_inst_r1);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
 }
 BOOST_AUTO_TEST_SUITE_END()
 
