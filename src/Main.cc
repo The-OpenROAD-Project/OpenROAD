@@ -82,6 +82,7 @@ int cmd_argc;
 char** cmd_argv;
 static const char* log_filename = nullptr;
 static const char* metrics_filename = nullptr;
+static std::set<std::string>* commands = nullptr;
 static bool no_settings = false;
 static bool minimize = false;
 
@@ -295,6 +296,7 @@ int main(int argc, char* argv[])
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
+  delete commands;
   return 0;
 }
 
@@ -454,7 +456,7 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
-    std::set<std::string> commands;
+    commands = new std::set<std::string>();
     if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
       Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
       int cmd_size;
@@ -462,7 +464,7 @@ static int tclAppInit(int& argc,
       if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs)
           == TCL_OK) {
         for (int i = 0; i < cmd_size; i++) {
-          commands.insert(Tcl_GetString(cmds_objs[i]));
+          commands->insert(Tcl_GetString(cmds_objs[i]));
         }
       }
     }
@@ -471,7 +473,7 @@ static int tclAppInit(int& argc,
           0,
           TCL_ALLOW_INLINE_COMPILATION, //In this case, traces on built-in commands may or may not result in trace callbacks.
           TraceTclCommand,
-          &commands,
+          commands,
           nullptr
     );
     const char* threads = findCmdLineKey(argc, argv, "-threads");
