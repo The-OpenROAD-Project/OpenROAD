@@ -57,7 +57,7 @@ bool _dbModITerm::operator<(const _dbModITerm& rhs) const
 
 _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
-  // For pointer tagging the bottom 3 bits.
+  // For pointer tagging the bottom log_2(8) bits.
   static_assert(alignof(_dbModITerm) % 8 == 0);
   _name = nullptr;
 }
