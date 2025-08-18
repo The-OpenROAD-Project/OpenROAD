@@ -249,6 +249,37 @@ BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
     BOOST_TEST(true);
   }
 }
+
+BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
+{
+  dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
+  dbChipRegionInst* cache_region_inst_r1
+      = (dbChipRegionInst*) (*cache_inst->getRegions().begin());
+  dbChipRegionInst* memory_region_inst_r1 = nullptr;
+  for (auto region : memory_inst->getRegions()) {
+    if (region->getChipRegion() == memory_chip_region_r1) {
+      memory_region_inst_r1 = region;
+      break;
+    }
+  }
+  BOOST_TEST(memory_region_inst_r1 != nullptr);
+  odb::dbChipConn* conn = odb::dbChipConn::create("CONN1",
+                                                  cache_region_inst_r1,
+                                                  memory_region_inst_r1,
+                                                  {cpu_inst, cache_inst},
+                                                  {memory_inst});
+  BOOST_TEST(conn->getName() == "CONN1");
+  BOOST_TEST(conn->getTopRegion() == cache_region_inst_r1);
+  BOOST_TEST(conn->getBottomRegion() == memory_region_inst_r1);
+  BOOST_TEST(conn->getTopRegionPath().size() == 2);
+  BOOST_TEST(conn->getBottomRegionPath().size() == 1);
+  BOOST_TEST(conn->getTopRegionPath()[0] == cpu_inst);
+  BOOST_TEST(conn->getTopRegionPath()[1] == cache_inst);
+  BOOST_TEST(conn->getBottomRegionPath()[0] == memory_inst);
+  BOOST_TEST(db->getChipConns().size() == 1);
+  dbChipConn::destroy(conn);
+  BOOST_TEST(db->getChipConns().size() == 0);
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace

@@ -106,6 +106,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipConn;
 class dbChipInst;
 class dbChipRegion;
 class dbChipRegionInst;
@@ -7029,6 +7030,35 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipConn : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setThickness(int thickness);
+
+  int getThickness() const;
+
+  // User Code Begin dbChipConn
+
+  dbChipRegionInst* getTopRegion() const;
+
+  dbChipRegionInst* getBottomRegion() const;
+
+  std::vector<dbChipInst*> getTopRegionPath() const;
+
+  std::vector<dbChipInst*> getBottomRegionPath() const;
+
+  static dbChipConn* create(const std::string& name,
+                            dbChipRegionInst* top_region,
+                            dbChipRegionInst* bottom_region,
+                            std::vector<dbChipInst*> top_region_path,
+                            std::vector<dbChipInst*> bottom_region_path);
+
+  static void destroy(dbChipConn* chipConn);
+  // User Code End dbChipConn
+};
+
 class dbChipInst : public dbObject
 {
  public:
@@ -7114,6 +7144,8 @@ class dbDatabase : public dbObject
   dbSet<dbChipInst> getChipInsts() const;
 
   dbSet<dbChipRegionInst> getChipRegionInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
 
   // User Code Begin dbDatabase
 

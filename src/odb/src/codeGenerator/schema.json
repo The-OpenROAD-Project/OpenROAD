@@ -429,6 +429,14 @@
       "tbl_name":"chip_region_inst_tbl_",
       "schema":"db_schema_chip_region",
       "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipConn",
+      "type":"1_n",
+      "tbl_name":"chip_conn_tbl_",
+      "schema":"db_schema_chip_region",
+      "flags": ["no-serial"]
     }
   ]
 }
