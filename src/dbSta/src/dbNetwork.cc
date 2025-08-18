@@ -165,13 +165,11 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
   return 0;
 }
 
-// We have exactly 8 values avalible in the lower 3 bits of the
+// We have exactly 8 values available in the lower 3 bits of the
 // pointer due to these classes all having 8 byte alignment. Used
 // to avoid having to call into the database to figure out the
 // type information, which requires a lot of pointer indirection.
 
-// Used to clear the pointer tag.
-static constexpr std::uintptr_t kPointerClearTag = ~(std::uintptr_t(0b111U));
 // Used to get the value of the pointer tag.
 static constexpr std::uintptr_t kPointerTagMask = std::uintptr_t(0b111U);
 
@@ -1230,10 +1228,13 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   if (hierarchy_) {
     // get the id for hierarchical objects using dbid.
-    std::uintptr_t pointer_without_tag
-        = reinterpret_cast<std::uintptr_t>(pin) & kPointerClearTag;
+    std::uintptr_t tag_value
+        = reinterpret_cast<std::uintptr_t>(pin) & kPointerTagMask;
+    // Need to cast to char pin to avoid compiler error for pointer
+    // arithmetic on incomplete types
+    const char* char_pin = reinterpret_cast<const char*>(pin);
     const dbObject* obj
-        = reinterpret_cast<const dbObject*>(pointer_without_tag);
+        = reinterpret_cast<const dbObject*>(char_pin - tag_value);
     return getDbNwkObjectId(obj);
   }
   if (iterm != nullptr) {
@@ -2786,10 +2787,18 @@ void dbNetwork::staToDb(const Pin* pin,
   iterm = nullptr;
   bterm = nullptr;
   moditerm = nullptr;
+
+  // Get the value of the tag
   std::uintptr_t pointer_with_tag = reinterpret_cast<std::uintptr_t>(pin);
   PinPointerTags tag_value
       = static_cast<PinPointerTags>(pointer_with_tag & kPointerTagMask);
-  std::uintptr_t pointer_without_tag = pointer_with_tag & kPointerClearTag;
+
+  // Cast to char* and avoid casting an integral type to pointer type
+  // by doing pointer arithmetic. Compiler apparently prefer this sytle.
+  const char* char_pointer_pin = reinterpret_cast<const char*>(pin);
+  char* pointer_without_tag = const_cast<char*>(
+      char_pointer_pin - static_cast<std::uintptr_t>(tag_value));
+
   if (pointer_without_tag) {
     switch (tag_value) {
       case PinPointerTags::kDbIterm:
@@ -2966,10 +2975,10 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
-  auto mod_iterm_tagged_ptr = reinterpret_cast<std::uintptr_t>(mod_iterm);
-  mod_iterm_tagged_ptr
-      |= static_cast<std::uintptr_t>(PinPointerTags::kDbModIterm);
-  return reinterpret_cast<Pin*>(mod_iterm_tagged_ptr);
+  char* unaligned_pointer = reinterpret_cast<char*>(mod_iterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbModIterm));
 }
 
 Net* dbNetwork::dbToSta(dbModNet* net) const
@@ -3014,16 +3023,18 @@ const Net* dbNetwork::dbToSta(const dbModNet* net) const
 
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
-  auto bterm_tagged_ptr = reinterpret_cast<std::uintptr_t>(bterm);
-  bterm_tagged_ptr |= static_cast<std::uintptr_t>(PinPointerTags::kDbBterm);
-  return reinterpret_cast<Pin*>(bterm_tagged_ptr);
+  char* unaligned_pointer = reinterpret_cast<char*>(bterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbBterm));
 }
 
 Pin* dbNetwork::dbToSta(dbITerm* iterm) const
 {
-  auto iterm_tagged_ptr = reinterpret_cast<std::uintptr_t>(iterm);
-  iterm_tagged_ptr |= static_cast<std::uintptr_t>(PinPointerTags::kDbIterm);
-  return reinterpret_cast<Pin*>(iterm_tagged_ptr);
+  char* unaligned_pointer = reinterpret_cast<char*>(iterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbIterm));
 }
 
 Term* dbNetwork::dbToStaTerm(dbBTerm* bterm) const
