@@ -1021,7 +1021,7 @@ if [[ ! -z ${saveDepsPrefixes} ]]; then
     mkdir -p "$(dirname $saveDepsPrefixes)"
     echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
     # Fix permissions if running as root to allow user access
-    if [[ $(id -u) == 0 && ! -z "$SUDO_USER" ]]; then
+    if [[ $(id -u) == 0 && ! -z "${SUDO_USER+x}" ]]; then
         chown "$SUDO_USER:$(id -gn "$SUDO_USER")" "$saveDepsPrefixes" 2>/dev/null || true
     fi
 fi
