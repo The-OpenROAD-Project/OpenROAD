@@ -3974,8 +3974,8 @@ void Resizer::cloneClkInverter(Instance* inv)
   inv_cell->bufferPorts(in_port, out_port);
   Pin* in_pin = network_->findPin(inv, in_port);
   Pin* out_pin = network_->findPin(inv, out_port);
-  Net* in_net = network_->net(in_pin);
-  dbNet* in_net_db = db_network_->staToDb(in_net);
+  Net* in_net = db_network_->getOrFindFlatNet(in_pin);
+  dbNet* in_net_db = db_network_->getOrFindFlatDbNet(in_net);
   Net* out_net = network_->isTopLevelPort(out_pin)
                      ? network_->net(network_->term(out_pin))
                      : network_->net(out_pin);
