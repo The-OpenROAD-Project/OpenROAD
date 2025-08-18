@@ -35,12 +35,12 @@ PDNSim::~PDNSim() = default;
 void PDNSim::init(utl::Logger* logger,
                   odb::dbDatabase* db,
                   sta::dbSta* sta,
-                  rsz::Resizer* resizer,
+                  est::EstimateParasitics* estimate_parasitics,
                   dpl::Opendp* opendp)
 {
   db_ = db;
   sta_ = sta;
-  resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
   opendp_ = opendp;
   logger_ = logger;
   heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
@@ -155,7 +155,7 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
     solver = std::make_unique<IRSolver>(net,
                                         floorplanning,
                                         sta_,
-                                        resizer_,
+                                        estimate_parasitics_,
                                         logger_,
                                         user_voltages_,
                                         user_powers_,

@@ -1372,4 +1372,33 @@ class dbAccessType
   Value _value;
 };
 
+//
+//  Class to denote a name uniquify type
+//
+class dbNameUniquifyType
+{
+ public:
+  enum Value
+  {
+    ALWAYS,                     // Add unique suffix always
+    ALWAYS_WITH_UNDERSCORE,     // Add unique suffix with underscore always
+    IF_NEEDED,                  // Add unique suffix if needed
+    IF_NEEDED_WITH_UNDERSCORE,  // Add unique suffix with underscore if needed
+  };
+
+  ///
+  /// Construction may take a type value, or default ("ALWAYS")
+  ///
+  dbNameUniquifyType(const char* instr);
+  dbNameUniquifyType(Value inval) { _value = inval; }
+  dbNameUniquifyType(const dbNameUniquifyType& value) { _value = value; }
+  dbNameUniquifyType() { _value = ALWAYS; }
+  Value getValue() const { return _value; }
+  const char* getString() const;
+  operator Value() const { return _value; }
+
+ private:
+  Value _value;
+};
+
 }  // namespace odb

@@ -41,6 +41,12 @@ class CallBackHandler
    */
   void triggerOnPinAccessUpdateRequired();
 
+  /**
+   * @brief Trigger the onEstimateParasiticsRequired callback for all registered
+   * callbacks.
+   */
+  void triggerOnEstimateParasiticsRequired();
+
  private:
   utl::Logger* logger_;
   std::set<CallBack*> callbacks_;

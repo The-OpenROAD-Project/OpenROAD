@@ -364,6 +364,29 @@
       "type":"1_n",
       "tbl_name":"categories_tbl_",
       "hash":true
+    },
+    {
+      "parent":"dbChip",
+      "child":"dbProperty",
+      "type":"1_n", 
+      "flags": ["no-serial", "private"],
+      "tbl_name":"_prop_tbl"
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChip",
+      "type":"1_n",
+      "tbl_name":"chip_tbl_",
+      "flags": ["no-serial"],
+      "page_size": 2,
+      "hash": true
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbProperty",
+      "type":"1_n",
+      "tbl_name":"_prop_tbl",
+      "flags": ["no-serial"]
     }
   ]
 }

@@ -1818,11 +1818,10 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
-                                      int& posX,
-                                      int& posY,
-                                      int dir,
-                                      int& radius)
+void FastRouteCore::findNetsNearPosition(std::set<odb::dbNet*>& congestion_nets,
+                                         const odb::Point& position,
+                                         bool is_horizontal,
+                                         int& radius)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
@@ -1846,14 +1845,15 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
         }
         if (grids[i].x == grids[i + 1].x) {  // a vertical edge
           const int ymin = std::min(grids[i].y, grids[i + 1].y);
-          if (abs(ymin - posY) <= radius && abs(grids[i].x - posX) <= radius
-              && dir == 0) {
+          if (abs(ymin - position.getY()) <= radius
+              && abs(grids[i].x - position.getX()) <= radius
+              && !is_horizontal) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
           const int xmin = std::min(grids[i].x, grids[i + 1].x);
-          if (abs(grids[i].y - posY) <= radius && abs(xmin - posX) <= radius
-              && dir == 1) {
+          if (abs(grids[i].y - position.getY()) <= radius
+              && abs(xmin - position.getX()) <= radius && is_horizontal) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         }
@@ -1862,31 +1862,32 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
   }
 }
 
-// The function will add the new nets to the congestion_nets set
-void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+// Get overflow positions
+void FastRouteCore::getOverflowPositions(
+    std::vector<std::pair<odb::Point, bool>>& overflow_pos)
 {
-  std::vector<int> xs, ys, dirs;
-  int n = 0;
   // Find horizontal ggrids with congestion
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      xs.push_back(x);
-      ys.push_back(y);
-      dirs.push_back(1);
-      n++;
+      overflow_pos.emplace_back(odb::Point(x, y), true);
     }
   }
   // Find vertical ggrids with congestion
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      xs.push_back(x);
-      ys.push_back(y);
-      dirs.push_back(0);
-      n++;
+      overflow_pos.emplace_back(odb::Point(x, y), false);
     }
   }
+}
+
+// The function will add the new nets to the congestion_nets set
+void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+{
+  // Get overflow position -- [(x,y), is horizontal]
+  std::vector<std::pair<odb::Point, bool>> overflow_positions;
+  getOverflowPositions(overflow_positions);
 
   int old_size = congestion_nets.size();
 
@@ -1895,8 +1896,9 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
   for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
        radius++) {
     // Find nets for each congestion ggrid
-    for (int i = 0; i < n; i++) {
-      setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], radius);
+    for (const auto& position : overflow_positions) {
+      findNetsNearPosition(
+          congestion_nets, position.first, position.second, radius);
     }
   }
 }
