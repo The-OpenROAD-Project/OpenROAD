@@ -430,8 +430,8 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   dlogHierConnDone();
 }
 
-void dbEditHierarchy::dlogHierConnStart(odb::dbITerm* source_pin,
-                                        odb::dbITerm* dest_pin,
+void dbEditHierarchy::dlogHierConnStart(dbITerm* source_pin,
+                                        dbITerm* dest_pin,
                                         const char* connection_name) const
 {
   debugPrint(logger_,
@@ -458,7 +458,7 @@ void dbEditHierarchy::dlogHierConnCreateFlatNet(
 }
 
 void dbEditHierarchy::dlogHierConnConnectSrcToFlatNet(
-    odb::dbITerm* source_pin,
+    dbITerm* source_pin,
     const std::string& flat_name) const
 {
   debugPrint(logger_,
@@ -472,8 +472,8 @@ void dbEditHierarchy::dlogHierConnConnectSrcToFlatNet(
 }
 
 void dbEditHierarchy::dlogHierConnConnectDstToFlatNet(
-    odb::dbITerm* dest_pin,
-    odb::dbNet* source_db_net) const
+    dbITerm* dest_pin,
+    dbNet* source_db_net) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -486,8 +486,8 @@ void dbEditHierarchy::dlogHierConnConnectDstToFlatNet(
 }
 
 void dbEditHierarchy::dlogHierConnReusingConnection(
-    odb::dbModule* dest_db_module,
-    odb::dbModNet* dest_mod_net) const
+    dbModule* dest_db_module,
+    dbModNet* dest_mod_net) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -499,8 +499,8 @@ void dbEditHierarchy::dlogHierConnReusingConnection(
 }
 
 void dbEditHierarchy::dlogHierConnCreatingSrcHierarchy(
-    odb::dbITerm* source_pin,
-    odb::dbModule* highest_common_module) const
+    dbITerm* source_pin,
+    dbModule* highest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -513,8 +513,8 @@ void dbEditHierarchy::dlogHierConnCreatingSrcHierarchy(
 }
 
 void dbEditHierarchy::dlogHierConnCreatingDstHierarchy(
-    odb::dbITerm* dest_pin,
-    odb::dbModule* highest_common_module) const
+    dbITerm* dest_pin,
+    dbModule* highest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -528,7 +528,7 @@ void dbEditHierarchy::dlogHierConnCreatingDstHierarchy(
 
 void dbEditHierarchy::dlogHierConnConnectingInCommon(
     const char* connection_name,
-    odb::dbModule* highest_common_module) const
+    dbModule* highest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -541,7 +541,7 @@ void dbEditHierarchy::dlogHierConnConnectingInCommon(
 
 void dbEditHierarchy::dlogHierConnCreatingTopNet(
     const char* connection_name,
-    odb::dbModule* highest_common_module) const
+    dbModule* highest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -552,9 +552,8 @@ void dbEditHierarchy::dlogHierConnCreatingTopNet(
              highest_common_module->getHierarchicalName());
 }
 
-void dbEditHierarchy::dlogHierConnConnectingTopDstPin(
-    odb::dbModITerm* top_mod_dest,
-    odb::dbModNet* net) const
+void dbEditHierarchy::dlogHierConnConnectingTopDstPin(dbModITerm* top_mod_dest,
+                                                      dbModNet* net) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -566,8 +565,8 @@ void dbEditHierarchy::dlogHierConnConnectingTopDstPin(
              net->getName());
 }
 
-void dbEditHierarchy::dlogHierConnConnectingDstPin(odb::dbITerm* dest_pin,
-                                                   odb::dbModNet* top_net) const
+void dbEditHierarchy::dlogHierConnConnectingDstPin(dbITerm* dest_pin,
+                                                   dbModNet* top_net) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -580,8 +579,8 @@ void dbEditHierarchy::dlogHierConnConnectingDstPin(odb::dbITerm* dest_pin,
 }
 
 void dbEditHierarchy::dlogHierConnReassociatingDstPin(
-    odb::dbNet* dest_pin_flat_net,
-    odb::dbModNet* dest_pin_mod_net) const
+    dbNet* dest_pin_flat_net,
+    dbModNet* dest_pin_mod_net) const
 {
   debugPrint(
       logger_,
@@ -594,8 +593,8 @@ void dbEditHierarchy::dlogHierConnReassociatingDstPin(
 }
 
 void dbEditHierarchy::dlogHierConnReassociatingSrcPin(
-    odb::dbNet* source_pin_flat_net,
-    odb::dbModNet* source_pin_mod_net) const
+    dbNet* source_pin_flat_net,
+    dbModNet* source_pin_mod_net) const
 {
   debugPrint(
       logger_,
@@ -607,7 +606,7 @@ void dbEditHierarchy::dlogHierConnReassociatingSrcPin(
       source_pin_mod_net->getName());
 }
 
-void dbEditHierarchy::dlogHierConnCleaningUpSrc(odb::dbModInst* mi) const
+void dbEditHierarchy::dlogHierConnCleaningUpSrc(dbModInst* mi) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -617,7 +616,7 @@ void dbEditHierarchy::dlogHierConnCleaningUpSrc(odb::dbModInst* mi) const
              mi->getHierarchicalName());
 }
 
-void dbEditHierarchy::dlogHierConnCleaningUpDst(odb::dbModInst* mi) const
+void dbEditHierarchy::dlogHierConnCleaningUpDst(dbModInst* mi) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -639,7 +638,7 @@ void dbEditHierarchy::dlogHierConnDone() const
 
 void dbEditHierarchy::dlogCreateHierBTermAndModNet(
     int level,
-    odb::dbModule* cur_module,
+    dbModule* cur_module,
     const std::string& new_term_net_name_i) const
 {
   debugPrint(logger_,
@@ -655,9 +654,9 @@ void dbEditHierarchy::dlogCreateHierBTermAndModNet(
 
 void dbEditHierarchy::dlogCreateHierDisconnectingPin(
     int level,
-    odb::dbModule* cur_module,
-    odb::dbITerm* pin,
-    odb::dbModNet* pin_mod_net) const
+    dbModule* cur_module,
+    dbITerm* pin,
+    dbModNet* pin_mod_net) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -672,11 +671,10 @@ void dbEditHierarchy::dlogCreateHierDisconnectingPin(
              pin_mod_net->getName());
 }
 
-void dbEditHierarchy::dlogCreateHierConnectingPin(
-    int level,
-    odb::dbModule* cur_module,
-    odb::dbITerm* pin,
-    odb::dbModNet* db_mod_net) const
+void dbEditHierarchy::dlogCreateHierConnectingPin(int level,
+                                                  dbModule* cur_module,
+                                                  dbITerm* pin,
+                                                  dbModNet* db_mod_net) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -692,8 +690,8 @@ void dbEditHierarchy::dlogCreateHierConnectingPin(
 
 void dbEditHierarchy::dlogCreateHierCreatingITerm(
     int level,
-    odb::dbModule* cur_module,
-    odb::dbModInst* parent_inst,
+    dbModule* cur_module,
+    dbModInst* parent_inst,
     const std::string& new_term_net_name_i) const
 {
   debugPrint(logger_,
@@ -709,10 +707,10 @@ void dbEditHierarchy::dlogCreateHierCreatingITerm(
 
 void dbEditHierarchy::dlogCreateHierConnectingITerm(
     int level,
-    odb::dbModule* cur_module,
-    odb::dbModInst* parent_inst,
+    dbModule* cur_module,
+    dbModInst* parent_inst,
     const std::string& new_term_net_name_i,
-    odb::dbModNet* db_mod_net) const
+    dbModNet* db_mod_net) const
 {
   debugPrint(logger_,
              utl::ORD,
