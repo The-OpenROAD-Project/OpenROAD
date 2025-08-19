@@ -40,6 +40,8 @@ using odb::dbSigType;
 using odb::Point;
 
 class dbNetwork;
+class dbEditHierarchy;
+
 // This class handles callbacks from the network to the listeners
 class dbNetworkObserver
 {
@@ -58,6 +60,8 @@ class dbNetworkObserver
 // ConcreteNetwork is used for library/cell/port functions only.
 class dbNetwork : public ConcreteNetwork
 {
+  friend class dbEditHierarchy;
+
  public:
   dbNetwork();
   ~dbNetwork() override;
@@ -168,20 +172,10 @@ class dbNetwork : public ConcreteNetwork
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
-  bool ConnectionToModuleExists(dbITerm* source_pin,
-                                dbModule* dest_module,
-                                dbModBTerm*& dest_modbterm,
-                                dbModITerm*& dest_moditerm);
-
   bool connected(Pin* source_pin, Pin* dest_pin);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
-                           const char* connection_name);
-
-  void getParentHierarchy(dbModule* start_module,
-                          std::vector<dbModule*>& parent_hierarchy) const;
-  dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
-                                    std::vector<dbModule*>& itree2);
+                           const char* connection_name = "net");
   Instance* findHierInstance(const char* name);
   void replaceHierModule(dbModInst* mod_inst, dbModule* module);
   void removeUnusedPortsAndPinsOnModuleInstances();
@@ -418,6 +412,7 @@ class dbNetwork : public ConcreteNetwork
   bool hierarchy_ = false;
   std::set<const Cell*> concrete_cells_;
   std::set<const Port*> concrete_ports_;
+  std::unique_ptr<dbEditHierarchy> hierarchy_editor_;
 };
 
 }  // namespace sta
