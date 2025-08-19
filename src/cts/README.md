@@ -69,6 +69,7 @@ clock_tree_synthesis
     [-library liberty_library_name]
     [-repair_clock_nets]
     [-no_insertion_delay]
+    [-skip_nets <list_of_clk_nets_to_skip>]
 ```
 
 #### Options
@@ -99,6 +100,7 @@ clock_tree_synthesis
 | `-library` | This option specifies the name of Liberty library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
 | `-repair_clock_nets` | This option includes fixing long wires inside CTS prior to latency adjustment with delay buffers. This can lead to a more balanced clock tree.  The default is not to perform clock net repair. |
 | `-no_insertion_delay` | Ignore sink insertion delay in clock tree construction and balancing. |
+| `-skip_nets` | String containing the names of the clock nets to be skipped. If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
 
 #### Instance Name Prefixes
 
