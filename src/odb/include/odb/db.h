@@ -107,6 +107,7 @@ class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
 class dbChipBump;
+class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipRegion;
@@ -7057,6 +7058,18 @@ class dbChipBump : public dbObject
   // User Code End dbChipBump
 };
 
+class dbChipBumpInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipBumpInst
+
+  dbChipBump* getChipBump() const;
+
+  dbChipRegionInst* getChipRegionInst() const;
+
+  // User Code End dbChipBumpInst
+};
+
 class dbChipConn : public dbObject
 {
  public:
@@ -7163,6 +7176,8 @@ class dbChipRegionInst : public dbObject
 
   dbChipRegion* getChipRegion() const;
 
+  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+
   // User Code End dbChipRegionInst
 };
 
@@ -7180,6 +7195,8 @@ class dbDatabase : public dbObject
   dbSet<dbChipRegionInst> getChipRegionInsts() const;
 
   dbSet<dbChipConn> getChipConns() const;
+
+  dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   // User Code Begin dbDatabase
 

@@ -198,62 +198,13 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   chip_region->layer_ = (_layer != nullptr) ? _layer->getOID() : 0;
   chip_region->box_ = Rect();  // Initialize with empty rectangle
 
-  // create the needed chip region insts
-  _dbDatabase* _db = (_dbDatabase*) _chip->getOwner();
-  for (auto chipinst : ((dbDatabase*) _db)->getChipInsts()) {
-    _dbChipInst* _chipinst = (_dbChipInst*) chipinst;
-    if (_chipinst->master_chip_ != _chip->getOID()) {
-      continue;
-    }
-    _dbChipRegionInst* _regioninst = _db->chip_region_inst_tbl_->create();
-    _regioninst->parent_chipinst_ = _chipinst->getOID();
-    _regioninst->region_ = chip_region->getOID();
-    _regioninst->chip_region_inst_next_ = _chipinst->chip_region_insts_;
-    _chipinst->chip_region_insts_ = _regioninst->getOID();
-  }
-
   return (dbChipRegion*) chip_region;
 }
 
 void dbChipRegion::destroy(dbChipRegion* chipRegion)
 {
-  if (chipRegion == nullptr) {
-    return;
-  }
-
   _dbChipRegion* chip_region = (_dbChipRegion*) chipRegion;
   _dbChip* chip = (_dbChip*) chip_region->getOwner();
-
-  // remove region insts
-  _dbDatabase* _db = (_dbDatabase*) chip->getOwner();
-  for (auto chipinst : ((dbDatabase*) _db)->getChipInsts()) {
-    _dbChipInst* _chipinst = (_dbChipInst*) chipinst;
-    if (_chipinst->master_chip_ != chip->getOID()) {
-      continue;
-    }
-    // iterate over chip_region_insts
-    uint region_inst_id = _chipinst->chip_region_insts_;
-    _dbChipRegionInst* prev_regioninst = nullptr;
-    while (region_inst_id != 0) {
-      _dbChipRegionInst* _regioninst
-          = (_dbChipRegionInst*) _db->chip_region_inst_tbl_->getPtr(
-              region_inst_id);
-      if (_regioninst->region_ == chip_region->getOID()) {
-        if (prev_regioninst == nullptr) {
-          _chipinst->chip_region_insts_ = _regioninst->chip_region_inst_next_;
-          _db->chip_region_inst_tbl_->destroy(_regioninst);
-          break;
-        } else {
-          prev_regioninst->chip_region_inst_next_
-              = _regioninst->chip_region_inst_next_;
-          _db->chip_region_inst_tbl_->destroy(_regioninst);
-          break;
-        }
-      }
-      prev_regioninst = _regioninst;
-      region_inst_id = _regioninst->chip_region_inst_next_;
-    }
-  }
   chip->chip_region_tbl_->destroy(chip_region);
 }
 // User Code End dbChipRegionPublicMethods

@@ -89,6 +89,7 @@ add_library(db
     dbCellEdgeSpacing.cpp
     dbChip.cpp
     dbChipBump.cpp
+    dbChipBumpInst.cpp
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipRegion.cpp
@@ -149,6 +150,7 @@ add_library(db
     dbTechLayerTwoWiresForbiddenSpcRule.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
+    dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
     dbChipRegionInstItr.cpp

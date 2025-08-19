@@ -5,6 +5,7 @@
 #include "dbDatabase.h"
 
 #include "dbChip.h"
+#include "dbChipBumpInst.h"
 #include "dbChipConn.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
@@ -26,6 +27,7 @@
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
+#include "dbChipBumpInstItr.h"
 #include "dbChipConnItr.h"
 #include "dbChipInstItr.h"
 #include "dbChipRegionInstItr.h"
@@ -86,6 +88,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*chip_conn_tbl_ != *rhs.chip_conn_tbl_) {
     return false;
   }
+  if (*chip_bump_inst_tbl_ != *rhs.chip_bump_inst_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
   //
@@ -141,6 +146,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       dbChipRegionInstObj);
   chip_conn_tbl_ = new dbTable<_dbChipConn>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipConnObj);
+  chip_bump_inst_tbl_
+      = new dbTable<_dbChipBumpInst>(this,
+                                     this,
+                                     (GetObjTbl_t) &_dbDatabase::getObjectTable,
+                                     dbChipBumpInstObj);
   // User Code Begin Constructor
   _magic1 = DB_MAGIC1;
   _magic2 = DB_MAGIC2;
@@ -169,6 +179,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_region_inst_itr_ = new dbChipRegionInstItr(chip_region_inst_tbl_);
 
   chip_conn_itr_ = new dbChipConnItr(chip_conn_tbl_);
+
+  chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
   // User Code End Constructor
 }
 
@@ -236,6 +248,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(db_schema_chip_region)) {
     stream >> *obj.chip_conn_tbl_;
   }
+  if (obj.isSchema(db_schema_chip_bump)) {
+    stream >> *obj.chip_bump_inst_tbl_;
+  }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
     if (obj._chip) {
@@ -286,6 +301,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_inst_tbl_;
   stream << *obj.chip_region_inst_tbl_;
   stream << *obj.chip_conn_tbl_;
+  stream << *obj.chip_bump_inst_tbl_;
   // User Code End <<
   return stream;
 }
@@ -303,6 +319,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return chip_region_inst_tbl_;
     case dbChipConnObj:
       return chip_conn_tbl_;
+    case dbChipBumpInstObj:
+      return chip_bump_inst_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return _tech_tbl;
@@ -334,6 +352,8 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   chip_conn_tbl_->collectMemInfo(info.children_["chip_conn_tbl_"]);
 
+  chip_bump_inst_tbl_->collectMemInfo(info.children_["chip_bump_inst_tbl_"]);
+
   // User Code Begin collectMemInfo
   _tech_tbl->collectMemInfo(info.children_["tech"]);
   _lib_tbl->collectMemInfo(info.children_["lib"]);
@@ -349,6 +369,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_inst_tbl_;
   delete chip_region_inst_tbl_;
   delete chip_conn_tbl_;
+  delete chip_bump_inst_tbl_;
   // User Code Begin Destructor
   delete _tech_tbl;
   delete _lib_tbl;
@@ -358,6 +379,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_inst_itr_;
   delete chip_region_inst_itr_;
   delete chip_conn_itr_;
+  delete chip_bump_inst_itr_;
   // User Code End Destructor
 }
 
@@ -401,6 +423,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   chip_region_inst_itr_ = new dbChipRegionInstItr(chip_region_inst_tbl_);
 
   chip_conn_itr_ = new dbChipConnItr(chip_conn_tbl_);
+
+  chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -460,6 +484,12 @@ dbSet<dbChipConn> dbDatabase::getChipConns() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbChipConn>(obj, obj->chip_conn_tbl_);
+}
+
+dbSet<dbChipBumpInst> dbDatabase::getChipBumpInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbChipBumpInst>(obj, obj->chip_bump_inst_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods

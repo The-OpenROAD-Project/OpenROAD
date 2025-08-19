@@ -62,6 +62,7 @@ enum dbObjectType
   dbCellEdgeSpacingObj,
   dbChipObj,
   dbChipBumpObj,
+  dbChipBumpInstObj,
   dbChipConnObj,
   dbChipInstObj,
   dbChipRegionObj,

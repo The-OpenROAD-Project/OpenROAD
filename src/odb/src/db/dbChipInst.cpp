@@ -12,6 +12,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbChip.h"
+#include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
 #include "odb/dbTransform.h"
 // User Code End Includes
@@ -204,6 +205,14 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     regioninst->parent_chipinst_ = chipinst->getOID();
     regioninst->chip_region_inst_next_ = chipinst->chip_region_insts_;
     chipinst->chip_region_insts_ = regioninst->getOID();
+    // create chipBumpInsts
+    for (auto bump : region->getChipBumps()) {
+      _dbChipBumpInst* bumpinst = db->chip_bump_inst_tbl_->create();
+      bumpinst->chip_bump_ = bump->getImpl()->getOID();
+      bumpinst->chip_region_inst_ = regioninst->getOID();
+      bumpinst->region_next_ = regioninst->chip_bump_insts_;
+      regioninst->chip_bump_insts_ = bumpinst->getOID();
+    }
   }
   return (dbChipInst*) chipinst;
 }
@@ -224,6 +233,14 @@ void dbChipInst::destroy(dbChipInst* chipInst)
         = db->chip_region_inst_tbl_->getPtr(region_inst_id);
     region_inst_id = region_inst->chip_region_inst_next_;
     db->chip_region_inst_tbl_->destroy(region_inst);
+    // remove chipBumpInsts
+    uint bump_inst_id = region_inst->chip_bump_insts_;
+    while (bump_inst_id != 0) {
+      _dbChipBumpInst* bump_inst
+          = db->chip_bump_inst_tbl_->getPtr(bump_inst_id);
+      bump_inst_id = bump_inst->region_next_;
+      db->chip_bump_inst_tbl_->destroy(bump_inst);
+    }
   }
   // Get parent chip
   _dbChip* parent = db->chip_tbl_->getPtr(inst->parent_chip_);

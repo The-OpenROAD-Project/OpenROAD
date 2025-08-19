@@ -552,15 +552,15 @@ dbChip* dbChip::getChip(dbDatabase* db_, uint dbid_)
 void dbChip::destroy(dbChip* chip_)
 {
   _dbChip* chip = (_dbChip*) chip_;
-  // Destroy chip regions
-  dbSet<dbChipRegion> chipRegions = chip_->getChipRegions();
-  for (dbChipRegion* chipRegion : chipRegions) {
-    dbChipRegion::destroy(chipRegion);
-  }
   // Destroy chip connections
   dbSet<dbChipConn> chipConns = chip_->getChipConns();
   for (dbChipConn* chipConn : chipConns) {
     dbChipConn::destroy(chipConn);
+  }
+  // destroy chip insts
+  dbSet<dbChipInst> chipInsts = chip_->getChipInsts();
+  for (dbChipInst* chipInst : chipInsts) {
+    dbChipInst::destroy(chipInst);
   }
   // Destroy chip
   _dbDatabase* db = chip->getDatabase();
