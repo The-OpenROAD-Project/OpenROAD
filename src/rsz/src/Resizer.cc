@@ -354,6 +354,7 @@ void Resizer::init()
 // remove all buffers if no buffers are specified
 void Resizer::removeBuffers(sta::InstanceSeq insts)
 {
+  init();
   initBlock();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
