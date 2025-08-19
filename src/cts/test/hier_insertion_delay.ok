@@ -23,25 +23,6 @@
 [INFO GPL-0020] Standard cells area:          1257.116 um^2
 [INFO GPL-0021] Large instances area:          100.000 um^2
 [InitialPlace]  Iter: 1 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 2 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 3 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 4 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 5 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 6 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 7 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 8 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 9 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 10 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 11 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 12 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 13 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 14 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 15 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 16 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 17 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 18 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 19 residual: 0.00001000 HPWL: 40000, abs percent change: 0
-[InitialPlace]  Iter: 20 residual: 0.00001000 HPWL: 40000, abs percent change: 0
 Placement Analysis
 ---------------------------------
 total displacement       9363.8 u

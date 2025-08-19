@@ -113,7 +113,7 @@ void InitialPlace::doPlace(int threads)
         current_hpwl,
         hpwl_pct_change);
 
-    if (residual_max < kResidualThreshold
+    if (residual_max <= kResidualThreshold
         && hpwl_pct_change < kHpwlPctChangeThreshold) {
       break;
     }
