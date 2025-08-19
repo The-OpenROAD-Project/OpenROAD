@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace utl {
 
 size_t getPeakRSS();
