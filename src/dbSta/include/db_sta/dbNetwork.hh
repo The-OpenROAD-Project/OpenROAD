@@ -387,8 +387,6 @@ class dbNetwork : public ConcreteNetwork
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
-  void getParentHierarchy(dbModule* start_module,
-                          std::vector<dbModule*>& parent_hierarchy) const;
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
