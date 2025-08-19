@@ -371,7 +371,8 @@ repair_setup(double setup_margin,
              bool skip_size_down,
              bool skip_buffering,
              bool skip_buffer_removal,
-             bool skip_last_gasp)
+             bool skip_last_gasp,
+             bool skip_vt_swap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -382,7 +383,7 @@ repair_setup(double setup_margin,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down,
                        skip_buffering, skip_buffer_removal,
-                       skip_last_gasp);
+                       skip_last_gasp, skip_vt_swap);
 }
 
 void

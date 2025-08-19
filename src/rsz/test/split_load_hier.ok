@@ -47,6 +47,6 @@ tns max -8.694
     final |       0 |       8 |        3 |      0 |     0 |    +4.6% |   -0.507 |       -8.2 |     19 | u1/r21/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 8 instances, 8 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 8 instances: 8 sized up, 0 sized up for match, 0 sized down, 0 VT swapped.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

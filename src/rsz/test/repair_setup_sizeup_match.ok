@@ -41,16 +41,16 @@ Path Type: max
            -0.230   slack (VIOLATED)
 
 
-[INFO RSZ-0100] Repair move sequence: SizeDownMove 
+[INFO RSZ-0100] Repair move sequence: SizeUpMoveMatch 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
-    final |       0 |       2 |        0 |      0 |     0 |   -11.1% |   -0.202 |       -0.2 |      1 | r2/D
+    final |       0 |       4 |        0 |      0 |     0 |   +22.2% |   -0.072 |       -0.1 |      1 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 2 instances: 0 sized up, 0 sized up for match, 2 sized down, 0 VT swapped.
+[INFO RSZ-0051] Resized 4 instances: 0 sized up, 4 sized up for match, 0 sized down, 0 VT swapped.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -63,30 +63,30 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.168    0.168 ^ r1/Q (DFF_X1)
-   0.013    0.182 ^ u1/A (BUF_X8)
-   0.029    0.211 ^ u1/Z (BUF_X8)
-   0.002    0.212 ^ u2/A (BUF_X1)
-   0.038    0.250 ^ u2/Z (BUF_X1)
-   0.002    0.252 ^ u3/A (BUF_X1)
-   0.042    0.294 ^ u3/Z (BUF_X1)
-   0.002    0.296 ^ u4/A (BUF_X1)
-   0.042    0.338 ^ u4/Z (BUF_X1)
-   0.002    0.340 ^ u5/A (BUF_X1)
-   0.116    0.456 ^ u5/Z (BUF_X1)
-   0.049    0.505 ^ r2/D (DFF_X1)
-            0.505   data arrival time
+   0.191    0.191 ^ r1/Q (DFF_X1)
+   0.017    0.208 ^ u1/A (BUF_X8)
+   0.031    0.240 ^ u1/Z (BUF_X8)
+   0.004    0.243 ^ u2/A (BUF_X8)
+   0.021    0.265 ^ u2/Z (BUF_X8)
+   0.004    0.268 ^ u3/A (BUF_X8)
+   0.020    0.288 ^ u3/Z (BUF_X8)
+   0.004    0.292 ^ u4/A (BUF_X8)
+   0.020    0.312 ^ u4/Z (BUF_X8)
+   0.004    0.316 ^ u5/A (BUF_X8)
+   0.025    0.341 ^ u5/Z (BUF_X8)
+   0.040    0.380 ^ r2/D (DFF_X1)
+            0.380   data arrival time
 
    0.350    0.350   clock clk (rise edge)
    0.000    0.350   clock network delay (ideal)
    0.000    0.350   clock reconvergence pessimism
             0.350 ^ r2/CK (DFF_X1)
-  -0.048    0.302   library setup time
-            0.302   data required time
+  -0.042    0.308   library setup time
+            0.308   data required time
 -----------------------------------------------------------
-            0.302   data required time
-           -0.505   data arrival time
+            0.308   data required time
+           -0.380   data arrival time
 -----------------------------------------------------------
-           -0.202   slack (VIOLATED)
+           -0.072   slack (VIOLATED)
 
 

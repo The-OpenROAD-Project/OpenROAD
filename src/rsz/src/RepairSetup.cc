@@ -16,10 +16,12 @@
 #include "CloneMove.hh"
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
+// This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
+#include "VTSwapMove.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -84,7 +86,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_size_down,
                               const bool skip_buffering,
                               const bool skip_buffer_removal,
-                              const bool skip_last_gasp)
+                              const bool skip_last_gasp,
+                              const bool skip_vt_swap)
 {
   bool repaired = false;
   init();
@@ -137,6 +140,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
           if (!skip_buffering) {
             move_sequence.push_back(resizer_->split_load_move_.get());
           }
+          break;
+        case MoveType::VTSWAP_SPEED:
+          if (!skip_vt_swap) {
+            move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+          }
+          break;
+        case MoveType::SIZEUP_MATCH:
+          move_sequence.push_back(resizer_->size_up_match_move_.get());
           break;
       }
     }
@@ -455,6 +466,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   int clone_moves_ = resizer_->clone_move_->numCommittedMoves();
   int split_load_moves_ = resizer_->split_load_move_->numCommittedMoves();
   int unbuffer_moves_ = resizer_->unbuffer_move_->numCommittedMoves();
+  int vt_swap_moves_ = resizer_->vt_swap_speed_move_->numCommittedMoves();
+  int size_up_match_moves_ = resizer_->size_up_match_move_->numCommittedMoves();
 
   if (unbuffer_moves_ > 0) {
     repaired = true;
@@ -474,14 +487,19 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves_ + split_load_moves_);
-  if (size_up_moves_ + size_down_moves_ > 0) {
+  if (size_up_moves_ + size_down_moves_ + size_up_match_moves_ + vt_swap_moves_
+      > 0) {
     repaired = true;
     logger_->info(RSZ,
                   51,
-                  "Resized {} instances, {} sized up, {} sized down.",
-                  size_up_moves_ + size_down_moves_,
+                  "Resized {} instances: {} sized up, {} sized up for match, "
+                  "{} sized down, {} VT swapped.",
+                  size_up_moves_ + size_up_match_moves_ + size_down_moves_
+                      + vt_swap_moves_,
                   size_up_moves_,
-                  size_down_moves_);
+                  size_up_match_moves_,
+                  size_down_moves_,
+                  vt_swap_moves_);
   }
   if (swap_pins_moves_ > 0) {
     repaired = true;
@@ -515,6 +533,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
 
   move_sequence.clear();
   move_sequence = {resizer_->unbuffer_move_.get(),
+                   resizer_->vt_swap_speed_move_.get(),
                    resizer_->size_down_move_.get(),
                    resizer_->size_up_move_.get(),
                    resizer_->swap_pins_move_.get(),
@@ -749,7 +768,9 @@ void RepairSetup::printProgress(const int iteration,
         itr_field,
         resizer_->unbuffer_move_->numMoves(),
         resizer_->size_up_move_->numMoves()
-            + resizer_->size_down_move_->numMoves(),
+            + resizer_->size_down_move_->numMoves()
+            + resizer_->size_up_match_move_->numMoves()
+            + resizer_->vt_swap_speed_move_->numMoves(),
         resizer_->buffer_move_->numMoves()
             + resizer_->split_load_move_->numMoves(),
         resizer_->clone_move_->numMoves(),
@@ -905,8 +926,13 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
-      const bool changed
+      bool changed1 = false;
+      /*
+          = upsizeOrSwapVT(end_path, end_slack, params.setup_slack_margin);
+      */
+      bool changed2
           = repairPath(end_path, end_slack, params.setup_slack_margin);
+      bool changed = changed1 || changed2;
 
       if (!changed) {
         if (pass != 1) {
@@ -964,6 +990,64 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       break;
     }
   }  // for each violating endpoint
+}
+
+// Improve timing by two transforms:
+// 1) upsize buffers or inverters to match previous stage drive strength
+//    For example, if BUF_X16 drives BUF_X1, upsize BUF_X1 to BUF_X16
+// 2) swap VT from higher VT to lower VT
+//
+// end_slack is adjusted based on delay estimation
+bool RepairSetup::upsizeOrSwapVT(Path* path,
+                                 Slack& end_slack,
+                                 const float& slack_margin)
+{
+  debugPrint(
+      logger_, RSZ, "repair_setup", 1, "upsizeOrSwapVT slack = {}", end_slack);
+  PathExpanded expanded(path, sta_);
+  int changed = 0;
+  if (expanded.size() > 1) {
+    const int path_length = expanded.size();
+    const int start_index = expanded.startIndex();
+    const DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
+    const int lib_ap = dcalc_ap->libertyIndex();
+    // Find load delay for each gate in the path.
+    LibertyCell* prev_cell = nullptr;
+    LibertyCell* curr_cell = nullptr;
+    for (int i = start_index; i < path_length; i++) {
+      const Path* curr_path = expanded.path(i);
+      Vertex* curr_vertex = curr_path->vertex(sta_);
+      const Pin* curr_pin = curr_vertex->pin();
+      LibertyPort* curr_port = network_->libertyPort(curr_pin);
+      if (curr_cell) {
+        prev_cell = curr_cell;
+      }
+      curr_cell = curr_port ? curr_port->libertyCell() : nullptr;
+
+      // Check if strong buffer/inverter is driving weak buffer/inverter
+      if (prev_cell && curr_cell && prev_cell != curr_cell) {
+        if ((prev_cell->isBuffer() && curr_cell->isBuffer())
+            || (prev_cell->isInverter() && curr_cell->isInverter())) {
+          if (resizer_->bufferDriveResistance(prev_cell)
+              < resizer_->bufferDriveResistance(curr_cell)) {
+            Instance* curr_inst = network_->instance(curr_pin);
+            resizer_->replaceCell(curr_inst, prev_cell, true);
+            debugPrint(logger_,
+                       RSZ,
+                       "repair_setup",
+                       1,
+                       "Upsized {} from {} to {} due to match drive strength",
+                       network_->name(curr_inst),
+                       curr_cell->name(),
+                       prev_cell->name());
+            changed++;
+          }
+        }
+      }
+    }
+  }
+
+  return changed > 0;
 }
 
 }  // namespace rsz

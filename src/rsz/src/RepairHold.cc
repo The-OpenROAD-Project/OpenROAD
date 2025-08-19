@@ -211,21 +211,20 @@ bool isDelayCell(const std::string& cell_name)
 void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
 {
   LibertyCellSeq buffer_list;
-  LibraryAnalysisData lib_data;
-  resizer_->getBufferList(buffer_list, lib_data);
+  resizer_->getBufferList(buffer_list);
 
   // Pick the least leaky VT for multiple VTs
   int best_vt_index = -1;
-  int num_vt = lib_data.sorted_vt_categories.size();
+  int num_vt = resizer_->lib_data_->sorted_vt_categories.size();
   if (num_vt > 0) {
-    best_vt_index = lib_data.sorted_vt_categories[0].first.vt_index;
+    best_vt_index = resizer_->lib_data_->sorted_vt_categories[0].first.vt_index;
   }
 
   // Pick the shortest cell site because this offers the most flexibility for
   // hold fixing
   int best_height = std::numeric_limits<int>::max();
   odb::dbSite* best_site = nullptr;
-  for (const auto& site_data : lib_data.cells_by_site) {
+  for (const auto& site_data : resizer_->lib_data_->cells_by_site) {
     int height = site_data.first->getHeight();
     if (height < best_height) {
       best_height = height;
@@ -235,7 +234,7 @@ void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
 
   // Use DELAY cell footprint if available
   bool lib_has_footprints = false;
-  for (const auto& [ft_str, count] : lib_data.cells_by_footprint) {
+  for (const auto& [ft_str, count] : resizer_->lib_data_->cells_by_footprint) {
     if (isDelayCell(ft_str)) {
       lib_has_footprints = true;
       break;
@@ -312,7 +311,7 @@ bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
     bool vt_matches = true;
     if (match_vt) {
       auto vt_type = resizer_->cellVTType(master);
-      vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+      vt_matches = best_vt_index == -1 || vt_type.vt_index == best_vt_index;
     }
 
     bool footprint_matches = true;

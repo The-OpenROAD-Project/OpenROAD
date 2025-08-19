@@ -29,6 +29,6 @@ fanout1/X                                20     20      0 (MET)
     final |       0 |       5 |       17 |      0 |     0 |    +0.2% |   -2.078 |    -4702.7 |   3277 | sink156/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 17 buffers.
-[INFO RSZ-0051] Resized 5 instances, 5 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 5 instances: 5 sized up, 0 sized up for match, 0 sized down, 0 VT swapped.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack max -2.08
