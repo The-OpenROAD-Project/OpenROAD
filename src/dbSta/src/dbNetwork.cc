@@ -165,6 +165,22 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
   return 0;
 }
 
+// We have exactly 8 values available in the lower 3 bits of the
+// pointer due to these classes all having 8 byte alignment. Used
+// to avoid having to call into the database to figure out the
+// type information, which requires a lot of pointer indirection.
+
+// Used to get the value of the pointer tag.
+static constexpr std::uintptr_t kPointerTagMask = std::uintptr_t(0b111U);
+
+enum class PinPointerTags : std::uintptr_t
+{
+  kNone = 0U,
+  kDbIterm = 1U,
+  kDbBterm = 2U,
+  kDbModIterm = 3U,
+};
+
 class DbLibraryIterator1 : public Iterator<Library*>
 {
  public:
@@ -470,14 +486,14 @@ bool DbNetPinIterator::hasNext()
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
     if (!iterm->getSigType().isSupply()) {
-      next_ = reinterpret_cast<Pin*>(*iitr_);
+      next_ = network_->dbToSta(*iitr_);
       ++iitr_;
       return true;
     }
     iitr_++;
   }
   if ((mitr_ != mitr_end_) && (network_->hasHierarchy())) {
-    next_ = reinterpret_cast<Pin*>(*mitr_);
+    next_ = network_->dbToSta(*mitr_);
     ++mitr_;
     return true;
   }
@@ -1212,14 +1228,20 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   if (hierarchy_) {
     // get the id for hierarchical objects using dbid.
-    const dbObject* obj = reinterpret_cast<const dbObject*>(pin);
+    std::uintptr_t tag_value
+        = reinterpret_cast<std::uintptr_t>(pin) & kPointerTagMask;
+    // Need to cast to char pin to avoid compiler error for pointer
+    // arithmetic on incomplete types
+    const char* char_pin = reinterpret_cast<const char*>(pin);
+    const dbObject* obj
+        = reinterpret_cast<const dbObject*>(char_pin - tag_value);
     return getDbNwkObjectId(obj);
   }
   if (iterm != nullptr) {
     return iterm->getId() << 1;
   }
   if (bterm != nullptr) {
-    return (bterm->getId() << 1) + 1;
+    return (bterm->getId() << 1) | 1U;
   }
   return 0;
 }
@@ -2012,6 +2034,8 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   }
   // Assume msb first busses because LEF has no clue about busses.
   // This generates the top level ports
+  // TODO: MSB first assumption looks risky because there can be LSB first
+  // buses.
   groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
@@ -2619,8 +2643,8 @@ Net* dbNetwork::mergedInto(Net*)
 
 bool dbNetwork::isSpecial(Net* net)
 {
-  dbNet* db_net = staToDb(net);
-  return db_net->isSpecial();
+  dbNet* db_net = getOrFindFlatDbNet(net);
+  return (db_net && db_net->isSpecial());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2763,17 +2787,32 @@ void dbNetwork::staToDb(const Pin* pin,
   iterm = nullptr;
   bterm = nullptr;
   moditerm = nullptr;
-  if (pin) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-    dbObjectType type = obj->getObjectType();
-    if (type == dbITermObj) {
-      iterm = static_cast<dbITerm*>(obj);
-    } else if (type == dbBTermObj) {
-      bterm = static_cast<dbBTerm*>(obj);
-    } else if (type == dbModITermObj) {
-      moditerm = static_cast<dbModITerm*>(obj);
-    } else {
-      logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
+
+  // Get the value of the tag
+  std::uintptr_t pointer_with_tag = reinterpret_cast<std::uintptr_t>(pin);
+  PinPointerTags tag_value
+      = static_cast<PinPointerTags>(pointer_with_tag & kPointerTagMask);
+
+  // Cast to char* and avoid casting an integral type to pointer type
+  // by doing pointer arithmetic. Compiler apparently prefer this sytle.
+  const char* char_pointer_pin = reinterpret_cast<const char*>(pin);
+  char* pointer_without_tag = const_cast<char*>(
+      char_pointer_pin - static_cast<std::uintptr_t>(tag_value));
+
+  if (pointer_without_tag) {
+    switch (tag_value) {
+      case PinPointerTags::kDbIterm:
+        iterm = reinterpret_cast<dbITerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kDbBterm:
+        bterm = reinterpret_cast<dbBTerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kDbModIterm:
+        moditerm = reinterpret_cast<dbModITerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kNone:
+        logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
+        break;
     }
   }
 }
@@ -2936,7 +2975,10 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
-  return reinterpret_cast<Pin*>(mod_iterm);
+  char* unaligned_pointer = reinterpret_cast<char*>(mod_iterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbModIterm));
 }
 
 Net* dbNetwork::dbToSta(dbModNet* net) const
@@ -2981,12 +3023,18 @@ const Net* dbNetwork::dbToSta(const dbModNet* net) const
 
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
-  return reinterpret_cast<Pin*>(bterm);
+  char* unaligned_pointer = reinterpret_cast<char*>(bterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbBterm));
 }
 
 Pin* dbNetwork::dbToSta(dbITerm* iterm) const
 {
-  return reinterpret_cast<Pin*>(iterm);
+  char* unaligned_pointer = reinterpret_cast<char*>(iterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbIterm));
 }
 
 Term* dbNetwork::dbToStaTerm(dbBTerm* bterm) const
@@ -3237,9 +3285,12 @@ Port* DbNetworkPortMemberIterator::next()
 
 PortMemberIterator* dbNetwork::memberIterator(const Port* port) const
 {
-  if (!hierarchy_) {
+  // top-level port is concrete port. DbNetworkPortMemberIterator cannot handle
+  // it.
+  if (!hierarchy_ || isConcretePort(port)) {
     return ConcreteNetwork::memberIterator(port);
   }
+
   return new DbNetworkPortMemberIterator(port, this);
 }
 
@@ -3567,9 +3618,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_mod_net = dest_moditerm->getModNet();
       }
       if (dest_mod_net) {
-        dbNet* dest_flat_net = flatNet((Pin*) dest_pin);
-        disconnectPin((Pin*) dest_pin);
-        connectPin((Pin*) dest_pin, (Net*) dest_flat_net, (Net*) dest_mod_net);
+        Pin* sta_dest_pin = dbToSta(dest_pin);
+        dbNet* dest_flat_net = flatNet(sta_dest_pin);
+        disconnectPin(sta_dest_pin);
+        connectPin(sta_dest_pin, (Net*) dest_flat_net, (Net*) dest_mod_net);
         return;
       }
     }
@@ -3605,11 +3657,12 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 
       // at leaf level make connection
       if (level == 0) {
-        dbModNet* source_pin_mod_net = hierNet((Pin*) source_pin);
+        Pin* sta_source_pin = dbToSta(source_pin);
+        dbModNet* source_pin_mod_net = hierNet(sta_source_pin);
         if (source_pin_mod_net) {
-          disconnectPin((Pin*) source_pin, (Net*) source_pin_mod_net);
+          disconnectPin(sta_source_pin, (Net*) source_pin_mod_net);
         }
-        connectPin((Pin*) source_pin, (Net*) source_db_mod_net);
+        connectPin(sta_source_pin, (Net*) source_db_mod_net);
       }
 
       dbModInst* parent_inst = cur_module->getModInst();
@@ -3637,11 +3690,12 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
 
       if (level == 0) {
-        dbModNet* dest_pin_mod_net = hierNet((Pin*) dest_pin);
+        Pin* sta_dest_pin = dbToSta(dest_pin);
+        dbModNet* dest_pin_mod_net = hierNet(sta_dest_pin);
         if (dest_pin_mod_net) {
-          disconnectPin((Pin*) dest_pin, (Net*) dest_pin_mod_net);
+          disconnectPin(sta_dest_pin, (Net*) dest_pin_mod_net);
         }
-        connectPin((Pin*) dest_pin, (Net*) dest_db_mod_net);
+        connectPin(sta_dest_pin, (Net*) dest_db_mod_net);
       }
 
       dbModInst* parent_inst = cur_module->getModInst();
@@ -3665,9 +3719,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
             = dbModNet::create(highest_common_module, connection_name);
         top_mod_dest->connect(source_db_mod_net);
 
-        dbNet* source_pin_flat_net = flatNet((Pin*) source_pin);
-        disconnectPin((Pin*) source_pin);
-        connectPin((Pin*) source_pin,
+        Pin* sta_source_pin = dbToSta(source_pin);
+        dbNet* source_pin_flat_net = flatNet(sta_source_pin);
+        disconnectPin(sta_source_pin);
+        connectPin(sta_source_pin,
                    (Net*) source_pin_flat_net,
                    (Net*) source_db_mod_net);
         // source_pin->connect(source_db_mod_net);
@@ -3688,20 +3743,22 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 
     // reassociate the dest pin
 
-    dbModNet* dest_pin_mod_net = hierNet((Pin*) dest_pin);
+    Pin* sta_dest_pin = dbToSta(dest_pin);
+    dbModNet* dest_pin_mod_net = hierNet(sta_dest_pin);
     if (dest_pin_mod_net) {
-      dbNet* dest_pin_flat_net = flatNet((Pin*) dest_pin);
+      dbNet* dest_pin_flat_net = flatNet(sta_dest_pin);
       dest_pin->disconnect();
       connectPin(
-          (Pin*) dest_pin, (Net*) dest_pin_flat_net, (Net*) dest_pin_mod_net);
+          sta_dest_pin, (Net*) dest_pin_flat_net, (Net*) dest_pin_mod_net);
     }
 
     // reassociate the source pin
-    dbModNet* source_pin_mod_net = hierNet((Pin*) source_pin);
+    Pin* sta_source_pin = dbToSta(source_pin);
+    dbModNet* source_pin_mod_net = hierNet(sta_source_pin);
     if (source_pin_mod_net) {
-      dbNet* source_pin_flat_net = flatNet((Pin*) source_pin);
+      dbNet* source_pin_flat_net = flatNet(sta_source_pin);
       source_pin->disconnect();
-      connectPin((Pin*) source_pin,
+      connectPin(sta_source_pin,
                  (Net*) source_pin_flat_net,
                  (Net*) source_pin_mod_net);
     }
@@ -3712,7 +3769,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     for (auto module_to_clean_up : source_parent_tree) {
       dbModInst* mi = module_to_clean_up->getModInst();
       if (mi) {
-        mi->RemoveUnusedPortsAndPins();
+        mi->removeUnusedPortsAndPins();
         cleaned_up.insert(mi);
       }
     }
@@ -3720,7 +3777,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModInst* mi = module_to_clean_up->getModInst();
       if (mi) {
         if (cleaned_up.find(mi) == cleaned_up.end()) {
-          mi->RemoveUnusedPortsAndPins();
+          mi->removeUnusedPortsAndPins();
           cleaned_up.insert(mi);
         }
       }
@@ -3731,7 +3788,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
 {
   for (auto mi : block()->getModInsts()) {
-    mi->RemoveUnusedPortsAndPins();
+    mi->removeUnusedPortsAndPins();
   }
 }
 
@@ -4223,19 +4280,60 @@ void dbNetwork::checkAxioms()
   checkSanityNetNames();
 }
 
-Net* dbNetwork::getFlatNet(Net* net) const
+// Given a net that may be hierarchical, find the corresponding flat net.
+// If the net is already a flat net, it is returned as is.
+// If the net is a hierarchical net (dbModNet), find the associated dbNet and
+// return it as Net*.
+Net* dbNetwork::getOrFindFlatNet(const Net* net) const
+{
+  return dbToSta(getOrFindFlatDbNet(net));
+}
+
+// Given a net that may be hierarchical, find the corresponding flat dbNet.
+// If the net is already a flat net (dbNet), it is returned as is.
+// If the net is a hierarchical net (dbModNet), find the associated dbNet.
+dbNet* dbNetwork::getOrFindFlatDbNet(const Net* net) const
 {
   if (!net) {
     return nullptr;
   }
   // Convert net to a flat net, if not already
-  dbNet* db_net;
-  dbModNet* db_mod_net;
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
   staToDb(net, db_net, db_mod_net);
+
+  if (db_net) {
+    // If it's already a flat net, return it
+    return db_net;
+  }
+
   if (db_mod_net) {
+    // If it's a hierarchical net, find the associated dbNet
+    // by traversing the hierarchy.
     db_net = findRelatedDbNet(db_mod_net);
   }
-  return dbToSta(db_net);
+  return db_net;
+}
+
+// Find the flat net connected to the pin.
+// This function handles both internal instance pins and top-level port pins.
+Net* dbNetwork::getOrFindFlatNet(const Pin* pin) const
+{
+  return dbToSta(getOrFindFlatDbNet(pin));
+}
+
+// Find the flat net (dbNet) connected to the pin in the OpenDB database.
+// This function handles both internal instance pins and top-level port pins.
+dbNet* dbNetwork::getOrFindFlatDbNet(const Pin* pin) const
+{
+  dbNet* db_net = nullptr;
+  if (isTopLevelPort(pin)) {
+    Net* net = this->net(term(pin));
+    db_net = flatNet(net);
+  } else {
+    db_net = flatNet(pin);
+  }
+  return db_net;
 }
 
 dbModInst* dbNetwork::getModInst(Instance* inst) const
@@ -4248,6 +4346,24 @@ dbModInst* dbNetwork::getModInst(Instance* inst) const
   dbModInst* db_mod_inst = nullptr;
   staToDb(inst, db_inst, db_mod_inst);
   return db_mod_inst;
+}
+
+bool dbNetwork::hasPort(const Net* net) const
+{
+  if (!net) {
+    return false;
+  }
+
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
+  staToDb(net, db_net, db_mod_net);
+  if (db_net) {
+    return !db_net->getBTerms().empty();
+  }
+  if (db_mod_net) {
+    return !db_mod_net->getBTerms().empty();
+  }
+  return false;
 }
 
 void dbNetwork::checkSanityModBTerms()

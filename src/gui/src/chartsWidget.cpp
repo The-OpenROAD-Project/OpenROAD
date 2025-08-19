@@ -173,7 +173,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       mode_menu_(new QComboBox(this)),
       filters_menu_(new QComboBox(this)),
       display_(new HistogramView(this)),
-      refresh_filters_button_(new QPushButton("Refresh Filters", this)),
+      refresh_filters_button_(new QPushButton("Update", this)),
       prev_filter_index_(0),  // start with no filter
       resetting_menu_(false),
       label_(new QLabel(this))
