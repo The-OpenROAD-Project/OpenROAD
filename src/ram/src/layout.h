@@ -45,13 +45,15 @@ class Cell {
 public:
   Cell();
 
-  Cell(odb::Point position);
+  Cell(odb::Point position, odb::dbOrientType orient);
 
   void addInst(odb::dbInst* inst);
 
   void cellInit();
 
   void placeCell();
+
+  void setOrient(odb::dbOrientType orient);
 
   void setOrigin(odb::Point position);
 
@@ -61,6 +63,7 @@ public:
 
 private:
   odb::Point origin_;
+  odb::dbOrientType orient_;
   int height;
   int width;
   std::vector<odb::dbInst*> insts_;

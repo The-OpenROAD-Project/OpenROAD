@@ -43,15 +43,16 @@ namespace ram {
    using odb::dbNet;
    using odb::Point;
    using odb::Rect;
+   using odb::dbOrientType;
 
    using utl::RAM;
 
    //////////////////////////////////////////////////////////////
 
 
-   Cell::Cell() : origin_(0, 0) {}
+   Cell::Cell() : origin_(0, 0), orient_(dbOrientType::R0) {}
 
-   Cell::Cell(Point position) : origin_(position) {}
+   Cell::Cell(Point position, dbOrientType orient) : origin_(position), orient_(orient) {}
 
    void Cell::addInst(dbInst* inst) {
       insts_.push_back(inst);
@@ -62,6 +63,7 @@ namespace ram {
          Rect inst_box = inst->getBBox()->getBox();
          width += inst_box.dx();
          height = inst_box.dy();
+	 inst->setOrient(orient_);
       }
 
    }
@@ -74,7 +76,10 @@ namespace ram {
          global_pos.addX(inst_box.dx());
          inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
       }
+   }
 
+   void Cell::setOrient(odb::dbOrientType orient){
+      orient_ = orient;
    }
 
    void Cell::setOrigin(Point position) {
@@ -103,17 +108,21 @@ namespace ram {
    }
 
    void Layout::layoutInit() {
-      for (auto& cell : cells_) {
-         if (cell) {
-            cell->cellInit();
-	    if (cell_height < cell->getHeight()) {
-	       cell_height = cell->getHeight();  
+      for (int i = 0; i < cells_.size(); ++i) {
+          if (cells_[i]) {
+	    //set orientation first before initializing
+	    if (i % 2 == 1) {
+	       cells_[i]->setOrient(odb::dbOrientType::MX);
 	    }
-	    if (cell_width < cell->getWidth()) {
-	       cell_width = cell->getWidth();
+            cells_[i]->cellInit();
+	    if (cell_height < cells_[i]->getHeight()) {
+	       cell_height = cells_[i]->getHeight();  
+	    }
+	    if (cell_width < cells_[i]->getWidth()) {
+	       cell_width = cells_[i]->getWidth();
 	    }
          }
-      } 
+      }
    }
 
    void Layout::placeLayout() {
@@ -173,7 +182,6 @@ namespace ram {
             } else {
                layouts_.push_back(std::make_unique<Layout>(odb::horizontal));
             }
-
          }
       }
       layouts_[track]->addCell(std::move(cell));
@@ -184,6 +192,7 @@ namespace ram {
          layout->layoutInit();
       }
 
+      //sets the height and width of the storage + read ports
       cell_height = layouts_[0]->getHeight();
       cell_width = layouts_[0]->getWidth();
 

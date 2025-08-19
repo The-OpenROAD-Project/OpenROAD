@@ -47,6 +47,7 @@ using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbNet;
+using odb::dbRow;
 
 using utl::RAM;
 
@@ -543,6 +544,13 @@ void RamGen::generate(const int bytes_per_word,
 
     ram_grid.addLayout(std::move(cell_inv_layout));
 
+
+    //test code for dbRow
+    auto db_libs = db_->getLibs().begin();
+    dbRow::create(block_, "test_row", *(db_libs->getSites().begin()), 0, 0, odb::dbOrientType::R0,
+		    odb::dbRowDir::HORIZONTAL, 190, 460);
+    dbRow::create(block_, "test_row_2", *(db_libs->getSites().begin()), 0, 10880, odb::dbOrientType::R0,
+		    odb::dbRowDir::HORIZONTAL, 190, 460);
 
     ram_grid.setOrigin(odb::Point(0, 0));
     ram_grid.gridInit();
