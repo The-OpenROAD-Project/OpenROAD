@@ -21,11 +21,26 @@
 [INFO GPL-0019] Utilization:                     0.151 %
 [INFO GPL-0020] Standard cells area:            72.352 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 9260
+[InitialPlace]  Iter: 1 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 2 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 3 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 4 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 5 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 6 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 7 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 8 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 9 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 10 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 11 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 12 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 13 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 14 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 15 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 16 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 17 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 18 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 19 residual: 0.00001000 HPWL: 9260, abs percent change: 0
+[InitialPlace]  Iter: 20 residual: 0.00001000 HPWL: 9260, abs percent change: 0
 Placement Analysis
 ---------------------------------
 total displacement        128.5 u
