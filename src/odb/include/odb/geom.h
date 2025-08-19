@@ -64,34 +64,39 @@ class Point
 
 std::ostream& operator<<(std::ostream& os, const Point& pIn);
 
-class Point3D : public Point
+class Point3D
 {
  public:
   Point3D() = default;
-  Point3D(int x, int y, int z) : Point(x, y), z_(z) {}
+  Point3D(int x, int y, int z) : x_(x), y_(y), z_(z) {}
   Point3D& operator=(const Point3D&) = default;
-  Point3D(const Point3D& p) : Point(p.getX(), p.getY()), z_(p.getZ()) {}
-  Point3D(const Point& p, int z) : Point(p), z_(z) {}
+  Point3D(const Point3D& p) : x_(p.x()), y_(p.y()), z_(p.z()) {}
+  Point3D(const Point& p, int z) : x_(p.x()), y_(p.y()), z_(z) {}
 
   bool operator==(const Point3D& rhs) const;
   bool operator!=(const Point3D& rhs) const { return !(*this == rhs); }
   bool operator<(const Point3D& rhs) const;
   bool operator>=(const Point3D& rhs) const { return !(*this < rhs); }
 
-  int z() const { return getZ(); }
-  int getZ() const { return z_; }
+  int z() const { return z_; }
   void setZ(int z) { z_ = z; }
+  int x() const { return x_; }
+  void setX(int x) { x_ = x; }
+  int y() const { return y_; }
+  void setY(int y) { y_ = y; }
   void set(const int x, const int y, const int z)
   {
     setX(x);
     setY(y);
-    z_ = z;
+    setZ(z);
   }
 
   friend dbIStream& operator>>(dbIStream& stream, Point3D& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point3D& p);
 
  private:
+  int x_ = 0;
+  int y_ = 0;
   int z_ = 0;
 };
 
