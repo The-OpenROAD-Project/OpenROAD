@@ -110,6 +110,7 @@ class dbChipBump;
 class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
+class dbChipNet;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -7014,6 +7015,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipConn> getChipConns() const;
 
+  dbSet<dbChipNet> getChipNets() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7131,6 +7134,25 @@ class dbChipInst : public dbObject
   // User Code End dbChipInst
 };
 
+class dbChipNet : public dbObject
+{
+ public:
+  std::string getName() const;
+  // User Code Begin dbChipNet
+  dbChip* getChip() const;
+
+  uint getNumBumpInsts() const;
+
+  dbChipBumpInst* getBumpInst(uint index, std::vector<dbChipInst*>& path) const;
+
+  void addBumpInst(dbChipBumpInst* bump_inst, std::vector<dbChipInst*> path);
+
+  static dbChipNet* create(dbChip* chip, const std::string& name);
+
+  static void destroy(dbChipNet* net);
+  // User Code End dbChipNet
+};
+
 class dbChipRegion : public dbObject
 {
  public:
@@ -7195,6 +7217,8 @@ class dbDatabase : public dbObject
   dbSet<dbChipConn> getChipConns() const;
 
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
+
+  dbSet<dbChipNet> getChipNets() const;
 
   // User Code Begin dbDatabase
 

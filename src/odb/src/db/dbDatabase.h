@@ -240,12 +240,14 @@ class _dbChipInst;
 class _dbChipRegionInst;
 class _dbChipConn;
 class _dbChipBumpInst;
+class _dbChipNet;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
 class dbChipRegionInstItr;
 class dbChipConnItr;
 class dbChipBumpInstItr;
+class dbChipNetItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
@@ -284,6 +286,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
   dbTable<_dbChipConn>* chip_conn_tbl_;
   dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
+  dbTable<_dbChipNet>* chip_net_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
@@ -295,6 +298,7 @@ class _dbDatabase : public _dbObject
   dbChipRegionInstItr* chip_region_inst_itr_;
   dbChipConnItr* chip_conn_itr_;
   dbChipBumpInstItr* chip_bump_inst_itr_;
+  dbChipNetItr* chip_net_itr_;
   int _unique_id;
 
   utl::Logger* _logger;

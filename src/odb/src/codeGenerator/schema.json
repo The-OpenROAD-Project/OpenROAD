@@ -198,6 +198,15 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbChipBumpInst.h", "dbChipRegionInst.h"]
+    },
+    {
+      "name": "dbChipNetItr",
+      "parentObject": "dbChipNet",
+      "tableName": "chip_net_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipNet.h", "dbChip.h"]
     }
   ],
   "relations":[
@@ -470,6 +479,14 @@
       "type":"1_n",
       "tbl_name":"chip_bump_inst_tbl_",
       "schema":"db_schema_chip_bump",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipNet",
+      "type":"1_n",
+      "tbl_name":"chip_net_tbl_",
+      "schema":"db_schema_chip_region",
       "flags": ["no-serial"]
     }
   ]

@@ -344,6 +344,22 @@ BOOST_FIXTURE_TEST_CASE(test_chip_bumps, F_CHIP_HIERARCHY)
   BOOST_TEST(io_inst_region_r1_bump_inst->getChipRegionInst()
              == io_inst_region_r1);
 
+  // test chip nets
+  dbChipNet* chip_net = dbChipNet::create(system_chip, "net1");
+  BOOST_TEST(chip_net->getChip() == system_chip);
+  BOOST_TEST(chip_net->getNumBumpInsts() == 0);
+  BOOST_TEST(system_chip->getChipNets().size() == 1);
+  BOOST_TEST(db->getChipNets().size() == 1);
+  chip_net->addBumpInst(io_inst_region_r1_bump_inst, {io_inst});
+  auto memory_inst_region_r1_bump_inst
+      = (*(*memory_inst->getRegions().begin())->getChipBumpInsts().begin());
+  chip_net->addBumpInst(memory_inst_region_r1_bump_inst, {memory_inst});
+  BOOST_TEST(chip_net->getNumBumpInsts() == 2);
+  std::vector<dbChipInst*> path;
+  BOOST_TEST(chip_net->getBumpInst(0, path) == io_inst_region_r1_bump_inst);
+  BOOST_TEST(path.size() == 1);
+  BOOST_TEST(path[0] == io_inst);
+
   dbMaster* io_master
       = createMaster1X1(lib1, "io_master", 100, 100, "in", "out");
   dbInst* io_cell

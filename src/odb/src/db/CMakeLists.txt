@@ -92,6 +92,7 @@ add_library(db
     dbChipBumpInst.cpp
     dbChipConn.cpp
     dbChipInst.cpp
+    dbChipNet.cpp
     dbChipRegion.cpp
     dbChipRegionInst.cpp
     dbDatabase.cpp
@@ -153,6 +154,7 @@ add_library(db
     dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
+    dbChipNetItr.cpp
     dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
