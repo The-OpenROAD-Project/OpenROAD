@@ -7,6 +7,7 @@ add_library(dbSta_lib
   dbSta.cc
   dbNetwork.cc
   dbSdcNetwork.cc
+  dbEditHierarchy.cc
   dbReadVerilog.cc
   SpefWriter.cc
 )
