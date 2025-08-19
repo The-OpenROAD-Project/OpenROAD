@@ -539,6 +539,14 @@ float SACoreSoftMacro::calSingleNotchPenalty(float width, float height) {
 // If there is no HardMacroCluster, we do not consider the notch penalty
 void SACoreSoftMacro::calNotchPenalty()
 {
+  int tot_num_macros = 0;
+  for (const auto& macro_id : pos_seq_) {
+    tot_num_macros += macros_[macro_id].getNumMacro();
+  }
+  if (tot_num_macros <= 0) {
+    return;
+  }
+
   // Initialization
   notch_penalty_ = 0.0;
   notch_h_th_ = outline_.getHeight() / 10.0;
@@ -642,6 +650,8 @@ void SACoreSoftMacro::calNotchPenalty()
       }
     }
   }
+
+  notch_penalty_ /= tot_num_macros;
 
   if (graphics_) {
     graphics_->setNotchPenalty(
