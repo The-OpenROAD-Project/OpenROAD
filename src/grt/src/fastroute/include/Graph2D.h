@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -98,20 +99,26 @@ class Graph2D
   int x_grid_;
   int y_grid_;
   int num_layers_;
+  std::set<std::string> congestion_nets_;
 
-  double getCostNDRAware(FrNet* net, int x, int y, const double edgeCost, EdgeDirection direction);
-  int getCostNDRAware(FrNet* net, int x, int y, const int edgeCost, EdgeDirection direction);
-  void updateNDRCapLayer(const int x, const int y, FrNet* net, EdgeDirection dir, const double edge_cost);
-  void fixFractionEdgeUsage(int minLayer, int maxLayer, int x, int y, double edge_cost, EdgeDirection dir);
+  void updateCongList(const std::string& net_name, double edge_cost);
+  void printAllElements();
+  double getCostNDRAware(FrNet* net, int x, int y, double edge_cost, EdgeDirection direction);
+  // int getCostNDRAware(FrNet* net, int x, int y, int edgeCost, EdgeDirection direction);
+  void updateNDRCapLayer(int x, int y, FrNet* net, EdgeDirection dir, double edge_cost);
+  void fixFractionEdgeUsage(int min_layer, int max_layer, int x, int y, double edge_cost, EdgeDirection dir);
+  void initNDRnets();
 
   void foreachEdge(const std::function<void(Edge&)>& func);
 
   multi_array<Edge, 2> v_edges_;  // The way it is indexed is (X, Y)
   multi_array<Edge, 2> h_edges_;  // The way it is indexed is (X, Y)
-  multi_array<uint16_t, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  multi_array<uint16_t, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  // multi_array<uint16_t, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  // multi_array<uint16_t, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
   multi_array<Cap3D, 3> _v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
   multi_array<Cap3D, 3> _h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  multi_array<std::set<std::string>, 2> v_ndr_nets_;  // The way it is indexed is (X, Y)
+  multi_array<std::set<std::string>, 2> h_ndr_nets_;  // The way it is indexed is (X, Y)
 
   utl::Logger* logger_;
 

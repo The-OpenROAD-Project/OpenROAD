@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <set>
+#include <string>
+#include "DataType.h"
 #include "FastRoute.h"
 
 namespace grt {
@@ -28,7 +31,7 @@ void Graph2D::init(const int x_grid,
       h_edges_[x][y].est_usage = 0;
       h_edges_[x][y].red = 0;
       h_edges_[x][y].last_usage = 0;
-      h_edges_[x][y].num_ndrs = 0;
+      h_edges_[x][y].ndr_overflow = 0;
     }
   }
   for (int x = 0; x < x_grid; x++) {
@@ -39,7 +42,7 @@ void Graph2D::init(const int x_grid,
       v_edges_[x][y].est_usage = 0;
       v_edges_[x][y].red = 0;
       v_edges_[x][y].last_usage = 0;
-      v_edges_[x][y].num_ndrs = 0;
+      v_edges_[x][y].ndr_overflow = 0;
     }
   }
 }
@@ -179,26 +182,26 @@ void Graph2D::addEstUsageH(const Interval& xi, const int y, const double usage)
   }
 }
 
-void Graph2D::updateEstUsageH(const Interval& xi, const int y, FrNet* net, const double usage)
+void Graph2D::updateEstUsageH(const Interval& xi, const int y, FrNet* net, const double edge_cost)
 {
   for (int x = xi.lo; x < xi.hi; x++) {
-    updateEstUsageH(x, y, net, usage);
+    updateEstUsageH(x, y, net, edge_cost);
   }
 }
 
-void Graph2D::updateEstUsageH(const int x, const int y, FrNet* net, const double usage)
+void Graph2D::updateEstUsageH(const int x, const int y, FrNet* net, const double edge_cost)
 {
-  // if(x==496 && y==352){
-  //   logger_->report("Before Underflow {} {} est {} num {}",net->getName(), usage, h_edges_[x][y].est_usage, h_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
-  h_edges_[x][y].est_usage += getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
-  updateNDRCapLayer(x, y, net, EdgeDirection::Horizontal, usage);
-  // if(x==496 && y==352){
-  //   logger_->report("Underflow {} {} est {} num {}",net->getName(), usage, h_edges_[x][y].est_usage, h_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
-  if (usage > 0) {
+  if(x==497 && y==351){
+    logger_->report("Before Underflow {} {} est {} num {}",net->getName(), edge_cost, h_edges_[x][y].est_usage, h_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
+  h_edges_[x][y].est_usage += getCostNDRAware(net, x, y, edge_cost, EdgeDirection::Horizontal);
+  // updateNDRCapLayer(x, y, net, EdgeDirection::Horizontal, edge_cost);
+  if(x==497 && y==351){
+    logger_->report("Underflow {} {} est {} num {}",net->getName(), edge_cost, h_edges_[x][y].est_usage, h_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
+  if (edge_cost > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }
@@ -235,16 +238,16 @@ void Graph2D::updateEstUsageV(const int x, const Interval& yi, FrNet* net, const
 
 void Graph2D::updateEstUsageV(const int x, const int y, FrNet* net, const double usage)
 {
-  // if(x==496 && y==352){
-  //   logger_->report("Before Underflow {} {} {} {}",net->getName(), usage, v_edges_[x][y].est_usage, v_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
+  if(x==497 && y==351){
+    logger_->report("Before Underflow V {} {} {} {}",net->getName(), usage, v_edges_[x][y].est_usage, v_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
   v_edges_[x][y].est_usage += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
-  updateNDRCapLayer(x, y, net, EdgeDirection::Vertical, usage);
-  // if(x==496 && y==352){
-  //   logger_->report("Underflow {} {} {} {}",net->getName(), usage, v_edges_[x][y].est_usage, v_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
+  // updateNDRCapLayer(x, y, net, EdgeDirection::Vertical, usage);
+  if(x==497 && y==351){
+    logger_->report("Underflow V {} {} {} {}",net->getName(), usage, v_edges_[x][y].est_usage, v_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
 
   if (usage > 0) {
     v_used_ggrid_.insert({x, y});
@@ -299,59 +302,89 @@ void Graph2D::addUsageH(const int x, const int y, const int usage)
   }
 }
 
-void Graph2D::updateUsageH(const int x, const int y, FrNet* net, const int usage)
+void Graph2D::updateCongList(const std::string& net_name, const double edge_cost)
 {
-  // if(x==496 && y==352){
-  //   logger_->report("Before U Underflow {} {} {} {}",net->getName(), usage, h_edges_[x][y].usage, h_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
-  h_edges_[x][y].usage += getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
-  updateNDRCapLayer(x, y, net, EdgeDirection::Horizontal, usage);
-  // if(x==496 && y==352){
-  //   logger_->report("U Underflow {} {} {} {}",net->getName(), usage, h_edges_[x][y].usage, h_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
-  if (usage > 0) {
+  if (edge_cost > 0){
+    congestion_nets_.insert(net_name);
+  } else {
+    congestion_nets_.erase(net_name);
+  }
+}
+
+void Graph2D::printAllElements() 
+{
+        if (congestion_nets_.empty()) {
+            std::cout << "No congestion nets.\n";
+            return;
+        }
+        
+        std::cout << "Congestion Nets: ";
+        std::cout <<  congestion_nets_.size();
+        std::cout << " { ";
+        for (auto it = congestion_nets_.begin(); it != congestion_nets_.end(); ++it) {
+            if (it != congestion_nets_.begin()) {
+                std::cout << ", ";
+            }
+            std::cout << "\"" << *it << "\"";
+        }
+        std::cout << " }\n";
+}
+
+void Graph2D::updateUsageH(const int x, const int y, FrNet* net, const int edge_cost)
+{
+  if(x==497 && y==351){
+    logger_->report("Before U Underflow {} {} {} {}",net->getName(), edge_cost, h_edges_[x][y].usage, h_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
+  h_edges_[x][y].usage += getCostNDRAware(net, x, y, edge_cost, EdgeDirection::Horizontal);
+  // updateNDRCapLayer(x, y, net, EdgeDirection::Horizontal, edge_cost);
+  if(x==497 && y==351){
+    logger_->report("U Underflow {} {} {} {}",net->getName(), edge_cost, h_edges_[x][y].usage, h_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
+  if (edge_cost > 0) {
     h_used_ggrid_.insert({x, y});
   }
 }
 
-void Graph2D::updateUsageH(const Interval& xi, const int y, FrNet* net, const int usage)
+void Graph2D::updateUsageH(const Interval& xi, const int y, FrNet* net, const int edge_cost)
 {
   for (int x = xi.lo; x < xi.hi; x++) {
-    updateUsageH(x, y, net, usage);
+    updateUsageH(x, y, net, edge_cost);
   }
 }
 
-void Graph2D::addUsageV(const int x, const int y, const int usage)
+void Graph2D::addUsageV(const int x, const int y, const int used)
 {
-  v_edges_[x][y].usage += usage;
-  if (usage > 0) {
+  v_edges_[x][y].usage += used;
+  if (used > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }
 
-void Graph2D::updateUsageV(const int x, const int y, FrNet* net, const int usage)
+void Graph2D::updateUsageV(const int x, const int y, FrNet* net, const int edge_cost)
 {
-  // if(x==496 && y==352){
-  //   logger_->report("U Before Underflow {} {} {} {}",net->getName(), usage, v_edges_[x][y].usage, v_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
-  v_edges_[x][y].usage += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
-  updateNDRCapLayer(x, y, net, EdgeDirection::Vertical, usage);
-  // if(x==496 && y==352){
-  //   logger_->report("U Underflow {} {} {} {}",net->getName(), usage, v_edges_[x][y].usage, v_edges_[x][y].num_ndrs);
-  //   printNDRCap(x,y);
-  // }
-  if (usage > 0) {
+  if(x==497 && y==351){
+    logger_->report("U Before Underflow {} {} {} {}",net->getName(), edge_cost, v_edges_[x][y].usage, v_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+  }
+  v_edges_[x][y].usage += getCostNDRAware(net, x, y, edge_cost, EdgeDirection::Vertical);
+  // updateNDRCapLayer(x, y, net, EdgeDirection::Vertical, edge_cost);
+  if(x==497 && y==351){
+    logger_->report("U Underflow {} {} {} {}",net->getName(), edge_cost, v_edges_[x][y].usage, v_edges_[x][y].ndr_overflow);
+    printNDRCap(x,y);
+    updateCongList(net->getName(), edge_cost);
+    printAllElements();
+  }
+  if (edge_cost > 0) {
     v_used_ggrid_.insert({x, y});
   }
 }
 
-void Graph2D::updateUsageV(const int x, const Interval& yi, FrNet* net, const int usage)
+void Graph2D::updateUsageV(const int x, const Interval& yi, FrNet* net, const int edge_cost)
 {
   for (int y = yi.lo; y < yi.hi; y++) {
-    updateUsageV(x, y, net, usage);
+    updateUsageV(x, y, net, edge_cost);
   }
 }
 
@@ -427,6 +460,13 @@ void Graph2D::initCap3D()
 {
   _v_cap_3D_.resize(boost::extents[num_layers_][x_grid_][y_grid_]);
   _h_cap_3D_.resize(boost::extents[num_layers_][x_grid_][y_grid_]);
+  initNDRnets();
+}
+
+void Graph2D::initNDRnets()
+{
+  v_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
+  h_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
 }
 
 void Graph2D::updateCap3D(int x, int y, int layer, EdgeDirection direction, const double cap)
@@ -457,18 +497,14 @@ void Graph2D::printEdgeCapPerLayer()
   }
 }
 
-bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction, double edge_cost)
+bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction)
 {
-  // Check if this is an NDR net
-  bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
-  // const int edgeCost = net->getEdgeCost();
+  const int edgeCost = net->getEdgeCost();
   double max_single_layer_cap = 0;
   
-  // if (is_ndr) {
-  if (edge_cost > 1) {
-    // For NDR nets, we need at least one layer with sufficient capacity
+  if (edgeCost > 1) {
+    // For nets with high cost, we need at least one layer with sufficient capacity
     for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-      int edgeCost = net->getLayerEdgeCost(l);
       double layer_cap = 0;
       if (direction == EdgeDirection::Horizontal) {
           layer_cap = _h_cap_3D_[l][x][y].cap_ndr;
@@ -476,13 +512,12 @@ bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction, 
           layer_cap = _v_cap_3D_[l][x][y].cap_ndr;
       }
       max_single_layer_cap = std::max(max_single_layer_cap,layer_cap);
-      // if (layer_cap >= edge_cost) {
       if (layer_cap >= edgeCost) {
         return true; 
       }
     }
-    // if(x==496 && y==352)
-    //   logger_->report("=== Max Layer Cap: {} V{} x{} y{} max {}",net->getName(), direction==EdgeDirection::Vertical, x, y, max_single_layer_cap);
+    if(x==497 && y==351)
+      logger_->report("=== Max Layer Cap: {} V{} x{} y{} max {}",net->getName(), direction==EdgeDirection::Vertical, x, y, max_single_layer_cap);
 
     // No single layer can accommodate this NDR net
     return false;
@@ -491,74 +526,159 @@ bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction, 
   return true;
 }
 
-double Graph2D::getCostNDRAware(FrNet* net, int x, int y, const double edge_cost, EdgeDirection direction)
-{ 
-  // if(x==496 && y==352){
-  //   logger_->report("getCostNDR {} V{} H{} edge {}",net->getName(), v_edges_[x][y].est_usage, h_edges_[x][y].est_usage, edge_cost);
-  // }
-  // No single layer can accommodate this NDR net
-  if (std::abs(edge_cost) > 1 && !hasNDRCapacity(net, x, y, direction, std::abs(edge_cost))) {
-    // if(x==496 && y==352){
-    //   logger_->report("NoSingleLayer {} Vndrs{} Hndrs{} edge {} V{}",
-    //     net->getName(), v_edges_[x][y].num_ndrs, h_edges_[x][y].num_ndrs, edge_cost, direction==EdgeDirection::Vertical);
-    // }
-    if(edge_cost < 0){ // Rip-up
-      if(direction == EdgeDirection::Horizontal){
-        if(h_edges_[x][y].num_ndrs == 0)
-          return edge_cost;
-        h_edges_[x][y].num_ndrs-=1;          
-      }else{
-        if(v_edges_[x][y].num_ndrs == 0)
-          return edge_cost;
-        v_edges_[x][y].num_ndrs-=1;          
-      }
+// bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction, double edge_cost)
+// {
+//   // Check if this is an NDR net
+//   bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
+//   const int edgeCost = net->getEdgeCost();
+//   double max_single_layer_cap = 0;
+  
+//   // if (is_ndr) {
+//   // if (edge_cost > 1) {
+//   if (edgeCost > 1) {
+//     // For NDR nets, we need at least one layer with sufficient capacity
+//     for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+//       // int edgeCost = net->getLayerEdgeCost(l);
+//       double layer_cap = 0;
+//       if (direction == EdgeDirection::Horizontal) {
+//           layer_cap = _h_cap_3D_[l][x][y].cap_ndr;
+//       } else {
+//           layer_cap = _v_cap_3D_[l][x][y].cap_ndr;
+//       }
+//       max_single_layer_cap = std::max(max_single_layer_cap,layer_cap);
+//       // if (layer_cap >= edge_cost) {
+//       if (layer_cap >= edgeCost) {
+//         return true; 
+//       }
+//     }
+//     // if(x==497 && y==351)
+//       logger_->report("=== Max Layer Cap: {} V{} x{} y{} max {}",net->getName(), direction==EdgeDirection::Vertical, x, y, max_single_layer_cap);
 
-    } else {
-      // Increment number of NDR nets in congestion situation
-      if(direction == EdgeDirection::Horizontal)
-        h_edges_[x][y].num_ndrs++;
-      else
-        v_edges_[x][y].num_ndrs++;
-    }
-    return 100*edge_cost; 
+//     // No single layer can accommodate this NDR net
+//     return false;
+//   }
+  
+//   return true;
+// }
+
+double Graph2D::getCostNDRAware(FrNet* net, int x, int y, const double edge_cost, EdgeDirection direction)
+{
+  int edgeCost = net->getEdgeCost();
+  // No NDR processing needed for nets with 1 edge cost
+  if (edgeCost == 1) {
+      return edge_cost;
   }
-  return edge_cost;
+
+  constexpr double OVERFLOW_COST_MULTIPLIER = 100.0;
+  
+  // Get references to the appropriate edge data based on direction
+  auto& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y] : v_edges_[x][y];
+  auto& ndr_nets = (direction == EdgeDirection::Horizontal) ? h_ndr_nets_[x][y] : v_ndr_nets_[x][y];
+  
+  const std::string& net_name = net->getName();
+  bool is_net_present = ndr_nets.find(net_name) != ndr_nets.end();
+  double final_edge_cost = 0;
+  
+  if (edge_cost < 0) {  // Rip-up: remove resource
+      if (is_net_present) { // Remove only one time for L route
+          ndr_nets.erase(net_name);
+          if (edge.ndr_overflow > 0) {
+              edge.ndr_overflow--;
+              final_edge_cost = -OVERFLOW_COST_MULTIPLIER * edgeCost;
+          } else {
+            final_edge_cost = -edgeCost;
+          }
+          updateNDRCapLayer(x,y,net,direction,edge_cost);
+      }
+  } else {  // Routing: add resource
+    if (!is_net_present) {
+      if (edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction)) {
+        edge.ndr_overflow++;
+        final_edge_cost = OVERFLOW_COST_MULTIPLIER * edgeCost;
+      } else {
+        final_edge_cost = edgeCost;
+      }
+      ndr_nets.insert(net_name);
+      updateNDRCapLayer(x,y,net,direction,edge_cost);
+    } 
+      
+  }
+  
+  return final_edge_cost;
+
+  // if(x==497 && y==351 && direction == EdgeDirection::Horizontal){
+  //   logger_->report("getCostNDR {} V{}|{} H{}|{} edge_cost {}",\
+  //     net->getName(), v_edges_[x][y].usage, v_edges_[x][y].usage_red(), h_edges_[x][y].usage, h_edges_[x][y].usage_red(), edge_cost);
+  //   updateCongList(net->getDbNet()->getName(), edge_cost);
+  //   printAllElements();
+  // }
+  // // No single layer can accommodate this NDR net
+  // if (std::abs(edge_cost) > 1 && !hasNDRCapacity(net, x, y, direction, std::abs(edge_cost))) {
+  //   // if(x==497 && y==351){
+  //   //   logger_->report("NoSingleLayer {} Vndrs{} Hndrs{} edge {} V{}",
+  //   //     net->getName(), v_edges_[x][y].ndr_overflow, h_edges_[x][y].ndr_overflow, edge_cost, direction==EdgeDirection::Vertical);
+  //   // }
+  //   if(edge_cost < 0){ // Rip-up
+  //     if(direction == EdgeDirection::Horizontal){
+  //       if(h_edges_[x][y].ndr_overflow == 0){
+  //         return edge_cost;
+  //       }
+  //       h_edges_[x][y].ndr_overflow-=1;          
+  //     }else{
+  //       if(v_edges_[x][y].ndr_overflow == 0){
+  //         return edge_cost;
+  //       }
+  //       v_edges_[x][y].ndr_overflow-=1;          
+  //     }
+
+  //   } else {
+  //     // Increment number of NDR nets in congestion situation
+  //     if(direction == EdgeDirection::Horizontal){
+  //       h_edges_[x][y].ndr_overflow++;
+  //     }
+  //     else {
+  //       v_edges_[x][y].ndr_overflow++;
+  //     }
+  //   }
+  //   return 100*edge_cost; 
+  // }
+  // return edge_cost;
 }
 
 // Get cost using integer instead of double starting after convertToMazeroute()
-int Graph2D::getCostNDRAware(FrNet* net, int x, int y, const int edge_cost, EdgeDirection direction)
-{  
-  // if(x==496 && y==352){
-  //   logger_->report("getCostNDR {} V{} H{} edge {}",net->getName(), v_edges_[x][y].usage, h_edges_[x][y].usage, edge_cost);
-  // }
-  // No single layer can accommodate this NDR net
-  if (std::abs(edge_cost) > 1 && !hasNDRCapacity(net, x, y, direction, std::abs(edge_cost))) {
-    // if(x==496 && y==352){
-    //   logger_->report("NoSingleLayer {} Vndrs{} Hndrs{} edge {} V{}",
-    //     net->getName(), v_edges_[x][y].num_ndrs, h_edges_[x][y].num_ndrs, edge_cost, direction==EdgeDirection::Vertical);
-    // }
-    if(edge_cost < 0){ // Rip-up
-      if(direction == EdgeDirection::Horizontal){
-        if(h_edges_[x][y].num_ndrs == 0)
-          return edge_cost;
-        h_edges_[x][y].num_ndrs-=1;          
-      }else{
-        if(v_edges_[x][y].num_ndrs == 0)
-          return edge_cost;
-        v_edges_[x][y].num_ndrs-=1;          
-      }
+// int Graph2D::getCostNDRAware(FrNet* net, int x, int y, const int edge_cost, EdgeDirection direction)
+// {  
+//   // if(x==497 && y==351){
+//   //   logger_->report("getCostNDR {} V{} H{} edge {}",net->getName(), v_edges_[x][y].usage, h_edges_[x][y].usage, edge_cost);
+//   // }
+//   // No single layer can accommodate this NDR net
+//   if (std::abs(edge_cost) > 1 && !hasNDRCapacity(net, x, y, direction, std::abs(edge_cost))) {
+//     // if(x==497 && y==351){
+//     //   logger_->report("NoSingleLayer {} Vndrs{} Hndrs{} edge {} V{}",
+//     //     net->getName(), v_edges_[x][y].ndr_overflow, h_edges_[x][y].ndr_overflow, edge_cost, direction==EdgeDirection::Vertical);
+//     // }
+//     if(edge_cost < 0){ // Rip-up
+//       if(direction == EdgeDirection::Horizontal){
+//         if(h_edges_[x][y].ndr_overflow == 0)
+//           return edge_cost;
+//         h_edges_[x][y].ndr_overflow-=1;          
+//       }else{
+//         if(v_edges_[x][y].ndr_overflow == 0)
+//           return edge_cost;
+//         v_edges_[x][y].ndr_overflow-=1;          
+//       }
 
-    } else {
-      // Increment number of NDR nets in congestion situation
-      if(direction == EdgeDirection::Horizontal)
-        h_edges_[x][y].num_ndrs++;
-      else
-        v_edges_[x][y].num_ndrs++;
-    }
-    return 100*edge_cost; 
-  }
-  return edge_cost;
-}
+//     } else {
+//       // Increment number of NDR nets in congestion situation
+//       if(direction == EdgeDirection::Horizontal)
+//         h_edges_[x][y].ndr_overflow++;
+//       else
+//         v_edges_[x][y].ndr_overflow++;
+//     }
+//     return 100*edge_cost; 
+//   }
+//   return edge_cost;
+// }
 
 void Graph2D::printNDRCap(const int x, const int y)
 {
@@ -570,91 +690,146 @@ void Graph2D::printNDRCap(const int x, const int y)
   }
 }
 
-void Graph2D::fixFractionEdgeUsage(const int min_layer, const int max_layer, const int x, const int y, const double edge_cost, EdgeDirection dir)
-{
-  double tmp = std::abs(edge_cost);
-  double cap, cap_ndr;
-  for(int l=min_layer; l <= max_layer; l++){ 
-    if(dir == EdgeDirection::Horizontal){
-      cap_ndr = _h_cap_3D_[l][x][y].cap_ndr;
-      cap = _h_cap_3D_[l][x][y].cap;
-      if(cap - cap_ndr > 0 && cap - cap_ndr <= tmp){
-        tmp -= (cap - cap_ndr);
-        _h_cap_3D_[l][x][y].cap_ndr += (cap - cap_ndr);
-      } else if(cap - cap_ndr > 0 && cap - cap_ndr >= tmp){
-        _h_cap_3D_[l][x][y].cap_ndr += tmp;
-        break;
-      }
-    } else {
-      cap_ndr = _v_cap_3D_[l][x][y].cap_ndr;
-      cap = _v_cap_3D_[l][x][y].cap;
-      if(cap - cap_ndr > 0 && cap - cap_ndr <= tmp){
-        tmp -= (cap - cap_ndr);
-        _v_cap_3D_[l][x][y].cap_ndr += (cap - cap_ndr);
-      } else if(cap - cap_ndr > 0 && cap - cap_ndr >= tmp){
-        _v_cap_3D_[l][x][y].cap_ndr += tmp;
-        break;
-      }
-    }
-  }
-}
-
 void Graph2D::updateNDRCapLayer(const int x, const int y, FrNet* net, EdgeDirection dir, const double edge_cost)
 {
-  bool is_ndr = net->getDbNet()->getNonDefaultRule() != nullptr;
   double cap_ndr = 0;
   double cap = 0;
+  const int edgeCost = net->getEdgeCost();
 
-  // if(is_ndr && std::abs(edge_cost) > 1){
-  if(std::abs(edge_cost) > 1){
+  if(edgeCost > 1){
     for(int l=net->getMinLayer(); l <= net->getMaxLayer(); l++){  
       if(dir == EdgeDirection::Horizontal){
         cap_ndr =_h_cap_3D_[l][x][y].cap_ndr;
         cap = _h_cap_3D_[l][x][y].cap;
         if(edge_cost < 0){ // Reducing edge usage
           // check available capacity to reduce usage
-          if(cap - cap_ndr >= std::abs(edge_cost)){ 
-            _h_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+          if(cap - cap_ndr >= edgeCost){ 
+            _h_cap_3D_[l][x][y].cap_ndr += edgeCost;
             break;
           }
-          // Fix edge usage when riping up L route (cost/2)
-          if(l == net->getMaxLayer()) 
-            fixFractionEdgeUsage(net->getMinLayer(), net->getMaxLayer(), x, y, edge_cost, dir);
         } else {
           // check available capacity to increase usage
-          if(cap_ndr >= std::abs(edge_cost)){
-            _h_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+          if(cap_ndr >= edgeCost){
+            _h_cap_3D_[l][x][y].cap_ndr -= edgeCost;
             break;
           }
           // Overflow (need to update cap_ndr even with congestion)
-          if(l == net->getMaxLayer()) 
-            _h_cap_3D_[net->getMinLayer()][x][y].cap_ndr -= edge_cost;
+          if(l == net->getMaxLayer()) {
+            _h_cap_3D_[net->getMinLayer()][x][y].cap_ndr -= edgeCost;
+          }
         }
       } else {
         cap_ndr =_v_cap_3D_[l][x][y].cap_ndr;
         cap = _v_cap_3D_[l][x][y].cap;
         if(edge_cost < 0){ 
-          if(cap - cap_ndr >= std::abs(edge_cost)){ 
-            _v_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+          if(cap - cap_ndr >= edgeCost){ 
+            _v_cap_3D_[l][x][y].cap_ndr += edgeCost;
             break;
           }
-          // Fix edge usage when riping up L route
-          if(l == net->getMaxLayer()) 
-            fixFractionEdgeUsage(net->getMinLayer(), net->getMaxLayer(), x, y, edge_cost, dir);
         } else{
-          if(cap_ndr >= std::abs(edge_cost)){ 
-            _v_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+          if(cap_ndr >= edgeCost){ 
+            _v_cap_3D_[l][x][y].cap_ndr -= edgeCost;
             break;
           }
           // Overflow (need to update cap_ndr even with congestion)
-          if(l == net->getMaxLayer()) 
-            _v_cap_3D_[net->getMinLayer()][x][y].cap_ndr -= edge_cost;
+          if(l == net->getMaxLayer()) {
+            _v_cap_3D_[net->getMinLayer()][x][y].cap_ndr -= edgeCost;
+          }
         }
       }
     }
   }
-  // if(net->getDbNet()->getName()=="gen_tiles\\[0\\].i_tile.i_tile/gen_caches\\[0\\].i_snitch_icache/i_lookup.g_sets\\[0\\].gen_scm.i_tag.CG_CELL_WORD_ITER\\[20\\].CG_Inst.clk_o")
-  //   logger_->report("\tAfter cap: {} capNDR: {} {}",cap,cap_ndr,edge_cost);
 }
+
+// void Graph2D::fixFractionEdgeUsage(const int min_layer, const int max_layer, const int x, const int y, const double edge_cost, EdgeDirection dir)
+// {
+//   double tmp = std::abs(edge_cost);
+//   double cap, cap_ndr;
+//   for(int l=min_layer; l <= max_layer; l++){ 
+//     if(dir == EdgeDirection::Horizontal){
+//       cap_ndr = _h_cap_3D_[l][x][y].cap_ndr;
+//       cap = _h_cap_3D_[l][x][y].cap;
+//       if(cap - cap_ndr > 0 && cap - cap_ndr <= tmp){
+//         tmp -= (cap - cap_ndr);
+//         _h_cap_3D_[l][x][y].cap_ndr += (cap - cap_ndr);
+//       } else if(cap - cap_ndr > 0 && cap - cap_ndr >= tmp){
+//         _h_cap_3D_[l][x][y].cap_ndr += tmp;
+//         break;
+//       }
+//     } else {
+//       cap_ndr = _v_cap_3D_[l][x][y].cap_ndr;
+//       cap = _v_cap_3D_[l][x][y].cap;
+//       if(cap - cap_ndr > 0 && cap - cap_ndr <= tmp){
+//         tmp -= (cap - cap_ndr);
+//         _v_cap_3D_[l][x][y].cap_ndr += (cap - cap_ndr);
+//       } else if(cap - cap_ndr > 0 && cap - cap_ndr >= tmp){
+//         _v_cap_3D_[l][x][y].cap_ndr += tmp;
+//         break;
+//       }
+//     }
+//   }
+// }
+
+// void Graph2D::updateNDRCapLayer(const int x, const int y, FrNet* net, EdgeDirection dir, const double edge_cost)
+// {
+//   bool is_ndr = net->getDbNet()->getNonDefaultRule() != nullptr;
+//   double cap_ndr = 0;
+//   double cap = 0;
+
+//   // if(is_ndr && std::abs(edge_cost) > 1){
+//   if(std::abs(edge_cost) > 1 || is_ndr){
+//     for(int l=net->getMinLayer(); l <= net->getMaxLayer(); l++){  
+//       if(dir == EdgeDirection::Horizontal){
+//         cap_ndr =_h_cap_3D_[l][x][y].cap_ndr;
+//         cap = _h_cap_3D_[l][x][y].cap;
+//         if(edge_cost < 0){ // Reducing edge usage
+//           // check available capacity to reduce usage
+//           if(cap - cap_ndr >= std::abs(edge_cost)){ 
+//             _h_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+//             break;
+//           }
+//           // Fix edge usage when riping up L route (cost/2)
+//           if(l == net->getMaxLayer()) {
+//             fixFractionEdgeUsage(net->getMinLayer(), net->getMaxLayer(), x, y, edge_cost, dir);
+//           }
+//         } else {
+//           // check available capacity to increase usage
+//           if(cap_ndr >= std::abs(edge_cost)){
+//             _h_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+//             break;
+//           }
+//           // Overflow (need to update cap_ndr even with congestion)
+//           if(l == net->getMaxLayer()) {
+//             _h_cap_3D_[net->getMinLayer()][x][y].cap_ndr -= edge_cost;
+//           }
+//         }
+//       } else {
+//         cap_ndr =_v_cap_3D_[l][x][y].cap_ndr;
+//         cap = _v_cap_3D_[l][x][y].cap;
+//         if(edge_cost < 0){ 
+//           if(cap - cap_ndr >= std::abs(edge_cost)){ 
+//             _v_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+//             break;
+//           }
+//           // Fix edge usage when riping up L route
+//           if(l == net->getMaxLayer()) {
+//             fixFractionEdgeUsage(net->getMinLayer(), net->getMaxLayer(), x, y, edge_cost, dir);
+//           }
+//         } else{
+//           if(cap_ndr >= std::abs(edge_cost)){ 
+//             _v_cap_3D_[l][x][y].cap_ndr -= edge_cost;
+//             break;
+//           }
+//           // Overflow (need to update cap_ndr even with congestion)
+//           if(l == net->getMaxLayer()) {
+//             _v_cap_3D_[net->getMinLayer()][x][y].cap_ndr -= edge_cost;
+//           }
+//         }
+//       }
+//     }
+//   }
+//   // if(net->getDbNet()->getName()=="gen_tiles\\[0\\].i_tile.i_tile/gen_caches\\[0\\].i_snitch_icache/i_lookup.g_sets\\[0\\].gen_scm.i_tag.CG_CELL_WORD_ITER\\[20\\].CG_Inst.clk_o")
+//   //   logger_->report("\tAfter cap: {} capNDR: {} {}",cap,cap_ndr,edge_cost);
+// }
 
 }  // namespace grt
