@@ -65,4 +65,17 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestAccessPoint",
+    srcs = [
+        "TestAccessPoint.cpp",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@boost.test",
+    ],
+)
+
 # TODO: more to come.

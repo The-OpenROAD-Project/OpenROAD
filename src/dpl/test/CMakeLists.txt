@@ -59,6 +59,7 @@ or_integration_tests(
     pad06
     pad07
     pad08
+    pad09
     regions1
     regions2
     regions3

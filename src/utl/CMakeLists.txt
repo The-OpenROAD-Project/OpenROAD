@@ -45,6 +45,7 @@ add_library(utl_lib
   src/Progress.cpp
   src/CommandLineProgress.cpp
   src/timer.cpp
+  src/mem_stats.cpp
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp
