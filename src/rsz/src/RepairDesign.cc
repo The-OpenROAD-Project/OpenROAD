@@ -31,6 +31,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Units.hh"
+#include "utl/mem_stats.h"
 #include "utl/scope.h"
 
 namespace rsz {
@@ -2652,6 +2653,8 @@ void RepairDesign::printProgress(int iteration,
         inserted_buffer_count_,
         repaired_net_count,
         nets_left);
+
+    debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   }
 
   if (end) {
