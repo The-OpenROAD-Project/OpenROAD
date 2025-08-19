@@ -161,7 +161,7 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
 
 std::vector<dbId<_dbChipInst>> extractChipInstsPath(
     dbChip* parent_chip,
-    std::vector<dbChipInst*> chip_insts)
+    const std::vector<dbChipInst*>& chip_insts)
 {
   _dbDatabase* _db = (_dbDatabase*) parent_chip->getImpl()->getOwner();
   utl::Logger* logger = _db->getLogger();
