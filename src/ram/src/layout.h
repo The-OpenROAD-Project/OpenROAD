@@ -118,6 +118,8 @@ public:
   const int getWidth();
 
   const int numLayouts();
+
+  const int getRowWidth();
 private:
   odb::Orientation2D orientation_;
   odb::Point origin_;

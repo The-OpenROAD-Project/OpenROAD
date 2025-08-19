@@ -111,6 +111,7 @@ namespace ram {
       for (int i = 0; i < cells_.size(); ++i) {
           if (cells_[i]) {
 	    //set orientation first before initializing
+	    //need something to flip entire track if horizontal
 	    if (i % 2 == 1) {
 	       cells_[i]->setOrient(odb::dbOrientType::MX);
 	    }
@@ -226,6 +227,14 @@ namespace ram {
 
    const int Grid::numLayouts() {
       return layouts_.size();
+   }
+
+   const int Grid::getRowWidth() {
+      int row_width = 0;
+      for (auto& layout : layouts_) {
+         row_width += layout->getWidth();
+      }
+      return row_width;
    }
 
 

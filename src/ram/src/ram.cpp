@@ -544,16 +544,29 @@ void RamGen::generate(const int bytes_per_word,
 
     ram_grid.addLayout(std::move(cell_inv_layout));
 
-
+    auto ram_origin(odb::Point (0,0));
+    
+    ram_grid.setOrigin(ram_origin);
+    ram_grid.gridInit(); 
+    
     //test code for dbRow
     auto db_libs = db_->getLibs().begin();
-    dbRow::create(block_, "test_row", *(db_libs->getSites().begin()), 0, 0, odb::dbOrientType::R0,
-		    odb::dbRowDir::HORIZONTAL, 190, 460);
-    dbRow::create(block_, "test_row_2", *(db_libs->getSites().begin()), 0, 10880, odb::dbOrientType::R0,
-		    odb::dbRowDir::HORIZONTAL, 190, 460);
+    auto db_sites = *(db_libs->getSites().begin());
+    auto sites_width = db_sites->getWidth();
+   
+    int num_sites = ram_grid.getRowWidth() / db_sites->getWidth();
+    for (int i = 0; i <= word_count; ++i) { //extra for the layer of buffers
+	auto row_name = fmt::format ("RAM_ROW{}", i).c_str();
+	auto y_coord = i * ram_grid.getHeight();
+	auto row_orient = odb::dbOrientType::R0;
+	if (i % 2 == 1) {
+	    row_orient = odb::dbOrientType::MX;
+	}	
+	dbRow::create(block_, row_name, db_sites, ram_origin.getX(), y_coord,
+		row_orient, odb::dbRowDir::HORIZONTAL, num_sites, sites_width);
+    }
 
-    ram_grid.setOrigin(odb::Point(0, 0));
-    ram_grid.gridInit();
+
     ram_grid.placeGrid();
 }
 

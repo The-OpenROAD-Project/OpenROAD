@@ -15,6 +15,7 @@ generate_ram_netlist \
 
 ord::design_created
 
+
 set def_file [make_result_file make_8x8.def]
 write_def $def_file
 diff_files make_8x8.defok $def_file
