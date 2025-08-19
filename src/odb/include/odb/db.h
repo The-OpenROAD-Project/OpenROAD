@@ -44,19 +44,16 @@ template <class T>
 class dbId;
 
 // Forward declarations of all database objects
-class dbDatabase;
 class dbBox;
 class dbJournalEntry;
 
 // Property objects
-class dbProperty;
 class dbBoolProperty;
 class dbStringProperty;
 class dbIntProperty;
 class dbDoubleProperty;
 
 // Design objects
-class dbChip;
 class dbBlock;
 class dbBTerm;
 class dbNet;
@@ -108,6 +105,8 @@ class dbViaParams;
 class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
+class dbChip;
+class dbDatabase;
 class dbDft;
 class dbGCellGrid;
 class dbGDSARef;
@@ -136,6 +135,7 @@ class dbNetTrack;
 class dbPolygon;
 class dbPowerDomain;
 class dbPowerSwitch;
+class dbProperty;
 class dbScanChain;
 class dbScanInst;
 class dbScanList;
@@ -169,326 +169,6 @@ class dbExtControl;
 
 // Custom iterators
 class dbModuleBusPortModBTermItr;
-///
-/// dbProperty - Property base class.
-///
-class dbProperty : public dbObject
-{
- public:
-  enum Type
-  {
-    // Do not change the order or the values of this enum.
-    STRING_PROP = 0,
-    BOOL_PROP = 1,
-    INT_PROP = 2,
-    DOUBLE_PROP = 3
-  };
-
-  /// Get the type of this property.
-  Type getType();
-
-  /// Get thetname of this property.
-  std::string getName();
-
-  /// Get the owner of this property
-  dbObject* getPropOwner();
-
-  /// Find the named property. Returns nullptr if the property does not exist.
-  static dbProperty* find(dbObject* object, const char* name);
-
-  /// Find the named property of the specified type. Returns nullptr if the
-  /// property does not exist.
-  static dbProperty* find(dbObject* object, const char* name, Type type);
-
-  /// Destroy a specific property
-  static void destroy(dbProperty* prop);
-  /// Destroy all properties of the specific object
-  static void destroyProperties(dbObject* obj);
-  static dbSet<dbProperty> getProperties(dbObject* object);
-  static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
-  // 5.8
-  static std::string writeProperties(dbObject* object);
-  static std::string writePropValue(dbProperty* prop);
-};
-
-///
-/// dbProperty - Boolean property.
-///
-class dbBoolProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  bool getValue();
-
-  /// Set the value of this property.
-  void setValue(bool value);
-
-  /// Create a bool property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbBoolProperty* create(dbObject* object, const char* name, bool value);
-
-  /// Find the named property of type bool. Returns nullptr if the property does
-  /// not exist.
-  static dbBoolProperty* find(dbObject* object, const char* name);
-};
-
-///
-/// dbProperty - String property.
-///
-class dbStringProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  std::string getValue();
-
-  /// Set the value of this property.
-  void setValue(const char* value);
-
-  /// Create a string property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbStringProperty* create(dbObject* object,
-                                  const char* name,
-                                  const char* value);
-
-  /// Find the named property of type string. Returns nullptr if the property
-  /// does not exist.
-  static dbStringProperty* find(dbObject* object, const char* name);
-};
-
-///
-/// dbProperty - Int property.
-///
-class dbIntProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  int getValue();
-
-  /// Set the value of this property.
-  void setValue(int value);
-
-  /// Create a int property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbIntProperty* create(dbObject* object, const char* name, int value);
-
-  /// Find the named property of type int. Returns nullptr if the property does
-  /// not exist.
-  static dbIntProperty* find(dbObject* object, const char* name);
-};
-
-///
-/// dbProperty - Double property.
-///
-class dbDoubleProperty : public dbProperty
-{
- public:
-  /// Get the value of this property.
-  double getValue();
-
-  /// Set the value of this property.
-  void setValue(double value);
-
-  /// Create a double property. Returns nullptr if a property with the same name
-  /// already exists.
-  static dbDoubleProperty* create(dbObject* object,
-                                  const char* name,
-                                  double value);
-
-  /// Find the named property of type double. Returns nullptr if the property
-  /// does not exist.
-  static dbDoubleProperty* find(dbObject* object, const char* name);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-///
-/// This class encapsulates a persitant ADS database.
-/// You can open multiple databases, however, the number
-/// of open databases is limited to the amount
-/// of physical memory available.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbDatabase : public dbObject
-{
- public:
-  ///
-  /// Return the libs contained in the database. A database can contain
-  /// multiple libs.
-  ///
-  dbSet<dbLib> getLibs();
-
-  ///
-  /// Find a specific lib.
-  /// Returns nullptr if no lib was found.
-  ///
-  dbLib* findLib(const char* name);
-
-  ///
-  /// Return the techs contained in the database. A database can contain
-  /// multiple techs.
-  ///
-  dbSet<dbTech> getTechs();
-
-  ///
-  /// Find a specific tech.
-  /// Returns nullptr if no tech was found.
-  ///
-  dbTech* findTech(const char* name);
-
-  ///
-  /// Find a specific master
-  /// Returns nullptr if no master is found.
-  ///
-  dbMaster* findMaster(const char* name);
-
-  ///
-  /// This function is used to delete unused master-cells.
-  /// Returns the number of unused master-cells that have been deleted.
-  ///
-  int removeUnusedMasters();
-
-  ///
-  /// Get the chip of this database.
-  /// Returns nullptr if no chip has been created.
-  ///
-  dbChip* getChip();
-
-  ////////////////////////
-  /// DEPRECATED
-  ////////////////////////
-  ///
-  /// This is replaced by dbBlock::getTech() or dbLib::getTech().
-  /// This is temporarily kept for legacy migration.
-  /// Get the technology of this database if there is exactly one dbTech.
-  /// Returns nullptr if no tech has been created.
-  ///
-  dbTech* getTech();
-
-  ////////////////////////
-  /// DEPRECATED
-  ////////////////////////
-  /// Return the chips contained in the database. A database can contain
-  /// multiple chips.
-  ///
-  dbSet<dbChip> getChips();
-
-  ///
-  /// Returns the number of masters
-  ///
-  uint getNumberOfMasters();
-
-  ///
-  /// Read a database from this stream.
-  /// WARNING: This function destroys the data currently in the database.
-  /// Throws ZIOError..
-  ///
-  void read(std::istream& f);
-
-  ///
-  /// Write a database to this stream.
-  /// Throws ZIOError..
-  ///
-  void write(std::ostream& file);
-
-  ///
-  /// ECO - The following methods implement a simple ECO mechanism for capturing
-  /// netlist changes. The intent of the ECO mechanism is to support delta
-  /// changes that occur in a "remote" node that must be applied back to the
-  /// "master" node. Being as such, the database on the "remote" must be an
-  /// exact copy of the "master" database, prior to changes. Furthermore, the
-  /// "master" database cannot change prior to commiting the eco to the block.
-  ///
-  /// WARNING: If these invariants does not hold then the results will be
-  ///          unpredictable.
-  ///
-
-  ///
-  /// Begin collecting netlist changes on specified block.
-  ///
-  /// NOTE: Eco changes can not be nested at this time.
-  ///
-  static void beginEco(dbBlock* block);
-
-  ///
-  /// End collecting netlist changes on specified block.
-  ///
-  static void endEco(dbBlock* block);
-
-  ///
-  /// Returns true of the pending eco is empty
-  ///
-  static bool ecoEmpty(dbBlock* block);
-
-  ///
-  /// Read the eco changes from the specified stream to be applied to the
-  /// specified block.
-  ///
-  static void readEco(dbBlock* block, const char* filename);
-
-  ///
-  /// Write the eco netlist changes to the specified stream.
-  ///
-  static void writeEco(dbBlock* block, const char* filename);
-  static int checkEco(dbBlock* block);
-
-  ///
-  /// Commit any pending netlist changes.
-  ///
-  static void commitEco(dbBlock* block);
-
-  ///
-  /// Undo any pending netlist changes.  Only supports:
-  ///   create and destroy of dbInst and dbNet
-  ///   dbInst::swapMaster
-  ///   connect and disconnect of dbBTerm and dbITerm
-  ///
-  static void undoEco(dbBlock* block);
-
-  ///
-  /// links to utl::Logger
-  ///
-  void setLogger(utl::Logger* logger);
-
-  ///
-  /// Initializes the database to nothing.
-  ///
-  void clear();
-
-  ///
-  /// Generates a report of memory usage.
-  ///   Not perfectly byte accurate.  Intended for developers.
-  ///
-  void report();
-
-  ///
-  /// Used to be notified when lef/def/odb are read.
-  ///
-  void addObserver(dbDatabaseObserver* observer);
-  void removeObserver(dbDatabaseObserver* observer);
-
-  ///
-  /// Notify observers when one of these operations is complete.
-  /// Fine-grained callbacks during construction are not as helpful
-  /// as knowing when the data is fully loaded into odb.
-  ///
-  void triggerPostReadLef(dbTech* tech, dbLib* library);
-  void triggerPostReadDef(dbBlock* block, bool floorplan);
-  void triggerPostReadDb();
-
-  ///
-  /// Create an instance of a database
-  ///
-  static dbDatabase* create();
-
-  ///
-  /// Detroy an instance of a database
-  ///
-  static void destroy(dbDatabase* db);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbDatabase* getDatabase(uint oid);
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -846,38 +526,6 @@ class dbSBox : public dbBox
   /// Destroy a SBox.
   ///
   static void destroy(dbSBox* box);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-///
-/// A Chip is the element the represents a VLSI/ASIC IC.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbChip : public dbObject
-{
- public:
-  ///
-  /// Get the top-block of this chip.
-  /// Returns nullptr if a top-block has NOT been created.
-  ///
-  dbBlock* getBlock();
-
-  ///
-  /// Create a new chip.
-  /// Returns nullptr if a chip already exists.
-  /// Returns nullptr if there is no database technology.
-  ///
-  static dbChip* create(dbDatabase* db);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbChip* getChip(dbDatabase* db, uint oid);
-
-  ///
-  /// Destroy a chip.
-  ///
-  static void destroy(dbChip* chip);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1612,6 +1260,23 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
+  /// Make a unique net/instance name
+  /// If parent is nullptr, the net name will be unique in top module.
+  /// If base_name is nullptr, the default net name will be used.
+  /// If uniquify is IF_NEEDED*, unique suffix will be added when necessary.
+  /// If uniquify is *_WITH_UNDERSCORE, an underscore will be added before the
+  /// unique suffix.
+  ///
+  std::string makeNewNetName(dbModInst* parent = nullptr,
+                             const char* base_name = "net",
+                             const dbNameUniquifyType& uniquify
+                             = dbNameUniquifyType::ALWAYS);
+  std::string makeNewInstName(dbModInst* parent = nullptr,
+                              const char* base_name = "inst",
+                              const dbNameUniquifyType& uniquify
+                              = dbNameUniquifyType::ALWAYS);
+
+  ///
   /// return the regions of this design
   ///
   dbSet<dbRegion> getRegions();
@@ -1701,9 +1366,6 @@ class dbBlock : public dbObject
   //
   void debugPrintContent(std::ostream& str_db);
   void debugPrintContent() { debugPrintContent(std::cout); }
-
- private:
-  void ComputeBBox();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7261,6 +6923,290 @@ class dbCellEdgeSpacing : public dbObject
   // User Code End dbCellEdgeSpacing
 };
 
+class dbChip : public dbObject
+{
+ public:
+  enum class ChipType
+  {
+    DIE,
+    RDL,
+    IP,
+    SUBSTRATE,
+    HIER
+  };
+
+  const char* getName() const;
+
+  void setOffset(Point offset);
+
+  Point getOffset() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setHeight(int height);
+
+  int getHeight() const;
+
+  void setThickness(int thickness);
+
+  int getThickness() const;
+
+  void setShrink(float shrink);
+
+  float getShrink() const;
+
+  void setSealRingEast(int seal_ring_east);
+
+  int getSealRingEast() const;
+
+  void setSealRingWest(int seal_ring_west);
+
+  int getSealRingWest() const;
+
+  void setSealRingNorth(int seal_ring_north);
+
+  int getSealRingNorth() const;
+
+  void setSealRingSouth(int seal_ring_south);
+
+  int getSealRingSouth() const;
+
+  void setScribeLineEast(int scribe_line_east);
+
+  int getScribeLineEast() const;
+
+  void setScribeLineWest(int scribe_line_west);
+
+  int getScribeLineWest() const;
+
+  void setScribeLineNorth(int scribe_line_north);
+
+  int getScribeLineNorth() const;
+
+  void setScribeLineSouth(int scribe_line_south);
+
+  int getScribeLineSouth() const;
+
+  void setTsv(bool tsv);
+
+  bool isTsv() const;
+
+  // User Code Begin dbChip
+
+  ChipType getChipType() const;
+  ///
+  /// Get the top-block of this chip.
+  /// Returns nullptr if a top-block has NOT been created.
+  ///
+  dbBlock* getBlock();
+
+  ///
+  /// Create a new chip.
+  /// Returns nullptr if there is no database technology.
+  ///
+  static dbChip* create(dbDatabase* db,
+                        const std::string& name = "",
+                        ChipType type = ChipType::DIE);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbChip* getChip(dbDatabase* db, uint oid);
+
+  ///
+  /// Destroy a chip.
+  ///
+  static void destroy(dbChip* chip);
+  // User Code End dbChip
+};
+
+class dbDatabase : public dbObject
+{
+ public:
+  dbSet<dbChip> getChips() const;
+
+  dbChip* findChip(const char* name) const;
+
+  dbSet<dbProperty> getProperties() const;
+
+  // User Code Begin dbDatabase
+
+  void setTopChip(dbChip* chip);
+  ///
+  /// Return the libs contained in the database. A database can contain
+  /// multiple libs.
+  ///
+  dbSet<dbLib> getLibs();
+
+  ///
+  /// Find a specific lib.
+  /// Returns nullptr if no lib was found.
+  ///
+  dbLib* findLib(const char* name);
+
+  ///
+  /// Return the techs contained in the database. A database can contain
+  /// multiple techs.
+  ///
+  dbSet<dbTech> getTechs();
+
+  ///
+  /// Find a specific tech.
+  /// Returns nullptr if no tech was found.
+  ///
+  dbTech* findTech(const char* name);
+
+  ///
+  /// Find a specific master
+  /// Returns nullptr if no master is found.
+  ///
+  dbMaster* findMaster(const char* name);
+
+  ///
+  /// This function is used to delete unused master-cells.
+  /// Returns the number of unused master-cells that have been deleted.
+  ///
+  int removeUnusedMasters();
+
+  ///
+  /// Get the chip of this database.
+  /// Returns nullptr if no chip has been created.
+  ///
+  dbChip* getChip();
+
+  ////////////////////////
+  /// DEPRECATED
+  ////////////////////////
+  ///
+  /// This is replaced by dbBlock::getTech() or dbLib::getTech().
+  /// This is temporarily kept for legacy migration.
+  /// Get the technology of this database if there is exactly one dbTech.
+  /// Returns nullptr if no tech has been created.
+  ///
+  dbTech* getTech();
+
+  ///
+  /// Returns the number of masters
+  ///
+  uint getNumberOfMasters();
+
+  ///
+  /// Read a database from this stream.
+  /// WARNING: This function destroys the data currently in the database.
+  /// Throws ZIOError..
+  ///
+  void read(std::istream& f);
+
+  ///
+  /// Write a database to this stream.
+  /// Throws ZIOError..
+  ///
+  void write(std::ostream& file);
+
+  ///
+  /// ECO - The following methods implement a simple ECO mechanism for capturing
+  /// netlist changes. The intent of the ECO mechanism is to support delta
+  /// changes that occur in a "remote" node that must be applied back to the
+  /// "master" node. Being as such, the database on the "remote" must be an
+  /// exact copy of the "master" database, prior to changes. Furthermore, the
+  /// "master" database cannot change prior to commiting the eco to the block.
+  ///
+  /// WARNING: If these invariants does not hold then the results will be
+  ///          unpredictable.
+  ///
+
+  ///
+  /// Begin collecting netlist changes on specified block.
+  ///
+  /// NOTE: Eco changes can not be nested at this time.
+  ///
+  static void beginEco(dbBlock* block);
+
+  ///
+  /// End collecting netlist changes on specified block.
+  ///
+  static void endEco(dbBlock* block);
+
+  ///
+  /// Returns true of the pending eco is empty
+  ///
+  static bool ecoEmpty(dbBlock* block);
+
+  ///
+  /// Read the eco changes from the specified stream to be applied to the
+  /// specified block.
+  ///
+  static void readEco(dbBlock* block, const char* filename);
+
+  ///
+  /// Write the eco netlist changes to the specified stream.
+  ///
+  static void writeEco(dbBlock* block, const char* filename);
+  static int checkEco(dbBlock* block);
+
+  ///
+  /// Commit any pending netlist changes.
+  ///
+  static void commitEco(dbBlock* block);
+
+  ///
+  /// Undo any pending netlist changes.  Only supports:
+  ///   create and destroy of dbInst and dbNet
+  ///   dbInst::swapMaster
+  ///   connect and disconnect of dbBTerm and dbITerm
+  ///
+  static void undoEco(dbBlock* block);
+
+  ///
+  /// links to utl::Logger
+  ///
+  void setLogger(utl::Logger* logger);
+
+  ///
+  /// Initializes the database to nothing.
+  ///
+  void clear();
+
+  ///
+  /// Generates a report of memory usage.
+  ///   Not perfectly byte accurate.  Intended for developers.
+  ///
+  void report();
+
+  ///
+  /// Used to be notified when lef/def/odb are read.
+  ///
+  void addObserver(dbDatabaseObserver* observer);
+  void removeObserver(dbDatabaseObserver* observer);
+
+  ///
+  /// Notify observers when one of these operations is complete.
+  /// Fine-grained callbacks during construction are not as helpful
+  /// as knowing when the data is fully loaded into odb.
+  ///
+  void triggerPostReadLef(dbTech* tech, dbLib* library);
+  void triggerPostReadDef(dbBlock* block, bool floorplan);
+  void triggerPostReadDb();
+
+  ///
+  /// Create an instance of a database
+  ///
+  static dbDatabase* create();
+
+  ///
+  /// Detroy an instance of a database
+  ///
+  static void destroy(dbDatabase* db);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbDatabase* getDatabase(uint oid);
+  // User Code End dbDatabase
+};
+
 // Top level DFT (Design for Testing) class
 class dbDft : public dbObject
 {
@@ -7504,7 +7450,7 @@ class dbGDSStructure : public dbObject
  public:
   char* getName() const;
 
-  dbSet<dbGDSBoundary> getGDSBoundarys() const;
+  dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
@@ -7905,7 +7851,7 @@ class dbMarkerCategory : public dbObject
 
   dbSet<dbMarker> getMarkers() const;
 
-  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbMarkerCategory* findMarkerCategory(const char* name) const;
 
@@ -8088,7 +8034,7 @@ class dbModInst : public dbObject
 
   dbSet<dbModITerm> getModITerms();
 
-  void RemoveUnusedPortsAndPins();
+  void removeUnusedPortsAndPins();
 
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
@@ -8179,7 +8125,7 @@ class dbModule : public dbObject
   // Get the ports of a module (STA world uses ports, which contain members).
   dbSet<dbModBTerm> getPorts();
   // Get the leaf level connections on a module (flat connected view).
-  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbModBTerm> getModBTerms() const;
   dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
 
@@ -8193,6 +8139,7 @@ class dbModule : public dbObject
   int getDbInstCount();
 
   const dbModBTerm* getHeadDbModBTerm() const;
+  bool canSwapWith(dbModule* new_module) const;
 
   static dbModule* create(dbBlock* block, const char* name);
 
@@ -8363,6 +8310,47 @@ class dbPowerSwitch : public dbObject
   //  lib cell defined in the upf
   std::map<std::string, dbMTerm*> getPortMap();
   // User Code End dbPowerSwitch
+};
+
+class dbProperty : public dbObject
+{
+ public:
+  // User Code Begin dbProperty
+  enum Type
+  {
+    // Do not change the order or the values of this enum.
+    STRING_PROP = 0,
+    BOOL_PROP = 1,
+    INT_PROP = 2,
+    DOUBLE_PROP = 3
+  };
+
+  /// Get the type of this property.
+  Type getType();
+
+  /// Get thetname of this property.
+  std::string getName();
+
+  /// Get the owner of this property
+  dbObject* getPropOwner();
+
+  /// Find the named property. Returns nullptr if the property does not exist.
+  static dbProperty* find(dbObject* object, const char* name);
+
+  /// Find the named property of the specified type. Returns nullptr if the
+  /// property does not exist.
+  static dbProperty* find(dbObject* object, const char* name, Type type);
+
+  /// Destroy a specific property
+  static void destroy(dbProperty* prop);
+  /// Destroy all properties of the specific object
+  static void destroyProperties(dbObject* obj);
+  static dbSet<dbProperty> getProperties(dbObject* object);
+  static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
+  // 5.8
+  static std::string writeProperties(dbObject* object);
+  static std::string writePropValue(dbProperty* prop);
+  // User Code End dbProperty
 };
 
 // A scan chain is a collection of dbScanLists that contains dbScanInsts.  Here,
@@ -10675,6 +10663,93 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 };
 
 // Generator Code End ClassDefinition
+///
+/// dbProperty - Boolean property.
+///
+class dbBoolProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  bool getValue();
+
+  /// Set the value of this property.
+  void setValue(bool value);
+
+  /// Create a bool property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbBoolProperty* create(dbObject* object, const char* name, bool value);
+
+  /// Find the named property of type bool. Returns nullptr if the property does
+  /// not exist.
+  static dbBoolProperty* find(dbObject* object, const char* name);
+};
+
+///
+/// dbProperty - String property.
+///
+class dbStringProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  std::string getValue();
+
+  /// Set the value of this property.
+  void setValue(const char* value);
+
+  /// Create a string property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbStringProperty* create(dbObject* object,
+                                  const char* name,
+                                  const char* value);
+
+  /// Find the named property of type string. Returns nullptr if the property
+  /// does not exist.
+  static dbStringProperty* find(dbObject* object, const char* name);
+};
+
+///
+/// dbProperty - Int property.
+///
+class dbIntProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  int getValue();
+
+  /// Set the value of this property.
+  void setValue(int value);
+
+  /// Create a int property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbIntProperty* create(dbObject* object, const char* name, int value);
+
+  /// Find the named property of type int. Returns nullptr if the property does
+  /// not exist.
+  static dbIntProperty* find(dbObject* object, const char* name);
+};
+
+///
+/// dbProperty - Double property.
+///
+class dbDoubleProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  double getValue();
+
+  /// Set the value of this property.
+  void setValue(double value);
+
+  /// Create a double property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbDoubleProperty* create(dbObject* object,
+                                  const char* name,
+                                  double value);
+
+  /// Find the named property of type double. Returns nullptr if the property
+  /// does not exist.
+  static dbDoubleProperty* find(dbObject* object, const char* name);
+};
 
 }  // namespace odb
 

@@ -37,6 +37,8 @@ template class dbTable<_dbBTerm>;
 
 _dbBTerm::_dbBTerm(_dbDatabase*)
 {
+  // For pointer tagging the bottom 3 bits.
+  static_assert(alignof(_dbBTerm) % 8 == 0);
   _flags._io_type = dbIoType::INPUT;
   _flags._sig_type = dbSigType::SIGNAL;
   _flags._orient = 0;

@@ -76,6 +76,9 @@ void Grid::allocateGrid()
       pixel.blocked_layers = 0;
     }
   }
+
+  row_sites_.clear();
+  row_sites_.resize(row_count_.v);
 }
 
 void Grid::markHopeless(dbBlock* block,
@@ -101,8 +104,9 @@ void Grid::markHopeless(dbBlock* block,
     for (GridX x{x_start}; x < x_end; x++) {
       Pixel* pixel = gridPixel(x, y_row);
       pixel->is_valid = true;
-      pixel->sites[db_row->getSite()] = db_row->getOrient();
     }
+    row_sites_[y_row.v].add(
+        {{x_start.v, x_end.v}, {{db_row->getSite(), db_row->getOrient()}}});
 
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
@@ -209,6 +213,50 @@ void Grid::initGrid(dbDatabase* db,
   markHopeless(block, max_displacement_x, max_displacement_y);
 
   markBlocked(block);
+}
+
+std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
+                                                       GridY grid_y)
+{
+  dbSite* selected_site = nullptr;
+  dbOrientType selected_orient;
+  DbuY min_height{std::numeric_limits<int>::max()};
+
+  const RowSitesMap& sites_map = row_sites_[grid_y.v];
+  auto it = sites_map.find(grid_x.v);
+
+  if (it != sites_map.end()) {
+    for (const auto& [site, orient] : it->second) {
+      DbuY site_height{site->getHeight()};
+      if (site_height < min_height) {
+        min_height = site_height;
+        selected_site = site;
+        selected_orient = orient;
+      }
+    }
+  }
+
+  return {selected_site, selected_orient};
+}
+
+std::optional<dbOrientType> Grid::getSiteOrientation(GridX x,
+                                                     GridY y,
+                                                     dbSite* site) const
+{
+  const RowSitesMap& sites_map = row_sites_[y.v];
+  auto interval_it = sites_map.find(x.v);
+
+  if (interval_it == sites_map.end()) {
+    return {};
+  }
+
+  const SiteToOrientation& sites_orient = interval_it->second;
+
+  if (auto it = sites_orient.find(site); it != sites_orient.end()) {
+    return it->second;
+  }
+
+  return {};
 }
 
 Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const

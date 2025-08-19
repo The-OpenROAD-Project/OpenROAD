@@ -174,7 +174,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       path_group_menu_(new QComboBox(this)),
       clock_menu_(new QComboBox(this)),
       display_(new HistogramView(this)),
-      refresh_filters_button_(new QPushButton("Refresh Filters", this)),
+      refresh_filters_button_(new QPushButton("Update", this)),
       clock_filter_(nullptr),
       resetting_menu_(false),
       label_(new QLabel(this))

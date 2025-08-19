@@ -53,6 +53,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -163,6 +164,22 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
   }
   return 0;
 }
+
+// We have exactly 8 values available in the lower 3 bits of the
+// pointer due to these classes all having 8 byte alignment. Used
+// to avoid having to call into the database to figure out the
+// type information, which requires a lot of pointer indirection.
+
+// Used to get the value of the pointer tag.
+static constexpr std::uintptr_t kPointerTagMask = std::uintptr_t(0b111U);
+
+enum class PinPointerTags : std::uintptr_t
+{
+  kNone = 0U,
+  kDbIterm = 1U,
+  kDbBterm = 2U,
+  kDbModIterm = 3U,
+};
 
 class DbLibraryIterator1 : public Iterator<Library*>
 {
@@ -469,14 +486,14 @@ bool DbNetPinIterator::hasNext()
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
     if (!iterm->getSigType().isSupply()) {
-      next_ = reinterpret_cast<Pin*>(*iitr_);
+      next_ = network_->dbToSta(*iitr_);
       ++iitr_;
       return true;
     }
     iitr_++;
   }
   if ((mitr_ != mitr_end_) && (network_->hasHierarchy())) {
-    next_ = reinterpret_cast<Pin*>(*mitr_);
+    next_ = network_->dbToSta(*mitr_);
     ++mitr_;
     return true;
   }
@@ -577,6 +594,11 @@ Instance* dbNetwork::topInstance() const
     return top_instance_;
   }
   return nullptr;
+}
+
+bool dbNetwork::isTopInstanceOrNull(const Instance* instance) const
+{
+  return (instance == nullptr) || (instance == top_instance_);
 }
 
 double dbNetwork::dbuToMeters(int dist) const
@@ -1206,14 +1228,20 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   if (hierarchy_) {
     // get the id for hierarchical objects using dbid.
-    const dbObject* obj = reinterpret_cast<const dbObject*>(pin);
+    std::uintptr_t tag_value
+        = reinterpret_cast<std::uintptr_t>(pin) & kPointerTagMask;
+    // Need to cast to char pin to avoid compiler error for pointer
+    // arithmetic on incomplete types
+    const char* char_pin = reinterpret_cast<const char*>(pin);
+    const dbObject* obj
+        = reinterpret_cast<const dbObject*>(char_pin - tag_value);
     return getDbNwkObjectId(obj);
   }
   if (iterm != nullptr) {
     return iterm->getId() << 1;
   }
   if (bterm != nullptr) {
-    return (bterm->getId() << 1) + 1;
+    return (bterm->getId() << 1) | 1U;
   }
   return 0;
 }
@@ -2006,6 +2034,8 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   }
   // Assume msb first busses because LEF has no clue about busses.
   // This generates the top level ports
+  // TODO: MSB first assumption looks risky because there can be LSB first
+  // buses.
   groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
@@ -2178,11 +2208,11 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 // Edit functions
 
 Instance* dbNetwork::makeInstance(LibertyCell* cell,
-                                  const char* name,
+                                  const char* name,  // full_name
                                   Instance* parent)
 {
   const char* cell_name = cell->name();
-  if (parent == top_instance_) {
+  if (isTopInstanceOrNull(parent)) {
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
       dbInst* inst = dbInst::create(block_, master, name);
@@ -2562,9 +2592,27 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
   return nullptr;
 }
 
-Net* dbNetwork::makeNet(const char* name, Instance* parent)
+Net* dbNetwork::makeNet(Instance* parent)
 {
-  dbNet* dnet = dbNet::create(block_, name, false);
+  return makeNet("net", parent, odb::dbNameUniquifyType::ALWAYS);
+}
+
+Net* dbNetwork::makeNet(const char* base_name, Instance* parent)
+{
+  return makeNet(base_name, parent, odb::dbNameUniquifyType::ALWAYS);
+}
+
+// If uniquify is IF_NEEDED, unique suffix will be added when necessary.
+Net* dbNetwork::makeNet(const char* base_name,
+                        Instance* parent,
+                        const odb::dbNameUniquifyType& uniquify)
+{
+  // Create a unique full name for a new net
+  std::string full_name
+      = block_->makeNewNetName(getModInst(parent), base_name, uniquify);
+
+  // Create a new net
+  dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
   return dbToSta(dnet);
 }
 
@@ -2595,8 +2643,8 @@ Net* dbNetwork::mergedInto(Net*)
 
 bool dbNetwork::isSpecial(Net* net)
 {
-  dbNet* db_net = staToDb(net);
-  return db_net->isSpecial();
+  dbNet* db_net = getOrFindFlatDbNet(net);
+  return (db_net && db_net->isSpecial());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2708,6 +2756,28 @@ dbModITerm* dbNetwork::hierPin(const Pin* pin) const
   return moditerm;
 }
 
+dbBlock* dbNetwork::getBlockOf(const Pin* pin) const
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+
+  dbBlock* block = nullptr;
+  if (iterm) {
+    block = iterm->getInst()->getBlock();
+  } else if (bterm) {
+    block = bterm->getBlock();
+  } else if (moditerm) {
+    // moditerm->parent is dbModInst
+    // moditerm->parent->parent is dbModule
+    // dbModule->owner is dbBlock
+    block = moditerm->getParent()->getParent()->getOwner();
+  }
+  assert(block != nullptr && "Pin must belong to a block.");
+  return block;
+}
+
 void dbNetwork::staToDb(const Pin* pin,
                         // Return values.
                         dbITerm*& iterm,
@@ -2717,17 +2787,32 @@ void dbNetwork::staToDb(const Pin* pin,
   iterm = nullptr;
   bterm = nullptr;
   moditerm = nullptr;
-  if (pin) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-    dbObjectType type = obj->getObjectType();
-    if (type == dbITermObj) {
-      iterm = static_cast<dbITerm*>(obj);
-    } else if (type == dbBTermObj) {
-      bterm = static_cast<dbBTerm*>(obj);
-    } else if (type == dbModITermObj) {
-      moditerm = static_cast<dbModITerm*>(obj);
-    } else {
-      logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
+
+  // Get the value of the tag
+  std::uintptr_t pointer_with_tag = reinterpret_cast<std::uintptr_t>(pin);
+  PinPointerTags tag_value
+      = static_cast<PinPointerTags>(pointer_with_tag & kPointerTagMask);
+
+  // Cast to char* and avoid casting an integral type to pointer type
+  // by doing pointer arithmetic. Compiler apparently prefer this sytle.
+  const char* char_pointer_pin = reinterpret_cast<const char*>(pin);
+  char* pointer_without_tag = const_cast<char*>(
+      char_pointer_pin - static_cast<std::uintptr_t>(tag_value));
+
+  if (pointer_without_tag) {
+    switch (tag_value) {
+      case PinPointerTags::kDbIterm:
+        iterm = reinterpret_cast<dbITerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kDbBterm:
+        bterm = reinterpret_cast<dbBTerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kDbModIterm:
+        moditerm = reinterpret_cast<dbModITerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kNone:
+        logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
+        break;
     }
   }
 }
@@ -2890,7 +2975,10 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
-  return reinterpret_cast<Pin*>(mod_iterm);
+  char* unaligned_pointer = reinterpret_cast<char*>(mod_iterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbModIterm));
 }
 
 Net* dbNetwork::dbToSta(dbModNet* net) const
@@ -2935,12 +3023,18 @@ const Net* dbNetwork::dbToSta(const dbModNet* net) const
 
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
-  return reinterpret_cast<Pin*>(bterm);
+  char* unaligned_pointer = reinterpret_cast<char*>(bterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbBterm));
 }
 
 Pin* dbNetwork::dbToSta(dbITerm* iterm) const
 {
-  return reinterpret_cast<Pin*>(iterm);
+  char* unaligned_pointer = reinterpret_cast<char*>(iterm);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbIterm));
 }
 
 Term* dbNetwork::dbToStaTerm(dbBTerm* bterm) const
@@ -3191,9 +3285,12 @@ Port* DbNetworkPortMemberIterator::next()
 
 PortMemberIterator* dbNetwork::memberIterator(const Port* port) const
 {
-  if (!hierarchy_) {
+  // top-level port is concrete port. DbNetworkPortMemberIterator cannot handle
+  // it.
+  if (!hierarchy_ || isConcretePort(port)) {
     return ConcreteNetwork::memberIterator(port);
   }
+
   return new DbNetworkPortMemberIterator(port, this);
 }
 
@@ -3521,9 +3618,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_mod_net = dest_moditerm->getModNet();
       }
       if (dest_mod_net) {
-        dbNet* dest_flat_net = flatNet((Pin*) dest_pin);
-        disconnectPin((Pin*) dest_pin);
-        connectPin((Pin*) dest_pin, (Net*) dest_flat_net, (Net*) dest_mod_net);
+        Pin* sta_dest_pin = dbToSta(dest_pin);
+        dbNet* dest_flat_net = flatNet(sta_dest_pin);
+        disconnectPin(sta_dest_pin);
+        connectPin(sta_dest_pin, (Net*) dest_flat_net, (Net*) dest_mod_net);
         return;
       }
     }
@@ -3559,11 +3657,12 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 
       // at leaf level make connection
       if (level == 0) {
-        dbModNet* source_pin_mod_net = hierNet((Pin*) source_pin);
+        Pin* sta_source_pin = dbToSta(source_pin);
+        dbModNet* source_pin_mod_net = hierNet(sta_source_pin);
         if (source_pin_mod_net) {
-          disconnectPin((Pin*) source_pin, (Net*) source_pin_mod_net);
+          disconnectPin(sta_source_pin, (Net*) source_pin_mod_net);
         }
-        connectPin((Pin*) source_pin, (Net*) source_db_mod_net);
+        connectPin(sta_source_pin, (Net*) source_db_mod_net);
       }
 
       dbModInst* parent_inst = cur_module->getModInst();
@@ -3591,11 +3690,12 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
 
       if (level == 0) {
-        dbModNet* dest_pin_mod_net = hierNet((Pin*) dest_pin);
+        Pin* sta_dest_pin = dbToSta(dest_pin);
+        dbModNet* dest_pin_mod_net = hierNet(sta_dest_pin);
         if (dest_pin_mod_net) {
-          disconnectPin((Pin*) dest_pin, (Net*) dest_pin_mod_net);
+          disconnectPin(sta_dest_pin, (Net*) dest_pin_mod_net);
         }
-        connectPin((Pin*) dest_pin, (Net*) dest_db_mod_net);
+        connectPin(sta_dest_pin, (Net*) dest_db_mod_net);
       }
 
       dbModInst* parent_inst = cur_module->getModInst();
@@ -3619,9 +3719,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
             = dbModNet::create(highest_common_module, connection_name);
         top_mod_dest->connect(source_db_mod_net);
 
-        dbNet* source_pin_flat_net = flatNet((Pin*) source_pin);
-        disconnectPin((Pin*) source_pin);
-        connectPin((Pin*) source_pin,
+        Pin* sta_source_pin = dbToSta(source_pin);
+        dbNet* source_pin_flat_net = flatNet(sta_source_pin);
+        disconnectPin(sta_source_pin);
+        connectPin(sta_source_pin,
                    (Net*) source_pin_flat_net,
                    (Net*) source_db_mod_net);
         // source_pin->connect(source_db_mod_net);
@@ -3642,20 +3743,22 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 
     // reassociate the dest pin
 
-    dbModNet* dest_pin_mod_net = hierNet((Pin*) dest_pin);
+    Pin* sta_dest_pin = dbToSta(dest_pin);
+    dbModNet* dest_pin_mod_net = hierNet(sta_dest_pin);
     if (dest_pin_mod_net) {
-      dbNet* dest_pin_flat_net = flatNet((Pin*) dest_pin);
+      dbNet* dest_pin_flat_net = flatNet(sta_dest_pin);
       dest_pin->disconnect();
       connectPin(
-          (Pin*) dest_pin, (Net*) dest_pin_flat_net, (Net*) dest_pin_mod_net);
+          sta_dest_pin, (Net*) dest_pin_flat_net, (Net*) dest_pin_mod_net);
     }
 
     // reassociate the source pin
-    dbModNet* source_pin_mod_net = hierNet((Pin*) source_pin);
+    Pin* sta_source_pin = dbToSta(source_pin);
+    dbModNet* source_pin_mod_net = hierNet(sta_source_pin);
     if (source_pin_mod_net) {
-      dbNet* source_pin_flat_net = flatNet((Pin*) source_pin);
+      dbNet* source_pin_flat_net = flatNet(sta_source_pin);
       source_pin->disconnect();
-      connectPin((Pin*) source_pin,
+      connectPin(sta_source_pin,
                  (Net*) source_pin_flat_net,
                  (Net*) source_pin_mod_net);
     }
@@ -3666,7 +3769,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     for (auto module_to_clean_up : source_parent_tree) {
       dbModInst* mi = module_to_clean_up->getModInst();
       if (mi) {
-        mi->RemoveUnusedPortsAndPins();
+        mi->removeUnusedPortsAndPins();
         cleaned_up.insert(mi);
       }
     }
@@ -3674,7 +3777,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModInst* mi = module_to_clean_up->getModInst();
       if (mi) {
         if (cleaned_up.find(mi) == cleaned_up.end()) {
-          mi->RemoveUnusedPortsAndPins();
+          mi->removeUnusedPortsAndPins();
           cleaned_up.insert(mi);
         }
       }
@@ -3685,7 +3788,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
 {
   for (auto mi : block()->getModInsts()) {
-    mi->RemoveUnusedPortsAndPins();
+    mi->removeUnusedPortsAndPins();
   }
 }
 
@@ -4163,27 +4266,384 @@ void dbNetwork::accumulateFlatLoadPinsOnNet(
   visitConnectedPins(net, rp, visited_nets);
 }
 
-void dbNetwork::AxiomCheck()
+// Use this API to check if flat & hier connectivities are ok
+void dbNetwork::checkAxioms()
 {
-  dbSet<dbModNet> mod_nets = block()->getModNets();
-  for (auto mod_net : mod_nets) {
-    findRelatedDbNet(mod_net);
-  }
+  checkSanityModBTerms();
+  checkSanityModITerms();
+  checkSanityModuleInsts();
+  checkSanityModInstTerms();
+  checkSanityUnusedModules();
+  checkSanityTermConnectivity();
+  checkSanityNetConnectivity();
+  checkSanityInstNames();
+  checkSanityNetNames();
 }
 
-Net* dbNetwork::getFlatNet(Net* net) const
+// Given a net that may be hierarchical, find the corresponding flat net.
+// If the net is already a flat net, it is returned as is.
+// If the net is a hierarchical net (dbModNet), find the associated dbNet and
+// return it as Net*.
+Net* dbNetwork::getOrFindFlatNet(const Net* net) const
+{
+  return dbToSta(getOrFindFlatDbNet(net));
+}
+
+// Given a net that may be hierarchical, find the corresponding flat dbNet.
+// If the net is already a flat net (dbNet), it is returned as is.
+// If the net is a hierarchical net (dbModNet), find the associated dbNet.
+dbNet* dbNetwork::getOrFindFlatDbNet(const Net* net) const
 {
   if (!net) {
     return nullptr;
   }
   // Convert net to a flat net, if not already
-  dbNet* db_net;
-  dbModNet* db_mod_net;
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
   staToDb(net, db_net, db_mod_net);
+
+  if (db_net) {
+    // If it's already a flat net, return it
+    return db_net;
+  }
+
   if (db_mod_net) {
+    // If it's a hierarchical net, find the associated dbNet
+    // by traversing the hierarchy.
     db_net = findRelatedDbNet(db_mod_net);
   }
-  return dbToSta(db_net);
+  return db_net;
+}
+
+// Find the flat net connected to the pin.
+// This function handles both internal instance pins and top-level port pins.
+Net* dbNetwork::getOrFindFlatNet(const Pin* pin) const
+{
+  return dbToSta(getOrFindFlatDbNet(pin));
+}
+
+// Find the flat net (dbNet) connected to the pin in the OpenDB database.
+// This function handles both internal instance pins and top-level port pins.
+dbNet* dbNetwork::getOrFindFlatDbNet(const Pin* pin) const
+{
+  dbNet* db_net = nullptr;
+  if (isTopLevelPort(pin)) {
+    Net* net = this->net(term(pin));
+    db_net = flatNet(net);
+  } else {
+    db_net = flatNet(pin);
+  }
+  return db_net;
+}
+
+dbModInst* dbNetwork::getModInst(Instance* inst) const
+{
+  if (!inst) {
+    return nullptr;
+  }
+
+  dbInst* db_inst = nullptr;
+  dbModInst* db_mod_inst = nullptr;
+  staToDb(inst, db_inst, db_mod_inst);
+  return db_mod_inst;
+}
+
+bool dbNetwork::hasPort(const Net* net) const
+{
+  if (!net) {
+    return false;
+  }
+
+  dbNet* db_net = nullptr;
+  dbModNet* db_mod_net = nullptr;
+  staToDb(net, db_net, db_mod_net);
+  if (db_net) {
+    return !db_net->getBTerms().empty();
+  }
+  if (db_mod_net) {
+    return !db_mod_net->getBTerms().empty();
+  }
+  return false;
+}
+
+void dbNetwork::checkSanityModBTerms()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModule* module : block_->getModules()) {
+    std::set<std::string> bterm_names;
+    for (odb::dbModBTerm* bterm : module->getModBTerms()) {
+      const std::string bterm_name = bterm->getName();
+      if (bterm_names.find(bterm_name) != bterm_names.end()) {
+        logger_->error(
+            ORD,
+            2036,
+            "SanityCheck: Duplicate dbModBTerm name '{}' in module '{}'.",
+            bterm_name,
+            module->getName());
+      }
+      bterm_names.insert(bterm_name);
+    }
+  }
+}
+
+void sta::dbNetwork::checkSanityModITerms()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    std::set<std::string> iterm_names;
+    for (odb::dbModITerm* iterm : mod_inst->getModITerms()) {
+      const std::string iterm_name = iterm->getName();
+      if (iterm_names.find(iterm_name) != iterm_names.end()) {
+        logger_->error(ORD,
+                       2037,
+                       "SanityCheck: Duplicate dbModITerm name '{}' in module "
+                       "instance '{}'.",
+                       iterm_name,
+                       mod_inst->getName());
+      }
+      iterm_names.insert(iterm_name);
+    }
+  }
+}
+
+void dbNetwork::checkSanityModuleInsts()
+{
+  int inst_count = 0;
+  for (odb::dbModule* module : block_->getModules()) {
+    if (module->getModInsts().empty() && module->getInsts().empty()) {
+      logger_->warn(ORD,
+                    2038,
+                    "SanityCheck: Module '{}' has no instances.",
+                    module->getHierarchicalName());
+    }
+
+    inst_count += module->getInsts().size();
+  }
+
+  // Check for # of instances in the block and in all modules.
+  if (inst_count != block_->getInsts().size()) {
+    logger_->error(ORD,
+                   2048,
+                   "SanityCheck: Total instance count in block '{}' is {} but "
+                   "sum of instance counts in all module is {}.",
+                   block_->getName(),
+                   block_->getInsts().size(),
+                   inst_count);
+  }
+}
+
+void dbNetwork::checkSanityModInstTerms()
+{
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    odb::dbModule* master = mod_inst->getMaster();
+    if (master) {
+      if (mod_inst->getModITerms().size() != master->getModBTerms().size()) {
+        logger_->warn(
+            ORD,
+            2042,
+            "SanityCheck: Module instance '{}' has {} ITerms, but its "
+            "master '{}' has {} BTerms.",
+            mod_inst->getHierarchicalName(),
+            mod_inst->getModITerms().size(),
+            master->getHierarchicalName(),
+            master->getModBTerms().size());
+      }
+    }
+  }
+}
+
+void dbNetwork::checkSanityUnusedModules()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // 1. Collect all modules from the top block and its children.
+  // Unused modules may be placed in child blocks.
+  std::vector<odb::dbModule*> all_modules;
+  for (odb::dbModule* module : block_->getModules()) {
+    all_modules.push_back(module);
+  }
+  for (odb::dbBlock* child_block : block_->getChildren()) {
+    for (odb::dbModule* module : child_block->getModules()) {
+      all_modules.push_back(module);
+    }
+  }
+
+  // 2. Create a set of all instantiated module masters.
+  std::set<odb::dbModule*> instantiated_masters;
+  for (odb::dbModule* module : all_modules) {
+    for (odb::dbModInst* mod_inst : module->getModInsts()) {
+      instantiated_masters.insert(mod_inst->getMaster());
+    }
+  }
+
+  // 3. Iterate through all collected modules to check for usage.
+  odb::dbModule* top_module = block_->getTopModule();
+  for (odb::dbModule* module : all_modules) {
+    // A module is unused if it's not the top module and it's not a master
+    // for any module instance.
+    if (module != top_module
+        && instantiated_masters.find(module) == instantiated_masters.end()) {
+      logger_->warn(
+          ORD,
+          2043,
+          "SanityCheck: Module '{}' is defined but never instantiated.",
+          module->getName());
+    }
+  }
+}
+
+void dbNetwork::checkSanityTermConnectivity()
+{
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getIoType() != dbIoType::INPUT && bterm->getNet() == nullptr) {
+      logger_->error(
+          ORD,
+          2040,
+          "SanityCheck: non-input BTerm '{}' is not connected to any net.",
+          bterm->getName());
+    }
+  }
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getSigType() == dbSigType::POWER
+          || iterm->getSigType() == dbSigType::GROUND) {
+        continue;  // Skip power/ground pins
+      }
+
+      if (iterm->getIoType() != dbIoType::OUTPUT
+          && iterm->getNet() == nullptr) {
+        logger_->error(ORD,
+                       2041,
+                       "SanityCheck: non-output ITerm '{}/{}' is not connected "
+                       "to any net.",
+                       inst->getName(),
+                       iterm->getMTerm()->getName());
+      }
+    }
+  }
+}
+
+void dbNetwork::checkSanityNetConnectivity()
+{
+  // Check for hier net and flat net connectivity
+  dbSet<dbModNet> mod_nets = block()->getModNets();
+  for (auto mod_net : mod_nets) {
+    findRelatedDbNet(mod_net);
+  }
+
+  // Check for incomplete flat net connections
+  for (odb::dbNet* net : block_->getNets()) {
+    const auto iterm_count = net->getITerms().size();
+    const auto bterm_count = net->getBTerms().size();
+    if (iterm_count + bterm_count >= 2) {
+      continue;
+    }
+
+    // Skip power/ground net
+    if (net->getSigType() == odb::dbSigType::POWER
+        || net->getSigType() == odb::dbSigType::GROUND) {
+      continue;  // OK: Unconnected power/ground net
+    }
+
+    // A net connected to 1 terminal
+    if (iterm_count == 1) {
+      odb::dbITerm* iterm = *(net->getITerms().begin());
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        continue;  // OK: Unconnected output pin
+      }
+    } else if (bterm_count == 1) {  // This is a top level port
+      odb::dbBTerm* bterm = *(net->getBTerms().begin());
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        continue;  // OK: Unconnected input port
+      }
+    }
+
+    logger_->error(ORD,
+                   2039,
+                   "SanityCheck: Net '{}' has less than 2 connections (# of "
+                   "ITerms = {}, # of BTerms = {}).",
+                   net->getName(),
+                   iterm_count,
+                   bterm_count);
+  }
+}
+
+void dbNetwork::checkSanityInstNames()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // Check for duplicate instance names
+  std::set<std::string> inst_names;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    const std::string inst_name = inst->getName();
+    if (inst_names.find(inst_name) != inst_names.end()) {
+      logger_->error(ORD,
+                     2044,
+                     "SanityCheck: Duplicate instance name '{}' in block '{}'.",
+                     inst_name,
+                     block_->getName());
+    }
+    inst_names.insert(inst_name);
+  }
+
+  // Check for duplicate module instance names
+  for (odb::dbModInst* mod_inst : block_->getModInsts()) {
+    const std::string mod_inst_name = mod_inst->getName();
+    if (inst_names.find(mod_inst_name) != inst_names.end()) {
+      logger_->error(ORD,
+                     2045,
+                     "SanityCheck: Duplicate module instance name '{}' in "
+                     "block '{}'.",
+                     mod_inst_name,
+                     block_->getName());
+    }
+    inst_names.insert(mod_inst_name);
+  }
+}
+
+void dbNetwork::checkSanityNetNames()
+{
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // Check for duplicate flat net names
+  std::set<std::string> net_names;
+  for (odb::dbNet* net : block_->getNets()) {
+    const std::string net_name = net->getName();
+    if (net_names.find(net_name) != net_names.end()) {
+      logger_->error(ORD,
+                     2046,
+                     "SanityCheck: Duplicate net name '{}' in block '{}'.",
+                     net_name,
+                     block_->getName());
+    }
+    net_names.insert(net_name);
+  }
+
+  // Check for duplicate module net names
+  std::set<std::string> mod_net_names;
+  for (odb::dbModNet* mod_net : block_->getModNets()) {
+    const std::string mod_net_name = mod_net->getName();
+    if (mod_net_names.find(mod_net_name) != mod_net_names.end()) {
+      logger_->error(
+          ORD,
+          2047,
+          "SanityCheck: Duplicate module net name '{}' in block '{}'.",
+          mod_net_name,
+          block_->getName());
+    }
+    mod_net_names.insert(mod_net_name);
+  }
 }
 
 }  // namespace sta

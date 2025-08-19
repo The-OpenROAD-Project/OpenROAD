@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <boost/icl/interval_map.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -39,9 +40,8 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   uint8_t blocked_layers = 0;
-  std::map<dbSite*, dbOrientType> sites;
-  std::unordered_set<Node*>
-      padding_reserved_by;  // Cells that reserved this pixel for padding
+  // Cells that reserved this pixel for padding
+  std::unordered_set<Node*> padding_reserved_by;
 };
 
 // Return value for grid searches.
@@ -132,6 +132,11 @@ class Grid
   Pixel& pixel(GridY y, GridX x) { return pixels_[y.v][x.v]; }
   const Pixel& pixel(GridY y, GridX x) const { return pixels_[y.v][x.v]; }
 
+  std::optional<dbOrientType> getSiteOrientation(GridX x,
+                                                 GridY y,
+                                                 dbSite* site) const;
+  std::pair<dbSite*, dbOrientType> getShortestSite(GridX grid_x, GridY grid_y);
+
   void resize(int size) { pixels_.resize(size); }
   void resize(GridY size) { pixels_.resize(size.v); }
   void resize(GridY y, GridX size) { pixels_[y.v].resize(size.v); }
@@ -147,6 +152,33 @@ class Grid
   bool isMultiHeight(dbMaster* master) const;
 
  private:
+  // Maps a site to the right orientation to use in a given row
+  using SiteToOrientation = std::map<dbSite*, dbOrientType>;
+
+  // Used to combine the SiteToOrientation for two intervals when merged
+  template <typename MapType>
+  struct SitesCombiner
+  {
+    using first_argument_type = MapType&;
+    using second_argument_type = const MapType&;
+
+    static MapType identity_element() { return MapType(); }
+
+    void operator()(MapType& target, const MapType& source) const
+    {
+      target.insert(source.begin(), source.end());
+    }
+  };
+
+  // Map intervals in rows to the site/orientation mapping
+  using RowSitesMap = boost::icl::interval_map<int,
+                                               SiteToOrientation,
+                                               boost::icl::total_absorber,
+                                               std::less,
+                                               SitesCombiner>;
+
+  using Pixels = std::vector<std::vector<Pixel>>;
+
   void markHopeless(dbBlock* block,
                     int max_displacement_x,
                     int max_displacement_y);
@@ -154,7 +186,6 @@ class Grid
   void visitDbRows(dbBlock* block,
                    const std::function<void(odb::dbRow*)>& func) const;
 
-  using Pixels = std::vector<std::vector<Pixel>>;
   Logger* logger_ = nullptr;
   dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
@@ -164,6 +195,9 @@ class Grid
   std::map<DbuY, GridY> row_y_dbu_to_index_;
   std::vector<DbuY> row_index_to_y_dbu_;         // index is GridY
   std::vector<DbuY> row_index_to_pixel_height_;  // index is GridY
+
+  // Indexed by row (GridY)
+  std::vector<RowSitesMap> row_sites_;
 
   bool has_hybrid_rows_ = false;
   Rect core_;

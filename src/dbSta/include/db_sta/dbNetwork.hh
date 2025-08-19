@@ -67,7 +67,18 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
-  void AxiomCheck();
+  // sanity checkers
+  void checkAxioms();
+  void checkSanityModBTerms();
+  void checkSanityModITerms();
+  void checkSanityModuleInsts();
+  void checkSanityModInstTerms();
+  void checkSanityUnusedModules();
+  void checkSanityTermConnectivity();
+  void checkSanityNetConnectivity();
+  void checkSanityInstNames();
+  void checkSanityNetNames();
+
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
@@ -190,6 +201,7 @@ class dbNetwork : public ConcreteNetwork
   // Instance functions
   // Top level instance of the design (defined after link).
   Instance* topInstance() const override;
+  bool isTopInstanceOrNull(const Instance* instance) const;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
@@ -219,6 +231,7 @@ class dbNetwork : public ConcreteNetwork
   dbNet* findRelatedDbNet(const dbModNet*) const;
   dbModNet* findModNetForPin(const Pin*);
   dbModNet* findRelatedModNet(const dbNet*) const;
+  dbModInst* getModInst(Instance* inst) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -233,6 +246,7 @@ class dbNetwork : public ConcreteNetwork
   dbModNet* hierNet(const Pin* pin) const;
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
+  dbBlock* getBlockOf(const Pin* pin) const;
 
   bool isFlat(const Pin* pin) const;
   bool isFlat(const Net* net) const;
@@ -291,7 +305,11 @@ class dbNetwork : public ConcreteNetwork
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
   dbNet* flatNet(const Net* net) const;
-  Net* getFlatNet(Net* net) const;
+  Net* getOrFindFlatNet(const Net* net) const;
+  dbNet* getOrFindFlatDbNet(const Net* net) const;
+  Net* getOrFindFlatNet(const Pin* pin) const;
+  dbNet* getOrFindFlatDbNet(const Pin* pin) const;
+  bool hasPort(const Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
@@ -311,7 +329,11 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
+  Net* makeNet(Instance* parent = nullptr);
   Net* makeNet(const char* name, Instance* parent) override;
+  Net* makeNet(const char* base_name,
+               Instance* parent,
+               const odb::dbNameUniquifyType& uniquify);
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;
   void deleteNet(Net* net) override;

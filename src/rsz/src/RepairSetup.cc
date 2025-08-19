@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -58,7 +59,9 @@ using sta::PathExpanded;
 using sta::Slew;
 using sta::VertexOutEdgeIterator;
 
-RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
+RepairSetup::RepairSetup(Resizer* resizer,
+                         est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -225,7 +228,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
@@ -354,7 +357,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // clang-format on
         break;
       }
-      resizer_->updateParasitics();
+      estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
       end_slack = sta_->vertexSlack(end, max_);
       sta_->worstSlack(max_, worst_slack, worst_vertex);
@@ -521,7 +524,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
                    resizer_->split_load_move_.get()};
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repairPath(path, slack, 0.0);
   }
 
@@ -738,6 +741,10 @@ void RepairSetup::printProgress(const int iteration,
 
     const double design_area = resizer_->computeDesignArea();
     const double area_growth = design_area - initial_design_area_;
+    double area_growth_percent = std::numeric_limits<double>::infinity();
+    if (std::abs(initial_design_area_) > 0.0) {
+      area_growth_percent = area_growth / initial_design_area_ * 100.0;
+    }
 
     // This actually prints both committed and pending moves, so the moves could
     // could go down if a pass is rejected and restored by the ECO.
@@ -752,7 +759,7 @@ void RepairSetup::printProgress(const int iteration,
             + resizer_->split_load_move_->numMoves(),
         resizer_->clone_move_->numMoves(),
         resizer_->swap_pins_move_->numMoves(),
-        area_growth / initial_design_area_ * 1e2,
+        area_growth_percent,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
         max(0, num_viols),
@@ -914,7 +921,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         }
         break;
       }
-      resizer_->updateParasitics();
+      estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
       end_slack = sta_->vertexSlack(end, max_);
       sta_->worstSlack(max_, curr_worst_slack, worst_vertex);
