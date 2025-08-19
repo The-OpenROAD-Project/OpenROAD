@@ -2489,8 +2489,8 @@ LayoutScroll::LayoutScroll(
     const std::function<int()>& arrow_keys_scroll_step,
     QWidget* parent)
     : QScrollArea(parent),
-      default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
-      arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
+      default_mouse_wheel_zoom_(default_mouse_wheel_zoom),
+      arrow_keys_scroll_step_(arrow_keys_scroll_step),
       viewer_(viewer),
       scrolling_with_cursor_(false)
 {

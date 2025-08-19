@@ -62,7 +62,6 @@ using sta::Network;
 using sta::stringEq;
 
 using rsz::Resizer;
-using rsz::ParasiticsSrc;
 %}
 
 // OpenSTA swig files
@@ -84,26 +83,6 @@ using rsz::ParasiticsSrc;
   PinSet *pins = $1;
   setPtrTclList<PinSet, Pin>(pins, SWIGTYPE_p_Pin, interp);
   delete pins;
-}
-
-%typemap(in) ParasiticsSrc {
-  int length;
-  const char *arg = Tcl_GetStringFromObj($input, &length);
-  if (stringEq(arg, "placement"))
-    $1 = ParasiticsSrc::placement;
-  else if (stringEq(arg, "global_routing"))
-    $1 = ParasiticsSrc::global_routing;
-  else if (stringEq(arg, "detailed_routing"))
-    $1 = ParasiticsSrc::detailed_routing;
-  else {
-    Logger* logger = ord::getLogger();
-    try {
-      logger->error(utl::RSZ, 19, "Unknown parasitics source '{}'.", arg);
-    } catch (const std::exception &e) {
-      Tcl_SetResult(interp, const_cast<char*>(e.what()), TCL_STATIC);
-      return TCL_ERROR;
-    }
-  }
 }
 
 %typemap(in) std::vector<rsz::MoveType> {
@@ -154,171 +133,6 @@ sum_parasitic_network_resist(Net *net)
   } else {
     return 0.0f;
   }
-}
-
-void
-set_layer_rc_cmd(odb::dbTechLayer *layer,
-                 const Corner *corner,
-                 float res,
-                 float cap)
-{
-  Resizer *resizer = getResizer();
-  resizer->setLayerRC(layer, corner, res, cap);
-}
-
-double
-layer_resistance(odb::dbTechLayer *layer,
-                 const Corner *corner)
-{
-  Resizer *resizer = getResizer();
-  double res, cap;
-  resizer->layerRC(layer, corner, res, cap);
-  return res;
-}
-
-double
-layer_capacitance(odb::dbTechLayer *layer,
-                  const Corner *corner)
-{
-  Resizer *resizer = getResizer();
-  double res, cap;
-  resizer->layerRC(layer, corner, res, cap);
-  return cap;
-}
-
-void
-set_h_wire_signal_rc_cmd(const Corner *corner,
-                         float res,
-                         float cap)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->setHWireSignalRC(corner, res, cap);
-}
-
-void
-set_v_wire_signal_rc_cmd(const Corner *corner,
-                         float res,
-                         float cap)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->setVWireSignalRC(corner, res, cap);
-}
-
-void
-set_h_wire_clk_rc_cmd(const Corner *corner,
-                      float res,
-                      float cap)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->setHWireClkRC(corner, res, cap);
-}
-
-void
-set_v_wire_clk_rc_cmd(const Corner *corner,
-                      float res,
-                      float cap)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->setVWireClkRC(corner, res, cap);
-}
-
-// ohms/meter
-double
-wire_signal_resistance(const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->wireSignalResistance(corner);
-}
-
-double
-wire_clk_resistance(const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->wireClkResistance(corner);
-}
-
-// farads/meter
-double
-wire_signal_capacitance(const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->wireSignalCapacitance(corner);
-}
-
-double
-wire_clk_capacitance(const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->wireClkCapacitance(corner);
-}
-
-void
-estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
-{
-  ensureLinked();
-  Resizer* resizer = getResizer();
-  std::map<Corner*, std::ostream*> spef_files;
-  if (path != nullptr && std::strlen(path) > 0) {
-    std::string file_path(path);
-    if (!file_path.empty()) {
-      for (Corner* corner : *resizer->getDbNetwork()->corners()) {
-        file_path = path;
-        if (resizer->getDbNetwork()->corners()->count() > 1) {
-          std::string suffix("_");
-          suffix.append(corner->name());
-          if (file_path.find(".spef") != std::string::npos
-              || file_path.find(".SPEF") != std::string::npos) {
-            file_path.insert(file_path.size() - 5, suffix);
-          } else {
-            file_path.append(suffix);
-          }
-        }
-
-        std::ofstream* file = new std::ofstream(file_path);
-
-        if (file->is_open()) {
-          spef_files[corner] = std::move(file);
-        } else {
-          Logger* logger = ord::getLogger();
-          logger->error(utl::RSZ,
-                        7,
-                        "Can't open file " + file_path);
-        }
-      }
-    }
-  }
-
-  resizer->estimateParasitics(src, spef_files);
-
-  for (auto [_, file] : spef_files) {
-    file->flush();
-    delete file;
-  }
-  spef_files.clear();
-}
-
-// For debugging. Does not protect against annotating power/gnd.
-void
-estimate_parasitic_net(const Net *net)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->estimateWireParasitic(net);
-}
-
-bool
-have_estimated_parasitics()
-{
-  Resizer *resizer = getResizer();
-  return resizer->haveEstimatedParasitics();
 }
 
 void
@@ -753,13 +567,6 @@ utilization()
   return resizer->utilization();
 }
 
-void
-highlight_steiner_tree(const Pin *drvr_pin)
-{
-  Resizer *resizer = getResizer();
-  resizer->highlightSteiner(drvr_pin);
-}
-
 PinSet
 find_fanin_fanouts(PinSet* pins)
 {
@@ -782,13 +589,6 @@ set_worst_slack_nets_percent(float percent)
 }
 
 void
-set_parasitics_src(ParasiticsSrc src)
-{
-  Resizer *resizer = getResizer();
-  resizer->setParasiticsSrc(src);
-}
-
-void
 eliminate_dead_logic_cmd(bool clean_nets)
 {
   ensureLinked();
@@ -801,6 +601,13 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint, bool r
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportEquivalentCells(cell, match_cell_footprint, report_all_cells);
+}
+
+void report_buffers_cmd(bool filtered)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportBuffers(filtered);
 }
 
 void

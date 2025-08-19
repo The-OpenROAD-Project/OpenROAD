@@ -3,5 +3,6 @@
 [INFO ODB-0227] LEF file: register_bank_cores.lef, created 2 library cells
 [WARNING ORD-2011] LEF master bank1 has no liberty cell.
 [WARNING ORD-2011] LEF master bank2 has no liberty cell.
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 [INFO ODB-0128] Design: scan_inserted_design
 No differences found.

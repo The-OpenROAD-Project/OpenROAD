@@ -3,21 +3,9 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "{{klass.name}}.h"
-#include "odb/db.h"
-#include "dbDatabase.h"
-#include "dbTable.h"
-#include "dbTable.hpp"
-
-{% if klass.hasBitFields %}
-  #include <cstring>
-  #include <cstdint>
-{% endif %}
-
 {% for include in klass.cpp_sys_includes %}
   #include <{{include}}>
 {% endfor %}
-
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
 {% endfor %}
@@ -25,6 +13,8 @@
 // User Code End Includes
 namespace odb {
   template class dbTable<_{{klass.name}}>; 
+  // User Code Begin Static
+  // User Code End Static
     
   bool _{{klass.name}}::operator==(const _{{klass.name}}& rhs) const
   {
@@ -94,11 +84,13 @@ namespace odb {
 
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
   {
+    {% if klass.assert_alignment_is_multiple_of %}
+    // For pointer tagging the bottom log_2({{klass.assert_alignment_is_multiple_of}}) bits.
+    static_assert(alignof(_{{klass.name}}) % {{klass.assert_alignment_is_multiple_of}} == 0);
+    {% endif%}
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {{field.name}} = {};
-      {% elif field.table %}
-        {{field.name}} = new dbTable<_{{field.type}}>(db, this, (GetObjTbl_t) &_{{klass.name}}::getObjectTable, {{field.type}}Obj);
       {% elif field.isHashTable %}
         {{field.name}}.setTable({{field.table_name}});
       {% elif 'default' in field%}
@@ -135,7 +127,7 @@ namespace odb {
     switch (type) {
       {% for field in klass.fields %}
         {% if field.table %}
-          case {{field.type}}Obj:
+          case {{field.table_base_type}}Obj:
             return {{field.name}};
         {% endif %}
       {% endfor %}
@@ -213,7 +205,7 @@ namespace odb {
       {
       {% if field.dbSetGetter %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
-          return dbSet<{{field.type}}>(obj, obj->{{field.name}});
+          return dbSet<{{field.table_base_type}}>(obj, obj->{{field.name}});
       {% elif field.isPassByRef %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           tbl = obj->{{field.name}};

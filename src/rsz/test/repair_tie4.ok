@@ -2,7 +2,7 @@
 [INFO ODB-0128] Design: top
 [INFO ODB-0131]     Created 11 components and 43 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 11 connections.
-[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        11

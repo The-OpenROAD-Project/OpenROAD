@@ -13,10 +13,6 @@ namespace sta {
 class dbSta;
 }
 
-namespace rsz {
-class Resizer;
-}
-
 namespace ant {
 class AntennaChecker;
 }
@@ -31,7 +27,8 @@ class SteinerTreeBuilder;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace grt {
 
@@ -42,11 +39,11 @@ grt::GlobalRouter* makeGlobalRouter();
 void initGlobalRouter(grt::GlobalRouter* grt,
                       odb::dbDatabase* db,
                       sta::dbSta* sta,
-                      rsz::Resizer* resizer,
                       ant::AntennaChecker* antenna_checker,
                       dpl::Opendp* dpl,
                       stt::SteinerTreeBuilder* stt_builder,
                       utl::Logger* logger,
+                      utl::CallBackHandler* callback_handler,
                       Tcl_Interp* tcl_interp);
 
 void deleteGlobalRouter(grt::GlobalRouter* global_router);

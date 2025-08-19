@@ -723,10 +723,8 @@ void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
 sta::Net* ClockTree::getNet(const sta::Pin* pin) const
 {
   sta::Term* term = network_->term(pin);
-  if (term != nullptr) {
-    return network_->net(term);
-  }
-  return network_->net(pin);
+  sta::Net* net = term ? network_->net(term) : network_->net(pin);
+  return network_->getOrFindFlatNet(net);
 }
 
 bool ClockTree::isLeaf(const sta::Pin* pin) const
@@ -909,8 +907,7 @@ StaPins STAGuiInterface::getEndPoints() const
 
 float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
 {
-  return sta_->pinSlack(pin,
-                        use_max_ ? sta::MinMax::max() : sta::MinMax::min());
+  return sta_->pinSlack(pin, minMax());
 }
 
 std::set<std::string> STAGuiInterface::getGroupPathsNames() const
@@ -953,7 +950,7 @@ EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
   sta::VisitPathEnds visit_ends(sta_);
   sta::Search* search = sta_->search();
   sta::PathGroup* path_group
-      = search->findPathGroup(path_group_name.c_str(), sta::MinMax::max());
+      = search->findPathGroup(path_group_name.c_str(), minMax());
   PathGroupSlackEndVisitor path_group_visitor(path_group, sta_);
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     visit_ends.visitPathEnds(vertex, &path_group_visitor);
@@ -1050,7 +1047,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           include_unconstrained_,
           // corner, min_max,
           corner_,
-          use_max_ ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+          minMaxAll(),
           // group_count, endpoint_count, unique_pins
           max_path_count_,
           one_path_per_endpoint_ ? 1 : max_path_count_,

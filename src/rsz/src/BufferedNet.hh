@@ -15,6 +15,10 @@
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 using utl::Logger;
@@ -128,7 +132,8 @@ class BufferedNet
               int layer,
               const BufferedNetPtr& ref,
               const Corner* corner,
-              const Resizer* resizer);
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics);
   // junc
   BufferedNet(BufferedNetType type,
               const Point& location,
@@ -141,7 +146,8 @@ class BufferedNet
               LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
               const Corner* corner,
-              const Resizer* resizer);
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics);
   std::string to_string(const Resizer* resizer) const;
   void reportTree(const Resizer* resizer) const;
   void reportTree(int level, const Resizer* resizer) const;
@@ -165,6 +171,7 @@ class BufferedNet
   int layer() const { return layer_; }
   void wireRC(const Corner* corner,
               const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics,
               // Return values.
               double& res,
               double& cap);

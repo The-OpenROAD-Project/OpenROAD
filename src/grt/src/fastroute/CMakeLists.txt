@@ -9,6 +9,7 @@ add_library(FastRoute4.1
   src/maze3D.cpp
   src/route.cpp
   src/utility.cpp
+  src/graph2d.cpp
 )
 
 target_compile_options(FastRoute4.1
@@ -27,6 +28,7 @@ target_include_directories(FastRoute4.1
 
 target_link_libraries(FastRoute4.1
   PRIVATE
+    est_lib
     utl_lib
     stt_lib
     odb

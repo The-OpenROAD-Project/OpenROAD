@@ -2680,7 +2680,7 @@ void NesterovBase::updateNextIter(const int iter)
                              / npVars_->referenceHpwl);
 
   float percentageChange = 0.0;
-  if (iter == 0 || (iter + 1) % 10 == 0) {
+  if (iter == 0 || (iter) % 10 == 0) {
     if (prevReportedHpwl_ != 0) {
       percentageChange = (static_cast<double>(hpwl - prevReportedHpwl_)
                           / static_cast<double>(prevReportedHpwl_))
@@ -2688,9 +2688,9 @@ void NesterovBase::updateNextIter(const int iter)
     }
     prevReportedHpwl_ = hpwl;
 
-    std::string group;
+    std::string group_name;
     if (pb_->group()) {
-      group = fmt::format(" ({})", pb_->group()->getName());
+      group_name = fmt::format(" ({})", pb_->group()->getName());
     }
 
     if ((iter == 0 || reprint_iter_header_) && !pb_->group()) {
@@ -2715,12 +2715,12 @@ void NesterovBase::updateNextIter(const int iter)
     }
 
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
-                 iter + 1,
+                 iter,
                  sumOverflowUnscaled_,
                  static_cast<double>(hpwl),
                  percentageChange,
                  densityPenalty_,
-                 group);
+                 group_name);
   }
 
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
@@ -2835,22 +2835,53 @@ void NesterovBase::saveSnapshot()
   snapshotStepLength_ = stepLength_;
 }
 
-bool NesterovBase::checkConvergence()
+bool NesterovBase::checkConvergence(int gpl_iter_count,
+                                    int routability_gpl_iter_count,
+                                    RouteBase* rb)
 {
   assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return true;
   }
   if (sumOverflowUnscaled_ <= npVars_->targetOverflow) {
-    if (pb_->group()) {
+    const bool is_power_domain = pb_->group();
+    const std::string group_name
+        = is_power_domain ? pb_->group()->getName() : "";
+    const int final_iter = gpl_iter_count;
+
+    log_->report("{:9d} | {:8.4f} | {:13.6e} | {:>8} | {:9.2e} | {:>5}",
+                 final_iter,
+                 sumOverflowUnscaled_,
+                 static_cast<double>(nbc_->getHpwl()),
+                 "",  // No % delta
+                 densityPenalty_,
+                 group_name);
+    log_->report(
+        "---------------------------------------------------------------");
+
+    if (is_power_domain) {
       log_->info(GPL,
-                 1000,
-                 "PowerDomain {} finished with Overflow: {:.6f}",
-                 pb_->group()->getName(),
-                 sumOverflowUnscaled_);
+                 1016,
+                 "Power domain '{}' placement finished at iteration {}",
+                 group_name,
+                 final_iter);
     } else {
       log_->info(
-          GPL, 1001, "Finished with Overflow: {:.6f}", sumOverflowUnscaled_);
+          GPL, 1001, "Global placement finished at iteration {}", final_iter);
+      if (npVars_->routability_driven_mode) {
+        log_->info(GPL,
+                   1003,
+                   "Routability mode iteration count: {}",
+                   routability_gpl_iter_count);
+      }
+    }
+
+    if (npVars_->routability_driven_mode) {
+      rb->getRudyResult();
+      log_->info(GPL,
+                 1005,
+                 "Routability final weighted congestion: {:.4f}",
+                 rb->getRudyRC(false));
     }
 
     dbBlock* block = pb_->db()->getChip()->getBlock();
