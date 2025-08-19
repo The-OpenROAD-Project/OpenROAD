@@ -7055,9 +7055,9 @@ class dbChipConn : public dbObject
 
   static dbChipConn* create(const std::string& name,
                             dbChip* parent_chip,
-                            std::vector<dbChipInst*> top_region_path,
+                            const std::vector<dbChipInst*>& top_region_path,
                             dbChipRegionInst* top_region,
-                            std::vector<dbChipInst*> bottom_region_path,
+                            const std::vector<dbChipInst*>& bottom_region_path,
                             dbChipRegionInst* bottom_region);
 
   static void destroy(dbChipConn* chipConn);
@@ -7123,7 +7123,6 @@ class dbChipRegion : public dbObject
                               Side side,
                               dbTechLayer* layer);
 
-  static void destroy(dbChipRegion* chipRegion);
   // User Code End dbChipRegion
 };
 

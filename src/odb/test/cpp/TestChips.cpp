@@ -195,6 +195,7 @@ BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)
   // Clean up remaining instances
   dbChipInst::destroy(memory_inst);
   dbChipInst::destroy(io_inst);
+  BOOST_TEST(db->getChipRegionInsts().size() == 0);
   BOOST_TEST(system_chip->getChipInsts().size() == 0);
 }
 BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
@@ -225,16 +226,7 @@ BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
   iterateChipRegions(memory_chip, {"R1", "R2", "R3"});
   iterateChipRegionInsts(memory_inst, {"R1", "R2", "R3"});
   iterateChipRegions(io_chip, {"R1"});
-  dbChipRegion::destroy(memory_chip_region_r2);
-  iterateChipRegions(memory_chip, {"R1", "R3"});
-  iterateChipRegionInsts(memory_inst, {"R1", "R3"});
-  dbChipRegion::destroy(memory_chip_region_r1);
-  iterateChipRegions(memory_chip, {"R3"});
-  iterateChipRegionInsts(memory_inst, {"R3"});
 
-  dbChipRegion::create(memory_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
-  iterateChipRegions(memory_chip, {"R1", "R3"});
-  iterateChipRegionInsts(memory_inst, {"R1", "R3"});
   try {
     dbChipRegion::create(cpu_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
     BOOST_TEST(false);
@@ -253,7 +245,6 @@ BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
 
 BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
 {
-  dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
   dbChipRegionInst* cache_region_inst_r1
       = (dbChipRegionInst*) (*cache_inst->getRegions().begin());
   dbChipRegionInst* memory_region_inst_r1 = nullptr;
