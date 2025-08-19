@@ -182,26 +182,30 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   setObjectName("charts_widget");  // for settings
   chart_tabs_->setTabBarAutoHide(true);
 
-  QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(mode_menu_);
-  controls_layout->addWidget(label_);
+  QHBoxLayout* controls_layout_top = new QHBoxLayout;
+  controls_layout_top->addWidget(mode_menu_);
   setModeMenu();
-  controls_layout->addWidget(path_group_menu_);
+  controls_layout_top->addWidget(path_group_menu_);
   path_group_menu_->hide();
-  controls_layout->addWidget(clock_menu_);
+  controls_layout_top->addWidget(clock_menu_);
   clock_menu_->hide();
-  controls_layout->addWidget(refresh_filters_button_);
+  controls_layout_top->addWidget(refresh_filters_button_);
   refresh_filters_button_->hide();
-  controls_layout->insertStretch(2);
+  controls_layout_top->insertStretch(1);
 
   QFrame* controls_frame = new QFrame;
-  controls_frame->setLayout(controls_layout);
+  controls_frame->setLayout(controls_layout_top);
   controls_frame->setFrameShape(QFrame::StyledPanel);
   controls_frame->setFrameShadow(QFrame::Raised);
+
+  QHBoxLayout* controls_layout_botton = new QHBoxLayout;
+  controls_layout_botton->addWidget(label_);
+  controls_layout_botton->insertStretch(1);
 
   QVBoxLayout* slack_layout = new QVBoxLayout;
   slack_layout->addWidget(controls_frame);
   slack_layout->addWidget(display_);
+  slack_layout->addLayout(controls_layout_botton);
 
   QWidget* slack_container = new QWidget(this);
   slack_container->setLayout(slack_layout);
