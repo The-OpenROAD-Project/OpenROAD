@@ -17,6 +17,8 @@ cc_library(
         "src/dbReadVerilog.cc",
         "src/dbSdcNetwork.cc",
         "src/dbSdcNetwork.hh",
+        "src/dbEditHierarchy.cc",
+        "src/dbEditHierarchy.hh",
         "src/dbSta.cc",
     ],
     hdrs = [
