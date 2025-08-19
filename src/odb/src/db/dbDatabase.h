@@ -5,6 +5,7 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbHashTable.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <iostream>
@@ -45,12 +46,15 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 113;  // Current revision number
+const uint db_schema_minor = 114;  // Current revision number
+
+// Revision where dbChip hash table was added
+const uint db_schema_chip_hash_table = 114;
 
 // Revision where unique net/inst indices were added to dbBlock
 const uint db_schema_unique_indices = 113;
 
-//
+// Revision where dbChip was extended with new fields
 const uint db_schema_chip_extended = 112;
 
 // Revision where the map which associates instances to their
@@ -221,8 +225,8 @@ const uint db_schema_add_global_connect = 58;
 class dbIStream;
 class dbOStream;
 class _dbChip;
-// User Code Begin Classes
 class _dbProperty;
+// User Code Begin Classes
 class dbPropertyItr;
 class _dbNameCache;
 class _dbTech;
@@ -255,13 +259,14 @@ class _dbDatabase : public _dbObject
   uint _schema_minor;
   uint _master_id;
   dbId<_dbChip> _chip;
-  dbTable<_dbChip, 2>* _chip_tbl;
+  dbTable<_dbChip, 2>* chip_tbl_;
+  dbHashTable<_dbChip, 2> chip_hash_;
+  dbTable<_dbProperty>* _prop_tbl;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
   dbTable<_dbLib>* _lib_tbl;
   dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
-  dbTable<_dbProperty>* _prop_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
   int _unique_id;
