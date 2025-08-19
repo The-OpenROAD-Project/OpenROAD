@@ -186,10 +186,6 @@ class dbBlockCallBackObj
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
 
-  // Pin Access Start
-  virtual void inDbPinAccessUpdateRequired() {}
-  // Pin Access End
-
   // allow ECO client initialization - payam
   virtual dbBlockCallBackObj& operator()() { return *this; }
 

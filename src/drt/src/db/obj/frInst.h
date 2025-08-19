@@ -120,6 +120,8 @@ class frInst : public frRef
   Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
+  bool isUpdatedPA() const { return updated_pa_; }
+  void setUpdatedPA(bool in) { updated_pa_ = in; }
 
  private:
   frString name_;
@@ -130,6 +132,7 @@ class frInst : public frRef
   dbTransform xform_;
   int pinAccessIdx_{-1};
   bool toBeDeleted_{false};
+  bool updated_pa_{true};
 };
 
 }  // namespace drt

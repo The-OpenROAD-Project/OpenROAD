@@ -3729,10 +3729,14 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
   auto db = block->getDb();
   std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
   for (auto& master : getDesign()->getMasters()) {
+    if (!master->isUpdatedPA()) {
+      continue;
+    }
     auto db_master = db->findMaster(master->getName().c_str());
     if (db_master == nullptr) {
       logger_->error(DRT, 294, "master {} not found in db", master->getName());
     }
+    db_master->clearPinAccess();
     for (auto& term : master->getTerms()) {
       auto db_mterm = db_master->findMTerm(term->getName().c_str());
       if (db_mterm == nullptr) {
@@ -3763,16 +3767,20 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
         }
       }
     }
+    master->setUpdatedPA(false);
   }
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
+    if (!inst->isUpdatedPA()) {
+      continue;
+    }
     auto db_inst = block->findInst(inst->getName().c_str());
     if (db_inst == nullptr) {
       logger_->error(DRT, 297, "inst {} not found in db", inst->getName());
     }
-    db_inst->setPinAccessIdx(inst->getPinAccessIdx());
     for (auto& term : inst->getInstTerms()) {
       auto aps = term->getAccessPoints();
       auto db_iterm = db_inst->findITerm(term->getTerm()->getName().c_str());
+      db_iterm->clearPrefAccessPoints();
       if (db_iterm == nullptr) {
         logger_->error(DRT, 298, "iterm {} not found in db", term->getName());
       }
@@ -3804,8 +3812,12 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
         i++;
       }
     }
+    inst->setUpdatedPA(false);
   }
   for (auto& term : getDesign()->getTopBlock()->getTerms()) {
+    if (!term->isUpdatedPA()) {
+      continue;
+    }
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr) {
       logger_->error(DRT, 301, "bterm {} not found in db", term->getName());
@@ -3835,6 +3847,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       }
       j++;
     }
+    term->setUpdatedPA(false);
   }
 }
 

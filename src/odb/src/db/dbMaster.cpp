@@ -448,6 +448,19 @@ dbSet<dbMasterEdgeType> dbMaster::getEdgeTypes()
   return dbSet<dbMasterEdgeType>(master, master->edge_types_tbl_);
 }
 
+void dbMaster::clearPinAccess()
+{
+  for (auto mterm : getMTerms()) {
+    for (auto pin : mterm->getMPins()) {
+      for (auto pa : pin->getPinAccess()) {
+        for (auto& ap : pa) {
+          odb::dbAccessPoint::destroy(ap);
+        }
+      }
+    }
+  }
+}
+
 dbMTerm* dbMaster::findMTerm(const char* name)
 {
   _dbMaster* master = (_dbMaster*) this;

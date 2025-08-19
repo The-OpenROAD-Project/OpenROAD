@@ -159,13 +159,4 @@ void DesignCallBack::inDbITermPostConnect(odb::dbITerm* db_iterm)
   router_->addInstancePAData(inst);
 }
 
-void DesignCallBack::inDbPinAccessUpdateRequired()
-{
-  auto design = router_->getDesign();
-  if (design == nullptr || design->getTopBlock() == nullptr) {
-    return;
-  }
-  router_->updateDirtyPAData();
-}
-
 }  // namespace drt

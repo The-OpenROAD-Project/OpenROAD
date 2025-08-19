@@ -169,14 +169,19 @@ void FlexPA::updateDirtyInsts()
     }
   }
   for (auto& inst : new_unique_insts) {
+    inst->setUpdatedPA(true);
+    inst->getMaster()->setUpdatedPA(true);
     addUniqueInst(inst);
   }
   for (auto& inst : dirty_unique_insts) {
+    inst->setUpdatedPA(true);
+    inst->getMaster()->setUpdatedPA(true);
     updateUniqueInst(inst);
   }
   buildInstsSet();
   frOrderedIdSet<frInst*> processed_insts;
   for (auto& inst : pattern_insts) {
+    inst->setUpdatedPA(true);
     if (processed_insts.find(inst) != processed_insts.end()) {
       continue;
     }

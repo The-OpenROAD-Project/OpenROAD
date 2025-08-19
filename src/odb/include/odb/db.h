@@ -5385,6 +5385,11 @@ class dbMaster : public dbObject
   int getMasterId();
 
   ///
+  /// Clear the access points of all pins.
+  ///
+  void clearPinAccess();
+
+  ///
   /// Create a new master.
   /// Returns nullptr if a master with this name already exists
   ///

@@ -21,7 +21,11 @@ class PACallBack : public utl::CallBack
 
   void onPinAccessUpdateRequired() override
   {
-    // TODO: Implement
+    auto design = router_->getDesign();
+    if (design == nullptr || design->getTopBlock() == nullptr) {
+      return;
+    }
+    router_->updateDirtyPAData();
   }
 
  private:

@@ -22,7 +22,6 @@ class DesignCallBack : public odb::dbBlockCallBackObj
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
-  void inDbPinAccessUpdateRequired() override;
 
  private:
   TritonRoute* router_;
