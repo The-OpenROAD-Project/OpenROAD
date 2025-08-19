@@ -244,13 +244,7 @@ BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
   iterateChipRegions(memory_chip, {"R1", "R2", "R3"});
   iterateChipRegionInsts(memory_inst, {"R1", "R2", "R3"});
   iterateChipRegions(io_chip, {"R1"});
-  dbChipRegion::destroy(memory_chip_region_r2);
-  iterateChipRegions(memory_chip, {"R1", "R3"});
-  dbChipRegion::destroy(memory_chip_region_r1);
-  iterateChipRegions(memory_chip, {"R3"});
 
-  dbChipRegion::create(memory_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
-  iterateChipRegions(memory_chip, {"R1", "R3"});
   try {
     dbChipRegion::create(cpu_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
     BOOST_TEST(false);
@@ -349,9 +343,6 @@ BOOST_FIXTURE_TEST_CASE(test_chip_bumps, F_CHIP_HIERARCHY)
   BOOST_TEST(io_inst_region_r1_bump_inst->getChipBump() == io_bump);
   BOOST_TEST(io_inst_region_r1_bump_inst->getChipRegionInst()
              == io_inst_region_r1);
-
-  dbChipBump::destroy(io_bump);
-  BOOST_TEST(io_chip_region_r1->getChipBumps().size() == 0);
 
   dbMaster* io_master
       = createMaster1X1(lib1, "io_master", 100, 100, "in", "out");

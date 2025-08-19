@@ -201,12 +201,6 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   return (dbChipRegion*) chip_region;
 }
 
-void dbChipRegion::destroy(dbChipRegion* chipRegion)
-{
-  _dbChipRegion* chip_region = (_dbChipRegion*) chipRegion;
-  _dbChip* chip = (_dbChip*) chip_region->getOwner();
-  chip->chip_region_tbl_->destroy(chip_region);
-}
 // User Code End dbChipRegionPublicMethods
 }  // namespace odb
 // Generator Code End Cpp

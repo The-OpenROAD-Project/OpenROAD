@@ -7054,7 +7054,6 @@ class dbChipBump : public dbObject
 
   static dbChipBump* create(dbChipRegion* chip_region, dbInst* inst);
 
-  static void destroy(dbChipBump* bump);
   // User Code End dbChipBump
 };
 
@@ -7163,7 +7162,6 @@ class dbChipRegion : public dbObject
                               Side side,
                               dbTechLayer* layer);
 
-  static void destroy(dbChipRegion* chipRegion);
   // User Code End dbChipRegion
 };
 

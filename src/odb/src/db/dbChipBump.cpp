@@ -169,13 +169,6 @@ dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
   return (dbChipBump*) obj;
 }
 
-void dbChipBump::destroy(dbChipBump* bump)
-{
-  _dbChipBump* obj = (_dbChipBump*) bump;
-  _dbChipRegion* _chip_region = (_dbChipRegion*) bump->getChipRegion();
-  _chip_region->chip_bump_tbl_->destroy(obj);
-}
-
 // User Code End dbChipBumpPublicMethods
 }  // namespace odb
 // Generator Code End Cpp
