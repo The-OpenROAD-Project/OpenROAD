@@ -3614,14 +3614,15 @@ void dbNetwork::createHierarchyBottomUp(dbITerm* pin,
 
     // Make connection at leaf level
     if (level == 0) {
-      dbModNet* pin_mod_net = hierNet((Pin*) pin);
+      Pin* sta_pin = dbToSta(pin);
+      dbModNet* pin_mod_net = hierNet(sta_pin);
       if (pin_mod_net) {
         // if pin is already connected. disconnect it
         dlogCreateHierDisconnectingPin(level, cur_module, pin, pin_mod_net);
-        disconnectPin((Pin*) pin, (Net*) pin_mod_net);
+        disconnectPin(sta_pin, (Net*) pin_mod_net);
       }
       dlogCreateHierConnectingPin(level, cur_module, pin, db_mod_net);
-      connectPin((Pin*) pin, (Net*) db_mod_net);
+      connectPin(sta_pin, (Net*) db_mod_net);
     }
 
     // Set next target hierarchy (goes up to the parent)
@@ -3736,9 +3737,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         Pin* sta_dest_pin = dbToSta(dest_pin);
         dbNet* dest_flat_net = flatNet(sta_dest_pin);
         disconnectPin(sta_dest_pin);
-        connectPin(sta_dest_pin,
-                   (Net*) dest_flat_net,
-                   (Net*) dest_mod_net);  // jk: check
+        connectPin(sta_dest_pin, (Net*) dest_flat_net, (Net*) dest_mod_net);
         return;
       }
     }
