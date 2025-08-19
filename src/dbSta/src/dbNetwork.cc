@@ -1615,18 +1615,22 @@ const char* dbNetwork::pathName(const Net* net) const
     if (parent_module == block_->getTopModule()) {
       return tmpStringCopy(modnet_name.c_str());
     }
-    // accumulate a hierachical name, includes top level name
-    std::string accumulated_path_name;
+
+    // Make a full hierarchical name
+    fmt::memory_buffer full_path_buf;
     std::vector<dbModule*> parent_hierarchy;
     hierarchy_editor_->getParentHierarchy(parent_module, parent_hierarchy);
     std::reverse(parent_hierarchy.begin(), parent_hierarchy.end());
+    auto back_inserter = std::back_inserter(full_path_buf);
     for (auto db_mod : parent_hierarchy) {
-      std::string module_name = db_mod->getName();
-      accumulated_path_name.append(module_name);
-      accumulated_path_name.append("/");
+      fmt::format_to(back_inserter,
+                     "{}{}",
+                     db_mod->getName(),
+                     block_->getHierarchyDelimiter());
     }
-    accumulated_path_name.append(modnet_name);
-    return tmpStringCopy(accumulated_path_name.c_str());
+    full_path_buf.append(modnet_name);
+    full_path_buf.push_back('\0');
+    return tmpStringCopy(full_path_buf.data());
   }
   return nullptr;
 }
