@@ -478,7 +478,7 @@ void ChartsWidget::setData(HistogramView* view,
   } else {
     SlackHistogramData data = fetchSlackHistogramData();
 
-    if (data.constrained_pins.size() == 0) {
+    if (data.constrained_pins.empty()) {
       logger_->warn(
           utl::GUI,
           97,
