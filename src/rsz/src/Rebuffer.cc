@@ -3,6 +3,7 @@
 
 #include "Rebuffer.hh"
 
+#include <limits>
 #include <memory>
 
 #include "BufferMove.hh"
@@ -1835,16 +1836,12 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name
-          = resizer_->makeUniqueInstName(instance_base_name);
-
       // HFix: make net in hierarchy
-      std::string net_name = resizer_->makeUniqueNetName();
-      Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
+      Net* net2 = db_network_->makeNet(parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
-          buffer_cell, buffer_name.c_str(), parent, choice->location());
+          buffer_cell, instance_base_name, parent, choice->location());
 
       resizer_->level_drvr_vertices_valid_ = false;
       LibertyPort *input, *output;
@@ -1857,7 +1854,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                  "",
                  level,
                  sdc_network_->pathName(net),
-                 buffer_name.c_str(),
+                 sdc_network_->pathName(buffer),
                  buffer_cell->name(),
                  sdc_network_->pathName(net2));
 
@@ -1936,8 +1933,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         return 0;
       }
 
+      Pin* mod_net_drvr_pin = db_network_->dbToSta(mod_net_drvr);
       dbNet* db_load_net = db_network_->flatNet(load_pin);
-      odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
+      odb::dbNet* db_net = db_network_->flatNet(mod_net_drvr_pin);
       if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
@@ -1978,7 +1976,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
             std::string preferred_connection_name;
             // always make a unique name to avoid name clashes.
-            preferred_connection_name = resizer_->makeUniqueNetName();
+            preferred_connection_name
+                = db_network_->getBlockOf(load_pin)->makeNewNetName();
             db_network_->hierarchicalConnect(
                 mod_net_drvr, load_iterm, preferred_connection_name.c_str());
           } else if (mod_net_in) {  // input hierarchical net
@@ -2012,10 +2011,14 @@ void Rebuffer::printProgress(int iteration,
   if (iteration % print_interval_ == 0 || force || end) {
     const double design_area = resizer_->computeDesignArea();
     const double area_growth = design_area - initial_design_area_;
+    double area_growth_percent = std::numeric_limits<double>::infinity();
+    if (std::abs(initial_design_area_) > 0.0) {
+      area_growth_percent = area_growth / initial_design_area_ * 100.0;
+    }
 
     logger_->report("{: >9s} | {: >+8.1f}% | {: >7d} | {: >8d} | {: >9d}",
                     end ? "final" : std::to_string(iteration),
-                    area_growth / initial_design_area_ * 1e2,
+                    area_growth_percent,
                     removed_count_,
                     inserted_count_,
                     remaining);

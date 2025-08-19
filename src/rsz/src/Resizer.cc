@@ -1147,13 +1147,11 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   }
 
   // make the buffer and its output net.
-  string buffer_name = makeUniqueInstName("input");
   Instance* parent = db_network_->topInstance();
-  Net* buffer_out = makeUniqueNet();
+  Net* buffer_out = db_network_->makeNet(parent);
   dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
   Point pin_loc = db_network_->location(top_pin);
-  Instance* buffer
-      = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
+  Instance* buffer = makeBuffer(buffer_cell, "input", parent, pin_loc);
   inserted_buffer_count_++;
 
   Pin* buffer_ip_pin = nullptr;
@@ -1325,14 +1323,12 @@ void Resizer::bufferOutput(const Pin* top_pin,
   assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
-  string buffer_name = makeUniqueInstName("output");
-  Net* buffer_out = makeUniqueNet();
   Instance* parent = network->topInstance();
+  Net* buffer_out = db_network_->makeNet(parent);
 
   Point pin_loc = db_network_->location(top_pin);
   // buffer made in top level.
-  Instance* buffer
-      = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
+  Instance* buffer = makeBuffer(buffer_cell, "output", parent, pin_loc);
   inserted_buffer_count_++;
 
   // connect original input (hierarchical or flat) to buffer input
@@ -3107,9 +3103,12 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
               const char* inst_name = network_->name(load_inst);
-              string tie_name = makeUniqueInstName(inst_name, true);
-              Instance* tie
-                  = makeInstance(tie_cell, tie_name.c_str(), top_inst, tie_loc);
+              Instance* tie = makeInstance(
+                  tie_cell,
+                  inst_name,
+                  top_inst,
+                  tie_loc,
+                  odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
 
               // Put the tie cell instance in the same module with the load
               // it drives.
@@ -3120,7 +3119,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               }
 
               // Make tie output net.
-              Net* load_net = makeUniqueNet();
+              Net* load_net = db_network_->makeNet();
 
               // Connect tie inst output.
               sta_->connectPin(tie, tie_port, load_net);
@@ -3454,78 +3453,6 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
   }
   sort(overdriven_nets, sta::NetPathNameLess(network_));
   return overdriven_nets;
-}
-
-////////////////////////////////////////////////////////////////
-
-// TODO:
-//----
-// when making a unique net name search within the scope of the
-// containing module only (parent scope module)which is passed in.
-// This requires scoping nets in the module in hierarchical mode
-//(as was done with dbInsts) and will require changing the
-// method: dbNetwork::name).
-// Currently all nets are scoped within a dbBlock.
-//
-
-string Resizer::makeUniqueNetName(Instance* parent_scope)
-{
-  string node_name;
-  bool prefix_name = false;
-  if (parent_scope && parent_scope != network_->topInstance()) {
-    prefix_name = true;
-  }
-  Instance* top_inst = prefix_name ? parent_scope : network_->topInstance();
-  do {
-    if (prefix_name) {
-      std::string parent_name = network_->name(parent_scope);
-      node_name = fmt::format("{}/net{}", parent_name, unique_net_index_++);
-    } else {
-      node_name = fmt::format("net{}", unique_net_index_++);
-    }
-  } while (network_->findNet(top_inst, node_name.c_str())
-           //
-           // in hierarchical mode we check the uniqueness globally.
-           // TODO:change scoping of nets so we never
-           // have to do this, as it is obviously slow.
-           //
-           || (db_network_->hasHierarchy()
-               && db_network_->findNetAllScopes(node_name.c_str())));
-  return node_name;
-}
-
-Net* Resizer::makeUniqueNet()
-{
-  string net_name = makeUniqueNetName();
-  Instance* parent = db_network_->topInstance();
-  return db_network_->makeNet(net_name.c_str(), parent);
-}
-
-string Resizer::makeUniqueInstName(const char* base_name)
-{
-  return makeUniqueInstName(base_name, false);
-}
-
-string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
-{
-  string inst_name;
-  do {
-    // sta::stringPrint can lead to string overflow and fatal
-    if (underscore) {
-      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
-    } else {
-      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
-    }
-    //
-    // NOTE: TODO: The scoping should be within
-    // the dbModule scope for the instance, not the whole network.
-    // dbInsts are already scoped within a dbModule
-    // To get the dbModule for a dbInst used inst -> getModule
-    // then search within that scope. That way the instance name
-    // does not have to be some massive string like root/X/Y/U1.
-    //
-  } while (network_->findInstance(inst_name.c_str()));
-  return inst_name;
 }
 
 float Resizer::portFanoutLoad(LibertyPort* port) const
@@ -4070,13 +3997,16 @@ void Resizer::cloneClkInverter(Instance* inv)
     while (load_iter->hasNext()) {
       const Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        string clone_name = makeUniqueInstName(inv_name, true);
         Point clone_loc = db_network_->location(load_pin);
         Instance* clone
-            = makeInstance(inv_cell, clone_name.c_str(), top_inst, clone_loc);
+            = makeInstance(inv_cell,
+                           inv_name,
+                           top_inst,
+                           clone_loc,
+                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
         journalMakeBuffer(clone);
 
-        Net* clone_out_net = makeUniqueNet();
+        Net* clone_out_net = db_network_->makeNet(top_inst);
         dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 
@@ -4495,13 +4425,23 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
+// If underscore is true, an underscore will be used to concat unique instance
+// index. This is added to cover the existing usage.
 Instance* Resizer::makeInstance(LibertyCell* cell,
                                 const char* name,
                                 Instance* parent,
-                                const Point& loc)
+                                const Point& loc,
+                                const odb::dbNameUniquifyType& uniquify)
 {
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
-  Instance* inst = db_network_->makeInstance(cell, name, parent);
+
+  // make new instance name
+  dbModInst* parent_mod_inst = db_network_->getModInst(parent);
+  std::string full_name
+      = block_->makeNewInstName(parent_mod_inst, name, uniquify);
+
+  // make new instance
+  Instance* inst = db_network_->makeInstance(cell, full_name.c_str(), parent);
   dbInst* db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);

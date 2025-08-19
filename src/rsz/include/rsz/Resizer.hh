@@ -13,6 +13,7 @@
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
+#include "odb/dbTypes.h"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
@@ -584,10 +585,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
                      // Return values.
                      Delay& delay,
                      Slew& slew);
-  std::string makeUniqueNetName(Instance* parent = nullptr);
-  Net* makeUniqueNet();
-  std::string makeUniqueInstName(const char* base_name);
-  std::string makeUniqueInstName(const char* base_name, bool underscore);
+  void makeWireParasitic(Net* net,
+                         Pin* drvr_pin,
+                         Pin* load_pin,
+                         double wire_length,  // meters
+                         const Corner* corner,
+                         Parasitics* parasitics);
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);
@@ -639,7 +642,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
-                         const Point& loc);
+                         const Point& loc,
+                         const odb::dbNameUniquifyType& uniquify
+                         = odb::dbNameUniquifyType::ALWAYS);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,
@@ -735,8 +740,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;
-  int unique_net_index_ = 1;
-  int unique_inst_index_ = 1;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;

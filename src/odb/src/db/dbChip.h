@@ -4,8 +4,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <string>
-
 #include "dbCore.h"
 #include "odb/geom.h"
 #include "odb/odb.h"
@@ -33,13 +31,13 @@ class _dbChip : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
 
-  std::string name_;
+  char* _name;
   uint type_;
   Point offset_;
   int width_;
   int height_;
   int thickness_;
-  // range ]0, 1]
+  // range (0, 1]
   float shrink_;
   int seal_ring_east_;
   int seal_ring_west_;
@@ -56,6 +54,7 @@ class _dbChip : public _dbObject
   dbBlockItr* _block_itr;
   dbPropertyItr* _prop_itr;
   dbTable<_dbProperty>* _prop_tbl;
+  dbId<_dbChip> _next_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj);
