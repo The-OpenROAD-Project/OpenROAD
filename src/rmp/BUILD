@@ -37,16 +37,16 @@ cc_library(
     copts = [
         "-Isrc/rmp/src",
     ],
+    defines = ["ABC_NAMESPACE=abc"],
     includes = [
         "include",
     ],
-    defines = ["ABC_NAMESPACE=abc"],
     deps = [
-        "//src/sta:opensta_lib",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@edu_berkeley_abc//:abc-lib",
     ],
