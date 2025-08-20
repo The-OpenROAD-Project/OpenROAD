@@ -3,9 +3,6 @@
 
 #pragma once
 
-namespace ord {
-class OpenRoad;
-}
 namespace utl {
 class Logger;
 }
