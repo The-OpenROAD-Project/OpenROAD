@@ -539,9 +539,13 @@ float SACoreSoftMacro::calSingleNotchPenalty(float width, float height) {
 // If there is no HardMacroCluster, we do not consider the notch penalty
 void SACoreSoftMacro::calNotchPenalty()
 {
+  if (notch_weight_ <= 0.0) {
+    return;
+  }
+
   int tot_num_macros = 0;
-  for (const auto& macro_id : pos_seq_) {
-    tot_num_macros += macros_[macro_id].getNumMacro();
+  for (const auto& macro : macros_) {
+    tot_num_macros += macro.getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
@@ -551,14 +555,10 @@ void SACoreSoftMacro::calNotchPenalty()
   notch_penalty_ = 0.0;
   notch_h_th_ = outline_.getHeight() / 10.0;
   notch_v_th_ = outline_.getWidth() / 10.0;
-
   float width = 0;
   float height = 0;
 
-  // if (notch_weight_ <= 0.0) {
-  //   return;
-  // }
-  // If the floorplan cannot fit into the outline
+  // If the floorplan is not valid
   // We think the entire floorplan is a "huge" notch
   if (!isValid(outline_)) {;
     width = std::max(width_, outline_.getWidth());
@@ -570,79 +570,64 @@ void SACoreSoftMacro::calNotchPenalty()
   // Create grids based on location of MixedCluster and HardMacroCluster
   std::set<float> x_point;
   std::set<float> y_point;
-  std::vector<bool> macro_mask;
   for (auto& macro : macros_) {
-    if (macro.getArea() <= 0.0
-        || (!macro.isMacroCluster() && !macro.isMixedCluster())) {
-      macro_mask.push_back(false);
+    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
     x_point.insert(macro.getX());
     x_point.insert(macro.getX() + macro.getWidth());
     y_point.insert(macro.getY());
     y_point.insert(macro.getY() + macro.getHeight());
-    macro_mask.push_back(true);
   }
   x_point.insert(0.0);
   y_point.insert(0.0);
   x_point.insert(outline_.getWidth());
   y_point.insert(outline_.getHeight());
-  // create grid
-  std::vector<float> x_grid(x_point.begin(), x_point.end());
-  std::vector<float> y_grid(y_point.begin(), y_point.end());
-  // create grid in a row-based manner
-  std::vector<std::vector<int>> grid;  // store the macro id
-  const int num_x = x_grid.size() - 1;
-  const int num_y = y_grid.size() - 1;
-  for (int i = 0; i < num_x; i++) {
-    std::vector<int> macro_ids(num_y, -1);
-    grid.push_back(macro_ids);
-  }
-  // detect the notch region around each MixedCluster and HardMacroCluster
-  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (!macro_mask[macro_id]) {
+
+  std::vector<float> x_coords(x_point.begin(), x_point.end());
+  std::vector<float> y_coords(y_point.begin(), y_point.end());
+  int num_x = x_coords.size() - 1;
+  int num_y = y_coords.size() - 1;
+
+  // Assign cluster locations for notch detection
+  std::vector<std::vector<bool>> grid(num_y, std::vector<bool>(num_x, false));
+  for (auto& macro : macros_) {
+    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
-    int x_start = 0;
-    int x_end = 0;
-    calSegmentLoc(macros_[macro_id].getX(),
-                  macros_[macro_id].getX() + macros_[macro_id].getWidth(),
-                  x_start,
-                  x_end,
-                  x_grid);
-    int y_start = 0;
-    int y_end = 0;
-    calSegmentLoc(macros_[macro_id].getY(),
-                  macros_[macro_id].getY() + macros_[macro_id].getHeight(),
-                  y_start,
-                  y_end,
-                  y_grid);
-    for (int i = x_start; i < x_end; i++) {
-      for (int j = y_start; j < y_end; j++) {
-        grid[i][j] = macro_id;
+    int x_start = getSegmentIndex(macro.getX(), x_coords);
+    int x_end = getSegmentIndex(macro.getX() + macro.getWidth(), x_coords);
+    int y_start = getSegmentIndex(macro.getY(), y_coords);
+    int y_end = getSegmentIndex(macro.getY() + macro.getHeight(), y_coords);
+    for (int row = y_start; row < y_end; row++) {
+      for (int col = x_start; col < x_end; col++) {
+        grid[row][col] = true;
       }
     }
   }
 
-  for (int i = 0; i < num_x; i++) {
-    for (int j = 0; j < num_y; j++) {
+  // Notch detection based on 
+  for (int row = 0; row < num_y; row++) {
+    for (int col = 0; col < num_x; col++) {
+      if (grid[row][col]) continue;
+
       int surroundings = 0;
-      if (i == 0 || grid[i-1][j] != -1) {
+      if (row == 0 || grid[row-1][col]) {
         surroundings++;
       }
-      if (i == num_x-1 || grid[i+1][j] != -1) {
+      if (row == num_y-1 || grid[row+1][col]) {
         surroundings++;
       }
-      if (j == 0 || grid[i][j-1] != -1) {
+      if (col == 0 || grid[row][col-1]) {
         surroundings++;
       }
-      if (j == num_y-1 || grid[i][j+1] != -1) {
+      if (col == num_x-1 || grid[row][col+1]) {
         surroundings++;
       }
 
       if (surroundings >= 3) {
-        width = x_grid[i+1] - x_grid[i];
-        height = y_grid[j+1] - y_grid[j];
+        width = x_coords[col+1] - x_coords[col];
+        height = y_coords[row+1] - y_coords[row];
 
         if (width <= notch_h_th_ || height <= notch_v_th_) {
           notch_penalty_ += calSingleNotchPenalty(width, height);
@@ -651,7 +636,7 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
-  notch_penalty_ /= tot_num_macros;
+  // notch_penalty_ = notch_penalty_ / tot_num_macros;
 
   if (graphics_) {
     graphics_->setNotchPenalty(
@@ -807,20 +792,12 @@ void SACoreSoftMacro::fillDeadSpace()
     if (macros_[macro_id].getArea() <= 0.0) {
       continue;
     }
-    int x_start = 0;
-    int x_end = 0;
-    calSegmentLoc(macros_[macro_id].getX(),
-                  macros_[macro_id].getX() + macros_[macro_id].getWidth(),
-                  x_start,
-                  x_end,
-                  x_grid);
-    int y_start = 0;
-    int y_end = 0;
-    calSegmentLoc(macros_[macro_id].getY(),
-                  macros_[macro_id].getY() + macros_[macro_id].getHeight(),
-                  y_start,
-                  y_end,
-                  y_grid);
+
+    int x_start = getSegmentIndex(macros_[macro_id].getX(), x_grid);
+    int x_end = getSegmentIndex(macros_[macro_id].getX() + macros_[macro_id].getWidth(), x_grid);
+    int y_start = getSegmentIndex(macros_[macro_id].getY(), y_grid);
+    int y_end = getSegmentIndex(macros_[macro_id].getY() + macros_[macro_id].getHeight(), y_grid);
+
     for (int j = y_start; j < y_end; j++) {
       for (int i = x_start; i < x_end; i++) {
         grids[j][i] = macro_id;
@@ -839,20 +816,12 @@ void SACoreSoftMacro::fillDeadSpace()
       if (!forward_flag) {
         continue;
       }
-      int x_start = 0;
-      int x_end = 0;
-      calSegmentLoc(macros_[macro_id].getX(),
-                    macros_[macro_id].getX() + macros_[macro_id].getWidth(),
-                    x_start,
-                    x_end,
-                    x_grid);
-      int y_start = 0;
-      int y_end = 0;
-      calSegmentLoc(macros_[macro_id].getY(),
-                    macros_[macro_id].getY() + macros_[macro_id].getHeight(),
-                    y_start,
-                    y_end,
-                    y_grid);
+      
+      int x_start = getSegmentIndex(macros_[macro_id].getX(), x_grid);
+      int x_end = getSegmentIndex(macros_[macro_id].getX() + macros_[macro_id].getWidth(), x_grid);
+      int y_start = getSegmentIndex(macros_[macro_id].getY(), y_grid);
+      int y_end = getSegmentIndex(macros_[macro_id].getY() + macros_[macro_id].getHeight(), y_grid);
+
       int x_start_new = x_start;
       int x_end_new = x_end;
       int y_start_new = y_start;
@@ -937,27 +906,11 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 }
 
-// A utility function for FillDeadSpace.
-// It's used for calculate the start point and end point for a segment in a grid
-void SACoreSoftMacro::calSegmentLoc(float seg_start,
-                                    float seg_end,
-                                    int& start_id,
-                                    int& end_id,
-                                    std::vector<float>& grid)
+int SACoreSoftMacro::getSegmentIndex(float segment,
+                                    std::vector<float>& coords)
 {
-  start_id = -1;
-  end_id = -1;
-  for (int i = 0; i < grid.size() - 1; i++) {
-    if ((grid[i] <= seg_start) && (grid[i + 1] > seg_start)) {
-      start_id = i;
-    }
-    if ((grid[i] <= seg_end) && (grid[i + 1] > seg_end)) {
-      end_id = i;
-    }
-  }
-  if (end_id == -1) {
-    end_id = grid.size() - 1;
-  }
+  int index = std::distance(coords.begin(), std::lower_bound(coords.begin(), coords.end(), segment));
+  return index;
 }
 
 // The blockages here are only those that overlap with the annealing outline.

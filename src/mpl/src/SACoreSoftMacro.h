@@ -83,14 +83,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // actions used
   void resizeOneCluster();
 
-  // A utility function for FillDeadSpace.
-  // It's used for calculate the start point and end point for a segment in a
-  // grid
-  void calSegmentLoc(float seg_start,
-                     float seg_end,
-                     int& start_id,
-                     int& end_id,
-                     std::vector<float>& grid);
+  int getSegmentIndex(float segment, std::vector<float>& coords);
 
   void calBoundaryPenalty();
   float calSingleNotchPenalty(float height, float width);
