@@ -359,7 +359,8 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  graph2d_.init(x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
+  graph2d_.init(
+      x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
 
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
@@ -386,8 +387,8 @@ void FastRouteCore::initEdges()
   }
 }
 
-// Useful to prevent NDR nets to be assigned to 3D edges with insufficient capacity.
-// Need to be initialized after all the adjustments
+// Useful to prevent NDR nets to be assigned to 3D edges with insufficient
+// capacity. Need to be initialized after all the adjustments
 void FastRouteCore::initEdgesCapacityPerLayer()
 {
   graph2d_.initCap3D();
@@ -396,10 +397,12 @@ void FastRouteCore::initEdgesCapacityPerLayer()
     for (int x = 0; x < x_grid_; x++) {
       for (int l = 0; l < num_layers_; l++) {
         if (x < x_grid_ - 1) {
-          graph2d_.updateCap3D(x, y, l, EdgeDirection::Horizontal, h_edges_3D_[l][y][x].cap);
+          graph2d_.updateCap3D(
+              x, y, l, EdgeDirection::Horizontal, h_edges_3D_[l][y][x].cap);
         }
         if (y < y_grid_ - 1) {
-          graph2d_.updateCap3D(x, y, l, EdgeDirection::Vertical, v_edges_3D_[l][y][x].cap);
+          graph2d_.updateCap3D(
+              x, y, l, EdgeDirection::Vertical, v_edges_3D_[l][y][x].cap);
         }
       }
     }
@@ -643,7 +646,7 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
                                    EdgeDirection direction)
 {
   int cap = 0;
-    
+
   // get 2D edge capacity respecting layer restrictions
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     if (direction == EdgeDirection::Horizontal) {
@@ -1208,7 +1211,6 @@ NetRouteMap FastRouteCore::run()
                   L,
                   cost_params,
                   slack_th);
-      
 
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1342,8 +1344,14 @@ NetRouteMap FastRouteCore::run()
 
     last_total_overflow = total_overflow_;
 
-    logger_->report("=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - OverflowIncreases {} - MaxOverIncr {} ===",
-        i, total_overflow_, overflow_iterations_, overflow_increases, max_overflow_increases);
+    logger_->report(
+        "=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - "
+        "OverflowIncreases {} - MaxOverIncr {} ===",
+        i,
+        total_overflow_,
+        overflow_iterations_,
+        overflow_increases,
+        max_overflow_increases);
 
     // debug mode Rectilinear Steiner Tree during overflow iterations
     if (debug_->isOn() && debug_->rectilinearSTree) {
@@ -1413,7 +1421,8 @@ NetRouteMap FastRouteCore::run()
   past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
   getOverflow3D();
 
-  logger_->report("After LayerAssignment - 2D/3D cong: {}/{}", past_cong, total_overflow_);
+  logger_->report(
+      "After LayerAssignment - 2D/3D cong: {}/{}", past_cong, total_overflow_);
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
@@ -1423,12 +1432,11 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-
   costheight_ = 3;
   via_cost_ = 1;
 
   if (goingLV && past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 40); // TODO: check this value 20 -> 40
+    mazeRouteMSMDOrder3D(enlarge_, 0, 20);  // TODO: check this value 20 -> 40
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
 
@@ -1453,7 +1461,8 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
   }
 
-  logger_->report("Tree 3D after layer assignment - Overflow (3D): {}", total_overflow_);
+  logger_->report("Tree 3D after layer assignment - Overflow (3D): {}",
+                  total_overflow_);
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D) {
     for (const int& netID : net_ids_) {
@@ -1537,26 +1546,25 @@ std::vector<int> FastRouteCore::getOriginalResources()
   return original_resources;
 }
 
-
-
 // Main method to find nets at all overflow locations
 // void FastRouteCore::debugNetsAtOverflowLocations(int targetLayer) {
 //     std::vector<OverflowInfo> overflows;
-    
-//     std::cout << "\n=== Debugging Overflow Locations and Contributing Nets ===" << std::endl;
-//     std::cout << "Grid: " << x_grid_ << " x " << y_grid_ << " x " << num_layers_ << std::endl;
-    
+
+//     std::cout << "\n=== Debugging Overflow Locations and Contributing Nets
+//     ===" << std::endl; std::cout << "Grid: " << x_grid_ << " x " << y_grid_
+//     << " x " << num_layers_ << std::endl;
+
 //     // Find all overflow edges
 //     for (int l = 0; l < num_layers_; l++) {
 //         if (targetLayer != -1 && l != targetLayer - 1) continue;
-        
+
 //         // Check horizontal edges
 //         for (int y = 0; y < y_grid_; y++) {
 //             for (int x = 0; x < x_grid_ - 1; x++) {
 //                 int cap = h_edges_3D_[l][y][x].cap;
 //                 int usage = h_edges_3D_[l][y][x].usage;
 //                 int overflow = usage - cap;
-                
+
 //                 if (overflow > 0) {
 //                     OverflowInfo info;
 //                     info.x1 = x;
@@ -1572,14 +1580,14 @@ std::vector<int> FastRouteCore::getOriginalResources()
 //                 }
 //             }
 //         }
-        
+
 //         // Check vertical edges
 //         for (int y = 0; y < y_grid_ - 1; y++) {
 //             for (int x = 0; x < x_grid_; x++) {
 //                 int cap = v_edges_3D_[l][y][x].cap;
 //                 int usage = v_edges_3D_[l][y][x].usage;
 //                 int overflow = usage - cap;
-                
+
 //                 if (overflow > 0) {
 //                     OverflowInfo info;
 //                     info.x1 = x;
@@ -1596,59 +1604,62 @@ std::vector<int> FastRouteCore::getOriginalResources()
 //             }
 //         }
 //     }
-    
+
 //     if (overflows.empty()) {
 //         std::cout << "No overflows found";
 //         if (targetLayer != -1) std::cout << " on layer " << targetLayer;
 //         std::cout << std::endl;
 //         return;
 //     }
-    
-//     std::cout << "Found " << overflows.size() << " overflow edges" << std::endl;
-    
+
+//     std::cout << "Found " << overflows.size() << " overflow edges" <<
+//     std::endl;
+
 //     // Now find which nets contribute to each overflow
 //     findNetsAtOverflowEdges(overflows);
-    
+
 //     // Sort by overflow amount (worst first)
 //     std::sort(overflows.begin(), overflows.end(),
 //               [](const OverflowInfo& a, const OverflowInfo& b) {
 //                   return a.overflow > b.overflow;
 //               });
-    
+
 //     // Print detailed report
 //     printOverflowReport(overflows);
 // }
 
 // Method to find which nets use each overflow edge
-// void FastRouteCore::findNetsAtOverflowEdges(std::vector<OverflowInfo>& overflows) {
+// void FastRouteCore::findNetsAtOverflowEdges(std::vector<OverflowInfo>&
+// overflows) {
 //     std::cout << "Analyzing nets at overflow locations..." << std::endl;
-    
+
 //     // Create a map for quick overflow lookup
 //     std::map<std::tuple<int, int, int, int, int>, OverflowInfo*> overflowMap;
 //     for (auto& ovf : overflows) {
-//         overflowMap[std::make_tuple(ovf.x1, ovf.y1, ovf.x2, ovf.y2, ovf.layer)] = &ovf;
+//         overflowMap[std::make_tuple(ovf.x1, ovf.y1, ovf.x2, ovf.y2,
+//         ovf.layer)] = &ovf;
 //     }
-    
+
 //     // Iterate through all routed nets
 //     for (const int& netID : net_ids_) {
 //         odb::dbNet* db_net = nets_[netID]->getDbNet();
-        
+
 //         // Skip if net is not routed
 //         if (sttrees_[netID].edges.empty()) continue;
-        
+
 //         // Check each edge in the net's routing tree
 //         const auto& treeedges = sttrees_[netID].edges;
 //         const int num_edges = sttrees_[netID].num_edges();
-        
+
 //         for (int edgeID = 0; edgeID < num_edges; edgeID++) {
 //             const TreeEdge* treeedge = &(treeedges[edgeID]);
-            
+
 //             // Process the route of this edge
 //             if (treeedge->route.routelen > 0) {
 //                 const std::vector<short>& gridsX = treeedge->route.gridsX;
 //                 const std::vector<short>& gridsY = treeedge->route.gridsY;
 //                 const std::vector<short>& gridsL = treeedge->route.gridsL;
-                
+
 //                 // Trace through the route segments
 //                 for (int i = 0; i < treeedge->route.routelen; i++) {
 //                     int x1 = gridsX[i];
@@ -1656,13 +1667,13 @@ std::vector<int> FastRouteCore::getOriginalResources()
 //                     int x2 = gridsX[i + 1];
 //                     int y2 = gridsY[i + 1];
 //                     int layer = gridsL[i] + 1;  // Convert to 1-based
-                    
+
 //                     // Normalize edge direction
 //                     if (x2 < x1 || (x1 == x2 && y2 < y1)) {
 //                         std::swap(x1, x2);
 //                         std::swap(y1, y2);
 //                     }
-                    
+
 //                     // Check if this segment uses an overflow edge
 //                     auto key = std::make_tuple(x1, y1, x2, y2, layer);
 //                     auto it = overflowMap.find(key);
@@ -1670,8 +1681,9 @@ std::vector<int> FastRouteCore::getOriginalResources()
 //                         // This net uses an overflow edge
 //                         auto& nets = it->second->contributingNets;
 //                         auto netIt = std::find_if(nets.begin(), nets.end(),
-//                             [&db_net](const auto& p) { return p.first == db_net; });
-                        
+//                             [&db_net](const auto& p) { return p.first ==
+//                             db_net; });
+
 //                         if (netIt != nets.end()) {
 //                             netIt->second++;  // Increment usage count
 //                         } else {
@@ -1685,52 +1697,59 @@ std::vector<int> FastRouteCore::getOriginalResources()
 // }
 
 // Method to print detailed overflow report
-// void FastRouteCore::printOverflowReport(const std::vector<OverflowInfo>& overflows) {
+// void FastRouteCore::printOverflowReport(const std::vector<OverflowInfo>&
+// overflows) {
 //     std::cout << "\n=== Detailed Overflow Report ===" << std::endl;
-//     std::cout << "Showing top 20 worst overflows with contributing nets:\n" << std::endl;
-    
+//     std::cout << "Showing top 20 worst overflows with contributing nets:\n"
+//     << std::endl;
+
 //     int count = 0;
 //     for (const auto& ovf : overflows) {
 //         if (++count > 20) {
-//             std::cout << "\n... and " << (overflows.size() - 20) 
+//             std::cout << "\n... and " << (overflows.size() - 20)
 //                      << " more overflow locations" << std::endl;
 //             break;
 //         }
-        
+
 //         std::cout << "----------------------------------------" << std::endl;
 //         std::cout << "Overflow #" << count << ":" << std::endl;
-//         std::cout << "  Location: (" << ovf.x1 << "," << ovf.y1 << ") to (" 
-//                   << ovf.x2 << "," << ovf.y2 << ") on Metal" << ovf.layer + 1 << std::endl;
-//         std::cout << "  Type: " << (ovf.isHorizontal ? "Horizontal" : "Vertical") << " edge" << std::endl;
-//         std::cout << "  Capacity: " << ovf.capacity 
-//                   << ", Usage: " << ovf.usage 
+//         std::cout << "  Location: (" << ovf.x1 << "," << ovf.y1 << ") to ("
+//                   << ovf.x2 << "," << ovf.y2 << ") on Metal" << ovf.layer + 1
+//                   << std::endl;
+//         std::cout << "  Type: " << (ovf.isHorizontal ? "Horizontal" :
+//         "Vertical") << " edge" << std::endl; std::cout << "  Capacity: " <<
+//         ovf.capacity
+//                   << ", Usage: " << ovf.usage
 //                   << ", Overflow: " << ovf.overflow << std::endl;
-        
+
 //         // Convert to DBU coordinates
 //         int dbuX1 = tile_size_ * ovf.x1 + x_corner_;
 //         int dbuY1 = tile_size_ * ovf.y1 + y_corner_;
 //         int dbuX2 = tile_size_ * ovf.x2 + x_corner_;
 //         int dbuY2 = tile_size_ * ovf.y2 + y_corner_;
-//         std::cout << "  DBU coords: (" << dbuX1 << "," << dbuY1 << ") to (" 
+//         std::cout << "  DBU coords: (" << dbuX1 << "," << dbuY1 << ") to ("
 //                   << dbuX2 << "," << dbuY2 << ")" << std::endl;
-        
-//         std::cout << "  Contributing nets: " << ovf.contributingNets.size() << std::endl;
-        
+
+//         std::cout << "  Contributing nets: " << ovf.contributingNets.size()
+//         << std::endl;
+
 //         if (!ovf.contributingNets.empty()) {
 //             // Sort by usage count
-//             std::vector<std::pair<odb::dbNet*, int>> sortedNets = ovf.contributingNets;
-//             std::sort(sortedNets.begin(), sortedNets.end(),
-//                       [](const auto& a, const auto& b) { return a.second > b.second; });
-            
+//             std::vector<std::pair<odb::dbNet*, int>> sortedNets =
+//             ovf.contributingNets; std::sort(sortedNets.begin(),
+//             sortedNets.end(),
+//                       [](const auto& a, const auto& b) { return a.second >
+//                       b.second; });
+
 //             int netCount = 0;
 //             for (const auto& [net, uses] : sortedNets) {
 //                 if (++netCount <= 10) {  // Show top 10 nets
-//                     std::cout << "    - " << net->getName() 
+//                     std::cout << "    - " << net->getName()
 //                              << " (uses: " << uses << ")" << std::endl;
 //                 }
 //             }
 //             if (sortedNets.size() > 10) {
-//                 std::cout << "    ... and " << (sortedNets.size() - 10) 
+//                 std::cout << "    ... and " << (sortedNets.size() - 10)
 //                          << " more nets" << std::endl;
 //             }
 //         }
@@ -1762,7 +1781,7 @@ void FastRouteCore::computeCongestionInformation()
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
-          logger_->report("Overflow H: x: {} y: {} layer: {}", j, i, l);
+          logger_->report("Overflow H: x: {} y: {} layer: {}", j, i, l + 1);
         }
       }
     }
@@ -1776,7 +1795,7 @@ void FastRouteCore::computeCongestionInformation()
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
-          logger_->report("Overflow V: x: {} y: {} layer: {}", j, i, l);
+          logger_->report("Overflow V: x: {} y: {} layer: {}", j, i, l + 1);
         }
       }
     }

@@ -666,7 +666,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
     FrNet* net = nets_[netID];
-    int extra_cost = 0;
+    int edge_cost = 0;
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -677,7 +677,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
 
-      // if (!is_ndr && (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb)) {
+      // if (!is_ndr && (treeedge->len >= ripupTHub || treeedge->len <=
+      // ripupTHlb)) {
       if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
         continue;
       }
@@ -691,9 +692,20 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       const auto [ymin, ymax] = std::minmax(n1y, n2y);
       const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
-      if(net->getDbNet() == debug_->net){
-        logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === Before newRipup3D", net->getName(), expand, ripupTHlb, ripupTHub);
-        logger_->report("x1/x2: {}/{} y1/y2: {}/{} Treeedge_len: {}",xmin, xmax, ymin, ymax, treeedge->len);
+      if (net->getDbNet() == debug_->net) {
+        logger_->report(
+            "=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === Before "
+            "newRipup3D",
+            net->getName(),
+            expand,
+            ripupTHlb,
+            ripupTHub);
+        logger_->report("x1/x2: {}/{} y1/y2: {}/{} Treeedge_len: {}",
+                        xmin,
+                        xmax,
+                        ymin,
+                        ymax,
+                        treeedge->len);
         if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
             if (nets_[netID]->getDbNet() == debug_->net) {
@@ -707,17 +719,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (!newRipup3DType3(netID, edgeID)) {
         continue;
       }
-      // DEBUG clknet
-      // if(net->getDbNet() == debug_->net_){
-      //   logger_->report("xxx After newRipup3DType3 xxx");
-      //   if (debug_->isOn() && debug_->rectilinearSTree_) {
-      //     for (const int& netID : net_ids_) {
-      //       if (nets_[netID]->getDbNet() == debug_->net_) {
-      //         StTreeVisualization(sttrees_[netID], nets_[netID], true);
-      //       }
-      //     }
-      //   }
-      // }
+
       enlarge = std::min(origEng, treeedge->route.routelen);
 
       const int regionX1 = std::max(0, xmin - enlarge);
@@ -776,8 +778,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
         removeMin3D(src_heap_3D_);
 
-        // If Net has NDR, use its cost as extra cost
-        extra_cost = net->getLayerEdgeCost(curL);
+        // If the net has more than 1 cost, use its cost as extra cost when
+        // trying to find a new route
+        edge_cost = net->getLayerEdgeCost(curL);
 
         const bool Horizontal
             = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
@@ -787,7 +790,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (curX > regionX1
               && directions_3D_[curL][curY][curX] != Direction::East) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
-            if (h_edges_3D_[curL][curY][curX - 1].usage + extra_cost
+            if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
                     <= h_edges_3D_[curL][curY][curX - 1].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               const int tmpX = curX - 1;  // the left neighbor
@@ -834,7 +837,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpX = curX + 1;  // the right neighbor
 
-            if (h_edges_3D_[curL][curY][curX].usage + extra_cost
+            if (h_edges_3D_[curL][curY][curX].usage + edge_cost
                     <= h_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][curY][tmpX]
@@ -875,22 +878,25 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
         } else {
           // if(net->getDbNet() == debug_->net){
-          //   logger_->report(">>> {} curY:{} regionY1/Y2:{}/{} ExtraCost:{} South:{} North:{} Up:{} Down:{}",
-          //       net->getName(),curY, regionY1, regionY2, extra_cost,
-          //     directions_3D_[curL][curY][curX] == Direction::South, 
+          //   logger_->report(">>> {} curY:{} regionY1/Y2:{}/{} ExtraCost:{}
+          //   South:{} North:{} Up:{} Down:{}",
+          //       net->getName(),curY, regionY1, regionY2, edge_cost,
+          //     directions_3D_[curL][curY][curX] == Direction::South,
           //     directions_3D_[curL][curY][curX] == Direction::North,
           //     directions_3D_[curL][curY][curX] == Direction::Up,
           //     directions_3D_[curL][curY][curX] == Direction::Down);
           //     logger_->report(">>> Usage/Cap: {}/{} Usage/Cap: {}/{}",
-          //         v_edges_3D_[curL][curY][curX].usage, v_edges_3D_[curL][curY][curX].cap,
-          //         v_edges_3D_[curL][curY-1][curX].usage, v_edges_3D_[curL][curY-1][curX].cap);
+          //         v_edges_3D_[curL][curY][curX].usage,
+          //         v_edges_3D_[curL][curY][curX].cap,
+          //         v_edges_3D_[curL][curY-1][curX].usage,
+          //         v_edges_3D_[curL][curY-1][curX].cap);
           // }
           // bottom
           if (!Horizontal && curY > regionY1
               && directions_3D_[curL][curY][curX] != Direction::South) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY - 1;  // the bottom neighbor
-            if (v_edges_3D_[curL][curY - 1][curX].usage + extra_cost
+            if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
                     <= v_edges_3D_[curL][curY - 1][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
@@ -934,7 +940,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D_[curL][curY][curX] != Direction::North) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY + 1;  // the top neighbor
-            if (v_edges_3D_[curL][curY][curX].usage + extra_cost
+            if (v_edges_3D_[curL][curY][curX].usage + edge_cost
                     <= v_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
@@ -1348,7 +1354,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              edge_n2B1,
                              edge_n2B2);
 
-
           // update position for n2
           treenodes[n2].assigned = true;
         }  // if E2 is on (n2, B1) or (n2, B2)
@@ -1452,7 +1457,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);
 
       // DEBUG clknet
-      if(net->getDbNet() == debug_->net){
+      if (net->getDbNet() == debug_->net) {
         logger_->report("xxx maze3D before resource update xxx");
         if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
@@ -1488,11 +1493,17 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         }
       }
 
-      if(net->getDbNet() == debug_->net){
-        logger_->report("=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === maze3D After update", net->getName(), expand, ripupTHlb, ripupTHub);
+      if (net->getDbNet() == debug_->net) {
+        logger_->report(
+            "=== Net {} - expand: {} ripupThlb: {} ripupThub: {} === maze3D "
+            "After update",
+            net->getName(),
+            expand,
+            ripupTHlb,
+            ripupTHub);
         int maxO, tU;
         getOverflow3D();
-        getOverflow2Dmaze(&maxO,&tU);
+        getOverflow2Dmaze(&maxO, &tU);
         if (debug_->isOn() && debug_->rectilinearSTree) {
           for (const int& netID : net_ids_) {
             if (nets_[netID]->getDbNet() == debug_->net) {

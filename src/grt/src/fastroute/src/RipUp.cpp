@@ -123,17 +123,15 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
 
   if (treeedge->route.xFirst) {
     for (int i = x1; i < x2; i++) {
-      const int cap
-          = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
-      if (graph2d_.getEstUsageH(i, y1) > cap){
+      const int cap = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
+      if (graph2d_.getEstUsageH(i, y1) > cap) {
         needRipup = true;
         break;
       }
     }
 
     for (int i = ymin; i < ymax; i++) {
-      const int cap
-          = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
+      const int cap = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
       if (graph2d_.getEstUsageV(x2, i) > cap) {
         needRipup = true;
         break;
@@ -141,16 +139,14 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
     }
   } else {
     for (int i = ymin; i < ymax; i++) {
-      const int cap
-          = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
-    if (graph2d_.getEstUsageV(x1, i) > cap){
+      const int cap = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
+      if (graph2d_.getEstUsageV(x1, i) > cap) {
         needRipup = true;
         break;
       }
     }
     for (int i = x1; i < x2; i++) {
-      const int cap
-          = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
+      const int cap = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
       if (graph2d_.getEstUsageH(i, y2) > cap) {
         needRipup = true;
         break;
@@ -209,15 +205,17 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
   for (int i = 0; i < treeedge->route.routelen; i++) {
     if (grids[i].x == grids[i + 1].x) {  // a vertical edge
       const int ymin = std::min(grids[i].y, grids[i + 1].y);
+
       if (graph2d_.getUsageRedV(grids[i].x, ymin)
-          >= v_capacity_ - ripup_threshold){
+          >= v_capacity_ - ripup_threshold) {
         needRipup = true;
         break;
       }
     } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
       const int xmin = std::min(grids[i].x, grids[i + 1].x);
+
       if (graph2d_.getUsageRedH(xmin, grids[i].y)
-          >= h_capacity_ - ripup_threshold){
+          >= h_capacity_ - ripup_threshold) {
         needRipup = true;
         break;
       }
@@ -247,7 +245,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         graph2d_.updateUsageH(xmin, grids[i].y, net, -edgeCost);
       }
     }
-    if(net->getDbNet()->getNonDefaultRule()){
+    if (net->getDbNet()->getNonDefaultRule()) {
       logger_->report(">> newRipupCheck {}", net->getName());
     }
   }
@@ -350,8 +348,13 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
     if (grids[i].layer == grids[i + 1].layer) {
       if (grids[i].x == grids[i + 1].x) {  // a vertical edge
         const int ymin = std::min(grids[i].y, grids[i + 1].y);
-        if (net->getDbNet() == debug_->net)
-          logger_->report("--- Ripping up {} x{} y{} l{}",net->getName(), grids[i].x, ymin, grids[i].layer+1);
+        if (net->getDbNet() == debug_->net) {
+          logger_->report("--- Ripping up {} x{} y{} l{}",
+                          net->getName(),
+                          grids[i].x,
+                          ymin,
+                          grids[i].layer + 1);
+        }
         graph2d_.updateUsageV(grids[i].x, ymin, net, -net->getEdgeCost());
         v_edges_3D_[grids[i].layer][ymin][grids[i].x].usage
             -= net->getLayerEdgeCost(grids[i].layer);
@@ -415,9 +418,12 @@ void FastRouteCore::newRipupNet(const int netID)
   const int num_edges = sttrees_[netID].num_edges();
 
   FrNet* net = nets_[netID];
-  if(net->getDbNet() == debug_->net){
-    logger_->report("=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===", 
-        net->getName(), num_edges, edgeCost);
+  if (net->getDbNet() == debug_->net) {
+    logger_->report(
+        "=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===",
+        net->getName(),
+        num_edges,
+        edgeCost);
   }
 
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {

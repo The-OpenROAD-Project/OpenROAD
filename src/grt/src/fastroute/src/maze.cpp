@@ -149,12 +149,14 @@ void FastRouteCore::fixOverlappingEdge(
         if (treeedge->route.grids[k].y != treeedge->route.grids[k + 1].y) {
           const int min_y = std::min(treeedge->route.grids[k].y,
                                      treeedge->route.grids[k + 1].y);
-          graph2d_.updateUsageV(treeedge->route.grids[k].x, min_y, net, -edgeCost);
+          graph2d_.updateUsageV(
+              treeedge->route.grids[k].x, min_y, net, -edgeCost);
         }
       } else {
         const int min_x = std::min(treeedge->route.grids[k].x,
                                    treeedge->route.grids[k + 1].x);
-        graph2d_.updateUsageH(min_x, treeedge->route.grids[k].y, net, -edgeCost);
+        graph2d_.updateUsageH(
+            min_x, treeedge->route.grids[k].y, net, -edgeCost);
       }
     }
     for (int k = 0; k < new_route.size() - 1;
@@ -1991,7 +1993,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
       // Convert to real coordinates
       int x_real = tile_size_ * (y + 0.5) + x_corner_;
       int y_real = tile_size_ * (x + 0.5) + y_corner_;
-      logger_->report("H 2D Overflow x{} y{} ({} {})", x,y, x_real, y_real);
+      // logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -2006,7 +2008,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
       // Convert to real coordinates
       int x_real = tile_size_ * (y + 0.5) + x_corner_;
       int y_real = tile_size_ * (x + 0.5) + y_corner_;
-      logger_->report("V 2D Overflow x{} y{} ({} {})", x,y, x_real, y_real);
+      // logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -2060,7 +2062,13 @@ int FastRouteCore::getOverflow3D()
         // Convert to real coordinates
         int x_real = tile_size_ * (x + 0.5) + x_corner_;
         int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report(">>> 3D H Overflow: x{} y{} l{} - Real coordinates: ({}, {})",x,y,k,x_real, y_real);
+        logger_->report(
+            ">>> 3D H Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+            x,
+            y,
+            k + 1,
+            x_real,
+            y_real);
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
       }
@@ -2072,25 +2080,31 @@ int FastRouteCore::getOverflow3D()
         // Convert to real coordinates
         int x_real = tile_size_ * (x + 0.5) + x_corner_;
         int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report(">>> 3D V Overflow: x{} y{} l{} - Real coordinates: ({}, {})",x,y,k,x_real, y_real);
+        logger_->report(
+            ">>> 3D V Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+            x,
+            y,
+            k + 1,
+            x_real,
+            y_real);
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
       }
     }
   }
 
-    total_overflow_ = H_overflow + V_overflow;
-    
-    if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
-      logger_->report("=== Total 3D Overflow Summary ===");
-      logger_->report("Total H overflow: {}", H_overflow);
-      logger_->report("Total V overflow: {}", V_overflow);
-      logger_->report("Max H overflow: {}", max_H_overflow);
-      logger_->report("Max V overflow: {}", max_V_overflow);
-      logger_->report("Total overflow: {}", total_overflow_);
-    }
+  total_overflow_ = H_overflow + V_overflow;
 
-    return total_usage;
+  if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+    logger_->report("=== Total 3D Overflow Summary ===");
+    logger_->report("Total H overflow: {}", H_overflow);
+    logger_->report("Total V overflow: {}", V_overflow);
+    logger_->report("Max H overflow: {}", max_H_overflow);
+    logger_->report("Max V overflow: {}", max_V_overflow);
+    logger_->report("Total overflow: {}", total_overflow_);
+  }
+
+  return total_usage;
 }
 
 void FastRouteCore::SaveLastRouteLen()
