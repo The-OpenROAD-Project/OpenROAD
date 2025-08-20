@@ -4,7 +4,7 @@ read_liberty example1_typ.lib
 read_verilog hier_deep.v
 link_design top -hier
 
-proc test_get_cells {pattern} {
+proc test_get_cells { pattern } {
   set cells [get_cells $pattern]
   puts "cmd: get_cells $pattern"
   puts "count: [llength $cells]"
