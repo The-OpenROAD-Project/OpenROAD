@@ -181,14 +181,14 @@ dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
   return (dbModNet*) ret;
 }
 
-dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
+dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
 {
   // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModNet* modnet = block->_modnet_tbl->create();
   // defaults
-  modnet->_name = strdup(name);
+  modnet->_name = strdup(base_name);
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->_next_entry = parent->_modnets;
   modnet->_prev_entry = 0;
@@ -197,12 +197,12 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
     new_next->_prev_entry = modnet->getOID();
   }
   parent->_modnets = modnet->getOID();
-  parent->_modnet_hash[name] = modnet->getOID();
+  parent->_modnet_hash[base_name] = modnet->getOID();
 
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
-    block->_journal->pushParam(name);
+    block->_journal->pushParam(base_name);
     block->_journal->pushParam(modnet->getId());
     block->_journal->pushParam(parent->getId());
     block->_journal->endAction();

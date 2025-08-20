@@ -106,6 +106,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -7002,6 +7003,8 @@ class dbChip : public dbObject
   ///
   dbBlock* getBlock();
 
+  dbSet<dbChipInst> getChipInsts() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7022,6 +7025,34 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipInst : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setLoc(const Point3D& loc);
+
+  Point3D getLoc() const;
+
+  dbChip* getMasterChip() const;
+
+  dbChip* getParentChip() const;
+
+  // User Code Begin dbChipInst
+  void setOrient(const dbOrientType& orient);
+
+  dbOrientType getOrient() const;
+
+  dbTransform getTransform() const;
+
+  static odb::dbChipInst* create(dbChip* parent_chip,
+                                 dbChip* master_chip,
+                                 const std::string& name);
+
+  static void destroy(dbChipInst* chipInst);
+  // User Code End dbChipInst
+};
+
 class dbDatabase : public dbObject
 {
  public:
@@ -7030,6 +7061,8 @@ class dbDatabase : public dbObject
   dbChip* findChip(const char* name) const;
 
   dbSet<dbProperty> getProperties() const;
+
+  dbSet<dbChipInst> getChipInsts() const;
 
   // User Code Begin dbDatabase
 
@@ -8092,7 +8125,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
 
   static dbModNet* getModNet(dbBlock* block, uint id);
-  static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbModNet* create(dbModule* parentModule, const char* base_name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet
