@@ -317,4 +317,30 @@ void Graph2D::foreachEdge(const std::function<void(Edge&)>& func)
   inner(v_edges_);
 }
 
+void Graph2D::saveResources(const int x, const int y, bool is_horizontal)
+{
+  if (is_horizontal) {
+    h_edges_[x][y].real_cap = h_edges_[x][y].cap;
+  } else {
+    v_edges_[x][y].real_cap = v_edges_[x][y].cap;
+  }
+}
+
+int Graph2D::getSuggestAdjustment(const int x, const int y, bool is_horizontal)
+{
+  float real_capacity, usage;
+  if (is_horizontal) {
+    real_capacity = h_edges_[x][y].real_cap;
+    usage = h_edges_[x][y].usage;
+  } else {
+    real_capacity = v_edges_[x][y].real_cap;
+    usage = v_edges_[x][y].usage;
+  }
+  if (real_capacity >= usage) {
+    const int suggest_adj = (1.0 - (usage / real_capacity)) * 100;
+    return suggest_adj;
+  }
+  return -1;
+}
+
 }  // namespace grt

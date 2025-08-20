@@ -69,6 +69,8 @@ class Graph2D
                                bool stop_decreasing,
                                int& max_adj);
   void str_accu(int rnd);
+  void saveResources(const int x, const int y, bool is_horizontal);
+  int getSuggestAdjustment(const int x, const int y, bool is_horizontal);
 
  private:
   void foreachEdge(const std::function<void(Edge&)>& func);
