@@ -1351,17 +1351,6 @@ void HierRTLMP::placeChildren(Cluster* parent)
   for (auto& cluster : parent->getChildren()) {
     clustering_engine_->updateInstancesAssociation(cluster.get());
   }
-  // Place children clusters
-  // map children cluster to soft macro
-  for (auto& cluster : parent->getChildren()) {
-    if (cluster->isIOCluster()) {  // ignore all the io clusters
-      continue;
-    }
-    auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
-    // no memory leakage, beacuse we set the soft macro, the old one
-    // will be deleted
-    cluster->setSoftMacro(std::move(soft_macro));
-  }
 
   const Rect outline = parent->getBBox();
   if (graphics_) {

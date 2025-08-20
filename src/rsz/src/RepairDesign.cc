@@ -31,6 +31,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Units.hh"
+#include "utl/mem_stats.h"
 #include "utl/scope.h"
 
 namespace rsz {
@@ -2482,12 +2483,8 @@ bool RepairDesign::makeRepeater(
         db_network_->disconnectPin(const_cast<Pin*>(pin));
 
         if (driver_instance_parent != load_instance_parent) {
-          odb::dbModInst* parent_mod_inst = db_network_->getModInst(parent);
-          std::string connection_name = db_network_->getBlockOf(buffer_op_pin)
-                                            ->makeNewNetName(parent_mod_inst);
           db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
-                                           db_network_->flatPin(pin),
-                                           connection_name.c_str());
+                                           db_network_->flatPin(pin));
         } else {
           db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
         }
@@ -2602,12 +2599,8 @@ bool RepairDesign::makeRepeater(
           db_network_->connectPin(const_cast<Pin*>(pin), buffer_ip_net);
 
           if (driver_instance_parent != load_instance_parent) {
-            odb::dbModInst* parent_mod_inst = db_network_->getModInst(parent);
-            std::string connection_name = db_network_->getBlockOf(driver_pin)
-                                              ->makeNewNetName(parent_mod_inst);
             db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
-                                             db_network_->flatPin(pin),
-                                             connection_name.c_str());
+                                             db_network_->flatPin(pin));
             // hierarchical connection will implicitly hook up the driver pin
           } else {
             // No hierarchy.
@@ -2726,6 +2719,8 @@ void RepairDesign::printProgress(int iteration,
         inserted_buffer_count_,
         repaired_net_count,
         nets_left);
+
+    debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   }
 
   if (end) {

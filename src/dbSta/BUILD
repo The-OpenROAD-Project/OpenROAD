@@ -17,6 +17,8 @@ cc_library(
         "src/dbReadVerilog.cc",
         "src/dbSdcNetwork.cc",
         "src/dbSdcNetwork.hh",
+        "src/dbEditHierarchy.cc",
+        "src/dbEditHierarchy.hh",
         "src/dbSta.cc",
     ],
     hdrs = [
@@ -33,6 +35,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
+        "@spdlog",
         "@tk_tcl//:tcl",
     ],
 )
