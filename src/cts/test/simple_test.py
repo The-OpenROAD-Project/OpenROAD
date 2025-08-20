@@ -1,6 +1,7 @@
 from openroad import Design, Tech
 import helpers
 import cts_aux
+import cts
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
@@ -17,7 +18,7 @@ cts_aux.clock_tree_synthesis(
     root_buf="CLKBUF_X3",
     buf_list="CLKBUF_X3",
     wire_unit=20,
-    apply_ndr=True,
+    apply_ndr=cts.CtsOptions.NdrStrategy_ROOT_ONLY,
 )
 
 cts_aux.report_cts(design)
