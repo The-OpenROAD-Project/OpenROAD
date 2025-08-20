@@ -595,58 +595,39 @@ void ClockGating::run()
 
   dump("post");
 
-  debugPrint(logger_, CGT, "clock_gating", 1, "Clock gating completed.");
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Rejected at simulation: {}",
-             rejected_sim_count_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Rejected at SAT: {}",
-             rejected_sat_count_);
-  debugPrint(logger_, CGT, "clock_gating", 1, "Accepted: {}", accepted_count_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total gate condition reuse check time: {} s",
-             reuse_check_time_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total gate condition search time: {} s",
-             search_time_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total existing gate condition check time: {} s",
-             exist_check_time_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total network export time: {} s",
-             network_export_time_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total network build time: {} s",
-             network_build_time_);
-  debugPrint(logger_,
-             CGT,
-             "clock_gating",
-             2,
-             "Total simulation time: {} s",
-             sim_time_);
-  debugPrint(
-      logger_, CGT, "clock_gating", 2, "Total SAT time: {} s", sat_time_);
+  if (logger_->debugCheck(CGT, "clock_gating", 1)) {
+    logger_->debug(CGT, "clock_gating", "Clock gating completed.");
+    logger_->debug(CGT, "clock_gating", "Accepted: {}", accepted_count_);
+  }
+  if (logger_->debugCheck(CGT, "clock_gating", 2)) {
+    logger_->debug(
+        CGT, "clock_gating", "Rejected at simulation: {}", rejected_sim_count_);
+    logger_->debug(
+        CGT, "clock_gating", "Rejected at SAT: {}", rejected_sat_count_);
+    logger_->debug(CGT,
+                   "clock_gating",
+                   "Total gate condition reuse check time: {} s",
+                   reuse_check_time_);
+    logger_->debug(CGT,
+                   "clock_gating",
+                   "Total gate condition search time: {} s",
+                   search_time_);
+    logger_->debug(CGT,
+                   "clock_gating",
+                   "Total existing gate condition check time: {} s",
+                   exist_check_time_);
+    logger_->debug(CGT,
+                   "clock_gating",
+                   "Total network export time: {} s",
+                   network_export_time_);
+    logger_->debug(CGT,
+                   "clock_gating",
+                   "Total network build time: {} s",
+                   network_build_time_);
+    logger_->debug(
+        CGT, "clock_gating", "Total simulation time: {} s", sim_time_);
+    logger_->debug(CGT, "clock_gating", "Total SAT time: {} s", sat_time_);
+  }
 }
 
 // Returns a sequence of nets that excludes the range [begin, end) from the
