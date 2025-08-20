@@ -33,7 +33,6 @@ using sta::MinMax;
 using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
-using sta::PortDirection;
 using sta::Slew;
 using sta::StaState;
 using sta::Vertex;

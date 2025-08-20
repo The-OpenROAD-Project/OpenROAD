@@ -91,6 +91,7 @@ using sta::NetPinIterator;
 using sta::NetTermIterator;
 using sta::NetworkEdit;
 using sta::Port;
+using sta::PortDirection;
 using sta::stringLess;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;

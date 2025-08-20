@@ -49,6 +49,7 @@ using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
 using sta::Port;
+using sta::PortDirection;
 using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::TimingRole;
