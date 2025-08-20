@@ -40,6 +40,7 @@ cc_library(
     includes = [
         "include",
     ],
+    defines = ["ABC_NAMESPACE=abc"],
     deps = [
         "//src/sta:opensta_lib",
         "//src/dbSta",
