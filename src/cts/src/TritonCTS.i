@@ -26,6 +26,35 @@ using ord::getTritonCts;
 %ignore cts::CtsOptions::setObserver;
 %ignore cts::CtsOptions::getObserver;
 
+// Enum: CtsOptions::NdrStrategy
+%typemap(typecheck) CtsOptions::NdrStrategy {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "NONE") == 0) {
+    $1 = 1;
+  } else if (strcasecmp(str, "ROOT_ONLY") == 0) {
+    $1 = 1;
+  } else if (strcasecmp(str, "HALF") == 0) {
+    $1 = 1;
+  } else if (strcasecmp(str, "FULL") == 0) {
+    $1 = 1;
+  } else {
+    $1 = 0;
+  }
+}
+
+%typemap(in) CtsOptions::NdrStrategy {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "ROOT_ONLY") == 0) {
+    $1 = CtsOptions::NdrStrategy::ROOT_ONLY;
+  } else if (strcasecmp(str, "HALF") == 0) {
+    $1 = CtsOptions::NdrStrategy::HALF;
+  } else if (strcasecmp(str, "FULL") == 0) {
+    $1 = CtsOptions::NdrStrategy::FULL;
+  } else {
+    $1 = CtsOptions::NdrStrategy::NONE;
+  };
+}
+
 %inline %{
 
 void
@@ -205,9 +234,9 @@ set_obstruction_aware(bool obs)
 }
 
 void
-set_apply_ndr(bool ndr)
+set_apply_ndr(CtsOptions::NdrStrategy strategy)
 {
-  getTritonCts()->getParms()->setApplyNDR(ndr);
+  getTritonCts()->getParms()->setApplyNDR(strategy);
 }
 
 void

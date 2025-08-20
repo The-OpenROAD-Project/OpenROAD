@@ -831,6 +831,9 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
  public:
   PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
                            sta::StaState* sta);
+  PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
+                           const sta::Clock* clk,
+                           sta::StaState* sta);
   PathGroupSlackEndVisitor(const PathGroupSlackEndVisitor&) = default;
   PathEndVisitor* copy() const override;
   void visit(sta::PathEnd* path_end) override;
@@ -841,6 +844,7 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
  private:
   const sta::PathGroup* path_group_;
   sta::StaState* sta_;
+  const sta::Clock* clk_;
   bool has_slack_{false};
   float worst_slack_{std::numeric_limits<float>::max()};
 };
@@ -848,7 +852,15 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
 PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
     const sta::PathGroup* path_group,
     sta::StaState* sta)
-    : path_group_(path_group), sta_(sta)
+    : path_group_(path_group), sta_(sta), clk_(nullptr)
+{
+}
+
+PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
+    const sta::PathGroup* path_group,
+    const sta::Clock* clk,
+    sta::StaState* sta)
+    : path_group_(path_group), sta_(sta), clk_(clk)
 {
 }
 
@@ -861,6 +873,12 @@ void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
 {
   sta::Search* search = sta_->search();
   if (search->pathGroup(path_end) == path_group_) {
+    if (clk_ != nullptr) {
+      sta::Path* path = path_end->path();
+      if (path->clock(sta_) != clk_) {
+        return;
+      }
+    }
     worst_slack_ = std::min(worst_slack_, path_end->slack(sta_));
     if (!has_slack_) {
       has_slack_ = true;
@@ -942,7 +960,8 @@ void STAGuiInterface::updatePathGroups()
 }
 
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
-    const std::string& path_group_name)
+    const std::string& path_group_name,
+    const sta::Clock* clk)
 {
   updatePathGroups();
 
@@ -951,9 +970,30 @@ EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
   sta::Search* search = sta_->search();
   sta::PathGroup* path_group
       = search->findPathGroup(path_group_name.c_str(), minMax());
+  PathGroupSlackEndVisitor path_group_visitor(path_group, clk, sta_);
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    visit_ends.visitPathEnds(
+        vertex, nullptr, minMaxAll(), false, &path_group_visitor);
+    if (path_group_visitor.hasSlack()) {
+      end_point_to_slack[vertex->pin()] = path_group_visitor.worstSlack();
+      path_group_visitor.resetWorstSlack();
+    }
+  }
+  return end_point_to_slack;
+}
+
+EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(const sta::Clock* clk)
+{
+  updatePathGroups();
+
+  EndPointSlackMap end_point_to_slack;
+  sta::VisitPathEnds visit_ends(sta_);
+  sta::Search* search = sta_->search();
+  sta::PathGroup* path_group = search->findPathGroup(clk, minMax());
   PathGroupSlackEndVisitor path_group_visitor(path_group, sta_);
   for (sta::Vertex* vertex : *sta_->endpoints()) {
-    visit_ends.visitPathEnds(vertex, &path_group_visitor);
+    visit_ends.visitPathEnds(
+        vertex, nullptr, minMaxAll(), false, &path_group_visitor);
     if (path_group_visitor.hasSlack()) {
       end_point_to_slack[vertex->pin()] = path_group_visitor.worstSlack();
       path_group_visitor.resetWorstSlack();

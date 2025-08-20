@@ -248,6 +248,15 @@ bool CloneMove::doMove(const Path* drvr_path,
   // hierarchical wiring
 
   odb::dbITerm* clone_output_iterm = db_network_->flatPin(clone_output_pin);
+  if (clone_output_iterm == nullptr) {
+    logger_->error(
+        RSZ,
+        100,
+        "Cannot find output pin of the clone instance. Driver pin: {}, "
+        "Clone output pin: {}",
+        (drvr_pin) ? network_->pathName(drvr_pin) : "Null",
+        (clone_output_pin) ? network_->pathName(clone_output_pin) : "Null");
+  }
 
   // Divide the list of pins in half and connect them to the new net we
   // created as part of gate cloning. Skip ports connected to the original net
