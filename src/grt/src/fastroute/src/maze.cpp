@@ -1882,6 +1882,77 @@ void FastRouteCore::getOverflowPositions(
   }
 }
 
+// Search in range of 5 the correct adjustment to fix the overflow
+void FastRouteCore::getPrecisionAdjustment(const int x,
+                                           const int y,
+                                           bool is_horizontal,
+                                           int& adjustment)
+{
+  int new_2D_cap, usage_2D, range = 5;
+  if (is_horizontal) {
+    usage_2D = graph2d_.getUsageH(x, y);
+  } else {
+    usage_2D = graph2d_.getUsageV(x, y);
+  }
+
+  new_2D_cap = 0;
+  while (range > 0 && new_2D_cap < usage_2D) {
+    // calculate new capacity with adjustment
+    for (int l = 0; l < num_layers_; l++) {
+      if (is_horizontal) {
+        new_2D_cap
+            += (1.0 - (adjustment / 100.0)) * h_edges_3D_[l][y][x].real_cap;
+      } else {
+        new_2D_cap
+            += (1.0 - (adjustment / 100.0)) * v_edges_3D_[l][y][x].real_cap;
+      }
+    }
+    // Reduce adjustment to increase capacity
+    if (usage_2D > new_2D_cap) {
+      adjustment--;
+      new_2D_cap = 0;
+    }
+    range--;
+  }
+}
+
+// For each edge with overflow, calculate the ideal adjustment
+// Return the minimum value of all or -1 if no value can be found
+int FastRouteCore::getSuggestAdjustment()
+{
+  int horizontal_suggest = 100, local_suggest;
+  // Find horizontal ggrids with congestion
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    const int overflow = graph2d_.getOverflowH(x, y);
+    if (overflow > 0) {
+      local_suggest = graph2d_.getSuggestAdjustment(x, y, true);
+      if (local_suggest != -1) {
+        // modify the value to resolve the congestion at the position
+        getPrecisionAdjustment(x, y, true, local_suggest);
+        horizontal_suggest = std::min(horizontal_suggest, local_suggest);
+      } else {
+        return -1;
+      }
+    }
+  }
+  int vertical_suggest = 100;
+  // Find vertical ggrids with congestion
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    const int overflow = graph2d_.getOverflowV(x, y);
+    if (overflow > 0) {
+      local_suggest = graph2d_.getSuggestAdjustment(x, y, false);
+      if (local_suggest != -1) {
+        // modify the value to resolve the congestion at the position
+        getPrecisionAdjustment(x, y, false, local_suggest);
+        vertical_suggest = std::min(vertical_suggest, local_suggest);
+      } else {
+        return -1;
+      }
+    }
+  }
+  return std::min(horizontal_suggest, vertical_suggest);
+}
+
 // The function will add the new nets to the congestion_nets set
 void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 {

@@ -148,6 +148,12 @@ class FastRouteCore
       const interval<int>::type& last_tile_reduce_interval,
       const std::vector<int>& track_space,
       bool release = false);
+  void saveResourcesBeforeAdjustments();
+  int getSuggestAdjustment();
+  void getPrecisionAdjustment(const int x,
+                              const int y,
+                              bool is_horizontal,
+                              int& adjustment);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();
