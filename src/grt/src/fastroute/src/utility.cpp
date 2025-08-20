@@ -402,11 +402,6 @@ void FastRouteCore::assignEdge(const int netID,
     gridD[i].resize(treeedge->route.routelen + 1);
   }
 
-  // bool has_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
-  // if(net->getDbNet()==debug_->net_){
-  //   logger_->report("--- Assigning layer to Edge {} for {}", edgeID, net->getName());
-  // }
-
   multi_array<int, 2> via_link;
   via_link.resize(boost::extents[num_layers_][routelen + 1]);
   for (int l = 0; l < num_layers_; l++) {
@@ -433,10 +428,6 @@ void FastRouteCore::assignEdge(const int netID,
         } else {
           layer_grid[l][k] = std::numeric_limits<int>::min();
         }
-        // if(min_y == 55 && grids[k].x==152){
-        //   logger_->report("--- {} x{} y{} V:{} best_cost:{} layer_grid:{}", 
-        //                   net->getName(), grids[k].x, min_y, is_vertical, best_cost, layer_grid[l][k]);
-        // }
       }
 
       // assigning the edge to the layer range would cause overflow try to
@@ -565,7 +556,7 @@ void FastRouteCore::assignEdge(const int netID,
         }
       }
       for (int l = 0; l < num_layers_; l++) {
-        if (layer_grid[l][k] > 0) {
+        if (layer_grid[l][k] >= net->getLayerEdgeCost(l)) {
           gridD[l][k + 1] = gridD[l][k] + 1;
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
@@ -682,7 +673,7 @@ void FastRouteCore::assignEdge(const int netID,
         }
       }
       for (int l = 0; l < num_layers_; l++) {
-        if (layer_grid[l][k - 1] > 0) {
+        if (layer_grid[l][k - 1] >= net->getLayerEdgeCost(l)) {
           gridD[l][k - 1] = gridD[l][k] + 1;
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
