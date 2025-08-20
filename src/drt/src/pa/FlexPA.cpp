@@ -168,24 +168,42 @@ void FlexPA::updateDirtyInsts()
       }
     }
   }
-  for (auto& inst : new_unique_insts) {
-    inst->setUpdatedPA(true);
-    inst->getMaster()->setUpdatedPA(true);
+  std::vector<frInst*> new_unique_insts_vec(new_unique_insts.begin(),
+                                            new_unique_insts.end());
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < static_cast<int>(new_unique_insts_vec.size()); i++) {
+    auto& inst = new_unique_insts_vec[i];
+    inst->setHasPinAccessUpdate(true);
+    inst->getMaster()->setHasPinAccessUpdate(true);
     addUniqueInst(inst);
   }
-  for (auto& inst : dirty_unique_insts) {
-    inst->setUpdatedPA(true);
-    inst->getMaster()->setUpdatedPA(true);
+  std::vector<frInst*> dirty_unique_insts_vec(dirty_unique_insts.begin(),
+                                              dirty_unique_insts.end());
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < static_cast<int>(dirty_unique_insts_vec.size()); i++) {
+    auto& inst = dirty_unique_insts_vec[i];
+    inst->setHasPinAccessUpdate(true);
+    inst->getMaster()->setHasPinAccessUpdate(true);
     updateUniqueInst(inst);
   }
   buildInstsSet();
   frOrderedIdSet<frInst*> processed_insts;
+  std::vector<std::vector<frInst*>> inst_rows;
   for (auto& inst : pattern_insts) {
-    inst->setUpdatedPA(true);
-    if (processed_insts.find(inst) != processed_insts.end()) {
+    if (processed_insts.find(inst) != processed_insts.end()
+        || isSkipInst(inst)) {
       continue;
     }
-    processInstInRow(inst, processed_insts);
+    std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
+    processed_insts.insert(inst_row.begin(), inst_row.end());
+    inst_rows.push_back(inst_row);
+  }
+#pragma omp parallel for schedule(dynamic)
+  for (auto& inst_row : inst_rows) {
+    genInstRowPattern(inst_row);
+  }
+  for (auto& inst : processed_insts) {
+    inst->setHasPinAccessUpdate(true);
   }
   dirty_insts_.clear();
 }

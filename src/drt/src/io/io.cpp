@@ -3723,13 +3723,9 @@ void io::Writer::updateTrackAssignment(odb::dbBlock* block)
 
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
 {
-  for (auto ap : block->getAccessPoints()) {
-    odb::dbAccessPoint::destroy(ap);
-  }
   auto db = block->getDb();
-  std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
   for (auto& master : getDesign()->getMasters()) {
-    if (!master->isUpdatedPA()) {
+    if (!master->hasPinAccessUpdate()) {
       continue;
     }
     auto db_master = db->findMaster(master->getName().c_str());
@@ -3761,16 +3757,16 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
           for (auto& ap : pa->getAccessPoints()) {
             auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
             updateDbAccessPoint(db_ap, ap.get(), db_tech, block);
-            aps_map[ap.get()] = db_ap;
+            ap->setDbAccessPoint(db_ap);
           }
           j++;
         }
       }
     }
-    master->setUpdatedPA(false);
+    master->setHasPinAccessUpdate(false);
   }
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (!inst->isUpdatedPA()) {
+    if (!inst->hasPinAccessUpdate()) {
       continue;
     }
     auto db_inst = block->findInst(inst->getName().c_str());
@@ -3801,8 +3797,8 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       frUInt4 i = 0;
       for (auto db_pin : db_pins) {
         if (aps[i] != nullptr) {
-          if (aps_map.find(aps[i]) != aps_map.end()) {
-            db_iterm->setAccessPoint(db_pin, aps_map[aps[i]]);
+          if (aps[i]->getDbAccessPoint() != nullptr) {
+            db_iterm->setAccessPoint(db_pin, aps[i]->getDbAccessPoint());
           } else {
             logger_->error(DRT, 300, "Preferred access point is not found");
           }
@@ -3812,10 +3808,10 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
         i++;
       }
     }
-    inst->setUpdatedPA(false);
+    inst->setHasPinAccessUpdate(false);
   }
   for (auto& term : getDesign()->getTopBlock()->getTerms()) {
-    if (!term->isUpdatedPA()) {
+    if (!term->hasPinAccessUpdate()) {
       continue;
     }
     auto db_term = block->findBTerm(term->getName().c_str());
@@ -3847,7 +3843,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       }
       j++;
     }
-    term->setUpdatedPA(false);
+    term->setHasPinAccessUpdate(false);
   }
 }
 

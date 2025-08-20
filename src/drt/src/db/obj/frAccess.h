@@ -12,6 +12,9 @@
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
 #include "frShape.h"
+namespace odb {
+class dbAccessPoint;
+}
 
 namespace drt {
 class frViaDef;
@@ -187,6 +190,8 @@ class frAccessPoint : public frBlockObject
 
   void addPathSeg(const frPathSeg& ps) { pathSegs_.emplace_back(ps); }
   std::vector<frPathSeg>& getPathSegs() { return pathSegs_; }
+  void setDbAccessPoint(odb::dbAccessPoint* in) { db_ap_ = in; }
+  odb::dbAccessPoint* getDbAccessPoint() const { return db_ap_; }
 
  private:
   Point point_;
@@ -200,6 +205,7 @@ class frAccessPoint : public frBlockObject
   frPinAccess* aps_{nullptr};
   std::vector<frPathSeg> pathSegs_;
   bool allow_via_{false};
+  odb::dbAccessPoint* db_ap_{nullptr};
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;

@@ -75,7 +75,7 @@ class frMaster : public frBlockObject
     return nullptr;
   }
   dbMasterType getMasterType() { return masterType_; }
-  bool isUpdatedPA() const { return updated_pa_; }
+  bool hasPinAccessUpdate() const { return has_pin_access_update_; }
 
   // setters
   void addTerm(std::unique_ptr<frMTerm> in)
@@ -114,7 +114,7 @@ class frMaster : public frBlockObject
     blockages_.push_back(std::move(in));
   }
   void setMasterType(const dbMasterType& in) { masterType_ = in; }
-  void setUpdatedPA(bool in) { updated_pa_ = in; }
+  void setHasPinAccessUpdate(bool in) { has_pin_access_update_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcMaster; }
 
@@ -125,7 +125,7 @@ class frMaster : public frBlockObject
   Rect dieBox_;
   frString name_;
   dbMasterType masterType_{dbMasterType::CORE};
-  bool updated_pa_ = true;
+  bool has_pin_access_update_ = true;
 
   friend class io::Parser;
 };
