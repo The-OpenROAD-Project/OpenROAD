@@ -63,7 +63,6 @@ add_library(drt_lib
   src/db/drObj/drPin.cpp
   src/db/drObj/drShape.cpp
   src/db/drObj/drVia.cpp
-  src/db/infra/frTime_helper.cpp
   src/db/infra/frTime.cpp
   src/db/infra/KDTree.cpp
   src/db/taObj/taShape.cpp

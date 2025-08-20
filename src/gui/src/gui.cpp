@@ -517,7 +517,7 @@ int Gui::select(const std::string& type,
         bool is_valid_attribute = false;
         Descriptor::Properties properties
             = descriptor->getProperties(sel.getObject());
-        if (filterSelectionProperties(
+        if (!filterSelectionProperties(
                 properties, attribute, value, is_valid_attribute)) {
           return;  // doesn't match the attribute filter
         }

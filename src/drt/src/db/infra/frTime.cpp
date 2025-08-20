@@ -6,6 +6,8 @@
 #include <boost/io/ios_state.hpp>
 #include <iomanip>
 
+#include "utl/mem_stats.h"
+
 namespace drt {
 
 void frTime::print(Logger* logger)
@@ -30,8 +32,8 @@ void frTime::print(Logger* logger)
                hour,
                min,
                sec,
-               getCurrentRSS() / (1024.0 * 1024.0),
-               getPeakRSS() / (1024.0 * 1024.0));
+               utl::getCurrentRSS() / (1024.0 * 1024.0),
+               utl::getPeakRSS() / (1024.0 * 1024.0));
 }
 
 std::ostream& operator<<(std::ostream& os, const frTime& t)
@@ -50,7 +52,7 @@ std::ostream& operator<<(std::ostream& os, const frTime& t)
   os << ":";
   os << std::setw(2) << std::setfill('0') << sec;
   os << ", memory = " << std::fixed << std::setprecision(2)
-     << getCurrentRSS() * 1.0 / 1024 / 1024 << " (MB)";
+     << utl::getCurrentRSS() * 1.0 / 1024 / 1024 << " (MB)";
   guard.restore();
   return os;
 }
