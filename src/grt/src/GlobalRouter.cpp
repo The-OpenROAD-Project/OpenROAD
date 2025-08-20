@@ -1256,7 +1256,7 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      if (layerIdx > net_max_layer) {
+      if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
         continue;
       }
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
@@ -1268,14 +1268,18 @@ void GlobalRouter::computeTrackConsumption(
       int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
-            
+
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
       track_consumption = std::max(track_consumption, consumption);
 
-      logger_->report("Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}", 
-          net->getConstName(), layer_rule->getLayer()->getConstName(), 
-          (float) ndr_pitch / default_pitch, consumption, track_consumption);
+      logger_->report(
+          "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
+          net->getConstName(),
+          layer_rule->getLayer()->getConstName(),
+          (float) ndr_pitch / default_pitch,
+          consumption,
+          track_consumption);
     }
   }
 }
@@ -4897,8 +4901,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     NetRouteMap new_route
         = findRouting(dirty_nets, getMinRoutingLayer(), getMaxRoutingLayer());
     mergeResults(new_route);
-
-    logger_->report("DEBUG: 2D Overflow: {}", fastroute_->has2Doverflow());
 
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
