@@ -15,14 +15,22 @@ struct F_CHIP_HIERARCHY
     utl::Logger* logger = new utl::Logger();
     db = dbDatabase::create();
     db->setLogger(logger);
-
+    createLibsAndTechs();
+    createChips();
+    createChipRegions();
+    createChipInsts();
+  }
+  void createLibsAndTechs()
+  {
     tech1 = dbTech::create(db, "tech1");
     layer_l1 = dbTechLayer::create(tech1, "L1", dbTechLayerType::MASTERSLICE);
     lib1 = dbLib::create(db, "lib1", tech1, ',');
     tech2 = dbTech::create(db, "tech2");
     layer_M1 = dbTechLayer::create(tech2, "M1", dbTechLayerType::MASTERSLICE);
     lib2 = dbLib::create(db, "lib2", tech2, ',');
-
+  }
+  void createChips()
+  {
     system_chip = dbChip::create(db, "system_chip", dbChip::ChipType::HIER);
     system_chip->setWidth(5000);
     system_chip->setHeight(4000);
@@ -35,8 +43,9 @@ struct F_CHIP_HIERARCHY
     // Create blocks
     dbBlock::create(memory_chip, "memory_block", tech1);
     dbBlock::create(io_chip, "io_block", tech2);
-
-    // Create chip regions
+  }
+  void createChipRegions()
+  {
     memory_chip_region_r1 = dbChipRegion::create(
         memory_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
     memory_chip_region_r2 = dbChipRegion::create(
@@ -45,8 +54,10 @@ struct F_CHIP_HIERARCHY
         memory_chip, "R3", dbChipRegion::Side::INTERNAL, nullptr);
     io_chip_region_r1 = dbChipRegion::create(
         io_chip, "R1", dbChipRegion::Side::FRONT, layer_M1);
-
-    // Create chip instances in system
+    dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
+  }
+  void createChipInsts()
+  {
     cpu_inst = dbChipInst::create(system_chip, cpu_chip, "cpu_inst");
     memory_inst = dbChipInst::create(system_chip, memory_chip, "memory_inst");
     io_inst = dbChipInst::create(system_chip, io_chip, "io_inst");
