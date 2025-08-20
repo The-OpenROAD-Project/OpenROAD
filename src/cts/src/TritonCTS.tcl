@@ -56,7 +56,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
                                              [-no_obstruction_aware] \
-                                             [-apply_ndr] \
+                                             [-apply_ndr strategy] \
                                              [-sink_buffer_max_cap_derate] \
                                              [-dont_use_dummy_load] \
                                              [-delay_buffer_derate] \

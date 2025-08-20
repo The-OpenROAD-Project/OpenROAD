@@ -271,7 +271,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool getRepairClockNets() { return repairClockNets_; }
 
   // NDR strategies
-  void setApplyNDR(const std::string& strategy);
+  void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
   NdrStrategy getApplyNdr() const { return ndrStrategy_; }
 
  private:
