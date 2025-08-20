@@ -55,5 +55,5 @@ Pin                                   Limit Fanout  Slack
 fanout8/Z                                10     10      0 (MET)
 
 Differences found at line 204.
- DFF_X1 load7 (.D(net73_i),
- DFF_X1 load7 (.D(net53_i),
+ DFF_X1 load7 (.D(net_i_4),
+ DFF_X1 load7 (.D(net_i_2),

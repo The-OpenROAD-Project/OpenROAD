@@ -49,4 +49,4 @@ tns max -1.582
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Differences found at line 5.
  BUF_X2 rebuffer8 (.A(r1q),
- BUF_X1 rebuffer5 (.A(net2),
+ BUF_X1 rebuffer5 (.A(net1),
