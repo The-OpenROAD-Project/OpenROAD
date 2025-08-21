@@ -493,8 +493,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     repaired = true;
     logger_->info(RSZ,
                   51,
-                  "Resized {} instances: {} sized up, {} sized up for match, "
-                  "{} sized down, {} VT swapped.",
+                  "Resized {} instances: {} up, {} up match, {} down, {} VT",
                   size_up_moves_ + size_up_match_moves_ + size_down_moves_
                       + vt_swap_moves_,
                   size_up_moves_,
@@ -831,6 +830,15 @@ bool RepairSetup::terminateProgress(const int iteration,
 // TODO: add VT swap
 void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 {
+  /* TODO: Tune after more testing
+  move_sequence.clear();
+  move_sequence = {resizer_->vt_swap_speed_move_.get(),
+                   resizer_->size_down_move_.get(),
+                   resizer_->size_up_match_move_.get(),
+                   resizer_->swap_pins_move_.get(),
+                   resizer_->unbuffer_move_.get()};
+  */
+
   // Sort remaining failing endpoints
   const VertexSet* endpoints = sta_->endpoints();
   vector<pair<Vertex*, Slack>> violating_ends;
@@ -931,13 +939,8 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
-      bool changed1 = false;
-      /*
-          = upsizeOrSwapVT(end_path, end_slack, params.setup_slack_margin);
-      */
-      bool changed2
+      const bool changed
           = repairPath(end_path, end_slack, params.setup_slack_margin);
-      bool changed = changed1 || changed2;
 
       if (!changed) {
         if (pass != 1) {
@@ -995,64 +998,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       break;
     }
   }  // for each violating endpoint
-}
-
-// Improve timing by two transforms:
-// 1) upsize buffers or inverters to match previous stage drive strength
-//    For example, if BUF_X16 drives BUF_X1, upsize BUF_X1 to BUF_X16
-// 2) swap VT from higher VT to lower VT
-//
-// end_slack is adjusted based on delay estimation
-bool RepairSetup::upsizeOrSwapVT(Path* path,
-                                 Slack& end_slack,
-                                 const float& slack_margin)
-{
-  debugPrint(
-      logger_, RSZ, "repair_setup", 1, "upsizeOrSwapVT slack = {}", end_slack);
-  PathExpanded expanded(path, sta_);
-  int changed = 0;
-  if (expanded.size() > 1) {
-    const int path_length = expanded.size();
-    const int start_index = expanded.startIndex();
-    const DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
-    const int lib_ap = dcalc_ap->libertyIndex();
-    // Find load delay for each gate in the path.
-    LibertyCell* prev_cell = nullptr;
-    LibertyCell* curr_cell = nullptr;
-    for (int i = start_index; i < path_length; i++) {
-      const Path* curr_path = expanded.path(i);
-      Vertex* curr_vertex = curr_path->vertex(sta_);
-      const Pin* curr_pin = curr_vertex->pin();
-      LibertyPort* curr_port = network_->libertyPort(curr_pin);
-      if (curr_cell) {
-        prev_cell = curr_cell;
-      }
-      curr_cell = curr_port ? curr_port->libertyCell() : nullptr;
-
-      // Check if strong buffer/inverter is driving weak buffer/inverter
-      if (prev_cell && curr_cell && prev_cell != curr_cell) {
-        if ((prev_cell->isBuffer() && curr_cell->isBuffer())
-            || (prev_cell->isInverter() && curr_cell->isInverter())) {
-          if (resizer_->bufferDriveResistance(prev_cell)
-              < resizer_->bufferDriveResistance(curr_cell)) {
-            Instance* curr_inst = network_->instance(curr_pin);
-            resizer_->replaceCell(curr_inst, prev_cell, true);
-            debugPrint(logger_,
-                       RSZ,
-                       "repair_setup",
-                       1,
-                       "Upsized {} from {} to {} due to match drive strength",
-                       network_->name(curr_inst),
-                       curr_cell->name(),
-                       prev_cell->name());
-            changed++;
-          }
-        }
-      }
-    }
-  }
-
-  return changed > 0;
 }
 
 }  // namespace rsz

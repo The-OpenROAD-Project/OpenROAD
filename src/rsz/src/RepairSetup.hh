@@ -111,7 +111,6 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
-  bool upsizeOrSwapVT(Path* path, Slack& end_slack, const float& slack_margin);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

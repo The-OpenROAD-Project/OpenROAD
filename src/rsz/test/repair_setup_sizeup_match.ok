@@ -50,7 +50,7 @@ Path Type: max
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
     final |       0 |       4 |        0 |      0 |     0 |   +22.2% |   -0.072 |       -0.1 |      1 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 4 instances: 0 sized up, 4 sized up for match, 0 sized down, 0 VT swapped.
+[INFO RSZ-0051] Resized 4 instances: 0 up, 4 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)

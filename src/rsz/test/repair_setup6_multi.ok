@@ -26,7 +26,7 @@ worst slack max -0.39
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 3 buffers.
 [INFO RSZ-0040] Inserted 1 buffers.
-[INFO RSZ-0051] Resized 10 instances: 10 sized up, 0 sized up for match, 0 sized down, 0 VT swapped.
+[INFO RSZ-0051] Resized 10 instances: 10 up, 0 up match, 0 down, 0 VT
 Repair timing output passed/skipped equivalence test
 worst slack max 0.01
 worst slack max 0.00

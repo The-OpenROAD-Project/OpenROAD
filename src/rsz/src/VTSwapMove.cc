@@ -33,6 +33,10 @@ bool VTSwapSpeedMove::doMove(const Path* drvr_path,
                              PathExpanded* expanded,
                              float setup_slack_margin)
 {
+  int num_vt = resizer_->lib_data_->sorted_vt_categories.size();
+  if (num_vt < 2) {
+    return false;
+  }
   Pin* drvr_pin = drvr_path->pin(this);
   if (drvr_pin == nullptr) {
     return false;
@@ -41,20 +45,29 @@ bool VTSwapSpeedMove::doMove(const Path* drvr_path,
   if (drvr == nullptr) {
     return false;
   }
-
-  if (!resizer_->dontTouch(drvr)) {
-    LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    if (drvr_port == nullptr) {
-      return false;
-    }
-    LibertyCell* drvr_cell = drvr_port->libertyCell();
-    if (drvr_cell == nullptr) {
-      return false;
-    }
-    odb::dbMaster* drvr_master = db_network_->staToDb(drvr_cell);
-    (void) drvr_master;
+  if (resizer_->dontTouch(drvr)) {
+    return false;
   }
- 
+
+  LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+  if (drvr_port == nullptr) {
+    return false;
+  }
+  LibertyCell* drvr_cell = drvr_port->libertyCell();
+  if (drvr_cell == nullptr) {
+    return false;
+  }
+  odb::dbMaster* drvr_master = db_network_->staToDb(drvr_cell);
+  if (drvr_master == nullptr) {
+    return false;
+  }
+
+  VTCategory vt_cat = resizer_->cellVTType(drvr_master);
+  if (vt_cat.vt_index
+      == resizer_->lib_data_->sorted_vt_categories[num_vt - 1].first.vt_index) {
+    return false;
+  }
+
   return false;
 }
 

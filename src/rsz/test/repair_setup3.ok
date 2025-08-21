@@ -18,6 +18,6 @@
        7* |       0 |       2 |        0 |      0 |     0 |    +5.1% |   -1.790 |       -1.9 |      2 | r3/D
     final |       0 |       2 |        0 |      0 |     0 |    +5.1% |   -1.790 |       -1.9 |      2 | r3/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 2 instances: 2 sized up, 0 sized up for match, 0 sized down, 0 VT swapped.
+[INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test

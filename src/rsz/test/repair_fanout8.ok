@@ -296,7 +296,7 @@ worst slack max -23.63
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 25 buffers.
 [INFO RSZ-0045] Inserted 207 buffers, 11 to split loads.
-[INFO RSZ-0051] Resized 170 instances: 170 sized up, 0 sized up for match, 0 sized down, 0 VT swapped.
+[INFO RSZ-0051] Resized 170 instances: 170 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
