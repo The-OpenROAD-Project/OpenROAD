@@ -709,8 +709,7 @@ void TclCmdInputWidget::processTclResult(const int tcl_result)
     Tcl_Obj* stackTrace = nullptr;
     if (Tcl_DictObjGet(nullptr, options, key, &stackTrace) == TCL_OK
         && stackTrace) {
-      const char* result_msg = Tcl_GetString(stackTrace);
-      emit addTextToOutput(QString::fromStdString(result_msg), Qt::red);
+      emit addTextToOutput(Tcl_GetString(stackTrace), Qt::red);
     }
 
     Tcl_DecrRefCount(key);
