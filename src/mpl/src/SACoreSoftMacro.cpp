@@ -544,14 +544,6 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
-  int tot_num_macros = 0;
-  for (const auto& macro : macros_) {
-    tot_num_macros += macro.getNumMacro();
-  }
-  if (tot_num_macros <= 0) {
-    return;
-  }
-
   // Initialization
   notch_penalty_ = 0.0;
   notch_h_th_ = outline_.getHeight() / 10.0;
@@ -638,8 +630,6 @@ void SACoreSoftMacro::calNotchPenalty()
       }
     }
   }
-
-  // notch_penalty_ = notch_penalty_ / tot_num_macros;
 
   if (graphics_) {
     graphics_->setNotchPenalty(
