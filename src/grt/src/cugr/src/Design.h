@@ -47,6 +47,14 @@ class Design
                        bool skipM1 = true) const;
 
  private:
+  void read();
+  void readLayers();
+  void readNetlist();
+  void readInstanceObstructions();
+  void readSpecialNetObstructions(int& numSpecialNets);
+  void computeGrid();
+  void setUnitCosts();
+
   int libDBU;
   BoxT<int> dieRegion;
   std::vector<MetalLayer> layers_;
@@ -85,9 +93,6 @@ class Design
   const double wire_patch_inflation_rate = 1.2;
   //
   const bool write_heatmap = false;
-
-  void read();
-  void setUnitCosts();
 };
 
 }  // namespace grt

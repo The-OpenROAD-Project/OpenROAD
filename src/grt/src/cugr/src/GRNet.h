@@ -1,14 +1,14 @@
 #pragma once
+#include "CUGR.h"
 #include "Design.h"
 #include "GridGraph.h"
-#include "global.h"
 
 namespace grt {
 
 class GRNet
 {
  public:
-  GRNet(const Net& baseNet, const Design& design, const GridGraph& gridGraph);
+  GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph);
 
   int getIndex() const { return index; }
   std::string getName() const { return name; }

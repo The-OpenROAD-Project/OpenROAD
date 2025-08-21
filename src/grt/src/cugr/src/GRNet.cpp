@@ -1,28 +1,26 @@
 #include "GRNet.h"
 
+#include <unordered_set>
+
 namespace grt {
 
-GRNet::GRNet(const Net& baseNet,
-             const Design& design,
-             const GridGraph& gridGraph)
+GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
 {
-  index = baseNet.getIndex();
-  name = baseNet.getName();
-  const auto& pinRefs = baseNet.getAllPinRefs();
-  int numPins = pinRefs.size();
+  name = baseNet.getDbNet()->getName();
+  int numPins = baseNet.getNumPins();
   pinAccessPoints.resize(numPins);
-  for (int pinIndex = 0; pinIndex < pinRefs.size(); pinIndex++) {
-    std::vector<BoxOnLayer> pinShapes;
-    design.getPinShapes(pinRefs[pinIndex], pinShapes);
-    robin_hood::unordered_set<uint64_t> included;
+  for (CUGRPin& pin : baseNet.getPins()) {
+    std::vector<BoxOnLayer> pinShapes = pin.getPinShapes();
+    std::unordered_set<uint64_t> included;
     for (const auto& pinShape : pinShapes) {
-      BoxT<int> cells = gridGraph.rangeSearchCells(pinShape);
+      BoxT<int> cells = gridGraph->rangeSearchCells(pinShape);
       for (int x = cells.x.low; x <= cells.x.high; x++) {
         for (int y = cells.y.low; y <= cells.y.high; y++) {
           GRPoint point(pinShape.layerIdx, x, y);
-          uint64_t hash = gridGraph.hashCell(point);
+          uint64_t hash = gridGraph->hashCell(point);
           if (included.find(hash) == included.end()) {
-            pinAccessPoints[pinIndex].emplace_back(pinShape.layerIdx, x, y);
+            pinAccessPoints[pin.getIndex()].emplace_back(
+                pinShape.layerIdx, x, y);
             included.insert(hash);
           }
         }
@@ -45,14 +43,16 @@ GRNet::GRNet(const Net& baseNet,
 //             if (node->layerIdx == child->layerIdx) {
 //                 guides.emplace_back(
 //                     node->layerIdx, BoxT<int>(
-//                         min(node->x, child->x), min(node->y, child->y),
-//                         max(node->x, child->x), max(node->y, child->y)
+//                         std::min(node->x, child->x), std::min(node->y,
+//                         child->y), std::max(node->x, child->x),
+//                         std::max(node->y, child->y)
 //                     )
 //                 );
 //             } else {
-//                 int maxLayerIndex = max(node->layerIdx, child->layerIdx);
-//                 for (int layerIdx = min(node->layerIdx, child->layerIdx);
-//                 layerIdx <= maxLayerIndex; layerIdx++) {
+//                 int maxLayerIndex = std::max(node->layerIdx,
+//                 child->layerIdx); for (int layerIdx =
+//                 std::min(node->layerIdx, child->layerIdx); layerIdx <=
+//                 maxLayerIndex; layerIdx++) {
 //                     guides.emplace_back(layerIdx, BoxT<int>(node->x,
 //                     node->y));
 //                 }
