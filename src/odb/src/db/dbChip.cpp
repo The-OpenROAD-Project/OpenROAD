@@ -4,8 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
-#include <string>
-
 #include "dbBlock.h"
 #include "dbBlockItr.h"
 #include "dbDatabase.h"
@@ -17,12 +15,16 @@
 #include "dbTech.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include "dbChipInst.h"
+#include "dbChipInstItr.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
 
 bool _dbChip::operator==(const _dbChip& rhs) const
 {
-  if (name_ != rhs.name_) {
+  if (_name != rhs._name) {
     return false;
   }
   if (type_ != rhs.type_) {
@@ -73,7 +75,13 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (_top != rhs._top) {
     return false;
   }
+  if (chipinsts_ != rhs.chipinsts_) {
+    return false;
+  }
   if (*_prop_tbl != *rhs._prop_tbl) {
+    return false;
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
   }
 
@@ -99,6 +107,7 @@ bool _dbChip::operator<(const _dbChip& rhs) const
 
 _dbChip::_dbChip(_dbDatabase* db)
 {
+  _name = nullptr;
   type_ = 0;
   offset_ = {};
   width_ = 0;
@@ -131,7 +140,7 @@ _dbChip::_dbChip(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
-    stream >> obj.name_;
+    stream >> obj._name;
   }
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
     stream >> obj.type_;
@@ -179,10 +188,16 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
     stream >> obj.tsv_;
   }
   stream >> obj._top;
+  if (obj.getDatabase()->isSchema(db_schema_chip_inst)) {
+    stream >> obj.chipinsts_;
+  }
   // User Code Begin >>
   stream >> *obj._block_tbl;
   stream >> *obj._prop_tbl;
   stream >> *obj._name_cache;
+  if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
+    stream >> obj._next_entry;
+  }
   // User Code End >>
   return stream;
 }
@@ -190,7 +205,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
 {
   dbOStreamScope scope(stream, "dbChip");
-  stream << obj.name_;
+  stream << obj._name;
   stream << obj.type_;
   stream << obj.offset_;
   stream << obj.width_;
@@ -207,10 +222,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.scribe_line_south_;
   stream << obj.tsv_;
   stream << obj._top;
+  stream << obj.chipinsts_;
   // User Code Begin <<
   stream << *obj._block_tbl;
   stream << NamedTable("prop_tbl", obj._prop_tbl);
   stream << *obj._name_cache;
+  stream << obj._next_entry;
   // User Code End <<
   return stream;
 }
@@ -244,6 +261,9 @@ void _dbChip::collectMemInfo(MemInfo& info)
 
 _dbChip::~_dbChip()
 {
+  if (_name) {
+    free((void*) _name);
+  }
   delete _prop_tbl;
   // User Code Begin Destructor
   delete _block_tbl;
@@ -259,10 +279,10 @@ _dbChip::~_dbChip()
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChip::getName() const
+const char* dbChip::getName() const
 {
   _dbChip* obj = (_dbChip*) this;
-  return obj->name_;
+  return obj->_name;
 }
 
 void dbChip::setOffset(Point offset)
@@ -448,6 +468,13 @@ bool dbChip::isTsv() const
 }
 
 // User Code Begin dbChipPublicMethods
+
+dbChip::ChipType dbChip::getChipType() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return (dbChip::ChipType) obj->type_;
+}
+
 dbBlock* dbChip::getBlock()
 {
   _dbChip* chip = (_dbChip*) this;
@@ -459,31 +486,42 @@ dbBlock* dbChip::getBlock()
   return (dbBlock*) chip->_block_tbl->getPtr(chip->_top);
 }
 
-dbChip* dbChip::create(dbDatabase* db_)
+dbSet<dbChipInst> dbChip::getChipInsts() const
+{
+  _dbChip* chip = (_dbChip*) this;
+  _dbDatabase* db = (_dbDatabase*) chip->getOwner();
+  return dbSet<dbChipInst>(chip, db->chip_inst_itr_);
+}
+
+dbChip* dbChip::create(dbDatabase* db_, const std::string& name, ChipType type)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-
-  if (db->_chip != 0) {
-    return nullptr;
+  _dbChip* chip = db->chip_tbl_->create();
+  chip->_name = safe_strdup(name.c_str());
+  chip->type_ = (uint) type;
+  if (db->_chip == 0) {
+    db->_chip = chip->getOID();
   }
-
-  _dbChip* chip = db->_chip_tbl->create();
-  db->_chip = chip->getOID();
+  db->chip_hash_.insert(chip);
   return (dbChip*) chip;
 }
 
 dbChip* dbChip::getChip(dbDatabase* db_, uint dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-  return (dbChip*) db->_chip_tbl->getPtr(dbid_);
+  return (dbChip*) db->chip_tbl_->getPtr(dbid_);
 }
 
 void dbChip::destroy(dbChip* chip_)
 {
   _dbChip* chip = (_dbChip*) chip_;
   _dbDatabase* db = chip->getDatabase();
+  if (db->_chip == chip->getOID()) {
+    db->_chip = 0;
+  }
   dbProperty::destroyProperties(chip);
-  db->_chip_tbl->destroy(chip);
+  db->chip_hash_.remove(chip);
+  db->chip_tbl_->destroy(chip);
   db->_chip = 0;
 }
 // User Code End dbChipPublicMethods

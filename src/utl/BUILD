@@ -30,6 +30,7 @@ cc_library(
         "src/histogram.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
+        "src/mem_stats.cpp",
     ],
     hdrs = [
         "include/utl/CallBack.h",
@@ -67,6 +68,7 @@ cc_library(
         "include/utl/timer.h",
         "include/utl/unique_name.h",
         "include/utl/validation.h",
+        "include/utl/mem_stats.h",
     ],
     includes = ["include"],
     deps = [

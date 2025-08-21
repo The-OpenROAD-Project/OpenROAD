@@ -8,7 +8,7 @@ load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 package(
     features = [
         "-parse_headers",
-        "-layering_check",
+        "layering_check",
         # TODO(b/299593765): Fix strict ordering.
         "-libcxx_assertions",
     ],
@@ -86,6 +86,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/psm",
     "//src/rcx",
     "//src/rcx:ui",
+    "//src/rmp",
+    "//src/rmp:ui",
     "//src/rsz",
     "//src/rsz:ui",
     "//src/stt",
@@ -131,11 +133,6 @@ cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
-        "src/OpenRoad.cc",
-        ":openroad_swig",
-        ":openroad_tcl",
-        ":rmp_swig",
-        ":rmp_tcl",
         "//bazel:runfiles",
     ],
     copts = OPENROAD_COPTS,
@@ -143,12 +140,13 @@ cc_binary(
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
-        ":openroad_lib_private",
+        ":openroad_lib",
         ":openroad_version",
-        "//src/odb",
-        "//src/rsz",
+        "//:ord",
+        "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],
@@ -167,21 +165,17 @@ cc_library(
         "src/Design.cc",
         "src/Tech.cc",
         "src/Timing.cc",
-    ] + glob([
-        "src/rmp/src/*.h",
-        "src/rmp/src/*.cpp",
-    ]),
-    hdrs = glob([
-        "src/rmp/include/rmp/*.h",
-    ]),
+    ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
     features = ["-use_header_modules"],
     includes = [
         "include",
-        "src/rmp/include",
     ],
-    deps = OPENROAD_LIBRARY_DEPS,
+    deps = OPENROAD_LIBRARY_DEPS + [
+        "//src/sta:opensta_lib",
+        "@tk_tcl//:tcl",
+    ]
 )
 
 cc_library(
@@ -193,21 +187,19 @@ cc_library(
         "src/Timing.cc",
         ":openroad_swig",
         ":openroad_tcl",
-        ":rmp_swig",
-        ":rmp_tcl",
-    ] + glob(["src/rmp/src/*.cpp"]),
-    hdrs = glob([
-        "src/rmp/include/rmp/*.h",
-    ]),
+    ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
     features = ["-use_header_modules"],
     includes = [
         "include",
-        "src/rmp/include",
     ],
     visibility = ["//visibility:public"],
-    deps = OPENROAD_LIBRARY_DEPS,
+    deps = OPENROAD_LIBRARY_DEPS + [
+        "//src/sta:opensta_lib",
+        "@boost.stacktrace",
+        "@tk_tcl//:tcl",
+    ]
 )
 
 cc_library(
@@ -255,15 +247,6 @@ tcl_encode(
     namespace = "ord",
 )
 
-tcl_encode(
-    name = "rmp_tcl",
-    srcs = [
-        "src/rmp/src/rmp.tcl",
-    ],
-    char_array_name = "rmp_tcl_inits",
-    namespace = "rmp",
-)
-
 tcl_wrap_cc(
     name = "openroad_swig",
     srcs = [
@@ -275,22 +258,6 @@ tcl_wrap_cc(
     root_swig_src = "src/OpenRoad.i",
     swig_includes = [
         "src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "rmp_swig",
-    srcs = [
-        "src/rmp/src/rmp.i",
-        ":error_swig",
-        "//src/sta:sta_swig_files",
-    ],
-    module = "rmp",
-    namespace_prefix = "rmp",
-    root_swig_src = "src/rmp/src/rmp.i",
-    swig_includes = [
-        "src/rmp/src",
-        "src/sta",
     ],
 )
 

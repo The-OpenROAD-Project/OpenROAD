@@ -4431,7 +4431,7 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getDBProperties(
   }
 
   SelectionSet subcategories;
-  for (odb::dbMarkerCategory* subcat : category->getMarkerCategorys()) {
+  for (odb::dbMarkerCategory* subcat : category->getMarkerCategories()) {
     subcategories.insert(gui->makeSelected(subcat));
   }
   if (!subcategories.empty()) {

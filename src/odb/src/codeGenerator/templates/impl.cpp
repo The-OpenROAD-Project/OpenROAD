@@ -84,6 +84,10 @@ namespace odb {
 
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
   {
+    {% if klass.assert_alignment_is_multiple_of %}
+    // For pointer tagging the bottom log_2({{klass.assert_alignment_is_multiple_of}}) bits.
+    static_assert(alignof(_{{klass.name}}) % {{klass.assert_alignment_is_multiple_of}} == 0);
+    {% endif%}
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {{field.name}} = {};

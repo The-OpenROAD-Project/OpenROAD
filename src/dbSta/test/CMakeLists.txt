@@ -7,9 +7,12 @@ or_integration_tests(
     constant1
     find_clks1
     find_clks2
+    get_ports1
+    get_ports1_hier
     hier2
     hierclock
     hierwrite
+    hier_deep
     make_port
     network_edit1
     power1
