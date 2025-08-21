@@ -20,7 +20,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
