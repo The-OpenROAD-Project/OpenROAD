@@ -102,7 +102,9 @@ void FlexPA::updateUniqueInst(frInst* unique_inst)
 {
   initSkipInstTerm(unique_inst);
   genInstAccessPoints(unique_inst);
-  prepPatternInst(unique_inst);
+  if (isStdCell(unique_inst)) {
+    prepPatternInst(unique_inst);
+  }
   revertAccessPoints(unique_inst);
 }
 
@@ -116,6 +118,16 @@ void FlexPA::removeDirtyInst(frInst* inst)
   dirty_insts_.erase(inst);
 }
 
+void FlexPA::addMovedInst(frInst* inst)
+{
+  moved_insts_.insert(inst);
+}
+
+void FlexPA::removeMovedInst(frInst* inst)
+{
+  moved_insts_.erase(inst);
+}
+
 void FlexPA::updateDirtyInsts()
 {
   frOrderedIdSet<frInst*>
@@ -123,7 +135,7 @@ void FlexPA::updateDirtyInsts()
   frOrderedIdSet<frInst*>
       new_unique_insts;  // list of compleltely new unique insts
   frOrderedIdSet<frInst*> pattern_insts
-      = dirty_insts_;  // list of insts that need row pattern generation
+      = moved_insts_;  // list of insts that need row pattern generation
   for (const auto& inst : dirty_insts_) {
     debugPrint(logger_,
                DRT,
@@ -163,6 +175,7 @@ void FlexPA::updateDirtyInsts()
     inst->setPinAccessIdx(cur_unique_head->getPinAccessIdx());
     const bool is_dirty_unique = updateSkipInstTerm(inst);
     if (is_dirty_unique) {
+      pattern_insts.insert(inst);
       dirty_unique_insts.insert(cur_unique_head);
       for (auto& child_inst : *unique_insts_.getClass(cur_unique_head)) {
         pattern_insts.insert(child_inst);
@@ -177,18 +190,18 @@ void FlexPA::updateDirtyInsts()
 #pragma omp parallel for schedule(dynamic)
   for (auto& inst : dirty_unique_insts_vec) {
     inst->setHasPinAccessUpdate(true);
+    updateUniqueInst(inst);
 #pragma omp critical
     {
       inst->getMaster()->setHasPinAccessUpdate(true);
     }
-    updateUniqueInst(inst);
   }
-  buildInstsSet();
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
   for (auto& inst : pattern_insts) {
-    if (processed_insts.find(inst) != processed_insts.end()
-        || isSkipInst(inst)) {
+    addToInstsSet(inst);
+    if (processed_insts.find(inst) != processed_insts.end() || isSkipInst(inst)
+        || !isStdCell(inst)) {
       continue;
     }
     std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
@@ -203,20 +216,8 @@ void FlexPA::updateDirtyInsts()
     inst->setHasPinAccessUpdate(true);
   }
   dirty_insts_.clear();
+  moved_insts_.clear();
 }  // namespace drt
-
-void FlexPA::processInstInRow(frInst* inst,
-                              frOrderedIdSet<frInst*>& processed_insts)
-{
-  if (isSkipInst(inst)) {
-    return;
-  }
-  std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
-  for (auto& child_inst : inst_row) {
-    processed_insts.insert(child_inst);
-  }
-  genInstRowPattern(inst_row);
-}
 
 void FlexPA::deleteInst(frInst* inst)
 {

@@ -181,8 +181,8 @@ class TritonRoute
   void prep();
   odb::dbDatabase* getDb() const { return db_; }
   void fixMaxSpacing(int num_threads);
-  void deleteInstancePAData(frInst* inst);
-  void addInstancePAData(frInst* inst);
+  void deleteInstancePAData(frInst* inst, bool delete_inst = false);
+  void addInstancePAData(frInst* inst, bool move_inst = false);
   void updateDirtyPAData();
 
  private:

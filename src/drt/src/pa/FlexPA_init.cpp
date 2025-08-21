@@ -156,7 +156,12 @@ void FlexPA::initSkipInstTerm(frInst* unique_inst)
     frMTerm* term = inst_term->getTerm();
     const UniqueInsts::InstSet* inst_class
         = unique_insts_.getClass(unique_inst);
-
+    if (skip_unique_inst_term_.find(unique_inst) != skip_unique_inst_term_.end()
+        && skip_unique_inst_term_[unique_inst].find(term)
+               != skip_unique_inst_term_[unique_inst].end()
+        && !skip_unique_inst_term_[unique_inst][term]) {
+      continue;
+    }
 #pragma omp critical
     skip_unique_inst_term_[unique_inst][term] = false;
 
@@ -180,18 +185,18 @@ void FlexPA::initSkipInstTerm(frInst* unique_inst)
 bool FlexPA::updateSkipInstTerm(frInst* inst)
 {
   const auto unique_inst = unique_insts_.getUnique(inst);
+  if (skip_unique_inst_term_.find(unique_inst)
+      == skip_unique_inst_term_.end()) {
+    return true;
+  }
   for (auto& inst_term : inst->getInstTerms()) {
     frMTerm* term = inst_term->getTerm();
-    if (skip_unique_inst_term_.find(unique_inst)
-        == skip_unique_inst_term_.end()) {
-      return true;
-    }
     if (skip_unique_inst_term_.at(unique_inst).find(term)
         == skip_unique_inst_term_.at(unique_inst).end()) {
       return true;
     }
-    if (skip_unique_inst_term_.at(unique_inst).at(term)
-        != isSkipInstTermLocal(inst_term.get())) {
+    if (!isSkipInstTermLocal(inst_term.get())
+        && skip_unique_inst_term_.at(unique_inst).at(term)) {
       return true;
     }
   }

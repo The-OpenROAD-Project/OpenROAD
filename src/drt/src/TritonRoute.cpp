@@ -1094,18 +1094,25 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   writer.updateDb(db_, router_cfg_.get(), true);
 }
 
-void TritonRoute::deleteInstancePAData(frInst* inst)
+void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
 {
   if (pa_) {
-    pa_->removeDirtyInst(inst);
-    pa_->deleteInst(inst);
+    pa_->removeFromInstsSet(inst);
+    if (delete_inst) {
+      pa_->removeDirtyInst(inst);
+      pa_->removeMovedInst(inst);
+      pa_->deleteInst(inst);
+    }
   }
 }
 
-void TritonRoute::addInstancePAData(frInst* inst)
+void TritonRoute::addInstancePAData(frInst* inst, bool move_inst)
 {
   if (pa_) {
     pa_->addDirtyInst(inst);
+    if (move_inst) {
+      pa_->addMovedInst(inst);
+    }
   }
 }
 

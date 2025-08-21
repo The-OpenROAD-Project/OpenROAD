@@ -42,6 +42,7 @@ void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->removeBlockObj(inst);
   }
+  router_->deleteInstancePAData(inst, false);
 }
 
 void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
@@ -58,7 +59,7 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
   db_inst->getLocation(x, y);
   inst->setOrigin({x, y});
   inst->setOrient(db_inst->getOrient());
-  router_->addInstancePAData(inst);
+  router_->addInstancePAData(inst, true);
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->addBlockObj(inst);
   }
@@ -74,11 +75,11 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
   if (inst == nullptr) {
     return;
   }
-  router_->deleteInstancePAData(inst);
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->removeBlockObj(inst);
   }
   design->getTopBlock()->removeInst(inst);
+  router_->deleteInstancePAData(inst, true);
 }
 
 void DesignCallBack::inDbInstSwapMasterBefore(odb::dbInst* db_inst,
@@ -136,7 +137,7 @@ void DesignCallBack::inDbITermPostDisconnect(odb::dbITerm* db_iterm,
   }
   net->removeInstTerm(inst_term);
   inst_term->addToNet(nullptr);
-  router_->addInstancePAData(inst);
+  router_->addInstancePAData(inst, false);
 }
 
 void DesignCallBack::inDbITermPostConnect(odb::dbITerm* db_iterm)
@@ -156,7 +157,7 @@ void DesignCallBack::inDbITermPostConnect(odb::dbITerm* db_iterm)
   }
   inst_term->addToNet(net);
   net->addInstTerm(inst_term);
-  router_->addInstancePAData(inst);
+  router_->addInstancePAData(inst, false);
 }
 
 }  // namespace drt

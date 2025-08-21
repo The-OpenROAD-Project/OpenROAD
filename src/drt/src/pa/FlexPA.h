@@ -94,7 +94,11 @@ class FlexPA
   void removeInstFromInstSet(frInst* inst);
   void addDirtyInst(frInst* inst);
   void removeDirtyInst(frInst* inst);
+  void addMovedInst(frInst* inst);
+  void removeMovedInst(frInst* inst);
   void updateDirtyInsts();
+  void removeFromInstsSet(frInst* inst);
+  void addToInstsSet(frInst* inst);
 
   int main();
 
@@ -131,7 +135,7 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
   frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
-
+  frOrderedIdSet<frInst*> moved_insts_;
   std::string remote_host_;
   uint16_t remote_port_ = -1;
   std::string shared_vol_;
@@ -941,16 +945,6 @@ class FlexPA
    * @param unique_inst The unique instance to redo the class for
    */
   void updateUniqueInst(frInst* unique_inst);
-
-  /**
-   * @brief Processes an instance in a row
-   * This function retrieves the instances that are adjacent to the passed
-   * instance and then generates the access patterns for them.
-   *
-   * @param inst The instance to process
-   * @param processed_insts The set of processed instances
-   */
-  void processInstInRow(frInst* inst, frOrderedIdSet<frInst*>& processed_insts);
 
   friend class RoutingCallBack;
 };
