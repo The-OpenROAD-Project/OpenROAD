@@ -8,7 +8,7 @@ load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 package(
     features = [
         "-parse_headers",
-        "-layering_check",
+        "layering_check",
         # TODO(b/299593765): Fix strict ordering.
         "-libcxx_assertions",
     ],
@@ -131,9 +131,6 @@ cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
-        "src/OpenRoad.cc",
-        ":openroad_swig",
-        ":openroad_tcl",
         "//bazel:runfiles",
     ],
     copts = OPENROAD_COPTS,
@@ -141,12 +138,13 @@ cc_binary(
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
-        ":openroad_lib_private",
+        ":openroad_lib",
         ":openroad_version",
-        "//src/odb",
-        "//src/rsz",
+        "//:ord",
+        "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],
@@ -172,7 +170,10 @@ cc_library(
     includes = [
         "include",
     ],
-    deps = OPENROAD_LIBRARY_DEPS,
+    deps = OPENROAD_LIBRARY_DEPS + [
+        "//src/sta:opensta_lib",
+        "@tk_tcl//:tcl",
+    ]
 )
 
 cc_library(
@@ -192,7 +193,11 @@ cc_library(
         "include",
     ],
     visibility = ["//visibility:public"],
-    deps = OPENROAD_LIBRARY_DEPS,
+    deps = OPENROAD_LIBRARY_DEPS + [
+        "//src/sta:opensta_lib",
+        "@boost.stacktrace",
+        "@tk_tcl//:tcl",
+    ]
 )
 
 cc_library(
