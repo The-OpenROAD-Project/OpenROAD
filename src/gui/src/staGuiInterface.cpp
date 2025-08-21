@@ -1026,14 +1026,15 @@ std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
 
 TimingPathList STAGuiInterface::getTimingPaths(const sta::Pin* thru) const
 {
-  return getTimingPaths({}, {{thru}}, {}, "" /* path group name */);
+  return getTimingPaths({}, {{thru}}, {}, "" /* path group name */, nullptr);
 }
 
 TimingPathList STAGuiInterface::getTimingPaths(
     const StaPins& from,
     const std::vector<StaPins>& thrus,
     const StaPins& to,
-    const std::string& path_group_name) const
+    const std::string& path_group_name,
+    sta::ClockSet *clks) const
 {
   TimingPathList paths;
 
@@ -1066,7 +1067,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(to.begin(), to.end());
     e_to = sta_->makeExceptionTo(pins,
-                                 nullptr,
+                                 clks,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
                                  sta::RiseFallBoth::riseFall());

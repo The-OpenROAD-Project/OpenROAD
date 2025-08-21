@@ -2,6 +2,7 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "staGui.h"
+#include <qglobal.h>
 
 #include <QAbstractItemView>
 #include <QAction>
@@ -21,8 +22,10 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "sta/Clock.hh"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Units.hh"
@@ -255,11 +258,12 @@ void TimingPathsModel::populateModel(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
-    const std::string& path_group_name)
+    const std::string& path_group_name,
+    sta::ClockSet* clks)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(from, thru, to, path_group_name);
+  populatePaths(from, thru, to, path_group_name, clks);
   endResetModel();
 }
 
@@ -267,14 +271,15 @@ bool TimingPathsModel::populatePaths(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
-    const std::string& path_group_name)
+    const std::string& path_group_name,
+    sta::ClockSet* clks)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   const bool sta_max = sta_->isUseMax();
   sta_->setUseMax(is_setup_);
-  timing_paths_ = sta_->getTimingPaths(from, thru, to, path_group_name);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to, path_group_name, clks);
   sta_->setUseMax(sta_max);
 
   QApplication::restoreOverrideCursor();
@@ -1106,6 +1111,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
       corner_box_(new QComboBox(this)),
+      clock_box_(new qComboCheckBoxes("Select Clocks", "All Clocks", this)),
       unconstrained_(new QCheckBox(this)),
       one_path_per_endpoint_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
@@ -1121,6 +1127,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   layout_->addRow("Paths:", path_count_spin_box_);
   layout_->addRow("Expand clock:", expand_clk_);
   layout_->addRow("Corner:", corner_box_);
+  layout_->addRow("Clock filter:", clock_box_);
 
   setupPinRow("From:", from_);
   setThruPin({});
@@ -1239,6 +1246,20 @@ void TimingControlsDialog::populate()
   }
 
   corner_box_->setCurrentIndex(selection);
+
+  for (auto clk : *sta_->getClocks()) {
+    QString clk_name = clk->name();
+
+    if (clks_.count(clk_name) != 1) {
+      clks_[clk_name] = clk;
+      QStandardItem* item = new QStandardItem(clk_name);
+
+      item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+      item->setData(Qt::Checked, Qt::CheckStateRole);
+
+      clock_box_->model()->appendRow(item);
+    }
+  }
 }
 
 void TimingControlsDialog::setPinSelections()
@@ -1321,4 +1342,15 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
   }
   return pins;
 }
+
+void TimingControlsDialog::getClocks(sta::ClockSet* clock_set) const
+{
+  std::cout << "TimingControlsDialog::getClocks" << std::endl;
+  for (const auto& clk : clock_box_->selectedItems()) {
+    clock_set->insert(clks_.at(clk));
+    std::cout << clk.toStdString() << std::endl;
+  }
+  std::cout  << std::endl;
+}
+
 }  // namespace gui
