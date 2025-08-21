@@ -11,103 +11,120 @@ _versionCompare() {
     test $a "$2" $b
 }
 
+# --- Yosys Suite Installation ---
+
+# Single Source of Truth: The target version for all tools.
+readonly YOSYS_SUITE_VERSION="v0.55"
+
+# Tool Configuration: Associative array mapping tool names to their git repos.
+declare -A YOSYS_SUITE_TOOLS=(
+    [yosys]="https://github.com/YosysHQ/yosys"
+    [eqy]="https://github.com/YosysHQ/eqy"
+    [sby]="https://github.com/YosysHQ/sby"
+)
+
+# Function to get the installed version of a yosys suite tool.
+_get_yosys_tool_version() {
+    local tool_name="$1"
+    local installed_version="none"
+
+    # Check PATH for the tool, but also the local PREFIX, since it may not be in the PATH yet.
+    local tool_path
+    if command -v "${tool_name}" &> /dev/null; then
+        tool_path=$(command -v "${tool_name}")
+    elif [[ -n "${PREFIX:-}" && -x "${PREFIX}/bin/${tool_name}" ]]; then
+        tool_path="${PREFIX}/bin/${tool_name}"
+    else
+        echo "none"
+        return
+    fi
+
+    case "${tool_name}" in
+        yosys)
+            installed_version=$("${tool_path}" --version | head -n 1 | awk '{print $2}')
+            ;;
+        eqy)
+            installed_version=$("${tool_path}" --version 2>/dev/null | awk '{print $2}' | sed 's/v//')
+            ;;
+        sby)
+            installed_version=$("${tool_path}" --version 2>/dev/null | awk '{print $2}' | sed 's/v//')
+            ;;
+        *)
+            echo "none"
+            ;;
+    esac
+    echo "${installed_version}"
+}
+
+_install_yosys_tool() {
+    local tool_name="$1"
+    local tool_repo="$2"
+    local target_version_str="${YOSYS_SUITE_VERSION#v}"
+    local tool_prefix="${PREFIX:-/usr/local}"
+
+    echo "--- Checking ${tool_name} ---"
+    local installed_version
+    installed_version=$(_get_yosys_tool_version "${tool_name}")
+
+    if [[ "${installed_version}" == "${target_version_str}" ]]; then
+        echo "${tool_name} version ${installed_version} is already up-to-date."
+        return
+    fi
+
+    echo "Installing ${tool_name} ${YOSYS_SUITE_VERSION} (found: ${installed_version})."
+
+    ( # Run in a subshell to isolate directory changes
+        cd "${baseDir}"
+        echo "Cloning ${tool_name} from ${tool_repo}..."
+
+        local clone_args=("--depth=1" "-b" "${YOSYS_SUITE_VERSION}")
+        if [[ "${tool_name}" == "yosys" || "${tool_name}" == "sby" ]]; then
+            clone_args+=("--recursive")
+        fi
+
+        git clone "${clone_args[@]}" "${tool_repo}" "${tool_name}"
+        cd "${tool_name}"
+
+        echo "Building and installing ${tool_name}..."
+        export PATH="${tool_prefix}/bin:${PATH}"
+
+        case "${tool_name}" in
+            yosys)
+                make -j "${numThreads}" PREFIX="${tool_prefix}" ABC_ARCHFLAGS=-Wno-register
+                make install PREFIX="${tool_prefix}"
+                ;;
+            eqy)
+                make -j "${numThreads}" PREFIX="${tool_prefix}"
+                make install PREFIX="${tool_prefix}" YOSYS_RELEASE_VERSION="EQY ${YOSYS_SUITE_VERSION}"
+                ;;
+            sby)
+                make -j "${numThreads}" PREFIX="${tool_prefix}" install
+                ;;
+        esac
+        echo "${tool_name} installation complete."
+    ) || {
+        echo "ERROR: Failed to build or install ${tool_name}." >&2
+        exit 1
+    }
+}
+
 _equivalenceDeps() {
-    yosysVersion=v0.55
-    local yosys_reinstalled=false
+    echo "Installing Yosys tool suite..."
+    echo "Target version for all tools: ${YOSYS_SUITE_VERSION}"
+    local tool_prefix="${PREFIX:-/usr/local}"
+    echo "Installation prefix: ${tool_prefix}"
 
-    # yosys
-    yosysPrefix=${PREFIX:-"/usr/local"}
-    yosysInstalledVersion="none"
-    if command -v yosys &> /dev/null && command -v yosys-config &> /dev/null; then
-        yosysInstalledVersion=$(yosys -V | head -n 1 | awk '{print $2}')
-    fi
-    if [[ "${yosysInstalledVersion}" != "${yosysVersion#v}" ]]; then
-        yosys_reinstalled=true
-        (
-            echo "Installing yosys ${yosysVersion} (found: ${yosysInstalledVersion})"
-            cd "${baseDir}"
-            git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
-            cd yosys
-            # use of no-register flag is required for some compilers,
-            # e.g., gcc and clang from RHEL8
-            make -j ${numThreads} PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
-            make install
-        )
-    else
-        echo "yosys ${yosysVersion} already installed."
-    fi
+    # Iterate over the tools and install them.
+    for tool in "${!YOSYS_SUITE_TOOLS[@]}"; do
+        _install_yosys_tool "${tool}" "${YOSYS_SUITE_TOOLS[$tool]}"
+    done
 
-    # eqy
-    eqyPrefix=${PREFIX:-"/usr/local"}
-    eqyInstalledVersion="none"
-    install_eqy=false
-    if ! command -v eqy &> /dev/null; then
-        install_eqy=true
-        eqyInstalledVersion="not found"
-    else
-        # EQY returns "EQY vX.Y"
-        eqyInstalledVersion=$(eqy --version 2>/dev/null | awk '{print $2}' | sed 's/v//')
-        if [[ "${eqyInstalledVersion}" != "${yosysVersion#v}" ]]; then
-            install_eqy=true
-        fi
-    fi
-
-    if [[ "${yosys_reinstalled}" == "true" ]]; then
-        install_eqy=true
-    fi
-
-    if [[ "${install_eqy}" == "true" ]]; then
-        (
-            if [[ "${yosys_reinstalled}" == "true" ]]; then
-                echo "Re-installing eqy because yosys was updated."
-            else
-                echo "Installing eqy ${yosysVersion} (found: ${eqyInstalledVersion})"
-            fi
-            cd "${baseDir}"
-            git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
-            cd eqy
-            export PATH="${yosysPrefix}/bin:${PATH}"
-            make -j ${numThreads} PREFIX="${eqyPrefix}"
-            make install PREFIX="${eqyPrefix}" YOSYS_RELEASE_VERSION="EQY v${yosysVersion#v}"
-        )
-    else
-        echo "eqy ${yosysVersion} already installed."
-    fi
-
-    # sby
-    sbyPrefix=${PREFIX:-"/usr/local"}
-    sbyInstalledVersion="none"
-    install_sby=false
-    if ! command -v sby &> /dev/null; then
-        install_sby=true
-        sbyInstalledVersion="not found"
-    else
-        sbyInstalledVersion=$(sby --version 2>/dev/null | awk '{print $2}')
-        if [[ "${sbyInstalledVersion}" != "${yosysVersion#v}" ]]; then
-            install_sby=true
-        fi
-    fi
-
-    if [[ "${yosys_reinstalled}" == "true" ]]; then
-        install_sby=true
-    fi
-
-    if [[ "${install_sby}" == "true" ]]; then
-        (
-            if [[ "${yosys_reinstalled}" == "true" ]]; then
-                echo "Re-installing sby because yosys was updated."
-            else
-                echo "Installing sby ${yosysVersion} (found: ${sbyInstalledVersion})"
-            fi
-            cd "${baseDir}"
-            git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
-            cd sby
-            export PATH="${eqyPrefix}/bin:${PATH}"
-            make -j ${numThreads} PREFIX="${sbyPrefix}" install
-        )
-    else
-        echo "sby ${yosysVersion} already installed."
-    fi
+    echo "--- Verification ---"
+    "${tool_prefix}/bin/yosys" --version
+    "${tool_prefix}/bin/eqy" --version
+    "${tool_prefix}/bin/sby" --version
+    echo "--------------------"
+    echo "Yosys tool suite installation finished successfully."
 }
 
 _installCommonDev() {
