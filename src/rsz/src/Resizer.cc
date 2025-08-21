@@ -91,6 +91,7 @@ using sta::NetPinIterator;
 using sta::NetTermIterator;
 using sta::NetworkEdit;
 using sta::Port;
+using sta::PortDirection;
 using sta::stringLess;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
@@ -213,6 +214,22 @@ bool VertexLevelLess::operator()(const Vertex* vertex1,
              // Break ties for stable results.
              && stringLess(network_->pathName(vertex1->pin()),
                            network_->pathName(vertex2->pin())));
+}
+
+VertexSeq Resizer::orderedLoadPinVertices()
+{
+  VertexSeq loads;
+  VertexIterator vertex_iter(graph_);
+  while (vertex_iter.hasNext()) {
+    Vertex* vertex = vertex_iter.next();
+    PortDirection* dir = network_->direction(vertex->pin());
+    bool top_level = network_->isTopLevelPort(vertex->pin());
+    if (!top_level && dir->isAnyInput()) {
+      loads.emplace_back(vertex);
+    }
+  }
+  sort(loads, VertexLevelLess(network_));
+  return loads;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2444,6 +2461,8 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
+  initBlock();
+
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
@@ -2473,7 +2492,9 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 
   findResizeSlacks1();
   if (run_journal_restore) {
+    db_cbk_->addOwner(block_);
     journalRestore();
+    db_cbk_->removeOwner();
     level_drvr_vertices_valid_ = false;
   }
 }
