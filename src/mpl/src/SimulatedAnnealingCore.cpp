@@ -100,8 +100,9 @@ void SimulatedAnnealingCore<T>::initSequencePair()
     return;
   }
 
-  const int sequence_pair_size
-      = macros_to_place_ != 0 ? macros_to_place_ : macros_.size();
+  const int sequence_pair_size = number_of_sequence_pair_macros_ != 0
+                                     ? number_of_sequence_pair_macros_
+                                     : macros_.size();
 
   int macro_id = 0;
 
