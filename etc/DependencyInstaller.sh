@@ -13,40 +13,100 @@ _versionCompare() {
 
 _equivalenceDeps() {
     yosysVersion=v0.55
+    local yosys_reinstalled=false
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
-        cd yosys
-        # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang from RHEL8
-        make -j ${numThreads} PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
-        make install
-    ) fi
+    yosysInstalledVersion="none"
+    if command -v yosys &> /dev/null && command -v yosys-config &> /dev/null; then
+        yosysInstalledVersion=$(yosys -V | head -n 1 | awk '{print $2}')
+    fi
+    if [[ "${yosysInstalledVersion}" != "${yosysVersion#v}" ]]; then
+        yosys_reinstalled=true
+        (
+            echo "Installing yosys ${yosysVersion} (found: ${yosysInstalledVersion})"
+            cd "${baseDir}"
+            git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
+            cd yosys
+            # use of no-register flag is required for some compilers,
+            # e.g., gcc and clang from RHEL8
+            make -j ${numThreads} PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
+            make install
+        )
+    else
+        echo "yosys ${yosysVersion} already installed."
+    fi
 
     # eqy
     eqyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v eqy &> /dev/null; then (
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
-        cd eqy
-        export PATH="${yosysPrefix}/bin:${PATH}"
-        make -j ${numThreads} PREFIX="${eqyPrefix}"
-        make install PREFIX="${eqyPrefix}"
-    )
+    eqyInstalledVersion="none"
+    install_eqy=false
+    if ! command -v eqy &> /dev/null; then
+        install_eqy=true
+        eqyInstalledVersion="not found"
+    else
+        # EQY returns "EQY vX.Y"
+        eqyInstalledVersion=$(eqy --version 2>/dev/null | awk '{print $2}' | sed 's/v//')
+        if [[ "${eqyInstalledVersion}" != "${yosysVersion#v}" ]]; then
+            install_eqy=true
+        fi
+    fi
+
+    if [[ "${yosys_reinstalled}" == "true" ]]; then
+        install_eqy=true
+    fi
+
+    if [[ "${install_eqy}" == "true" ]]; then
+        (
+            if [[ "${yosys_reinstalled}" == "true" ]]; then
+                echo "Re-installing eqy because yosys was updated."
+            else
+                echo "Installing eqy ${yosysVersion} (found: ${eqyInstalledVersion})"
+            fi
+            cd "${baseDir}"
+            git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
+            cd eqy
+            export PATH="${yosysPrefix}/bin:${PATH}"
+            make -j ${numThreads} PREFIX="${eqyPrefix}"
+            make install PREFIX="${eqyPrefix}" YOSYS_RELEASE_VERSION="EQY v${yosysVersion#v}"
+        )
+    else
+        echo "eqy ${yosysVersion} already installed."
     fi
 
     # sby
     sbyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v sby &> /dev/null; then (
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
-        cd sby
-        export PATH="${eqyPrefix}/bin:${PATH}"
-        make -j ${numThreads} PREFIX="${sbyPrefix}" install
-    )
+    sbyInstalledVersion="none"
+    install_sby=false
+    if ! command -v sby &> /dev/null; then
+        install_sby=true
+        sbyInstalledVersion="not found"
+    else
+        sbyInstalledVersion=$(sby --version 2>/dev/null | awk '{print $2}')
+        if [[ "${sbyInstalledVersion}" != "${yosysVersion#v}" ]]; then
+            install_sby=true
+        fi
+    fi
+
+    if [[ "${yosys_reinstalled}" == "true" ]]; then
+        install_sby=true
+    fi
+
+    if [[ "${install_sby}" == "true" ]]; then
+        (
+            if [[ "${yosys_reinstalled}" == "true" ]]; then
+                echo "Re-installing sby because yosys was updated."
+            else
+                echo "Installing sby ${yosysVersion} (found: ${sbyInstalledVersion})"
+            fi
+            cd "${baseDir}"
+            git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
+            cd sby
+            export PATH="${eqyPrefix}/bin:${PATH}"
+            make -j ${numThreads} PREFIX="${sbyPrefix}" install
+        )
+    else
+        echo "sby ${yosysVersion} already installed."
     fi
 }
 
