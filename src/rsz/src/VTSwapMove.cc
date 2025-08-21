@@ -9,12 +9,6 @@
 
 namespace rsz {
 
-using std::string;
-
-using utl::RSZ;
-
-using sta::ArcDelay;
-using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
