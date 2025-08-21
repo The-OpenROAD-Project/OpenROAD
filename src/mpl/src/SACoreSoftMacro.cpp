@@ -532,8 +532,9 @@ void SACoreSoftMacro::alignMacroClusters()
   }
 }
 
-float SACoreSoftMacro::calSingleNotchPenalty(float width, float height) {
-  return sqrt((width * height)/outline_.getArea());
+float SACoreSoftMacro::calSingleNotchPenalty(float width, float height)
+{
+  return std::sqrt((width * height) / outline_.getArea());
 }
 
 // If there is no HardMacroCluster, we do not consider the notch penalty
@@ -560,7 +561,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
   // If the floorplan is not valid
   // We think the entire floorplan is a "huge" notch
-  if (!isValid(outline_)) {;
+  if (!isValid(outline_)) {
     width = std::max(width_, outline_.getWidth());
     height = std::max(height_, outline_.getHeight());
     notch_penalty_ = calSingleNotchPenalty(width, height);
@@ -606,28 +607,30 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
-  // Notch detection based on 
+  // Notch detection based on
   for (int row = 0; row < num_y; row++) {
     for (int col = 0; col < num_x; col++) {
-      if (grid[row][col]) continue;
+      if (grid[row][col]) {
+        continue;
+      }
 
       int surroundings = 0;
-      if (row == 0 || grid[row-1][col]) {
+      if (row == 0 || grid[row - 1][col]) {
         surroundings++;
       }
-      if (row == num_y-1 || grid[row+1][col]) {
+      if (row == num_y - 1 || grid[row + 1][col]) {
         surroundings++;
       }
-      if (col == 0 || grid[row][col-1]) {
+      if (col == 0 || grid[row][col - 1]) {
         surroundings++;
       }
-      if (col == num_x-1 || grid[row][col+1]) {
+      if (col == num_x - 1 || grid[row][col + 1]) {
         surroundings++;
       }
 
       if (surroundings >= 3) {
-        width = x_coords[col+1] - x_coords[col];
-        height = y_coords[row+1] - y_coords[row];
+        width = x_coords[col + 1] - x_coords[col];
+        height = y_coords[row + 1] - y_coords[row];
 
         if (width <= notch_h_th_ || height <= notch_v_th_) {
           notch_penalty_ += calSingleNotchPenalty(width, height);
@@ -794,9 +797,11 @@ void SACoreSoftMacro::fillDeadSpace()
     }
 
     int x_start = getSegmentIndex(macros_[macro_id].getX(), x_grid);
-    int x_end = getSegmentIndex(macros_[macro_id].getX() + macros_[macro_id].getWidth(), x_grid);
+    int x_end = getSegmentIndex(
+        macros_[macro_id].getX() + macros_[macro_id].getWidth(), x_grid);
     int y_start = getSegmentIndex(macros_[macro_id].getY(), y_grid);
-    int y_end = getSegmentIndex(macros_[macro_id].getY() + macros_[macro_id].getHeight(), y_grid);
+    int y_end = getSegmentIndex(
+        macros_[macro_id].getY() + macros_[macro_id].getHeight(), y_grid);
 
     for (int j = y_start; j < y_end; j++) {
       for (int i = x_start; i < x_end; i++) {
@@ -816,11 +821,13 @@ void SACoreSoftMacro::fillDeadSpace()
       if (!forward_flag) {
         continue;
       }
-      
+
       int x_start = getSegmentIndex(macros_[macro_id].getX(), x_grid);
-      int x_end = getSegmentIndex(macros_[macro_id].getX() + macros_[macro_id].getWidth(), x_grid);
+      int x_end = getSegmentIndex(
+          macros_[macro_id].getX() + macros_[macro_id].getWidth(), x_grid);
       int y_start = getSegmentIndex(macros_[macro_id].getY(), y_grid);
-      int y_end = getSegmentIndex(macros_[macro_id].getY() + macros_[macro_id].getHeight(), y_grid);
+      int y_end = getSegmentIndex(
+          macros_[macro_id].getY() + macros_[macro_id].getHeight(), y_grid);
 
       int x_start_new = x_start;
       int x_end_new = x_end;
@@ -906,10 +913,10 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 }
 
-int SACoreSoftMacro::getSegmentIndex(float segment,
-                                    std::vector<float>& coords)
+int SACoreSoftMacro::getSegmentIndex(float segment, std::vector<float>& coords)
 {
-  int index = std::distance(coords.begin(), std::lower_bound(coords.begin(), coords.end(), segment));
+  int index = std::distance(
+      coords.begin(), std::lower_bound(coords.begin(), coords.end(), segment));
   return index;
 }
 

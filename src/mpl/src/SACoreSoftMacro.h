@@ -86,7 +86,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   int getSegmentIndex(float segment, std::vector<float>& coords);
 
   void calBoundaryPenalty();
-  float calSingleNotchPenalty(float height, float width);
+  float calSingleNotchPenalty(float width, float height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
 
