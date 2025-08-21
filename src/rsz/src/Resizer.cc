@@ -106,6 +106,7 @@ using sta::ClkArrivalSearchPred;
 using sta::Clock;
 using sta::Corners;
 using sta::Edge;
+using sta::fuzzyEqual;
 using sta::fuzzyGreaterEqual;
 using sta::INF;
 using sta::InputDrive;
@@ -1625,7 +1626,8 @@ std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
 // For debugging
 void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                                     bool match_cell_footprint,
-                                    bool report_all_cells)
+                                    bool report_all_cells,
+                                    bool report_vt_equiv)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -1644,6 +1646,8 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     utl::SetAndRestore relax_keep_vt(sizing_keep_vt_, restrict);
     equiv_cells = getSwappableCells(base_cell);
     swappable_cells_cache_.clear();  // SetAndRestore invalidates cache.
+  } else if (report_vt_equiv) {
+    equiv_cells = getVTEquivCells(base_cell);
   } else {
     equiv_cells = getSwappableCells(base_cell);
   }
@@ -1925,7 +1929,8 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
         VTCategory vt_category = cellVTType(master);
 
         // Get or create VT leakage stats for this category
-        VTLeakageStats& vt_stats = lib_data_->vt_leakage_by_category[vt_category];
+        VTLeakageStats& vt_stats
+            = lib_data_->vt_leakage_by_category[vt_category];
         vt_stats.add_cell_leakage(cellLeakage(buffer));
       }
     }
@@ -2016,7 +2021,8 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       }
 
       if (sizing_keep_vt_) {
-        if (cellVTType(master).vt_index != cellVTType(equiv_cell_master).vt_index) {
+        if (cellVTType(master).vt_index
+            != cellVTType(equiv_cell_master).vt_index) {
           continue;
         }
       }
@@ -2045,6 +2051,99 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
   swappable_cells_cache_[source_cell] = swappable_cells;
   return swappable_cells;
+}
+
+LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
+{
+  auto cache_it = vt_equiv_cells_cache_.find(source_cell);
+  if (cache_it != vt_equiv_cells_cache_.end()) {
+    return cache_it->second;
+  }
+
+  if (!lib_data_) {
+    LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+    // We just need library data
+    (void) buffer_list;
+  }
+
+  if (lib_data_->sorted_vt_categories.size() < 2) {
+    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
+  LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  if (equiv_cells == nullptr) {
+    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
+  LibertyCellSeq vt_equiv_cells;
+  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
+  int64_t source_cell_area = source_cell_master->getArea();
+
+  // VT equiv cell should have the same area, footprint, site and function class
+  // but different VT type
+  for (LibertyCell* equiv_cell : *equiv_cells) {
+    if (equiv_cell == source_cell) {
+      vt_equiv_cells.emplace_back(equiv_cell);
+      continue;
+    }
+
+    if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
+      continue;
+    }
+
+    dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
+    if (!equiv_cell_master) {
+      continue;
+    }
+
+    if (cellVTType(equiv_cell_master) == cellVTType(source_cell_master)) {
+      continue;
+    }
+
+    if (!fuzzyEqual(equiv_cell_master->getArea(), source_cell_area)) {
+      continue;
+    }
+
+    if (equiv_cell_master->getSite() != source_cell_master->getSite()) {
+      continue;
+    }
+
+    if (!sta::stringEqIf(source_cell->footprint(), equiv_cell->footprint())) {
+      continue;
+    }
+
+    if (source_cell->userFunctionClass()
+        && !sta::stringEqIf(source_cell->userFunctionClass(),
+                            equiv_cell->userFunctionClass())) {
+      continue;
+    }
+
+    vt_equiv_cells.emplace_back(equiv_cell);
+  }
+
+  // Sort the list in ascending order of leakage
+  std::stable_sort(vt_equiv_cells.begin(),
+                   vt_equiv_cells.end(),
+                   [this](LibertyCell* cell1, LibertyCell* cell2) {
+                     std::optional<float> leak1 = this->cellLeakage(cell1);
+                     std::optional<float> leak2 = this->cellLeakage(cell2);
+                     // Treat missing leakage as 0
+                     return leak1.value_or(0.0) < leak2.value_or(0.0);
+                   });
+
+  // Map all equivalent cells to the same list
+  // BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_LVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
+  const LibertyCellSeq& vt_equiv_cells_new = vt_equiv_cells_cache_[source_cell];
+  for (LibertyCell* equiv_cell : vt_equiv_cells_new) {
+    vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+  }
+  return vt_equiv_cells_cache_[source_cell];
 }
 
 void Resizer::checkLibertyForAllCorners()
@@ -2202,8 +2301,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
   compressVTLayerName(new_layer_name);
   VTCategory vt_cat{vt_hash_map_[hash1], new_layer_name};
-  auto [new_it, _] = vt_map_.emplace(
-                                     master, vt_cat);
+  auto [new_it, _] = vt_map_.emplace(master, vt_cat);
   debugPrint(logger_,
              RSZ,
              "equiv",
@@ -4256,7 +4354,8 @@ void Resizer::journalEnd()
              RSZ,
              "opt_moves",
              1,
-             "TOTAL {} moves (acc {} rej {}):  up {} up_match {} down {} buffer {} clone "
+             "TOTAL {} moves (acc {} rej {}):  up {} up_match {} down {} "
+             "buffer {} clone "
              "{} swap {} unbuf {} vt_swap {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,

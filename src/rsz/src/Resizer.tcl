@@ -718,15 +718,16 @@ proc report_opt_config { args } {
   puts "*******************************************"
 }
 
-sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint -all }
+sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint -all -vt }
 
 proc report_equiv_cells { args } {
-  sta::parse_key_args "report_equiv_cells" args keys {} flags {-match_cell_footprint -all}
+  sta::parse_key_args "report_equiv_cells" args keys {} flags {-match_cell_footprint -all -vt}
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set report_all_cells [info exists flags(-all)]
   sta::check_argc_eq1 "report_equiv_cells" $args
   set lib_cell [sta::get_lib_cells_arg "report_equiv_cells" [lindex $args 0] sta::sta_warn]
-  rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells
+  set report_vt_equiv [info exists flags(-vt)]
+  rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells $report_vt_equiv
 }
 
 sta::define_cmd_args "replace_arith_modules" { [-path_count num_critical_paths] \

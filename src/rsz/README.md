@@ -226,6 +226,7 @@ repair_timing
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_last_gasp]
+    [-skip_vt_swap]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_repairs_per_pass max_repairs_per_pass]
@@ -450,6 +451,7 @@ The `report_equiv_cells` command finds all functionally equivalent library cells
 report_equiv_cells 
     [-match_cell_footprint]
     [-all]
+    [-vt]
     lib_cell
 ```
 
@@ -459,6 +461,7 @@ report_equiv_cells
 | ----- | ----- |
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 | `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
+| `-vt`  | List all threshold voltage (VT) equivalent cells such as HVT, RVT, LVT, SLVT. |
 
 ### Reporting Buffers
 

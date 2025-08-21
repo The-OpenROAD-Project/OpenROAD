@@ -427,7 +427,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell,
                              bool match_cell_footprint,
-                             bool report_all_cells);
+                             bool report_all_cells,
+                             bool report_vt_equiv);
   void reportBuffers(bool filtered);
   void getBufferList(LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
@@ -505,6 +506,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
+  LibertyCellSeq getVTEquivCells(LibertyCell* source_cell);
 
   bool getCin(const LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
@@ -727,6 +729,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Cache results of getSwappableCells() as this is expensive for large PDKs.
   std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+  // Cache VT equivalent cells for each cell, equivalent cells are sorted in
+  // increasing order of leakage
+  // BUF_X1_RVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_LVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // ...
+  std::unordered_map<LibertyCell*, LibertyCellSeq> vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
   VertexSeq level_drvr_vertices_;
