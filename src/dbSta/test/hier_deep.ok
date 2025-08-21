@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+cmd: get_cells level1_inst
+count: 1
+level1_inst
+----------------------
+cmd: get_cells level1_inst/level2_inst
+count: 1
+level1_inst/level2_inst
+----------------------
+cmd: get_cells level1_inst/level2_inst/leaf_inst
+count: 1
+level1_inst/level2_inst/leaf_inst
+----------------------
+cmd: get_cells level1_inst/level2_inst/leaf_inst/inverter
+count: 1
+level1_inst/level2_inst/leaf_inst/inverter
+----------------------
+cmd: get_cells level1_*
+count: 4
+level1_inst
+level1_inst/level2_inst
+level1_inst/level2_inst/leaf_inst
+level1_inst/level2_inst/leaf_inst/inverter
+----------------------
+cmd: get_cells *level2*
+count: 3
+level1_inst/level2_inst
+level1_inst/level2_inst/leaf_inst
+level1_inst/level2_inst/leaf_inst/inverter
+----------------------
+cmd: get_cells *leaf*
+count: 2
+level1_inst/level2_inst/leaf_inst
+level1_inst/level2_inst/leaf_inst/inverter
+----------------------
+cmd: get_cells *inv*
+count: 1
+level1_inst/level2_inst/leaf_inst/inverter
+----------------------
+cmd: get_cells */level2*inv*
+count: 1
+level1_inst/level2_inst/leaf_inst/inverter
+----------------------

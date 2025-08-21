@@ -13,7 +13,7 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         5
-    final |   +233.3% |       1 |       5 |             1 |         0
+    final |   +241.7% |       1 |       5 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
@@ -23,7 +23,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Driver    length delay
 wire1/Z manhtn 591.2 steiner 591.2 0.05
 wire3/Z manhtn 590.0 steiner 590.0 0.05
-u2/Z manhtn 478.7 steiner 478.7 0.03
+u2/Z manhtn 478.8 steiner 478.8 0.03
 max_length5/Z manhtn 478.6 steiner 478.6 0.03
 wire2/Z manhtn 432.8 steiner 432.8 0.03
 wire4/Z manhtn 432.8 steiner 432.8 0.03

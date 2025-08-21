@@ -35,6 +35,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
+        "@spdlog",
         "@tk_tcl//:tcl",
     ],
 )
