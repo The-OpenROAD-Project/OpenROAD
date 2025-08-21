@@ -2,9 +2,8 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "qComboCheckBoxes.h"
-#include <qnamespace.h>
 
-#include <QSignalBlocker>
+#include <qnamespace.h>
 
 namespace gui {
 

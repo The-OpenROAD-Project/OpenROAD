@@ -7,8 +7,8 @@
 #include <qobjectdefs.h>
 
 #include <QComboBox>
-#include <QStandardItemModel>
 #include <QStandardItem>
+#include <QStandardItemModel>
 
 namespace sta {
 class dbSta;
@@ -42,7 +42,7 @@ class qComboCheckBoxes : public QComboBox
   std::vector<QString> selectedItems();
 
  public slots:
-  void itemChanged(QStandardItem *item);
+  void itemChanged(QStandardItem* item);
 
  private:
   QStandardItem* name_item_;
