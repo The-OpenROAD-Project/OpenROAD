@@ -1,6 +1,7 @@
 {
     "name":"dbModITerm",
     "needs_non_default_destructor" : "true",
+    "assert_alignment_is_multiple_of": 8,
     "fields":[
         {
             "name":"_name",

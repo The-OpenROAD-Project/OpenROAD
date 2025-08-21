@@ -47,12 +47,15 @@ enum class EdgeDirection
 
 struct Segment  // A Segment is a 2-pin connection
 {
-  bool xFirst;  // route x-direction first (only for L route)
-  bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
-
-  int16_t x1, y1, x2, y2;  // coordinates of two endpoints
-  int netID;               // the netID of the net this segment belonging to
-  int16_t Zpoint;  // The coordinates of Z point (x for HVH and y for VHV)
+  Segment(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int8_t cost)
+      : x1(x1), y1(y1), x2(x2), y2(y2), cost(cost), xFirst(false), HVH(false)
+  {
+  }
+  const int16_t x1, y1, x2, y2;  // coordinates of two endpoints (x1 <= x2)
+  int16_t Zpoint;     // The coordinates of Z point (x for HVH and y for VHV)
+  const int8_t cost;  // the netID of the net this segment belonging to
+  bool xFirst : 1;    // route x-direction first (only for L route)
+  bool HVH : 1;       // TRUE = HVH or false = VHV (only for Z route)
 };
 
 struct FrNet  // A Net is a set of connected MazePoints
@@ -62,12 +65,12 @@ struct FrNet  // A Net is a set of connected MazePoints
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   int getDriverIdx() const { return driver_idx_; }
-  int getEdgeCost() const { return edge_cost_; }
+  int8_t getEdgeCost() const { return edge_cost_; }
   const char* getName() const;
   int getMaxLayer() const { return max_layer_; }
   int getMinLayer() const { return min_layer_; }
   int getNumPins() const { return pin_x_.size(); }
-  int getLayerEdgeCost(int layer) const;
+  int8_t getLayerEdgeCost(int layer) const;
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
@@ -80,11 +83,11 @@ struct FrNet  // A Net is a set of connected MazePoints
   void reset(odb::dbNet* db_net,
              bool is_clock,
              int driver_idx,
-             int edge_cost,
+             int8_t edge_cost,
              int min_layer,
              int max_layer,
              float slack,
-             std::vector<int>* edge_cost_per_layer);
+             std::vector<int8_t>* edge_cost_per_layer);
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
@@ -98,12 +101,12 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool is_clock_;           // flag that indicates if net is a clock net
   bool is_critical_;
   int driver_idx_;
-  int edge_cost_;
+  int8_t edge_cost_;
   int min_layer_;
   int max_layer_;
   float slack_;
   // Non-null when an NDR has been applied to the net.
-  std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
+  std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };
 
 struct Edge  // An Edge is the routing track holder between two adjacent

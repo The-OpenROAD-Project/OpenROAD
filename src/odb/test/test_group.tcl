@@ -57,6 +57,29 @@ proc test_default { } {
   tearDown $db
 }
 
+proc test_destroy { } {
+  # Setup
+  lassign [createSimpleDB] db lib
+  set block [create1LevelBlock $db $lib [$db getChip]]
+  set and2 [$lib findMaster "and2"]
+
+  set inst1 [odb::dbInst_create $block $and2 "inst1"]
+  set inst2 [odb::dbInst_create $block $and2 "inst2"]
+
+  set group [odb::dbGroup_create $block "group"]
+  $group addInst $inst1
+  $group addInst $inst2
+
+  # Test action
+  odb::dbGroup_destroy $group
+
+  # Verification
+  assertStringEq [$inst1 getGroup] "NULL"
+  assertStringEq [$inst2 getGroup] "NULL"
+  tearDown $db
+}
+
 test_default
+test_destroy
 puts "pass"
 exit 0

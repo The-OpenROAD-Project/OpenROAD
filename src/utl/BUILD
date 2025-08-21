@@ -15,6 +15,8 @@ package(
 cc_library(
     name = "utl",
     srcs = [
+        "src/CallBack.cpp",
+        "src/CallBackHandler.cpp",
         "src/CFileUtils.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
@@ -28,8 +30,11 @@ cc_library(
         "src/histogram.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
+        "src/mem_stats.cpp",
     ],
     hdrs = [
+        "include/utl/CallBack.h",
+        "include/utl/CallBackHandler.h",
         "include/utl/CFileUtils.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
@@ -62,6 +67,7 @@ cc_library(
         "include/utl/scope.h",
         "include/utl/timer.h",
         "include/utl/validation.h",
+        "include/utl/mem_stats.h",
     ],
     includes = ["include"],
     deps = [
@@ -85,6 +91,8 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
+        "include/utl/CallBack.h",
+        "include/utl/CallBackHandler.h",
         "include/utl/CFileUtils.h",
         "include/utl/Logger.h",
         "include/utl/MakeLogger.h",

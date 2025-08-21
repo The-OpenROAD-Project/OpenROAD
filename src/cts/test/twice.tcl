@@ -11,12 +11,12 @@ set_wire_rc -clock -layer metal3
 clock_tree_synthesis -root_buf CLKBUF_X3 \
   -buf_list CLKBUF_X3 \
   -wire_unit 20 \
-  -apply_ndr
+  -apply_ndr root_only
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
   -buf_list CLKBUF_X3 \
   -wire_unit 20 \
-  -apply_ndr
+  -apply_ndr root_only
 
 set def_file [make_result_file twice.def]
 write_def $def_file

@@ -253,7 +253,7 @@ void DRCWidget::updateModel()
   model_->removeRows(0, model_->rowCount());
 
   if (category != nullptr) {
-    for (odb::dbMarkerCategory* subcategory : category->getMarkerCategorys()) {
+    for (odb::dbMarkerCategory* subcategory : category->getMarkerCategories()) {
       populateCategory(subcategory, model_->invisibleRootItem());
     }
   }
@@ -280,7 +280,7 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category,
   type_group->setCheckable(true);
   type_group->setCheckState(Qt::Checked);
 
-  for (odb::dbMarkerCategory* subcategory : category->getMarkerCategorys()) {
+  for (odb::dbMarkerCategory* subcategory : category->getMarkerCategories()) {
     populateCategory(subcategory, type_group);
   }
 

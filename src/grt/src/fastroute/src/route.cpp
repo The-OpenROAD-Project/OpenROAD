@@ -20,7 +20,7 @@ using utl::GRT;
 void FastRouteCore::estimateOneSeg(const Segment* seg)
 {
   FrNet* net = nets_[seg->netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -41,7 +41,7 @@ void FastRouteCore::estimateOneSeg(const Segment* seg)
 void FastRouteCore::routeSegV(const Segment* seg)
 {
   FrNet* net = nets_[seg->netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -51,7 +51,7 @@ void FastRouteCore::routeSegV(const Segment* seg)
 void FastRouteCore::routeSegH(const Segment* seg)
 {
   FrNet* net = nets_[seg->netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost);
 }
@@ -60,7 +60,7 @@ void FastRouteCore::routeSegH(const Segment* seg)
 void FastRouteCore::routeSegL(Segment* seg)
 {
   FrNet* net = nets_[seg->netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -142,7 +142,7 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
   }
 
   FrNet* net = nets_[seg->netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
@@ -493,7 +493,7 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
         continue;
       }
       // ripup the original routing
-      if (newRipupType2(
+      if (newRipupCongestedL(
               treeedge, treenodes, x1, y1, x2, y2, num_terminals, netID)) {
         const int n1a = treenodes[n1].stackAlias;
         const int n2a = treenodes[n2].stackAlias;

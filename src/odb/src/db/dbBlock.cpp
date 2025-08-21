@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cmath>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -106,6 +107,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "odb/defout.h"
 #include "odb/geom_boost.h"
 #include "odb/lefout.h"
@@ -847,6 +849,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._bterm_groups;
   stream << block._bterm_top_layer_grid;
   stream << block._inst_scan_inst_map;
+  stream << block._unique_net_index;
+  stream << block._unique_inst_index;
 
   //---------------------------------------------------------- stream out
   // properties
@@ -1027,6 +1031,10 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   if (db->isSchema(db_schema_map_insts_to_scan_insts)) {
     stream >> block._inst_scan_inst_map;
+  }
+  if (db->isSchema(db_schema_unique_indices)) {
+    stream >> block._unique_net_index;
+    stream >> block._unique_inst_index;
   }
 
   //---------------------------------------------------------- stream in
@@ -1460,27 +1468,26 @@ dbBox* dbBlock::getBBox()
   _dbBlock* block = (_dbBlock*) this;
 
   if (block->_flags._valid_bbox == 0) {
-    ComputeBBox();
+    block->ComputeBBox();
   }
 
   _dbBox* bbox = block->_box_tbl->getPtr(block->_bbox);
   return (dbBox*) bbox;
 }
 
-void dbBlock::ComputeBBox()
+void _dbBlock::ComputeBBox()
 {
-  _dbBlock* block = (_dbBlock*) this;
-  _dbBox* bbox = block->_box_tbl->getPtr(block->_bbox);
+  _dbBox* bbox = _box_tbl->getPtr(_bbox);
   bbox->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
 
-  for (dbInst* inst : getInsts()) {
+  for (dbInst* inst : dbSet<dbInst>(this, _inst_tbl)) {
     if (inst->isPlaced()) {
       _dbBox* box = (_dbBox*) inst->getBBox();
       bbox->_shape._rect.merge(box->_shape._rect);
     }
   }
 
-  for (dbBTerm* bterm : getBTerms()) {
+  for (dbBTerm* bterm : dbSet<dbBTerm>(this, _bterm_tbl)) {
     for (dbBPin* bp : bterm->getBPins()) {
       if (bp->getPlacementStatus().isPlaced()) {
         for (dbBox* box : bp->getBoxes()) {
@@ -1491,17 +1498,17 @@ void dbBlock::ComputeBBox()
     }
   }
 
-  for (dbObstruction* obs : getObstructions()) {
+  for (dbObstruction* obs : dbSet<dbObstruction>(this, _obstruction_tbl)) {
     _dbBox* box = (_dbBox*) obs->getBBox();
     bbox->_shape._rect.merge(box->_shape._rect);
   }
 
-  for (dbSBox* box : dbSet<dbSBox>(block, block->_sbox_tbl)) {
+  for (dbSBox* box : dbSet<dbSBox>(this, _sbox_tbl)) {
     Rect rect = box->getBox();
     bbox->_shape._rect.merge(rect);
   }
 
-  for (dbWire* wire : dbSet<dbWire>(block, block->_wire_tbl)) {
+  for (dbWire* wire : dbSet<dbWire>(this, _wire_tbl)) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
       bbox->_shape._rect.merge(opt_bbox.value());
@@ -1512,7 +1519,7 @@ void dbBlock::ComputeBBox()
     bbox->_shape._rect.reset(0, 0, 0, 0);
   }
 
-  block->_flags._valid_bbox = 1;
+  _flags._valid_bbox = 1;
 }
 
 dbDatabase* dbBlock::getDataBase()
@@ -1525,7 +1532,7 @@ dbChip* dbBlock::getChip()
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = block->getDatabase();
-  _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  _dbChip* chip = db->chip_tbl_->getPtr(block->_chip);
   return (dbChip*) chip;
 }
 
@@ -1533,7 +1540,7 @@ dbBlock* dbBlock::getParent()
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = block->getDatabase();
-  _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  _dbChip* chip = db->chip_tbl_->getPtr(block->_chip);
   if (!block->_parent.isValid()) {
     return nullptr;
   }
@@ -1565,7 +1572,7 @@ dbSet<dbBlock> dbBlock::getChildren()
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = getImpl()->getDatabase();
-  _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  _dbChip* chip = db->chip_tbl_->getPtr(block->_chip);
   return dbSet<dbBlock>(block, chip->_block_itr);
 }
 
@@ -3684,6 +3691,96 @@ void _dbBlock::ensureConstraintRegion(const Direction2D& edge,
                  block->dbuToMicrons(begin),
                  block->dbuToMicrons(end));
   }
+}
+
+std::string _dbBlock::makeNewName(
+    dbModInst* parent,
+    const char* base_name,
+    const dbNameUniquifyType& uniquify,
+    uint& unique_index,
+    const std::function<bool(const char*)>& exists)
+{
+  dbBlock* block = (dbBlock*) this;
+
+  // Decide hierarchical name without unique index
+  fmt::memory_buffer buf;
+  if (parent) {
+    fmt::format_to(std::back_inserter(buf),
+                   "{}{}",
+                   parent->getHierarchicalName(),
+                   block->getHierarchyDelimiter());
+  }
+  buf.append(fmt::string_view(base_name));
+  buf.push_back('\0');  // Null-terminate for find* functions
+
+  // If uniquify is IF_NEEDED*, check for uniqueness before adding a suffix.
+  bool uniquify_if_needed
+      = (dbNameUniquifyType::IF_NEEDED == uniquify)
+        || (dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE == uniquify);
+  if (uniquify_if_needed && !exists(buf.data())) {
+    return std::string(buf.data());
+  }
+
+  // The name is not unique, or we must uniquify.
+  // Prepare the prefix for the uniquifying loop.
+  buf.resize(buf.size() - 1);  // Remove null terminator
+
+  // Use underscore if specified
+  if ((dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE == uniquify
+       || dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE == uniquify)) {
+    buf.push_back('_');
+  }
+
+  const size_t prefix_size = buf.size();
+  do {
+    buf.resize(prefix_size);
+    fmt::format_to(std::back_inserter(buf), "{}", unique_index++);
+    buf.push_back('\0');  // Null-terminate
+  } while (exists(buf.data()));
+  return std::string(buf.data());  // Returns a new unique full name
+}
+
+////////////////////////////////////////////////////////////////
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module) which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+// (as was done with dbInsts) and will require changing the
+// method: (dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
+//
+
+// If uniquify is IF_NEEDED, unique suffix will be added when necessary.
+// This is added to cover the existing multiple use cases of making a
+// new net name w/ and w/o unique suffix.
+std::string dbBlock::makeNewNetName(dbModInst* parent,
+                                    const char* base_name,
+                                    const dbNameUniquifyType& uniquify)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  auto exists = [this](const char* name) { return findNet(name) != nullptr; };
+  return block->makeNewName(
+      parent, base_name, uniquify, block->_unique_net_index, exists);
+}
+
+std::string dbBlock::makeNewInstName(dbModInst* parent,
+                                     const char* base_name,
+                                     const dbNameUniquifyType& uniquify)
+{
+  // NOTE: TODO: The scoping should be within
+  // the dbModule scope for the instance, not the whole network.
+  // dbInsts are already scoped within a dbModule
+  // To get the dbModule for a dbInst used inst -> getModule
+  // then search within that scope. That way the instance name
+  // does not have to be some massive string like root/X/Y/U1.
+  //
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  auto exists = [this](const char* name) {
+    return findInst(name) != nullptr || findModInst(name) != nullptr;
+  };
+  return block->makeNewName(
+      parent, base_name, uniquify, block->_unique_inst_index, exists);
 }
 
 }  // namespace odb

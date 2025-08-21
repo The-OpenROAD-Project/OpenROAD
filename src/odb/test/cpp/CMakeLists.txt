@@ -32,6 +32,7 @@ add_executable(TestGuide TestGuide.cpp)
 add_executable(TestNetTrack TestNetTrack.cpp)
 add_executable(TestMaster TestMaster.cpp)
 add_executable(TestGDSIn TestGDSIn.cpp)
+add_executable(TestChips TestChips.cpp)
 #add_executable(TestXML TestXML.cpp)
 
 target_link_libraries(OdbGTests ${TEST_LIBS})
@@ -47,6 +48,7 @@ target_link_libraries(TestGuide ${TEST_LIBS})
 target_link_libraries(TestNetTrack ${TEST_LIBS})
 target_link_libraries(TestMaster ${TEST_LIBS})
 target_link_libraries(TestGDSIn gdsin odb_test_helper)
+target_link_libraries(TestChips ${TEST_LIBS})
 #target_link_libraries(TestXML gdsin odb_test_helper)
 
 # Skip the tests from being registered here, since they are called via
@@ -58,7 +60,7 @@ target_link_libraries(TestGDSIn gdsin odb_test_helper)
 # directory.
 gtest_discover_tests(OdbGTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*"
+    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*,-TestChips.*"
 )
 
 add_dependencies(build_and_test 
@@ -70,6 +72,7 @@ add_dependencies(build_and_test
         TestGuide
         TestNetTrack
         TestMaster
+        TestChips
         OdbGTests
 )
 add_subdirectory(helper)

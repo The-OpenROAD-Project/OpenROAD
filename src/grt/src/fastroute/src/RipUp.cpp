@@ -18,7 +18,7 @@ using utl::GRT;
 void FastRouteCore::ripupSegL(const Segment* seg)
 {
   FrNet* net = nets_[seg->netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
@@ -43,12 +43,12 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
     return;  // not ripup for degraded edge
   }
 
-  const RouteType ripuptype = treeedge->route.type;
+  const RouteType edge_type = treeedge->route.type;
   const auto [ymin, ymax] = std::minmax(y1, y2);
   FrNet* net = nets_[netID];
   const int edgeCost = net->getEdgeCost();
 
-  if (ripuptype == RouteType::LRoute)  // remove L routing
+  if (edge_type == RouteType::LRoute)  // remove L routing
   {
     if (treeedge->route.xFirst) {
       graph2d_.updateEstUsageH({x1, x2}, y1, net, -edgeCost);
@@ -57,7 +57,7 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
       graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, -edgeCost);
       graph2d_.updateEstUsageH({x1, x2}, y2, net, -edgeCost);
     }
-  } else if (ripuptype == RouteType::ZRoute) {
+  } else if (edge_type == RouteType::ZRoute) {
     // remove Z routing
     const int Zpoint = treeedge->route.Zpoint;
     if (treeedge->route.HVH) {
@@ -75,7 +75,7 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
         graph2d_.updateEstUsageV(x2, {y2, Zpoint}, net, -edgeCost);
       }
     }
-  } else if (ripuptype == RouteType::MazeRoute) {
+  } else if (edge_type == RouteType::MazeRoute) {
     const std::vector<GPoint3D>& grids = treeedge->route.grids;
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (grids[i].x == grids[i + 1].x) {  // a vertical edge
@@ -91,27 +91,27 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
   }
 }
 
-// remove L routing
-bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
-                                  std::vector<TreeNode>& treenodes,
-                                  const int x1,
-                                  const int y1,
-                                  const int x2,
-                                  const int y2,
-                                  const int deg,
-                                  const int netID)
+// remove L routing if passing through congested edges
+bool FastRouteCore::newRipupCongestedL(const TreeEdge* treeedge,
+                                       std::vector<TreeNode>& treenodes,
+                                       const int x1,
+                                       const int y1,
+                                       const int x2,
+                                       const int y2,
+                                       const int deg,
+                                       const int netID)
 {
   if (treeedge->len == 0) {
     return false;  // no ripup for degraded edge
   }
 
-  const RouteType ripuptype = treeedge->route.type;
-  if (ripuptype != RouteType::LRoute) {
+  const RouteType edge_type = treeedge->route.type;
+  if (edge_type != RouteType::LRoute) {
     logger_->error(GRT,
                    226,
                    "Net {} ripup type is {}. Expected LRoute.",
                    nets_[netID]->getName(),
-                   ripuptype);
+                   edge_type);
   }
 
   const auto [ymin, ymax] = std::minmax(y1, y2);
@@ -121,33 +121,24 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
 
   bool needRipup = false;
 
-  if (treeedge->route.xFirst) {
-    for (int i = x1; i < x2; i++) {
-      const int cap = getEdgeCapacity(net, i, y1, EdgeDirection::Horizontal);
-      if (graph2d_.getEstUsageH(i, y1) > cap) {
-        needRipup = true;
-        break;
-      }
-    }
+  // The x value for the vertical check
+  const int x_check = treeedge->route.xFirst ? x2 : x1;
+  // The y value for the horizontal check
+  const int y_check = treeedge->route.xFirst ? y1 : y2;
 
-    for (int i = ymin; i < ymax; i++) {
-      const int cap = getEdgeCapacity(net, x2, i, EdgeDirection::Vertical);
-      if (graph2d_.getEstUsageV(x2, i) > cap) {
-        needRipup = true;
-        break;
-      }
+  for (int i = ymin; i < ymax; i++) {
+    const int cap
+        = getEdgeCapacity(nets_[netID], x_check, i, EdgeDirection::Vertical);
+    if (graph2d_.getEstUsageV(x_check, i) > cap) {
+      needRipup = true;
+      break;
     }
-  } else {
-    for (int i = ymin; i < ymax; i++) {
-      const int cap = getEdgeCapacity(net, x1, i, EdgeDirection::Vertical);
-      if (graph2d_.getEstUsageV(x1, i) > cap) {
-        needRipup = true;
-        break;
-      }
-    }
+  }
+  if (!needRipup) {
     for (int i = x1; i < x2; i++) {
-      const int cap = getEdgeCapacity(net, i, y2, EdgeDirection::Horizontal);
-      if (graph2d_.getEstUsageH(i, y2) > cap) {
+      const int cap = getEdgeCapacity(
+          nets_[netID], i, y_check, EdgeDirection::Horizontal);
+      if (graph2d_.getEstUsageH(i, y_check) > cap) {
         needRipup = true;
         break;
       }
@@ -436,10 +427,10 @@ void FastRouteCore::newRipupNet(const int netID)
       const int x2 = treenodes[n2].x;
       const int y2 = treenodes[n2].y;
 
-      const RouteType ripuptype = treeedge->route.type;
+      const RouteType edge_type = treeedge->route.type;
       const auto [ymin, ymax] = std::minmax(y1, y2);
 
-      if (ripuptype == RouteType::LRoute)  // remove L routing
+      if (edge_type == RouteType::LRoute)  // remove L routing
       {
         // if(net->getDbNet()->getNonDefaultRule()){
         //   logger_->report("=== Removing L routing ===");
@@ -452,7 +443,7 @@ void FastRouteCore::newRipupNet(const int netID)
           graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, -edgeCost);
           graph2d_.updateEstUsageH({x1, x2}, y2, net, -edgeCost);
         }
-      } else if (ripuptype == RouteType::ZRoute) {
+      } else if (edge_type == RouteType::ZRoute) {
         // remove Z routing
         const int Zpoint = treeedge->route.Zpoint;
         if (treeedge->route.HVH) {
@@ -470,7 +461,7 @@ void FastRouteCore::newRipupNet(const int netID)
             graph2d_.updateEstUsageV(x2, {y2, Zpoint}, net, -edgeCost);
           }
         }
-      } else if (ripuptype == RouteType::MazeRoute) {
+      } else if (edge_type == RouteType::MazeRoute) {
         const std::vector<GPoint3D>& grids = treeedge->route.grids;
         for (int i = 0; i < treeedge->route.routelen; i++) {
           if (grids[i].x == grids[i + 1].x) {  // a vertical edge

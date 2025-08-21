@@ -719,21 +719,12 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
       if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
         // the position of this segment in seglist
-        seglist_[netID].push_back(Segment());
-        auto& seg = seglist_[netID].back();
+        const int8_t cost = nets_[netID]->getEdgeCost();
         if (x1 < x2) {
-          seg.x1 = x1;
-          seg.x2 = x2;
-          seg.y1 = y1;
-          seg.y2 = y2;
+          seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
         } else {
-          seg.x1 = x2;
-          seg.x2 = x1;
-          seg.y1 = y2;
-          seg.y2 = y1;
+          seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
         }
-
-        seg.netID = netID;
       }
     }  // loop j
 

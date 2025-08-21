@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractSteinerRenderer.h"
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
@@ -122,16 +121,7 @@ using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
-    : recover_power_(std::make_unique<RecoverPower>(this)),
-      repair_design_(std::make_unique<RepairDesign>(this)),
-      repair_setup_(std::make_unique<RepairSetup>(this)),
-      repair_hold_(std::make_unique<RepairHold>(this)),
-      swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
-      rebuffer_(std::make_unique<Rebuffer>(this)),
-      wire_signal_res_(0.0),
-      wire_signal_cap_(0.0),
-      wire_clk_res_(0.0),
-      wire_clk_cap_(0.0),
+    : swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
       tgt_slews_{0.0, 0.0}
 {
 }
@@ -144,7 +134,7 @@ void Resizer::init(Logger* logger,
                    SteinerTreeBuilder* stt_builder,
                    GlobalRouter* global_router,
                    dpl::Opendp* opendp,
-                   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer)
+                   est::EstimateParasitics* estimate_parasitics)
 {
   opendp_ = opendp;
   logger_ = logger;
@@ -153,10 +143,9 @@ void Resizer::init(Logger* logger,
   dbStaState::init(sta);
   stt_builder_ = stt_builder;
   global_router_ = global_router;
-  incr_groute_ = nullptr;
+  estimate_parasitics_ = estimate_parasitics;
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = InstanceSet(db_network_);
-  steiner_renderer_ = std::move(steiner_renderer);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
 
   db_network_->addObserver(this);
@@ -168,6 +157,12 @@ void Resizer::init(Logger* logger,
   split_load_move_ = std::make_unique<SplitLoadMove>(this);
   swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
   unbuffer_move_ = std::make_unique<UnbufferMove>(this);
+
+  recover_power_ = std::make_unique<RecoverPower>(this, estimate_parasitics_);
+  repair_design_ = std::make_unique<RepairDesign>(this, estimate_parasitics_);
+  repair_setup_ = std::make_unique<RepairSetup>(this, estimate_parasitics_);
+  repair_hold_ = std::make_unique<RepairHold>(this, estimate_parasitics_);
+  rebuffer_ = std::make_unique<Rebuffer>(this, estimate_parasitics_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -363,7 +358,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
-  IncrementalParasiticsGuard guard(this);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   if (insts.empty()) {
     // remove all the buffers
@@ -994,7 +989,7 @@ void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
   buffer_moved_into_core_ = false;
 
   {
-    IncrementalParasiticsGuard guard(this);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     std::unique_ptr<InstancePinIterator> port_iter(
         network_->pinIterator(network_->topInstance()));
     while (port_iter->hasNext()) {
@@ -1150,13 +1145,11 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   }
 
   // make the buffer and its output net.
-  string buffer_name = makeUniqueInstName("input");
   Instance* parent = db_network_->topInstance();
-  Net* buffer_out = makeUniqueNet();
+  Net* buffer_out = db_network_->makeNet(parent);
   dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
   Point pin_loc = db_network_->location(top_pin);
-  Instance* buffer
-      = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
+  Instance* buffer = makeBuffer(buffer_cell, "input", parent, pin_loc);
   inserted_buffer_count_++;
 
   Pin* buffer_ip_pin = nullptr;
@@ -1238,7 +1231,7 @@ void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
   buffer_moved_into_core_ = false;
 
   {
-    IncrementalParasiticsGuard guard(this);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     std::unique_ptr<InstancePinIterator> port_iter(
         network_->pinIterator(network_->topInstance()));
     while (port_iter->hasNext()) {
@@ -1328,14 +1321,12 @@ void Resizer::bufferOutput(const Pin* top_pin,
   assert(buffer_cell);
   buffer_cell->bufferPorts(input, output);
 
-  string buffer_name = makeUniqueInstName("output");
-  Net* buffer_out = makeUniqueNet();
   Instance* parent = network->topInstance();
+  Net* buffer_out = db_network_->makeNet(parent);
 
   Point pin_loc = db_network_->location(top_pin);
   // buffer made in top level.
-  Instance* buffer
-      = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
+  Instance* buffer = makeBuffer(buffer_cell, "output", parent, pin_loc);
   inserted_buffer_count_++;
 
   // connect original input (hierarchical or flat) to buffer input
@@ -2076,18 +2067,6 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
-void Resizer::setParasiticsSrc(ParasiticsSrc src)
-{
-  if (incremental_parasitics_enabled_) {
-    logger_->error(RSZ,
-                   108,
-                   "cannot change parasitics source while incremental "
-                   "parasitics enabled");
-  }
-
-  parasitics_src_ = src;
-}
-
 void Resizer::makeEquivCells()
 {
   LibertyLibrarySeq libs;
@@ -2242,7 +2221,7 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
                  revisiting_inst ? " - revisit" : "");
       resized_multi_output_insts_.insert(inst);
     }
-    ensureWireParasitic(drvr_pin);
+    estimate_parasitics_->ensureWireParasitic(drvr_pin);
     // Includes net parasitic capacitance.
     float load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
     if (load_cap > 0.0) {
@@ -2292,7 +2271,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
       && isLogicStdCell(inst)) {
     float cin, load_cap;
-    ensureWireParasitic(drvr_pin);
+    estimate_parasitics_->ensureWireParasitic(drvr_pin);
 
     // Includes net parasitic capacitance.
     load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
@@ -2406,11 +2385,6 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
   return best_cell;
 }
 
-void Resizer::eraseParasitics(const Net* net)
-{
-  parasitics_invalid_.erase(net);
-}
-
 // Replace LEF with LEF so ports stay aligned in instance.
 bool Resizer::replaceCell(Instance* inst,
                           const LibertyCell* replacement,
@@ -2428,8 +2402,10 @@ bool Resizer::replaceCell(Instance* inst,
     designAreaIncr(area(replacement_master));
 
     // Legalize the position of the instance in case it leaves the die
-    if (parasitics_src_ == ParasiticsSrc::global_routing
-        || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::global_routing
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
     return true;
@@ -2468,12 +2444,12 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
-  IncrementalParasiticsGuard guard(this);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
   }
   ensureLevelDrvrVertices();
-  estimateWireParasitics();
+  estimate_parasitics_->estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repair_design_->repairDesign(max_wire_length_,
@@ -3116,9 +3092,12 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
               const char* inst_name = network_->name(load_inst);
-              string tie_name = makeUniqueInstName(inst_name, true);
-              Instance* tie
-                  = makeInstance(tie_cell, tie_name.c_str(), top_inst, tie_loc);
+              Instance* tie = makeInstance(
+                  tie_cell,
+                  inst_name,
+                  top_inst,
+                  tie_loc,
+                  odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
 
               // Put the tie cell instance in the same module with the load
               // it drives.
@@ -3129,7 +3108,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
               }
 
               // Make tie output net.
-              Net* load_net = makeUniqueNet();
+              Net* load_net = db_network_->makeNet();
 
               // Connect tie inst output.
               sta_->connectPin(tie, tie_port, load_net);
@@ -3156,7 +3135,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
           // network_->net(tie_pin);
           sta_->deleteNet(tie_net);
-          parasitics_invalid_.erase(tie_net);
+          estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);
           // Delete the tie instance if no other ports are in use.
           // A tie cell can have both tie hi and low outputs.
           bool has_other_fanout = false;
@@ -3250,8 +3229,8 @@ void Resizer::reportLongWires(int count, int digits)
   findLongWires(drvrs);
   logger_->report("Driver    length delay");
   const Corner* corner = sta_->cmdCorner();
-  double wire_res = wireSignalResistance(corner);
-  double wire_cap = wireSignalCapacitance(corner);
+  double wire_res = estimate_parasitics_->wireSignalResistance(corner);
+  double wire_cap = estimate_parasitics_->wireSignalCapacitance(corner);
   int i = 0;
   for (Vertex* drvr : drvrs) {
     Pin* drvr_pin = drvr->pin();
@@ -3465,78 +3444,6 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
   return overdriven_nets;
 }
 
-////////////////////////////////////////////////////////////////
-
-// TODO:
-//----
-// when making a unique net name search within the scope of the
-// containing module only (parent scope module)which is passed in.
-// This requires scoping nets in the module in hierarchical mode
-//(as was done with dbInsts) and will require changing the
-// method: dbNetwork::name).
-// Currently all nets are scoped within a dbBlock.
-//
-
-string Resizer::makeUniqueNetName(Instance* parent_scope)
-{
-  string node_name;
-  bool prefix_name = false;
-  if (parent_scope && parent_scope != network_->topInstance()) {
-    prefix_name = true;
-  }
-  Instance* top_inst = prefix_name ? parent_scope : network_->topInstance();
-  do {
-    if (prefix_name) {
-      std::string parent_name = network_->name(parent_scope);
-      node_name = fmt::format("{}/net{}", parent_name, unique_net_index_++);
-    } else {
-      node_name = fmt::format("net{}", unique_net_index_++);
-    }
-  } while (network_->findNet(top_inst, node_name.c_str())
-           //
-           // in hierarchical mode we check the uniqueness globally.
-           // TODO:change scoping of nets so we never
-           // have to do this, as it is obviously slow.
-           //
-           || (db_network_->hasHierarchy()
-               && db_network_->findNetAllScopes(node_name.c_str())));
-  return node_name;
-}
-
-Net* Resizer::makeUniqueNet()
-{
-  string net_name = makeUniqueNetName();
-  Instance* parent = db_network_->topInstance();
-  return db_network_->makeNet(net_name.c_str(), parent);
-}
-
-string Resizer::makeUniqueInstName(const char* base_name)
-{
-  return makeUniqueInstName(base_name, false);
-}
-
-string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
-{
-  string inst_name;
-  do {
-    // sta::stringPrint can lead to string overflow and fatal
-    if (underscore) {
-      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
-    } else {
-      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
-    }
-    //
-    // NOTE: TODO: The scoping should be within
-    // the dbModule scope for the instance, not the whole network.
-    // dbInsts are already scoped within a dbModule
-    // To get the dbModule for a dbInst used inst -> getModule
-    // then search within that scope. That way the instance name
-    // does not have to be some massive string like root/X/Y/U1.
-    //
-  } while (network_->findInstance(inst_name.c_str()));
-  return inst_name;
-}
-
 float Resizer::portFanoutLoad(LibertyPort* port) const
 {
   float fanout_load;
@@ -3713,7 +3620,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
 {
   std::optional<double> max_length;
   for (const Corner* corner : *sta_->corners()) {
-    if (wireSignalResistance(corner) <= 0.0) {
+    if (estimate_parasitics_->wireSignalResistance(corner) <= 0.0) {
       if (issue_error) {
         logger_->warn(RSZ,
                       88,
@@ -3779,7 +3686,8 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
   // wire_length_high - upper bound
   double wire_length_low = 0.0;
   // Initial guess with wire resistance same as driver resistance.
-  double wire_length_high = drvr_r / wireSignalResistance(corner);
+  double wire_length_high
+      = drvr_r / estimate_parasitics_->wireSignalResistance(corner);
   const double tol = .01;  // 1%
   double diff_ub = splitWireDelayDiff(wire_length_high, cell, sta);
   // binary search for diff = 0.
@@ -3881,7 +3789,8 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
   load_pin_index_map[load_pin] = 0;
   for (Corner* corner : *corners) {
     const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
-    makeWireParasitic(net, drvr_pin, load_pin, wire_length, corner, parasitics);
+    estimate_parasitics_->makeWireParasitic(
+        net, drvr_pin, load_pin, wire_length, corner, parasitics);
 
     for (TimingArcSet* arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
@@ -3917,28 +3826,6 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
   sta->deleteInstance(drvr);
   sta->deleteInstance(load);
   sta->deleteNet(net);
-}
-
-void Resizer::makeWireParasitic(Net* net,
-                                Pin* drvr_pin,
-                                Pin* load_pin,
-                                double wire_length,  // meters
-                                const Corner* corner,
-                                Parasitics* parasitics)
-{
-  const ParasiticAnalysisPt* parasitics_ap
-      = corner->findParasiticAnalysisPt(max_);
-  Parasitic* parasitic
-      = parasitics->makeParasiticNetwork(net, false, parasitics_ap);
-  ParasiticNode* n1
-      = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
-  ParasiticNode* n2
-      = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
-  double wire_cap = wire_length * wireSignalCapacitance(corner);
-  double wire_res = wire_length * wireSignalResistance(corner);
-  parasitics->incrCap(n1, wire_cap / 2.0);
-  parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
-  parasitics->incrCap(n2, wire_cap / 2.0);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4000,8 +3887,10 @@ void Resizer::repairDesign(double max_wire_length,
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing
-      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
@@ -4085,8 +3974,8 @@ void Resizer::cloneClkInverter(Instance* inv)
   inv_cell->bufferPorts(in_port, out_port);
   Pin* in_pin = network_->findPin(inv, in_port);
   Pin* out_pin = network_->findPin(inv, out_port);
-  Net* in_net = network_->net(in_pin);
-  dbNet* in_net_db = db_network_->staToDb(in_net);
+  Net* in_net = db_network_->getOrFindFlatNet(in_pin);
+  dbNet* in_net_db = db_network_->getOrFindFlatDbNet(in_net);
   Net* out_net = network_->isTopLevelPort(out_pin)
                      ? network_->net(network_->term(out_pin))
                      : network_->net(out_pin);
@@ -4097,13 +3986,16 @@ void Resizer::cloneClkInverter(Instance* inv)
     while (load_iter->hasNext()) {
       const Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        string clone_name = makeUniqueInstName(inv_name, true);
         Point clone_loc = db_network_->location(load_pin);
         Instance* clone
-            = makeInstance(inv_cell, clone_name.c_str(), top_inst, clone_loc);
+            = makeInstance(inv_cell,
+                           inv_name,
+                           top_inst,
+                           clone_loc,
+                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
         journalMakeBuffer(clone);
 
-        Net* clone_out_net = makeUniqueNet();
+        Net* clone_out_net = db_network_->makeNet(top_inst);
         dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 
@@ -4132,7 +4024,7 @@ void Resizer::cloneClkInverter(Instance* inv)
       sta_->disconnectPin(in_pin);
       sta_->disconnectPin(out_pin);
       sta_->deleteNet(out_net);
-      parasitics_invalid_.erase(out_net);
+      estimate_parasitics_->removeNetFromParasiticsInvalid(out_net);
       sta_->deleteInstance(inv);
     }
   }
@@ -4157,8 +4049,10 @@ bool Resizer::repairSetup(double setup_margin,
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing
-      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
   return repair_setup_->repairSetup(setup_margin,
@@ -4217,8 +4111,10 @@ bool Resizer::repairHold(
   utl::SetAndRestore set_buffers(buffer_cells_, LibertyCellSeq());
 
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing
-      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
   return repair_hold_->repairHold(setup_margin,
@@ -4262,8 +4158,10 @@ bool Resizer::recoverPower(float recover_power_percent,
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing
-      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
   return recover_power_->recoverPower(recover_power_percent, verbose);
@@ -4274,8 +4172,10 @@ void Resizer::swapArithModules(int path_count,
                                float slack_margin)
 {
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing
-      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
   swap_arith_modules_->replaceArithModules(path_count, target, slack_margin);
@@ -4300,7 +4200,7 @@ void Resizer::journalEnd()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   if (!odb::dbDatabase::ecoEmpty(block_)) {
-    updateParasitics();
+    estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
   odb::dbDatabase::endEco(block_);
@@ -4387,7 +4287,7 @@ void Resizer::journalRestore()
   odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
-  updateParasitics();
+  estimate_parasitics_->updateParasitics();
   sta_->findRequireds();
 
   // Update transform counts
@@ -4508,19 +4408,31 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
+// If underscore is true, an underscore will be used to concat unique instance
+// index. This is added to cover the existing usage.
 Instance* Resizer::makeInstance(LibertyCell* cell,
                                 const char* name,
                                 Instance* parent,
-                                const Point& loc)
+                                const Point& loc,
+                                const odb::dbNameUniquifyType& uniquify)
 {
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
-  Instance* inst = db_network_->makeInstance(cell, name, parent);
+
+  // make new instance name
+  dbModInst* parent_mod_inst = db_network_->getModInst(parent);
+  std::string full_name
+      = block_->makeNewInstName(parent_mod_inst, name, uniquify);
+
+  // make new instance
+  Instance* inst = db_network_->makeInstance(cell, full_name.c_str(), parent);
   dbInst* db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);
   // Legalize the position of the instance in case it leaves the die
-  if (parasitics_src_ == ParasiticsSrc::global_routing
-      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
     opendp_->legalCellPos(db_inst);
   }
   designAreaIncr(area(db_inst->getMaster()));
@@ -4831,6 +4743,8 @@ void Resizer::fullyRebuffer(Pin* user_pin)
   rebuffer_->fullyRebuffer(user_pin);
 }
 
+////////////////////////////////////////////////////////////////
+
 void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
 {
   repair_design_->setDebugGraphics(graphics);
@@ -4878,69 +4792,6 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     result.push_back(parseMove(item));
   }
   return result;
-}
-
-IncrementalParasiticsGuard::IncrementalParasiticsGuard(Resizer* resizer)
-    : resizer_(resizer), need_unregister_(false)
-{
-  // check to allow reentrancy
-  if (!resizer_->incremental_parasitics_enabled_) {
-    if (!resizer_->block_) {
-      resizer_->logger_->error(
-          RSZ, 101, "incremental parasitics require an initialized block");
-    }
-
-    if (!resizer_->parasitics_invalid_.empty()) {
-      resizer_->logger_->error(RSZ, 104, "inconsistent parasitics state");
-    }
-
-    switch (resizer_->parasitics_src_) {
-      case ParasiticsSrc::placement:
-        break;
-      case ParasiticsSrc::global_routing:
-      case ParasiticsSrc::detailed_routing:
-        // TODO: add IncrementalDRoute
-        resizer_->incr_groute_
-            = new IncrementalGRoute(resizer_->global_router_, resizer_->block_);
-        // Don't print verbose messages for incremental routing
-        resizer_->global_router_->setVerbose(false);
-        break;
-      case ParasiticsSrc::none:
-        break;
-    }
-
-    resizer_->incremental_parasitics_enabled_ = true;
-    resizer_->db_cbk_->addOwner(resizer_->block_);
-    need_unregister_ = true;
-  }
-}
-
-void IncrementalParasiticsGuard::update()
-{
-  resizer_->updateParasitics();
-}
-
-IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
-{
-  if (need_unregister_) {
-    resizer_->db_cbk_->removeOwner();
-    resizer_->updateParasitics();
-
-    switch (resizer_->parasitics_src_) {
-      case ParasiticsSrc::placement:
-        break;
-      case ParasiticsSrc::global_routing:
-      case ParasiticsSrc::detailed_routing:
-        // TODO: add IncrementalDRoute
-        delete resizer_->incr_groute_;
-        resizer_->incr_groute_ = nullptr;
-        break;
-      case ParasiticsSrc::none:
-        break;
-    }
-
-    resizer_->incremental_parasitics_enabled_ = false;
-  }
 }
 
 }  // namespace rsz

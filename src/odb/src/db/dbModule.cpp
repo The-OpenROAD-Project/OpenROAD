@@ -332,7 +332,7 @@ dbSet<dbModBTerm> dbModule::getPorts()
 // The modbterms are the leaf level connections
 //"flat view"
 //
-dbSet<dbModBTerm> dbModule::getModBTerms()
+dbSet<dbModBTerm> dbModule::getModBTerms() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
@@ -503,14 +503,14 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
   std::string modbterm_name(name);
-  // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
-  size_t last_idx = modbterm_name.find_last_of('/');
+  char hier_delimiter = getOwner()->getHierarchyDelimiter();
+  size_t last_idx = modbterm_name.find_last_of(hier_delimiter);
   if (last_idx != std::string::npos) {
     modbterm_name = modbterm_name.substr(last_idx + 1);
   }
   _dbModule* obj = (_dbModule*) this;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_modbterm_hash.find(name);
+  auto it = obj->_modbterm_hash.find(modbterm_name);
   if (it != obj->_modbterm_hash.end()) {
     auto db_id = (*it).second;
     return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);
@@ -558,6 +558,60 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
     module = dbModule::create(block, full_name.c_str());
   } while (module == nullptr);
   return module;
+}
+
+// Check if two hierarchical modules are swappable.
+// Two modules must have identical number of ports and port names need to match.
+// Functional equivalence is not required.
+bool dbModule::canSwapWith(dbModule* new_module) const
+{
+  const _dbModule* module_impl = reinterpret_cast<const _dbModule*>(this);
+  const std::string old_module_name = getName();
+  const std::string new_module_name = new_module->getName();
+
+  // Check if module names differ
+  if (old_module_name == new_module_name) {
+    module_impl->getLogger()->warn(
+        utl::ODB,
+        470,
+        "The modules cannot be swapped because the new module name {} is "
+        "identical to the existing module name.",
+        new_module_name);
+    return false;
+  }
+
+  // Check if number of module ports match
+  dbSet<dbModBTerm> old_bterms = getModBTerms();
+  dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
+  if (old_bterms.size() != new_bterms.size()) {
+    module_impl->getLogger()->warn(
+        utl::ODB,
+        453,
+        "The modules cannot be swapped because module {} has {} ports but "
+        "module {} has {} ports.",
+        old_module_name,
+        old_bterms.size(),
+        new_module_name,
+        new_bterms.size());
+    return false;
+  }
+
+  // Check if module port names match
+  for (dbModBTerm* old_bterm : old_bterms) {
+    if (new_module->findModBTerm(old_bterm->getName()) == nullptr) {
+      module_impl->getLogger()->warn(utl::ODB,
+                                     454,
+                                     "The modules cannot be swapped because "
+                                     "module {} has port {} which is "
+                                     "not in module {}.",
+                                     old_module_name,
+                                     old_bterm->getName(),
+                                     new_module_name);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // Do a "deep" copy of old_module based on its instance context into new_module.

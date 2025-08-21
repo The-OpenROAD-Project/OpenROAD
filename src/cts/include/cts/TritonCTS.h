@@ -18,6 +18,10 @@ namespace utl {
 class Logger;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 class Resizer;
 }
@@ -60,7 +64,8 @@ class TritonCTS
             sta::dbNetwork* network,
             sta::dbSta* sta,
             stt::SteinerTreeBuilder* st_builder,
-            rsz::Resizer* resizer);
+            rsz::Resizer* resizer,
+            est::EstimateParasitics* estimate_parasitics);
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
@@ -93,12 +98,25 @@ class TritonCTS
   void buildClockTrees();
   void writeDataToDb();
 
+  // NDR functions
+  std::vector<int> getAllClockTreeLevels(Clock& clockNet);
+  int applyNDRToClockLevels(Clock& clockNet,
+                            odb::dbTechNonDefaultRule* clockNDR,
+                            const std::vector<int>& targetLevels);
+
+  int applyNDRToClockLevelRange(Clock& clockNet,
+                                odb::dbTechNonDefaultRule* clockNDR,
+                                int minLevel,
+                                int maxLevel);
+  int applyNDRToFirstHalfLevels(Clock& clockNet,
+                                odb::dbTechNonDefaultRule* clockNDR);
+
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
   void writeClockNetsToDb(TreeBuilder* builder,
                           std::set<odb::dbNet*>& clkLeafNets);
-  void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNDRsToDb(TreeBuilder* builder);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
@@ -208,6 +226,7 @@ class TritonCTS
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   std::vector<std::unique_ptr<TreeBuilder>> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;

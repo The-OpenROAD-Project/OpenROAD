@@ -115,7 +115,7 @@ BrowserWidget::BrowserWidget(
   display_controls_warning_->setStyleSheet("color: red;");
 
   model_->setHorizontalHeaderLabels({"Instance",
-                                     "Master",
+                                     "Module",
                                      "Instances",
                                      "Macros",
                                      "Modules",

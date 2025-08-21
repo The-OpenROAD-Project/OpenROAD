@@ -30,6 +30,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -51,13 +52,15 @@ void TritonCTS::init(utl::Logger* logger,
                      sta::dbNetwork* network,
                      sta::dbSta* sta,
                      stt::SteinerTreeBuilder* st_builder,
-                     rsz::Resizer* resizer)
+                     rsz::Resizer* resizer,
+                     est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;
   network_ = network;
   openSta_ = sta;
   resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
 
   options_ = new CtsOptions(logger_, st_builder);
 }
@@ -217,8 +220,13 @@ void TritonCTS::setupCharacterization()
   }
 
   // A new characteriztion is always created.
-  techChar_ = std::make_unique<TechChar>(
-      options_, db_, openSta_, resizer_, network_, logger_);
+  techChar_ = std::make_unique<TechChar>(options_,
+                                         db_,
+                                         openSta_,
+                                         resizer_,
+                                         estimate_parasitics_,
+                                         network_,
+                                         logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -473,8 +481,8 @@ void TritonCTS::writeDataToDb()
 
   for (auto& builder : builders_) {
     writeClockNetsToDb(builder.get(), clkLeafNets);
-    if (options_->applyNDR()) {
-      writeClockNDRsToDb(clkLeafNets);
+    if (options_->getApplyNdr() != CtsOptions::NdrStrategy::NONE) {
+      writeClockNDRsToDb(builder.get());
     }
     if (options_->dummyLoadEnabled()) {
       writeDummyLoadsToDb(builder->getClock(), clkDummies);
@@ -868,8 +876,8 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
       = static_cast<float>(std::max(coreArea.dx(), coreArea.dy()))
         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
-  float rootWireCap
-      = resizer_->wireSignalCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
+  float rootWireCap = estimate_parasitics_->wireSignalCapacitance(corner) * 1e-6
+                      * sinkWireLength / 2.0;
   std::string rootBuf = selectBestMaxCapBuffer(buffers, rootWireCap);
   return rootBuf;
 }
@@ -911,8 +919,8 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
       = static_cast<float>(std::max(coreArea.dx(), coreArea.dy()))
         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
-  float sinkWireCap
-      = resizer_->wireSignalCapacitance(corner) * 1e-6 * sinkWireLength;
+  float sinkWireCap = estimate_parasitics_->wireSignalCapacitance(corner) * 1e-6
+                      * sinkWireLength;
 
   std::string sinkBuf = selectBestMaxCapBuffer(buffers, sinkWireCap);
   // clang-format off
@@ -1238,9 +1246,20 @@ bool TritonCTS::separateMacroRegSinks(
     }
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
+      // Cells with insertion delay, macros, clock gaters and inverters that
+      // drive macros are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
-      // Treat clock gaters like macro sink
-      if (hasInsertionDelay(inst, mterm) || !isSink(iterm) || inst->isBlock()) {
+
+      bool nonSinkMacro = !isSink(iterm);
+      sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
+      sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+      if (libertyCell && libertyCell->isInverter()) {
+        odb::dbITerm* invertedTerm
+            = inst->getFirstOutput()->getNet()->get1stSignalInput(false);
+        nonSinkMacro &= invertedTerm->getInst()->isBlock();
+      }
+
+      if (hasInsertionDelay(inst, mterm) || nonSinkMacro || inst->isBlock()) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
@@ -1419,6 +1438,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
     }
     odb::dbNet* clkSubNet
         = odb::dbNet::create(block_, subNet.getName().c_str());
+    subNet.setNetObj(clkSubNet);
 
     ++numClkNets_;
     clkSubNet->setSigType(odb::dbSigType::CLOCK);
@@ -1538,120 +1558,110 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
 }
 
-// Function to extract level number from clock net name
-int extractClockTreeLevelFromNetName(const std::string& netName)
-{
-  // Pattern to find number between underscores (e.g., "clknet_2_clk_i")
-  std::regex pattern("_([0-9]+)_");
-  std::smatch match;
-
-  if (std::regex_search(netName, match, pattern)) {
-    return std::stoi(match[1]);
-  }
-
-  // If no number found between underscores, it's level 0
-  return 0;
-}
-
-// Utility function to get all unique clock tree levels in the design
-std::vector<int> getAllClockTreeLevels(odb::dbBlock* block_,
-                                       const std::set<odb::dbNet*>& clkLeafNets)
+// Utility function to get all unique clock tree levels
+std::vector<int> TritonCTS::getAllClockTreeLevels(Clock& clockNet)
 {
   std::set<int> uniqueLevels;
 
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType() == odb::dbSigType::CLOCK
-        && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      int level = extractClockTreeLevelFromNetName(net->getConstName());
-      uniqueLevels.insert(level);
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
+    if (!subNet.isLeafLevel()) {
+      uniqueLevels.insert(subNet.getTreeLevel());
     }
-  }
+  });
 
   return std::vector<int>(uniqueLevels.begin(), uniqueLevels.end());
-  ;
 }
 
 // Function to apply NDR to specific clock tree levels and return the number of
 // NDR applied nets
-int applyNDRToClockLevels(odb::dbBlock* block_,
-                          odb::dbTechNonDefaultRule* clockNDR,
-                          const std::set<odb::dbNet*>& clkLeafNets,
-                          const std::vector<int>& targetLevels)
+int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
+                                     odb::dbTechNonDefaultRule* clockNDR,
+                                     const std::vector<int>& targetLevels)
 {
-  int totalClkNets = 0;
   int ndrAppliedNets = 0;
 
-  std::cout << "\n=== Applying NDR to clock tree levels: ";
+  debugPrint(
+      logger_, CTS, "clustering", 1, "Applying NDR to clock tree levels: ");
   for (int level : targetLevels) {
-    std::cout << level << " ";
+    debugPrint(logger_, CTS, "clustering", 1, "{} ", level);
   }
-  std::cout << "===" << std::endl;
 
-  // Single pass: check clock nets and apply NDR if level matches
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType() == odb::dbSigType::CLOCK
-        && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      totalClkNets++;
-      std::string netName = net->getConstName();
-      int level = extractClockTreeLevelFromNetName(netName);
+  // Check if the main clock net (level 0) is in the level list
+  if (std::find(targetLevels.begin(), targetLevels.end(), 0)
+      != targetLevels.end()) {
+    odb::dbNet* clk_net = clockNet.getNetObj();
+    clk_net->setNonDefaultRule(clockNDR);
+    ndrAppliedNets++;
+    // clang-format off
+    debugPrint(logger_, CTS, "clustering", 1,
+        "Applied NDR to: {} (level {})", clockNet.getName(), 0);
+    // clang-format on
+  }
 
-      // Apply NDR if this level is in the target list
-      if (std::find(targetLevels.begin(), targetLevels.end(), level)
-          != targetLevels.end()) {
+  // Check clock sub nets list and apply NDR if level matches
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
+    int level = subNet.getTreeLevel();
+    if (std::find(targetLevels.begin(), targetLevels.end(), level)
+        != targetLevels.end()) {
+      odb::dbNet* net = subNet.getNetObj();
+      if (!subNet.isLeafLevel()) {
         net->setNonDefaultRule(clockNDR);
         ndrAppliedNets++;
-        std::cout << "Applied NDR to: " << netName << " (level " << level << ")"
-                  << std::endl;
+        std::string net_name = net->getName();
+        // clang-format off
+        debugPrint(logger_, CTS, "clustering", 1,
+            "Applied NDR to: {} (level {})", net_name, level);
+        // clang-format on
       }
     }
-  }
+  });
 
   return ndrAppliedNets;
 }
 
 // Alternative function to apply NDR to a range of clock tree levels
-int applyNDRToClockLevelRange(odb::dbBlock* block_,
-                              odb::dbTechNonDefaultRule* clockNDR,
-                              const std::set<odb::dbNet*>& clkLeafNets,
-                              int minLevel,
-                              int maxLevel)
+int TritonCTS::applyNDRToClockLevelRange(Clock& clockNet,
+                                         odb::dbTechNonDefaultRule* clockNDR,
+                                         const int minLevel,
+                                         const int maxLevel)
 {
   std::vector<int> targetLevels;
   for (int i = minLevel; i <= maxLevel; i++) {
     targetLevels.push_back(i);
   }
 
-  return applyNDRToClockLevels(block_, clockNDR, clkLeafNets, targetLevels);
+  return applyNDRToClockLevels(clockNet, clockNDR, targetLevels);
 }
 
 // Function to apply NDR to the first half of clock tree levels
-int applyNDRToFirstHalfLevels(odb::dbBlock* block_,
-                              odb::dbTechNonDefaultRule* clockNDR,
-                              const std::set<odb::dbNet*>& clkLeafNets)
+int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
+                                         odb::dbTechNonDefaultRule* clockNDR)
 {
   // Get all unique levels in the design
-  std::vector<int> allLevels = getAllClockTreeLevels(block_, clkLeafNets);
+  const std::vector<int> allLevels = getAllClockTreeLevels(clockNet);
 
   // Calculate first half (rounding up if odd number of levels)
-  size_t halfCount = (allLevels.size() + 1) / 2;
+  const int halfCount = (allLevels.size() + 1) / 2;
 
   // Create vector with first half of levels
   std::vector<int> firstHalfLevels(allLevels.begin(),
                                    allLevels.begin() + halfCount);
 
-  std::cout << "Total clock tree levels found: " << allLevels.size()
-            << std::endl;
-  std::cout << "Applying NDR to first " << halfCount << " levels" << std::endl;
+  // clang-format off
+  debugPrint(logger_, CTS, "clustering", 1, "Total clock tree levels found: {}"
+        " Applying NDR to first {} levels", allLevels.size(), halfCount);
+  // clang-format on
 
   // Apply NDR to the first half
-  return applyNDRToClockLevels(block_, clockNDR, clkLeafNets, firstHalfLevels);
+  return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
 }
 
-void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
+void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
   int ruleIndex = 0;
   odb::dbTechNonDefaultRule* clockNDR;
+  Clock& clockNet = builder->getClock();
 
   // create a new non-default rule in *block* not tech
   while (ruleIndex >= 0) {
@@ -1687,26 +1697,22 @@ void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
 
   int clkNets = 0;
 
-  // TODO: Add user specified args to choose the NDR strategy
-  // Option 1: Apply NDR to specific levels
-  std::vector<int> specificLevels = {0};  // Apply to level 0
-  clkNets = applyNDRToClockLevels(block_, clockNDR, clkLeafNets, specificLevels);
-
-  // Option 2: Apply NDR to a range of levels (e.g., Levels 0-3)
-  // clkNets = applyNDRToClockLevelRange(block_, clockNDR, clkLeafNets, 0, 3);
-
-  // Option 3: Apply NDR to the first half of the clk tree levels (higher
-  // levels)
-  // clkNets = applyNDRToFirstHalfLevels(block_, clockNDR, clkLeafNets);
-
-  // Option 4: Apply NDR to all non-leaf clock nets
-  // for (odb::dbNet* net : block_->getNets()) {
-  //   if (net->getSigType() == odb::dbSigType::CLOCK
-  //       && (clkLeafNets.find(net) == clkLeafNets.end())) {
-  //     net->setNonDefaultRule(clockNDR);
-  //     clkNets++;
-  //   }
-  // }
+  // Apply NDR following the selected strategy (root_only, half, full)
+  switch (options_->getApplyNdr()) {
+    case CtsOptions::NdrStrategy::ROOT_ONLY:
+      clkNets = applyNDRToClockLevels(clockNet, clockNDR, {0});
+      break;
+    case CtsOptions::NdrStrategy::HALF:
+      clkNets = applyNDRToFirstHalfLevels(clockNet, clockNDR);
+      break;
+    case CtsOptions::NdrStrategy::FULL:
+      clkNets = applyNDRToClockLevels(
+          clockNet, clockNDR, getAllClockTreeLevels(clockNet));
+      break;
+    case CtsOptions::NdrStrategy::NONE:
+      // Should not be called
+      break;
+  }
 
   logger_->info(CTS,
                 202,
@@ -1946,8 +1952,10 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
         double delayPerSec = (rise + fall) / 2.0;
         // convert delay to length because HTree uses lengths
         sta::Corner* corner = openSta_->cmdCorner();
-        double capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
-        double resPerMicron = resizer_->wireSignalResistance(corner) * 1e-6;
+        double capPerMicron
+            = estimate_parasitics_->wireSignalCapacitance(corner) * 1e-6;
+        double resPerMicron
+            = estimate_parasitics_->wireSignalResistance(corner) * 1e-6;
         if (sta::fuzzyEqual(capPerMicron, 1e-18)
             || sta::fuzzyEqual(resPerMicron, 1e-18)) {
           logger_->warn(CTS,
@@ -2283,7 +2291,7 @@ void TritonCTS::setAllClocksPropagated()
   for (sta::Clock* clk : *sdc->clocks()) {
     openSta_->setPropagatedClock(clk);
   }
-  resizer_->estimateParasitics(rsz::ParasiticsSrc::placement);
+  estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::placement);
 }
 
 void TritonCTS::repairClockNets()
@@ -2306,7 +2314,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
-  rsz::IncrementalParasiticsGuard parasitics_guard(resizer_);
+  est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
   openSta_->ensureClkNetwork();
   openSta_->ensureClkArrivals();
   sta::Graph* graph = openSta_->graph();
@@ -2635,8 +2643,8 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
       = (module == nullptr || (module == block_->getTopModule()))
             ? network_->topInstance()
             : (sta::Instance*) (module->getModInst());
-  odb::dbNet* newNet
-      = network_->staToDb(network_->makeNet(newNetName.c_str(), scope));
+  odb::dbNet* newNet = network_->staToDb(network_->makeNet(
+      newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
 
   newNet->setSigType(odb::dbSigType::CLOCK);
 

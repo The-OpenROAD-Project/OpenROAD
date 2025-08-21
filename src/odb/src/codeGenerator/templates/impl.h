@@ -5,8 +5,6 @@
 //Generator Code Begin Header
 #pragma once
 
-#include "odb/odb.h"
-#include "dbCore.h"
 
 {% for include in klass.h_sys_includes %}
   #include <{{include}}>
@@ -19,9 +17,8 @@
 // User Code End Includes
 
 namespace odb {
-  class dbIStream;
-  class dbOStream;
-  class _dbDatabase;
+  // User Code Begin Consts
+  // User Code End Consts
   {% for _class in klass.declared_classes %}
     {% if _class in ["dbTable", "dbHashTable"] %}
       template <class T>
@@ -62,11 +59,7 @@ namespace odb {
       {% if "comment" in field %}
         {{field.comment}}
       {% endif %}
-      {% if field.table %}
-        dbTable<_{{field.type}}>* {{field.name}};
-      {% else %}
-        {{field.type}} {{field.name}};
-      {% endif %}
+      {{field.type}} {{field.name}};
     {% endfor %}
 
     // User Code Begin Fields

@@ -25,6 +25,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/mem_stats.h"
 
 namespace rsz {
 
@@ -42,7 +43,9 @@ using sta::PathExpanded;
 using sta::Port;
 using sta::VertexOutEdgeIterator;
 
-RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
+RepairHold::RepairHold(Resizer* resizer,
+                       est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -82,7 +85,7 @@ bool RepairHold::repairHold(
   max_buffer_count = std::max(max_buffer_count, 100);
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repaired = repairHold(ends1,
                           buffer_cell,
                           setup_margin,
@@ -117,7 +120,7 @@ void RepairHold::repairHold(const Pin* end_pin,
   const int max_buffer_count = max_buffer_percent * network_->instanceCount();
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repairHold(ends,
                buffer_cell,
                setup_margin,
@@ -488,7 +491,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 bool verbose,
                                 int& pass)
 {
-  resizer_->updateParasitics();
+  estimate_parasitics_->updateParasitics();
   sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
@@ -497,7 +500,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
       printProgress(pass, false, false);
     }
 
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
@@ -708,7 +711,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // to be preserved.
     // Move the driver pin over to gensym'd net.
     //
-    in_net = resizer_->makeUniqueNet();
+    in_net = db_network_->makeNet();
     Port* drvr_port = network_->port(drvr_pin);
     Instance* drvr_inst = network_->instance(drvr_pin);
     sta_->disconnectPin(drvr_pin);
@@ -717,8 +720,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   } else {
     in_net = db_network_->dbToSta(db_drvr_net);
     // make the output net, put in same module as buffer
-    std::string net_name = resizer_->makeUniqueNetName();
-    out_net = db_network_->makeNet(net_name.c_str(), parent);
+    out_net = db_network_->makeNet(parent);
   }
 
   dbNet* in_net_db = db_network_->staToDb(in_net);
@@ -745,11 +747,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
 
-  string buffer_name = resizer_->makeUniqueInstName("hold");
-
   // make the buffer in the driver pin's parent
-  Instance* buffer
-      = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, loc);
+  Instance* buffer = resizer_->makeBuffer(buffer_cell, "hold", parent, loc);
   inserted_buffer_count_++;
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
@@ -816,12 +815,12 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
-  resizer_->updateParasitics();
+  estimate_parasitics_->updateParasitics();
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.
   sta_->findDelays(buffer_out_vertex);
   if (!checkMaxSlewCap(buffer_out_pin)
       && resizer_->resizeToTargetSlew(buffer_out_pin)) {
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
     resize_count_++;
   }
 }
@@ -891,6 +890,8 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 3),
         worst_vertex->name(network_));
+
+    debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   }
 
   if (end) {
