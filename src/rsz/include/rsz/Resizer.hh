@@ -161,13 +161,9 @@ struct VTCategory
   }
   bool operator==(const VTCategory& other) const
   {
-    return (vt_index == other.vt_index &&
-            vt_name == other.vt_name);
+    return (vt_index == other.vt_index && vt_name == other.vt_name);
   }
-  bool operator!=(const VTCategory& other) const
-  {
-    return !(*this == other);
-  }
+  bool operator!=(const VTCategory& other) const { return !(*this == other); }
 };
 
 // Leakage statistics for cells in a single VT category
