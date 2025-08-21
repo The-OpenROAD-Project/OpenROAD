@@ -80,10 +80,10 @@ void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
     // OpenRoad is not initialized
     emit commandAboutToExecute();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    const bool setup_tcl_result = ord::tclInit(interp_) == TCL_OK;
+    const int setup_tcl_result = ord::tclInit(interp_);
     post_or_init();
     processTclResult(setup_tcl_result);
-    emit commandFinishedExecuting(setup_tcl_result);
+    emit commandFinishedExecuting(setup_tcl_result == TCL_OK);
   } else {
     post_or_init();
   }
@@ -675,7 +675,7 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
 
   if (!silent) {
     // Show its output
-    processTclResult(is_ok);
+    processTclResult(return_code);
 
     if (is_ok) {
       // record the successful command to tcl history command
@@ -685,16 +685,36 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
   } else {
     if (!is_ok) {
       // Show output on error despite silent
-      processTclResult(is_ok);
+      processTclResult(return_code);
     }
   }
 
   emit commandFinishedExecuting(is_ok);
 }
 
-void TclCmdInputWidget::processTclResult(bool is_ok)
+void TclCmdInputWidget::processTclResult(const int tcl_result)
 {
+  const bool is_ok = (tcl_result == TCL_OK);
   emit addResultToOutput(Tcl_GetString(Tcl_GetObjResult(interp_)), is_ok);
+
+  if (!is_ok) {
+    // Tcl_GetReturnOptions returns an object with a ref count of 0.
+    // We DO NOT own it and MUST NOT decrement its ref count.
+    Tcl_Obj* options = Tcl_GetReturnOptions(interp_, tcl_result);
+
+    // Create a key to look up the stack trace in the options dictionary.
+    Tcl_Obj* key = Tcl_NewStringObj("-errorinfo", -1);  // refCount is now 1
+
+    // Look up the stack trace.
+    Tcl_Obj* stackTrace = nullptr;
+    if (Tcl_DictObjGet(nullptr, options, key, &stackTrace) == TCL_OK
+        && stackTrace) {
+      const char* result_msg = Tcl_GetString(stackTrace);
+      emit addTextToOutput(QString::fromStdString(result_msg), Qt::red);
+    }
+
+    Tcl_DecrRefCount(key);
+  }
 }
 
 }  // namespace gui
