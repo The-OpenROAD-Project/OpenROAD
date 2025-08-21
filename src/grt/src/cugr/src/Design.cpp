@@ -1,328 +1,339 @@
 #include "Design.h"
 
+#include <unordered_map>
+
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "utl/Logger.h"
+
 namespace grt {
 
-void Design::read(std::string lef_file, std::string def_file)
+Design::Design(odb::dbDatabase* db, utl::Logger* logger)
+    : block_(db->getChip()->getBlock()), tech_(db->getTech()), logger_(logger)
 {
-  log() << "parsing..." << std::endl;
-  loghline();
-  const Rsyn::Json params = {{"lefFile", lef_file}, {"defFile", def_file}};
-  Rsyn::ISPD2018Reader reader;
-  reader.load(params);
-  log() << "Rsyn finished loading lef/def" << std::endl;
-  // GET DATA FOR DESIGN
+  read();
+  setUnitCosts();
+}
 
-  Rsyn::Session session;
-  Rsyn::PhysicalService* physicalService = session.getService("rsyn.physical");
-  Rsyn::PhysicalDesign physicalDesign = physicalService->getPhysicalDesign();
-  Rsyn::Design rsynDesign = session.getDesign();
-  Rsyn::Module rsynModule = rsynDesign.getTopModule();
-
-  libDBU = physicalDesign.getDatabaseUnits(Rsyn::LIBRARY_DBU);
-  auto dieBound = physicalDesign.getPhysicalDie().getBounds();
-  dieRegion = getBoxFromRsynBounds(dieBound);
+void Design::read()
+{
+  libDBU = block_->getDbUnitsPerMicron();
+  auto dieBound = block_->getDieArea();
+  dieRegion = getBoxFromRect(dieBound);
 
   // 1. Get layers
-  for (const Rsyn::PhysicalLayer& rsynLayer :
-       physicalDesign.allPhysicalLayers()) {
-    if (rsynLayer.getType() == Rsyn::ROUTING) {
-      const auto& rsynTracks = physicalDesign.allPhysicalTracks(rsynLayer);
-      layers.emplace_back(rsynLayer, rsynTracks, libDBU);
-    } else if (rsynLayer.getType() == Rsyn::CUT) {
+  for (odb::dbTechLayer* tech_layer : tech_->getLayers()) {
+    if (tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
+      odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+      if (track_grid != nullptr) {
+        layers_.emplace_back(tech_layer, track_grid);
+        if (tech_layer->getRoutingLevel() == 3) {
+          int track_step, track_init, num_tracks;
+          track_grid->getAverageTrackSpacing(
+              track_step, track_init, num_tracks);
+          defaultGridlineSpacing = track_step * 15;
+        }
+      }
     }
   }
 
-  // 2. Get macros and instances
-  int numCells = 0;
-  int numPorts = 0;
-  robin_hood::unordered_map<std::string, int> instanceIndices;
-  robin_hood::unordered_map<std::string, int>
-      macroNameIndices;  // Original macros
-  robin_hood::unordered_map<uint64_t, int>
-      macroIndices;  // Macros with a specific orientation
-  for (const Rsyn::Instance& rsynInstance : rsynModule.allInstances()) {
-    if (rsynInstance.getType() == Rsyn::CELL) {
-      numCells++;
-      const Rsyn::Cell& cell = rsynInstance.asCell();
-      const Rsyn::PhysicalLibraryCell& phyLibCell
-          = physicalDesign.getPhysicalLibraryCell(cell);
-      const std::string& macroName = phyLibCell.getMacro()->name();
-      if (macroNameIndices.find(macroName) == macroNameIndices.end()) {
-        macroNameIndices.emplace(macroName, macroNameIndices.size());
+  // 2. Get obstructions from insts
+  for (odb::dbInst* db_inst : block_->getInsts()) {
+    odb::dbTransform xform = db_inst->getTransform();
+
+    for (odb::dbITerm* iterm : db_inst->getITerms()) {
+      // get pin obstructions
+      for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
+          odb::dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+            continue;
+          }
+
+          int layerIndex = tech_layer->getRoutingLevel();
+          odb::Rect rect = box->getBox();
+          xform.apply(rect);
+
+          BoxOnLayer box_on_layer(
+              layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+          obstacles_.push_back(box_on_layer);
+        }
       }
-      int macroNameIndex = macroNameIndices[macroName];
-      int orientation = physicalDesign.getPhysicalCell(cell)
-                            .getTransform()
-                            .getOrientation();
-      uint64_t macroHash
-          = macroNameIndex * Rsyn::NUM_PHY_ORIENTATION + orientation;
+    }
 
-      const DBUxy position = rsynInstance.getPosition();
-      if (macroIndices.find(macroHash) == macroIndices.end()) {
-        int macroIndex = macros.size();
-        macros.emplace_back(macroIndex, cell, physicalDesign);
-        macroIndices.emplace(macroHash, macroIndex);
+    // get lib obstructions
+    for (odb::dbBox* box : db_inst->getMaster()->getObstructions()) {
+      if (box->getTechLayer()->getType() != odb::dbTechLayerType::ROUTING) {
+        continue;
       }
+      int layerIndex = box->getTechLayer()->getRoutingLevel();
 
-      int instanceIndex = instances.size();
-      instanceIndices[rsynInstance.getName()] = instanceIndex;
-      instances.emplace_back(instanceIndex,
-                             rsynInstance.getName(),
-                             macroIndices[macroHash],
-                             PointT<DBU>(position.x, position.y));
-    } else if (rsynInstance.getType() == Rsyn::PORT) {
-      numPorts++;
-      const Rsyn::Port& port = rsynInstance.asPort();
-      const Rsyn::PhysicalPort& phyPort = physicalDesign.getPhysicalPort(port);
+      odb::Rect rect = box->getBox();
+      xform.apply(rect);
 
-      int instanceIndex = instances.size();
-      instanceIndices[rsynInstance.getName()] = instanceIndex;
-      instances.emplace_back(instanceIndex, rsynInstance.getName(), phyPort);
+      odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
+      odb::Point upper_bound = odb::Point(rect.xMax(), rect.yMax());
+      odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+      obstacles_.emplace_back(layerIndex,
+                              obstruction_rect.xMin(),
+                              obstruction_rect.yMin(),
+                              obstruction_rect.xMax(),
+                              obstruction_rect.yMax());
     }
   }
 
-  // 3. Get Nets
-  for (const Rsyn::Net rsynNet : rsynModule.allNets()) {
-    if (rsynNet.getUse() == Rsyn::POWER || rsynNet.getUse() == Rsyn::GROUND) {
+  // 3. Populate netlist
+  for (odb::dbNet* db_net : block_->getNets()) {
+    if (db_net->isSpecial() || db_net->getSigType().isSupply()) {
       continue;
     }
-    nets.emplace_back(nets.size(), rsynNet.getName());
-    auto& net = nets.back();
-    for (const auto& rsynPin : rsynNet.allPins()) {
-      if (rsynPin.isPort()) {
-        auto p = instanceIndices.find(rsynPin.getName());
-        if (p == instanceIndices.end()) {
-          log() << "Error: cannot find instance " << rsynPin.getName()
-                << std::endl;
-        } else {
-          net.addPinRef(p->second, -1);
+
+    std::vector<CUGRPin> pins;
+    int pin_count = 0;
+    for (odb::dbBTerm* db_bterm : db_net->getBTerms()) {
+      int x, y;
+      std::vector<BoxOnLayer> pin_shapes;
+      if (db_bterm->getFirstPinLocation(x, y)) {
+        odb::Point position(x, y);
+        auto bounds = db_bterm->getBBox();
+        for (odb::dbBPin* bpin : db_bterm->getBPins()) {
+          for (odb::dbBox* bpin_box : bpin->getBoxes()) {
+            int layer_idx = bpin_box->getTechLayer()->getRoutingLevel();
+            pin_shapes.emplace_back(layer_idx,
+                                    getBoxFromRect(bpin_box->getBox()));
+          }
         }
-      } else {
-        auto p = instanceIndices.find(rsynPin.getInstance().getName());
-        if (p == instanceIndices.end()) {
-          log() << "Error: cannot find instance "
-                << rsynPin.getInstance().getName() << std::endl;
-        }
-        int instanceIndex = p->second;
-        Macro& macro = macros[instances[instanceIndex].getMacroIndex()];
-        auto pinIndex = macro.getPinIndex(rsynPin.getName());
-        net.addPinRef(instanceIndex, pinIndex);
+      }
+      for (const auto& pin_shape : pin_shapes) {
+        pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
+        pin_count++;
       }
     }
+
+    for (odb::dbITerm* db_iterm : db_net->getITerms()) {
+      std::vector<BoxOnLayer> pin_shapes;
+      odb::dbTransform xform = db_iterm->getInst()->getTransform();
+      for (odb::dbMPin* mpin : db_iterm->getMTerm()->getMPins()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
+          odb::dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+            continue;
+          }
+
+          odb::Rect rect = box->getBox();
+          xform.apply(rect);
+
+          int layerIndex = tech_layer->getRoutingLevel();
+          pin_shapes.emplace_back(
+              layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+        }
+      }
+
+      pins.emplace_back(pin_count, db_iterm, pin_shapes, false);
+      pin_count++;
+    }
+    nets_.emplace_back(db_net, pins);
   }
 
   // 4. Get special nets as obstacles
   int numSpecialNets = 0;
-  for (Rsyn::PhysicalSpecialNet specialNet :
-       physicalDesign.allPhysicalSpecialNets()) {
-    numSpecialNets++;
-    for (const DefWireDscp& wire : specialNet.getNet().clsWires) {
-      for (const DefWireSegmentDscp& segment : wire.clsWireSegments) {
-        int layerIdx
-            = physicalDesign.getPhysicalLayerByName(segment.clsLayerName)
-                  .getRelativeIndex();
-        const DBU width = segment.clsRoutedWidth;
-        DBUxy pos;
-        DBU ext = 0;
-        for (unsigned i = 0; i != segment.clsRoutingPoints.size(); ++i) {
-          const DefRoutingPointDscp& pt = segment.clsRoutingPoints[i];
-          const DBUxy& nextPos = pt.clsPos;
-          const DBU nextExt = pt.clsHasExtension ? pt.clsExtension : 0;
-          if (i >= 1) {
-            for (unsigned dim = 0; dim != 2; ++dim) {
-              if (pos[dim] == nextPos[dim]) {
-                continue;
-              }
-              const DBU l = pos[dim] < nextPos[dim] ? pos[dim] - ext
-                                                    : nextPos[dim] - nextExt;
-              const DBU h = pos[dim] < nextPos[dim] ? nextPos[dim] + nextExt
-                                                    : pos[dim] + ext;
-              BoxOnLayer box(layerIdx);
-              box[dim].Set(l, h);
-              box[1 - dim].Set(pos[1 - dim] - width / 2,
-                               pos[1 - dim] + width / 2);
-              obstacles.emplace_back(box);
-              break;
-            }
-          }
-          pos = nextPos;
-          ext = nextExt;
-          if (!pt.clsHasVia) {
-            continue;
-          }
-          const Rsyn::PhysicalVia& via
-              = physicalDesign.getPhysicalViaByName(pt.clsViaName);
-          const int botLayerIdx = via.getBottomLayer().getRelativeIndex();
-          for (const Rsyn::PhysicalViaGeometry& geo :
-               via.allBottomGeometries()) {
-            Bounds bounds = geo.getBounds();
-            bounds.translate(pos);
-            const BoxOnLayer box(botLayerIdx, getBoxFromRsynBounds(bounds));
-            obstacles.emplace_back(box);
-          }
-          const int topLayerIdx = via.getTopLayer().getRelativeIndex();
-          for (const Rsyn::PhysicalViaGeometry& geo : via.allTopGeometries()) {
-            Bounds bounds = geo.getBounds();
-            bounds.translate(pos);
-            const BoxOnLayer box(topLayerIdx, getBoxFromRsynBounds(bounds));
-            obstacles.emplace_back(box);
-          }
-          if (via.hasViaRule()) {
-            const PointT<int> numRowCol
-                = via.hasRowCol()
-                      ? PointT<int>(via.getNumCols(), via.getNumRows())
-                      : PointT<int>(1, 1);
-            BoxOnLayer botBox(botLayerIdx);
-            BoxOnLayer topBox(topLayerIdx);
-            for (unsigned dimIdx = 0; dimIdx != 2; ++dimIdx) {
-              const Dimension dim = static_cast<Dimension>(dimIdx);
-              const DBU origin
-                  = via.hasOrigin() ? pos[dim] + via.getOrigin(dim) : pos[dim];
-              const DBU botOff
-                  = via.hasOffset()
-                        ? origin + via.getOffset(Rsyn::BOTTOM_VIA_LEVEL, dim)
-                        : origin;
-              const DBU topOff
-                  = via.hasOffset()
-                        ? origin + via.getOffset(Rsyn::TOP_VIA_LEVEL, dim)
-                        : origin;
-              const DBU length = (via.getCutSize(dim) * numRowCol[dim]
-                                  + via.getSpacing(dim) * (numRowCol[dim] - 1))
-                                 / 2;
-              const DBU botEnc
-                  = length + via.getEnclosure(Rsyn::BOTTOM_VIA_LEVEL, dim);
-              const DBU topEnc
-                  = length + via.getEnclosure(Rsyn::TOP_VIA_LEVEL, dim);
-              botBox[dim].Set(botOff - botEnc, botOff + botEnc);
-              topBox[dim].Set(topOff - topEnc, topOff + topEnc);
-            }
-            obstacles.emplace_back(botBox);
-            obstacles.emplace_back(topBox);
-          }
-          if (layerIdx == botLayerIdx) {
-            layerIdx = topLayerIdx;
-          } else if (layerIdx == topLayerIdx) {
-            layerIdx = botLayerIdx;
-          } else {
-            log() << "Error: via " << pt.clsViaName << "of special net "
-                  << specialNet.getNet().clsName << " is on a wrong layer "
-                  << layerIdx << std::endl;
-            break;
-          }
-        }
-      }
-    }
-  }
+  // for (odb::dbNet* specialNet : block_->getNets()) {
+  //   if (!specialNet->isSpecial()) {
+  //     continue;
+  //   }
+  //   numSpecialNets++;
+  //   std::vector<odb::dbShape> via_boxes;
+  //   for (odb::dbSWire* swire : specialNet->getSWires()) {
+  //     for (odb::dbSBox* s : swire->getWires()) {
+  //       if (s->isVia()) {
+  //         s->getViaBoxes(via_boxes);
+  //         for (const odb::dbShape& box : via_boxes) {
+  //           odb::dbTechLayer* tech_layer = box.getTechLayer();
+  //           if (tech_layer->getRoutingLevel() == 0) {
+  //             continue;
+  //           }
+  //           odb::Rect via_rect = box.getBox();
+  //           applyNetObstruction(via_rect, tech_layer, die_area, db_net);
+  //         }
+  //       } else {
+  //         odb::Rect wire_rect = s->getBox();
+  //         odb::dbTechLayer* tech_layer = s->getTechLayer();
+  //         applyNetObstruction(wire_rect, tech_layer, die_area, db_net);
+  //       }
+  //     }
+  //   }
+  //   for (const DefWireDscp& wire : specialNet->getWire()) {
+  //     for (const DefWireSegmentDscp& segment : wire.clsWireSegments) {
+  //       int layerIdx
+  //           = physicalDesign.getPhysicalLayerByName(segment.clsLayerName)
+  //                 .getRelativeIndex();
+  //       const int width = segment.clsRoutedWidth;
+  //       odb::Point pos;
+  //       int ext = 0;
+  //       for (unsigned i = 0; i != segment.clsRoutingPoints.size(); ++i) {
+  //         const DefRoutingPointDscp& pt = segment.clsRoutingPoints[i];
+  //         const odb::Point& nextPos = pt.clsPos;
+  //         const int nextExt = pt.clsHasExtension ? pt.clsExtension : 0;
+  //         if (i >= 1) {
+  //           for (unsigned dim = 0; dim != 2; ++dim) {
+  //             if (pos[dim] == nextPos[dim]) {
+  //               continue;
+  //             }
+  //             const int l = pos[dim] < nextPos[dim] ? pos[dim] - ext
+  //                                                   : nextPos[dim] -
+  //                                                   nextExt;
+  //             const int h = pos[dim] < nextPos[dim] ? nextPos[dim] +
+  //             nextExt
+  //                                                   : pos[dim] + ext;
+  //             BoxOnLayer box(layerIdx);
+  //             box[dim].Set(l, h);
+  //             box[1 - dim].Set(pos[1 - dim] - width / 2,
+  //                              pos[1 - dim] + width / 2);
+  //             obstacles_.emplace_back(box);
+  //             break;
+  //           }
+  //         }
+  //         pos = nextPos;
+  //         ext = nextExt;
+  //         if (!pt.clsHasVia) {
+  //           continue;
+  //         }
+  //         const Rsyn::PhysicalVia& via
+  //             = physicalDesign.getPhysicalViaByName(pt.clsViaName);
+  //         const int botLayerIdx = via.getBottomLayer().getRelativeIndex();
+  //         for (const Rsyn::PhysicalViaGeometry& geo :
+  //              via.allBottomGeometries()) {
+  //           Bounds bounds = geo.getBounds();
+  //           bounds.translate(pos);
+  //           const BoxOnLayer box(botLayerIdx, getBoxFromRect(bounds));
+  //           obstacles_.emplace_back(box);
+  //         }
+  //         const int topLayerIdx = via.getTopLayer().getRelativeIndex();
+  //         for (const Rsyn::PhysicalViaGeometry& geo :
+  //         via.allTopGeometries())
+  //         {
+  //           Bounds bounds = geo.getBounds();
+  //           bounds.translate(pos);
+  //           const BoxOnLayer box(topLayerIdx, getBoxFromRect(bounds));
+  //           obstacles_.emplace_back(box);
+  //         }
+  //         if (via.hasViaRule()) {
+  //           const PointT<int> numRowCol
+  //               = via.hasRowCol()
+  //                     ? PointT<int>(via.getNumCols(), via.getNumRows())
+  //                     : PointT<int>(1, 1);
+  //           BoxOnLayer botBox(botLayerIdx);
+  //           BoxOnLayer topBox(topLayerIdx);
+  //           for (unsigned dimIdx = 0; dimIdx != 2; ++dimIdx) {
+  //             const Dimension dim = static_cast<Dimension>(dimIdx);
+  //             const int origin
+  //                 = via.hasOrigin() ? pos[dim] + via.getOrigin(dim) :
+  //                 pos[dim];
+  //             const int botOff
+  //                 = via.hasOffset()
+  //                       ? origin + via.getOffset(Rsyn::BOTTOM_VIA_LEVEL,
+  //                       dim) : origin;
+  //             const int topOff
+  //                 = via.hasOffset()
+  //                       ? origin + via.getOffset(Rsyn::TOP_VIA_LEVEL, dim)
+  //                       : origin;
+  //             const int length = (via.getCutSize(dim) * numRowCol[dim]
+  //                                 + via.getSpacing(dim) * (numRowCol[dim] -
+  //                                 1))
+  //                                / 2;
+  //             const int botEnc
+  //                 = length + via.getEnclosure(Rsyn::BOTTOM_VIA_LEVEL, dim);
+  //             const int topEnc
+  //                 = length + via.getEnclosure(Rsyn::TOP_VIA_LEVEL, dim);
+  //             botBox[dim].Set(botOff - botEnc, botOff + botEnc);
+  //             topBox[dim].Set(topOff - topEnc, topOff + topEnc);
+  //           }
+  //           obstacles_.emplace_back(botBox);
+  //           obstacles_.emplace_back(topBox);
+  //         }
+  //         if (layerIdx == botLayerIdx) {
+  //           layerIdx = topLayerIdx;
+  //         } else if (layerIdx == topLayerIdx) {
+  //           layerIdx = botLayerIdx;
+  //         } else {
+  //           logger_->report("Error: via " << pt.clsViaName << "of special
+  //           net
+  //           "
+  //                                         << specialNet.getNet().clsName
+  //                                         << " is on a wrong layer "
+  //                                         << layerIdx);
+  //           break;
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
   // 5. Get gridlines
   gridlines.resize(2);
-  if (physicalDesign.allPhysicalGCell().empty()) {
-    for (unsigned dimension = 0; dimension < 2; dimension++) {
-      const int low = dieRegion[dimension].low;
-      const int high = dieRegion[dimension].high;
-      for (int i = low; i + defaultGridlineSpacing < high;
-           i += defaultGridlineSpacing) {
-        gridlines[dimension].push_back(i);
-      }
-      if (gridlines[dimension].back() != high) {
-        gridlines[dimension].push_back(high);
-      }
+  for (unsigned dimension = 0; dimension < 2; dimension++) {
+    const int low = dieRegion[dimension].low;
+    const int high = dieRegion[dimension].high;
+    for (int i = low; i + defaultGridlineSpacing < high;
+         i += defaultGridlineSpacing) {
+      gridlines[dimension].push_back(i);
     }
-  } else {
-    for (const Rsyn::PhysicalGCell& rsynGCell :
-         physicalDesign.allPhysicalGCell()) {
-      int location = rsynGCell.getLocation();
-      int step = rsynGCell.getStep();
-      int numStep = rsynGCell.getNumTracks();
-      unsigned direction
-          = (rsynGCell.getDirection() == Rsyn::PhysicalGCellDirection::VERTICAL
-                 ? MetalLayer::V
-                 : MetalLayer::H);
-      for (int i = 1; i < numStep; i++) {
-        gridlines[1 - direction].push_back(location + step * i);
-      }
-    }
-    for (unsigned dimension = 0; dimension < 2; dimension++) {
-      gridlines[dimension].push_back(dieRegion[dimension].low);
-      sort(gridlines[dimension].begin(), gridlines[dimension].end());
-      if (gridlines[dimension].back() != dieRegion[dimension].high) {
-        gridlines[dimension].push_back(dieRegion[dimension].high);
-      }
+    if (gridlines[dimension].back() != high) {
+      gridlines[dimension].push_back(high);
     }
   }
-  log() << "Finished reading lef/def" << std::endl;
-  logmem();
-  logeol();
 
-  log() << "design statistics" << std::endl;
-  loghline();
-  log() << "lib DBU:             " << libDBU << std::endl;
-  log() << "die region (in DBU): " << dieRegion << std::endl;
-  log() << "num of cells:        " << numCells << std::endl;
-  log() << "num of ports:        " << numPorts << std::endl;
-  log() << "num of nets :        " << nets.size() << std::endl;
-  log() << "num of special nets: " << numSpecialNets << std::endl;
-  log() << "gcell grid:          " << gridlines[0].size() - 1 << " x "
-        << gridlines[1].size() - 1 << " x " << getNumLayers() << std::endl;
-  logeol();
+  std::cout << "design statistics" << std::endl;
+  std::cout << "lib DBU:             " << libDBU << std::endl;
+  std::cout << "die region (in DBU): " << dieRegion << std::endl;
+  std::cout << "num of nets :        " << nets_.size() << std::endl;
+  std::cout << "num of special nets: " << numSpecialNets << std::endl;
+  std::cout << "gcell grid:          " << gridlines[0].size() - 1 << " x "
+            << gridlines[1].size() - 1 << " x " << getNumLayers() << std::endl;
+
+  for (const auto& layer : layers_) {
+    std::cout << "Layer " << layer.getName() << " statistics:" << std::endl;
+    std::cout << "  Width: " << layer.getWidth() << std::endl;
+    std::cout << "  Pitch: " << layer.getPitch() << std::endl;
+    std::cout << "  Min Length: " << layer.getMinLength() << std::endl;
+    std::cout << "  Default Spacing: " << layer.getDefaultSpacing()
+              << std::endl;
+    std::cout << "  Max EOL Spacing: " << layer.getMaxEolSpacing() << std::endl;
+  }
 }
 
 void Design::setUnitCosts()
 {
-  DBU m2_pitch = layers[1].getPitch();
-  unit_length_wire_cost = parameters.weight_wire_length / m2_pitch;
-  unit_via_cost = parameters.weight_via_number;
-  unit_length_short_costs.resize(layers.size());
-  const CostT unit_area_short_cost
-      = parameters.weight_short_area / (m2_pitch * m2_pitch);
-  for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
+  int m2_pitch = layers_[1].getPitch();
+  unit_length_wire_cost = weight_wire_length / m2_pitch;
+  unit_via_cost = weight_via_number;
+  unit_length_short_costs.resize(layers_.size());
+  const CostT unit_area_short_cost = weight_short_area / (m2_pitch * m2_pitch);
+  for (int layerIndex = 0; layerIndex < layers_.size(); layerIndex++) {
     unit_length_short_costs[layerIndex]
-        = unit_area_short_cost * layers[layerIndex].getWidth();
+        = unit_area_short_cost * layers_[layerIndex].getWidth();
   }
 }
 
-void Design::getPinShapes(const PinReference& pinRef,
-                          std::vector<BoxOnLayer>& pinShapes) const
-{
-  const auto& instance = instances[pinRef.instanceIndex];
-  if (instance.isCell()) {
-    const Macro& macro = macros[instance.getMacroIndex()];
-    const PointT<DBU> position = instance.getPosition();
-    const std::vector<BoxOnLayer>& macroPins
-        = macro.getPinShapes(pinRef.pinIndex);
-    for (const auto& macroPin : macroPins) {
-      pinShapes.push_back(macroPin);
-      pinShapes.back().ShiftBy(position);
-    }
-  } else {
-    pinShapes.push_back(instance.getPort());
-  }
-}
-
-void Design::getAllObstacles(std::vector<std::vector<BoxT<DBU>>>& allObstacles,
+void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& allObstacles,
                              bool skipM1) const
 {
   allObstacles.resize(getNumLayers());
-  // cell obstacles
-  for (const auto& instance : instances) {
-    if (!instance.isCell()) {
-      continue;
-    }
-    PointT<DBU> position = instance.getPosition();
-    const auto& macro = macros[instance.getMacroIndex()];
-    const std::vector<BoxOnLayer>& macroObstacles = macro.getObstacles();
-    for (const BoxOnLayer& obs : macroObstacles) {
-      if (obs.layerIdx > 0 || !skipM1) {
-        allObstacles[obs.layerIdx].emplace_back(obs.x, obs.y);
-        allObstacles[obs.layerIdx].back().ShiftBy(position);
-      }
-    }
-  }
-  // other obstacles
-  for (const BoxOnLayer& obs : obstacles) {
-    if (obs.layerIdx > 0 || !skipM1) {
+
+  for (const BoxOnLayer& obs : obstacles_) {
+    if (obs.layerIdx > 1 || !skipM1) {
       allObstacles[obs.layerIdx].emplace_back(obs.x, obs.y);
     }
+  }
+
+  int layer_idx = 0;
+  for (auto layer_boxes : allObstacles) {
+    std::cout << "Layer " << layer_idx << " has " << layer_boxes.size()
+              << " obstacles." << std::endl;
+    for (const auto& box : layer_boxes) {
+      std::cout << "\t" << box << std::endl;
+    }
+    layer_idx++;
   }
 }
 

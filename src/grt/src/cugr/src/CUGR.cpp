@@ -14,8 +14,8 @@
 namespace grt {
 
 CUGR::CUGR(odb::dbDatabase* db,
-        utl::Logger* log,
-        stt::SteinerTreeBuilder* stt_builder)
+           utl::Logger* log,
+           stt::SteinerTreeBuilder* stt_builder)
     : db_(db), logger_(log), stt_builder_(stt_builder)
 {
   design_ = new Design(db_, logger_);
@@ -62,7 +62,8 @@ void CUGR::route()
   // logger_->report(netIndices.size()
   //                 << " / " << nets.size() << " nets have overflows.");
 
-  // t1 = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()
+  // t1 =
+  // std::chrono::duration<double>(std::chrono::high_resolution_clock::now()
   //                                    - t)
   //          .count();
   // t = std::chrono::high_resolution_clock::now();
@@ -101,7 +102,8 @@ void CUGR::route()
   //                   << " / " << nets.size() << " nets have overflows.");
   // }
 
-  // t2 = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()
+  // t2 =
+  // std::chrono::duration<double>(std::chrono::high_resolution_clock::now()
   //                                    - t)
   //          .count();
   // t = std::chrono::high_resolution_clock::now();
@@ -147,7 +149,8 @@ void CUGR::route()
   //                   << " / " << nets.size() << " nets have overflows.");
   // }
 
-  // t3 = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()
+  // t3 =
+  // std::chrono::duration<double>(std::chrono::high_resolution_clock::now()
   //                                    - t)
   //          .count();
   // t = std::chrono::high_resolution_clock::now();
@@ -235,8 +238,9 @@ void CUGR::getGuides(const GRNet* net,
   //             layerIdx,
   //             BoxT<int>(max(gpt.x - padding, 0),
   //                       std::max(gpt.y - padding, 0),
-  //                       std::min(gpt.x + padding, (int) gridGraph.getSize(0) - 1),
-  //                       std::min(gpt.y + padding, (int) gridGraph.getSize(1) - 1)));
+  //                       std::min(gpt.x + padding, (int) gridGraph.getSize(0)
+  //                       - 1), std::min(gpt.y + padding, (int)
+  //                       gridGraph.getSize(1) - 1)));
   //         areaOfPinPatches += (guides.back().second.x.range() + 1)
   //                             * (guides.back().second.y.range() + 1);
   //       }
@@ -295,17 +299,18 @@ void CUGR::printStatistics() const
   // wireUsage.assign(
   //     gridGraph.getNumLayers(),
   //     std::vector<std::vector<int>>(gridGraph.getSize(0),
-  //                                   std::vector<int>(gridGraph.getSize(1), 0)));
+  //                                   std::vector<int>(gridGraph.getSize(1),
+  //                                   0)));
   // for (const auto& net : nets) {
   //   GRTreeNode::preorder(
   //       net.getRoutingTree(), [&](std::shared_ptr<GRTreeNode> node) {
   //         for (const auto& child : node->children) {
   //           if (node->layerIdx == child->layerIdx) {
-  //             unsigned direction = gridGraph.getLayerDirection(node->layerIdx);
-  //             int l = std::min((*node)[direction], (*child)[direction]);
-  //             int h = std::max((*node)[direction], (*child)[direction]);
-  //             int r = (*node)[1 - direction];
-  //             for (int c = l; c < h; c++) {
+  //             unsigned direction =
+  //             gridGraph.getLayerDirection(node->layerIdx); int l =
+  //             std::min((*node)[direction], (*child)[direction]); int h =
+  //             std::max((*node)[direction], (*child)[direction]); int r =
+  //             (*node)[1 - direction]; for (int c = l; c < h; c++) {
   //               wireLength += gridGraph.getEdgeLength(direction, c);
   //               int x = direction == MetalLayer::H ? c : r;
   //               int y = direction == MetalLayer::H ? r : c;
@@ -329,8 +334,8 @@ void CUGR::printStatistics() const
   //   unsigned direction = gridGraph.getLayerDirection(layerIndex);
   //   for (int x = 0; x < gridGraph.getSize(0) - 1 + direction; x++) {
   //     for (int y = 0; y < gridGraph.getSize(1) - direction; y++) {
-  //       CapacityT resource = gridGraph.getEdge(layerIndex, x, y).getResource();
-  //       if (resource < minResource) {
+  //       CapacityT resource = gridGraph.getEdge(layerIndex, x,
+  //       y).getResource(); if (resource < minResource) {
   //         minResource = resource;
   //         bottleneck = {layerIndex, x, y};
   //       }
@@ -374,7 +379,8 @@ void CUGR::write(std::string guide_file)
   //   ss << ")" << std::endl;
   // }
   // logger_->report("total area of pin access patches: {}", areaOfPinPatches);
-  // logger_->report("total area of wire segment patches: {}", areaOfWirePatches);
+  // logger_->report("total area of wire segment patches: {}",
+  // areaOfWirePatches);
 }
 
 }  // namespace grt

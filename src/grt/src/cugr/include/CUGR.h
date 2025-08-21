@@ -58,8 +58,8 @@ class CUGR
 {
  public:
   CUGR(odb::dbDatabase* db,
-        utl::Logger* log,
-        stt::SteinerTreeBuilder* stt_builder);
+       utl::Logger* log,
+       stt::SteinerTreeBuilder* stt_builder);
   void route();
   void write(std::string guide_file = "");
 
@@ -76,7 +76,6 @@ class CUGR
   odb::dbDatabase* db_;
   stt::SteinerTreeBuilder* stt_builder_;
   utl::Logger* logger_;
-
 
   int areaOfPinPatches;
   int areaOfWirePatches;
