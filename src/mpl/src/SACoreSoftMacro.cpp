@@ -599,7 +599,7 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
-  // Notch detection based on
+  // An empty grid cell surrounded by 3 or more edges is considered a notch
   for (int row = 0; row < num_y; row++) {
     for (int col = 0; col < num_x; col++) {
       if (grid[row][col]) {
