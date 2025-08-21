@@ -2053,6 +2053,25 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   return swappable_cells;
 }
 
+size_t getCommonLength(const std::string& string1, const std::string& string2)
+{
+  size_t common_len = 0;
+  size_t len_limit = std::min(string1.length(), string2.length());
+
+  while (common_len < len_limit && string1[common_len] == string2[common_len]) {
+    common_len++;
+  }
+
+  return common_len;
+}
+
+// Get VT swappable cells including the source cell itself
+// Use cache to store equivalent cell list as follows:
+// BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+// BUF_X1_LVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+// BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+// If there are multiple cells in a VT category,
+// keep only one cell that most closely matches the source cell name
 LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
 {
   auto cache_it = vt_equiv_cells_cache_.find(source_cell);
@@ -2133,6 +2152,33 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
                      // Treat missing leakage as 0
                      return leak1.value_or(0.0) < leak2.value_or(0.0);
                    });
+
+  // Pick only one cell from each VT category
+  const std::string source_name = source_cell->name();
+  for (auto it = vt_equiv_cells.begin(); it != vt_equiv_cells.end();) {
+    if (std::next(it) != vt_equiv_cells.end()) {
+      LibertyCell* curr_cell = *it;
+      LibertyCell* next_cell = *std::next(it);
+      dbMaster* curr_master = db_network_->staToDb(curr_cell);
+      dbMaster* next_master = db_network_->staToDb(next_cell);
+      if (cellVTType(curr_master) == cellVTType(next_master)) {
+        const std::string curr_name = curr_cell->name();
+        const std::string next_name = next_cell->name();
+        size_t curr_common_len = getCommonLength(curr_name, source_name);
+        size_t next_common_len = getCommonLength(next_name, source_name);
+        if (curr_common_len > next_common_len) {
+          vt_equiv_cells.erase(std::next(it));
+          ++it;
+        } else {
+          vt_equiv_cells.erase(it);
+        }
+      } else {
+        ++it;
+      }
+    } else {
+      ++it;
+    }
+  }
 
   // Map all equivalent cells to the same list
   // BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
