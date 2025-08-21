@@ -371,6 +371,10 @@ void Resizer::init()
 // remove all buffers if no buffers are specified
 void Resizer::removeBuffers(sta::InstanceSeq insts)
 {
+  // Unlike Resizer::bufferInputs(), init() call is not needed here.
+  // init() call performs STA levelization, but removeBuffers() does not need
+  // timing information. So initBlock(), a light version of init(), is
+  // sufficient.
   initBlock();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
