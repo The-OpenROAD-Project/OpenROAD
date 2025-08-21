@@ -21,19 +21,18 @@
 [INFO GPL-0019] Utilization:                     0.671 %
 [INFO GPL-0020] Standard cells area:           321.062 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 18520
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 27440
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 25496
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 24876
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 24732
+[InitialPlace]  Iter: 1 residual: 0.00000456 HPWL: 27438, abs percent change: 48.15334773218142
+[InitialPlace]  Iter: 2 residual: 0.00000823 HPWL: 25342, abs percent change: 7.639040746410088
+[InitialPlace]  Iter: 3 residual: 0.00000416 HPWL: 24876, abs percent change: 1.8388446057927552
+[InitialPlace]  Iter: 4 residual: 0.00000005 HPWL: 24732, abs percent change: 0.5788712011577424
 Placement Analysis
 ---------------------------------
-total displacement       1145.8 u
-average displacement       16.1 u
+total displacement       1148.8 u
+average displacement       16.2 u
 max displacement           25.9 u
 original HPWL               2.3 u
 legalized HPWL             90.0 u
-delta HPWL                 3754 %
+delta HPWL                 3757 %
 
 max fanout
 
@@ -55,4 +54,6 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout8/Z                                10     10      0 (MET)
 
-No differences found.
+Differences found at line 204.
+ DFF_X1 load7 (.D(net_i_4),
+ DFF_X1 load7 (.D(net_i_2),

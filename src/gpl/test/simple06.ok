@@ -21,9 +21,8 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 5668660
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5048725
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5034377
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5036666
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5036282
-No differences found.
+[InitialPlace]  Iter: 1 residual: 0.00000784 HPWL: 5048733, abs percent change: 10.93604132193499
+[InitialPlace]  Iter: 2 residual: 0.00000998 HPWL: 5034383, abs percent change: 0.2842297265472347
+Differences found at line 63.
+    - _276_ NOR2_X2 + PLACED ( 31978 29602 ) N ;
+    - _276_ NOR2_X2 + PLACED ( 32513 29799 ) N ;

@@ -26,11 +26,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0019] Utilization:                     0.576 %
 [INFO GPL-0020] Standard cells area:             3.754 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 93755
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 1 residual: 0.00000008 HPWL: 92385, abs percent change: 1.4612553997120155
+[InitialPlace]  Iter: 2 residual: 0.00000008 HPWL: 92385, abs percent change: 0
 [INFO GPL-0023] Placement target density:       0.7500
 [INFO GPL-0024] Movable insts average area:      3.754 um^2
 [INFO GPL-0025] Ideal bin area:                  5.005 um^2

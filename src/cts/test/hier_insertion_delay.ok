@@ -22,11 +22,7 @@
 [INFO GPL-0019] Utilization:                     2.835 %
 [INFO GPL-0020] Standard cells area:          1257.116 um^2
 [INFO GPL-0021] Large instances area:          100.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 40000
+[InitialPlace]  Iter: 1 residual: 0.00001000 HPWL: 40000, abs percent change: 0
 Placement Analysis
 ---------------------------------
 total displacement       9363.8 u

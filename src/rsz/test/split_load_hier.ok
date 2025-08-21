@@ -21,19 +21,17 @@
 [INFO GPL-0019] Utilization:                     0.288 %
 [INFO GPL-0020] Standard cells area:           138.054 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 182440
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 200075
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000011 HPWL: 195901
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 194848
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 194513
+[InitialPlace]  Iter: 1 residual: 0.00000636 HPWL: 200057, abs percent change: 9.656325367244026
+[InitialPlace]  Iter: 2 residual: 0.00000498 HPWL: 195077, abs percent change: 2.489290552192625
+[InitialPlace]  Iter: 3 residual: 0.00000309 HPWL: 194547, abs percent change: 0.2716875900285528
 Placement Analysis
 ---------------------------------
-total displacement        589.4 u
-average displacement       12.5 u
-max displacement           17.0 u
+total displacement        591.3 u
+average displacement       12.6 u
+max displacement           17.1 u
 original HPWL               5.0 u
 legalized HPWL            307.4 u
-delta HPWL                 6037 %
+delta HPWL                 6110 %
 
 worst slack max -0.70
 tns max -8.694

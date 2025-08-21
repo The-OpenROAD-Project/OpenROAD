@@ -23,16 +23,31 @@
 [INFO GPL-0019] Utilization:                     0.671 %
 [INFO GPL-0020] Standard cells area:           321.062 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 18520
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 27440
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 19494
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 27022
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 19466
+[InitialPlace]  Iter: 1 residual: 0.00000330 HPWL: 27442, abs percent change: 48.17494600431966
+[InitialPlace]  Iter: 2 residual: 0.00000010 HPWL: 19348, abs percent change: 29.49493477151811
+[InitialPlace]  Iter: 3 residual: 0.00000007 HPWL: 27022, abs percent change: 39.66301426504032
+[InitialPlace]  Iter: 4 residual: 0.00000014 HPWL: 19466, abs percent change: 27.962401006587225
+[InitialPlace]  Iter: 5 residual: 0.00000704 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 6 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 7 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 8 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 9 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 10 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 11 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 12 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 13 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 14 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 15 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 16 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 17 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 18 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
+[InitialPlace]  Iter: 19 residual: 0.00000075 HPWL: 27020, abs percent change: 38.80612349738005
+[InitialPlace]  Iter: 20 residual: 0.00000075 HPWL: 19466, abs percent change: 27.957068837897854
 Placement Analysis
 ---------------------------------
-total displacement       1195.4 u
-average displacement       16.8 u
-max displacement           27.1 u
+total displacement       1148.0 u
+average displacement       16.2 u
+max displacement           24.6 u
 original HPWL               2.4 u
 legalized HPWL             90.0 u
 delta HPWL                 3711 %
@@ -57,4 +72,6 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout9/Z                                10     10      0 (MET)
 
-No differences found.
+Differences found at line 216.
+ DFF_X1 load8 (.D(net_i_6),
+ DFF_X1 load8 (.D(net0),

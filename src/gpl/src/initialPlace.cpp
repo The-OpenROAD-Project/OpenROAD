@@ -4,12 +4,14 @@
 #include "initialPlace.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "graphics.h"
 #include "placerBase.h"
 #include "solver.h"
 
@@ -26,7 +28,7 @@ void InitialPlaceVars::reset()
 {
   maxIter = 20;
   minDiffLength = 1500;
-  maxSolverIter = 100;
+  maxSolverIter = 50;
   maxFanout = 200;
   netWeightScale = 800.0;
   debug = false;
@@ -40,9 +42,12 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 {
 }
 
-void InitialPlace::doBicgstabPlace(int threads)
+void InitialPlace::doPlace(int threads)
 {
-  ResidualError error;
+  ResidualError residual;
+
+  constexpr float kResidualThreshold = 1.0e-5;
+  constexpr float kHpwlPctChangeThreshold = 1.0;
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
@@ -58,19 +63,20 @@ void InitialPlace::doBicgstabPlace(int threads)
     graphics->getGuiObjectFromGraphics()->gifStart("initPlacement.gif");
   }
 
+  auto init_hpwl = pbc_->getHpwl();
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
-    error = cpuSparseSolve(ipVars_.maxSolverIter,
-                           iter,
-                           placeInstForceMatrixX_,
-                           fixedInstForceVecX_,
-                           instLocVecX_,
-                           placeInstForceMatrixY_,
-                           fixedInstForceVecY_,
-                           instLocVecY_,
-                           log_,
-                           threads);
+    residual = cpuSparseSolve(ipVars_.maxSolverIter,
+                              kResidualThreshold,
+                              placeInstForceMatrixX_,
+                              fixedInstForceVecX_,
+                              instLocVecX_,
+                              placeInstForceMatrixY_,
+                              fixedInstForceVecY_,
+                              instLocVecY_,
+                              log_,
+                              threads);
 
     if (graphics) {
       graphics->cellPlot(true);
@@ -83,7 +89,7 @@ void InitialPlace::doBicgstabPlace(int threads)
       gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
 
-    if (std::isnan(error.x) || std::isnan(error.y)) {
+    if (std::isnan(residual.x) || std::isnan(residual.y)) {
       log_->warn(GPL,
                  154,
                  "Conjugate gradient initial placement solver failed at "
@@ -92,16 +98,23 @@ void InitialPlace::doBicgstabPlace(int threads)
       break;
     }
 
-    float error_max = std::max(error.x, error.y);
-    log_->report(
-        "[InitialPlace]  Iter: {} conjugate gradient residual: {:0.8f} HPWL: "
-        "{}",
-        iter,
-        error_max,
-        pbc_->getHpwl());
     updateCoordi();
+    float residual_max = std::max(residual.x, residual.y);
+    const auto current_hpwl = pbc_->getHpwl();
+    const double hpwl_pct_change
+        = 100.0 * static_cast<double>(std::abs(init_hpwl - current_hpwl))
+          / init_hpwl;
+    init_hpwl = current_hpwl;
+    log_->report(
+        "[InitialPlace]  Iter: {} residual: {:0.8f} HPWL: "
+        "{}, abs percent change: {}",
+        iter,
+        residual_max,
+        current_hpwl,
+        hpwl_pct_change);
 
-    if (error_max <= 1e-5 && iter >= 5) {
+    if (residual_max <= kResidualThreshold
+        && hpwl_pct_change < kHpwlPctChangeThreshold) {
       break;
     }
   }

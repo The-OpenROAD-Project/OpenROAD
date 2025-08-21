@@ -21,11 +21,8 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 5668660
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5048725
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5034377
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5036666
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5036282
+[InitialPlace]  Iter: 1 residual: 0.00000784 HPWL: 5048733, abs percent change: 10.93604132193499
+[InitialPlace]  Iter: 2 residual: 0.00000998 HPWL: 5034383, abs percent change: 0.2842297265472347
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
@@ -38,60 +35,60 @@
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.8438 |  3.796564e+06 |   +0.00% |  7.97e-14 |      
-       10 |   0.7432 |  4.212821e+06 |  +10.96% |  1.30e-13 |      
-       20 |   0.7468 |  4.195180e+06 |   -0.42% |  2.11e-13 |      
-       30 |   0.7480 |  4.196203e+06 |   +0.02% |  3.44e-13 |      
-       40 |   0.7474 |  4.196379e+06 |   +0.00% |  5.61e-13 |      
-       50 |   0.7472 |  4.196232e+06 |   -0.00% |  9.14e-13 |      
-       60 |   0.7473 |  4.196634e+06 |   +0.01% |  1.49e-12 |      
-       70 |   0.7473 |  4.196871e+06 |   +0.01% |  2.42e-12 |      
-       80 |   0.7470 |  4.197401e+06 |   +0.01% |  3.95e-12 |      
-       90 |   0.7467 |  4.198302e+06 |   +0.02% |  6.43e-12 |      
-      100 |   0.7463 |  4.199684e+06 |   +0.03% |  1.05e-11 |      
-      110 |   0.7457 |  4.201968e+06 |   +0.05% |  1.71e-11 |      
-      120 |   0.7445 |  4.205652e+06 |   +0.09% |  2.78e-11 |      
-      130 |   0.7427 |  4.211277e+06 |   +0.13% |  4.53e-11 |      
-      140 |   0.7400 |  4.220238e+06 |   +0.21% |  7.38e-11 |      
-      150 |   0.7361 |  4.234481e+06 |   +0.34% |  1.20e-10 |      
-      160 |   0.7300 |  4.256795e+06 |   +0.53% |  1.96e-10 |      
-      170 |   0.7181 |  4.286768e+06 |   +0.70% |  3.19e-10 |      
-      180 |   0.7006 |  4.327737e+06 |   +0.96% |  5.19e-10 |      
-      190 |   0.6798 |  4.383844e+06 |   +1.30% |  8.46e-10 |      
-      200 |   0.6576 |  4.457657e+06 |   +1.68% |  1.38e-09 |      
-      210 |   0.6213 |  4.523486e+06 |   +1.48% |  2.24e-09 |      
+        0 |   0.8515 |  3.755128e+06 |   +0.00% |  7.83e-14 |      
+       10 |   0.7444 |  4.212544e+06 |  +12.18% |  1.28e-13 |      
+       20 |   0.7467 |  4.195122e+06 |   -0.41% |  2.08e-13 |      
+       30 |   0.7480 |  4.196093e+06 |   +0.02% |  3.38e-13 |      
+       40 |   0.7474 |  4.196334e+06 |   +0.01% |  5.51e-13 |      
+       50 |   0.7473 |  4.196255e+06 |   -0.00% |  8.98e-13 |      
+       60 |   0.7473 |  4.196561e+06 |   +0.01% |  1.46e-12 |      
+       70 |   0.7473 |  4.196835e+06 |   +0.01% |  2.38e-12 |      
+       80 |   0.7470 |  4.197376e+06 |   +0.01% |  3.88e-12 |      
+       90 |   0.7468 |  4.198255e+06 |   +0.02% |  6.32e-12 |      
+      100 |   0.7464 |  4.199613e+06 |   +0.03% |  1.03e-11 |      
+      110 |   0.7457 |  4.201872e+06 |   +0.05% |  1.68e-11 |      
+      120 |   0.7445 |  4.205469e+06 |   +0.09% |  2.73e-11 |      
+      130 |   0.7428 |  4.211028e+06 |   +0.13% |  4.45e-11 |      
+      140 |   0.7402 |  4.219840e+06 |   +0.21% |  7.25e-11 |      
+      150 |   0.7363 |  4.233723e+06 |   +0.33% |  1.18e-10 |      
+      160 |   0.7303 |  4.255778e+06 |   +0.52% |  1.92e-10 |      
+      170 |   0.7186 |  4.285477e+06 |   +0.70% |  3.13e-10 |      
+      180 |   0.7012 |  4.325945e+06 |   +0.94% |  5.10e-10 |      
+      190 |   0.6807 |  4.381453e+06 |   +1.28% |  8.31e-10 |      
+      200 |   0.6584 |  4.454691e+06 |   +1.67% |  1.35e-09 |      
+      210 |   0.6228 |  4.521141e+06 |   +1.49% |  2.21e-09 |      
 [INFO GPL-0038] Routability snapshot saved at iter = 216
-      220 |   0.5823 |  4.600925e+06 |   +1.71% |  3.66e-09 |      
-      230 |   0.5418 |  4.680893e+06 |   +1.74% |  5.96e-09 |      
-      240 |   0.4880 |  4.709557e+06 |   +0.61% |  9.70e-09 |      
-      250 |   0.4321 |  4.701787e+06 |   -0.16% |  1.58e-08 |      
-      260 |   0.3690 |  4.684741e+06 |   -0.36% |  2.57e-08 |      
-      270 |   0.3229 |  4.686171e+06 |   +0.03% |  4.03e-08 |      
-      280 |   0.2999 |  4.737986e+06 |   +1.11% |  5.93e-08 |      
+      220 |   0.5838 |  4.597804e+06 |   +1.70% |  3.59e-09 |      
+      230 |   0.5435 |  4.678798e+06 |   +1.76% |  5.85e-09 |      
+      240 |   0.4903 |  4.710199e+06 |   +0.67% |  9.53e-09 |      
+      250 |   0.4342 |  4.698274e+06 |   -0.25% |  1.55e-08 |      
+      260 |   0.3725 |  4.682658e+06 |   -0.33% |  2.53e-08 |      
+      270 |   0.3244 |  4.689139e+06 |   +0.14% |  3.96e-08 |      
+      280 |   0.3006 |  4.737824e+06 |   +1.04% |  5.83e-08 |      
 [INFO GPL-0040] Routability iteration: 1
 [INFO GPL-0041] Total routing overflow: 0.0000
 [INFO GPL-0042] Number of overflowed tiles: 0 (0.00%)
-[INFO GPL-0043] Average top 0.5% routing congestion: 0.5573
-[INFO GPL-0044] Average top 1.0% routing congestion: 0.5409
-[INFO GPL-0045] Average top 2.0% routing congestion: 0.5149
-[INFO GPL-0046] Average top 5.0% routing congestion: 0.4777
-[INFO GPL-0047] Routability iteration weighted routing congestion: 0.5491
+[INFO GPL-0043] Average top 0.5% routing congestion: 0.5441
+[INFO GPL-0044] Average top 1.0% routing congestion: 0.5347
+[INFO GPL-0045] Average top 2.0% routing congestion: 0.5115
+[INFO GPL-0046] Average top 5.0% routing congestion: 0.4776
+[INFO GPL-0047] Routability iteration weighted routing congestion: 0.5394
 [INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(0.6700), end routability optimization.
 [INFO GPL-0090] Routability finished. Target routing congestion achieved succesfully.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      290 |   0.2638 |  4.778788e+06 |   +0.86% |  8.74e-08 |      
-      300 |   0.2294 |  4.812550e+06 |   +0.71% |  1.29e-07 |      
-      310 |   0.1984 |  4.851619e+06 |   +0.81% |  1.90e-07 |      
-      320 |   0.1710 |  4.885603e+06 |   +0.70% |  2.79e-07 |      
-      330 |   0.1427 |  4.921831e+06 |   +0.74% |  4.12e-07 |      
-      340 |   0.1216 |  4.941255e+06 |   +0.39% |  6.06e-07 |      
-      350 |   0.1052 |  4.968363e+06 |   +0.55% |  8.93e-07 |      
-      354 |   0.0998 |  4.980743e+06 |          |  1.08e-06 |      
+      290 |   0.2659 |  4.779393e+06 |   +0.88% |  8.59e-08 |      
+      300 |   0.2311 |  4.814415e+06 |   +0.73% |  1.26e-07 |      
+      310 |   0.2007 |  4.851650e+06 |   +0.77% |  1.86e-07 |      
+      320 |   0.1704 |  4.882490e+06 |   +0.64% |  2.74e-07 |      
+      330 |   0.1409 |  4.921323e+06 |   +0.80% |  4.04e-07 |      
+      340 |   0.1202 |  4.942129e+06 |   +0.42% |  5.96e-07 |      
+      350 |   0.1030 |  4.967834e+06 |   +0.52% |  8.78e-07 |      
+      352 |   0.0991 |  4.973475e+06 |          |  9.86e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 354
-[INFO GPL-1003] Routability mode iteration count: 63
-[INFO GPL-1005] Routability final weighted congestion: 0.4420
+[INFO GPL-1001] Global placement finished at iteration 352
+[INFO GPL-1003] Routability mode iteration count: 64
+[INFO GPL-1005] Routability final weighted congestion: 0.4487
 [INFO GPL-1002] Placed Cell Area              569.7720
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6000 (cell_area / free_area)
@@ -101,4 +98,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Original area (um^2): 569.77
 [INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 569.77 (+0.00%)
-No differences found.
+Differences found at line 63.
+    - _276_ NOR2_X2 + PLACED ( 36542 45495 ) N ;
+    - _276_ NOR2_X2 + PLACED ( 36171 45812 ) N ;

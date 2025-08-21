@@ -62,7 +62,7 @@ void Replace::reset()
 
   initialPlaceMaxIter_ = 20;
   initialPlaceMinDiffLength_ = 1500;
-  initialPlaceMaxSolverIter_ = 100;
+  initialPlaceMaxSolverIter_ = 50;
   initialPlaceMaxFanout_ = 200;
   initialPlaceNetWeightScale_ = 800;
 
@@ -225,7 +225,7 @@ void Replace::doInitialPlace(int threads)
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace(threads);
+  ip_->doPlace(threads);
 }
 
 void Replace::runMBFF(int max_sz,
