@@ -374,35 +374,36 @@ EOF
 }
 
 _installOrTools() {
-    os=$1
-    osVersion=$2
-    arch=$3
-    orToolsVersionBig=9.11
-    orToolsVersionSmall=${orToolsVersionBig}.4210
+    local os=$1
+    local osVersion=$2
+    local arch=$3
+    local orToolsVersionBig=9.11
+    local orToolsVersionSmall=${orToolsVersionBig}.4210
+
+    # Define the installation path.
+    local orToolsPath=${PREFIX:-"/opt/or-tools"}
+    if command -v brew &> /dev/null; then
+        orToolsPath="$(brew --prefix or-tools)"
+    fi
+
+    # Check if a key library file from the installation already exists.
+    local lib_path="${orToolsPath}/lib/libortools.so.${orToolsVersionSmall}"
+    if [[ -f "${lib_path}" ]]; then
+        echo "OR-Tools v${orToolsVersionSmall} is already installed."
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath "${orToolsPath}") "
+        return
+    fi
+
+    # --- If not installed, proceed with installation ---
+    echo "OR-Tools v${orToolsVersionSmall} not found. Installing..."
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
-    if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
+    if [[ -n "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
 
-    # Disable exit on error for 'find' command, as it might return non zero
-    set +euo pipefail
-    LIST=($(find /local* /opt* /lib* /usr* /bin* -type f -name "libortools.so*" 2>/dev/null))
-    # Bring back exit on error
-    set -euo pipefail
-    # Return if right version of or-tools is installed
-    for lib in ${LIST[@]}; do
-        if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
-            echo "OR-Tools is already installed"
-            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
-            return
-        fi
-    done
-
-    orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
-        echo "OR-TOOLS NOT FOUND"
-        echo "Installing  OR-Tools for aarch64..."
+        echo "Installing OR-Tools for aarch64 from source..."
         git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
         cd or-tools
         ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
@@ -415,11 +416,9 @@ _installOrTools() {
             # FIXME make do with or-tools for 24.04 until an official release for 25.04 is available
             osVersion=24.04
         fi
-        orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
+        local orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-        if command -v brew &> /dev/null; then
-            orToolsPath="$(brew --prefix or-tools)"
-        fi
+
         mkdir -p ${orToolsPath}
         tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
         rm -rf ${baseDir}
