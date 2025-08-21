@@ -943,13 +943,6 @@ class FlexPA
   void updateUniqueInst(frInst* unique_inst);
 
   /**
-   * @brief Adds a unique instance to the PA data structure
-   *
-   * @param inst The unique instance to add
-   */
-  void addUniqueInst(frInst* inst);
-
-  /**
    * @brief Processes an instance in a row
    * This function retrieves the instances that are adjacent to the passed
    * instance and then generates the access patterns for them.

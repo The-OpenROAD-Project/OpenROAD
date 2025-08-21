@@ -152,6 +152,7 @@ void FlexPA::updateDirtyInsts()
       const bool is_new_unique = unique_insts_.addInst(inst);
       if (is_new_unique) {
         new_unique_insts.insert(inst);
+        dirty_unique_insts.insert(inst);
         continue;
       }
     }
@@ -168,22 +169,18 @@ void FlexPA::updateDirtyInsts()
       }
     }
   }
-  std::vector<frInst*> new_unique_insts_vec(new_unique_insts.begin(),
-                                            new_unique_insts.end());
-#pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < static_cast<int>(new_unique_insts_vec.size()); i++) {
-    auto& inst = new_unique_insts_vec[i];
-    inst->setHasPinAccessUpdate(true);
-    inst->getMaster()->setHasPinAccessUpdate(true);
-    addUniqueInst(inst);
+  for (auto& inst : new_unique_insts) {
+    unique_insts_.initUniqueInstPinAccess(inst);
   }
   std::vector<frInst*> dirty_unique_insts_vec(dirty_unique_insts.begin(),
                                               dirty_unique_insts.end());
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < static_cast<int>(dirty_unique_insts_vec.size()); i++) {
-    auto& inst = dirty_unique_insts_vec[i];
+  for (auto& inst : dirty_unique_insts_vec) {
     inst->setHasPinAccessUpdate(true);
-    inst->getMaster()->setHasPinAccessUpdate(true);
+#pragma omp critical
+    {
+      inst->getMaster()->setHasPinAccessUpdate(true);
+    }
     updateUniqueInst(inst);
   }
   buildInstsSet();
@@ -206,13 +203,7 @@ void FlexPA::updateDirtyInsts()
     inst->setHasPinAccessUpdate(true);
   }
   dirty_insts_.clear();
-}
-
-void FlexPA::addUniqueInst(frInst* inst)
-{
-  unique_insts_.initUniqueInstPinAccess(inst);
-  updateUniqueInst(inst);
-}
+}  // namespace drt
 
 void FlexPA::processInstInRow(frInst* inst,
                               frOrderedIdSet<frInst*>& processed_insts)
