@@ -2,6 +2,7 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "staGui.h"
+
 #include <qglobal.h>
 
 #include <QAbstractItemView>
@@ -14,7 +15,6 @@
 #include <QStandardItemModel>
 #include <fstream>
 #include <functional>
-#include <iostream>
 #include <limits>
 #include <string>
 #include <vector>
@@ -1345,12 +1345,9 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
 
 void TimingControlsDialog::getClocks(sta::ClockSet* clock_set) const
 {
-  std::cout << "TimingControlsDialog::getClocks" << std::endl;
   for (const auto& clk : clock_box_->selectedItems()) {
     clock_set->insert(clks_.at(clk));
-    std::cout << clk.toStdString() << std::endl;
   }
-  std::cout  << std::endl;
 }
 
 }  // namespace gui

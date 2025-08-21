@@ -1034,7 +1034,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
     const std::vector<StaPins>& thrus,
     const StaPins& to,
     const std::string& path_group_name,
-    sta::ClockSet *clks) const
+    sta::ClockSet* clks) const
 {
   TimingPathList paths;
 
@@ -1045,8 +1045,12 @@ TimingPathList STAGuiInterface::getTimingPaths(
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(from.begin(), from.end());
     e_from = sta_->makeExceptionFrom(
-        pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
+        pins, clks, nullptr, sta::RiseFallBoth::riseFall());
+  } else if (clks) {
+    e_from = sta_->makeExceptionFrom(
+        nullptr, clks, nullptr, sta::RiseFallBoth::riseFall());
   }
+
   sta::ExceptionThruSeq* e_thrus = nullptr;
   if (!thrus.empty()) {
     for (const auto& thru_set : thrus) {
@@ -1067,6 +1071,12 @@ TimingPathList STAGuiInterface::getTimingPaths(
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(to.begin(), to.end());
     e_to = sta_->makeExceptionTo(pins,
+                                 clks,
+                                 nullptr,
+                                 sta::RiseFallBoth::riseFall(),
+                                 sta::RiseFallBoth::riseFall());
+  } else if (clks) {
+    e_to = sta_->makeExceptionTo(nullptr,
                                  clks,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
