@@ -321,6 +321,14 @@ class STAGuiInterface
 
   bool isUseMax() const { return use_max_; }
   void setUseMax(bool use_max) { use_max_ = use_max; }
+  const sta::MinMaxAll* minMaxAll() const
+  {
+    return use_max_ ? sta::MinMaxAll::max() : sta::MinMaxAll::min();
+  }
+  const sta::MinMax* minMax() const
+  {
+    return use_max_ ? sta::MinMax::max() : sta::MinMax::min();
+  }
 
   int getMaxPathCount() const { return max_path_count_; }
   void setMaxPathCount(int max_paths) { max_path_count_ = max_paths; }
@@ -358,7 +366,9 @@ class STAGuiInterface
   StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
-  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name);
+  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name,
+                                         const sta::Clock* clk = nullptr);
+  EndPointSlackMap getEndPointToSlackMap(const sta::Clock* clk);
 
   std::set<std::string> getGroupPathsNames() const;
   void updatePathGroups();

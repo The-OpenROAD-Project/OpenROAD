@@ -98,9 +98,7 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
         treeedges[edgecnt].n1 = n;
         treeedges[edgecnt].n2 = i;
       }
-      treeedges[edgecnt].route.gridsX.clear();
-      treeedges[edgecnt].route.gridsY.clear();
-      treeedges[edgecnt].route.gridsL.clear();
+      treeedges[edgecnt].route.grids.clear();
       treenodes[i].nbr[nbrcnt[i]] = n;
       treenodes[i].edge[nbrcnt[i]] = edgecnt;
       treenodes[n].nbr[nbrcnt[n]] = i;
@@ -720,21 +718,12 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
       if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
         // the position of this segment in seglist
-        seglist_[netID].push_back(Segment());
-        auto& seg = seglist_[netID].back();
+        const int8_t cost = nets_[netID]->getEdgeCost();
         if (x1 < x2) {
-          seg.x1 = x1;
-          seg.x2 = x2;
-          seg.y1 = y1;
-          seg.y2 = y2;
+          seglist_[netID].emplace_back(x1, y1, x2, y2, cost);
         } else {
-          seg.x1 = x2;
-          seg.x2 = x1;
-          seg.y1 = y2;
-          seg.y2 = y1;
+          seglist_[netID].emplace_back(x2, y2, x1, y1, cost);
         }
-
-        seg.netID = netID;
       }
     }  // loop j
 

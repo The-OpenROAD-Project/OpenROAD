@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0252]     Updated 7 pins.
+[INFO ODB-0253]     Updated 34 components.
+[INFO ODB-0254]     Updated 29 nets and 81 connections.
+worst slack max -0.43
+worst slack min -0.05
+tns max -3.964
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         1
+    final |     +1.7% |       0 |        1 |         0
+-------------------------------------------------------
+No differences found.
+No differences found.

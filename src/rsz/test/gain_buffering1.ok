@@ -31,7 +31,7 @@ Fanout   Delay    Time   Description
                  -0.12   slack (VIOLATED)
 
 
-[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]

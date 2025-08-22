@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// Generator Code Begin Header
 #pragma once
 
+#include "dbCore.h"
+#include "dbHashTable.h"
+#include "odb/odb.h"
+// User Code Begin Includes
 #include <iostream>
 #include <set>
 
-#include "dbCore.h"
 #include "odb/dbDatabaseObserver.h"
-#include "odb/odb.h"
-
 namespace utl {
 class Logger;
 }
+// User Code End Includes
 
 namespace odb {
-
+// User Code Begin Consts
 //
 // When changing the database schema please add a #define to refer to the schema
 // changes. Use the define statement along with the isSchema(rev) method:
@@ -43,7 +46,19 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 111;  // Current revision number
+const uint db_schema_minor = 115;  // Current revision number
+
+// Revision where dbChipInst was added
+const uint db_schema_chip_inst = 115;
+
+// Revision where dbChip hash table was added
+const uint db_schema_chip_hash_table = 114;
+
+// Revision where unique net/inst indices were added to dbBlock
+const uint db_schema_unique_indices = 113;
+
+// Revision where dbChip was extended with new fields
+const uint db_schema_chip_extended = 112;
 
 // Revision where the map which associates instances to their
 // scan version was added
@@ -209,56 +224,65 @@ const uint db_schema_wrongway_width = 60;
 // Revision where dbGlobalConnect was added
 const uint db_schema_add_global_connect = 58;
 
+// User Code End Consts
+class dbIStream;
+class dbOStream;
+class _dbChip;
 class _dbProperty;
+class _dbChipInst;
+// User Code Begin Classes
 class dbPropertyItr;
+class dbChipInstItr;
 class _dbNameCache;
 class _dbTech;
-class _dbChip;
 class _dbLib;
 class _dbGDSLib;
-class dbOStream;
-class dbIStream;
+// User Code End Classes
 
 class _dbDatabase : public _dbObject
 {
  public:
-  // PERSISTANT_MEMBERS
+  _dbDatabase(_dbDatabase*);
+
+  ~_dbDatabase();
+
+  bool operator==(const _dbDatabase& rhs) const;
+  bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbDatabase& rhs) const;
+  dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
+  // User Code Begin Methods
+  _dbDatabase(_dbDatabase* db, int id);
+  utl::Logger* getLogger() const;
+  bool isSchema(uint rev) const { return _schema_minor >= rev; }
+  bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
+  // User Code End Methods
+
   uint _magic1;
   uint _magic2;
   uint _schema_major;
   uint _schema_minor;
-  uint _master_id;  // for a unique id across all libraries
+  uint _master_id;
   dbId<_dbChip> _chip;
+  dbTable<_dbChip, 2>* chip_tbl_;
+  dbHashTable<_dbChip, 2> chip_hash_;
+  dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbChipInst>* chip_inst_tbl_;
 
-  // NON_PERSISTANT_MEMBERS
+  // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
   dbTable<_dbLib>* _lib_tbl;
-  dbTable<_dbChip, 2>* _chip_tbl;
   dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
-  dbTable<_dbProperty>* _prop_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
+  dbChipInstItr* chip_inst_itr_;
   int _unique_id;
 
   utl::Logger* _logger;
   std::set<dbDatabaseObserver*> observers_;
-
-  _dbDatabase(_dbDatabase* db);
-  _dbDatabase(_dbDatabase* db, int id);
-  ~_dbDatabase();
-
-  utl::Logger* getLogger() const;
-
-  bool operator==(const _dbDatabase& rhs) const;
-  bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }
-
-  bool isSchema(uint rev) const { return _schema_minor >= rev; }
-  bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
-  dbObjectTable* getObjectTable(dbObjectType type);
-  void collectMemInfo(MemInfo& info);
+  // User Code End Fields
 };
-
-dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db);
-dbIStream& operator>>(dbIStream& stream, _dbDatabase& db);
-
+dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj);
 }  // namespace odb
+// Generator Code End Header

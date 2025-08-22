@@ -25,12 +25,13 @@ void initRestructure(rmp::Restructure* restructure,
                      sta::dbSta* sta,
                      odb::dbDatabase* db,
                      rsz::Resizer* resizer,
+                     est::EstimateParasitics* estimate_parasitics,
                      Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Rmp_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, rmp::rmp_tcl_inits);
-  restructure->init(logger, sta, db, resizer);
+  restructure->init(logger, sta, db, resizer, estimate_parasitics);
 }
 
 void deleteRestructure(rmp::Restructure* restructure)

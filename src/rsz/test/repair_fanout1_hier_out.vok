@@ -8,13 +8,13 @@ module hi_fanout_child (clk1);
  input clk1;
 
 
- BUF_X2 fanout4 (.A(net0),
+ BUF_X1 fanout4 (.A(net0),
     .Z(net4));
- BUF_X2 fanout3 (.A(net4),
+ BUF_X1 fanout3 (.A(net4),
     .Z(net3));
- BUF_X2 fanout2 (.A(net3),
+ BUF_X1 fanout2 (.A(net3),
     .Z(net2));
- BUF_X2 fanout1 (.A(net3),
+ BUF_X1 fanout1 (.A(net3),
     .Z(net1));
  DFF_X1 drvr (.CK(clk1),
     .Q(net0));

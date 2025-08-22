@@ -31,10 +31,8 @@ class _dbObject;
 ///
 enum dbObjectType
 {
-  dbDatabaseObj,
 
   // Design Objects
-  dbChipObj,
   dbGdsLibObj,
   dbBlockObj,
   dbInstHdrObj,
@@ -62,6 +60,9 @@ enum dbObjectType
   dbAccessPointObj,
   dbBusPortObj,
   dbCellEdgeSpacingObj,
+  dbChipObj,
+  dbChipInstObj,
+  dbDatabaseObj,
   dbDftObj,
   dbGCellGridObj,
   dbGDSARefObj,
@@ -90,6 +91,7 @@ enum dbObjectType
   dbPolygonObj,
   dbPowerDomainObj,
   dbPowerSwitchObj,
+  dbPropertyObj,
   dbScanChainObj,
   dbScanInstObj,
   dbScanListObj,
@@ -143,7 +145,6 @@ enum dbObjectType
   dbTechViaLayerRuleObj,
 
   // Property
-  dbPropertyObj,
   dbNameObj
 };
 
@@ -168,5 +169,8 @@ class dbObject
   dbObject() = default;
   ~dbObject() = default;
 };
+
+dbIStream& operator>>(dbIStream& stream, dbObjectType& type);
+dbOStream& operator<<(dbOStream& stream, dbObjectType type);
 
 }  // namespace odb

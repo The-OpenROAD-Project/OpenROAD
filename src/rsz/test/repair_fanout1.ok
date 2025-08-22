@@ -13,10 +13,9 @@ drvr/Q                                   10     35    -25 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        73
-    final |     +2.5% |       4 |       4 |             1 |         0
+    final |     +2.0% |       0 |       4 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 4 instances.
 [INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 Repair timing output passed/skipped equivalence test
 max fanout

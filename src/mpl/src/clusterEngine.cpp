@@ -171,11 +171,7 @@ void ClusteringEngine::setFloorplanShape()
 
 void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
 {
-  odb::Rect floorplan_shape(
-      block_->micronsToDbu(tree_->floorplan_shape.xMin()),
-      block_->micronsToDbu(tree_->floorplan_shape.yMin()),
-      block_->micronsToDbu(tree_->floorplan_shape.xMax()),
-      block_->micronsToDbu(tree_->floorplan_shape.yMax()));
+  odb::Rect floorplan_shape = micronsToDbu(block_, tree_->floorplan_shape);
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isFixed()
@@ -1989,14 +1985,10 @@ void ClusteringEngine::breakMixedLeaves(
   }
 }
 
-// Break mixed leaf into standard-cell and hard-macro clusters.
-// Merge macros based on connection signature and footprint.
-// Based on types of designs, we support two types of breaking up:
-//   1) Replace cluster A by A1, A2, A3
-//   2) Create a subtree:
-//      A  ->        A
-//               |   |   |
-//               A1  A2  A3
+// "Split" mixed leaf by replacing it for standard-cell and macro
+// clusters. Macro clusters are formed by grouping the macros in
+// the mixed leaf according to footprint, connection signature and
+// interconnectivity.
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
   Cluster* parent = mixed_leaf->getParent();
@@ -2056,7 +2048,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
     }
 
     setClusterMetrics(macro_clusters[i]);
-    virtual_conn_clusters.push_back(mixed_leaf->getId());
+    virtual_conn_clusters.push_back(macro_clusters[i]->getId());
   }
 
   // add virtual connections
@@ -2109,7 +2101,7 @@ void ClusteringEngine::getHardMacros(odb::dbModule* module,
 }
 
 void ClusteringEngine::createOneClusterForEachMacro(
-    Cluster* parent,
+    Cluster* mixed_leaf_parent,
     const std::vector<HardMacro*>& hard_macros,
     std::vector<Cluster*>& macro_clusters)
 {
@@ -2120,7 +2112,7 @@ void ClusteringEngine::createOneClusterForEachMacro(
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
     macro_clusters.push_back(single_macro_cluster.get());
 
-    incorporateNewCluster(std::move(single_macro_cluster), parent);
+    incorporateNewCluster(std::move(single_macro_cluster), mixed_leaf_parent);
   }
 }
 

@@ -36,6 +36,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
 endif()
 
 add_library(utl_lib
+  src/CallBackHandler.cpp
+  src/CallBack.cpp
   src/Metrics.cpp
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp
@@ -43,6 +45,7 @@ add_library(utl_lib
   src/Progress.cpp
   src/CommandLineProgress.cpp
   src/timer.cpp
+  src/mem_stats.cpp
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp

@@ -10,8 +10,6 @@ add_library(db
     dbBlockItr.cpp 
     dbBox.cpp 
     dbBoxItr.cpp 
-    dbChip.cpp 
-    dbDatabase.cpp 
     dbITerm.cpp 
     dbITermItr.cpp 
     dbInst.cpp 
@@ -75,7 +73,6 @@ add_library(db
     dbTechViaGenerateRule.cpp 
     dbViaParams.cpp 
     dbNameCache.cpp 
-    dbProperty.cpp 
     dbPropertyItr.cpp 
     geom.cpp
     tmg_conn.cpp
@@ -90,6 +87,9 @@ add_library(db
     dbAccessPoint.cpp
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
+    dbChip.cpp
+    dbChipInst.cpp
+    dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSARef.cpp
@@ -118,6 +118,7 @@ add_library(db
     dbPolygon.cpp
     dbPowerDomain.cpp
     dbPowerSwitch.cpp
+    dbProperty.cpp
     dbScanChain.cpp
     dbScanInst.cpp
     dbScanList.cpp
@@ -144,6 +145,7 @@ add_library(db
     dbTechLayerTwoWiresForbiddenSpcRule.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
+    dbChipInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
     dbGroupModInstItr.cpp
