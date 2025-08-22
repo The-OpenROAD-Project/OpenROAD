@@ -91,7 +91,7 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        eval wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        eval wget https://github.com/Kitware/CMake/releases/download/v${cmakeVersionSmall}/cmake-${cmakeVersionSmall}-linux-${arch}.sh
         md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
