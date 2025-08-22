@@ -98,7 +98,7 @@ _dbLib::_dbLib(_dbDatabase* db)
 {
   _lef_units = 0;
   _dbu_per_micron = 1000;
-  _hier_delimiter = 0;
+  _hier_delimiter = '/';
   _left_bus_delimiter = 0;
   _right_bus_delimiter = 0;
   _spare = 0;
