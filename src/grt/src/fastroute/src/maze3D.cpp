@@ -677,8 +677,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
 
-      // if (!is_ndr && (treeedge->len >= ripupTHub || treeedge->len <=
-      // ripupTHlb)) {
       if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
         continue;
       }

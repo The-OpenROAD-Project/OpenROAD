@@ -1072,7 +1072,6 @@ void FastRouteCore::routeMonotonic(const int netID,
   const int16_t y2 = treenodes[n2].y;
 
   FrNet* net = nets_[netID];
-  bool is_ndr = (net->getDbNet()->getNonDefaultRule() != nullptr);
 
   // ripup the original routing
   if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, 0, netID, edgeID)) {
