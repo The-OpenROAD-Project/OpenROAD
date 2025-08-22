@@ -1,19 +1,17 @@
 #pragma once
-#include "global.h"
+#include "CUGR.h"
+#include "odb/db.h"
 
 namespace grt {
 
-BoxT<DBU> getBoxFromRsynBounds(const Bounds& bounds);
+BoxT<int> getBoxFromRect(const odb::Rect& bounds);
 
-class BoxOnLayer : public BoxT<DBU>
+class BoxOnLayer : public BoxT<int>
 {
  public:
-  int layerIdx;
-
-  //  constructors
   template <typename... Args>
   BoxOnLayer(int layerIndex = -1, Args... params)
-      : layerIdx(layerIndex), BoxT<DBU>(params...)
+      : BoxT<int>(params...), layer_idx_(layerIndex)
   {
   }
 
@@ -21,13 +19,18 @@ class BoxOnLayer : public BoxT<DBU>
   template <typename... Args>
   void Set(int layerIndex = -1, Args... params)
   {
-    layerIdx = layerIndex;
-    BoxT<DBU>::Set(params...);
+    layer_idx_ = layerIndex;
+    BoxT<int>::Set(params...);
   }
 
   bool isConnected(const BoxOnLayer& rhs) const;
 
-  friend ostream& operator<<(ostream& os, const BoxOnLayer& box);
+  int getLayerIdx() const { return layer_idx_; }
+
+  friend std::ostream& operator<<(std::ostream& os, const BoxOnLayer& box);
+
+ private:
+  int layer_idx_;
 };
 
 }  // namespace grt

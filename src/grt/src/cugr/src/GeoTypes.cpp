@@ -2,24 +2,21 @@
 
 namespace grt {
 
-BoxT<DBU> getBoxFromRsynBounds(const Bounds& bounds)
+BoxT<int> getBoxFromRect(const odb::Rect& bounds)
 {
-  return {bounds.getLower().x,
-          bounds.getLower().y,
-          bounds.getUpper().x,
-          bounds.getUpper().y};
+  return {bounds.ll().x(), bounds.ll().y(), bounds.ur().x(), bounds.ur().y()};
 }
 
 // BoxOnLayer
 
 bool BoxOnLayer::isConnected(const BoxOnLayer& rhs) const
 {
-  return abs(rhs.layerIdx - layerIdx) < 2 && HasIntersectWith(rhs);
+  return abs(rhs.getLayerIdx() - layer_idx_) < 2 && HasIntersectWith(rhs);
 }
 
-ostream& operator<<(ostream& os, const BoxOnLayer& box)
+std::ostream& operator<<(std::ostream& os, const BoxOnLayer& box)
 {
-  os << "box(l=" << box.layerIdx << ", x=" << box[0] << ", y=" << box[1] << ")";
+  os << "box(l=" << box.getLayerIdx() << ", x=" << box[0] << ", y=" << box[1] << ")";
   return os;
 }
 

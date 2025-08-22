@@ -1,7 +1,7 @@
 #pragma once
+#include "CUGR.h"
 #include "Design.h"
 #include "GRTree.h"
-#include "global.h"
 
 namespace grt {
 
@@ -14,6 +14,7 @@ struct GraphEdge
 {
   CapacityT capacity;
   CapacityT demand;
+
   GraphEdge() : capacity(0), demand(0) {}
   CapacityT getResource() const { return capacity - demand; }
 };
@@ -21,75 +22,74 @@ struct GraphEdge
 class GridGraph
 {
  public:
-  GridGraph(const Design& design, const Parameters& params);
-  inline DBU getLibDBU() const { return libDBU; }
-  inline DBU getM2Pitch() const { return m2_pitch; }
-  inline unsigned getNumLayers() const { return nLayers; }
+  GridGraph(const Design* design);
+  inline int getLibDBU() const { return lib_dbu_; }
+  inline int getM2Pitch() const { return m2_pitch_; }
+  inline unsigned getNumLayers() const { return num_layers_; }
   inline unsigned getSize(unsigned dimension) const
   {
-    return (dimension ? ySize : xSize);
+    return (dimension ? y_size_ : x_size_);
   }
-  inline std::string getLayerName(int layerIndex) const
+  inline std::string getLayerName(int layer_index) const
   {
-    return layerNames[layerIndex];
+    return layer_names_[layer_index];
   }
-  inline unsigned getLayerDirection(int layerIndex) const
+  inline unsigned getLayerDirection(int layer_index) const
   {
-    return layerDirections[layerIndex];
+    return layer_directions_[layer_index];
   }
 
   inline uint64_t hashCell(const GRPoint& point) const
   {
-    return ((uint64_t) point.layerIdx * xSize + point.x) * ySize + point.y;
+    return ((uint64_t)point.getLayerIdx() * x_size_ + point.x) * y_size_ + point.y;
   };
   inline uint64_t hashCell(const int x, const int y) const
   {
-    return (uint64_t) x * ySize + y;
+    return (uint64_t) x * y_size_ + y;
   }
-  inline DBU getGridline(const unsigned dimension, const int index) const
+  inline int getGridline(const unsigned dimension, const int index) const
   {
-    return gridlines[dimension][index];
+    return gridlines_[dimension][index];
   }
-  BoxT<DBU> getCellBox(PointT<int> point) const;
-  BoxT<int> rangeSearchCells(const BoxT<DBU>& box) const;
-  inline GraphEdge getEdge(const int layerIndex, const int x, const int y) const
+  BoxT<int> getCellBox(PointT<int> point) const;
+  BoxT<int> rangeSearchCells(const BoxT<int>& box) const;
+  inline GraphEdge getEdge(const int layer_index, const int x, const int y) const
   {
-    return graphEdges[layerIndex][x][y];
+    return graph_edges_[layer_index][x][y];
   }
 
   // Costs
-  DBU getEdgeLength(unsigned direction, unsigned edgeIndex) const;
-  CostT getWireCost(const int layerIndex,
+  int getEdgeLength(unsigned direction, unsigned edge_index) const;
+  CostT getWireCost(const int layer_index,
                     const PointT<int> u,
                     const PointT<int> v) const;
-  CostT getViaCost(const int layerIndex, const PointT<int> loc) const;
-  inline CostT getUnitViaCost() const { return unit_via_cost; }
+  CostT getViaCost(const int layer_index, const PointT<int> loc) const;
+  inline CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
   void selectAccessPoints(
       GRNet& net,
-      robin_hood::unordered_map<uint64_t,
-                                std::pair<PointT<int>, IntervalT<int>>>&
-          selectedAccessPoints) const;
+      std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>&
+          selected_access_points) const;
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   const bool reverse = false);
 
   // Checks
-  inline bool checkOverflow(const int layerIndex,
+  inline bool checkOverflow(const int layer_index,
                             const int x,
                             const int y) const
   {
-    return getEdge(layerIndex, x, y).getResource() < 0.0;
+    return getEdge(layer_index, x, y).getResource() < 0.0;
   }
-  int checkOverflow(const int layerIndex,
+  int checkOverflow(const int layer_index,
                     const PointT<int> u,
                     const PointT<int> v) const;  // Check wire overflow
   int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
       const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
-      const std::shared_ptr<GRTreeNode>& routingTree) const;
+      const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
   // 2D maps
   void extractBlockageView(GridGraphView<bool>& view) const;
@@ -97,84 +97,102 @@ class GridGraph
       GridGraphView<bool>& view) const;  // 2D overflow look-up table
   void extractWireCostView(GridGraphView<CostT>& view) const;
   void updateWireCostView(GridGraphView<CostT>& view,
-                          std::shared_ptr<GRTreeNode> routingTree) const;
+                          std::shared_ptr<GRTreeNode> routing_tree) const;
 
   // For visualization
   void write(const std::string heatmap_file = "heatmap.txt") const;
 
  private:
-  const DBU libDBU;
-  DBU m2_pitch;
-  const Parameters& parameters;
+  const int lib_dbu_;
+  int m2_pitch_;
 
-  unsigned nLayers;
-  unsigned xSize;
-  unsigned ySize;
-  std::vector<std::vector<DBU>> gridlines;
-  std::vector<std::vector<DBU>> gridCenters;
-  std::vector<std::string> layerNames;
-  std::vector<unsigned> layerDirections;
-  std::vector<DBU> layerMinLengths;
+  unsigned num_layers_;
+  unsigned x_size_;
+  unsigned y_size_;
+  std::vector<std::vector<int>> gridlines_;
+  std::vector<std::vector<int>> grid_centers_;
+  std::vector<std::string> layer_names_;
+  std::vector<unsigned> layer_directions_;
+  std::vector<int> layer_min_lengths_;
 
   // Unit costs
-  CostT unit_length_wire_cost;
-  CostT unit_via_cost;
-  std::vector<CostT> unit_length_short_costs;
+  CostT unit_length_wire_cost_;
+  CostT unit_via_cost_;
+  std::vector<CostT> unit_length_short_costs_;
 
-  DBU totalLength = 0;
-  int totalNumVias = 0;
-  std::vector<std::vector<vector<GraphEdge>>> graphEdges;
+  int total_length_ = 0;
+  int total_num_vias_ = 0;
+  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
 
+  // constants
+  const double weight_wire_length_ = 0.5;
+  const double weight_via_number_ = 4.0;
+  const double weight_short_area_ = 500.0;
+
+  const int min_routing_layer_ = 1;
+  const double cost_logistic_slope_ = 1.0;
+    // allowed stem length increase to trunk length ratio
+  const double max_detour_ratio_ = 0.25;
+  const int target_detour_count_ = 20;
+  const double via_multiplier_ = 2.0;
+
+  const double maze_logistic_slope_ = 0.5;
+
+  const double pin_patch_threshold_ = 20.0;
+  const int pin_patch_padding_ = 1;
+  const double wire_patch_threshold_ = 2.0;
+  const double wire_patch_inflation_rate_ = 1.2;
+
   IntervalT<int> rangeSearchGridlines(const unsigned dimension,
-                                      const IntervalT<DBU>& locInterval) const;
-  // Find the gridlines within [locInterval.low, locInterval.high]
+                                      const IntervalT<int>& loc_interval) const;
+  // Find the gridlines_ within [locInterval.low, locInterval.high]
   IntervalT<int> rangeSearchRows(const unsigned dimension,
-                                 const IntervalT<DBU>& locInterval) const;
+                                 const IntervalT<int>& locInterval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
-  inline CostT getUnitLengthWireCost() const { return unit_length_wire_cost; }
-  // CostT getUnitViaCost() const { return unit_via_cost; }
-  inline CostT getUnitLengthShortCost(const int layerIndex) const
+  inline CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
+  // CostT getUnitViaCost() const { return unit_via_cost_; }
+  inline CostT getUnitLengthShortCost(const int layer_index) const
   {
-    return unit_length_short_costs[layerIndex];
+    return unit_length_short_costs_[layer_index];
   }
 
   inline double logistic(const CapacityT& input, const double slope) const;
-  CostT getWireCost(const int layerIndex,
+  CostT getWireCost(const int layer_index,
                     const PointT<int> lower,
                     const CapacityT demand = 1.0) const;
 
   // Methods for updating demands
-  void commit(const int layerIndex,
+  void commit(const int layer_index,
               const PointT<int> lower,
               const CapacityT demand);
-  void commitWire(const int layerIndex,
+  void commitWire(const int layer_index,
                   const PointT<int> lower,
                   const bool reverse = false);
-  void commitVia(const int layerIndex,
+  void commitVia(const int layer_index,
                  const PointT<int> loc,
                  const bool reverse = false);
 };
 
 template <typename Type>
-class GridGraphView : public std::vector<std::vector<vector<Type>>>
+class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 {
  public:
   bool check(const PointT<int>& u, const PointT<int>& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     if (u.y == v.y) {
-      int l = min(u.x, v.x), h = max(u.x, v.x);
+      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
       for (int x = l; x < h; x++) {
         if ((*this)[MetalLayer::H][x][u.y]) {
           return true;
         }
       }
     } else {
-      int l = min(u.y, v.y), h = max(u.y, v.y);
+      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
       for (int y = l; y < h; y++) {
         if ((*this)[MetalLayer::V][u.x][y]) {
           return true;
@@ -189,12 +207,12 @@ class GridGraphView : public std::vector<std::vector<vector<Type>>>
     assert(u.x == v.x || u.y == v.y);
     Type res = 0;
     if (u.y == v.y) {
-      int l = min(u.x, v.x), h = max(u.x, v.x);
+      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
       for (int x = l; x < h; x++) {
         res += (*this)[MetalLayer::H][x][u.y];
       }
     } else {
-      int l = min(u.y, v.y), h = max(u.y, v.y);
+      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
       for (int y = l; y < h; y++) {
         res += (*this)[MetalLayer::V][u.x][y];
       }

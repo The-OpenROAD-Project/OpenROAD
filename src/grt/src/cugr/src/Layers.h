@@ -9,51 +9,52 @@ namespace grt {
 class MetalLayer
 {
  public:
-  MetalLayer(odb::dbTechLayer* tech_layer,
-             odb::dbTrackGrid* track_grid);
-  std::string getName() const { return name; }
-  unsigned getDirection() const { return direction; }
-  int getWidth() const { return width; }
-  int getPitch() const { return pitch; }
-  int getTrackLocation(const int trackIndex) const;
-  IntervalT<int> rangeSearchTracks(const IntervalT<int>& locRange,
-                                   bool includeBound = true) const;
+  const static unsigned H = 0;
+  const static unsigned V = 1;
+  MetalLayer(odb::dbTechLayer* tech_layer, odb::dbTrackGrid* track_grid);
+  std::string getName() const { return name_; }
+  unsigned getDirection() const { return direction_; }
+  int getWidth() const { return width_; }
+  int getPitch() const { return pitch_; }
+  int getTrackLocation(const int track_index) const;
+  IntervalT<int> rangeSearchTracks(const IntervalT<int>& loc_range,
+                                   bool include_bound = true) const;
 
   // Design rule related methods
-  int getMinLength() const { return minLength; }
-  int getDefaultSpacing() const { return defaultSpacing; }
+  int getMinLength() const { return min_length_; }
+  int getDefaultSpacing() const { return default_spacing_; }
   int getParallelSpacing(const int width, const int length = 0) const;
-  int getMaxEolSpacing() const { return maxEolSpacing; }
+  int getMaxEolSpacing() const { return max_eol_spacing_; }
 
  private:
-  std::string name;
-  int index;
-  odb::dbTechLayerDir direction;
-  int width;
-  int minWidth;
+  std::string name_;
+  int index_;
+  unsigned direction_;
+  int width_;
+  int min_width_;
 
   // tracks
-  int firstTrackLoc;
-  int lastTrackLoc;
-  int pitch;
-  int numTracks;
+  int first_track_loc_;
+  int last_track_loc_;
+  int pitch_;
+  int num_tracks_;
 
   // Design rules
   // Min area
-  int minArea;
-  int minLength;
+  int min_area_;
+  int min_length_;
 
   // Parallel run spacing
-  std::vector<int> parallelWidth = {0};
-  std::vector<int> parallelLength = {0};
-  std::vector<std::vector<int>> parallelSpacing
+  std::vector<int> parallel_width_ = {0};
+  std::vector<int> parallel_length_ = {0};
+  std::vector<std::vector<int>> parallel_spacing_
       = {{0}};  // width, length -> spacing
-  int defaultSpacing = 0;
+  int default_spacing_ = 0;
 
   // End-of-line spacing
-  int maxEolSpacing = 0;
-  int maxEolWidth = 0;
-  int maxEolWithin = 0;
+  int max_eol_spacing_ = 0;
+  int max_eol_width_ = 0;
+  int max_eol_within_ = 0;
 
   // Corner spacing
 };

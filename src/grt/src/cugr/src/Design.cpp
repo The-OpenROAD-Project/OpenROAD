@@ -85,7 +85,8 @@ void Design::readNetlist()
         odb::Point position(x, y);
         for (odb::dbBPin* bpin : db_bterm->getBPins()) {
           for (odb::dbBox* bpin_box : bpin->getBoxes()) {
-            int layer_idx = bpin_box->getTechLayer()->getRoutingLevel();
+            // adjust layer idx to start with zero
+            int layer_idx = bpin_box->getTechLayer()->getRoutingLevel() - 1;
             pin_shapes.emplace_back(layer_idx,
                                     getBoxFromRect(bpin_box->getBox()));
           }
@@ -109,7 +110,7 @@ void Design::readNetlist()
           odb::Rect rect = box->getBox();
           xform.apply(rect);
 
-          int layerIndex = tech_layer->getRoutingLevel();
+          int layerIndex = tech_layer->getRoutingLevel() - 1;
           pin_shapes.emplace_back(
               layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
         }
@@ -136,7 +137,7 @@ void Design::readInstanceObstructions()
             continue;
           }
 
-          int layerIndex = tech_layer->getRoutingLevel();
+          int layerIndex = tech_layer->getRoutingLevel() - 1;
           odb::Rect rect = box->getBox();
           xform.apply(rect);
 
@@ -152,7 +153,7 @@ void Design::readInstanceObstructions()
       if (box->getTechLayer()->getType() != odb::dbTechLayerType::ROUTING) {
         continue;
       }
-      int layerIndex = box->getTechLayer()->getRoutingLevel();
+      int layerIndex = box->getTechLayer()->getRoutingLevel() - 1;
 
       odb::Rect rect = box->getBox();
       xform.apply(rect);
@@ -193,7 +194,7 @@ void Design::readSpecialNetObstructions(int& numSpecialNets)
               continue;
             }
             odb::Rect via_rect = box.getBox();
-            obstacles_.emplace_back(tech_layer->getRoutingLevel(),
+            obstacles_.emplace_back(tech_layer->getRoutingLevel() - 1,
                                     via_rect.xMin(),
                                     via_rect.yMin(),
                                     via_rect.xMax(),
@@ -202,7 +203,7 @@ void Design::readSpecialNetObstructions(int& numSpecialNets)
         } else {
           odb::dbTechLayer* tech_layer = s->getTechLayer();
           odb::Rect wire_rect = s->getBox();
-          obstacles_.emplace_back(tech_layer->getRoutingLevel(),
+          obstacles_.emplace_back(tech_layer->getRoutingLevel() - 1,
                                   wire_rect.xMin(),
                                   wire_rect.yMin(),
                                   wire_rect.xMax(),
