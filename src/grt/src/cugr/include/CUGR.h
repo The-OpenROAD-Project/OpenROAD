@@ -75,8 +75,8 @@ class CUGR
   std::vector<GRNet*> gr_nets_;
 
   odb::dbDatabase* db_;
-  stt::SteinerTreeBuilder* stt_builder_;
   utl::Logger* logger_;
+  stt::SteinerTreeBuilder* stt_builder_;
 
   int area_of_pin_patches_;
   int area_of_wire_patches_;
