@@ -1333,7 +1333,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
     return;
   }
 
-  if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
+  // Cover IO Clusters, Leaf Std Cells and Fixed Macros.
+  if (parent->isLeaf()) {
     return;
   }
 
@@ -1385,6 +1386,16 @@ void HierRTLMP::placeChildren(Cluster* parent)
     }
 
     soft_macro_id_map[cluster->getName()] = macros.size();
+
+    if (cluster->isFixedMacro()) {
+      const HardMacro* hard_macro = cluster->getHardMacros().front();
+      Point offset(-outline.xMin(), -outline.yMin());
+      auto soft_macro
+          = std::make_unique<SoftMacro>(logger_, hard_macro, &offset);
+      macros.push_back(*soft_macro);
+      continue;
+    }
+
     auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
     // Needed for computing the nets.
     clustering_engine_->updateInstancesAssociation(cluster.get());
@@ -2412,6 +2423,10 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
 
 void HierRTLMP::placeMacros(Cluster* cluster)
 {
+  if (cluster->isFixedMacro()) {
+    return;
+  }
+
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -2867,7 +2882,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock() || ClusteringEngine::isIgnoredInst(inst)) {
+    if (!inst->isBlock() || inst->isFixed()) {
       continue;
     }
 
@@ -2920,7 +2935,7 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
 {
   odb::dbInst* inst = hard_macro->getInst();
 
-  if (!inst) {
+  if (!inst || inst->isFixed()) {
     return;
   }
 
@@ -2939,7 +2954,7 @@ void HierRTLMP::commitMacroPlacementToDb()
   Snapper snapper(logger_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
-    if (!inst) {
+    if (!inst || inst->isFixed()) {
       continue;
     }
 
@@ -3156,6 +3171,10 @@ void Pusher::pushMacrosToCoreBoundaries()
   fetchMacroClusters(root_, macro_clusters);
 
   for (Cluster* macro_cluster : macro_clusters) {
+    if (macro_cluster->isFixedMacro()) {
+      continue;
+    }
+
     debugPrint(logger_,
                MPL,
                "boundary_push",
