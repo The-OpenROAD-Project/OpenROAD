@@ -17,9 +17,9 @@ Design::Design(odb::dbDatabase* db, utl::Logger* logger)
 
 void Design::read()
 {
-  libDBU = block_->getDbUnitsPerMicron();
+  lib_dbu_ = block_->getDbUnitsPerMicron();
   auto dieBound = block_->getDieArea();
-  dieRegion = getBoxFromRect(dieBound);
+  die_region_ = getBoxFromRect(dieBound);
 
   readLayers();
 
@@ -33,12 +33,12 @@ void Design::read()
   computeGrid();
 
   std::cout << "design statistics" << std::endl;
-  std::cout << "lib DBU:             " << libDBU << std::endl;
-  std::cout << "die region (in DBU): " << dieRegion << std::endl;
+  std::cout << "lib DBU:             " << lib_dbu_ << std::endl;
+  std::cout << "die region (in DBU): " << die_region_ << std::endl;
   std::cout << "num of nets :        " << nets_.size() << std::endl;
   std::cout << "num of special nets: " << numSpecialNets << std::endl;
-  std::cout << "gcell grid:          " << gridlines[0].size() - 1 << " x "
-            << gridlines[1].size() - 1 << " x " << getNumLayers() << std::endl;
+  std::cout << "gcell grid:          " << gridlines_[0].size() - 1 << " x "
+            << gridlines_[1].size() - 1 << " x " << getNumLayers() << std::endl;
 
   for (const auto& layer : layers_) {
     std::cout << "Layer " << layer.getName() << " statistics:" << std::endl;
@@ -62,7 +62,7 @@ void Design::readLayers()
           int track_step, track_init, num_tracks;
           track_grid->getAverageTrackSpacing(
               track_step, track_init, num_tracks);
-          defaultGridlineSpacing = track_step * 15;
+          default_gridline_spacing_ = track_step * 15;
         }
       }
     }
@@ -83,7 +83,6 @@ void Design::readNetlist()
       std::vector<BoxOnLayer> pin_shapes;
       if (db_bterm->getFirstPinLocation(x, y)) {
         odb::Point position(x, y);
-        auto bounds = db_bterm->getBBox();
         for (odb::dbBPin* bpin : db_bterm->getBPins()) {
           for (odb::dbBox* bpin_box : bpin->getBoxes()) {
             int layer_idx = bpin_box->getTechLayer()->getRoutingLevel();
@@ -92,10 +91,9 @@ void Design::readNetlist()
           }
         }
       }
-      for (const auto& pin_shape : pin_shapes) {
-        pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
-        pin_count++;
-      }
+      
+      pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
+      pin_count++;
     }
 
     for (odb::dbITerm* db_iterm : db_net->getITerms()) {
@@ -219,16 +217,16 @@ void Design::readSpecialNetObstructions(int& numSpecialNets)
 
 void Design::computeGrid()
 {
-  gridlines.resize(2);
+  gridlines_.resize(2);
   for (unsigned dimension = 0; dimension < 2; dimension++) {
-    const int low = dieRegion[dimension].low;
-    const int high = dieRegion[dimension].high;
-    for (int i = low; i + defaultGridlineSpacing < high;
-         i += defaultGridlineSpacing) {
-      gridlines[dimension].push_back(i);
+    const int low = die_region_[dimension].low;
+    const int high = die_region_[dimension].high;
+    for (int i = low; i + default_gridline_spacing_ < high;
+         i += default_gridline_spacing_) {
+      gridlines_[dimension].push_back(i);
     }
-    if (gridlines[dimension].back() != high) {
-      gridlines[dimension].push_back(high);
+    if (gridlines_[dimension].back() != high) {
+      gridlines_[dimension].push_back(high);
     }
   }
 }
@@ -236,12 +234,12 @@ void Design::computeGrid()
 void Design::setUnitCosts()
 {
   int m2_pitch = layers_[1].getPitch();
-  unit_length_wire_cost = weight_wire_length / m2_pitch;
-  unit_via_cost = weight_via_number;
-  unit_length_short_costs.resize(layers_.size());
-  const CostT unit_area_short_cost = weight_short_area / (m2_pitch * m2_pitch);
+  unit_length_wire_cost_ = weight_wire_length_ / m2_pitch;
+  unit_via_cost_ = weight_via_number_;
+  unit_length_short_costs_.resize(layers_.size());
+  const CostT unit_area_short_cost = weight_short_area_ / (m2_pitch * m2_pitch);
   for (int layerIndex = 0; layerIndex < layers_.size(); layerIndex++) {
-    unit_length_short_costs[layerIndex]
+    unit_length_short_costs_[layerIndex]
         = unit_area_short_cost * layers_[layerIndex].getWidth();
   }
 }
@@ -252,8 +250,8 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& allObstacles,
   allObstacles.resize(getNumLayers());
 
   for (const BoxOnLayer& obs : obstacles_) {
-    if (obs.layerIdx > 1 || !skipM1) {
-      allObstacles[obs.layerIdx - 1].emplace_back(obs.x, obs.y);
+    if (obs.getLayerIdx() > 1 || !skipM1) {
+      allObstacles[obs.getLayerIdx() - 1].emplace_back(obs.x, obs.y);
     }
   }
 }

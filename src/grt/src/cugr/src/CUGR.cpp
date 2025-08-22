@@ -18,13 +18,17 @@ CUGR::CUGR(odb::dbDatabase* db,
            stt::SteinerTreeBuilder* stt_builder)
     : db_(db), logger_(log), stt_builder_(stt_builder)
 {
+}
+
+void CUGR::init()
+{
   design_ = new Design(db_, logger_);
-  gridGraph = new GridGraph(design_);
+  grid_graph_ = new GridGraph(design_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
-  nets.reserve(baseNets.size());
+  gr_nets_.reserve(baseNets.size());
   for (const CUGRNet& baseNet : baseNets) {
-    nets.push_back(new GRNet(baseNet, design_, gridGraph));
+    gr_nets_.push_back(new GRNet(baseNet, design_, grid_graph_));
   }
 }
 
@@ -186,15 +190,15 @@ void CUGR::getGuides(const GRNet* net,
   // // 0. Basic guides
   // GRTreeNode::preorder(routingTree, [&](std::shared_ptr<GRTreeNode> node) {
   //   for (const auto& child : node->children) {
-  //     if (node->layerIdx == child->layerIdx) {
-  //       guides.emplace_back(node->layerIdx,
+  //     if (node->getLayerIdx() == child->getLayerIdx()) {
+  //       guides.emplace_back(node->getLayerIdx(),
   //                           BoxT<int>(min(node->x, child->x),
   //                                     std::min(node->y, child->y),
   //                                     std::max(node->x, child->x),
   //                                     std::max(node->y, child->y)));
   //     } else {
-  //       int maxLayerIndex = std::max(node->layerIdx, child->layerIdx);
-  //       for (int layerIdx = std::min(node->layerIdx, child->layerIdx);
+  //       int maxLayerIndex = std::max(node->getLayerIdx(), child->getLayerIdx());
+  //       for (int layerIdx = std::min(node->getLayerIdx(), child->getLayerIdx());
   //            layerIdx <= maxLayerIndex;
   //            layerIdx++) {
   //         guides.emplace_back(layerIdx, BoxT<int>(node->x, node->y));
@@ -205,18 +209,18 @@ void CUGR::getGuides(const GRNet* net,
 
   // auto getSpareResource = [&](const GRPoint& point) {
   //   double resource = std::numeric_limits<double>::max();
-  //   unsigned direction = gridGraph.getLayerDirection(point.layerIdx);
+  //   unsigned direction = gridGraph.getLayerDirection(point.getLayerIdx());
   //   if (point[direction] + 1 < gridGraph.getSize(direction)) {
   //     resource = std::min(
   //         resource,
-  //         gridGraph.getEdge(point.layerIdx, point.x, point.y).getResource());
+  //         gridGraph.getEdge(point.getLayerIdx(), point.x, point.y).getResource());
   //   }
   //   if (point[direction] > 0) {
   //     GRPoint lower = point;
   //     lower[direction] -= 1;
   //     resource = std::min(
   //         resource,
-  //         gridGraph.getEdge(lower.layerIdx, point.x, point.y).getResource());
+  //         gridGraph.getEdge(lower.getLayerIdx(), point.x, point.y).getResource());
   //   }
   //   return resource;
   // };
@@ -225,13 +229,13 @@ void CUGR::getGuides(const GRNet* net,
   // assert(min_routing_layer + 1 < gridGraph.getNumLayers());
   // for (auto& gpts : net.getPinAccessPoints()) {
   //   for (auto& gpt : gpts) {
-  //     if (gpt.layerIdx < min_routing_layer) {
+  //     if (gpt.getLayerIdx() < min_routing_layer) {
   //       int padding = 0;
   //       if (getSpareResource({min_routing_layer, gpt.x, gpt.y})
   //           < pin_patch_threshold) {
   //         padding = pin_patch_padding;
   //       }
-  //       for (int layerIdx = gpt.layerIdx;
+  //       for (int layerIdx = gpt.getLayerIdx();
   //            layerIdx <= min_routing_layer + 1;
   //            layerIdx++) {
   //         guides.emplace_back(
@@ -251,20 +255,20 @@ void CUGR::getGuides(const GRNet* net,
   // // 2. Wire segment patches
   // GRTreeNode::preorder(routingTree, [&](std::shared_ptr<GRTreeNode> node) {
   //   for (const auto& child : node->children) {
-  //     if (node->layerIdx == child->layerIdx) {
+  //     if (node->getLayerIdx() == child->getLayerIdx()) {
   //       double wire_patch_threshold = wire_patch_threshold;
-  //       unsigned direction = gridGraph.getLayerDirection(node->layerIdx);
+  //       unsigned direction = gridGraph.getLayerDirection(node->getLayerIdx());
   //       int l = std::min((*node)[direction], (*child)[direction]);
   //       int h = std::max((*node)[direction], (*child)[direction]);
   //       int r = (*node)[1 - direction];
   //       for (int c = l; c <= h; c++) {
   //         bool patched = false;
   //         GRPoint point
-  //             = (direction == MetalLayer::H ? GRPoint(node->layerIdx, c, r)
-  //                                           : GRPoint(node->layerIdx, r, c));
+  //             = (direction == MetalLayer::H ? GRPoint(node->getLayerIdx(), c, r)
+  //                                           : GRPoint(node->getLayerIdx(), r, c));
   //         if (getSpareResource(point) < wire_patch_threshold) {
-  //           for (int layerIndex = node->layerIdx - 1;
-  //                layerIndex <= node->layerIdx + 1;
+  //           for (int layerIndex = node->getLayerIdx() - 1;
+  //                layerIndex <= node->getLayerIdx() + 1;
   //                layerIndex += 2) {
   //             if (layerIndex < min_routing_layer
   //                 || layerIndex >= gridGraph.getNumLayers()) {
@@ -305,19 +309,19 @@ void CUGR::printStatistics() const
   //   GRTreeNode::preorder(
   //       net.getRoutingTree(), [&](std::shared_ptr<GRTreeNode> node) {
   //         for (const auto& child : node->children) {
-  //           if (node->layerIdx == child->layerIdx) {
+  //           if (node->getLayerIdx() == child->getLayerIdx()) {
   //             unsigned direction =
-  //             gridGraph.getLayerDirection(node->layerIdx); int l =
+  //             gridGraph.getLayerDirection(node->getLayerIdx()); int l =
   //             std::min((*node)[direction], (*child)[direction]); int h =
   //             std::max((*node)[direction], (*child)[direction]); int r =
   //             (*node)[1 - direction]; for (int c = l; c < h; c++) {
   //               wireLength += gridGraph.getEdgeLength(direction, c);
   //               int x = direction == MetalLayer::H ? c : r;
   //               int y = direction == MetalLayer::H ? r : c;
-  //               wireUsage[node->layerIdx][x][y] += 1;
+  //               wireUsage[node->getLayerIdx()][x][y] += 1;
   //             }
   //           } else {
-  //             viaCount += abs(node->layerIdx - child->layerIdx);
+  //             viaCount += abs(node->getLayerIdx() - child->getLayerIdx());
   //           }
   //         }
   //       });

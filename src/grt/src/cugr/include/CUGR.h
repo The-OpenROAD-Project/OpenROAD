@@ -60,6 +60,7 @@ class CUGR
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
        stt::SteinerTreeBuilder* stt_builder);
+  void init();
   void route();
   void write(std::string guide_file = "");
 
@@ -70,36 +71,35 @@ class CUGR
   void printStatistics() const;
 
   Design* design_;
-  GridGraph* gridGraph;
-  std::vector<GRNet*> nets;
+  GridGraph* grid_graph_;
+  std::vector<GRNet*> gr_nets_;
 
   odb::dbDatabase* db_;
   stt::SteinerTreeBuilder* stt_builder_;
   utl::Logger* logger_;
 
-  int areaOfPinPatches;
-  int areaOfWirePatches;
+  int area_of_pin_patches_;
+  int area_of_wire_patches_;
 
   // constants
-  const double weight_wire_length = 0.5;
-  const double weight_via_number = 4.0;
-  const double weight_short_area = 500.0;
+  const double weight_wire_length_ = 0.5;
+  const double weight_via_number_ = 4.0;
+  const double weight_short_area_ = 500.0;
 
-  const int min_routing_layer = 1;
-  const double cost_logistic_slope = 1.0;
-  const double max_detour_ratio
-      = 0.25;  // allowed stem length increase to trunk length ratio
-  const int target_detour_count = 20;
-  const double via_multiplier = 2.0;
+  const int min_routing_layer_ = 1;
+  const double cost_logistic_slope_ = 1.0;
+  const double max_detour_ratio_ = 0.25;  // allowed stem length increase to trunk length ratio
+  const int target_detour_count_ = 20;
+  const double via_multiplier_ = 2.0;
 
-  const double maze_logistic_slope = 0.5;
+  const double maze_logistic_slope_ = 0.5;
 
-  const double pin_patch_threshold = 20.0;
-  const int pin_patch_padding = 1;
-  const double wire_patch_threshold = 2.0;
-  const double wire_patch_inflation_rate = 1.2;
+  const double pin_patch_threshold_ = 20.0;
+  const int pin_patch_padding_ = 1;
+  const double wire_patch_threshold_ = 2.0;
+  const double wire_patch_inflation_rate_ = 1.2;
 
-  const bool write_heatmap = false;
+  const bool write_heatmap_ = false;
 };
 
 }  // namespace grt

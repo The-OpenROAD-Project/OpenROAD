@@ -1,20 +1,21 @@
 #pragma once
-#include "global.h"
+#include "CUGR.h"
 
 namespace grt {
 
 class GRPoint : public PointT<int>
 {
  public:
-  // int x
-  // int y
-  int layerIdx;
-  GRPoint(int l, int _x, int _y) : layerIdx(l), PointT<int>(_x, _y) {}
+  GRPoint(int l, int _x, int _y) : PointT<int>(_x, _y), layer_idx_(l) {}
   friend inline std::ostream& operator<<(std::ostream& os, const GRPoint& pt)
   {
-    os << "(" << pt.layerIdx << ", " << pt.x << ", " << pt.y << ")";
+    os << "(" << pt.layer_idx_ << ", " << pt.x << ", " << pt.y << ")";
     return os;
   }
+  int getLayerIdx() const { return layer_idx_; }
+
+ private:
+  int layer_idx_;
 };
 
 class GRTreeNode : public GRPoint

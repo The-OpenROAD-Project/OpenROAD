@@ -15,7 +15,7 @@ void GRTreeNode::preorder(
 void GRTreeNode::print(std::shared_ptr<GRTreeNode> node)
 {
   preorder(node, [](std::shared_ptr<GRTreeNode> node) {
-    log() << *node << (node->children.size() > 0 ? " -> " : "");
+    std::cout << *node << (node->children.size() > 0 ? " -> " : "");
     for (auto& child : node->children) {
       std::cout << *child << (child == node->children.back() ? "" : ", ");
     }
