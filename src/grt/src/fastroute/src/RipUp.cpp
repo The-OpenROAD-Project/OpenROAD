@@ -336,13 +336,6 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
     if (grids[i].layer == grids[i + 1].layer) {
       if (grids[i].x == grids[i + 1].x) {  // a vertical edge
         const int ymin = std::min(grids[i].y, grids[i + 1].y);
-        if (net->getDbNet() == debug_->net) {
-          logger_->report("--- Ripping up {} x{} y{} l{}",
-                          net->getName(),
-                          grids[i].x,
-                          ymin,
-                          grids[i].layer + 1);
-        }
         graph2d_.updateUsageV(grids[i].x, ymin, net, -net->getEdgeCost());
         v_edges_3D_[grids[i].layer][ymin][grids[i].x].usage
             -= net->getLayerEdgeCost(grids[i].layer);
@@ -406,13 +399,6 @@ void FastRouteCore::newRipupNet(const int netID)
   const int num_edges = sttrees_[netID].num_edges();
 
   FrNet* net = nets_[netID];
-  if (net->getDbNet() == debug_->net) {
-    logger_->report(
-        "=== Starting newRipupNet for {} - NumEdges: {}  - EdgeCost: {} ===",
-        net->getName(),
-        num_edges,
-        edgeCost);
-  }
 
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     const TreeEdge* treeedge = &(treeedges[edgeID]);

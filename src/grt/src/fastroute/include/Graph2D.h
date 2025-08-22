@@ -91,14 +91,6 @@ class Graph2D
   void updateUsageH(int x, int y, FrNet* net, int usage);
   void updateUsageV(int x, const Interval& yi, FrNet* net, int usage);
   void updateUsageV(int x, int y, FrNet* net, int usage);
-  bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
-  bool hasNDRCapacity(FrNet* net,
-                      int x,
-                      int y,
-                      EdgeDirection direction,
-                      double edge_cost);
-  void printNDRCap(int x, int y);
-  void printEdgeCapPerLayer();
   void initCap3D();
   void updateCap3D(int x,
                    int y,
@@ -124,12 +116,9 @@ class Graph2D
                          FrNet* net,
                          EdgeDirection dir,
                          double edge_cost);
-  void fixFractionEdgeUsage(int min_layer,
-                            int max_layer,
-                            int x,
-                            int y,
-                            double edge_cost,
-                            EdgeDirection dir);
+  bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
+  void printNDRCap(int x, int y);
+  void printEdgeCapPerLayer();
   void initNDRnets();
 
   void foreachEdge(const std::function<void(Edge&)>& func);

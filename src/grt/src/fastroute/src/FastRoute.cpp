@@ -1441,15 +1441,6 @@ NetRouteMap FastRouteCore::run()
           max_overflow_increases);
     }
 
-    // debug mode Rectilinear Steiner Tree during overflow iterations
-    if (debug_->isOn() && debug_->rectilinearSTree) {
-      for (const int& netID : net_ids_) {
-        if (nets_[netID]->getDbNet() == debug_->net) {
-          StTreeVisualization(sttrees_[netID], nets_[netID], false);
-        }
-      }
-    }
-
     // generate DRC report each interval
     if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
       saveCongestion(i);
@@ -1629,8 +1620,6 @@ void FastRouteCore::computeCongestionInformation()
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
-          logger_->info(
-              GRT, 117, "Overflow H: x: {} y: {} layer: {}", j, i, l + 1);
         }
       }
     }
@@ -1644,8 +1633,6 @@ void FastRouteCore::computeCongestionInformation()
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
-          logger_->info(
-              GRT, 118, "Overflow V: x: {} y: {} layer: {}", j, i, l + 1);
         }
       }
     }

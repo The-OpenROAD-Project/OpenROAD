@@ -367,7 +367,7 @@ void Graph2D::updateUsageH(const int x,
   }
 }
 
-// Updates usage for a horizontal edge segment, considering NDRs.
+// Updates usage for a horizontal edge segment.
 void Graph2D::updateUsageH(const Interval& xi,
                            const int y,
                            FrNet* net,
@@ -401,7 +401,7 @@ void Graph2D::updateUsageV(const int x,
   }
 }
 
-// Updates usage for a vertical edge segment, considering NDRs.
+// Updates usage for a vertical edge segment.
 void Graph2D::updateUsageV(const int x,
                            const Interval& yi,
                            FrNet* net,

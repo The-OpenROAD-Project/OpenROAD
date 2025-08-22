@@ -545,8 +545,6 @@ class FastRouteCore
   void StTreeVisualization(const StTree& stree,
                            FrNet* net,
                            bool is3DVisualization);
-  bool congestionAnalysis(int netID);
-  void updateNetUsage(int netID, int adjustment);
   int netCount() const { return nets_.size(); }
 
   using Tile = std::tuple<int, int, int>;

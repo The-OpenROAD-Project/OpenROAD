@@ -1316,11 +1316,6 @@ void FastRouteCore::routeMonotonic(const int netID,
   treeedge->route.routelen = cnt - 1;
 
   grids.resize(cnt);
-
-  if (is_ndr && net->getDbNet() == debug_->net) {
-    logger_->report("After reroute monotonic");
-    printEdge(netID, edgeID);
-  }
 }
 
 void FastRouteCore::routeMonotonicAll(const int threshold,
