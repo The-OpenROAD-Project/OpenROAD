@@ -649,8 +649,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     if (net_alpha > 0.0) {
       rsmt = stt_builder_->makeSteinerTree(
           net->getDbNet(), net->getPinX(), net->getPinY(), net->getDriverIdx());
-    } else 
-    {
+    } else {
       float coeffV = 1.36;
 
       if (congestionDriven) {

@@ -47,8 +47,20 @@ enum class EdgeDirection
 
 struct Segment  // A Segment is a 2-pin connection
 {
-  Segment(int netID, int16_t x1, int16_t y1, int16_t x2, int16_t y2, int8_t cost)
-      : netID(netID), x1(x1), y1(y1), x2(x2), y2(y2), cost(cost), xFirst(false), HVH(false)
+  Segment(int netID,
+          int16_t x1,
+          int16_t y1,
+          int16_t x2,
+          int16_t y2,
+          int8_t cost)
+      : netID(netID),
+        x1(x1),
+        y1(y1),
+        x2(x2),
+        y2(y2),
+        cost(cost),
+        xFirst(false),
+        HVH(false)
   {
   }
   const int netID;
@@ -118,8 +130,8 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t usage;  // the usage of the edge
   uint16_t red;
   int16_t last_usage;
-  uint16_t ndr_overflow; // number of NDR nets in congestion
-  double est_usage;  // the estimated usage of the edge
+  uint16_t ndr_overflow;  // number of NDR nets in congestion
+  double est_usage;       // the estimated usage of the edge
 
   uint16_t usage_red() const { return usage + red; }
   double est_usage_red() const { return est_usage + red; }
@@ -218,7 +230,7 @@ struct OrderNetPin
   int treeIndex;
   int minX;
   float length_per_pin;  // net length over pin count
-  int ndr_priority; // NDR nets are assigned first
+  int ndr_priority;      // NDR nets are assigned first
 };
 
 struct OrderTree

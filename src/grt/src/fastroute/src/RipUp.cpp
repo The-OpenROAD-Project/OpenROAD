@@ -236,9 +236,6 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         graph2d_.updateUsageH(xmin, grids[i].y, net, -edgeCost);
       }
     }
-    if (net->getDbNet()->getNonDefaultRule()) {
-      logger_->report(">> newRipupCheck {}", net->getName());
-    }
   }
   return needRipup;
 }
@@ -432,10 +429,6 @@ void FastRouteCore::newRipupNet(const int netID)
 
       if (edge_type == RouteType::LRoute)  // remove L routing
       {
-        // if(net->getDbNet()->getNonDefaultRule()){
-        //   logger_->report("=== Removing L routing ===");
-        //   logger_->report("\tx1/y1: {}/{} x2/y2: {}/{}", x1,y1,x2,y2);
-        // }
         if (treeedge->route.xFirst) {
           graph2d_.updateEstUsageH({x1, x2}, y1, net, -edgeCost);
           graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, -edgeCost);

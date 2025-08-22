@@ -231,7 +231,7 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
- 
+
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }
   int tile_size() const { return tile_size_; }
@@ -545,6 +545,8 @@ class FastRouteCore
   void StTreeVisualization(const StTree& stree,
                            FrNet* net,
                            bool is3DVisualization);
+  bool congestionAnalysis(int netID);
+  void updateNetUsage(int netID, int adjustment);
   int netCount() const { return nets_.size(); }
 
   using Tile = std::tuple<int, int, int>;

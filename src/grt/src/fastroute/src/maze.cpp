@@ -1155,11 +1155,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     double cost1 = getCost(pos1, is_horizontal, cost_params);
 
-    // if (nets_[net_id]->isClock()) {
-    // logger_->report("{} net maze cost: pos1={}, cost1={}, is_horizontal={}",
-    //                 nets_[net_id]->getName(), pos1, cost1, is_horizontal);
-    // }
-
     double tmp = d1[cur_y][cur_x] + cost1;
 
     if (add_via && d1[cur_y][cur_x] != 0) {
@@ -1928,6 +1923,12 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageH(x, y);
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (y + 0.5) + x_corner_;
+        int y_real = tile_size_ * (x + 0.5) + y_corner_;
+        logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -1938,6 +1939,12 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageV(x, y);
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (y + 0.5) + x_corner_;
+        int y_real = tile_size_ * (x + 0.5) + y_corner_;
+        logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -1992,10 +1999,12 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = graph2d_.getEstUsageH(x, y) - graph2d_.getCapH(x, y);
     hCap += graph2d_.getCapH(x, y);
     if (overflow > 0) {
-      // Convert to real coordinates
-      int x_real = tile_size_ * (y + 0.5) + x_corner_;
-      int y_real = tile_size_ * (x + 0.5) + y_corner_;
-      // logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (y + 0.5) + x_corner_;
+        int y_real = tile_size_ * (x + 0.5) + y_corner_;
+        logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -2007,10 +2016,12 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
-      // Convert to real coordinates
-      int x_real = tile_size_ * (y + 0.5) + x_corner_;
-      int y_real = tile_size_ * (x + 0.5) + y_corner_;
-      // logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (y + 0.5) + x_corner_;
+        int y_real = tile_size_ * (x + 0.5) + y_corner_;
+        logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -2027,7 +2038,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     ahth_ = 20;
   }
 
-  if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+  if (logger_->debugCheck(GRT, "congestion", 1)) {
     logger_->report("Overflow report.");
     logger_->report("Total hCap               : {}", hCap);
     logger_->report("Total vCap               : {}", vCap);
@@ -2061,16 +2072,18 @@ int FastRouteCore::getOverflow3D()
       overflow = h_edges_3D_[k][y][x].usage - h_edges_3D_[k][y][x].cap;
 
       if (overflow > 0) {
-        // Convert to real coordinates
-        int x_real = tile_size_ * (x + 0.5) + x_corner_;
-        int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report(
-            ">>> 3D H Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
-            x,
-            y,
-            k + 1,
-            x_real,
-            y_real);
+        if (logger_->debugCheck(GRT, "checkOverflow3D", 1)) {
+          // Convert to real coordinates
+          int x_real = tile_size_ * (x + 0.5) + x_corner_;
+          int y_real = tile_size_ * (y + 0.5) + y_corner_;
+          logger_->report(
+              ">>> 3D H Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+              x,
+              y,
+              k + 1,
+              x_real,
+              y_real);
+        }
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
       }
@@ -2079,16 +2092,18 @@ int FastRouteCore::getOverflow3D()
       total_usage += v_edges_3D_[k][y][x].usage;
       overflow = v_edges_3D_[k][y][x].usage - v_edges_3D_[k][y][x].cap;
       if (overflow > 0) {
-        // Convert to real coordinates
-        int x_real = tile_size_ * (x + 0.5) + x_corner_;
-        int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report(
-            ">>> 3D V Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
-            x,
-            y,
-            k + 1,
-            x_real,
-            y_real);
+        if (logger_->debugCheck(GRT, "checkOverflow3D", 1)) {
+          // Convert to real coordinates
+          int x_real = tile_size_ * (x + 0.5) + x_corner_;
+          int y_real = tile_size_ * (y + 0.5) + y_corner_;
+          logger_->report(
+              ">>> 3D V Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+              x,
+              y,
+              k + 1,
+              x_real,
+              y_real);
+        }
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
       }

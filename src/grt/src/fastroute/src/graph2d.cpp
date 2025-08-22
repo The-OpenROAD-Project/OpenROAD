@@ -262,10 +262,6 @@ void Graph2D::updateEstUsageV(const int x,
 {
   v_edges_[x][y].est_usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
-  // if(x==497 && y==352){
-  //   logger_->report("Underflow V {} {} {} {}",net->getName(), usage,
-  //   v_edges_[x][y].est_usage, v_edges_[x][y].ndr_overflow); printNDRCap(x,y);
-  // }
 
   if (usage > 0) {
     v_used_ggrid_.insert({x, y});
@@ -399,12 +395,7 @@ void Graph2D::updateUsageV(const int x,
 {
   v_edges_[x][y].usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
-  // if(x==497 && y==352){
-  //   logger_->report("U Underflow {} {} {} {}",net->getName(), edge_cost,
-  //   v_edges_[x][y].usage, v_edges_[x][y].ndr_overflow); printNDRCap(x,y);
-  //   updateCongList(net->getName(), edge_cost);
-  //   printAllElements();
-  // }
+
   if (usage > 0) {
     v_used_ggrid_.insert({x, y});
   }
@@ -514,17 +505,11 @@ void Graph2D::updateCap3D(int x,
                           EdgeDirection direction,
                           const double cap)
 {
-  auto &cap3D = (EdgeDirection::Horizontal == direction) ? h_cap_3D_[layer][x][y] : v_cap_3D_[layer][x][y];
+  auto& cap3D = (EdgeDirection::Horizontal == direction)
+                    ? h_cap_3D_[layer][x][y]
+                    : v_cap_3D_[layer][x][y];
   cap3D.cap = cap;
   cap3D.cap_ndr = cap;
-
-  // if (direction == EdgeDirection::Horizontal) {
-  //   h_cap_3D_[layer][x][y].cap = cap;
-  //   h_cap_3D_[layer][x][y].cap_ndr = cap;
-  // } else {
-  //   v_cap_3D_[layer][x][y].cap = cap;
-  //   v_cap_3D_[layer][x][y].cap_ndr = cap;
-  // }
 }
 
 // Prints the capacity of each edge per layer.
@@ -568,10 +553,6 @@ bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction)
         return true;
       }
     }
-    // if(x==497 && y==352)
-    //   logger_->report("=== Max Layer Cap: {} V{} x{} y{} max
-    //   {}",net->getName(), direction==EdgeDirection::Vertical, x, y,
-    //   max_single_layer_cap);
 
     // No single layer can accommodate this NDR net
     return false;
@@ -655,7 +636,7 @@ void Graph2D::updateNDRCapLayer(const int x,
                                 const double edge_cost)
 {
   const int edgeCost = net->getEdgeCost();
-  if (edgeCost <= 1) {
+  if (edgeCost == 1) {
     return;
   }
 

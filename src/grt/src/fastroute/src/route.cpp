@@ -150,13 +150,15 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
     graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, -edgeCost / 2.0f);
 
     graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y2, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(
+        {seg->x1, seg->x2}, seg->y1, net, -edgeCost / 2.0f);
 
     seg->xFirst = false;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
     graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y2, net, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(
+        {seg->x1, seg->x2}, seg->y2, net, -edgeCost / 2.0f);
 
     graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, edgeCost / 2.0f);
     graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, -edgeCost / 2.0f);
@@ -1316,8 +1318,8 @@ void FastRouteCore::routeMonotonic(const int netID,
   grids.resize(cnt);
 
   if (is_ndr && net->getDbNet() == debug_->net) {
-        logger_->report("After reroute monotonic");
-        printEdge(netID,edgeID);
+    logger_->report("After reroute monotonic");
+    printEdge(netID, edgeID);
   }
 }
 
