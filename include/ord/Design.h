@@ -63,6 +63,10 @@ namespace tap {
 class Tapcell;
 }
 
+namespace cgt {
+class ClockGating;
+}
+
 namespace cts {
 class TritonCTS;
 }
@@ -157,6 +161,7 @@ class Design
 
   // Services
   ant::AntennaChecker* getAntennaChecker();
+  cgt::ClockGating* getClockGating();
   cts::TritonCTS* getTritonCts();
   dft::Dft* getDft();
   dpl::Opendp* getOpendp();

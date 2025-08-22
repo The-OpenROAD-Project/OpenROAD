@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "abc_library_factory.h"
 #include "base/abc/abc.h"
+#include "cut/abc_library_factory.h"
 #include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
@@ -47,7 +47,7 @@ class LogicOptimizationStrategy
   // 2. Return a new network that is optimized according to the strategy.
   virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
       const abc::Abc_Ntk_t* ntk,
-      AbcLibrary& abc_library,
+      cut::AbcLibrary& abc_library,
       utl::Logger* logger)
       = 0;
 };

@@ -11,16 +11,16 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <mutex>
 #include <sstream>
 #include <vector>
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
+#include "cut/blif.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "rmp/blif.h"
+#include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -36,10 +36,9 @@
 
 using utl::RMP;
 using namespace abc;
+using cut::Blif;
 
 namespace rmp {
-
-std::once_flag init_abc_flag;
 
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
@@ -53,7 +52,7 @@ void Restructure::init(utl::Logger* logger,
   resizer_ = resizer;
   estimate_parasitics_ = estimate_parasitics;
 
-  std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
+  ord::abcInit();
 }
 
 void Restructure::deleteComponents()
@@ -210,7 +209,7 @@ void Restructure::runABC()
       child_proc[curr_mode_idx]
           = Cmd_CommandExecute(abc_frame, command.c_str());
       if (child_proc[curr_mode_idx]) {
-        logger_->error(RMP, 26, "Error executing ABC command {}.", command);
+        logger_->error(RMP, 6, "Error executing ABC command {}.", command);
         return;
       }
       Abc_Stop();
@@ -277,13 +276,13 @@ void Restructure::runABC()
                countConsts(block_));
   } else {
     logger_->info(
-        RMP, 21, "All re-synthesis runs discarded, keeping original netlist.");
+        RMP, 4, "All re-synthesis runs discarded, keeping original netlist.");
   }
 
   for (const auto& file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1)) {
       if (std::remove(file_to_remove.c_str()) != 0) {
-        logger_->error(RMP, 37, "Fail to remove file {}", file_to_remove);
+        logger_->error(RMP, 11, "Fail to remove file {}", file_to_remove);
       }
     }
   }
@@ -445,7 +444,7 @@ void Restructure::removeConstCells()
             iterm->disconnect();
             new_inst->getITerm(const_port)->connect(net);
           } else {
-            logger_->warn(RMP, 35, "Could not create instance {}.", inst_name);
+            logger_->warn(RMP, 9, "Could not create instance {}.", inst_name);
           }
         }
         const_outputs++;
@@ -481,7 +480,7 @@ bool Restructure::writeAbcScript(std::string file_name)
   std::ofstream script(file_name.c_str());
 
   if (!script.is_open()) {
-    logger_->error(RMP, 20, "Cannot open file {} for writing.", file_name);
+    logger_->error(RMP, 3, "Cannot open file {} for writing.", file_name);
     return false;
   }
 
@@ -593,7 +592,7 @@ void Restructure::setMode(const char* mode_name)
   } else if (!strcmp(mode_name, "area")) {
     opt_mode_ = Mode::AREA_1;
   } else {
-    logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
+    logger_->warn(RMP, 10, "Mode {} not recognized.", mode_name);
   }
 }
 
@@ -619,7 +618,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
 {
   std::ifstream abc_file(abc_file_name);
   if (abc_file.bad()) {
-    logger_->error(RMP, 16, "cannot open file {}", abc_file_name);
+    logger_->error(RMP, 2, "cannot open file {}", abc_file_name);
     return false;
   }
   logger_->report("Reading ABC log {}.", abc_file_name);
@@ -643,7 +642,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
     if (!tokens.empty() && tokens[0] == "Error:") {
       status = false;
       logger_->warn(RMP,
-                    25,
+                    5,
                     "ABC run failed, see log file {} for details.",
                     abc_file_name);
       break;
