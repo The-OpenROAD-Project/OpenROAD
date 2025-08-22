@@ -12,6 +12,7 @@ or_integration_tests(
     hier2
     hierclock
     hierwrite
+    hier_deep
     make_port
     network_edit1
     power1

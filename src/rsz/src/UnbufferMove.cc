@@ -303,8 +303,8 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  dbNet* in_db_net = db_network_->getOrFindFlatDbNet(in_net);
-  dbNet* out_db_net = db_network_->getOrFindFlatDbNet(out_net);
+  dbNet* in_db_net = db_network_->findFlatDbNet(in_net);
+  dbNet* out_db_net = db_network_->findFlatDbNet(out_net);
   // honor net dont-touch on input net or output net
   if ((in_db_net && in_db_net->isDoNotTouch())
       || (out_db_net && out_db_net->isDoNotTouch())) {
