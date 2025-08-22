@@ -861,10 +861,10 @@ while [ "$#" -gt 0 ]; do
             export GIT_SSL_NO_VERIFY=true
             ;;
         -save-deps-prefixes=*)
-            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
+            saveDepsPrefixes=$(realpath ${1#*=})
             ;;
         -threads=*)
-            numThreads=${1}
+            numThreads=${1#*=}
             ;;
         *)
             echo "unknown option: ${1}" >&2
