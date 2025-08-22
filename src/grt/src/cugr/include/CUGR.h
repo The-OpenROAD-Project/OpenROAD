@@ -1,6 +1,5 @@
 #pragma once
 
-#include "enum.h"
 #include "geo.h"
 
 // STL libraries
