@@ -1313,7 +1313,7 @@ void FastRouteCore::removeLoops()
     auto& treeedges = sttrees_[netID].edges;
 
     FrNet* net = nets_[netID];
-    const int edgeCost = net->getEdgeCost();
+    const int8_t edgeCost = net->getEdgeCost();
 
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge edge = sttrees_[netID].edges[edgeID];
@@ -1366,7 +1366,7 @@ void FastRouteCore::verify2DEdgesUsage()
     }
     const auto& treenodes = sttrees_[netID].nodes;
     const auto& treeedges = sttrees_[netID].edges;
-    const int edgeCost = nets_[netID]->getEdgeCost();
+    const int8_t edgeCost = nets_[netID]->getEdgeCost();
 
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -1481,7 +1481,7 @@ void FastRouteCore::verify3DEdgesUsage()
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
 
-    const int edgeCost = nets_[netID]->getEdgeCost();
+    const int8_t edgeCost = nets_[netID]->getEdgeCost();
 
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -1797,7 +1797,7 @@ void FastRouteCore::copyBR()
     for (const int& netID : net_ids_) {
       const int numEdges = sttrees_[netID].num_edges();
       FrNet* net = nets_[netID];
-      const int edgeCost = net->getEdgeCost();
+      const int8_t edgeCost = net->getEdgeCost();
 
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         const TreeEdge& edge = sttrees_[netID].edges[edgeID];
@@ -1881,7 +1881,7 @@ void FastRouteCore::copyBR()
     for (const int& netID : net_ids_) {
       const int numEdges = sttrees_[netID].num_edges();
       FrNet* net = nets_[netID];
-      const int edgeCost = net->getEdgeCost();
+      const int8_t edgeCost = net->getEdgeCost();
 
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         const TreeEdge& edge = sttrees_[netID].edges[edgeID];

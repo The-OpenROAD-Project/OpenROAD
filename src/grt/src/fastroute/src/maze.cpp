@@ -142,7 +142,7 @@ void FastRouteCore::fixOverlappingEdge(
 
     // Updates the usage of the altered edge
     FrNet* net = nets_[net_id];
-    const int edgeCost = net->getEdgeCost();
+    const int8_t edgeCost = net->getEdgeCost();
     for (int k = 0; k < treeedge->route.routelen;
          k++) {  // remove the usages of the old edges
       if (treeedge->route.grids[k].x == treeedge->route.grids[k + 1].x) {
@@ -1696,7 +1696,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }
 
       FrNet* net = nets_[netID];
-      int edgeCost = net->getEdgeCost();
+      int8_t edgeCost = net->getEdgeCost();
 
       // update edge usage
       for (int i = 0; i < cnt_n1n2 - 1; i++) {

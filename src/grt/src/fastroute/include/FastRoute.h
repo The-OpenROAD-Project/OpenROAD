@@ -118,7 +118,7 @@ class FastRouteCore
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
   void initEdgesCapacityPerLayer();
-  void setNumAdjustments(int nAdjustements);
+  void setNumAdjustments(int nAdjustments);
   void addAdjustment(int x1,
                      int y1,
                      int x2,

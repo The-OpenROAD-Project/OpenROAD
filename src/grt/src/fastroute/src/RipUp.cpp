@@ -46,7 +46,7 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
   const RouteType edge_type = treeedge->route.type;
   const auto [ymin, ymax] = std::minmax(y1, y2);
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   if (edge_type == RouteType::LRoute)  // remove L routing
   {
@@ -117,7 +117,7 @@ bool FastRouteCore::newRipupCongestedL(const TreeEdge* treeedge,
   const auto [ymin, ymax] = std::minmax(y1, y2);
 
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   bool needRipup = false;
 
@@ -225,7 +225,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     }
   }
   if (needRipup) {
-    const int edgeCost = net->getEdgeCost();
+    const int8_t edgeCost = net->getEdgeCost();
 
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (grids[i].x == grids[i + 1].x) {  // a vertical edge
@@ -357,7 +357,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
 void FastRouteCore::releaseNetResources(const int netID)
 {
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
   const auto& treeedges = sttrees_[netID].edges;
   const int num_edges = sttrees_[netID].num_edges();
 
@@ -392,7 +392,7 @@ void FastRouteCore::releaseNetResources(const int netID)
 
 void FastRouteCore::newRipupNet(const int netID)
 {
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  const int8_t edgeCost = nets_[netID]->getEdgeCost();
 
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;

@@ -206,7 +206,7 @@ void FastRouteCore::newrouteL(const int netID,
                               const bool viaGuided)
 {
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   const int num_edges = sttrees_[netID].num_edges();
   auto& treeedges = sttrees_[netID].edges;
@@ -350,7 +350,7 @@ void FastRouteCore::newrouteLAll(const bool firstTime, const bool viaGuided)
 void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
 {
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   // only route the non-degraded edges (len>0)
   if (sttrees_[netID].edges[edgeID].len <= 0) {
@@ -470,7 +470,7 @@ void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
 void FastRouteCore::newrouteZ(const int netID, const int threshold)
 {
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   const int num_terminals = sttrees_[netID].num_terminals;
   const int num_edges = sttrees_[netID].num_edges();
@@ -759,7 +759,7 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
   auto& treenodes = sttrees_[netID].nodes;
 
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   TreeEdge* treeedge = &(treeedges[edgeID]);
   if (treeedge->len <= 0)  // only route the non-degraded edges (len>0)
@@ -1194,7 +1194,7 @@ void FastRouteCore::routeMonotonic(const int netID,
   int cnt = 0;
   std::vector<GPoint3D>& grids = treeedge->route.grids;
   grids.resize(x_range_ + y_range_);
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  const int8_t edgeCost = nets_[netID]->getEdgeCost();
 
   if (BL1) {
     if (bestp1x > x1) {
@@ -1361,7 +1361,7 @@ void FastRouteCore::newrouteLInMaze(const int netID)
   const auto& treenodes = sttrees_[netID].nodes;
 
   FrNet* net = nets_[netID];
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   // loop for all the tree edges
   for (int i = 0; i < num_edges; i++) {

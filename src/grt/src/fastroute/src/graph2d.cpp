@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <set>
 #include <string>
 
@@ -535,7 +536,7 @@ void Graph2D::printEdgeCapPerLayer()
 // Checks if there is enough NDR capacity for a given net.
 bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction)
 {
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
   double max_single_layer_cap = 0;
 
   if (edgeCost > 1) {
@@ -568,7 +569,7 @@ double Graph2D::getCostNDRAware(FrNet* net,
                                 const double edge_cost,
                                 EdgeDirection direction)
 {
-  int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
 
   // No processing needed for nets with 1 edge cost
   if (edgeCost == 1) {
@@ -635,7 +636,7 @@ void Graph2D::updateNDRCapLayer(const int x,
                                 EdgeDirection dir,
                                 const double edge_cost)
 {
-  const int edgeCost = net->getEdgeCost();
+  const int8_t edgeCost = net->getEdgeCost();
   if (edgeCost == 1) {
     return;
   }
