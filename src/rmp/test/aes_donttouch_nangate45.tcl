@@ -7,6 +7,8 @@ read_verilog ./aes_nangate45.v
 link_design aes_cipher_top
 read_sdc ./aes_nangate45.sdc
 
+set_dont_touch *
+
 # Unset dont use for tie cells
 unset_dont_use *LOGIC*
 
@@ -18,13 +20,6 @@ report_wns
 report_tns
 
 puts "-- After --\n"
-
-resynth
-report_timing_histogram
-report_cell_usage
-report_checks
-report_wns
-report_tns
 
 resynth
 report_timing_histogram

@@ -685,7 +685,7 @@ TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
   UniqueName name_generator;
   ZeroSlackStrategy zero_slack;
   EXPECT_NO_THROW(
-      zero_slack.OptimizeDesign(sta_.get(), name_generator, &logger_));
+      zero_slack.OptimizeDesign(sta_.get(), name_generator, nullptr, &logger_));
 }
 
 TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
