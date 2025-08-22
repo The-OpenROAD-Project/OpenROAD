@@ -2234,9 +2234,9 @@ void dbNet::mergeNet(dbNet* in_net)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  // in_net->getITerms() returns a terminal iterator, andibterm->connect() can
-  // invalidate the iterator by disconnecting a dbITerm. So storing all dbITerms
-  // is needed for safe dbITerms iteration.
+  // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
+  // invalidate the iterator by disconnecting a dbITerm.
+  // So storing all dbITerms is needed for safe iterms iteration.
   std::vector<dbITerm*> iterms;
   for (dbITerm* iterm : in_net->getITerms()) {
     iterms.push_back(iterm);
@@ -2250,9 +2250,7 @@ void dbNet::mergeNet(dbNet* in_net)
     iterm->connect(this);
   }
 
-  // in_net->getBTerms() returns an BTerm iterator, and bterm->connect() can
-  // invalidate the iterator by disconnecting a dbBTerm. So storing all BTerms
-  // is needed for safe BTerms iteration.
+  // Store dbBTerms for safe iteration.
   std::vector<dbBTerm*> bterms;
   for (dbBTerm* bterm : in_net->getBTerms()) {
     bterms.push_back(bterm);
