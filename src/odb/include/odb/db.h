@@ -1330,7 +1330,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbChip* chip,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
@@ -1340,7 +1340,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbBlock* block,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4990,7 +4990,7 @@ class dbLib : public dbObject
   static dbLib* create(dbDatabase* db,
                        const char* name,
                        dbTech* tech,
-                       char hierarchy_delimiter = 0);
+                       char hierarchy_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.

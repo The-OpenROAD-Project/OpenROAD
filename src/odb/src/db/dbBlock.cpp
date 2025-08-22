@@ -152,7 +152,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
-  _hier_delimiter = 0;
+  _hier_delimiter = '/';
   _left_bus_delimiter = 0;
   _right_bus_delimiter = 0;
   _num_ext_corners = 0;
