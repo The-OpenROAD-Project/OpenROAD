@@ -1097,9 +1097,7 @@ NetRouteMap FastRouteCore::run()
   int slope;
   int max_adj;
 
-  // Init the data structures to monitor 3D capacity during 2D phases
-  initEdgesCapacityPerLayer();
-
+  
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
@@ -1484,10 +1482,9 @@ NetRouteMap FastRouteCore::run()
 
   removeLoops();
 
-  past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+  getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   layerAssignment();
-  getOverflow3D();
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
@@ -1498,12 +1495,13 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  if (past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 20);
+  if (past_cong == 0){
+    mazeRouteMSMDOrder3D(enlarge_, 0, 40);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    getOverflow3D();
     logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
   }
 
