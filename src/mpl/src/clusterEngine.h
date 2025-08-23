@@ -219,7 +219,7 @@ class ClusteringEngine
   void mapMacroInCluster2HardMacro(Cluster* cluster);
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
-  void createOneClusterForEachMacro(Cluster* parent,
+  void createOneClusterForEachMacro(Cluster* mixed_leaf_parent,
                                     const std::vector<HardMacro*>& hard_macros,
                                     std::vector<Cluster*>& macro_clusters);
   void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,

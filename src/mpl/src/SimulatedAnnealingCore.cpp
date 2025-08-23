@@ -100,8 +100,9 @@ void SimulatedAnnealingCore<T>::initSequencePair()
     return;
   }
 
-  const int sequence_pair_size
-      = macros_to_place_ != 0 ? macros_to_place_ : macros_.size();
+  const int sequence_pair_size = number_of_sequence_pair_macros_ != 0
+                                     ? number_of_sequence_pair_macros_
+                                     : macros_.size();
 
   int macro_id = 0;
 
@@ -444,11 +445,6 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
-  for (auto& macro_id : pos_seq_) {
-    macros_[macro_id].setX(0.0);
-    macros_[macro_id].setY(0.0);
-  }
-
   // Each index corresponds to a macro id whose pair is:
   // <Position in Positive Sequence , Position in Negative Sequence>
   std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());

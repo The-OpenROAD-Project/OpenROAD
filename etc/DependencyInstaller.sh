@@ -91,7 +91,7 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        eval wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        eval wget https://github.com/Kitware/CMake/releases/download/v${cmakeVersionSmall}/cmake-${cmakeVersionSmall}-linux-${arch}.sh
         md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
@@ -861,10 +861,10 @@ while [ "$#" -gt 0 ]; do
             export GIT_SSL_NO_VERIFY=true
             ;;
         -save-deps-prefixes=*)
-            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
+            saveDepsPrefixes=$(realpath ${1#*=})
             ;;
         -threads=*)
-            numThreads=${1}
+            numThreads=${1#*=}
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -933,11 +933,13 @@ case "${os}" in
             _installOrTools "ubuntu" "${ubuntuVersion}" "amd64"
         fi
         ;;
-    "Red Hat Enterprise Linux" | "Rocky Linux")
+    "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
     if [[ "${os}" == "Red Hat Enterprise Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' redhat-release | cut -d. -f1)
     elif  [[ "${os}" == "Rocky Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' rocky-release | cut -d. -f1)
+    elif [[ "${os}" == "AlmaLinux" ]]; then
+        rhelVersion=$(rpm -q --queryformat '%{VERSION}' almalinux-release | cut -d. -f1)
     fi
         if [[ "${rhelVersion}" != "8" ]] && [[ "${rhelVersion}" != "9" ]]; then
             echo "ERROR: Unsupported ${rhelVersion} version. Versions '8' and '9' are supported."
@@ -1018,4 +1020,8 @@ esac
 if [[ ! -z ${saveDepsPrefixes} ]]; then
     mkdir -p "$(dirname $saveDepsPrefixes)"
     echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
+    # Fix permissions if running as root to allow user access
+    if [[ $(id -u) == 0 && ! -z "${SUDO_USER+x}" ]]; then
+        chown "$SUDO_USER:$(id -gn "$SUDO_USER")" "$saveDepsPrefixes" 2>/dev/null || true
+    fi
 fi
