@@ -83,7 +83,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // actions used
   void resizeOneCluster();
 
-  int getSegmentIndex(float segment, std::vector<float>& coords);
+  int getSegmentIndex(float segment, const std::vector<float>& coords);
 
   void calBoundaryPenalty();
   float calSingleNotchPenalty(float width, float height);

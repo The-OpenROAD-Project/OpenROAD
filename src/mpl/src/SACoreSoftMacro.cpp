@@ -903,7 +903,8 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 }
 
-int SACoreSoftMacro::getSegmentIndex(float segment, std::vector<float>& coords)
+int SACoreSoftMacro::getSegmentIndex(float segment,
+                                     const std::vector<float>& coords)
 {
   int index = std::distance(
       coords.begin(), std::lower_bound(coords.begin(), coords.end(), segment));
