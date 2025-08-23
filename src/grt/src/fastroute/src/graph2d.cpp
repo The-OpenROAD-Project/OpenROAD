@@ -214,7 +214,7 @@ void Graph2D::updateEstUsageH(const int x,
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
 
   if (usage > 0) {
-    v_used_ggrid_.insert({x, y});
+    h_used_ggrid_.insert({x, y});
   }
 }
 
