@@ -72,19 +72,19 @@ void PatternRoute::constructSteinerTree()
           accessPoint.second.first, accessPoint.second.second);
     }
   } else {
-    std::vector<int> xs(degree * 4);
-    std::vector<int> ys(degree * 4);
-    int i = 0;
+    std::vector<int> xs;
+    std::vector<int> ys;
     for (auto& accessPoint : selectedAccessPoints) {
-      xs[i] = accessPoint.second.first.x;
-      ys[i] = accessPoint.second.first.y;
-      i++;
+      xs.push_back(accessPoint.second.first.x);
+      ys.push_back(accessPoint.second.first.y);
     }
+
     stt::Tree flutetree = stt_builder_->flute(xs, ys, flute_accuracy_);
     const int numBranches = degree + degree - 2;
     std::vector<PointT<int>> steinerPoints;
     steinerPoints.reserve(numBranches);
     std::vector<std::vector<int>> adjacentList(numBranches);
+
     for (int branchIndex = 0; branchIndex < numBranches; branchIndex++) {
       const stt::Branch& branch = flutetree.branch[branchIndex];
       steinerPoints.emplace_back(branch.x, branch.y);
@@ -94,6 +94,7 @@ void PatternRoute::constructSteinerTree()
       adjacentList[branchIndex].push_back(branch.n);
       adjacentList[branch.n].push_back(branchIndex);
     }
+
     std::function<void(std::shared_ptr<SteinerTreeNode>&, int, int)>
         constructTree = [&](std::shared_ptr<SteinerTreeNode>& parent,
                             int prevIndex,
