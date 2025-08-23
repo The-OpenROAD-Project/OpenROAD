@@ -747,12 +747,6 @@ void SimulatedAnnealingCore<T>::fastSA()
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-
-    if (step == max_num_step_ - macros_.size() * 2) {
-      packFloorplan();
-      calPenalty();
-      pre_cost = calNormCost();
-    }
   }
 
   packFloorplan();
