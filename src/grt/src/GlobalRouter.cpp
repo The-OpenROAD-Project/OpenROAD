@@ -160,6 +160,9 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
 
+  // Init the data structures to monitor 3D capacity during 2D phases
+  fastroute_->initEdgesCapacityPerLayer();
+
   std::vector<Net*> nets = findNets(true);
   checkPinPlacement();
   initNetlist(nets);
@@ -1294,13 +1297,15 @@ void GlobalRouter::computeTrackConsumption(
       track_consumption
           = std::max(track_consumption, static_cast<int8_t>(consumption));
 
-      logger_->report(
-          "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
-          net->getConstName(),
-          layer_rule->getLayer()->getConstName(),
-          (float) ndr_pitch / default_pitch,
-          consumption,
-          track_consumption);
+      if (logger_->debugCheck(GRT, "ndrInfo", 1)) {
+        logger_->report(
+            "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
+            net->getConstName(),
+            layer_rule->getLayer()->getConstName(),
+            (float) ndr_pitch / default_pitch,
+            consumption,
+            track_consumption);
+      }
     }
   }
 }
