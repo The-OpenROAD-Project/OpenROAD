@@ -1097,7 +1097,6 @@ NetRouteMap FastRouteCore::run()
   int slope;
   int max_adj;
 
-  
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
@@ -1495,7 +1494,7 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  if (past_cong == 0){
+  if (past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 40);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
