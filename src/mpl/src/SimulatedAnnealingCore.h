@@ -59,9 +59,9 @@ class SimulatedAnnealingCore
 
   virtual ~SimulatedAnnealingCore() = default;
 
-  void setNumberOfMacrosToPlace(int macros_to_place)
+  void setNumberOfSequencePairMacros(int number_of_sequence_pair_macros)
   {
-    macros_to_place_ = macros_to_place;
+    number_of_sequence_pair_macros_ = number_of_sequence_pair_macros;
   };
   void setNets(const std::vector<BundledNet>& nets);
   void setFences(const std::map<int, Rect>& fences);
@@ -145,8 +145,7 @@ class SimulatedAnnealingCore
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
-  // Number of macros that will actually be part of the sequence pair
-  int macros_to_place_ = 0;
+  int number_of_sequence_pair_macros_ = 0;
 
   std::vector<BundledNet> nets_;
   std::map<int, Rect> fences_;  // Macro Id -> Fence

@@ -743,7 +743,7 @@ static BufferedNetPtr makeBufferedNet(
 BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
                                               const Corner* corner)
 {
-  dbNet* db_net = db_network_->getOrFindFlatDbNet(drvr_pin);
+  dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
   const Net* net = db_network_->dbToSta(db_net);
   assert(db_net != nullptr);
   std::vector<grt::PinGridLocation> pin_grid_locs

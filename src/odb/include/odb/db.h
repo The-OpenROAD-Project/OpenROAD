@@ -106,6 +106,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -1329,7 +1330,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbChip* chip,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
@@ -1339,7 +1340,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbBlock* block,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4989,7 +4990,7 @@ class dbLib : public dbObject
   static dbLib* create(dbDatabase* db,
                        const char* name,
                        dbTech* tech,
-                       char hierarchy_delimiter = 0);
+                       char hierarchy_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7002,6 +7003,8 @@ class dbChip : public dbObject
   ///
   dbBlock* getBlock();
 
+  dbSet<dbChipInst> getChipInsts() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7022,6 +7025,34 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipInst : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setLoc(const Point3D& loc);
+
+  Point3D getLoc() const;
+
+  dbChip* getMasterChip() const;
+
+  dbChip* getParentChip() const;
+
+  // User Code Begin dbChipInst
+  void setOrient(const dbOrientType& orient);
+
+  dbOrientType getOrient() const;
+
+  dbTransform getTransform() const;
+
+  static odb::dbChipInst* create(dbChip* parent_chip,
+                                 dbChip* master_chip,
+                                 const std::string& name);
+
+  static void destroy(dbChipInst* chipInst);
+  // User Code End dbChipInst
+};
+
 class dbDatabase : public dbObject
 {
  public:
@@ -7030,6 +7061,8 @@ class dbDatabase : public dbObject
   dbChip* findChip(const char* name) const;
 
   dbSet<dbProperty> getProperties() const;
+
+  dbSet<dbChipInst> getChipInsts() const;
 
   // User Code Begin dbDatabase
 

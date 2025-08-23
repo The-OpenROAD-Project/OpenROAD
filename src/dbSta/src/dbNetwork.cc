@@ -1628,7 +1628,7 @@ const char* dbNetwork::pathName(const Net* net) const
                      db_mod->getName(),
                      block_->getHierarchyDelimiter());
     }
-    fmt::format_to(back_inserter, "{}", modnet_name);
+    full_path_buf.append(modnet_name);
     full_path_buf.push_back('\0');
     return tmpStringCopy(full_path_buf.data());
   }
@@ -2655,7 +2655,7 @@ Net* dbNetwork::mergedInto(Net*)
 
 bool dbNetwork::isSpecial(Net* net)
 {
-  dbNet* db_net = getOrFindFlatDbNet(net);
+  dbNet* db_net = findFlatDbNet(net);
   return (db_net && db_net->isSpecial());
 }
 
@@ -3977,15 +3977,15 @@ void dbNetwork::checkAxioms()
 // If the net is already a flat net, it is returned as is.
 // If the net is a hierarchical net (dbModNet), find the associated dbNet and
 // return it as Net*.
-Net* dbNetwork::getOrFindFlatNet(const Net* net) const
+Net* dbNetwork::findFlatNet(const Net* net) const
 {
-  return dbToSta(getOrFindFlatDbNet(net));
+  return dbToSta(findFlatDbNet(net));
 }
 
 // Given a net that may be hierarchical, find the corresponding flat dbNet.
 // If the net is already a flat net (dbNet), it is returned as is.
 // If the net is a hierarchical net (dbModNet), find the associated dbNet.
-dbNet* dbNetwork::getOrFindFlatDbNet(const Net* net) const
+dbNet* dbNetwork::findFlatDbNet(const Net* net) const
 {
   if (!net) {
     return nullptr;
@@ -4010,14 +4010,14 @@ dbNet* dbNetwork::getOrFindFlatDbNet(const Net* net) const
 
 // Find the flat net connected to the pin.
 // This function handles both internal instance pins and top-level port pins.
-Net* dbNetwork::getOrFindFlatNet(const Pin* pin) const
+Net* dbNetwork::findFlatNet(const Pin* pin) const
 {
-  return dbToSta(getOrFindFlatDbNet(pin));
+  return dbToSta(findFlatDbNet(pin));
 }
 
 // Find the flat net (dbNet) connected to the pin in the OpenDB database.
 // This function handles both internal instance pins and top-level port pins.
-dbNet* dbNetwork::getOrFindFlatDbNet(const Pin* pin) const
+dbNet* dbNetwork::findFlatDbNet(const Pin* pin) const
 {
   dbNet* db_net = nullptr;
   if (isTopLevelPort(pin)) {
