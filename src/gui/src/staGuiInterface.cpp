@@ -724,7 +724,7 @@ sta::Net* ClockTree::getNet(const sta::Pin* pin) const
 {
   sta::Term* term = network_->term(pin);
   sta::Net* net = term ? network_->net(term) : network_->net(pin);
-  return network_->getOrFindFlatNet(net);
+  return network_->findFlatNet(net);
 }
 
 bool ClockTree::isLeaf(const sta::Pin* pin) const

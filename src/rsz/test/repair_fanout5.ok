@@ -13,10 +13,9 @@ in1                                      10     35    -25 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        36
-    final |    +14.3% |       3 |       4 |             1 |         0
+    final |    +11.4% |       0 |       4 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 3 instances.
 [INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 max fanout
 

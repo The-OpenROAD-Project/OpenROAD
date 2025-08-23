@@ -1380,13 +1380,14 @@ void HierRTLMP::placeChildren(Cluster* parent)
       io_clusters.push_back(cluster.get());
       continue;
     }
-    // for other clusters
+
     soft_macro_id_map[cluster->getName()] = macros.size();
     auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
-    clustering_engine_->updateInstancesAssociation(
-        cluster.get());  // we need this step to calculate nets
+    // Needed for computing the nets.
+    clustering_engine_->updateInstancesAssociation(cluster.get());
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(std::move(soft_macro));
+
     // merge fences and guides for hard macros within cluster
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
@@ -1426,7 +1427,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
     graphics_->setFences(fences);
   }
 
-  const int num_of_macros_to_place = static_cast<int>(macros.size());
+  const int number_of_sequence_pair_macros = static_cast<int>(macros.size());
 
   for (Cluster* io_cluster : io_clusters) {
     soft_macro_id_map[io_cluster->getName()] = macros.size();
@@ -1616,7 +1617,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
                                               graphics_.get(),
                                               logger_,
                                               block_);
-      sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
+      sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
       sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -1828,7 +1829,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
     graphics_->setFences(fences);
   }
 
-  const int macros_to_place = static_cast<int>(macros.size());
+  const int number_of_sequence_pair_macros = static_cast<int>(macros.size());
 
   for (Cluster* io_cluster : io_clusters) {
     soft_macro_id_map[io_cluster->getName()] = macros.size();
@@ -2004,7 +2005,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
                                               graphics_.get(),
                                               logger_,
                                               block_);
-      sa->setNumberOfMacrosToPlace(macros_to_place);
+      sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
       sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -2463,15 +2464,18 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   float double_swap_prob = double_swap_prob_ / action_sum;
   exchange_swap_prob = exchange_swap_prob / action_sum;
 
-  const int macros_to_place = static_cast<int>(hard_macros.size());
+  const int number_of_sequence_pair_macros
+      = static_cast<int>(hard_macros.size());
 
-  int num_perturb_per_step = (macros_to_place > num_perturb_per_step_ / 10)
-                                 ? macros_to_place
-                                 : num_perturb_per_step_ / 10;
+  int num_perturb_per_step
+      = (number_of_sequence_pair_macros > num_perturb_per_step_ / 10)
+            ? number_of_sequence_pair_macros
+            : num_perturb_per_step_ / 10;
 
   SequencePair initial_seq_pair;
   if (cluster->isArrayOfInterconnectedMacros()) {
-    setArrayTilingSequencePair(cluster, macros_to_place, initial_seq_pair);
+    setArrayTilingSequencePair(
+        cluster, number_of_sequence_pair_macros, initial_seq_pair);
 
     pos_swap_prob = 0.0f;
     neg_swap_prob = 0.0f;
@@ -2479,7 +2483,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     exchange_swap_prob = 1.0f;
 
     // Large arrays need more steps to properly converge.
-    if (num_perturb_per_step > macros_to_place) {
+    if (num_perturb_per_step > number_of_sequence_pair_macros) {
       num_perturb_per_step *= 2;
     }
   }
@@ -2521,7 +2525,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               graphics_.get(),
                                               logger_,
                                               block_);
-      sa->setNumberOfMacrosToPlace(macros_to_place);
+      sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
       sa->setNets(nets);
       sa->setFences(fences);
       sa->setGuides(guides);
