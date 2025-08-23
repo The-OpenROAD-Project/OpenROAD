@@ -166,8 +166,6 @@ class PatternRoute
   int num_dag_nodes_;
   std::shared_ptr<SteinerTreeNode> steiner_tree_;
   std::shared_ptr<PatternRoutingNode> routing_dag_;
-
-  int default_gridline_spacing_ = 3000;
   std::vector<std::vector<int>> gridlines_;
 
   Constants constants_;

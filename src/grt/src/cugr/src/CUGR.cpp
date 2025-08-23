@@ -148,7 +148,9 @@ void CUGR::route()
   }
 
   printStatistics();
-  grid_graph_->write();
+  if (constants_.write_heatmap) {
+    grid_graph_->write();
+  }
 }
 
 void CUGR::sortNetIndices(std::vector<int>& netIndices) const

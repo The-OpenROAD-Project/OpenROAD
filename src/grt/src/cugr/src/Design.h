@@ -74,7 +74,7 @@ class Design
   std::vector<CostT> unit_length_short_costs_;
 
   // For global routing
-  int default_gridline_spacing_ = 3000;
+  int default_gridline_spacing_;
   std::vector<std::vector<int>> gridlines_;
 
   Constants constants_;
