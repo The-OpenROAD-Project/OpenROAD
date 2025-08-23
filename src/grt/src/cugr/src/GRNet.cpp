@@ -35,31 +35,4 @@ GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
   }
 }
 
-// void GRNet::getGuides(std::vector<std::pair<int, BoxT<int>>>& guides)
-// const
-// {
-//     if (!routingTree) return;
-//     GRTreeNode::preorder(routingTree, [&](std::shared_ptr<GRTreeNode> node) {
-//         for (const auto& child : node->children) {
-//             if (node->getLayerIdx() == child->getLayerIdx()) {
-//                 guides.emplace_back(
-//                     node->getLayerIdx(), BoxT<int>(
-//                         std::min(node->x, child->x), std::min(node->y,
-//                         child->y), std::max(node->x, child->x),
-//                         std::max(node->y, child->y)
-//                     )
-//                 );
-//             } else {
-//                 int maxLayerIndex = std::max(node->getLayerIdx(),
-//                 child->getLayerIdx()); for (int layerIdx =
-//                 std::min(node->getLayerIdx(), child->getLayerIdx()); layerIdx
-//                 <= maxLayerIndex; layerIdx++) {
-//                     guides.emplace_back(layerIdx, BoxT<int>(node->x,
-//                     node->y));
-//                 }
-//             }
-//         }
-//     });
-// }
-
 }  // namespace grt

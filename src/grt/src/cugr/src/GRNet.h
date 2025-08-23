@@ -22,8 +22,6 @@ class GRNet
   {
     return routing_tree_;
   }
-  // void getGuides(std::vector<std::pair<int, BoxT<int>>>& guides)
-  // const;
 
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
   {

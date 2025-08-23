@@ -191,11 +191,6 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
               usableIntervals[tIdx].high = std::min(
                   usableIntervals[tIdx].high, obstacle->first[direction].low);
             }
-            // if
-            // (obstacle->first[direction].HasStrictIntersectWith(usableIntervals[tIdx]))
-            // {
-            //     usableIntervals[tIdx] = {gridline, gridline};
-            // }
           }
         }
         CapacityT capacity = 0;
