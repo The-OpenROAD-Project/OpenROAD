@@ -93,7 +93,7 @@ void Design::readNetlist()
           }
         }
       }
-      
+
       pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
       pin_count++;
     }

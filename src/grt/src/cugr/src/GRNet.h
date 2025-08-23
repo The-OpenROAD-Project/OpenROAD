@@ -25,7 +25,10 @@ class GRNet
   // void getGuides(std::vector<std::pair<int, BoxT<int>>>& guides)
   // const;
 
-  void setRoutingTree(std::shared_ptr<GRTreeNode> tree) { routing_tree_ = tree; }
+  void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
+  {
+    routing_tree_ = tree;
+  }
   void clearRoutingTree() { routing_tree_ = nullptr; }
 
  private:
@@ -36,4 +39,4 @@ class GRNet
   std::shared_ptr<GRTreeNode> routing_tree_;
 };
 
-}  // name_space grt
+}  // namespace grt

@@ -35,7 +35,9 @@ std::string CUGRPin::getName() const
   return is_port_ ? bterm->getName() : iterm->getName();
 }
 
-CUGRNet::CUGRNet(const int index, odb::dbNet* db_net, const std::vector<CUGRPin>& pins)
+CUGRNet::CUGRNet(const int index,
+                 odb::dbNet* db_net,
+                 const std::vector<CUGRPin>& pins)
     : index_(index), db_net_(db_net), pins_(pins)
 {
 }

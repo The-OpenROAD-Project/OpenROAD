@@ -41,7 +41,8 @@ class GridGraph
 
   inline uint64_t hashCell(const GRPoint& point) const
   {
-    return ((uint64_t)point.getLayerIdx() * x_size_ + point.x) * y_size_ + point.y;
+    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x) * y_size_
+           + point.y;
   };
   inline uint64_t hashCell(const int x, const int y) const
   {
@@ -53,7 +54,9 @@ class GridGraph
   }
   BoxT<int> getCellBox(PointT<int> point) const;
   BoxT<int> rangeSearchCells(const BoxT<int>& box) const;
-  inline GraphEdge getEdge(const int layer_index, const int x, const int y) const
+  inline GraphEdge getEdge(const int layer_index,
+                           const int x,
+                           const int y) const
   {
     return graph_edges_[layer_index][x][y];
   }
@@ -133,7 +136,7 @@ class GridGraph
 
   const int min_routing_layer_ = 1;
   const double cost_logistic_slope_ = 1.0;
-    // allowed stem length increase to trunk length ratio
+  // allowed stem length increase to trunk length ratio
   const double max_detour_ratio_ = 0.25;
   const int target_detour_count_ = 20;
   const double via_multiplier_ = 2.0;

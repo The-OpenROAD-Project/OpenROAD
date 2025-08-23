@@ -19,10 +19,7 @@ class SteinerTreeNode : public PointT<int>
       std::function<void(std::shared_ptr<SteinerTreeNode>)> visit);
   static std::string getPythonString(std::shared_ptr<SteinerTreeNode> node);
 
-  IntervalT<int>& getFixedLayers()
-  {
-    return fixed_layers_;
-  }
+  IntervalT<int>& getFixedLayers() { return fixed_layers_; }
 
   void setFixedLayers(const IntervalT<int>& fixed_layers)
   {
@@ -34,20 +31,14 @@ class SteinerTreeNode : public PointT<int>
     children_.emplace_back(child);
   }
 
-  void removeChild(int index)
-  {
-    children_.erase(children_.begin() + index);
-  }
+  void removeChild(int index) { children_.erase(children_.begin() + index); }
 
   std::vector<std::shared_ptr<SteinerTreeNode>>& getChildren()
   {
     return children_;
   }
 
-  int getNumChildren() const
-  {
-    return children_.size();
-  }
+  int getNumChildren() const { return children_.size(); }
 
  private:
   IntervalT<int> fixed_layers_;
@@ -71,20 +62,11 @@ class PatternRoutingNode : public PointT<int>
   {
   }
 
-  const int& getIndex() const
-  {
-    return index_;
-  }
+  const int& getIndex() const { return index_; }
 
-  const IntervalT<int>& getFixedLayers() const
-  {
-    return fixed_layers_;
-  }
+  const IntervalT<int>& getFixedLayers() const { return fixed_layers_; }
 
-  bool isOptional() const
-  {
-    return optional_;
-  }
+  bool isOptional() const { return optional_; }
 
   std::vector<std::shared_ptr<PatternRoutingNode>>& getChildren()
   {
@@ -96,25 +78,16 @@ class PatternRoutingNode : public PointT<int>
     children_.emplace_back(child);
   }
 
-  void removeChild(int index)
-  {
-    children_.erase(children_.begin() + index);
-  }
+  void removeChild(int index) { children_.erase(children_.begin() + index); }
 
-  int getNumChildren() const
-  {
-    return children_.size();
-  }
+  int getNumChildren() const { return children_.size(); }
 
   std::vector<std::vector<std::shared_ptr<PatternRoutingNode>>>& getPaths()
   {
     return paths_;
   }
 
-  std::vector<CostT>& getCosts()
-  {
-    return costs_;
-  }
+  std::vector<CostT>& getCosts() { return costs_; }
 
   std::vector<std::vector<std::pair<int, int>>>& getBestPaths()
   {
@@ -125,7 +98,7 @@ class PatternRoutingNode : public PointT<int>
       std::shared_ptr<PatternRoutingNode> routing_dag);
 
  private:
-   const int index_;
+  const int index_;
   // childIndex -> pathIndex -> path
   IntervalT<int> fixed_layers_;
   bool optional_;
@@ -142,8 +115,13 @@ class PatternRoutingNode : public PointT<int>
 class PatternRoute
 {
  public:
-  PatternRoute(GRNet* net, const GridGraph* graph, stt::SteinerTreeBuilder* stt_builder)
-      : net_(net), grid_graph_(graph), stt_builder_(stt_builder), num_dag_nodes_(0)
+  PatternRoute(GRNet* net,
+               const GridGraph* graph,
+               stt::SteinerTreeBuilder* stt_builder)
+      : net_(net),
+        grid_graph_(graph),
+        stt_builder_(stt_builder),
+        num_dag_nodes_(0)
   {
   }
   void constructSteinerTree();
@@ -155,20 +133,11 @@ class PatternRoute
     steiner_tree_ = tree;
   }
 
-  const GRNet* getNet() const
-  {
-    return net_;
-  }
+  const GRNet* getNet() const { return net_; }
 
-  const GridGraph* getGridGraph() const
-  {
-    return grid_graph_;
-  }
+  const GridGraph* getGridGraph() const { return grid_graph_; }
 
-  int getNumDAGNodes() const
-  {
-    return num_dag_nodes_;
-  }
+  int getNumDAGNodes() const { return num_dag_nodes_; }
 
   std::shared_ptr<SteinerTreeNode> getSteinerTree() const
   {

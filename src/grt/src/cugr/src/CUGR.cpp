@@ -56,7 +56,8 @@ void CUGR::route()
       netIndices.push_back(net->getIndex());
     }
   }
-  std::cout << netIndices.size() << " / " << gr_nets_.size() << " gr_nets_ have overflows.\n";
+  std::cout << netIndices.size() << " / " << gr_nets_.size()
+            << " gr_nets_ have overflows.\n";
 
   // Stage 2: Pattern routing with possible detours
   if (netIndices.size() > 0) {
@@ -87,7 +88,8 @@ void CUGR::route()
         netIndices.push_back(net->getIndex());
       }
     }
-    std::cout << netIndices.size() << " / " << gr_nets_.size() << " gr_nets_ have overflows.\n";
+    std::cout << netIndices.size() << " / " << gr_nets_.size()
+              << " gr_nets_ have overflows.\n";
   }
 
   // Stage 3: maze routing on sparsified routing graph
@@ -126,8 +128,8 @@ void CUGR::route()
         netIndices.push_back(net->getIndex());
       }
     }
-    std::cout << netIndices.size()
-              << " / " << gr_nets_.size() << " gr_nets_ have overflows.\n";
+    std::cout << netIndices.size() << " / " << gr_nets_.size()
+              << " gr_nets_ have overflows.\n";
   }
 
   printStatistics();
@@ -177,16 +179,18 @@ void CUGR::getGuides(const GRNet* net,
     double resource = std::numeric_limits<double>::max();
     unsigned direction = grid_graph_->getLayerDirection(point.getLayerIdx());
     if (point[direction] + 1 < grid_graph_->getSize(direction)) {
-      resource = std::min(
-          resource,
-          grid_graph_->getEdge(point.getLayerIdx(), point.x, point.y).getResource());
+      resource
+          = std::min(resource,
+                     grid_graph_->getEdge(point.getLayerIdx(), point.x, point.y)
+                         .getResource());
     }
     if (point[direction] > 0) {
       GRPoint lower = point;
       lower[direction] -= 1;
-      resource = std::min(
-          resource,
-          grid_graph_->getEdge(lower.getLayerIdx(), point.x, point.y).getResource());
+      resource
+          = std::min(resource,
+                     grid_graph_->getEdge(lower.getLayerIdx(), point.x, point.y)
+                         .getResource());
     }
     return resource;
   };
@@ -206,13 +210,14 @@ void CUGR::getGuides(const GRNet* net,
              layerIdx++) {
           guides.emplace_back(
               layerIdx,
-              BoxT<int>(std::max(gpt.x - padding, 0),
-                        std::max(gpt.y - padding, 0),
-                        std::min(gpt.x + padding, (int) grid_graph_->getSize(0)
-                        - 1), std::min(gpt.y + padding, (int)
-                        grid_graph_->getSize(1) - 1)));
+              BoxT<int>(
+                  std::max(gpt.x - padding, 0),
+                  std::max(gpt.y - padding, 0),
+                  std::min(gpt.x + padding, (int) grid_graph_->getSize(0) - 1),
+                  std::min(gpt.y + padding,
+                           (int) grid_graph_->getSize(1) - 1)));
           area_of_pin_patches_ += (guides.back().second.x.range() + 1)
-                              * (guides.back().second.y.range() + 1);
+                                  * (guides.back().second.y.range() + 1);
         }
       }
     }
@@ -223,15 +228,16 @@ void CUGR::getGuides(const GRNet* net,
     for (const auto& child : node->children) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
         double wire_patch_threshold = wire_patch_threshold_;
-        unsigned direction = grid_graph_->getLayerDirection(node->getLayerIdx());
+        unsigned direction
+            = grid_graph_->getLayerDirection(node->getLayerIdx());
         int l = std::min((*node)[direction], (*child)[direction]);
         int h = std::max((*node)[direction], (*child)[direction]);
         int r = (*node)[1 - direction];
         for (int c = l; c <= h; c++) {
           bool patched = false;
-          GRPoint point
-              = (direction == MetalLayer::H ? GRPoint(node->getLayerIdx(), c, r)
-                                            : GRPoint(node->getLayerIdx(), r, c));
+          GRPoint point = (direction == MetalLayer::H
+                               ? GRPoint(node->getLayerIdx(), c, r)
+                               : GRPoint(node->getLayerIdx(), r, c));
           if (getSpareResource(point) < wire_patch_threshold) {
             for (int layerIndex = node->getLayerIdx() - 1;
                  layerIndex <= node->getLayerIdx() + 1;
@@ -266,21 +272,21 @@ void CUGR::printStatistics() const
   uint64_t wireLength = 0;
   int viaCount = 0;
   std::vector<std::vector<std::vector<int>>> wireUsage;
-  wireUsage.assign(
-      grid_graph_->getNumLayers(),
-      std::vector<std::vector<int>>(grid_graph_->getSize(0),
-                                    std::vector<int>(grid_graph_->getSize(1),
-                                    0)));
+  wireUsage.assign(grid_graph_->getNumLayers(),
+                   std::vector<std::vector<int>>(
+                       grid_graph_->getSize(0),
+                       std::vector<int>(grid_graph_->getSize(1), 0)));
   for (GRNet* net : gr_nets_) {
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](std::shared_ptr<GRTreeNode> node) {
           for (const auto& child : node->children) {
             if (node->getLayerIdx() == child->getLayerIdx()) {
-              unsigned direction =
-              grid_graph_->getLayerDirection(node->getLayerIdx()); int l =
-              std::min((*node)[direction], (*child)[direction]); int h =
-              std::max((*node)[direction], (*child)[direction]); int r =
-              (*node)[1 - direction]; for (int c = l; c < h; c++) {
+              unsigned direction
+                  = grid_graph_->getLayerDirection(node->getLayerIdx());
+              int l = std::min((*node)[direction], (*child)[direction]);
+              int h = std::max((*node)[direction], (*child)[direction]);
+              int r = (*node)[1 - direction];
+              for (int c = l; c < h; c++) {
                 wireLength += grid_graph_->getEdgeLength(direction, c);
                 int x = direction == MetalLayer::H ? c : r;
                 int y = direction == MetalLayer::H ? r : c;
@@ -304,8 +310,9 @@ void CUGR::printStatistics() const
     unsigned direction = grid_graph_->getLayerDirection(layerIndex);
     for (int x = 0; x < grid_graph_->getSize(0) - 1 + direction; x++) {
       for (int y = 0; y < grid_graph_->getSize(1) - direction; y++) {
-        CapacityT resource = grid_graph_->getEdge(layerIndex, x,
-        y).getResource(); if (resource < minResource) {
+        CapacityT resource
+            = grid_graph_->getEdge(layerIndex, x, y).getResource();
+        if (resource < minResource) {
           minResource = resource;
           bottleneck = {layerIndex, x, y};
         }
@@ -319,8 +326,8 @@ void CUGR::printStatistics() const
     }
   }
 
-  std::cout << "wire length (metric):  " << wireLength
-                                                   / grid_graph_->getM2Pitch() << "\n";
+  std::cout << "wire length (metric):  "
+            << wireLength / grid_graph_->getM2Pitch() << "\n";
   std::cout << "total via count:       " << viaCount << "\n";
   std::cout << "total wire overflow:   " << (int) overflow << "\n";
 
@@ -349,7 +356,8 @@ void CUGR::write(std::string guide_file)
     ss << ")" << std::endl;
   }
   logger_->report("total area of pin access patches: {}", area_of_pin_patches_);
-  logger_->report("total area of wire segment patches: {}", area_of_wire_patches_);
+  logger_->report("total area of wire segment patches: {}",
+                  area_of_wire_patches_);
 }
 
 }  // namespace grt

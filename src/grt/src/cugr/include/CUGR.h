@@ -87,7 +87,8 @@ class CUGR
 
   const int min_routing_layer_ = 1;
   const double cost_logistic_slope_ = 1.0;
-  const double max_detour_ratio_ = 0.25;  // allowed stem length increase to trunk length ratio
+  const double max_detour_ratio_
+      = 0.25;  // allowed stem length increase to trunk length ratio
   const int target_detour_count_ = 20;
   const double via_multiplier_ = 2.0;
 

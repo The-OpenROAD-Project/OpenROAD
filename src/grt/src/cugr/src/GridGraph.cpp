@@ -46,8 +46,8 @@ GridGraph::GridGraph(const Design* design) : lib_dbu_(design->getLibDBU())
   // Init grid graph edges
   std::vector<std::vector<int>> gridTracks(num_layers_);
   graph_edges_.assign(num_layers_,
-                       std::vector<std::vector<GraphEdge>>(
-                           x_size_, std::vector<GraphEdge>(y_size_)));
+                      std::vector<std::vector<GraphEdge>>(
+                          x_size_, std::vector<GraphEdge>(y_size_)));
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
     const MetalLayer& layer = design->getLayer(layer_index);
     const unsigned direction = layer.getDirection();
@@ -547,7 +547,8 @@ std::string GridGraph::getPythonString(
         for (int c = l; c < h; c++) {
           PointT<int> cpoint = (direction == MetalLayer::H ? PointT<int>(c, r)
                                                            : PointT<int>(r, c));
-          if (checkOverflow(node->getLayerIdx(), cpoint.x, cpoint.y) != congested) {
+          if (checkOverflow(node->getLayerIdx(), cpoint.x, cpoint.y)
+              != congested) {
             if (lpoint != cpoint) {
               edges.emplace_back(lpoint, cpoint, congested);
               lpoint = cpoint;
@@ -574,9 +575,11 @@ std::string GridGraph::getPythonString(
 
 void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
 {
-  view.assign(
-      2, std::vector<std::vector<bool>>(x_size_, std::vector<bool>(y_size_, true)));
-  for (int layer_index = min_routing_layer_; layer_index < num_layers_; layer_index++) {
+  view.assign(2,
+              std::vector<std::vector<bool>>(x_size_,
+                                             std::vector<bool>(y_size_, true)));
+  for (int layer_index = min_routing_layer_; layer_index < num_layers_;
+       layer_index++) {
     unsigned direction = getLayerDirection(layer_index);
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
@@ -590,10 +593,11 @@ void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
 
 void GridGraph::extractCongestionView(GridGraphView<bool>& view) const
 {
-  view.assign(
-      2,
-      std::vector<std::vector<bool>>(x_size_, std::vector<bool>(y_size_, false)));
-  for (int layer_index = min_routing_layer_; layer_index < num_layers_; layer_index++) {
+  view.assign(2,
+              std::vector<std::vector<bool>>(
+                  x_size_, std::vector<bool>(y_size_, false)));
+  for (int layer_index = min_routing_layer_; layer_index < num_layers_;
+       layer_index++) {
     unsigned direction = getLayerDirection(layer_index);
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
@@ -610,7 +614,8 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
   view.assign(
       2,
       std::vector<std::vector<CostT>>(
-          x_size_, std::vector<CostT>(y_size_, std::numeric_limits<CostT>::max())));
+          x_size_,
+          std::vector<CostT>(y_size_, std::numeric_limits<CostT>::max())));
   for (unsigned direction = 0; direction < 2; direction++) {
     std::vector<int> layerIndices;
     CostT unitLengthShortCost = std::numeric_limits<CostT>::max();
@@ -618,8 +623,8 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
          layer_index++) {
       if (getLayerDirection(layer_index) == direction) {
         layerIndices.emplace_back(layer_index);
-        unitLengthShortCost
-            = std::min(unitLengthShortCost, getUnitLengthShortCost(layer_index));
+        unitLengthShortCost = std::min(unitLengthShortCost,
+                                       getUnitLengthShortCost(layer_index));
       }
     }
     for (int x = 0; x < x_size_; x++) {

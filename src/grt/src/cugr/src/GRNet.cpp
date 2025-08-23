@@ -52,8 +52,8 @@ GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
 //             } else {
 //                 int maxLayerIndex = std::max(node->getLayerIdx(),
 //                 child->getLayerIdx()); for (int layerIdx =
-//                 std::min(node->getLayerIdx(), child->getLayerIdx()); layerIdx <=
-//                 maxLayerIndex; layerIdx++) {
+//                 std::min(node->getLayerIdx(), child->getLayerIdx()); layerIdx
+//                 <= maxLayerIndex; layerIdx++) {
 //                     guides.emplace_back(layerIdx, BoxT<int>(node->x,
 //                     node->y));
 //                 }

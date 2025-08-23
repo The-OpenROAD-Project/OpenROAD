@@ -7,7 +7,8 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
 {
   name_ = tech_layer->getName();
   index_ = tech_layer->getRoutingLevel() - 1;
-  direction_ = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL ? H : V;
+  direction_
+      = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL ? H : V;
   width_ = static_cast<int>(std::round(tech_layer->getWidth()));
   min_width_ = static_cast<int>(std::round(tech_layer->getMinWidth()));
 

@@ -16,7 +16,8 @@ bool BoxOnLayer::isConnected(const BoxOnLayer& rhs) const
 
 std::ostream& operator<<(std::ostream& os, const BoxOnLayer& box)
 {
-  os << "box(l=" << box.getLayerIdx() << ", x=" << box[0] << ", y=" << box[1] << ")";
+  os << "box(l=" << box.getLayerIdx() << ", x=" << box[0] << ", y=" << box[1]
+     << ")";
   return os;
 }
 

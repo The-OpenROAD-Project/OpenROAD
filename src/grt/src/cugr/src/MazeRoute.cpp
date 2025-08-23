@@ -268,7 +268,8 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
 
   // Remove redundant tree nodes
   SteinerTreeNode::preorder(tree, [&](std::shared_ptr<SteinerTreeNode> node) {
-    for (int childIndex = 0; childIndex < node->getNumChildren(); childIndex++) {
+    for (int childIndex = 0; childIndex < node->getNumChildren();
+         childIndex++) {
       std::shared_ptr<SteinerTreeNode> child = node->getChildren()[childIndex];
       if (node->x == child->x && node->y == child->y) {
         for (auto& gradchild : child->getChildren()) {
