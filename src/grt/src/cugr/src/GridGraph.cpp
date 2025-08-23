@@ -4,7 +4,8 @@
 
 namespace grt {
 
-GridGraph::GridGraph(const Design* design) : lib_dbu_(design->getLibDBU())
+GridGraph::GridGraph(const Design* design, const Constants& constants)
+    : lib_dbu_(design->getLibDBU()), constants_(constants)
 {
   gridlines_ = design->getGridlines();
   num_layers_ = design->getNumLayers();
@@ -282,9 +283,9 @@ CostT GridGraph::getWireCost(const int layer_index,
   const auto& edge = graph_edges_[layer_index][lower.x][lower.y];
   CostT cost = demandLength * unit_length_wire_cost_;
   cost += demandLength * unit_length_short_costs_[layer_index]
-          * (edge.capacity < 1.0
-                 ? 1.0
-                 : logistic(edge.capacity - edge.demand, cost_logistic_slope_));
+          * (edge.capacity < 1.0 ? 1.0
+                                 : logistic(edge.capacity - edge.demand,
+                                            constants_.cost_logistic_slope));
   return cost;
 }
 
@@ -325,7 +326,8 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT<int> loc) const
                                ? getEdgeLength(direction, loc[direction])
                                : 0;
     CapacityT demand = (CapacityT) layer_min_lengths_[l]
-                       / (lowerEdgeLength + higherEdgeLength) * via_multiplier_;
+                       / (lowerEdgeLength + higherEdgeLength)
+                       * constants_.via_multiplier;
     if (lowerEdgeLength > 0) {
       cost += getWireCost(l, lowerLoc, demand);
     }
@@ -352,7 +354,7 @@ void GridGraph::selectAccessPoints(
     for (int index = 0; index < accessPoints.size(); index++) {
       const auto& point = accessPoints[index];
       int accessibility = 0;
-      if (point.getLayerIdx() >= min_routing_layer_) {
+      if (point.getLayerIdx() >= constants_.min_routing_layer) {
         unsigned direction = getLayerDirection(point.getLayerIdx());
         accessibility
             += getEdge(point.getLayerIdx(), point.x, point.y).capacity >= 1;
@@ -434,7 +436,8 @@ void GridGraph::commitVia(const int layer_index,
                                ? getEdgeLength(direction, loc[direction])
                                : 0;
     CapacityT demand = (CapacityT) layer_min_lengths_[l]
-                       / (lowerEdgeLength + higherEdgeLength) * via_multiplier_;
+                       / (lowerEdgeLength + higherEdgeLength)
+                       * constants_.via_multiplier;
     if (lowerEdgeLength > 0) {
       commit(l, lowerLoc, (reverse ? -demand : demand));
     }
@@ -578,7 +581,8 @@ void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
   view.assign(2,
               std::vector<std::vector<bool>>(x_size_,
                                              std::vector<bool>(y_size_, true)));
-  for (int layer_index = min_routing_layer_; layer_index < num_layers_;
+  for (int layer_index = constants_.min_routing_layer;
+       layer_index < num_layers_;
        layer_index++) {
     unsigned direction = getLayerDirection(layer_index);
     for (int x = 0; x < x_size_; x++) {
@@ -596,7 +600,8 @@ void GridGraph::extractCongestionView(GridGraphView<bool>& view) const
   view.assign(2,
               std::vector<std::vector<bool>>(
                   x_size_, std::vector<bool>(y_size_, false)));
-  for (int layer_index = min_routing_layer_; layer_index < num_layers_;
+  for (int layer_index = constants_.min_routing_layer;
+       layer_index < num_layers_;
        layer_index++) {
     unsigned direction = getLayerDirection(layer_index);
     for (int x = 0; x < x_size_; x++) {
@@ -619,7 +624,8 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
   for (unsigned direction = 0; direction < 2; direction++) {
     std::vector<int> layerIndices;
     CostT unitLengthShortCost = std::numeric_limits<CostT>::max();
-    for (int layer_index = min_routing_layer_; layer_index < getNumLayers();
+    for (int layer_index = constants_.min_routing_layer;
+         layer_index < getNumLayers();
          layer_index++) {
       if (getLayerDirection(layer_index) == direction) {
         layerIndices.emplace_back(layer_index);
@@ -645,9 +651,10 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
             = length
               * (unit_length_wire_cost_
                  + unitLengthShortCost
-                       * (capacity < 1.0 ? 1.0
-                                         : logistic(capacity - demand,
-                                                    maze_logistic_slope_)));
+                       * (capacity < 1.0
+                              ? 1.0
+                              : logistic(capacity - demand,
+                                         constants_.maze_logistic_slope)));
       }
     }
   }
@@ -659,7 +666,8 @@ void GridGraph::updateWireCostView(
 {
   std::vector<std::vector<int>> sameDirectionLayers(2);
   std::vector<CostT> unitLengthShortCost(2, std::numeric_limits<CostT>::max());
-  for (int layer_index = min_routing_layer_; layer_index < getNumLayers();
+  for (int layer_index = constants_.min_routing_layer;
+       layer_index < getNumLayers();
        layer_index++) {
     unsigned direction = getLayerDirection(layer_index);
     sameDirectionLayers[direction].emplace_back(layer_index);
@@ -688,7 +696,8 @@ void GridGraph::updateWireCostView(
              + unitLengthShortCost[direction]
                    * (capacity < 1.0
                           ? 1.0
-                          : logistic(capacity - demand, maze_logistic_slope_)));
+                          : logistic(capacity - demand,
+                                     constants_.maze_logistic_slope)));
   };
   GRTreeNode::preorder(routing_tree, [&](std::shared_ptr<GRTreeNode> node) {
     for (const auto& child : node->children) {

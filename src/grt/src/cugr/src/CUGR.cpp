@@ -18,12 +18,26 @@ CUGR::CUGR(odb::dbDatabase* db,
            stt::SteinerTreeBuilder* stt_builder)
     : db_(db), logger_(log), stt_builder_(stt_builder)
 {
+  constants_.weight_wire_length = 0.5;
+  constants_.weight_via_number = 4.0;
+  constants_.weight_short_area = 500.0;
+  constants_.min_routing_layer = 1;
+  constants_.cost_logistic_slope = 1.0;
+  constants_.max_detour_ratio = 0.25;
+  constants_.target_detour_count = 20;
+  constants_.via_multiplier = 2.0;
+  constants_.maze_logistic_slope = 0.5;
+  constants_.pin_patch_threshold = 20.0;
+  constants_.pin_patch_padding = 1;
+  constants_.wire_patch_threshold = 2.0;
+  constants_.wire_patch_inflation_rate = 1.2;
+  constants_.write_heatmap = false;
 }
 
 void CUGR::init()
 {
-  design_ = new Design(db_, logger_);
-  grid_graph_ = new GridGraph(design_);
+  design_ = new Design(db_, logger_, constants_);
+  grid_graph_ = new GridGraph(design_, constants_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
   gr_nets_.reserve(baseNets.size());
@@ -43,7 +57,8 @@ void CUGR::route()
   logger_->report("stage 1: pattern routing");
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
-    PatternRoute patternRoute(gr_nets_[netIndex], grid_graph_, stt_builder_);
+    PatternRoute patternRoute(
+        gr_nets_[netIndex], grid_graph_, stt_builder_, constants_);
     patternRoute.constructSteinerTree();
     patternRoute.constructRoutingDAG();
     patternRoute.run();
@@ -73,7 +88,7 @@ void CUGR::route()
     for (const int netIndex : netIndices) {
       GRNet* net = gr_nets_[netIndex];
       grid_graph_->commitTree(net->getRoutingTree(), true);
-      PatternRoute patternRoute(net, grid_graph_, stt_builder_);
+      PatternRoute patternRoute(net, grid_graph_, stt_builder_, constants_);
       patternRoute.constructSteinerTree();
       patternRoute.constructRoutingDAG();
       patternRoute.constructDetours(
@@ -113,7 +128,7 @@ void CUGR::route()
       std::shared_ptr<SteinerTreeNode> tree = mazeRoute.getSteinerTree();
       assert(tree != nullptr);
 
-      PatternRoute patternRoute(net, grid_graph_, stt_builder_);
+      PatternRoute patternRoute(net, grid_graph_, stt_builder_, constants_);
       patternRoute.setSteinerTree(tree);
       patternRoute.constructRoutingDAG();
       patternRoute.run();
@@ -196,17 +211,17 @@ void CUGR::getGuides(const GRNet* net,
   };
 
   // 1. Pin access patches
-  assert(min_routing_layer_ + 1 < grid_graph_->getNumLayers());
+  assert(constants_.min_routing_layer + 1 < grid_graph_->getNumLayers());
   for (auto& gpts : net->getPinAccessPoints()) {
     for (auto& gpt : gpts) {
-      if (gpt.getLayerIdx() < min_routing_layer_) {
+      if (gpt.getLayerIdx() < constants_.min_routing_layer) {
         int padding = 0;
-        if (getSpareResource({min_routing_layer_, gpt.x, gpt.y})
-            < pin_patch_threshold_) {
-          padding = pin_patch_padding_;
+        if (getSpareResource({constants_.min_routing_layer, gpt.x, gpt.y})
+            < constants_.pin_patch_threshold) {
+          padding = constants_.pin_patch_padding;
         }
         for (int layerIdx = gpt.getLayerIdx();
-             layerIdx <= min_routing_layer_ + 1;
+             layerIdx <= constants_.min_routing_layer + 1;
              layerIdx++) {
           guides.emplace_back(
               layerIdx,
@@ -227,7 +242,7 @@ void CUGR::getGuides(const GRNet* net,
   GRTreeNode::preorder(routingTree, [&](std::shared_ptr<GRTreeNode> node) {
     for (const auto& child : node->children) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
-        double wire_patch_threshold = wire_patch_threshold_;
+        double wire_patch_threshold = constants_.wire_patch_threshold;
         unsigned direction
             = grid_graph_->getLayerDirection(node->getLayerIdx());
         int l = std::min((*node)[direction], (*child)[direction]);
@@ -242,7 +257,7 @@ void CUGR::getGuides(const GRNet* net,
             for (int layerIndex = node->getLayerIdx() - 1;
                  layerIndex <= node->getLayerIdx() + 1;
                  layerIndex += 2) {
-              if (layerIndex < min_routing_layer_
+              if (layerIndex < constants_.min_routing_layer
                   || layerIndex >= grid_graph_->getNumLayers()) {
                 continue;
               }
@@ -254,9 +269,9 @@ void CUGR::getGuides(const GRNet* net,
             }
           }
           if (patched) {
-            wire_patch_threshold = wire_patch_threshold_;
+            wire_patch_threshold = constants_.wire_patch_threshold;
           } else {
-            wire_patch_threshold *= wire_patch_inflation_rate_;
+            wire_patch_threshold *= constants_.wire_patch_inflation_rate;
           }
         }
       }
@@ -304,7 +319,7 @@ void CUGR::printStatistics() const
 
   CapacityT minResource = std::numeric_limits<CapacityT>::max();
   GRPoint bottleneck(-1, -1, -1);
-  for (int layerIndex = min_routing_layer_;
+  for (int layerIndex = constants_.min_routing_layer;
        layerIndex < grid_graph_->getNumLayers();
        layerIndex++) {
     unsigned direction = grid_graph_->getLayerDirection(layerIndex);
@@ -351,13 +366,16 @@ void CUGR::write(std::string guide_file)
          << grid_graph_->getGridline(1, guide.second.y.low) << " "
          << grid_graph_->getGridline(0, guide.second.x.high + 1) << " "
          << grid_graph_->getGridline(1, guide.second.y.high + 1) << " "
-         << grid_graph_->getLayerName(guide.first);
+         << grid_graph_->getLayerName(guide.first) << "\n";
     }
     ss << ")" << std::endl;
   }
   logger_->report("total area of pin access patches: {}", area_of_pin_patches_);
   logger_->report("total area of wire segment patches: {}",
                   area_of_wire_patches_);
+  std::ofstream fout(guide_file);
+  fout << ss.str();
+  fout.close();
 }
 
 }  // namespace grt

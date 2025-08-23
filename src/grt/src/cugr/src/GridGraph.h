@@ -22,7 +22,7 @@ struct GraphEdge
 class GridGraph
 {
  public:
-  GridGraph(const Design* design);
+  GridGraph(const Design* design, const Constants& constants);
   inline int getLibDBU() const { return lib_dbu_; }
   inline int getM2Pitch() const { return m2_pitch_; }
   inline unsigned getNumLayers() const { return num_layers_; }
@@ -128,25 +128,7 @@ class GridGraph
   std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
-
-  // constants
-  const double weight_wire_length_ = 0.5;
-  const double weight_via_number_ = 4.0;
-  const double weight_short_area_ = 500.0;
-
-  const int min_routing_layer_ = 1;
-  const double cost_logistic_slope_ = 1.0;
-  // allowed stem length increase to trunk length ratio
-  const double max_detour_ratio_ = 0.25;
-  const int target_detour_count_ = 20;
-  const double via_multiplier_ = 2.0;
-
-  const double maze_logistic_slope_ = 0.5;
-
-  const double pin_patch_threshold_ = 20.0;
-  const int pin_patch_padding_ = 1;
-  const double wire_patch_threshold_ = 2.0;
-  const double wire_patch_inflation_rate_ = 1.2;
+  Constants constants_;
 
   IntervalT<int> rangeSearchGridlines(const unsigned dimension,
                                       const IntervalT<int>& loc_interval) const;

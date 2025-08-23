@@ -53,6 +53,32 @@ using boostPoint = bg::model::point<int, 2, bg::cs::cartesian>;
 using boostBox = bg::model::box<boostPoint>;
 using RTree = bgi::rtree<std::pair<boostBox, int>, bgi::rstar<32>>;
 
+struct Constants
+{
+  double weight_wire_length;
+  double weight_via_number;
+  double weight_short_area;
+
+  int min_routing_layer;
+
+  double cost_logistic_slope;
+
+  // allowed stem length increase to trunk length ratio
+  double max_detour_ratio;
+  int target_detour_count;
+
+  double via_multiplier;
+
+  double maze_logistic_slope;
+
+  double pin_patch_threshold;
+  int pin_patch_padding;
+  double wire_patch_threshold;
+  double wire_patch_inflation_rate;
+
+  bool write_heatmap;
+};
+
 class CUGR
 {
  public:
@@ -77,29 +103,10 @@ class CUGR
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
 
+  Constants constants_;
+
   int area_of_pin_patches_;
   int area_of_wire_patches_;
-
-  // constants
-  const double weight_wire_length_ = 0.5;
-  const double weight_via_number_ = 4.0;
-  const double weight_short_area_ = 500.0;
-
-  const int min_routing_layer_ = 1;
-  const double cost_logistic_slope_ = 1.0;
-  const double max_detour_ratio_
-      = 0.25;  // allowed stem length increase to trunk length ratio
-  const int target_detour_count_ = 20;
-  const double via_multiplier_ = 2.0;
-
-  const double maze_logistic_slope_ = 0.5;
-
-  const double pin_patch_threshold_ = 20.0;
-  const int pin_patch_padding_ = 1;
-  const double wire_patch_threshold_ = 2.0;
-  const double wire_patch_inflation_rate_ = 1.2;
-
-  const bool write_heatmap_ = false;
 };
 
 }  // namespace grt

@@ -574,7 +574,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
       int trunkPos = (*scaffold->children[0]->node)[1 - direction];
       int originalLength = getTotalStemLength(stems, trunkPos);
       IntervalT<int> shiftInterval(trunkPos);
-      int maxLengthIncrease = trunk.range() * max_detour_ratio_;
+      int maxLengthIncrease = trunk.range() * constants_.max_detour_ratio;
       while (shiftInterval.low - 1 >= 0
              && getTotalStemLength(stems, shiftInterval.low - 1)
                         - originalLength
@@ -590,7 +590,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
       int step = 1;
       while ((trunkPos - shiftInterval.low) / (step + 1)
                  + (shiftInterval.high - trunkPos) / (step + 1)
-             >= target_detour_count_) {
+             >= constants_.target_detour_count) {
         step++;
       }
 
@@ -688,7 +688,7 @@ void PatternRoute::calculateRoutingCosts(
       calculateRoutingCosts(path);
       unsigned direction = node->x == path->x ? MetalLayer::V : MetalLayer::H;
       assert((*node)[1 - direction] == (*path)[1 - direction]);
-      for (int layerIndex = min_routing_layer_;
+      for (int layerIndex = constants_.min_routing_layer;
            layerIndex < grid_graph_->getNumLayers();
            layerIndex++) {
         if (grid_graph_->getLayerDirection(layerIndex) != direction) {
@@ -724,7 +724,7 @@ void PatternRoute::calculateRoutingCosts(
   IntervalT<int> fixedLayers(node->getFixedLayers());
   fixedLayers.low = std::min(fixedLayers.low,
                              static_cast<int>(grid_graph_->getNumLayers()) - 1);
-  fixedLayers.high = std::max(fixedLayers.high, min_routing_layer_);
+  fixedLayers.high = std::max(fixedLayers.high, constants_.min_routing_layer);
 
   for (int lowLayerIndex = 0; lowLayerIndex <= fixedLayers.low;
        lowLayerIndex++) {

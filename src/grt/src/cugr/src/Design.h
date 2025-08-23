@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CUGR.h"
 #include "GeoTypes.h"
 #include "Layers.h"
 #include "Netlist.h"
@@ -21,7 +22,7 @@ using CostT = double;
 class Design
 {
  public:
-  Design(odb::dbDatabase* db, utl::Logger* logger);
+  Design(odb::dbDatabase* db, utl::Logger* logger, const Constants& constants);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -76,25 +77,7 @@ class Design
   int default_gridline_spacing_ = 3000;
   std::vector<std::vector<int>> gridlines_;
 
-  const double weight_wire_length_ = 0.5;
-  const double weight_via_number_ = 4.0;
-  const double weight_short_area_ = 500.0;
-  //
-  const int min_routing_layer_ = 1;
-  const double cost_logistic_slope_ = 1.0;
-  const double max_detour_ratio_
-      = 0.25;  // allowed stem length increase to trunk length ratio
-  const int target_detour_count_ = 20;
-  const double via_multiplier_ = 2.0;
-  //
-  const double maze_logistic_slope_ = 0.5;
-  //
-  const double pin_patch_threshold_ = 20.0;
-  const int pin_patch_padding_ = 1;
-  const double wire_patch_threshold_ = 2.0;
-  const double wire_patch_inflation_rate_ = 1.2;
-  //
-  const bool write_heatmap_ = false;
+  Constants constants_;
 };
 
 }  // namespace grt

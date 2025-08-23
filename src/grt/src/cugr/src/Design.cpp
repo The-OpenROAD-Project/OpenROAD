@@ -8,8 +8,13 @@
 
 namespace grt {
 
-Design::Design(odb::dbDatabase* db, utl::Logger* logger)
-    : block_(db->getChip()->getBlock()), tech_(db->getTech()), logger_(logger)
+Design::Design(odb::dbDatabase* db,
+               utl::Logger* logger,
+               const Constants& constants)
+    : block_(db->getChip()->getBlock()),
+      tech_(db->getTech()),
+      logger_(logger),
+      constants_(constants)
 {
   read();
   setUnitCosts();
@@ -71,8 +76,8 @@ void Design::readLayers()
 
 void Design::readNetlist()
 {
+  int net_index = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
-    int net_index = 0;
     if (db_net->isSpecial() || db_net->getSigType().isSupply()) {
       continue;
     }
@@ -237,10 +242,11 @@ void Design::computeGrid()
 void Design::setUnitCosts()
 {
   int m2_pitch = layers_[1].getPitch();
-  unit_length_wire_cost_ = weight_wire_length_ / m2_pitch;
-  unit_via_cost_ = weight_via_number_;
+  unit_length_wire_cost_ = constants_.weight_wire_length / m2_pitch;
+  unit_via_cost_ = constants_.weight_via_number;
   unit_length_short_costs_.resize(layers_.size());
-  const CostT unit_area_short_cost = weight_short_area_ / (m2_pitch * m2_pitch);
+  const CostT unit_area_short_cost
+      = constants_.weight_short_area / (m2_pitch * m2_pitch);
   for (int layerIndex = 0; layerIndex < layers_.size(); layerIndex++) {
     unit_length_short_costs_[layerIndex]
         = unit_area_short_cost * layers_[layerIndex].getWidth();
