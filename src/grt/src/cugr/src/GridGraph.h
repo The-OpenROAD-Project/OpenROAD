@@ -68,7 +68,7 @@ class GridGraph
 
   // Misc
   void selectAccessPoints(
-      GRNet& net,
+      GRNet* net,
       std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>&
           selected_access_points) const;
 

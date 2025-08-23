@@ -33,7 +33,7 @@ struct SparseGrid
 class SparseGraph
 {
  public:
-  SparseGraph(GRNet& net, const GridGraph& graph)
+  SparseGraph(GRNet* net, const GridGraph* graph)
       : net_(net), grid_graph_(graph)
   {
   }
@@ -71,8 +71,8 @@ class SparseGraph
     return direction * xs_.size() * ys_.size() + yi * xs_.size() + xi;
   }
 
-  GRNet& net_;
-  const GridGraph& grid_graph_;
+  GRNet* net_;
+  const GridGraph* grid_graph_;
 
   std::vector<std::pair<PointT<int>, IntervalT<int>>> pseudo_pins_;
 
@@ -103,7 +103,7 @@ struct Solution
 class MazeRoute
 {
  public:
-  MazeRoute(GRNet& net, const GridGraph& graph)
+  MazeRoute(GRNet* net, const GridGraph* graph)
       : net_(net), grid_graph_(graph), graph_(net, graph)
   {
   }
@@ -117,8 +117,8 @@ class MazeRoute
   std::shared_ptr<SteinerTreeNode> getSteinerTree() const;
 
  private:
-  GRNet& net_;
-  const GridGraph& grid_graph_;
+  GRNet* net_;
+  const GridGraph* grid_graph_;
   SparseGraph graph_;
 
   std::vector<std::shared_ptr<Solution>> solutions_;

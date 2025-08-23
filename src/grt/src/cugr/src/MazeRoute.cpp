@@ -9,7 +9,7 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   // 0. Create pseudo pins
   std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
       selectedAccessPoints;
-  grid_graph_.selectAccessPoints(net_, selectedAccessPoints);
+  grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
   pseudo_pins_.reserve(selectedAccessPoints.size());
   for (auto& selectedPoint : selectedAccessPoints) {
     pseudo_pins_.push_back(selectedPoint.second);
@@ -18,8 +18,8 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   // 1. Collect additional routing grid lines
   std::vector<int> pxs;
   std::vector<int> pys;
-  pxs.reserve(net_.getNumPins());
-  pys.reserve(net_.getNumPins());
+  pxs.reserve(net_->getNumPins());
+  pys.reserve(net_->getNumPins());
   for (const auto& pin : pseudo_pins_) {
     pxs.emplace_back(pin.first.x);
     pys.emplace_back(pin.first.y);
@@ -27,8 +27,8 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   std::sort(pxs.begin(), pxs.end());
   std::sort(pys.begin(), pys.end());
 
-  const int xSize = grid_graph_.getSize(0);
-  const int ySize = grid_graph_.getSize(1);
+  const int xSize = grid_graph_->getSize(0);
+  const int ySize = grid_graph_->getSize(1);
   xs_.reserve(xSize / grid.interval.x + pxs.size());
   ys_.reserve(ySize / grid.interval.y + pys.size());
   int j = 0;
@@ -110,7 +110,7 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
 
     edges_[u][2] = v;
     edges_[v][2] = u;
-    costs_[u][2] = costs_[v][2] = grid_graph_.getUnitViaCost();
+    costs_[u][2] = costs_[v][2] = grid_graph_->getUnitViaCost();
   };
 
   for (int xi = 0; xi < xs_.size(); xi++) {
@@ -167,9 +167,9 @@ void MazeRoute::run()
     }
   };
 
-  solutions_.reserve(net_.getNumPins());
+  solutions_.reserve(net_->getNumPins());
 
-  std::vector<bool> visited(net_.getNumPins(), false);
+  std::vector<bool> visited(net_->getNumPins(), false);
   const int startPinIndex = 0;
   visited[startPinIndex] = true;
   int numDetached = graph_.getNumPseudoPins() - 1;
@@ -232,7 +232,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
     return tree;
   }
 
-  std::vector<bool> visited(net_.getNumPins(), false);
+  std::vector<bool> visited(net_->getNumPins(), false);
   std::unordered_map<int, std::shared_ptr<SteinerTreeNode>> created;
   for (auto& solution : solutions_) {
     std::shared_ptr<Solution> temp = solution;

@@ -72,6 +72,7 @@ void Design::readLayers()
 void Design::readNetlist()
 {
   for (odb::dbNet* db_net : block_->getNets()) {
+    int net_index = 0;
     if (db_net->isSpecial() || db_net->getSigType().isSupply()) {
       continue;
     }
@@ -119,7 +120,8 @@ void Design::readNetlist()
       pins.emplace_back(pin_count, db_iterm, pin_shapes, false);
       pin_count++;
     }
-    nets_.emplace_back(db_net, pins);
+    nets_.emplace_back(net_index, db_net, pins);
+    net_index++;
   }
 }
 
