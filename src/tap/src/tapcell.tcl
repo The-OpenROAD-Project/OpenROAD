@@ -314,13 +314,13 @@ proc place_endcaps { args } {
     [tap::parse_endcap_key keys -right_bottom_corner -corner -corner]]
 
   set left_top_edge [tap::find_master \
-    [tap::parse_endcap_key keys -left_top_edge -edge_corner -edge_corner]]
+    [tap::parse_endcap_key keys -left_top_edge -edge_corner -corner]]
   set right_top_edge [tap::find_master \
-    [tap::parse_endcap_key keys -right_top_edge -edge_corner -edge_corner]]
+    [tap::parse_endcap_key keys -right_top_edge -edge_corner -corner]]
   set left_bottom_edge [tap::find_master \
-    [tap::parse_endcap_key keys -left_bottom_edge -edge_corner -edge_corner]]
+    [tap::parse_endcap_key keys -left_bottom_edge -edge_corner -corner]]
   set right_bottom_edge [tap::find_master \
-    [tap::parse_endcap_key keys -right_bottom_edge -edge_corner -edge_corner]]
+    [tap::parse_endcap_key keys -right_bottom_edge -edge_corner -corner]]
 
   set left_edge [tap::find_master \
     [tap::parse_endcap_key keys -left_edge -endcap_vertical -endcap]]
