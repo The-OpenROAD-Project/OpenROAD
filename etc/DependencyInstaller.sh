@@ -11,43 +11,120 @@ _versionCompare() {
     test $a "$2" $b
 }
 
+# --- Yosys Suite Installation ---
+
+# Single Source of Truth: The target version for all tools.
+readonly YOSYS_SUITE_VERSION="v0.55"
+
+# Tool Configuration: Associative array mapping tool names to their git repos.
+declare -A YOSYS_SUITE_TOOLS=(
+    [yosys]="https://github.com/YosysHQ/yosys"
+    [eqy]="https://github.com/YosysHQ/eqy"
+    [sby]="https://github.com/YosysHQ/sby"
+)
+
+# Function to get the installed version of a yosys suite tool.
+_get_yosys_tool_version() {
+    local tool_name="$1"
+    local installed_version="none"
+
+    # Check PATH for the tool, but also the local PREFIX, since it may not be in the PATH yet.
+    local tool_path
+    if command -v "${tool_name}" &> /dev/null; then
+        tool_path=$(command -v "${tool_name}")
+    elif [[ -n "${PREFIX:-}" && -x "${PREFIX}/bin/${tool_name}" ]]; then
+        tool_path="${PREFIX}/bin/${tool_name}"
+    else
+        echo "none"
+        return
+    fi
+
+    case "${tool_name}" in
+        yosys)
+            installed_version=$("${tool_path}" --version | head -n 1 | awk '{print $2}')
+            ;;
+        eqy)
+            installed_version=$("${tool_path}" --version 2>/dev/null | awk '{print $2}' | sed 's/v//')
+            ;;
+        sby)
+            installed_version=$("${tool_path}" --version 2>/dev/null | awk '{print $2}' | sed 's/v//')
+            ;;
+        *)
+            echo "none"
+            ;;
+    esac
+    echo "${installed_version}"
+}
+
+_install_yosys_tool() {
+    local tool_name="$1"
+    local tool_repo="$2"
+    local target_version_str="${YOSYS_SUITE_VERSION#v}"
+    local tool_prefix="${PREFIX:-/usr/local}"
+
+    echo "--- Checking ${tool_name} ---"
+    local installed_version
+    installed_version=$(_get_yosys_tool_version "${tool_name}")
+
+    if [[ "${installed_version}" == "${target_version_str}" ]]; then
+        echo "${tool_name} version ${installed_version} is already up-to-date."
+        return
+    fi
+
+    echo "Installing ${tool_name} ${YOSYS_SUITE_VERSION} (found: ${installed_version})."
+
+    ( # Run in a subshell to isolate directory changes
+        cd "${baseDir}"
+        echo "Cloning ${tool_name} from ${tool_repo}..."
+
+        local clone_args=("--depth=1" "-b" "${YOSYS_SUITE_VERSION}")
+        if [[ "${tool_name}" == "yosys" || "${tool_name}" == "sby" ]]; then
+            clone_args+=("--recursive")
+        fi
+
+        git clone "${clone_args[@]}" "${tool_repo}" "${tool_name}"
+        cd "${tool_name}"
+
+        echo "Building and installing ${tool_name}..."
+        export PATH="${tool_prefix}/bin:${PATH}"
+
+        case "${tool_name}" in
+            yosys)
+                make -j "${numThreads}" PREFIX="${tool_prefix}" ABC_ARCHFLAGS=-Wno-register
+                make install PREFIX="${tool_prefix}"
+                ;;
+            eqy)
+                make -j "${numThreads}" PREFIX="${tool_prefix}"
+                make install PREFIX="${tool_prefix}" YOSYS_RELEASE_VERSION="EQY ${YOSYS_SUITE_VERSION}"
+                ;;
+            sby)
+                make -j "${numThreads}" PREFIX="${tool_prefix}" install
+                ;;
+        esac
+        echo "${tool_name} installation complete."
+    ) || {
+        echo "ERROR: Failed to build or install ${tool_name}." >&2
+        exit 1
+    }
+}
+
 _equivalenceDeps() {
-    yosysVersion=v0.55
+    echo "Installing Yosys tool suite..."
+    echo "Target version for all tools: ${YOSYS_SUITE_VERSION}"
+    local tool_prefix="${PREFIX:-/usr/local}"
+    echo "Installation prefix: ${tool_prefix}"
 
-    # yosys
-    yosysPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
-        cd yosys
-        # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang from RHEL8
-        make -j ${numThreads} PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
-        make install
-    ) fi
+    # Iterate over the tools and install them.
+    for tool in "${!YOSYS_SUITE_TOOLS[@]}"; do
+        _install_yosys_tool "${tool}" "${YOSYS_SUITE_TOOLS[$tool]}"
+    done
 
-    # eqy
-    eqyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v eqy &> /dev/null; then (
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
-        cd eqy
-        export PATH="${yosysPrefix}/bin:${PATH}"
-        make -j ${numThreads} PREFIX="${eqyPrefix}"
-        make install PREFIX="${eqyPrefix}"
-    )
-    fi
-
-    # sby
-    sbyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v sby &> /dev/null; then (
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
-        cd sby
-        export PATH="${eqyPrefix}/bin:${PATH}"
-        make -j ${numThreads} PREFIX="${sbyPrefix}" install
-    )
-    fi
+    echo "--- Verification ---"
+    "${tool_prefix}/bin/yosys" --version
+    "${tool_prefix}/bin/eqy" --version
+    "${tool_prefix}/bin/sby" --version
+    echo "--------------------"
+    echo "Yosys tool suite installation finished successfully."
 }
 
 _installCommonDev() {
@@ -297,35 +374,36 @@ EOF
 }
 
 _installOrTools() {
-    os=$1
-    osVersion=$2
-    arch=$3
-    orToolsVersionBig=9.11
-    orToolsVersionSmall=${orToolsVersionBig}.4210
+    local os=$1
+    local osVersion=$2
+    local arch=$3
+    local orToolsVersionBig=9.11
+    local orToolsVersionSmall=${orToolsVersionBig}.4210
+
+    # Define the installation path.
+    local orToolsPath=${PREFIX:-"/opt/or-tools"}
+    if command -v brew &> /dev/null; then
+        orToolsPath="$(brew --prefix or-tools)"
+    fi
+
+    # Check if a key library file from the installation already exists.
+    local lib_path="${orToolsPath}/lib/libortools.so.${orToolsVersionSmall}"
+    if [[ -f "${lib_path}" ]]; then
+        echo "OR-Tools v${orToolsVersionSmall} is already installed."
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath "${orToolsPath}") "
+        return
+    fi
+
+    # --- If not installed, proceed with installation ---
+    echo "OR-Tools v${orToolsVersionSmall} not found. Installing..."
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
-    if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
+    if [[ -n "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
 
-    # Disable exit on error for 'find' command, as it might return non zero
-    set +euo pipefail
-    LIST=($(find /local* /opt* /lib* /usr* /bin* -type f -name "libortools.so*" 2>/dev/null))
-    # Bring back exit on error
-    set -euo pipefail
-    # Return if right version of or-tools is installed
-    for lib in ${LIST[@]}; do
-        if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
-            echo "OR-Tools is already installed"
-            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
-            return
-        fi
-    done
-
-    orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
-        echo "OR-TOOLS NOT FOUND"
-        echo "Installing  OR-Tools for aarch64..."
+        echo "Installing OR-Tools for aarch64 from source..."
         git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
         cd or-tools
         ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
@@ -338,11 +416,9 @@ _installOrTools() {
             # FIXME make do with or-tools for 24.04 until an official release for 25.04 is available
             osVersion=24.04
         fi
-        orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
+        local orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-        if command -v brew &> /dev/null; then
-            orToolsPath="$(brew --prefix or-tools)"
-        fi
+
         mkdir -p ${orToolsPath}
         tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
         rm -rf ${baseDir}
