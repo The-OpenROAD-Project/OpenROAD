@@ -250,7 +250,34 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   // co-existing, something we respect even when making
   // new hierarchical connections.
   //
+
+  // Connect source and dest pins directly in flat flow
   dbNet* source_db_net = source_pin->getNet();
+  dbNet* dest_db_net = dest_pin->getNet();
+  if (db_network_->hierarchy_ == false) {
+    // If both source pin and dest pin do not have a corresponding flat net,
+    // Create a new net and connect it with source pin.
+    if (source_db_net == nullptr && dest_db_net == nullptr) {
+      Net* new_net = db_network_->makeNet(
+          connection_name,
+          db_network_->parent(db_network_->dbToSta(source_pin->getInst())),
+          odb::dbNameUniquifyType::IF_NEEDED);
+      source_db_net = db_network_->staToDb(new_net);
+      source_pin->connect(source_db_net);
+    }
+
+    // Connect
+    if (source_db_net) {
+      dest_pin->connect(source_db_net);
+    } else {
+      assert(dest_db_net);
+      source_pin->connect(dest_db_net);
+    }
+
+    dlogHierConnDone();
+    return;  // Done here in a flat flow
+  }
+
   if (!source_db_net) {
     dlogHierConnCreateFlatNet(connection_name);
     Net* new_net = db_network_->makeNet(
