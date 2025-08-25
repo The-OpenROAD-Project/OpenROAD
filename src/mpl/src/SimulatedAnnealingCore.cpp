@@ -707,7 +707,6 @@ void SimulatedAnnealingCore<T>::fastSA()
 {
   float cost = calNormCost();
   float pre_cost = cost;
-  float delta_cost = 0.0;
   int step = 1;
   float temperature = init_temperature_;
   const float min_t = 1e-10;
@@ -728,21 +727,24 @@ void SimulatedAnnealingCore<T>::fastSA()
       perturb();
       cost = calNormCost();
 
-      const bool keep_result
-          = cost < pre_cost
-            || best_valid_result_.sequence_pair.pos_sequence.empty();
+      const bool keep_result = cost < pre_cost || best_valid_result_.empty();
       if (isValid() && keep_result) {
         updateBestValidResult(cost);
       }
 
-      delta_cost = cost - pre_cost;
-      const float num = distribution_(generator_);
-      const float prob
-          = (delta_cost > 0.0) ? std::exp((-1) * delta_cost / temperature) : 1;
-      if (num < prob) {
+      const float delta_cost = cost - pre_cost;
+      if (delta_cost <= 0) {
+        // always accept improvements
         pre_cost = cost;
       } else {
-        restoreState();
+        // probabilistically accept degradations for hill climbing
+        const float num = distribution_(generator_);
+        const float prob = std::exp(-delta_cost / temperature);
+        if (num < prob) {
+          pre_cost = cost;
+        } else {
+          restoreState();
+        }
       }
     }
 
@@ -766,7 +768,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   }
   calPenalty();
 
-  if (!best_valid_result_.sequence_pair.pos_sequence.empty()
+  if (!best_valid_result_.empty()
       && (!isValid() || best_valid_result_.cost < calNormCost())) {
     useBestValidResult();
   }

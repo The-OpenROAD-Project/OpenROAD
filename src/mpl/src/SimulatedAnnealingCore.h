@@ -92,6 +92,8 @@ class SimulatedAnnealingCore
  protected:
   struct Result
   {
+    bool empty() const { return sequence_pair.pos_sequence.empty(); }
+
     float cost{std::numeric_limits<float>::max()};
     SequencePair sequence_pair;
     // [Only for SoftMacro] The same sequence pair can represent different
