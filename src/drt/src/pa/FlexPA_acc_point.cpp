@@ -1345,9 +1345,9 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::set<std::pair<Point, frLayerNum>> apset;
 
   if (graphics_) {
-    frOrderedIdSet<frInst*>* inst_class = nullptr;
+    UniqueClass* inst_class = nullptr;
     if (inst_term) {
-      inst_class = unique_insts_.getClass(inst_term->getInst());
+      inst_class = unique_insts_.getUniqueClass(inst_term->getInst());
     }
     graphics_->startPin(pin, inst_term, inst_class);
   }
@@ -1471,21 +1471,23 @@ void FlexPA::genAllAccessPoints()
   omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 
-  const std::vector<frInst*>& unique = unique_insts_.getUnique();
+  const auto& unique = unique_insts_.getUniqueClasses();
 #pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {  // NOLINT
+  for (const auto& unique_class : unique) {  // NOLINT
     try {
+      auto candidate_inst = unique_class->getFirstInst();
       // only do for core and block cells
-      if (!isStdCell(unique_inst) && !isMacroCell(unique_inst)) {
+      if (!isStdCell(candidate_inst) && !isMacroCell(candidate_inst)) {
         continue;
       }
 
-      genInstAccessPoints(unique_inst);
+      genInstAccessPoints(candidate_inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
 
-      int inst_terms_cnt = static_cast<int>(unique_inst->getInstTerms().size());
+      int inst_terms_cnt
+          = static_cast<int>(candidate_inst->getInstTerms().size());
 #pragma omp critical
       for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;
@@ -1537,18 +1539,15 @@ void FlexPA::genAllAccessPoints()
 
 void FlexPA::revertAccessPoints()
 {
-  const auto& unique = unique_insts_.getUnique();
-  for (frInst* inst : unique) {
-    const dbTransform xform = inst->getTransform();
+  const auto& unique = unique_insts_.getUniqueClasses();
+  for (const auto& unique_class : unique) {
+    auto candidate_inst = unique_class->getFirstInst();
+    const dbTransform xform = candidate_inst->getTransform();
     const Point offset(xform.getOffset());
     dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
-    const auto pin_access_idx = inst->getPinAccessIdx();
-    for (auto& inst_term : inst->getInstTerms()) {
-      // if (isSkipInstTerm(inst_term.get())) {
-      //   continue;
-      // }
-
+    const auto pin_access_idx = candidate_inst->getPinAccessIdx();
+    for (auto& inst_term : candidate_inst->getInstTerms()) {
       for (auto& pin : inst_term->getTerm()->getPins()) {
         auto pin_access = pin->getPinAccess(pin_access_idx);
         for (auto& access_point : pin_access->getAccessPoints()) {

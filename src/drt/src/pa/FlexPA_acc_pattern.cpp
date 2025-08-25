@@ -60,10 +60,10 @@ void FlexPA::buildInstsSet()
 
 void FlexPA::prepPatternInst(frInst* unique_inst)
 {
+  auto unique_class = unique_insts_.getUniqueClass(unique_inst);
 #pragma omp critical
-  unique_inst_patterns_[unique_inst]
+  unique_inst_patterns_[unique_class]
       = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
-
   int num_valid_pattern = prepPatternInstHelper(unique_inst, true);
 
   if (num_valid_pattern > 0) {
@@ -655,7 +655,8 @@ bool FlexPA::genPatternsCommit(
   if (target_obj != nullptr
       && genPatternsGC({target_obj}, objs, Commit, &owners)) {
     pin_access_pattern->updateCost();
-    unique_inst_patterns_[unique_inst].push_back(std::move(pin_access_pattern));
+    unique_inst_patterns_[unique_insts_.getUniqueClass(unique_inst)].push_back(
+        std::move(pin_access_pattern));
     // genPatternsPrint(nodes, pins);
     is_valid = true;
   } else {

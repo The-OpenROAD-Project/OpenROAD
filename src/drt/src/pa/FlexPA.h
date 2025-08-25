@@ -113,13 +113,11 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::unordered_map<frInst*,
+  std::unordered_map<UniqueClass*,
                      std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
-  using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
-  std::map<UniqueMTerm, bool> skip_unique_inst_term_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
@@ -154,7 +152,7 @@ class FlexPA
   void initTrackCoords();
   void initViaRawPriority();
   void initAllSkipInstTerm();
-  void initSkipInstTerm(frInst* unique_inst);
+  void initSkipInstTerm(UniqueClass* unique_class);
   // prep
   void prep();
 
