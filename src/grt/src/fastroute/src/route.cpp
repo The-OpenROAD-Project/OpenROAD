@@ -19,6 +19,7 @@ using utl::GRT;
 // possible L for L segments
 void FastRouteCore::estimateOneSeg(const Segment* seg)
 {
+  FrNet* net = nets_[seg->netID];
   const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
@@ -26,36 +27,39 @@ void FastRouteCore::estimateOneSeg(const Segment* seg)
   // assign 0.5 to both Ls (x1,y1)-(x1,y2) + (x1,y2)-(x2,y2) + (x1,y1)-(x2,y1) +
   // (x2,y1)-(x2,y2)
   if (seg->x1 == seg->x2) {  // a vertical segment
-    graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, edgeCost);
+    graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, edgeCost);
   } else if (seg->y1 == seg->y2) {  // a horizontal segment
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, edgeCost);
+    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost);
   } else {  // a diagonal segment
-    graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, edgeCost / 2.0f);
-    graph2d_.addEstUsageV(seg->x2, {ymin, ymax}, edgeCost / 2.0f);
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, edgeCost / 2.0f);
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y2, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y2, net, edgeCost / 2.0f);
   }
 }
 
 void FastRouteCore::routeSegV(const Segment* seg)
 {
+  FrNet* net = nets_[seg->netID];
   const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
-  graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, edgeCost);
+  graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, edgeCost);
 }
 
 void FastRouteCore::routeSegH(const Segment* seg)
 {
+  FrNet* net = nets_[seg->netID];
   const int8_t edgeCost = seg->cost;
 
-  graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, edgeCost);
+  graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost);
 }
 
 // L-route, based on previous L route
 void FastRouteCore::routeSegL(Segment* seg)
 {
+  FrNet* net = nets_[seg->netID];
   const int8_t edgeCost = seg->cost;
 
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
@@ -91,13 +95,13 @@ void FastRouteCore::routeSegL(Segment* seg)
 
     if (costL1 < costL2) {
       // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-      graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, edgeCost);
-      graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y2, edgeCost);
+      graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, edgeCost);
+      graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y2, net, edgeCost);
       seg->xFirst = false;
     } else {
       // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-      graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, edgeCost);
-      graph2d_.addEstUsageV(seg->x2, {ymin, ymax}, edgeCost);
+      graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost);
+      graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, edgeCost);
       seg->xFirst = true;
     }
   }
@@ -137,24 +141,27 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
     }
   }
 
+  FrNet* net = nets_[seg->netID];
   const int8_t edgeCost = seg->cost;
 
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-    graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, edgeCost / 2.0f);
-    graph2d_.addEstUsageV(seg->x2, {ymin, ymax}, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, -edgeCost / 2.0f);
 
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y2, edgeCost / 2.0f);
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y2, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(
+        {seg->x1, seg->x2}, seg->y1, net, -edgeCost / 2.0f);
 
     seg->xFirst = false;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y1, edgeCost / 2.0f);
-    graph2d_.addEstUsageH({seg->x1, seg->x2}, seg->y2, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(
+        {seg->x1, seg->x2}, seg->y2, net, -edgeCost / 2.0f);
 
-    graph2d_.addEstUsageV(seg->x2, {ymin, ymax}, edgeCost / 2.0f);
-    graph2d_.addEstUsageV(seg->x1, {ymin, ymax}, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, -edgeCost / 2.0f);
 
     seg->xFirst = true;
   }
@@ -175,7 +182,7 @@ void FastRouteCore::routeLAll(const bool firstTime)
     for (const int netID : net_ids_) {
       for (auto& seg : seglist_[netID]) {
         // no need to reroute the H or V segs
-        if (seg.x1 != seg.x2 || seg.y1 != seg.y2) {
+        if (seg.x1 != seg.x2 && seg.y1 != seg.y2) {
           routeSegLFirstTime(&seg);
         }
       }
@@ -184,7 +191,7 @@ void FastRouteCore::routeLAll(const bool firstTime)
     for (const int netID : net_ids_) {
       for (auto& seg : seglist_[netID]) {
         // no need to reroute the H or V segs
-        if (seg.x1 != seg.x2 || seg.y1 != seg.y2) {
+        if (seg.x1 != seg.x2 && seg.y1 != seg.y2) {
           ripupSegL(&seg);
           routeSegL(&seg);
         }
@@ -198,7 +205,8 @@ void FastRouteCore::newrouteL(const int netID,
                               const RouteType ripuptype,
                               const bool viaGuided)
 {
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  FrNet* net = nets_[netID];
+  const int8_t edgeCost = net->getEdgeCost();
 
   const int num_edges = sttrees_[netID].num_edges();
   auto& treeedges = sttrees_[netID].edges;
@@ -226,7 +234,7 @@ void FastRouteCore::newrouteL(const int netID,
 
       treeedge->route.type = RouteType::LRoute;
       if (x1 == x2) {  // V-routing
-        graph2d_.addEstUsageV(x1, {ymin, ymax}, edgeCost);
+        graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
         treeedge->route.xFirst = false;
         if (treenodes[n1].status % 2 == 0) {
           treenodes[n1].status += 1;
@@ -235,7 +243,7 @@ void FastRouteCore::newrouteL(const int netID,
           treenodes[n2].status += 1;
         }
       } else if (y1 == y2) {  // H-routing
-        graph2d_.addEstUsageH({x1, x2}, y1, edgeCost);
+        graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost);
         treeedge->route.xFirst = true;
         if (treenodes[n2].status < 2) {
           treenodes[n2].status += 2;
@@ -299,8 +307,8 @@ void FastRouteCore::newrouteL(const int netID,
           }
 
           // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-          graph2d_.addEstUsageV(x1, {ymin, ymax}, edgeCost);
-          graph2d_.addEstUsageH({x1, x2}, y2, edgeCost);
+          graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
+          graph2d_.updateEstUsageH({x1, x2}, y2, net, edgeCost);
 
           treeedge->route.xFirst = false;
         } else {  // if costL1<costL2
@@ -312,8 +320,8 @@ void FastRouteCore::newrouteL(const int netID,
           }
 
           // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-          graph2d_.addEstUsageH({x1, x2}, y1, edgeCost);
-          graph2d_.addEstUsageV(x2, {ymin, ymax}, edgeCost);
+          graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost);
+          graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, edgeCost);
           treeedge->route.xFirst = true;
         }
 
@@ -341,7 +349,8 @@ void FastRouteCore::newrouteLAll(const bool firstTime, const bool viaGuided)
 
 void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
 {
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  FrNet* net = nets_[netID];
+  const int8_t edgeCost = net->getEdgeCost();
 
   // only route the non-degraded edges (len>0)
   if (sttrees_[netID].edges[edgeID].len <= 0) {
@@ -450,9 +459,9 @@ void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
     }
   }
 
-  graph2d_.addEstUsageH({x1, bestZ}, y1, edgeCost);
-  graph2d_.addEstUsageH({bestZ, x2}, y2, edgeCost);
-  graph2d_.addEstUsageV(bestZ, {ymin, ymax}, edgeCost);
+  graph2d_.updateEstUsageH({x1, bestZ}, y1, net, edgeCost);
+  graph2d_.updateEstUsageH({bestZ, x2}, y2, net, edgeCost);
+  graph2d_.updateEstUsageV(bestZ, {ymin, ymax}, net, edgeCost);
   treeedge->route.HVH = true;
   treeedge->route.Zpoint = bestZ;
 }
@@ -460,7 +469,8 @@ void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
 // Z-route, rip-up the previous route according to the ripuptype
 void FastRouteCore::newrouteZ(const int netID, const int threshold)
 {
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  FrNet* net = nets_[netID];
+  const int8_t edgeCost = net->getEdgeCost();
 
   const int num_terminals = sttrees_[netID].num_terminals;
   const int num_edges = sttrees_[netID].num_edges();
@@ -692,9 +702,9 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
           treenodes[n1a].hID++;
           treenodes[n2a].hID++;
 
-          graph2d_.addEstUsageH({x1, bestZ}, y1, edgeCost);
-          graph2d_.addEstUsageH({bestZ, x2}, y2, edgeCost);
-          graph2d_.addEstUsageV(bestZ, {ymin, ymax}, edgeCost);
+          graph2d_.updateEstUsageH({x1, bestZ}, y1, net, edgeCost);
+          graph2d_.updateEstUsageH({bestZ, x2}, y2, net, edgeCost);
+          graph2d_.updateEstUsageV(bestZ, {ymin, ymax}, net, edgeCost);
 
           treeedge->route.HVH = HVH;
           treeedge->route.Zpoint = bestZ;
@@ -709,16 +719,16 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
           treenodes[n1a].lID++;
           treenodes[n2a].lID++;
           if (y1Smaller) {
-            graph2d_.addEstUsageV(x1, {y1, bestZ}, edgeCost);
-            graph2d_.addEstUsageV(x2, {bestZ, y2}, edgeCost);
-            graph2d_.addEstUsageH({x1, x2}, bestZ, edgeCost);
+            graph2d_.updateEstUsageV(x1, {y1, bestZ}, net, edgeCost);
+            graph2d_.updateEstUsageV(x2, {bestZ, y2}, net, edgeCost);
+            graph2d_.updateEstUsageH({x1, x2}, bestZ, net, edgeCost);
 
             treeedge->route.HVH = HVH;
             treeedge->route.Zpoint = bestZ;
           } else {
-            graph2d_.addEstUsageV(x2, {y2, bestZ}, edgeCost);
-            graph2d_.addEstUsageV(x1, {bestZ, y1}, edgeCost);
-            graph2d_.addEstUsageH({x1, x2}, bestZ, edgeCost);
+            graph2d_.updateEstUsageV(x2, {y2, bestZ}, net, edgeCost);
+            graph2d_.updateEstUsageV(x1, {bestZ, y1}, net, edgeCost);
+            graph2d_.updateEstUsageH({x1, x2}, bestZ, net, edgeCost);
             treeedge->route.HVH = HVH;
             treeedge->route.Zpoint = bestZ;
           }
@@ -748,7 +758,8 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
   auto& treeedges = sttrees_[netID].edges;
   auto& treenodes = sttrees_[netID].nodes;
 
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  FrNet* net = nets_[netID];
+  const int8_t edgeCost = net->getEdgeCost();
 
   TreeEdge* treeedge = &(treeedges[edgeID]);
   if (treeedge->len <= 0)  // only route the non-degraded edges (len>0)
@@ -780,7 +791,7 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
 
   treeedge->route.type = RouteType::LRoute;
   if (x1 == x2) {  // V-routing
-    graph2d_.addEstUsageV(x1, {ymin, ymax}, edgeCost);
+    graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
     treeedge->route.xFirst = false;
     if (treenodes[n1].status % 2 == 0) {
       treenodes[n1].status += 1;
@@ -796,7 +807,7 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
       treenodes[n2a].status += 1;
     }
   } else if (y1 == y2) {  // H-routing
-    graph2d_.addEstUsageH({x1, x2}, y1, edgeCost);
+    graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost);
     treeedge->route.xFirst = true;
     if (treenodes[n2].status < 2) {
       treenodes[n2].status += 2;
@@ -870,8 +881,8 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
       treenodes[n1a].lID++;
 
       // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-      graph2d_.addEstUsageV(x1, {ymin, ymax}, edgeCost);
-      graph2d_.addEstUsageH({x1, x2}, y2, edgeCost);
+      graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
+      graph2d_.updateEstUsageH({x1, x2}, y2, net, edgeCost);
 
       treeedge->route.xFirst = false;
     } else {
@@ -893,8 +904,8 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
       treenodes[n2a].lID++;
 
       // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-      graph2d_.addEstUsageH({x1, x2}, y1, edgeCost);
-      graph2d_.addEstUsageV(x2, {ymin, ymax}, edgeCost);
+      graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost);
+      graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, edgeCost);
       treeedge->route.xFirst = true;
     }
   }  // else L-routing
@@ -1060,6 +1071,8 @@ void FastRouteCore::routeMonotonic(const int netID,
   const int16_t x2 = treenodes[n2].x;
   const int16_t y2 = treenodes[n2].y;
 
+  FrNet* net = nets_[netID];
+
   // ripup the original routing
   if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, 0, netID, edgeID)) {
     return;
@@ -1145,7 +1158,7 @@ void FastRouteCore::routeMonotonic(const int netID,
           = std::abs(d2[y2][i] - d2[j][i]) + std::abs(d1[y2][i] - d1[y2][x2]);
       const double tmp4
           = std::abs(d2[y2][x2] - d2[j][x2])
-            + std::abs(d1[j][x2] - d1[j][i]);  // xifrst for mid point
+            + std::abs(d1[j][x2] - d1[j][i]);  // xfirst for mid point
 
       double tmp = tmp1 + tmp4;
       bool LH1 = false;
@@ -1181,19 +1194,19 @@ void FastRouteCore::routeMonotonic(const int netID,
   int cnt = 0;
   std::vector<GPoint3D>& grids = treeedge->route.grids;
   grids.resize(x_range_ + y_range_);
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  const int8_t edgeCost = nets_[netID]->getEdgeCost();
 
   if (BL1) {
     if (bestp1x > x1) {
       for (int16_t i = x1; i < bestp1x; i++) {
         grids[cnt] = {i, y1};
-        graph2d_.addUsageH(i, y1, edgeCost);
+        graph2d_.updateUsageH(i, y1, net, edgeCost);
         cnt++;
       }
     } else {
       for (int16_t i = x1; i > bestp1x; i--) {
         grids[cnt] = {i, y1};
-        graph2d_.addUsageH(i - 1, y1, edgeCost);
+        graph2d_.updateUsageH(i - 1, y1, net, edgeCost);
         cnt++;
       }
     }
@@ -1201,13 +1214,13 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int16_t i = y1; i < bestp1y; i++) {
         grids[cnt] = {bestp1x, i};
         cnt++;
-        graph2d_.addUsageV(bestp1x, i, edgeCost);
+        graph2d_.updateUsageV(bestp1x, i, net, edgeCost);
       }
     } else {
       for (int16_t i = y1; i > bestp1y; i--) {
         grids[cnt] = {bestp1x, i};
         cnt++;
-        graph2d_.addUsageV(bestp1x, i - 1, edgeCost);
+        graph2d_.updateUsageV(bestp1x, i - 1, net, edgeCost);
       }
     }
   } else {
@@ -1215,25 +1228,25 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int16_t i = y1; i < bestp1y; i++) {
         grids[cnt] = {x1, i};
         cnt++;
-        graph2d_.addUsageV(x1, i, edgeCost);
+        graph2d_.updateUsageV(x1, i, net, edgeCost);
       }
     } else {
       for (int16_t i = y1; i > bestp1y; i--) {
         grids[cnt] = {x1, i};
         cnt++;
-        graph2d_.addUsageV(x1, i - 1, edgeCost);
+        graph2d_.updateUsageV(x1, i - 1, net, edgeCost);
       }
     }
     if (bestp1x > x1) {
       for (int16_t i = x1; i < bestp1x; i++) {
         grids[cnt] = {i, bestp1y};
-        graph2d_.addUsageH(i, bestp1y, edgeCost);
+        graph2d_.updateUsageH(i, bestp1y, net, edgeCost);
         cnt++;
       }
     } else {
       for (int16_t i = x1; i > bestp1x; i--) {
         grids[cnt] = {i, bestp1y};
-        graph2d_.addUsageH(i - 1, bestp1y, edgeCost);
+        graph2d_.updateUsageH(i - 1, bestp1y, net, edgeCost);
         cnt++;
       }
     }
@@ -1243,13 +1256,13 @@ void FastRouteCore::routeMonotonic(const int netID,
     if (bestp1x < x2) {
       for (int16_t i = bestp1x; i < x2; i++) {
         grids[cnt] = {i, bestp1y};
-        graph2d_.addUsageH(i, bestp1y, edgeCost);
+        graph2d_.updateUsageH(i, bestp1y, net, edgeCost);
         cnt++;
       }
     } else {
       for (int16_t i = bestp1x; i > x2; i--) {
         grids[cnt] = {i, bestp1y};
-        graph2d_.addUsageH(i - 1, bestp1y, edgeCost);
+        graph2d_.updateUsageH(i - 1, bestp1y, net, edgeCost);
         cnt++;
       }
     }
@@ -1258,13 +1271,13 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int16_t i = bestp1y; i < y2; i++) {
         grids[cnt] = {x2, i};
         cnt++;
-        graph2d_.addUsageV(x2, i, edgeCost);
+        graph2d_.updateUsageV(x2, i, net, edgeCost);
       }
     } else {
       for (int16_t i = bestp1y; i > y2; i--) {
         grids[cnt] = {x2, i};
         cnt++;
-        graph2d_.addUsageV(x2, i - 1, edgeCost);
+        graph2d_.updateUsageV(x2, i - 1, net, edgeCost);
       }
     }
   } else {
@@ -1272,25 +1285,25 @@ void FastRouteCore::routeMonotonic(const int netID,
       for (int16_t i = bestp1y; i < y2; i++) {
         grids[cnt] = {bestp1x, i};
         cnt++;
-        graph2d_.addUsageV(bestp1x, i, edgeCost);
+        graph2d_.updateUsageV(bestp1x, i, net, edgeCost);
       }
     } else {
       for (int16_t i = bestp1y; i > y2; i--) {
         grids[cnt] = {bestp1x, i};
         cnt++;
-        graph2d_.addUsageV(bestp1x, i - 1, edgeCost);
+        graph2d_.updateUsageV(bestp1x, i - 1, net, edgeCost);
       }
     }
     if (x2 > bestp1x) {
       for (int16_t i = bestp1x; i < x2; i++) {
         grids[cnt] = {i, y2};
-        graph2d_.addUsageH(i, y2, edgeCost);
+        graph2d_.updateUsageH(i, y2, net, edgeCost);
         cnt++;
       }
     } else {
       for (int16_t i = bestp1x; i > x2; i--) {
         grids[cnt] = {i, y2};
-        graph2d_.addUsageH(i - 1, y2, edgeCost);
+        graph2d_.updateUsageH(i - 1, y2, net, edgeCost);
         cnt++;
       }
     }
@@ -1347,7 +1360,8 @@ void FastRouteCore::newrouteLInMaze(const int netID)
   auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
 
-  const int edgeCost = nets_[netID]->getEdgeCost();
+  FrNet* net = nets_[netID];
+  const int8_t edgeCost = net->getEdgeCost();
 
   // loop for all the tree edges
   for (int i = 0; i < num_edges; i++) {
@@ -1369,10 +1383,10 @@ void FastRouteCore::newrouteLInMaze(const int netID)
 
     treeedge->route.type = RouteType::LRoute;
     if (x1 == x2) {  // V-routing
-      graph2d_.addUsageV(x1, {ymin, ymax}, edgeCost);
+      graph2d_.updateUsageV(x1, {ymin, ymax}, net, edgeCost);
       treeedge->route.xFirst = false;
     } else if (y1 == y2) {  // H-routing
-      graph2d_.addUsageH({x1, x2}, y1, edgeCost);
+      graph2d_.updateUsageH({x1, x2}, y1, net, edgeCost);
       treeedge->route.xFirst = true;
     } else {  // L-routing
       int costL1 = 0;
@@ -1401,14 +1415,14 @@ void FastRouteCore::newrouteLInMaze(const int netID)
 
       if (costL1 < costL2) {
         // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-        graph2d_.addEstUsageV(x1, {ymin, ymax}, edgeCost);
-        graph2d_.addEstUsageH({x1, x2}, y2, edgeCost);
+        graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
+        graph2d_.updateEstUsageH({x1, x2}, y2, net, edgeCost);
 
         treeedge->route.xFirst = false;
       } else {
         // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-        graph2d_.addEstUsageH({x1, x2}, y1, edgeCost);
-        graph2d_.addEstUsageV(x2, {ymin, ymax}, edgeCost);
+        graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost);
+        graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, edgeCost);
 
         treeedge->route.xFirst = true;
       }
