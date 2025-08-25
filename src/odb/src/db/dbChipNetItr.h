@@ -7,14 +7,9 @@
 #include "dbCore.h"
 #include "odb/dbIterator.h"
 #include "odb/odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class _dbChipNet;
-
-// User Code Begin classes
-// User Code End classes
 
 class dbChipNetItr : public dbIterator
 {
@@ -33,12 +28,9 @@ class dbChipNetItr : public dbIterator
   uint end(dbObject* parent) override;
   uint next(uint id, ...) override;
   dbObject* getObject(uint id, ...) override;
-  // User Code Begin Methods
-  // User Code End Methods
+
  private:
   dbTable<_dbChipNet>* _chip_net_tbl;
-  // User Code Begin Fields
-  // User Code End Fields
 };
 
 }  // namespace odb

@@ -16,12 +16,8 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbChipNet>;
-// User Code Begin Static
-// User Code End Static
 
 bool _dbChipNet::operator==(const _dbChipNet& rhs) const
 {
@@ -35,22 +31,16 @@ bool _dbChipNet::operator==(const _dbChipNet& rhs) const
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbChipNet::operator<(const _dbChipNet& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
 _dbChipNet::_dbChipNet(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipNet& obj)
@@ -59,8 +49,6 @@ dbIStream& operator>>(dbIStream& stream, _dbChipNet& obj)
   stream >> obj.chip_;
   stream >> obj.chip_net_next_;
   stream >> obj.bump_insts_paths_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -70,8 +58,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipNet& obj)
   stream << obj.chip_;
   stream << obj.chip_net_next_;
   stream << obj.bump_insts_paths_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -79,13 +65,7 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
-
-  // User Code Begin collectMemInfo
-  // User Code End collectMemInfo
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

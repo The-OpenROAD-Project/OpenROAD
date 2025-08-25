@@ -7138,6 +7138,7 @@ class dbChipNet : public dbObject
 {
  public:
   std::string getName() const;
+
   // User Code Begin dbChipNet
   dbChip* getChip() const;
 

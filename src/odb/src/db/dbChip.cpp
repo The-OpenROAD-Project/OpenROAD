@@ -210,7 +210,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
     stream >> obj.conns_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
     stream >> obj.nets_;
   }
   if (obj.getDatabase()->isSchema(db_schema_chip_region)) {

@@ -8,8 +8,6 @@
 #include "dbChipNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 
@@ -90,7 +88,5 @@ dbObject* dbChipNetItr::getObject(uint id, ...)
 {
   return _chip_net_tbl->getPtr(id);
 }
-// User Code Begin Methods
-// User Code End Methods
 }  // namespace odb
 // Generator Code End Cpp
