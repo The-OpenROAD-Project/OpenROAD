@@ -529,10 +529,10 @@ std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
       odb::Point grid_pt = pin.getOnGridPosition();
       odb::Point pt = pin.getPosition();
 
-      std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+      std::map<int, std::vector<PointPair>> ap_positions;
       bool has_access_points = findPinAccessPointPositions(pin, ap_positions);
       if (has_access_points) {
-        auto ap_position = ap_positions.front();
+        auto ap_position = ap_positions[0].front();
         pt = ap_position.first;
         grid_pt = ap_position.second;
       }
@@ -877,7 +877,7 @@ Rudy* GlobalRouter::getRudy()
 
 bool GlobalRouter::findPinAccessPointPositions(
     const Pin& pin,
-    std::vector<std::pair<odb::Point, odb::Point>>& ap_positions)
+    std::map<int, std::vector<PointPair>>& ap_positions)
 {
   std::vector<odb::dbAccessPoint*> access_points;
   // get APs from odb
@@ -907,31 +907,35 @@ bool GlobalRouter::findPinAccessPointPositions(
       xform.apply(ap_position);
     }
 
-    ap_positions.push_back(
+    const int ap_layer = ap->getLayer()->getRoutingLevel();
+    ap_positions[ap_layer].push_back(
         {ap_position, grid_->getPositionOnGrid(ap_position)});
   }
 
   return true;
 }
 
-std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+std::vector<RoutePt> GlobalRouter::findOnGridPositions(
     const Pin& pin,
     bool& has_access_points,
     odb::Point& pos_on_grid,
     bool ignore_db_access_points)
 {
-  std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+  std::map<int, std::vector<PointPair>> ap_positions;
 
   // temporarily ignore odb access points when incremental changes
   // are made, in order to avoid getting invalid APs
   has_access_points = findPinAccessPointPositions(pin, ap_positions);
 
-  std::vector<odb::Point> positions_on_grid;
+  std::vector<RoutePt> positions_on_grid;
 
   if (has_access_points && !ignore_db_access_points) {
-    for (const auto& ap_position : ap_positions) {
-      pos_on_grid = ap_position.second;
-      positions_on_grid.push_back(pos_on_grid);
+    for (const auto& [layer, positions] : ap_positions) {
+      for (const PointPair& position : positions) {
+        pos_on_grid = position.second;
+        positions_on_grid.emplace_back(
+            pos_on_grid.getX(), pos_on_grid.getY(), layer);
+      }
     }
   } else {
     // if odb doesn't have any APs, run the grt version considering the
@@ -959,7 +963,8 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
               pin.getPositionNearInstEdge(pin_box, rect_middle));
         }
       }
-      positions_on_grid.push_back(pos_on_grid);
+      positions_on_grid.emplace_back(
+          pos_on_grid.getX(), pos_on_grid.getY(), conn_layer);
       has_access_points = false;
     }
   }
@@ -972,7 +977,7 @@ void GlobalRouter::findPins(Net* net)
   for (Pin& pin : net->getPins()) {
     bool has_access_points;
     odb::Point pos_on_grid;
-    std::vector<odb::Point> pin_positions_on_grid
+    std::vector<RoutePt> pin_positions_on_grid
         = findOnGridPositions(pin, has_access_points, pos_on_grid);
 
     computePinPositionOnGrid(
@@ -981,15 +986,17 @@ void GlobalRouter::findPins(Net* net)
 }
 
 void GlobalRouter::computePinPositionOnGrid(
-    std::vector<odb::Point>& pin_positions_on_grid,
+    std::vector<RoutePt>& pin_positions_on_grid,
     Pin& pin,
     odb::Point& pos_on_grid,
     const bool has_access_points)
 {
   int votes = -1;
 
-  odb::Point pin_position;
-  for (odb::Point pos : pin_positions_on_grid) {
+  RoutePt pin_position(pin.getPosition().getX(),
+                       pin.getPosition().getY(),
+                       pin.getConnectionLayer());
+  for (const RoutePt& pos : pin_positions_on_grid) {
     int equals = std::count(
         pin_positions_on_grid.begin(), pin_positions_on_grid.end(), pos);
     if (equals > votes) {
@@ -1005,16 +1012,18 @@ void GlobalRouter::computePinPositionOnGrid(
     const int conn_layer = pin.getConnectionLayer();
     odb::dbTechLayer* layer = routing_layers_[conn_layer];
     pos_on_grid = grid_->getPositionOnGrid(pos_on_grid);
-    if (!(pos_on_grid == pin_position)
+    if (!(pos_on_grid == odb::Point(pin_position.x(), pin_position.y()))
         && ((layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
              && pos_on_grid.y() != pin_position.y())
             || (layer->getDirection() == odb::dbTechLayerDir::VERTICAL
                 && pos_on_grid.x() != pin_position.x()))) {
-      pin_position = pos_on_grid;
+      pin_position = RoutePt(
+          pos_on_grid.getX(), pos_on_grid.getY(), pin_position.layer());
     }
   }
 
-  pin.setOnGridPosition(pin_position);
+  pin.setOnGridPosition(odb::Point(pin_position.x(), pin_position.y()));
+  pin.setConnectionLayer(pin_position.layer());
 }
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
@@ -2221,7 +2230,7 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
       if (pins_not_covered.find(pin.getName()) != std::string::npos) {
         bool has_aps;
         odb::Point pos_on_grid;
-        std::vector<odb::Point> pin_positions_on_grid
+        std::vector<RoutePt> pin_positions_on_grid
             = findOnGridPositions(pin, has_aps, pos_on_grid, true);
         computePinPositionOnGrid(
             pin_positions_on_grid, pin, pos_on_grid, has_aps);

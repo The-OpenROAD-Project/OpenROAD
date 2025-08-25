@@ -303,8 +303,8 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  dbNet* in_db_net = db_network_->getOrFindFlatDbNet(in_net);
-  dbNet* out_db_net = db_network_->getOrFindFlatDbNet(out_net);
+  dbNet* in_db_net = db_network_->findFlatDbNet(in_net);
+  dbNet* out_db_net = db_network_->findFlatDbNet(out_net);
   // honor net dont-touch on input net or output net
   if ((in_db_net && in_db_net->isDoNotTouch())
       || (out_db_net && out_db_net->isDoNotTouch())) {
@@ -405,7 +405,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     }
   }
 
-  // Remove buffer from the database and handle the nets
+  // Disconnect the buffer and handle the nets
   debugPrint(logger_,
              RSZ,
              "remove_buffer",
@@ -423,10 +423,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
-  sta_->deleteInstance(buffer);
-  if (removed) {
-    sta_->deleteNet(removed);
-  }
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
@@ -445,6 +441,12 @@ void UnbufferMove::removeBuffer(Instance* buffer)
                db_network_->name(driver_pin),
                db_network_->name(in_net));
     db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
+  }
+
+  // Deletion
+  sta_->deleteInstance(buffer);
+  if (removed) {
+    sta_->deleteNet(removed);
   }
 
   estimate_parasitics_->removeNetFromParasiticsInvalid(removed);

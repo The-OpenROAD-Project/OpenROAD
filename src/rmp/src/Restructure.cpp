@@ -20,7 +20,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -75,7 +74,8 @@ void Restructure::reset()
 void Restructure::resynth(sta::Corner* corner)
 {
   ZeroSlackStrategy zero_slack_strategy(corner);
-  zero_slack_strategy.OptimizeDesign(open_sta_, name_generator_, logger_);
+  zero_slack_strategy.OptimizeDesign(
+      open_sta_, name_generator_, resizer_, logger_);
 }
 
 void Restructure::run(char* liberty_file_name,

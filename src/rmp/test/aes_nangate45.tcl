@@ -7,6 +7,8 @@ read_verilog ./aes_nangate45.v
 link_design aes_cipher_top
 read_sdc ./aes_nangate45.sdc
 
+# Unset dont use for tie cells
+unset_dont_use *LOGIC*
 
 puts "-- Before --\n"
 report_cell_usage

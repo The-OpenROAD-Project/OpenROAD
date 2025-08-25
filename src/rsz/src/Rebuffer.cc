@@ -1974,12 +1974,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
               && load_parent_inst != parent_in) {
             // make the flat connection
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
-            std::string preferred_connection_name;
-            // always make a unique name to avoid name clashes.
-            preferred_connection_name
-                = db_network_->getBlockOf(load_pin)->makeNewNetName();
-            db_network_->hierarchicalConnect(
-                mod_net_drvr, load_iterm, preferred_connection_name.c_str());
+            db_network_->hierarchicalConnect(mod_net_drvr, load_iterm);
           } else if (mod_net_in) {  // input hierarchical net
             db_network_->connectPin(
                 const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) mod_net_in);

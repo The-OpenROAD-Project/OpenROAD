@@ -239,6 +239,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
 
+  VertexSeq orderedLoadPinVertices();
+
   void setDontUse(LibertyCell* cell, bool dont_use);
   void resetDontUse();
   bool dontUse(const LibertyCell* cell);

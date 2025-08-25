@@ -54,7 +54,7 @@ def clock_tree_synthesis(
     sink_clustering_levels=None,
     num_static_layers=None,
     sink_clustering_buffer=None,
-    apply_ndr=False,
+    apply_ndr=None,
 ):
     cts = design.getTritonCts()
     parms = cts.getParms()
@@ -62,7 +62,6 @@ def clock_tree_synthesis(
     # Boolean
     parms.setSinkClustering(sink_clustering_enable)
     parms.setBalanceLevels(balance_levels)
-    parms.setApplyNDR(apply_ndr)
 
     if is_pos_int(sink_clustering_size):
         parms.setSinkClusteringSize(sink_clustering_size)
@@ -119,6 +118,9 @@ def clock_tree_synthesis(
         cts.setSinkBuffer(sink_clustering_buf)
     else:
         cts.setSinkBuffer("")
+
+    if apply_ndr != None:
+        parms.setApplyNDR(apply_ndr)
 
     if design.getBlock() == None:
         utl.error(utl.CTS, 604, "No design block found.")

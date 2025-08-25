@@ -40,6 +40,7 @@
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
+#include "utl/mem_stats.h"
 
 namespace rsz {
 
@@ -788,6 +789,8 @@ void RepairSetup::printProgress(const int iteration,
         delayAsString(tns, sta_, 1),
         max(0, num_viols),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");
+
+    debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   }
 
   if (end) {

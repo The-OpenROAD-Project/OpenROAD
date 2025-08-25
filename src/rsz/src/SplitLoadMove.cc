@@ -225,14 +225,10 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
-        std::string unique_connection_name
-            = db_network_->getBlockOf(load_pin)->makeNewNetName();
         odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
         odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
         if (load_pin_iterm && buffer_op_pin_iterm) {
-          db_network_->hierarchicalConnect(buffer_op_pin_iterm,
-                                           load_pin_iterm,
-                                           unique_connection_name.c_str());
+          db_network_->hierarchicalConnect(buffer_op_pin_iterm, load_pin_iterm);
         }
       } else {
         if (load_iterm && db_mod_load_net) {

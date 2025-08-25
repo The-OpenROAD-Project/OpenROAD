@@ -993,7 +993,7 @@ SteinerTree* EstimateParasitics::makeSteinerTree(const Pin* drvr_pin)
   /*
     Handle hierarchy. Make sure all traversal on dbNets.
    */
-  odb::dbNet* db_net = db_network_->getOrFindFlatDbNet(drvr_pin);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
   Net* net = db_network_->dbToSta(db_net);
 
   debugPrint(logger_, EST, "steiner", 1, "Net {}", sdc_network->pathName(net));
