@@ -236,22 +236,9 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
 
   dlogHierConnStart(source_pin, dest_pin, connection_name);
 
-  // 1. Get the scope (dbModule*) of the source and destination pins
-  dbModule* source_db_module = source_pin->getInst()->getModule();
-  dbModule* dest_db_module = dest_pin->getInst()->getModule();
-  // it is possible that one or other of the pins is not involved
-  // in hierarchy, which is ok, and the source/dest modnet will be null
-  dbModNet* source_db_mod_net = source_pin->getModNet();
-
   //
-  // 2. Make sure there is a direct flat net connection
-  // Recall the hierarchical connections are overlayed
-  // onto the flat db network, so we have both worlds
-  // co-existing, something we respect even when making
-  // new hierarchical connections.
+  // 1. Connect source and dest pins directly in flat flow
   //
-
-  // Connect source and dest pins directly in flat flow
   dbNet* source_db_net = source_pin->getNet();
   dbNet* dest_db_net = dest_pin->getNet();
   if (db_network_->hierarchy_ == false) {
@@ -278,6 +265,13 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     return;  // Done here in a flat flow
   }
 
+  //
+  // 2. Make sure there is a direct flat net connection
+  // Recall the hierarchical connections are overlayed
+  // onto the flat db network, so we have both worlds
+  // co-existing, something we respect even when making
+  // new hierarchical connections.
+  //
   if (!source_db_net) {
     dlogHierConnCreateFlatNet(connection_name);
     Net* new_net = db_network_->makeNet(
@@ -298,6 +292,13 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   // 3. Make the hierarchical connection.
   // in case when pins in different modules
   //
+
+  // Get the scope (dbModule*) of the source and destination pins
+  dbModule* source_db_module = source_pin->getInst()->getModule();
+  dbModule* dest_db_module = dest_pin->getInst()->getModule();
+  // it is possible that one or other of the pins is not involved
+  // in hierarchy, which is ok, and the source/dest modnet will be null
+  dbModNet* source_db_mod_net = source_pin->getModNet();
   if (source_db_module != dest_db_module) {
     //
     // 3.1. Attempt to factor connection (minimize punch through), and return
