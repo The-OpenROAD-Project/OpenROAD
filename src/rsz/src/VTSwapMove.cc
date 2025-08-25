@@ -48,13 +48,12 @@ bool VTSwapSpeedMove::doMove(const Path* drvr_path,
                     best_cell->name());
     addMove(drvr);
     return true;
-  } else {
-    debugMovePrint1("REJECT vt_swap {}: {} -> {} swap failed",
-                    network_->pathName(drvr_pin),
-                    drvr_cell->name(),
-                    best_cell->name());
   }
 
+  debugMovePrint1("REJECT vt_swap {}: {} -> {} swap failed",
+                  network_->pathName(drvr_pin),
+                  drvr_cell->name(),
+                  best_cell->name());
   return false;
 }
 
