@@ -7,7 +7,7 @@ namespace grt {
 GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
 {
   index_ = baseNet.getIndex();
-  name_ = baseNet.getDbNet()->getName();
+  db_net_ = baseNet.getDbNet();
   int numPins = baseNet.getNumPins();
   pin_access_points_.resize(numPins);
   for (CUGRPin& pin : baseNet.getPins()) {

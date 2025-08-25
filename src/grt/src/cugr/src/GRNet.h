@@ -1,7 +1,9 @@
 #pragma once
+
 #include "CUGR.h"
 #include "Design.h"
 #include "GridGraph.h"
+#include "odb/db.h"
 
 namespace grt {
 
@@ -11,7 +13,8 @@ class GRNet
   GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph);
 
   int getIndex() const { return index_; }
-  std::string getName() const { return name_; }
+  odb::dbNet* getDbNet() const { return db_net_; }
+  std::string getName() const { return db_net_->getName(); }
   int getNumPins() const { return pin_access_points_.size(); }
   const std::vector<std::vector<GRPoint>>& getPinAccessPoints() const
   {
@@ -31,7 +34,7 @@ class GRNet
 
  private:
   int index_;
-  std::string name_;
+  odb::dbNet* db_net_;
   std::vector<std::vector<GRPoint>> pin_access_points_;
   BoxT<int> bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
