@@ -1,0 +1,43 @@
+{
+    "name": "dbChipNet",
+    "type": "dbObject",
+    "fields": [
+        {
+            "name": "name_",
+            "type": "std::string",
+            "flags": [
+                "no-set"
+            ]
+        },
+        {
+            "name": "chip_",
+            "type": "dbId<_dbChip>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "chip_net_next_",
+            "type": "dbId<_dbChipNet>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "bump_insts_paths_",
+            "type": "std::vector<std::pair<std::vector<dbId<_dbChipInst>>, dbId<_dbChipBumpInst>>>",
+            "flags": [
+                "private"
+            ]
+        }
+    ],
+    "h_includes": [
+        "odb/dbId.h"
+    ],
+    "cpp_includes": [
+        "dbChipRegionInst.h",
+        "dbChipInst.h",
+        "dbChipBumpInst.h",
+        "dbChip.h"
+    ]
+}

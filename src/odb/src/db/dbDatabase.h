@@ -47,7 +47,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 116;  // Current revision number
+const uint db_schema_minor = 117;  // Current revision number
+
+// Revision where dbChipBump was added
+const uint db_schema_chip_bump = 117;
 
 // Revision where dbChipRegion was added
 const uint db_schema_chip_region = 116;
@@ -236,11 +239,15 @@ class _dbProperty;
 class _dbChipInst;
 class _dbChipRegionInst;
 class _dbChipConn;
+class _dbChipBumpInst;
+class _dbChipNet;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
 class dbChipRegionInstItr;
 class dbChipConnItr;
+class dbChipBumpInstItr;
+class dbChipNetItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
@@ -278,6 +285,8 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipInst>* chip_inst_tbl_;
   dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
   dbTable<_dbChipConn>* chip_conn_tbl_;
+  dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
+  dbTable<_dbChipNet>* chip_net_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
@@ -288,6 +297,8 @@ class _dbDatabase : public _dbObject
   dbChipInstItr* chip_inst_itr_;
   dbChipRegionInstItr* chip_region_inst_itr_;
   dbChipConnItr* chip_conn_itr_;
+  dbChipBumpInstItr* chip_bump_inst_itr_;
+  dbChipNetItr* chip_net_itr_;
   int _unique_id;
 
   utl::Logger* _logger;
