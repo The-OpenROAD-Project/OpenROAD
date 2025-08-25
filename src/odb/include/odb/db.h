@@ -106,6 +106,10 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipConn;
+class dbChipInst;
+class dbChipRegion;
+class dbChipRegionInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -1329,7 +1333,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbChip* chip,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
@@ -1339,7 +1343,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbBlock* block,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4989,7 +4993,7 @@ class dbLib : public dbObject
   static dbLib* create(dbDatabase* db,
                        const char* name,
                        dbTech* tech,
-                       char hierarchy_delimiter = 0);
+                       char hierarchy_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -6993,6 +6997,8 @@ class dbChip : public dbObject
 
   bool isTsv() const;
 
+  dbSet<dbChipRegion> getChipRegions() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7001,6 +7007,10 @@ class dbChip : public dbObject
   /// Returns nullptr if a top-block has NOT been created.
   ///
   dbBlock* getBlock();
+
+  dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
 
   ///
   /// Create a new chip.
@@ -7022,6 +7032,112 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
+class dbChipConn : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setThickness(int thickness);
+
+  int getThickness() const;
+
+  // User Code Begin dbChipConn
+
+  dbChip* getParentChip() const;
+
+  dbChipRegionInst* getTopRegion() const;
+
+  dbChipRegionInst* getBottomRegion() const;
+
+  std::vector<dbChipInst*> getTopRegionPath() const;
+
+  std::vector<dbChipInst*> getBottomRegionPath() const;
+
+  static dbChipConn* create(const std::string& name,
+                            dbChip* parent_chip,
+                            const std::vector<dbChipInst*>& top_region_path,
+                            dbChipRegionInst* top_region,
+                            const std::vector<dbChipInst*>& bottom_region_path,
+                            dbChipRegionInst* bottom_region);
+
+  static void destroy(dbChipConn* chipConn);
+  // User Code End dbChipConn
+};
+
+class dbChipInst : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setLoc(const Point3D& loc);
+
+  Point3D getLoc() const;
+
+  dbChip* getMasterChip() const;
+
+  dbChip* getParentChip() const;
+
+  // User Code Begin dbChipInst
+  void setOrient(const dbOrientType& orient);
+
+  dbOrientType getOrient() const;
+
+  dbTransform getTransform() const;
+
+  dbSet<dbChipRegionInst> getRegions() const;
+
+  static odb::dbChipInst* create(dbChip* parent_chip,
+                                 dbChip* master_chip,
+                                 const std::string& name);
+
+  static void destroy(dbChipInst* chipInst);
+  // User Code End dbChipInst
+};
+
+class dbChipRegion : public dbObject
+{
+ public:
+  enum class Side
+  {
+    FRONT,
+    BACK,
+    INTERNAL,
+    INTERNAL_EXT
+  };
+
+  std::string getName() const;
+
+  void setBox(const Rect& box);
+
+  Rect getBox() const;
+
+  // User Code Begin dbChipRegion
+  dbChip* getChip() const;
+
+  Side getSide() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbChipRegion* create(dbChip* chip,
+                              const std::string& name,
+                              Side side,
+                              dbTechLayer* layer);
+
+  // User Code End dbChipRegion
+};
+
+class dbChipRegionInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipRegionInst
+
+  dbChipInst* getChipInst() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  // User Code End dbChipRegionInst
+};
+
 class dbDatabase : public dbObject
 {
  public:
@@ -7030,6 +7146,12 @@ class dbDatabase : public dbObject
   dbChip* findChip(const char* name) const;
 
   dbSet<dbProperty> getProperties() const;
+
+  dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipRegionInst> getChipRegionInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
 
   // User Code Begin dbDatabase
 
@@ -8092,7 +8214,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
 
   static dbModNet* getModNet(dbBlock* block, uint id);
-  static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbModNet* create(dbModule* parentModule, const char* base_name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet

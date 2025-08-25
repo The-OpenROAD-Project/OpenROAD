@@ -142,6 +142,18 @@
       "name": "_prop_itr",
       "type": "dbPropertyItr*",
       "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "chipinsts_",
+      "type": "dbId<_dbChipInst>",
+      "flags": ["private"],
+      "schema":"db_schema_chip_inst"
+    },
+    {
+      "name": "conns_",
+      "type": "dbId<_dbChipConn>",
+      "flags": ["private"],
+      "schema": "db_schema_chip_region"
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],
@@ -155,6 +167,7 @@
     "dbBlockItr.h", 
     "dbBlock.h", 
     "dbTech.h", 
-    "dbPropertyItr.h"
+    "dbPropertyItr.h",
+    "dbChipConn.h"
   ]
 } 

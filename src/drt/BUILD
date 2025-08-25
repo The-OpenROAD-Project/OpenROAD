@@ -95,7 +95,6 @@ cc_library(
         "src/db/drObj/drVia.cpp",
         "src/db/infra/KDTree.cpp",
         "src/db/infra/frTime.cpp",
-        "src/db/infra/frTime_helper.cpp",
         "src/db/obj/frAccess.cpp",
         "src/db/obj/frInst.cpp",
         "src/db/obj/frInstTerm.cpp",

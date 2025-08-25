@@ -152,7 +152,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
-  _hier_delimiter = 0;
+  _hier_delimiter = '/';
   _left_bus_delimiter = 0;
   _right_bus_delimiter = 0;
   _num_ext_corners = 0;
@@ -3710,7 +3710,7 @@ std::string _dbBlock::makeNewName(
                    parent->getHierarchicalName(),
                    block->getHierarchyDelimiter());
   }
-  buf.append(base_name, base_name + std::strlen(base_name));
+  buf.append(fmt::string_view(base_name));
   buf.push_back('\0');  // Null-terminate for find* functions
 
   // If uniquify is IF_NEEDED*, check for uniqueness before adding a suffix.
