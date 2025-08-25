@@ -2483,7 +2483,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     exchange_swap_prob = 1.0f;
 
     // Large arrays need more steps to properly converge.
-    if (num_perturb_per_step <= number_of_sequence_pair_macros) {
+    if (number_of_sequence_pair_macros > num_perturb_per_step) {
       num_perturb_per_step *= 2;
     }
   }
