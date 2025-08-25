@@ -171,6 +171,42 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbChipInst.h", "dbChip.h"]
+    },
+    {
+      "name": "dbChipRegionInstItr",
+      "parentObject": "dbChipRegionInst",
+      "tableName": "chip_region_inst_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipInst.h", "dbChip.h"]
+    },
+    {
+      "name": "dbChipConnItr",
+      "parentObject": "dbChipConn",
+      "tableName": "chip_conn_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipConn.h", "dbChip.h"]
+    },
+    {
+      "name": "dbChipBumpInstItr",
+      "parentObject": "dbChipBumpInst",
+      "tableName": "chip_bump_inst_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipBumpInst.h", "dbChipRegionInst.h"]
+    },
+    {
+      "name": "dbChipNetItr",
+      "parentObject": "dbChipNet",
+      "tableName": "chip_net_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipNet.h", "dbChip.h"]
     }
   ],
   "relations":[
@@ -382,6 +418,22 @@
       "tbl_name":"_prop_tbl"
     },
     {
+      "parent":"dbChip",
+      "child":"dbChipRegion",
+      "type":"1_n", 
+      "flags": [],
+      "schema":"db_schema_chip_region",
+      "tbl_name":"chip_region_tbl_"
+    },
+    {
+      "parent":"dbChipRegion",
+      "child":"dbChipBump",
+      "type":"1_n", 
+      "flags": [],
+      "schema":"db_schema_chip_bump",
+      "tbl_name":"chip_bump_tbl_"
+    },
+    {
       "parent":"dbDatabase",
       "child":"dbChip",
       "type":"1_n",
@@ -403,6 +455,38 @@
       "type":"1_n",
       "tbl_name":"chip_inst_tbl_",
       "schema":"db_schema_chip_inst",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipRegionInst",
+      "type":"1_n",
+      "tbl_name":"chip_region_inst_tbl_",
+      "schema":"db_schema_chip_region",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipConn",
+      "type":"1_n",
+      "tbl_name":"chip_conn_tbl_",
+      "schema":"db_schema_chip_region",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipBumpInst",
+      "type":"1_n",
+      "tbl_name":"chip_bump_inst_tbl_",
+      "schema":"db_schema_chip_bump",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbChipNet",
+      "type":"1_n",
+      "tbl_name":"chip_net_tbl_",
+      "schema":"db_schema_chip_region",
       "flags": ["no-serial"]
     }
   ]

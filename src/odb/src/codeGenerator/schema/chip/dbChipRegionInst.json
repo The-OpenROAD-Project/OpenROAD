@@ -1,0 +1,32 @@
+{
+  "name": "dbChipRegionInst",
+  "type": "dbObject",
+  "fields": [
+      {
+          "name": "region_",
+          "type": "dbId<_dbChipRegion>",
+          "flags": ["private"]
+      },
+      {
+        "name":"parent_chipinst_",
+        "type":"dbId<_dbChipInst>",
+        "flags":["private"]
+      },
+      {
+        "name":"chip_region_inst_next_",
+        "type":"dbId<_dbChipRegionInst>",
+        "flags":["private"]
+      },
+      {
+        "name":"chip_bump_insts_",
+        "type":"dbId<_dbChipBumpInst>",
+        "flags":["private"]
+      }
+  ],
+  "h_includes": [
+      "odb/dbId.h"
+  ],
+  "cpp_includes": [
+      "dbChipRegion.h"
+  ]
+}

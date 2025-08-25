@@ -16,6 +16,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChip;
+class _dbChipRegionInst;
 
 class _dbChipInst : public _dbObject
 {
@@ -33,6 +34,7 @@ class _dbChipInst : public _dbObject
   dbId<_dbChip> master_chip_;
   dbId<_dbChip> parent_chip_;
   dbId<_dbChipInst> chipinst_next_;
+  dbId<_dbChipRegionInst> chip_region_insts_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipInst& obj);
