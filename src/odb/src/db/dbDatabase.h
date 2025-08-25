@@ -11,6 +11,7 @@
 #include <iostream>
 #include <set>
 
+#include "dbChipRegionInstItr.h"
 #include "odb/dbDatabaseObserver.h"
 namespace utl {
 class Logger;
@@ -46,7 +47,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 115;  // Current revision number
+const uint db_schema_minor = 116;  // Current revision number
+
+// Revision where dbChipRegion was added
+const uint db_schema_chip_region = 116;
 
 // Revision where dbChipInst was added
 const uint db_schema_chip_inst = 115;
@@ -230,9 +234,13 @@ class dbOStream;
 class _dbChip;
 class _dbProperty;
 class _dbChipInst;
+class _dbChipRegionInst;
+class _dbChipConn;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
+class dbChipRegionInstItr;
+class dbChipConnItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
@@ -268,6 +276,8 @@ class _dbDatabase : public _dbObject
   dbHashTable<_dbChip, 2> chip_hash_;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbChipInst>* chip_inst_tbl_;
+  dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
+  dbTable<_dbChipConn>* chip_conn_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* _tech_tbl;
@@ -276,6 +286,8 @@ class _dbDatabase : public _dbObject
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
   dbChipInstItr* chip_inst_itr_;
+  dbChipRegionInstItr* chip_region_inst_itr_;
+  dbChipConnItr* chip_conn_itr_;
   int _unique_id;
 
   utl::Logger* _logger;

@@ -37,6 +37,7 @@ class GuiChart : public Chart
   void setYAxisFormats(const std::vector<std::string>& formats) override;
   void setYAxisMin(const std::vector<std::optional<double>>& mins) override;
   void addPoint(double x, const std::vector<double>& ys) override;
+  void clearPoints() override;
 
   void addVerticalMarker(double x, const Painter::Color& color) override;
 
@@ -48,6 +49,14 @@ class GuiChart : public Chart
     double y_min{std::numeric_limits<double>::max()};
     double y_max{std::numeric_limits<double>::lowest()};
     bool has_min{false};
+
+    void clear()
+    {
+      series->clear();
+      y_min = std::numeric_limits<double>::max();
+      y_max = std::numeric_limits<double>::lowest();
+      has_min = false;
+    }
   };
 
   void addSeries(const std::string& label);
@@ -142,6 +151,15 @@ void GuiChart::addPoint(const double x, const std::vector<double>& ys)
     }
     series.y_axis->setMax(series.y_max);
   }
+}
+
+void GuiChart::clearPoints()
+{
+  for (Series& series : series_) {
+    series.clear();
+  }
+  x_min_ = std::numeric_limits<double>::max();
+  x_max_ = std::numeric_limits<double>::lowest();
 }
 
 void GuiChart::addVerticalMarker(const double x, const Painter::Color& color)

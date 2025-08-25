@@ -80,7 +80,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
 void SACoreSoftMacro::run()
 {
   if (graphics_) {
-    graphics_->startSA();
+    graphics_->startSA("soft", max_num_step_, num_perturb_per_step_);
   }
 
   fastSA();
