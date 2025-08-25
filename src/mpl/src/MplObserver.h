@@ -24,7 +24,11 @@ class MplObserver
   virtual void startCoarse() {}
   virtual void startFine() {}
 
-  virtual void startSA() {}
+  virtual void startSA(const char* type,
+                       int max_num_step,
+                       int num_perturb_per_step)
+  {
+  }
   virtual void saStep(const std::vector<SoftMacro>& macros) {}
   virtual void saStep(const std::vector<HardMacro>& macros) {}
   virtual void endSA(float norm_cost) {}

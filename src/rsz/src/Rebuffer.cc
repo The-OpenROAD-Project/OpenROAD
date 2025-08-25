@@ -1933,8 +1933,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         return 0;
       }
 
+      Pin* mod_net_drvr_pin = db_network_->dbToSta(mod_net_drvr);
       dbNet* db_load_net = db_network_->flatNet(load_pin);
-      odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
+      odb::dbNet* db_net = db_network_->flatNet(mod_net_drvr_pin);
       if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
@@ -1973,12 +1974,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
               && load_parent_inst != parent_in) {
             // make the flat connection
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
-            std::string preferred_connection_name;
-            // always make a unique name to avoid name clashes.
-            preferred_connection_name
-                = db_network_->getBlockOf(load_pin)->makeNewNetName();
-            db_network_->hierarchicalConnect(
-                mod_net_drvr, load_iterm, preferred_connection_name.c_str());
+            db_network_->hierarchicalConnect(mod_net_drvr, load_iterm);
           } else if (mod_net_in) {  // input hierarchical net
             db_network_->connectPin(
                 const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) mod_net_in);

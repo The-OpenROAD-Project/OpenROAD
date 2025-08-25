@@ -1336,7 +1336,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbChip* chip,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
@@ -1346,7 +1346,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbBlock* block,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4996,7 +4996,7 @@ class dbLib : public dbObject
   static dbLib* create(dbDatabase* db,
                        const char* name,
                        dbTech* tech,
-                       char hierarchy_delimiter = 0);
+                       char hierarchy_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7095,9 +7095,9 @@ class dbChipConn : public dbObject
 
   static dbChipConn* create(const std::string& name,
                             dbChip* parent_chip,
-                            std::vector<dbChipInst*> top_region_path,
+                            const std::vector<dbChipInst*>& top_region_path,
                             dbChipRegionInst* top_region,
-                            std::vector<dbChipInst*> bottom_region_path,
+                            const std::vector<dbChipInst*>& bottom_region_path,
                             dbChipRegionInst* bottom_region);
 
   static void destroy(dbChipConn* chipConn);
@@ -8281,7 +8281,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
 
   static dbModNet* getModNet(dbBlock* block, uint id);
-  static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbModNet* create(dbModule* parentModule, const char* base_name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet

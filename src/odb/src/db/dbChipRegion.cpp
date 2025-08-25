@@ -18,7 +18,6 @@
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTech.h"
-#include "dbTechLayer.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -200,7 +199,6 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
 
   return (dbChipRegion*) chip_region;
 }
-
 // User Code End dbChipRegionPublicMethods
 }  // namespace odb
 // Generator Code End Cpp

@@ -9,9 +9,6 @@
 
 #include "frBaseTypes.h"
 
-extern size_t getPeakRSS();
-extern size_t getCurrentRSS();
-
 namespace drt {
 class frTime
 {

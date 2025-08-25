@@ -36,6 +36,8 @@
 #error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
 #endif
 
+namespace utl {
+
 /**
  * Returns the peak (maximum so far) resident set size (physical
  * memory use) measured in bytes, or zero if the value cannot be
@@ -127,3 +129,5 @@ size_t getCurrentRSS()
   return (size_t) 0L; /* Unsupported. */
 #endif
 }
+
+}  // namespace utl

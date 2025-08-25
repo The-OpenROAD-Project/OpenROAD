@@ -171,11 +171,7 @@ void ClusteringEngine::setFloorplanShape()
 
 void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
 {
-  odb::Rect floorplan_shape(
-      block_->micronsToDbu(tree_->floorplan_shape.xMin()),
-      block_->micronsToDbu(tree_->floorplan_shape.yMin()),
-      block_->micronsToDbu(tree_->floorplan_shape.xMax()),
-      block_->micronsToDbu(tree_->floorplan_shape.yMax()));
+  odb::Rect floorplan_shape = micronsToDbu(block_, tree_->floorplan_shape);
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isFixed()
@@ -2105,7 +2101,7 @@ void ClusteringEngine::getHardMacros(odb::dbModule* module,
 }
 
 void ClusteringEngine::createOneClusterForEachMacro(
-    Cluster* parent,
+    Cluster* mixed_leaf_parent,
     const std::vector<HardMacro*>& hard_macros,
     std::vector<Cluster*>& macro_clusters)
 {
@@ -2116,7 +2112,7 @@ void ClusteringEngine::createOneClusterForEachMacro(
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
     macro_clusters.push_back(single_macro_cluster.get());
 
-    incorporateNewCluster(std::move(single_macro_cluster), parent);
+    incorporateNewCluster(std::move(single_macro_cluster), mixed_leaf_parent);
   }
 }
 

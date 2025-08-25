@@ -150,7 +150,8 @@ dbOrientType dbChipInst::getOrient() const
 dbTransform dbChipInst::getTransform() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
-  return dbTransform(obj->orient_, obj->loc_);
+  // TODO: Add 3d Point handling to the transform
+  return dbTransform(obj->orient_, Point(obj->loc_.x(), obj->loc_.y()));
 }
 
 dbSet<dbChipRegionInst> dbChipInst::getRegions() const

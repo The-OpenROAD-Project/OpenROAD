@@ -138,8 +138,9 @@ std::vector<dbChipInst*> dbChipConn::getTopRegionPath() const
   _dbChipConn* obj = (_dbChipConn*) this;
   _dbDatabase* _db = (_dbDatabase*) obj->getOwner();
   std::vector<dbChipInst*> top_region_path;
-  for (auto chipinst_id : obj->top_region_path_) {
-    top_region_path.push_back(
+  top_region_path.reserve(obj->top_region_path_.size());
+  for (const auto& chipinst_id : obj->top_region_path_) {
+    top_region_path.emplace_back(
         (dbChipInst*) _db->chip_inst_tbl_->getPtr(chipinst_id));
   }
   return top_region_path;
@@ -150,8 +151,9 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
   _dbChipConn* obj = (_dbChipConn*) this;
   _dbDatabase* _db = (_dbDatabase*) obj->getOwner();
   std::vector<dbChipInst*> bottom_region_path;
-  for (auto chipinst_id : obj->bottom_region_path_) {
-    bottom_region_path.push_back(
+  bottom_region_path.reserve(obj->bottom_region_path_.size());
+  for (const auto& chipinst_id : obj->bottom_region_path_) {
+    bottom_region_path.emplace_back(
         (dbChipInst*) _db->chip_inst_tbl_->getPtr(chipinst_id));
   }
   return bottom_region_path;
@@ -159,11 +161,12 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
 
 std::vector<dbId<_dbChipInst>> extractChipInstsPath(
     dbChip* parent_chip,
-    std::vector<dbChipInst*> chip_insts)
+    const std::vector<dbChipInst*>& chip_insts)
 {
   _dbDatabase* _db = (_dbDatabase*) parent_chip->getImpl()->getOwner();
   utl::Logger* logger = _db->getLogger();
   std::vector<dbId<_dbChipInst>> chip_insts_path;
+  chip_insts_path.reserve(chip_insts.size());
   for (auto chipinst : chip_insts) {
     if (chipinst->getParentChip() != parent_chip) {
       logger->error(utl::ODB,
@@ -173,18 +176,19 @@ std::vector<dbId<_dbChipInst>> extractChipInstsPath(
                     chipinst->getName(),
                     parent_chip->getName());
     }
-    chip_insts_path.push_back(chipinst->getImpl()->getOID());
+    chip_insts_path.emplace_back(chipinst->getImpl()->getOID());
     parent_chip = chipinst->getMasterChip();
   }
   return chip_insts_path;
 }
 
-dbChipConn* dbChipConn::create(const std::string& name,
-                               dbChip* parent_chip,
-                               std::vector<dbChipInst*> top_region_path,
-                               dbChipRegionInst* top_region,
-                               std::vector<dbChipInst*> bottom_region_path,
-                               dbChipRegionInst* bottom_region)
+dbChipConn* dbChipConn::create(
+    const std::string& name,
+    dbChip* parent_chip,
+    const std::vector<dbChipInst*>& top_region_path,
+    dbChipRegionInst* top_region,
+    const std::vector<dbChipInst*>& bottom_region_path,
+    dbChipRegionInst* bottom_region)
 {
   _dbDatabase* _db = (_dbDatabase*) top_region->getImpl()->getOwner();
   if (parent_chip == nullptr || top_region_path.empty()
