@@ -26,6 +26,7 @@
 #include "AbstractFastRouteRenderer.h"
 #include "AbstractGrouteRenderer.h"
 #include "AbstractRoutingCongestionDataSource.h"
+#include "CUGR.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
@@ -60,6 +61,7 @@ GlobalRouter::GlobalRouter()
       antenna_checker_(nullptr),
       opendp_(nullptr),
       fastroute_(nullptr),
+      cugr_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
@@ -108,6 +110,7 @@ void GlobalRouter::init(utl::Logger* logger,
   sta_ = sta;
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, stt_builder_);
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
@@ -308,19 +311,25 @@ void GlobalRouter::globalRoute(bool save_guides,
         delete grouter_cbk_;
         grouter_cbk_ = nullptr;
       } else {
-        clear();
-        block_ = db_->getChip()->getBlock();
+        if (use_cugr_) {
+          cugr_->init();
+          cugr_->route();
+          cugr_->write();
+        } else {
+          clear();
+          block_ = db_->getChip()->getBlock();
 
-        int min_layer, max_layer;
-        getMinMaxLayer(min_layer, max_layer);
+          int min_layer, max_layer;
+          getMinMaxLayer(min_layer, max_layer);
 
-        std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+          std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-        if (verbose_) {
-          reportResources();
+          if (verbose_) {
+            reportResources();
+          }
+
+          routes_ = findRouting(nets, min_layer, max_layer);
         }
-
-        routes_ = findRouting(nets, min_layer, max_layer);
       }
     } catch (...) {
       updateDbCongestion();
@@ -331,7 +340,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     updateDbCongestion();
     saveCongestion();
 
-    if (verbose_) {
+    if (verbose_ && !use_cugr_) {
       reportCongestion();
     }
     computeWirelength();
