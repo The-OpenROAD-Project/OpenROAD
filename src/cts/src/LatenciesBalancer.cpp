@@ -55,25 +55,29 @@ void LatenciesBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
-sta::ArcDelay LatenciesBalancer::computeBufferDelay(sta::LibertyCell *buffer_cell, float extra_out_cap)
+sta::ArcDelay LatenciesBalancer::computeBufferDelay(
+    sta::LibertyCell* buffer_cell,
+    float extra_out_cap)
 {
   sta::ArcDelay max_rise_delay = 0;
 
   sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   for (sta::Corner* corner : *openSta_->corners()) {
-    const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(sta::MinMax::max());
+    const sta::DcalcAnalysisPt* dcalc_ap
+        = corner->findDcalcAnalysisPt(sta::MinMax::max());
     const sta::Pvt* pvt = dcalc_ap->operatingConditions();
 
-    for (sta::TimingArcSet* arc_set : buffer_cell->timingArcSets(input, output)) {
+    for (sta::TimingArcSet* arc_set :
+         buffer_cell->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
-        sta::GateTimingModel* model = dynamic_cast<sta::GateTimingModel*>(arc->model());
+        sta::GateTimingModel* model
+            = dynamic_cast<sta::GateTimingModel*>(arc->model());
         const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
         // Only look at rise-rise arcs
-        if (model != nullptr &&
-            in_rf == sta::RiseFall::rise() &&
-            out_rf == sta::RiseFall::rise()) {
+        if (model != nullptr && in_rf == sta::RiseFall::rise()
+            && out_rf == sta::RiseFall::rise()) {
           float in_cap = input->capacitance(in_rf, sta::MinMax::max());
           float load_cap = in_cap + extra_out_cap;
           sta::ArcDelay arc_delay;
@@ -156,11 +160,12 @@ void LatenciesBalancer::buildGraph(odb::dbNet* clkInputNet)
           continue;
         }
 
-        if(isSink(sinkIterm)) {
+        if (isSink(sinkIterm)) {
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
-            float arrival = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
+            float arrival
+                = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
             graph_[sinkId].delay = arrival;
           }
           continue;
@@ -332,8 +337,7 @@ void LatenciesBalancer::balanceLatencies(int nodeId)
                  "For node {}, isert {:2f} buffers",
                  node->name,
                  (worseDelay_ - node->delay) / buffer_delay_);
-      node->nBuffInsert
-          = (int) ((worseDelay_ - node->delay) / buffer_delay_);
+      node->nBuffInsert = (int) ((worseDelay_ - node->delay) / buffer_delay_);
     }
     return;
   }
@@ -398,9 +402,8 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(
     const std::vector<odb::dbITerm*>& sinksInput)
 {
   // get bbox of current load pins without driver output pin
-  int maxSinkX = 0, maxSinkY = 0;
-  int minSinkX = std::numeric_limits<int>::max(),
-      minSinkY = std::numeric_limits<int>::max();
+  odb::Rect loadPinsBbox = odb::Rect();
+  loadPinsBbox.mergeInit();
   odb::dbNet* drivingNet = nullptr;
   debugPrint(logger_,
              CTS,
@@ -417,16 +420,11 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(
     sinkInput->disconnect();
     int sinkX, sinkY;
     sinkInput->getAvgXY(&sinkX, &sinkY);
-    maxSinkX = std::max(maxSinkX, sinkX);
-    maxSinkY = std::max(maxSinkY, sinkY);
-    minSinkX = std::min(minSinkX, sinkX);
-    minSinkY = std::min(minSinkY, sinkY);
+    loadPinsBbox.merge({sinkX, sinkY});
   }
 
-  int destX = (maxSinkX + minSinkX) / 2;
-  int destY = (maxSinkY + minSinkY) / 2;
-  float offsetX = (float) (destX - srcX) / (numBuffers + 1);
-  float offsetY = (float) (destY - srcY) / (numBuffers + 1);
+  float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (numBuffers + 1);
+  float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (numBuffers + 1);
   odb::dbInst* returnBuffer = nullptr;
   for (int i = 0; i < numBuffers; i++) {
     double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
@@ -546,7 +544,7 @@ bool LatenciesBalancer::isSink(odb::dbITerm* iterm)
 
 void LatenciesBalancer::showGraph()
 {
-  logger_->report("Graph builded:");
+  logger_->report("Graph built:");
   for (const auto& node : graph_) {
     odb::dbITerm* inputTerm = node.inputTerm;
     logger_->report(" Node {}", node.name);
