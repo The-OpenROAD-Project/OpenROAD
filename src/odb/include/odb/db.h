@@ -7145,7 +7145,8 @@ class dbChipNet : public dbObject
 
   dbChipBumpInst* getBumpInst(uint index, std::vector<dbChipInst*>& path) const;
 
-  void addBumpInst(dbChipBumpInst* bump_inst, std::vector<dbChipInst*> path);
+  void addBumpInst(dbChipBumpInst* bump_inst,
+                   const std::vector<dbChipInst*>& path);
 
   static dbChipNet* create(dbChip* chip, const std::string& name);
 

@@ -134,13 +134,14 @@ dbChipBumpInst* dbChipNet::getBumpInst(uint index,
 }
 
 void dbChipNet::addBumpInst(dbChipBumpInst* bump_inst,
-                            std::vector<dbChipInst*> path)
+                            const std::vector<dbChipInst*>& path)
 {
   _dbChipNet* obj = (_dbChipNet*) this;
 
   std::vector<dbId<_dbChipInst>> path_ids;
-  for (dbChipInst* inst : path) {
-    path_ids.push_back(inst->getImpl()->getOID());
+  path_ids.reserve(path.size());
+  for (const auto& inst : path) {
+    path_ids.emplace_back(inst->getImpl()->getOID());
   }
 
   obj->bump_insts_paths_.emplace_back(std::move(path_ids),
