@@ -1346,7 +1346,7 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
 void TimingControlsDialog::getClocks(sta::ClockSet* clock_set) const
 {
   for (const auto& clk : clock_box_->selectedItems()) {
-    clock_set->insert(clks_.at(clk));
+    clock_set->insert(clks_[clk]);
   }
 }
 
