@@ -26,9 +26,9 @@ fanout1/X                                20     20      0 (MET)
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -12.933 |   -75580.1 |   8000 | sink6389/D
-    final |       0 |       4 |       23 |      0 |     0 |    +0.2% |   -2.068 |    -4622.6 |   5206 | sink156/D
+    final |       0 |    1285 |       13 |      0 |     0 |    +0.1% |   -6.336 |   -22341.4 |   6400 | sink3015/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 23 buffers, 2 to split loads.
-[INFO RSZ-0051] Resized 4 instances: 4 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 13 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 1285 instances: 3 up, 1282 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -2.07
+worst slack max -6.34

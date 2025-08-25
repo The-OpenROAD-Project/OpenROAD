@@ -48,9 +48,9 @@ Path Type: max
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
-    final |       0 |       4 |        0 |      0 |     0 |   +22.2% |   -0.072 |       -0.1 |      1 | r2/D
+    final |       0 |       6 |        0 |      0 |     0 |   +30.0% |   -0.027 |       -0.0 |      1 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 4 instances: 0 up, 4 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 6 instances: 2 up, 4 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -62,20 +62,20 @@ Path Type: max
 -----------------------------------------------------------
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
-   0.000    0.000 ^ r1/CK (DFF_X1)
-   0.191    0.191 ^ r1/Q (DFF_X1)
-   0.017    0.208 ^ u1/A (BUF_X8)
-   0.031    0.240 ^ u1/Z (BUF_X8)
-   0.004    0.243 ^ u2/A (BUF_X8)
-   0.021    0.265 ^ u2/Z (BUF_X8)
-   0.004    0.268 ^ u3/A (BUF_X8)
-   0.020    0.288 ^ u3/Z (BUF_X8)
-   0.004    0.292 ^ u4/A (BUF_X8)
-   0.020    0.312 ^ u4/Z (BUF_X8)
-   0.004    0.316 ^ u5/A (BUF_X8)
-   0.025    0.341 ^ u5/Z (BUF_X8)
-   0.040    0.380 ^ r2/D (DFF_X1)
-            0.380   data arrival time
+   0.000    0.000 ^ r1/CK (DFF_X2)
+   0.152    0.152 ^ r1/Q (DFF_X2)
+   0.017    0.169 ^ u1/A (BUF_X8)
+   0.029    0.198 ^ u1/Z (BUF_X8)
+   0.004    0.202 ^ u2/A (BUF_X8)
+   0.021    0.222 ^ u2/Z (BUF_X8)
+   0.004    0.226 ^ u3/A (BUF_X8)
+   0.020    0.246 ^ u3/Z (BUF_X8)
+   0.004    0.250 ^ u4/A (BUF_X8)
+   0.021    0.271 ^ u4/Z (BUF_X8)
+   0.005    0.276 ^ u5/A (BUF_X16)
+   0.022    0.298 ^ u5/Z (BUF_X16)
+   0.038    0.336 ^ r2/D (DFF_X1)
+            0.336   data arrival time
 
    0.350    0.350   clock clk (rise edge)
    0.000    0.350   clock network delay (ideal)
@@ -85,8 +85,8 @@ Path Type: max
             0.308   data required time
 -----------------------------------------------------------
             0.308   data required time
-           -0.380   data arrival time
+           -0.336   data arrival time
 -----------------------------------------------------------
-           -0.072   slack (VIOLATED)
+           -0.027   slack (VIOLATED)
 
 

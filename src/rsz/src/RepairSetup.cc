@@ -143,7 +143,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
           }
           break;
         case MoveType::VTSWAP_SPEED:
-          if (!skip_vt_swap) {
+          if (!skip_vt_swap
+              && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
             move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
           }
           break;
@@ -157,6 +158,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     move_sequence.clear();
     if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move_.get());
+    }
+    if (!skip_vt_swap && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
+      move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
     }
     // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
@@ -827,17 +831,13 @@ bool RepairSetup::terminateProgress(const int iteration,
 
 // Perform some last fixing based on sizing only.
 // This is a greedy opto that does not degrade WNS or TNS.
-// TODO: add VT swap
 void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 {
-  /* TODO: Tune after more testing
   move_sequence.clear();
   move_sequence = {resizer_->vt_swap_speed_move_.get(),
-                   resizer_->size_down_move_.get(),
                    resizer_->size_up_match_move_.get(),
-                   resizer_->swap_pins_move_.get(),
-                   resizer_->unbuffer_move_.get()};
-  */
+                   resizer_->size_up_move_.get(),
+                   resizer_->swap_pins_move_.get()};
 
   // Sort remaining failing endpoints
   const VertexSet* endpoints = sta_->endpoints();
@@ -860,15 +860,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
     // clang-format off
     debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
                "because TNS is {:0.2f}", curr_tns);
-    // clang-format on
-    return;
-  }
-
-  // Don't do anything unless there was some progress from previous fixing
-  if ((params.initial_tns - curr_tns) / params.initial_tns < 0.05) {
-    // clang-format off
-    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
-               "because TNS was reduced by < 5% from previous fixing");
     // clang-format on
     return;
   }

@@ -19,6 +19,13 @@ class VTSwapSpeedMove : public BaseMove
               float setup_slack_margin) override;
 
   const char* name() override { return "VTSwapSpeed"; }
+
+ private:
+  bool isSwappable(const Path*& drvr_path,
+                   Pin*& drvr_pin,
+                   Instance*& drvr,
+                   LibertyCell*& drvr_cell,
+                   LibertyCell*& best_cell);
 };
 
 }  // namespace rsz
