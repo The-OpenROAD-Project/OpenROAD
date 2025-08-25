@@ -480,6 +480,25 @@ struct less<odb::dbChip*>
 };
 
 template <>
+struct less<odb::dbChipBump*>
+{
+  bool operator()(const odb::dbChipBump* lhs, const odb::dbChipBump* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbChipBumpInst*>
+{
+  bool operator()(const odb::dbChipBumpInst* lhs,
+                  const odb::dbChipBumpInst* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbChipConn*>
 {
   bool operator()(const odb::dbChipConn* lhs, const odb::dbChipConn* rhs) const
@@ -492,6 +511,15 @@ template <>
 struct less<odb::dbChipInst*>
 {
   bool operator()(const odb::dbChipInst* lhs, const odb::dbChipInst* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbChipNet*>
+{
+  bool operator()(const odb::dbChipNet* lhs, const odb::dbChipNet* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

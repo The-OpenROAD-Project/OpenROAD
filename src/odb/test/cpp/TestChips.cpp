@@ -55,6 +55,11 @@ struct F_CHIP_HIERARCHY
     io_chip_region_r1 = dbChipRegion::create(
         io_chip, "R1", dbChipRegion::Side::FRONT, layer_M1);
     dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
+    // create chip bumps
+    dbMaster* io_master
+        = createMaster1X1(lib2, "io_master", 100, 100, "in", "out");
+    dbInst* io_cell = dbInst::create(io_chip->getBlock(), io_master, "io_bump");
+    io_bump = dbChipBump::create(io_chip_region_r1, io_cell);
   }
   void createChipInsts()
   {
@@ -92,6 +97,7 @@ struct F_CHIP_HIERARCHY
   dbChipRegion* memory_chip_region_r2;
   dbChipRegion* memory_chip_region_r3;
   dbChipRegion* io_chip_region_r1;
+  dbChipBump* io_bump;
 };
 
 BOOST_FIXTURE_TEST_CASE(test_chip_creation, F_CHIP_HIERARCHY)
@@ -206,6 +212,7 @@ BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)
   // Clean up remaining instances
   dbChipInst::destroy(memory_inst);
   dbChipInst::destroy(io_inst);
+  BOOST_TEST(db->getChipBumpInsts().size() == 0);
   BOOST_TEST(db->getChipRegionInsts().size() == 0);
   BOOST_TEST(system_chip->getChipInsts().size() == 0);
 }
@@ -308,6 +315,63 @@ BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
     BOOST_TEST(true);
   }
 }
+
+BOOST_FIXTURE_TEST_CASE(test_chip_bumps, F_CHIP_HIERARCHY)
+{
+  BOOST_TEST(io_bump->getInst()->getName() == "io_bump");
+  BOOST_TEST(io_bump->getChip() == io_chip);
+  BOOST_TEST(io_bump->getChipRegion() == io_chip_region_r1);
+  BOOST_TEST(io_bump->getNet() == nullptr);
+  BOOST_TEST(io_bump->getBTerm() == nullptr);
+  dbNet* net = dbNet::create(io_chip->getBlock(), "net1");
+  dbBTerm* bterm = dbBTerm::create(net, "bterm1");
+  io_bump->setNet(net);
+  io_bump->setBTerm(bterm);
+  BOOST_TEST(io_bump->getNet() == net);
+  BOOST_TEST(io_bump->getBTerm() == bterm);
+
+  BOOST_TEST(io_chip_region_r1->getChipBumps().size() == 1);
+  BOOST_TEST(*io_chip_region_r1->getChipBumps().begin() == io_bump);
+
+  BOOST_TEST(db->getChipBumpInsts().size() == 1);
+
+  BOOST_TEST(io_inst->getRegions().size() == 1);
+  auto io_inst_region_r1 = *io_inst->getRegions().begin();
+  BOOST_TEST(io_inst_region_r1->getChipBumpInsts().size() == 1);
+  auto io_inst_region_r1_bump_inst
+      = *io_inst_region_r1->getChipBumpInsts().begin();
+  BOOST_TEST(io_inst_region_r1_bump_inst->getChipBump() == io_bump);
+  BOOST_TEST(io_inst_region_r1_bump_inst->getChipRegionInst()
+             == io_inst_region_r1);
+
+  // test chip nets
+  dbChipNet* chip_net = dbChipNet::create(system_chip, "net1");
+  BOOST_TEST(chip_net->getChip() == system_chip);
+  BOOST_TEST(chip_net->getNumBumpInsts() == 0);
+  BOOST_TEST(system_chip->getChipNets().size() == 1);
+  BOOST_TEST(db->getChipNets().size() == 1);
+  chip_net->addBumpInst(io_inst_region_r1_bump_inst, {io_inst});
+  auto memory_inst_region_r1_bump_inst
+      = (*(*memory_inst->getRegions().begin())->getChipBumpInsts().begin());
+  chip_net->addBumpInst(memory_inst_region_r1_bump_inst, {memory_inst});
+  BOOST_TEST(chip_net->getNumBumpInsts() == 2);
+  std::vector<dbChipInst*> path;
+  BOOST_TEST(chip_net->getBumpInst(0, path) == io_inst_region_r1_bump_inst);
+  BOOST_TEST(path.size() == 1);
+  BOOST_TEST(path[0] == io_inst);
+
+  dbMaster* io_master
+      = createMaster1X1(lib1, "io_master", 100, 100, "in", "out");
+  dbInst* io_cell
+      = dbInst::create(memory_chip->getBlock(), io_master, "io_bump");
+  try {
+    dbChipBump::create(io_chip_region_r1, io_cell);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
