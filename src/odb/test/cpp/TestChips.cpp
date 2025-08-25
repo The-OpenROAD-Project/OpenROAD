@@ -15,18 +15,49 @@ struct F_CHIP_HIERARCHY
     utl::Logger* logger = new utl::Logger();
     db = dbDatabase::create();
     db->setLogger(logger);
-
+    createLibsAndTechs();
+    createChips();
+    createChipRegions();
+    createChipInsts();
+  }
+  void createLibsAndTechs()
+  {
+    tech1 = dbTech::create(db, "tech1");
+    layer_l1 = dbTechLayer::create(tech1, "L1", dbTechLayerType::MASTERSLICE);
+    lib1 = dbLib::create(db, "lib1", tech1, ',');
+    tech2 = dbTech::create(db, "tech2");
+    layer_M1 = dbTechLayer::create(tech2, "M1", dbTechLayerType::MASTERSLICE);
+    lib2 = dbLib::create(db, "lib2", tech2, ',');
+  }
+  void createChips()
+  {
     system_chip = dbChip::create(db, "system_chip", dbChip::ChipType::HIER);
-    cpu_chip = dbChip::create(db, "cpu_chip", dbChip::ChipType::HIER);
-    memory_chip = dbChip::create(db, "memory_chip");
-    io_chip = dbChip::create(db, "io_chip");
-    cache_chip = dbChip::create(db, "cache_chip");
-
     system_chip->setWidth(5000);
     system_chip->setHeight(4000);
     system_chip->setThickness(500);
     system_chip->setOffset(Point(10, 0));
-    // Create chip instances in system
+    cpu_chip = dbChip::create(db, "cpu_chip", dbChip::ChipType::HIER);
+    memory_chip = dbChip::create(db, "memory_chip");
+    io_chip = dbChip::create(db, "io_chip");
+    cache_chip = dbChip::create(db, "cache_chip");
+    // Create blocks
+    dbBlock::create(memory_chip, "memory_block", tech1);
+    dbBlock::create(io_chip, "io_block", tech2);
+  }
+  void createChipRegions()
+  {
+    memory_chip_region_r1 = dbChipRegion::create(
+        memory_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
+    memory_chip_region_r2 = dbChipRegion::create(
+        memory_chip, "R2", dbChipRegion::Side::BACK, layer_l1);
+    memory_chip_region_r3 = dbChipRegion::create(
+        memory_chip, "R3", dbChipRegion::Side::INTERNAL, nullptr);
+    io_chip_region_r1 = dbChipRegion::create(
+        io_chip, "R1", dbChipRegion::Side::FRONT, layer_M1);
+    dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
+  }
+  void createChipInsts()
+  {
     cpu_inst = dbChipInst::create(system_chip, cpu_chip, "cpu_inst");
     memory_inst = dbChipInst::create(system_chip, memory_chip, "memory_inst");
     io_inst = dbChipInst::create(system_chip, io_chip, "io_inst");
@@ -42,6 +73,12 @@ struct F_CHIP_HIERARCHY
   ~F_CHIP_HIERARCHY() { dbDatabase::destroy(db); }
 
   dbDatabase* db;
+  dbTech* tech1;
+  dbTech* tech2;
+  dbLib* lib1;
+  dbLib* lib2;
+  dbTechLayer* layer_l1;
+  dbTechLayer* layer_M1;
   dbChip* system_chip;
   dbChip* cpu_chip;
   dbChip* memory_chip;
@@ -51,6 +88,10 @@ struct F_CHIP_HIERARCHY
   dbChipInst* memory_inst;
   dbChipInst* io_inst;
   dbChipInst* cache_inst;
+  dbChipRegion* memory_chip_region_r1;
+  dbChipRegion* memory_chip_region_r2;
+  dbChipRegion* memory_chip_region_r3;
+  dbChipRegion* io_chip_region_r1;
 };
 
 BOOST_FIXTURE_TEST_CASE(test_chip_creation, F_CHIP_HIERARCHY)
@@ -165,9 +206,108 @@ BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)
   // Clean up remaining instances
   dbChipInst::destroy(memory_inst);
   dbChipInst::destroy(io_inst);
+  BOOST_TEST(db->getChipRegionInsts().size() == 0);
   BOOST_TEST(system_chip->getChipInsts().size() == 0);
 }
+BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
+{
+  auto iterateChipRegions = [](dbChip* chip,
+                               std::set<std::string> region_names) {
+    BOOST_TEST(chip->getChipRegions().size() == region_names.size());
+    for (auto region : chip->getChipRegions()) {
+      BOOST_TEST((region_names.find(region->getName()) != region_names.end()));
+    }
+  };
+  auto iterateChipRegionInsts
+      = [](dbChipInst* chipinst, std::set<std::string> region_names) {
+          BOOST_TEST(chipinst->getRegions().size() == region_names.size());
+          for (auto region : chipinst->getRegions()) {
+            BOOST_TEST((region_names.find(region->getChipRegion()->getName())
+                        != region_names.end()));
+          }
+        };
+  // Test dbChipRegion methods
+  BOOST_TEST(memory_chip_region_r1->getName() == "R1");
+  BOOST_TEST((memory_chip_region_r1->getSide() == dbChipRegion::Side::FRONT));
+  BOOST_TEST(memory_chip_region_r1->getLayer() == layer_l1);
+  BOOST_TEST(memory_chip_region_r1->getChip() == memory_chip);
+  BOOST_TEST(
+      (memory_chip_region_r3->getSide() == dbChipRegion::Side::INTERNAL));
+  BOOST_TEST(memory_chip_region_r3->getLayer() == nullptr);
+  iterateChipRegions(memory_chip, {"R1", "R2", "R3"});
+  iterateChipRegionInsts(memory_inst, {"R1", "R2", "R3"});
+  iterateChipRegions(io_chip, {"R1"});
 
+  try {
+    dbChipRegion::create(cpu_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
+
+  try {
+    dbChipRegion::create(
+        memory_chip, "region_M1", dbChipRegion::Side::FRONT, layer_M1);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
+}
+
+BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
+{
+  dbChipRegionInst* cache_region_inst_r1
+      = (dbChipRegionInst*) (*cache_inst->getRegions().begin());
+  dbChipRegionInst* memory_region_inst_r1 = nullptr;
+  for (auto region : memory_inst->getRegions()) {
+    if (region->getChipRegion() == memory_chip_region_r1) {
+      memory_region_inst_r1 = region;
+      break;
+    }
+  }
+  BOOST_TEST(memory_region_inst_r1 != nullptr);
+  odb::dbChipConn* conn = odb::dbChipConn::create("CONN1",
+                                                  system_chip,
+                                                  {cpu_inst, cache_inst},
+                                                  cache_region_inst_r1,
+                                                  {memory_inst},
+                                                  memory_region_inst_r1);
+  BOOST_TEST(conn->getName() == "CONN1");
+  BOOST_TEST(conn->getTopRegion() == cache_region_inst_r1);
+  BOOST_TEST(conn->getBottomRegion() == memory_region_inst_r1);
+  BOOST_TEST(conn->getTopRegionPath().size() == 2);
+  BOOST_TEST(conn->getBottomRegionPath().size() == 1);
+  BOOST_TEST(conn->getTopRegionPath()[0] == cpu_inst);
+  BOOST_TEST(conn->getTopRegionPath()[1] == cache_inst);
+  BOOST_TEST(conn->getBottomRegionPath()[0] == memory_inst);
+  BOOST_TEST(db->getChipConns().size() == 1);
+  BOOST_TEST(system_chip->getChipConns().size() == 1);
+  dbChipConn::destroy(conn);
+  BOOST_TEST(db->getChipConns().size() == 0);
+  BOOST_TEST(system_chip->getChipConns().size() == 0);
+  try {
+    odb::dbChipConn::create("CONN2",
+                            system_chip,
+                            {cache_inst},
+                            cache_region_inst_r1,
+                            {memory_inst},
+                            memory_region_inst_r1);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
+  try {
+    odb::dbChipConn::create("CONN2",
+                            system_chip,
+                            {cache_inst},
+                            memory_region_inst_r1,
+                            {memory_inst},
+                            cache_region_inst_r1);
+    BOOST_TEST(false);
+  } catch (const std::exception& e) {
+    BOOST_TEST(true);
+  }
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
