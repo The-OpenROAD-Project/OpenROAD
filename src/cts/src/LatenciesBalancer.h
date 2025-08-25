@@ -77,7 +77,8 @@ class LatenciesBalancer
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
                             odb::dbITerm* iterm);
-  sta::ArcDelay computeBufferDelay(sta::LibertyCell *buffer_cell, float extra_out_cap);
+  sta::ArcDelay computeBufferDelay(sta::LibertyCell* buffer_cell,
+                                   float extra_out_cap);
   float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
