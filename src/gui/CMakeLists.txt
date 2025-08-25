@@ -69,6 +69,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/bufferTreeDescriptor.cpp
     src/chartsWidget.cpp
     src/GUIProgress.cpp
+    src/qComboCheckBoxes.cpp
     resources/resource.qrc
   )
 

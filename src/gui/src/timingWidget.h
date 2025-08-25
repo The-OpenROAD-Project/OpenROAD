@@ -20,10 +20,12 @@
 
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "sta/Clock.hh"
 
 namespace sta {
 class Pin;
 class dbSta;
+class Clock;
 }  // namespace sta
 
 namespace gui {
@@ -115,7 +117,8 @@ class TimingWidget : public QDockWidget
   void populateAndSortModels(const std::set<const sta::Pin*>& from,
                              const std::vector<std::set<const sta::Pin*>>& thru,
                              const std::set<const sta::Pin*>& to,
-                             const std::string& path_group_name);
+                             const std::string& path_group_name,
+                             sta::ClockSet* clks = nullptr);
   void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
 
