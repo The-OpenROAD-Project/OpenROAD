@@ -58,7 +58,7 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
 void SACoreHardMacro::run()
 {
   if (graphics_) {
-    graphics_->startSA();
+    graphics_->startSA("hard", max_num_step_, num_perturb_per_step_);
   }
 
   fastSA();
