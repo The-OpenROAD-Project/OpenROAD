@@ -185,6 +185,9 @@ NetRouteMap CUGR::getRoutes()
 {
   NetRouteMap routes;
   for (const GRNet* net : gr_nets_) {
+    if (net->getNumPins() < 2) {
+      continue;
+    }
     odb::dbNet* db_net = net->getDbNet();
     GRoute& route = routes[db_net];
 
