@@ -506,7 +506,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -564,7 +564,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -746,7 +746,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -800,7 +800,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -2546,7 +2546,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       // Reset weights so we can compare the final costs.
       sa->setWeights(placement_core_weights_);
 
-      if (sa->isValid(outline) && sa->getNormCost() < best_cost) {
+      if (sa->isValid() && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa.get();
       }

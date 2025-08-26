@@ -158,7 +158,7 @@ bool SimulatedAnnealingCore<T>::isValid() const
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::isValid(const Rect& outline) const
+bool SimulatedAnnealingCore<T>::fitsIn(const Rect& outline) const
 {
   return (width_ <= std::ceil(outline.getWidth()))
          && (height_ <= std::ceil(outline.getHeight()));
