@@ -40,8 +40,6 @@ class MetalLayer
   int num_tracks_;
 
   // Design rules
-  // Min area
-  int min_area_;
   int min_length_;
 
   // Parallel run spacing

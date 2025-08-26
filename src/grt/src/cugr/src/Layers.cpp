@@ -17,70 +17,61 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
 
   // Design rules not parsed thoroughly
   // Min area
-  min_area_ = static_cast<int>(std::round(tech_layer->getArea()));
-  min_length_ = std::max(min_area_ / width_ - width_, 0);
+  const int database_unit = tech_layer->getTech()->getDbUnitsPerMicron();
+  int min_area = static_cast<int>(
+      std::round(tech_layer->getArea() * database_unit * database_unit));
+  min_length_ = std::max(min_area / width_ - width_, 0);
 
-  // TODO: Handle parallel run spacing
-  // // Parallel run spacing
-  // auto spacingTable = tech_layer->getTechLayerSpacingTablePrlRules();
-  // if (spacingTable.empty()) {
-  //   printf("No spacing table for layer %s\n", name_.c_str());
-  // } else {
-  //   for (const auto& parallel : spacingTable) {
-  //     parallel->getTechLayerSpacingTablePrlRule()->getTable(
-  //         parallel_width_, parallel_length_, parallel_spacing_, _within_tbl);
-  //   }
-  //   for (unsigned tableIdx = 0; tableIdx < numSpacingTable; tableIdx++) {
-  //     if (!layer_->spacingTable(tableIdx)->isParallel()) {
-  //       continue;
-  //     }
-  //     const lefiParallel* parallel =
-  //     layer_->spacingTable(tableIdx)->parallel(); const int numLength =
-  //     parallel->numLength(); if (numLength > 0) {
-  //       parallel_length_.resize(numLength);
-  //       for (unsigned l = 0; l < numLength; l++) {
-  //         parallel_length_[l]
-  //             = static_cast<int>(std::round(parallel->length(l)));
-  //       }
-  //     }
-  //     const int numWidth = parallel->numWidth();
-  //     if (numWidth > 0) {
-  //       parallel_width_.resize(numWidth);
-  //       parallel_spacing_.resize(numWidth);
-  //       for (unsigned w = 0; w < numWidth; w++) {
-  //         parallel_width_[w]
-  //             = static_cast<int>(std::round(parallel->width(w)));
-  //         parallel_spacing_[w].resize(std::max(1, numLength), 0);
-  //         for (int l = 0; l < numLength; l++) {
-  //           parallel_spacing_[w][l] = static_cast<int>(
-  //               std::round(parallel->widthSpacing(w, l)));
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-  // default_spacing_ = getParallelSpacing(width_);
+  // Parallel run spacing
+  std::vector<std::vector<uint>> spacing_table;
+  std::vector<uint> widths;
+  std::vector<uint> lengths;
+  tech_layer->getV55SpacingTable(spacing_table);
+  tech_layer->getV55SpacingWidthsAndLengths(widths, lengths);
 
-  // TODO: Handle end-of-line spacing
-  // End-of-line spacing
-  // if (!layer_->hasSpacingNumber()) {
-  //   printf("No spacing rules for layer %s\n", name_.c_str());
-  // } else {
-  //   const int numSpace = layer_->numSpacing();
-  //   for (int spacingIdx = 0; spacingIdx < numSpace; ++spacingIdx) {
-  //     const int spacing
-  //         = static_cast<int>(std::round(layer_->spacing(spacingIdx)));
-  //     const int eolWidth = static_cast<int>(
-  //         std::round(layer_->spacingEolWidth(spacingIdx)));
-  //     const int eolWithin = static_cast<int>(
-  //         std::round(layer_->spacingEolWithin(spacingIdx)));
+  for (int table_idx = 0; table_idx < spacing_table.size(); table_idx++) {
+    const int num_length = lengths.size();
+    if (num_length > 0) {
+      parallel_length_.resize(num_length);
+      for (int l = 0; l < num_length; l++) {
+        parallel_length_[l] = static_cast<int>(std::round(lengths[l]));
+      }
+    }
 
-  //     // Pessimistic
-  //     max_eol_spacing_ = std::max(max_eol_spacing_, spacing);
-  //     max_eol_width_ = std::max(max_eol_width_, eolWidth);
-  //     max_eol_within_ = std::max(max_eol_within_, eolWithin);
-  //   }
-  // }
+    const int num_width = widths.size();
+    if (num_width > 0) {
+      parallel_width_.resize(num_width);
+      parallel_spacing_.resize(num_width);
+      for (int w = 0; w < num_width; w++) {
+        parallel_width_[w] = static_cast<int>(std::round(widths[w]));
+        parallel_spacing_[w].resize(std::max(1, num_length), 0);
+        for (int l = 0; l < num_length; l++) {
+          parallel_spacing_[w][l]
+              = static_cast<int>(std::round(spacing_table[w][l]));
+        }
+      }
+    }
+  }
+
+  default_spacing_ = getParallelSpacing(width_);
+
+  // // End-of-line spacing
+  auto spacing_rules = tech_layer->getV54SpacingRules();
+  for (auto rule : spacing_rules) {
+    const int spacing = static_cast<int>(std::round(rule->getSpacing()));
+    uint eol_width, eol_within, parallel_space, parallel_within;
+    bool parallel_edge, two_edges;
+    rule->getEol(eol_width,
+                 eol_within,
+                 parallel_edge,
+                 parallel_space,
+                 parallel_within,
+                 two_edges);
+    // Pessimistic
+    max_eol_spacing_ = std::max(max_eol_spacing_, spacing);
+    max_eol_width_ = std::max(max_eol_width_, static_cast<int>(eol_width));
+    max_eol_within_ = std::max(max_eol_within_, static_cast<int>(eol_within));
+  }
 }
 
 int MetalLayer::getTrackLocation(const int trackIndex) const
