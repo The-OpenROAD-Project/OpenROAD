@@ -98,6 +98,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
 
+  Tiling computeOverlapShape(const Rect& rect_a, const Rect& rect_b) const;
+
   std::vector<Rect> blockages_;
 
   Cluster* root_;
