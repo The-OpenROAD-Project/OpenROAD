@@ -188,17 +188,21 @@ NetRouteMap CUGR::getRoutes()
     odb::dbNet* db_net = net->getDbNet();
     GRoute& route = routes[db_net];
 
+    const int half_gcell_size = design_->getGridlineSize() / 2;
+
     auto& routing_tree = net->getRoutingTree();
     if (routing_tree) {
       GRTreeNode::preorder(routing_tree, [&](std::shared_ptr<GRTreeNode> node) {
         for (const auto& child : node->children) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
+            auto [min_x, max_x] = std::minmax(node->x, child->x);
+            auto [min_y, max_y] = std::minmax(node->y, child->y);
             GSegment segment(
-                grid_graph_->getGridline(0, std::min(node->x, child->x)) + design_->getGridlineSize() / 2,
-                grid_graph_->getGridline(1, std::min(node->y, child->y)) + design_->getGridlineSize() / 2,
+                grid_graph_->getGridline(0, min_x) + half_gcell_size,
+                grid_graph_->getGridline(1, min_y) + half_gcell_size,
                 node->getLayerIdx() + 1,
-                grid_graph_->getGridline(0, std::max(node->x, child->x)) + design_->getGridlineSize() / 2,
-                grid_graph_->getGridline(1, std::max(node->y, child->y)) + design_->getGridlineSize() / 2,
+                grid_graph_->getGridline(0, max_x) + half_gcell_size,
+                grid_graph_->getGridline(1, max_y) + half_gcell_size,
                 child->getLayerIdx() + 1,
                 false);
             route.push_back(segment);
@@ -209,13 +213,14 @@ NetRouteMap CUGR::getRoutes()
                 = std::max(node->getLayerIdx(), child->getLayerIdx());
             for (int layer_idx = bottom_layer; layer_idx < top_layer;
                  layer_idx++) {
-              GSegment segment(grid_graph_->getGridline(0, node->x) + design_->getGridlineSize() / 2,
-                               grid_graph_->getGridline(1, node->y) + design_->getGridlineSize() / 2,
-                               layer_idx + 1,
-                               grid_graph_->getGridline(0, node->x) + design_->getGridlineSize() / 2,
-                               grid_graph_->getGridline(1, node->y) + design_->getGridlineSize() / 2,
-                               layer_idx + 2,
-                               true);
+              GSegment segment(
+                  grid_graph_->getGridline(0, node->x) + half_gcell_size,
+                  grid_graph_->getGridline(1, node->y) + half_gcell_size,
+                  layer_idx + 1,
+                  grid_graph_->getGridline(0, node->x) + half_gcell_size,
+                  grid_graph_->getGridline(1, node->y) + half_gcell_size,
+                  layer_idx + 2,
+                  true);
               route.push_back(segment);
             }
           }
