@@ -1,7 +1,5 @@
 #include "Design.h"
 
-#include <unordered_map>
-
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"

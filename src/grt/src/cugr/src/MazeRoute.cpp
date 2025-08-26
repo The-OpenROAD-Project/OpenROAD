@@ -7,7 +7,7 @@ namespace grt {
 void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
 {
   // 0. Create pseudo pins
-  std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
+  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
   pseudo_pins_.reserve(selectedAccessPoints.size());
@@ -120,8 +120,8 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   }
 
   // 5. Add pseudo pin locations
-  std::unordered_map<int, int> xtoxi;
-  std::unordered_map<int, int> ytoyi;
+  robin_hood::unordered_map<int, int> xtoxi;
+  robin_hood::unordered_map<int, int> ytoyi;
   for (int xi = 0; xi < xs_.size(); xi++) {
     xtoxi.emplace(xs_[xi], xi);
   }
@@ -233,7 +233,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   }
 
   std::vector<bool> visited(net_->getNumPins(), false);
-  std::unordered_map<int, std::shared_ptr<SteinerTreeNode>> created;
+  robin_hood::unordered_map<int, std::shared_ptr<SteinerTreeNode>> created;
   for (auto& solution : solutions_) {
     std::shared_ptr<Solution> temp = solution;
     std::shared_ptr<SteinerTreeNode> lastNode = nullptr;

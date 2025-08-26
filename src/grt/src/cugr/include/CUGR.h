@@ -3,19 +3,17 @@
 #include "geo.h"
 
 // STL libraries
-#include <csignal>
-#include <iostream>
-#include <string>
-#include <vector>
-// #include <unordered_map>
-// #include <unordered_set>
 #include <bitset>
+#include <csignal>
 #include <fstream>
+#include <iostream>
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <string>
 #include <thread>
 #include <tuple>
+#include <vector>
 
 // Boost libraries
 #include <boost/foreach.hpp>

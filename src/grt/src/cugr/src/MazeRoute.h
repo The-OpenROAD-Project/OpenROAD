@@ -3,6 +3,7 @@
 #include "GRNet.h"
 #include "GridGraph.h"
 #include "PatternRoute.h"
+#include "robin_hood.h"
 
 namespace grt {
 
@@ -82,9 +83,7 @@ class SparseGraph
   std::vector<GRPoint> vertices_;
   std::vector<std::array<int, 3>> edges_;
   std::vector<std::array<CostT, 3>> costs_;
-  // std::unordered_map<int, std::vector<int>> vertexPins;
-  // std::vector<std::vector<int>> pinVertices;
-  std::unordered_map<int, int> vertex_pin_;
+  robin_hood::unordered_map<int, int> vertex_pin_;
   std::vector<int> pin_vertex_;
 };
 

@@ -1,6 +1,7 @@
 #include "PatternRoute.h"
 
 #include "stt/SteinerTreeBuilder.h"
+#include "robin_hood.h"
 
 namespace grt {
 
@@ -60,7 +61,7 @@ std::string PatternRoutingNode::getPythonString(
 void PatternRoute::constructSteinerTree()
 {
   // 1. Select access points
-  std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
+  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
 

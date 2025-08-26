@@ -335,7 +335,7 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT<int> loc) const
 
 void GridGraph::selectAccessPoints(
     GRNet* net,
-    std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>&
+    robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>&
         selected_access_points) const
 {
   selected_access_points.clear();
@@ -371,7 +371,7 @@ void GridGraph::selectAccessPoints(
       }
     }
     if (bestAccessDist.first == 0) {
-      printf("Warning: the pin is hard to access.");
+      printf("Warning: the pin is hard to access.\n");
     }
     const PointT<int> selectedPoint = accessPoints[bestIndex];
     const uint64_t hash = hashCell(selectedPoint.x, selectedPoint.y);

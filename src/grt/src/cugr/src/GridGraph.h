@@ -2,6 +2,7 @@
 #include "CUGR.h"
 #include "Design.h"
 #include "GRTree.h"
+#include "robin_hood.h"
 
 namespace grt {
 
@@ -72,7 +73,8 @@ class GridGraph
   // Misc
   void selectAccessPoints(
       GRNet* net,
-      std::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>&
+      robin_hood::unordered_map<uint64_t,
+                                std::pair<PointT<int>, IntervalT<int>>>&
           selected_access_points) const;
 
   // Methods for updating demands
