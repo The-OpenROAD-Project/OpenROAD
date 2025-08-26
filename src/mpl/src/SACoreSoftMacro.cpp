@@ -29,9 +29,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                  const Rect& outline,
                                  const std::vector<SoftMacro>& macros,
                                  const SACoreWeights& core_weights,
-                                 float boundary_weight,
-                                 float macro_blockage_weight,
-                                 float notch_weight,
+                                 const SASoftWeights& soft_weights,
                                  // notch threshold
                                  float notch_h_threshold,
                                  float notch_v_threshold,
@@ -66,9 +64,9 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                         block),
       root_(tree->root.get())
 {
-  boundary_weight_ = boundary_weight;
-  macro_blockage_weight_ = macro_blockage_weight;
-  notch_weight_ = notch_weight;
+  boundary_weight_ = soft_weights.boundary;
+  macro_blockage_weight_ = soft_weights.macro_blockage;
+  notch_weight_ = soft_weights.notch;
   resize_prob_ = resize_prob;
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;
@@ -429,7 +427,6 @@ void SACoreSoftMacro::calBoundaryPenalty()
 // 1) Number of macros to prioritize clusters with more macros.
 // 2) The macro area percentage over the cluster's total area so that
 //    mixed clusters with large std cell area have less penalty.
-
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
@@ -447,32 +444,22 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
 
   for (auto& blockage : blockages_) {
     for (const auto& macro_id : pos_seq_) {
-      if (macros_[macro_id].getNumMacro() > 0) {
-        const float soft_macro_x_min = macros_[macro_id].getX();
-        const float soft_macro_x_max
-            = soft_macro_x_min + macros_[macro_id].getWidth();
-        const float soft_macro_y_min = macros_[macro_id].getY();
-        const float soft_macro_y_max
-            = soft_macro_y_min + macros_[macro_id].getHeight();
-
-        const float overlap_width
-            = std::min(blockage.xMax(), soft_macro_x_max)
-              - std::max(blockage.xMin(), soft_macro_x_min);
-        const float overlap_height
-            = std::min(blockage.yMax(), soft_macro_y_max)
-              - std::max(blockage.yMin(), soft_macro_y_min);
+      const SoftMacro& soft_macro = macros_[macro_id];
+      if (soft_macro.getNumMacro() > 0) {
+        Tiling overlap_shape
+            = computeOverlapShape(blockage, soft_macro.getBBox());
 
         // If any of the dimensions is negative, then there's no overlap.
-        if (overlap_width < 0 || overlap_height < 0) {
+        if (overlap_shape.width() < 0 || overlap_shape.height() < 0) {
           continue;
         }
 
-        Cluster* cluster = macros_[macro_id].getCluster();
+        Cluster* cluster = soft_macro.getCluster();
         float macro_dominance = cluster->getMacroArea() / cluster->getArea();
 
-        macro_blockage_penalty_ += overlap_width * overlap_height
-                                   * macros_[macro_id].getNumMacro()
-                                   * macro_dominance;
+        macro_blockage_penalty_ += overlap_shape.width()
+                                   * overlap_shape.height()
+                                   * soft_macro.getNumMacro() * macro_dominance;
       }
     }
   }
@@ -965,6 +952,17 @@ void SACoreSoftMacro::moveFloorplan(const std::pair<float, float>& offset)
   }
 
   calPenalty();
+}
+
+Tiling SACoreSoftMacro::computeOverlapShape(const Rect& rect_a,
+                                            const Rect& rect_b) const
+{
+  const float overlap_width = std::min(rect_a.xMax(), rect_b.xMax())
+                              - std::max(rect_a.xMin(), rect_b.xMin());
+  const float overlap_height = std::min(rect_a.yMax(), rect_b.yMax())
+                               - std::max(rect_a.yMin(), rect_b.yMin());
+
+  return Tiling(overlap_width, overlap_height);
 }
 
 }  // namespace mpl
