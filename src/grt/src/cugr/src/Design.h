@@ -49,6 +49,8 @@ class Design
   void getAllObstacles(std::vector<std::vector<BoxT<int>>>& all_obstacles,
                        bool skip_m1 = true) const;
 
+  int getGridlineSize() const { return default_gridline_spacing_; }
+
  private:
   void read();
   void readLayers();
