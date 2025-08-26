@@ -48,6 +48,7 @@ using odb::dbInst;
 using odb::dbMaster;
 using odb::dbNet;
 using odb::dbRow;
+using odb::dbBPin;
 
 using utl::RAM;
 
@@ -93,18 +94,19 @@ dbNet* RamGen::makeNet(const std::string& prefix, const std::string& name) {
     return dbNet::create(block_, net_name.c_str());
 }
 
-dbNet* RamGen::makeBTerm(const std::string& name) {
+dbBTerm* RamGen::makeBTerm(const std::string& name) {
     auto net = dbNet::create(block_, name.c_str());
-    dbBTerm::create(net, name.c_str());
-    return net;
+    auto bTerm = dbBTerm::create(net, name.c_str());
+
+    return bTerm;
 }
 
-dbNet* RamGen::makeOutputBTerm(const std::string& name) {
+dbBTerm* RamGen::makeOutputBTerm(const std::string& name) {
     auto net = dbNet::create(block_, name.c_str());
     auto bTerm = dbBTerm::create(net, name.c_str());
 
     bTerm->setIoType(odb::dbIoType::OUTPUT);
-    return net;
+    return bTerm;
 }
 std::unique_ptr<Cell> RamGen::makeCellBit(const std::string& prefix,
     const int read_ports,
@@ -138,7 +140,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
     dbNet* write_enable,
     const vector<dbNet*>& selects,
     const array<dbNet*, 8>& data_input,
-    const vector<array<dbNet*, 8>>& data_output) {
+    const vector<array<dbBTerm*, 8>>& data_output) {
 
     vector<dbNet*> select_b_nets(selects.size());
     for (int i = 0; i < selects.size(); ++i) {
@@ -153,7 +155,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
         auto name = fmt::format("{}.bit{}", prefix, bit);
         vector<dbNet*> outs;
         for (int read_port = 0; read_port < read_ports; ++read_port) {
-            outs.push_back(data_output[read_port][bit]);
+            outs.push_back(data_output[read_port][bit]->getNet());
         }
 
         ram_grid.addCell(makeCellBit(
@@ -411,7 +413,7 @@ void RamGen::generate(const int bytes_per_word,
 
     auto clock = makeBTerm("clk");
 
-    vector<dbNet*> write_enable(bytes_per_word, nullptr);
+    vector<dbBTerm*> write_enable(bytes_per_word, nullptr);
     for (int byte = 0; byte < bytes_per_word; ++byte) {
         auto in_name = fmt::format("we[{}]", byte);
         write_enable[byte] = makeBTerm(in_name);
@@ -419,9 +421,9 @@ void RamGen::generate(const int bytes_per_word,
 
     //input bterms
     int numImputs = std::log2(word_count);
-    vector<dbNet*> addr(numImputs, nullptr);
+    vector<dbBTerm*> addr(numImputs, nullptr);
     for (int i = 0; i < numImputs; ++i) {
-        addr[i] = (makeBTerm(fmt::format("addr[{}]", i)));
+        addr[i] = makeBTerm(fmt::format("addr[{}]", i));
     }
 
     //vector of nets storing inverter nets
@@ -440,7 +442,7 @@ void RamGen::generate(const int bytes_per_word,
                 //places inverted address for each input
                 decoder_input_nets[word][input] = inv_addr[input];
             } else { //puts original input in invert nets
-                decoder_input_nets[word][input] = addr[input];
+                decoder_input_nets[word][input] = addr[input]->getNet();
             }
             word_num /= 2;
         }
@@ -449,17 +451,17 @@ void RamGen::generate(const int bytes_per_word,
     vector<dbNet*> decoder_output_nets;
 
     for (int col = 0; col < bytes_per_word; ++col) {
-        array<dbNet*, 8> D; //array for b-term for external inputs
+        array<dbBTerm*, 8> D; //array for b-term for external inputs
         array<dbNet*, 8> D_nets; //net for buffers
         for (int bit = 0; bit < 8; ++bit) {
             D[bit] = makeBTerm(fmt::format("D[{}]", bit + col * 8));
             D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
         }
 
-        vector<array<dbNet*, 8>> Q;
+        vector<array<dbBTerm*, 8>> Q;
         //if readports == 1, only have Q outputs
         if (read_ports == 1) {
-            array<dbNet*, 8> d;
+            array<dbBTerm*, 8> d;
             for (int bit = 0; bit < 8; ++bit) {
                 auto out_name = fmt::format("Q[{}]", bit + col * 8);
                 d[bit] = makeOutputBTerm(out_name);
@@ -467,8 +469,7 @@ void RamGen::generate(const int bytes_per_word,
             Q.push_back(d);
         } else {
             for (int read_port = 0; read_port < read_ports; ++read_port) {
-                array<dbNet*, 8> d;
-                // add in readport = 1, then name outputs as just Q
+                array<dbBTerm*, 8> d;
                 for (int bit = 0; bit < 8; ++bit) {
                     auto out_name = fmt::format("Q{}[{}]", read_port, bit + col * 8);
                     d[bit] = makeOutputBTerm(out_name);
@@ -477,25 +478,21 @@ void RamGen::generate(const int bytes_per_word,
             }
         }
 
-        vector<vector<dbNet*>> select_nets(word_count);
 
         for (int row = 0; row < word_count; ++row) {
 
 	    auto cell_name = fmt::format("storage_{}_{}", row, col);
             if (word_count == 2) {
                 decoder_output_nets.clear();
-                decoder_output_nets.push_back(row == 0 ? inv_addr[0] : addr[0]);
+                decoder_output_nets.push_back(row == 0 ? inv_addr[0] : addr[0]->getNet());
             } else {
                 decoder_output_nets = selectNets(cell_name, read_ports);
 
             }
-                //creates nets that decoders will use
-            select_nets.push_back(decoder_output_nets);
-
             
             makeCellByte(ram_grid, col,
                 cell_name, read_ports,
-                clock, write_enable[col],
+                clock->getNet(), write_enable[col]->getNet(),
                 decoder_output_nets, D_nets, Q);
             auto decoder_name = fmt::format("decoder_{}_{}", row, col);
             auto decoder_and_cell = makeDecoder(decoder_name, word_count, read_ports,
@@ -511,8 +508,9 @@ void RamGen::generate(const int bytes_per_word,
                 "buffer",
                 fmt::format("in[{}]", bit),
                 buffer_cell_,
-                { {"A", D[bit]}, {"X", D_nets[bit]} });
+                {{"A", D[bit]->getNet()}, {"X", D_nets[bit]}});
             ram_grid.addCell(std::move(buffer_cell), bit);
+	    
         }
 
     }
@@ -526,7 +524,7 @@ void RamGen::generate(const int bytes_per_word,
                 "decoder",
                 fmt::format("inv_{}", i),
                 inv_cell_,
-                { {"A", addr[i]}, {"Y", inv_addr[i]} });
+                { {"A", addr[i]->getNet()}, {"Y", inv_addr[i]} });
             cell_inv_layout->addCell(std::move(inv_cell));
             for (int filler_count = 0; filler_count < numImputs - 1; ++filler_count) {
                 cell_inv_layout->addCell(nullptr);
@@ -538,7 +536,7 @@ void RamGen::generate(const int bytes_per_word,
             "decoder",
             fmt::format("inv_{}", 0),
             inv_cell_,
-            { {"A", addr[0]}, {"Y", inv_addr[0]} });
+            { {"A", addr[0]->getNet()}, {"Y", inv_addr[0]} });
         cell_inv_layout->addCell(std::move(inv_cell));
     }
 
@@ -549,7 +547,6 @@ void RamGen::generate(const int bytes_per_word,
     ram_grid.setOrigin(ram_origin);
     ram_grid.gridInit(); 
     
-    //test code for dbRow
     auto db_libs = db_->getLibs().begin();
     auto db_sites = *(db_libs->getSites().begin());
     auto sites_width = db_sites->getWidth();

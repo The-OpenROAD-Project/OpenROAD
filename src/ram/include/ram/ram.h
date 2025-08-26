@@ -105,10 +105,10 @@ std::unique_ptr<Cell> makeCellBit(
        odb::dbNet* write_enable,
        const std::vector<odb::dbNet*>& selects,
        const std::array<odb::dbNet*, 8>& data_input, 
-       const std::vector<std::array<odb::dbNet*, 8>>& data_output);
+       const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
 
-  odb::dbNet* makeBTerm(const std::string& name);
-  odb::dbNet* makeOutputBTerm(const std::string& name);
+  odb::dbBTerm* makeBTerm(const std::string& name);
+  odb::dbBTerm* makeOutputBTerm(const std::string& name);
 
   std::unique_ptr<Cell> makeDecoder (const std::string& prefix,
       const int num_word, const int read_ports, 
