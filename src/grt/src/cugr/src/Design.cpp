@@ -259,8 +259,8 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& allObstacles,
   allObstacles.resize(getNumLayers());
 
   for (const BoxOnLayer& obs : obstacles_) {
-    if (obs.getLayerIdx() > 1 || !skipM1) {
-      allObstacles[obs.getLayerIdx() - 1].emplace_back(obs.x, obs.y);
+    if (obs.getLayerIdx() > 0 || !skipM1) {
+      allObstacles[obs.getLayerIdx()].emplace_back(obs.x, obs.y);
     }
   }
 }
