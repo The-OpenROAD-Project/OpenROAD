@@ -187,6 +187,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
     maxDiameterSet_ = true;
   }
   bool isMaxDiameterSet() const { return maxDiameterSet_; }
+  const std::vector<unsigned>& getSinkClusteringDiameters() { return sinkClusteringDiameters_; }
   unsigned getSinkClusteringSize() const { return sinkClustersSize_; }
   void setSinkClusteringSize(unsigned size)
   {
@@ -195,6 +196,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
     sinkClustersSizeSet_ = true;
   }
   bool isSinkClusteringSizeSet() const { return sinkClustersSizeSet_; }
+  const std::vector<unsigned>& getSinkClusteringSizes() { return sinkClusteringSizes_; }
+  void limitSinkClusteringSizes(unsigned limit);
   unsigned getSinkClusteringLevels() const { return sinkClusteringLevels_; }
   void setSinkClusteringLevels(unsigned levels)
   {
@@ -311,8 +314,10 @@ class CtsOptions : public odb::dbBlockCallBackObj
   int sinks_ = 0;
   double maxDiameter_ = 50;
   bool maxDiameterSet_ = false;
+  std::vector<unsigned> sinkClusteringDiameters_ = {50, 100, 200};
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
+  std::vector<unsigned> sinkClusteringSizes_ = {10, 20, 30};
   double macroMaxDiameter_ = 50;
   bool macroMaxDiameterSet_ = false;
   unsigned macroSinkClustersSize_ = 4;
