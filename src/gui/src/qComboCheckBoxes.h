@@ -20,20 +20,26 @@ class qComboCheckBoxes : public QComboBox
 {
   Q_OBJECT
  public:
-  qComboCheckBoxes(const char* name,
-                   const char* all_text = "All",
+  qComboCheckBoxes(const std::string& name,
+                   const std::string& all_text = "All",
                    QWidget* parent = nullptr);
   qComboCheckBoxes(const QString& name,
-                   const char* all_text = "All",
+                   const QString& all_text = "All",
                    QWidget* parent = nullptr);
   void clear();
 
-  void setName(const char* name) { name_item_->setText(QString(name)); };
+  void setName(const std::string& name)
+  {
+    name_item_->setText(QString::fromStdString(name));
+  };
   void setName(const QString& name) { name_item_->setText(name); };
   QString getName() { return name_item_->text(); };
   QStandardItem* getNameItem() { return name_item_; };
 
-  void setAllText(const char* text) { all_item_->setText(QString(text)); };
+  void setAllText(const std::string& text)
+  {
+    all_item_->setText(QString::fromStdString(text));
+  };
   void setAllText(const QString& text) { all_item_->setText(text); };
   QString getAllText() { return all_item_->text(); };
   QStandardItem* getAllItem() { return all_item_; };

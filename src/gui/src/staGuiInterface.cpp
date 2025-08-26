@@ -1026,7 +1026,8 @@ std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
 
 TimingPathList STAGuiInterface::getTimingPaths(const sta::Pin* thru) const
 {
-  return getTimingPaths({}, {{thru}}, {}, "" /* path group name */, nullptr);
+  return getTimingPaths(
+      {}, {{thru}}, {}, "" /* path group name */, nullptr /* clockset */);
 }
 
 TimingPathList STAGuiInterface::getTimingPaths(

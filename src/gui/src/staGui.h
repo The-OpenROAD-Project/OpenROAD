@@ -12,9 +12,9 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QListWidget>
 #include <QSpinBox>
-#include <QHash>
 #include <map>
 #include <memory>
 #include <set>
@@ -437,7 +437,7 @@ class TimingControlsDialog : public QDialog
   PinSetWidget* from_;
   std::vector<PinSetWidget*> thru_;
   PinSetWidget* to_;
-  QHash<QString, sta::Clock*> clks_;
+  QHash<QString, sta::Clock*> qstring_to_clk_;
 
   static constexpr int kThruStartRow = 4;
 

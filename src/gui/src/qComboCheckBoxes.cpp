@@ -7,12 +7,12 @@
 
 namespace gui {
 
-qComboCheckBoxes::qComboCheckBoxes(const char* name,
-                                   const char* all_text,
+qComboCheckBoxes::qComboCheckBoxes(const std::string& name,
+                                   const std::string& all_text,
                                    QWidget* parent)
     : QComboBox(parent),
-      name_item_(new QStandardItem(name)),
-      all_item_(new QStandardItem(all_text)),
+      name_item_(new QStandardItem(QString::fromStdString(name))),
+      all_item_(new QStandardItem(QString::fromStdString(all_text))),
       model_(new QStandardItemModel(this)),
       updating_check_boxes_(false)
 {
@@ -20,7 +20,7 @@ qComboCheckBoxes::qComboCheckBoxes(const char* name,
 }
 
 qComboCheckBoxes::qComboCheckBoxes(const QString& name,
-                                   const char* all_text,
+                                   const QString& all_text,
                                    QWidget* parent)
     : QComboBox(parent),
       name_item_(new QStandardItem(name)),

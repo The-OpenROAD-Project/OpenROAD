@@ -3,6 +3,7 @@
 
 #include "staGui.h"
 
+#include <qchar.h>
 #include <qglobal.h>
 
 #include <QAbstractItemView>
@@ -1111,7 +1112,9 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
       corner_box_(new QComboBox(this)),
-      clock_box_(new qComboCheckBoxes("Select Clocks", "All Clocks", this)),
+      clock_box_(new qComboCheckBoxes(QString("Select Clocks"),
+                                      QString("All Clocks"),
+                                      this)),
       unconstrained_(new QCheckBox(this)),
       one_path_per_endpoint_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
@@ -1250,8 +1253,8 @@ void TimingControlsDialog::populate()
   for (auto clk : *sta_->getClocks()) {
     QString clk_name = clk->name();
 
-    if (clks_.count(clk_name) != 1) {
-      clks_[clk_name] = clk;
+    if (qstring_to_clk_.count(clk_name) != 1) {
+      qstring_to_clk_[clk_name] = clk;
       QStandardItem* item = new QStandardItem(clk_name);
 
       item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
@@ -1345,8 +1348,8 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
 
 void TimingControlsDialog::getClocks(sta::ClockSet* clock_set) const
 {
-  for (const auto& clk : clock_box_->selectedItems()) {
-    clock_set->insert(clks_[clk]);
+  for (const auto& clk_name : clock_box_->selectedItems()) {
+    clock_set->insert(qstring_to_clk_[clk_name]);
   }
 }
 
