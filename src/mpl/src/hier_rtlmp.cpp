@@ -93,17 +93,17 @@ void HierRTLMP::setFenceWeight(float weight)
 
 void HierRTLMP::setBoundaryWeight(float weight)
 {
-  boundary_weight_ = weight;
+  cluster_placement_weights_.boundary = weight;
 }
 
 void HierRTLMP::setNotchWeight(float weight)
 {
-  notch_weight_ = weight;
+  cluster_placement_weights_.notch = weight;
 }
 
 void HierRTLMP::setMacroBlockageWeight(float weight)
 {
-  macro_blockage_weight_ = weight;
+  cluster_placement_weights_.macro_blockage = weight;
 }
 
 void HierRTLMP::setGlobalFence(float fence_lx,
@@ -304,9 +304,9 @@ void HierRTLMP::resetSAParameters()
 
   placement_core_weights_.fence = 0.0;
 
-  boundary_weight_ = 0.0;
-  notch_weight_ = 0.0;
-  macro_blockage_weight_ = 0.0;
+  cluster_placement_weights_.boundary = 0.0;
+  cluster_placement_weights_.notch = 0.0;
+  cluster_placement_weights_.macro_blockage = 0.0;
 }
 
 void HierRTLMP::runCoarseShaping()
@@ -475,9 +475,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               new_outline,
                                               macros,
                                               shaping_core_weights_,
-                                              0.0,  // boundary weight
-                                              0.0,  // macro blockage
-                                              0.0,  // notch weight
+                                              SASoftWeights(),
                                               0.0,  // no notch size
                                               0.0,  // no notch size
                                               pos_swap_prob_ / action_sum,
@@ -535,9 +533,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               new_outline,
                                               macros,
                                               shaping_core_weights_,
-                                              0.0,  // boundary weight
-                                              0.0,  // macro blockage
-                                              0.0,  // notch weight
+                                              SASoftWeights(),
                                               0.0,  // no notch size
                                               0.0,  // no notch size
                                               pos_swap_prob_ / action_sum,
@@ -1320,9 +1316,9 @@ void HierRTLMP::adjustMacroBlockageWeight()
                "Tree max level is {}, Changing macro blockage weight from {} "
                "to {} (half of the outline weight)",
                tree_->max_level,
-               macro_blockage_weight_,
+               cluster_placement_weights_.macro_blockage,
                new_macro_blockage_weight);
-    macro_blockage_weight_ = new_macro_blockage_weight;
+    cluster_placement_weights_.macro_blockage = new_macro_blockage_weight;
   }
 }
 
@@ -1603,9 +1599,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               placement_core_weights_,
-                                              boundary_weight_,
-                                              macro_blockage_weight_,
-                                              notch_weight_,
+                                              cluster_placement_weights_,
                                               notch_h_th_,
                                               notch_v_th_,
                                               pos_swap_prob_ / action_sum,
@@ -1991,9 +1985,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               placement_core_weights_,
-                                              boundary_weight_,
-                                              macro_blockage_weight_,
-                                              notch_weight_,
+                                              cluster_placement_weights_,
                                               notch_h_th_,
                                               notch_v_th_,
                                               pos_swap_prob_ / action_sum,

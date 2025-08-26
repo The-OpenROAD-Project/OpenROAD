@@ -27,9 +27,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   const SACoreWeights& core_weights,
-                  float boundary_weight,
-                  float macro_blockage_weight,
-                  float notch_weight,
+                  const SASoftWeights& soft_weights,
                   // notch threshold
                   float notch_h_threshold,
                   float notch_v_threshold,

@@ -29,9 +29,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                  const Rect& outline,
                                  const std::vector<SoftMacro>& macros,
                                  const SACoreWeights& core_weights,
-                                 float boundary_weight,
-                                 float macro_blockage_weight,
-                                 float notch_weight,
+                                 const SASoftWeights& soft_weights,
                                  // notch threshold
                                  float notch_h_threshold,
                                  float notch_v_threshold,
@@ -66,9 +64,9 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                         block),
       root_(tree->root.get())
 {
-  boundary_weight_ = boundary_weight;
-  macro_blockage_weight_ = macro_blockage_weight;
-  original_notch_weight_ = notch_weight;
+  boundary_weight_ = soft_weights.boundary;
+  macro_blockage_weight_ = soft_weights.macro_blockage;
+  original_notch_weight_ = soft_weights.notch;
   resize_prob_ = resize_prob;
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;
