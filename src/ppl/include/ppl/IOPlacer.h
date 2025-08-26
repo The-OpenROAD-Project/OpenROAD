@@ -163,6 +163,10 @@ class IOPlacer
                     int end,
                     Edge edge,
                     std::vector<Section>& sections);
+  void findSectionsPolygon(int begin,
+                    int end,
+                    odb::Line poly_edge,
+                    std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
@@ -175,9 +179,13 @@ class IOPlacer
   void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
+  void createSectionsPerEdgePolygon(odb::Line poly_edge, const std::set<int>& layers);
+  bool isPointOnLine(const odb::Point& point, const odb::Line& line) const;
   void createSections();
+  void createSectionsPolygon();
   void addGroupToFallback(const std::vector<int>& pin_group, bool order);
   bool assignPinsToSections(int assigned_pins_count);
+  bool assignPinsToSectionsPolygon(int assigned_pins_count);
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
