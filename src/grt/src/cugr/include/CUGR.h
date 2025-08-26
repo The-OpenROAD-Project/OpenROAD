@@ -1,6 +1,7 @@
 #pragma once
 
 #include "geo.h"
+#include "grt/GRoute.h"
 
 // STL libraries
 #include <bitset>
@@ -86,6 +87,7 @@ class CUGR
   void init();
   void route();
   void write(std::string guide_file = "");
+  NetRouteMap getRoutes();
 
  private:
   void sortNetIndices(std::vector<int>& netIndices) const;

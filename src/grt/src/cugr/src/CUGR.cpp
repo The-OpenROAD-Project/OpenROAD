@@ -181,6 +181,52 @@ void CUGR::write(std::string guide_file)
   fout.close();
 }
 
+NetRouteMap CUGR::getRoutes()
+{
+  NetRouteMap routes;
+  for (const GRNet* net : gr_nets_) {
+    odb::dbNet* db_net = net->getDbNet();
+    GRoute& route = routes[db_net];
+
+    auto& routing_tree = net->getRoutingTree();
+    if (routing_tree) {
+      GRTreeNode::preorder(routing_tree, [&](std::shared_ptr<GRTreeNode> node) {
+        for (const auto& child : node->children) {
+          if (node->getLayerIdx() == child->getLayerIdx()) {
+            GSegment segment(
+                grid_graph_->getGridline(0, std::min(node->x, child->x)) + design_->getGridlineSize() / 2,
+                grid_graph_->getGridline(1, std::min(node->y, child->y)) + design_->getGridlineSize() / 2,
+                node->getLayerIdx() + 1,
+                grid_graph_->getGridline(0, std::max(node->x, child->x)) + design_->getGridlineSize() / 2,
+                grid_graph_->getGridline(1, std::max(node->y, child->y)) + design_->getGridlineSize() / 2,
+                child->getLayerIdx() + 1,
+                false);
+            route.push_back(segment);
+          } else {
+            const int bottom_layer
+                = std::min(node->getLayerIdx(), child->getLayerIdx());
+            const int top_layer
+                = std::max(node->getLayerIdx(), child->getLayerIdx());
+            for (int layer_idx = bottom_layer; layer_idx < top_layer;
+                 layer_idx++) {
+              GSegment segment(grid_graph_->getGridline(0, node->x) + design_->getGridlineSize() / 2,
+                               grid_graph_->getGridline(1, node->y) + design_->getGridlineSize() / 2,
+                               layer_idx + 1,
+                               grid_graph_->getGridline(0, node->x) + design_->getGridlineSize() / 2,
+                               grid_graph_->getGridline(1, node->y) + design_->getGridlineSize() / 2,
+                               layer_idx + 2,
+                               true);
+              route.push_back(segment);
+            }
+          }
+        }
+      });
+    }
+  }
+
+  return routes;
+}
+
 void CUGR::sortNetIndices(std::vector<int>& netIndices) const
 {
   std::vector<int> halfParameters(gr_nets_.size());

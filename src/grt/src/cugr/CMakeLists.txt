@@ -23,6 +23,10 @@ target_compile_options(CUGR
 target_include_directories(CUGR
   PUBLIC
     include
+  PRIVATE
+    # Ugly but necessary to get GRoute.h and avoid a circular dependency
+    # with FastRoute.  Remove once this data moves to OpenDB
+    ../../include
 )
 
 target_link_libraries(CUGR
