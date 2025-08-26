@@ -82,7 +82,7 @@ int cmd_argc;
 char** cmd_argv;
 static const char* log_filename = nullptr;
 static const char* metrics_filename = nullptr;
-static std::set<std::string>* commands = nullptr;
+static std::unique_ptr<std::set<std::string>> commands;
 static bool no_settings = false;
 static bool minimize = false;
 
@@ -296,7 +296,6 @@ int main(int argc, char* argv[])
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
-  delete commands;
   return 0;
 }
 
@@ -373,9 +372,9 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
 
 static int TraceTclCommand(
     ClientData clientData,
-    Tcl_Interp *interp,
-    int level,
-    const char *command,
+    Tcl_Interp* interp,
+    int /* level */,
+    const char* /* command */,
     Tcl_Command commandToken,
     int objc,
     Tcl_Obj *const objv[])
@@ -391,7 +390,12 @@ static int TraceTclCommand(
     }
     utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
     if(commands->count(Tcl_GetString(objv[0]))){
-      logger->report("[CMD] "+cmd_str);
+      Tcl_Obj *fullName = Tcl_NewObj();
+      Tcl_GetCommandFullName(interp, commandToken, fullName);
+      string fullName_str = Tcl_GetString(fullName);
+      if(fullName_str.compare(0, 7, "::sta::") ==0){
+        logger->report("[CMD] "+cmd_str);
+      }
     }
     return TCL_OK;
 }
@@ -456,7 +460,7 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
-    commands = new std::set<std::string>();
+    commands = std::make_unique<std::set<std::string>>();
     if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
       Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
       int cmd_size;
@@ -471,9 +475,9 @@ static int tclAppInit(int& argc,
     Tcl_CreateObjTrace(
           interp,
           0,
-          TCL_ALLOW_INLINE_COMPILATION, //In this case, traces on built-in commands may or may not result in trace callbacks.
+          TCL_ALLOW_INLINE_COMPILATION,
           TraceTclCommand,
-          commands,
+          commands.get(),
           nullptr
     );
     const char* threads = findCmdLineKey(argc, argv, "-threads");
