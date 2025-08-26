@@ -511,6 +511,10 @@ void RamGen::generate(const int bytes_per_word,
                 {{"A", D[bit]->getNet()}, {"X", D_nets[bit]}});
             ram_grid.addCell(std::move(buffer_cell), bit);
 	    
+	    // Work in Progress
+	    auto bit_BPin = dbBPin::create(D[bit]);
+	    auto access_pin = odb::dbAccessPoint::create(bit_BPin);
+
         }
 
     }
