@@ -1,0 +1,165 @@
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13156, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13189, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13222, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13255, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13288, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13321, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13354, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 14748, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 14781, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 14814, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: ./asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+-- Before --
+
+Cell type report:                       Count       Area
+  Buffer                                 1081      78.80
+  Inverter                                458      20.03
+  Sequential cell                         562     163.88
+  Multi-Input combinational cell         9806    1050.62
+  Total                                 11907    1313.34
+[-30.917,  54.906): ***** (21)
+[ 54.906, 140.728): ********************** (92)
+[140.728, 226.551): *********** (47)
+[226.551, 312.373): ************************************************** (212)
+[312.373, 398.196): ******* (29)
+[398.196, 484.018): **** (19)
+[484.018, 569.841): ** (10)
+[569.841, 655.664): * (3)
+[655.664, 741.486): ****************************** (129)
+[741.486, 827.309]: ****************************** (129)
+Startpoint: ld (input port clocked by core_clock)
+Endpoint: u0/subword[19]$_DFF_P_
+          (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+ 200.00  200.00 ^ input external delay
+   0.00  200.00 ^ ld (in)
+  43.55  243.55 ^ _12054_/Y (BUFx2_ASAP7_75t_R)
+  61.28  304.83 ^ _12066_/Y (BUFx2_ASAP7_75t_R)
+  61.08  365.91 ^ _12067_/Y (BUFx2_ASAP7_75t_R)
+  48.16  414.07 ^ _12197_/Y (OA21x2_ASAP7_75t_R)
+  65.83  479.90 ^ _12198_/Y (BUFx2_ASAP7_75t_R)
+  78.77  558.68 v _13022_/Y (INVx1_ASAP7_75t_R)
+  85.51  644.19 ^ _23139_/CON (HAxp5_ASAP7_75t_R)
+  39.37  683.56 v _23139_/SN (HAxp5_ASAP7_75t_R)
+  56.95  740.51 v _13045_/Y (BUFx2_ASAP7_75t_R)
+  53.72  794.23 v _13111_/Y (OA21x2_ASAP7_75t_R)
+  46.41  840.64 v _13289_/Y (AO221x1_ASAP7_75t_R)
+  52.20  892.84 v _13290_/Y (OA211x2_ASAP7_75t_R)
+  42.82  935.66 v _13295_/Y (OR3x1_ASAP7_75t_R)
+  52.15  987.81 v _13296_/Y (OA211x2_ASAP7_75t_R)
+  33.57 1021.38 v _13297_/Y (AO21x1_ASAP7_75t_R)
+   0.00 1021.38 v u0/subword[19]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+        1021.38   data arrival time
+
+1000.00 1000.00   clock core_clock (rise edge)
+   0.00 1000.00   clock network delay (ideal)
+   0.00 1000.00   clock reconvergence pessimism
+        1000.00 ^ u0/subword[19]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+  -9.54  990.46   library setup time
+         990.46   data required time
+---------------------------------------------------------
+         990.46   data required time
+        -1021.38   data arrival time
+---------------------------------------------------------
+         -30.92   slack (VIOLATED)
+
+
+wns max -30.92
+tns max -191.30
+-- After --
+
+Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
+[INFO RMP-0052] Resynthesis: starting simulated annealing
+[INFO RMP-0053] Initial temperature: 9.712329e-10
+[INFO RMP-0054] Iteration: 10, temperature: 6.79863e-10
+[INFO RMP-0054] Iteration: 20, temperature: 3.5611872e-10
+[INFO RMP-0054] Iteration: 30, temperature: 3.237443e-11
+[INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
+[INFO RMP-0056] Resynthesis: Applying ABC operations
+[ 14.281,  95.583): ******* (30)
+[ 95.583, 176.886): **************************** (122)
+[176.886, 258.189): ** (8)
+[258.189, 339.492):  (0)
+[339.492, 420.795):  (0)
+[420.795, 502.097): ************************************************** (221)
+[502.097, 583.400): *********** (48)
+[583.400, 664.703): * (3)
+[664.703, 746.006): ***************************** (130)
+[746.006, 827.309]: ***************************** (129)
+Cell type report:                       Count       Area
+  Buffer                                  990      72.03
+  Inverter                                596      26.80
+  Sequential cell                         562     163.88
+  Multi-Input combinational cell        10198    1054.29
+  Total                                 12346    1317.00
+Startpoint: u0/w[0][1]$_DFF_P_
+            (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: u0/subword[8]$_DFF_P_
+          (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u0/w[0][1]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+  84.80   84.80 ^ u0/w[0][1]$_DFF_P_/QN (DFFHQNx1_ASAP7_75t_R)
+  56.35  141.15 ^ cut_74716/Y (XOR2xp5_ASAP7_75t_R)
+  74.24  215.39 ^ cut_74717/Y (XOR2xp5_ASAP7_75t_R)
+  47.20  262.59 ^ cut_74718/Y (XOR2xp5_ASAP7_75t_R)
+  41.79  304.39 v cut_74720/Y (AOI21xp33_ASAP7_75t_R)
+  74.12  378.51 ^ cut_74721/Y (INVx1_ASAP7_75t_R)
+  84.57  463.08 v _13443_/Y (INVx1_ASAP7_75t_R)
+ 120.05  583.13 v _23153_/SN (HAxp5_ASAP7_75t_R)
+  37.17  620.30 ^ cut_74624/Y (INVx1_ASAP7_75t_R)
+  46.92  667.21 v cut_74738/Y (NOR2xp33_ASAP7_75t_R)
+  45.81  713.02 ^ cut_74764/Y (NOR2xp33_ASAP7_75t_R)
+  35.20  748.23 v cut_74765/Y (INVx1_ASAP7_75t_R)
+  23.56  771.78 ^ cut_74766/Y (NOR2xp33_ASAP7_75t_R)
+  20.95  792.74 v cut_74767/Y (NOR2xp33_ASAP7_75t_R)
+  23.66  816.40 ^ cut_74769/Y (NAND2xp33_ASAP7_75t_R)
+  17.18  833.58 v cut_74770/Y (NAND2xp33_ASAP7_75t_R)
+  21.14  854.71 ^ cut_74772/Y (NAND2xp33_ASAP7_75t_R)
+  26.69  881.40 v cut_74788/Y (NOR2xp33_ASAP7_75t_R)
+  20.39  901.79 ^ cut_74819/Y (NOR2xp33_ASAP7_75t_R)
+  19.61  921.39 v cut_74820/Y (NOR2xp33_ASAP7_75t_R)
+  33.94  955.33 ^ cut_74821/Y (NOR2xp33_ASAP7_75t_R)
+   0.00  955.33 ^ u0/subword[8]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+         955.33   data arrival time
+
+1000.00 1000.00   clock core_clock (rise edge)
+   0.00 1000.00   clock network delay (ideal)
+   0.00 1000.00   clock reconvergence pessimism
+        1000.00 ^ u0/subword[8]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -30.39  969.61   library setup time
+         969.61   data required time
+---------------------------------------------------------
+         969.61   data required time
+        -955.33   data arrival time
+---------------------------------------------------------
+          14.28   slack (MET)
+
+
+wns max 0.00
+tns max 0.00

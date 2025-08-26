@@ -14,6 +14,8 @@ cc_library(
     name = "rmp",
     srcs = [
         "src/Restructure.cpp",
+        "src/annealing_strategy.cpp",
+        "src/annealing_strategy.h",
         "src/delay_optimization_strategy.cpp",
         "src/delay_optimization_strategy.h",
         "src/logic_optimization_strategy.h",
