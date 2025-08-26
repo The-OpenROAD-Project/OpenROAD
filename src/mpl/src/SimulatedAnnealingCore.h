@@ -69,7 +69,7 @@ class SimulatedAnnealingCore
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
-  bool isValid(const Rect& outline) const;
+  bool fitsIn(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
