@@ -42,16 +42,6 @@ void Design::read()
   std::cout << "num of special nets: " << numSpecialNets << std::endl;
   std::cout << "gcell grid:          " << gridlines_[0].size() - 1 << " x "
             << gridlines_[1].size() - 1 << " x " << getNumLayers() << std::endl;
-
-  for (const auto& layer : layers_) {
-    std::cout << "Layer " << layer.getName() << " statistics:" << std::endl;
-    std::cout << "  Width: " << layer.getWidth() << std::endl;
-    std::cout << "  Pitch: " << layer.getPitch() << std::endl;
-    std::cout << "  Min Length: " << layer.getMinLength() << std::endl;
-    std::cout << "  Default Spacing: " << layer.getDefaultSpacing()
-              << std::endl;
-    std::cout << "  Max EOL Spacing: " << layer.getMaxEolSpacing() << std::endl;
-  }
 }
 
 void Design::readLayers()
