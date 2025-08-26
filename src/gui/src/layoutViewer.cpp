@@ -634,7 +634,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
 
     const bool routing_visible = options_->areRoutingSegmentsVisible();
     const bool vias_visible = options_->areRoutingViasVisible();
-    if (routing_visible || vias_visible) {
+    const bool io_pins_visible = options_->areIOPinsVisible();
+    if (routing_visible || vias_visible || io_pins_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
                                                 search_line.xMin(),
@@ -642,11 +643,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                 search_line.xMax(),
                                                 search_line.yMax(),
                                                 shape_limit);
-      for (const auto& [box, is_via, net] : box_shapes) {
-        if (!routing_visible && !is_via) {
+      for (const auto& [box, type, net] : box_shapes) {
+        if (!routing_visible && type == Search::WIRE) {
           continue;
         }
-        if (!vias_visible && is_via) {
+        if (!vias_visible && type == Search::VIA) {
+          continue;
+        }
+        if (!io_pins_visible && type == Search::BTERM) {
           continue;
         }
         if (isNetVisible(net)) {
@@ -855,7 +859,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
     const bool routing_visible = options_->areRoutingSegmentsVisible();
     const bool vias_visible = options_->areRoutingViasVisible();
-    if (routing_visible || vias_visible) {
+    const bool io_pins_visible = options_->areIOPinsVisible();
+    if (routing_visible || vias_visible || io_pins_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
                                                 region.xMin(),
@@ -864,11 +869,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                                 region.yMax(),
                                                 shape_limit);
 
-      for (auto& [box, is_via, net] : box_shapes) {
-        if (!routing_visible && !is_via) {
+      for (auto& [box, type, net] : box_shapes) {
+        if (!routing_visible && type == Search::WIRE) {
           continue;
         }
-        if (!vias_visible && is_via) {
+        if (!vias_visible && type == Search::VIA) {
+          continue;
+        }
+        if (!io_pins_visible && type == Search::BTERM) {
           continue;
         }
         if (isNetVisible(net) && options_->isNetSelectable(net)) {

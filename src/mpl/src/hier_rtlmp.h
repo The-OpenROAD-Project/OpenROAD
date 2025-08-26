@@ -296,7 +296,6 @@ class HierRTLMP
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
   float exchange_swap_prob_ = 0.2;
-  float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 
   // since we convert from the database unit to the micrometer
