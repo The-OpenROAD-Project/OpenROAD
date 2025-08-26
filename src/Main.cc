@@ -393,7 +393,7 @@ static int TraceTclCommand(
       Tcl_Obj *fullName = Tcl_NewObj();
       Tcl_GetCommandFullName(interp, commandToken, fullName);
       string fullName_str = Tcl_GetString(fullName);
-      if(fullName_str.compare(0, 7, "::sta::") ==0){
+      if(fullName_str.compare(0, 7, "::sta::")!=0){
         logger->report("[CMD] "+cmd_str);
       }
     }
