@@ -58,6 +58,10 @@ class Design
   void computeGrid();
   void setUnitCosts();
 
+  // debug functions
+  void printNets() const;
+  void printBlockages() const;
+
   int lib_dbu_;
   BoxT<int> die_region_;
   std::vector<MetalLayer> layers_;

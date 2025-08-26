@@ -265,4 +265,34 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& allObstacles,
   }
 }
 
+void Design::printNets() const
+{
+  for (const CUGRNet& net : nets_) {
+    std::cout << "Net: " << net.getName() << std::endl;
+    for (const auto& pin : net.getPins()) {
+      std::cout << "\tPin: " << pin.getName() << "\n";
+      for (const auto& box : pin.getPinShapes()) {
+        std::cout << "\t\t" << box << "\n";  // adjust to 1-based
+      }
+      std::cout << std::endl;
+    }
+  }
+}
+
+void Design::printBlockages() const
+{
+  std::vector<std::vector<BoxT<int>>> allObstacles;
+  getAllObstacles(allObstacles, true);
+  std::cout << "design obstacles: " << allObstacles.size() << std::endl;
+  for (int i = 0; i < allObstacles.size(); i++) {
+    std::cout << "obs in layer " << (i + 1) << ": " << allObstacles[i].size()
+              << std::endl;
+    for (const auto& obstacle : allObstacles[i]) {
+      std::cout << "  Obstacle on layer "
+                << (i + 1)  // adjust to 1-based layer index
+                << ": " << obstacle << std::endl;
+    }
+  }
+}
+
 }  // namespace grt
