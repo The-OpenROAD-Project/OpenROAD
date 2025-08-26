@@ -261,11 +261,11 @@ ROW ROW_253 FreePDK45_38x28_10R_NP_162NW_34O 40280 750400 FS DO 315 BY 1 STEP 38
 ROW ROW_254 FreePDK45_38x28_10R_NP_162NW_34O 40280 753200 N DO 315 BY 1 STEP 380 0 ;
 ROW ROW_255 FreePDK45_38x28_10R_NP_162NW_34O 40280 756000 FS DO 315 BY 1 STEP 380 0 ;
 COMPONENTS 5 ;
-    - r1 DFF_X1 ;
-    - r2 DFF_X1 ;
-    - r3 DFF_X1 ;
-    - u1 BUF_X1 ;
-    - u2 AND2_X1 ;
+    - r1 DFF_X1 + PLACED ( 572300 416600 ) FS ;
+    - r2 DFF_X1 + PLACED ( 85000 788000 ) N ;
+    - r3 DFF_X1 + PLACED ( 94000 30000 ) FS ;
+    - u1 BUF_X1 + PLACED ( 13000 390000 ) FS ;
+    - u2 AND2_X1 + PLACED ( 180000 400000 ) N ;
 END COMPONENTS
 PINS 6 ;
     - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
@@ -273,18 +273,18 @@ PINS 6 ;
     - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
     - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
     - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
+    - out + NET out + DIRECTION INPUT + USE SIGNAL ;
 END PINS
 NETS 10 ;
     - clk1 ( PIN clk1 ) ( r1 CK ) + USE SIGNAL ;
     - clk2 ( PIN clk2 ) ( r2 CK ) + USE SIGNAL ;
     - clk3 ( PIN clk3 ) ( r3 CK ) + USE SIGNAL ;
-    - in1 ( PIN in1 ) ( r1 D ) + USE SIGNAL ;
-    - in2 ( PIN in2 ) ( r2 D ) + USE SIGNAL ;
-    - out ( PIN out ) ( r3 Q ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( u1 Z ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( u1 A ) + USE SIGNAL ;
+    - out ( PIN out ) ( u2 A2 ) + USE SIGNAL ;
     - r1q ( u2 A1 ) ( r1 Q ) + USE SIGNAL ;
-    - r2q ( u1 A ) ( r2 Q ) + USE SIGNAL ;
-    - u1z ( u2 A2 ) ( u1 Z ) + USE SIGNAL ;
+    - r2q ( r2 D ) ( r2 Q ) + USE SIGNAL ;
+    - u1z ( r3 Q ) ( r1 D ) + USE SIGNAL ;
     - u2z ( u2 ZN ) ( r3 D ) + USE SIGNAL ;
 END NETS
 END DESIGN
