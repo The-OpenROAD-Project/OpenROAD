@@ -153,6 +153,34 @@ void CUGR::route()
   }
 }
 
+void CUGR::write(std::string guide_file)
+{
+  area_of_pin_patches_ = 0;
+  area_of_wire_patches_ = 0;
+  std::stringstream ss;
+  for (const GRNet* net : gr_nets_) {
+    std::vector<std::pair<int, BoxT<int>>> guides;
+    getGuides(net, guides);
+
+    ss << net->getName() << std::endl;
+    ss << "(" << std::endl;
+    for (const auto& guide : guides) {
+      ss << grid_graph_->getGridline(0, guide.second.x.low) << " "
+         << grid_graph_->getGridline(1, guide.second.y.low) << " "
+         << grid_graph_->getGridline(0, guide.second.x.high + 1) << " "
+         << grid_graph_->getGridline(1, guide.second.y.high + 1) << " "
+         << grid_graph_->getLayerName(guide.first) << "\n";
+    }
+    ss << ")" << std::endl;
+  }
+  logger_->report("total area of pin access patches: {}", area_of_pin_patches_);
+  logger_->report("total area of wire segment patches: {}",
+                  area_of_wire_patches_);
+  std::ofstream fout(guide_file);
+  fout << ss.str();
+  fout.close();
+}
+
 void CUGR::sortNetIndices(std::vector<int>& netIndices) const
 {
   std::vector<int> halfParameters(gr_nets_.size());
@@ -350,34 +378,6 @@ void CUGR::printStatistics() const
 
   std::cout << "min resource: " << minResource << "\n";
   std::cout << "bottleneck:   " << bottleneck << "\n";
-}
-
-void CUGR::write(std::string guide_file)
-{
-  area_of_pin_patches_ = 0;
-  area_of_wire_patches_ = 0;
-  std::stringstream ss;
-  for (const GRNet* net : gr_nets_) {
-    std::vector<std::pair<int, BoxT<int>>> guides;
-    getGuides(net, guides);
-
-    ss << net->getName();
-    ss << "(" << std::endl;
-    for (const auto& guide : guides) {
-      ss << grid_graph_->getGridline(0, guide.second.x.low) << " "
-         << grid_graph_->getGridline(1, guide.second.y.low) << " "
-         << grid_graph_->getGridline(0, guide.second.x.high + 1) << " "
-         << grid_graph_->getGridline(1, guide.second.y.high + 1) << " "
-         << grid_graph_->getLayerName(guide.first) << "\n";
-    }
-    ss << ")" << std::endl;
-  }
-  logger_->report("total area of pin access patches: {}", area_of_pin_patches_);
-  logger_->report("total area of wire segment patches: {}",
-                  area_of_wire_patches_);
-  std::ofstream fout(guide_file);
-  fout << ss.str();
-  fout.close();
 }
 
 }  // namespace grt
