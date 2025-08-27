@@ -269,8 +269,8 @@ class HierRTLMP
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
-  // For cluster and macro placement.
-  SACoreWeights placement_core_weights_;
+  SACoreWeights placement_core_weights_;  // For cluster and macro placement.
+  SASoftWeights cluster_placement_weights_;
 
   // For generation of the coarse shape (tiling) of clusters with macros.
   const SACoreWeights shaping_core_weights_{1.0f /* area */,
@@ -278,11 +278,6 @@ class HierRTLMP
                                             0.0f /* wirelength */,
                                             0.0f /* guidance */,
                                             0.0f /* fence */};
-
-  // Soft-Especific Weights
-  float boundary_weight_ = 5.0;
-  float notch_weight_ = 1.0;  // Used inside Core, but only for Soft.
-  float macro_blockage_weight_ = 1.0;
 
   std::map<std::string, Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
@@ -301,7 +296,6 @@ class HierRTLMP
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
   float exchange_swap_prob_ = 0.2;
-  float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 
   // since we convert from the database unit to the micrometer

@@ -118,6 +118,17 @@ void Dft::executeDftPlan()
       auto scan_out_term = scan_cell->getScanOut().getValue();
       db_scaninst->setAccessPins(
           {.scan_in = scan_in_term, .scan_out = scan_out_term});
+
+      const ClockDomain& clock_domain = scan_cell->getClockDomain();
+      db_scaninst->setScanClock(clock_domain.getClockName());
+      switch (clock_domain.getClockEdge()) {
+        case ClockEdge::Rising:
+          db_scaninst->setClockEdge(odb::dbScanInst::ClockEdge::Rising);
+          break;
+        case ClockEdge::Falling:
+          db_scaninst->setClockEdge(odb::dbScanInst::ClockEdge::Falling);
+          break;
+      }
     }
 
     std::optional<ScanDriver> sc_enable_driver = chain->getScanEnable();

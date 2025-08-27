@@ -39,13 +39,20 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   class PolygonIntersectPredicate;
 
  public:
+  enum RouteBoxType
+  {
+    WIRE,
+    VIA,
+    BTERM
+  };
+
   template <typename T>
   using LayerMap = std::map<odb::dbTechLayer*, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
   template <typename T>
-  using RouteBoxValue = std::tuple<odb::Rect, bool, T>;
+  using RouteBoxValue = std::tuple<odb::Rect, RouteBoxType, T>;
   template <typename T>
   using SNetValue = std::tuple<odb::dbSBox*, odb::Polygon, T>;
   template <typename T>

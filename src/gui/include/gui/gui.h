@@ -591,6 +591,7 @@ class Chart
   virtual void setYAxisMin(const std::vector<std::optional<double>>& mins) = 0;
   // One y per series.  The order matches y_labels in addChart
   virtual void addPoint(double x, const std::vector<double>& ys) = 0;
+  virtual void clearPoints() = 0;
 
   virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
 

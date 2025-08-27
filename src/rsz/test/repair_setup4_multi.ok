@@ -17,7 +17,7 @@ tns max -6.294
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 1 instances, 1 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack max -0.48

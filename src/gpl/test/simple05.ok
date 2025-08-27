@@ -34,8 +34,8 @@
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0000 |  2.887100e+04 |   +0.00% |  4.17e-11 |      
-        0 |   0.0000 |  2.887100e+04 |          |  4.33e-11 |      
+        0 |   0.0000 |  1.443550e+01 |   +0.00% |  4.17e-11 |      
+        0 |   0.0000 |  1.443550e+01 |          |  4.33e-11 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area                1.8620
