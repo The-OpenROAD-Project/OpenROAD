@@ -125,6 +125,8 @@ class EstimateParasitics : public dbStaState
                // Return values.
                double& res,
                double& cap) const;
+  void addClkLayer(odb::dbTechLayer* layer);
+  void addSignalLayer(odb::dbTechLayer* layer);
   // Set the resistance and capacitance used for horizontal parasitics on signal
   // nets.
   void setHWireSignalRC(const Corner* corner,
@@ -263,6 +265,8 @@ class EstimateParasitics : public dbStaState
   dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
 
+  std::vector<odb::dbTechLayer*> signal_layers_;
+  std::vector<odb::dbTechLayer*> clk_layers_;
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   std::vector<std::vector<double>> layer_res_;  // ohms/meter
   std::vector<std::vector<double>> layer_cap_;  // Farads/meter

@@ -118,6 +118,16 @@ void EstimateParasitics::layerRC(dbTechLayer* layer,
 
 ////////////////////////////////////////////////////////////////
 
+void EstimateParasitics::addClkLayer(odb::dbTechLayer* layer)
+{
+  clk_layers_.push_back(layer);
+}
+
+void EstimateParasitics::addSignalLayer(odb::dbTechLayer* layer)
+{
+  signal_layers_.push_back(layer);
+}
+
 void EstimateParasitics::setHWireSignalRC(const Corner* corner,
                                           double res,
                                           double cap)

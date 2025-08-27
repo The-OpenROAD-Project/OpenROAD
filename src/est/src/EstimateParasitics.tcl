@@ -257,6 +257,19 @@ proc set_wire_rc { args } {
         set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
         incr v_layers
       }
+
+      if { [info exists flags(-clock)] } {
+        est::add_clk_layer_cmd $tec_layer
+      }
+
+      if { [info exists flags(-signal)] } {
+        est::add_signal_layer_cmd $tec_layer
+      }
+
+      if { ![info exists flags(-clock)] && ![info exists flags(-signal)]} {
+        est::add_clk_layer_cmd $tec_layer
+        est::add_signal_layer_cmd $tec_layer
+      }
     }
     if { $h_layers == 0 } {
       utl::error EST 16 "No horizontal layer specified."
@@ -284,6 +297,19 @@ proc set_wire_rc { args } {
       set v_wire_res [est::layer_resistance $tec_layer $corner]
       set h_wire_cap [est::layer_capacitance $tec_layer $corner]
       set v_wire_cap [est::layer_capacitance $tec_layer $corner]
+    }
+
+    if { [info exists flags(-clock)] } {
+      est::add_clk_layer_cmd $tec_layer
+    }
+
+    if { [info exists flags(-signal)] } {
+      est::add_signal_layer_cmd $tec_layer
+    }
+
+    if { ![info exists flags(-clock)] && ![info exists flags(-signal)]} {
+      est::add_clk_layer_cmd $tec_layer
+      est::add_signal_layer_cmd $tec_layer
     }
   } else {
     ord::ensure_units_initialized
