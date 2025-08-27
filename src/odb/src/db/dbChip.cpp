@@ -569,15 +569,20 @@ void dbChip::destroy(dbChip* chip_)
 {
   _dbChip* chip = (_dbChip*) chip_;
   // Destroy chip connections
-  dbSet<dbChipConn> chipConns = chip_->getChipConns();
-  for (dbChipConn* chipConn : chipConns) {
+  auto chip_conns = chip_->getChipConns();
+  auto chip_conns_itr = chip_conns.begin();
+  while (chip_conns_itr != chip_conns.end()) {
+    auto chipConn = *chip_conns_itr++;
     dbChipConn::destroy(chipConn);
   }
   // destroy chip insts
-  dbSet<dbChipInst> chipInsts = chip_->getChipInsts();
-  for (dbChipInst* chipInst : chipInsts) {
+  auto chip_insts = chip_->getChipInsts();
+  auto chip_insts_itr = chip_insts.begin();
+  while (chip_insts_itr != chip_insts.end()) {
+    auto chipInst = *chip_insts_itr++;
     dbChipInst::destroy(chipInst);
   }
+  // TODO: destroy instances of the current chip
   // Destroy chip
   _dbDatabase* db = chip->getDatabase();
   if (db->_chip == chip->getOID()) {
