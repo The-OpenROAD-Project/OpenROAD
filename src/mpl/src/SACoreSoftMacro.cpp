@@ -540,7 +540,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
   // If the floorplan is not valid
   // We think the entire floorplan is a "huge" notch
-  if (!isValid(outline_)) {
+  if (!isValid()) {
     width = std::max(width_, outline_.getWidth());
     height = std::max(height_, outline_.getHeight());
     notch_penalty_ = calSingleNotchPenalty(width, height);
