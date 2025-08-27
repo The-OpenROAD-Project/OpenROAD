@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <boost/asio.hpp>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/thread/thread.hpp>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -14,6 +11,9 @@
 #include <vector>
 
 #include "BalancerConnection.h"
+#include "boost/asio.hpp"
+#include "boost/asio/thread_pool.hpp"
+#include "boost/thread/thread.hpp"
 
 namespace utl {
 class Logger;

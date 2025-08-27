@@ -48,6 +48,8 @@ cc_library(
         "src/SwapPinsMove.hh",
         "src/UnbufferMove.cc",
         "src/UnbufferMove.hh",
+        "src/VTSwapMove.hh",
+        "src/VTSwapMove.cc",
     ],
     hdrs = [
         "include/rsz/MakeResizer.hh",

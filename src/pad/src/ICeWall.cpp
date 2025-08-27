@@ -4,7 +4,6 @@
 #include "pad/ICeWall.h"
 
 #include <algorithm>
-#include <boost/icl/interval_set.hpp>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -16,6 +15,7 @@
 #include "RDLGui.h"
 #include "RDLRouter.h"
 #include "Utilities.h"
+#include "boost/icl/interval_set.hpp"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"

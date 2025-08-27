@@ -4,7 +4,6 @@
 #include "rsz/Resizer.hh"
 
 #include <algorithm>
-#include <boost/functional/hash.hpp>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -31,6 +30,8 @@
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
+#include "VTSwapMove.hh"
+#include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -106,6 +107,7 @@ using sta::ClkArrivalSearchPred;
 using sta::Clock;
 using sta::Corners;
 using sta::Edge;
+using sta::fuzzyEqual;
 using sta::fuzzyGreaterEqual;
 using sta::INF;
 using sta::InputDrive;
@@ -158,6 +160,8 @@ void Resizer::init(Logger* logger,
   split_load_move_ = std::make_unique<SplitLoadMove>(this);
   swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
   unbuffer_move_ = std::make_unique<UnbufferMove>(this);
+  vt_swap_speed_move_ = std::make_unique<VTSwapSpeedMove>(this);
+  size_up_match_move_ = std::make_unique<SizeUpMatchMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this, estimate_parasitics_);
   repair_design_ = std::make_unique<RepairDesign>(this, estimate_parasitics_);
@@ -505,7 +509,7 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
         // and equal or less drive resistance.  swappable_cells are
         // sorted in decreasing order of drive resistance.
         if (target_master->getSite() == site
-            && cellVTType(target_master).first == cellVTType(master).first
+            && cellVTType(target_master).vt_index == cellVTType(master).vt_index
             && sta::fuzzyLessEqual(cellDriveResistance(target_cell),
                                    cellDriveResistance(cell))) {
           inst->swapMaster(target_master);
@@ -757,13 +761,12 @@ void Resizer::findBuffers()
   }
 
   LibertyCellSeq buffer_list;
-  LibraryAnalysisData lib_data;
-  getBufferList(buffer_list, lib_data);
+  getBufferList(buffer_list);
 
   // Pick the right cell footprint to avoid delay cells
   std::string best_footprint;
-  if (lib_data.cells_by_footprint.size() > 1) {
-    for (const auto& [footprint_type, count] : lib_data.cells_by_footprint) {
+  if (lib_data_->cells_by_footprint.size() > 1) {
+    for (const auto& [footprint_type, count] : lib_data_->cells_by_footprint) {
       float ratio = (float) count / buffer_list.size();
       // Some PDK libs have a distinct footprint for each drive strength
       // Pick a footprint that dominates
@@ -777,10 +780,10 @@ void Resizer::findBuffers()
 
   // Pick the second most leaky VT for multiple VTs
   int best_vt_index = -1;
-  int num_vt = lib_data.sorted_vt_categories.size();
+  int num_vt = lib_data_->sorted_vt_categories.size();
   if (num_vt > 1) {
     const std::pair<VTCategory, VTLeakageStats> second_leakiest_vt
-        = lib_data.sorted_vt_categories[num_vt - 2];
+        = lib_data_->sorted_vt_categories[num_vt - 2];
     best_vt_index = second_leakiest_vt.first.vt_index;
     debugRDPrint2("findBuffers: Best VT index is {} [{}] among {} VTs",
                   best_vt_index,
@@ -788,7 +791,7 @@ void Resizer::findBuffers()
                   num_vt);
   } else if (num_vt == 1) {
     const std::pair<VTCategory, VTLeakageStats> only_vt
-        = lib_data.sorted_vt_categories[0];
+        = lib_data_->sorted_vt_categories[0];
     best_vt_index = only_vt.first.vt_index;
     debugRDPrint2("findBuffers: Best VT index is {} among 1 VT", best_vt_index);
   } else {
@@ -798,14 +801,14 @@ void Resizer::findBuffers()
   // There may be multiple cell sites like short, tall, short+tall, etc.
   // Pick two sites that are the most dominant.  Most likely, short and tall.
   std::vector<std::pair<odb::dbSite*, float>> site_list;
-  site_list.reserve(lib_data.cells_by_site.size());
-  for (const auto& [site_type, count] : lib_data.cells_by_site) {
+  site_list.reserve(lib_data_->cells_by_site.size());
+  for (const auto& [site_type, count] : lib_data_->cells_by_site) {
     site_list.emplace_back(site_type, (float) count / buffer_list.size());
   }
   std::sort(site_list.begin(),
             site_list.end(),
             [](const auto& a, const auto& b) { return a.second > b.second; });
-  int num_best_sites = std::min(2, (int) lib_data.cells_by_site.size());
+  int num_best_sites = std::min(2, (int) lib_data_->cells_by_site.size());
   for (int i = 0; i < num_best_sites; i++) {
     debugRDPrint2("findBuffers: {} is a dominant site",
                   site_list[i].first->getName());
@@ -818,7 +821,7 @@ void Resizer::findBuffers()
     auto vt_type = cellVTType(master);
     bool footprint_matches
         = best_footprint.empty() || (footprint && best_footprint == footprint);
-    bool vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+    bool vt_matches = best_vt_index == -1 || vt_type.vt_index == best_vt_index;
 
     if (footprint_matches && vt_matches) {
       new_buffer_list.emplace_back(buffer);
@@ -831,7 +834,7 @@ void Resizer::findBuffers()
           buffer->name(),
           (vt_matches ? "matches" : "doesn't match"),
           (footprint_matches ? "matches" : "doesn't match"),
-          vt_type.first,
+          vt_type.vt_index,
           best_vt_index);
     }
   }
@@ -1644,7 +1647,8 @@ std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
 // For debugging
 void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                                     bool match_cell_footprint,
-                                    bool report_all_cells)
+                                    bool report_all_cells,
+                                    bool report_vt_equiv)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -1663,6 +1667,8 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     utl::SetAndRestore relax_keep_vt(sizing_keep_vt_, restrict);
     equiv_cells = getSwappableCells(base_cell);
     swappable_cells_cache_.clear();  // SetAndRestore invalidates cache.
+  } else if (report_vt_equiv) {
+    equiv_cells = getVTEquivCells(base_cell);
   } else {
     equiv_cells = getSwappableCells(base_cell);
   }
@@ -1741,13 +1747,13 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                         equiv_area / base_area,
                         *equiv_cell_leakage,
                         *equiv_cell_leakage / *base_leakage,
-                        cellVTType(equiv_master).second);
+                        cellVTType(equiv_master).vt_name);
       } else {
         logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                         cell_name,
                         equiv_area,
                         equiv_area / base_area,
-                        cellVTType(equiv_master).second);
+                        cellVTType(equiv_master).vt_name);
       }
     }
     logger_->report(
@@ -1773,7 +1779,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                       cell_name,
                       equiv_area,
                       equiv_area / base_area,
-                      cellVTType(equiv_master).second);
+                      cellVTType(equiv_master).vt_name);
     }
     logger_->report(
         "--------------------------------------------------------------");
@@ -1785,9 +1791,8 @@ void Resizer::reportBuffers(bool filtered)
   resizePreamble();
 
   LibertyCellSeq buffer_list;
-  LibraryAnalysisData lib_data;
 
-  getBufferList(buffer_list, lib_data);
+  getBufferList(buffer_list);
   if (buffer_list.empty()) {
     logger_->error(RSZ, 23, "No buffers are found from the loaded libraries.");
     return;
@@ -1802,9 +1807,9 @@ void Resizer::reportBuffers(bool filtered)
       (exclude_clock_buffers_ ? " or clock buffers" : ""));
 
   logger_->report("\nThere are {} VT types:",
-                  lib_data.vt_leakage_by_category.size());
+                  lib_data_->vt_leakage_by_category.size());
   logger_->report("VT type[index]: # buffers, ave leakage");
-  for (const auto& [vt_category, vt_stats] : lib_data.sorted_vt_categories) {
+  for (const auto& [vt_category, vt_stats] : lib_data_->sorted_vt_categories) {
     logger_->report("  {:<6} [{}]: {}, {:>7.1e}",
                     vt_category.vt_name,
                     vt_category.vt_index,
@@ -1813,8 +1818,8 @@ void Resizer::reportBuffers(bool filtered)
   }
 
   logger_->report("\nThere are {} cell footprint types:",
-                  lib_data.cells_by_footprint.size());
-  for (const auto& [footprint_type, count] : lib_data.cells_by_footprint) {
+                  lib_data_->cells_by_footprint.size());
+  for (const auto& [footprint_type, count] : lib_data_->cells_by_footprint) {
     logger_->report("  {:<6}: {} [{:.2f}%]",
                     footprint_type,
                     count,
@@ -1822,8 +1827,8 @@ void Resizer::reportBuffers(bool filtered)
   }
 
   logger_->report("\nThere are {} cell site types:",
-                  lib_data.cells_by_site.size());
-  for (const auto& [site_type, count] : lib_data.cells_by_site) {
+                  lib_data_->cells_by_site.size());
+  for (const auto& [site_type, count] : lib_data_->cells_by_site) {
     logger_->report("  {:<6} [H={}]: {} [{:.2f}%]",
                     site_type->getName(),
                     site_type->getHeight(),
@@ -1855,7 +1860,7 @@ void Resizer::reportBuffers(bool filtered)
                     cell_leak.value_or(0.0f),
                     master->getSite()->getHeight(),
                     (buffer->footprint() ? buffer->footprint() : "N/A"),
-                    cellVTType(master).second);
+                    cellVTType(master).vt_name);
   }
 
   if (filtered) {
@@ -1896,7 +1901,7 @@ void Resizer::reportBuffers(bool filtered)
                       cell_leak.value_or(0.0f),
                       master->getSite()->getHeight(),
                       (buffer->footprint() ? buffer->footprint() : "N/A"),
-                      cellVTType(master).second);
+                      cellVTType(master).vt_name);
     }
   }
 
@@ -1907,9 +1912,17 @@ void Resizer::reportBuffers(bool filtered)
   logger_->report("{:*>80}", "");
 }
 
-void Resizer::getBufferList(LibertyCellSeq& buffer_list,
-                            LibraryAnalysisData& lib_data)
+void Resizer::getBufferList(LibertyCellSeq& buffer_list)
 {
+  if (!lib_data_) {
+    lib_data_ = std::make_unique<LibraryAnalysisData>();
+  } else {
+    lib_data_->vt_leakage_by_category.clear();
+    lib_data_->cells_by_footprint.clear();
+    lib_data_->cells_by_site.clear();
+    lib_data_->sorted_vt_categories.clear();
+  }
+
   LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary* lib = lib_iter->next();
@@ -1926,19 +1939,19 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list,
 
         // Track cell footprint distribution
         if (buffer->footprint()) {
-          lib_data.cells_by_footprint[buffer->footprint()]++;
+          lib_data_->cells_by_footprint[buffer->footprint()]++;
         }
 
         // Track site distribution
         odb::dbMaster* master = db_network_->staToDb(buffer);
-        lib_data.cells_by_site[master->getSite()]++;
+        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track VT category leakage data
-        auto vt_type = cellVTType(master);
-        VTCategory vt_category{vt_type.first, vt_type.second};
+        VTCategory vt_category = cellVTType(master);
 
         // Get or create VT leakage stats for this category
-        VTLeakageStats& vt_stats = lib_data.vt_leakage_by_category[vt_category];
+        VTLeakageStats& vt_stats
+            = lib_data_->vt_leakage_by_category[vt_category];
         vt_stats.add_cell_leakage(cellLeakage(buffer));
       }
     }
@@ -1961,7 +1974,7 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list,
          });
 
     // Sort VT categories by average leakage
-    lib_data.sort_vt_categories();
+    lib_data_->sort_vt_categories();
   }
 }
 
@@ -2029,7 +2042,8 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       }
 
       if (sizing_keep_vt_) {
-        if (cellVTType(master).first != cellVTType(equiv_cell_master).first) {
+        if (cellVTType(master).vt_index
+            != cellVTType(equiv_cell_master).vt_index) {
           continue;
         }
       }
@@ -2058,6 +2072,145 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
   swappable_cells_cache_[source_cell] = swappable_cells;
   return swappable_cells;
+}
+
+size_t getCommonLength(const std::string& string1, const std::string& string2)
+{
+  size_t common_len = 0;
+  size_t len_limit = std::min(string1.length(), string2.length());
+
+  while (common_len < len_limit && string1[common_len] == string2[common_len]) {
+    common_len++;
+  }
+
+  return common_len;
+}
+
+// Get VT swappable cells including the source cell itself
+// Use cache to store equivalent cell list as follows:
+// BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+// BUF_X1_LVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+// BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+// If there are multiple cells in a VT category,
+// keep only one cell that most closely matches the source cell name
+LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
+{
+  auto cache_it = vt_equiv_cells_cache_.find(source_cell);
+  if (cache_it != vt_equiv_cells_cache_.end()) {
+    return cache_it->second;
+  }
+
+  if (!lib_data_) {
+    LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+    // We just need library data
+    (void) buffer_list;
+  }
+
+  if (lib_data_->sorted_vt_categories.size() < 2) {
+    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
+  LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  if (equiv_cells == nullptr) {
+    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
+  LibertyCellSeq vt_equiv_cells;
+  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
+  int64_t source_cell_area = source_cell_master->getArea();
+
+  // VT equiv cell should have the same area, footprint, site and function class
+  // but different VT type
+  for (LibertyCell* equiv_cell : *equiv_cells) {
+    if (equiv_cell == source_cell) {
+      vt_equiv_cells.emplace_back(equiv_cell);
+      continue;
+    }
+
+    if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
+      continue;
+    }
+
+    dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
+    if (!equiv_cell_master) {
+      continue;
+    }
+
+    if (cellVTType(equiv_cell_master) == cellVTType(source_cell_master)) {
+      continue;
+    }
+
+    if (!fuzzyEqual(equiv_cell_master->getArea(), source_cell_area)) {
+      continue;
+    }
+
+    if (equiv_cell_master->getSite() != source_cell_master->getSite()) {
+      continue;
+    }
+
+    if (!sta::stringEqIf(source_cell->footprint(), equiv_cell->footprint())) {
+      continue;
+    }
+
+    if (source_cell->userFunctionClass()
+        && !sta::stringEqIf(source_cell->userFunctionClass(),
+                            equiv_cell->userFunctionClass())) {
+      continue;
+    }
+
+    vt_equiv_cells.emplace_back(equiv_cell);
+  }
+
+  // Sort the list in ascending order of leakage
+  std::stable_sort(vt_equiv_cells.begin(),
+                   vt_equiv_cells.end(),
+                   [this](LibertyCell* cell1, LibertyCell* cell2) {
+                     std::optional<float> leak1 = this->cellLeakage(cell1);
+                     std::optional<float> leak2 = this->cellLeakage(cell2);
+                     // Treat missing leakage as 0
+                     return leak1.value_or(0.0) < leak2.value_or(0.0);
+                   });
+
+  // Pick only one cell from each VT category
+  const std::string source_name = source_cell->name();
+  for (auto it = vt_equiv_cells.begin(); it != vt_equiv_cells.end();) {
+    if (std::next(it) != vt_equiv_cells.end()) {
+      LibertyCell* curr_cell = *it;
+      LibertyCell* next_cell = *std::next(it);
+      dbMaster* curr_master = db_network_->staToDb(curr_cell);
+      dbMaster* next_master = db_network_->staToDb(next_cell);
+      if (cellVTType(curr_master) == cellVTType(next_master)) {
+        const std::string curr_name = curr_cell->name();
+        const std::string next_name = next_cell->name();
+        size_t curr_common_len = getCommonLength(curr_name, source_name);
+        size_t next_common_len = getCommonLength(next_name, source_name);
+        if (curr_common_len > next_common_len) {
+          vt_equiv_cells.erase(std::next(it));
+          ++it;
+        } else {
+          vt_equiv_cells.erase(it);
+        }
+      } else {
+        ++it;
+      }
+    } else {
+      ++it;
+    }
+  }
+
+  // Map all equivalent cells to the same list
+  // BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_LVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
+  const LibertyCellSeq& vt_equiv_cells_new = vt_equiv_cells_cache_[source_cell];
+  for (LibertyCell* equiv_cell : vt_equiv_cells_new) {
+    vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+  }
+  return vt_equiv_cells_cache_[source_cell];
 }
 
 void Resizer::checkLibertyForAllCorners()
@@ -2163,7 +2316,7 @@ void compressVTLayerName(std::string& name)
 // Cells beloning to the same VT category should have identical layer
 // composition, resulting in the same hash value.  VT type is 0 if there are
 // no OBS VT layers.
-std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
+VTCategory Resizer::cellVTType(dbMaster* master)
 {
   // Check if VT type is already computed
   auto it = vt_map_.find(master);
@@ -2173,7 +2326,8 @@ std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
+    VTCategory vt_cat{0, "-"};
+    auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
 
@@ -2202,7 +2356,8 @@ std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
+    VTCategory vt_cat{0, "-"};
+    auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
 
@@ -2212,16 +2367,16 @@ std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
   }
 
   compressVTLayerName(new_layer_name);
-  auto [new_it, _] = vt_map_.emplace(
-      master, std::make_pair(vt_hash_map_[hash1], new_layer_name));
+  VTCategory vt_cat{vt_hash_map_[hash1], new_layer_name};
+  auto [new_it, _] = vt_map_.emplace(master, vt_cat);
   debugPrint(logger_,
              RSZ,
              "equiv",
              1,
              "{} has VT type {} {}",
              master->getName(),
-             vt_map_[master].first,
-             vt_map_[master].second);
+             vt_map_[master].vt_index,
+             vt_map_[master].vt_name);
   return new_it->second;
 }
 
@@ -4069,7 +4224,8 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_size_down,
                           bool skip_buffering,
                           bool skip_buffer_removal,
-                          bool skip_last_gasp)
+                          bool skip_last_gasp,
+                          bool skip_vt_swap)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -4091,7 +4247,8 @@ bool Resizer::repairSetup(double setup_margin,
                                     skip_size_down,
                                     skip_buffering,
                                     skip_buffer_removal,
-                                    skip_last_gasp);
+                                    skip_last_gasp,
+                                    skip_vt_swap);
 }
 
 void Resizer::reportSwappablePins()
@@ -4261,22 +4418,27 @@ void Resizer::journalEnd()
   split_load_move_->commitMoves();
   swap_pins_move_->commitMoves();
   unbuffer_move_->commitMoves();
+  size_up_match_move_->commitMoves();
+  vt_swap_speed_move_->commitMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              1,
-             "TOTAL {} moves (acc {} rej {}):  up {} down {} buffer {} clone "
-             "{} swap {} unbuf {}",
+             "TOTAL {} moves (acc {} rej {}):  up {} up_match {} down {} "
+             "buffer {} clone "
+             "{} swap {} unbuf {} vt_swap {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
              size_up_move_->numCommittedMoves(),
+             size_up_match_move_->numCommittedMoves(),
              size_down_move_->numCommittedMoves(),
              buffer_move_->numCommittedMoves(),
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
-             unbuffer_move_->numCommittedMoves());
+             unbuffer_move_->numCommittedMoves(),
+             vt_swap_speed_move_->numCommittedMoves());
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -4803,6 +4965,12 @@ MoveType Resizer::parseMove(const std::string& s)
   }
   if (lower == "split") {
     return rsz::MoveType::SPLIT;
+  }
+  if (lower == "sizeup_match") {
+    return rsz::MoveType::SIZEUP_MATCH;
+  }
+  if (lower == "vt_swap") {
+    return rsz::MoveType::VTSWAP_SPEED;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }

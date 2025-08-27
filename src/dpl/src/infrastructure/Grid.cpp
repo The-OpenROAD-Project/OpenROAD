@@ -3,7 +3,6 @@
 
 #include "Grid.h"
 
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -13,6 +12,7 @@
 
 #include "Objects.h"
 #include "Padding.h"
+#include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"

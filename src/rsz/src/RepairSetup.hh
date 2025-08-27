@@ -84,7 +84,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_last_gasp);
+                   bool skip_last_gasp,
+                   bool skip_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
