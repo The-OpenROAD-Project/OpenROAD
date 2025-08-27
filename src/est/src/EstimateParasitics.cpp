@@ -795,6 +795,34 @@ float EstimateParasitics::subtreeLoad(SteinerTree* tree,
   return left_cap + right_cap;
 }
 
+odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
+{
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::dbModITerm* moditerm;
+  db_network_->staToDb(pin, iterm, bterm, moditerm);
+
+  odb::dbTechLayer* pin_layer = nullptr;
+  if (iterm) {
+    int min_layer_idx = std::numeric_limits<int>::max();
+    for (const auto& [layer, rect] : iterm->getGeometries()) {
+      if (layer->getRoutingLevel() < min_layer_idx) {
+        min_layer_idx = layer->getRoutingLevel();
+        pin_layer = layer;
+      }
+    }
+  } else if (bterm) {
+    odb::dbShape pin_shape;
+    bterm->getFirstPin(pin_shape);
+    pin_layer = pin_shape.getTechLayer();
+  } else {
+    logger_->error(
+        EST, 164, "Pin {} has no iterm or bterm.", network_->pathName(pin));
+  }
+
+  return pin_layer;
+}
+
 void EstimateParasitics::parasiticNodeConnectPins(Parasitic* parasitic,
                                                   ParasiticNode* node,
                                                   SteinerTree* tree,

@@ -247,11 +247,14 @@ class EstimateParasitics : public dbStaState
   float subtreeLoad(SteinerTree* tree,
                     float cap_per_micron,
                     SteinerPt pt) const;
+  odb::dbTechLayer* getPinLayer(const Pin* pin);
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
-                                size_t& resistor_id);
+                                size_t& resistor_id,
+                                Corner* corner,
+                                bool is_clk);
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   double dbuToMeters(int dist) const;
 
