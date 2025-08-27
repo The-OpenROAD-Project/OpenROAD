@@ -127,6 +127,7 @@ class EstimateParasitics : public dbStaState
                double& cap) const;
   void addClkLayer(odb::dbTechLayer* layer);
   void addSignalLayer(odb::dbTechLayer* layer);
+  void sortClkAndSignalLayers();
   // Set the resistance and capacitance used for horizontal parasitics on signal
   // nets.
   void setHWireSignalRC(const Corner* corner,

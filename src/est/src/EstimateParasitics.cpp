@@ -128,6 +128,16 @@ void EstimateParasitics::addSignalLayer(odb::dbTechLayer* layer)
   signal_layers_.push_back(layer);
 }
 
+void EstimateParasitics::sortClkAndSignalLayers()
+{
+  auto sortLayers = [](const odb::dbTechLayer* a, const odb::dbTechLayer* b) {
+    return a->getNumber() < b->getNumber();
+  };
+
+  std::sort(clk_layers_.begin(), clk_layers_.end(), sortLayers);
+  std::sort(signal_layers_.begin(), signal_layers_.end(), sortLayers);
+}
+
 void EstimateParasitics::setHWireSignalRC(const Corner* corner,
                                           double res,
                                           double cap)
@@ -530,6 +540,9 @@ void EstimateParasitics::estimateWireParasitics(SpefWriter* spef_writer)
     // Note that in hierarchy mode, this will not present all the nets,
     // which is intent here. So get all flat nets from block
     //
+
+    sortClkAndSignalLayers();
+
     odb::dbSet<odb::dbNet> nets = block_->getNets();
     for (auto db_net : nets) {
       Net* cur_net = db_network_->dbToSta(db_net);
