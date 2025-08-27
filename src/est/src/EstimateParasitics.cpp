@@ -859,8 +859,8 @@ void EstimateParasitics::parasiticNodeConnectPins(Parasitic* parasitic,
         for (int layer_number = pin_layer->getNumber();
              layer_number < tree_layer->getNumber();
              layer_number++) {
-          odb::dbTechLayer* via_layer = db_->getTech()->findLayer(layer_number);
-          if (via_layer->getType() == odb::dbTechLayerType::CUT) {
+          odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_number);
+          if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
             float cut_res = layer_res_[layer_number][corner->index()];
             if (cut_res > 0.0) {
               parasitics_->makeResistor(
