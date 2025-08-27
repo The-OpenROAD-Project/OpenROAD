@@ -2,8 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
-#include <boost/serialization/base_object.hpp>
-
+#include "boost/serialization/base_object.hpp"
 #include "dst/JobMessage.h"
 namespace boost::serialization {
 class access;

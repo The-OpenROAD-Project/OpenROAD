@@ -4,7 +4,6 @@
 #include "SACoreSoftMacro.h"
 
 #include <algorithm>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <map>
 #include <set>
@@ -13,6 +12,7 @@
 
 #include "MplObserver.h"
 #include "SimulatedAnnealingCore.h"
+#include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
 #include "object.h"
 #include "odb/db.h"

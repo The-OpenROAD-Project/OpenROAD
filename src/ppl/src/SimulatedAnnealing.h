@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <boost/random/mersenne_twister.hpp>
 #include <limits>
 #include <memory>
 #include <set>
@@ -13,6 +12,7 @@
 #include "Core.h"
 #include "Netlist.h"
 #include "Slots.h"
+#include "boost/random/mersenne_twister.hpp"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
