@@ -15,6 +15,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
+#include "odb/dbShape.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -716,8 +717,10 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
           parasitics_->makeResistor(parasitic, resistor_id++, res, n1, n2);
           parasitics_->incrCap(n2, cap / 2.0);
         }
-        parasiticNodeConnectPins(parasitic, n1, tree, steiner_pt1, resistor_id);
-        parasiticNodeConnectPins(parasitic, n2, tree, steiner_pt2, resistor_id);
+        parasiticNodeConnectPins(
+            parasitic, n1, tree, steiner_pt1, resistor_id, corner, is_clk);
+        parasiticNodeConnectPins(
+            parasitic, n2, tree, steiner_pt2, resistor_id, corner, is_clk);
       }
       if (spef_writer) {
         spef_writer->writeNet(corner, net, parasitic);
@@ -840,16 +843,39 @@ void EstimateParasitics::parasiticNodeConnectPins(Parasitic* parasitic,
                                                   ParasiticNode* node,
                                                   SteinerTree* tree,
                                                   SteinerPt pt,
-                                                  size_t& resistor_id)
+                                                  size_t& resistor_id,
+                                                  Corner* corner,
+                                                  const bool is_clk)
 {
   const PinSeq* pins = tree->pins(pt);
   if (pins) {
+    odb::dbTechLayer* tree_layer = is_clk ? clk_layers_[0] : signal_layers_[0];
     for (const Pin* pin : *pins) {
       ParasiticNode* pin_node
           = parasitics_->ensureParasiticNode(parasitic, pin, network_);
-      // Use a small resistor to keep the connectivity intact.
-      parasitics_->makeResistor(
-          parasitic, resistor_id++, 1.0e-3, node, pin_node);
+      if (tree_layer != nullptr && !layer_res_.empty()) {
+        odb::dbTechLayer* pin_layer = getPinLayer(pin);
+
+        for (int layer_number = pin_layer->getNumber();
+             layer_number < tree_layer->getNumber();
+             layer_number++) {
+          odb::dbTechLayer* via_layer = db_->getTech()->findLayer(layer_number);
+          if (via_layer->getType() == odb::dbTechLayerType::CUT) {
+            float cut_res = layer_res_[layer_number][corner->index()];
+            if (cut_res > 0.0) {
+              parasitics_->makeResistor(
+                  parasitic, resistor_id++, cut_res, node, pin_node);
+            } else {
+              parasitics_->makeResistor(
+                  parasitic, resistor_id++, 1.0e-3, node, pin_node);
+            }
+          }
+        }
+      } else {
+        // Use a small resistor to keep the connectivity intact.
+        parasitics_->makeResistor(
+            parasitic, resistor_id++, 1.0e-3, node, pin_node);
+      }
     }
   }
 }
