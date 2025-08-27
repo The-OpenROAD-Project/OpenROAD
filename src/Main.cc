@@ -374,27 +374,20 @@ static int TraceTclCommand(
     ClientData clientData,
     Tcl_Interp* interp,
     int /* level */,
-    const char* /* command */,
+    const char* command ,
     Tcl_Command commandToken,
     int objc,
     Tcl_Obj *const objv[])
 {
 
     auto* commands = static_cast<std::set<std::string>*>(clientData);
-    std::string cmd_str;
-    for (int i = 0; i < objc; i++) {
-        cmd_str += Tcl_GetString(objv[i]);
-        if (i < objc - 1) {
-          cmd_str += " ";
-        }
-    }
     utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
     if(commands->count(Tcl_GetString(objv[0]))){
       Tcl_Obj *fullName = Tcl_NewObj();
       Tcl_GetCommandFullName(interp, commandToken, fullName);
       string fullName_str = Tcl_GetString(fullName);
       if(fullName_str.compare(0, 7, "::sta::")==0||!sta_commands->count(Tcl_GetString(objv[0]))){
-        logger->report("[CMD] "+cmd_str);
+        logger->report("[CMD] {}", command);
       }
     }
     return TCL_OK;
