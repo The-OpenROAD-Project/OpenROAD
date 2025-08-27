@@ -3,12 +3,12 @@
 
 #include "frRegionQuery.h"
 
-#include <boost/polygon/polygon.hpp>
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/obj/frBlockObject.h"
 #include "frDesign.h"
 #include "frRTree.h"

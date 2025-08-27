@@ -5,12 +5,6 @@
 
 #include <dst/JobMessage.h>
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/asio/post.hpp>
-#include <boost/bind/bind.hpp>
-#include <boost/serialization/export.hpp>
-#include <boost/thread/thread.hpp>
 #include <cstddef>
 #include <memory>
 #include <mutex>
@@ -20,6 +14,12 @@
 #include <vector>
 
 #include "LoadBalancer.h"
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/asio/post.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/serialization/export.hpp"
+#include "boost/thread/thread.hpp"
 #include "dst/BalancerJobDescription.h"
 #include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"

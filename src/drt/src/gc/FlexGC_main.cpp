@@ -2,7 +2,6 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <boost/geometry.hpp>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -10,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry.hpp"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 

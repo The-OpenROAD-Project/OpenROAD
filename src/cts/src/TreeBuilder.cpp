@@ -3,7 +3,6 @@
 
 #include "TreeBuilder.h"
 
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -14,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "odb/geom_boost.h"
 #include "utl/Logger.h"
 

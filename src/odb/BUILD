@@ -98,6 +98,7 @@ cc_library(
         "//:ord",
         "//src/utl",
         "@boost.container",
+        "@boost.geometry",
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
