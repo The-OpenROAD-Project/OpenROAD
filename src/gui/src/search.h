@@ -4,12 +4,12 @@
 #pragma once
 
 #include <QObject>
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <mutex>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"

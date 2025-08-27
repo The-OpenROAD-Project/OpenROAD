@@ -3,7 +3,6 @@
 
 #include "ScanStitch.hh"
 
-#include <boost/algorithm/string.hpp>
 #include <cstddef>
 #include <deque>
 #include <iostream>
@@ -12,6 +11,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "boost/algorithm/string.hpp"
 
 namespace {
 constexpr std::string_view kScanEnable = "scan-enable";

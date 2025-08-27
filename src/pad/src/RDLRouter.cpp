@@ -3,11 +3,6 @@
 
 #include "RDLRouter.h"
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/graph/astar_search.hpp>
-#include <boost/graph/lookup_edge.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <cstddef>
 #include <functional>
 #include <limits>
@@ -22,6 +17,11 @@
 #include "RDLGui.h"
 #include "RDLRoute.h"
 #include "Utilities.h"
+#include "boost/geometry.hpp"
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/graph/astar_search.hpp"
+#include "boost/graph/lookup_edge.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "pad/ICeWall.h"

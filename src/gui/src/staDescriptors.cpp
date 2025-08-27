@@ -5,7 +5,6 @@
 
 #include <QInputDialog>
 #include <QStringList>
-#include <boost/algorithm/string.hpp>
 #include <functional>
 #include <iomanip>
 #include <limits>
@@ -15,6 +14,7 @@
 #include <sstream>
 #include <string>
 
+#include "boost/algorithm/string.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"

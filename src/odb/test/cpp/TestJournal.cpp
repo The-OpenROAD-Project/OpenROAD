@@ -1,9 +1,9 @@
 #define BOOST_TEST_MODULE TestJournal
-#include <boost/test/included/unit_test.hpp>
 #include <functional>
 #include <iostream>
 #include <string>
 
+#include "boost/test/included/unit_test.hpp"
 #include "env.h"
 #include "helper.h"
 #include "odb/db.h"

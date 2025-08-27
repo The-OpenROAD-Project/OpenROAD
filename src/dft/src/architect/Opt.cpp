@@ -3,9 +3,6 @@
 
 #include "Opt.hh"
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <cstddef>
 #include <iostream>
 #include <limits>
@@ -14,6 +11,9 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "boost/geometry.hpp"
+#include "boost/geometry/geometries/register/point.hpp"
+#include "boost/geometry/index/rtree.hpp"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;

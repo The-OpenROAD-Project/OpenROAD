@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <boost/functional/hash.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
 #include <deque>
 #include <functional>
 #include <set>
@@ -17,6 +14,9 @@
 #include "CtsOptions.h"
 #include "TechChar.h"
 #include "Util.h"
+#include "boost/functional/hash.hpp"
+#include "boost/unordered/unordered_map.hpp"
+#include "boost/unordered/unordered_set.hpp"
 
 namespace utl {
 class Logger;
