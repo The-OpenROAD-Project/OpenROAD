@@ -354,6 +354,11 @@ void FastRouteCore::clearNetRoute(const int netID)
   sttrees_[netID].edges.clear();
 }
 
+void FastRouteCore::clearNDRnets()
+{
+  graph2d_.clearNDRnets();
+}
+
 void FastRouteCore::initEdges()
 {
   const float LB = 0.9;
@@ -1486,6 +1491,7 @@ NetRouteMap FastRouteCore::run()
   layerAssignment();
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    getOverflow3D();
     logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
                     past_cong,
                     total_overflow_);

@@ -231,6 +231,7 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+  void clearNDRnets();
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }

@@ -82,6 +82,21 @@ void Graph2D::clearUsed()
   h_used_ggrid_.clear();
 }
 
+// Clears the NDR lists
+void Graph2D::clearNDRnets()
+{
+  for (auto row : v_ndr_nets_) {
+    for (auto& ndr_set : row) {
+      ndr_set.clear();
+    }
+  }
+  for (auto row : h_ndr_nets_) {
+    for (auto& ndr_set : row) {
+      ndr_set.clear();
+    }
+  }
+}
+
 // Checks if the graph has any horizontal or vertical edges.
 bool Graph2D::hasEdges() const
 {

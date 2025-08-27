@@ -465,6 +465,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
+      fastroute_->clearNDRnets();
       incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
     }

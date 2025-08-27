@@ -98,6 +98,8 @@ class Graph2D
                    EdgeDirection direction,
                    double cap);
 
+  void clearNDRnets();
+
  private:
   int x_grid_;
   int y_grid_;
