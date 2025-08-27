@@ -266,7 +266,7 @@ proc set_wire_rc { args } {
         est::add_signal_layer_cmd $tec_layer
       }
 
-      if { ![info exists flags(-clock)] && ![info exists flags(-signal)]} {
+      if { ![info exists flags(-clock)] && ![info exists flags(-signal)] } {
         est::add_clk_layer_cmd $tec_layer
         est::add_signal_layer_cmd $tec_layer
       }
@@ -307,7 +307,7 @@ proc set_wire_rc { args } {
       est::add_signal_layer_cmd $tec_layer
     }
 
-    if { ![info exists flags(-clock)] && ![info exists flags(-signal)]} {
+    if { ![info exists flags(-clock)] && ![info exists flags(-signal)] } {
       est::add_clk_layer_cmd $tec_layer
       est::add_signal_layer_cmd $tec_layer
     }
