@@ -17,6 +17,6 @@ worst slack max -1.88
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.880 |       -1.9 |      1 | u5/A
     final |       0 |      12 |        0 |      0 |     0 |   +46.7% |    0.086 |        0.0 |      0 | u5/A
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 12 instances, 12 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 12 instances: 12 up, 0 up match, 0 down, 0 VT
 Repair timing output passed/skipped equivalence test
 worst slack max 0.09

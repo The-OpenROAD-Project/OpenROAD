@@ -1578,6 +1578,7 @@ ObjectId dbNetwork::id(const Net* net) const
     const dbObject* obj = reinterpret_cast<const dbObject*>(net);
     return getDbNwkObjectId(obj);
   }
+  assert(dnet != nullptr);
   return dnet->getId();
 }
 
