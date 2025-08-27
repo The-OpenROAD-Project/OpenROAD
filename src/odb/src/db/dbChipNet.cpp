@@ -117,10 +117,21 @@ void dbChipNet::addBumpInst(dbChipBumpInst* bump_inst,
                             const std::vector<dbChipInst*>& path)
 {
   _dbChipNet* obj = (_dbChipNet*) this;
-
+  if (bump_inst == nullptr) {
+    obj->getLogger()->error(utl::ODB,
+                            479,
+                            "Cannot add nullptr bump inst to chip {} net {}",
+                            obj->name_);
+  }
   std::vector<dbId<_dbChipInst>> path_ids;
   path_ids.reserve(path.size());
   for (const auto& inst : path) {
+    if (inst == nullptr) {
+      obj->getLogger()->error(utl::ODB,
+                              480,
+                              "Invalid inst in path for bump inst in net {}",
+                              obj->name_);
+    }
     path_ids.emplace_back(inst->getImpl()->getOID());
   }
 
