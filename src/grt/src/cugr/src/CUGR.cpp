@@ -34,9 +34,10 @@ CUGR::CUGR(odb::dbDatabase* db,
   constants_.write_heatmap = false;
 }
 
-void CUGR::init()
+void CUGR::init(const int min_routing_layer, const int max_routing_layer)
 {
-  design_ = new Design(db_, logger_, constants_);
+  design_ = new Design(
+      db_, logger_, constants_, min_routing_layer, max_routing_layer);
   grid_graph_ = new GridGraph(design_, constants_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();

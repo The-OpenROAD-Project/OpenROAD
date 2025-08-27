@@ -8,11 +8,15 @@ namespace grt {
 
 Design::Design(odb::dbDatabase* db,
                utl::Logger* logger,
-               const Constants& constants)
+               const Constants& constants,
+               const int min_routing_layer,
+               const int max_routing_layer)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
-      constants_(constants)
+      constants_(constants),
+      min_routing_layer_(min_routing_layer),
+      max_routing_layer_(max_routing_layer)
 {
   read();
   setUnitCosts();
@@ -47,7 +51,8 @@ void Design::read()
 void Design::readLayers()
 {
   for (odb::dbTechLayer* tech_layer : tech_->getLayers()) {
-    if (tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
+    if (tech_layer->getType() == odb::dbTechLayerType::ROUTING
+        && tech_layer->getRoutingLevel() <= max_routing_layer_) {
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid != nullptr) {
         layers_.emplace_back(tech_layer, track_grid);

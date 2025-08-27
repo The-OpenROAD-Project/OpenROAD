@@ -319,7 +319,9 @@ void GlobalRouter::globalRoute(bool save_guides,
 
         std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
         if (use_cugr_) {
-          cugr_->init();
+          int min_layer, max_layer;
+          getMinMaxLayer(min_layer, max_layer);
+          cugr_->init(min_layer, max_layer);
           cugr_->route();
           routes_ = cugr_->getRoutes();
         } else {

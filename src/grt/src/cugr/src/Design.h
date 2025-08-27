@@ -22,7 +22,11 @@ using CostT = double;
 class Design
 {
  public:
-  Design(odb::dbDatabase* db, utl::Logger* logger, const Constants& constants);
+  Design(odb::dbDatabase* db,
+         utl::Logger* logger,
+         const Constants& constants,
+         int min_routing_layer,
+         int max_routing_layer);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -84,6 +88,8 @@ class Design
   std::vector<std::vector<int>> gridlines_;
 
   Constants constants_;
+  int min_routing_layer_;
+  int max_routing_layer_;
 };
 
 }  // namespace grt
