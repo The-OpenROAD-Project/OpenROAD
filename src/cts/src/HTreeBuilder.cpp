@@ -34,8 +34,8 @@ void HTreeBuilder::preSinkClustering(
                             ? options_->isMacroMaxDiameterSet()
                             : options_->isMaxDiameterSet();
   bool clusterSizeSet = (type_ == TreeType::MacroTree)
-                                ? options_->isMacroSinkClusteringSizeSet()
-                                : options_->isSinkClusteringSizeSet();
+                            ? options_->isMacroSinkClusteringSizeSet()
+                            : options_->isSinkClusteringSizeSet();
 
   unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
                                       ? min_clustering_macro_sinks_
@@ -138,7 +138,6 @@ void HTreeBuilder::preSinkClustering(
       }
     }
   }
-
 
   if (clusterSizeSet || maxDiameterSet) {
     logger_->info(
