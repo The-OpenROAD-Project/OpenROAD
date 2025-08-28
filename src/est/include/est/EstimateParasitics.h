@@ -231,6 +231,8 @@ class EstimateParasitics : public dbStaState
 
   Logger* getLogger() { return logger_; }
 
+  std::optional<float> sumPointToPointResist(Pin* point1, Pin* point2);
+
  private:
   void ensureParasitics();
   void estimateWireParasiticSteiner(const Pin* drvr_pin,

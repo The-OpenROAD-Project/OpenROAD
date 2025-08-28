@@ -328,6 +328,18 @@ sum_parasitic_network_resist(Net *net)
   }
 }
 
+std::string
+sum_point_to_point_resist(Pin *point1, Pin *point2)
+{
+  EstimateParasitics *estimate = getEstimateParasitics();
+  std::optional<float> result = estimate->sumPointToPointResist(point1, point2);
+  if (result) {
+    return std::to_string(result.value());
+  } else {
+    // signal that parasitics are missing
+    return "";
+  }
+}
 
 } // namespace
 
