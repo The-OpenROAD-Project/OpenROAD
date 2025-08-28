@@ -23,7 +23,7 @@
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
-#include "LatenciesBalancer.h"
+#include "LatencyBalancer.h"
 #include "LevelBalancer.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"

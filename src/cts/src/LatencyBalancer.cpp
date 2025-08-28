@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "LatenciesBalancer.h"
+#include "LatencyBalancer.h"
 
 #include <map>
 #include <set>
