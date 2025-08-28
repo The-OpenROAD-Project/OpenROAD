@@ -133,7 +133,8 @@ void Design::readInstanceObstructions()
       for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
         for (odb::dbBox* box : mpin->getGeometry()) {
           odb::dbTechLayer* tech_layer = box->getTechLayer();
-          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING
+              || tech_layer->getRoutingLevel() > max_routing_layer_) {
             continue;
           }
 
@@ -150,7 +151,8 @@ void Design::readInstanceObstructions()
 
     // get lib obstructions
     for (odb::dbBox* box : db_inst->getMaster()->getObstructions()) {
-      if (box->getTechLayer()->getType() != odb::dbTechLayerType::ROUTING) {
+      if (box->getTechLayer()->getType() != odb::dbTechLayerType::ROUTING
+          || box->getTechLayer()->getRoutingLevel() > max_routing_layer_) {
         continue;
       }
       int layerIndex = box->getTechLayer()->getRoutingLevel() - 1;
@@ -190,7 +192,8 @@ void Design::readSpecialNetObstructions(int& numSpecialNets)
           s->getViaBoxes(via_boxes);
           for (const odb::dbShape& box : via_boxes) {
             odb::dbTechLayer* tech_layer = box.getTechLayer();
-            if (tech_layer->getRoutingLevel() == 0) {
+            if (tech_layer->getRoutingLevel() == 0
+                || tech_layer->getRoutingLevel() > max_routing_layer_) {
               continue;
             }
             odb::Rect via_rect = box.getBox();
@@ -202,12 +205,14 @@ void Design::readSpecialNetObstructions(int& numSpecialNets)
           }
         } else {
           odb::dbTechLayer* tech_layer = s->getTechLayer();
-          odb::Rect wire_rect = s->getBox();
-          obstacles_.emplace_back(tech_layer->getRoutingLevel() - 1,
-                                  wire_rect.xMin(),
-                                  wire_rect.yMin(),
-                                  wire_rect.xMax(),
-                                  wire_rect.yMax());
+          if (tech_layer->getRoutingLevel() <= max_routing_layer_) {
+            odb::Rect wire_rect = s->getBox();
+            obstacles_.emplace_back(tech_layer->getRoutingLevel() - 1,
+                                    wire_rect.xMin(),
+                                    wire_rect.yMin(),
+                                    wire_rect.xMax(),
+                                    wire_rect.yMax());
+          }
         }
       }
     }
