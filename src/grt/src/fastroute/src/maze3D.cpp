@@ -666,6 +666,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
     FrNet* net = nets_[netID];
+    int8_t edge_cost = 0;
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -693,6 +694,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (!newRipup3DType3(netID, edgeID)) {
         continue;
       }
+
       enlarge = std::min(origEng, treeedge->route.routelen);
 
       const int regionX1 = std::max(0, xmin - enlarge);
@@ -751,6 +753,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
         removeMin3D(src_heap_3D_);
 
+        // If the net has more than 1 cost, use its cost as extra cost when
+        // trying to find a new route
+        edge_cost = net->getLayerEdgeCost(curL);
+
         const bool Horizontal
             = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
 
@@ -759,8 +765,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (curX > regionX1
               && directions_3D_[curL][curY][curX] != Direction::East) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
-            if (h_edges_3D_[curL][curY][curX - 1].usage
-                    < h_edges_3D_[curL][curY][curX - 1].cap
+            if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
+                    <= h_edges_3D_[curL][curY][curX - 1].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               const int tmpX = curX - 1;  // the left neighbor
 
@@ -806,8 +812,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpX = curX + 1;  // the right neighbor
 
-            if (h_edges_3D_[curL][curY][curX].usage
-                    < h_edges_3D_[curL][curY][curX].cap
+            if (h_edges_3D_[curL][curY][curX].usage + edge_cost
+                    <= h_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][curY][tmpX]
                   >= BIG_INT)  // right neighbor not been put into
@@ -851,8 +857,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D_[curL][curY][curX] != Direction::South) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY - 1;  // the bottom neighbor
-            if (v_edges_3D_[curL][curY - 1][curX].usage
-                    < v_edges_3D_[curL][curY - 1][curX].cap
+            if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
+                    <= v_edges_3D_[curL][curY - 1][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
                   >= BIG_INT)  // bottom neighbor not been put into
@@ -895,8 +901,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D_[curL][curY][curX] != Direction::North) {
             const float tmp = d1_3D_[curL][curY][curX] + 1;
             const int tmpY = curY + 1;  // the top neighbor
-            if (v_edges_3D_[curL][curY][curX].usage
-                    < v_edges_3D_[curL][curY][curX].cap
+            if (v_edges_3D_[curL][curY][curX].usage + edge_cost
+                    <= v_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
                   >= BIG_INT)  // top neighbor not been put into src_heap_3D
@@ -1423,13 +1429,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (grids[i].x == grids[i + 1].x)  // a vertical edge
           {
             const int min_y = std::min(grids[i].y, grids[i + 1].y);
-            graph2d_.addUsageV(grids[i].x, min_y, net->getEdgeCost());
+            graph2d_.updateUsageV(grids[i].x, min_y, net, net->getEdgeCost());
             v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
                 += net->getLayerEdgeCost(grids[i].layer);
-          } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
+          } else  // a horizontal edge
           {
             const int min_x = std::min(grids[i].x, grids[i + 1].x);
-            graph2d_.addUsageH(min_x, grids[i].y, net->getEdgeCost());
+            graph2d_.updateUsageH(min_x, grids[i].y, net, net->getEdgeCost());
             h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
                 += net->getLayerEdgeCost(grids[i].layer);
           }
