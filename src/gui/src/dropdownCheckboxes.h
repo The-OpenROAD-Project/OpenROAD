@@ -16,14 +16,14 @@ class Clock;
 }  // namespace sta
 
 namespace gui {
-class qComboCheckBoxes : public QComboBox
+class DropdownCheckboxes : public QComboBox
 {
   Q_OBJECT
  public:
-  qComboCheckBoxes(const std::string& name,
+  DropdownCheckboxes(const std::string& name,
                    const std::string& all_text = "All",
                    QWidget* parent = nullptr);
-  qComboCheckBoxes(const QString& name,
+  DropdownCheckboxes(const QString& name,
                    const QString& all_text = "All",
                    QWidget* parent = nullptr);
   void clear();

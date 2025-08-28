@@ -24,7 +24,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "qComboCheckBoxes.h"
+#include "dropdownCheckboxes.h"
 #include "sta/PathExpanded.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"
@@ -428,7 +428,7 @@ class TimingControlsDialog : public QDialog
 
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
-  qComboCheckBoxes* clock_box_;
+  DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;
   QCheckBox* one_path_per_endpoint_;

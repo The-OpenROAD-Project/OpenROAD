@@ -1112,7 +1112,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
       corner_box_(new QComboBox(this)),
-      clock_box_(new qComboCheckBoxes(QString("Select Clocks"),
+      clock_box_(new DropdownCheckboxes(QString("Select Clocks"),
                                       QString("All Clocks"),
                                       this)),
       unconstrained_(new QCheckBox(this)),

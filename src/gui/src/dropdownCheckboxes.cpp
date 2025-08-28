@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "qComboCheckBoxes.h"
+#include "dropdownCheckboxes.h"
 
 #include <qnamespace.h>
 
 namespace gui {
 
-qComboCheckBoxes::qComboCheckBoxes(const std::string& name,
+DropdownCheckboxes::DropdownCheckboxes(const std::string& name,
                                    const std::string& all_text,
                                    QWidget* parent)
     : QComboBox(parent),
@@ -19,7 +19,7 @@ qComboCheckBoxes::qComboCheckBoxes(const std::string& name,
   setup();
 }
 
-qComboCheckBoxes::qComboCheckBoxes(const QString& name,
+DropdownCheckboxes::DropdownCheckboxes(const QString& name,
                                    const QString& all_text,
                                    QWidget* parent)
     : QComboBox(parent),
@@ -31,7 +31,7 @@ qComboCheckBoxes::qComboCheckBoxes(const QString& name,
   setup();
 }
 
-void qComboCheckBoxes::setup()
+void DropdownCheckboxes::setup()
 {
   name_item_->setFlags(Qt::NoItemFlags);
   all_item_->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled
@@ -46,15 +46,15 @@ void qComboCheckBoxes::setup()
   connect(model_,
           &QStandardItemModel::itemChanged,
           this,
-          &qComboCheckBoxes::itemChanged);
+          &DropdownCheckboxes::itemChanged);
 }
 
-void qComboCheckBoxes::clear()
+void DropdownCheckboxes::clear()
 {
   model_->removeRows(2, model_->rowCount() - 2);
 }
 
-void qComboCheckBoxes::itemChanged(QStandardItem* item)
+void DropdownCheckboxes::itemChanged(QStandardItem* item)
 {
   if (updating_check_boxes_) {
     return;
@@ -94,7 +94,7 @@ void qComboCheckBoxes::itemChanged(QStandardItem* item)
   updating_check_boxes_ = false;
 }
 
-std::vector<QString> qComboCheckBoxes::selectedItems()
+std::vector<QString> DropdownCheckboxes::selectedItems()
 {
   std::vector<QString> selected;
   for (auto row = 2; row < model_->rowCount(); row++) {
