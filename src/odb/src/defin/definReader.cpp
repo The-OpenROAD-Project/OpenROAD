@@ -3,7 +3,6 @@
 
 #include "definReader.h"
 
-#include <boost/algorithm/string/replace.hpp>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -12,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/algorithm/string/replace.hpp"
 #include "definBlockage.h"
 #include "definComponent.h"
 #include "definComponentMaskShift.h"

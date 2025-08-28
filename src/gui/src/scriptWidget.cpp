@@ -76,6 +76,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           this,
           &ScriptWidget::addResultToOutput);
   connect(input_,
+          &TclCmdInputWidget::addTextToOutput,
+          this,
+          &ScriptWidget::addTextToOutput,
+          Qt::QueuedConnection);
+  connect(input_,
           &TclCmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::resetPauser);

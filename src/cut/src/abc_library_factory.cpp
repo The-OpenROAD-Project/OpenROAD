@@ -47,7 +47,7 @@ static bool IsCombinational(sta::LibertyCell* cell)
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
           && !cell->hasSequentials() && !cell->isLevelShifter()
-          && !cell->isIsolationCell() && !cell->isClockGate());
+          && !cell->isIsolationCell() && !cell->isMemory());
 }
 
 static int CountOutputPins(sta::LibertyCell* cell)
@@ -82,8 +82,12 @@ static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
   return false;
 }
 
-static bool isCompatibleWithAbc(sta::LibertyCell* cell)
+static bool isCompatibleWithAbc(sta::LibertyCell* cell, rsz::Resizer* resizer)
 {
+  if (resizer != nullptr && resizer->dontUse(cell)) {
+    return false;
+  }
+
   if (!IsCombinational(cell)) {
     return false;
   }
@@ -219,6 +223,13 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
       output_pin->max_out_slew = time_unit->staToUser(max_output_slew);
     }
 
+    if (cell_port->function() == nullptr) {
+      logger_->error(utl::CUT,
+                     49,
+                     "cell port function is null for cell {}:{}",
+                     cell->name(),
+                     cell_port->name());
+    }
     output_pin->func_text = strdup(cell_port->function()->to_string().c_str());
 
     // Get list of input ports
@@ -315,6 +326,12 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
 AbcLibraryFactory& AbcLibraryFactory::AddDbSta(sta::dbSta* db_sta)
 {
   db_sta_ = db_sta;
+  return *this;
+}
+
+AbcLibraryFactory& AbcLibraryFactory::AddResizer(rsz::Resizer* resizer)
+{
+  resizer_ = resizer;
   return *this;
 }
 
@@ -423,7 +440,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(
   // Loop through all of the cells in STA and create equivalents in
   // the ABC structure.
   for (sta::LibertyCell* cell : cells) {
-    if (!isCompatibleWithAbc(cell)) {
+    if (!isCompatibleWithAbc(cell, resizer_)) {
       continue;
     }
 

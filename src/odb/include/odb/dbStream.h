@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <boost/container/flat_map.hpp>
 #include <cstdint>
 #include <cstring>
 #include <istream>
@@ -18,6 +17,7 @@
 #include <vector>
 
 #include "ZException.h"
+#include "boost/container/flat_map.hpp"
 #include "dbObject.h"
 #include "odb.h"
 

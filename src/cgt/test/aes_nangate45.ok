@@ -6,38 +6,65 @@ Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
 Warning: Detected 2 multi-output gates (for example, "FA_X1").
 SC library cannot be found.
 [INFO CGT-0003] Clock gating instance 0/562
-[INFO CGT-0004] Accepted clock enable '_13148_ | _04684_ | _04714_ | _04685_' for instance dcnt\[0\]$_SDFFE_PN0P_
-[INFO CGT-0004] Accepted clock enable '_13149_ | _04645_ | _04715_ | _00499_ | _04712_' for instance dcnt\[3\]$_SDFFE_PN0P_
-[INFO CGT-0004] Accepted clock enable '_13151_ | ld_r | _07141_ | _07142_' for instance ld_r$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13148_ | _04712_ | _04712_ | _00499_ | _05106_ | _05208_' for instance dcnt\[0\]$_SDFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable '_13152_ | _09934_ | _02343_ | _07345_ | _09869_ | _02344_ | _07261_' for instance sa00_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13157_ | _12485_ | _12321_ | _02320_ | _02282_ | _12382_ | _09813_ | _09874_ | _07267_ | _12320_ | _09832_ | _02318_ | _07158_' for instance sa00_sr\[5\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13160_ | _12929_ | _10515_ | _07927_ | _08140_ | _03035_ | _02956_ | _08009_' for instance sa01_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13162_ | _12980_ | _02965_ | _07950_ | _02939_ | _03152_ | _07974_' for instance sa01_sr\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13168_ | _01174_ | _11134_ | _08575_ | _08648_' for instance sa02_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13176_ | _01724_ | _09333_ | _04072_ | _09245_ | _09345_ | _09351_' for instance sa03_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13192_ | _02957_ | _10548_ | _02955_ | _07982_ | _07223_ | _08515_ | _12993_ | _07339_' for instance sa11_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13200_ | _08828_ | _01374_ | _03436_ | _03474_ | _07400_ | _01115_ | _07280_' for instance sa12_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13208_ | _09357_ | _09166_ | _09257_ | _09866_ | _04083_ | _11702_ | _07266_' for instance sa13_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13232_ | _08716_ | _01150_ | _07280_ | _07223_' for instance sa22_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13240_ | _09316_ | _01673_ | _09866_ | _09198_ | _07399_' for instance sa23_sr\[0\]$_DFF_P_
 [INFO CGT-0003] Clock gating instance 100/562
+[INFO CGT-0004] Accepted clock enable '_13250_ | _12502_ | _12426_ | _07161_ | _09888_ | _07267_ | _12345_ | _12387_ | _07849_' for instance sa30_sr\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13111_ | _09602_ | _09391_ | _09430_ | _09259_ | _09262_ | _09274_ | _07895_ | _09300_ | _09258_ | _04669_ | _08108_' for instance text_in_r\[31\]$_DFFE_PP_
 [INFO CGT-0003] Clock gating instance 200/562
 [INFO CGT-0003] Clock gating instance 300/562
 [INFO CGT-0004] Accepted clock enable '_00444_ | _05000_ | _05001_' for instance u0.r0.out\[24\]$_SDFF_PP1_
 [INFO CGT-0004] Accepted clock enable '_00445_ | _05015_ | _05016_' for instance u0.r0.out\[25\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00446_ | _05029_ | _05176_ | _05031_ | _05177_ | _05178_' for instance u0.r0.out\[26\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00447_ | _05048_ | _05049_' for instance u0.r0.out\[27\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00448_ | _05063_ | _05064_' for instance u0.r0.out\[28\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00449_ | _05189_ | _05076_ | _05077_' for instance u0.r0.out\[29\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00450_ | _05194_ | _05089_ | _05090_' for instance u0.r0.out\[30\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00451_ | _05099_ | _05100_' for instance u0.r0.out\[31\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable 'u0.r0.rcnt_next\[0\] | _04692_ | _04693_' for instance u0.r0.rcnt\[0\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_13063_ | _04690_ | _04691_' for instance u0.r0.rcnt\[1\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00446_ | _06669_ | _05102_ | _05256_ | _07010_ | _05077_ | _06678_ | _06691_ | _05205_' for instance u0.r0.out\[26\]$_SDFF_PP0_
 [INFO CGT-0003] Clock gating instance 400/562
-[INFO CGT-0004] Accepted clock enable '_13062_ | _04689_ | _04697_' for instance u0.r0.rcnt\[2\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_13406_ | _04700_ | _04701_' for instance u0.r0.rcnt\[3\]$_SDFF_PP0_
-[INFO CGT-0004] Accepted clock enable '_00437_ | _04272_ | _04348_ | _04370_' for instance u0.u1.d\[0\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00438_ | _04444_ | _04531_ | _04552_' for instance u0.u1.d\[1\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00437_ | _04272_ | _04348_ | _04359_ | _04370_' for instance u0.u1.d\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00438_ | _04434_ | _05272_ | _00297_ | _04142_ | _05271_ | _05208_' for instance u0.u1.d\[1\]$_DFF_P_
 [INFO CGT-0004] Accepted clock enable '_00420_ | _05252_ | _04710_ | _05223_' for instance u0.u1.d\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00439_ | _04010_ | _05424_ | _00331_ | _00299_ | _05434_ | _04370_ | _05283_ | _05208_' for instance u0.u1.d\[3\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00440_ | _05154_ | _04676_ | _04678_' for instance u0.u1.d\[4\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00441_ | _05156_ | _04652_ | _04654_ | _04655_' for instance u0.u1.d\[5\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00442_ | _04975_ | _04976_ | _04977_' for instance u0.u1.d\[6\]$_DFF_P_
 [INFO CGT-0004] Accepted clock enable '_00430_ | _05124_ | _05125_ | _04857_ | _04858_' for instance u0.u2.d\[0\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00431_ | _04872_ | _06125_' for instance u0.u2.d\[1\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00422_ | _05245_ | _04882_ | _05214_' for instance u0.u2.d\[2\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00423_ | _04739_ | _04740_ | _04741_' for instance u0.u3.d\[0\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00424_ | _04749_ | _04756_ | _04758_' for instance u0.u3.d\[1\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00421_ | _05237_ | _04765_ | _04772_ | _05110_ | _04773_' for instance u0.u3.d\[2\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00425_ | _05112_ | _04787_ | _04788_' for instance u0.u3.d\[3\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00426_ | _04796_ | _04804_ | _04805_ | _04806_' for instance u0.u3.d\[4\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00427_ | _05118_ | _04820_ | _04822_' for instance u0.u3.d\[5\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00428_ | _05120_ | _04834_ | _04835_ | _04836_' for instance u0.u3.d\[6\]$_DFF_P_
-[INFO CGT-0004] Accepted clock enable '_00429_ | _05123_ | _04844_ | _04846_ | _06475_' for instance u0.u3.d\[7\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00431_ | _06011_ | _05799_ | _05875_ | _04876_ | _04860_ | _05852_ | _05242_ | _05918_ | _04885_ | _04920_ | _04949_ | _04605_' for instance u0.u2.d\[1\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00432_ | _05131_ | _04905_ | _04902_' for instance u0.u2.d\[3\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00434_ | _05137_ | _04939_ | _04940_' for instance u0.u2.d\[5\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00436_ | _05219_ | _04965_ | _00391_ | _06015_ | _06037_ | _00010_ | _00008_ | _00015_ | _00009_ | _00012_ | _00013_ | _06087_ | _06025_ | _06127_ | _06099_ | _00416_' for instance u0.u2.d\[7\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00423_ | _04790_ | _04771_ | _04196_ | _04764_ | _04605_' for instance u0.u3.d\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13415_ | _02390_ | _06262_ | _04806_ | _06220_ | _06266_ | _05222_ | _07247_ | _04810_ | _04784_ | _04842_ | ld_r | _03935_' for instance u0.w\[0\]\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13416_ | _12323_ | _04882_ | _05214_' for instance u0.w\[0\]\[10\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13431_ | _05018_ | _06904_ | _06694_ | _05256_ | _07243_ | _05011_ | _07165_ | _04991_ | _03935_' for instance u0.w\[0\]\[24\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13446_ | _12485_ | _04876_ | _05242_ | _07339_ | _04918_ | _07165_ | _07206_ | _04863_ | _03935_' for instance u0.w\[0\]\[9\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13447_ | _06347_ | _06266_ | _05162_ | _07353_ | _07855_ | _07869_ | _07891_ | sa30_sub\[7\] | sa30_sub\[3\] | _03935_' for instance u0.w\[1\]\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13479_ | _06347_ | _03500_ | _05106_ | _03470_ | _04797_ | _08500_ | _08564_ | _04736_ | _03935_' for instance u0.w\[2\]\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13480_ | _04884_ | _04885_ | _04889_ | _05128_ | _04890_' for instance u0.w\[2\]\[10\]$_DFF_P_
 [INFO CGT-0003] Clock gating instance 500/562
+[INFO CGT-0004] Accepted clock enable '_13483_ | _01398_ | _05759_ | _05737_ | _05138_ | _08515_ | _01098_ | _08570_ | _04928_ | _08535_ | _03935_' for instance u0.w\[2\]\[13\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13504_ | _06356_ | _04741_ | _05113_ | _03452_ | _04811_ | _08505_ | _04229_ | _04784_ | _03935_' for instance u0.w\[2\]\[3\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13514_ | _01642_ | _04921_ | _04922_ | _05753_ | _01645_ | _04923_' for instance u0.w\[3\]\[12\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13516_ | _04951_ | _01755_ | _01699_ | _04952_ | _01700_ | _01756_ | _04953_' for instance u0.w\[3\]\[14\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13519_ | _05335_ | _11702_ | _04542_ | _04552_' for instance u0.w\[3\]\[17\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13520_ | _11717_ | _04725_ | _04722_ | _04726_' for instance u0.w\[3\]\[18\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13521_ | _04043_ | _04054_' for instance u0.w\[3\]\[19\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13522_ | _04755_ | _04094_ | _04056_ | _04757_ | _04059_ | _04758_' for instance u0.w\[3\]\[1\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13529_ | _09210_ | _05032_ | _09438_ | _05033_' for instance u0.w\[3\]\[26\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13532_ | _09256_ | _05076_ | _09257_ | _09248_ | _05077_' for instance u0.w\[3\]\[29\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13533_ | _04018_ | _04769_ | _04773_ | _04774_' for instance u0.w\[3\]\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13534_ | _05087_ | _05089_ | _05090_' for instance u0.w\[3\]\[30\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13535_ | _05100_ | _05101_ | _09145_ | _05102_' for instance u0.w\[3\]\[31\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13536_ | _04787_ | _04078_ | _04788_ | _04007_ | _04079_ | _04789_' for instance u0.w\[3\]\[3\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13537_ | _04797_ | _04798_' for instance u0.w\[3\]\[4\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13538_ | _04820_ | _04125_ | _04821_ | _04038_ | _04822_' for instance u0.w\[3\]\[5\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13539_ | _04833_ | _04834_ | _04835_ | _04836_' for instance u0.w\[3\]\[6\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13540_ | _04039_ | _04160_ | _04083_ | _04047_ | _07849_ | _04845_ | _04605_ | _04149_ | _04837_ | _03935_' for instance u0.w\[3\]\[7\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13061_ | _01686_ | _04871_ | _04872_ | _06125_ | _04873_' for instance u0.w\[3\]\[9\]$_DFF_P_
 No differences found.

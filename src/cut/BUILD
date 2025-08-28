@@ -28,6 +28,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/dbSta",
+        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.fusion",

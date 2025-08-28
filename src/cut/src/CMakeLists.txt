@@ -25,6 +25,8 @@ target_sources(cut
 )
 
 target_link_libraries(cut
+  PUBLIC
+    rsz_lib
   PRIVATE
     odb
     dbSta

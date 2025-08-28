@@ -22,6 +22,7 @@
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
 #include "sta/VerilogReader.hh"
@@ -1260,7 +1261,7 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
 
 UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
     sta::Instance* const instance,
-    const std::vector<sta::Net*>& gate_cond_nets)
+    const std::vector<sta::Net*>& nets)
 {
   utl::DebugScopedTimer timer(network_export_time_,
                               logger_,
@@ -1271,21 +1272,12 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
   auto network = sta_->getDbNetwork();
   auto graph = sta_->graph();
   std::unordered_set<sta::Vertex*> endpoints;
-  for (auto gate_cond_net : gate_cond_nets) {
+  for (auto gate_cond_net : nets) {
     auto pin_iter = network->pinIterator(gate_cond_net);
     while (pin_iter->hasNext()) {
       auto pin = pin_iter->next();
-      if (network->direction(pin)->isAnyInput()) {
-        auto instance = network->instance(pin);
-        auto pin_iter = network->pinIterator(instance);
-        while (pin_iter->hasNext()) {
-          auto pin = pin_iter->next();
-          if (network->direction(pin)->isAnyOutput()) {
-            endpoints.insert(graph->pinLoadVertex(pin));
-          }
-        }
-        delete pin_iter;
-      } else if (network->direction(pin)->isAnyOutput()) {
+      auto vertex = graph->pinLoadVertex(pin);
+      if (sta_->search()->isEndpoint(vertex)) {
         endpoints.insert(graph->pinLoadVertex(pin));
       }
     }
@@ -1297,7 +1289,9 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
     auto pin = pin_iter->next();
     if (network->direction(pin)->isAnyInput()) {
       auto vertex = graph->pinLoadVertex(pin);
-      endpoints.insert(vertex);
+      if (sta_->search()->isEndpoint(vertex)) {
+        endpoints.insert(graph->pinLoadVertex(pin));
+      }
     }
   }
   delete pin_iter;

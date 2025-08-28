@@ -35,10 +35,10 @@
 #ifdef HAS_BOOST_UNIT_TEST_LIBRARY
 // Shared library version
 #define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "boost/test/unit_test.hpp"
 #else
 // Header only version
-#include <boost/test/included/unit_test.hpp>
+#include "boost/test/included/unit_test.hpp"
 #endif
 
 #include "rcx/ext2dBox.h"

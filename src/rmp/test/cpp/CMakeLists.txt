@@ -7,6 +7,7 @@ target_link_libraries(RmpGTests
         GTest::gtest_main
         GTest::gmock
         dbSta_lib
+        rsz_lib
         utl_lib
         libabc
         rmp

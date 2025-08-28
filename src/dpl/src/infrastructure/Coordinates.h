@@ -4,12 +4,12 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/operators.hpp>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <ostream>
 
+#include "boost/operators.hpp"
 #include "dpl/Opendp.h"
 
 namespace dpl {

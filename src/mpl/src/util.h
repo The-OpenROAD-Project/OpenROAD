@@ -72,6 +72,13 @@ struct SACoreWeights
   float fence{0.0f};
 };
 
+struct SASoftWeights
+{
+  float boundary{0.0f};
+  float notch{0.0f};
+  float macro_blockage{0.0f};
+};
+
 // The cost of a certain penalty is:
 //   cost = weight * normalized_penalty
 //

@@ -51,7 +51,7 @@ Path Type: max
     final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      0 | r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
-[INFO RSZ-0051] Resized 1 instances, 1 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)

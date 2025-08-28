@@ -272,7 +272,7 @@ void Search::updateShapes(odb::dbBlock* block)
           continue;
         }
         odb::dbTechLayer* layer = box->getTechLayer();
-        net_shapes[layer].emplace_back(box->getBox(), false, term->getNet());
+        net_shapes[layer].emplace_back(box->getBox(), BTERM, term->getNet());
       }
     }
   }
@@ -406,14 +406,14 @@ void Search::addVia(
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
       bbox.moveDelta(x, y);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
       bbox.moveDelta(x, y);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
     }
   }
 }
@@ -462,7 +462,7 @@ void Search::addNet(
     if (s.isVia()) {
       addVia(net, &s, itr._prev_x, itr._prev_y, tree_shapes);
     } else {
-      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), false, net);
+      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), WIRE, net);
     }
   }
 }

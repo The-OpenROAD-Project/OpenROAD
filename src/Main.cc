@@ -5,7 +5,6 @@
 #include <tcl.h>
 
 #include <array>
-#include <boost/stacktrace.hpp>
 #include <climits>
 #include <clocale>
 #include <csignal>
@@ -15,6 +14,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+
+#include "boost/stacktrace.hpp"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed

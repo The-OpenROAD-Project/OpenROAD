@@ -71,7 +71,7 @@ class ClockGating
   // ABC.
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> exportToAbc(
       sta::Instance* instance,
-      const std::vector<sta::Net*>& gate_cond_nets);
+      const std::vector<sta::Net*>& gate_cond_cover);
   // Constructs an ABC network that will be used for testing if the given nets
   // are correct gating conditions.
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> makeTestNetwork(

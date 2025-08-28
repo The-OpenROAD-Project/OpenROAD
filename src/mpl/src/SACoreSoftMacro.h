@@ -27,9 +27,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   const SACoreWeights& core_weights,
-                  float boundary_weight,
-                  float macro_blockage_weight,
-                  float notch_weight,
+                  const SASoftWeights& soft_weights,
                   // notch threshold
                   float notch_h_threshold,
                   float notch_v_threshold,
@@ -83,22 +81,18 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // actions used
   void resizeOneCluster();
 
-  // A utility function for FillDeadSpace.
-  // It's used for calculate the start point and end point for a segment in a
-  // grid
-  void calSegmentLoc(float seg_start,
-                     float seg_end,
-                     int& start_id,
-                     int& end_id,
-                     std::vector<float>& grid);
+  int getSegmentIndex(float segment, const std::vector<float>& coords);
 
   void calBoundaryPenalty();
+  float calSingleNotchPenalty(float width, float height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
 
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
+
+  Tiling computeOverlapShape(const Rect& rect_a, const Rect& rect_b) const;
 
   std::vector<Rect> blockages_;
 
@@ -116,6 +110,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // additional penalties
   float boundary_weight_ = 0.0;
   float macro_blockage_weight_ = 0.0;
+  float notch_weight_ = 0.0;
 
   float boundary_penalty_ = 0.0;
   float notch_penalty_ = 0.0;

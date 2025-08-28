@@ -142,8 +142,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.1929 |  1.027780e+05 |   +0.00% |  4.39e-14 |      
-        0 |   0.1929 |  1.027780e+05 |          |  4.56e-14 |      
+        0 |   0.1929 |  5.138900e+01 |   +0.00% |  4.39e-14 |      
+        0 |   0.1929 |  5.138900e+01 |          |  4.56e-14 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               59.8500
@@ -272,8 +272,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.1876 |  8.809500e+04 |   +0.00% |  3.98e-14 |      
-        0 |   0.1876 |  8.809500e+04 |          |  4.13e-14 |      
+        0 |   0.1876 |  4.404750e+01 |   +0.00% |  3.98e-14 |      
+        0 |   0.1876 |  4.404750e+01 |          |  4.13e-14 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               60.3820
@@ -402,8 +402,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.1408 |  9.342400e+04 |   +0.00% |  3.25e-14 |      
-        0 |   0.1408 |  9.342400e+04 |          |  3.38e-14 |      
+        0 |   0.1408 |  4.671200e+01 |   +0.00% |  3.25e-14 |      
+        0 |   0.1408 |  4.671200e+01 |          |  3.38e-14 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               59.8500

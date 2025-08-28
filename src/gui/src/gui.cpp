@@ -9,7 +9,6 @@
 #else
 #include <QRegExp>
 #endif
-#include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <optional>
 #include <stdexcept>
@@ -17,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"
