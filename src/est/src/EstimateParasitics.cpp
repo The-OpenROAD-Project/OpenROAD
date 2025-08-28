@@ -854,6 +854,10 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
 
 double EstimateParasitics::computeAverageCutResistance(Corner* corner)
 {
+  if (layer_res_.empty()) {
+    return 0.0;
+  }
+
   double total_resistance = 0.0;
   int count = 0;
 
@@ -895,7 +899,13 @@ void EstimateParasitics::parasiticNodeConnectPins(
 {
   const PinSeq* pins = tree->pins(pt);
   if (pins) {
-    odb::dbTechLayer* tree_layer = is_clk ? clk_layers_[0] : signal_layers_[0];
+    odb::dbTechLayer* tree_layer;
+    if (is_clk) {
+      tree_layer = clk_layers_.empty() ? nullptr : clk_layers_[0];
+    } else {
+      tree_layer = signal_layers_.empty() ? nullptr : signal_layers_[0];
+    }
+
     for (const Pin* pin : *pins) {
       ParasiticNode* pin_node
           = parasitics_->ensureParasiticNode(parasitic, pin, network_);
