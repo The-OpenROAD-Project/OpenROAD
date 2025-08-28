@@ -47,10 +47,10 @@ struct GraphNode
   odb::dbITerm* inputTerm = nullptr;
 };
 
-class LatenciesBalancer
+class LatencyBalancer
 {
  public:
-  LatenciesBalancer(TreeBuilder* root,
+  LatencyBalancer(TreeBuilder* root,
                     const CtsOptions* options,
                     Logger* logger,
                     odb::dbDatabase* db,

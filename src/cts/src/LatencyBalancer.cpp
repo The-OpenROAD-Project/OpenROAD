@@ -26,7 +26,7 @@ namespace cts {
 
 using utl::CTS;
 
-void LatenciesBalancer::run()
+void LatencyBalancer::run()
 {
   worseDelay_ = std::numeric_limits<float>::min();
   delayBufIndex_ = 0;
@@ -47,7 +47,7 @@ void LatenciesBalancer::run()
              root_->getClock().getSdcName());
 }
 
-void LatenciesBalancer::initSta()
+void LatencyBalancer::initSta()
 {
   openSta_->ensureGraph();
   openSta_->ensureClkNetwork();
@@ -55,7 +55,7 @@ void LatenciesBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
-sta::ArcDelay LatenciesBalancer::computeBufferDelay(
+sta::ArcDelay LatencyBalancer::computeBufferDelay(
     sta::LibertyCell* buffer_cell,
     float extra_out_cap)
 {
@@ -99,7 +99,7 @@ sta::ArcDelay LatenciesBalancer::computeBufferDelay(
   return max_rise_delay;
 }
 
-void LatenciesBalancer::findLeafBuilders(TreeBuilder* builder)
+void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
 {
   if (builder->isLeafTree()) {
     std::string topBufferName = builder->getTopBufferName();
@@ -110,7 +110,7 @@ void LatenciesBalancer::findLeafBuilders(TreeBuilder* builder)
   }
 }
 
-void LatenciesBalancer::buildGraph(odb::dbNet* clkInputNet)
+void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
 {
   std::string rootSrcName;
   odb::dbITerm* rootOutputITerm = clkInputNet->getFirstOutput();
@@ -176,7 +176,7 @@ void LatenciesBalancer::buildGraph(odb::dbNet* clkInputNet)
   }
 }
 
-odb::dbITerm* LatenciesBalancer::getFirstInput(odb::dbInst* inst) const
+odb::dbITerm* LatencyBalancer::getFirstInput(odb::dbInst* inst) const
 {
   odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   for (odb::dbITerm* iterm : iterms) {
@@ -188,7 +188,7 @@ odb::dbITerm* LatenciesBalancer::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
-float LatenciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
+float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
                                              odb::dbNet* topNet,
                                              odb::dbITerm* iterm)
 {
@@ -238,7 +238,7 @@ float LatenciesBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
   return clkPathArrival;
 }
 
-float LatenciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
+float LatencyBalancer::computeAveSinkArrivals(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
   odb::dbNet* topInputClockNet = builder->getTopInputNet();
@@ -264,7 +264,7 @@ float LatenciesBalancer::computeAveSinkArrivals(TreeBuilder* builder)
   return aveArrival;
 }
 
-void LatenciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
+void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                                 odb::dbITerm* iterm,
                                                 float& sumArrivals,
                                                 unsigned& numSinks)
@@ -323,7 +323,7 @@ void LatenciesBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
   }
 }
 
-void LatenciesBalancer::balanceLatencies(int nodeId)
+void LatencyBalancer::balanceLatencies(int nodeId)
 {
   GraphNode* node = &graph_[nodeId];
 
@@ -395,7 +395,7 @@ void LatenciesBalancer::balanceLatencies(int nodeId)
   node->nBuffInsert = previouBufToInsert;
 }
 
-odb::dbITerm* LatenciesBalancer::insertDelayBuffers(
+odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     int numBuffers,
     int srcX,
     int srcY,
@@ -452,7 +452,7 @@ odb::dbITerm* LatenciesBalancer::insertDelayBuffers(
 
 // Create a new delay buffer and connect output pin of driver to input pin of
 // new buffer. Output pin of new buffer will be connected later.
-odb::dbInst* LatenciesBalancer::createDelayBuffer(odb::dbNet* driverNet,
+odb::dbInst* LatencyBalancer::createDelayBuffer(odb::dbNet* driverNet,
                                                   const std::string& clockName,
                                                   int locX,
                                                   int locY)
@@ -492,7 +492,7 @@ odb::dbInst* LatenciesBalancer::createDelayBuffer(odb::dbNet* driverNet,
   return newBuf;
 }
 
-bool LatenciesBalancer::propagateClock(odb::dbITerm* input)
+bool LatencyBalancer::propagateClock(odb::dbITerm* input)
 {
   odb::dbInst* inst = input->getInst();
   sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
@@ -520,7 +520,7 @@ bool LatenciesBalancer::propagateClock(odb::dbITerm* input)
   return false;
 }
 
-bool LatenciesBalancer::isSink(odb::dbITerm* iterm)
+bool LatencyBalancer::isSink(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
@@ -542,7 +542,7 @@ bool LatenciesBalancer::isSink(odb::dbITerm* iterm)
   return false;
 }
 
-void LatenciesBalancer::showGraph()
+void LatencyBalancer::showGraph()
 {
   logger_->report("Graph built:");
   for (const auto& node : graph_) {

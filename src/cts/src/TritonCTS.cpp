@@ -2319,8 +2319,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* builder = iter->get();
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
-      LatenciesBalancer balancer
-          = LatenciesBalancer(builder,
+      LatencyBalancer balancer
+          = LatencyBalancer(builder,
                               options_,
                               logger_,
                               db_,
