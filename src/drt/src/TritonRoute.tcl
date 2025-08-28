@@ -467,7 +467,7 @@ proc step_dr { args } {
   drt::detailed_route_step_drt {*}$args
 }
 
-sta::define_cmd_args "check_drc" {
+sta::define_hidden_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
     [-marker_name name]

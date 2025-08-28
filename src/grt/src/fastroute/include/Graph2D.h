@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>
@@ -11,6 +10,7 @@
 #include <vector>
 
 #include "DataType.h"
+#include "boost/multi_array.hpp"
 
 namespace grt {
 

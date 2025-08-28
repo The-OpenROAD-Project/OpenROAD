@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/iterator/function_output_iterator.hpp>
 #include <map>
 #include <set>
 #include <string>
@@ -15,6 +12,9 @@
 #include <vector>
 
 #include "ant/AntennaChecker.hh"
+#include "boost/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
+#include "boost/iterator/function_output_iterator.hpp"
 #include "dpl/Opendp.h"
 #include "grt/GRoute.h"
 #include "grt/RoutePt.h"

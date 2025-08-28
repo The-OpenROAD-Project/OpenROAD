@@ -4,11 +4,11 @@
 #include "DensityFill.h"
 
 #include <algorithm>
-#include <boost/lexical_cast.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "boost/lexical_cast.hpp"
 #include "graphics.h"
 #include "odb/dbShape.h"
 

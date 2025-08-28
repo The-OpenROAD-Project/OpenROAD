@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -16,6 +14,8 @@
 #include <utility>  // pair
 #include <vector>
 
+#include "boost/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 
 namespace utl {
