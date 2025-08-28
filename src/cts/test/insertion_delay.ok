@@ -72,4 +72,7 @@
 [INFO CTS-0101]  Average sink wire length 72.77 um
 [INFO CTS-0102]  Path depth 3 - 3
 [INFO CTS-0207]  Leaf load cells 1
+[INFO CTS-0033] Balancing latancy for clock core
+[INFO CTS-0036]  inserted 4 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 4
 Found 0 unconnected buffers.

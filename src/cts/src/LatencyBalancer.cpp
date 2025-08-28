@@ -26,8 +26,13 @@ namespace cts {
 
 using utl::CTS;
 
-void LatencyBalancer::run()
+int LatencyBalancer::run()
 {
+  logger_->info(
+             CTS,
+             33,
+             "Balancing latancy for clock {}",
+             root_->getClock().getSdcName());
   worseDelay_ = std::numeric_limits<float>::min();
   delayBufIndex_ = 0;
   initSta();
@@ -36,15 +41,15 @@ void LatencyBalancer::run()
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   sta::Cell* masterCell = network_->dbToSta(master);
   sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
-  buffer_delay_ = computeBufferDelay(libertyCell, 0);
+  bufferDelay_ = computeBufferDelay(libertyCell, 0);
   balanceLatencies(0);
-  debugPrint(logger_,
+  logger_->info(
              CTS,
-             "insertion delay",
-             1,
-             "inserted {} delay buffers for clock: {}",
+             36,
+             " inserted {} delay buffers",
              delayBufIndex_,
              root_->getClock().getSdcName());
+  return delayBufIndex_;
 }
 
 void LatencyBalancer::initSta()
@@ -336,8 +341,8 @@ void LatencyBalancer::balanceLatencies(int nodeId)
                  3,
                  "For node {}, isert {:2f} buffers",
                  node->name,
-                 (worseDelay_ - node->delay) / buffer_delay_);
-      node->nBuffInsert = (int) ((worseDelay_ - node->delay) / buffer_delay_);
+                 (worseDelay_ - node->delay) / bufferDelay_);
+      node->nBuffInsert = (int) ((worseDelay_ - node->delay) / bufferDelay_);
     }
     return;
   }

@@ -2315,6 +2315,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
+  int totalDelayBuff = 0;
   est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* builder = iter->get();
@@ -2327,9 +2328,12 @@ void TritonCTS::balanceMacroRegisterLatencies()
                               network_,
                               openSta_,
                               techChar_->getLengthUnit());
-      balancer.run();
+      totalDelayBuff += balancer.run();
       parasitics_guard.update();
     }
+  }
+  if(totalDelayBuff) {
+    logger_->info(CTS, 37, "Total number of delay buffers: {}", totalDelayBuff);
   }
 }
 

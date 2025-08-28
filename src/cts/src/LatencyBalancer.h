@@ -67,7 +67,7 @@ class LatencyBalancer
   {
   }
 
-  void run();
+  int run();
 
  private:
   void initSta();
@@ -113,7 +113,7 @@ class LatencyBalancer
   sta::Graph* timingGraph_ = nullptr;
   double wireSegmentUnit_;
   float worseDelay_;
-  float buffer_delay_;
+  float bufferDelay_;
   int delayBufIndex_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;
