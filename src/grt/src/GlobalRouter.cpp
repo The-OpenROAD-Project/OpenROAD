@@ -4,8 +4,6 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
-#include <boost/icl/interval.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -31,6 +29,8 @@
 #include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "boost/icl/interval.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

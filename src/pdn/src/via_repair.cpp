@@ -3,11 +3,11 @@
 
 #include "via_repair.h"
 
-#include <boost/polygon/polygon.hpp>
 #include <map>
 #include <set>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"

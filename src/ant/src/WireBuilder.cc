@@ -3,9 +3,9 @@
 
 #include "WireBuilder.hh"
 
-#include <boost/functional/hash.hpp>
 #include <limits>
 
+#include "boost/functional/hash.hpp"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 

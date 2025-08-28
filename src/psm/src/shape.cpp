@@ -3,8 +3,6 @@
 
 #include "shape.h"
 
-#include <boost/geometry.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <functional>
 #include <map>
@@ -14,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "node.h"
 #include "odb/geom_boost.h"
 

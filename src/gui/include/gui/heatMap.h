@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <boost/multi_array.hpp>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -14,6 +13,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/multi_array.hpp"
 #include "gui/gui.h"
 
 namespace odb {

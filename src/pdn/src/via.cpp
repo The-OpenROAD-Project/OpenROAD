@@ -4,7 +4,6 @@
 #include "via.h"
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <cstddef>
 #include <map>
@@ -14,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "grid.h"
 #include "odb/db.h"

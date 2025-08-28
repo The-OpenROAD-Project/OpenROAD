@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <map>
 #include <memory>
 #include <optional>
@@ -12,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "boost/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
 #include "odb/db.h"

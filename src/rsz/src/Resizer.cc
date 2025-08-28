@@ -4,7 +4,6 @@
 #include "rsz/Resizer.hh"
 
 #include <algorithm>
-#include <boost/functional/hash.hpp>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -32,6 +31,7 @@
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
+#include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"

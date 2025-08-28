@@ -52,7 +52,7 @@ TESTS = [
     "repair_fanout2",
     "repair_fanout2_hier",
     "repair_fanout3",
-    "repair_fanout3_hier      ",
+    "repair_fanout3_hier",
     "repair_fanout4",
     "repair_fanout5",
     "repair_fanout6",

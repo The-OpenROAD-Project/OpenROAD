@@ -3,12 +3,12 @@
 
 #include "ruler.h"
 
-#include <boost/geometry.hpp>
 #include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "boost/geometry.hpp"
 #include "odb/db.h"
 
 namespace gui {

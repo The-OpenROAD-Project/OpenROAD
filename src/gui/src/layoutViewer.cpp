@@ -22,7 +22,6 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
-#include <boost/geometry.hpp>
 #include <cmath>
 #include <deque>
 #include <functional>
@@ -31,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry.hpp"
 #include "dbDescriptors.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
