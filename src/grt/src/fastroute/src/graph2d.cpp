@@ -349,24 +349,21 @@ void Graph2D::updateCongList(const std::string& net_name,
   }
 }
 
-// Prints all congested nets.
+// Prints all congested nets (debug).
 void Graph2D::printAllElements()
 {
   if (congestion_nets_.empty()) {
-    std::cout << "No congestion nets.\n";
+    logger_->report("No congestion nets.");
     return;
   }
 
-  std::cout << "Congestion Nets: ";
-  std::cout << congestion_nets_.size();
-  std::cout << " { ";
+  logger_->report("Congestion nets ({}):", congestion_nets_.size());
   for (auto it = congestion_nets_.begin(); it != congestion_nets_.end(); ++it) {
     if (it != congestion_nets_.begin()) {
-      std::cout << ", ";
+      logger_->reportLiteral(", ");
     }
-    std::cout << "\"" << *it << "\"";
+    logger_->reportLiteral(fmt::format("\"{}\"", *it));
   }
-  std::cout << " }\n";
 }
 
 // Updates usage for a horizontal edge, considering NDRs.
@@ -552,29 +549,28 @@ void Graph2D::printEdgeCapPerLayer()
 bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction)
 {
   const int8_t edgeCost = net->getEdgeCost();
-  double max_single_layer_cap = 0;
 
-  if (edgeCost > 1) {
-    // For nets with high cost, we need at least one layer with sufficient
-    // capacity
-    for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-      double layer_cap = 0;
-      if (direction == EdgeDirection::Horizontal) {
-        layer_cap = h_cap_3D_[l][x][y].cap_ndr;
-      } else {
-        layer_cap = v_cap_3D_[l][x][y].cap_ndr;
-      }
-      max_single_layer_cap = std::max(max_single_layer_cap, layer_cap);
-      if (layer_cap >= edgeCost) {
-        return true;
-      }
-    }
-
-    // No single layer can accommodate this NDR net
-    return false;
+  if (edgeCost == 1) {
+    return true;
   }
 
-  return true;
+  // For nets with high cost, we need at least one layer with sufficient
+  // capacity
+  for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+    double layer_cap = 0;
+    if (direction == EdgeDirection::Horizontal) {
+      layer_cap = h_cap_3D_[l][x][y].cap_ndr;
+    } else {
+      layer_cap = v_cap_3D_[l][x][y].cap_ndr;
+    }
+
+    if (layer_cap >= edgeCost) {
+      return true;
+    }
+  }
+
+  // No single layer can accommodate this NDR net
+  return false;
 }
 
 // Calculates the cost of an edge, considering NDRs.
@@ -603,9 +599,15 @@ double Graph2D::getCostNDRAware(FrNet* net,
   bool is_net_present = ndr_nets.find(net_name) != ndr_nets.end();
   double final_edge_cost = 0;
 
-  if (edge_cost < 0) {     // Rip-up: remove resource
-    if (is_net_present) {  // Remove only one time for L route
+  if (edge_cost < 0) {  // Rip-up: remove resource
+    // If the net is in the list, remove it and compute the edge cost.
+    // If the net is not in the list, it probably means that we are removing
+    // half the edge cost a second time in the initial routing steps. But we
+    // only need to count once to avoid problems when managing 3D capacity
+    if (is_net_present) {
       ndr_nets.erase(net_name);
+      // If the edge already has an overflow caused by NDR net we need to remove
+      // the big edge cost value
       if (edge.ndr_overflow > 0) {
         edge.ndr_overflow--;
         final_edge_cost = -OVERFLOW_COST_MULTIPLIER * edgeCost;
@@ -615,7 +617,14 @@ double Graph2D::getCostNDRAware(FrNet* net,
       updateNDRCapLayer(x, y, net, direction, edge_cost);
     }
   } else {  // Routing: add resource
+    // If the net is not in the list, add it and compute the edge cost.
+    // If the net is in the list, it probably means that we are in the
+    // initial routing steps adding two times half the edge cost. But we
+    // only need to count once to avoid problems when managing 3D capacity
     if (!is_net_present) {
+      // If the edge already has an overflow caused by NDR net or it will have
+      // an overflow due to lack of capacity in a single layer, we need to add
+      // the big edge cost value
       if (edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction)) {
         edge.ndr_overflow++;
         final_edge_cost = OVERFLOW_COST_MULTIPLIER * edgeCost;
@@ -661,11 +670,14 @@ void Graph2D::updateNDRCapLayer(const int x,
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     auto& layer_cap = cap_3D[l][x][y];
     if (edge_cost < 0) {  // Reducing edge usage
+      // If we already have a NDR net in this layer, increase the NDR capacity
+      // available again
       if (layer_cap.cap - layer_cap.cap_ndr >= edgeCost) {
         layer_cap.cap_ndr += edgeCost;
         return;
       }
     } else {  // Increasing edge usage
+      // If there is NDR capacity available, reduce the capacity value
       if (layer_cap.cap_ndr >= edgeCost) {
         layer_cap.cap_ndr -= edgeCost;
         return;
@@ -673,7 +685,9 @@ void Graph2D::updateNDRCapLayer(const int x,
     }
   }
 
-  // Overflow (need to update cap_ndr even with congestion)
+  // If the edge is already with congestion and there is no capacity available
+  // in any layer, reduce the capacity available of the first layer.
+  // When rippin-up, it will be the first to be released
   if (edge_cost > 0) {
     cap_3D[net->getMinLayer()][x][y].cap_ndr -= edgeCost;
   }

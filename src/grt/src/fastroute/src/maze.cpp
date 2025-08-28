@@ -1955,7 +1955,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   total_overflow_ = H_overflow + V_overflow;
   *maxOverflow = max_overflow;
 
-  if (logger_->debugCheck(GRT, "congestion", 1)) {
+  if (logger_->debugCheck(GRT, "congestion2D", 1)) {
     logger_->report("Overflow report:");
     logger_->report("Total usage          : {}", total_usage);
     logger_->report("Max H overflow       : {}", max_H_overflow);
@@ -2038,7 +2038,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     ahth_ = 20;
   }
 
-  if (logger_->debugCheck(GRT, "congestion", 1)) {
+  if (logger_->debugCheck(GRT, "congestion2D", 1)) {
     logger_->report("Overflow report.");
     logger_->report("Total hCap               : {}", hCap);
     logger_->report("Total vCap               : {}", vCap);

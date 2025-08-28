@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <unordered_set>
@@ -1101,6 +1102,8 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
+  const int long_edge_len = 40;
+  const int short_edge_len = 12;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
@@ -1501,8 +1504,8 @@ NetRouteMap FastRouteCore::run()
   via_cost_ = 1;
 
   if (past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 40);
-    mazeRouteMSMDOrder3D(enlarge_, 0, 12);
+    mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
+    mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
   }
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
