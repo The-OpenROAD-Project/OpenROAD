@@ -839,6 +839,37 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
   return pin_layer;
 }
 
+double EstimateParasitics::computeAverageCutResistance(Corner* corner)
+{
+  double total_resistance = 0.0;
+  int count = 0;
+
+  int min_layer = block_->getMinRoutingLayer();
+  int max_layer = block_->getMaxRoutingLayer();
+
+  if (max_layer < 0) {
+    max_layer = db_->getTech()->getRoutingLayerCount() / 2;
+  }
+
+  odb::dbTechLayer* min_tech_layer
+      = db_->getTech()->findRoutingLayer(min_layer);
+  odb::dbTechLayer* max_tech_layer
+      = db_->getTech()->findRoutingLayer(max_layer);
+
+  for (int layer_idx = min_tech_layer->getNumber();
+       layer_idx <= max_tech_layer->getNumber();
+       layer_idx++) {
+    odb::dbTechLayer* layer = db_->getTech()->findLayer(layer_idx);
+    if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
+      const float resistance = layer_res_[layer_idx][corner->index()];
+      total_resistance += resistance;
+      count++;
+    }
+  }
+
+  return count > 0 ? total_resistance / count : 0.0;
+}
+
 void EstimateParasitics::parasiticNodeConnectPins(Parasitic* parasitic,
                                                   ParasiticNode* node,
                                                   SteinerTree* tree,
@@ -861,20 +892,17 @@ void EstimateParasitics::parasiticNodeConnectPins(Parasitic* parasitic,
              layer_number++) {
           odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_number);
           if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
-            float cut_res = layer_res_[layer_number][corner->index()];
-            if (cut_res > 0.0) {
-              parasitics_->makeResistor(
-                  parasitic, resistor_id++, cut_res, node, pin_node);
-            } else {
-              parasitics_->makeResistor(
-                  parasitic, resistor_id++, 1.0e-3, node, pin_node);
-            }
+            double cut_res
+                = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
+            parasitics_->makeResistor(
+                parasitic, resistor_id++, cut_res, node, pin_node);
           }
         }
       } else {
         // Use a small resistor to keep the connectivity intact.
+        double cut_res = std::max(computeAverageCutResistance(corner), 1.0e-3);
         parasitics_->makeResistor(
-            parasitic, resistor_id++, 1.0e-3, node, pin_node);
+            parasitic, resistor_id++, cut_res, node, pin_node);
       }
     }
   }
