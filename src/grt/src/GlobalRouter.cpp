@@ -5199,6 +5199,14 @@ void GRouteDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
   }
 }
 
+void GRouteDbCbk::inDbITermPostSetAccessPoints(odb::dbITerm* iterm)
+{
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
+}
+
 void GRouteDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
