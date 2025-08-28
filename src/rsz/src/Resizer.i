@@ -106,36 +106,6 @@ using rsz::Resizer;
 namespace rsz {
 
 void
-report_net_parasitic(Net *net)
-{
-  Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
-  if (parasitic) {
-    resizer->parasitics()->report(parasitic);
-  }
-}
-
-float
-sum_parasitic_network_resist(Net *net)
-{
-  Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
-  if (parasitic) {
-    float ret = 0.0;
-    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
-      ret += resizer->parasitics()->value(resist);
-    }
-    return ret;
-  } else {
-    return 0.0f;
-  }
-}
-
-void
 remove_buffers_cmd(InstanceSeq *insts)
 {
   ensureLinked();

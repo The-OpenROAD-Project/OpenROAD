@@ -298,6 +298,37 @@ highlight_steiner_tree(const Pin *drvr_pin)
   estimate_parasitics->highlightSteiner(drvr_pin);
 }
 
+void
+report_net_parasitics(Net *net)
+{
+  EstimateParasitics *estimate = getEstimateParasitics();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = estimate->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    estimate->parasitics()->report(parasitic);
+  }
+}
+
+float
+sum_parasitic_network_resist(Net *net)
+{
+  EstimateParasitics *estimate = getEstimateParasitics();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = estimate->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    float ret = 0.0;
+    for (auto resist : estimate->parasitics()->resistors(parasitic)) {
+      ret += estimate->parasitics()->value(resist);
+    }
+    return ret;
+  } else {
+    return 0.0f;
+  }
+}
+
+
 } // namespace
 
 %} // inline
