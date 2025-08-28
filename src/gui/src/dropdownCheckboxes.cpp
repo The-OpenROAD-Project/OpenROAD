@@ -8,8 +8,8 @@
 namespace gui {
 
 DropdownCheckboxes::DropdownCheckboxes(const std::string& name,
-                                   const std::string& all_text,
-                                   QWidget* parent)
+                                       const std::string& all_text,
+                                       QWidget* parent)
     : QComboBox(parent),
       name_item_(new QStandardItem(QString::fromStdString(name))),
       all_item_(new QStandardItem(QString::fromStdString(all_text))),
@@ -20,8 +20,8 @@ DropdownCheckboxes::DropdownCheckboxes(const std::string& name,
 }
 
 DropdownCheckboxes::DropdownCheckboxes(const QString& name,
-                                   const QString& all_text,
-                                   QWidget* parent)
+                                       const QString& all_text,
+                                       QWidget* parent)
     : QComboBox(parent),
       name_item_(new QStandardItem(name)),
       all_item_(new QStandardItem(all_text)),

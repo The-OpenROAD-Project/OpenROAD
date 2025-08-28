@@ -21,11 +21,11 @@ class DropdownCheckboxes : public QComboBox
   Q_OBJECT
  public:
   DropdownCheckboxes(const std::string& name,
-                   const std::string& all_text = "All",
-                   QWidget* parent = nullptr);
+                     const std::string& all_text = "All",
+                     QWidget* parent = nullptr);
   DropdownCheckboxes(const QString& name,
-                   const QString& all_text = "All",
-                   QWidget* parent = nullptr);
+                     const QString& all_text = "All",
+                     QWidget* parent = nullptr);
   void clear();
 
   void setName(const std::string& name)
