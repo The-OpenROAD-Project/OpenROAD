@@ -5,6 +5,7 @@
 
 #include <tcl.h>
 
+#include <cstdint>
 #include <string>
 
 #include "ant/AntennaChecker.hh"

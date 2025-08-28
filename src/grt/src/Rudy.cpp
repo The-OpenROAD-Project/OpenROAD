@@ -4,6 +4,7 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <utility>
 
 #include "grt/GRoute.h"

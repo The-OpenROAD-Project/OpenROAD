@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <cstdlib>
 #include <iomanip>
 #include <map>

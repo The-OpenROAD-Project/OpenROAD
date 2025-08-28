@@ -5,6 +5,7 @@
 
 #include "nesterovPlace.h"
 
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <memory>

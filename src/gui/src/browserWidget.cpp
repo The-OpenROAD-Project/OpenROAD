@@ -9,6 +9,7 @@
 #include <QLocale>
 #include <QMouseEvent>
 #include <QString>
+#include <cstdint>
 #include <string>
 #include <vector>
 

@@ -3,6 +3,7 @@
 
 #include "ScanArchitectHeuristic.hh"
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <sstream>

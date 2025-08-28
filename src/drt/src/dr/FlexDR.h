@@ -5,6 +5,7 @@
 
 #include <triton_route/TritonRoute.h>
 
+#include <cstdint>
 #include <deque>
 #include <map>
 #include <memory>

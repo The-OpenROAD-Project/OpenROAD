@@ -4,6 +4,7 @@
 #include "odb/util.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <numeric>
