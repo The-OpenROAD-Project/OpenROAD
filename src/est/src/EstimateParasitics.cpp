@@ -890,7 +890,7 @@ void EstimateParasitics::parasiticNodeConnectPins(
     SteinerPt pt,
     size_t& resistor_id,
     Corner* corner,
-    std::set<const Pin*> connected_pins,
+    std::set<const Pin*>& connected_pins,
     const bool is_clk)
 {
   const PinSeq* pins = tree->pins(pt);
