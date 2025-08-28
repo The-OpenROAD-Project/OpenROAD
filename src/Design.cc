@@ -62,8 +62,13 @@ void Design::readDef(const std::string& file_name,
   if (tech_->getDB()->getTech() == nullptr) {
     getLogger()->error(utl::ORD, 102, "No technology has been read.");
   }
+  auto chip = tech_->getDB()->getChip();
+  if (chip == nullptr) {
+    chip = odb::dbChip::create(tech_->getDB());
+  }
   getOpenRoad()->readDef(file_name.c_str(),
                          tech_->getDB()->getTech(),
+                         chip,
                          continue_on_errors,
                          floorplan_init,
                          incremental,

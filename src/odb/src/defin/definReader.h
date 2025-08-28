@@ -53,9 +53,10 @@ class definReader : public definBase
   void useBlockName(const char* name);
   void error(std::string_view msg);
 
-  dbChip* createChip(std::vector<dbLib*>& search_libs,
-                     const char* def_file,
-                     dbTech* tech);
+  void readChip(std::vector<dbLib*>& search_libs,
+                const char* def_file,
+                dbTech* tech,
+                dbChip* chip);
   dbBlock* createBlock(dbBlock* parent,
                        std::vector<dbLib*>& search_libs,
                        const char* def_file,
@@ -225,6 +226,7 @@ class definReader : public definBase
 
   dbDatabase* _db;
   dbBlock* parent_{nullptr};  // For Hierarchal implementation if exits
+  dbChip* chip_{nullptr};
   std::unique_ptr<definBlockage> _blockageR;
   std::unique_ptr<definComponentMaskShift> _componentMaskShift;
   std::unique_ptr<definComponent> _componentR;

@@ -383,12 +383,13 @@ int definReader::designCallback(
                                        reader->hier_delimiter_);
     }
   } else {
-    dbChip* chip = reader->_db->getChip();
     if (reader->_mode != defin::DEFAULT) {
-      reader->_block = chip->getBlock();
+      reader->_block = reader->chip_->getBlock();
     } else {
-      reader->_block = dbBlock::create(
-          chip, block_name.c_str(), reader->_tech, reader->hier_delimiter_);
+      reader->_block = dbBlock::create(reader->chip_,
+                                       block_name.c_str(),
+                                       reader->_tech,
+                                       reader->hier_delimiter_);
     }
   }
   if (reader->_mode == defin::DEFAULT) {
@@ -1840,31 +1841,29 @@ void definReader::setLibs(std::vector<dbLib*>& lib_names)
   _rowR->setLibs(lib_names);
 }
 
-dbChip* definReader::createChip(std::vector<dbLib*>& libs,
-                                const char* file,
-                                odb::dbTech* tech)
+void definReader::readChip(std::vector<dbLib*>& libs,
+                           const char* file,
+                           odb::dbTech* tech,
+                           dbChip* chip)
 {
   init();
   setLibs(libs);
-  dbChip* chip = _db->getChip();
-  if (_mode != defin::DEFAULT) {
-    if (chip == nullptr) {
-      _logger->error(utl::ODB, 250, "Chip does not exist");
-    }
-  } else if (chip != nullptr) {
-    _logger->error(utl::ODB, 251, "Chip already exists");
-  } else {
-    chip = dbChip::create(_db);
+  chip_ = chip;
+  if (chip_ == nullptr) {
+    _logger->error(utl::ODB, 250, "Chip does not exist");
+  }
+  if (_mode == defin::DEFAULT && chip_->getBlock() != nullptr) {
+    _logger->error(utl::ODB, 251, "Chip already has a block");
   }
 
-  assert(chip);
+  assert(chip_);
   setTech(tech);
   _logger->info(utl::ODB, 127, "Reading DEF file: {}", file);
 
   if (!createBlock(file)) {
     dbChip::destroy(chip);
     _logger->warn(utl::ODB, 129, "Error: Failed to read DEF file");
-    return nullptr;
+    return;
   }
 
   if (_pinR->_bterm_cnt) {
@@ -1915,8 +1914,6 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
 
   _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
-
-  return chip;
 }
 
 dbBlock* definReader::createBlock(dbBlock* parent,
@@ -1929,7 +1926,7 @@ dbBlock* definReader::createBlock(dbBlock* parent,
   parent_ = parent;
   setTech(tech);
   _logger->info(utl::ODB, 135, "Reading DEF file: {}", def_file);
-
+  chip_ = parent->getChip();
   if (!createBlock(def_file)) {
     dbBlock::destroy(_block);
     _logger->warn(utl::ODB, 137, "Error: Failed to read DEF file");

@@ -38,7 +38,15 @@ odb::dbChip* read_def(odb::dbTech* tech, std::string path)
     }
   }
   odb::defin defParser(tech->getDb(), logger);
-  return defParser.createChip(libs, path.c_str(), tech);
+  auto db = tech->getDb();
+  odb::dbChip* chip = nullptr;
+  if (db->getChip() == nullptr) {
+    chip = odb::dbChip::create(db);
+  } else {
+    chip = db->getChip();
+  }
+  defParser.readChip(libs, path.c_str(), tech, chip);
+  return chip;
 }
 
 int write_def(odb::dbBlock* block,

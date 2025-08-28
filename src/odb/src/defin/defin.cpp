@@ -63,12 +63,13 @@ void defin::useBlockName(const char* name)
   _reader->useBlockName(name);
 }
 
-dbChip* defin::createChip(std::vector<dbLib*>& libs,
-                          const char* def_file,
-                          dbTech* tech)
+void defin::readChip(std::vector<dbLib*>& libs,
+                     const char* def_file,
+                     dbTech* tech,
+                     dbChip* chip)
 {
   std::lock_guard<std::mutex> lock(_def_mutex);
-  return _reader->createChip(libs, def_file, tech);
+  _reader->readChip(libs, def_file, tech, chip);
 }
 
 dbBlock* defin::createBlock(dbBlock* parent,

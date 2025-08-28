@@ -17,6 +17,7 @@ class dbDatabase;
 class dbBlock;
 class dbTech;
 class dbLib;
+class dbChip;
 class Point;
 class Rect;
 }  // namespace odb
@@ -186,6 +187,7 @@ class OpenRoad
 
   void readDef(const char* filename,
                odb::dbTech* tech,
+               odb::dbChip* chip,
                bool continue_on_errors,
                bool floorplan_init,
                bool incremental,

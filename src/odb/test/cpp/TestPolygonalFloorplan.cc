@@ -32,10 +32,11 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(libs,
-                                       DATA_PREFIX
-                                       "data/nangate45_polygon_floorplan.def",
-                                       lib_->getTech());
+  dbChip* chip = dbChip::create(db_.get());
+  def_parser.readChip(libs,
+                      DATA_PREFIX "data/nangate45_polygon_floorplan.def",
+                      lib_->getTech(),
+                      chip);
   EXPECT_NE(chip, nullptr);
 
   // Assert
@@ -77,10 +78,11 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(libs,
-                                       DATA_PREFIX
-                                       "data/nangate45_polygon_floorplan.def",
-                                       lib_->getTech());
+  dbChip* chip = dbChip::create(db_.get());
+  def_parser.readChip(libs,
+                      DATA_PREFIX "data/nangate45_polygon_floorplan.def",
+                      lib_->getTech(),
+                      chip);
   EXPECT_NE(chip, nullptr);
 
   odb::Polygon new_die_area({{0, 0},
@@ -129,10 +131,11 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(libs,
-                                       DATA_PREFIX
-                                       "data/nangate45_polygon_floorplan.def",
-                                       lib_->getTech());
+  dbChip* chip = dbChip::create(db_.get());
+  def_parser.readChip(libs,
+                      DATA_PREFIX "data/nangate45_polygon_floorplan.def",
+                      lib_->getTech(),
+                      chip);
   EXPECT_NE(chip, nullptr);
   dbBlock* block = chip->getBlock();
 
@@ -160,10 +163,11 @@ TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(libs,
-                                       DATA_PREFIX
-                                       "data/nangate45_polygon_floorplan.def",
-                                       lib_->getTech());
+  dbChip* chip = dbChip::create(db_.get());
+  def_parser.readChip(libs,
+                      DATA_PREFIX "data/nangate45_polygon_floorplan.def",
+                      lib_->getTech(),
+                      chip);
   EXPECT_NE(chip, nullptr);
   dbBlock* block = chip->getBlock();
   // Assert

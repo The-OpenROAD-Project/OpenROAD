@@ -549,6 +549,9 @@ dbSet<dbChipNet> dbChip::getChipNets() const
 dbChip* dbChip::create(dbDatabase* db_, const std::string& name, ChipType type)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
+  if (db->chip_hash_.hasMember(name.c_str())) {
+    db->getLogger()->error(utl::ODB, 273, "Chip {} already exists", name);
+  }
   _dbChip* chip = db->chip_tbl_->create();
   chip->_name = safe_strdup(name.c_str());
   chip->type_ = (uint) type;
