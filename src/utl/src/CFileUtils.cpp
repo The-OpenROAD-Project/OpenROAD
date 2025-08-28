@@ -1,6 +1,7 @@
 #include "utl/CFileUtils.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 
 namespace utl {

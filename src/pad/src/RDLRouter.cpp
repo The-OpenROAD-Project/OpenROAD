@@ -4,6 +4,7 @@
 #include "RDLRouter.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <list>

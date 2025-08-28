@@ -17,6 +17,7 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <map>

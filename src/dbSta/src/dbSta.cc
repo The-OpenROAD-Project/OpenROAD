@@ -13,6 +13,7 @@
 
 #include <algorithm>  // min
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <map>
 #include <memory>

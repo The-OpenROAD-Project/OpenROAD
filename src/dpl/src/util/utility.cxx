@@ -4,6 +4,7 @@
 #include "utility.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include "infrastructure/network.h"
 

@@ -4,6 +4,7 @@
 #include "Opt.hh"
 
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <memory>

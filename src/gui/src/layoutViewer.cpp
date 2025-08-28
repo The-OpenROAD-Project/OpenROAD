@@ -23,6 +23,7 @@
 #include <QToolTip>
 #include <QTranslator>
 #include <cmath>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <limits>
