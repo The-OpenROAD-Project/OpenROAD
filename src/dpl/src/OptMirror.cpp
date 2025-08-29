@@ -3,6 +3,7 @@
 
 #include "dpl/OptMirror.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <unordered_set>
 #include <vector>

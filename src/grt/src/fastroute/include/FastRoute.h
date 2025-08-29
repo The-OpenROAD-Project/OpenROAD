@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
@@ -117,7 +118,8 @@ class FastRouteCore
   void clearNetRoute(odb::dbNet* db_net);
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
-  void setNumAdjustments(int nAdjustements);
+  void initEdgesCapacityPerLayer();
+  void setNumAdjustments(int nAdjustments);
   void addAdjustment(int x1,
                      int y1,
                      int x2,
@@ -230,6 +232,7 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+  void clearNDRnets();
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }

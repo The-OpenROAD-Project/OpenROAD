@@ -4,6 +4,7 @@
 #include "dbWire.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <vector>
 

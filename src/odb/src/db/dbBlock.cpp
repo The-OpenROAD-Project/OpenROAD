@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <map>

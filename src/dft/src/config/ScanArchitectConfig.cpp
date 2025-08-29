@@ -3,6 +3,7 @@
 
 #include "ScanArchitectConfig.hh"
 
+#include <cstdint>
 #include <optional>
 #include <string>
 

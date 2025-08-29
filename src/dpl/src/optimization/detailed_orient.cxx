@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>

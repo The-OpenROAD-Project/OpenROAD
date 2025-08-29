@@ -5,6 +5,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>

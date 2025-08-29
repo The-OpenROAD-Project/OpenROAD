@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
@@ -2189,9 +2190,8 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
         size_t next_common_len = getCommonLength(next_name, source_name);
         if (curr_common_len > next_common_len) {
           vt_equiv_cells.erase(std::next(it));
-          ++it;
         } else {
-          vt_equiv_cells.erase(it);
+          it = vt_equiv_cells.erase(it);
         }
       } else {
         ++it;
@@ -2367,8 +2367,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   compressVTLayerName(new_layer_name);
-  VTCategory vt_cat{vt_hash_map_[hash1], new_layer_name};
-  auto [new_it, _] = vt_map_.emplace(master, vt_cat);
+  VTCategory vt_cat{vt_hash_map_[hash1], std::move(new_layer_name)};
+  const auto& [new_it, _] = vt_map_.emplace(master, std::move(vt_cat));
   debugPrint(logger_,
              RSZ,
              "equiv",

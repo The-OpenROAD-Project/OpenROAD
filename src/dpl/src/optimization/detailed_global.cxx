@@ -7,6 +7,7 @@
 #include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iosfwd>
 #include <tuple>
 #include <vector>
