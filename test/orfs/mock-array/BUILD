@@ -306,6 +306,10 @@ verilator_cc_library(
         "-Wno-DECLFILENAME",
         "-Wno-UNUSEDSIGNAL",
         "-Wno-PINMISSING",
+        # OpenROAD write_verilog uses implicit wires
+        "-Wno-IMPLICIT",
+        # FIXME remove after https://github.com/The-OpenROAD-Project/OpenROAD/issues/8108 fixed
+        "-Wno-UNDRIVEN",
         "--trace-underscore",
     ],
 )
