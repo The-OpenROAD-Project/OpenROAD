@@ -35,10 +35,6 @@ void CtsOptions::limitSinkClusteringSizes(unsigned limit)
       sinkClusteringSizes_.begin(), sinkClusteringSizes_.end(), limit);
   sinkClusteringSizes_.erase(lowerBound, sinkClusteringSizes_.end());
   sinkClusteringSizes_.push_back(limit);
-
-  for(auto i : sinkClusteringSizes_) {
-    logger_->report("i: {}", i);
-  }
 }
 
 void CtsOptions::recordBuffer(odb::dbMaster* master, MasterType type)
