@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <qchar.h>
+
 #include <QAbstractTableModel>
 #include <QCheckBox>
 #include <QColor>
@@ -10,6 +12,7 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QListWidget>
 #include <QSpinBox>
 #include <map>
@@ -18,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -28,6 +32,7 @@
 namespace sta {
 class dbSta;
 class Pin;
+class Clock;
 }  // namespace sta
 namespace gui {
 class TimingPathsModel;
@@ -90,7 +95,8 @@ class TimingPathsModel : public QAbstractTableModel
   void populateModel(const std::set<const sta::Pin*>& from,
                      const std::vector<std::set<const sta::Pin*>>& thru,
                      const std::set<const sta::Pin*>& to,
-                     const std::string& path_group_name);
+                     const std::string& path_group_name,
+                     sta::ClockSet* clks);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
@@ -99,7 +105,8 @@ class TimingPathsModel : public QAbstractTableModel
   bool populatePaths(const std::set<const sta::Pin*>& from,
                      const std::vector<std::set<const sta::Pin*>>& thru,
                      const std::set<const sta::Pin*>& to,
-                     const std::string& path_group_name);
+                     const std::string& path_group_name,
+                     sta::ClockSet* clks);
 
   STAGuiInterface* sta_;
   bool is_setup_;
@@ -397,6 +404,7 @@ class TimingControlsDialog : public QDialog
   std::set<const sta::Pin*> getFromPins() const { return from_->getPins(); }
   std::vector<std::set<const sta::Pin*>> getThruPins() const;
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
+  void getClocks(sta::ClockSet* clock_set) const;
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 
@@ -420,6 +428,7 @@ class TimingControlsDialog : public QDialog
 
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
+  DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;
   QCheckBox* one_path_per_endpoint_;
@@ -428,8 +437,9 @@ class TimingControlsDialog : public QDialog
   PinSetWidget* from_;
   std::vector<PinSetWidget*> thru_;
   PinSetWidget* to_;
+  QHash<QString, sta::Clock*> qstring_to_clk_;
 
-  static constexpr int kThruStartRow = 3;
+  static constexpr int kThruStartRow = 4;
 
   void setPinSelections();
 
