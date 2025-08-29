@@ -47,6 +47,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   odb::dbBlock* block);
 
   void run() override;
+  bool isValid() const override;
 
   // accessors
   float getBoundaryPenalty() const;
@@ -87,6 +88,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float calSingleNotchPenalty(float width, float height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
+  void calFixedMacrosPenalty();
 
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
@@ -94,7 +96,10 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   Tiling computeOverlapShape(const Rect& rect_a, const Rect& rect_b) const;
 
+  void findFixedMacros();
+
   std::vector<Rect> blockages_;
+  std::vector<Rect> fixed_macros_;
 
   Cluster* root_;
 
@@ -111,10 +116,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float boundary_weight_ = 0.0;
   float macro_blockage_weight_ = 0.0;
   float notch_weight_ = 0.0;
+  const float fixed_macros_weight_ = 100.0;
 
   float boundary_penalty_ = 0.0;
   float notch_penalty_ = 0.0;
   float macro_blockage_penalty_ = 0.0;
+  float fixed_macros_penalty_ = 0.0;
 
   float pre_boundary_penalty_ = 0.0;
   float pre_notch_penalty_ = 0.0;
@@ -123,6 +130,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float norm_boundary_penalty_ = 0.0;
   float norm_notch_penalty_ = 0.0;
   float norm_macro_blockage_penalty_ = 0.0;
+  float norm_fixed_macros_penalty_ = 0.0;
 
   // action prob
   float resize_prob_ = 0.0;
