@@ -14,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <system_error>
 
 #include "boost/stacktrace.hpp"
 #ifdef ENABLE_READLINE
@@ -228,12 +229,14 @@ int main(int argc, char* argv[])
 
   log_filename = findCmdLineKey(argc, argv, "-log");
   if (log_filename) {
-    remove(log_filename);
+    std::error_code err_ignore;
+    std::filesystem::remove(log_filename, err_ignore);
   }
 
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
   if (metrics_filename) {
-    remove(metrics_filename);
+    std::error_code err_ignored;
+    std::filesystem::remove(metrics_filename, err_ignored);
   }
 
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
