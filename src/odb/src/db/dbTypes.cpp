@@ -3,6 +3,9 @@
 
 #include "odb/dbTypes.h"
 
+#include <strings.h>
+
+#include <cassert>
 #include <cctype>
 #include <cstdint>
 #include <cstring>

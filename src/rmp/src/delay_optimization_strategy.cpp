@@ -3,6 +3,9 @@
 
 #include "delay_optimization_strategy.h"
 
+#include <string.h>
+
+#include <cstring>
 #include <mutex>
 
 #include "abc_library_factory.h"

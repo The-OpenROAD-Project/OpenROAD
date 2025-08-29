@@ -3,6 +3,9 @@
 
 #include "exa/example.h"
 
+#include <memory>
+#include <utility>
+
 #include "observer.h"
 
 namespace exa {

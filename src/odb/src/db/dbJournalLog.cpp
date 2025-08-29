@@ -3,6 +3,7 @@
 
 #include "dbJournalLog.h"
 
+#include <cstring>
 #include <string>
 
 #include "dbCommon.h"

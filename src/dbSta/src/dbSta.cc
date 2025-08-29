@@ -12,7 +12,10 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cctype>
 #include <cmath>
+#include <cstdarg>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <map>

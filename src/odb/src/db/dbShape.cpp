@@ -3,6 +3,7 @@
 
 #include "odb/dbShape.h"
 
+#include <cstring>
 #include <vector>
 
 #include "dbTechLayer.h"

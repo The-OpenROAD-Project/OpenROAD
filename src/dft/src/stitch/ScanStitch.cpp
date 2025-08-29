@@ -3,12 +3,16 @@
 
 #include "ScanStitch.hh"
 
+#include <algorithm>
 #include <cstddef>
 #include <deque>
+#include <functional>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 

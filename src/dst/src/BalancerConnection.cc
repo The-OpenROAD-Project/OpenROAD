@@ -6,6 +6,7 @@
 #include <dst/JobMessage.h>
 
 #include <cstddef>
+#include <exception>
 #include <memory>
 #include <mutex>
 #include <string>

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <iterator>
+
 #include "dbObject.h"
 #include "dbSet.h"
 

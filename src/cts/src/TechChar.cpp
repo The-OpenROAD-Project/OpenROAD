@@ -4,12 +4,15 @@
 #include "TechChar.h"
 
 #include <algorithm>
+#include <bitset>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <fstream>
 #include <functional>
 #include <iomanip>
+#include <iterator>
 #include <limits>
 #include <ostream>
 #include <sstream>

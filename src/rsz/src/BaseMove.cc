@@ -3,6 +3,13 @@
 
 #include "BaseMove.hh"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
+
 namespace rsz {
 
 using std::max;

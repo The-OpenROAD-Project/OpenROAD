@@ -3,6 +3,8 @@
 
 #include "search.h"
 
+#include <atomic>
+#include <mutex>
 #include <tuple>
 #include <utility>
 #include <vector>

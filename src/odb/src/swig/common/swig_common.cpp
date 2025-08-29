@@ -6,8 +6,11 @@
 #include <libgen.h>
 
 #include <array>
+#include <cerrno>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
+#include <ios>
 #include <string>
 #include <vector>
 

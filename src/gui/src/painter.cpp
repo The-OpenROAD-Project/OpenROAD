@@ -4,7 +4,10 @@
 #include "painter.h"
 
 #include <QFont>
+#include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <map>
 #include <string>
 
 namespace gui {

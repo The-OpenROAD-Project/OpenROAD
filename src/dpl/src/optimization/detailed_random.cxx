@@ -12,6 +12,7 @@
 #include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <stack>
 #include <string>
 #include <vector>

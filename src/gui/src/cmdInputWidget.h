@@ -6,6 +6,7 @@
 #include <QPlainTextEdit>
 #include <QSettings>
 #include <QStringList>
+#include <string>
 
 namespace gui {
 

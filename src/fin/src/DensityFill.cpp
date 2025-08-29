@@ -4,7 +4,10 @@
 #include "DensityFill.h"
 
 #include <algorithm>
+#include <array>
+#include <iterator>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 

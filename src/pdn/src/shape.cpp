@@ -4,9 +4,11 @@
 #include "shape.h"
 
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"

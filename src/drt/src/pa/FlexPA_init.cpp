@@ -6,6 +6,7 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
 #include "FlexPA.h"

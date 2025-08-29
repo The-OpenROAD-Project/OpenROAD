@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 
 #include "dbCommon.h"
 #include "odb/db.h"

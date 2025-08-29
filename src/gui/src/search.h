@@ -4,7 +4,10 @@
 #pragma once
 
 #include <QObject>
+#include <atomic>
+#include <map>
 #include <mutex>
+#include <tuple>
 #include <utility>
 #include <vector>
 

@@ -1,9 +1,18 @@
 #include "utl/ScopedTemporaryFile.h"
 
+#include <stdio.h>  // NOLINT(modernize-deprecated-headers): for fdopen()
 #include <unistd.h>
 
+#include <cerrno>
 #include <cstdio>
+#include <cstring>
+#include <exception>
 #include <filesystem>
+#include <ios>
+#include <istream>
+#include <memory>
+#include <ostream>
+#include <stdexcept>
 #include <string>
 
 #include "boost/algorithm/string/predicate.hpp"

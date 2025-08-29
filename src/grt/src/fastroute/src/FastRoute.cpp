@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>

@@ -34,8 +34,13 @@
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <memory>
 #include <numeric>
+#include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 

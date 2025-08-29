@@ -2,6 +2,9 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
+#include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 

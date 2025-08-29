@@ -1,4 +1,8 @@
 #define BOOST_TEST_MODULE TestChips
+#include <exception>
+#include <set>
+#include <vector>
+
 #include "boost/test/included/unit_test.hpp"
 #include "helper.h"
 #include "odb/db.h"

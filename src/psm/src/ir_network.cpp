@@ -4,7 +4,10 @@
 #include "ir_network.h"
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <fstream>
+#include <iterator>
 #include <list>
 #include <map>
 #include <memory>

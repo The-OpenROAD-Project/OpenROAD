@@ -3,7 +3,15 @@
 
 #include "WireBuilder.hh"
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <limits>
+#include <map>
+#include <tuple>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "boost/functional/hash.hpp"
 #include "odb/dbShape.h"

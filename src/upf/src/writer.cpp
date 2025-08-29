@@ -3,6 +3,8 @@
 
 #include "writer.h"
 
+#include <cstddef>
+#include <iostream>
 #include <string>
 
 namespace upf {

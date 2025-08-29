@@ -3,7 +3,13 @@
 
 #include "network.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
+#include <map>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "PlacementDRC.h"
 #include "infrastructure/Grid.h"

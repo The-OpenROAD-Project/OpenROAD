@@ -4,7 +4,16 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#include <algorithm>
+#include <any>
+#include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <exception>
+#include <map>
+#include <memory>
+#include <typeindex>
+#include <variant>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else
