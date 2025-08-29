@@ -3222,10 +3222,12 @@ bool dbNetwork::hasMembers(const Port* port) const
     dbBTerm* bterm = nullptr;
     dbModBTerm* modbterm = nullptr;
     staToDb(port, bterm, mterm, modbterm);
-    if (modbterm && modbterm->isBusPort()) {
-      return true;
+    if (modbterm) {
+      return modbterm->isBusPort();
     }
-    return false;
+
+    // If port is a bus port of leaf liberty instance, modbterm is null.
+    // In the case, cport->hasMembers() should be checked.
   }
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return cport->hasMembers();
