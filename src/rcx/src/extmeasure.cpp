@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 
 #include "gseq.h"
 #include "rcx/dbUtil.h"

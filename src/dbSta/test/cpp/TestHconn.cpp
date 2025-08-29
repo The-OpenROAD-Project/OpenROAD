@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <map>

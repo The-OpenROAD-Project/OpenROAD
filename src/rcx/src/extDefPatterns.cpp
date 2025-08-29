@@ -11,6 +11,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdio>
 #include <map>
 #include <vector>
 

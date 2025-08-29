@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "defwWriterCalls.h"
 #include "defwWriterCalls.hpp"
 

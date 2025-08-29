@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
+#include <cstdio>
 #include <ctime>
 #include <filesystem>
 #include <memory>

@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <vector>
 
 #include "find_some_net.h"
