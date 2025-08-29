@@ -33,8 +33,12 @@ void CtsOptions::limitSinkClusteringSizes(unsigned limit)
   }
   auto lowerBound = std::lower_bound(
       sinkClusteringSizes_.begin(), sinkClusteringSizes_.end(), limit);
-  sinkClusteringSizes_.assign(sinkClusteringSizes_.begin(), lowerBound);
+  sinkClusteringSizes_.erase(lowerBound, sinkClusteringSizes_.end());
   sinkClusteringSizes_.push_back(limit);
+
+  for(auto i : sinkClusteringSizes_) {
+    logger_->report("i: {}", i);
+  }
 }
 
 void CtsOptions::recordBuffer(odb::dbMaster* master, MasterType type)
