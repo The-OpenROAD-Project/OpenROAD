@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "defiAssertion.h"
 #include "defiAssertion.hpp"
 

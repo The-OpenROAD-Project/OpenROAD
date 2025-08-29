@@ -3,6 +3,8 @@
 
 #include "dbCCSeg.h"
 
+#include <cstdio>
+
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbDatabase.h"

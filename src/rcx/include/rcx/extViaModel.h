@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdio>
+
 #include "odb/util.h"
 #include "util.h"
 

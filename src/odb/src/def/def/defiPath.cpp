@@ -29,6 +29,7 @@
 
 #include "defiPath.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
