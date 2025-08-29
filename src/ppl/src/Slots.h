@@ -58,6 +58,7 @@ struct Slot
   odb::Point pos;
   int layer;
   Edge edge;
+  odb::Line containing_line;
 
   bool isAvailable() const { return (!blocked && !used); }
 };

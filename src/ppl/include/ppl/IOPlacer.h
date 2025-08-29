@@ -67,7 +67,7 @@ enum class Edge
   left,
   right,
   invalid,
-  polygonEdge
+  polygonEdge,
 };
 
 enum class Direction
@@ -215,6 +215,8 @@ class IOPlacer
   void excludeInterval(Interval interval);
 
   void updateOrientation(IOPin& pin);
+  bool isPointInsidePolygon(const odb::Point point, const odb::Polygon polygon);
+  void updateOrientationPolygon(IOPin& pin);
   void updatePinArea(IOPin& pin);
   void movePinToTrack(odb::Point& pos,
                       int layer,

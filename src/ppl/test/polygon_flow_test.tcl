@@ -10,12 +10,7 @@ set sdc_file "gcd_nangate45.sdc"
 # set die_area {0 0 100.13 100.8}
 # set core_area {10.07 11.2 90.25 91}
 
-# Die: outer T (unchanged, 8 vertices)
-set die_area {30 0   50 0   50 40   80 40\
-             80 60   0 60   0 40   30 40}
-
-# Core: inner T entirely inside the die (8 vertices)
-set core_area {34 4  46 4  46 44  76 44\
-              76 56  4 56  4 44  34 44}
+set die_area {0 0  400 300 400 150 300 150 300}
+set core_area {20 20 380 280 380 180 280 180 280 20}
 
 include -echo "flow.tcl"
