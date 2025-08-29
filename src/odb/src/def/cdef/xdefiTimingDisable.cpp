@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "defiTimingDisable.h"
 #include "defiTimingDisable.hpp"
 

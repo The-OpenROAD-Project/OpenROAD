@@ -4,6 +4,7 @@
 #include "definNet.h"
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 

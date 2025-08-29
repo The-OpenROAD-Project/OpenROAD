@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <cstdio>
 #include <filesystem>
 #include <string>
 

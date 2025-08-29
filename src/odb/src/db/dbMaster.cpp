@@ -3,6 +3,7 @@
 
 #include "dbMaster.h"
 
+#include <cstdint>
 #include <string>
 
 #include "dbBlock.h"

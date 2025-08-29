@@ -6,6 +6,7 @@
 #include <omp.h>
 
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>

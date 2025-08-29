@@ -3,6 +3,8 @@
 
 #include "rcx/dbUtil.h"
 
+#include <cstdint>
+#include <cstdio>
 #include <utility>
 #include <vector>
 

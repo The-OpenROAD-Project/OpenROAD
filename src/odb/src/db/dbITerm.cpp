@@ -3,6 +3,7 @@
 
 #include "dbITerm.h"
 
+#include <cstdint>
 #include <map>
 #include <utility>
 #include <vector>

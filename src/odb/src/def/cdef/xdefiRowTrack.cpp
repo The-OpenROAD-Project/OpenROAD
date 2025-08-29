@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "defiRowTrack.h"
 #include "defiRowTrack.hpp"
 

@@ -29,6 +29,7 @@
 
 #include <tcl.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 

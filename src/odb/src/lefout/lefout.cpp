@@ -6,6 +6,7 @@
 #include <spdlog/fmt/ostr.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <string>
 #include <unordered_map>
