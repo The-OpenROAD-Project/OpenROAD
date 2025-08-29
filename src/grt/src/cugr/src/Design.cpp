@@ -133,7 +133,8 @@ void Design::readInstanceObstructions()
       for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
         for (odb::dbBox* box : mpin->getGeometry()) {
           odb::dbTechLayer* tech_layer = box->getTechLayer();
-          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING
+          if (tech_layer == nullptr
+              || tech_layer->getType() != odb::dbTechLayerType::ROUTING
               || tech_layer->getRoutingLevel() > max_routing_layer_) {
             continue;
           }
@@ -151,12 +152,14 @@ void Design::readInstanceObstructions()
 
     // get lib obstructions
     for (odb::dbBox* box : db_inst->getMaster()->getObstructions()) {
-      if (box->getTechLayer()->getType() != odb::dbTechLayerType::ROUTING
-          || box->getTechLayer()->getRoutingLevel() > max_routing_layer_) {
+      odb::dbTechLayer* tech_layer = box->getTechLayer();
+      if (tech_layer == nullptr
+          || tech_layer->getType() != odb::dbTechLayerType::ROUTING
+          || tech_layer->getRoutingLevel() > max_routing_layer_) {
         continue;
       }
-      int layerIndex = box->getTechLayer()->getRoutingLevel() - 1;
 
+      int layerIndex = tech_layer->getRoutingLevel() - 1;
       odb::Rect rect = box->getBox();
       xform.apply(rect);
 
