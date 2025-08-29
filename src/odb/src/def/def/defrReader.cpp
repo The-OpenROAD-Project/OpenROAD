@@ -29,14 +29,14 @@
 
 #include "defrReader.hpp"
 
-#include <sys/stat.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 #include "defiDebug.hpp"
 #include "defiMisc.hpp"
@@ -1109,14 +1109,15 @@ int defrRead(FILE* f, const char* fName, defiUserData uData, int case_sensitive)
   defContext.data = defData;
 
   // lex_init
-  struct stat statbuf;
 
   /* 4/11/2003 - Remove file lefrRWarning.log from directory if it exist */
   /* pcr 569729 */
-  if (stat("defRWarning.log", &statbuf) != -1) {
+  std::error_code err_ignored;
+  const auto warning_file = std::filesystem::path("defRWarning.log");
+  if (std::filesystem::exists(warning_file, err_ignored)) {
     /* file exist, remove it */
     if (!defContext.settings->LogFileAppend) {
-      remove("defRWarning.log");
+      std::filesystem::remove(warning_file, err_ignored);
     }
   }
 
