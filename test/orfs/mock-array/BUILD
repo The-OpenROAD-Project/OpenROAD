@@ -145,6 +145,7 @@ orfs_flow(
         "IO_PLACER_V": "M5 M7",
         "IO_PLACER_H": "M4 M6",
         "DETAILED_ROUTE_END_ITERATION": "6",
+        "OPENROAD_HIERARCHICAL": "1",
     },
     macros = ["Element_generate_abstract"],
     sources = {
@@ -190,6 +191,7 @@ orfs_flow(
             ce_height,
         ),
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        "OPENROAD_HIERARCHICAL": "1",
     },
     sources = {
         "IO_CONSTRAINTS": [":mock-array-element-io"],
