@@ -197,17 +197,6 @@ void Graph2D::addCapV(const int x, const int y, const int cap)
   v_edges_[x][y].cap += cap;
 }
 
-// Adds estimated usage to a horizontal edge segment.
-void Graph2D::addEstUsageH(const Interval& xi, const int y, const double usage)
-{
-  for (int x = xi.lo; x < xi.hi; x++) {
-    h_edges_[x][y].est_usage += usage;
-    if (usage > 0) {
-      h_used_ggrid_.insert({x, y});
-    }
-  }
-}
-
 // Updates estimated usage for a horizontal edge segment, considering NDRs.
 void Graph2D::updateEstUsageH(const Interval& xi,
                               const int y,
@@ -233,30 +222,10 @@ void Graph2D::updateEstUsageH(const int x,
   }
 }
 
-// Adds estimated usage to a horizontal edge.
-void Graph2D::addEstUsageH(const int x, const int y, const double usage)
-{
-  h_edges_[x][y].est_usage += usage;
-  if (usage > 0) {
-    h_used_ggrid_.insert({x, y});
-  }
-}
-
 // Adds the estimated usage to the actual usage for all edges.
 void Graph2D::addEstUsageToUsage()
 {
   foreachEdge([](Edge& edge) { edge.usage += edge.est_usage; });
-}
-
-// Adds estimated usage to a vertical edge segment.
-void Graph2D::addEstUsageV(const int x, const Interval& yi, const double usage)
-{
-  for (int y = yi.lo; y < yi.hi; y++) {
-    v_edges_[x][y].est_usage += usage;
-    if (usage > 0) {
-      v_used_ggrid_.insert({x, y});
-    }
-  }
 }
 
 // Updates estimated usage for a vertical edge segment, considering NDRs.
@@ -284,15 +253,6 @@ void Graph2D::updateEstUsageV(const int x,
   }
 }
 
-// Adds estimated usage to a vertical edge.
-void Graph2D::addEstUsageV(const int x, const int y, const double usage)
-{
-  v_edges_[x][y].est_usage += usage;
-  if (usage > 0) {
-    v_used_ggrid_.insert({x, y});
-  }
-}
-
 // Adds reduction to a horizontal edge.
 void Graph2D::addRedH(const int x, const int y, const int red)
 {
@@ -311,21 +271,7 @@ void Graph2D::addRedV(const int x, const int y, const int red)
 void Graph2D::addUsageH(const Interval& xi, const int y, const int used)
 {
   for (int x = xi.lo; x < xi.hi; x++) {
-    h_edges_[x][y].usage += used;
-    if (used > 0) {
-      h_used_ggrid_.insert({x, y});
-    }
-  }
-}
-
-// Adds usage to a vertical edge segment.
-void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
-{
-  for (int y = yi.lo; y < yi.hi; y++) {
-    v_edges_[x][y].usage += used;
-    if (used > 0) {
-      v_used_ggrid_.insert({x, y});
-    }
+    addUsageH(x, y, used);
   }
 }
 
@@ -335,6 +281,23 @@ void Graph2D::addUsageH(const int x, const int y, const int used)
   h_edges_[x][y].usage += used;
   if (used > 0) {
     h_used_ggrid_.insert({x, y});
+  }
+}
+
+// Adds usage to a vertical edge segment.
+void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
+{
+  for (int y = yi.lo; y < yi.hi; y++) {
+    addUsageV(x, y, used);
+  }
+}
+
+// Adds usage to a vertical edge.
+void Graph2D::addUsageV(const int x, const int y, const int used)
+{
+  v_edges_[x][y].usage += used;
+  if (used > 0) {
+    v_used_ggrid_.insert({x, y});
   }
 }
 
@@ -357,13 +320,15 @@ void Graph2D::printAllElements()
     return;
   }
 
-  logger_->report("Congestion nets ({}):", congestion_nets_.size());
+  logger_->reportLiteral(
+      fmt::format("Congestion nets ({}): ", congestion_nets_.size()));
   for (auto it = congestion_nets_.begin(); it != congestion_nets_.end(); ++it) {
     if (it != congestion_nets_.begin()) {
       logger_->reportLiteral(", ");
     }
     logger_->reportLiteral(fmt::format("\"{}\"", *it));
   }
+  logger_->reportLiteral("\n");
 }
 
 // Updates usage for a horizontal edge, considering NDRs.
@@ -388,15 +353,6 @@ void Graph2D::updateUsageH(const Interval& xi,
 {
   for (int x = xi.lo; x < xi.hi; x++) {
     updateUsageH(x, y, net, usage);
-  }
-}
-
-// Adds usage to a vertical edge.
-void Graph2D::addUsageV(const int x, const int y, const int used)
-{
-  v_edges_[x][y].usage += used;
-  if (used > 0) {
-    v_used_ggrid_.insert({x, y});
   }
 }
 
@@ -558,13 +514,13 @@ bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction)
   // capacity
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     double layer_cap = 0;
-    if (direction == EdgeDirection::Horizontal) {
-      layer_cap = h_cap_3D_[l][x][y].cap_ndr;
-    } else {
-      layer_cap = v_cap_3D_[l][x][y].cap_ndr;
-    }
+    int8_t layer_edge_cost = net->getLayerEdgeCost(l);
 
-    if (layer_cap >= edgeCost) {
+    layer_cap = (direction == EdgeDirection::Horizontal)
+                    ? h_cap_3D_[l][x][y].cap_ndr
+                    : v_cap_3D_[l][x][y].cap_ndr;
+
+    if (layer_cap >= layer_edge_cost) {
       return true;
     }
   }
@@ -666,20 +622,22 @@ void Graph2D::updateNDRCapLayer(const int x,
   }
 
   auto& cap_3D = (dir == EdgeDirection::Horizontal) ? h_cap_3D_ : v_cap_3D_;
+  int8_t layer_edge_cost = 0;
 
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     auto& layer_cap = cap_3D[l][x][y];
+    layer_edge_cost = net->getLayerEdgeCost(l);
     if (edge_cost < 0) {  // Reducing edge usage
       // If we already have a NDR net in this layer, increase the NDR capacity
       // available again
-      if (layer_cap.cap - layer_cap.cap_ndr >= edgeCost) {
-        layer_cap.cap_ndr += edgeCost;
+      if (layer_cap.cap - layer_cap.cap_ndr >= layer_edge_cost) {
+        layer_cap.cap_ndr += layer_edge_cost;
         return;
       }
     } else {  // Increasing edge usage
       // If there is NDR capacity available, reduce the capacity value
-      if (layer_cap.cap_ndr >= edgeCost) {
-        layer_cap.cap_ndr -= edgeCost;
+      if (layer_cap.cap_ndr >= layer_edge_cost) {
+        layer_cap.cap_ndr -= layer_edge_cost;
         return;
       }
     }
@@ -689,7 +647,8 @@ void Graph2D::updateNDRCapLayer(const int x,
   // in any layer, reduce the capacity available of the first layer.
   // When rippin-up, it will be the first to be released
   if (edge_cost > 0) {
-    cap_3D[net->getMinLayer()][x][y].cap_ndr -= edgeCost;
+    layer_edge_cost = net->getLayerEdgeCost(net->getMinLayer());
+    cap_3D[net->getMinLayer()][x][y].cap_ndr -= layer_edge_cost;
   }
 }
 
