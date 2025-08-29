@@ -101,8 +101,7 @@ proc global_placement { args } {
 
     if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
       set overflow_list $keys(-timing_driven_net_reweight_overflow)
-    } else {
-      #previous values: [list 79 64 29 21 15]
+    } else {    
       set overflow_list [list 64 20]
     }
 
