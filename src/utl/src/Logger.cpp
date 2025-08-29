@@ -4,6 +4,7 @@
 #include "utl/Logger.h"
 
 #include <atomic>
+#include <cstdint>
 #include <fstream>
 #include <memory>
 #include <mutex>

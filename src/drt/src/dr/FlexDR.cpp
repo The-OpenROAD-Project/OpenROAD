@@ -7,10 +7,8 @@
 #include <omp.h>
 
 #include <algorithm>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/io/ios_state.hpp>
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
@@ -24,6 +22,9 @@
 #include <utility>
 #include <vector>
 
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/io/ios_state.hpp"
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"

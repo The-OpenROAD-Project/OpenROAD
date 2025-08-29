@@ -4,6 +4,7 @@
 #include "rcx/extSpef.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <limits>
 #include <vector>
 

@@ -5,7 +5,6 @@
 
 #include <QInputDialog>
 #include <QStringList>
-#include <boost/algorithm/string.hpp>
 #include <cmath>
 #include <functional>
 #include <iomanip>
@@ -17,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/algorithm/string.hpp"
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

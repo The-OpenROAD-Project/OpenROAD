@@ -29,6 +29,7 @@
 
 #include "lefiLayer.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <set>

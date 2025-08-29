@@ -72,7 +72,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 1 buffers.
-[INFO RSZ-0051] Resized 7 instances, 7 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 7 instances: 7 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

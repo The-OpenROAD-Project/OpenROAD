@@ -69,7 +69,7 @@ class SimulatedAnnealingCore
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
-  bool isValid(const Rect& outline) const;
+  bool fitsIn(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
@@ -154,9 +154,6 @@ class SimulatedAnnealingCore
   std::map<int, Rect> guides_;  // Macro Id -> Guide
 
   SACoreWeights core_weights_;
-
-  float original_notch_weight_ = 0.0;
-  float notch_weight_ = 0.0;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.0;

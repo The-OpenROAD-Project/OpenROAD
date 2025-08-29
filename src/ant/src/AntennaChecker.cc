@@ -6,7 +6,6 @@
 #include <omp.h>
 
 #include <algorithm>
-#include <boost/pending/disjoint_sets.hpp>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -21,6 +20,7 @@
 
 #include "Polygon.hh"
 #include "WireBuilder.hh"
+#include "boost/pending/disjoint_sets.hpp"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

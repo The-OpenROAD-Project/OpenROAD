@@ -15,13 +15,14 @@
 ///  dbTablePage
 ///
 
-#include <boost/container/flat_map.hpp>
+#include <cstdint>
 #include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "boost/container/flat_map.hpp"
 #include "dbAttrTable.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"

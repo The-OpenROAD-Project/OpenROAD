@@ -4,12 +4,12 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#include <cstdint>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else
 #include <QRegExp>
 #endif
-#include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <optional>
 #include <stdexcept>
@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"

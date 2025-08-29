@@ -33,6 +33,8 @@ COMPULSORY_TESTS = [
     "design_is_routed_fail1",
     "design_is_routed_fail2",
     "dont_touch",
+    "dump_netlists",
+    "dump_netlists_withfill",
     "dump_nets",
     "dump_via_rules",
     "dump_vias",
@@ -61,6 +63,7 @@ COMPULSORY_TESTS = [
     "replace_hier_mod2",
     "replace_hier_mod3",
     "replace_hier_mod4",
+    "replace_hier_mod5",
     "rounding",
     "row_settings",
     "sky130hd_multi_patterned",
@@ -72,6 +75,16 @@ COMPULSORY_TESTS = [
     "write_lef_and_def",
     "write_lef_polygon",
     "write_macro_placement",
+    # pass-fail
+    "test_block",
+    "test_bterm",
+    "test_destroy",
+    "test_group",
+    "test_inst",
+    "test_iterm",
+    "test_module",
+    "test_net",
+    "test_wire_codec",
 ]
 
 # Disabled in CMakeLists.txt
@@ -153,6 +166,7 @@ filegroup(
         "gcd_adder.v",
         "gcd_adder2.v",
         "gcd_adder4.v",
+        "gcd_adder5.v",
         "helper.tcl",
         "helpers.tcl",
         "replace_hier_mod_undo.tcl",
@@ -193,6 +207,12 @@ filegroup(
             ],
             "replace_hier_mod4": [
                 "gcd_abstract_lef.lefok",
+            ],
+            "dump_netlists": [
+                "dump_netlists_cdl.ok",
+            ],
+            "dump_netlists_withfill": [
+                "dump_netlists_withfill_cdl.ok",
             ],
         }.get(
             test_name,

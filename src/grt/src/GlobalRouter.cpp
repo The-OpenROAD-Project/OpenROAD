@@ -4,9 +4,8 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
-#include <boost/icl/interval.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <functional>
@@ -32,6 +31,8 @@
 #include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "boost/icl/interval.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -162,6 +163,9 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
+
+  // Init the data structures to monitor 3D capacity during 2D phases
+  fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = findNets(true);
   checkPinPlacement();
@@ -472,6 +476,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
+      fastroute_->clearNDRnets();
       incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
     }
@@ -1289,7 +1294,7 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      if (layerIdx > net_max_layer) {
+      if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
         continue;
       }
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
@@ -1312,6 +1317,16 @@ void GlobalRouter::computeTrackConsumption(
 
       track_consumption
           = std::max(track_consumption, static_cast<int8_t>(consumption));
+
+      if (logger_->debugCheck(GRT, "ndrInfo", 1)) {
+        logger_->report(
+            "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
+            net->getConstName(),
+            layer_rule->getLayer()->getConstName(),
+            (float) ndr_pitch / default_pitch,
+            consumption,
+            track_consumption);
+      }
     }
   }
 }

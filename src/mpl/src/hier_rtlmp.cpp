@@ -440,7 +440,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
 
-  const Rect outline(0, 0, tree_->root->getWidth(), tree_->root->getHeight());
+  const Rect outline = tree_->root->getBBox();
 
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
@@ -462,10 +462,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const Rect new_outline(0,
-                             0,
-                             outline.getWidth() * vary_factor_list[run_id++],
-                             outline.getHeight());
+      Rect new_outline = outline;
+      const float new_width = outline.getWidth() * vary_factor_list[run_id++];
+      new_outline.setXMax(new_outline.xMin() + new_width);
+
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(block_, new_outline));
       }
@@ -506,7 +506,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -520,10 +520,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const Rect new_outline(0,
-                             0,
-                             outline.getWidth(),
-                             outline.getHeight() * vary_factor_list[run_id++]);
+      Rect new_outline = outline;
+      const float new_height = outline.getHeight() * vary_factor_list[run_id++];
+      new_outline.setYMax(new_outline.yMin() + new_height);
+
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(block_, new_outline));
       }
@@ -564,7 +564,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -746,7 +746,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -800,7 +800,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -2546,7 +2546,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       // Reset weights so we can compare the final costs.
       sa->setWeights(placement_core_weights_);
 
-      if (sa->isValid(outline) && sa->getNormCost() < best_cost) {
+      if (sa->isValid() && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa.get();
       }

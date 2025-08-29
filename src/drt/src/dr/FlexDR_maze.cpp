@@ -2,8 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <chrono>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "dr/FlexDR.h"

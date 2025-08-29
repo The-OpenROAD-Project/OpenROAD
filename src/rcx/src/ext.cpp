@@ -3,6 +3,7 @@
 
 #include "rcx/ext.h"
 
+#include <cstdio>
 #include <functional>
 #include <string>
 

@@ -2,8 +2,8 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <limits>
 #include <memory>
@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "boost/random/uniform_int_distribution.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Grid.h"

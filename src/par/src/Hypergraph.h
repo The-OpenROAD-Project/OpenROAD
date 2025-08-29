@@ -13,12 +13,12 @@
 // Rule2 : Each hyperedge can include a vertex at most once.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include <boost/range/iterator_range_core.hpp>
 #include <memory>
 #include <set>
 #include <vector>
 
 #include "Utilities.h"
+#include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
 // The basic function related to hypergraph should be listed here

@@ -4,7 +4,6 @@
 #include "SimulatedAnnealingCore.h"
 
 #include <algorithm>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -16,6 +15,7 @@
 #include <vector>
 
 #include "MplObserver.h"
+#include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
 #include "object.h"
 #include "odb/db.h"
@@ -158,7 +158,7 @@ bool SimulatedAnnealingCore<T>::isValid() const
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::isValid(const Rect& outline) const
+bool SimulatedAnnealingCore<T>::fitsIn(const Rect& outline) const
 {
   return (width_ <= std::ceil(outline.getWidth()))
          && (height_ <= std::ceil(outline.getHeight()));
@@ -713,10 +713,6 @@ void SimulatedAnnealingCore<T>::fastSA()
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
 
-  // Used to ensure notch penalty is used only in the latter steps
-  // as it is too expensive
-  notch_weight_ = 0.0;
-
   updateBestResult(cost);
 
   while (step <= max_num_step_) {
@@ -753,13 +749,6 @@ void SimulatedAnnealingCore<T>::fastSA()
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-
-    if (step == max_num_step_ - macros_.size() * 2) {
-      notch_weight_ = original_notch_weight_;
-      packFloorplan();
-      calPenalty();
-      pre_cost = calNormCost();
-    }
   }
 
   packFloorplan();

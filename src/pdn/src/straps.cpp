@@ -4,8 +4,6 @@
 #include "straps.h"
 
 #include <algorithm>
-#include <boost/geometry.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <functional>
 #include <limits>
 #include <map>
@@ -15,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"

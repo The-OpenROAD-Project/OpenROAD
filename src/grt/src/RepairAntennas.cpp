@@ -6,7 +6,6 @@
 #include <omp.h>
 
 #include <algorithm>
-#include <boost/pending/disjoint_sets.hpp>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -17,6 +16,7 @@
 
 #include "Net.h"
 #include "Pin.h"
+#include "boost/pending/disjoint_sets.hpp"
 #include "grt/GlobalRouter.h"
 #include "utl/Logger.h"
 

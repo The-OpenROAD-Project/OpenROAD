@@ -4,8 +4,6 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/container/flat_map.hpp>
-#include <boost/container/flat_set.hpp>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -17,6 +15,8 @@
 #include <vector>
 
 #include "FlexMazeTypes.h"
+#include "boost/container/flat_map.hpp"
+#include "boost/container/flat_set.hpp"
 #include "db/drObj/drPin.h"
 #include "db/infra/frBox.h"
 #include "dr/FlexWavefront.h"

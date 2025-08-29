@@ -2,6 +2,7 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdint>
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"
@@ -720,9 +721,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         // the position of this segment in seglist
         const int8_t cost = nets_[netID]->getEdgeCost();
         if (x1 < x2) {
-          seglist_[netID].emplace_back(x1, y1, x2, y2, cost);
+          seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
         } else {
-          seglist_[netID].emplace_back(x2, y2, x1, y1, cost);
+          seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
         }
       }
     }  // loop j

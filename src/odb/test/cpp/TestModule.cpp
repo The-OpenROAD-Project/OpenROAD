@@ -1,8 +1,9 @@
 #define BOOST_TEST_MODULE TestModule
-#include <boost/test/included/unit_test.hpp>
+#include <cstdio>
 #include <iostream>
 #include <string>
 
+#include "boost/test/included/unit_test.hpp"
 #include "helper.h"
 #include "odb/db.h"
 

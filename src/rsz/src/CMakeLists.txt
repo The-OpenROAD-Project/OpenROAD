@@ -26,6 +26,7 @@ add_library(rsz_lib
     SplitLoadMove.cc
     SwapPinsMove.cc
     UnbufferMove.cc
+    VTSwapMove.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
