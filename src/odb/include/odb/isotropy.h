@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <ostream>
+
 #include "utl/Logger.h"
 
 namespace odb {

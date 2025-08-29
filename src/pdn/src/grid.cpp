@@ -4,10 +4,12 @@
 #include "grid.h"
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 

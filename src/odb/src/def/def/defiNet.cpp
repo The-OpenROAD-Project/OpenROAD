@@ -29,9 +29,12 @@
 
 #include "defiNet.hpp"
 
+#include <string.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <sstream>
 
 #include "defiDebug.hpp"

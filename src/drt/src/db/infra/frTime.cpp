@@ -3,7 +3,11 @@
 
 #include "frTime.h"
 
+#include <chrono>
 #include <iomanip>
+#include <ios>
+#include <iostream>
+#include <ostream>
 
 #include "boost/io/ios_state.hpp"
 #include "utl/mem_stats.h"

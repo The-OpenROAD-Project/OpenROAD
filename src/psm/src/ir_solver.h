@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>

@@ -10,6 +10,7 @@
 #endif
 
 #include <cstdio>
+#include <cstring>
 #include <map>
 #include <vector>
 

@@ -3,7 +3,9 @@
 
 #include "ruler.h"
 
+#include <any>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>

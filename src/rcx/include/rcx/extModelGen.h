@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdio>
+#include <list>
 #include <string>
 
 #include "extRCap.h"

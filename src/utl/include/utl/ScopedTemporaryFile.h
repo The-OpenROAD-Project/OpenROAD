@@ -6,7 +6,9 @@
 #include <climits>
 #include <cstdio>
 #include <fstream>
+#include <istream>
 #include <memory>
+#include <ostream>
 #include <string>
 
 #include "boost/iostreams/filtering_streambuf.hpp"

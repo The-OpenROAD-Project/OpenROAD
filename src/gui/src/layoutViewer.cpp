@@ -22,11 +22,16 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <deque>
 #include <functional>
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <tuple>
 #include <utility>
 #include <vector>

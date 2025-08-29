@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <ostream>
+
 #include "frBaseTypes.h"
 
 namespace drt {

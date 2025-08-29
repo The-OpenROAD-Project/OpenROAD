@@ -3,6 +3,7 @@
 
 #include "via_repair.h"
 
+#include <array>
 #include <map>
 #include <set>
 #include <vector>

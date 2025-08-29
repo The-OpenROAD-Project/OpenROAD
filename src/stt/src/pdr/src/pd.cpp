@@ -6,9 +6,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <deque>
 #include <limits>
 #include <map>
 #include <numeric>
+#include <tuple>
 #include <utility>
 #include <vector>
 

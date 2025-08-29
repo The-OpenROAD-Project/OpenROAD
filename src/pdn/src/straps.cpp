@@ -4,7 +4,9 @@
 #include "straps.h"
 
 #include <algorithm>
+#include <array>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>

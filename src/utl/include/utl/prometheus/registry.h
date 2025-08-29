@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <map>
 #include <memory>
 #include <mutex>

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include "dbStream.h"
 
 namespace odb {

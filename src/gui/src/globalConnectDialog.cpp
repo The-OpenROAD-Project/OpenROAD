@@ -8,6 +8,10 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <regex>
+#include <set>
+#include <stdexcept>
+#include <string>
 
 #include "utl/Logger.h"
 

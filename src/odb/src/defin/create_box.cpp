@@ -3,6 +3,8 @@
 
 #include "create_box.h"
 
+#include <cassert>
+#include <cmath>
 #include <cstdio>
 
 #include "utl/Logger.h"

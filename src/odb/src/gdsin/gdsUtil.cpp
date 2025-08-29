@@ -3,9 +3,11 @@
 
 #include "odb/gdsUtil.h"
 
+#include <cmath>
 #include <cstdint>
 #include <ctime>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 

@@ -3,6 +3,9 @@
 
 #include "dst/Distributed.h"
 
+#include <cstddef>
+#include <cstring>
+#include <exception>
 #include <memory>
 #include <string>
 #include <utility>

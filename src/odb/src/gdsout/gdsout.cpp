@@ -4,6 +4,7 @@
 #include "odb/gdsout.h"
 
 #include <cstdint>
+#include <ctime>
 #include <iostream>
 #include <string>
 #include <vector>

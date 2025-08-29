@@ -4,6 +4,8 @@
 #include "dbMaster.h"
 
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "dbBlock.h"

@@ -3,6 +3,8 @@
 
 #include "RDLRouter.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -12,6 +14,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 

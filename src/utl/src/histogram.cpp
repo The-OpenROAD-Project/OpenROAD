@@ -3,6 +3,11 @@
 
 #include "utl/histogram.h"
 
+#include <algorithm>
+#include <cmath>
+#include <optional>
+#include <utility>
+
 #include "utl/Logger.h"
 
 namespace utl {

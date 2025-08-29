@@ -3,6 +3,9 @@
 
 #include "dbTechNonDefaultRule.h"
 
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 

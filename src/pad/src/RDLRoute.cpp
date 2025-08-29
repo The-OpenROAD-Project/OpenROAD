@@ -3,8 +3,10 @@
 
 #include "RDLRoute.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "odb/db.h"

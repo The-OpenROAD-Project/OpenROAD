@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
