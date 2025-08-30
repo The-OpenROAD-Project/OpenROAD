@@ -74,6 +74,7 @@ class MplObserver
   virtual void setFencePenalty(const PenaltyData& penalty) {}
   virtual void setGuidancePenalty(const PenaltyData& penalty) {}
   virtual void setMacroBlockagePenalty(const PenaltyData& penalty) {}
+  virtual void setFixedMacrosPenalty(const PenaltyData& penalty) {}
   virtual void setNotchPenalty(const PenaltyData& penalty) {}
   virtual void setOutlinePenalty(const PenaltyData& penalty) {}
   virtual void setWirelengthPenalty(const PenaltyData& penalty) {}
