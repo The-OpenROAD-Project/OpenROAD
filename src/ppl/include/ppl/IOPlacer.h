@@ -164,9 +164,9 @@ class IOPlacer
                     Edge edge,
                     std::vector<Section>& sections);
   void findSectionsPolygon(int begin,
-                    int end,
-                    odb::Line poly_edge,
-                    std::vector<Section>& sections);
+                           int end,
+                           odb::Line poly_edge,
+                           std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
@@ -179,7 +179,8 @@ class IOPlacer
   void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
-  void createSectionsPerEdgePolygon(odb::Line poly_edge, const std::set<int>& layers);
+  void createSectionsPerEdgePolygon(odb::Line poly_edge,
+                                    const std::set<int>& layers);
   bool isPointOnLine(const odb::Point& point, const odb::Line& line) const;
   void createSections();
   void createSectionsPolygon();
