@@ -376,7 +376,7 @@ static int TraceTclCommand(
     int /* level */,
     const char* command ,
     Tcl_Command commandToken,
-    int objc,
+    int /* objc */,
     Tcl_Obj *const objv[])
 {
 
