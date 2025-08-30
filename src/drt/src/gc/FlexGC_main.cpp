@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 

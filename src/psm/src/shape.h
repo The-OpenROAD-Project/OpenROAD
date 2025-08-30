@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "ir_network.h"
 #include "odb/geom_boost.h"
 

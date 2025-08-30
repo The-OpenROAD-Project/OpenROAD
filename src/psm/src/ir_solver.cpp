@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connection.h"
 #include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"

@@ -15,6 +15,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "dr/FlexDR.h"
 #include "frRTree.h"
 

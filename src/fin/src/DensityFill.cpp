@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "boost/lexical_cast.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "graphics.h"
 #include "odb/dbShape.h"
 

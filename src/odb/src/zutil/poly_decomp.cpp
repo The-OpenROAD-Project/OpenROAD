@@ -6,6 +6,7 @@
 #include <list>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "odb/geom_boost.h"
 
 namespace gtl = boost::polygon;

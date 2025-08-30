@@ -31,6 +31,7 @@
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/io/ios_state.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"

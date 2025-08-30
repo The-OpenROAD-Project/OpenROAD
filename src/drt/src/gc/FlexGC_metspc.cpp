@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "gc/FlexGC_impl.h"
 
 namespace drt {

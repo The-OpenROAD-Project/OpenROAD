@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "FlexPA.h"
+#include "boost/polygon/polygon.hpp"
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 

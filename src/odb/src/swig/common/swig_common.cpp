@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"

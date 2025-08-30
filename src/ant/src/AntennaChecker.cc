@@ -23,6 +23,7 @@
 #include "Polygon.hh"
 #include "WireBuilder.hh"
 #include "boost/pending/disjoint_sets.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

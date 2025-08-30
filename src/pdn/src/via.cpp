@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "grid.h"

@@ -7,6 +7,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
 
