@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/bind/bind.hpp"
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
 #include "odb/db.h"

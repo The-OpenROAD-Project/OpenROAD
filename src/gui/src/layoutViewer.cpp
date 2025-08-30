@@ -36,7 +36,7 @@
 #include <utility>
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "dbDescriptors.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
