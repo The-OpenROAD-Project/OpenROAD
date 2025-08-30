@@ -51,6 +51,7 @@ cc_library(
         "@spdlog",
     ],
 )
+
 cc_library(
     name = "ui",
     srcs = [
@@ -60,7 +61,6 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/est/EstimateParasitics.h",
         "include/est/MakeEstimateParasitics.h",
     ],
     copts = [

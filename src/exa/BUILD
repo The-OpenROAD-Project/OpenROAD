@@ -33,16 +33,11 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/MakeExample.cpp",
         "src/graphics.cpp",
         "src/graphics.h",
         "src/observer.h",
         ":swig",
         ":tcl",
-    ],
-    hdrs = [
-        "include/exa/MakeExample.h",
-        "include/exa/example.h",
     ],
     copts = [
         "-Isrc/exa/src",
@@ -51,6 +46,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":exa",
         "//:ord",
         "//src/gui",
         "//src/odb",
