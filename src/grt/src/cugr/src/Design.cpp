@@ -71,7 +71,8 @@ void Design::readNetlist()
 {
   int net_index = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
-    if (db_net->isSpecial() || db_net->getSigType().isSupply()) {
+    if (db_net->isSpecial() || db_net->getSigType().isSupply()
+        || !db_net->getSWires().empty() || db_net->isConnectedByAbutment()) {
       continue;
     }
 
