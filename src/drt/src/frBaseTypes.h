@@ -14,6 +14,7 @@
 #include "boost/geometry/geometries/box.hpp"
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometries/segment.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/geometry/strategies/strategies.hpp"
 #include "boost/serialization/base_object.hpp"
 #include "odb/dbTypes.h"

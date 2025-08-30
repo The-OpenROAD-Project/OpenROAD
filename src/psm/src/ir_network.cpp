@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
 #include "odb/dbShape.h"

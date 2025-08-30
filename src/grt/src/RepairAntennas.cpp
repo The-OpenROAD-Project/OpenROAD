@@ -18,6 +18,7 @@
 
 #include "Net.h"
 #include "Pin.h"
+#include "boost/geometry/geometry.hpp"
 #include "boost/pending/disjoint_sets.hpp"
 #include "grt/GlobalRouter.h"
 #include "utl/Logger.h"

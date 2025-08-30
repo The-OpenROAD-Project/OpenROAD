@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "frRTree.h"
 #include "ta/FlexTA.h"
 

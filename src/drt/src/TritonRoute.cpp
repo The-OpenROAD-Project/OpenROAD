@@ -21,6 +21,7 @@
 #include "PACallBack.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"

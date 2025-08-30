@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/db.h"

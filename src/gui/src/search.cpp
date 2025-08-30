@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "odb/dbShape.h"
 
 namespace gui {

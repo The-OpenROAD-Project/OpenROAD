@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "gr/FlexGR.h"
 
 namespace drt {

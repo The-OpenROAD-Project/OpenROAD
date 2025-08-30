@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"

@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
 #include "dr/FlexDR.h"
 #include "frProfileTask.h"

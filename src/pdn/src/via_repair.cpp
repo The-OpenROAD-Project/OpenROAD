@@ -8,6 +8,7 @@
 #include <set>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "odb/db.h"

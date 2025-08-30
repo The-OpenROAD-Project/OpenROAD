@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "FlexRP.h"
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
