@@ -10,6 +10,8 @@ TESTS = [
     "buffer_ports10",
     "buffer_ports11",
     "buffer_ports11_hier",
+    "buffer_ports12",
+    "buffer_ports12_hier",
     "buffer_ports3",
     "buffer_ports4",
     "buffer_ports5",
