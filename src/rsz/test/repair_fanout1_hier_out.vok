@@ -7,6 +7,11 @@ endmodule
 module hi_fanout_child (clk1);
  input clk1;
 
+ wire net0;
+ wire net1;
+ wire net2;
+ wire net3;
+ wire net4;
 
  BUF_X1 fanout4 (.A(net0),
     .Z(net4));

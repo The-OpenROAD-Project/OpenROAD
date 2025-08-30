@@ -1,6 +1,16 @@
 module hi_fanout (clk1);
  input clk1;
 
+ wire net9;
+ wire net8;
+ wire net6;
+ wire net5;
+ wire net4;
+ wire net3;
+ wire net2;
+ wire net1;
+ wire net0;
+ wire net7;
 
  BUF_X1 fanout9 (.A(net0),
     .Z(net9));
