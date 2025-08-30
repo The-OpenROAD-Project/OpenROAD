@@ -12,6 +12,7 @@
 #include "ScanArchitectConfig.hh"
 #include "ScanCellMock.hh"
 #include "gtest/gtest.h"
+#include "utl/Logger.h"
 
 namespace dft::test {
 namespace {

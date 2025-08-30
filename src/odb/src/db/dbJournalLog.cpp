@@ -7,6 +7,7 @@
 #include <string>
 
 #include "dbCommon.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

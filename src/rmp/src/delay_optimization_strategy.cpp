@@ -13,6 +13,7 @@
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
+#include "utl/Logger.h"
 #include "utl/deleter.h"
 
 namespace abc {

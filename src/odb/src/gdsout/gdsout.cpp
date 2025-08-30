@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "utl/Logger.h"
+
 namespace odb::gds {
 
 using utl::ODB;
