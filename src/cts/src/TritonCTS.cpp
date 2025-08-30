@@ -176,7 +176,7 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
-  return fanout;
+  return fanout == std::numeric_limits<int>::max() ? 0 : fanout;
 }
 
 void TritonCTS::setupCharacterization()
@@ -213,10 +213,7 @@ void TritonCTS::setupCharacterization()
   }
 
   if (sinkMaxFanout) {
-    if (options_->getSinkClusteringSize() > sinkMaxFanout) {
-      options_->setSinkClusteringSize(sinkMaxFanout);
-    }
-
+    options_->limitSinkClusteringSizes(sinkMaxFanout);
     if (sinkMaxFanout < options_->getMaxFanout()) {
       options_->setMaxFanout(sinkMaxFanout);
     }
