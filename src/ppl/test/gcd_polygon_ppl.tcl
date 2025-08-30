@@ -1,13 +1,12 @@
 # gcd_nangate45 IO placement
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_def gcd_polygon.def
+read_def gcd_polygon_pre_ppl-tcl.def
 
-make_tracks
+# make_tracks
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 -min_distance 0.12 -is_rectilinear_die
 
 set def_file [make_result_file gcd.def]
 
 write_def $def_file
-
 diff_file gcd.defok $def_file

@@ -89,11 +89,8 @@ set_macro_extension 2
 global_placement -density $global_place_density \
   -pad_left $global_place_pad -pad_right $global_place_pad -skip_io
 
-# write_def
-write_def [make_result_file gcd_polygon.def]
-
 # IO Placement
-place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer -is_rectilinear_die
+place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 # Global placement with placed IOs and routability-driven
 global_placement -routability_driven -density $global_place_density \
