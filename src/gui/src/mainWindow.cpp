@@ -42,6 +42,7 @@
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "fileLine.h"
 #include "globalConnectDialog.h"
 #include "gui/heatMap.h"
 #include "helpWidget.h"
@@ -619,6 +620,8 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new LibertyPgPortDescriptor(sta));
   gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
+
+  gui->registerDescriptor<FileLine>(new FileLineDescriptor);
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
