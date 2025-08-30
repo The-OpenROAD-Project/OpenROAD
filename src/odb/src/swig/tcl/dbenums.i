@@ -83,6 +83,65 @@
 		$1 = 0;
 	}
 }
+%typemap(out) odb::dbChip::ChipType, dbChip::ChipType {
+	Tcl_Obj *obj = nullptr;
+	switch ($1) {
+		case odb::dbChip::ChipType::DIE:
+			obj = Tcl_NewStringObj("DIE", -1);
+			break;
+	 	case odb::dbChip::ChipType::RDL:
+			obj = Tcl_NewStringObj("RDL", -1);
+			break;
+	 	case odb::dbChip::ChipType::IP:
+			obj = Tcl_NewStringObj("IP", -1);
+			break;
+	 	case odb::dbChip::ChipType::SUBSTRATE:
+			obj = Tcl_NewStringObj("SUBSTRATE", -1);
+			break;
+	 	case odb::dbChip::ChipType::HIER:
+			obj = Tcl_NewStringObj("HIER", -1);
+			break;
+	}
+	Tcl_SetObjResult(interp, obj);
+}
+%typemap(in) odb::dbChip::ChipType, dbChip::ChipType {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	if (strcasecmp(str, "DIE") == 0) {
+		$1 = odb::dbChip::ChipType::DIE;
+	} else if (strcasecmp(str, "RDL") == 0) {
+		$1 = odb::dbChip::ChipType::RDL;
+	} else if (strcasecmp(str, "IP") == 0) {
+		$1 = odb::dbChip::ChipType::IP;
+	} else if (strcasecmp(str, "SUBSTRATE") == 0) {
+		$1 = odb::dbChip::ChipType::SUBSTRATE;
+	} else if (strcasecmp(str, "HIER") == 0) {
+		$1 = odb::dbChip::ChipType::HIER;
+	} else {
+    SWIG_exception(SWIG_ValueError, "Unknown chip type");
+	}
+ }
+%typemap(typecheck) odb::dbChip::ChipType, dbChip::ChipType {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "DIE") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "RDL") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "IP") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "SUBSTRATE") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "HIER") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
 %typemap(out) odb::dbSigType, dbSigType {
 	Tcl_Obj *obj = nullptr;
 	switch ($1.getValue()) {

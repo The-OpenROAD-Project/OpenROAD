@@ -308,7 +308,8 @@ read_def_cmd(const char *filename,
              bool continue_on_errors,
              bool floorplan_init,
              bool incremental,
-             bool child)
+             bool child,
+             odb::dbChip* chip)
 {
   OpenRoad *ord = getOpenRoad();
   auto* db = ord->getDb();
@@ -322,7 +323,7 @@ read_def_cmd(const char *filename,
     auto logger = getLogger();
     logger->error(utl::ORD, 52, "Technology {} not found", tech_name);
   }
-  ord->readDef(filename, tech, continue_on_errors,
+  ord->readDef(filename, tech, chip, continue_on_errors,
                floorplan_init, incremental, child);
 }
 

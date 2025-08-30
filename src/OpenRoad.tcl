@@ -41,10 +41,11 @@ proc read_lef { args } {
 sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental|-child]\
                                    [-continue_on_errors]\
                                    [-tech name] \
+                                   [-chip chip_name] \
                                    filename}
 
 proc read_def { args } {
-  sta::parse_key_args "read_def" args keys {-tech} \
+  sta::parse_key_args "read_def" args keys {-tech -chip} \
     flags {-floorplan_initialize -incremental \
            -order_wires -continue_on_errors -child}
   sta::check_argc_eq1 "read_def" $args
@@ -72,8 +73,20 @@ proc read_def { args } {
     utl::error ORD 16 "Options -incremental, -floorplan_initialization,\
       and -child are mutually exclusive."
   }
+  if { [info exists keys(-chip)] } {
+    set chip [[ord::get_db] findChip $keys(-chip)]
+    if { $chip == "NULL" } {
+      utl::error ORD 20 "Chip $keys(-chip) not found."
+    }
+  } else {
+    if { [[ord::get_db] getChip] == "NULL" } {
+      set chip [odb::dbChip_create [ord::get_db]]
+    } else {
+      set chip [[ord::get_db] getChip]
+    }
+  }
   ord::read_def_cmd $filename $tech_name $continue_on_errors $floorplan_init \
-    $incremental $child
+    $incremental $child $chip
 }
 
 sta::define_cmd_args "write_def" {[-version version] filename}
