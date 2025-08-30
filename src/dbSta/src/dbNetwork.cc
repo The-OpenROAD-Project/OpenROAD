@@ -312,6 +312,8 @@ class DbInstanceNetIterator : public InstanceNetIterator
   dbSet<dbNet>::iterator end_;
   dbSet<dbModNet>::iterator mod_net_iter_;
   dbSet<dbModNet>::iterator mod_net_end_;
+  std::vector<dbNet*> flat_nets_vec_;
+  size_t flat_net_idx_ = 0;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
@@ -319,16 +321,72 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
     : network_(network)
 {
   if (network_->hasHierarchy()) {
-    dbInst* db_inst;
-    dbModInst* mod_inst;
-    network_->staToDb(instance, db_inst, mod_inst);
-    if (mod_inst) {
-      dbModule* master = mod_inst->getMaster();
-      dbSet<dbModNet> nets = master->getModNets();
-      mod_net_iter_ = nets.begin();
-      mod_net_end_ = nets.end();
+    //
+    // In hierarchical flow, the net iterator collects both hierarchical
+    // nets (dbModNets) and unique flat nets (dbNets) within the
+    // instance's module scope.
+    // Flat nets can be retrieved by traversing instance ITerms and BTerms.
+    // Avoids the duplication b/w flat and hierarchical nets.
+    //
+
+    // Get the module of the instance
+    dbModule* module = nullptr;
+    if (instance == network->topInstance()) {
+      module = network->block()->getTopModule();
+    } else {
+      dbInst* db_inst;
+      dbModInst* mod_inst;
+      network_->staToDb(instance, db_inst, mod_inst);
+      if (mod_inst) {
+        module = mod_inst->getMaster();
+      }
+    }
+
+    if (module) {
+      // Get dbModNets
+      dbSet<dbModNet> mod_nets = module->getModNets();
+      mod_net_iter_ = mod_nets.begin();
+      mod_net_end_ = mod_nets.end();
+
+      // Keep track of flat nets that are already represented by a mod_net
+      // to avoid returning both.
+      std::set<dbNet*> handled_flat_nets;
+      for (dbModNet* mod_net : mod_nets) {
+        dbNet* flat_net = network_->findRelatedDbNet(mod_net);
+        if (flat_net) {
+          handled_flat_nets.insert(flat_net);
+        }
+      }
+
+      // Collect dbNets from children dbInsts' pins that are not already
+      // handled.
+      std::set<dbNet*> flat_nets_set;
+      for (dbInst* child_inst : module->getInsts()) {
+        for (dbITerm* iterm : child_inst->getITerms()) {
+          dbNet* flat_net = iterm->getNet();
+          if (flat_net
+              && handled_flat_nets.find(flat_net) == handled_flat_nets.end()) {
+            flat_nets_set.insert(flat_net);
+          }
+        }
+      }
+
+      // For top instance, also check top-level ports (BTerms)
+      if (instance == network->topInstance()) {
+        for (dbBTerm* bterm : network->block()->getBTerms()) {
+          dbNet* flat_net = bterm->getNet();
+          if (flat_net
+              && handled_flat_nets.find(flat_net) == handled_flat_nets.end()) {
+            flat_nets_set.insert(flat_net);
+          }
+        }
+      }
+      flat_nets_vec_.assign(flat_nets_set.begin(), flat_nets_set.end());
     }
   } else {
+    //
+    // In flat flow, the net iterator collects all nets from top block
+    //
     if (instance == network->topInstance()) {
       dbSet<dbNet> nets = network->block()->getNets();
       iter_ = nets.begin();
@@ -340,7 +398,10 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
 bool DbInstanceNetIterator::hasNext()
 {
   if (network_->hasHierarchy()) {
-    return mod_net_iter_ != mod_net_end_;
+    if (mod_net_iter_ != mod_net_end_) {
+      return true;
+    }
+    return flat_net_idx_ < flat_nets_vec_.size();
   }
   return iter_ != end_;
 }
@@ -348,9 +409,16 @@ bool DbInstanceNetIterator::hasNext()
 Net* DbInstanceNetIterator::next()
 {
   if (network_->hasHierarchy()) {
-    dbModNet* net = *mod_net_iter_;
-    mod_net_iter_++;
-    return network_->dbToSta(net);
+    if (mod_net_iter_ != mod_net_end_) {
+      dbModNet* net = *mod_net_iter_;
+      mod_net_iter_++;
+      return network_->dbToSta(net);
+    }
+    if (flat_net_idx_ < flat_nets_vec_.size()) {
+      dbNet* net = flat_nets_vec_[flat_net_idx_++];
+      return network_->dbToSta(net);
+    }
+    return nullptr;
   }
   dbNet* net = *iter_;
   iter_++;

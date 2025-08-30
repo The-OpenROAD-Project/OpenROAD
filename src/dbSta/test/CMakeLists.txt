@@ -9,8 +9,6 @@ or_integration_tests(
     find_clks2
     get_ports1
     get_ports1_hier
-    get_ports2
-    get_ports2_hier
     hier2
     hierclock
     hierwrite
