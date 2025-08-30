@@ -14,6 +14,7 @@
 #include "ClockDomain.hh"
 #include "Opt.hh"
 #include "ScanArchitect.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

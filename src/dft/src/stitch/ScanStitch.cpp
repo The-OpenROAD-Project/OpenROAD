@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
+#include "utl/Logger.h"
 
 namespace {
 constexpr std::string_view kScanEnable = "scan-enable";

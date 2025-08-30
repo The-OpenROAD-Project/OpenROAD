@@ -5,6 +5,8 @@
 
 #include <algorithm>
 
+#include "utl/Logger.h"
+
 namespace drt {
 
 void frLayer::printAllConstraints(utl::Logger* logger)

@@ -10,6 +10,8 @@
 #include <map>
 #include <string>
 
+#include "utl/Logger.h"
+
 namespace gui {
 
 std::map<std::string, Painter::Color> Painter::colors()

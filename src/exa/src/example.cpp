@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "observer.h"
+#include "utl/Logger.h"
 
 namespace exa {
 

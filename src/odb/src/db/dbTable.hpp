@@ -14,6 +14,7 @@
 #include "dbTable.h"
 #include "odb/ZException.h"
 #include "odb/dbStream.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

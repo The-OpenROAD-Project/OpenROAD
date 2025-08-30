@@ -10,6 +10,7 @@
 #include <variant>
 
 #include "ClockDomain.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

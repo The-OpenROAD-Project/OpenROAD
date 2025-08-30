@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #include "odb/odb.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 

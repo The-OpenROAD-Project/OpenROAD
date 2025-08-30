@@ -13,6 +13,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
+#include "utl/Logger.h"
 namespace odb {
 class dbTechLayer;
 }
