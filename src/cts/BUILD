@@ -76,7 +76,6 @@ cc_library(
     ],
     hdrs = [
         "include/cts/MakeTritoncts.h",
-        "include/cts/TritonCTS.h",
     ],
     copts = [
         "-Isrc/cts/src",

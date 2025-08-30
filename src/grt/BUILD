@@ -22,20 +22,24 @@ cc_library(
 )
 
 cc_library(
+    name = "groute",
+    hdrs = ["include/grt/GRoute.h"],
+)
+
+cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
-        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/RSMT.cpp",
         "src/fastroute/src/RipUp.cpp",
+        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/maze.cpp",
         "src/fastroute/src/maze3D.cpp",
         "src/fastroute/src/route.cpp",
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
-        "include/grt/GRoute.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
@@ -46,6 +50,7 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":groute",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
@@ -75,7 +80,6 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
-        "include/grt/GRoute.h",
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
         "include/grt/RoutePt.h",
@@ -90,6 +94,7 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
+        ":groute",
         "//src/ant",
         "//src/dbSta",
         "//src/dpl",
@@ -125,12 +130,7 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/grt/GRoute.h",
-        "include/grt/GlobalRouter.h",
         "include/grt/MakeGlobalRouter.h",
-        "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
-        "include/grt/Rudy.h",
     ],
     copts = [
         "-Isrc/grt/src",
@@ -143,6 +143,8 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
+        ":groute",
+        ":grt",
         "//:ord",
         "//src/ant",
         "//src/dbSta",
