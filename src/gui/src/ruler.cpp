@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "odb/db.h"
 
 namespace gui {

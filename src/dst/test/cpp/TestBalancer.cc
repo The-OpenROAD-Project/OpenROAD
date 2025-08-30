@@ -5,6 +5,7 @@
 #include "HelperCallBack.h"
 #include "LoadBalancer.h"
 #include "boost/asio.hpp"
+#include "boost/bind/bind.hpp"
 #include "boost/test/included/unit_test.hpp"
 #include "boost/thread/thread.hpp"
 #include "dst/BroadcastJobDescription.h"

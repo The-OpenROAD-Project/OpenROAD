@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
