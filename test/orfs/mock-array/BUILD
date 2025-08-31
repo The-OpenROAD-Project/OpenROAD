@@ -307,6 +307,10 @@ verilator_cc_library(
         "-Wno-UNUSEDSIGNAL",
         "-Wno-PINMISSING",
         "--trace-underscore",
+        # inline all PDK modules to speed up compilation
+        "--flatten",
+        # No-op option to retrigger a build
+        # "-Wfuture-blah",
     ],
 )
 
