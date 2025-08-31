@@ -311,6 +311,10 @@ verilator_cc_library(
         # FIXME remove after https://github.com/The-OpenROAD-Project/OpenROAD/issues/8108 fixed
         "-Wno-UNDRIVEN",
         "--trace-underscore",
+        # inline all PDK modules to speed up compilation
+        "--flatten",
+        # No-op option to retrigger a build
+        # "-Wfuture-blah",
     ],
 )
 
