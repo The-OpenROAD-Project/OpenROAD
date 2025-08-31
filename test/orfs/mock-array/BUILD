@@ -19,17 +19,11 @@ POWER_STAGE_STEM = {
 MOCK_ARRAY_TABLE = [
     8,
     8,
-    20,
-    20,
-    20,
-    22,
+    30,
+    30,
+    30,
+    32,
 ]
-
-# Element'd data width
-MOCK_ARRAY_DATAWIDTH = 64
-
-# Must be zero for routing by abutment
-MACRO_BLOCKAGE_HALO = 0
 
 MOCK_ARRAY_SCALE = 45
 
@@ -76,10 +70,6 @@ ce_margin_y = placement_grid_y * 0.5
 array_spacing_x = margin_x * 2
 
 array_spacing_y = margin_y * 2
-
-array_offset_x = array_spacing_x + margin_x
-
-array_offset_y = array_spacing_y + margin_y
 
 # top level core and die size
 core_width = (
@@ -191,7 +181,10 @@ orfs_flow(
             ce_height,
         ),
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        # We want to report power per module using hierarhical .odb
         "OPENROAD_HIERARCHICAL": "1",
+        "SYNTH_HIERARCHICAL": "1",
+        "SYNTH_MINIMUM_KEEP_SIZE": "0",
     },
     sources = {
         "IO_CONSTRAINTS": [":mock-array-element-io"],
@@ -339,6 +332,8 @@ genrule(
     ],
 )
 
+# If we want to measure power after final, instead of with estimated parasitics,
+# we'll need this.
 SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,
