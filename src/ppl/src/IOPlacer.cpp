@@ -1129,7 +1129,7 @@ void IOPlacer::defineSlotsPolygon()
 
     logger_->error(
         PPL,
-        95,
+        96,
         "Number of IO pins ({}) exceeds maximum number of available for"
         "positions ({}). Increase the rectilinear die perimeter from {:.2f}um "
         "to {:.2f}um.",
