@@ -4,6 +4,7 @@
 #include "placerBase.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -1015,8 +1016,22 @@ void PlacerBase::init()
       continue;
     }
 
-    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
+    odb::dbInst* db_inst = inst->dbInst();
+    if (!db_inst) {
       continue;
+    }
+
+    odb::dbGroup* db_inst_group = db_inst->getGroup();
+    if (group_ == nullptr) {
+      if (db_inst_group
+          && db_inst_group->getType() != odb::dbGroupType::VISUAL_DEBUG) {
+        continue;
+      }
+    } else {
+      if (!db_inst_group || db_inst_group != group_
+          || db_inst_group->getType() == odb::dbGroupType::VISUAL_DEBUG) {
+        continue;
+      }
     }
 
     if (inst->isFixed()) {
@@ -1196,8 +1211,22 @@ void PlacerBase::initInstsForUnusableSites()
     if (!inst->isFixed()) {
       continue;
     }
-    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
+    odb::dbInst* db_inst = inst->dbInst();
+    if (!db_inst) {
       continue;
+    }
+
+    odb::dbGroup* db_inst_group = db_inst->getGroup();
+    if (group_ == nullptr) {
+      if (db_inst_group
+          && db_inst_group->getType() != odb::dbGroupType::VISUAL_DEBUG) {
+        continue;
+      }
+    } else {
+      if (!db_inst_group || db_inst_group != group_
+          || db_inst_group->getType() == odb::dbGroupType::VISUAL_DEBUG) {
+        continue;
+      }
     }
     std::pair<int, int> pairX = getMinMaxIdx(
         inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);

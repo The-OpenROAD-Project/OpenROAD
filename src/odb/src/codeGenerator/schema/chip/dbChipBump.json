@@ -1,0 +1,13 @@
+{
+  "name": "dbChipBump",
+  "type": "dbObject",
+  "fields": [
+    { "name": "inst_", "type":"dbId<_dbInst>", "flags": ["private"] },
+    { "name": "chip_", "type":"dbId<_dbChip>", "flags": ["private"] },
+    { "name": "chip_region_", "type":"dbId<_dbChipRegion>", "flags": ["private"] },
+    { "name": "net_", "type":"dbId<_dbNet>", "flags": ["private"] },
+    { "name": "bterm_", "type":"dbId<_dbBTerm>", "flags": ["private"] }
+  ],
+  "h_includes": ["odb/dbId.h"],
+  "cpp_includes": ["dbInst.h", "dbChip.h"]
+} 

@@ -3,7 +3,9 @@
 
 #include "odb/dbStream.h"
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
@@ -99,6 +101,22 @@ dbIStream& operator>>(dbIStream& stream, Point& p)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream, const Point3D& p)
+{
+  stream << p.x_;
+  stream << p.y_;
+  stream << p.z_;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, Point3D& p)
+{
+  stream >> p.x_;
+  stream >> p.y_;
+  stream >> p.z_;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const Oct& o)
 {
   stream << o.center_high_;
@@ -154,6 +172,12 @@ std::ostream& operator<<(std::ostream& os, const Rect& box)
 std::ostream& operator<<(std::ostream& os, const Point& pIn)
 {
   os << "( " << pIn.x() << " " << pIn.y() << " )";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Point3D& pIn)
+{
+  os << "( " << pIn.x() << " " << pIn.y() << " " << pIn.z() << " )";
   return os;
 }
 

@@ -123,8 +123,6 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   odb::dbModNet* db_mod_drvr_net;
   db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
 
-  const string buffer_name = resizer_->makeUniqueInstName("split");
-
   // H-Fix Use driver parent for hierarchy, not the top instance
   Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
@@ -132,8 +130,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // H-Fix make the buffer in the parent of the driver pin
-  Instance* buffer
-      = makeBuffer(buffer_cell, buffer_name.c_str(), parent, drvr_loc);
+  Instance* buffer = makeBuffer(buffer_cell, "split", parent, drvr_loc);
   debugPrint(logger_,
              RSZ,
              "split_load",
@@ -149,8 +146,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   addMove(buffer);
 
   // H-fix make the out net in the driver parent
-  std::string out_net_name = resizer_->makeUniqueNetName();
-  Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+  Net* out_net = db_network_->makeNet(parent);
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -192,7 +188,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   sta_->connectPin(buffer, input, db_network_->dbToSta(db_drvr_net));
 
   // invalidate the dbNet
-  resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
 
   // out_net is the db net
   sta_->connectPin(buffer, output, out_net);
@@ -229,13 +225,10 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
-        std::string unique_connection_name = resizer_->makeUniqueNetName();
         odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
         odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
         if (load_pin_iterm && buffer_op_pin_iterm) {
-          db_network_->hierarchicalConnect(buffer_op_pin_iterm,
-                                           load_pin_iterm,
-                                           unique_connection_name.c_str());
+          db_network_->hierarchicalConnect(buffer_op_pin_iterm, load_pin_iterm);
         }
       } else {
         if (load_iterm && db_mod_load_net) {
@@ -243,8 +236,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
           // hierarchical net and the modnet to make sure they
           // get reassociated. (so all modnet pins refer to flat net).
           load_iterm->disconnect();
-          db_network_->connectPin(
-              load_pin, (Net*) out_net, (Net*) db_mod_load_net);
+          db_network_->connectPin(load_pin, out_net, (Net*) db_mod_load_net);
           //          iterm->connect(db_mod_load_net);
         }
       }
@@ -255,8 +247,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   resizer_->resizeToTargetSlew(buffer_out_pin);
   // H-Fix, only invalidate db nets.
   // resizer_->parasiticsInvalid(net);
-  resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
-  resizer_->parasiticsInvalid(out_net);
+  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+  estimate_parasitics_->parasiticsInvalid(out_net);
 
   return true;
 }

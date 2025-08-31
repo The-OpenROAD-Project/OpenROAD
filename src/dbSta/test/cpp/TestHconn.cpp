@@ -9,12 +9,14 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <sstream>
 #include <string>
 
 #include "db_sta/MakeDbSta.hh"
@@ -107,7 +109,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
     sprintf(tmp_str,
             "\tModule %s %s\n",
             (cur_obj == block->getTopModule()) ? "(Top Module)" : "",
-            ((dbModule*) cur_obj)->getName());
+            cur_obj->getName());
     str_db << tmp_str;
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == block->getTopModule()) {
@@ -1016,7 +1018,7 @@ TEST_F(TestHconn, ConnectionMade)
 
   EXPECT_EQ(initial_db_net_count, 6);
   EXPECT_EQ(initial_mod_net_count, 23);
-  EXPECT_EQ(final_mod_net_count, 26);
+  EXPECT_EQ(final_mod_net_count, 27);
   EXPECT_EQ(final_db_net_count, 7);
 
   //

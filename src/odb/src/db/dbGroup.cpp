@@ -489,17 +489,17 @@ void dbGroup::destroy(dbGroup* group)
 {
   _dbGroup* _group = (_dbGroup*) group;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
-  for (auto inst : group->getInsts()) {
-    group->removeInst(inst);
+  while (!group->getInsts().empty()) {
+    group->removeInst(*group->getInsts().begin());
   }
   if (_group->region_.isValid()) {
     group->getRegion()->removeGroup(group);
   }
-  for (auto modinst : group->getModInsts()) {
-    group->removeModInst(modinst);
+  while (!group->getModInsts().empty()) {
+    group->removeModInst(*group->getModInsts().begin());
   }
-  for (auto child : group->getGroups()) {
-    group->removeGroup(child);
+  while (!group->getGroups().empty()) {
+    group->removeGroup(*group->getGroups().begin());
   }
   if (_group->_parent_group.isValid()) {
     group->getParentGroup()->removeGroup(group);

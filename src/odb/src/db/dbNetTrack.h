@@ -6,7 +6,6 @@
 
 #include "dbCore.h"
 #include "odb/odb.h"
-
 // User Code Begin Includes
 #include "odb/geom.h"
 // User Code End Includes

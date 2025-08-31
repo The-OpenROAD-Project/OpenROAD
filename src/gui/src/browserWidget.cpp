@@ -9,7 +9,14 @@
 #include <QLocale>
 #include <QMouseEvent>
 #include <QString>
+#include <algorithm>
+#include <any>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbDescriptors.h"
@@ -115,7 +122,7 @@ BrowserWidget::BrowserWidget(
   display_controls_warning_->setStyleSheet("color: red;");
 
   model_->setHorizontalHeaderLabels({"Instance",
-                                     "Master",
+                                     "Module",
                                      "Instances",
                                      "Macros",
                                      "Modules",

@@ -3,9 +3,13 @@
 
 #include "odb/gdsout.h"
 
+#include <cstdint>
+#include <ctime>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "utl/Logger.h"
 
 namespace odb::gds {
 
@@ -200,7 +204,7 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
   r2.data8 = str->getName();
   writeRecord(r2);
 
-  for (auto boundary : str->getGDSBoundarys()) {
+  for (auto boundary : str->getGDSBoundaries()) {
     writeBoundary(boundary);
   }
 

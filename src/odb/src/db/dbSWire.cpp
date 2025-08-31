@@ -3,6 +3,8 @@
 
 #include "dbSWire.h"
 
+#include <cstring>
+
 #include "dbBlock.h"
 #include "dbNet.h"
 #include "dbSBox.h"

@@ -3,8 +3,13 @@
 
 #include "dbSdcNetwork.hh"
 
+#include <spdlog/fmt/fmt.h>
+
+#include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
@@ -62,14 +67,47 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
-  std::unique_ptr<InstanceChildIterator> child_iter{
-      childIterator(topInstance())};
-  while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
-    if (pattern->match(staToSdc(name(child)))) {
-      insts.push_back(child);
+  // A recursive lambda to traverse the design hierarchy with a depth-first
+  // search (DFS).
+  // It builds the hierarchical path incrementally using fmt::memory_buffer to
+  // avoid expensive std::string allocations and copies at each step.
+  std::function<void(Instance*, fmt::memory_buffer&)> dfs_search
+      = [&, this](Instance* instance, fmt::memory_buffer& path_buffer) -> void {
+    // Iterate over the children of the current instance.
+    std::unique_ptr<InstanceChildIterator> child_iter{childIterator(instance)};
+    while (child_iter->hasNext()) {
+      Instance* child = child_iter->next();
+
+      // Save the current size of the buffer to restore it later.
+      const size_t original_size = path_buffer.size();
+
+      // Build the child's full path name incrementally.
+      if (original_size > 0) {
+        path_buffer.push_back(pathDivider());
+      }
+      path_buffer.append(std::string_view(name(child)));
+
+      // Check if the child instance name matches the pattern.
+      // Add a null terminator for C-style string compatibility.
+      path_buffer.push_back('\0');
+      if (pattern->match(staToSdc(path_buffer.data()))) {
+        insts.push_back(child);
+      }
+      path_buffer.resize(path_buffer.size() - 1);  // Remove the null terminator
+
+      // Recurse into the child's hierarchy if it's not a leaf.
+      if (!isLeaf(child)) {
+        dfs_search(child, path_buffer);
+      }
+
+      // Restore the buffer to its original state for the next sibling.
+      path_buffer.resize(original_size);
     }
-  }
+  };
+
+  // Start the search from the top-level instance.
+  fmt::memory_buffer path_buffer;
+  dfs_search(topInstance(), path_buffer);
 }
 
 NetSeq dbSdcNetwork::findNetsMatching(const Instance*,

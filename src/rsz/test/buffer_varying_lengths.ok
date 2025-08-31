@@ -2,26 +2,27 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       600
-    final |    +64.2% |     186 |     117 |            59 |         0
+    final |    +66.2% |       0 |     159 |            88 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0034] Found 59 slew violations.
-[INFO RSZ-0039] Resized 186 instances.
-[INFO RSZ-0038] Inserted 117 buffers in 59 nets.
-worst slack max -0.324
-tns max -35.417
+[INFO RSZ-0034] Found 77 slew violations.
+[INFO RSZ-0036] Found 88 capacitance violations.
+[INFO RSZ-0038] Inserted 159 buffers in 88 nets.
+worst slack max -0.355
+tns max -40.710
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 200 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 200 out of 200 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.324 |      -35.4 |    200 | p3-200
-    final |      41 |    1094 |        0 |      0 |     0 |  +393.0% |   -0.324 |      -31.8 |    200 | p3-200
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.355 |      -40.7 |    200 | p3-200
+    2030* |      74 |    1543 |        0 |      0 |     0 |  +486.8% |   -0.324 |      -32.0 |    200 | p3-200
+    final |      74 |    1698 |        0 |      0 |     0 |  +489.5% |   -0.302 |      -31.4 |    200 | p3-200
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 41 buffers.
-[INFO RSZ-0051] Resized 1094 instances, 1094 sized up, 0 sized down.
+[INFO RSZ-0059] Removed 74 buffers.
+[INFO RSZ-0051] Resized 1698 instances: 1570 up, 128 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
-worst slack max -0.324
-tns max -31.831
+worst slack max -0.302
+tns max -31.391
 No differences found.

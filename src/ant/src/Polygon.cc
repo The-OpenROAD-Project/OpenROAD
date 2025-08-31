@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "odb/dbShape.h"
 
 namespace ant {

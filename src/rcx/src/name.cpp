@@ -3,6 +3,12 @@
 
 #include "name.h"
 
+#include <string.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 namespace rcx {
 
 class NameTable::NameBucket

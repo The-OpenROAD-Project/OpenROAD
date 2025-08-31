@@ -4,6 +4,9 @@
 #include "odb/dbWireCodec.h"
 
 #include <cctype>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <optional>
 
 #include "dbBlock.h"

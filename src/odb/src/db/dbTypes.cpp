@@ -3,7 +3,11 @@
 
 #include "odb/dbTypes.h"
 
+#include <strings.h>
+
+#include <cassert>
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include <optional>
 #include <string>
@@ -2214,6 +2218,31 @@ const char* dbAccessType::getString() const
 
     case NearbyGrid:
       value = "NearbyGrid";
+      break;
+  }
+
+  return value;
+}
+
+const char* dbNameUniquifyType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case ALWAYS:
+      value = "ALWAYS";
+      break;
+
+    case ALWAYS_WITH_UNDERSCORE:
+      value = "ALWAYS_WITH_UNDERSCORE";
+      break;
+
+    case IF_NEEDED:
+      value = "IF_NEEDED";
+      break;
+
+    case IF_NEEDED_WITH_UNDERSCORE:
+      value = "IF_NEEDED_WITH_UNDERSCORE";
       break;
   }
 

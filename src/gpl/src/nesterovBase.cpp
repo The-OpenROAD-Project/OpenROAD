@@ -6,9 +6,14 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <random>
 #include <string>
@@ -2714,10 +2719,11 @@ void NesterovBase::updateNextIter(const int iter)
       reprint_iter_header_ = false;
     }
 
+    dbBlock* block = pb_->db()->getChip()->getBlock();
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
                  iter,
                  sumOverflowUnscaled_,
-                 static_cast<double>(hpwl),
+                 block->dbuToMicrons(hpwl),
                  percentageChange,
                  densityPenalty_,
                  group_name);
@@ -2848,11 +2854,12 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     const std::string group_name
         = is_power_domain ? pb_->group()->getName() : "";
     const int final_iter = gpl_iter_count;
+    dbBlock* block = pb_->db()->getChip()->getBlock();
 
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:>8} | {:9.2e} | {:>5}",
                  final_iter,
                  sumOverflowUnscaled_,
-                 static_cast<double>(nbc_->getHpwl()),
+                 block->dbuToMicrons(nbc_->getHpwl()),
                  "",  // No % delta
                  densityPenalty_,
                  group_name);
@@ -2884,7 +2891,6 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                  rb->getRudyRC(false));
     }
 
-    dbBlock* block = pb_->db()->getChip()->getBlock();
     log_->info(GPL,
                1002,
                format_label_float,

@@ -7,12 +7,18 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <mutex>
+#include <set>
 #include <sstream>
+#include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 #include "base/abc/abc.h"
@@ -20,7 +26,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -45,12 +50,14 @@ std::once_flag init_abc_flag;
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
                        odb::dbDatabase* db,
-                       rsz::Resizer* resizer)
+                       rsz::Resizer* resizer,
+                       est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;
   open_sta_ = open_sta;
   resizer_ = resizer;
+  estimate_parasitics_ = estimate_parasitics;
 
   std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 }
@@ -73,7 +80,8 @@ void Restructure::reset()
 void Restructure::resynth(sta::Corner* corner)
 {
   ZeroSlackStrategy zero_slack_strategy(corner);
-  zero_slack_strategy.OptimizeDesign(open_sta_, name_generator_, logger_);
+  zero_slack_strategy.OptimizeDesign(
+      open_sta_, name_generator_, resizer_, logger_);
 }
 
 void Restructure::run(char* liberty_file_name,
@@ -140,8 +148,9 @@ void Restructure::getBlob(unsigned max_depth)
 
 void Restructure::runABC()
 {
-  input_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
-                          + "_crit_path.blif";
+  const std::string prefix
+      = work_dir_name_ + std::string(block_->getConstName());
+  input_blif_file_name_ = prefix + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
   debugPrint(logger_,
@@ -183,15 +192,14 @@ void Restructure::runABC()
   for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size();
        curr_mode_idx++) {
     output_blif_file_name_
-        = work_dir_name_ + std::string(block_->getConstName())
-          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+        = prefix + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
 
     opt_mode_ = modes[curr_mode_idx];
 
     const std::string abc_script_file
-        = work_dir_name_ + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
+        = prefix + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
     if (logfile_ == "") {
-      logfile_ = work_dir_name_ + "abc.log";
+      logfile_ = prefix + "abc.log";
     }
 
     debugPrint(logger_,
@@ -226,8 +234,7 @@ void Restructure::runABC()
     }
 
     output_blif_file_name_
-        = work_dir_name_ + std::string(block_->getConstName())
-          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+        = prefix + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
     const std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
 
     int level_gain = 0;
@@ -282,7 +289,8 @@ void Restructure::runABC()
 
   for (const auto& file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1)) {
-      if (std::remove(file_to_remove.c_str()) != 0) {
+      std::error_code err;
+      if (std::filesystem::remove(file_to_remove, err); err) {
         logger_->error(RMP, 37, "Fail to remove file {}", file_to_remove);
       }
     }
@@ -292,7 +300,7 @@ void Restructure::runABC()
 void Restructure::postABC(float worst_slack)
 {
   // Leave the parasitics up to date.
-  resizer_->estimateWireParasitics();
+  estimate_parasitics_->estimateWireParasitics();
 }
 void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,

@@ -274,6 +274,8 @@
     "https://bcr.bazel.build/modules/boost.system/1.83.0.bcr.1/MODULE.bazel": "5f905d0fbb1ce99231f3fa278b2e5999aa7395c6393ac42d479ae21824adf03f",
     "https://bcr.bazel.build/modules/boost.system/1.83.0.bcr.1/source.json": "0676ab63c01c5ddf731a5cf54667ffc6560e9fb52401a2a9ac6a10c5a9909019",
     "https://bcr.bazel.build/modules/boost.system/1.83.0/MODULE.bazel": "76354b72be5998bb286e9a4d8e439a04c5b29ebd0e51bfe669258dcd5c3a8c4f",
+    "https://bcr.bazel.build/modules/boost.test/1.83.0.bcr.1/MODULE.bazel": "4c7419815ccade6052d2b807ba1e02e8c45becb4724596c58ffaa314ac070b5f",
+    "https://bcr.bazel.build/modules/boost.test/1.83.0.bcr.1/source.json": "156150bd631d9b8c8b16f0828c5c8d35728dfbc5667b6b88b1891bed48845431",
     "https://bcr.bazel.build/modules/boost.thread/1.83.0.bcr.1/MODULE.bazel": "2c5da147f251b0c7af2f0861477271878ed364248edd85c6e93175cf6e5f98ce",
     "https://bcr.bazel.build/modules/boost.thread/1.83.0.bcr.2/MODULE.bazel": "25266dd71d08e26664e188696bb84d20f9f754a50f338fbb190fcd403394de6d",
     "https://bcr.bazel.build/modules/boost.thread/1.83.0.bcr.2/source.json": "f02cc68c9d73dfb35d4753c74266bc2651d91f7d3acf5b8d8d8d226e3f80c311",
@@ -517,7 +519,8 @@
     "https://bcr.bazel.build/modules/rules_jvm_external/6.3/MODULE.bazel": "c998e060b85f71e00de5ec552019347c8bca255062c990ac02d051bb80a38df0",
     "https://bcr.bazel.build/modules/rules_jvm_external/6.4/MODULE.bazel": "e859f460f0fcebbee0af2ac65a38c952eedb60612956395ba414fdf78babae2f",
     "https://bcr.bazel.build/modules/rules_jvm_external/6.6/MODULE.bazel": "153042249c7060536dc95b6bb9f9bb8063b8a0b0cb7acdb381bddbc2374aed55",
-    "https://bcr.bazel.build/modules/rules_jvm_external/6.6/source.json": "b1d7ffc3877e5a76e6e48e6bce459cbb1712c90eba14861b112bd299587a534d",
+    "https://bcr.bazel.build/modules/rules_jvm_external/6.7/MODULE.bazel": "e717beabc4d091ecb2c803c2d341b88590e9116b8bf7947915eeb33aab4f96dd",
+    "https://bcr.bazel.build/modules/rules_jvm_external/6.7/source.json": "5426f412d0a7fc6b611643376c7e4a82dec991491b9ce5cb1cfdd25fe2e92be4",
     "https://bcr.bazel.build/modules/rules_kotlin/1.9.0/MODULE.bazel": "ef85697305025e5a61f395d4eaede272a5393cee479ace6686dba707de804d59",
     "https://bcr.bazel.build/modules/rules_kotlin/1.9.6/MODULE.bazel": "d269a01a18ee74d0335450b10f62c9ed81f2321d7958a2934e44272fe82dcef3",
     "https://bcr.bazel.build/modules/rules_kotlin/1.9.6/source.json": "2faa4794364282db7c06600b7e5e34867a564ae91bda7cae7c29c64e9466b7d5",
@@ -1068,8 +1071,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "iyNJmQefNHFxk2IZ05Ws8xMhCV33ensoUHYLn+DsXWA=",
-        "usagesDigest": "p4zEoA3yxHDfZI6Em7ff1/fttWfPccHMpPHS2H2v2pI=",
+        "bzlTransitiveDigest": "xMdj3VsRTAj/bBji7IiyxOnBRsFjKl5qgByGWDdrDhc=",
+        "usagesDigest": "VaToXe23EQQxlEVjjtEb4kWm2DkcPwq16aw3VggChK0=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1087,12 +1090,20 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-3503-gd7c7e73f",
-              "sha256": "d5539ade517724de3765362589be443afb2624b14391b365612c8949a7c99a19",
+              "image": "docker.io/openroad/orfs:v3.0-3675-g1592c420",
+              "sha256": "ae830cfa6a86b1921db89868eb7133c94d77443e79cd534ba3808dfd139ffc53",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
                 "find . -name BUILD.bazel -delete"
+              ],
+              "patches": [
+                "@@bazel-orfs+//:0001-Revert-make-check-if-binaries-are-valid-before-conti.patch"
+              ],
+              "patch_args": [
+                "-p1",
+                "-d",
+                "OpenROAD-flow-scripts"
               ]
             }
           },

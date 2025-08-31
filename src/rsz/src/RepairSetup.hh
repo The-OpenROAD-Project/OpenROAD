@@ -18,6 +18,10 @@ namespace sta {
 class PathExpanded;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -66,7 +70,7 @@ struct OptoParams
 class RepairSetup : public sta::dbStaState
 {
  public:
-  RepairSetup(Resizer* resizer);
+  RepairSetup(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
   bool repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
@@ -80,7 +84,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_last_gasp);
+                   bool skip_last_gasp,
+                   bool skip_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -110,6 +115,7 @@ class RepairSetup : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   bool fallback_ = false;
   float min_viol_ = 0.0;

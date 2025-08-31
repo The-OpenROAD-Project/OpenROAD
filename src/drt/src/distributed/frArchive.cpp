@@ -3,6 +3,9 @@
 
 #include "frArchive.h"
 
+#include <istream>
+#include <ostream>
+
 // explicit instantiation of class templates involved
 namespace boost {
 namespace archive {

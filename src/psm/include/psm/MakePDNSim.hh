@@ -17,8 +17,8 @@ namespace sta {
 class dbSta;
 }
 
-namespace rsz {
-class Resizer;
+namespace est {
+class EstimateParasitics;
 }
 
 namespace dpl {
@@ -35,7 +35,7 @@ void initPDNSim(psm::PDNSim* pdnsim,
                 utl::Logger* logger,
                 odb::dbDatabase* db,
                 sta::dbSta* sta,
-                rsz::Resizer* resizer,
+                est::EstimateParasitics* estimate_parasitics,
                 dpl::Opendp* opendp,
                 Tcl_Interp* tcl_interp);
 

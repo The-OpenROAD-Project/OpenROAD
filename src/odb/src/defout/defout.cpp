@@ -3,6 +3,7 @@
 
 #include "odb/defout.h"
 
+#include <cassert>
 #include <cstdio>
 
 #include "defout_impl.h"

@@ -5,6 +5,11 @@
 
 #include <tcl.h>
 
+#include <cmath>
+#include <cstdint>
+#include <istream>
+#include <mutex>
+#include <ostream>
 #include <string>
 
 #include "ant/AntennaChecker.hh"

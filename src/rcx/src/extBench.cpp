@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
+#include <cstdio>
 #include <map>
 #include <vector>
 

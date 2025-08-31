@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -44,10 +46,6 @@ class AntennaChecker;
 namespace dpl {
 class Opendp;
 }
-
-namespace rsz {
-class Resizer;
-}  // namespace rsz
 
 namespace sta {
 class dbSta;
@@ -107,6 +105,7 @@ using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
 using RoutePointToPinsMap = std::map<RoutePt, RoutePointPins>;
+using PointPair = std::pair<odb::Point, odb::Point>;
 
 class GlobalRouter
 {
@@ -119,7 +118,6 @@ class GlobalRouter
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            rsz::Resizer* resizer,
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -171,8 +169,6 @@ class GlobalRouter
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
-  void estimateRC(sta::SpefWriter* spef_writer = nullptr);
-  void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
@@ -180,7 +176,7 @@ class GlobalRouter
                    bool start_incremental = false,
                    bool end_incremental = false);
   void saveCongestion();
-  NetRouteMap& getRoutes() { return routes_; }
+  NetRouteMap& getRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
   bool isNonLeafClock(odb::dbNet* db_net);
@@ -274,7 +270,7 @@ class GlobalRouter
 
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -298,6 +294,7 @@ class GlobalRouter
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
 
+  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -327,7 +324,11 @@ class GlobalRouter
                                 float reduction_percentage);
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer,
-                                  bool is_macro = false);
+                                  bool is_macro = false,
+                                  bool release = false);
+  void savePositionWithReducedResources(const odb::Rect& rect,
+                                        odb::dbTechLayer* tech_layer,
+                                        odb::dbNet* db_net);
   void addResourcesForPinAccess();
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
@@ -338,14 +339,14 @@ class GlobalRouter
                                std::vector<int8_t>*& edge_costs_per_layer);
 
   // aux functions
-  std::vector<odb::Point> findOnGridPositions(const Pin& pin,
-                                              bool& has_access_points,
-                                              odb::Point& pos_on_grid,
-                                              bool ignore_db_access_points
-                                              = false);
+  std::vector<RoutePt> findOnGridPositions(const Pin& pin,
+                                           bool& has_access_points,
+                                           odb::Point& pos_on_grid,
+                                           bool ignore_db_access_points
+                                           = false);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
-  void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
+  void computePinPositionOnGrid(std::vector<RoutePt>& pin_positions_on_grid,
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
@@ -452,12 +453,12 @@ class GlobalRouter
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
-  rsz::Resizer* resizer_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
+  NetRouteMap partial_routes_;
 
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
@@ -489,6 +490,10 @@ class GlobalRouter
 
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> pad_pins_connections_;
+
+  // Saving the positions used by nets
+  std::map<odb::Point, std::vector<odb::dbNet*>> h_nets_in_pos_;
+  std::map<odb::Point, std::vector<odb::dbNet*>> v_nets_in_pos_;
 
   // db variables
   sta::dbSta* sta_;

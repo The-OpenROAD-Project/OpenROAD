@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <functional>
 #include <memory>
+#include <mutex>
 
 #include "utl/Logger.h"
 

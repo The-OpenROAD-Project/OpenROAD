@@ -2,7 +2,9 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include <cmath>
+#include <cstring>
 #include <string>
+#include <vector>
 
 #include "util/utility.h"
 #include "utl/Logger.h"

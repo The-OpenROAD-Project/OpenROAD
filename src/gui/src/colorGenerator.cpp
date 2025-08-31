@@ -3,6 +3,8 @@
 
 #include "colorGenerator.h"
 
+#include <array>
+
 namespace gui {
 
 // https://mokole.com/palette.html

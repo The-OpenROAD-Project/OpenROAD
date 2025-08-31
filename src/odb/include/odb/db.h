@@ -4,6 +4,8 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>
@@ -11,6 +13,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -44,7 +47,6 @@ template <class T>
 class dbId;
 
 // Forward declarations of all database objects
-class dbDatabase;
 class dbBox;
 class dbJournalEntry;
 
@@ -55,7 +57,6 @@ class dbIntProperty;
 class dbDoubleProperty;
 
 // Design objects
-class dbChip;
 class dbBlock;
 class dbBTerm;
 class dbNet;
@@ -107,6 +108,15 @@ class dbViaParams;
 class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
+class dbChip;
+class dbChipBump;
+class dbChipBumpInst;
+class dbChipConn;
+class dbChipInst;
+class dbChipNet;
+class dbChipRegion;
+class dbChipRegionInst;
+class dbDatabase;
 class dbDft;
 class dbGCellGrid;
 class dbGDSARef;
@@ -169,196 +179,6 @@ class dbExtControl;
 
 // Custom iterators
 class dbModuleBusPortModBTermItr;
-///////////////////////////////////////////////////////////////////////////////
-///
-/// This class encapsulates a persitant ADS database.
-/// You can open multiple databases, however, the number
-/// of open databases is limited to the amount
-/// of physical memory available.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbDatabase : public dbObject
-{
- public:
-  ///
-  /// Return the libs contained in the database. A database can contain
-  /// multiple libs.
-  ///
-  dbSet<dbLib> getLibs();
-
-  ///
-  /// Find a specific lib.
-  /// Returns nullptr if no lib was found.
-  ///
-  dbLib* findLib(const char* name);
-
-  ///
-  /// Return the techs contained in the database. A database can contain
-  /// multiple techs.
-  ///
-  dbSet<dbTech> getTechs();
-
-  ///
-  /// Find a specific tech.
-  /// Returns nullptr if no tech was found.
-  ///
-  dbTech* findTech(const char* name);
-
-  ///
-  /// Find a specific master
-  /// Returns nullptr if no master is found.
-  ///
-  dbMaster* findMaster(const char* name);
-
-  ///
-  /// This function is used to delete unused master-cells.
-  /// Returns the number of unused master-cells that have been deleted.
-  ///
-  int removeUnusedMasters();
-
-  ///
-  /// Get the chip of this database.
-  /// Returns nullptr if no chip has been created.
-  ///
-  dbChip* getChip();
-
-  ////////////////////////
-  /// DEPRECATED
-  ////////////////////////
-  ///
-  /// This is replaced by dbBlock::getTech() or dbLib::getTech().
-  /// This is temporarily kept for legacy migration.
-  /// Get the technology of this database if there is exactly one dbTech.
-  /// Returns nullptr if no tech has been created.
-  ///
-  dbTech* getTech();
-
-  ////////////////////////
-  /// DEPRECATED
-  ////////////////////////
-  /// Return the chips contained in the database. A database can contain
-  /// multiple chips.
-  ///
-  dbSet<dbChip> getChips();
-
-  ///
-  /// Returns the number of masters
-  ///
-  uint getNumberOfMasters();
-
-  ///
-  /// Read a database from this stream.
-  /// WARNING: This function destroys the data currently in the database.
-  /// Throws ZIOError..
-  ///
-  void read(std::istream& f);
-
-  ///
-  /// Write a database to this stream.
-  /// Throws ZIOError..
-  ///
-  void write(std::ostream& file);
-
-  ///
-  /// ECO - The following methods implement a simple ECO mechanism for capturing
-  /// netlist changes. The intent of the ECO mechanism is to support delta
-  /// changes that occur in a "remote" node that must be applied back to the
-  /// "master" node. Being as such, the database on the "remote" must be an
-  /// exact copy of the "master" database, prior to changes. Furthermore, the
-  /// "master" database cannot change prior to commiting the eco to the block.
-  ///
-  /// WARNING: If these invariants does not hold then the results will be
-  ///          unpredictable.
-  ///
-
-  ///
-  /// Begin collecting netlist changes on specified block.
-  ///
-  /// NOTE: Eco changes can not be nested at this time.
-  ///
-  static void beginEco(dbBlock* block);
-
-  ///
-  /// End collecting netlist changes on specified block.
-  ///
-  static void endEco(dbBlock* block);
-
-  ///
-  /// Returns true of the pending eco is empty
-  ///
-  static bool ecoEmpty(dbBlock* block);
-
-  ///
-  /// Read the eco changes from the specified stream to be applied to the
-  /// specified block.
-  ///
-  static void readEco(dbBlock* block, const char* filename);
-
-  ///
-  /// Write the eco netlist changes to the specified stream.
-  ///
-  static void writeEco(dbBlock* block, const char* filename);
-  static int checkEco(dbBlock* block);
-
-  ///
-  /// Commit any pending netlist changes.
-  ///
-  static void commitEco(dbBlock* block);
-
-  ///
-  /// Undo any pending netlist changes.  Only supports:
-  ///   create and destroy of dbInst and dbNet
-  ///   dbInst::swapMaster
-  ///   connect and disconnect of dbBTerm and dbITerm
-  ///
-  static void undoEco(dbBlock* block);
-
-  ///
-  /// links to utl::Logger
-  ///
-  void setLogger(utl::Logger* logger);
-
-  ///
-  /// Initializes the database to nothing.
-  ///
-  void clear();
-
-  ///
-  /// Generates a report of memory usage.
-  ///   Not perfectly byte accurate.  Intended for developers.
-  ///
-  void report();
-
-  ///
-  /// Used to be notified when lef/def/odb are read.
-  ///
-  void addObserver(dbDatabaseObserver* observer);
-  void removeObserver(dbDatabaseObserver* observer);
-
-  ///
-  /// Notify observers when one of these operations is complete.
-  /// Fine-grained callbacks during construction are not as helpful
-  /// as knowing when the data is fully loaded into odb.
-  ///
-  void triggerPostReadLef(dbTech* tech, dbLib* library);
-  void triggerPostReadDef(dbBlock* block, bool floorplan);
-  void triggerPostReadDb();
-
-  ///
-  /// Create an instance of a database
-  ///
-  static dbDatabase* create();
-
-  ///
-  /// Detroy an instance of a database
-  ///
-  static void destroy(dbDatabase* db);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbDatabase* getDatabase(uint oid);
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -716,38 +536,6 @@ class dbSBox : public dbBox
   /// Destroy a SBox.
   ///
   static void destroy(dbSBox* box);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-///
-/// A Chip is the element the represents a VLSI/ASIC IC.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbChip : public dbObject
-{
- public:
-  ///
-  /// Get the top-block of this chip.
-  /// Returns nullptr if a top-block has NOT been created.
-  ///
-  dbBlock* getBlock();
-
-  ///
-  /// Create a new chip.
-  /// Returns nullptr if a chip already exists.
-  /// Returns nullptr if there is no database technology.
-  ///
-  static dbChip* create(dbDatabase* db);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbChip* getChip(dbDatabase* db, uint oid);
-
-  ///
-  /// Destroy a chip.
-  ///
-  static void destroy(dbChip* chip);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1482,6 +1270,23 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
+  /// Make a unique net/instance name
+  /// If parent is nullptr, the net name will be unique in top module.
+  /// If base_name is nullptr, the default net name will be used.
+  /// If uniquify is IF_NEEDED*, unique suffix will be added when necessary.
+  /// If uniquify is *_WITH_UNDERSCORE, an underscore will be added before the
+  /// unique suffix.
+  ///
+  std::string makeNewNetName(dbModInst* parent = nullptr,
+                             const char* base_name = "net",
+                             const dbNameUniquifyType& uniquify
+                             = dbNameUniquifyType::ALWAYS);
+  std::string makeNewInstName(dbModInst* parent = nullptr,
+                              const char* base_name = "inst",
+                              const dbNameUniquifyType& uniquify
+                              = dbNameUniquifyType::ALWAYS);
+
+  ///
   /// return the regions of this design
   ///
   dbSet<dbRegion> getRegions();
@@ -1534,7 +1339,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbChip* chip,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
@@ -1544,7 +1349,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbBlock* block,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimiter = 0);
+                         char hier_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -1571,9 +1376,6 @@ class dbBlock : public dbObject
   //
   void debugPrintContent(std::ostream& str_db);
   void debugPrintContent() { debugPrintContent(std::cout); }
-
- private:
-  void ComputeBBox();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5197,7 +4999,7 @@ class dbLib : public dbObject
   static dbLib* create(dbDatabase* db,
                        const char* name,
                        dbTech* tech,
-                       char hierarchy_delimiter = 0);
+                       char hierarchy_delimiter = '/');
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7131,6 +6933,474 @@ class dbCellEdgeSpacing : public dbObject
   // User Code End dbCellEdgeSpacing
 };
 
+class dbChip : public dbObject
+{
+ public:
+  enum class ChipType
+  {
+    DIE,
+    RDL,
+    IP,
+    SUBSTRATE,
+    HIER
+  };
+
+  const char* getName() const;
+
+  void setOffset(Point offset);
+
+  Point getOffset() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setHeight(int height);
+
+  int getHeight() const;
+
+  void setThickness(int thickness);
+
+  int getThickness() const;
+
+  void setShrink(float shrink);
+
+  float getShrink() const;
+
+  void setSealRingEast(int seal_ring_east);
+
+  int getSealRingEast() const;
+
+  void setSealRingWest(int seal_ring_west);
+
+  int getSealRingWest() const;
+
+  void setSealRingNorth(int seal_ring_north);
+
+  int getSealRingNorth() const;
+
+  void setSealRingSouth(int seal_ring_south);
+
+  int getSealRingSouth() const;
+
+  void setScribeLineEast(int scribe_line_east);
+
+  int getScribeLineEast() const;
+
+  void setScribeLineWest(int scribe_line_west);
+
+  int getScribeLineWest() const;
+
+  void setScribeLineNorth(int scribe_line_north);
+
+  int getScribeLineNorth() const;
+
+  void setScribeLineSouth(int scribe_line_south);
+
+  int getScribeLineSouth() const;
+
+  void setTsv(bool tsv);
+
+  bool isTsv() const;
+
+  dbSet<dbChipRegion> getChipRegions() const;
+
+  // User Code Begin dbChip
+
+  ChipType getChipType() const;
+  ///
+  /// Get the top-block of this chip.
+  /// Returns nullptr if a top-block has NOT been created.
+  ///
+  dbBlock* getBlock();
+
+  dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
+
+  dbSet<dbChipNet> getChipNets() const;
+
+  ///
+  /// Create a new chip.
+  /// Returns nullptr if there is no database technology.
+  ///
+  static dbChip* create(dbDatabase* db,
+                        const std::string& name = "",
+                        ChipType type = ChipType::DIE);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbChip* getChip(dbDatabase* db, uint oid);
+
+  ///
+  /// Destroy a chip.
+  ///
+  static void destroy(dbChip* chip);
+  // User Code End dbChip
+};
+
+class dbChipBump : public dbObject
+{
+ public:
+  // User Code Begin dbChipBump
+  dbChip* getChip() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  dbInst* getInst() const;
+
+  dbNet* getNet() const;
+
+  dbBTerm* getBTerm() const;
+
+  void setNet(dbNet* net);
+
+  void setBTerm(dbBTerm* bterm);
+
+  static dbChipBump* create(dbChipRegion* chip_region, dbInst* inst);
+
+  // User Code End dbChipBump
+};
+
+class dbChipBumpInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipBumpInst
+
+  dbChipBump* getChipBump() const;
+
+  dbChipRegionInst* getChipRegionInst() const;
+
+  // User Code End dbChipBumpInst
+};
+
+class dbChipConn : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setThickness(int thickness);
+
+  int getThickness() const;
+
+  // User Code Begin dbChipConn
+
+  dbChip* getParentChip() const;
+
+  dbChipRegionInst* getTopRegion() const;
+
+  dbChipRegionInst* getBottomRegion() const;
+
+  std::vector<dbChipInst*> getTopRegionPath() const;
+
+  std::vector<dbChipInst*> getBottomRegionPath() const;
+
+  static dbChipConn* create(const std::string& name,
+                            dbChip* parent_chip,
+                            const std::vector<dbChipInst*>& top_region_path,
+                            dbChipRegionInst* top_region,
+                            const std::vector<dbChipInst*>& bottom_region_path,
+                            dbChipRegionInst* bottom_region);
+
+  static void destroy(dbChipConn* chipConn);
+  // User Code End dbChipConn
+};
+
+class dbChipInst : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setLoc(const Point3D& loc);
+
+  Point3D getLoc() const;
+
+  dbChip* getMasterChip() const;
+
+  dbChip* getParentChip() const;
+
+  // User Code Begin dbChipInst
+  void setOrient(const dbOrientType& orient);
+
+  dbOrientType getOrient() const;
+
+  dbTransform getTransform() const;
+
+  dbSet<dbChipRegionInst> getRegions() const;
+
+  static odb::dbChipInst* create(dbChip* parent_chip,
+                                 dbChip* master_chip,
+                                 const std::string& name);
+
+  static void destroy(dbChipInst* chipInst);
+  // User Code End dbChipInst
+};
+
+class dbChipNet : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  // User Code Begin dbChipNet
+  dbChip* getChip() const;
+
+  uint getNumBumpInsts() const;
+
+  dbChipBumpInst* getBumpInst(uint index, std::vector<dbChipInst*>& path) const;
+
+  void addBumpInst(dbChipBumpInst* bump_inst,
+                   const std::vector<dbChipInst*>& path);
+
+  static dbChipNet* create(dbChip* chip, const std::string& name);
+
+  static void destroy(dbChipNet* net);
+  // User Code End dbChipNet
+};
+
+class dbChipRegion : public dbObject
+{
+ public:
+  enum class Side
+  {
+    FRONT,
+    BACK,
+    INTERNAL,
+    INTERNAL_EXT
+  };
+
+  std::string getName() const;
+
+  void setBox(const Rect& box);
+
+  Rect getBox() const;
+
+  dbSet<dbChipBump> getChipBumps() const;
+
+  // User Code Begin dbChipRegion
+  dbChip* getChip() const;
+
+  Side getSide() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbChipRegion* create(dbChip* chip,
+                              const std::string& name,
+                              Side side,
+                              dbTechLayer* layer);
+
+  // User Code End dbChipRegion
+};
+
+class dbChipRegionInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipRegionInst
+
+  dbChipInst* getChipInst() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+
+  // User Code End dbChipRegionInst
+};
+
+class dbDatabase : public dbObject
+{
+ public:
+  dbSet<dbChip> getChips() const;
+
+  dbChip* findChip(const char* name) const;
+
+  dbSet<dbProperty> getProperties() const;
+
+  dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipRegionInst> getChipRegionInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
+
+  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+
+  dbSet<dbChipNet> getChipNets() const;
+
+  // User Code Begin dbDatabase
+
+  void setTopChip(dbChip* chip);
+  ///
+  /// Return the libs contained in the database. A database can contain
+  /// multiple libs.
+  ///
+  dbSet<dbLib> getLibs();
+
+  ///
+  /// Find a specific lib.
+  /// Returns nullptr if no lib was found.
+  ///
+  dbLib* findLib(const char* name);
+
+  ///
+  /// Return the techs contained in the database. A database can contain
+  /// multiple techs.
+  ///
+  dbSet<dbTech> getTechs();
+
+  ///
+  /// Find a specific tech.
+  /// Returns nullptr if no tech was found.
+  ///
+  dbTech* findTech(const char* name);
+
+  ///
+  /// Find a specific master
+  /// Returns nullptr if no master is found.
+  ///
+  dbMaster* findMaster(const char* name);
+
+  ///
+  /// This function is used to delete unused master-cells.
+  /// Returns the number of unused master-cells that have been deleted.
+  ///
+  int removeUnusedMasters();
+
+  ///
+  /// Get the chip of this database.
+  /// Returns nullptr if no chip has been created.
+  ///
+  dbChip* getChip();
+
+  ////////////////////////
+  /// DEPRECATED
+  ////////////////////////
+  ///
+  /// This is replaced by dbBlock::getTech() or dbLib::getTech().
+  /// This is temporarily kept for legacy migration.
+  /// Get the technology of this database if there is exactly one dbTech.
+  /// Returns nullptr if no tech has been created.
+  ///
+  dbTech* getTech();
+
+  ///
+  /// Returns the number of masters
+  ///
+  uint getNumberOfMasters();
+
+  ///
+  /// Read a database from this stream.
+  /// WARNING: This function destroys the data currently in the database.
+  /// Throws ZIOError..
+  ///
+  void read(std::istream& f);
+
+  ///
+  /// Write a database to this stream.
+  /// Throws ZIOError..
+  ///
+  void write(std::ostream& file);
+
+  ///
+  /// ECO - The following methods implement a simple ECO mechanism for capturing
+  /// netlist changes. The intent of the ECO mechanism is to support delta
+  /// changes that occur in a "remote" node that must be applied back to the
+  /// "master" node. Being as such, the database on the "remote" must be an
+  /// exact copy of the "master" database, prior to changes. Furthermore, the
+  /// "master" database cannot change prior to commiting the eco to the block.
+  ///
+  /// WARNING: If these invariants does not hold then the results will be
+  ///          unpredictable.
+  ///
+
+  ///
+  /// Begin collecting netlist changes on specified block.
+  ///
+  /// NOTE: Eco changes can not be nested at this time.
+  ///
+  static void beginEco(dbBlock* block);
+
+  ///
+  /// End collecting netlist changes on specified block.
+  ///
+  static void endEco(dbBlock* block);
+
+  ///
+  /// Returns true of the pending eco is empty
+  ///
+  static bool ecoEmpty(dbBlock* block);
+
+  ///
+  /// Read the eco changes from the specified stream to be applied to the
+  /// specified block.
+  ///
+  static void readEco(dbBlock* block, const char* filename);
+
+  ///
+  /// Write the eco netlist changes to the specified stream.
+  ///
+  static void writeEco(dbBlock* block, const char* filename);
+  static int checkEco(dbBlock* block);
+
+  ///
+  /// Commit any pending netlist changes.
+  ///
+  static void commitEco(dbBlock* block);
+
+  ///
+  /// Undo any pending netlist changes.  Only supports:
+  ///   create and destroy of dbInst and dbNet
+  ///   dbInst::swapMaster
+  ///   connect and disconnect of dbBTerm and dbITerm
+  ///
+  static void undoEco(dbBlock* block);
+
+  ///
+  /// links to utl::Logger
+  ///
+  void setLogger(utl::Logger* logger);
+
+  ///
+  /// Initializes the database to nothing.
+  ///
+  void clear();
+
+  ///
+  /// Generates a report of memory usage.
+  ///   Not perfectly byte accurate.  Intended for developers.
+  ///
+  void report();
+
+  ///
+  /// Used to be notified when lef/def/odb are read.
+  ///
+  void addObserver(dbDatabaseObserver* observer);
+  void removeObserver(dbDatabaseObserver* observer);
+
+  ///
+  /// Notify observers when one of these operations is complete.
+  /// Fine-grained callbacks during construction are not as helpful
+  /// as knowing when the data is fully loaded into odb.
+  ///
+  void triggerPostReadLef(dbTech* tech, dbLib* library);
+  void triggerPostReadDef(dbBlock* block, bool floorplan);
+  void triggerPostReadDb();
+
+  ///
+  /// Create an instance of a database
+  ///
+  static dbDatabase* create();
+
+  ///
+  /// Detroy an instance of a database
+  ///
+  static void destroy(dbDatabase* db);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbDatabase* getDatabase(uint oid);
+  // User Code End dbDatabase
+};
+
 // Top level DFT (Design for Testing) class
 class dbDft : public dbObject
 {
@@ -7374,7 +7644,7 @@ class dbGDSStructure : public dbObject
  public:
   char* getName() const;
 
-  dbSet<dbGDSBoundary> getGDSBoundarys() const;
+  dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
@@ -7775,7 +8045,7 @@ class dbMarkerCategory : public dbObject
 
   dbSet<dbMarker> getMarkers() const;
 
-  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbMarkerCategory* findMarkerCategory(const char* name) const;
 
@@ -7958,7 +8228,7 @@ class dbModInst : public dbObject
 
   dbSet<dbModITerm> getModITerms();
 
-  void RemoveUnusedPortsAndPins();
+  void removeUnusedPortsAndPins();
 
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
@@ -8016,7 +8286,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
 
   static dbModNet* getModNet(dbBlock* block, uint id);
-  static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbModNet* create(dbModule* parentModule, const char* base_name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet
@@ -8049,7 +8319,7 @@ class dbModule : public dbObject
   // Get the ports of a module (STA world uses ports, which contain members).
   dbSet<dbModBTerm> getPorts();
   // Get the leaf level connections on a module (flat connected view).
-  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbModBTerm> getModBTerms() const;
   dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
 
@@ -8063,6 +8333,7 @@ class dbModule : public dbObject
   int getDbInstCount();
 
   const dbModBTerm* getHeadDbModBTerm() const;
+  bool canSwapWith(dbModule* new_module) const;
 
   static dbModule* create(dbBlock* block, const char* name);
 

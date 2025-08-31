@@ -10,22 +10,6 @@ package(
 )
 
 cc_library(
-    name = "types",
-    hdrs = [
-        "include/grt/GRoute.h",
-        "include/grt/GlobalRouter.h",
-        "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        "//src/odb",
-    ],
-)
-
-cc_library(
     name = "abstract-fastroute",
     hdrs = [
         "src/fastroute/include/AbstractFastRouteRenderer.h",
@@ -38,30 +22,36 @@ cc_library(
 )
 
 cc_library(
+    name = "groute",
+    hdrs = ["include/grt/GRoute.h"],
+)
+
+cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
-        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/RSMT.cpp",
         "src/fastroute/src/RipUp.cpp",
+        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/maze.cpp",
         "src/fastroute/src/maze3D.cpp",
         "src/fastroute/src/route.cpp",
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
-        "src/fastroute/include/AbstractMakeWireParasitics.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
     ],
     includes = [
+        "include",
         "src/fastroute/include",
     ],
     deps = [
         ":abstract-fastroute",
-        ":types",
+        ":groute",
+        "//src/dbSta",
         "//src/gui",
         "//src/odb",
         "//src/stt",
@@ -80,8 +70,6 @@ cc_library(
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
-        "src/MakeWireParasitics.cpp",
-        "src/MakeWireParasitics.h",
         "src/Net.cpp",
         "src/Net.h",
         "src/Pin.cpp",
@@ -92,6 +80,9 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
+        "include/grt/GlobalRouter.h",
+        "include/grt/PinGridLocation.h",
+        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -103,14 +94,12 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":types",
+        ":groute",
         "//src/ant",
-        "//src/ant:types",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -142,7 +131,6 @@ cc_library(
     ],
     hdrs = [
         "include/grt/MakeGlobalRouter.h",
-        "include/grt/Rudy.h",
     ],
     copts = [
         "-Isrc/grt/src",
@@ -155,14 +143,14 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":fastroute",
-        ":types",
+        ":groute",
+        ":grt",
         "//:ord",
         "//src/ant",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",

@@ -70,9 +70,6 @@ cc_library(
     ],
     hdrs = [
         "include/stt/MakeSteinerTreeBuilder.h",
-        "include/stt/SteinerTreeBuilder.h",
-        "include/stt/flute.h",
-        "include/stt/pd.h",
     ],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
@@ -82,6 +79,7 @@ cc_library(
         "src",
     ],
     deps = [
+        ":stt",
         "//:ord",
         "//src/gui",
         "//src/odb",

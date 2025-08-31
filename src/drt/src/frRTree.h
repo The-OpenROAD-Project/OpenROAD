@@ -3,12 +3,13 @@
 
 #pragma once
 
-#include <boost/geometry/algorithms/covered_by.hpp>
-#include <boost/geometry/algorithms/equals.hpp>
-#include <boost/geometry/geometries/register/box.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
 #include <utility>
 
+#include "boost/geometry/algorithms/covered_by.hpp"
+#include "boost/geometry/algorithms/equals.hpp"
+#include "boost/geometry/geometries/register/box.hpp"
+#include "boost/geometry/geometries/register/point.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "db/infra/frBox.h"
 #include "db/infra/frPoint.h"
 #include "serialization.h"

@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "utl/Logger.h"
+
 namespace grt {
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,

@@ -4,14 +4,16 @@
 #include "grid.h"
 
 #include <algorithm>
-#include <boost/geometry.hpp>
+#include <array>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "odb/db.h"

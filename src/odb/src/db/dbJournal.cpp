@@ -3,6 +3,8 @@
 
 #include "dbJournal.h"
 
+#include <cstdio>
+
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"

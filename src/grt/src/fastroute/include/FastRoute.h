@@ -3,27 +3,29 @@
 
 #pragma once
 
-#include <boost/functional/hash.hpp>
-#include <boost/icl/interval.hpp>
-#include <boost/icl/interval_set.hpp>
-#include <boost/multi_array.hpp>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "AbstractMakeWireParasitics.h"
 #include "DataType.h"
 #include "Graph2D.h"
+#include "boost/functional/hash.hpp"
+#include "boost/icl/interval.hpp"
+#include "boost/icl/interval_set.hpp"
+#include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace utl {
+class CallBackHandler;
 class Logger;
-}
+}  // namespace utl
 
 namespace odb {
 class dbDatabase;
@@ -39,6 +41,10 @@ namespace gui {
 class Gui;
 }
 
+namespace sta {
+class dbSta;
+}
+
 namespace grt {
 
 using boost::multi_array;
@@ -46,8 +52,6 @@ using boost::icl::interval;
 using boost::icl::interval_set;
 
 class AbstractFastRouteRenderer;
-class MakeWireParasitics;
-
 // Debug mode settings
 struct DebugSetting
 {
@@ -87,7 +91,9 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder);
+                utl::CallBackHandler* callback_handler,
+                stt::SteinerTreeBuilder* stt_builder,
+                sta::dbSta* sta);
   ~FastRouteCore();
 
   void clear();
@@ -113,7 +119,8 @@ class FastRouteCore
   void clearNetRoute(odb::dbNet* db_net);
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
-  void setNumAdjustments(int nAdjustements);
+  void initEdgesCapacityPerLayer();
+  void setNumAdjustments(int nAdjustments);
   void addAdjustment(int x1,
                      int y1,
                      int x2,
@@ -121,18 +128,29 @@ class FastRouteCore
                      int layer,
                      uint16_t reducedCap,
                      bool isReduce);
+  void releaseResourcesOnInterval(
+      int x,
+      int y,
+      int layer,
+      bool is_horizontal,
+      const interval<int>::type& tile_reduce_interval,
+      const std::vector<int>& track_space);
   void addVerticalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
       int layer,
       const interval<int>::type& first_tile_reduce_interval,
-      const interval<int>::type& last_tile_reduce_interval);
+      const interval<int>::type& last_tile_reduce_interval,
+      const std::vector<int>& track_space,
+      bool release = false);
   void addHorizontalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
       int layer,
       const interval<int>::type& first_tile_reduce_interval,
-      const interval<int>::type& last_tile_reduce_interval);
+      const interval<int>::type& last_tile_reduce_interval,
+      const std::vector<int>& track_space,
+      bool release = false);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();
@@ -185,7 +203,6 @@ class FastRouteCore
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
-  void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
@@ -216,6 +233,7 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+  void clearNDRnets();
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }
@@ -225,6 +243,10 @@ class FastRouteCore
   {
     return debug_->renderer.get();
   }
+  void getOverflowPositions(
+      std::vector<std::pair<odb::Point, bool>>& overflow_pos);
+
+  NetRouteMap getPlanarRoutes();
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -234,7 +256,6 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  NetRouteMap getPlanarRoutes();
 
   // maze functions
   // Maze-routing in different orders
@@ -252,11 +273,10 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
-                         int& posX,
-                         int& posY,
-                         int dir,
-                         int& radius);
+  void findNetsNearPosition(std::set<odb::dbNet*>& congestion_nets,
+                            const odb::Point& position,
+                            bool is_horizontal,
+                            int& radius);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(int net_id);
   bool areEdgesOverlapping(int net_id,
@@ -479,6 +499,7 @@ class FastRouteCore
   void checkRoute3D();
   void StNetOrder();
   float CalculatePartialSlack();
+  float getNetSlack(odb::dbNet* net);
   /**
    * @brief Validates the routing of edges for a specified net.
    *
@@ -621,9 +642,10 @@ class FastRouteCore
   std::vector<StTree> sttrees_;  // the Steiner trees
   std::vector<StTree> sttrees_bk_;
 
+  utl::CallBackHandler* callback_handler_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  AbstractMakeWireParasitics* parasitics_builder_;
+  sta::dbSta* sta_;
 
   std::unique_ptr<DebugSetting> debug_;
 

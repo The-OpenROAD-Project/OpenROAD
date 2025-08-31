@@ -3,6 +3,7 @@
 
 #include "OneBitScanCell.hh"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>

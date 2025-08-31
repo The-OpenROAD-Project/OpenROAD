@@ -4,6 +4,9 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>
@@ -2234,20 +2237,24 @@ void dbNet::mergeNet(dbNet* in_net)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  std::vector<dbITerm*> iterms;
-  for (dbITerm* iterm : in_net->getITerms()) {
-    iterms.push_back(iterm);
-  }
-
   for (auto callback : block->_callbacks) {
     callback->inDbNetPreMerge(this, in_net);
   }
 
+  // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
+  // invalidate the iterator by disconnecting a dbITerm.
+  // Calling iterm->connect() during iteration with the iterator is not safe.
+  // Thus create another vector for safe iterms iteration.
+  auto iterms_set = in_net->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
   for (dbITerm* iterm : iterms) {
     iterm->connect(this);
   }
 
-  for (dbBTerm* bterm : in_net->getBTerms()) {
+  // Create vector for safe iteration.
+  auto bterms_set = in_net->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
 }

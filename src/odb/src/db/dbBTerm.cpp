@@ -3,6 +3,9 @@
 
 #include "dbBTerm.h"
 
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <optional>
 #include <string>
 
@@ -37,6 +40,8 @@ template class dbTable<_dbBTerm>;
 
 _dbBTerm::_dbBTerm(_dbDatabase*)
 {
+  // For pointer tagging the bottom 3 bits.
+  static_assert(alignof(_dbBTerm) % 8 == 0);
   _flags._io_type = dbIoType::INPUT;
   _flags._sig_type = dbSigType::SIGNAL;
   _flags._orient = 0;
@@ -392,6 +397,11 @@ void dbBTerm::connect(dbNet* net_)
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  // Same net. Nothing to connect.
+  if (bterm->_net == net_->getId()) {
+    return;
+  }
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(utl::ODB,

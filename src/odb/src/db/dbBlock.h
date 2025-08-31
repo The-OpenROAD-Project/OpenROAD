@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbCore.h"
@@ -195,6 +197,8 @@ class _dbBlock : public _dbObject
   int _max_layer_for_clock;
   std::vector<_dbBTermGroup> _bterm_groups;
   _dbBTermTopLayerGrid _bterm_top_layer_grid;
+  uint _unique_net_index{1};   // unique index used to create a new net name
+  uint _unique_inst_index{1};  // unique index used to create a new inst name
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -319,6 +323,12 @@ class _dbBlock : public _dbObject
   void collectMemInfo(MemInfo& info);
   void clearSystemBlockagesAndObstructions();
   void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
+  void ComputeBBox();
+  std::string makeNewName(dbModInst* parent,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify,
+                          uint& unique_index,
+                          const std::function<bool(const char*)>& exists);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);

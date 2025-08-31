@@ -19,6 +19,7 @@
 #include <QToolBar>
 #include <QVariant>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"

@@ -6,20 +6,24 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
+// This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
+#include "VTSwapMove.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -37,6 +41,7 @@
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
+#include "utl/mem_stats.h"
 
 namespace rsz {
 
@@ -58,7 +63,9 @@ using sta::PathExpanded;
 using sta::Slew;
 using sta::VertexOutEdgeIterator;
 
-RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
+RepairSetup::RepairSetup(Resizer* resizer,
+                         est::EstimateParasitics* estimate_parasitics)
+    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
 {
 }
 
@@ -82,7 +89,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_size_down,
                               const bool skip_buffering,
                               const bool skip_buffer_removal,
-                              const bool skip_last_gasp)
+                              const bool skip_last_gasp,
+                              const bool skip_vt_swap)
 {
   bool repaired = false;
   init();
@@ -136,6 +144,15 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
             move_sequence.push_back(resizer_->split_load_move_.get());
           }
           break;
+        case MoveType::VTSWAP_SPEED:
+          if (!skip_vt_swap
+              && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
+            move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+          }
+          break;
+        case MoveType::SIZEUP_MATCH:
+          move_sequence.push_back(resizer_->size_up_match_move_.get());
+          break;
       }
     }
 
@@ -143,6 +160,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     move_sequence.clear();
     if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move_.get());
+    }
+    if (!skip_vt_swap && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
+      move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
     }
     // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
@@ -225,7 +245,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
@@ -354,7 +374,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // clang-format on
         break;
       }
-      resizer_->updateParasitics();
+      estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
       end_slack = sta_->vertexSlack(end, max_);
       sta_->worstSlack(max_, worst_slack, worst_vertex);
@@ -453,6 +473,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   int clone_moves_ = resizer_->clone_move_->numCommittedMoves();
   int split_load_moves_ = resizer_->split_load_move_->numCommittedMoves();
   int unbuffer_moves_ = resizer_->unbuffer_move_->numCommittedMoves();
+  int vt_swap_moves_ = resizer_->vt_swap_speed_move_->numCommittedMoves();
+  int size_up_match_moves_ = resizer_->size_up_match_move_->numCommittedMoves();
 
   if (unbuffer_moves_ > 0) {
     repaired = true;
@@ -472,14 +494,18 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves_ + split_load_moves_);
-  if (size_up_moves_ + size_down_moves_ > 0) {
+  if (size_up_moves_ + size_down_moves_ + size_up_match_moves_ + vt_swap_moves_
+      > 0) {
     repaired = true;
     logger_->info(RSZ,
                   51,
-                  "Resized {} instances, {} sized up, {} sized down.",
-                  size_up_moves_ + size_down_moves_,
+                  "Resized {} instances: {} up, {} up match, {} down, {} VT",
+                  size_up_moves_ + size_up_match_moves_ + size_down_moves_
+                      + vt_swap_moves_,
                   size_up_moves_,
-                  size_down_moves_);
+                  size_up_match_moves_,
+                  size_down_moves_,
+                  vt_swap_moves_);
   }
   if (swap_pins_moves_ > 0) {
     repaired = true;
@@ -513,6 +539,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
 
   move_sequence.clear();
   move_sequence = {resizer_->unbuffer_move_.get(),
+                   resizer_->vt_swap_speed_move_.get(),
                    resizer_->size_down_move_.get(),
                    resizer_->size_up_move_.get(),
                    resizer_->swap_pins_move_.get(),
@@ -521,7 +548,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
                    resizer_->split_load_move_.get()};
 
   {
-    IncrementalParasiticsGuard guard(resizer_);
+    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     repairPath(path, slack, 0.0);
   }
 
@@ -738,6 +765,10 @@ void RepairSetup::printProgress(const int iteration,
 
     const double design_area = resizer_->computeDesignArea();
     const double area_growth = design_area - initial_design_area_;
+    double area_growth_percent = std::numeric_limits<double>::infinity();
+    if (std::abs(initial_design_area_) > 0.0) {
+      area_growth_percent = area_growth / initial_design_area_ * 100.0;
+    }
 
     // This actually prints both committed and pending moves, so the moves could
     // could go down if a pass is rejected and restored by the ECO.
@@ -747,16 +778,20 @@ void RepairSetup::printProgress(const int iteration,
         itr_field,
         resizer_->unbuffer_move_->numMoves(),
         resizer_->size_up_move_->numMoves()
-            + resizer_->size_down_move_->numMoves(),
+            + resizer_->size_down_move_->numMoves()
+            + resizer_->size_up_match_move_->numMoves()
+            + resizer_->vt_swap_speed_move_->numMoves(),
         resizer_->buffer_move_->numMoves()
             + resizer_->split_load_move_->numMoves(),
         resizer_->clone_move_->numMoves(),
         resizer_->swap_pins_move_->numMoves(),
-        area_growth / initial_design_area_ * 1e2,
+        area_growth_percent,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
         max(0, num_viols),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");
+
+    debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   }
 
   if (end) {
@@ -800,9 +835,14 @@ bool RepairSetup::terminateProgress(const int iteration,
 
 // Perform some last fixing based on sizing only.
 // This is a greedy opto that does not degrade WNS or TNS.
-// TODO: add VT swap
 void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 {
+  move_sequence.clear();
+  move_sequence = {resizer_->vt_swap_speed_move_.get(),
+                   resizer_->size_up_match_move_.get(),
+                   resizer_->size_up_move_.get(),
+                   resizer_->swap_pins_move_.get()};
+
   // Sort remaining failing endpoints
   const VertexSet* endpoints = sta_->endpoints();
   vector<pair<Vertex*, Slack>> violating_ends;
@@ -824,15 +864,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
     // clang-format off
     debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
                "because TNS is {:0.2f}", curr_tns);
-    // clang-format on
-    return;
-  }
-
-  // Don't do anything unless there was some progress from previous fixing
-  if ((params.initial_tns - curr_tns) / params.initial_tns < 0.05) {
-    // clang-format off
-    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
-               "because TNS was reduced by < 5% from previous fixing");
     // clang-format on
     return;
   }
@@ -914,7 +945,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         }
         break;
       }
-      resizer_->updateParasitics();
+      estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
       end_slack = sta_->vertexSlack(end, max_);
       sta_->worstSlack(max_, curr_worst_slack, worst_vertex);

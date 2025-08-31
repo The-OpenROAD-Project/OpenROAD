@@ -1,11 +1,12 @@
 #define BOOST_TEST_MODULE TestGDSIn
 #include <libgen.h>
 
-#include <boost/test/included/unit_test.hpp>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "boost/test/included/unit_test.hpp"
 #include "helper/env.h"
 #include "odb/gdsin.h"
 #include "odb/gdsout.h"
@@ -35,7 +36,7 @@ BOOST_AUTO_TEST_CASE(reader)
   dbGDSStructure* str = lib->findGDSStructure("sky130_fd_sc_hd__inv_1");
   BOOST_TEST(str != nullptr);
 
-  BOOST_TEST(str->getGDSBoundarys().size() == 44);
+  BOOST_TEST(str->getGDSBoundaries().size() == 44);
   BOOST_TEST(str->getGDSBoxs().size() == 0);
   BOOST_TEST(str->getGDSPaths().size() == 2);
   BOOST_TEST(str->getGDSSRefs().size() == 0);
@@ -55,7 +56,7 @@ BOOST_AUTO_TEST_CASE(reader)
   BOOST_TEST(path0_xy.size() == 2);
   BOOST_TEST(path1_xy.size() == 2);
 
-  auto boundries_iter = str->getGDSBoundarys().begin();
+  auto boundries_iter = str->getGDSBoundaries().begin();
   auto boundary0 = *boundries_iter++;
   const std::vector<Point>& boundary0_xy = boundary0->getXY();
 
@@ -103,7 +104,7 @@ BOOST_AUTO_TEST_CASE(writer)
   dbGDSStructure* str = lib->findGDSStructure("sky130_fd_sc_hd__inv_1");
   BOOST_TEST(str != nullptr);
 
-  BOOST_TEST(str->getGDSBoundarys().size() == 44);
+  BOOST_TEST(str->getGDSBoundaries().size() == 44);
   BOOST_TEST(str->getGDSBoxs().size() == 0);
   BOOST_TEST(str->getGDSPaths().size() == 2);
   BOOST_TEST(str->getGDSSRefs().size() == 0);
@@ -123,7 +124,7 @@ BOOST_AUTO_TEST_CASE(writer)
   BOOST_TEST(path0_xy.size() == 2);
   BOOST_TEST(path1_xy.size() == 2);
 
-  auto boundries_iter = str->getGDSBoundarys().begin();
+  auto boundries_iter = str->getGDSBoundaries().begin();
   auto boundary0 = *boundries_iter++;
   const std::vector<Point>& boundary0_xy = boundary0->getXY();
 

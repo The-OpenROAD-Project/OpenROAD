@@ -3,6 +3,7 @@
 
 #include "FastRouteRenderer.h"
 
+#include <cmath>
 #include <vector>
 
 namespace grt {

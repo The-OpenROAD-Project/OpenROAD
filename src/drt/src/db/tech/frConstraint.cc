@@ -6,6 +6,7 @@
 #include <string>
 
 #include "frLayer.h"
+#include "utl/Logger.h"
 namespace drt {
 
 std::string frConstraint::getViolName() const

@@ -4,17 +4,21 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <string.h>
 #include <tcl.h>
 #include <unistd.h>
 
 #include <array>
 #include <cstddef>
+#include <cstdlib>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
@@ -685,7 +689,7 @@ TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
   UniqueName name_generator;
   ZeroSlackStrategy zero_slack;
   EXPECT_NO_THROW(
-      zero_slack.OptimizeDesign(sta_.get(), name_generator, &logger_));
+      zero_slack.OptimizeDesign(sta_.get(), name_generator, nullptr, &logger_));
 }
 
 TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
