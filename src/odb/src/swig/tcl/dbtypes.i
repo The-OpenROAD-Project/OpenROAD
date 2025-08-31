@@ -24,6 +24,17 @@
     Tcl_SetObjResult(interp, list);
 }
 
+%typemap(out) odb::Point3D, Point3D {
+    Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+    Tcl_Obj *x = Tcl_NewIntObj($1.x());
+    Tcl_Obj *y = Tcl_NewIntObj($1.y());
+    Tcl_Obj *z = Tcl_NewIntObj($1.z());
+    Tcl_ListObjAppendElement(interp, list, x);
+    Tcl_ListObjAppendElement(interp, list, y);
+    Tcl_ListObjAppendElement(interp, list, z);
+    Tcl_SetObjResult(interp, list);
+}
+
 %typemap(out) std::optional<uint8_t> {
     if ($1.has_value()) {
         Tcl_SetIntObj($result, (int) $1.value());
