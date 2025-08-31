@@ -205,10 +205,16 @@ void SwapPinsMove::equivCellPins(const LibertyCell* cell,
   // count number of output ports.
   while (port_iter.hasNext()) {
     LibertyPort* port = port_iter.next();
-    if (port->direction()->isOutput()) {
+    sta::PortDirection* direction = port->direction();
+    if (direction->isOutput()) {
       ++outputs;
-    } else {
+    } else if (direction->isInput()) {
       ++inputs;
+    } else if (direction->isPower() || direction->isGround()) {
+      // skip
+    } else {
+      ports.clear();
+      return;  // reject tristate/internal/bidirect/unknown cases
     }
   }
 
