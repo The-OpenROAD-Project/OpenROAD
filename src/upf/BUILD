@@ -23,9 +23,9 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/sta:opensta_lib",
         "//src/dbSta",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
     ],
 )
