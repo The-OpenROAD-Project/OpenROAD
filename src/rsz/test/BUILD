@@ -208,7 +208,12 @@ extra_deps = {
     "repair_setup4_sequence": ["repair_setup4.tcl"],
 }
 
+BIG_TESTS = [
+    "repair_fanout6",
+]
+
 [regression_test(
     name = test_name,
+    size = "large" if test_name in BIG_TESTS else "medium",
     data = [":test_resources"] + extra_deps.get(test_name, []),
 ) for test_name in TESTS]
