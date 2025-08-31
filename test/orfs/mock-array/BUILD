@@ -130,10 +130,10 @@ orfs_flow(
         ),
         "MACRO_PLACE_HALO": "0 2.16",
         "RTLMP_BOUNDARY_WT": "0",
-        "RTLMP_MAX_INST" :"250",
-        "RTLMP_MIN_INST" :"50",
-        "RTLMP_MAX_MACRO" :"64",
-        "RTLMP_MIN_MACRO" :"8",
+        "RTLMP_MAX_INST": "250",
+        "RTLMP_MIN_INST": "50",
+        "RTLMP_MAX_MACRO": "64",
+        "RTLMP_MIN_MACRO": "8",
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "MACRO_ROWS_HALO_X": "0.5",
         "MACRO_ROWS_HALO_Y": "0.5",
@@ -306,10 +306,6 @@ verilator_cc_library(
         "-Wno-DECLFILENAME",
         "-Wno-UNUSEDSIGNAL",
         "-Wno-PINMISSING",
-        # OpenROAD write_verilog uses implicit wires
-        "-Wno-IMPLICIT",
-        # FIXME remove after https://github.com/The-OpenROAD-Project/OpenROAD/issues/8108 fixed
-        "-Wno-UNDRIVEN",
         "--trace-underscore",
     ],
 )
