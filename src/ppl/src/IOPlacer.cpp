@@ -1647,12 +1647,10 @@ bool IOPlacer::assignPinsToSectionsPolygon(int assigned_pins_count)
 
   // Mirrored pins first
   int idx = 0;
-  int mirrored_pins_assigned = 0;  // DEBUG VARIABLE _ REMOVE LATER
   for (IOPin& io_pin : net->getIOPins()) {
     if (io_pin.getBTerm()->hasMirroredBTerm()) {
       if (assignPinToSection(io_pin, idx, sections)) {
         total_pins_assigned += 2;
-        mirrored_pins_assigned += 2;  // DEBUG VARIABLE _ REMOVE LATER
       }
     }
     idx++;
@@ -1814,13 +1812,10 @@ void IOPlacer::updateOrientation(IOPin& pin)
   }
 }
 
-bool IOPlacer::isPointInsidePolygon(const odb::Point point,
-                                    const odb::Polygon die_polygon)
+bool IOPlacer::isPointInsidePolygon(odb::Point point,
+                                    const odb::Polygon& die_polygon)
 {
   const std::vector<odb::Point>& vertices = die_polygon.getPoints();
-  if (vertices.size() < 3) {
-    return false;  // Not a valid polygon
-  }
 
   int x = point.getX();
   int y = point.getY();
@@ -2463,11 +2458,6 @@ std::string IOPlacer::getPinSetOrListString(const PinSetOrList& group)
 void IOPlacer::findPinAssignment(std::vector<Section>& sections,
                                  bool mirrored_groups_only)
 {
-  int total_pin_indices = 0;
-  for (const auto& section : sections) {
-    total_pin_indices += section.pin_indices.size();
-  }
-
   std::vector<HungarianMatching> hg_vec;
   for (const auto& section : sections) {
     if (!section.pin_indices.empty()) {
