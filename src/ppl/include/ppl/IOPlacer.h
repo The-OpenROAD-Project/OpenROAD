@@ -216,7 +216,7 @@ class IOPlacer
   void excludeInterval(Interval interval);
 
   void updateOrientation(IOPin& pin);
-  bool isPointInsidePolygon(const odb::Point point, const odb::Polygon polygon);
+  bool isPointInsidePolygon(odb::Point point, const odb::Polygon& polygon);
   void updateOrientationPolygon(IOPin& pin);
   void updatePinArea(IOPin& pin);
   void movePinToTrack(odb::Point& pos,
