@@ -183,8 +183,8 @@ orfs_flow(
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
         # We want to report power per module using hierarhical .odb
         "OPENROAD_HIERARCHICAL": "1",
-        "SYNTH_HIERARCHICAL": "1",
-        "SYNTH_MINIMUM_KEEP_SIZE": "0",
+        # Keep only one module, enough for testing, faster builds
+        "SYNTH_KEEP_MODULES": "multiplier.final_adder",
     },
     sources = {
         "IO_CONSTRAINTS": [":mock-array-element-io"],
