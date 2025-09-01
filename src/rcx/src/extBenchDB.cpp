@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "odb/db.h"
