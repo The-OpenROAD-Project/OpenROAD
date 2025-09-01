@@ -19,6 +19,7 @@
 #include "dbWireOpcode.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {

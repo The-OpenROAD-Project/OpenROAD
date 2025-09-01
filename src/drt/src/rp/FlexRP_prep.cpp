@@ -18,6 +18,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

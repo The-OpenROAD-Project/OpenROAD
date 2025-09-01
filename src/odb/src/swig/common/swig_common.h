@@ -6,7 +6,9 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defout.h"
+#include "odb/geom.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path);
 

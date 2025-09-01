@@ -11,6 +11,8 @@
 #include "RoutingTracks.h"
 #include "boost/icl/interval.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 

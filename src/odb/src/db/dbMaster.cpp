@@ -25,7 +25,11 @@
 #include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

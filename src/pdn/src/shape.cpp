@@ -16,6 +16,8 @@
 #include "grid.h"
 #include "grid_component.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"

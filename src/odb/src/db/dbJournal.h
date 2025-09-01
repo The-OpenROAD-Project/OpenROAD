@@ -6,6 +6,8 @@
 #include <string>
 
 #include "dbJournalLog.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 
 namespace utl {

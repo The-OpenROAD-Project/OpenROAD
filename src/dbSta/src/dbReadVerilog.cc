@@ -17,6 +17,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkCmp.hh"

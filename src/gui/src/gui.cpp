@@ -39,6 +39,7 @@
 #include "layoutViewer.h"
 #include "mainWindow.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "ord/OpenRoad.hh"

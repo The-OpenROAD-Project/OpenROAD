@@ -7,6 +7,8 @@
 
 #include "dbDatabase.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 
 namespace odb {

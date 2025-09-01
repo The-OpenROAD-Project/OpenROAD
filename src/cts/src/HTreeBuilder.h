@@ -14,6 +14,7 @@
 #include "CtsObserver.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
+#include "odb/db.h"
 
 namespace cts {
 class Graphics;

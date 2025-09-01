@@ -28,6 +28,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "options.h"
 

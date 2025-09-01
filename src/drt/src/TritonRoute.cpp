@@ -37,6 +37,8 @@
 #include "gr/FlexGR.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
+#include "odb/db.h"
+#include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"

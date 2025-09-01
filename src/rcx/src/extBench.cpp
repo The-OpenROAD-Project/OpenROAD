@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extprocess.h"

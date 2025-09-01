@@ -13,6 +13,7 @@
 #include <string>
 
 #include "odb/dbId.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 

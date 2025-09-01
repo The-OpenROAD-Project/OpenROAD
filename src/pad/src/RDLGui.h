@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "gui/gui.h"
+#include "odb/geom.h"
 
 namespace pad {
 
