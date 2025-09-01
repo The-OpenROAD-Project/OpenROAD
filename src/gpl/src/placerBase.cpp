@@ -14,6 +14,7 @@
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace gpl {

@@ -14,7 +14,10 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/ExceptionPath.hh"

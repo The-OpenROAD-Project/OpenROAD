@@ -21,6 +21,10 @@
 #include "boost/geometry/geometry.hpp"
 #include "boost/pending/disjoint_sets.hpp"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {

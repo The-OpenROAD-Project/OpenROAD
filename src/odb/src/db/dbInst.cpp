@@ -39,6 +39,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {

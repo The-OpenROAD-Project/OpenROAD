@@ -18,6 +18,8 @@
 #include "boost/functional/hash.hpp"
 #include "boost/unordered/unordered_map.hpp"
 #include "boost/unordered/unordered_set.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

@@ -16,6 +16,7 @@
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace drt {

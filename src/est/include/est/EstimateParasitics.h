@@ -16,6 +16,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"

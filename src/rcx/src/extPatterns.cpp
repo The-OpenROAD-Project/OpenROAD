@@ -11,6 +11,8 @@
 #include <map>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"

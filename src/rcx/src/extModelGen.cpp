@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/dbSet.h"
 #include "parse.h"
 
 namespace rcx {

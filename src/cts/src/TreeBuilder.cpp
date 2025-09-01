@@ -16,6 +16,8 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "utl/Logger.h"
 

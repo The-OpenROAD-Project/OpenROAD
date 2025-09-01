@@ -4,6 +4,7 @@
 #pragma once
 
 #include "dbHashTable.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 

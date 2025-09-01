@@ -15,6 +15,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 

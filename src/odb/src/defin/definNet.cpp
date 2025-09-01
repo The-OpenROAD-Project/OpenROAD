@@ -11,8 +11,11 @@
 #include <stdexcept>
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "odb/defin.h"
 #include "utl/Logger.h"
 
 namespace odb {

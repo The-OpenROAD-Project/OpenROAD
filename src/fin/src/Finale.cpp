@@ -4,6 +4,8 @@
 #include "fin/Finale.h"
 
 #include "DensityFill.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace fin {
 

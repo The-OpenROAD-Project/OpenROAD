@@ -11,6 +11,8 @@
 #include "extPattern.h"
 #include "extRCap.h"
 #include "ext_options.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "rcx/extModelGen.h"
 
 namespace utl {

@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbNet*);

@@ -21,6 +21,7 @@
 
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 

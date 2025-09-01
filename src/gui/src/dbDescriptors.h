@@ -14,8 +14,10 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbMaster;

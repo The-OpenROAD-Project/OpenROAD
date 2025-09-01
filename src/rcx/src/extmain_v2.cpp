@@ -11,6 +11,9 @@
 #include <vector>
 
 #include "find_some_net.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "rcx/extModelGen.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"

@@ -16,6 +16,8 @@
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 

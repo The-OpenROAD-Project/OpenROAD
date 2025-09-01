@@ -16,6 +16,7 @@
 #include "connection.h"
 #include "node.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "psm/pdnsim.h"
 #include "utl/Logger.h"
 

@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "BaseMove.hh"
+#include "odb/db.h"
 
 namespace rsz {
 

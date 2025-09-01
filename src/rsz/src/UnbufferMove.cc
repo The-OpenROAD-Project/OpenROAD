@@ -13,6 +13,7 @@
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
+#include "odb/db.h"
 
 namespace rsz {
 

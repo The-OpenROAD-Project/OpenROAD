@@ -12,6 +12,7 @@
 #include "grt/GRoute.h"
 #include "grt/RoutePt.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace grt {
 

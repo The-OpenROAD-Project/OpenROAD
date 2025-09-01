@@ -3,6 +3,9 @@
 
 #include "Graphics.hh"
 
+#include "odb/db.h"
+#include "odb/geom.h"
+
 namespace rsz {
 
 Graphics::Graphics()

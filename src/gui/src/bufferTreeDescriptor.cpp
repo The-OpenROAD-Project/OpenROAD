@@ -14,6 +14,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 namespace gui {

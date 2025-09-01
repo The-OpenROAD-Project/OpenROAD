@@ -16,6 +16,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 

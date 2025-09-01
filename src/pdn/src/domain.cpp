@@ -12,6 +12,7 @@
 
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "utl/Logger.h"
 

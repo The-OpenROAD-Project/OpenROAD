@@ -60,6 +60,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 
 #include "dbEditHierarchy.hh"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"

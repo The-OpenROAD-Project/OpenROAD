@@ -28,6 +28,10 @@
 #include "dbTechViaLayerRule.h"
 #include "dbTechViaRule.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbStream.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
