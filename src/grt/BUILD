@@ -91,7 +91,7 @@ cc_library(
         "src/cugr/include/geo.h",
     ],
     includes = [
-        "include"
+        "include",
         "src/cugr/include",
     ],
     deps = [
