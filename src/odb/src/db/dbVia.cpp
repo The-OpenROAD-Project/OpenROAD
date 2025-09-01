@@ -3,6 +3,9 @@
 
 #include "dbVia.h"
 
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 

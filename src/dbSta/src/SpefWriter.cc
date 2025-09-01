@@ -3,6 +3,7 @@
 
 #include "db_sta/SpefWriter.hh"
 
+#include <algorithm>
 #include <cstddef>
 #include <fstream>
 #include <iostream>

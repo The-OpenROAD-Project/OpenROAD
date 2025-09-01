@@ -4,9 +4,11 @@
 #include "cts/TritonCTS.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <functional>
@@ -15,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>

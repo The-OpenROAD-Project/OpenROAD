@@ -12,12 +12,10 @@ package(
 cc_library(
     name = "exa",
     srcs = [
-        "src/MakeExample.cpp",
         "src/example.cpp",
         "src/observer.h",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
         "include/exa/example.h",
     ],
     includes = [
@@ -42,7 +40,6 @@ cc_library(
     ],
     hdrs = [
         "include/exa/MakeExample.h",
-        "include/exa/example.h",
     ],
     copts = [
         "-Isrc/exa/src",
@@ -51,6 +48,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":exa",
         "//:ord",
         "//src/gui",
         "//src/odb",

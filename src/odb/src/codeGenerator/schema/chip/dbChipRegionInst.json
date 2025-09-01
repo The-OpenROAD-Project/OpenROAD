@@ -16,6 +16,11 @@
         "name":"chip_region_inst_next_",
         "type":"dbId<_dbChipRegionInst>",
         "flags":["private"]
+      },
+      {
+        "name":"chip_bump_insts_",
+        "type":"dbId<_dbChipBumpInst>",
+        "flags":["private"]
       }
   ],
   "h_includes": [

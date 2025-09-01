@@ -8,7 +8,7 @@
 [WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
 [WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
 [WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
-[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: ./asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
 [INFO ODB-0128] Design: Element
 [INFO ODB-0130]     Created 65 pins.
@@ -51,7 +51,7 @@
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         0 |   0.1267 |  3.978990e+02 |   +0.00% |  8.30e-11 |      
-[INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
+[INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
 [INFO GPL-0101]    Iter: 1, overflow: 0.127, keep resizer changes at: 1, HPWL: 397899
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------

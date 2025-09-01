@@ -2,17 +2,25 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
+#include <cassert>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <iostream>
+#include <iterator>
 #include <limits>
+#include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <random>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "dr/FlexDR.h"

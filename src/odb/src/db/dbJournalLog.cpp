@@ -3,9 +3,11 @@
 
 #include "dbJournalLog.h"
 
+#include <cstring>
 #include <string>
 
 #include "dbCommon.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

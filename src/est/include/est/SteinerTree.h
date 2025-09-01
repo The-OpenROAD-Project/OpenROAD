@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

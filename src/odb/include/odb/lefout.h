@@ -3,13 +3,14 @@
 
 #pragma once
 
-#include <boost/polygon/polygon.hpp>
+#include <cstdint>
 #include <map>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 
+#include "boost/polygon/polygon.hpp"
 #include "db.h"
 #include "dbObject.h"
 #include "odb.h"

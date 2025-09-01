@@ -5,11 +5,8 @@
 
 #include <omp.h>
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/io/ios_state.hpp>
-#include <boost/serialization/export.hpp>
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -20,6 +17,10 @@
 #include <vector>
 
 #include "AbstractPAGraphics.h"
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/io/ios_state.hpp"
+#include "boost/serialization/export.hpp"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"

@@ -78,6 +78,7 @@ cc_library(
         "src/db/tech/frViaDef.h",
         "src/db/tech/frViaRuleGenerate.h",
     ],
+    deps = ["@boost.polygon"],
 )
 
 cc_library(

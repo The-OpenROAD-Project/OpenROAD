@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdio>
 #include <vector>
 
 #include "extprocess.h"

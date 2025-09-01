@@ -3,6 +3,8 @@
 
 #include "dbBox.h"
 
+#include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include "dbBPin.h"

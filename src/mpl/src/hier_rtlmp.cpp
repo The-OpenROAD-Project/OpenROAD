@@ -93,17 +93,17 @@ void HierRTLMP::setFenceWeight(float weight)
 
 void HierRTLMP::setBoundaryWeight(float weight)
 {
-  boundary_weight_ = weight;
+  cluster_placement_weights_.boundary = weight;
 }
 
 void HierRTLMP::setNotchWeight(float weight)
 {
-  notch_weight_ = weight;
+  cluster_placement_weights_.notch = weight;
 }
 
 void HierRTLMP::setMacroBlockageWeight(float weight)
 {
-  macro_blockage_weight_ = weight;
+  cluster_placement_weights_.macro_blockage = weight;
 }
 
 void HierRTLMP::setGlobalFence(float fence_lx,
@@ -299,14 +299,13 @@ void HierRTLMP::resetSAParameters()
   neg_swap_prob_ = 0.2;
   double_swap_prob_ = 0.2;
   exchange_swap_prob_ = 0.2;
-  flip_prob_ = 0.2;
   resize_prob_ = 0.0;
 
   placement_core_weights_.fence = 0.0;
 
-  boundary_weight_ = 0.0;
-  notch_weight_ = 0.0;
-  macro_blockage_weight_ = 0.0;
+  cluster_placement_weights_.boundary = 0.0;
+  cluster_placement_weights_.notch = 0.0;
+  cluster_placement_weights_.macro_blockage = 0.0;
 }
 
 void HierRTLMP::runCoarseShaping()
@@ -441,7 +440,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
 
-  const Rect outline(0, 0, tree_->root->getWidth(), tree_->root->getHeight());
+  const Rect outline = tree_->root->getBBox();
 
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
@@ -463,10 +462,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const Rect new_outline(0,
-                             0,
-                             outline.getWidth() * vary_factor_list[run_id++],
-                             outline.getHeight());
+      Rect new_outline = outline;
+      const float new_width = outline.getWidth() * vary_factor_list[run_id++];
+      new_outline.setXMax(new_outline.xMin() + new_width);
+
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(block_, new_outline));
       }
@@ -475,9 +474,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               new_outline,
                                               macros,
                                               shaping_core_weights_,
-                                              0.0,  // boundary weight
-                                              0.0,  // macro blockage
-                                              0.0,  // notch weight
+                                              SASoftWeights(),
                                               0.0,  // no notch size
                                               0.0,  // no notch size
                                               pos_swap_prob_ / action_sum,
@@ -509,7 +506,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -523,10 +520,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const Rect new_outline(0,
-                             0,
-                             outline.getWidth(),
-                             outline.getHeight() * vary_factor_list[run_id++]);
+      Rect new_outline = outline;
+      const float new_height = outline.getHeight() * vary_factor_list[run_id++];
+      new_outline.setYMax(new_outline.yMin() + new_height);
+
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(block_, new_outline));
       }
@@ -535,9 +532,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               new_outline,
                                               macros,
                                               shaping_core_weights_,
-                                              0.0,  // boundary weight
-                                              0.0,  // macro blockage
-                                              0.0,  // notch weight
+                                              SASoftWeights(),
                                               0.0,  // no notch size
                                               0.0,  // no notch size
                                               pos_swap_prob_ / action_sum,
@@ -569,7 +564,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -727,7 +722,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
                                               exchange_swap_prob_ / action_sum,
-                                              0.0,  // no flip
                                               init_prob_,
                                               max_num_step_,
                                               num_perturb_per_step,
@@ -752,7 +746,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -782,7 +776,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
                                               exchange_swap_prob_ / action_sum,
-                                              0.0,
                                               init_prob_,
                                               max_num_step_,
                                               num_perturb_per_step,
@@ -807,7 +800,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     }
     // add macro tilings
     for (auto& sa : sa_batch) {
-      if (sa->isValid(outline)) {
+      if (sa->fitsIn(outline)) {
         tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
@@ -1320,9 +1313,9 @@ void HierRTLMP::adjustMacroBlockageWeight()
                "Tree max level is {}, Changing macro blockage weight from {} "
                "to {} (half of the outline weight)",
                tree_->max_level,
-               macro_blockage_weight_,
+               cluster_placement_weights_.macro_blockage,
                new_macro_blockage_weight);
-    macro_blockage_weight_ = new_macro_blockage_weight;
+    cluster_placement_weights_.macro_blockage = new_macro_blockage_weight;
   }
 }
 
@@ -1603,9 +1596,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               placement_core_weights_,
-                                              boundary_weight_,
-                                              macro_blockage_weight_,
-                                              notch_weight_,
+                                              cluster_placement_weights_,
                                               notch_h_th_,
                                               notch_v_th_,
                                               pos_swap_prob_ / action_sum,
@@ -1741,18 +1732,6 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
 
   if (graphics_) {
     graphics_->setCurrentCluster(parent);
-  }
-
-  // Place children clusters
-  // map children cluster to soft macro
-  for (auto& cluster : parent->getChildren()) {
-    if (cluster->isIOCluster()) {  // ignore all the io clusters
-      continue;
-    }
-    auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
-    // no memory leakage, beacuse we set the soft macro, the old one
-    // will be deleted
-    cluster->setSoftMacro(std::move(soft_macro));
   }
 
   const Rect outline = parent->getBBox();
@@ -1991,9 +1970,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               placement_core_weights_,
-                                              boundary_weight_,
-                                              macro_blockage_weight_,
-                                              notch_weight_,
+                                              cluster_placement_weights_,
                                               notch_h_th_,
                                               notch_v_th_,
                                               pos_swap_prob_ / action_sum,
@@ -2460,14 +2437,12 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   // set the action probabilities (summation to 1.0)
   const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
-                           + double_swap_prob_ + exchange_swap_prob
-                           + flip_prob_;
+                           + double_swap_prob_ + exchange_swap_prob;
 
   float pos_swap_prob = pos_swap_prob_ * 10 / action_sum;
   float neg_swap_prob = neg_swap_prob_ * 10 / action_sum;
   float double_swap_prob = double_swap_prob_ / action_sum;
   exchange_swap_prob = exchange_swap_prob / action_sum;
-  float flip_prob = flip_prob_ / action_sum;
 
   const int number_of_sequence_pair_macros
       = static_cast<int>(hard_macros.size());
@@ -2485,11 +2460,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     pos_swap_prob = 0.0f;
     neg_swap_prob = 0.0f;
     double_swap_prob = 0.0f;
-    exchange_swap_prob = 0.95;
-    flip_prob = 0.05;
+    exchange_swap_prob = 1.0f;
 
     // Large arrays need more steps to properly converge.
-    if (num_perturb_per_step > number_of_sequence_pair_macros) {
+    if (number_of_sequence_pair_macros > num_perturb_per_step) {
       num_perturb_per_step *= 2;
     }
   }
@@ -2524,7 +2498,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               neg_swap_prob,
                                               double_swap_prob,
                                               exchange_swap_prob,
-                                              flip_prob,
                                               init_prob_,
                                               max_num_step_,
                                               num_perturb_per_step,
@@ -2561,7 +2534,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       // Reset weights so we can compare the final costs.
       sa->setWeights(placement_core_weights_);
 
-      if (sa->isValid(outline) && sa->getNormCost() < best_cost) {
+      if (sa->isValid() && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa.get();
       }

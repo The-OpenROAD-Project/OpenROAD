@@ -73,7 +73,6 @@ cc_library(
     ],
     hdrs = [
         "include/par/MakePartitionMgr.h",
-        "include/par/PartitionMgr.h",
     ],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
@@ -82,6 +81,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":par",
         "//:ord",
         "//src/dbSta",
         "//src/gui",

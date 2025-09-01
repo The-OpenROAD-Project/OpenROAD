@@ -4,9 +4,9 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcFig.h"
 
 namespace gtl = boost::polygon;

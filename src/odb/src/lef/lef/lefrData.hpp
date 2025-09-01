@@ -30,6 +30,7 @@
 #ifndef lefrData_h
 #define lefrData_h
 
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <string>

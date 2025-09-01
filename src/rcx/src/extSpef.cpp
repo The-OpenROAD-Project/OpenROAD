@@ -3,7 +3,14 @@
 
 #include "rcx/extSpef.h"
 
+#include <stdio.h>  // NOLINT(modernize-deprecated-headers): for popen()
+
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <limits>
 #include <vector>
 

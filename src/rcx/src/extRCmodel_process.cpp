@@ -9,6 +9,8 @@
 #include "direct.h"
 #endif
 
+#include <cstdio>
+#include <cstring>
 #include <map>
 #include <vector>
 

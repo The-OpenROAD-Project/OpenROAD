@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
@@ -15,6 +17,7 @@
 #include "ClockDomain.hh"
 #include "ClockDomainHash.hh"
 #include "ScanArchitectHeuristic.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

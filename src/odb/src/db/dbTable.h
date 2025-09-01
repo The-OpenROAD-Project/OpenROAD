@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <boost/integer/static_log2.hpp>
 #include <vector>
 
+#include "boost/integer/static_log2.hpp"
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/ZException.h"

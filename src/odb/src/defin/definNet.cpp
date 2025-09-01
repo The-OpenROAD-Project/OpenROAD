@@ -3,9 +3,12 @@
 
 #include "definNet.h"
 
+#include <cassert>
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"

@@ -48,9 +48,10 @@ cc_library(
         "src/SwapPinsMove.hh",
         "src/UnbufferMove.cc",
         "src/UnbufferMove.hh",
+        "src/VTSwapMove.cc",
+        "src/VTSwapMove.hh",
     ],
     hdrs = [
-        "include/rsz/MakeResizer.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
     ],
@@ -85,8 +86,6 @@ cc_library(
     ],
     hdrs = [
         "include/rsz/MakeResizer.hh",
-        "include/rsz/OdbCallBack.hh",
-        "include/rsz/Resizer.hh",
     ],
     copts = [
         "-Isrc/rsz/src",
@@ -95,6 +94,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":rsz",
         "//:ord",
         "//src/dbSta",
         "//src/dpl",

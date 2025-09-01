@@ -3,6 +3,9 @@
 
 #include "dbBTerm.h"
 
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <optional>
 #include <string>
 

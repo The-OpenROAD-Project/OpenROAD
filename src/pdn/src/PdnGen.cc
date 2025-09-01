@@ -3,12 +3,17 @@
 
 #include "pdn/PdnGen.hh"
 
+#include <algorithm>
+#include <array>
+#include <cstring>
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"

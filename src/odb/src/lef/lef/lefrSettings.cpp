@@ -30,6 +30,7 @@
 #include "lefrSettings.hpp"
 
 #include <cstring>
+#include <map>
 #include <string>
 
 #include "lef_parser.hpp"

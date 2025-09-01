@@ -11,6 +11,8 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbChip.h"
+#include "dbChipBumpInst.h"
+#include "dbChipBumpInstItr.h"
 #include "dbChipInst.h"
 // User Code End Includes
 namespace odb {
@@ -25,6 +27,9 @@ bool _dbChipRegionInst::operator==(const _dbChipRegionInst& rhs) const
     return false;
   }
   if (chip_region_inst_next_ != rhs.chip_region_inst_next_) {
+    return false;
+  }
+  if (chip_bump_insts_ != rhs.chip_bump_insts_) {
     return false;
   }
 
@@ -45,6 +50,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegionInst& obj)
   stream >> obj.region_;
   stream >> obj.parent_chipinst_;
   stream >> obj.chip_region_inst_next_;
+  stream >> obj.chip_bump_insts_;
   return stream;
 }
 
@@ -53,6 +59,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipRegionInst& obj)
   stream << obj.region_;
   stream << obj.parent_chipinst_;
   stream << obj.chip_region_inst_next_;
+  stream << obj.chip_bump_insts_;
   return stream;
 }
 
@@ -83,6 +90,13 @@ dbChipRegion* dbChipRegionInst::getChipRegion() const
   auto chip_inst = getChipInst();
   _dbChip* chip = (_dbChip*) chip_inst->getMasterChip();
   return (dbChipRegion*) chip->chip_region_tbl_->getPtr(obj->region_);
+}
+
+dbSet<dbChipBumpInst> dbChipRegionInst::getChipBumpInsts() const
+{
+  _dbChipRegionInst* obj = (_dbChipRegionInst*) this;
+  _dbDatabase* db = (_dbDatabase*) obj->getOwner();
+  return dbSet<dbChipBumpInst>(obj, db->chip_bump_inst_itr_);
 }
 
 // User Code End dbChipRegionInstPublicMethods

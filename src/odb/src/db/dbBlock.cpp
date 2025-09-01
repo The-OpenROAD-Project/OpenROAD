@@ -3,15 +3,26 @@
 
 #include "dbBlock.h"
 
+#include <string.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <functional>
+#include <ios>
+#include <iterator>
+#include <list>
 #include <map>
 #include <memory>
+#include <optional>
+#include <ostream>
 #include <set>
 #include <string>
 #include <utility>

@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbCore.h"

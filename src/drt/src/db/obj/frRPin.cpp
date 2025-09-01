@@ -3,6 +3,8 @@
 
 #include "frRPin.h"
 
+#include <iostream>
+
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 

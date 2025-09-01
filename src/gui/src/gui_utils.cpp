@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QImageWriter>
 #include <QPainter>
+#include <algorithm>
 
 #include "utl/Logger.h"
 

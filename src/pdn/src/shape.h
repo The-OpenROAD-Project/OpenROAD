@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -12,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

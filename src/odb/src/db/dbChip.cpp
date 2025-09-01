@@ -21,6 +21,8 @@
 #include "dbChipConnItr.h"
 #include "dbChipInst.h"
 #include "dbChipInstItr.h"
+#include "dbChipNet.h"
+#include "dbChipNetItr.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
@@ -82,6 +84,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
     return false;
   }
   if (conns_ != rhs.conns_) {
+    return false;
+  }
+  if (nets_ != rhs.nets_) {
     return false;
   }
   if (*_prop_tbl != *rhs._prop_tbl) {
@@ -205,6 +210,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
     stream >> obj.conns_;
   }
+  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+    stream >> obj.nets_;
+  }
   if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
     stream >> *obj.chip_region_tbl_;
   }
@@ -241,6 +249,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj._top;
   stream << obj.chipinsts_;
   stream << obj.conns_;
+  stream << obj.nets_;
   stream << *obj.chip_region_tbl_;
   // User Code Begin <<
   stream << *obj._block_tbl;
@@ -530,6 +539,13 @@ dbSet<dbChipConn> dbChip::getChipConns() const
   return dbSet<dbChipConn>(chip, db->chip_conn_itr_);
 }
 
+dbSet<dbChipNet> dbChip::getChipNets() const
+{
+  _dbChip* chip = (_dbChip*) this;
+  _dbDatabase* db = (_dbDatabase*) chip->getOwner();
+  return dbSet<dbChipNet>(chip, db->chip_net_itr_);
+}
+
 dbChip* dbChip::create(dbDatabase* db_, const std::string& name, ChipType type)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
@@ -553,10 +569,20 @@ void dbChip::destroy(dbChip* chip_)
 {
   _dbChip* chip = (_dbChip*) chip_;
   // Destroy chip connections
-  dbSet<dbChipConn> chipConns = chip_->getChipConns();
-  for (dbChipConn* chipConn : chipConns) {
+  auto chip_conns = chip_->getChipConns();
+  auto chip_conns_itr = chip_conns.begin();
+  while (chip_conns_itr != chip_conns.end()) {
+    auto chipConn = *chip_conns_itr++;
     dbChipConn::destroy(chipConn);
   }
+  // destroy chip insts
+  auto chip_insts = chip_->getChipInsts();
+  auto chip_insts_itr = chip_insts.begin();
+  while (chip_insts_itr != chip_insts.end()) {
+    auto chipInst = *chip_insts_itr++;
+    dbChipInst::destroy(chipInst);
+  }
+  // TODO: destroy instances of the current chip
   // Destroy chip
   _dbDatabase* db = chip->getDatabase();
   if (db->_chip == chip->getOID()) {

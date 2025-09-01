@@ -4,7 +4,10 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbAccessPoint.h"

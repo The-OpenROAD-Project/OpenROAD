@@ -6,13 +6,20 @@
 #include <sys/stat.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <ios>
 #include <limits>
+#include <list>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "odb/db.h"

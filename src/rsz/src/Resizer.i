@@ -371,7 +371,8 @@ repair_setup(double setup_margin,
              bool skip_size_down,
              bool skip_buffering,
              bool skip_buffer_removal,
-             bool skip_last_gasp)
+             bool skip_last_gasp,
+             bool skip_vt_swap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -382,7 +383,7 @@ repair_setup(double setup_margin,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down,
                        skip_buffering, skip_buffer_removal,
-                       skip_last_gasp);
+                       skip_last_gasp, skip_vt_swap);
 }
 
 void
@@ -596,11 +597,13 @@ eliminate_dead_logic_cmd(bool clean_nets)
   resizer->eliminateDeadLogic(clean_nets);
 }
 
-void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint, bool report_all_cells)
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint,
+                            bool report_all_cells, bool report_vt_equiv)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
-  resizer->reportEquivalentCells(cell, match_cell_footprint, report_all_cells);
+  resizer->reportEquivalentCells(cell, match_cell_footprint, report_all_cells,
+                                 report_vt_equiv);
 }
 
 void report_buffers_cmd(bool filtered)

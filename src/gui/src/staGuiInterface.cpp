@@ -3,6 +3,14 @@
 
 #include "staGuiInterface.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

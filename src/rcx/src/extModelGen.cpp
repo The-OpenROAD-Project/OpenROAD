@@ -3,6 +3,13 @@
 
 #include "rcx/extModelGen.h"
 
+#include <string.h>
+
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <list>
 #include <string>
 #include <vector>
 

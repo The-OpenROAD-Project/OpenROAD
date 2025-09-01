@@ -104,6 +104,9 @@ void _dbBusPort::collectMemInfo(MemInfo& info)
 
 _dbBusPort::~_dbBusPort()
 {
+  // User Code Begin Destructor
+  delete _members_iter;
+  // User Code End Destructor
 }
 
 ////////////////////////////////////////////////////////////////////

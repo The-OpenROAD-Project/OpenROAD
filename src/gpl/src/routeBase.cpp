@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <memory>

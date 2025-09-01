@@ -1,6 +1,10 @@
 module reg1 (clk);
  input clk;
 
+ wire net3;
+ wire net2;
+ wire net1;
+ wire r1q;
 
  BUF_X1 rebuffer3 (.A(r1q),
     .Z(net3));
@@ -27,6 +31,26 @@ module submodule (net_i_2,
  input r1q;
  input clk;
 
+ wire u10z;
+ wire u11z;
+ wire u12z;
+ wire u13z;
+ wire u14z;
+ wire u15z;
+ wire u16z;
+ wire u17z;
+ wire u18z;
+ wire u19z;
+ wire u1z;
+ wire u20z;
+ wire u2z;
+ wire u3z;
+ wire u4z;
+ wire u5z;
+ wire u6z;
+ wire u7z;
+ wire u8z;
+ wire u9z;
 
  DFF_X1 r1 (.D(u6z),
     .CK(clk));

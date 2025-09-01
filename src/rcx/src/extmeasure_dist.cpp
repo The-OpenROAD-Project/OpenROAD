@@ -2,6 +2,8 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 // DELETE #include <dbRtTree.h>
+#include <cmath>
+#include <cstdio>
 
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"

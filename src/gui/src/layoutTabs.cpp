@@ -4,6 +4,8 @@
 #include "layoutTabs.h"
 
 #include <functional>
+#include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 

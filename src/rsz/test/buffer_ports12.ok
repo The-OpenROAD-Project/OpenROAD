@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+clk
+count: 1
+
+sram0_ce_in
+count: 1
+
+sram0_we_in
+count: 1
+
+{sram0_addr_in[0]} {sram0_addr_in[1]} {sram0_addr_in[2]} {sram0_addr_in[3]} {sram0_addr_in[4]} {sram0_addr_in[5]}
+count: 6
+
+{sram0_w_mask_in[0]} {sram0_w_mask_in[1]} {sram0_w_mask_in[2]} {sram0_w_mask_in[3]} {sram0_w_mask_in[4]} {sram0_w_mask_in[5]} {sram0_w_mask_in[6]}
+count: 7
+
+sram1_ce_in
+count: 1
+
+sram1_we_in
+count: 1
+
+{sram1_addr_in[0]} {sram1_addr_in[1]} {sram1_addr_in[2]} {sram1_addr_in[3]} {sram1_addr_in[4]} {sram1_addr_in[5]}
+count: 6
+
+{sram1_w_mask_in[0]} {sram1_w_mask_in[1]} {sram1_w_mask_in[2]} {sram1_w_mask_in[3]} {sram1_w_mask_in[4]} {sram1_w_mask_in[5]} {sram1_w_mask_in[6]}
+count: 7
+
+clk
+count: 1
+
+{addr_in[0]} {addr_in[1]} {addr_in[2]} {addr_in[3]} {addr_in[4]} {addr_in[5]}
+count: 6
+
+clk
+count: 1
+
+{addr_in[0]} {addr_in[1]} {addr_in[2]} {addr_in[3]} {addr_in[4]} {addr_in[5]}
+count: 6
+
+[INFO RSZ-0027] Inserted 31 BUF_X1 input buffers.
+[INFO RSZ-0028] Inserted 0 BUF_X1 output buffers.
+No differences found.

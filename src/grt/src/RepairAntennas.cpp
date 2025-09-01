@@ -6,10 +6,11 @@
 #include <omp.h>
 
 #include <algorithm>
-#include <boost/pending/disjoint_sets.hpp>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <map>
+#include <stack>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -17,6 +18,8 @@
 
 #include "Net.h"
 #include "Pin.h"
+#include "boost/geometry/geometry.hpp"
+#include "boost/pending/disjoint_sets.hpp"
 #include "grt/GlobalRouter.h"
 #include "utl/Logger.h"
 

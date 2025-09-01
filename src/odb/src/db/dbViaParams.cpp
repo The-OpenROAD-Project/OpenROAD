@@ -3,6 +3,8 @@
 
 #include "odb/dbViaParams.h"
 
+#include <cassert>
+
 #include "odb/db.h"
 
 namespace odb {

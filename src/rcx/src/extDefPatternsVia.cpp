@@ -10,6 +10,7 @@
 #include "direct.h"
 #endif
 
+#include <cstdio>
 #include <map>
 #include <vector>
 
