@@ -9,36 +9,9 @@ Please read our paper for more technical details:
 EDGE: Efficient DAG-Based Global Routing Engine,
 ACM/IEEE Design Automation Conference (DAC), San Francisco, CA, USA, July 9-13, 2023.
 
-(CUGR 2.0 supports ICCAD'19 benchmarks ([v2](http://iccad-contest.org/2019/Problem_C/iccad19_benchmarks_v2.tar.gz), [hidden](http://iccad-contest.org/2019/Problem_C/iccad19_hidden_benchmarks.tar.gz)).
-This version of code is consistent with the DAC paper.)
+(CUGR 2.0 supports ICCAD'19 benchmarks ([v2](http://iccad-contest.org/2019/Problem_C/iccad19_benchmarks_v2.tar.gz), [hidden](http://iccad-contest.org/2019/Problem_C/iccad19_hidden_benchmarks.tar.gz)).)
 
-## 1. How to Build
-
-**Step 1:** Download the source code. For example,
-```bash
-$ git clone https://github.com/cuhk-eda/cu-gr-2
-```
-
-**Step 2:** Go to the project root and build by
-```bash
-$ cd cu-gr-2
-$ scripts/build.py -o release
-```
-
-Note that this will generate two folders under the root, `build` and `run` (`build` contains intermediate files for build/compilation, while `run` contains binaries and auxiliary files).
-More details are in [`scripts/build.py`](scripts/build.py).
-
-### 1.1. Dependencies
-
-* [GCC](https://gcc.gnu.org/) (version >= 5.5.0) or other working c++ compliers
-* [CMake](https://cmake.org/) (version >= 2.8)
-* [Boost](https://www.boost.org/) (version >= 1.58)
-* [Python](https://www.python.org/) (version 3, optional, for utility scripts)
-* [Innovus®](https://www.cadence.com/content/cadence-www/global/en_US/home/tools/digital-design-and-signoff/soc-implementation-and-floorplanning/innovus-implementation-system.html) (version 18.1, optional, for design rule checking and evaluation)
-* [Rsyn](https://github.com/RsynTeam/rsyn-x) (a trimmed version is used, already added under folder `rsyn`)
-* [Dr. CU](https://github.com/cuhk-eda/dr-cu) (v4.1.1, optional, official detailed router for ICCAD'19 Contest, [binary](http://iccad-contest.org/2019/Problem_C/drcu_june19.zip) is already included under the root)
-
-## 2. License
+## 1. License
 
 READ THIS LICENSE AGREEMENT CAREFULLY BEFORE USING THIS PRODUCT. BY USING THIS PRODUCT YOU INDICATE YOUR ACCEPTANCE OF THE TERMS OF THE FOLLOWING AGREEMENT. THESE TERMS APPLY TO YOU AND ANY SUBSEQUENT LICENSEE OF THIS PRODUCT.
 
