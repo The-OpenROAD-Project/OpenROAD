@@ -14,6 +14,7 @@
 #include "dr/FlexDR.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

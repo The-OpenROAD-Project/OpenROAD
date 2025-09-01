@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "distributed/frArchive.h"
+#include "odb/db.h"
 
 namespace drt {
 

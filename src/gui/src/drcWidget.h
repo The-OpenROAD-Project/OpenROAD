@@ -17,6 +17,7 @@
 #include "inspector.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

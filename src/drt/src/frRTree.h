@@ -12,6 +12,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "db/infra/frBox.h"
 #include "db/infra/frPoint.h"
+#include "odb/geom.h"
 #include "serialization.h"
 
 namespace bgi = boost::geometry::index;

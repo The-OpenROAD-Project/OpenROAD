@@ -16,6 +16,9 @@
 #include "dbTable.hpp"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 

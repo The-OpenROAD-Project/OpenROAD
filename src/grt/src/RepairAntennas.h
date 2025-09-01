@@ -20,6 +20,8 @@
 #include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/wOrder.h"
 #include "sta/Liberty.hh"
 

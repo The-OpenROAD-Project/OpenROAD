@@ -23,6 +23,8 @@
 #include "dbTechViaGenerateRule.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 

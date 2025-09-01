@@ -27,7 +27,9 @@
 #include "boost/graph/lookup_edge.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "pad/ICeWall.h"
 #include "utl/Logger.h"
 

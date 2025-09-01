@@ -44,6 +44,8 @@
 #include "odb/dbExtControl.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "odb/util.h"
+
 namespace rcx {
 
 class NameTable::NameBucket

@@ -43,6 +43,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "io/io.h"
+#include "odb/dbTypes.h"
 #include "serialization.h"
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"

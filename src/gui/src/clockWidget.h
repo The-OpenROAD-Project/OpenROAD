@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "staGuiInterface.h"
 
 namespace sta {

@@ -21,7 +21,9 @@
 #include "dbTechNonDefaultRule.h"
 #include "dbTechViaGenerateRule.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbViaParams.h"
+#include "odb/geom.h"
 
 namespace odb {
 

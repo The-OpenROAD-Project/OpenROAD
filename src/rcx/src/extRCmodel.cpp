@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 
+#include "odb/db.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"

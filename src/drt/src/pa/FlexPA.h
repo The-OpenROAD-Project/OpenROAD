@@ -18,6 +18,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/unordered_map.hpp"
 #include "frDesign.h"
+#include "odb/db.h"
 namespace gtl = boost::polygon;
 
 namespace odb {

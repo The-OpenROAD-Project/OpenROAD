@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;

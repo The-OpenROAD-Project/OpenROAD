@@ -16,6 +16,7 @@
 #include "Objects.h"
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 
 namespace dpl {
 

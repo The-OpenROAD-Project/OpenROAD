@@ -12,6 +12,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace drt {
 using LOOKUP_STRATEGY = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY;

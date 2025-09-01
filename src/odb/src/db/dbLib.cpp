@@ -18,6 +18,9 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbStream.h"
 #include "odb/dbTransform.h"
 
 namespace odb {

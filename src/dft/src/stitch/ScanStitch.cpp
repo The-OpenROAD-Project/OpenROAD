@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace {

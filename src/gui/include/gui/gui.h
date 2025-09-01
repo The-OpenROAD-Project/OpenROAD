@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 
 struct Tcl_Interp;
 struct GifWriter;
