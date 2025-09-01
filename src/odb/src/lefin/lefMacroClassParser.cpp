@@ -9,6 +9,7 @@
 #include "boostParser.h"
 #include "lefMacroPropParser.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/lefin.h"
 
 namespace odb::lefMacroClassType {

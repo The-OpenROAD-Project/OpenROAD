@@ -10,6 +10,7 @@
 #include "AbstractDRGraphics.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbDatabase;

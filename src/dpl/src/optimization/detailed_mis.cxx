@@ -42,6 +42,7 @@
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
 #include "utl/Logger.h"

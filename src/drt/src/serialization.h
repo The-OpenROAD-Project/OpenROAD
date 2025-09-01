@@ -35,6 +35,7 @@
 #include "distributed/paUpdate.h"
 #include "frDesign.h"
 #include "global.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

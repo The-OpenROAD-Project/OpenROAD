@@ -6,6 +6,8 @@
 #include <string_view>
 #include <variant>
 
+#include "odb/db.h"
+
 namespace dft {
 
 ScanPin::ScanPin(std::variant<odb::dbBTerm*, odb::dbITerm*> term) : value_(term)

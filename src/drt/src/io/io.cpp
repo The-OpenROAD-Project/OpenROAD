@@ -28,8 +28,11 @@
 #include "frRTree.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 

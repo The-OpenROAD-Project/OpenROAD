@@ -10,6 +10,9 @@
 #include <string>
 #include <tuple>
 
+#include "odb/db.h"
+#include "odb/geom.h"
+
 namespace rsz {
 
 using std::max;

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"

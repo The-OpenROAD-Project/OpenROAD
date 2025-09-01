@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class Point;

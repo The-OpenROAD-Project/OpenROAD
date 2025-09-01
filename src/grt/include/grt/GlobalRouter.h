@@ -18,6 +18,7 @@
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;

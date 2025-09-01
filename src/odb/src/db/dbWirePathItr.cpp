@@ -12,6 +12,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

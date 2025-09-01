@@ -10,6 +10,7 @@
 
 #include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"

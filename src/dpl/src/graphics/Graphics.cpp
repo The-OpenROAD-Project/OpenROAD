@@ -7,6 +7,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/geom.h"
 
 namespace dpl {
 

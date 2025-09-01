@@ -15,6 +15,7 @@
 #include "gui/gui.h"
 #include "label.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "ruler.h"
 #include "utl/Logger.h"
 

@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
 

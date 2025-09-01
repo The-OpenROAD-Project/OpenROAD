@@ -18,6 +18,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 

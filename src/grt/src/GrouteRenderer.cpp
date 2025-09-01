@@ -4,6 +4,8 @@
 #include "GrouteRenderer.h"
 
 #include "Net.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace grt {
 

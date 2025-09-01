@@ -16,7 +16,9 @@
 #include "gtest/gtest.h"
 #include "nangate45_test_fixture.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/defin.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 // TODO: not needed after fully switching to bazel

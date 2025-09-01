@@ -4,6 +4,7 @@
 #include "Utilities.h"
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace pad {
 

@@ -12,6 +12,8 @@
 
 #include "boost/icl/interval_set.hpp"
 #include "frDesign.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;

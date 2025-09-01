@@ -19,6 +19,7 @@
 #include "frProfileTask.h"
 #include "global.h"
 #include "io/io.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

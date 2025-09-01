@@ -24,7 +24,12 @@
 
 #include "odb/db.h"
 #include "odb/dbMap.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "odb/defout.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 namespace odb {
