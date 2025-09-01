@@ -130,6 +130,9 @@ _dbModule::~_dbModule()
   if (_name) {
     free((void*) _name);
   }
+  // User Code Begin Destructor
+  delete _port_iter;
+  // User Code End Destructor
 }
 
 ////////////////////////////////////////////////////////////////////
