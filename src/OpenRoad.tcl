@@ -76,7 +76,7 @@ proc read_def { args } {
   if { [info exists keys(-chip)] } {
     set chip [[ord::get_db] findChip $keys(-chip)]
     if { $chip == "NULL" } {
-      utl::error ORD 20 "Chip $keys(-chip) not found."
+      utl::error ORD 21 "Chip $keys(-chip) not found."
     }
   } else {
     if { [[ord::get_db] getChip] == "NULL" } {
