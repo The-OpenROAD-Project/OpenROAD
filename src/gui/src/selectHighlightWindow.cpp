@@ -10,6 +10,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <string>
+#include <utility>
 
 #include "gui/gui.h"
 

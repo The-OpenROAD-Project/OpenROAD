@@ -3,6 +3,9 @@
 
 #include "definComponent.h"
 
+#include <string.h>
+
+#include <cassert>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>

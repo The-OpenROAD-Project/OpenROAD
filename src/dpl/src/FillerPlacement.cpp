@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
 #include <utility>
 
 #include "dpl/Opendp.h"

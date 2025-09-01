@@ -4,6 +4,9 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>

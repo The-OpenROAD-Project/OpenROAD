@@ -71,7 +71,6 @@ cc_library(
         "src/util/utility.h",
     ],
     hdrs = [
-        "include/dpl/MakeOpendp.h",
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
     ],
@@ -114,14 +113,13 @@ cc_library(
     ],
     hdrs = [
         "include/dpl/MakeOpendp.h",
-        "include/dpl/Opendp.h",
-        "include/dpl/OptMirror.h",
     ],
     includes = [
         "include",
         "src",
     ],
     deps = [
+        ":dpl",
         "//:ord",
         "//src/gui",
         "//src/odb",

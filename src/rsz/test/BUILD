@@ -8,6 +8,10 @@ exports_files(
 TESTS = [
     "buffer_ports1",
     "buffer_ports10",
+    "buffer_ports11",
+    "buffer_ports11_hier",
+    "buffer_ports12",
+    "buffer_ports12_hier",
     "buffer_ports3",
     "buffer_ports4",
     "buffer_ports5",
@@ -204,7 +208,12 @@ extra_deps = {
     "repair_setup4_sequence": ["repair_setup4.tcl"],
 }
 
+BIG_TESTS = [
+    "repair_fanout6",
+]
+
 [regression_test(
     name = test_name,
+    size = "large" if test_name in BIG_TESTS else "medium",
     data = [":test_resources"] + extra_deps.get(test_name, []),
 ) for test_name in TESTS]

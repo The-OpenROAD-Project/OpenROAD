@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>

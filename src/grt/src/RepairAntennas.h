@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "ant/AntennaChecker.hh"
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "boost/iterator/function_output_iterator.hpp"
 #include "dpl/Opendp.h"

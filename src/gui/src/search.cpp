@@ -3,10 +3,13 @@
 
 #include "search.h"
 
+#include <atomic>
+#include <mutex>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "odb/dbShape.h"
 
 namespace gui {

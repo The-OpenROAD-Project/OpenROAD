@@ -3,8 +3,11 @@
 
 #include "dr/FlexGridGraph.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <vector>
 

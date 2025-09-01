@@ -67,8 +67,6 @@ cc_library(
     ],
     hdrs = [
         "include/rmp/MakeRestructure.h",
-        "include/rmp/Restructure.h",
-        "include/rmp/unique_name.h",
     ],
     copts = [
         "-Isrc/rmp/src",

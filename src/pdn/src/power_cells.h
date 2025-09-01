@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"

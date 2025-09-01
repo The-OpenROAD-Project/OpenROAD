@@ -3,8 +3,11 @@
 
 #include "dpl/Opendp.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>

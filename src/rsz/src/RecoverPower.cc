@@ -4,8 +4,10 @@
 #include "RecoverPower.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <string>
+#include <tuple>
 
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"

@@ -57,6 +57,6 @@ build_dir_path=$(dirname $(dirname $(dirname $(realpath "$0"))))/build
 
 cd $build_dir_path
 
-ctest -L $tool ${@:1}
+ctest -L " $tool " ${@:1}
     
 

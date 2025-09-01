@@ -3,12 +3,17 @@
 
 #include "odb/lefin.h"
 
+#include <strings.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <list>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>

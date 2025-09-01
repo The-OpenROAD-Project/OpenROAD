@@ -13,6 +13,11 @@ module top (clk,
  output out1;
  output out2;
 
+ wire m2_out1;
+ wire m1_out2;
+ wire m1_out1;
+ wire n1;
+ wire n2;
 
  BUF_X1 buf1 (.A(m1_out1),
     .Z(n1));
@@ -92,6 +97,9 @@ module leaf1 (clk,
  input in1;
  output out1;
 
+ wire n1;
+ wire n2;
+ wire n3;
 
  BUF_X1 buf1 (.A(n1),
     .Z(n2));
@@ -115,6 +123,9 @@ module leaf2 (net_o,
  output out1;
  output out2;
 
+ wire n1;
+ wire n2;
+ wire n3;
 
  BUF_X4 place1 (.A(out1),
     .Z(net_o));
@@ -143,6 +154,7 @@ module mid2 (clk,
 
  wire l4_out;
  wire l3_out;
+ wire n1;
 
  BUF_X1 buf1 (.A(l3_out),
     .Z(n1));
@@ -163,6 +175,11 @@ module leaf3 (clk,
  input in1;
  output out1;
 
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
 
  BUF_X1 buf1 (.A(n1),
     .Z(n2));

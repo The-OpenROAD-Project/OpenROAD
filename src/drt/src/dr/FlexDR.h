@@ -5,9 +5,12 @@
 
 #include <triton_route/TritonRoute.h>
 
+#include <cstdint>
 #include <deque>
+#include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
 #include <string>
 #include <utility>

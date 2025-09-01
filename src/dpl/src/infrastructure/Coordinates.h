@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <limits>
 #include <ostream>
+#include <tuple>
 
 #include "boost/operators.hpp"
 #include "dpl/Opendp.h"

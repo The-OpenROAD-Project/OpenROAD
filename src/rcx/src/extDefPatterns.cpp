@@ -11,7 +11,11 @@
 #endif
 
 #include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "utl/Logger.h"

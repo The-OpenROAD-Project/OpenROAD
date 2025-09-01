@@ -1,5 +1,7 @@
 #define BOOST_TEST_MODULE TestModule
+#include <cstdio>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "boost/test/included/unit_test.hpp"

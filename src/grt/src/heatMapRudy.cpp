@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include <vector>
 
 #include "odb/db.h"

@@ -3,13 +3,20 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
+#include <stack>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "dr/FlexDR.h"
 #include "frRTree.h"
 

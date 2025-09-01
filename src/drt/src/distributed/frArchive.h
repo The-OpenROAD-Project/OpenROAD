@@ -2,6 +2,9 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
+#include <istream>
+#include <ostream>
+
 #include "boost/archive/binary_iarchive.hpp"
 #include "boost/archive/binary_oarchive.hpp"
 #include "frDesign.h"

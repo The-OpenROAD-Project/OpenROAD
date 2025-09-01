@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/geom_boost.h"
 
 namespace odb {

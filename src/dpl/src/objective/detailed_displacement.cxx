@@ -3,6 +3,7 @@
 
 #include "detailed_displacement.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 

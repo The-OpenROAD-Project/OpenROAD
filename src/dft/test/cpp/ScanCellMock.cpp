@@ -1,10 +1,12 @@
 #include "ScanCellMock.hh"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "ClockDomain.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 namespace test {

@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <string>
 
 #include "BaseMove.hh"
 

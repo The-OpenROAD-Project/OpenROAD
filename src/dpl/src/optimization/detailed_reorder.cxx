@@ -4,9 +4,14 @@
 #include "detailed_reorder.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <limits>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "detailed_manager.h"
 #include "infrastructure/architecture.h"

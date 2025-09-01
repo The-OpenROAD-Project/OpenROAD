@@ -4,6 +4,7 @@
 #include "dbBlockItr.h"
 
 #include <algorithm>
+#include <cstdarg>
 
 #include "dbBlock.h"
 #include "dbTable.h"

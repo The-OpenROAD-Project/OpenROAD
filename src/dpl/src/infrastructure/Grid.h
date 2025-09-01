@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
 #include <optional>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Coordinates.h"

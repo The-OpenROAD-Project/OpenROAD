@@ -3,6 +3,7 @@
 
 #include "node.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 

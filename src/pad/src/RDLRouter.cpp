@@ -3,7 +3,10 @@
 
 #include "RDLRouter.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <list>
@@ -11,14 +14,15 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "RDLGui.h"
 #include "RDLRoute.h"
 #include "Utilities.h"
-#include "boost/geometry.hpp"
 #include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/graph/astar_search.hpp"
 #include "boost/graph/lookup_edge.hpp"
 #include "boost/polygon/polygon.hpp"

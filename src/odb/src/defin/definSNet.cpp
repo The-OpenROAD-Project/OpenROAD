@@ -3,6 +3,7 @@
 
 #include "definSNet.h"
 
+#include <cassert>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>

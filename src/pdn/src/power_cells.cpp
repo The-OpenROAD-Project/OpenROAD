@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"

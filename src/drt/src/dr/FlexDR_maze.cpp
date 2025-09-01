@@ -2,13 +2,21 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <iostream>
+#include <iterator>
 #include <limits>
+#include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <random>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 

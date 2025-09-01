@@ -4,14 +4,17 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
+#include "boost/polygon/polygon.hpp"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "utl/exception.h"

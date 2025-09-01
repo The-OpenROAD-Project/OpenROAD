@@ -1,6 +1,8 @@
+#include <cstdint>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -10,6 +12,7 @@
 #include "ScanArchitectConfig.hh"
 #include "ScanCellMock.hh"
 #include "gtest/gtest.h"
+#include "utl/Logger.h"
 
 namespace dft::test {
 namespace {

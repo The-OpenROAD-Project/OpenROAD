@@ -3,7 +3,9 @@
 
 #include "rcx/ext.h"
 
+#include <cstdio>
 #include <functional>
+#include <list>
 #include <string>
 
 #include "odb/wOrder.h"

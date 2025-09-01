@@ -4,7 +4,11 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <map>
+#include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
