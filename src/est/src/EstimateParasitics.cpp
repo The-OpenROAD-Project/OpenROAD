@@ -5,8 +5,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <map>
 #include <memory>
+#include <ostream>
+#include <utility>
+#include <vector>
 
 #include "AbstractSteinerRenderer.h"
 #include "EstimateParasiticsCallBack.h"

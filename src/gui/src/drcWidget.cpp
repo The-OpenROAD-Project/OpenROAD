@@ -7,9 +7,13 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
+#include <algorithm>
+#include <any>
 #include <array>
 #include <iomanip>
 #include <map>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 

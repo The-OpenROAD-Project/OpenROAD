@@ -3,7 +3,11 @@
 
 #include "writer.h"
 
+#include <cstddef>
+#include <iostream>
 #include <string>
+
+#include "utl/Logger.h"
 
 namespace upf {
 

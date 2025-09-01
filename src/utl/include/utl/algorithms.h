@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <iomanip>
+#include <ios>
 #include <sstream>
 #include <string>
 #include <tuple>

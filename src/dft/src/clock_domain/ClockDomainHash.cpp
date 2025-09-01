@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <functional>
 
+#include "utl/Logger.h"
+
 namespace dft {
 
 std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(

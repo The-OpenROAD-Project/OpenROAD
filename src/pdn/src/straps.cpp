@@ -4,7 +4,9 @@
 #include "straps.h"
 
 #include <algorithm>
+#include <array>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -13,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"

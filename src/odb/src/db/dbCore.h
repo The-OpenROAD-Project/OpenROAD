@@ -15,7 +15,9 @@
 ///  dbTablePage
 ///
 
+#include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <map>
 #include <set>
 #include <string>

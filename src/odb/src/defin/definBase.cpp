@@ -3,6 +3,8 @@
 
 #include "definBase.h"
 
+#include <cassert>
+
 #include "defiUtil.hpp"
 #include "odb/db.h"
 

@@ -23,6 +23,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@boost.geometry",
         "@boost.polygon",
     ],
 )
@@ -46,6 +47,7 @@ cc_library(
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.geometry",
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",

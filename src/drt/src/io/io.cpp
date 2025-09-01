@@ -4,18 +4,25 @@
 #include "io/io.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <list>
 #include <map>
 #include <memory>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
 #include "frRTree.h"

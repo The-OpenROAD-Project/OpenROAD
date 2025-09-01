@@ -3,6 +3,8 @@
 
 #include "dbTechLayerRule.h"
 
+#include <cassert>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbTable.h"

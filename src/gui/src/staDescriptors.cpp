@@ -5,14 +5,22 @@
 
 #include <QInputDialog>
 #include <QStringList>
+#include <algorithm>
+#include <any>
+#include <array>
+#include <cctype>
+#include <cmath>
+#include <cstring>
 #include <functional>
 #include <iomanip>
 #include <limits>
 #include <memory>
 #include <queue>
 #include <regex>
+#include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include "boost/algorithm/string.hpp"
 #include "db_sta/dbNetwork.hh"

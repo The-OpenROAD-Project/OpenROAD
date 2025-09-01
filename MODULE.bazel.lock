@@ -1071,8 +1071,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "xMdj3VsRTAj/bBji7IiyxOnBRsFjKl5qgByGWDdrDhc=",
-        "usagesDigest": "VaToXe23EQQxlEVjjtEb4kWm2DkcPwq16aw3VggChK0=",
+        "bzlTransitiveDigest": "W2FcgOTim8eocKPV5zKBqUWCMCrRjVK8KK28G/2fPTE=",
+        "usagesDigest": "Di+D8M35YqALm1MG9vYodXqtgEPNphuBYeDbr44Vj+w=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1090,16 +1090,14 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-3675-g1592c420",
-              "sha256": "ae830cfa6a86b1921db89868eb7133c94d77443e79cd534ba3808dfd139ffc53",
+              "image": "docker.io/openroad/orfs:v3.0-3695-ga037c3d9",
+              "sha256": "a1e32aa02774b817ccb66813bbf838a6b5174ee90bdfc1a42e7e288a2a6dc25f",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
                 "find . -name BUILD.bazel -delete"
               ],
-              "patches": [
-                "@@bazel-orfs+//:0001-Revert-make-check-if-binaries-are-valid-before-conti.patch"
-              ],
+              "patches": [],
               "patch_args": [
                 "-p1",
                 "-d",

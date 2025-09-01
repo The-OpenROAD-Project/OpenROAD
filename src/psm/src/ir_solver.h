@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
@@ -11,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "debug_gui.h"

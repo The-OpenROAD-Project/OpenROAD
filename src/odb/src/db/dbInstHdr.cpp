@@ -3,6 +3,8 @@
 
 #include "dbInstHdr.h"
 
+#include <cassert>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbLib.h"

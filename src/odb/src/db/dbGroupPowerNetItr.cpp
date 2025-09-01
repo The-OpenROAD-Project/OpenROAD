@@ -4,6 +4,7 @@
 #include "dbGroupPowerNetItr.h"
 
 #include <algorithm>
+#include <cstdarg>
 
 #include "dbBlock.h"
 #include "dbGroup.h"

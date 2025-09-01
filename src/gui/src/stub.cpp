@@ -6,8 +6,12 @@
 
 #include <tcl.h>
 
+#include <any>
 #include <cstdio>
+#include <map>
+#include <optional>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 #include "gui/gui.h"

@@ -3,6 +3,7 @@
 
 #include "connection.h"
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>

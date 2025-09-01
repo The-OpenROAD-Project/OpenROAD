@@ -4,11 +4,14 @@
 #include "shape.h"
 
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "grid_component.h"

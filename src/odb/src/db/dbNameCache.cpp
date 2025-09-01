@@ -3,6 +3,9 @@
 
 #include "dbNameCache.h"
 
+#include <cstdlib>
+#include <cstring>
+
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbName.h"

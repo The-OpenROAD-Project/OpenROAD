@@ -3,7 +3,9 @@
 
 #include "RDLGui.h"
 
+#include <cstddef>
 #include <map>
+#include <tuple>
 #include <vector>
 
 #include "RDLRoute.h"

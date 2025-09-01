@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "odb/dbId.h"

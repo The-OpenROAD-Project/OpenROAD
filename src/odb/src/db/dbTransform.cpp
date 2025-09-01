@@ -5,6 +5,7 @@
 
 #include "odb/dbTransform.h"
 
+#include <stdexcept>
 #include <vector>
 
 #include "odb/dbStream.h"

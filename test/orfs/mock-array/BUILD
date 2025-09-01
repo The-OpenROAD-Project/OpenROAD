@@ -25,12 +25,6 @@ MOCK_ARRAY_TABLE = [
     22,
 ]
 
-# Element'd data width
-MOCK_ARRAY_DATAWIDTH = 64
-
-# Must be zero for routing by abutment
-MACRO_BLOCKAGE_HALO = 0
-
 MOCK_ARRAY_SCALE = 45
 
 # Routing pitches for relevant metal layers.
@@ -76,10 +70,6 @@ ce_margin_y = placement_grid_y * 0.5
 array_spacing_x = margin_x * 2
 
 array_spacing_y = margin_y * 2
-
-array_offset_x = array_spacing_x + margin_x
-
-array_offset_y = array_spacing_y + margin_y
 
 # top level core and die size
 core_width = (
@@ -130,10 +120,10 @@ orfs_flow(
         ),
         "MACRO_PLACE_HALO": "0 2.16",
         "RTLMP_BOUNDARY_WT": "0",
-        "RTLMP_MAX_INST" :"250",
-        "RTLMP_MIN_INST" :"50",
-        "RTLMP_MAX_MACRO" :"64",
-        "RTLMP_MIN_MACRO" :"8",
+        "RTLMP_MAX_INST": "250",
+        "RTLMP_MIN_INST": "50",
+        "RTLMP_MAX_MACRO": "64",
+        "RTLMP_MIN_MACRO": "8",
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "MACRO_ROWS_HALO_X": "0.5",
         "MACRO_ROWS_HALO_Y": "0.5",
@@ -145,6 +135,7 @@ orfs_flow(
         "IO_PLACER_V": "M5 M7",
         "IO_PLACER_H": "M4 M6",
         "DETAILED_ROUTE_END_ITERATION": "6",
+        "OPENROAD_HIERARCHICAL": "1",
     },
     macros = ["Element_generate_abstract"],
     sources = {
@@ -190,6 +181,12 @@ orfs_flow(
             ce_height,
         ),
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        # We want to report power per module using hierarhical .odb
+        "OPENROAD_HIERARCHICAL": "1",
+        # Keep only one module, enough for testing, faster builds. There's
+        # some width in multiply reduction going on here to speed up
+        # builds, so we want to keep this exact module.
+        "SYNTH_KEEP_MODULES": "Multiplier",
     },
     sources = {
         "IO_CONSTRAINTS": [":mock-array-element-io"],
@@ -305,6 +302,10 @@ verilator_cc_library(
         "-Wno-UNUSEDSIGNAL",
         "-Wno-PINMISSING",
         "--trace-underscore",
+        # inline all PDK modules to speed up compilation
+        "--flatten",
+        # No-op option to retrigger a build
+        # "-Wfuture-blah",
     ],
 )
 
@@ -333,6 +334,8 @@ genrule(
     ],
 )
 
+# If we want to measure power after final, instead of with estimated parasitics,
+# we'll need this.
 SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,

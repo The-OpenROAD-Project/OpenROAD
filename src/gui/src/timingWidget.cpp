@@ -12,6 +12,8 @@
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
+#include <memory>
+#include <set>
 #include <string>
 #include <vector>
 

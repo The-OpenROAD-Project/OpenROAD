@@ -3,7 +3,10 @@
 
 #include "dbSite.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "dbDatabase.h"

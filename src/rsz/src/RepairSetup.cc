@@ -11,6 +11,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "BaseMove.hh"
 #include "BufferMove.hh"

@@ -6,9 +6,14 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 

@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <string.h>
+
+#include <cmath>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <list>
 #include <map>
 #include <string>
 #include <vector>

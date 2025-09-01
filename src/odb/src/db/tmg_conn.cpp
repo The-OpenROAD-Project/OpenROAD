@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
+#include <tuple>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"

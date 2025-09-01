@@ -31,6 +31,9 @@
 #ifdef HAS_BOOST_UNIT_TEST_LIBRARY
 // Shared library version
 #define BOOST_TEST_DYN_LINK
+#include <map>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "boost/test/unit_test.hpp"

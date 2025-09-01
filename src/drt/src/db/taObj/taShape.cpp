@@ -3,6 +3,8 @@
 
 #include "db/taObj/taShape.h"
 
+#include <tuple>
+
 #include "db/obj/frShape.h"
 
 namespace drt {

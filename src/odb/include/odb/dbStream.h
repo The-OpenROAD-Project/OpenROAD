@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <string.h>
+
 #include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <istream>
 #include <map>

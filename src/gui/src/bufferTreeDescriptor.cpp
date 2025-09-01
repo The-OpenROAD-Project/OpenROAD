@@ -3,6 +3,10 @@
 
 #include "bufferTreeDescriptor.h"
 
+#include <algorithm>
+#include <any>
+#include <functional>
+#include <set>
 #include <string>
 
 #include "colorGenerator.h"

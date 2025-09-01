@@ -3,6 +3,8 @@
 
 #include "dbTech.h"
 
+#include <cmath>
+#include <cstring>
 #include <vector>
 
 #include "dbBox.h"

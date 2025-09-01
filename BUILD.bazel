@@ -173,7 +173,7 @@ cc_library(
     deps = OPENROAD_LIBRARY_DEPS + [
         "//src/sta:opensta_lib",
         "@tk_tcl//:tcl",
-    ]
+    ],
 )
 
 cc_library(
@@ -197,7 +197,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-    ]
+    ],
 )
 
 cc_library(

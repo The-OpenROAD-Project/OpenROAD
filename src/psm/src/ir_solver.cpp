@@ -6,16 +6,21 @@
 #include <Eigen/SparseLU>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
+#include <iterator>
 #include <list>
 #include <map>
 #include <memory>
 #include <optional>
 #include <queue>
 #include <set>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connection.h"
 #include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"

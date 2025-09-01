@@ -4,7 +4,10 @@
 #include "dbMTerm.h"
 
 #include <spdlog/fmt/ostr.h>
+#include <string.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <utility>
 #include <vector>

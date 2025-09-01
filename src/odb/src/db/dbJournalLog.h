@@ -7,6 +7,7 @@
 
 #include "dbPagedVector.h"
 #include "odb/odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

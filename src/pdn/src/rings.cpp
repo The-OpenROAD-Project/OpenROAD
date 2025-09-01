@@ -4,6 +4,8 @@
 #include "rings.h"
 
 #include <algorithm>
+#include <array>
+#include <utility>
 #include <vector>
 
 #include "domain.h"

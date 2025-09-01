@@ -3,6 +3,7 @@
 
 #include "Objects.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>

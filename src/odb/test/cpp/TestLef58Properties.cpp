@@ -3,6 +3,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "boost/test/included/unit_test.hpp"
 #include "env.h"

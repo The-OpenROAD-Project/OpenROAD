@@ -3,8 +3,21 @@
 
 #include "Rebuffer.hh"
 
+#include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
 #include <limits>
 #include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "BufferMove.hh"
 #include "BufferedNet.hh"

@@ -11,11 +11,20 @@
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "dbDescriptors.h"
