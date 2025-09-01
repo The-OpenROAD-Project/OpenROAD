@@ -66,7 +66,8 @@ enum class Edge
   bottom,
   left,
   right,
-  invalid
+  invalid,
+  polygonEdge,
 };
 
 enum class Direction
@@ -89,6 +90,7 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void runHungarianMatching();
+  void runHungarianMatchingPolygon();
   void runAnnealing();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
@@ -148,16 +150,23 @@ class IOPlacer
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
+  void findSlotsPolygon(const std::set<int>& layers, odb::Line line);
   std::vector<Point> findLayerSlots(int layer, Edge edge);
+  std::vector<Point> findLayerSlotsPolygon(int layer, odb::Line line);
   void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
   void defineSlots();
+  void defineSlotsPolygon();
   void findSections(int begin,
                     int end,
                     Edge edge,
                     std::vector<Section>& sections);
+  void findSectionsPolygon(int begin,
+                           int end,
+                           odb::Line poly_edge,
+                           std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
@@ -170,9 +179,14 @@ class IOPlacer
   void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
+  void createSectionsPerEdgePolygon(odb::Line poly_edge,
+                                    const std::set<int>& layers);
+  bool isPointOnLine(const odb::Point& point, const odb::Line& line) const;
   void createSections();
+  void createSectionsPolygon();
   void addGroupToFallback(const std::vector<int>& pin_group, bool order);
   bool assignPinsToSections(int assigned_pins_count);
+  bool assignPinsToSectionsPolygon(int assigned_pins_count);
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
@@ -202,6 +216,8 @@ class IOPlacer
   void excludeInterval(Interval interval);
 
   void updateOrientation(IOPin& pin);
+  bool isPointInsidePolygon(odb::Point point, const odb::Polygon& polygon);
+  void updateOrientationPolygon(IOPin& pin);
   void updatePinArea(IOPin& pin);
   void movePinToTrack(odb::Point& pos,
                       int layer,
@@ -210,6 +226,7 @@ class IOPlacer
                       const Rect& die_boundary);
   Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
   bool checkBlocked(Edge edge, const odb::Point& pos, int layer);
+  bool checkBlockedPolygon(odb::Line& line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();

@@ -160,6 +160,12 @@ run_hungarian_matching()
 }
 
 void
+run_hungarian_matching_polygon()
+{
+  getIOPlacer()->runHungarianMatchingPolygon();
+}
+
+void
 set_report_hpwl(bool report)
 {
   getIOPlacer()->getParameters()->setReportHPWL(report);

@@ -402,6 +402,10 @@ void IOPlacer::placeFallbackGroup(
     io_pin.setPosition(slot.pos);
     io_pin.setLayer(slot.layer);
     io_pin.setEdge(slot.edge);
+    // Set line information only for polygon edges
+    if (slot.edge == Edge::polygonEdge) {
+      io_pin.setLine(slot.containing_line);
+    }
     assignment_.push_back(io_pin);
     slot.used = true;
     slot.blocked = true;
@@ -433,6 +437,34 @@ bool IOPlacer::checkBlocked(Edge edge, const odb::Point& pos, int layer)
         || blocked_interval.getLayer() == layer) {
       if (blocked_interval.getEdge() == edge
           && coord > blocked_interval.getBegin()
+          && coord < blocked_interval.getEnd()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool IOPlacer::checkBlockedPolygon(odb::Line& line,
+                                   const odb::Point& pos,
+                                   int layer)
+{
+  for (odb::Rect fixed_pin_shape : layer_fixed_pins_shapes_[layer]) {
+    if (fixed_pin_shape.intersects(pos)) {
+      return true;
+    }
+  }
+
+  bool vertical_pin = (line.pt0().getY() == line.pt1().getY());
+  int coord = vertical_pin ? pos.getX() : pos.getY();
+
+  for (Interval blocked_interval : excluded_intervals_) {
+    // check if the blocked interval blocks all layers (== -1) or if it blocks
+    // the layer of the position
+    if (blocked_interval.getLayer() == -1
+        || blocked_interval.getLayer() == layer) {
+      if (coord > blocked_interval.getBegin()
           && coord < blocked_interval.getEnd()) {
         return true;
       }
@@ -709,7 +741,54 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     for (const Point& pos : slots) {
       bool blocked = checkBlocked(edge, pos, layer);
-      slots_.push_back({blocked, false, pos, layer, edge});
+      // For regular die boundary edges, use default-constructed line
+      odb::Line empty_line;  // Default constructor creates empty line
+      slots_.push_back({blocked, false, pos, layer, edge, empty_line});
+    }
+  }
+}
+
+void IOPlacer::findSlotsPolygon(const std::set<int>& layers, odb::Line line)
+{
+  for (int layer : layers) {
+    std::vector<Point> slots = findLayerSlotsPolygon(layer, line);
+
+    // Remove slots that violates the min distance before reversing the vector.
+    // This ensures that mirrored positions will exists for every slot.
+    int slot_count = 0;
+    Point last = slots[0];
+    int min_dst_pins = parms_->getMinDistance();
+    const bool min_dist_in_tracks = parms_->getMinDistanceInTracks();
+    for (auto it = slots.begin(); it != slots.end();) {
+      Point pos = *it;
+      bool valid_slot;
+      if (!min_dist_in_tracks) {
+        // If user-defined min distance is not in tracks, use this value to
+        // determine if slots are valid between each other.
+        valid_slot = pos == last
+                     || (std::abs(last.getX() - pos.getX()) >= min_dst_pins
+                         || std::abs(last.getY() - pos.getY()) >= min_dst_pins);
+      } else {
+        valid_slot = pos == last || slot_count % min_dst_pins == 0;
+      }
+      if (valid_slot) {
+        last = pos;
+        ++it;
+      } else {
+        it = slots.erase(it);
+      }
+      slot_count++;
+    }
+
+    if ((line.pt0().y() == line.pt1().y() && line.pt0().x() > line.pt1().x())
+        || (line.pt0().x() == line.pt1().x()
+            && line.pt0().y() > line.pt1().y())) {
+      std::reverse(slots.begin(), slots.end());
+    }
+
+    for (const Point& pos : slots) {
+      bool blocked = checkBlockedPolygon(line, pos, layer);
+      slots_.push_back({blocked, false, pos, layer, Edge::polygonEdge, line});
     }
   }
 }
@@ -819,6 +898,109 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
   return slots;
 }
 
+std::vector<Point> IOPlacer::findLayerSlotsPolygon(const int layer,
+                                                   const odb::Line line)
+{
+  Point edge_start = line.pt0();
+  Point edge_end = line.pt1();
+
+  bool vertical_pin = (edge_start.getY() == edge_end.getY());
+  int min = vertical_pin ? std::min(edge_start.getX(), edge_end.getX())
+                         : std::min(edge_start.getY(), edge_end.getY());
+  int max = vertical_pin ? std::max(edge_start.getX(), edge_end.getX())
+                         : std::max(edge_start.getY(), edge_end.getY());
+
+  corner_avoidance_ = parms_->getCornerAvoidance();
+
+  const std::vector<int>& layer_min_distances
+      = vertical_pin ? core_->getMinDstPinsX().at(layer)
+                     : core_->getMinDstPinsY().at(layer);
+
+  const std::vector<int>& layer_init_tracks
+      = vertical_pin ? core_->getInitTracksX().at(layer)
+                     : core_->getInitTracksY().at(layer);
+
+  const std::vector<int>& layer_num_tracks
+      = vertical_pin ? core_->getNumTracksX().at(layer)
+                     : core_->getNumTracksY().at(layer);
+
+  std::vector<Point> slots;
+  for (int l = 0; l < layer_min_distances.size(); l++) {
+    int tech_min_dst = layer_min_distances[l];
+
+    // If Parameters::min_distance_ is zero, use the default min distance of 2
+    // tracks. If it is not zero, use the tech min distance to create all
+    // possible slots. -- same as rectangular die
+    int min_dst_pins = parms_->getMinDistance() == 0
+                           ? default_min_dist_ * tech_min_dst
+                           : tech_min_dst;
+
+    if (corner_avoidance_ == -1) {
+      corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
+      // limit default offset to 1um
+      if (corner_avoidance_ > getBlock()->micronsToDbu(1.0)) {
+        corner_avoidance_ = getBlock()->micronsToDbu(1.0);
+      }
+    }
+
+    int init_tracks = layer_init_tracks[l];
+    int num_tracks = layer_num_tracks[l];
+
+    float thickness_multiplier
+        = vertical_pin ? parms_->getVerticalThicknessMultiplier()
+                       : parms_->getHorizontalThicknessMultiplier();
+
+    int half_width = vertical_pin
+                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
+                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
+
+    half_width *= thickness_multiplier;
+
+    int num_tracks_offset
+        = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
+
+    int curr_x, curr_y, start_idx, end_idx;
+    start_idx
+        = std::max(0.0,
+                   ceil(static_cast<double>((min + half_width - init_tracks))
+                        / min_dst_pins))
+          + num_tracks_offset;
+    end_idx = std::min((num_tracks - 1),
+                       static_cast<int>((max - half_width - init_tracks)
+                                        / min_dst_pins))
+              - num_tracks_offset;
+    if (vertical_pin) {
+      curr_x = init_tracks + start_idx * min_dst_pins;
+      curr_y = edge_start.getY();
+    } else {
+      curr_y = init_tracks + start_idx * min_dst_pins;
+      curr_x = edge_start.getX();
+    }
+
+    for (int i = start_idx; i <= end_idx; ++i) {
+      odb::Point pos(curr_x, curr_y);
+      slots.push_back(pos);
+      if (vertical_pin) {
+        curr_x += min_dst_pins;
+      } else {
+        curr_y += min_dst_pins;
+      }
+    }
+  }
+
+  std::sort(slots.begin(),
+            slots.end(),
+            [&](const odb::Point& p1, const odb::Point& p2) {
+              if (vertical_pin) {
+                return p1.getX() < p2.getX();
+              }
+
+              return p1.getY() < p2.getY();
+            });
+
+  return slots;
+}
+
 void IOPlacer::defineSlots()
 {
   /*******************************************
@@ -899,6 +1081,65 @@ void IOPlacer::defineSlots()
   }
 }
 
+void IOPlacer::defineSlotsPolygon()
+{
+  for (auto line : core_->getDieAreaEdges()) {
+    bool is_vertical_pin = (line.pt0().getY() == line.pt1().getY());
+    if (is_vertical_pin) {
+      findSlotsPolygon(ver_layers_, line);
+    } else {
+      findSlotsPolygon(hor_layers_, line);
+    }
+  }
+
+  findSlotsForTopLayer();  // Add top layer support for polygon flow too
+
+  int regular_pin_count
+      = static_cast<int>(netlist_->getIOPins().size()) - top_layer_pins_count_;
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  if (regular_pin_count > available_slots) {
+    int min_dist = std::numeric_limits<int>::min();
+    for (int layer_idx : ver_layers_) {
+      std::vector<int> layer_min_distances
+          = core_->getMinDstPinsX().at(layer_idx);
+      if (!layer_min_distances.empty()) {
+        const int layer_min_dist = *(std::max_element(
+            layer_min_distances.begin(), layer_min_distances.end()));
+        min_dist = std::max(layer_min_dist, min_dist);
+      }
+    }
+    for (int layer_idx : hor_layers_) {
+      std::vector<int> layer_min_distances
+          = core_->getMinDstPinsY().at(layer_idx);
+      if (!layer_min_distances.empty()) {
+        const int layer_min_dist = *(std::max_element(
+            layer_min_distances.begin(), layer_min_distances.end()));
+        min_dist = std::max(layer_min_dist, min_dist);
+      }
+    }
+
+    const int64_t die_margin = getBlock()->getDieArea().margin();
+    const int64_t new_margin
+        = computeIncrease(min_dist, regular_pin_count, die_margin) + die_margin;
+
+    logger_->error(
+        PPL,
+        96,
+        "Number of IO pins ({}) exceeds maximum number of available for"
+        "positions ({}). Increase the rectilinear die perimeter from {:.2f}um "
+        "to {:.2f}um.",
+        regular_pin_count,
+        available_slots,
+        getBlock()->dbuToMicrons(die_margin),
+        getBlock()->dbuToMicrons(new_margin));
+  }
+}
+
 void IOPlacer::findSections(int begin,
                             int end,
                             Edge edge,
@@ -927,6 +1168,40 @@ void IOPlacer::findSections(int begin,
     n_sec.end_slot = end_slot;
     n_sec.used_slots = 0;
     n_sec.edge = edge;
+
+    sections.push_back(n_sec);
+    begin = ++end_slot;
+  }
+}
+
+void IOPlacer::findSectionsPolygon(int begin,
+                                   int end,
+                                   odb::Line poly_edge,
+                                   std::vector<Section>& sections)
+{
+  int end_slot = 0;
+  while (end_slot < end) {
+    int blocked_slots = 0;
+    end_slot = begin + slots_per_section_ - 1;
+    if (end_slot > end) {
+      end_slot = end;
+    }
+    for (int i = begin; i <= end_slot; ++i) {
+      if (slots_[i].blocked) {
+        blocked_slots++;
+      }
+    }
+    int half_length_pt = begin + (end_slot - begin) / 2;
+    Section n_sec;
+    n_sec.pos = slots_.at(half_length_pt).pos;
+    n_sec.num_slots = end_slot - begin - blocked_slots + 1;
+    if (n_sec.num_slots < 0) {
+      logger_->error(PPL, 940, "Negative number of slots.");
+    }
+    n_sec.begin_slot = begin;
+    n_sec.end_slot = end_slot;
+    n_sec.used_slots = 0;
+    n_sec.edge = Edge::polygonEdge;
 
     sections.push_back(n_sec);
     begin = ++end_slot;
@@ -1007,6 +1282,59 @@ void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
   }
 }
 
+bool IOPlacer::isPointOnLine(const odb::Point& point,
+                             const odb::Line& line) const
+{
+  odb::Point p1 = line.pt0();
+  odb::Point p2 = line.pt1();
+
+  // Check if the line is horizontal
+  if (p1.getY() == p2.getY()) {
+    // Point must have same Y coordinate and X must be within line bounds
+    if (point.getY() != p1.getY()) {
+      return false;
+    }
+    int min_x = std::min(p1.getX(), p2.getX());
+    int max_x = std::max(p1.getX(), p2.getX());
+    return (point.getX() >= min_x && point.getX() <= max_x);
+  }
+
+  // Check if the line is vertical
+  if (p1.getX() == p2.getX()) {
+    // Point must have same X coordinate and Y must be within line bounds
+    if (point.getX() != p1.getX()) {
+      return false;
+    }
+    int min_y = std::min(p1.getY(), p2.getY());
+    int max_y = std::max(p1.getY(), p2.getY());
+    return (point.getY() >= min_y && point.getY() <= max_y);
+  }
+
+  // Not axis-aligned (shouldn't happen)
+  return false;
+}
+
+void IOPlacer::createSectionsPerEdgePolygon(odb::Line poly_edge,
+                                            const std::set<int>& layers)
+{
+  for (int layer : layers) {
+    std::vector<Slot>::iterator it
+        = std::find_if(slots_.begin(), slots_.end(), [&](Slot s) {
+            return s.edge == Edge::polygonEdge && s.layer == layer
+                   && isPointOnLine(s.pos, poly_edge);
+          });
+    int edge_begin = it - slots_.begin();
+
+    it = std::find_if(slots_.begin() + edge_begin, slots_.end(), [&](Slot s) {
+      return s.edge != Edge::polygonEdge || s.layer != layer
+             || !isPointOnLine(s.pos, poly_edge);
+    });
+    int edge_end = it - slots_.begin() - 1;
+
+    findSections(edge_begin, edge_end, Edge::polygonEdge, sections_);
+  }
+}
+
 void IOPlacer::createSections()
 {
   sections_.clear();
@@ -1016,6 +1344,20 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::right, hor_layers_);
   createSectionsPerEdge(Edge::top, ver_layers_);
   createSectionsPerEdge(Edge::left, hor_layers_);
+}
+
+void IOPlacer::createSectionsPolygon()
+{
+  sections_.clear();
+
+  for (auto line : core_->getDieAreaEdges()) {
+    bool is_vertical_pin = (line.pt0().getY() == line.pt1().getY());
+    if (is_vertical_pin) {
+      createSectionsPerEdgePolygon(line, ver_layers_);
+    } else {
+      createSectionsPerEdgePolygon(line, hor_layers_);
+    }
+  }
 }
 
 int IOPlacer::updateSection(Section& section, std::vector<Slot>& slots)
@@ -1293,6 +1635,59 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   return false;
 }
 
+bool IOPlacer::assignPinsToSectionsPolygon(int assigned_pins_count)
+{
+  Netlist* net = netlist_.get();
+  std::vector<Section>& sections = sections_;
+
+  createSectionsPolygon();
+
+  int mirrored_pins_cnt = 0;
+  int total_pins_assigned = assignGroupsToSections(mirrored_pins_cnt);
+
+  // Mirrored pins first
+  int idx = 0;
+  for (IOPin& io_pin : net->getIOPins()) {
+    if (io_pin.getBTerm()->hasMirroredBTerm()) {
+      if (assignPinToSection(io_pin, idx, sections)) {
+        total_pins_assigned += 2;
+      }
+    }
+    idx++;
+  }
+
+  // Remaining pins
+  idx = 0;
+  for (IOPin& io_pin : net->getIOPins()) {
+    if (assignPinToSection(io_pin, idx, sections)) {
+      total_pins_assigned++;
+    }
+    idx++;
+  }
+
+  total_pins_assigned += assigned_pins_count + mirrored_pins_cnt;
+
+  if (total_pins_assigned > net->numIOPins()) {
+    logger_->error(
+        PPL,
+        913,
+        "Internal error, placed more pins than exist ({} out of {}).",
+        total_pins_assigned,
+        net->numIOPins());
+  }
+
+  if (total_pins_assigned == net->numIOPins()) {
+    logger_->info(PPL, 998, "Successfully assigned pins to sections.");
+    return true;
+  }
+  logger_->info(PPL,
+                999,
+                "Unsuccessfully assigned pins to sections ({} out of {}).",
+                total_pins_assigned,
+                net->numIOPins());
+  return false;
+}
+
 bool IOPlacer::assignPinToSection(IOPin& io_pin,
                                   int idx,
                                   std::vector<Section>& sections)
@@ -1415,6 +1810,83 @@ void IOPlacer::updateOrientation(IOPin& pin)
     pin.setOrientation(Orientation::south);
     return;
   }
+}
+
+bool IOPlacer::isPointInsidePolygon(odb::Point point,
+                                    const odb::Polygon& die_polygon)
+{
+  const std::vector<odb::Point>& vertices = die_polygon.getPoints();
+
+  int x = point.getX();
+  int y = point.getY();
+  bool inside = false;
+
+  size_t j = vertices.size() - 1;  // Start with last vertex
+
+  for (size_t i = 0; i < vertices.size(); i++) {
+    int xi = vertices[i].getX();
+    int yi = vertices[i].getY();
+    int xj = vertices[j].getX();
+    int yj = vertices[j].getY();
+
+    // Check if point is on different sides of the edge
+    if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+    j = i;  // j follows i
+  }
+
+  return inside;
+}
+
+void IOPlacer::updateOrientationPolygon(IOPin& pin)
+{
+  const int x = pin.getX();
+  const int y = pin.getY();
+
+  odb::Line pin_line = pin.getLine();
+
+  odb::Polygon die_polygon = getBlock()->getDieAreaPolygon();
+
+  const int offset = 50;
+
+  bool is_vertical = (pin_line.pt0().getX() == pin_line.pt1().getX());
+
+  if (is_vertical) {
+    odb::Point delta_right = pin.getPosition();
+    odb::Point delta_left = pin.getPosition();
+    delta_right.setX(delta_right.getX() + offset);
+    delta_left.setX(delta_left.getX() - offset);
+    if (isPointInsidePolygon(delta_right, die_polygon)) {
+      pin.setOrientation(Orientation::east);
+      return;
+    }
+    if (isPointInsidePolygon(delta_left, die_polygon)) {
+      pin.setOrientation(Orientation::west);
+      return;
+    }
+  } else {
+    odb::Point delta_top = pin.getPosition();
+    odb::Point delta_bottom = pin.getPosition();
+    delta_top.setY(delta_top.getY() + offset);
+    delta_bottom.setY(delta_bottom.getY() - offset);
+    if (isPointInsidePolygon(delta_top, die_polygon)) {
+      pin.setOrientation(Orientation::north);
+      return;
+    }
+    if (isPointInsidePolygon(delta_bottom, die_polygon)) {
+      pin.setOrientation(Orientation::south);
+      return;
+    }
+  }
+
+  logger_->warn(
+      PPL,
+      9999,
+      "Could not determine orientation for pin {} at ({:.2f}um, {:.2f}um)\n",
+      pin.getName(),
+      getBlock()->dbuToMicrons(x),
+      getBlock()->dbuToMicrons(y));
 }
 
 void IOPlacer::updatePinArea(IOPin& pin)
@@ -2128,6 +2600,101 @@ void IOPlacer::runHungarianMatching()
   clear();
 }
 
+void IOPlacer::runHungarianMatchingPolygon()
+{
+  slots_per_section_ = parms_->getSlotsPerSection();
+  initExcludedIntervals();
+  initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegionsFromMacros();
+
+  defineSlotsPolygon();
+
+  initMirroredPins();
+  initConstraints();
+
+  int constrained_pins_cnt = 0;
+  int mirrored_pins_cnt = 0;
+  printConfig();
+
+  // add groups to fallback
+  for (const auto& io_group : netlist_->getIOGroups()) {
+    if (io_group.pin_indices.size() > slots_per_section_) {
+      debugPrint(logger_,
+                 utl::PPL,
+                 "pin_groups",
+                 1,
+                 "Pin group of size {} does not fit any section. Adding "
+                 "to fallback mode.",
+                 io_group.pin_indices.size());
+      addGroupToFallback(io_group.pin_indices, io_group.order);
+    }
+  }
+  constrained_pins_cnt += placeFallbackPins();
+
+  for (bool mirrored_only : {true, false}) {
+    for (Constraint& constraint : constraints_) {
+      updateConstraintSections(constraint);
+      std::vector<Section> sections_for_constraint
+          = assignConstrainedPinsToSections(
+              constraint, mirrored_pins_cnt, mirrored_only);
+
+      int slots_available = 0;
+      for (auto& sec : sections_for_constraint) {
+        slots_available += sec.num_slots - sec.used_slots;
+      }
+
+      if (slots_available < 0) {
+        std::string edge_str = getEdgeString(constraint.interval.getEdge());
+        logger_->error(
+            PPL,
+            388,
+            "Cannot assign {} constrained pins to region {:.2f}u-{:.2f}u "
+            "at edge {}. Not "
+            "enough space in the defined region.",
+            constraint.pin_list.size(),
+            static_cast<float>(
+                getBlock()->dbuToMicrons(constraint.interval.getBegin())),
+            static_cast<float>(
+                getBlock()->dbuToMicrons(constraint.interval.getEnd())),
+            edge_str);
+      }
+
+      findPinAssignment(sections_for_constraint, mirrored_only);
+      updateSlots();
+
+      for (Section& sec : sections_for_constraint) {
+        constrained_pins_cnt += sec.pin_indices.size();
+      }
+      constrained_pins_cnt += mirrored_pins_cnt;
+      mirrored_pins_cnt = 0;
+    }
+  }
+  constrained_pins_cnt += placeFallbackPins();
+
+  assignPinsToSectionsPolygon(constrained_pins_cnt);
+  findPinAssignment(sections_, false);
+
+  for (auto& pin : assignment_) {
+    updateOrientationPolygon(pin);
+    updatePinArea(pin);
+  }
+
+  if (assignment_.size() != static_cast<int>(netlist_->numIOPins())) {
+    logger_->error(PPL,
+                   339,
+                   "Assigned {} pins out of {} IO pins.",
+                   assignment_.size(),
+                   netlist_->numIOPins());
+  }
+
+  reportHPWL();
+
+  checkPinPlacement();
+  commitIOPlacementToDB(assignment_);
+  writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
+  clear();
+}
+
 void IOPlacer::setAnnealingConfig(float temperature,
                                   int max_iterations,
                                   int perturb_per_iter,
@@ -2639,6 +3206,15 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     num_tracks_x[ver_layer_idx] = std::move(num_track_x);
   }
 
+  const std::vector<odb::Point>& points
+      = getBlock()->getDieAreaPolygon().getPoints();
+  std::vector<odb::Line> polygon_edges;
+  polygon_edges.reserve(points.size());
+
+  for (size_t i = points.size() - 1; i >= 1; i--) {
+    polygon_edges.emplace_back(points[i], points[i - 1]);
+  }
+
   *core_ = Core(boundary,
                 min_spacings_x,
                 min_spacings_y,
@@ -2650,7 +3226,8 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                 min_areas_y,
                 min_widths_x,
                 min_widths_y,
-                database_unit);
+                database_unit,
+                polygon_edges);
 }
 
 void IOPlacer::initTopLayerGrid()
@@ -2685,11 +3262,13 @@ void IOPlacer::findSlotsForTopLayer()
                          || !die_area.intersects(ul)
                          || !die_area.intersects(ur);
 
-          top_layer_slots_.push_back({blocked,
-                                      false,
-                                      Point(x, y),
-                                      top_grid_->layer->getRoutingLevel(),
-                                      Edge::invalid});
+          top_layer_slots_.push_back(
+              {blocked,
+               false,
+               Point(x, y),
+               top_grid_->layer->getRoutingLevel(),
+               Edge::invalid,
+               odb::Line()});  // Default-constructed line for top layer
         }
       }
     }
