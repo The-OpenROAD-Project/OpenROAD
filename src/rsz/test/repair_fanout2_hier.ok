@@ -46,7 +46,6 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
         0 |     +0.0% |       0 |       0 |             0 |       143
     final |     +2.2% |       0 |       9 |             1 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 max fanout

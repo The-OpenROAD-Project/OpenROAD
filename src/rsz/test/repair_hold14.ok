@@ -26,9 +26,9 @@ Path Type: min
    0.00   -1.00 v in1 (in)
    0.41   -0.59 v hold2/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
    0.43   -0.16 v hold1/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
-   0.43    0.26 v hold3/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
-   0.00    0.26 v r1/D (sky130_fd_sc_hd__dfxbp_1)
-           0.26   data arrival time
+   0.43    0.27 v hold3/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.00    0.27 v r1/D (sky130_fd_sc_hd__dfxbp_1)
+           0.27   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (propagated)
@@ -38,7 +38,7 @@ Path Type: min
           -0.06   data required time
 ---------------------------------------------------------
           -0.06   data required time
-          -0.26   data arrival time
+          -0.27   data arrival time
 ---------------------------------------------------------
            0.33   slack (MET)
 
@@ -47,7 +47,7 @@ Path Type: min
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -0.374 |  -0.374 | r1/D
-    final |       0 |       1 |            0 |   +10.3% |   0.180 |   0.000 | r1/D
+    final |       0 |       1 |            0 |   +10.3% |   0.179 |   0.000 | r1/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 1 hold buffers.
 Startpoint: in1 (input port clocked by clk)
