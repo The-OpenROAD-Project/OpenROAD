@@ -1,7 +1,7 @@
 #include "PatternRoute.h"
 
-#include "stt/SteinerTreeBuilder.h"
 #include "robin_hood.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace grt {
 

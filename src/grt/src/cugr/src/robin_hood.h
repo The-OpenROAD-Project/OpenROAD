@@ -1300,10 +1300,7 @@ class Table
   // route k through. No need to disable this because it's just not used if not
   // applicable.
   ROBIN_HOOD(NODISCARD)
-  key_type const& getFirstConst(key_type const& k) const noexcept
-  {
-    return k;
-  }
+  key_type const& getFirstConst(key_type const& k) const noexcept { return k; }
 
   // in case we have non-void mapped_type, we have a standard robin_hood::pair
   template <typename Q = mapped_type>
