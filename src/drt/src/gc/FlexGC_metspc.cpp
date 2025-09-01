@@ -2,9 +2,11 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "gc/FlexGC_impl.h"
 
 namespace drt {

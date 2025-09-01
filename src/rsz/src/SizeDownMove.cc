@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <tuple>
 
 #include "BaseMove.hh"
 

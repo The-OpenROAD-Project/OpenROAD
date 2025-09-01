@@ -4,15 +4,18 @@
 #include "via.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "grid.h"

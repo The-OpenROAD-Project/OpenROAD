@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <cstdio>
+#include <cstdlib>
 
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"

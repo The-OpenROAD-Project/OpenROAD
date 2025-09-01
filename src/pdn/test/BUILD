@@ -243,7 +243,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
         "sky130hvl/sky130_fd_sc_hvl.tlef",
-        "sky130hvl/sky130_fd_sc_hvl_merged.lef"
+        "sky130hvl/sky130_fd_sc_hvl_merged.lef",
     ],
 )
 

@@ -3,6 +3,7 @@
 
 #include "dbRow.h"
 
+#include <cstring>
 #include <string>
 
 #include "dbBlock.h"

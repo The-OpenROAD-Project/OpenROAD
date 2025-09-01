@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <cstdio>
+#include <list>
+#include <sstream>
 #include <string>
 
 #include "odb/wOrder.h"

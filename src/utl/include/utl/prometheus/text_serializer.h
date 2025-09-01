@@ -24,9 +24,13 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdio>
 #include <iosfwd>
 #include <limits>
+#include <locale>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 

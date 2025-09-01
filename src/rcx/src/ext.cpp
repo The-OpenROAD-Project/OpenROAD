@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <functional>
+#include <list>
 #include <string>
 
 #include "odb/wOrder.h"

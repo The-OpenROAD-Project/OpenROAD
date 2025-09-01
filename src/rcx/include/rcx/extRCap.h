@@ -3,8 +3,13 @@
 
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <cstdio>
+#include <cstdlib>
+#include <list>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 

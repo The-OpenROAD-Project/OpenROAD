@@ -4,6 +4,7 @@
 #include "SizeUpMove.hh"
 
 #include <cmath>
+#include <string>
 
 #include "BaseMove.hh"
 #include "CloneMove.hh"

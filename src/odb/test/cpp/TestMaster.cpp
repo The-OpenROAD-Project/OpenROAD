@@ -1,4 +1,5 @@
 #define BOOST_TEST_MODULE TestMaster
+#include <exception>
 #include <iostream>
 #include <string>
 

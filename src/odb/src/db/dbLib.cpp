@@ -3,6 +3,8 @@
 
 #include "dbLib.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "dbDatabase.h"

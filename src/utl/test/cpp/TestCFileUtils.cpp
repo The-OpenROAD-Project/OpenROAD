@@ -34,8 +34,13 @@
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <memory>
 #include <numeric>
+#include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -44,6 +49,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "utl/CFileUtils.h"
+#include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/prometheus/gauge.h"
 

@@ -3,7 +3,13 @@
 
 #include "LoadBalancer.h"
 
+#include <algorithm>
+#include <cstring>
+#include <exception>
 #include <limits>
+#include <mutex>
+#include <queue>
+#include <string>
 #include <vector>
 
 #include "boost/bind/bind.hpp"

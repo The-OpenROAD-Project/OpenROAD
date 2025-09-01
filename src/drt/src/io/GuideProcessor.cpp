@@ -8,10 +8,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <set>
 #include <string>
 #include <utility>
@@ -19,6 +21,7 @@
 
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt::io {

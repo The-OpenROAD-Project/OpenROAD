@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <list>
 #include <memory>
 #include <utility>
 #include <vector>

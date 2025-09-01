@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <list>
 #include <mutex>
 #include <string>

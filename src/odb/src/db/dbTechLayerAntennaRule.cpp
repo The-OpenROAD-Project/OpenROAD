@@ -5,6 +5,7 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <cassert>
 #include <utility>
 #include <vector>
 

@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <iostream>
+#include <list>
+#include <tuple>
 #include <vector>
 
 #include "boost/archive/binary_iarchive.hpp"
 #include "boost/archive/binary_oarchive.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/array.hpp"
 #include "boost/serialization/list.hpp"

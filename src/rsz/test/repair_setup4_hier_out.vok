@@ -1,6 +1,12 @@
 module reg1 (clk);
  input clk;
 
+ wire net5;
+ wire net4;
+ wire net3;
+ wire net2;
+ wire net1;
+ wire r1q;
 
  BUF_X1 rebuffer5 (.A(net1),
     .Z(net5));
@@ -34,6 +40,11 @@ module submodule (net_i_2,
  input r1q;
  input clk;
 
+ wire u1z;
+ wire u2z;
+ wire u3z;
+ wire u4z;
+ wire u5z;
 
  DFF_X1 r10 (.D(net_i_2));
  DFF_X1 r11 (.D(net_i_2));

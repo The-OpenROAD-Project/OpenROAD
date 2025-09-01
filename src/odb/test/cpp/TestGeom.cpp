@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TestGeom
 #include <iostream>
+#include <vector>
 
 #include "boost/test/included/unit_test.hpp"
 #include "helper.h"

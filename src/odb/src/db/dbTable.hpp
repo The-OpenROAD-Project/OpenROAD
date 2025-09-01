@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <new>
 #include <vector>
@@ -12,6 +14,7 @@
 #include "dbTable.h"
 #include "odb/ZException.h"
 #include "odb/dbStream.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

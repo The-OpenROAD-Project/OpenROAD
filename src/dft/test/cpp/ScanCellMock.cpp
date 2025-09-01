@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "ClockDomain.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 namespace test {

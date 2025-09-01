@@ -3,6 +3,8 @@
 
 #include "TreeBuilder.h"
 
+#include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <fstream>
 #include <iomanip>

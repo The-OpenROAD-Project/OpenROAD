@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Formatting.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

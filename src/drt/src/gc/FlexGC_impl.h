@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "dr/FlexDR.h"
 #include "frDesign.h"

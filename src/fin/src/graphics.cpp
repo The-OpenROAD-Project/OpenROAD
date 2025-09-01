@@ -8,6 +8,8 @@
 #include <limits>
 #include <string>
 
+#include "boost/polygon/polygon.hpp"
+
 namespace fin {
 
 Graphics::Graphics()

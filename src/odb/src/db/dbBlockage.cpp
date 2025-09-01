@@ -3,6 +3,8 @@
 
 #include "dbBlockage.h"
 
+#include <cstring>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"

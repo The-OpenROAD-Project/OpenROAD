@@ -11,10 +11,15 @@
 #include <QWidget>
 #include <QtCharts>
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "gui_utils.h"

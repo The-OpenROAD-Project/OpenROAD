@@ -4,6 +4,7 @@
 #include "dbGroupGroundNetItr.h"
 
 #include <algorithm>
+#include <cstdarg>
 
 #include "dbBlock.h"
 #include "dbGroup.h"

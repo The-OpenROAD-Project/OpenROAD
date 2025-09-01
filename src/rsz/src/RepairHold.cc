@@ -4,6 +4,7 @@
 #include "RepairHold.hh"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 

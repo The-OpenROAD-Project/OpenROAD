@@ -7,6 +7,7 @@
 #include <set>
 #include <utility>
 
+#include "boost/geometry/geometry.hpp"
 #include "odb/db.h"
 #include "shape.h"
 

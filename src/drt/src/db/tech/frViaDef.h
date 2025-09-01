@@ -4,9 +4,12 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>

@@ -27,6 +27,17 @@
     $result = list;
 }
 
+%typemap(out) odb::Point3D, Point3D {
+    PyObject *list = PyList_New(3);
+    PyObject *x = PyInt_FromLong($1.x());
+    PyObject *y = PyInt_FromLong($1.y());
+    PyObject *z = PyInt_FromLong($1.z());
+    PyList_SetItem(list, 0, x);
+    PyList_SetItem(list, 1, y);
+    PyList_SetItem(list, 2, z);
+    $result = list;
+}
+
 // Wrapper for dbSet, dbVector...etc
 %define WRAP_DB_CONTAINER(T)
 %typemap(out) dbSet< T >, dbVector< T > {
