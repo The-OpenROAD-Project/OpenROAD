@@ -235,6 +235,11 @@ class HierRTLMP
   void printPlacementResult(Cluster* parent,
                             const Rect& outline,
                             SACore* sa_core);
+  void writeNetFile(const std::string& file_name_prefix, std::vector<SoftMacro>& macros, std::vector<BundledNet>& nets);               
+  void writeFloorplanFile(const std::string& file_name_prefix, std::vector<SoftMacro>& macros);
+  template <typename SACore>
+  void writeCostFile(const std::string& file_name_prefix, SACore* sa_core);
+
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;

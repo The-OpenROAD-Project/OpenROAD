@@ -36,13 +36,6 @@
 
 namespace mpl {
 
-using std::string;
-
-static string make_filename(const string& file_name)
-{
-  return std::regex_replace(file_name, std::regex("[\":<>\\|\\*\\?/]"), "--");
-}
-
 ///////////////////////////////////////////////////////////
 // Class HierRTLMP
 using utl::MPL;
@@ -1480,7 +1473,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
 
   // convert the connections between clusters to SoftMacros
   for (auto& cluster : parent->getChildren()) {
-    const int src_id = cluster->getId();
+     const int src_id = cluster->getId();
     const std::string src_name = cluster->getName();
     for (auto& [cluster_id, weight] : cluster->getConnection()) {
       debugPrint(logger_,
@@ -1505,19 +1498,10 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
   // merge nets to reduce runtime
   mergeNets(nets);
 
-  // Write the connections between macros
-  std::ofstream file;
-  std::string file_name = parent->getName();
-  file_name = make_filename(file_name);
-
-  file_name = report_directory_ + "/" + file_name;
-  file.open(file_name + ".net.txt");
-  for (auto& net : nets) {
-    file << macros[net.terminals.first].getName() << "   "
-         << macros[net.terminals.second].getName() << "   " << net.weight
-         << std::endl;
+  std::string file_name_prefix = report_directory_ + "/" + std::regex_replace(parent->getName(), std::regex("[\":<>\\|\\*\\?/]"), "--");
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+    writeNetFile(file_name_prefix, macros, nets);
   }
-  file.close();
 
   // Call Simulated Annealing Engine to place children
   // set the action probabilities
@@ -1721,32 +1705,15 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
     }
     best_sa->fillDeadSpace();
 
-    std::vector<SoftMacro> shaped_macros;
-    best_sa->getMacros(shaped_macros);
-    file.open(file_name + ".fp.txt.temp");
-    for (auto& macro : shaped_macros) {
-      file << macro.getName() << "   " << macro.getX() << "   " << macro.getY()
-           << "   " << macro.getWidth() << "   " << macro.getHeight()
-           << std::endl;
-    }
-    file.close();
+    std::vector<SoftMacro> shaped_macros = best_sa->getMacros();
 
     if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
       logger_->report("Cluster Placement Summary");
       printPlacementResult(parent, outline, best_sa);
-    }
 
-    // write the cost function. This can be used to tune the temperature
-    // schedule and cost weight
-    best_sa->writeCostFile(file_name + ".cost.txt");
-    // write the floorplan information
-    file.open(file_name + ".fp.txt");
-    for (auto& macro : shaped_macros) {
-      file << macro.getName() << "   " << macro.getX() << "   " << macro.getY()
-           << "   " << macro.getWidth() << "   " << macro.getHeight()
-           << std::endl;
+      writeFloorplanFile(file_name_prefix, shaped_macros);
+      writeCostFile(file_name_prefix, best_sa);
     }
-    file.close();
 
     updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
 
@@ -2224,8 +2191,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                    "Macro placement failed for macro cluster: {}",
                    cluster->getName());
   } else {
-    std::vector<HardMacro> best_macros;
-    best_sa->getMacros(best_macros);
+    std::vector<HardMacro> best_macros = best_sa->getMacros();
 
     if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
       logger_->report("Macro Placement Summary");
@@ -2743,6 +2709,29 @@ void HierRTLMP::printPlacementResult(Cluster* parent,
                   outline.xMax(),
                   outline.yMax());
   sa_core->printResults();
+}
+
+void HierRTLMP::writeNetFile(const std::string& file_name_prefix, std::vector<SoftMacro>& macros, std::vector<BundledNet>& nets) {
+  std::ofstream file(file_name_prefix + ".net.txt");
+  for (auto& net : nets) {
+    file << macros[net.terminals.first].getName() << "   "
+        << macros[net.terminals.second].getName() << "   " << net.weight
+        << std::endl;
+  }
+}
+
+void HierRTLMP::writeFloorplanFile(const std::string& file_name_prefix, std::vector<SoftMacro>& macros) {
+  std::ofstream file(file_name_prefix + ".fp.txt");
+  for (auto& macro : macros) {
+    file << macro.getName() << "   " << macro.getX() << "   " << macro.getY()
+        << "   " << macro.getWidth() << "   " << macro.getHeight()
+        << std::endl;
+  }
+}
+
+template <typename SACore>
+void HierRTLMP::writeCostFile(const std::string& file_name_prefix, SACore* sa_core) {
+  sa_core->writeCostFile(file_name_prefix + ".cost.txt");
 }
 
 //////// Pusher ////////
