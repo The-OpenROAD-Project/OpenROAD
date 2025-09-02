@@ -17,13 +17,11 @@
 #include <vector>
 
 // Boost libraries
-#include <boost/foreach.hpp>
-#include <boost/functional/hash.hpp>
+// #include <boost/functional/hash.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
-#include <boost/icl/split_interval_map.hpp>
 
 #include "odb/geom.h"
 

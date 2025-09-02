@@ -101,6 +101,7 @@ cc_library(
         "//src/stt",
         "//src/utl",
         "@boost.container_hash",
+        "@boost.geometry",
         "@boost.icl",
         "@boost.multi_array",
     ],
