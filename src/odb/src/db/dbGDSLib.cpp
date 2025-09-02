@@ -5,7 +5,9 @@
 
 #include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbTable.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"

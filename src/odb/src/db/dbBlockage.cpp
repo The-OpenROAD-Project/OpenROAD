@@ -7,6 +7,7 @@
 
 #include "dbBlock.h"
 #include "dbBox.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"

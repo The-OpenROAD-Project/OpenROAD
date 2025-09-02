@@ -12,6 +12,7 @@
 #include "dbBlock.h"
 #include "dbBlockage.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbLib.h"

@@ -19,6 +19,7 @@
 #include "dbCapNode.h"
 #include "dbCapNodeItr.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbGuide.h"

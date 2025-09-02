@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/ZException.h"

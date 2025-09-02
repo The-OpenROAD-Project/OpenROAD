@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

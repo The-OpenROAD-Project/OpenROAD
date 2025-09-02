@@ -8,6 +8,7 @@
 #include "dbAccessPoint.h"
 #include "dbBlock.h"
 #include "dbBoxItr.h"
+#include "dbCore.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
