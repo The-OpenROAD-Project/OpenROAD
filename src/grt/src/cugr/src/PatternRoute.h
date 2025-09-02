@@ -123,7 +123,6 @@ class PatternRoute
       : net_(net),
         grid_graph_(graph),
         stt_builder_(stt_builder),
-        num_dag_nodes_(0),
         constants_(constants)
   {
   }
@@ -164,7 +163,7 @@ class PatternRoute
   GRNet* net_;
   const GridGraph* grid_graph_;
   stt::SteinerTreeBuilder* stt_builder_;
-  int num_dag_nodes_;
+  int num_dag_nodes_{0};
   std::shared_ptr<SteinerTreeNode> steiner_tree_;
   std::shared_ptr<PatternRoutingNode> routing_dag_;
   std::vector<std::vector<int>> gridlines_;
