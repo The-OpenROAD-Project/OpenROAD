@@ -16,14 +16,14 @@ class MetalLayer
   unsigned getDirection() const { return direction_; }
   int getWidth() const { return width_; }
   int getPitch() const { return pitch_; }
-  int getTrackLocation(const int track_index) const;
+  int getTrackLocation(int track_index) const;
   IntervalT<int> rangeSearchTracks(const IntervalT<int>& loc_range,
                                    bool include_bound = true) const;
 
   // Design rule related methods
   int getMinLength() const { return min_length_; }
   int getDefaultSpacing() const { return default_spacing_; }
-  int getParallelSpacing(const int width, const int length = 0) const;
+  int getParallelSpacing(int width, int length = 0) const;
   int getMaxEolSpacing() const { return max_eol_spacing_; }
 
  private:

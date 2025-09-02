@@ -6,21 +6,21 @@
 namespace grt {
 
 void SteinerTreeNode::preorder(
-    std::shared_ptr<SteinerTreeNode> node,
-    std::function<void(std::shared_ptr<SteinerTreeNode>)> visit)
+    const std::shared_ptr<SteinerTreeNode>& node,
+    const std::function<void(std::shared_ptr<SteinerTreeNode>)>& visit)
 {
   visit(node);
-  for (auto child : node->getChildren()) {
+  for (const auto& child : node->getChildren()) {
     preorder(child, visit);
   }
 }
 
 std::string SteinerTreeNode::getPythonString(
-    std::shared_ptr<SteinerTreeNode> node)
+    const std::shared_ptr<SteinerTreeNode>& node)
 {
   std::vector<std::pair<PointT<int>, PointT<int>>> edges;
-  preorder(node, [&](std::shared_ptr<SteinerTreeNode> node) {
-    for (auto child : node->getChildren()) {
+  preorder(std::move(node), [&](const std::shared_ptr<SteinerTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
       edges.emplace_back(*node, *child);
     }
   });
@@ -39,7 +39,7 @@ std::string PatternRoutingNode::getPythonString(
 {
   std::vector<std::pair<PointT<int>, PointT<int>>> edges;
   std::function<void(std::shared_ptr<PatternRoutingNode>)> getEdges
-      = [&](std::shared_ptr<PatternRoutingNode> node) {
+      = [&](const std::shared_ptr<PatternRoutingNode>& node) {
           for (auto& childPaths : node->getPaths()) {
             for (auto& path : childPaths) {
               edges.emplace_back(*node, *path);
@@ -47,7 +47,7 @@ std::string PatternRoutingNode::getPythonString(
             }
           }
         };
-  getEdges(routing_dag_);
+  getEdges(std::move(routing_dag_));
   std::stringstream ss;
   ss << "[";
   for (int i = 0; i < edges.size(); i++) {
@@ -138,12 +138,11 @@ void PatternRoute::constructSteinerTree()
         int nextIndex = adjacentList[index][0];
         if (steinerPoints[index] == steinerPoints[nextIndex]) {
           return hasDegree1(nextIndex);
-        } else {
-          return true;
         }
-      } else {
-        return false;
+        return true;
       }
+
+      return false;
     };
     for (int i = 0; i < steinerPoints.size(); i++) {
       if (hasDegree1(i)) {
@@ -209,7 +208,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
   {
     std::shared_ptr<PatternRoutingNode> node;
     std::vector<std::shared_ptr<ScaffoldNode>> children;
-    ScaffoldNode(std::shared_ptr<PatternRoutingNode> n) : node(n) {}
+    ScaffoldNode(std::shared_ptr<PatternRoutingNode> n) : node(std::move(n)) {}
   };
 
   std::vector<std::vector<std::shared_ptr<ScaffoldNode>>> scaffolds(2);
@@ -221,7 +220,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestionView)
   std::vector<bool> visited(num_dag_nodes_, false);
 
   std::function<void(std::shared_ptr<PatternRoutingNode>)> buildScaffolds =
-      [&](std::shared_ptr<PatternRoutingNode> node) {
+      [&](const std::shared_ptr<PatternRoutingNode>& node) {
         if (visited[node->getIndex()]) {
           return;
         }

@@ -26,8 +26,9 @@ class GRTreeNode : public GRPoint
   GRTreeNode(int l, int _x, int _y) : GRPoint(l, _x, _y) {}
   GRTreeNode(const GRPoint& point) : GRPoint(point) {}
   // ~GRTreeNode() { for (auto& child : children) child->~GRTreeNode(); }
-  static void preorder(std::shared_ptr<GRTreeNode> node,
-                       std::function<void(std::shared_ptr<GRTreeNode>)> visit);
+  static void preorder(
+      const std::shared_ptr<GRTreeNode>& node,
+      std::function<void(const std::shared_ptr<GRTreeNode>&)> visit);
   static void print(std::shared_ptr<GRTreeNode> node);
 };
 

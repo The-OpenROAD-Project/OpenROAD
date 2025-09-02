@@ -4,7 +4,7 @@
 
 namespace grt {
 
-void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
+void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
 {
   // 0. Create pseudo pins
   robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
@@ -35,7 +35,7 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   for (int i = 0; true; i++) {
     int x = i * grid.interval.x + grid.offset.x;
     for (; j < pxs.size() && pxs[j] <= x; j++) {
-      if ((xs_.size() > 0 && pxs[j] == xs_.back()) || pxs[j] == x) {
+      if ((!xs_.empty() && pxs[j] == xs_.back()) || pxs[j] == x) {
         continue;
       }
       xs_.emplace_back(pxs[j]);
@@ -50,7 +50,7 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
   for (int i = 0; true; i++) {
     int y = i * grid.interval.y + grid.offset.y;
     for (; j < pys.size() && pys[j] <= y; j++) {
-      if ((ys_.size() > 0 && pys[j] == ys_.back()) || pys[j] == y) {
+      if ((!ys_.empty() && pys[j] == ys_.back()) || pys[j] == y) {
         continue;
       }
       ys_.emplace_back(pys[j]);
@@ -84,7 +84,7 @@ void SparseGraph::init(GridGraphView<CostT>& wireCostView, SparseGrid& grid)
 
           edges_[u][0] = v;
           edges_[v][1] = u;
-          costs_[u][0] = costs_[v][1] = wireCostView.sum(U, V);
+          costs_[u][0] = costs_[v][1] = wire_cost_view.sum(U, V);
         };
 
   for (unsigned direction = 0; direction < 2; direction++) {
@@ -267,50 +267,55 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   }
 
   // Remove redundant tree nodes
-  SteinerTreeNode::preorder(tree, [&](std::shared_ptr<SteinerTreeNode> node) {
-    for (int childIndex = 0; childIndex < node->getNumChildren();
-         childIndex++) {
-      std::shared_ptr<SteinerTreeNode> child = node->getChildren()[childIndex];
-      if (node->x == child->x && node->y == child->y) {
-        for (auto& gradchild : child->getChildren()) {
-          node->addChild(gradchild);
-        }
-        if (child->getFixedLayers().IsValid()) {
-          if (node->getFixedLayers().IsValid()) {
-            node->getFixedLayers().UnionWith(child->getFixedLayers());
-          } else {
-            node->setFixedLayers(child->getFixedLayers());
+  SteinerTreeNode::preorder(
+      tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
+        for (int childIndex = 0; childIndex < node->getNumChildren();
+             childIndex++) {
+          std::shared_ptr<SteinerTreeNode> child
+              = node->getChildren()[childIndex];
+          if (node->x == child->x && node->y == child->y) {
+            for (auto& gradchild : child->getChildren()) {
+              node->addChild(gradchild);
+            }
+            if (child->getFixedLayers().IsValid()) {
+              if (node->getFixedLayers().IsValid()) {
+                node->getFixedLayers().UnionWith(child->getFixedLayers());
+              } else {
+                node->setFixedLayers(child->getFixedLayers());
+              }
+            }
+            node->removeChild(childIndex);
+            childIndex -= 1;
           }
         }
-        node->removeChild(childIndex);
-        childIndex -= 1;
-      }
-    }
-  });
+      });
 
   // Remove intermediate tree nodes
-  SteinerTreeNode::preorder(tree, [&](std::shared_ptr<SteinerTreeNode> node) {
-    for (std::shared_ptr<SteinerTreeNode>& child : node->getChildren()) {
-      unsigned direction
-          = (node->y == child->y ? MetalLayer::H : MetalLayer::V);
-      std::shared_ptr<SteinerTreeNode> temp = child;
-      while (!temp->getFixedLayers().IsValid() && temp->getNumChildren() == 1
-             && (*temp)[1 - direction]
-                    == (*(temp->getChildren()[0]))[1 - direction]) {
-        temp = temp->getChildren()[0];
-      }
-      child = temp;
-    }
-  });
+  SteinerTreeNode::preorder(
+      tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
+        for (std::shared_ptr<SteinerTreeNode>& child : node->getChildren()) {
+          unsigned direction
+              = (node->y == child->y ? MetalLayer::H : MetalLayer::V);
+          std::shared_ptr<SteinerTreeNode> temp = child;
+          while (!temp->getFixedLayers().IsValid()
+                 && temp->getNumChildren() == 1
+                 && (*temp)[1 - direction]
+                        == (*(temp->getChildren()[0]))[1 - direction]) {
+            temp = temp->getChildren()[0];
+          }
+          child = temp;
+        }
+      });
 
   // Check duplicate tree nodes
-  SteinerTreeNode::preorder(tree, [&](std::shared_ptr<SteinerTreeNode> node) {
-    for (auto child : node->getChildren()) {
-      if (node->x == child->x && node->y == child->y) {
-        printf("Error: duplicate tree nodes encountered.");
-      }
-    }
-  });
+  SteinerTreeNode::preorder(
+      tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
+        for (auto child : node->getChildren()) {
+          if (node->x == child->x && node->y == child->y) {
+            printf("Error: duplicate tree nodes encountered.");
+          }
+        }
+      });
   return tree;
 }
 

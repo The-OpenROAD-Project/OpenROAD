@@ -144,7 +144,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
       if (!gridTrackRange.IsValid()) {
         continue;
       }
-      if (obstaclesInGrid[gridIndex].size() == 0) {
+      if (obstaclesInGrid[gridIndex].empty()) {
         continue;
       }
       std::vector<
@@ -161,7 +161,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
         }
       }
       for (int edge_index = 0; edge_index < nEdges; edge_index++) {
-        if (obstaclesAtEdge[edge_index].size() == 0) {
+        if (obstaclesAtEdge[edge_index].empty()) {
           continue;
         }
         int gridline = gridlines_[direction][edge_index + 1];
@@ -450,7 +450,7 @@ void GridGraph::commitVia(const int layer_index,
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool reverse)
 {
-  GRTreeNode::preorder(tree, [&](std::shared_ptr<GRTreeNode> node) {
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->children) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
         unsigned direction = layer_directions_[node->getLayerIdx()];
@@ -511,7 +511,7 @@ int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
     return 0;
   }
   int num = 0;
-  GRTreeNode::preorder(tree, [&](std::shared_ptr<GRTreeNode> node) {
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (auto& child : node->children) {
       // Only check wires
       if (node->getLayerIdx() == child->getLayerIdx()) {
@@ -527,39 +527,43 @@ std::string GridGraph::getPythonString(
     const std::shared_ptr<GRTreeNode>& routing_tree) const
 {
   std::vector<std::tuple<PointT<int>, PointT<int>, bool>> edges;
-  GRTreeNode::preorder(routing_tree, [&](std::shared_ptr<GRTreeNode> node) {
-    for (auto& child : node->children) {
-      if (node->getLayerIdx() == child->getLayerIdx()) {
-        unsigned direction = getLayerDirection(node->getLayerIdx());
-        int r = (*node)[1 - direction];
-        const int l = std::min((*node)[direction], (*child)[direction]);
-        const int h = std::max((*node)[direction], (*child)[direction]);
-        if (l == h) {
-          continue;
-        }
-        PointT<int> lpoint = (direction == MetalLayer::H ? PointT<int>(l, r)
-                                                         : PointT<int>(r, l));
-        PointT<int> hpoint = (direction == MetalLayer::H ? PointT<int>(h, r)
-                                                         : PointT<int>(r, h));
-        bool congested = false;
-        for (int c = l; c < h; c++) {
-          PointT<int> cpoint = (direction == MetalLayer::H ? PointT<int>(c, r)
-                                                           : PointT<int>(r, c));
-          if (checkOverflow(node->getLayerIdx(), cpoint.x, cpoint.y)
-              != congested) {
-            if (lpoint != cpoint) {
-              edges.emplace_back(lpoint, cpoint, congested);
-              lpoint = cpoint;
+  GRTreeNode::preorder(
+      routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+        for (auto& child : node->children) {
+          if (node->getLayerIdx() == child->getLayerIdx()) {
+            unsigned direction = getLayerDirection(node->getLayerIdx());
+            int r = (*node)[1 - direction];
+            const int l = std::min((*node)[direction], (*child)[direction]);
+            const int h = std::max((*node)[direction], (*child)[direction]);
+            if (l == h) {
+              continue;
             }
-            congested = !congested;
+            PointT<int> lpoint
+                = (direction == MetalLayer::H ? PointT<int>(l, r)
+                                              : PointT<int>(r, l));
+            PointT<int> hpoint
+                = (direction == MetalLayer::H ? PointT<int>(h, r)
+                                              : PointT<int>(r, h));
+            bool congested = false;
+            for (int c = l; c < h; c++) {
+              PointT<int> cpoint
+                  = (direction == MetalLayer::H ? PointT<int>(c, r)
+                                                : PointT<int>(r, c));
+              if (checkOverflow(node->getLayerIdx(), cpoint.x, cpoint.y)
+                  != congested) {
+                if (lpoint != cpoint) {
+                  edges.emplace_back(lpoint, cpoint, congested);
+                  lpoint = cpoint;
+                }
+                congested = !congested;
+              }
+            }
+            if (lpoint != hpoint) {
+              edges.emplace_back(lpoint, hpoint, congested);
+            }
           }
         }
-        if (lpoint != hpoint) {
-          edges.emplace_back(lpoint, hpoint, congested);
-        }
-      }
-    }
-  });
+      });
   std::stringstream ss;
   ss << "[";
   for (int i = 0; i < edges.size(); i++) {
@@ -694,37 +698,42 @@ void GridGraph::updateWireCostView(
                           : logistic(capacity - demand,
                                      constants_.maze_logistic_slope)));
   };
-  GRTreeNode::preorder(routing_tree, [&](std::shared_ptr<GRTreeNode> node) {
-    for (const auto& child : node->children) {
-      if (node->getLayerIdx() == child->getLayerIdx()) {
-        unsigned direction = getLayerDirection(node->getLayerIdx());
-        if (direction == MetalLayer::H) {
-          assert(node->y == child->y);
-          int l = std::min(node->x, child->x), h = std::max(node->x, child->x);
-          for (int x = l; x < h; x++) {
-            update(direction, x, node->y);
-          }
-        } else {
-          assert(node->x == child->x);
-          int l = std::min(node->y, child->y), h = std::max(node->y, child->y);
-          for (int y = l; y < h; y++) {
-            update(direction, node->x, y);
+  GRTreeNode::preorder(
+      std::move(routing_tree), [&](const std::shared_ptr<GRTreeNode>& node) {
+        for (const auto& child : node->children) {
+          if (node->getLayerIdx() == child->getLayerIdx()) {
+            unsigned direction = getLayerDirection(node->getLayerIdx());
+            if (direction == MetalLayer::H) {
+              assert(node->y == child->y);
+              int l = std::min(node->x, child->x),
+                  h = std::max(node->x, child->x);
+              for (int x = l; x < h; x++) {
+                update(direction, x, node->y);
+              }
+            } else {
+              assert(node->x == child->x);
+              int l = std::min(node->y, child->y),
+                  h = std::max(node->y, child->y);
+              for (int y = l; y < h; y++) {
+                update(direction, node->x, y);
+              }
+            }
+          } else {
+            int maxLayerIndex
+                = std::max(node->getLayerIdx(), child->getLayerIdx());
+            for (int layerIdx
+                 = std::min(node->getLayerIdx(), child->getLayerIdx());
+                 layerIdx < maxLayerIndex;
+                 layerIdx++) {
+              unsigned direction = getLayerDirection(layerIdx);
+              update(direction, node->x, node->y);
+              if ((*node)[direction] > 0) {
+                update(direction, node->x - 1 + direction, node->y - direction);
+              }
+            }
           }
         }
-      } else {
-        int maxLayerIndex = std::max(node->getLayerIdx(), child->getLayerIdx());
-        for (int layerIdx = std::min(node->getLayerIdx(), child->getLayerIdx());
-             layerIdx < maxLayerIndex;
-             layerIdx++) {
-          unsigned direction = getLayerDirection(layerIdx);
-          update(direction, node->x, node->y);
-          if ((*node)[direction] > 0) {
-            update(direction, node->x - 1 + direction, node->y - direction);
-          }
-        }
-      }
-    }
-  });
+      });
 }
 
 void GridGraph::write(const std::string heatmap_file) const

@@ -86,7 +86,7 @@ class CUGR
        stt::SteinerTreeBuilder* stt_builder);
   void init(int min_routing_layer, int max_routing_layer);
   void route();
-  void write(std::string guide_file = "");
+  void write(const std::string& guide_file = "");
   NetRouteMap getRoutes();
 
  private:

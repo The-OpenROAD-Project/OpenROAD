@@ -74,9 +74,9 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   }
 }
 
-int MetalLayer::getTrackLocation(const int trackIndex) const
+int MetalLayer::getTrackLocation(const int track_index) const
 {
-  return first_track_loc_ + trackIndex * pitch_;
+  return first_track_loc_ + track_index * pitch_;
 }
 
 IntervalT<int> MetalLayer::rangeSearchTracks(const IntervalT<int>& loc_range,

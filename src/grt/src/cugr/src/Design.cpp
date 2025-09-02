@@ -34,8 +34,8 @@ void Design::read()
 
   readInstanceObstructions();
 
-  int numSpecialNets = 0;
-  readSpecialNetObstructions(numSpecialNets);
+  int num_special_nets = 0;
+  readSpecialNetObstructions(num_special_nets);
 
   computeGrid();
 
@@ -43,7 +43,7 @@ void Design::read()
   std::cout << "lib DBU:             " << lib_dbu_ << std::endl;
   std::cout << "die region (in DBU): " << die_region_ << std::endl;
   std::cout << "num of nets :        " << nets_.size() << std::endl;
-  std::cout << "num of special nets: " << numSpecialNets << std::endl;
+  std::cout << "num of special nets: " << num_special_nets << std::endl;
   std::cout << "gcell grid:          " << gridlines_[0].size() - 1 << " x "
             << gridlines_[1].size() - 1 << " x " << getNumLayers() << std::endl;
 }
@@ -176,7 +176,7 @@ void Design::readInstanceObstructions()
   }
 }
 
-void Design::readSpecialNetObstructions(int& numSpecialNets)
+void Design::readSpecialNetObstructions(int& num_special_nets)
 {
   for (odb::dbNet* db_net : block_->getNets()) {
     if (!db_net->isSpecial() && !db_net->getSigType().isSupply()) {
@@ -221,7 +221,7 @@ void Design::readSpecialNetObstructions(int& numSpecialNets)
       }
     }
 
-    numSpecialNets++;
+    num_special_nets++;
   }
 }
 
@@ -255,14 +255,14 @@ void Design::setUnitCosts()
   }
 }
 
-void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& allObstacles,
+void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& all_obstacles,
                              bool skipM1) const
 {
-  allObstacles.resize(getNumLayers());
+  all_obstacles.resize(getNumLayers());
 
   for (const BoxOnLayer& obs : obstacles_) {
     if (obs.getLayerIdx() > 0 || !skipM1) {
-      allObstacles[obs.getLayerIdx()].emplace_back(obs.x, obs.y);
+      all_obstacles[obs.getLayerIdx()].emplace_back(obs.x, obs.y);
     }
   }
 }
@@ -283,13 +283,13 @@ void Design::printNets() const
 
 void Design::printBlockages() const
 {
-  std::vector<std::vector<BoxT<int>>> allObstacles;
-  getAllObstacles(allObstacles, true);
-  std::cout << "design obstacles: " << allObstacles.size() << std::endl;
-  for (int i = 0; i < allObstacles.size(); i++) {
-    std::cout << "obs in layer " << (i + 1) << ": " << allObstacles[i].size()
+  std::vector<std::vector<BoxT<int>>> all_obstacles;
+  getAllObstacles(all_obstacles, true);
+  std::cout << "design obstacles: " << all_obstacles.size() << std::endl;
+  for (int i = 0; i < all_obstacles.size(); i++) {
+    std::cout << "obs in layer " << (i + 1) << ": " << all_obstacles[i].size()
               << std::endl;
-    for (const auto& obstacle : allObstacles[i]) {
+    for (const auto& obstacle : all_obstacles[i]) {
       std::cout << "  Obstacle on layer "
                 << (i + 1)  // adjust to 1-based layer index
                 << ": " << obstacle << std::endl;

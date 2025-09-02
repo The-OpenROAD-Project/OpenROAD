@@ -13,10 +13,10 @@ class GridGraphView;
 
 struct GraphEdge
 {
-  CapacityT capacity;
-  CapacityT demand;
+  CapacityT capacity{0};
+  CapacityT demand{0};
 
-  GraphEdge() : capacity(0), demand(0) {}
+  GraphEdge() = default;
   CapacityT getResource() const { return capacity - demand; }
 };
 
@@ -64,10 +64,8 @@ class GridGraph
 
   // Costs
   int getEdgeLength(unsigned direction, unsigned edge_index) const;
-  CostT getWireCost(const int layer_index,
-                    const PointT<int> u,
-                    const PointT<int> v) const;
-  CostT getViaCost(const int layer_index, const PointT<int> loc) const;
+  CostT getWireCost(int layer_index, PointT<int> u, PointT<int> v) const;
+  CostT getViaCost(int layer_index, PointT<int> loc) const;
   inline CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
@@ -79,18 +77,16 @@ class GridGraph
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                  const bool reverse = false);
+                  bool reverse = false);
 
   // Checks
-  inline bool checkOverflow(const int layer_index,
-                            const int x,
-                            const int y) const
+  inline bool checkOverflow(int layer_index, int x, int y) const
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
-  int checkOverflow(const int layer_index,
-                    const PointT<int> u,
-                    const PointT<int> v) const;  // Check wire overflow
+  int checkOverflow(int layer_index,
+                    PointT<int> u,
+                    PointT<int> v) const;  // Check wire overflow
   int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
       const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
@@ -105,7 +101,7 @@ class GridGraph
                           std::shared_ptr<GRTreeNode> routing_tree) const;
 
   // For visualization
-  void write(const std::string heatmap_file = "heatmap.txt") const;
+  void write(std::string heatmap_file = "heatmap.txt") const;
 
  private:
   const int lib_dbu_;
@@ -132,36 +128,30 @@ class GridGraph
   // (l, x, y+1)} depending on the routing direction of the layer
   Constants constants_;
 
-  IntervalT<int> rangeSearchGridlines(const unsigned dimension,
+  IntervalT<int> rangeSearchGridlines(unsigned dimension,
                                       const IntervalT<int>& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT<int> rangeSearchRows(const unsigned dimension,
-                                 const IntervalT<int>& locInterval) const;
+  IntervalT<int> rangeSearchRows(unsigned dimension,
+                                 const IntervalT<int>& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
   inline CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
   // CostT getUnitViaCost() const { return unit_via_cost_; }
-  inline CostT getUnitLengthShortCost(const int layer_index) const
+  inline CostT getUnitLengthShortCost(int layer_index) const
   {
     return unit_length_short_costs_[layer_index];
   }
 
-  inline double logistic(const CapacityT& input, const double slope) const;
-  CostT getWireCost(const int layer_index,
-                    const PointT<int> lower,
-                    const CapacityT demand = 1.0) const;
+  inline double logistic(const CapacityT& input, double slope) const;
+  CostT getWireCost(int layer_index,
+                    PointT<int> lower,
+                    CapacityT demand = 1.0) const;
 
   // Methods for updating demands
-  void commit(const int layer_index,
-              const PointT<int> lower,
-              const CapacityT demand);
-  void commitWire(const int layer_index,
-                  const PointT<int> lower,
-                  const bool reverse = false);
-  void commitVia(const int layer_index,
-                 const PointT<int> loc,
-                 const bool reverse = false);
+  void commit(int layer_index, PointT<int> lower, CapacityT demand);
+  void commitWire(int layer_index, PointT<int> lower, bool reverse = false);
+  void commitVia(int layer_index, PointT<int> loc, bool reverse = false);
 };
 
 template <typename Type>

@@ -28,7 +28,7 @@ class GRNet
 
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
   {
-    routing_tree_ = tree;
+    routing_tree_ = std::move(tree);
   }
   void clearRoutingTree() { routing_tree_ = nullptr; }
 

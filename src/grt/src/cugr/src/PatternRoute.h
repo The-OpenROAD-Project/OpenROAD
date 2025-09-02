@@ -15,9 +15,10 @@ class SteinerTreeNode : public PointT<int>
   }
 
   static void preorder(
-      std::shared_ptr<SteinerTreeNode> node,
-      std::function<void(std::shared_ptr<SteinerTreeNode>)> visit);
-  static std::string getPythonString(std::shared_ptr<SteinerTreeNode> node);
+      const std::shared_ptr<SteinerTreeNode>& node,
+      const std::function<void(std::shared_ptr<SteinerTreeNode>)>& visit);
+  static std::string getPythonString(
+      const std::shared_ptr<SteinerTreeNode>& node);
 
   IntervalT<int>& getFixedLayers() { return fixed_layers_; }
 

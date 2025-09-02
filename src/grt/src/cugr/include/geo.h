@@ -157,11 +157,13 @@ class IntervalT
   {
     if (!IsValid()) {
       return rhs;
-    } else if (!rhs.IsValid()) {
-      return *this;
-    } else {
-      return IntervalT(std::min(low, rhs.low), std::max(high, rhs.high));
     }
+
+    if (!rhs.IsValid()) {
+      return *this;
+    }
+
+    return IntervalT(std::min(low, rhs.low), std::max(high, rhs.high));
   }
   // may return an invalid interval (as empty intersection)
   IntervalT IntersectWith(const IntervalT& rhs) const
@@ -189,21 +191,25 @@ class IntervalT
   {
     if (val <= low) {
       return low;
-    } else if (val >= high) {
-      return high;
-    } else {
-      return val;
     }
+
+    if (val >= high) {
+      return high;
+    }
+
+    return val;
   }
   IntervalT GetNearestPointsTo(IntervalT val) const
   {
     if (val.high <= low) {
       return {low};
-    } else if (val.low >= high) {
-      return {high};
-    } else {
-      return IntersectWith(val);
     }
+
+    if (val.low >= high) {
+      return {high};
+    }
+
+    return IntersectWith(val);
   }
 
   void ShiftBy(const T& rhs)
@@ -240,11 +246,13 @@ inline T Dist(const IntervalT<T>& int1, const IntervalT<T>& int2)
 {
   if (int1.high <= int2.low) {
     return int2.low - int1.high;
-  } else if (int1.low >= int2.high) {
-    return int1.low - int2.high;
-  } else {
-    return 0;
   }
+
+  if (int1.low >= int2.high) {
+    return int1.low - int2.high;
+  }
+
+  return 0;
 }
 
 // Box template
