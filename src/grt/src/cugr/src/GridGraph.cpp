@@ -661,7 +661,7 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
 
 void GridGraph::updateWireCostView(
     GridGraphView<CostT>& view,
-    std::shared_ptr<GRTreeNode> routing_tree) const
+    const std::shared_ptr<GRTreeNode>& routing_tree) const
 {
   std::vector<std::vector<int>> sameDirectionLayers(2);
   std::vector<CostT> unitLengthShortCost(2, std::numeric_limits<CostT>::max());
@@ -699,7 +699,7 @@ void GridGraph::updateWireCostView(
                                      constants_.maze_logistic_slope)));
   };
   GRTreeNode::preorder(
-      std::move(routing_tree), [&](const std::shared_ptr<GRTreeNode>& node) {
+      routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
         for (const auto& child : node->children) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             unsigned direction = getLayerDirection(node->getLayerIdx());

@@ -27,7 +27,7 @@ class SteinerTreeNode : public PointT<int>
     fixed_layers_ = fixed_layers;
   }
 
-  void addChild(std::shared_ptr<SteinerTreeNode> child)
+  void addChild(const std::shared_ptr<SteinerTreeNode>& child)
   {
     children_.emplace_back(child);
   }
@@ -74,7 +74,7 @@ class PatternRoutingNode : public PointT<int>
     return children_;
   }
 
-  void addChild(std::shared_ptr<PatternRoutingNode> child)
+  void addChild(const std::shared_ptr<PatternRoutingNode>& child)
   {
     children_.emplace_back(child);
   }
@@ -131,7 +131,7 @@ class PatternRoute
   void constructRoutingDAG();
   void constructDetours(GridGraphView<bool>& congestion_view);
   void run();
-  void setSteinerTree(std::shared_ptr<SteinerTreeNode> tree)
+  void setSteinerTree(const std::shared_ptr<SteinerTreeNode>& tree)
   {
     steiner_tree_ = tree;
   }

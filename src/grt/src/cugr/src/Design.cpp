@@ -256,12 +256,12 @@ void Design::setUnitCosts()
 }
 
 void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& all_obstacles,
-                             bool skipM1) const
+                             bool skip_m1) const
 {
   all_obstacles.resize(getNumLayers());
 
   for (const BoxOnLayer& obs : obstacles_) {
-    if (obs.getLayerIdx() > 0 || !skipM1) {
+    if (obs.getLayerIdx() > 0 || !skip_m1) {
       all_obstacles[obs.getLayerIdx()].emplace_back(obs.x, obs.y);
     }
   }

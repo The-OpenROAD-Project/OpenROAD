@@ -4,7 +4,7 @@ namespace grt {
 
 void GRTreeNode::preorder(
     const std::shared_ptr<GRTreeNode>& node,
-    std::function<void(const std::shared_ptr<GRTreeNode>&)> visit)
+    const std::function<void(const std::shared_ptr<GRTreeNode>&)>& visit)
 {
   visit(node);
   for (auto& child : node->children) {
@@ -12,9 +12,9 @@ void GRTreeNode::preorder(
   }
 }
 
-void GRTreeNode::print(std::shared_ptr<GRTreeNode> node)
+void GRTreeNode::print(const std::shared_ptr<GRTreeNode>& node)
 {
-  preorder(std::move(node), [](const std::shared_ptr<GRTreeNode>& node) {
+  preorder(node, [](const std::shared_ptr<GRTreeNode>& node) {
     std::cout << *node << (!node->children.empty() ? " -> " : "");
     for (auto& child : node->children) {
       std::cout << *child << (child == node->children.back() ? "" : ", ");

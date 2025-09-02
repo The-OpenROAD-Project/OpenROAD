@@ -97,8 +97,9 @@ class GridGraph
   void extractCongestionView(
       GridGraphView<bool>& view) const;  // 2D overflow look-up table
   void extractWireCostView(GridGraphView<CostT>& view) const;
-  void updateWireCostView(GridGraphView<CostT>& view,
-                          std::shared_ptr<GRTreeNode> routing_tree) const;
+  void updateWireCostView(
+      GridGraphView<CostT>& view,
+      const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
   // For visualization
   void write(std::string heatmap_file = "heatmap.txt") const;
