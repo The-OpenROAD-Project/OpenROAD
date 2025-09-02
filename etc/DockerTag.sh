@@ -7,15 +7,18 @@ if [[ "$@" == "-dev" ]]; then
         "./docker/Dockerfile.binary"
         "./docker/Dockerfile.builder"
         "./docker/Dockerfile.dev"
-        "./etc/Build.sh"
         "./etc/DependencyInstaller.sh"
-        "./etc/DockerHelper.sh"
-        "./etc/DockerTag.sh"
+    )
+    cat "${file_list[@]}" | sha256sum | awk '{print substr($1, 1, 6)}'
+elif [[ "$@" == "-bazel" ]]; then
+    file_list=(
+        "./docker/Dockerfile.bazel"
     )
     cat "${file_list[@]}" | sha256sum | awk '{print substr($1, 1, 6)}'
 elif [[ "$@" == "-master" ]]; then
+    git fetch --tags >&2
     git describe
 else
-    echo "Usage: $0 {-dev|-master}"
+    echo "Usage: $0 {-dev|-bazel|-master}"
     exit 1
 fi
