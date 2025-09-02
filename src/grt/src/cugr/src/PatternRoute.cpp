@@ -512,7 +512,8 @@ void PatternRoute::calculateRoutingCosts(
   if (!node->getPaths().empty()) {
     childCosts.resize(node->getPaths().size());
   }
-  for (int child_index = 0; child_index < node->getPaths().size(); child_index++) {
+  for (int child_index = 0; child_index < node->getPaths().size();
+       child_index++) {
     auto& childPaths = node->getPaths()[child_index];
     auto& costs = childCosts[child_index];
     costs.assign(grid_graph_->getNumLayers(),
@@ -576,7 +577,8 @@ void PatternRoute::calculateRoutingCosts(
            child_index++) {
         if (childCosts[child_index][layerIndex].first
             < minChildCosts[child_index]) {
-          minChildCosts[child_index] = childCosts[child_index][layerIndex].first;
+          minChildCosts[child_index]
+              = childCosts[child_index][layerIndex].first;
           bestPaths[child_index] = std::make_pair(
               childCosts[child_index][layerIndex].second, layerIndex);
         }
