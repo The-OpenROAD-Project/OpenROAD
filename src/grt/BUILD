@@ -63,6 +63,51 @@ cc_library(
 )
 
 cc_library(
+    name = "cugr",
+    srcs = [
+        "src/cugr/src/CUGR.cpp",
+        "src/cugr/src/Design.cpp",
+        "src/cugr/src/Design.h",
+        "src/cugr/src/GeoTypes.cpp",
+        "src/cugr/src/GeoTypes.h",
+        "src/cugr/src/GridGraph.cpp",
+        "src/cugr/src/GridGraph.h",
+        "src/cugr/src/GRNet.cpp",
+        "src/cugr/src/GRNet.h",
+        "src/cugr/src/GRTree.cpp",
+        "src/cugr/src/GRTree.h",
+        "src/cugr/src/Layers.cpp",
+        "src/cugr/src/Layers.h",
+        "src/cugr/src/MazeRoute.cpp",
+        "src/cugr/src/MazeRoute.h",
+        "src/cugr/src/Netlist.cpp",
+        "src/cugr/src/Netlist.h",
+        "src/cugr/src/PatternRoute.cpp",
+        "src/cugr/src/PatternRoute.h",
+        "src/cugr/src/robin_hood.h",
+    ],
+    hdrs = [
+        "src/cugr/include/CUGR.h",
+        "src/cugr/include/geo.h",
+    ],
+    includes = [
+        "include",
+        "src/cugr/include",
+    ],
+    deps = [
+        ":groute",
+        "//src/dbSta",
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
+        "@boost.container_hash",
+        "@boost.geometry",
+        "@boost.icl",
+        "@boost.multi_array",
+    ],
+)
+
+cc_library(
     name = "grt",
     srcs = [
         "src/AbstractGrouteRenderer.h",
@@ -93,6 +138,7 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
         ":groute",
         "//src/ant",
@@ -142,6 +188,7 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
         ":groute",
         ":grt",
