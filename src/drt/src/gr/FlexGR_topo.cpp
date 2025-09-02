@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
+#include "gr/FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace drt {

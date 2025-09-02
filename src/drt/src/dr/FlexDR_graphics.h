@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "AbstractDRGraphics.h"
+#include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
