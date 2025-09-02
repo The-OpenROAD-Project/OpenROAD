@@ -168,8 +168,8 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
         IntervalT<int> edgeInterval(grid_centers_[direction][edge_index],
                                     grid_centers_[direction][edge_index + 1]);
         // Update cpacity
-        std::vector<IntervalT<int>> usableIntervals(gridTrackRange.range() + 1,
-                                                    edgeInterval);
+        std::vector<IntervalT<int>> usable_intervals(gridTrackRange.range() + 1,
+                                                     edgeInterval);
         for (auto& obstacle : obstaclesAtEdge[edge_index]) {
           IntervalT<int> affectedTrackRange
               = gridTrackRange.IntersectWith(obstacle->second);
@@ -183,20 +183,20 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
             if (obstacle->first[direction].low <= gridline
                 && obstacle->first[direction].high >= gridline) {
               // Completely blocked
-              usableIntervals[tIdx] = {gridline, gridline};
+              usable_intervals[tIdx] = {gridline, gridline};
             } else if (obstacle->first[direction].high < gridline) {
-              usableIntervals[tIdx].low = std::max(
-                  usableIntervals[tIdx].low, obstacle->first[direction].high);
+              usable_intervals[tIdx].low = std::max(
+                  usable_intervals[tIdx].low, obstacle->first[direction].high);
             } else if (obstacle->first[direction].low > gridline) {
-              usableIntervals[tIdx].high = std::min(
-                  usableIntervals[tIdx].high, obstacle->first[direction].low);
+              usable_intervals[tIdx].high = std::min(
+                  usable_intervals[tIdx].high, obstacle->first[direction].low);
             }
           }
         }
         CapacityT capacity = 0;
-        for (int tIdx = 0; tIdx < usableIntervals.size(); tIdx++) {
-          capacity += (CapacityT) usableIntervals[tIdx].range()
-                      / edgeInterval.range();
+        for (IntervalT<int>& usable_interval : usable_intervals) {
+          capacity
+              += (CapacityT) usable_interval.range() / edgeInterval.range();
         }
         if (direction == MetalLayer::V) {
           graph_edges_[layer_index][gridIndex][edge_index].capacity = capacity;
@@ -736,7 +736,7 @@ void GridGraph::updateWireCostView(
       });
 }
 
-void GridGraph::write(const std::string heatmap_file) const
+void GridGraph::write(const std::string& heatmap_file) const
 {
   printf("writing heatmap to file...");
   std::stringstream ss;

@@ -102,7 +102,7 @@ class GridGraph
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
   // For visualization
-  void write(std::string heatmap_file = "heatmap.txt") const;
+  void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
   const int lib_dbu_;
