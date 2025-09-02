@@ -172,7 +172,7 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void placeChildren(Cluster* parent, bool minimum_uitl = false);
+  void placeChildren(Cluster* parent, bool minimum_target_util = false);
 
   void findBlockagesWithinOutline(std::vector<Rect>& macro_blockages,
                                   std::vector<Rect>& placement_blockages,

@@ -1319,9 +1319,13 @@ void HierRTLMP::adjustMacroBlockageWeight()
   }
 }
 
-void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
+// This function is used in cases with very high density, in which it may
+// be very hard to generate a valid tiling for the clusters.
+// Here, we may want to try setting the area of all standard-cell clusters to 0.
+// This should be only be used in mixed clusters.
+void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
 {
-  if (!minimum_util) {
+  if (!minimum_target_util) {
     if (parent->getClusterType() == HardMacroCluster) {
       placeMacros(parent);
       return;
@@ -1332,11 +1336,11 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
     }
 
     debugPrint(logger_,
-              MPL,
-              "hierarchical_macro_placement",
-              1,
-              "Placing children of cluster {}",
-              parent->getName());
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "Placing children of cluster {}",
+               parent->getName());
 
     for (auto& cluster : parent->getChildren()) {
       clustering_engine_->updateInstancesAssociation(cluster.get());
@@ -1355,13 +1359,13 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
     }
 
     debugPrint(logger_,
-              MPL,
-              "hierarchical_macro_placement",
-              1,
-              "Conventional cluster placement failed. Attempting with minimum "
-              "target utilization.");
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "Conventional cluster placement failed. Attempting with minimum "
+               "target utilization.");
   }
-  
+
   if (graphics_) {
     graphics_->setCurrentCluster(parent);
   }
@@ -1528,7 +1532,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
   std::vector<float> target_utils;
   std::vector<float> target_dead_spaces;
 
-  if (!minimum_util) {
+  if (!minimum_target_util) {
     // In our implementation, the utilization can be larger than 1.
     for (int i = 0; i < num_target_util_; i++) {
       target_utils.push_back(target_util_ + i * target_util_step_);
@@ -1538,7 +1542,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
     for (int i = 0; i < num_target_dead_space_; i++) {
       if (target_dead_space_ + i * target_dead_space_step_ < 1.0) {
         target_dead_spaces.push_back(target_dead_space_
-                                    + i * target_dead_space_step_);
+                                     + i * target_dead_space_step_);
       }
     }
   } else {
@@ -1687,25 +1691,25 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
   }
 
   if (best_sa == nullptr) {
-    if (!minimum_util) {
+    if (!minimum_target_util) {
       placeChildren(parent, true);
     } else {
       debugPrint(logger_,
-                MPL,
-                "hierarchical_macro_placement",
-                1,
-                "SA Summary for cluster {}",
-                parent->getName());
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "SA Summary for cluster {}",
+                 parent->getName());
 
       for (auto i = 0; i < sa_containers.size(); i++) {
         debugPrint(logger_,
-                  MPL,
-                  "hierarchical_macro_placement",
-                  1,
-                  "sa_id: {}, target_util: {}, target_dead_space: {}",
-                  i,
-                  target_util_list[i],
-                  target_dead_space_list[i]);
+                   MPL,
+                   "hierarchical_macro_placement",
+                   1,
+                   "sa_id: {}, target_util: {}, target_dead_space: {}",
+                   i,
+                   target_util_list[i],
+                   target_dead_space_list[i]);
 
         sa_containers[i]->printResults();
       }
@@ -1749,7 +1753,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
     updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
   }
 
-  if (!minimum_util) {
+  if (!minimum_target_util) {
     for (auto& cluster : parent->getChildren()) {
       placeChildren(cluster.get());
     }
@@ -1757,11 +1761,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_util)
     clustering_engine_->updateInstancesAssociation(parent);
   }
 }
-
-// This function is used in cases with very high density, in which it may
-// be very hard to generate a valid tiling for the clusters.
-// Here, we may want to try setting the area of all standard-cell clusters to 0.
-// This should be only be used in mixed clusters.
 
 // Find the area of blockages that are inside the outline.
 void HierRTLMP::findBlockagesWithinOutline(
