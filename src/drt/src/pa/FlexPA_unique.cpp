@@ -189,9 +189,10 @@ UniqueClass* UniqueInsts::computeUniqueClass(frInst* inst)
   const auto key = computeUniqueClassKey(inst);
   if (unique_class_by_key_.find(key) == unique_class_by_key_.end()) {
     // new unique class
-    unique_classes_.emplace_back(std::make_unique<UniqueClass>(key));
-    auto new_unique_class = unique_classes_.back().get();
-    unique_class_by_key_[key] = new_unique_class;
+    auto unique_class = std::make_unique<UniqueClass>(key);
+    auto unique_class_ptr = unique_class.get();
+    unique_classes_.emplace_back(std::move(unique_class));
+    unique_class_by_key_[key] = unique_class_ptr;
   }
   return unique_class_by_key_.at(key);
 }
@@ -331,6 +332,7 @@ void UniqueInsts::deleteInst(frInst* inst)
 
 void UniqueInsts::deleteUniqueClass(UniqueClass* unique_class)
 {
+  unique_class_by_key_.erase(unique_class->key());
   unique_classes_.erase(std::find_if(
       unique_classes_.begin(),
       unique_classes_.end(),

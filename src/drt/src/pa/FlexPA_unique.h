@@ -51,6 +51,7 @@ class UniqueClass
 
   UniqueClass(const UniqueClassKey& key);
 
+  const UniqueClassKey& key() const { return key_; }
   frMaster* getMaster() const { return key_.master; }
   dbOrientType getOrient() const { return key_.orient; }
   const std::vector<frCoord>& getOffsets() const { return key_.offsets; }
