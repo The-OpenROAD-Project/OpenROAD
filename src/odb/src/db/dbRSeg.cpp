@@ -10,6 +10,7 @@
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbJournal.h"
 #include "dbNet.h"

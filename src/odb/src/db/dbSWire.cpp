@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbNet.h"
 #include "dbSBox.h"
 #include "dbSBoxItr.h"

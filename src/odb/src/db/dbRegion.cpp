@@ -12,6 +12,8 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbInst.h"

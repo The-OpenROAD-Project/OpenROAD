@@ -16,6 +16,7 @@
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHier.h"
 #include "dbITerm.h"

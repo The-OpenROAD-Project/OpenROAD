@@ -3,6 +3,7 @@
 
 #include "dbTechViaLayerRule.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

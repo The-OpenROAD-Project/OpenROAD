@@ -9,6 +9,7 @@
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbJournal.h"
 #include "dbNet.h"

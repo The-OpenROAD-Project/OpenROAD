@@ -15,6 +15,7 @@
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayerRule.h"
+#include "dbVector.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
 #include "odb/db.h"

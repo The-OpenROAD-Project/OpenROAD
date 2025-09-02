@@ -18,6 +18,7 @@
 #include "dbBox.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbHier.h"

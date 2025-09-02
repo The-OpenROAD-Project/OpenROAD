@@ -6,7 +6,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "dbCommon.h"
 #include "dbDatabase.h"
+#include "dbHashTable.h"
 #include "dbHashTable.hpp"
 #include "dbName.h"
 #include "dbTable.h"
