@@ -310,7 +310,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   // Check duplicate tree nodes
   SteinerTreeNode::preorder(
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
-        for (auto child : node->getChildren()) {
+        for (const auto& child : node->getChildren()) {
           if (node->x == child->x && node->y == child->y) {
             printf("Error: duplicate tree nodes encountered.");
           }
