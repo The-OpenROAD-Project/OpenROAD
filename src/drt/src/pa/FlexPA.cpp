@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexPA.h"
+#include "pa/FlexPA.h"
 
 #include <omp.h>
 
@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/io/ios_state.hpp"
@@ -30,6 +29,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
+#include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
 #include "utl/exception.h"
 

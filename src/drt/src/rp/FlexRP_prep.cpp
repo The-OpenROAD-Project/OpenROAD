@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "FlexRP.h"
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
@@ -19,6 +18,7 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "rp/FlexRP.h"
 
 namespace drt {
 

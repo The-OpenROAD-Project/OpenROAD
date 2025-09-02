@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "FlexPA_unique.h"
+#include "pa/FlexPA_unique.h"
 
 #include <algorithm>
 #include <limits>
