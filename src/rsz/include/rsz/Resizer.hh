@@ -246,10 +246,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
-  bool dontTouch(const Instance* inst);
+  bool dontTouch(const Instance* inst) const;
   void setDontTouch(const Net* net, bool dont_touch);
-  bool dontTouch(const Net* net);
-  bool dontTouch(const Pin* pin);
+  bool dontTouch(const Net* net) const;
+  bool dontTouch(const Pin* pin) const;
   void reportDontTouch();
 
   void reportFastBufferSizes();
@@ -457,7 +457,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                         bool verbose);
   void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
-  bool isTristateDriver(const Pin* pin);
+  bool isTristateDriver(const Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
   bool bufferSizeOutmatched(LibertyCell* worse,
@@ -677,6 +677,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
                       const Corner*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance* inst);
+
+  bool okToBufferNet(const Pin* driver_pin) const;
+
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.

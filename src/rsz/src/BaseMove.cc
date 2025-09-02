@@ -703,6 +703,4 @@ vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
   return fanouts;
 }
 
-////////////////////////////////////////////////////////////////
-// namespace rsz
 }  // namespace rsz
