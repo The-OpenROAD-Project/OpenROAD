@@ -95,6 +95,7 @@ cc_library(
         "src/cugr/include",
     ],
     deps = [
+        ":groute",
         "//src/dbSta",
         "//src/odb",
         "//src/stt",
