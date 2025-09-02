@@ -17,3 +17,5 @@ set_opt_config -disable_buffer_pruning true
 
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
+
+report_equiv_cells -vt BUFx2_ASAP7_75t_R

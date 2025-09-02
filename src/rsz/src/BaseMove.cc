@@ -3,6 +3,16 @@
 
 #include "BaseMove.hh"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
+
+#include "odb/db.h"
+#include "odb/geom.h"
+
 namespace rsz {
 
 using std::max;

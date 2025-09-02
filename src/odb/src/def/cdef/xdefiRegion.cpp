@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "defiRegion.h"
 #include "defiRegion.hpp"
 

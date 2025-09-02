@@ -6,7 +6,12 @@
 #include <map>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace ant {
 

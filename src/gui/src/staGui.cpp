@@ -14,10 +14,19 @@
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "dbDescriptors.h"
@@ -25,7 +34,9 @@
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"

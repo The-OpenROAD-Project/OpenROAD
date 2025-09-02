@@ -3,6 +3,8 @@
 
 #include "dbJournal.h"
 
+#include <cstdio>
+
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
@@ -12,6 +14,8 @@
 #include "dbNet.h"
 #include "dbRSeg.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {

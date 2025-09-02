@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -12,6 +13,8 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace dpl {

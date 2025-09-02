@@ -3,11 +3,17 @@
 
 #include "dbRegion.h"
 
+#include <string.h>
+
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbInst.h"
@@ -17,6 +23,8 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 

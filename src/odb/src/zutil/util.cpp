@@ -4,6 +4,8 @@
 #include "odb/util.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -14,6 +16,7 @@
 #include "odb/db.h"
 #include "odb/dbCCSegSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {

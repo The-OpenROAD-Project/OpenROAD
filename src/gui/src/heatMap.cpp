@@ -7,18 +7,27 @@
 #include <QThread>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "heatMapSetup.h"
+#include "odb/db.h"
 #include "sta/Corner.hh"
 #include "utl/Logger.h"
 

@@ -5,10 +5,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <string>
 
 #include "BufferMove.hh"
 #include "SplitLoadMove.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace rsz {
 

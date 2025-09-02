@@ -6,6 +6,7 @@
 #include "dbEditHierarchy.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <set>
 #include <string>
 #include <vector>
@@ -236,12 +237,34 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
 
   dlogHierConnStart(source_pin, dest_pin, connection_name);
 
-  // 1. Get the scope (dbModule*) of the source and destination pins
-  dbModule* source_db_module = source_pin->getInst()->getModule();
-  dbModule* dest_db_module = dest_pin->getInst()->getModule();
-  // it is possible that one or other of the pins is not involved
-  // in hierarchy, which is ok, and the source/dest modnet will be null
-  dbModNet* source_db_mod_net = source_pin->getModNet();
+  //
+  // 1. Connect source and dest pins directly in flat flow
+  //
+  dbNet* source_db_net = source_pin->getNet();
+  dbNet* dest_db_net = dest_pin->getNet();
+  if (db_network_->hierarchy_ == false) {
+    // If both source pin and dest pin do not have a corresponding flat net,
+    // Create a new net and connect it with source pin.
+    if (source_db_net == nullptr && dest_db_net == nullptr) {
+      Net* new_net = db_network_->makeNet(
+          connection_name,
+          db_network_->parent(db_network_->dbToSta(source_pin->getInst())),
+          odb::dbNameUniquifyType::IF_NEEDED);
+      source_db_net = db_network_->staToDb(new_net);
+      source_pin->connect(source_db_net);
+    }
+
+    // Connect
+    if (source_db_net) {
+      dest_pin->connect(source_db_net);
+    } else {
+      assert(dest_db_net);
+      source_pin->connect(dest_db_net);
+    }
+
+    dlogHierConnDone();
+    return;  // Done here in a flat flow
+  }
 
   //
   // 2. Make sure there is a direct flat net connection
@@ -250,7 +273,6 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   // co-existing, something we respect even when making
   // new hierarchical connections.
   //
-  dbNet* source_db_net = source_pin->getNet();
   if (!source_db_net) {
     dlogHierConnCreateFlatNet(connection_name);
     Net* new_net = db_network_->makeNet(
@@ -271,6 +293,13 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   // 3. Make the hierarchical connection.
   // in case when pins in different modules
   //
+
+  // Get the scope (dbModule*) of the source and destination pins
+  dbModule* source_db_module = source_pin->getInst()->getModule();
+  dbModule* dest_db_module = dest_pin->getInst()->getModule();
+  // it is possible that one or other of the pins is not involved
+  // in hierarchy, which is ok, and the source/dest modnet will be null
+  dbModNet* source_db_mod_net = source_pin->getModNet();
   if (source_db_module != dest_db_module) {
     //
     // 3.1. Attempt to factor connection (minimize punch through), and return

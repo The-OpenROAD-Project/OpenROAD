@@ -4,9 +4,6 @@
 #pragma once
 
 #include <array>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <map>
 #include <memory>
 #include <set>
@@ -14,6 +11,9 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

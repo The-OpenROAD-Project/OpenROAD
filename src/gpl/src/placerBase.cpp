@@ -4,6 +4,7 @@
 #include "placerBase.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -13,6 +14,7 @@
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace gpl {

@@ -24,7 +24,11 @@ cc_library(
         "src/Util.h",
     ],
     visibility = ["//visibility:private"],
-    deps = ["//src/sta:opensta_lib"],
+    deps = [
+        "//src/sta:opensta_lib",
+        "@boost.container_hash",
+        "@boost.unordered",
+    ],
 )
 
 cc_library(
@@ -72,7 +76,6 @@ cc_library(
     ],
     hdrs = [
         "include/cts/MakeTritoncts.h",
-        "include/cts/TritonCTS.h",
     ],
     copts = [
         "-Isrc/cts/src",

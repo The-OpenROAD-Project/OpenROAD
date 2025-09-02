@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -11,6 +12,7 @@ class Logger;
 }
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace dpl {
 

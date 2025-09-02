@@ -10,10 +10,14 @@
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
+#include <deque>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "gui/gui.h"

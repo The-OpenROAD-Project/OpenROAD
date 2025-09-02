@@ -11,10 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "dr/FlexDR.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;

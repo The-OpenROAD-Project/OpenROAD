@@ -4,14 +4,20 @@
 #include "FlexDR_graphics.h"
 
 #include <algorithm>
+#include <any>
+#include <cassert>
 #include <cstdio>
+#include <functional>
 #include <limits>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 

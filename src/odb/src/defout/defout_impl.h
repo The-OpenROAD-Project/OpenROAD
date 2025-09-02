@@ -10,6 +10,7 @@
 
 #include "odb/db.h"
 #include "odb/dbMap.h"
+#include "odb/dbObject.h"
 #include "odb/defout.h"
 #include "odb/odb.h"
 namespace utl {

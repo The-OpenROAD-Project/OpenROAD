@@ -19,10 +19,14 @@
 #include <QWheelEvent>
 #include <QWidgetAction>
 #include <QtAlgorithms>
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "colorGenerator.h"
@@ -30,6 +34,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"
+#include "odb/db.h"
 #include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"

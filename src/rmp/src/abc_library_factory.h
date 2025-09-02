@@ -12,6 +12,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "map/scl/sclLib.h"
+#include "rsz/Resizer.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
@@ -54,6 +55,7 @@ class AbcLibraryFactory
  public:
   explicit AbcLibraryFactory(utl::Logger* logger) : logger_(logger) {}
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
+  AbcLibraryFactory& AddResizer(rsz::Resizer* resizer);
   AbcLibraryFactory& SetCorner(sta::Corner* corner);
   AbcLibrary Build();
 
@@ -78,6 +80,7 @@ class AbcLibraryFactory
   utl::Logger* logger_;
   sta::dbSta* db_sta_ = nullptr;
   sta::Corner* corner_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
 };
 
 }  // namespace rmp

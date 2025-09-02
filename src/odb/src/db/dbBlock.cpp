@@ -3,15 +3,26 @@
 
 #include "dbBlock.h"
 
+#include <string.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <functional>
+#include <ios>
+#include <iterator>
+#include <list>
 #include <map>
 #include <memory>
+#include <optional>
+#include <ostream>
 #include <set>
 #include <string>
 #include <utility>
@@ -34,6 +45,7 @@
 #include "dbCapNode.h"
 #include "dbCapNodeItr.h"
 #include "dbChip.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbFill.h"
@@ -47,12 +59,14 @@
 #include "dbGroupPowerNetItr.h"
 #include "dbGuide.h"
 #include "dbGuideItr.h"
+#include "dbHashTable.h"
 #include "dbHashTable.hpp"
 #include "dbHier.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
 #include "dbInstHdr.h"
+#include "dbIntHashTable.h"
 #include "dbIntHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbJournal.h"
@@ -78,6 +92,7 @@
 #include "dbNetTrack.h"
 #include "dbNetTrackItr.h"
 #include "dbObstruction.h"
+#include "dbPagedVector.h"
 #include "dbPowerDomain.h"
 #include "dbPowerSwitch.h"
 #include "dbProperty.h"
@@ -106,9 +121,13 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbStream.h"
 #include "odb/dbTypes.h"
 #include "odb/defout.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/lefout.h"
 #include "odb/poly_decomp.h"
@@ -152,7 +171,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
-  _hier_delimiter = 0;
+  _hier_delimiter = '/';
   _left_bus_delimiter = 0;
   _right_bus_delimiter = 0;
   _num_ext_corners = 0;

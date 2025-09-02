@@ -4,12 +4,14 @@
 #include "initialPlace.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
 

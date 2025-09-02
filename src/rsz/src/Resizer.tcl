@@ -247,6 +247,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_buffering]\
                                         [-skip_buffer_removal]\
                                         [-skip_last_gasp]\
+                                        [-skip_vt_swap]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
@@ -261,8 +262,8 @@ proc repair_timing { args } {
             -libraries -max_utilization -max_buffer_percent -sequence \
             -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-           -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
-            -match_cell_footprint -verbose}
+             -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
+             -skip_vt_swap -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -299,6 +300,7 @@ proc repair_timing { args } {
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
+  set skip_vt_swap [info exists flags(-skip_vt_swap)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   set max_buffer_percent 20
@@ -356,7 +358,7 @@ proc repair_timing { args } {
         $max_repairs_per_pass $match_cell_footprint $verbose \
         $sequence \
         $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
-        $skip_buffer_removal $skip_last_gasp]
+        $skip_buffer_removal $skip_last_gasp $skip_vt_swap]
     }
     if { $hold } {
       set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
@@ -716,15 +718,16 @@ proc report_opt_config { args } {
   puts "*******************************************"
 }
 
-sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint -all }
+sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint -all -vt }
 
 proc report_equiv_cells { args } {
-  sta::parse_key_args "report_equiv_cells" args keys {} flags {-match_cell_footprint -all}
+  sta::parse_key_args "report_equiv_cells" args keys {} flags {-match_cell_footprint -all -vt}
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set report_all_cells [info exists flags(-all)]
   sta::check_argc_eq1 "report_equiv_cells" $args
   set lib_cell [sta::get_lib_cells_arg "report_equiv_cells" [lindex $args 0] sta::sta_warn]
-  rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells
+  set report_vt_equiv [info exists flags(-vt)]
+  rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint $report_all_cells $report_vt_equiv
 }
 
 sta::define_cmd_args "replace_arith_modules" { [-path_count num_critical_paths] \

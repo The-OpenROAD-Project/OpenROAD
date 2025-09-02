@@ -7,6 +7,7 @@
 #include "dbMaster.h"
 #include "dbPolygon.h"
 #include "dbTable.hpp"
+#include "odb/dbObject.h"
 
 namespace odb {
 

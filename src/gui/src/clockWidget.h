@@ -16,13 +16,17 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolTip>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "staGuiInterface.h"
 
 namespace sta {

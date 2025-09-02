@@ -3,6 +3,7 @@
 
 #include "domain.h"
 
+#include <algorithm>
 #include <memory>
 #include <set>
 #include <string>
@@ -11,6 +12,7 @@
 
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "utl/Logger.h"
 

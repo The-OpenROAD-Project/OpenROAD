@@ -2,8 +2,6 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <boost/graph/connected_components.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -11,13 +9,17 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/graph/connected_components.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "global.h"
 #include "io/io.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

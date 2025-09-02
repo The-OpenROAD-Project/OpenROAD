@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -16,6 +18,7 @@
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
@@ -103,6 +106,7 @@ using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
 using RoutePointToPinsMap = std::map<RoutePt, RoutePointPins>;
+using PointPair = std::pair<odb::Point, odb::Point>;
 
 class GlobalRouter
 {
@@ -267,7 +271,7 @@ class GlobalRouter
 
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -336,14 +340,14 @@ class GlobalRouter
                                std::vector<int8_t>*& edge_costs_per_layer);
 
   // aux functions
-  std::vector<odb::Point> findOnGridPositions(const Pin& pin,
-                                              bool& has_access_points,
-                                              odb::Point& pos_on_grid,
-                                              bool ignore_db_access_points
-                                              = false);
+  std::vector<RoutePt> findOnGridPositions(const Pin& pin,
+                                           bool& has_access_points,
+                                           odb::Point& pos_on_grid,
+                                           bool ignore_db_access_points
+                                           = false);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
-  void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
+  void computePinPositionOnGrid(std::vector<RoutePt>& pin_positions_on_grid,
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);

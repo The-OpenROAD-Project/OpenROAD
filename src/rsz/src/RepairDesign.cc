@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -17,6 +19,9 @@
 #include "BufferedNet.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"

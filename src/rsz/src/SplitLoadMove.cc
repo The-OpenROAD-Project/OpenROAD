@@ -8,6 +8,8 @@
 #include <string>
 
 #include "BaseMove.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace rsz {
 

@@ -7,6 +7,20 @@ module top (clk,
  input in2;
  output out;
 
+ wire net_o;
+ wire r1q;
+ wire i1z;
+ wire i2z;
+ wire i3z;
+ wire i4z;
+ wire i5z;
+ wire i6z;
+ wire i7z;
+ wire i8z;
+ wire r2q;
+ wire u1z;
+ wire u2z;
+ wire net2;
 
  CLKBUF_X1 hold2 (.A(u2z),
     .Z(net2));
@@ -34,24 +48,27 @@ module top (clk,
     .Q(out));
  BUF_X1 u1 (.A(r2q),
     .Z(u1z));
- AND2_X1 u2 (.A1(r1q),
+ AND2_X1 u2 (.A1(net_o),
     .A2(u1z),
     .ZN(u2z));
- hier1 h1 (.in1(in1),
+ hier1 h1 (.net_o(net_o),
+    .in1(in1),
     .i1z(i1z),
     .op(r1q));
 endmodule
-module hier1 (in1,
+module hier1 (net_o,
+    in1,
     i1z,
     op);
+ output net_o;
  input in1;
  input i1z;
  output op;
 
 
- CLKBUF_X1 hold1 (.A(r1q),
-    .Z(op));
+ CLKBUF_X1 hold1 (.A(op),
+    .Z(net_o));
  DFF_X1 r1 (.D(in1),
     .CK(i1z),
-    .Q(r1q));
+    .Q(op));
 endmodule

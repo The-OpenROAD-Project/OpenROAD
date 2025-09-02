@@ -4,8 +4,7 @@
 #pragma once
 
 #include <Eigen/Sparse>
-#include <boost/geometry.hpp>
-#include <boost/polygon/polygon.hpp>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
@@ -13,11 +12,14 @@
 #include <string>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "debug_gui.h"
 #include "ir_network.h"
 #include "node.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "psm/pdnsim.h"
 #include "utl/Logger.h"
 

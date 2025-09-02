@@ -3,7 +3,12 @@
 
 #include "exa/example.h"
 
+#include <memory>
+#include <utility>
+
 #include "observer.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace exa {
 

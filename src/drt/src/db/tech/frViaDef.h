@@ -4,15 +4,19 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace drt {

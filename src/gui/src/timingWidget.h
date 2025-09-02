@@ -15,6 +15,7 @@
 #include <QSplitter>
 #include <QTableView>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 

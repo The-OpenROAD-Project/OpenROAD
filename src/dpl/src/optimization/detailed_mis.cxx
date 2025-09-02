@@ -28,6 +28,9 @@
 #include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <deque>
 #include <limits>
 #include <map>
 #include <queue>
@@ -39,6 +42,7 @@
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
 #include "utl/Logger.h"

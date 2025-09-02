@@ -3,6 +3,7 @@
 
 #include "find_some_net.h"
 
+#include <cstdlib>
 #include <memory>
 #include <vector>
 

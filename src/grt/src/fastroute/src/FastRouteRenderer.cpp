@@ -3,7 +3,10 @@
 
 #include "FastRouteRenderer.h"
 
+#include <cmath>
 #include <vector>
+
+#include "odb/db.h"
 
 namespace grt {
 
