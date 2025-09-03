@@ -1545,15 +1545,17 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
       target_dead_space_list.push_back(target_dead_space);
     }
   }
+
   // The number of perturbations in each step should be larger than the
   // number of macros
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_)
-                                       ? macros.size()
-                                       : num_perturb_per_step_;
+  const int num_perturb_per_step = std::max(macros.size(), num_perturb_per_step_);
+
   int remaining_runs = target_util_list.size();
   int run_id = 0;
+
   SACoreSoftMacro* best_sa = nullptr;
   SoftSAVector sa_containers;  // The owner of SACore objects
+
   // To give consistency across threads we check the solutions
   // at a fixed interval independent of how many threads we are using.
   const int check_interval = 10;
@@ -1565,6 +1567,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
     SoftSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
+
     for (int i = 0; i < run_thread; i++) {
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
 
@@ -1636,24 +1639,22 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
       sa->addBlockages(macro_blockages);
       sa_batch.push_back(std::move(sa));
     }
-    if (sa_batch.size() == 1) {
-      runSA<SACoreSoftMacro>(sa_batch[0].get());
-    } else {
-      // multi threads
-      std::vector<std::thread> threads;
-      threads.reserve(sa_batch.size());
-      for (auto& sa : sa_batch) {
-        threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
-      }
-      for (auto& th : threads) {
-        th.join();
-      }
+
+    std::vector<std::thread> threads;
+    threads.reserve(sa_batch.size());
+    for (auto& sa : sa_batch) {
+      threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
+    }
+    for (auto& th : threads) {
+      th.join();
     }
     remaining_runs -= run_thread;
+
     // add macro tilings
     for (auto& sa : sa_batch) {
       sa_containers.push_back(std::move(sa));
     }
+
     while (sa_containers.size() >= end_check) {
       while (begin_check < end_check) {
         auto& sa = sa_containers[begin_check];
