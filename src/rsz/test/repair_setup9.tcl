@@ -1,5 +1,6 @@
 # check physical hierarchy of new buffer in flattened flow
 source "helpers.tcl"
+source Nangate45/Nangate45.vars
 
 define_corners fast slow
 read_liberty -corner slow Nangate45/Nangate45_slow.lib

@@ -137,6 +137,11 @@ void Opendp::createNetwork()
     if (!net || net->getSigType().isSupply()) {
       continue;
     }
+    if (bterm->getBBox().isInverted()) {
+      logger_->error(
+          utl::DPL, 386, "BTerm {} has no shapes.", bterm->getName());
+    }
+
     network_->addNode(bterm);
   }
 
