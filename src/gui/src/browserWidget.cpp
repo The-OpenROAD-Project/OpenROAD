@@ -9,12 +9,20 @@
 #include <QLocale>
 #include <QMouseEvent>
 #include <QString>
+#include <algorithm>
+#include <any>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
 #include "displayControls.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbInst*);

@@ -22,6 +22,7 @@
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "util/journal.h"
 #include "util/utility.h"
 #include "utl/Logger.h"

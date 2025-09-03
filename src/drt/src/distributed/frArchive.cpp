@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "frArchive.h"
+#include "distributed/frArchive.h"
+
+#include <istream>
+#include <ostream>
 
 // explicit instantiation of class templates involved
 namespace boost {

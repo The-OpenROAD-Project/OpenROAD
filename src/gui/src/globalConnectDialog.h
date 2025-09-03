@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QWidget>
+#include <map>
 
 #include "odb/db.h"
 

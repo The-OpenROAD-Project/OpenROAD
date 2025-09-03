@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "FlexPA.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "pa/FlexPA.h"
 
 namespace drt {
 

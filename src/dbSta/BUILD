@@ -13,12 +13,12 @@ cc_library(
     name = "dbSta",
     srcs = [
         "src/SpefWriter.cc",
+        "src/dbEditHierarchy.cc",
+        "src/dbEditHierarchy.hh",
         "src/dbNetwork.cc",
         "src/dbReadVerilog.cc",
         "src/dbSdcNetwork.cc",
         "src/dbSdcNetwork.hh",
-        "src/dbEditHierarchy.cc",
-        "src/dbEditHierarchy.hh",
         "src/dbSta.cc",
     ],
     hdrs = [
@@ -50,10 +50,6 @@ cc_library(
     ],
     hdrs = [
         "include/db_sta/MakeDbSta.hh",
-        "include/db_sta/SpefWriter.hh",
-        "include/db_sta/dbNetwork.hh",
-        "include/db_sta/dbReadVerilog.hh",
-        "include/db_sta/dbSta.hh",
     ],
     copts = [
         "-Isrc/dbSta/src",
@@ -63,6 +59,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dbSta",
         "//:ord",
         "//src/odb",
         "//src/sta:opensta_lib",

@@ -11,7 +11,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 508 buffers in 1 nets.
-worst slack max -32.27
+worst slack max -32.28
 max fanout
 
 Pin                                   Limit Fanout  Slack
@@ -24,10 +24,10 @@ fanout1/X                                20     20      0 (MET)
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -32.274 |  -188720.6 |   8000 | sink7689/D
-    final |       0 |      13 |        2 |      0 |     0 |    +0.0% |  -12.860 |   -69533.7 |   8000 | sink7534/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -32.280 |  -188759.2 |   8000 | sink7689/D
+    final |       0 |      13 |        2 |      0 |     0 |    +0.0% |  -12.862 |   -69608.4 |   8000 | sink7534/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 13 instances, 13 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 13 instances: 13 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack max -12.86

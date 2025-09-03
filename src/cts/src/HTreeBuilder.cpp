@@ -17,6 +17,7 @@
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace cts {

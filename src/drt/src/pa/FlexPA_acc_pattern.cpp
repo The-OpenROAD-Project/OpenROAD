@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -17,8 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
-#include "FlexPA.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -26,6 +25,8 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "pa/AbstractPAGraphics.h"
+#include "pa/FlexPA.h"
 #include "serialization.h"
 #include "utl/exception.h"
 

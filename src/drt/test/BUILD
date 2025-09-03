@@ -16,7 +16,7 @@ COMPULSORY_TESTS = [
     "ta_pin_aligned",
     "top_level_term",
     "top_level_term2",
-    "via_access_layer"
+    "via_access_layer",
 ]
 
 # Disabled in CMakeLists.txt

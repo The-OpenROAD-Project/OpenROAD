@@ -14,6 +14,7 @@
 #include <QSpinBox>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
@@ -21,6 +22,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 #include "sta/PathExpanded.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"

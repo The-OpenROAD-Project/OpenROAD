@@ -7,12 +7,18 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <mutex>
+#include <set>
 #include <sstream>
+#include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 #include "base/abc/abc.h"
@@ -283,7 +289,8 @@ void Restructure::runABC()
 
   for (const auto& file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1)) {
-      if (std::remove(file_to_remove.c_str()) != 0) {
+      std::error_code err;
+      if (std::filesystem::remove(file_to_remove, err); err) {
         logger_->error(RMP, 37, "Fail to remove file {}", file_to_remove);
       }
     }

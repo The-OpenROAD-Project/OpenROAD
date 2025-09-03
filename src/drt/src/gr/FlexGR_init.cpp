@@ -2,15 +2,17 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdlib>
 #include <deque>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
-#include "FlexGRCMap.h"
+#include "gr/FlexGR.h"
+#include "gr/FlexGRCMap.h"
 
 namespace drt {
 

@@ -5,6 +5,9 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <cassert>
+
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

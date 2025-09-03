@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexPA.h"
+#include "pa/FlexPA.h"
 
 #include <omp.h>
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/io/ios_state.hpp>
-#include <boost/serialization/export.hpp>
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -19,7 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/io/ios_state.hpp"
+#include "boost/serialization/export.hpp"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -28,6 +28,8 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "odb/db.h"
+#include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
 #include "utl/exception.h"
 

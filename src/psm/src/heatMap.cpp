@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
 #include "sta/Corner.hh"
 #include "sta/Sta.hh"

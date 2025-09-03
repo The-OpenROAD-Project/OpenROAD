@@ -4,14 +4,16 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
-#include "frShape.h"
+#include "db/obj/frShape.h"
 
 namespace drt {
 class frViaDef;

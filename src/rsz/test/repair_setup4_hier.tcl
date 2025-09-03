@@ -1,5 +1,6 @@
 # repair_timing -setup 2 corners
 source "helpers.tcl"
+source Nangate45/Nangate45.vars
 define_corners fast slow
 read_liberty -corner slow Nangate45/Nangate45_slow.lib
 read_liberty -corner fast Nangate45/Nangate45_fast.lib
@@ -10,6 +11,9 @@ link_design reg1 -hier
 #place the design
 initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
   -site FreePDK45_38x28_10R_NP_162NW_34O
+source $tracks_file
+place_pins -hor_layers $io_placer_hor_layer \
+  -ver_layers $io_placer_ver_layer
 global_placement -skip_nesterov_place
 detailed_placement
 

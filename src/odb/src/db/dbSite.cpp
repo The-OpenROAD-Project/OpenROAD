@@ -3,14 +3,20 @@
 
 #include "dbSite.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
+#include <tuple>
 #include <vector>
 
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 

@@ -3,14 +3,16 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "DataType.h"
+#include "boost/multi_array.hpp"
+#include "utl/Logger.h"
 
 namespace grt {
 
@@ -25,7 +27,18 @@ class Graph2D
     const int hi;
   };
 
-  void init(int x_grid, int y_grid, int h_capacity, int v_capacity);
+  struct Cap3D
+  {
+    uint16_t cap;    // max layer capacity
+    double cap_ndr;  // capacity available for NDR
+  };
+
+  void init(int x_grid,
+            int y_grid,
+            int h_capacity,
+            int v_capacity,
+            int num_layers,
+            utl::Logger* logger);
   void InitEstUsage();
   void InitLastUsage(int upType);
   void clear();
@@ -52,11 +65,7 @@ class Graph2D
 
   void addCapH(int x, int y, int cap);
   void addCapV(int x, int y, int cap);
-  void addEstUsageH(const Interval& xi, int y, double usage);
-  void addEstUsageH(int x, int y, double usage);
   void addEstUsageToUsage();
-  void addEstUsageV(int x, const Interval& yi, double usage);
-  void addEstUsageV(int x, int y, double usage);
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);
   void addUsageH(const Interval& xi, int y, int used);
@@ -70,11 +79,58 @@ class Graph2D
                                int& max_adj);
   void str_accu(int rnd);
 
+  void updateEstUsageH(const Interval& xi, int y, FrNet* net, double usage);
+  void updateEstUsageH(int x, int y, FrNet* net, double usage);
+  void updateEstUsageV(int x, const Interval& yi, FrNet* net, double usage);
+  void updateEstUsageV(int x, int y, FrNet* net, double usage);
+  void updateUsageH(const Interval& xi, int y, FrNet* net, int usage);
+  void updateUsageH(int x, int y, FrNet* net, int usage);
+  void updateUsageV(int x, const Interval& yi, FrNet* net, int usage);
+  void updateUsageV(int x, int y, FrNet* net, int usage);
+  void initCap3D();
+  void updateCap3D(int x,
+                   int y,
+                   int layer,
+                   EdgeDirection direction,
+                   double cap);
+
+  void clearNDRnets();
+
  private:
+  int x_grid_;
+  int y_grid_;
+  int num_layers_;
+  std::set<std::string> congestion_nets_;
+
+  void updateCongList(const std::string& net_name, double edge_cost);
+  void printAllElements();
+  double getCostNDRAware(FrNet* net,
+                         int x,
+                         int y,
+                         double edge_cost,
+                         EdgeDirection direction);
+  void updateNDRCapLayer(int x,
+                         int y,
+                         FrNet* net,
+                         EdgeDirection dir,
+                         double edge_cost);
+  bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
+  void printNDRCap(int x, int y);
+  void printEdgeCapPerLayer();
+  void initNDRnets();
+
   void foreachEdge(const std::function<void(Edge&)>& func);
 
-  multi_array<Edge, 2> v_edges_;  // The way it is indexed is (X, Y)
-  multi_array<Edge, 2> h_edges_;  // The way it is indexed is (X, Y)
+  multi_array<Edge, 2> v_edges_;    // The way it is indexed is (X, Y)
+  multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
+  multi_array<Cap3D, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  multi_array<Cap3D, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
+  multi_array<std::set<std::string>, 2>
+      v_ndr_nets_;  // The way it is indexed is (X, Y)
+  multi_array<std::set<std::string>, 2>
+      h_ndr_nets_;  // The way it is indexed is (X, Y)
+
+  utl::Logger* logger_;
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;

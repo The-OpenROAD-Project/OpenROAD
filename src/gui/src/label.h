@@ -3,12 +3,16 @@
 
 #pragma once
 
+#include <any>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class Point;

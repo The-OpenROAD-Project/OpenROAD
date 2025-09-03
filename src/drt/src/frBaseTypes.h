@@ -3,18 +3,20 @@
 
 #pragma once
 
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/segment.hpp>
-#include <boost/geometry/strategies/strategies.hpp>
-#include <boost/serialization/base_object.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometries/box.hpp"
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/geometries/segment.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/strategies/strategies.hpp"
+#include "boost/serialization/base_object.hpp"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

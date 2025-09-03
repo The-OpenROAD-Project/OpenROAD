@@ -4,6 +4,7 @@
 #include "gpl/Replace.h"
 
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <utility>

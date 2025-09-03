@@ -23,6 +23,7 @@ utl::Logger* getLogger();
 %import <std_vector.i>
 %import "dbtypes.i"
 %import "dbenums.i"
+%include "exception.i"
 %include "../../Exception.i"
 
 

@@ -6,6 +6,8 @@
 #include <tcl.h>
 
 #include <algorithm>
+#include <array>
+#include <cstring>
 #include <set>
 #include <utility>
 #include <vector>

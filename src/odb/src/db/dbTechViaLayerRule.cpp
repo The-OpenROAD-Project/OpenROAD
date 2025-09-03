@@ -3,6 +3,7 @@
 
 #include "dbTechViaLayerRule.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -13,6 +14,7 @@
 #include "dbTechViaRule.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 

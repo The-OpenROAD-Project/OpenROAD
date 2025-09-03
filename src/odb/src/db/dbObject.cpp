@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include "odb/dbObject.h"
+
+#include <cstdint>
 #include <cstring>
 #include <unordered_map>
 
@@ -54,8 +57,11 @@ static const char* name_tbl[] = {"dbGDSLib",
                                  "dbBusPort",
                                  "dbCellEdgeSpacing",
                                  "dbChip",
+                                 "dbChipBump",
+                                 "dbChipBumpInst",
                                  "dbChipConn",
                                  "dbChipInst",
+                                 "dbChipNet",
                                  "dbChipRegion",
                                  "dbChipRegionInst",
                                  "dbDatabase",
@@ -171,8 +177,11 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x12B22B2C, dbBusPortObj},
        {0xEE4BAB67, dbCellEdgeSpacingObj},
        {0x00000001, dbChipObj},
+       {0xEC4D30D9, dbChipBumpObj},
+       {0xC3302A8D, dbChipBumpInstObj},
        {0x9FEC713B, dbChipConnObj},
        {0x09A169FD, dbChipInstObj},
+       {0x972E397C, dbChipNetObj},
        {0x0676E6F1, dbChipRegionObj},
        {0x457A83E5, dbChipRegionInstObj},
        {0x00000000, dbDatabaseObj},
@@ -288,8 +297,11 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbBusPortObj, 0x12B22B2C},
        {dbCellEdgeSpacingObj, 0xEE4BAB67},
        {dbChipObj, 0x00000001},
+       {dbChipBumpObj, 0xEC4D30D9},
+       {dbChipBumpInstObj, 0xC3302A8D},
        {dbChipConnObj, 0x9FEC713B},
        {dbChipInstObj, 0x09A169FD},
+       {dbChipNetObj, 0x972E397C},
        {dbChipRegionObj, 0x0676E6F1},
        {dbChipRegionInstObj, 0x457A83E5},
        {dbDatabaseObj, 0x00000000},

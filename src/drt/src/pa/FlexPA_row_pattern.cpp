@@ -3,9 +3,11 @@
 
 #include <omp.h>
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -13,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "FlexPA.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -21,6 +22,7 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "pa/FlexPA.h"
 #include "serialization.h"
 #include "utl/exception.h"
 

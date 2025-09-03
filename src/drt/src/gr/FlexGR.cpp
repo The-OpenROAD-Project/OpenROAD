@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexGR.h"
+#include "gr/FlexGR.h"
 
 #include <omp.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
+#include <deque>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <set>

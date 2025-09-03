@@ -2,15 +2,18 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <deque>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
+#include "gr/FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace drt {

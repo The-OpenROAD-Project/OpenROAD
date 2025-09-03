@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <iostream>
 #include <map>
 #include <memory>

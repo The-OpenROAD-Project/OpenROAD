@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "frDesign.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;

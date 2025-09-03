@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <limits>
 #include <random>
 #include <sstream>

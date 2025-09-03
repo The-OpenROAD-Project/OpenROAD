@@ -10,7 +10,9 @@
 #include <QStandardItemModel>
 #include <QTreeView>
 #include <array>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 

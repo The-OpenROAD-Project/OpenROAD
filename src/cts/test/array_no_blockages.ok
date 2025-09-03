@@ -125,7 +125,7 @@ legalized HPWL         195260.9 u
 delta HPWL                    1 %
 
 Clock clk
-   1.04 source latency inst_5_4/clk ^
+   1.05 source latency inst_5_4/clk ^
   -1.16 target latency inst_6_4/clk ^
    0.00 CRPR
 --------------

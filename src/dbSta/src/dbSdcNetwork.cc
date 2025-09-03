@@ -5,6 +5,8 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>

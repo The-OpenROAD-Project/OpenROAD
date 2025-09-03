@@ -1,14 +1,17 @@
 #define BOOST_TEST_MODULE TestGDSIn
 #include <libgen.h>
 
-#include <boost/test/included/unit_test.hpp>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "boost/test/included/unit_test.hpp"
 #include "helper/env.h"
+#include "odb/db.h"
 #include "odb/gdsin.h"
 #include "odb/gdsout.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb::gds {

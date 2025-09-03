@@ -5,6 +5,11 @@
 
 #include "nesterovPlace.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <memory>

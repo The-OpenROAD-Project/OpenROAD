@@ -4,9 +4,8 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
-#include <boost/icl/interval.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <functional>
@@ -15,10 +14,12 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <queue>
 #include <random>
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -26,18 +27,23 @@
 #include "AbstractFastRouteRenderer.h"
 #include "AbstractGrouteRenderer.h"
 #include "AbstractRoutingCongestionDataSource.h"
+#include "CUGR.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "boost/icl/interval.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
 #include "grt/Rudy.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
@@ -60,6 +66,7 @@ GlobalRouter::GlobalRouter()
       antenna_checker_(nullptr),
       opendp_(nullptr),
       fastroute_(nullptr),
+      cugr_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
@@ -108,6 +115,7 @@ void GlobalRouter::init(utl::Logger* logger,
   sta_ = sta;
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, stt_builder_);
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
@@ -159,6 +167,9 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
+
+  // Init the data structures to monitor 3D capacity during 2D phases
+  fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = findNets(true);
   checkPinPlacement();
@@ -315,12 +326,19 @@ void GlobalRouter::globalRoute(bool save_guides,
         getMinMaxLayer(min_layer, max_layer);
 
         std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+        if (use_cugr_) {
+          int min_layer, max_layer;
+          getMinMaxLayer(min_layer, max_layer);
+          cugr_->init(min_layer, max_layer);
+          cugr_->route();
+          routes_ = cugr_->getRoutes();
+        } else {
+          if (verbose_) {
+            reportResources();
+          }
 
-        if (verbose_) {
-          reportResources();
+          routes_ = findRouting(nets, min_layer, max_layer);
         }
-
-        routes_ = findRouting(nets, min_layer, max_layer);
       }
     } catch (...) {
       updateDbCongestion();
@@ -331,7 +349,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     updateDbCongestion();
     saveCongestion();
 
-    if (verbose_) {
+    if (verbose_ && !use_cugr_) {
       reportCongestion();
     }
     computeWirelength();
@@ -462,6 +480,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
+      fastroute_->clearNDRnets();
       incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
     }
@@ -1279,7 +1298,7 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      if (layerIdx > net_max_layer) {
+      if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
         continue;
       }
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
@@ -1302,6 +1321,16 @@ void GlobalRouter::computeTrackConsumption(
 
       track_consumption
           = std::max(track_consumption, static_cast<int8_t>(consumption));
+
+      if (logger_->debugCheck(GRT, "ndrInfo", 1)) {
+        logger_->report(
+            "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
+            net->getConstName(),
+            layer_rule->getLayer()->getConstName(),
+            (float) ndr_pitch / default_pitch,
+            consumption,
+            track_consumption);
+      }
     }
   }
 }
@@ -2465,7 +2494,10 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
     }
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
-    RoutePointToPinsMap point_to_pins = findRoutePtPins(net);
+    RoutePointToPinsMap point_to_pins;
+    if (!use_cugr_) {
+      point_to_pins = findRoutePtPins(net);
+    }
 
     int jumper_count = 0;
     if (!route.empty()) {
@@ -2491,12 +2523,14 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide2 = odb::dbGuide::create(
                 db_net, layer2, layer1, box, guide_is_congested);
 
-            RoutePt route_pt1(
-                segment.init_x, segment.init_y, segment.init_layer);
-            RoutePt route_pt2(
-                segment.final_x, segment.final_y, segment.final_layer);
-            addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
-            addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
+            if (!use_cugr_) {
+              RoutePt route_pt1(
+                  segment.init_x, segment.init_y, segment.init_layer);
+              RoutePt route_pt2(
+                  segment.final_x, segment.final_y, segment.final_layer);
+              addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
+              addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
+            }
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
@@ -2506,17 +2540,19 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide = odb::dbGuide::create(
                 db_net, layer, via_layer, box, guide_is_congested);
 
-            RoutePt route_pt1(
-                segment.init_x, segment.init_y, segment.init_layer);
-            RoutePt route_pt2(
-                segment.final_x, segment.final_y, segment.final_layer);
-            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
+            if (!use_cugr_) {
+              RoutePt route_pt1(
+                  segment.init_x, segment.init_y, segment.init_layer);
+              RoutePt route_pt2(
+                  segment.final_x, segment.final_y, segment.final_layer);
+              addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
+              addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
+            }
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
               && segment.init_x != segment.final_x
-              && segment.init_y != segment.final_y) {
+              && segment.init_y != segment.final_y && !use_cugr_) {
             logger_->error(GRT,
                            74,
                            "Routing with guides in blocked metal for net {}.",
@@ -2533,11 +2569,14 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             jumper_count++;
           }
 
-          RoutePt route_pt1(segment.init_x, segment.init_y, segment.init_layer);
-          RoutePt route_pt2(
-              segment.final_x, segment.final_y, segment.final_layer);
-          addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-          addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
+          if (!use_cugr_) {
+            RoutePt route_pt1(
+                segment.init_x, segment.init_y, segment.init_layer);
+            RoutePt route_pt2(
+                segment.final_x, segment.final_y, segment.final_layer);
+            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
+            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
+          }
         }
       }
     }

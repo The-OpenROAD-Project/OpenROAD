@@ -1,12 +1,13 @@
 #define BOOST_TEST_MODULE TestBalancer
 
-#include <boost/asio.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread/thread.hpp>
 #include <string>
 
 #include "HelperCallBack.h"
 #include "LoadBalancer.h"
+#include "boost/asio.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/test/included/unit_test.hpp"
+#include "boost/thread/thread.hpp"
 #include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"

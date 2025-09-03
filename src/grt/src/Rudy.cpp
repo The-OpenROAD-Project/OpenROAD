@@ -4,11 +4,13 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <utility>
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {

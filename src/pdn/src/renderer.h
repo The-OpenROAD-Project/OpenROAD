@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "shape.h"
 #include "via.h"
 
