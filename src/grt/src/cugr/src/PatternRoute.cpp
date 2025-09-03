@@ -18,7 +18,7 @@ void SteinerTreeNode::preorder(
 std::string SteinerTreeNode::getPythonString(
     const std::shared_ptr<SteinerTreeNode>& node)
 {
-  std::vector<std::pair<PointT<int>, PointT<int>>> edges;
+  std::vector<std::pair<PointT, PointT>> edges;
   preorder(node, [&](const std::shared_ptr<SteinerTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
       edges.emplace_back(*node, *child);
@@ -37,7 +37,7 @@ std::string SteinerTreeNode::getPythonString(
 std::string PatternRoutingNode::getPythonString(
     std::shared_ptr<PatternRoutingNode> routing_dag_)
 {
-  std::vector<std::pair<PointT<int>, PointT<int>>> edges;
+  std::vector<std::pair<PointT, PointT>> edges;
   std::function<void(std::shared_ptr<PatternRoutingNode>)> getEdges
       = [&](const std::shared_ptr<PatternRoutingNode>& node) {
           for (auto& childPaths : node->getPaths()) {
@@ -61,7 +61,7 @@ std::string PatternRoutingNode::getPythonString(
 void PatternRoute::constructSteinerTree()
 {
   // 1. Select access points
-  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT>>
+  robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
 
@@ -82,7 +82,7 @@ void PatternRoute::constructSteinerTree()
 
     stt::Tree flutetree = stt_builder_->flute(xs, ys, flute_accuracy_);
     const int numBranches = degree + degree - 2;
-    std::vector<PointT<int>> steinerPoints;
+    std::vector<PointT> steinerPoints;
     steinerPoints.reserve(numBranches);
     std::vector<std::vector<int>> adjacentList(numBranches);
 
@@ -191,8 +191,8 @@ void PatternRoute::constructPaths(std::shared_ptr<PatternRoutingNode>& start,
   } else {
     for (int pathIndex = 0; pathIndex <= 1;
          pathIndex++) {  // two paths of different L-shape
-      PointT<int> midPoint = pathIndex ? PointT<int>(start->x, end->y)
-                                       : PointT<int>(end->x, start->y);
+      PointT midPoint
+          = pathIndex ? PointT(start->x, end->y) : PointT(end->x, start->y);
       std::shared_ptr<PatternRoutingNode> mid
           = std::make_shared<PatternRoutingNode>(
               midPoint, num_dag_nodes_++, true);
@@ -350,11 +350,11 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
         std::shared_ptr<PatternRoutingNode> treeNode = scaffoldNode->node;
         if (treeNode->getFixedLayers().IsValid()) {
           std::shared_ptr<PatternRoutingNode> dupTreeNode
-              = std::make_shared<PatternRoutingNode>((PointT<int>) *treeNode,
+              = std::make_shared<PatternRoutingNode>((PointT) *treeNode,
                                                      treeNode->getFixedLayers(),
                                                      num_dag_nodes_++);
           std::shared_ptr<PatternRoutingNode> shiftedTreeNode
-              = std::make_shared<PatternRoutingNode>((PointT<int>) *treeNode,
+              = std::make_shared<PatternRoutingNode>((PointT) *treeNode,
                                                      num_dag_nodes_++);
           (*shiftedTreeNode)[1 - direction] += shiftAmount;
           constructPaths(shiftedTreeNode, dupTreeNode);
@@ -376,7 +376,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
           return shiftedTreeNode;
         }
         std::shared_ptr<PatternRoutingNode> shiftedTreeNode
-            = std::make_shared<PatternRoutingNode>((PointT<int>) *treeNode,
+            = std::make_shared<PatternRoutingNode>((PointT) *treeNode,
                                                    num_dag_nodes_++);
         (*shiftedTreeNode)[1 - direction] += shiftAmount;
         for (auto& treeChild : treeNode->getChildren()) {
@@ -465,7 +465,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
               continue;
             }
             std::shared_ptr<PatternRoutingNode> shiftedTreeNode
-                = std::make_shared<PatternRoutingNode>((PointT<int>) *treeNode,
+                = std::make_shared<PatternRoutingNode>((PointT) *treeNode,
                                                        num_dag_nodes_++);
             (*shiftedTreeNode)[1 - direction] += shiftAmount;
             constructPaths(treeNode, shiftedTreeNode, 0);

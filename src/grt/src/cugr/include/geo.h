@@ -14,35 +14,30 @@
 namespace grt {
 
 // Point template
-template <typename T>
 class PointT
 {
  public:
-  T x, y;
-  PointT(T xx = std::numeric_limits<T>::has_infinity
-                    ? std::numeric_limits<T>::infinity()
-                    : std::numeric_limits<T>::max(),
-         T yy = std::numeric_limits<T>::has_infinity
-                    ? std::numeric_limits<T>::infinity()
-                    : std::numeric_limits<T>::max())
+  int x, y;
+  PointT(int xx = std::numeric_limits<int>::max(),
+         int yy = std::numeric_limits<int>::max())
       : x(xx), y(yy)
   {
   }
   bool IsValid() { return *this != PointT(); }
 
   // Operators
-  const T& operator[](const unsigned d) const
+  const int& operator[](const unsigned d) const
   {
     assert(d == 0 || d == 1);
     return (d == 0 ? x : y);
   }
-  T& operator[](const unsigned d)
+  int& operator[](const unsigned d)
   {
     assert(d == 0 || d == 1);
     return (d == 0 ? x : y);
   }
   PointT operator+(const PointT& rhs) { return PointT(x + rhs.x, y + rhs.y); }
-  PointT operator/(T divisor) { return PointT(x / divisor, y / divisor); }
+  PointT operator/(int divisor) { return PointT(x / divisor, y / divisor); }
   PointT& operator+=(const PointT& rhs)
   {
     x += rhs.x;
@@ -80,12 +75,8 @@ class IntervalT
   // Setters
   void Set()
   {
-    low = std::numeric_limits<int>::has_infinity
-              ? std::numeric_limits<int>::infinity()
-              : std::numeric_limits<int>::max();
-    high = std::numeric_limits<int>::has_infinity
-               ? -std::numeric_limits<int>::infinity()
-               : std::numeric_limits<int>::lowest();
+    low = std::numeric_limits<int>::max();
+    high = std::numeric_limits<int>::min();
   }
   void Set(int val)
   {
@@ -239,7 +230,7 @@ class BoxT
     x.Set(xVal);
     y.Set(yVal);
   }
-  void Set(const PointT<int>& pt) { Set(pt.x, pt.y); }
+  void Set(const PointT& pt) { Set(pt.x, pt.y); }
   void Set(int lx, int ly, int hx, int hy)
   {
     x.Set(lx, hx);
@@ -250,7 +241,7 @@ class BoxT
     x = xRange;
     y = yRange;
   }
-  void Set(const PointT<int>& low, const PointT<int>& high)
+  void Set(const PointT& low, const PointT& high)
   {
     Set(low.x, low.y, high.x, high.y);
   }
@@ -293,8 +284,8 @@ class BoxT
     x.FastUpdate(xVal);
     y.FastUpdate(yVal);
   }
-  void Update(const PointT<int>& pt) { Update(pt.x, pt.y); }
-  void FastUpdate(const PointT<int>& pt) { FastUpdate(pt.x, pt.y); }
+  void Update(const PointT& pt) { Update(pt.x, pt.y); }
+  void FastUpdate(const PointT& pt) { FastUpdate(pt.x, pt.y); }
 
   // Geometric Query/Update
   BoxT UnionWith(const BoxT& rhs) const
@@ -313,15 +304,15 @@ class BoxT
   {
     return IntersectWith(rhs).IsStrictValid();
   }  // tighter
-  bool Contain(const PointT<int>& pt) const
+  bool Contain(const PointT& pt) const
   {
     return x.Contain(pt.x) && y.Contain(pt.y);
   }
-  bool StrictlyContain(const PointT<int>& pt) const
+  bool StrictlyContain(const PointT& pt) const
   {
     return x.StrictlyContain(pt.x) && y.StrictlyContain(pt.y);
   }
-  PointT<int> GetNearestPointTo(const PointT<int>& pt)
+  PointT GetNearestPointTo(const PointT& pt)
   {
     return {x.GetNearestPointTo(pt.x), y.GetNearestPointTo(pt.y)};
   }
@@ -330,7 +321,7 @@ class BoxT
     return {x.GetNearestPointsTo(val.x), y.GetNearestPointsTo(val.y)};
   }
 
-  void ShiftBy(const PointT<int>& rhs)
+  void ShiftBy(const PointT& rhs)
   {
     x.ShiftBy(rhs.x);
     y.ShiftBy(rhs.y);

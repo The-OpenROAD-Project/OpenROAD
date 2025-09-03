@@ -5,12 +5,12 @@
 
 namespace grt {
 
-class SteinerTreeNode : public PointT<int>
+class SteinerTreeNode : public PointT
 {
  public:
-  SteinerTreeNode(PointT<int> point) : PointT<int>(point) {}
-  SteinerTreeNode(PointT<int> point, IntervalT fixed_layers)
-      : PointT<int>(point), fixed_layers_(fixed_layers)
+  SteinerTreeNode(PointT point) : PointT(point) {}
+  SteinerTreeNode(PointT point, IntervalT fixed_layers)
+      : PointT(point), fixed_layers_(fixed_layers)
   {
   }
 
@@ -46,15 +46,15 @@ class SteinerTreeNode : public PointT<int>
   std::vector<std::shared_ptr<SteinerTreeNode>> children_;
 };
 
-class PatternRoutingNode : public PointT<int>
+class PatternRoutingNode : public PointT
 {
  public:
-  PatternRoutingNode(PointT<int> point, int index, bool optional = false)
-      : PointT<int>(point), index_(index), optional_(optional)
+  PatternRoutingNode(PointT point, int index, bool optional = false)
+      : PointT(point), index_(index), optional_(optional)
   {
   }
-  PatternRoutingNode(PointT<int> point, IntervalT fixed_layers, int index = 0)
-      : PointT<int>(point),
+  PatternRoutingNode(PointT point, IntervalT fixed_layers, int index = 0)
+      : PointT(point),
         index_(index),
         fixed_layers_(fixed_layers),
         optional_(false)

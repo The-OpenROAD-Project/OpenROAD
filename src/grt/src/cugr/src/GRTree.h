@@ -3,10 +3,10 @@
 
 namespace grt {
 
-class GRPoint : public PointT<int>
+class GRPoint : public PointT
 {
  public:
-  GRPoint(int l, int _x, int _y) : PointT<int>(_x, _y), layer_idx_(l) {}
+  GRPoint(int l, int _x, int _y) : PointT(_x, _y), layer_idx_(l) {}
   friend inline std::ostream& operator<<(std::ostream& os, const GRPoint& pt)
   {
     os << "(" << pt.layer_idx_ << ", " << pt.x << ", " << pt.y << ")";
