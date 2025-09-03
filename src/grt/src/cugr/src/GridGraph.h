@@ -1,4 +1,12 @@
 #pragma once
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "CUGR.h"
 #include "Design.h"
 #include "GRTree.h"

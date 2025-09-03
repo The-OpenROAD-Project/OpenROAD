@@ -1,4 +1,9 @@
 #pragma once
+#include <functional>
+#include <memory>
+#include <ostream>
+#include <vector>
+
 #include "CUGR.h"
 
 namespace grt {

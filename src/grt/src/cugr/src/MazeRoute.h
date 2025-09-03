@@ -1,4 +1,9 @@
 #pragma once
+#include <array>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "CUGR.h"
 #include "GRNet.h"
 #include "GridGraph.h"

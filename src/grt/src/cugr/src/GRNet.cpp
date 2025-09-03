@@ -1,6 +1,8 @@
 #include "GRNet.h"
 
+#include <cstdint>
 #include <unordered_set>
+#include <vector>
 
 namespace grt {
 

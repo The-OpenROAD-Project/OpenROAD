@@ -1,5 +1,12 @@
 #include "Layers.h"
 
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+
 namespace grt {
 
 MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,

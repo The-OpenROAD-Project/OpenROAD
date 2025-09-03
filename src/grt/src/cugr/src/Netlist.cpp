@@ -3,6 +3,11 @@
 
 #include "Netlist.h"
 
+#include <string>
+#include <vector>
+
+#include "odb/db.h"
+
 namespace grt {
 
 CUGRPin::CUGRPin(int index,

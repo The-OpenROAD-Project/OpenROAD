@@ -1,5 +1,10 @@
 #include "GeoTypes.h"
 
+#include <cmath>
+#include <ostream>
+
+#include "odb/geom.h"
+
 namespace grt {
 
 BoxT<int> getBoxFromRect(const odb::Rect& bounds)

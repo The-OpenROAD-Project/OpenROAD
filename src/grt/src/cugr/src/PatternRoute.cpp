@@ -1,5 +1,19 @@
 #include "PatternRoute.h"
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
 #include "robin_hood.h"
 #include "stt/SteinerTreeBuilder.h"
 

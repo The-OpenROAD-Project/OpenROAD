@@ -1,6 +1,17 @@
 #include "CUGR.h"
 
+#include <algorithm>
+#include <cassert>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <sstream>
+#include <utility>
+#include <vector>
 
 #include "Design.h"
 #include "GRNet.h"

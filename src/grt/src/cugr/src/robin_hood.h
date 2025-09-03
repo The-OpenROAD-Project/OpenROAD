@@ -40,6 +40,8 @@
 #define ROBIN_HOOD_VERSION_PATCH 3  // for backwards-compatible bug fixes
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
@@ -47,6 +49,7 @@
 #include <memory>  // only to support hash of smart pointers
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #if __cplusplus >= 201703L
