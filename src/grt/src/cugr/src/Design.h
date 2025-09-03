@@ -52,7 +52,7 @@ class Design
 
   const std::vector<CUGRNet>& getAllNets() const { return nets_; }
 
-  void getAllObstacles(std::vector<std::vector<BoxT<int>>>& all_obstacles,
+  void getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
                        bool skip_m1 = true) const;
 
   int getGridlineSize() const { return default_gridline_spacing_; }
@@ -71,7 +71,7 @@ class Design
   void printBlockages() const;
 
   int lib_dbu_;
-  BoxT<int> die_region_;
+  BoxT die_region_;
   std::vector<MetalLayer> layers_;
   std::vector<CUGRNet> nets_;
   std::vector<BoxOnLayer> obstacles_;

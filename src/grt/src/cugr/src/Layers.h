@@ -20,8 +20,8 @@ class MetalLayer
   int getWidth() const { return width_; }
   int getPitch() const { return pitch_; }
   int getTrackLocation(int track_index) const;
-  IntervalT<int> rangeSearchTracks(const IntervalT<int>& loc_range,
-                                   bool include_bound = true) const;
+  IntervalT rangeSearchTracks(const IntervalT& loc_range,
+                              bool include_bound = true) const;
 
   // Design rule related methods
   int getMinLength() const { return min_length_; }
