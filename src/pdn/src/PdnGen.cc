@@ -18,6 +18,7 @@
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
 #include "ord/OpenRoad.hh"
 #include "power_cells.h"

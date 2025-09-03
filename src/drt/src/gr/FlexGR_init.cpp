@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
-#include "FlexGRCMap.h"
+#include "gr/FlexGR.h"
+#include "gr/FlexGRCMap.h"
 
 namespace drt {
 

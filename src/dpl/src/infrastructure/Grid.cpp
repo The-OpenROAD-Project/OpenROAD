@@ -17,8 +17,11 @@
 #include "Padding.h"
 #include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace dpl {

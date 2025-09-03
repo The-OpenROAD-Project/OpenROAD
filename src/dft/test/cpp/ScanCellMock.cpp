@@ -6,6 +6,8 @@
 #include <utility>
 
 #include "ClockDomain.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace dft {

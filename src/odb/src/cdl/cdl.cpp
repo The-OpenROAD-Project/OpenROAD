@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 

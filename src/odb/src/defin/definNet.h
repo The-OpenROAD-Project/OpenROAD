@@ -7,6 +7,7 @@
 #include <string>
 
 #include "definBase.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "odb/odb.h"
 

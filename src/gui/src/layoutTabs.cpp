@@ -11,6 +11,8 @@
 
 #include "colorGenerator.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace gui {

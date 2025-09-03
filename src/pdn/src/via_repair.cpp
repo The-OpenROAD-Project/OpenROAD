@@ -13,6 +13,7 @@
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 #include "via.h"
 

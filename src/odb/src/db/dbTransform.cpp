@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "odb/dbStream.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 

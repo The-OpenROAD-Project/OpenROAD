@@ -17,6 +17,9 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "util/symmetry.h"
 #include "utl/Logger.h"
@@ -134,6 +137,11 @@ void Opendp::createNetwork()
     if (!net || net->getSigType().isSupply()) {
       continue;
     }
+    if (bterm->getBBox().isInverted()) {
+      logger_->error(
+          utl::DPL, 386, "BTerm {} has no shapes.", bterm->getName());
+    }
+
     network_->addNode(bterm);
   }
 

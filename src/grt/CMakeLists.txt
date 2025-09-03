@@ -8,6 +8,7 @@ project(grt)
 find_package(OpenMP REQUIRED)
 
 add_subdirectory(src/fastroute)
+add_subdirectory(src/cugr)
 
 swig_lib(NAME      grt
          NAMESPACE grt
@@ -34,6 +35,7 @@ target_include_directories(grt_lib
 target_link_libraries(grt_lib
     utl_lib
     FastRoute4.1
+    CUGR
     ant_lib
     dpl_lib
     dbSta_lib
@@ -86,6 +88,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       utl_lib
       FastRoute4.1
+      CUGR
       drt_lib
       ant_lib
       dpl_lib

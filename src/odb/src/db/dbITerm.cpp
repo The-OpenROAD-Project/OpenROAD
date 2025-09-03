@@ -16,6 +16,7 @@
 #include "dbBlock.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHier.h"
 #include "dbInst.h"
@@ -32,6 +33,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 namespace odb {
 

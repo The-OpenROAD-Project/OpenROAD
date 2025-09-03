@@ -13,6 +13,8 @@
 
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace gui {
 

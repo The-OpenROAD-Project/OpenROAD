@@ -17,6 +17,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

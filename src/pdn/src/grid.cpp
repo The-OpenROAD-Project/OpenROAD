@@ -19,6 +19,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "power_cells.h"
 #include "rings.h"
 #include "straps.h"

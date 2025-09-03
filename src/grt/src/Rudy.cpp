@@ -10,6 +10,7 @@
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
