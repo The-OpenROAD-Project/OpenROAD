@@ -1473,7 +1473,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
 
   // convert the connections between clusters to SoftMacros
   for (auto& cluster : parent->getChildren()) {
-     const int src_id = cluster->getId();
+    const int src_id = cluster->getId();
     const std::string src_name = cluster->getName();
     for (auto& [cluster_id, weight] : cluster->getConnection()) {
       debugPrint(logger_,
@@ -1498,7 +1498,10 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
   // merge nets to reduce runtime
   mergeNets(nets);
 
-  std::string file_name_prefix = report_directory_ + "/" + std::regex_replace(parent->getName(), std::regex("[\":<>\\|\\*\\?/]"), "--");
+  std::string file_name_prefix
+      = report_directory_ + "/"
+        + std::regex_replace(
+            parent->getName(), std::regex("[\":<>\\|\\*\\?/]"), "--");
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
     writeNetFile(file_name_prefix, macros, nets);
   }
@@ -1548,7 +1551,8 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
 
   // The number of perturbations in each step should be larger than the
   // number of macros
-  const int num_perturb_per_step = std::max(macros.size(), num_perturb_per_step_);
+  const int num_perturb_per_step
+      = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
 
   int remaining_runs = target_util_list.size();
   int run_id = 0;
@@ -1655,6 +1659,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
       sa_containers.push_back(std::move(sa));
     }
 
+    // usa sempre o primeiro valido que melhora o resultado?
     while (sa_containers.size() >= end_check) {
       while (begin_check < end_check) {
         auto& sa = sa_containers[begin_check];
@@ -2712,26 +2717,33 @@ void HierRTLMP::printPlacementResult(Cluster* parent,
   sa_core->printResults();
 }
 
-void HierRTLMP::writeNetFile(const std::string& file_name_prefix, std::vector<SoftMacro>& macros, std::vector<BundledNet>& nets) {
+void HierRTLMP::writeNetFile(const std::string& file_name_prefix,
+                             std::vector<SoftMacro>& macros,
+                             std::vector<BundledNet>& nets)
+{
   std::ofstream file(file_name_prefix + ".net.txt");
   for (auto& net : nets) {
     file << macros[net.terminals.first].getName() << "   "
-        << macros[net.terminals.second].getName() << "   " << net.weight
-        << std::endl;
+         << macros[net.terminals.second].getName() << "   " << net.weight
+         << std::endl;
   }
 }
 
-void HierRTLMP::writeFloorplanFile(const std::string& file_name_prefix, std::vector<SoftMacro>& macros) {
+void HierRTLMP::writeFloorplanFile(const std::string& file_name_prefix,
+                                   std::vector<SoftMacro>& macros)
+{
   std::ofstream file(file_name_prefix + ".fp.txt");
   for (auto& macro : macros) {
     file << macro.getName() << "   " << macro.getX() << "   " << macro.getY()
-        << "   " << macro.getWidth() << "   " << macro.getHeight()
-        << std::endl;
+         << "   " << macro.getWidth() << "   " << macro.getHeight()
+         << std::endl;
   }
 }
 
 template <typename SACore>
-void HierRTLMP::writeCostFile(const std::string& file_name_prefix, SACore* sa_core) {
+void HierRTLMP::writeCostFile(const std::string& file_name_prefix,
+                              SACore* sa_core)
+{
   sa_core->writeCostFile(file_name_prefix + ".cost.txt");
 }
 
