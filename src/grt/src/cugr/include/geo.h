@@ -65,27 +65,6 @@ class PointT
   }
 };
 
-// L-1 (Manhattan) distance between points
-template <typename T>
-T Dist(const PointT<T>& pt1, const PointT<T>& pt2)
-{
-  return std::abs(pt1.x - pt2.x) + std::abs(pt1.y - pt2.y);
-}
-
-// L-2 (Euclidean) distance between points
-template <typename T>
-double L2Dist(const PointT<T>& pt1, const PointT<T>& pt2)
-{
-  return std::sqrt(std::pow(pt1.x - pt2.x, 2) + std::pow(pt1.y - pt2.y, 2));
-}
-
-// L-inf distance between points
-template <typename T>
-T LInfDist(const PointT<T>& pt1, const PointT<T>& pt2)
-{
-  return std::max(std::abs(pt1.x - pt2.x), std::abs(pt1.y - pt2.y));
-}
-
 // Interval template
 template <typename T>
 class IntervalT
@@ -178,11 +157,6 @@ class IntervalT
   {
     return IntersectWith(rhs).IsStrictValid();
   }
-  //  Parallel run length between intervals
-  T ParaRunLength(const IntervalT& rhs) const
-  {
-    return IntersectWith(rhs).range();
-  }
   // contain a val
   bool Contain(int val) const { return val >= low && val <= high; }
   bool StrictlyContain(int val) const { return val > low && val < high; }
@@ -233,27 +207,6 @@ class IntervalT
     return os;
   }
 };
-
-// Distance between intervals/points (assume valid intervals)
-template <typename T>
-T Dist(const IntervalT<T>& intvl, const T val)
-{
-  return std::abs(intvl.GetNearestPointTo(val) - val);
-}
-
-template <typename T>
-T Dist(const IntervalT<T>& int1, const IntervalT<T>& int2)
-{
-  if (int1.high <= int2.low) {
-    return int2.low - int1.high;
-  }
-
-  if (int1.low >= int2.high) {
-    return int1.low - int2.high;
-  }
-
-  return 0;
-}
 
 // Box template
 class BoxT
@@ -396,107 +349,5 @@ class BoxT
     return os;
   }
 };
-
-// L-1 (Manhattan) distance between boxes/points (assume valid boxes)
-template <typename T>
-int Dist(const BoxT& box, const PointT<T>& point)
-{
-  return Dist(box.x, point.x) + Dist(box.y, point.y);
-}
-inline int Dist(const BoxT& box1, const BoxT& box2)
-{
-  return Dist(box1.x, box2.x) + Dist(box1.y, box2.y);
-}
-
-// L-2 (Euclidean) distance between boxes
-inline double L2Dist(const BoxT& box1, const BoxT& box2)
-{
-  return std::sqrt(std::pow(Dist(box1.x, box2.x), 2)
-                   + std::pow(Dist(box1.y, box2.y), 2));
-}
-
-// L-Inf (max) distance between boxes
-inline int LInfDist(const BoxT& box1, const BoxT& box2)
-{
-  return std::max(Dist(box1.x, box2.x), Dist(box1.y, box2.y));
-}
-
-//  Parallel run length between boxes
-template <typename T>
-int ParaRunLength(const BoxT& box1, const BoxT& box2)
-{
-  return std::max(box1.x.ParaRunLength(box2.x), box1.y.ParaRunLength(box2.y));
-}
-
-// Merge/stitch overlapped rectangles along mergeDir
-// mergeDir: 0 for x/vertical, 1 for y/horizontal
-// use BoxT instead of T & BoxT<T> to make it more general
-template <typename BoxT>
-void MergeRects(std::vector<BoxT>& boxes, int mergeDir)
-{
-  int boundaryDir = 1 - mergeDir;
-  std::sort(boxes.begin(), boxes.end(), [&](const BoxT& lhs, const BoxT& rhs) {
-    return lhs[boundaryDir].low < rhs[boundaryDir].low
-           || (lhs[boundaryDir].low == rhs[boundaryDir].low
-               && lhs[mergeDir].low < rhs[mergeDir].low);
-  });
-  std::vector<BoxT> mergedBoxes;
-  mergedBoxes.push_back(boxes.front());
-  for (int i = 1; i < boxes.size(); ++i) {
-    auto& lastBox = mergedBoxes.back();
-    auto& slicedBox = boxes[i];
-    if (slicedBox[boundaryDir] == lastBox[boundaryDir]
-        && slicedBox[mergeDir].low
-               <= lastBox[mergeDir].high) {  // aligned and intersected
-      lastBox[mergeDir] = lastBox[mergeDir].UnionWith(slicedBox[mergeDir]);
-    } else {  // neither misaligned not seperated
-      mergedBoxes.push_back(slicedBox);
-    }
-  }
-  boxes = move(mergedBoxes);
-}
-
-// Slice polygons along sliceDir
-// sliceDir: 0 for x/vertical, 1 for y/horizontal
-// assume no degenerated case
-inline void SlicePolygons(std::vector<BoxT>& boxes, int sliceDir)
-{
-  // Line sweep in sweepDir = 1 - sliceDir
-  // Suppose sliceDir = y and sweepDir = x (sweep from left to right)
-  // Not scalable impl (brute force interval query) but fast for small case
-  if (boxes.size() <= 1) {
-    return;
-  }
-
-  // sort slice lines in sweepDir
-  int sweepDir = 1 - sliceDir;
-  std::vector<int> locs;
-  for (const auto& box : boxes) {
-    locs.push_back(box[sweepDir].low);
-    locs.push_back(box[sweepDir].high);
-  }
-  std::sort(locs.begin(), locs.end());
-  locs.erase(std::unique(locs.begin(), locs.end()), locs.end());
-
-  // slice each box
-  std::vector<BoxT> slicedBoxes;
-  for (const auto& box : boxes) {
-    BoxT slicedBox = box;
-    auto itLoc = std::lower_bound(locs.begin(), locs.end(), box[sweepDir].low);
-    auto itEnd = std::upper_bound(itLoc, locs.end(), box[sweepDir].high);
-    while ((itLoc + 1) != itEnd) {
-      slicedBox[sweepDir].Set(*itLoc, *(itLoc + 1));
-      slicedBoxes.push_back(slicedBox);
-      ++itLoc;
-    }
-  }
-  boxes = move(slicedBoxes);
-
-  // merge overlapped boxes along slice dir
-  MergeRects(boxes, sliceDir);
-
-  // stitch boxes along sweep dir
-  MergeRects(boxes, sweepDir);
-}
 
 }  // namespace grt
