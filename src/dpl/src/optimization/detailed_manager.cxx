@@ -4,8 +4,6 @@
 #include "detailed_manager.h"
 
 #include <algorithm>
-#include <boost/format.hpp>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
@@ -18,6 +16,8 @@
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "boost/format.hpp"
+#include "boost/tokenizer.hpp"
 #include "detailed_orient.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
