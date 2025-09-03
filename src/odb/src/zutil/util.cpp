@@ -334,8 +334,15 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net,
   }
 
   Rect bbox = net->getTermBBox();
+  if (bbox.isInverted()) {
+    hpwl_x = 0;
+    hpwl_y = 0;
+    return 0;
+  }
+
   hpwl_x = bbox.dx();
   hpwl_y = bbox.dy();
+
   return hpwl_x + hpwl_y;
 }
 
