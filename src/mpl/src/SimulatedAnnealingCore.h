@@ -102,6 +102,7 @@ class SimulatedAnnealingCore
   };
 
   void fastSA();
+  bool resultFitsInOutline() const;
 
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);

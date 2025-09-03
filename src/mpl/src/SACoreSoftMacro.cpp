@@ -109,8 +109,7 @@ bool SACoreSoftMacro::isValid() const
     return false;
   }
 
-  return (width_ <= std::ceil(outline_.getWidth()))
-         && (height_ <= std::ceil(outline_.getHeight()));
+  return resultFitsInOutline();
 }
 
 // acessors functions

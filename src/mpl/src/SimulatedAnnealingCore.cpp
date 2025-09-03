@@ -153,8 +153,7 @@ void SimulatedAnnealingCore<T>::setInitialSequencePair(
 template <class T>
 bool SimulatedAnnealingCore<T>::isValid() const
 {
-  return (width_ <= std::ceil(outline_.getWidth()))
-         && (height_ <= std::ceil(outline_.getHeight()));
+  return resultFitsInOutline();
 }
 
 template <class T>
@@ -767,6 +766,13 @@ void SimulatedAnnealingCore<T>::fastSA()
   if ((is_best_result_valid_ && !is_valid) || !improved) {
     useBestResult();
   }
+}
+
+template <class T>
+bool SimulatedAnnealingCore<T>::resultFitsInOutline() const
+{
+  return (width_ <= std::ceil(outline_.getWidth()))
+          && (height_ <= std::ceil(outline_.getHeight()));
 }
 
 template <class T>
