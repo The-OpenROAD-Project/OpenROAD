@@ -47,7 +47,10 @@ namespace odb {
 inline constexpr uint db_schema_major = 0;  // Not used...
 inline constexpr uint db_schema_initial = 57;
 
-inline constexpr uint db_schema_minor = 117;  // Current revision number
+inline constexpr uint db_schema_minor = 118;  // Current revision number
+
+// Revision where _dbDatabase::dbu_per_micron_ was added
+inline constexpr uint db_schema_dbu_per_micron = 118;
 
 // Revision where dbChipBump was added
 inline constexpr uint db_schema_chip_bump = 117;
@@ -279,6 +282,7 @@ class _dbDatabase : public _dbObject
   uint _schema_minor;
   uint _master_id;
   dbId<_dbChip> _chip;
+  uint dbu_per_micron_;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;
   dbTable<_dbProperty>* _prop_tbl;
