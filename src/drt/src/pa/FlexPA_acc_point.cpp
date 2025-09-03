@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "pa/AbstractPAGraphics.h"

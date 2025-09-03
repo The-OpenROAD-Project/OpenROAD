@@ -31,11 +31,6 @@
 #ifdef HAS_BOOST_UNIT_TEST_LIBRARY
 // Shared library version
 #define BOOST_TEST_DYN_LINK
-#include <map>
-#include <memory>
-#include <utility>
-#include <vector>
-
 #include "boost/test/unit_test.hpp"
 #else
 // Header only version
@@ -43,9 +38,14 @@
 #endif
 
 #include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
 #include "boost/test/data/test_case.hpp"
 #include "fixture.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"

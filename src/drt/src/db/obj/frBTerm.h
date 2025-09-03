@@ -9,6 +9,7 @@
 
 #include "db/obj/frBPin.h"
 #include "db/obj/frTerm.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frBlock;

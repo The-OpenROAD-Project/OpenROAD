@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
 #include "dst/Distributed.h"
