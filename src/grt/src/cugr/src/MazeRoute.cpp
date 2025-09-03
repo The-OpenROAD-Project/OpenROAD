@@ -15,7 +15,7 @@ namespace grt {
 void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
 {
   // 0. Create pseudo pins
-  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
+  robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
   pseudo_pins_.reserve(selectedAccessPoints.size());
@@ -87,8 +87,8 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
       = [&](const unsigned direction, const int xi, const int yi) {
           const int u = getVertexIndex(direction, xi, yi);
           const int v = direction == MetalLayer::H ? u + 1 : u + xs_.size();
-          PointT<int> U(xs_[xi], ys_[yi]);
-          PointT<int> V(xs_[xi + 1 - direction], ys_[yi + direction]);
+          PointT U(xs_[xi], ys_[yi]);
+          PointT V(xs_[xi + 1 - direction], ys_[yi + direction]);
 
           edges_[u][0] = v;
           edges_[v][1] = u;
@@ -248,7 +248,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
     while (temp) {
       auto it = created.find(temp->vertex);
       if (it == created.end()) {
-        PointT<int> point = graph_.getPoint(temp->vertex);
+        PointT point = graph_.getPoint(temp->vertex);
         auto node = std::make_shared<SteinerTreeNode>(point);
         created.emplace(temp->vertex, node);
         if (lastNode) {

@@ -21,6 +21,8 @@
 #include "boost/io/ios_state.hpp"
 #include "boost/serialization/export.hpp"
 #include "db/infra/frTime.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
 #include "distributed/paUpdate.h"

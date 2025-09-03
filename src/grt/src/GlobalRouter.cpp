@@ -141,6 +141,7 @@ void GlobalRouter::clear()
 GlobalRouter::~GlobalRouter()
 {
   delete fastroute_;
+  delete cugr_;
   delete grid_;
   for (auto [ignored, net] : db_net_map_) {
     delete net;
@@ -5192,6 +5193,14 @@ void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 void GRouteDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   // missing net pin update
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
+}
+
+void GRouteDbCbk::inDbITermPostSetAccessPoints(odb::dbITerm* iterm)
+{
   odb::dbNet* net = iterm->getNet();
   if (net != nullptr && !net->isSpecial()) {
     grouter_->addDirtyNet(iterm->getNet());

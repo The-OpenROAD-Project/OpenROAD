@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
 #include "gr/FlexGR.h"
 

@@ -6,9 +6,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <map>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -839,6 +841,7 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
   db_network_->staToDb(pin, iterm, bterm, moditerm);
 
   odb::dbTechLayer* pin_layer = nullptr;
+  odb::dbShape pin_shape;
   if (iterm) {
     int min_layer_idx = std::numeric_limits<int>::max();
     for (const auto& [layer, rect] : iterm->getGeometries()) {
@@ -847,13 +850,13 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
         pin_layer = layer;
       }
     }
-  } else if (bterm) {
-    odb::dbShape pin_shape;
-    bterm->getFirstPin(pin_shape);
+  } else if (bterm && bterm->getFirstPin(pin_shape)) {
     pin_layer = pin_shape.getTechLayer();
   } else {
-    logger_->error(
-        EST, 164, "Pin {} has no iterm or bterm.", network_->pathName(pin));
+    logger_->error(EST,
+                   164,
+                   "Pin {} has no placed iterm or bterm.",
+                   network_->pathName(pin));
   }
 
   return pin_layer;
