@@ -1312,10 +1312,6 @@ void HierRTLMP::adjustMacroBlockageWeight()
   }
 }
 
-// This function is used in cases with very high density, in which it may
-// be very hard to generate a valid tiling for the clusters.
-// Here, we may want to try setting the area of all standard-cell clusters to 0.
-// This should be only be used in mixed clusters.
 void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
 {
   if (!minimum_target_util) {
@@ -1533,7 +1529,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
       }
     }
   } else {
-    target_utils.push_back(1.6);
+    target_utils.push_back(1e6);
     target_dead_spaces.push_back(0.99999);
   }
 
@@ -1683,25 +1679,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
     if (!minimum_target_util) {
       placeChildren(parent, true);
     } else {
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "SA Summary for cluster {}",
-                 parent->getName());
-
-      for (auto i = 0; i < sa_containers.size(); i++) {
-        debugPrint(logger_,
-                   MPL,
-                   "hierarchical_macro_placement",
-                   1,
-                   "sa_id: {}, target_util: {}, target_dead_space: {}",
-                   i,
-                   target_util_list[i],
-                   target_dead_space_list[i]);
-
-        sa_containers[i]->printResults();
-      }
       logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
     }
   } else {
