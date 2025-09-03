@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 
+#include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 

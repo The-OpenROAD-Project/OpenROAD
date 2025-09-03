@@ -5,6 +5,7 @@
 
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
 

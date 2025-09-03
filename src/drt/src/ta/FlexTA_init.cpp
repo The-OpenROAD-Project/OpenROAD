@@ -10,7 +10,9 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 

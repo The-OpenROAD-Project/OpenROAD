@@ -22,6 +22,8 @@
 #include "db/drObj/drNet.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"

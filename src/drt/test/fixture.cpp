@@ -35,6 +35,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frVia.h"
 #include "frBaseTypes.h"
 #include "global.h"
 #include "odb/db.h"

@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frAccess.h"
 #include "db/obj/frMPin.h"
 #include "db/obj/frTerm.h"
 #include "frBaseTypes.h"

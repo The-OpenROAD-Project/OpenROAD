@@ -17,7 +17,9 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frRTree.h"

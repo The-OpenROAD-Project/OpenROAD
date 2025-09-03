@@ -31,6 +31,8 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "odb/db.h"

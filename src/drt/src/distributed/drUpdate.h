@@ -5,6 +5,7 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 namespace drt {
 
