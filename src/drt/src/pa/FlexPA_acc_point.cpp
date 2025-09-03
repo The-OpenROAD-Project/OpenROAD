@@ -13,7 +13,10 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"

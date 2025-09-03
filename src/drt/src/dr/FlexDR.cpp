@@ -35,6 +35,7 @@
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"

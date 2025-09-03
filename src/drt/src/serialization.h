@@ -28,6 +28,7 @@
 #include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frBox.h"
+#include "db/obj/frAccess.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"

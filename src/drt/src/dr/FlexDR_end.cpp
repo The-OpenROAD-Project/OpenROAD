@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 

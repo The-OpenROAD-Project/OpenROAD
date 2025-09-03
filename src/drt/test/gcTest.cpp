@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "boost/test/data/test_case.hpp"
+#include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"

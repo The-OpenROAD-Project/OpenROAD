@@ -15,6 +15,8 @@
 
 #include "boost/graph/connected_components.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frVia.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "global.h"

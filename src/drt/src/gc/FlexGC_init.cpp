@@ -12,6 +12,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
