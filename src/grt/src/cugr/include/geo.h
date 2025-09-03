@@ -58,7 +58,7 @@ class PointT
   bool operator==(const PointT& rhs) const { return x == rhs.x && y == rhs.y; }
   bool operator!=(const PointT& rhs) const { return !(*this == rhs); }
 
-  friend inline std::ostream& operator<<(std::ostream& os, const PointT& pt)
+  friend std::ostream& operator<<(std::ostream& os, const PointT& pt)
   {
     os << "(" << pt.x << ", " << pt.y << ")";
     return os;
@@ -67,21 +67,21 @@ class PointT
 
 // L-1 (Manhattan) distance between points
 template <typename T>
-inline T Dist(const PointT<T>& pt1, const PointT<T>& pt2)
+T Dist(const PointT<T>& pt1, const PointT<T>& pt2)
 {
   return std::abs(pt1.x - pt2.x) + std::abs(pt1.y - pt2.y);
 }
 
 // L-2 (Euclidean) distance between points
 template <typename T>
-inline double L2Dist(const PointT<T>& pt1, const PointT<T>& pt2)
+double L2Dist(const PointT<T>& pt1, const PointT<T>& pt2)
 {
   return std::sqrt(std::pow(pt1.x - pt2.x, 2) + std::pow(pt1.y - pt2.y, 2));
 }
 
 // L-inf distance between points
 template <typename T>
-inline T LInfDist(const PointT<T>& pt1, const PointT<T>& pt2)
+T LInfDist(const PointT<T>& pt1, const PointT<T>& pt2)
 {
   return std::max(std::abs(pt1.x - pt2.x), std::abs(pt1.y - pt2.y));
 }
@@ -226,8 +226,8 @@ class IntervalT
   }
   bool operator!=(const IntervalT& rhs) const { return !(*this == rhs); }
 
-  friend inline std::ostream& operator<<(std::ostream& os,
-                                         const IntervalT<T>& interval)
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const IntervalT<T>& interval)
   {
     os << "(" << interval.low << ", " << interval.high << ")";
     return os;
@@ -236,13 +236,13 @@ class IntervalT
 
 // Distance between intervals/points (assume valid intervals)
 template <typename T>
-inline T Dist(const IntervalT<T>& intvl, const T val)
+T Dist(const IntervalT<T>& intvl, const T val)
 {
   return std::abs(intvl.GetNearestPointTo(val) - val);
 }
 
 template <typename T>
-inline T Dist(const IntervalT<T>& int1, const IntervalT<T>& int2)
+T Dist(const IntervalT<T>& int1, const IntervalT<T>& int2)
 {
   if (int1.high <= int2.low) {
     return int2.low - int1.high;
@@ -391,7 +391,7 @@ class BoxT
   }
   bool operator!=(const BoxT& rhs) const { return !(*this == rhs); }
 
-  friend inline std::ostream& operator<<(std::ostream& os, const BoxT<T>& box)
+  friend std::ostream& operator<<(std::ostream& os, const BoxT<T>& box)
   {
     os << "[x: " << box.x << ", y: " << box.y << "]";
     return os;
@@ -400,19 +400,19 @@ class BoxT
 
 // L-1 (Manhattan) distance between boxes/points (assume valid boxes)
 template <typename T>
-inline T Dist(const BoxT<T>& box, const PointT<T>& point)
+T Dist(const BoxT<T>& box, const PointT<T>& point)
 {
   return Dist(box.x, point.x) + Dist(box.y, point.y);
 }
 template <typename T>
-inline T Dist(const BoxT<T>& box1, const BoxT<T>& box2)
+T Dist(const BoxT<T>& box1, const BoxT<T>& box2)
 {
   return Dist(box1.x, box2.x) + Dist(box1.y, box2.y);
 }
 
 // L-2 (Euclidean) distance between boxes
 template <typename T>
-inline double L2Dist(const BoxT<T>& box1, const BoxT<T>& box2)
+double L2Dist(const BoxT<T>& box1, const BoxT<T>& box2)
 {
   return std::sqrt(std::pow(Dist(box1.x, box2.x), 2)
                    + std::pow(Dist(box1.y, box2.y), 2));
@@ -420,14 +420,14 @@ inline double L2Dist(const BoxT<T>& box1, const BoxT<T>& box2)
 
 // L-Inf (max) distance between boxes
 template <typename T>
-inline T LInfDist(const BoxT<T>& box1, const BoxT<T>& box2)
+T LInfDist(const BoxT<T>& box1, const BoxT<T>& box2)
 {
   return std::max(Dist(box1.x, box2.x), Dist(box1.y, box2.y));
 }
 
 //  Parallel run length between boxes
 template <typename T>
-inline T ParaRunLength(const BoxT<T>& box1, const BoxT<T>& box2)
+T ParaRunLength(const BoxT<T>& box1, const BoxT<T>& box2)
 {
   return std::max(box1.x.ParaRunLength(box2.x), box1.y.ParaRunLength(box2.y));
 }

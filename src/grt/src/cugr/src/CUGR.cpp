@@ -18,20 +18,6 @@ CUGR::CUGR(odb::dbDatabase* db,
            stt::SteinerTreeBuilder* stt_builder)
     : db_(db), logger_(log), stt_builder_(stt_builder)
 {
-  constants_.weight_wire_length = 0.5;
-  constants_.weight_via_number = 4.0;
-  constants_.weight_short_area = 500.0;
-  constants_.min_routing_layer = 1;
-  constants_.cost_logistic_slope = 1.0;
-  constants_.max_detour_ratio = 0.25;
-  constants_.target_detour_count = 20;
-  constants_.via_multiplier = 2.0;
-  constants_.maze_logistic_slope = 0.5;
-  constants_.pin_patch_threshold = 20.0;
-  constants_.pin_patch_padding = 1;
-  constants_.wire_patch_threshold = 2.0;
-  constants_.wire_patch_inflation_rate = 1.2;
-  constants_.write_heatmap = false;
 }
 
 void CUGR::init(const int min_routing_layer, const int max_routing_layer)

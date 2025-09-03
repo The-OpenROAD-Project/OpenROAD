@@ -16,7 +16,6 @@ struct GraphEdge
   CapacityT capacity{0};
   CapacityT demand{0};
 
-  GraphEdge() = default;
   CapacityT getResource() const { return capacity - demand; }
 };
 
@@ -24,40 +23,38 @@ class GridGraph
 {
  public:
   GridGraph(const Design* design, const Constants& constants);
-  inline int getLibDBU() const { return lib_dbu_; }
-  inline int getM2Pitch() const { return m2_pitch_; }
-  inline unsigned getNumLayers() const { return num_layers_; }
-  inline unsigned getSize(unsigned dimension) const
+  int getLibDBU() const { return lib_dbu_; }
+  int getM2Pitch() const { return m2_pitch_; }
+  unsigned getNumLayers() const { return num_layers_; }
+  unsigned getSize(unsigned dimension) const
   {
     return (dimension ? y_size_ : x_size_);
   }
-  inline std::string getLayerName(int layer_index) const
+  std::string getLayerName(int layer_index) const
   {
     return layer_names_[layer_index];
   }
-  inline unsigned getLayerDirection(int layer_index) const
+  unsigned getLayerDirection(int layer_index) const
   {
     return layer_directions_[layer_index];
   }
 
-  inline uint64_t hashCell(const GRPoint& point) const
+  uint64_t hashCell(const GRPoint& point) const
   {
     return ((uint64_t) point.getLayerIdx() * x_size_ + point.x) * y_size_
            + point.y;
   };
-  inline uint64_t hashCell(const int x, const int y) const
+  uint64_t hashCell(const int x, const int y) const
   {
     return (uint64_t) x * y_size_ + y;
   }
-  inline int getGridline(const unsigned dimension, const int index) const
+  int getGridline(const unsigned dimension, const int index) const
   {
     return gridlines_[dimension][index];
   }
   BoxT<int> getCellBox(PointT<int> point) const;
   BoxT<int> rangeSearchCells(const BoxT<int>& box) const;
-  inline GraphEdge getEdge(const int layer_index,
-                           const int x,
-                           const int y) const
+  GraphEdge getEdge(const int layer_index, const int x, const int y) const
   {
     return graph_edges_[layer_index][x][y];
   }
@@ -66,7 +63,7 @@ class GridGraph
   int getEdgeLength(unsigned direction, unsigned edge_index) const;
   CostT getWireCost(int layer_index, PointT<int> u, PointT<int> v) const;
   CostT getViaCost(int layer_index, PointT<int> loc) const;
-  inline CostT getUnitViaCost() const { return unit_via_cost_; }
+  CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
   void selectAccessPoints(
@@ -80,7 +77,7 @@ class GridGraph
                   bool reverse = false);
 
   // Checks
-  inline bool checkOverflow(int layer_index, int x, int y) const
+  bool checkOverflow(int layer_index, int x, int y) const
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
@@ -137,14 +134,14 @@ class GridGraph
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
-  inline CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
+  CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
   // CostT getUnitViaCost() const { return unit_via_cost_; }
-  inline CostT getUnitLengthShortCost(int layer_index) const
+  CostT getUnitLengthShortCost(int layer_index) const
   {
     return unit_length_short_costs_[layer_index];
   }
 
-  inline double logistic(const CapacityT& input, double slope) const;
+  double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
                     PointT<int> lower,
                     CapacityT demand = 1.0) const;
