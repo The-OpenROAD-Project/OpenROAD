@@ -1,5 +1,10 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "CUGR.h"
 #include "Design.h"
 #include "GridGraph.h"

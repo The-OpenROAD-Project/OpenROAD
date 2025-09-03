@@ -1,6 +1,14 @@
 #include "MazeRoute.h"
 
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <limits>
+#include <memory>
 #include <queue>
+#include <utility>
+#include <vector>
 
 namespace grt {
 

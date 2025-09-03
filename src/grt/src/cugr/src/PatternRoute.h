@@ -1,4 +1,10 @@
 #pragma once
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "CUGR.h"
 #include "GRNet.h"
 #include "geo.h"

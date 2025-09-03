@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "geo.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
