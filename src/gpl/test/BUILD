@@ -59,3 +59,44 @@ filegroup(
     name = test_name,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+OPENROAD_COPTS = [
+    "-fexceptions",
+    "-Wno-error",
+    "-Wall",
+    "-Wextra",
+    "-pedantic",
+    "-Wno-cast-qual",  # typically from TCL swigging
+    "-Wno-missing-braces",  # typically from TCL swigging
+    "-Wredundant-decls",
+    "-Wformat-security",
+    "-Wno-sign-compare",
+    "-Wno-unused-parameter",
+    "-Wno-tautological-constant-out-of-range-compare",
+    "-Wno-ctad-maybe-unsupported",
+    "-Wno-nullability-extension",
+    "-fopenmp",
+]
+
+cc_test(
+    name = "mbff_test",
+    srcs = ["mbff_test.cpp"],
+    copts = OPENROAD_COPTS,
+    data = [
+        "library/test/test0.def",
+        "library/test/test0.lef",
+        "library/test/test0.lib",
+    ],
+    deps = [
+        "@googletest//:gtest_main",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:status_matchers",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings:str_format",
+        "@tk_tcl//:tcl",
+        "//:openroad_lib",
+        "//bazel:runfiles",
+        "//src/gpl:gpl",
+    ],
+)
