@@ -1704,7 +1704,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         {
           const int min_y = std::min(grids[i].y, grids[i + 1].y);
           graph2d_.updateUsageV(grids[i].x, min_y, net, edgeCost);
-        } else  /// if(grids[i].y==grids[i+1].y)// a horizontal edge
+        } else  // a horizontal edge
         {
           const int min_x = std::min(grids[i].x, grids[i + 1].x);
           graph2d_.updateUsageH(min_x, grids[i].y, net, edgeCost);

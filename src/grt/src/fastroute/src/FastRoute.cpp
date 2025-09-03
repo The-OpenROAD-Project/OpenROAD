@@ -371,6 +371,11 @@ void FastRouteCore::initEdges()
   graph2d_.init(
       x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
 
+  init3DEdges();
+}
+
+void FastRouteCore::init3DEdges()
+{
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
@@ -760,19 +765,29 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
                                            int x2,
                                            int y2,
                                            int layer,
-                                           int used)
+                                           int used,
+                                           odb::dbNet* db_net)
 {
   const int k = layer - 1;
+  FrNet* net = nullptr;
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  net = nets_[net_id];
+
+  int8_t layer_edge_cost = net->getLayerEdgeCost(k);
+  int8_t edge_cost = net->getEdgeCost();
 
   if (y1 == y2) {  // horizontal edge
-    graph2d_.addUsageH({x1, x2}, y1, used);
+    graph2d_.updateUsageH({x1, x2}, y1, net, used * edge_cost);
     for (int x = x1; x < x2; x++) {
-      h_edges_3D_[k][y1][x].usage += used;
+      h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
     }
   } else if (x1 == x2) {  // vertical edge
-    graph2d_.addUsageV(x1, {y1, y2}, used);
+    graph2d_.updateUsageV(x1, {y1, y2}, net, used * edge_cost);
     for (int y = y1; y < y2; y++) {
-      v_edges_3D_[k][y][x1].usage += used;
+      v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
     }
   }
 }
@@ -840,6 +855,45 @@ NetRouteMap FastRouteCore::getRoutes()
   }
 
   return routes;
+}
+
+void FastRouteCore::updateRouteGridsLayer(int x1,
+                                          int y1,
+                                          int x2,
+                                          int y2,
+                                          int layer,
+                                          odb::dbNet* db_net)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+      int routeLen = treeedge->route.routelen;
+      std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+      for (int i = 0; i <= routeLen; i++) {
+        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
+            && grids[i].y <= y2 && grids[i].layer == layer) {
+          grids[i].layer = layer + 2;
+        }
+      }
+    }
+  }
+}
+
+int FastRouteCore::getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  return nets_[net_id]->getLayerEdgeCost(layer - 1);
 }
 
 NetRouteMap FastRouteCore::getPlanarRoutes()
