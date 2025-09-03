@@ -6,11 +6,20 @@
 #include <libgen.h>
 
 #include <array>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
+#include <ios>
 #include <string>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
+#include "odb/defout.h"
+#include "odb/geom.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "utl/Logger.h"

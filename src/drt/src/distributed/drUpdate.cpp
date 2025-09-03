@@ -3,6 +3,7 @@
 
 #include "distributed/drUpdate.h"
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"

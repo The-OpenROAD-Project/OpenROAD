@@ -3,6 +3,8 @@
 
 #include "detailed_hpwl.h"
 
+#include <cstdint>
+
 #include "optimization/detailed_orient.h"
 
 namespace dpl {

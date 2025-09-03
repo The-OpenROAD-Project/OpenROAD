@@ -3,11 +3,13 @@
 
 #include "dpl/OptMirror.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <unordered_set>
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "utl/Logger.h"

@@ -4,6 +4,7 @@
 #include "gpl/Replace.h"
 
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <utility>
@@ -440,6 +441,8 @@ float Replace::getUniformTargetDensity(int threads)
 {
   log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
   log_->redirectStringBegin();
+
+  setSkipIoMode(true);  // in case bterms are not placed
 
   float density = 1.0f;
   if (initNesterovPlace(threads)) {

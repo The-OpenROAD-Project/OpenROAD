@@ -9,7 +9,9 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/ZException.h"
+#include "odb/dbId.h"
 #include "odb/dbIterator.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 
 namespace odb {

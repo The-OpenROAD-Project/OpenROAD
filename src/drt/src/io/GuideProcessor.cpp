@@ -1,24 +1,30 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "GuideProcessor.h"
+#include "io/GuideProcessor.h"
 
 #include <omp.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt::io {

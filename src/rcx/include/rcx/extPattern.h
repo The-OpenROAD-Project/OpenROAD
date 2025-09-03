@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdio>
 #include <functional>
 #include <memory>
 #include <vector>

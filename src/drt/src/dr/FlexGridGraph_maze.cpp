@@ -2,6 +2,10 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <bitset>
+#include <cmath>
+#include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <string>
@@ -9,6 +13,7 @@
 
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 const int debugMazeIter = std::numeric_limits<int>::max();

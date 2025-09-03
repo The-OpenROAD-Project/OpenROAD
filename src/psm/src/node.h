@@ -7,8 +7,10 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace odb {

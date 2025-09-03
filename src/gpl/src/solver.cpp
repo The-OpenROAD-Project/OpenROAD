@@ -5,6 +5,8 @@
 
 #include <omp.h>
 
+#include <limits>
+
 namespace gpl {
 
 ResidualError cpuSparseSolve(int maxSolverIter,

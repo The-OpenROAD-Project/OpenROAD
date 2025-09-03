@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Worker.h"
+#include "boost/asio.hpp"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
 #include "dst/Distributed.h"

@@ -6,9 +6,11 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

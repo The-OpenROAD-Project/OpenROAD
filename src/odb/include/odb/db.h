@@ -4,6 +4,8 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>
@@ -11,6 +13,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>

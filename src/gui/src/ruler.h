@@ -3,11 +3,14 @@
 
 #pragma once
 
+#include <any>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;

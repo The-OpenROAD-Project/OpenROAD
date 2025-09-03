@@ -3,6 +3,9 @@
 
 #include "definComponent.h"
 
+#include <string.h>
+
+#include <cassert>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -11,7 +14,11 @@
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

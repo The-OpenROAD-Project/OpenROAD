@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <iostream>
+#include <list>
+#include <tuple>
 #include <vector>
 
 #include "boost/archive/binary_iarchive.hpp"
 #include "boost/archive/binary_oarchive.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/array.hpp"
 #include "boost/serialization/list.hpp"
@@ -28,8 +33,10 @@
 #include "db/obj/frVia.h"
 #include "distributed/drUpdate.h"
 #include "distributed/paUpdate.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

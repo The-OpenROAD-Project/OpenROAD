@@ -4,6 +4,7 @@
 #pragma once
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

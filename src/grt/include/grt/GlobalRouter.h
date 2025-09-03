@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -16,6 +18,7 @@
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
@@ -54,6 +57,7 @@ class SpefWriter;
 namespace grt {
 
 class FastRouteCore;
+class CUGR;
 class RepairAntennas;
 class Grid;
 class Pin;
@@ -149,6 +153,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
+  void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
 
   // flow functions
   void readGuides(const char* file_name);
@@ -461,6 +466,7 @@ class GlobalRouter
   dpl::Opendp* opendp_;
   // Objects variables
   FastRouteCore* fastroute_;
+  CUGR* cugr_;
   odb::Point grid_origin_;
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
@@ -483,6 +489,7 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  bool use_cugr_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
@@ -542,6 +549,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
+  void inDbITermPostSetAccessPoints(odb::dbITerm* iterm) override;
 
   void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
   void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;

@@ -7,8 +7,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <map>
+#include <stack>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -16,9 +18,13 @@
 
 #include "Net.h"
 #include "Pin.h"
+#include "boost/geometry/geometry.hpp"
 #include "boost/pending/disjoint_sets.hpp"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {

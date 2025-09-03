@@ -10,6 +10,8 @@
 
 #include "definBase.h"
 #include "defrReader.hpp"
+#include "odb/db.h"
+#include "odb/defin.h"
 #include "odb/odb.h"
 
 namespace utl {

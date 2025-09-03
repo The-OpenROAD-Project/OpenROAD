@@ -11,6 +11,7 @@
 #include "Coordinates.h"
 #include "Objects.h"
 #include "architecture.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 namespace odb {

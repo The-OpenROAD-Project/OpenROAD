@@ -2,12 +2,16 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 
 namespace drt {

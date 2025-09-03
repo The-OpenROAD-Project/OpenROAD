@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -16,6 +17,7 @@
 #include "DataType.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {

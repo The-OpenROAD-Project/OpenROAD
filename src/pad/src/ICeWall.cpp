@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -18,6 +21,7 @@
 #include "boost/icl/interval_set.hpp"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 

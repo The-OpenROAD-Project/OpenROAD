@@ -6,11 +6,12 @@
 
 #pragma once
 
+#include <cstddef>
 #include <vector>
 
-#include "boost/geometry.hpp"
 #include "boost/geometry/geometries/register/point.hpp"
 #include "boost/geometry/geometries/register/ring.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "odb/geom.h"
 

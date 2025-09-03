@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
+#include <memory>
+
 #include "odb/db.h"
 #include "utl/Logger.h"
 

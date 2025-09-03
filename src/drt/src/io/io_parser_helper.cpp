@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -18,6 +19,7 @@
 #include "frProfileTask.h"
 #include "global.h"
 #include "io/io.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

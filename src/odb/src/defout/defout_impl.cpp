@@ -6,18 +6,30 @@
 #include <sys/stat.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <ios>
 #include <limits>
+#include <list>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/dbMap.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "odb/defout.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 namespace odb {

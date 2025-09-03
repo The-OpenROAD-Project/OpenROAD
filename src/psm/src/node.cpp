@@ -3,10 +3,12 @@
 
 #include "node.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "shape.h"
 
 namespace psm {

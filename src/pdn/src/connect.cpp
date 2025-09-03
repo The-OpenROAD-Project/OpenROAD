@@ -9,12 +9,15 @@
 #include <memory>
 #include <regex>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 

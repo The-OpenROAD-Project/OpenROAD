@@ -7,6 +7,7 @@
 #include "dbSBox.h"
 #include "dbSWire.h"
 #include "dbTable.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 

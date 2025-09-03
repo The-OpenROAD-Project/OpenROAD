@@ -9,6 +9,7 @@
 #include "geom.h"
 #include "odb.h"
 #include "odbDList.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

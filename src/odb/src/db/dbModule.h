@@ -9,6 +9,7 @@
 #include "odb/dbSet.h"
 #include "odb/odb.h"
 // User Code Begin Includes
+#include <map>
 #include <string>
 #include <unordered_map>
 

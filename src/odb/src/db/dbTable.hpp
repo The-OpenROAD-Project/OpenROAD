@@ -3,15 +3,21 @@
 
 #pragma once
 
+#include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <new>
 #include <vector>
 
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/ZException.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
 #include "odb/dbStream.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

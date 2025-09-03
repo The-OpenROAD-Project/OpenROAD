@@ -2,6 +2,9 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
+#include <string>
+#include <vector>
+
 #include "boost/algorithm/string.hpp"
 
 namespace odb {

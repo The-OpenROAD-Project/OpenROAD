@@ -4,10 +4,12 @@
 #pragma once
 
 #include <iostream>
+#include <list>
 #include <memory>
 
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frPoint.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
 #include "frBaseTypes.h"
 

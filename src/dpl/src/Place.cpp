@@ -2,16 +2,23 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <functional>
 #include <limits>
 #include <memory>
+#include <queue>
 #include <random>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "boost/geometry/geometry.hpp"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
@@ -864,11 +871,11 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
+  dbSite* site = cell->getSite();
   for (GridY y1 = y; y1 < y_end; y1++) {
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
       const Pixel* pixel = grid_->gridPixel(x1, y1);
-      auto site = cell->getSite();
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group != cell->getGroup())
           || (!cell->inGroup() && pixel->group)
@@ -908,7 +915,6 @@ bool Opendp::checkPixels(const Node* cell,
       }
     }
   }
-  dbSite* site = cell->getDbInst()->getMaster()->getSite();
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
   return drc_engine_->checkDRC(cell, x, y, orient);
 }

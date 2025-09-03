@@ -42,6 +42,7 @@
 #include "defwWriter.hpp"
 
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>

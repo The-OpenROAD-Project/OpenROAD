@@ -3,6 +3,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "Python.h"
 

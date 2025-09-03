@@ -13,6 +13,10 @@ source Nangate45/Nangate45.vars
 source Nangate45/Nangate45.rc
 
 #place_pad -master PADCELL_SIG_V -row IO_EAST -location 500 "clk"
+source $tracks_file
+
+place_pins -hor_layers $io_placer_hor_layer \
+  -ver_layers $io_placer_ver_layer
 
 global_placement -skip_nesterov_place
 detailed_placement

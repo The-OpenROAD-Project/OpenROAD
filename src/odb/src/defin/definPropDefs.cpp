@@ -3,7 +3,10 @@
 
 #include "definPropDefs.h"
 
+#include <cassert>
+
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

@@ -303,6 +303,25 @@ module hi_fanout (clk1,
  output output98;
  output output99;
 
+ wire net576;
+ wire net575;
+ wire net_o_11;
+ wire net_o_10;
+ wire net_o_9;
+ wire net174;
+ wire net_o_8;
+ wire net172;
+ wire net_o_7;
+ wire net_o_6;
+ wire net_o_5;
+ wire net_o_3;
+ wire net_o_4;
+ wire net_o_2;
+ wire net_o_1;
+ wire net_o;
+ wire net0;
+ wire clk_to_nand1;
+ wire clk_to_nand0;
 
  BUF_X8 split576 (.A(clk_to_nand0),
     .Z(net576));

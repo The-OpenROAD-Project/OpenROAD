@@ -9,8 +9,11 @@
 #include "boost/geometry/algorithms/equals.hpp"
 #include "boost/geometry/geometries/register/box.hpp"
 #include "boost/geometry/geometries/register/point.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "db/infra/frBox.h"
 #include "db/infra/frPoint.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 #include "serialization.h"
 
 namespace bgi = boost::geometry::index;

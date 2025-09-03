@@ -23,6 +23,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <ctime>
 
 #include "atomic_floating.h"

@@ -8,9 +8,11 @@
 #include "utl/prometheus/metrics_server.h"
 
 #include <chrono>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <thread>
 

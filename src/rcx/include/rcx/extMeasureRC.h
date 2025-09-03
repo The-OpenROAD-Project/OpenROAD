@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <cstdio>
 #include <string>
 
 #include "extRCap.h"
+#include "odb/db.h"
 
 namespace rcx {
 

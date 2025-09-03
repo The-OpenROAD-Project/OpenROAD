@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "lefiMisc.h"
 #include "lefiMisc.hpp"
 

@@ -31,15 +31,18 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <fstream>
+#include <ios>
 #include <string>
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 #include "env.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 namespace {

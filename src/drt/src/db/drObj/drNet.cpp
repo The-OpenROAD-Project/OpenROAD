@@ -7,8 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "serialization.h"
 
 namespace drt {

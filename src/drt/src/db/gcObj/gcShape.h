@@ -8,6 +8,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcFig.h"
+#include "frBaseTypes.h"
 
 namespace gtl = boost::polygon;
 

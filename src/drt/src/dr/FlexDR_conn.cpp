@@ -6,13 +6,20 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "io/io.h"
 #include "triton_route/TritonRoute.h"

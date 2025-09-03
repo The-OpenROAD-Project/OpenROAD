@@ -4,11 +4,14 @@
 #include "RepairHold.hh"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 
+#include "BufferMove.hh"
 #include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -542,14 +545,9 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
       for (int i = 0; i < path_vertices.size() - 1; i++) {
         Vertex* path_vertex = path_vertices[i];
         Pin* path_pin = path_vertex->pin();
-        // explicitly force getting the flat net.
-        odb::dbNet* db_path_net
-            = network_->isTopLevelPort(path_pin)
-                  ? db_network_->flatNet(network_->term(path_pin))
-                  : db_network_->flatNet(const_cast<Pin*>(path_pin));
 
-        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
-            && !db_path_net->isConnectedByAbutment()) {
+        if (path_vertex->isDriver(network_)
+            && resizer_->okToBufferNet(path_pin)) {
           PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
