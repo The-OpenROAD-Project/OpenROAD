@@ -4,7 +4,7 @@
 
 namespace grt {
 
-GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
+GRNet::GRNet(const CUGRNet& baseNet, GridGraph* gridGraph)
 {
   index_ = baseNet.getIndex();
   db_net_ = baseNet.getDbNet();

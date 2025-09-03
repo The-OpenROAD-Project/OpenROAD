@@ -4,6 +4,7 @@
 #include <csignal>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
@@ -66,6 +67,7 @@ class CUGR
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
        stt::SteinerTreeBuilder* stt_builder);
+  ~CUGR();
   void init(int min_routing_layer, int max_routing_layer);
   void route();
   void write(const std::string& guide_file);
@@ -77,9 +79,9 @@ class CUGR
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
 
-  Design* design_ = nullptr;
-  GridGraph* grid_graph_ = nullptr;
-  std::vector<GRNet*> gr_nets_;
+  std::unique_ptr<Design> design_;
+  std::unique_ptr<GridGraph> grid_graph_;
+  std::vector<std::unique_ptr<GRNet>> gr_nets_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

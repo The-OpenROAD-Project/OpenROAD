@@ -141,6 +141,7 @@ void GlobalRouter::clear()
 GlobalRouter::~GlobalRouter()
 {
   delete fastroute_;
+  delete cugr_;
   delete grid_;
   for (auto [ignored, net] : db_net_map_) {
     delete net;
