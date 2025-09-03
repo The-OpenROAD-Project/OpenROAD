@@ -53,7 +53,7 @@ class PointT
   bool operator==(const PointT& rhs) const { return x == rhs.x && y == rhs.y; }
   bool operator!=(const PointT& rhs) const { return !(*this == rhs); }
 
-  friend std::ostream& operator<<(std::ostream& os, const PointT& pt)
+  friend inline std::ostream& operator<<(std::ostream& os, const PointT& pt)
   {
     os << "(" << pt.x << ", " << pt.y << ")";
     return os;
@@ -333,7 +333,7 @@ class BoxT
   }
   bool operator!=(const BoxT& rhs) const { return !(*this == rhs); }
 
-  friend std::ostream& operator<<(std::ostream& os, const BoxT& box)
+  friend inline std::ostream& operator<<(std::ostream& os, const BoxT& box)
   {
     os << "[x: " << box.x << ", y: " << box.y << "]";
     return os;
