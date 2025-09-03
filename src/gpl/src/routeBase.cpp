@@ -251,6 +251,7 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   nbc_ = std::move(nbc);
   log_ = log;
   nbVec_ = std::move(nbVec);
+  minRcTargetDensity_.resize(nbVec.size());
   init();
 }
 
@@ -276,14 +277,14 @@ void RouteBase::revertToMinCongestion()
 
   // revert
   nbc_->revertGCellSizeToMinRc();
-  for (auto& nb :  nbVec_) {
+  for (int j = 0; j < nbVec_.size(); j++) {
     log_->info(GPL,
               58,
               "\t{}\t: {:.4f}",
-              nb->group()->getName(), minRcTargetDensity_);
-    nb->setTargetDensity(minRcTargetDensity_);
-    nb->restoreRemovedFillers();
-    nb->updateDensitySize();
+              nbVec_[j]->group()->getName(), minRcTargetDensity_[j]);
+    nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
+    nbVec_[j]->restoreRemovedFillers();
+    nbVec_[j]->updateDensitySize();
   }
   resetRoutabilityResources();
 }
@@ -585,9 +586,11 @@ std::pair<bool, bool> RouteBase::routability(
                curRc,
                minRc_);
     minRc_ = curRc;
-    minRcTargetDensity_ = nbVec_[0]->getTargetDensity();
     min_RC_violated_cnt_ = 0;
-    nbVec_[0]->clearRemovedFillers();
+    for (int i = 0; i < nbVec_.size(); i++) {
+      minRcTargetDensity_[i] = nbVec_[i]->getTargetDensity();
+      nbVec_[i]->clearRemovedFillers();
+    }
 
     // save cell size info
     nbc_->updateMinRcCellSize();

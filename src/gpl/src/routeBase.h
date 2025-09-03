@@ -192,7 +192,7 @@ class RouteBase
   // minRcInflationSize_ will store
   // GCell's width and height
   float minRc_ = 1e30;
-  float minRcTargetDensity_ = 0;
+  std::vector<float> minRcTargetDensity_;
   int min_RC_violated_cnt_ = 0;
   int max_routability_no_improvement_ = 3;
   int max_routability_revert_ = 50;
