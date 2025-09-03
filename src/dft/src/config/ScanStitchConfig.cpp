@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "Formatting.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

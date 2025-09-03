@@ -3,6 +3,7 @@
 
 #include <cstdio>
 
+#include "odb/db.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extSegment.h"

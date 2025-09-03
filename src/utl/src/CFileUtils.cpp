@@ -8,6 +8,8 @@
 #include <cstring>
 #include <string>
 
+#include "utl/Logger.h"
+
 namespace utl {
 
 std::string GetContents(FILE* file, Logger* logger)

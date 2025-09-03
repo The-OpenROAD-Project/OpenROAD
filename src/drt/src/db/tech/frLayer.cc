@@ -5,6 +5,9 @@
 
 #include <algorithm>
 
+#include "frBaseTypes.h"
+#include "utl/Logger.h"
+
 namespace drt {
 
 void frLayer::printAllConstraints(utl::Logger* logger)

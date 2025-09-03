@@ -18,7 +18,7 @@
 #include <string>
 #include <system_error>
 
-#include "boost/stacktrace.hpp"
+#include "boost/stacktrace/stacktrace.hpp"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed

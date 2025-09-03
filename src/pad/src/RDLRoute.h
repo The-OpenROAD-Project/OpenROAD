@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "RDLRouter.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbITerm;

@@ -24,5 +24,6 @@ cc_library(
     ],
     deps = [
         "//src/dft/src/config",
+        "//src/utl",
     ],
 )

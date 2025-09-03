@@ -3,6 +3,7 @@
 
 #include "Worker.h"
 
+#include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
 #include "utl/Logger.h"

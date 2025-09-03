@@ -21,13 +21,22 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frViaRuleGenerate.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 

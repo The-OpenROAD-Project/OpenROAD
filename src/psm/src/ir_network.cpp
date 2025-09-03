@@ -16,9 +16,14 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
+#include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "shape.h"
 #include "utl/timer.h"

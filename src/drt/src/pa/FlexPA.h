@@ -14,10 +14,16 @@
 #include <utility>
 #include <vector>
 
-#include "FlexPA_unique.h"
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/unordered_map.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "odb/db.h"
+#include "pa/FlexPA_unique.h"
 namespace gtl = boost::polygon;
 
 namespace odb {

@@ -14,7 +14,12 @@
 #include <vector>
 
 #include "boost/functional/hash.hpp"
+#include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ant {

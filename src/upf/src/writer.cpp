@@ -7,6 +7,9 @@
 #include <iostream>
 #include <string>
 
+#include "odb/db.h"
+#include "utl/Logger.h"
+
 namespace upf {
 
 UPFWriter::UPFWriter(odb::dbBlock* block, utl::Logger* logger)

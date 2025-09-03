@@ -49,6 +49,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "utl/CFileUtils.h"
+#include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/prometheus/gauge.h"
 

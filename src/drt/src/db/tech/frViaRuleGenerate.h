@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "db/infra/frBox.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frViaRuleGenerate

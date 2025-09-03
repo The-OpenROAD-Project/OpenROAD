@@ -17,6 +17,7 @@
 // This is needed just for clang-tidy.  Normally people will not include
 // this header directly; they will include db.h and get this indirectly.
 #include "odb/db.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 

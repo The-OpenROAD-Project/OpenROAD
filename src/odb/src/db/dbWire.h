@@ -6,6 +6,7 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
+#include "odb/dbStream.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
 

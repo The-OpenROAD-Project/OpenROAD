@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "ant/AntennaChecker.hh"
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "boost/iterator/function_output_iterator.hpp"
 #include "dpl/Opendp.h"
@@ -20,6 +20,8 @@
 #include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/wOrder.h"
 #include "sta/Liberty.hh"
 

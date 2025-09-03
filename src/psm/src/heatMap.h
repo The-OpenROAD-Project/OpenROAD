@@ -6,6 +6,7 @@
 #include <string>
 
 #include "gui/heatMap.h"
+#include "odb/db.h"
 
 namespace sta {
 class Sta;

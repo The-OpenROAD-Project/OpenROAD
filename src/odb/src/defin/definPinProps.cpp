@@ -10,6 +10,7 @@
 #include <string>
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

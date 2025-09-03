@@ -52,6 +52,8 @@ filegroup(
     # per test glob patterns below.
     srcs = [
         "16sinks.def",
+        "ModNangate45/ModNangate45.lef",
+        "ModNangate45/ModNangate45_typ.lib",
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
@@ -81,15 +83,13 @@ filegroup(
         "Nangate45/fakeram45_64x96.lef",
         "Nangate45/fakeram45_64x96.lib",
         "Nangate45/work_around_yosys/cells.v",
-        "ModNangate45/ModNangate45_typ.lib",
-        "ModNangate45/ModNangate45.lef",
-        "check_buffers.def",
         "array_dummy.tcl",
         "array_full_flow.tcl",
         "array_tile.lef",
         "array_tile.lib",
         "array_tile_ins_delay.lef",
         "array_tile_ins_delay.lib",
+        "check_buffers.def",
         "cts-helpers.tcl",
         "helpers.tcl",
         "ihp-sg13g2_data/IOLib.lef",
@@ -174,8 +174,8 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/cts",
-        "//src/utl",
         "//src/grt",  # work around cyclic dependncy between rsz and grt
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

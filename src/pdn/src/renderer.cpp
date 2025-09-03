@@ -7,8 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
+#include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "straps.h"
 

@@ -679,11 +679,21 @@ COMPONENTS 294 ;
 END COMPONENTS
 
 PINS 54 ;
-- resp_msg[9] + NET resp_msg\[9\] + DIRECTION OUTPUT + USE SIGNAL ;
-- resp_msg[8] + NET resp_msg\[8\] + DIRECTION OUTPUT + USE SIGNAL ;
-- resp_msg[7] + NET resp_msg\[7\] + DIRECTION OUTPUT + USE SIGNAL ;
-- resp_msg[6] + NET resp_msg\[6\] + DIRECTION OUTPUT + USE SIGNAL ;
-- resp_msg[5] + NET resp_msg\[5\] + DIRECTION OUTPUT + USE SIGNAL ;
+- resp_msg[9] + NET resp_msg\[9\] + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal5 ( -140 0 ) ( 140 280 )
+  + FIXED ( 61940 28970 ) W ;
+- resp_msg[8] + NET resp_msg\[8\] + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal5 ( -140 0 ) ( 140 280 )
+  + FIXED ( 61940 33980 ) W ;
+- resp_msg[7] + NET resp_msg\[7\] + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 )
+  + FIXED ( 23830 0 ) N ;
+- resp_msg[6] + NET resp_msg\[6\] + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 )
+  + FIXED ( 750 0 ) N ;
+- resp_msg[5] + NET resp_msg\[5\] + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 )
+  + FIXED ( 750 61600 ) S ;
 - resp_msg[4] + NET resp_msg\[4\] + DIRECTION OUTPUT + USE SIGNAL
   + LAYER metal6 ( -140 0 ) ( 140 280 )
   + FIXED ( 57170 61600 ) S ;

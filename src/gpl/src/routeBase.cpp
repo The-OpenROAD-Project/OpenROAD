@@ -18,6 +18,7 @@
 #include "grt/Rudy.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 using odb::dbBlock;
