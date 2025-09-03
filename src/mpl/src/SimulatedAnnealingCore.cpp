@@ -772,7 +772,7 @@ template <class T>
 bool SimulatedAnnealingCore<T>::resultFitsInOutline() const
 {
   return (width_ <= std::ceil(outline_.getWidth()))
-          && (height_ <= std::ceil(outline_.getHeight()));
+         && (height_ <= std::ceil(outline_.getHeight()));
 }
 
 template <class T>
