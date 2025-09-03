@@ -504,13 +504,4 @@ void SlicePolygons(std::vector<BoxT<T>>& boxes, int sliceDir)
   MergeRects(boxes, sweepDir);
 }
 
-template <typename T>
-class SegmentT : public BoxT<T>
-{
- public:
-  using BoxT<T>::BoxT;
-  T length() const { return BoxT<T>::hp(); }
-  bool IsRectilinear() const { return BoxT<T>::x() == 0 || BoxT<T>::y() == 0; }
-};
-
 }  // namespace grt
