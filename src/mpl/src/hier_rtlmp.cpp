@@ -1312,9 +1312,9 @@ void HierRTLMP::adjustMacroBlockageWeight()
   }
 }
 
-void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
+void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
 {
-  if (!minimum_target_util) {
+  if (!ignore_std_cell_area) {
     if (parent->getClusterType() == HardMacroCluster) {
       placeMacros(parent);
       return;
@@ -1515,7 +1515,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
   std::vector<float> target_utils;
   std::vector<float> target_dead_spaces;
 
-  if (!minimum_target_util) {
+  if (!ignore_std_cell_area) {
     // In our implementation, the utilization can be larger than 1.
     for (int i = 0; i < num_target_util_; i++) {
       target_utils.push_back(target_util_ + i * target_util_step_);
@@ -1676,7 +1676,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
   }
 
   if (best_sa == nullptr) {
-    if (!minimum_target_util) {
+    if (!ignore_std_cell_area) {
       placeChildren(parent, true);
     } else {
       logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
@@ -1702,7 +1702,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
     updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
   }
 
-  if (!minimum_target_util) {
+  if (!ignore_std_cell_area) {
     for (auto& cluster : parent->getChildren()) {
       placeChildren(cluster.get());
     }
