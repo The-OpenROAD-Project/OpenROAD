@@ -971,17 +971,18 @@ void Inspector::doubleClicked(const QModelIndex& index)
 bool invokeEditorFromEnv(const FileLine& file_line)
 {
   QString editorCommand
-      = QProcessEnvironment::systemEnvironment().value("EDITOR");
+      = QProcessEnvironment::systemEnvironment().value("OPENROAD_EDITOR");
 
   if (editorCommand.isEmpty()) {
-    qWarning() << "EDITOR environment variable not set.";
+    qWarning() << "OPENROAD_EDITOR environment variable not set.";
     return false;
   }
 
   // Check if the placeholders are present in the command string.
   if (!editorCommand.contains("%FILE%") || !editorCommand.contains("%LINE%")) {
-    qWarning() << "Error: The EDITOR command does not contain the necessary "
-                  "placeholders.";
+    qWarning()
+        << "Error: The OPENROAD_EDITOR command does not contain the necessary "
+           "placeholders.";
     qWarning()
         << "It must contain both %FILE% and %LINE% to function correctly.";
     qWarning() << "Current command:" << editorCommand;
@@ -1003,7 +1004,7 @@ bool invokeEditorFromEnv(const FileLine& file_line)
     program = parts.first();
     arguments = parts.mid(1);
   } else {
-    qWarning() << "Invalid EDITOR command:" << editorCommand;
+    qWarning() << "Invalid OPENROAD_EDITOR command:" << editorCommand;
     return false;
   }
 
