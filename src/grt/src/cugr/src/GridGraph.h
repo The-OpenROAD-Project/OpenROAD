@@ -68,8 +68,7 @@ class GridGraph
   // Misc
   void selectAccessPoints(
       GRNet* net,
-      robin_hood::unordered_map<uint64_t,
-                                std::pair<PointT<int>, IntervalT<int>>>&
+      robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT>>&
           selected_access_points) const;
 
   // Methods for updating demands
@@ -126,11 +125,11 @@ class GridGraph
   // (l, x, y+1)} depending on the routing direction of the layer
   Constants constants_;
 
-  IntervalT<int> rangeSearchGridlines(unsigned dimension,
-                                      const IntervalT<int>& loc_interval) const;
+  IntervalT rangeSearchGridlines(unsigned dimension,
+                                 const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT<int> rangeSearchRows(unsigned dimension,
-                                 const IntervalT<int>& loc_interval) const;
+  IntervalT rangeSearchRows(unsigned dimension,
+                            const IntervalT& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation

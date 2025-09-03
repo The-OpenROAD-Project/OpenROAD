@@ -61,7 +61,7 @@ std::string PatternRoutingNode::getPythonString(
 void PatternRoute::constructSteinerTree()
 {
   // 1. Select access points
-  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
+  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT>>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
 
@@ -295,12 +295,12 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
   }
 
   std::function<void(const std::shared_ptr<ScaffoldNode>&,
-                     IntervalT<int>&,
+                     IntervalT&,
                      std::vector<int>&,
                      unsigned,
                      bool)>
       getTrunkAndStems = [&](const std::shared_ptr<ScaffoldNode>& scaffoldNode,
-                             IntervalT<int>& trunk,
+                             IntervalT& trunk,
                              std::vector<int>& stems,
                              unsigned direction,
                              bool starting) {
@@ -401,13 +401,13 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
     for (const std::shared_ptr<ScaffoldNode>& scaffold : scaffolds[direction]) {
       assert(scaffold->children.size() == 1);
 
-      IntervalT<int> trunk;
+      IntervalT trunk;
       std::vector<int> stems;
       getTrunkAndStems(scaffold, trunk, stems, direction, true);
       std::sort(stems.begin(), stems.end());
       int trunkPos = (*scaffold->children[0]->node)[1 - direction];
       int originalLength = getTotalStemLength(stems, trunkPos);
-      IntervalT<int> shiftInterval(trunkPos);
+      IntervalT shiftInterval(trunkPos);
       int maxLengthIncrease = trunk.range() * constants_.max_detour_ratio;
       while (shiftInterval.low - 1 >= 0
              && getTotalStemLength(stems, shiftInterval.low - 1)
@@ -556,7 +556,7 @@ void PatternRoute::calculateRoutingCosts(
     viaCosts[layerIndex] = viaCosts[layerIndex - 1]
                            + grid_graph_->getViaCost(layerIndex - 1, *node);
   }
-  IntervalT<int> fixedLayers(node->getFixedLayers());
+  IntervalT fixedLayers(node->getFixedLayers());
   fixedLayers.low = std::min(fixedLayers.low,
                              static_cast<int>(grid_graph_->getNumLayers()) - 1);
   fixedLayers.high = std::max(fixedLayers.high, constants_.min_routing_layer);

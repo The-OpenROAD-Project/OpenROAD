@@ -79,10 +79,10 @@ int MetalLayer::getTrackLocation(const int track_index) const
   return first_track_loc_ + track_index * pitch_;
 }
 
-IntervalT<int> MetalLayer::rangeSearchTracks(const IntervalT<int>& loc_range,
-                                             bool include_bound) const
+IntervalT MetalLayer::rangeSearchTracks(const IntervalT& loc_range,
+                                        bool include_bound) const
 {
-  IntervalT<int> track_range(
+  IntervalT track_range(
       ceil(double(std::max(loc_range.low, first_track_loc_) - first_track_loc_)
            / double(pitch_)),
       floor(double(std::min(loc_range.high, last_track_loc_) - first_track_loc_)

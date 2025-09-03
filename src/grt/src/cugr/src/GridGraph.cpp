@@ -56,8 +56,8 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
     const int nGrids = gridlines_[1 - direction].size() - 1;
     gridTracks[layer_index].resize(nGrids);
     for (size_t gridIndex = 0; gridIndex < nGrids; gridIndex++) {
-      IntervalT<int> locRange(gridlines_[1 - direction][gridIndex],
-                              gridlines_[1 - direction][gridIndex + 1]);
+      IntervalT locRange(gridlines_[1 - direction][gridIndex],
+                         gridlines_[1 - direction][gridIndex + 1]);
       auto trackRange = layer.rangeSearchTracks(locRange);
       if (trackRange.IsValid()) {
         gridTracks[layer_index][gridIndex] = trackRange.range() + 1;
@@ -103,8 +103,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
                                grid_centers_[direction][edge_index + 1]
                                    - grid_centers_[direction][edge_index]);
     }
-    std::vector<
-        std::vector<std::shared_ptr<std::pair<BoxT, IntervalT<int>>>>>
+    std::vector<std::vector<std::shared_ptr<std::pair<BoxT, IntervalT>>>>
         obstaclesInGrid(nGrids);  // obstacle indices sorted in track grids
     // Sort obstacles in track grids
     for (auto& obs : obstacles[layer_index]) {
@@ -115,16 +114,14 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
       PointT<int> margin(0, 0);
       margin[1 - direction] = spacing;
       BoxT obsBox(obs.x.low - margin.x,
-                       obs.y.low - margin.y,
-                       obs.x.high + margin.x,
-                       obs.y.high + margin.y);  // enlarged obstacle box
-      IntervalT<int> trackRange
-          = layer.rangeSearchTracks(obsBox[1 - direction]);
-      std::shared_ptr<std::pair<BoxT, IntervalT<int>>> obstacle
-          = std::make_shared<std::pair<BoxT, IntervalT<int>>>(obsBox,
-                                                                   trackRange);
+                  obs.y.low - margin.y,
+                  obs.x.high + margin.x,
+                  obs.y.high + margin.y);  // enlarged obstacle box
+      IntervalT trackRange = layer.rangeSearchTracks(obsBox[1 - direction]);
+      std::shared_ptr<std::pair<BoxT, IntervalT>> obstacle
+          = std::make_shared<std::pair<BoxT, IntervalT>>(obsBox, trackRange);
       // Get grid range
-      IntervalT<int> gridRange
+      IntervalT gridRange
           = rangeSearchRows(1 - direction, obsBox[1 - direction]);
       for (int gridIndex = gridRange.low; gridIndex <= gridRange.high;
            gridIndex++) {
@@ -132,7 +129,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
       }
     }
     // Handle each track grid
-    IntervalT<int> gridTrackRange;
+    IntervalT gridTrackRange;
     for (int gridIndex = 0; gridIndex < nGrids; gridIndex++) {
       if (gridIndex == 0) {
         gridTrackRange.low = 0;
@@ -147,14 +144,13 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
       if (obstaclesInGrid[gridIndex].empty()) {
         continue;
       }
-      std::vector<
-          std::vector<std::shared_ptr<std::pair<BoxT, IntervalT<int>>>>>
+      std::vector<std::vector<std::shared_ptr<std::pair<BoxT, IntervalT>>>>
           obstaclesAtEdge(nEdges);
       for (auto& obstacle : obstaclesInGrid[gridIndex]) {
-        IntervalT<int> gridlineRange
+        IntervalT gridlineRange
             = rangeSearchGridlines(direction, obstacle->first[direction]);
-        IntervalT<int> edgeRange(std::max(gridlineRange.low - 2, 0),
-                                 std::min(gridlineRange.high, nEdges - 1));
+        IntervalT edgeRange(std::max(gridlineRange.low - 2, 0),
+                            std::min(gridlineRange.high, nEdges - 1));
         for (int edge_index = edgeRange.low; edge_index <= edgeRange.high;
              edge_index++) {
           obstaclesAtEdge[edge_index].emplace_back(obstacle);
@@ -165,13 +161,13 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
           continue;
         }
         int gridline = gridlines_[direction][edge_index + 1];
-        IntervalT<int> edgeInterval(grid_centers_[direction][edge_index],
-                                    grid_centers_[direction][edge_index + 1]);
+        IntervalT edgeInterval(grid_centers_[direction][edge_index],
+                               grid_centers_[direction][edge_index + 1]);
         // Update cpacity
-        std::vector<IntervalT<int>> usable_intervals(gridTrackRange.range() + 1,
-                                                     edgeInterval);
+        std::vector<IntervalT> usable_intervals(gridTrackRange.range() + 1,
+                                                edgeInterval);
         for (auto& obstacle : obstaclesAtEdge[edge_index]) {
-          IntervalT<int> affectedTrackRange
+          IntervalT affectedTrackRange
               = gridTrackRange.IntersectWith(obstacle->second);
           if (!affectedTrackRange.IsValid()) {
             continue;
@@ -194,7 +190,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
           }
         }
         CapacityT capacity = 0;
-        for (IntervalT<int>& usable_interval : usable_intervals) {
+        for (IntervalT& usable_interval : usable_intervals) {
           capacity
               += (CapacityT) usable_interval.range() / edgeInterval.range();
         }
@@ -208,11 +204,10 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
   }
 }
 
-IntervalT<int> GridGraph::rangeSearchGridlines(
-    const unsigned dimension,
-    const IntervalT<int>& loc_interval) const
+IntervalT GridGraph::rangeSearchGridlines(const unsigned dimension,
+                                          const IntervalT& loc_interval) const
 {
-  IntervalT<int> range;
+  IntervalT range;
   range.low = lower_bound(gridlines_[dimension].begin(),
                           gridlines_[dimension].end(),
                           loc_interval.low)
@@ -229,9 +224,8 @@ IntervalT<int> GridGraph::rangeSearchGridlines(
   return range;
 }
 
-IntervalT<int> GridGraph::rangeSearchRows(
-    const unsigned dimension,
-    const IntervalT<int>& loc_interval) const
+IntervalT GridGraph::rangeSearchRows(const unsigned dimension,
+                                     const IntervalT& loc_interval) const
 {
   const auto& lineRange = rangeSearchGridlines(dimension, loc_interval);
   return {
@@ -334,7 +328,7 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT<int> loc) const
 
 void GridGraph::selectAccessPoints(
     GRNet* net,
-    robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>&
+    robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT>>&
         selected_access_points) const
 {
   selected_access_points.clear();
@@ -376,9 +370,9 @@ void GridGraph::selectAccessPoints(
     const uint64_t hash = hashCell(selectedPoint.x, selectedPoint.y);
     if (selected_access_points.find(hash) == selected_access_points.end()) {
       selected_access_points.emplace(
-          hash, std::make_pair(selectedPoint, IntervalT<int>()));
+          hash, std::make_pair(selectedPoint, IntervalT()));
     }
-    IntervalT<int>& fixedLayerInterval = selected_access_points[hash].second;
+    IntervalT& fixedLayerInterval = selected_access_points[hash].second;
     for (const auto& point : accessPoints) {
       if (point.x == selectedPoint.x && point.y == selectedPoint.y) {
         fixedLayerInterval.Update(point.getLayerIdx());
@@ -387,7 +381,7 @@ void GridGraph::selectAccessPoints(
   }
   // Extend the fixed layers to 2 layers higher to facilitate track switching
   for (auto& accessPoint : selected_access_points) {
-    IntervalT<int>& fixedLayers = accessPoint.second.second;
+    IntervalT& fixedLayers = accessPoint.second.second;
     fixedLayers.high = std::min(fixedLayers.high + 2, (int) getNumLayers() - 1);
   }
 }

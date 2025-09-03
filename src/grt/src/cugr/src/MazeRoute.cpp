@@ -7,7 +7,7 @@ namespace grt {
 void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
 {
   // 0. Create pseudo pins
-  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT<int>>>
+  robin_hood::unordered_map<uint64_t, std::pair<PointT<int>, IntervalT>>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
   pseudo_pins_.reserve(selectedAccessPoints.size());

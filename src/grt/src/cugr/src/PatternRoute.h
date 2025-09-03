@@ -9,7 +9,7 @@ class SteinerTreeNode : public PointT<int>
 {
  public:
   SteinerTreeNode(PointT<int> point) : PointT<int>(point) {}
-  SteinerTreeNode(PointT<int> point, IntervalT<int> fixed_layers)
+  SteinerTreeNode(PointT<int> point, IntervalT fixed_layers)
       : PointT<int>(point), fixed_layers_(fixed_layers)
   {
   }
@@ -20,9 +20,9 @@ class SteinerTreeNode : public PointT<int>
   static std::string getPythonString(
       const std::shared_ptr<SteinerTreeNode>& node);
 
-  IntervalT<int>& getFixedLayers() { return fixed_layers_; }
+  IntervalT& getFixedLayers() { return fixed_layers_; }
 
-  void setFixedLayers(const IntervalT<int>& fixed_layers)
+  void setFixedLayers(const IntervalT& fixed_layers)
   {
     fixed_layers_ = fixed_layers;
   }
@@ -42,7 +42,7 @@ class SteinerTreeNode : public PointT<int>
   int getNumChildren() const { return children_.size(); }
 
  private:
-  IntervalT<int> fixed_layers_;
+  IntervalT fixed_layers_;
   std::vector<std::shared_ptr<SteinerTreeNode>> children_;
 };
 
@@ -53,9 +53,7 @@ class PatternRoutingNode : public PointT<int>
       : PointT<int>(point), index_(index), optional_(optional)
   {
   }
-  PatternRoutingNode(PointT<int> point,
-                     IntervalT<int> fixed_layers,
-                     int index = 0)
+  PatternRoutingNode(PointT<int> point, IntervalT fixed_layers, int index = 0)
       : PointT<int>(point),
         index_(index),
         fixed_layers_(fixed_layers),
@@ -65,7 +63,7 @@ class PatternRoutingNode : public PointT<int>
 
   const int& getIndex() const { return index_; }
 
-  const IntervalT<int>& getFixedLayers() const { return fixed_layers_; }
+  const IntervalT& getFixedLayers() const { return fixed_layers_; }
 
   bool isOptional() const { return optional_; }
 
@@ -101,7 +99,7 @@ class PatternRoutingNode : public PointT<int>
  private:
   const int index_;
   // childIndex -> pathIndex -> path
-  IntervalT<int> fixed_layers_;
+  IntervalT fixed_layers_;
   bool optional_;
 
   std::vector<std::shared_ptr<PatternRoutingNode>> children_;

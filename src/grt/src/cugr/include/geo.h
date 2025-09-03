@@ -66,11 +66,10 @@ class PointT
 };
 
 // Interval template
-template <typename T>
 class IntervalT
 {
  public:
-  T low, high;
+  int low, high;
 
   template <typename... Args>
   IntervalT(Args... params)
@@ -81,31 +80,31 @@ class IntervalT
   // Setters
   void Set()
   {
-    low = std::numeric_limits<T>::has_infinity
-              ? std::numeric_limits<T>::infinity()
-              : std::numeric_limits<T>::max();
-    high = std::numeric_limits<T>::has_infinity
-               ? -std::numeric_limits<T>::infinity()
-               : std::numeric_limits<T>::lowest();
+    low = std::numeric_limits<int>::has_infinity
+              ? std::numeric_limits<int>::infinity()
+              : std::numeric_limits<int>::max();
+    high = std::numeric_limits<int>::has_infinity
+               ? -std::numeric_limits<int>::infinity()
+               : std::numeric_limits<int>::lowest();
   }
-  void Set(T val)
+  void Set(int val)
   {
     low = val;
     high = val;
   }
-  void Set(T lo, T hi)
+  void Set(int lo, int hi)
   {
     low = lo;
     high = hi;
   }
 
   // Getters
-  T center() const { return (high + low) / 2; }
-  T range() const { return high - low; }
+  int center() const { return (high + low) / 2; }
+  int range() const { return high - low; }
 
   // Update
   // Update() is always safe, FastUpdate() assumes existing values
-  void Update(T newVal)
+  void Update(int newVal)
   {
     if (newVal < low) {
       low = newVal;
@@ -114,7 +113,7 @@ class IntervalT
       high = newVal;
     }
   }
-  void FastUpdate(T newVal)
+  void FastUpdate(int newVal)
   {
     if (newVal < low) {
       low = newVal;
@@ -161,7 +160,7 @@ class IntervalT
   bool Contain(int val) const { return val >= low && val <= high; }
   bool StrictlyContain(int val) const { return val > low && val < high; }
   // get nearest point(s) to val (assume valid intervals)
-  T GetNearestPointTo(T val) const
+  int GetNearestPointTo(int val) const
   {
     if (val <= low) {
       return low;
@@ -186,7 +185,7 @@ class IntervalT
     return IntersectWith(val);
   }
 
-  void ShiftBy(const T& rhs)
+  void ShiftBy(const int& rhs)
   {
     low += rhs;
     high += rhs;
@@ -200,8 +199,8 @@ class IntervalT
   }
   bool operator!=(const IntervalT& rhs) const { return !(*this == rhs); }
 
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const IntervalT<T>& interval)
+  friend inline std::ostream& operator<<(std::ostream& os,
+                                         const IntervalT& interval)
   {
     os << "(" << interval.low << ", " << interval.high << ")";
     return os;
@@ -212,7 +211,7 @@ class IntervalT
 class BoxT
 {
  public:
-  IntervalT<int> x, y;
+  IntervalT x, y;
 
   template <typename... Args>
   BoxT(Args... params)
@@ -225,7 +224,7 @@ class BoxT
   int& ly() { return y.low; }
   int& hy() { return y.high; }
   int& hx() { return x.high; }
-  IntervalT<int>& operator[](unsigned i)
+  IntervalT& operator[](unsigned i)
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x : y;
@@ -246,7 +245,7 @@ class BoxT
     x.Set(lx, hx);
     y.Set(ly, hy);
   }
-  void Set(const IntervalT<int>& xRange, const IntervalT<int>& yRange)
+  void Set(const IntervalT& xRange, const IntervalT& yRange)
   {
     x = xRange;
     y = yRange;
@@ -277,7 +276,7 @@ class BoxT
   int height() const { return y.range(); }
   int hp() const { return width() + height(); }  // half perimeter
   int area() const { return width() * height(); }
-  const IntervalT<int>& operator[](unsigned i) const
+  const IntervalT& operator[](unsigned i) const
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x : y;
