@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,

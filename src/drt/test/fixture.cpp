@@ -35,6 +35,7 @@
 #include <utility>
 #include <vector>
 
+#include "frBaseTypes.h"
 #include "global.h"
 #include "odb/db.h"
 

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "db/obj/frInst.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

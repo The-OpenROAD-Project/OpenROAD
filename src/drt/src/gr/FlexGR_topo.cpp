@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 

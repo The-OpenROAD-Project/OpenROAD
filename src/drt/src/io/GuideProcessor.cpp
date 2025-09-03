@@ -20,6 +20,8 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "odb/db.h"
 #include "utl/Logger.h"

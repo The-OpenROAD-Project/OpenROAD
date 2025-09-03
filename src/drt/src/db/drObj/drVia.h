@@ -9,6 +9,7 @@
 #include "db/drObj/drRef.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexMazeTypes.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

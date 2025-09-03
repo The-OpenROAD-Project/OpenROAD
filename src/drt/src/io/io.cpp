@@ -24,6 +24,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db/tech/frConstraint.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"

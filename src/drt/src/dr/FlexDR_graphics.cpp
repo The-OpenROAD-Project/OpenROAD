@@ -16,6 +16,7 @@
 
 #include "../gc/FlexGC.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

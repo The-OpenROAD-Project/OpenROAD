@@ -30,6 +30,7 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
