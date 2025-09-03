@@ -83,7 +83,7 @@ class dbBlockCallBackObj
   virtual void inDbITermPostDisconnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPreConnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPostConnect(dbITerm*) {}
-  virtual void inDbITermPostSetAccessPoints(dbITerm* iterm) {}
+  virtual void inDbITermPostSetAccessPoints(dbITerm*) {}
   // dbITerm End
 
   // dbModITerm Start
