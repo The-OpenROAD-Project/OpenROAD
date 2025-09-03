@@ -60,8 +60,8 @@ class GridGraph
   {
     return gridlines_[dimension][index];
   }
-  BoxT<int> getCellBox(PointT<int> point) const;
-  BoxT<int> rangeSearchCells(const BoxT<int>& box) const;
+  BoxT getCellBox(PointT point) const;
+  BoxT rangeSearchCells(const BoxT& box) const;
   GraphEdge getEdge(const int layer_index, const int x, const int y) const
   {
     return graph_edges_[layer_index][x][y];
@@ -69,15 +69,14 @@ class GridGraph
 
   // Costs
   int getEdgeLength(unsigned direction, unsigned edge_index) const;
-  CostT getWireCost(int layer_index, PointT<int> u, PointT<int> v) const;
-  CostT getViaCost(int layer_index, PointT<int> loc) const;
+  CostT getWireCost(int layer_index, PointT u, PointT v) const;
+  CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
   void selectAccessPoints(
       GRNet* net,
-      robin_hood::unordered_map<uint64_t,
-                                std::pair<PointT<int>, IntervalT<int>>>&
+      robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>&
           selected_access_points) const;
 
   // Methods for updating demands
@@ -90,8 +89,8 @@ class GridGraph
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
   int checkOverflow(int layer_index,
-                    PointT<int> u,
-                    PointT<int> v) const;  // Check wire overflow
+                    PointT u,
+                    PointT v) const;  // Check wire overflow
   int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
       const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
@@ -134,11 +133,11 @@ class GridGraph
   // (l, x, y+1)} depending on the routing direction of the layer
   Constants constants_;
 
-  IntervalT<int> rangeSearchGridlines(unsigned dimension,
-                                      const IntervalT<int>& loc_interval) const;
+  IntervalT rangeSearchGridlines(unsigned dimension,
+                                 const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT<int> rangeSearchRows(unsigned dimension,
-                                 const IntervalT<int>& loc_interval) const;
+  IntervalT rangeSearchRows(unsigned dimension,
+                            const IntervalT& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
@@ -151,20 +150,20 @@ class GridGraph
 
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
-                    PointT<int> lower,
+                    PointT lower,
                     CapacityT demand = 1.0) const;
 
   // Methods for updating demands
-  void commit(int layer_index, PointT<int> lower, CapacityT demand);
-  void commitWire(int layer_index, PointT<int> lower, bool reverse = false);
-  void commitVia(int layer_index, PointT<int> loc, bool reverse = false);
+  void commit(int layer_index, PointT lower, CapacityT demand);
+  void commitWire(int layer_index, PointT lower, bool reverse = false);
+  void commitVia(int layer_index, PointT loc, bool reverse = false);
 };
 
 template <typename Type>
 class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 {
  public:
-  bool check(const PointT<int>& u, const PointT<int>& v) const
+  bool check(const PointT& u, const PointT& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     if (u.y == v.y) {
@@ -185,7 +184,7 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
     return false;
   }
 
-  Type sum(const PointT<int>& u, const PointT<int>& v) const
+  Type sum(const PointT& u, const PointT& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     Type res = 0;

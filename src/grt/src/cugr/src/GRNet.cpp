@@ -6,7 +6,7 @@
 
 namespace grt {
 
-GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
+GRNet::GRNet(const CUGRNet& baseNet, GridGraph* gridGraph)
 {
   index_ = baseNet.getIndex();
   db_net_ = baseNet.getDbNet();
@@ -16,7 +16,7 @@ GRNet::GRNet(const CUGRNet& baseNet, Design* design, GridGraph* gridGraph)
     std::vector<BoxOnLayer> pinShapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
     for (const auto& pinShape : pinShapes) {
-      BoxT<int> cells = gridGraph->rangeSearchCells(pinShape);
+      BoxT cells = gridGraph->rangeSearchCells(pinShape);
       for (int x = cells.x.low; x <= cells.x.high; x++) {
         for (int y = cells.y.low; y <= cells.y.high; y++) {
           GRPoint point(pinShape.getLayerIdx(), x, y);
