@@ -256,11 +256,10 @@ T Dist(const IntervalT<T>& int1, const IntervalT<T>& int2)
 }
 
 // Box template
-template <typename T>
 class BoxT
 {
  public:
-  IntervalT<T> x, y;
+  IntervalT<int> x, y;
 
   template <typename... Args>
   BoxT(Args... params)
@@ -269,11 +268,11 @@ class BoxT
   }
 
   // Setters
-  T& lx() { return x.low; }
-  T& ly() { return y.low; }
-  T& hy() { return y.high; }
-  T& hx() { return x.high; }
-  IntervalT<T>& operator[](unsigned i)
+  int& lx() { return x.low; }
+  int& ly() { return y.low; }
+  int& hy() { return y.high; }
+  int& hx() { return x.high; }
+  IntervalT<int>& operator[](unsigned i)
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x : y;
@@ -283,27 +282,27 @@ class BoxT
     x.Set();
     y.Set();
   }
-  void Set(T xVal, T yVal)
+  void Set(int xVal, int yVal)
   {
     x.Set(xVal);
     y.Set(yVal);
   }
-  void Set(const PointT<T>& pt) { Set(pt.x, pt.y); }
-  void Set(T lx, T ly, T hx, T hy)
+  void Set(const PointT<int>& pt) { Set(pt.x, pt.y); }
+  void Set(int lx, int ly, int hx, int hy)
   {
     x.Set(lx, hx);
     y.Set(ly, hy);
   }
-  void Set(const IntervalT<T>& xRange, const IntervalT<T>& yRange)
+  void Set(const IntervalT<int>& xRange, const IntervalT<int>& yRange)
   {
     x = xRange;
     y = yRange;
   }
-  void Set(const PointT<T>& low, const PointT<T>& high)
+  void Set(const PointT<int>& low, const PointT<int>& high)
   {
     Set(low.x, low.y, high.x, high.y);
   }
-  void Set(const BoxT<T>& box) { Set(box.x, box.y); }
+  void Set(const BoxT& box) { Set(box.x, box.y); }
 
   // Two types of boxes: normal & degenerated (line or point)
   // is valid box
@@ -315,35 +314,35 @@ class BoxT
   }  // tighter
 
   // Getters
-  T lx() const { return x.low; }
-  T ly() const { return y.low; }
-  T hy() const { return y.high; }
-  T hx() const { return x.high; }
-  T cx() const { return x.center(); }
-  T cy() const { return y.center(); }
-  T width() const { return x.range(); }
-  T height() const { return y.range(); }
-  T hp() const { return width() + height(); }  // half perimeter
-  T area() const { return width() * height(); }
-  const IntervalT<T>& operator[](unsigned i) const
+  int lx() const { return x.low; }
+  int ly() const { return y.low; }
+  int hy() const { return y.high; }
+  int hx() const { return x.high; }
+  int cx() const { return x.center(); }
+  int cy() const { return y.center(); }
+  int width() const { return x.range(); }
+  int height() const { return y.range(); }
+  int hp() const { return width() + height(); }  // half perimeter
+  int area() const { return width() * height(); }
+  const IntervalT<int>& operator[](unsigned i) const
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x : y;
   }
 
   // Update() is always safe, FastUpdate() assumes existing values
-  void Update(T xVal, T yVal)
+  void Update(int xVal, int yVal)
   {
     x.Update(xVal);
     y.Update(yVal);
   }
-  void FastUpdate(T xVal, T yVal)
+  void FastUpdate(int xVal, int yVal)
   {
     x.FastUpdate(xVal);
     y.FastUpdate(yVal);
   }
-  void Update(const PointT<T>& pt) { Update(pt.x, pt.y); }
-  void FastUpdate(const PointT<T>& pt) { FastUpdate(pt.x, pt.y); }
+  void Update(const PointT<int>& pt) { Update(pt.x, pt.y); }
+  void FastUpdate(const PointT<int>& pt) { FastUpdate(pt.x, pt.y); }
 
   // Geometric Query/Update
   BoxT UnionWith(const BoxT& rhs) const
@@ -362,15 +361,15 @@ class BoxT
   {
     return IntersectWith(rhs).IsStrictValid();
   }  // tighter
-  bool Contain(const PointT<T>& pt) const
+  bool Contain(const PointT<int>& pt) const
   {
     return x.Contain(pt.x) && y.Contain(pt.y);
   }
-  bool StrictlyContain(const PointT<T>& pt) const
+  bool StrictlyContain(const PointT<int>& pt) const
   {
     return x.StrictlyContain(pt.x) && y.StrictlyContain(pt.y);
   }
-  PointT<T> GetNearestPointTo(const PointT<T>& pt)
+  PointT<int> GetNearestPointTo(const PointT<int>& pt)
   {
     return {x.GetNearestPointTo(pt.x), y.GetNearestPointTo(pt.y)};
   }
@@ -379,7 +378,7 @@ class BoxT
     return {x.GetNearestPointsTo(val.x), y.GetNearestPointsTo(val.y)};
   }
 
-  void ShiftBy(const PointT<T>& rhs)
+  void ShiftBy(const PointT<int>& rhs)
   {
     x.ShiftBy(rhs.x);
     y.ShiftBy(rhs.y);
@@ -391,7 +390,7 @@ class BoxT
   }
   bool operator!=(const BoxT& rhs) const { return !(*this == rhs); }
 
-  friend std::ostream& operator<<(std::ostream& os, const BoxT<T>& box)
+  friend std::ostream& operator<<(std::ostream& os, const BoxT& box)
   {
     os << "[x: " << box.x << ", y: " << box.y << "]";
     return os;
@@ -400,34 +399,31 @@ class BoxT
 
 // L-1 (Manhattan) distance between boxes/points (assume valid boxes)
 template <typename T>
-T Dist(const BoxT<T>& box, const PointT<T>& point)
+int Dist(const BoxT& box, const PointT<T>& point)
 {
   return Dist(box.x, point.x) + Dist(box.y, point.y);
 }
-template <typename T>
-T Dist(const BoxT<T>& box1, const BoxT<T>& box2)
+inline int Dist(const BoxT& box1, const BoxT& box2)
 {
   return Dist(box1.x, box2.x) + Dist(box1.y, box2.y);
 }
 
 // L-2 (Euclidean) distance between boxes
-template <typename T>
-double L2Dist(const BoxT<T>& box1, const BoxT<T>& box2)
+inline double L2Dist(const BoxT& box1, const BoxT& box2)
 {
   return std::sqrt(std::pow(Dist(box1.x, box2.x), 2)
                    + std::pow(Dist(box1.y, box2.y), 2));
 }
 
 // L-Inf (max) distance between boxes
-template <typename T>
-T LInfDist(const BoxT<T>& box1, const BoxT<T>& box2)
+inline int LInfDist(const BoxT& box1, const BoxT& box2)
 {
   return std::max(Dist(box1.x, box2.x), Dist(box1.y, box2.y));
 }
 
 //  Parallel run length between boxes
 template <typename T>
-T ParaRunLength(const BoxT<T>& box1, const BoxT<T>& box2)
+int ParaRunLength(const BoxT& box1, const BoxT& box2)
 {
   return std::max(box1.x.ParaRunLength(box2.x), box1.y.ParaRunLength(box2.y));
 }
@@ -463,8 +459,7 @@ void MergeRects(std::vector<BoxT>& boxes, int mergeDir)
 // Slice polygons along sliceDir
 // sliceDir: 0 for x/vertical, 1 for y/horizontal
 // assume no degenerated case
-template <typename T>
-void SlicePolygons(std::vector<BoxT<T>>& boxes, int sliceDir)
+inline void SlicePolygons(std::vector<BoxT>& boxes, int sliceDir)
 {
   // Line sweep in sweepDir = 1 - sliceDir
   // Suppose sliceDir = y and sweepDir = x (sweep from left to right)
@@ -475,7 +470,7 @@ void SlicePolygons(std::vector<BoxT<T>>& boxes, int sliceDir)
 
   // sort slice lines in sweepDir
   int sweepDir = 1 - sliceDir;
-  std::vector<T> locs;
+  std::vector<int> locs;
   for (const auto& box : boxes) {
     locs.push_back(box[sweepDir].low);
     locs.push_back(box[sweepDir].high);
@@ -484,9 +479,9 @@ void SlicePolygons(std::vector<BoxT<T>>& boxes, int sliceDir)
   locs.erase(std::unique(locs.begin(), locs.end()), locs.end());
 
   // slice each box
-  std::vector<BoxT<T>> slicedBoxes;
+  std::vector<BoxT> slicedBoxes;
   for (const auto& box : boxes) {
-    BoxT<T> slicedBox = box;
+    BoxT slicedBox = box;
     auto itLoc = std::lower_bound(locs.begin(), locs.end(), box[sweepDir].low);
     auto itEnd = std::upper_bound(itLoc, locs.end(), box[sweepDir].high);
     while ((itLoc + 1) != itEnd) {

@@ -52,8 +52,8 @@ class GridGraph
   {
     return gridlines_[dimension][index];
   }
-  BoxT<int> getCellBox(PointT<int> point) const;
-  BoxT<int> rangeSearchCells(const BoxT<int>& box) const;
+  BoxT getCellBox(PointT<int> point) const;
+  BoxT rangeSearchCells(const BoxT& box) const;
   GraphEdge getEdge(const int layer_index, const int x, const int y) const
   {
     return graph_edges_[layer_index][x][y];

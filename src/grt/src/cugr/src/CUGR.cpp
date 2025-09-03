@@ -146,7 +146,7 @@ void CUGR::write(const std::string& guide_file)
   area_of_wire_patches_ = 0;
   std::stringstream ss;
   for (const GRNet* net : gr_nets_) {
-    std::vector<std::pair<int, BoxT<int>>> guides;
+    std::vector<std::pair<int, BoxT>> guides;
     getGuides(net, guides);
 
     ss << net->getName() << std::endl;
@@ -236,7 +236,7 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
 }
 
 void CUGR::getGuides(const GRNet* net,
-                     std::vector<std::pair<int, BoxT<int>>>& guides)
+                     std::vector<std::pair<int, BoxT>>& guides)
 {
   auto& routingTree = net->getRoutingTree();
   if (!routingTree) {
@@ -248,10 +248,10 @@ void CUGR::getGuides(const GRNet* net,
         for (const auto& child : node->children) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             guides.emplace_back(node->getLayerIdx(),
-                                BoxT<int>(std::min(node->x, child->x),
-                                          std::min(node->y, child->y),
-                                          std::max(node->x, child->x),
-                                          std::max(node->y, child->y)));
+                                BoxT(std::min(node->x, child->x),
+                                     std::min(node->y, child->y),
+                                     std::max(node->x, child->x),
+                                     std::max(node->y, child->y)));
           } else {
             int maxLayerIndex
                 = std::max(node->getLayerIdx(), child->getLayerIdx());
@@ -259,7 +259,7 @@ void CUGR::getGuides(const GRNet* net,
                  = std::min(node->getLayerIdx(), child->getLayerIdx());
                  layerIdx <= maxLayerIndex;
                  layerIdx++) {
-              guides.emplace_back(layerIdx, BoxT<int>(node->x, node->y));
+              guides.emplace_back(layerIdx, BoxT(node->x, node->y));
             }
           }
         }
@@ -300,12 +300,11 @@ void CUGR::getGuides(const GRNet* net,
              layerIdx++) {
           guides.emplace_back(
               layerIdx,
-              BoxT<int>(
-                  std::max(gpt.x - padding, 0),
-                  std::max(gpt.y - padding, 0),
-                  std::min(gpt.x + padding, (int) grid_graph_->getSize(0) - 1),
-                  std::min(gpt.y + padding,
-                           (int) grid_graph_->getSize(1) - 1)));
+              BoxT(std::max(gpt.x - padding, 0),
+                   std::max(gpt.y - padding, 0),
+                   std::min(gpt.x + padding, (int) grid_graph_->getSize(0) - 1),
+                   std::min(gpt.y + padding,
+                            (int) grid_graph_->getSize(1) - 1)));
           area_of_pin_patches_ += (guides.back().second.x.range() + 1)
                                   * (guides.back().second.y.range() + 1);
         }
@@ -338,8 +337,7 @@ void CUGR::getGuides(const GRNet* net,
                     continue;
                   }
                   if (getSpareResource({layerIndex, point.x, point.y}) >= 1.0) {
-                    guides.emplace_back(layerIndex,
-                                        BoxT<int>(point.x, point.y));
+                    guides.emplace_back(layerIndex, BoxT(point.x, point.y));
                     area_of_wire_patches_ += 1;
                     patched = true;
                   }

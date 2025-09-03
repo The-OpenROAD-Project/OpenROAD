@@ -20,7 +20,7 @@ class GRNet
   {
     return pin_access_points_;
   }
-  const BoxT<int>& getBoundingBox() const { return bounding_box_; }
+  const BoxT& getBoundingBox() const { return bounding_box_; }
   const std::shared_ptr<GRTreeNode>& getRoutingTree() const
   {
     return routing_tree_;
@@ -36,7 +36,7 @@ class GRNet
   int index_;
   odb::dbNet* db_net_;
   std::vector<std::vector<GRPoint>> pin_access_points_;
-  BoxT<int> bounding_box_;
+  BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
 };
 

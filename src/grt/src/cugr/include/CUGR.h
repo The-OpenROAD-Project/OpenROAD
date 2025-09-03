@@ -74,7 +74,7 @@ class CUGR
  private:
   void sortNetIndices(std::vector<int>& netIndices) const;
   void getGuides(const GRNet* net,
-                 std::vector<std::pair<int, grt::BoxT<int>>>& guides);
+                 std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
 
   Design* design_ = nullptr;

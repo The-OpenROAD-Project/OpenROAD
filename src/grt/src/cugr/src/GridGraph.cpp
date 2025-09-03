@@ -90,7 +90,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
   }
 
   // Deduct obstacles usage for layers EXCEPT Metal 1
-  std::vector<std::vector<BoxT<int>>> obstacles(num_layers_);
+  std::vector<std::vector<BoxT>> obstacles(num_layers_);
   design->getAllObstacles(obstacles, true);
   for (int layer_index = 1; layer_index < num_layers_; layer_index++) {
     const MetalLayer& layer = design->getLayer(layer_index);
@@ -104,7 +104,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
                                    - grid_centers_[direction][edge_index]);
     }
     std::vector<
-        std::vector<std::shared_ptr<std::pair<BoxT<int>, IntervalT<int>>>>>
+        std::vector<std::shared_ptr<std::pair<BoxT, IntervalT<int>>>>>
         obstaclesInGrid(nGrids);  // obstacle indices sorted in track grids
     // Sort obstacles in track grids
     for (auto& obs : obstacles[layer_index]) {
@@ -114,14 +114,14 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
                     + layer.getWidth() / 2 - 1;
       PointT<int> margin(0, 0);
       margin[1 - direction] = spacing;
-      BoxT<int> obsBox(obs.x.low - margin.x,
+      BoxT obsBox(obs.x.low - margin.x,
                        obs.y.low - margin.y,
                        obs.x.high + margin.x,
                        obs.y.high + margin.y);  // enlarged obstacle box
       IntervalT<int> trackRange
           = layer.rangeSearchTracks(obsBox[1 - direction]);
-      std::shared_ptr<std::pair<BoxT<int>, IntervalT<int>>> obstacle
-          = std::make_shared<std::pair<BoxT<int>, IntervalT<int>>>(obsBox,
+      std::shared_ptr<std::pair<BoxT, IntervalT<int>>> obstacle
+          = std::make_shared<std::pair<BoxT, IntervalT<int>>>(obsBox,
                                                                    trackRange);
       // Get grid range
       IntervalT<int> gridRange
@@ -148,7 +148,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
         continue;
       }
       std::vector<
-          std::vector<std::shared_ptr<std::pair<BoxT<int>, IntervalT<int>>>>>
+          std::vector<std::shared_ptr<std::pair<BoxT, IntervalT<int>>>>>
           obstaclesAtEdge(nEdges);
       for (auto& obstacle : obstaclesInGrid[gridIndex]) {
         IntervalT<int> gridlineRange
@@ -243,7 +243,7 @@ IntervalT<int> GridGraph::rangeSearchRows(
           : std::min(lineRange.high, static_cast<int>(getSize(dimension)) - 1)};
 }
 
-BoxT<int> GridGraph::getCellBox(PointT<int> point) const
+BoxT GridGraph::getCellBox(PointT<int> point) const
 {
   return {getGridline(0, point.x),
           getGridline(1, point.y),
@@ -251,7 +251,7 @@ BoxT<int> GridGraph::getCellBox(PointT<int> point) const
           getGridline(1, point.y + 1)};
 }
 
-BoxT<int> GridGraph::rangeSearchCells(const BoxT<int>& box) const
+BoxT GridGraph::rangeSearchCells(const BoxT& box) const
 {
   return {rangeSearchRows(0, box[0]), rangeSearchRows(1, box[1])};
 }
