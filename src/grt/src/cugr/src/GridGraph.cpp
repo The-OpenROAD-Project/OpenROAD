@@ -262,8 +262,7 @@ int GridGraph::getEdgeLength(unsigned direction, unsigned edge_index) const
          - grid_centers_[direction][edge_index];
 }
 
-inline double GridGraph::logistic(const CapacityT& input,
-                                  const double slope) const
+double GridGraph::logistic(const CapacityT& input, const double slope) const
 {
   return 1.0 / (1.0 + exp(input * slope));
 }

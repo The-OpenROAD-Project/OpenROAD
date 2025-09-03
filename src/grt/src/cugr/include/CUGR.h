@@ -1,9 +1,5 @@
 #pragma once
 
-#include "geo.h"
-#include "grt/GRoute.h"
-
-// STL libraries
 #include <bitset>
 #include <csignal>
 #include <fstream>
@@ -16,13 +12,8 @@
 #include <tuple>
 #include <vector>
 
-// Boost libraries
-// #include <boost/functional/hash.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/index/rtree.hpp>
-
+#include "geo.h"
+#include "grt/GRoute.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -43,37 +34,30 @@ class Design;
 class GridGraph;
 class GRNet;
 
-namespace bg = boost::geometry;
-namespace bgi = boost::geometry::index;
-
-using boostPoint = bg::model::point<int, 2, bg::cs::cartesian>;
-using boostBox = bg::model::box<boostPoint>;
-using RTree = bgi::rtree<std::pair<boostBox, int>, bgi::rstar<32>>;
-
 struct Constants
 {
-  double weight_wire_length;
-  double weight_via_number;
-  double weight_short_area;
+  double weight_wire_length = 0.5;
+  double weight_via_number = 4.0;
+  double weight_short_area = 500.0;
 
-  int min_routing_layer;
+  int min_routing_layer = 1;
 
-  double cost_logistic_slope;
+  double cost_logistic_slope = 1.0;
 
   // allowed stem length increase to trunk length ratio
-  double max_detour_ratio;
-  int target_detour_count;
+  double max_detour_ratio = 0.25;
+  int target_detour_count = 20;
 
-  double via_multiplier;
+  double via_multiplier = 2.0;
 
-  double maze_logistic_slope;
+  double maze_logistic_slope = 0.5;
 
-  double pin_patch_threshold;
-  int pin_patch_padding;
-  double wire_patch_threshold;
-  double wire_patch_inflation_rate;
+  double pin_patch_threshold = 20.0;
+  int pin_patch_padding = 1;
+  double wire_patch_threshold = 2.0;
+  double wire_patch_inflation_rate = 1.2;
 
-  bool write_heatmap;
+  bool write_heatmap = false;
 };
 
 class CUGR
@@ -93,8 +77,8 @@ class CUGR
                  std::vector<std::pair<int, grt::BoxT<int>>>& guides);
   void printStatistics() const;
 
-  Design* design_;
-  GridGraph* grid_graph_;
+  Design* design_ = nullptr;
+  GridGraph* grid_graph_ = nullptr;
   std::vector<GRNet*> gr_nets_;
 
   odb::dbDatabase* db_;
@@ -103,8 +87,8 @@ class CUGR
 
   Constants constants_;
 
-  int area_of_pin_patches_;
-  int area_of_wire_patches_;
+  int area_of_pin_patches_ = 0;
+  int area_of_wire_patches_ = 0;
 };
 
 }  // namespace grt

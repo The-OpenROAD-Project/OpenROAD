@@ -67,7 +67,7 @@ class SparseGraph
   GRPoint getPoint(const int vertex) const { return vertices_[vertex]; }
 
  private:
-  inline int getVertexIndex(int direction, int xi, int yi) const
+  int getVertexIndex(int direction, int xi, int yi) const
   {
     return direction * xs_.size() * ys_.size() + yi * xs_.size() + xi;
   }
