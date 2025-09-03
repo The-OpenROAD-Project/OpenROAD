@@ -1659,7 +1659,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool minimum_target_util)
       sa_containers.push_back(std::move(sa));
     }
 
-    // usa sempre o primeiro valido que melhora o resultado?
     while (sa_containers.size() >= end_check) {
       while (begin_check < end_check) {
         auto& sa = sa_containers[begin_check];
