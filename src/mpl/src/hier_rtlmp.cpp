@@ -1529,8 +1529,11 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       }
     }
   } else {
-    target_utils.push_back(1e6);
-    target_dead_spaces.push_back(0.99999);
+    const float target_util = 1e6;
+    const float target_dead_space = 0.99999;
+    
+    target_utils.push_back(target_util);
+    target_dead_spaces.push_back(target_dead_space);
   }
 
   // Since target_util and target_dead_space are independent variables
