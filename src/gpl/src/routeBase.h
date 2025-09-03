@@ -199,6 +199,7 @@ class RouteBase
 
   void init();
   void resetRoutabilityResources();
+  void revertToMinCongestion();
 
   // update numCall_
   void increaseCounter();

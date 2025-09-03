@@ -260,6 +260,33 @@ void RouteBase::resetRoutabilityResources()
   inflatedAreaDelta_ = 0;
 }
 
+void RouteBase::revertToMinCongestion()
+{
+  log_->info(GPL,
+              55,
+              "Reverting inflation values and target density from the "
+              "iteration with "
+              "minimum observed routing congestion.");
+  log_->info(
+      GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
+  log_->info(GPL,
+              57,
+              "Target density at minimum routing congestion:");
+
+  // revert
+  nbc_->revertGCellSizeToMinRc();
+  for (auto& nb :  nbVec_) {
+    log_->info(GPL,
+              58,
+              "\t{}\t: {:.4f}",
+              nb->group()->getName(), minRcTargetDensity_);
+    nb->setTargetDensity(minRcTargetDensity_);
+    nb->restoreRemovedFillers();
+    nb->updateDensitySize();
+  }
+  resetRoutabilityResources();
+}
+
 void RouteBase::init()
 {
   // tg_ init
@@ -513,6 +540,15 @@ std::pair<bool, bool> RouteBase::routability(
     int routability_driven_revert_count)
 {
   increaseCounter();
+  if (routability_driven_revert_count >= max_routability_revert_) {
+    log_->info(GPL,
+                91,
+                "Routability mode reached the maximum allowed reverts {}",
+                routability_driven_revert_count);
+
+    revertToMinCongestion();
+    return std::make_pair(false, true);
+  }
 
   // create Tile Grid
   std::unique_ptr<TileGrid> tg(new TileGrid());
@@ -564,6 +600,20 @@ std::pair<bool, bool> RouteBase::routability(
                curRc,
                minRc_,
                min_RC_violated_cnt_);
+    
+    // rc not improvement detection -- (not improved the RC values 3 times in a
+    // row)
+    if (min_RC_violated_cnt_ >= max_routability_no_improvement_) {
+      log_->info(GPL,
+                54,
+                "No improvement in routing congestion for {} consecutive "
+                "iterations (limit is {}).",
+                min_RC_violated_cnt_,
+                max_routability_no_improvement_);
+
+      revertToMinCongestion();
+      return std::make_pair(false, true);
+    }
   }
 
   // set inflated ratio
@@ -664,60 +714,15 @@ std::pair<bool, bool> RouteBase::routability(
 
   nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
 
-  //
-  // max density detection or,
-  // rc not improvement detection -- (not improved the RC values 3 times in a
-  // row)
-  //
-  bool is_max_density_exceeded
-      = nbVec_[0]->getTargetDensity() > rbVars_.maxDensity;
-  bool congestion_not_improving
-      = min_RC_violated_cnt_ >= max_routability_no_improvement_;
-  bool is_max_routability_revert
-      = routability_driven_revert_count >= max_routability_revert_;
-
-  if (is_max_density_exceeded || congestion_not_improving
-      || is_max_routability_revert) {
-    if (is_max_density_exceeded) {
-      log_->info(GPL,
-                 53,
-                 "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
-                 nbVec_[0]->getTargetDensity(),
-                 rbVars_.maxDensity);
-    }
-    if (congestion_not_improving) {
-      log_->info(GPL,
-                 54,
-                 "No improvement in routing congestion for {} consecutive "
-                 "iterations (limit is {}).",
-                 min_RC_violated_cnt_,
-                 max_routability_no_improvement_);
-    }
-    if (is_max_routability_revert) {
-      log_->info(GPL,
-                 91,
-                 "Routability mode reached the maximum allowed reverts {}",
-                 routability_driven_revert_count);
-    }
-
-    log_->info(
-        GPL,
-        55,
-        "Reverting inflation values and target density from the iteration with "
-        "minimum observed routing congestion.");
-
-    log_->info(GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
+  // max density detection
+  if (nbVec_[0]->getTargetDensity() > rbVars_.maxDensity) {
     log_->info(GPL,
-               57,
-               "Target density at minimum routing congestion: {:.4f}",
-               minRcTargetDensity_);
+                53,
+                "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
+                nbVec_[0]->getTargetDensity(),
+                rbVars_.maxDensity);
 
-    nbVec_[0]->setTargetDensity(minRcTargetDensity_);
-    nbc_->revertGCellSizeToMinRc();
-    nbVec_[0]->restoreRemovedFillers();
-    nbVec_[0]->updateDensitySize();
-    resetRoutabilityResources();
-
+    revertToMinCongestion();
     return std::make_pair(false, true);
   }
 
