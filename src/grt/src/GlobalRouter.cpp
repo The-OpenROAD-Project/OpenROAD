@@ -1715,6 +1715,7 @@ void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
                                              const int& final_x,
                                              const int& final_y,
                                              const int& layer_level,
+                                             const int& new_layer_level,
                                              odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastrouter
@@ -1730,6 +1731,7 @@ void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
                                     grid_final_x,
                                     grid_final_y,
                                     layer_level - 1,
+                                    new_layer_level - 1,
                                     db_net);
 }
 

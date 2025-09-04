@@ -859,30 +859,44 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
+// Updates the layer assignment for specific route segments after repair
+// antennas. This function is called after jumper insertion during antenna
+// violation repair. When a jumper is inserted to fix an antenna violation,
+// certain route segments need to be moved to a different layer. This function
+// searches through all edges of the specified net and updates the layer
+// assignment for any route points that fall within the specified region.
 void FastRouteCore::updateRouteGridsLayer(int x1,
                                           int y1,
                                           int x2,
                                           int y2,
                                           int layer,
+                                          int new_layer,
                                           odb::dbNet* db_net)
 {
+  // Get the internal net ID from the database net object
   int net_id;
   bool exists;
   getNetId(db_net, net_id, exists);
 
+  // Access the routing tree edges for this net
   std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
   const int num_edges = sttrees_[net_id].num_edges();
 
+  // Iterate through all edges in the net's routing tree
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     TreeEdge* treeedge = &(treeedges[edgeID]);
+    // Only process edges that have actual routing
     if (treeedge->len > 0 || treeedge->route.routelen > 0) {
       int routeLen = treeedge->route.routelen;
       std::vector<GPoint3D>& grids = treeedge->route.grids;
 
+      // If the point is within the specified rectangular region AND on the
+      // original layer
       for (int i = 0; i <= routeLen; i++) {
         if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
             && grids[i].y <= y2 && grids[i].layer == layer) {
-          grids[i].layer = layer + 2;
+          // Update to the new layer
+          grids[i].layer = new_layer;
         }
       }
     }

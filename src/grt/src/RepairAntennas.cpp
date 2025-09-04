@@ -609,7 +609,7 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
       init_x, init_y, final_x, final_y, layer_level + 2, 1, db_net);
   // Update FastRoute Tree Edges
   grouter_->updateFastRouteGridsLayer(
-      init_x, init_y, final_x, final_y, layer_level, db_net);
+      init_x, init_y, final_x, final_y, layer_level, layer_level + 2, db_net);
 }
 
 void RepairAntennas::addJumperToRoute(GRoute& route,

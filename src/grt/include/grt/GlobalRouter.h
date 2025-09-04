@@ -206,6 +206,7 @@ class GlobalRouter
                                  const int& final_x,
                                  const int& final_y,
                                  const int& layer_level,
+                                 const int& new_layer_level,
                                  odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.

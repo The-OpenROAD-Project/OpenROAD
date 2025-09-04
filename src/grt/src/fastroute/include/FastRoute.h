@@ -19,7 +19,6 @@
 #include "boost/icl/interval_set.hpp"
 #include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
-#include "odb/db.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
@@ -209,6 +208,7 @@ class FastRouteCore
                              int x2,
                              int y2,
                              int layer,
+                             int new_layer,
                              odb::dbNet* db_net);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
