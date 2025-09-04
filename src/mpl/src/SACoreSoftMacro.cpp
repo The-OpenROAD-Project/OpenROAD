@@ -947,6 +947,7 @@ void SACoreSoftMacro::attemptCentralization(const float pre_cost)
                                  (outline_.getHeight() - height_) / 2);
   moveFloorplan(offset);
 
+  calPenalty();
   // revert centralization
   if (calNormCost() > pre_cost) {
     centralization_was_reverted_ = true;
@@ -974,8 +975,6 @@ void SACoreSoftMacro::moveFloorplan(const std::pair<float, float>& offset)
   if (graphics_) {
     graphics_->saStep(macros_);
   }
-
-  calPenalty();
 }
 
 Tiling SACoreSoftMacro::computeOverlapShape(const Rect& rect_a,
