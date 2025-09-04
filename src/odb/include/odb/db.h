@@ -7133,6 +7133,8 @@ class dbChipInst : public dbObject
 
   dbSet<dbChipRegionInst> getRegions() const;
 
+  dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
+
   dbChipRegionInst* findChipRegionInst(const std::string& name) const;
 
   static odb::dbChipInst* create(dbChip* parent_chip,

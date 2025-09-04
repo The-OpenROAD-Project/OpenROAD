@@ -162,15 +162,24 @@ dbSet<dbChipRegionInst> dbChipInst::getRegions() const
   return dbSet<dbChipRegionInst>(_chipinst, _db->chip_region_inst_itr_);
 }
 
-dbChipRegionInst* dbChipInst::findChipRegionInst(const std::string& name) const
+dbChipRegionInst* dbChipInst::findChipRegionInst(
+    dbChipRegion* chip_region) const
 {
+  if (chip_region == nullptr) {
+    return nullptr;
+  }
   _dbChipInst* obj = (_dbChipInst*) this;
-  auto it = obj->region_insts_map_.find(name);
+  auto it = obj->region_insts_map_.find(chip_region->getId());
   if (it != obj->region_insts_map_.end()) {
     auto db = (_dbDatabase*) obj->getOwner();
     return (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr((*it).second);
   }
   return nullptr;
+}
+
+dbChipRegionInst* dbChipInst::findChipRegionInst(const std::string& name) const
+{
+  return findChipRegionInst(getMasterChip()->findChipRegion(name));
 }
 
 dbChipInst* dbChipInst::create(dbChip* parent_chip,
@@ -226,7 +235,7 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     regioninst->parent_chipinst_ = chipinst->getOID();
     regioninst->chip_region_inst_next_ = chipinst->chip_region_insts_;
     chipinst->chip_region_insts_ = regioninst->getOID();
-    chipinst->region_insts_map_[region->getName()] = regioninst->getOID();
+    chipinst->region_insts_map_[region->getId()] = regioninst->getOID();
     // create chipBumpInsts
     for (auto bump : region->getChipBumps()) {
       _dbChipBumpInst* bumpinst = db->chip_bump_inst_tbl_->create();

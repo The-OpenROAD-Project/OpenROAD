@@ -42,8 +42,8 @@
     },
     {
       "name":"region_insts_map_",
-      "type":"std::unordered_map<std::string, dbId<_dbChipRegionInst>>",
-      "flags":["private", "no-serial"]
+      "type":"std::unordered_map<dbId<_dbChipRegion>, dbId<_dbChipRegionInst>>",
+      "flags":["private", "no-serial", "no-template"]
     }
   ],
   "h_includes": [
