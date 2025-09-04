@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include "dbCore.h"
 #include "odb/dbTypes.h"
@@ -16,6 +17,10 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChip;
+class _dbChipRegionInst;
+// User Code Begin Classes
+class _dbChipRegion;
+// User Code End Classes
 
 class _dbChipInst : public _dbObject
 {
@@ -33,6 +38,9 @@ class _dbChipInst : public _dbObject
   dbId<_dbChip> master_chip_;
   dbId<_dbChip> parent_chip_;
   dbId<_dbChipInst> chipinst_next_;
+  dbId<_dbChipRegionInst> chip_region_insts_;
+  std::unordered_map<dbId<_dbChipRegion>, dbId<_dbChipRegionInst>>
+      region_insts_map_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipInst& obj);

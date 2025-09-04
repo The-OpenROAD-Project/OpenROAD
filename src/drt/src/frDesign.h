@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
@@ -11,6 +12,7 @@
 
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
+#include "db/obj/frTrackPattern.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/drUpdate.h"
 #include "frBaseTypes.h"

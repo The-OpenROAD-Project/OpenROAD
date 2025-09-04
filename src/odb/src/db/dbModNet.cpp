@@ -166,6 +166,10 @@ const char* dbModNet::getName() const
 void dbModNet::rename(const char* new_name)
 {
   _dbModNet* obj = (_dbModNet*) this;
+  if (strcmp(obj->_name, new_name) == 0) {
+    return;
+  }
+
   _dbBlock* block = (_dbBlock*) obj->getOwner();
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
   parent->_modnet_hash.erase(obj->_name);

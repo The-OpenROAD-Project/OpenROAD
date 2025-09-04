@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -16,6 +18,7 @@
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
@@ -54,6 +57,7 @@ class SpefWriter;
 namespace grt {
 
 class FastRouteCore;
+class CUGR;
 class RepairAntennas;
 class Grid;
 class Pin;
@@ -103,6 +107,7 @@ using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
 using RoutePointToPinsMap = std::map<RoutePt, RoutePointPins>;
+using PointPair = std::pair<odb::Point, odb::Point>;
 
 class GlobalRouter
 {
@@ -148,6 +153,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
+  void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
 
   // flow functions
   void readGuides(const char* file_name);
@@ -181,7 +187,8 @@ class GlobalRouter
   bool hasAvailableResources(bool is_horizontal,
                              const int& pos_x,
                              const int& pos_y,
-                             const int& layer_level);
+                             const int& layer_level,
+                             odb::dbNet* db_net);
   odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
@@ -192,7 +199,15 @@ class GlobalRouter
                        const int& final_x,
                        const int& final_y,
                        const int& layer_level,
-                       int used);
+                       int used,
+                       odb::dbNet* db_net);
+  void updateFastRouteGridsLayer(const int& init_x,
+                                 const int& init_y,
+                                 const int& final_x,
+                                 const int& final_y,
+                                 const int& layer_level,
+                                 const int& new_layer_level,
+                                 odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
@@ -267,7 +282,7 @@ class GlobalRouter
 
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -336,14 +351,14 @@ class GlobalRouter
                                std::vector<int8_t>*& edge_costs_per_layer);
 
   // aux functions
-  std::vector<odb::Point> findOnGridPositions(const Pin& pin,
-                                              bool& has_access_points,
-                                              odb::Point& pos_on_grid,
-                                              bool ignore_db_access_points
-                                              = false);
+  std::vector<RoutePt> findOnGridPositions(const Pin& pin,
+                                           bool& has_access_points,
+                                           odb::Point& pos_on_grid,
+                                           bool ignore_db_access_points
+                                           = false);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
-  void computePinPositionOnGrid(std::vector<odb::Point>& pin_positions_on_grid,
+  void computePinPositionOnGrid(std::vector<RoutePt>& pin_positions_on_grid,
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
@@ -452,6 +467,7 @@ class GlobalRouter
   dpl::Opendp* opendp_;
   // Objects variables
   FastRouteCore* fastroute_;
+  CUGR* cugr_;
   odb::Point grid_origin_;
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
@@ -474,6 +490,7 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  bool use_cugr_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
@@ -533,6 +550,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
+  void inDbITermPostSetAccessPoints(odb::dbITerm* iterm) override;
 
   void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
   void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;

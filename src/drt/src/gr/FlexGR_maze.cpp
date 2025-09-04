@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <deque>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <memory>
@@ -9,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 
 namespace drt {

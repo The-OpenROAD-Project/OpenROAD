@@ -3,19 +3,21 @@
 
 #pragma once
 
-#include <boost/functional/hash.hpp>
-#include <boost/icl/interval.hpp>
-#include <boost/icl/interval_set.hpp>
-#include <boost/multi_array.hpp>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "DataType.h"
 #include "Graph2D.h"
+#include "boost/functional/hash.hpp"
+#include "boost/icl/interval.hpp"
+#include "boost/icl/interval_set.hpp"
+#include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
@@ -117,7 +119,10 @@ class FastRouteCore
   void clearNetRoute(odb::dbNet* db_net);
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
-  void setNumAdjustments(int nAdjustements);
+  void init3DEdges();
+  int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
+  void initEdgesCapacityPerLayer();
+  void setNumAdjustments(int nAdjustments);
   void addAdjustment(int x1,
                      int y1,
                      int x2,
@@ -195,8 +200,16 @@ class FastRouteCore
                               int x2,
                               int y2,
                               int layer,
-                              int used);
+                              int used,
+                              odb::dbNet* db_net);
   void setMaxNetDegree(int);
+  void updateRouteGridsLayer(int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int layer,
+                             int new_layer,
+                             odb::dbNet* db_net);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
@@ -230,6 +243,7 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+  void clearNDRnets();
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }

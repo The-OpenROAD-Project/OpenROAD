@@ -8,11 +8,13 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
-#include "FlexPA.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMPin.h"
 #include "frBaseTypes.h"
+#include "global.h"
 #include "gui/gui.h"
+#include "pa/AbstractPAGraphics.h"
+#include "pa/FlexPA.h"
 
 namespace odb {
 class dbDatabase;

@@ -4,6 +4,8 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>
@@ -11,6 +13,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -106,7 +109,13 @@ class dbAccessPoint;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
+class dbChipBump;
+class dbChipBumpInst;
+class dbChipConn;
 class dbChipInst;
+class dbChipNet;
+class dbChipRegion;
+class dbChipRegionInst;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -6994,6 +7003,8 @@ class dbChip : public dbObject
 
   bool isTsv() const;
 
+  dbSet<dbChipRegion> getChipRegions() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7004,6 +7015,14 @@ class dbChip : public dbObject
   dbBlock* getBlock();
 
   dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
+
+  dbSet<dbChipNet> getChipNets() const;
+
+  dbChipInst* findChipInst(const std::string& name) const;
+
+  dbChipRegion* findChipRegion(const std::string& name) const;
 
   ///
   /// Create a new chip.
@@ -7023,6 +7042,73 @@ class dbChip : public dbObject
   ///
   static void destroy(dbChip* chip);
   // User Code End dbChip
+};
+
+class dbChipBump : public dbObject
+{
+ public:
+  // User Code Begin dbChipBump
+  dbChip* getChip() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  dbInst* getInst() const;
+
+  dbNet* getNet() const;
+
+  dbBTerm* getBTerm() const;
+
+  void setNet(dbNet* net);
+
+  void setBTerm(dbBTerm* bterm);
+
+  static dbChipBump* create(dbChipRegion* chip_region, dbInst* inst);
+
+  // User Code End dbChipBump
+};
+
+class dbChipBumpInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipBumpInst
+
+  dbChipBump* getChipBump() const;
+
+  dbChipRegionInst* getChipRegionInst() const;
+
+  // User Code End dbChipBumpInst
+};
+
+class dbChipConn : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  void setThickness(int thickness);
+
+  int getThickness() const;
+
+  // User Code Begin dbChipConn
+
+  dbChip* getParentChip() const;
+
+  dbChipRegionInst* getTopRegion() const;
+
+  dbChipRegionInst* getBottomRegion() const;
+
+  std::vector<dbChipInst*> getTopRegionPath() const;
+
+  std::vector<dbChipInst*> getBottomRegionPath() const;
+
+  static dbChipConn* create(const std::string& name,
+                            dbChip* parent_chip,
+                            const std::vector<dbChipInst*>& top_region_path,
+                            dbChipRegionInst* top_region,
+                            const std::vector<dbChipInst*>& bottom_region_path,
+                            dbChipRegionInst* bottom_region);
+
+  static void destroy(dbChipConn* chipConn);
+  // User Code End dbChipConn
 };
 
 class dbChipInst : public dbObject
@@ -7045,12 +7131,87 @@ class dbChipInst : public dbObject
 
   dbTransform getTransform() const;
 
+  dbSet<dbChipRegionInst> getRegions() const;
+
+  dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
+
+  dbChipRegionInst* findChipRegionInst(const std::string& name) const;
+
   static odb::dbChipInst* create(dbChip* parent_chip,
                                  dbChip* master_chip,
                                  const std::string& name);
 
   static void destroy(dbChipInst* chipInst);
   // User Code End dbChipInst
+};
+
+class dbChipNet : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  // User Code Begin dbChipNet
+  dbChip* getChip() const;
+
+  uint getNumBumpInsts() const;
+
+  dbChipBumpInst* getBumpInst(uint index, std::vector<dbChipInst*>& path) const;
+
+  void addBumpInst(dbChipBumpInst* bump_inst,
+                   const std::vector<dbChipInst*>& path);
+
+  static dbChipNet* create(dbChip* chip, const std::string& name);
+
+  static void destroy(dbChipNet* net);
+  // User Code End dbChipNet
+};
+
+class dbChipRegion : public dbObject
+{
+ public:
+  enum class Side
+  {
+    FRONT,
+    BACK,
+    INTERNAL,
+    INTERNAL_EXT
+  };
+
+  std::string getName() const;
+
+  void setBox(const Rect& box);
+
+  Rect getBox() const;
+
+  dbSet<dbChipBump> getChipBumps() const;
+
+  // User Code Begin dbChipRegion
+  dbChip* getChip() const;
+
+  Side getSide() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbChipRegion* create(dbChip* chip,
+                              const std::string& name,
+                              Side side,
+                              dbTechLayer* layer);
+
+  // User Code End dbChipRegion
+};
+
+class dbChipRegionInst : public dbObject
+{
+ public:
+  // User Code Begin dbChipRegionInst
+
+  dbChipInst* getChipInst() const;
+
+  dbChipRegion* getChipRegion() const;
+
+  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+
+  // User Code End dbChipRegionInst
 };
 
 class dbDatabase : public dbObject
@@ -7063,6 +7224,14 @@ class dbDatabase : public dbObject
   dbSet<dbProperty> getProperties() const;
 
   dbSet<dbChipInst> getChipInsts() const;
+
+  dbSet<dbChipRegionInst> getChipRegionInsts() const;
+
+  dbSet<dbChipConn> getChipConns() const;
+
+  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+
+  dbSet<dbChipNet> getChipNets() const;
 
   // User Code Begin dbDatabase
 

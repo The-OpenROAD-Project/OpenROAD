@@ -1,5 +1,7 @@
 #include "PlacementDRC.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <set>
 #include <string>
 

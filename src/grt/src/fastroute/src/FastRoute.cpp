@@ -5,8 +5,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <memory>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -15,6 +17,7 @@
 #include "DataType.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -354,6 +357,11 @@ void FastRouteCore::clearNetRoute(const int netID)
   sttrees_[netID].edges.clear();
 }
 
+void FastRouteCore::clearNDRnets()
+{
+  graph2d_.clearNDRnets();
+}
+
 void FastRouteCore::initEdges()
 {
   const float LB = 0.9;
@@ -362,8 +370,14 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  graph2d_.init(x_grid_, y_grid_, h_capacity_, v_capacity_);
+  graph2d_.init(
+      x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
 
+  init3DEdges();
+}
+
+void FastRouteCore::init3DEdges()
+{
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
@@ -384,6 +398,28 @@ void FastRouteCore::initEdges()
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
         v_edges_3D_[k][i][j].red = 0;
+      }
+    }
+  }
+}
+
+// Useful to prevent NDR nets to be assigned to 3D edges with insufficient
+// capacity. Need to be initialized after all the adjustments
+void FastRouteCore::initEdgesCapacityPerLayer()
+{
+  graph2d_.initCap3D();
+
+  for (int y = 0; y < y_grid_; y++) {
+    for (int x = 0; x < x_grid_; x++) {
+      for (int l = 0; l < num_layers_; l++) {
+        if (x < x_grid_ - 1) {
+          graph2d_.updateCap3D(
+              x, y, l, EdgeDirection::Horizontal, h_edges_3D_[l][y][x].cap);
+        }
+        if (y < y_grid_ - 1) {
+          graph2d_.updateCap3D(
+              x, y, l, EdgeDirection::Vertical, v_edges_3D_[l][y][x].cap);
+        }
       }
     }
   }
@@ -731,19 +767,29 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
                                            int x2,
                                            int y2,
                                            int layer,
-                                           int used)
+                                           int used,
+                                           odb::dbNet* db_net)
 {
   const int k = layer - 1;
+  FrNet* net = nullptr;
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  net = nets_[net_id];
+
+  int8_t layer_edge_cost = net->getLayerEdgeCost(k);
+  int8_t edge_cost = net->getEdgeCost();
 
   if (y1 == y2) {  // horizontal edge
-    graph2d_.addUsageH({x1, x2}, y1, used);
+    graph2d_.updateUsageH({x1, x2}, y1, net, used * edge_cost);
     for (int x = x1; x < x2; x++) {
-      h_edges_3D_[k][y1][x].usage += used;
+      h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
     }
   } else if (x1 == x2) {  // vertical edge
-    graph2d_.addUsageV(x1, {y1, y2}, used);
+    graph2d_.updateUsageV(x1, {y1, y2}, net, used * edge_cost);
     for (int y = y1; y < y2; y++) {
-      v_edges_3D_[k][y][x1].usage += used;
+      v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
     }
   }
 }
@@ -811,6 +857,59 @@ NetRouteMap FastRouteCore::getRoutes()
   }
 
   return routes;
+}
+
+// Updates the layer assignment for specific route segments after repair
+// antennas. This function is called after jumper insertion during antenna
+// violation repair. When a jumper is inserted to fix an antenna violation,
+// certain route segments need to be moved to a different layer. This function
+// searches through all edges of the specified net and updates the layer
+// assignment for any route points that fall within the specified region.
+void FastRouteCore::updateRouteGridsLayer(int x1,
+                                          int y1,
+                                          int x2,
+                                          int y2,
+                                          int layer,
+                                          int new_layer,
+                                          odb::dbNet* db_net)
+{
+  // Get the internal net ID from the database net object
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  // Access the routing tree edges for this net
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  // Iterate through all edges in the net's routing tree
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    // Only process edges that have actual routing
+    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+      int routeLen = treeedge->route.routelen;
+      std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+      // If the point is within the specified rectangular region AND on the
+      // original layer
+      for (int i = 0; i <= routeLen; i++) {
+        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
+            && grids[i].y <= y2 && grids[i].layer == layer) {
+          // Update to the new layer
+          grids[i].layer = new_layer;
+        }
+      }
+    }
+  }
+}
+
+int FastRouteCore::getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  return nets_[net_id]->getLayerEdgeCost(layer - 1);
 }
 
 NetRouteMap FastRouteCore::getPlanarRoutes()
@@ -1073,20 +1172,49 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
+  const int long_edge_len = 40;
+  const int short_edge_len = 12;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
-
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
-  routeLAll(true);
-  gen_brk_RSMT(true, true, true, false, noADJ);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After RSMT");
+  }
 
+  // First time L routing
+  routeLAll(true);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After routeLAll");
+  }
+
+  // Congestion-driven rip-up and reroute L
+  gen_brk_RSMT(true, true, true, false, noADJ);
   getOverflow2D(&maxOverflow);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After congestion-driven RSMT");
+  }
+
+  // New rip-up and reroute L via-guided
   newrouteLAll(false, true);
   getOverflow2D(&maxOverflow);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After newRouteLAll");
+  }
+
+  // Rip-up and reroute using spiral route
   spiralRouteAll();
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After spiralRouteAll");
+  }
+
+  // Rip-up a tree edge according to its ripup type and Z-route it
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
+
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After newRouteZAll");
+  }
 
   convertToMazeroute();
 
@@ -1123,8 +1251,6 @@ NetRouteMap FastRouteCore::run()
       newTH = 1;
     }
   }
-
-  //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
   graph2d_.InitEstUsage();
 
@@ -1228,7 +1354,6 @@ NetRouteMap FastRouteCore::run()
     }
 
     if (maxOverflow == 1) {
-      // L = 0;
       ripup_threshold = -1;
       slope = 5;
     }
@@ -1247,6 +1372,7 @@ NetRouteMap FastRouteCore::run()
                   L,
                   cost_params,
                   slack_th);
+
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1379,6 +1505,17 @@ NetRouteMap FastRouteCore::run()
 
     last_total_overflow = total_overflow_;
 
+    if (logger_->debugCheck(GRT, "congestionIterations", 1)) {
+      logger_->report(
+          "=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - "
+          "OverflowIncreases {} - MaxOverIncr {} ===",
+          i,
+          total_overflow_,
+          overflow_iterations_,
+          overflow_increases,
+          max_overflow_increases);
+    }
+
     // generate DRC report each interval
     if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
       saveCongestion(i);
@@ -1387,6 +1524,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
+    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
@@ -1425,12 +1563,24 @@ NetRouteMap FastRouteCore::run()
 
   layerAssignment();
 
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    getOverflow3D();
+    logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
+                    past_cong,
+                    total_overflow_);
+  }
+
   costheight_ = 3;
   via_cost_ = 1;
 
   if (past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 20);
-    mazeRouteMSMDOrder3D(enlarge_, 0, 12);
+    mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
+    mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+  }
+
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    getOverflow3D();
+    logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
   }
 
   fillVIA();

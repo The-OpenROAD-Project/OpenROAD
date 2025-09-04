@@ -33,6 +33,17 @@
       "name":"chipinst_next_",
       "type":"dbId<_dbChipInst>",
       "flags":["private"]
+    },
+    {
+      "name":"chip_region_insts_",
+      "type":"dbId<_dbChipRegionInst>",
+      "flags":["private"],
+      "schema":"db_schema_chip_region"
+    },
+    {
+      "name":"region_insts_map_",
+      "type":"std::unordered_map<dbId<_dbChipRegion>, dbId<_dbChipRegionInst>>",
+      "flags":["private", "no-serial", "no-template"]
     }
   ],
   "h_includes": [

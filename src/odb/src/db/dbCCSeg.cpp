@@ -3,14 +3,18 @@
 
 #include "dbCCSeg.h"
 
+#include <cstdio>
+
 #include "dbBlock.h"
 #include "dbCapNode.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbJournal.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {

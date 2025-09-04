@@ -14,6 +14,7 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 namespace dpl {
 

@@ -3,7 +3,10 @@
 
 #include "db/obj/frShape.h"
 
+#include <tuple>
+
 #include "db/drObj/drShape.h"
+#include "db/obj/frFig.h"
 #include "db/taObj/taShape.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"

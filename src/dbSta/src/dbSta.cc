@@ -12,7 +12,11 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cctype>
 #include <cmath>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -28,6 +32,7 @@
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"

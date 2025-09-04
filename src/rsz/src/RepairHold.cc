@@ -4,11 +4,14 @@
 #include "RepairHold.hh"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 
+#include "BufferMove.hh"
 #include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -212,21 +215,20 @@ bool isDelayCell(const std::string& cell_name)
 void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
 {
   LibertyCellSeq buffer_list;
-  LibraryAnalysisData lib_data;
-  resizer_->getBufferList(buffer_list, lib_data);
+  resizer_->getBufferList(buffer_list);
 
   // Pick the least leaky VT for multiple VTs
   int best_vt_index = -1;
-  int num_vt = lib_data.sorted_vt_categories.size();
+  int num_vt = resizer_->lib_data_->sorted_vt_categories.size();
   if (num_vt > 0) {
-    best_vt_index = lib_data.sorted_vt_categories[0].first.vt_index;
+    best_vt_index = resizer_->lib_data_->sorted_vt_categories[0].first.vt_index;
   }
 
   // Pick the shortest cell site because this offers the most flexibility for
   // hold fixing
   int best_height = std::numeric_limits<int>::max();
   odb::dbSite* best_site = nullptr;
-  for (const auto& site_data : lib_data.cells_by_site) {
+  for (const auto& site_data : resizer_->lib_data_->cells_by_site) {
     int height = site_data.first->getHeight();
     if (height < best_height) {
       best_height = height;
@@ -236,7 +238,7 @@ void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
 
   // Use DELAY cell footprint if available
   bool lib_has_footprints = false;
-  for (const auto& [ft_str, count] : lib_data.cells_by_footprint) {
+  for (const auto& [ft_str, count] : resizer_->lib_data_->cells_by_footprint) {
     if (isDelayCell(ft_str)) {
       lib_has_footprints = true;
       break;
@@ -313,7 +315,7 @@ bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
     bool vt_matches = true;
     if (match_vt) {
       auto vt_type = resizer_->cellVTType(master);
-      vt_matches = best_vt_index == -1 || vt_type.first == best_vt_index;
+      vt_matches = best_vt_index == -1 || vt_type.vt_index == best_vt_index;
     }
 
     bool footprint_matches = true;
@@ -543,14 +545,9 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
       for (int i = 0; i < path_vertices.size() - 1; i++) {
         Vertex* path_vertex = path_vertices[i];
         Pin* path_pin = path_vertex->pin();
-        // explicitly force getting the flat net.
-        odb::dbNet* db_path_net
-            = network_->isTopLevelPort(path_pin)
-                  ? db_network_->flatNet(network_->term(path_pin))
-                  : db_network_->flatNet(const_cast<Pin*>(path_pin));
 
-        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
-            && !db_path_net->isConnectedByAbutment()) {
+        if (path_vertex->isDriver(network_)
+            && resizer_->okToBufferNet(path_pin)) {
           PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
@@ -680,140 +677,78 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                const Point& loc)
 {
   Pin* drvr_pin = drvr->pin();
-  odb::dbModNet* mod_drvr_net = nullptr;  // hierarchical driver, default none
-  dbNet* db_drvr_net = nullptr;           // regular flat driver
+  dbNet* db_drvr_net = db_network_->findFlatDbNet(drvr_pin);
+  odb::dbModNet* mod_drvr_net = db_network_->hierNet(drvr_pin);
+  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
-  Instance* parent = nullptr;
-  if (db_network_->hasHierarchy()) {
-    // get the nets on the driver pin (possibly both flat and hierarchical)
-    db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
-    // Get the parent instance (owning the instance of the driver pin)
-    // we will put the new buffer in that parent
-    parent = db_network_->getOwningInstanceParent(drvr_pin);
-    // exception case: drvr pin is a top level, fix the db_drvr_net to be
-    // the lower level net. Explictly get the "flat" net.
-    if (network_->isTopLevelPort(drvr_pin)) {
-      db_drvr_net = db_network_->flatNet(db_network_->term(drvr_pin));
-    }
-  } else {
-    // original flat code (which handles exception case at top level &
-    // defaults to top level instance as parent).
-    db_drvr_net = db_network_->staToDb(
-        network_->isTopLevelPort(drvr_pin)
-            ? db_network_->net(db_network_->term(drvr_pin))
-            : db_network_->net(drvr_pin));
-    parent = db_network_->topInstance();
-  }
-  Net *in_net = nullptr, *out_net = nullptr;
-
-  if (loads_have_out_port) {
-    // Verilog uses nets as ports, so the net connected to an output port has
-    // to be preserved.
-    // Move the driver pin over to gensym'd net.
+  // If output port is in load pins, do "Driver pin buffering".
+  // - Verilog uses nets as ports, so the net connected to an output port has
+  // - to be preserved.
+  // - Move the driver pin over to gensym'd net.
+  // Otherwise, do "Load pin buffering".
+  bool driver_pin_buffering = loads_have_out_port;
+  Net* buf_input_net = nullptr;
+  Net* buf_output_net = nullptr;
+  if (driver_pin_buffering) {
+    // Do "Driver pin buffering": Buffer drives the existing net.
     //
-    in_net = db_network_->makeNet();
+    //     driver --- (new_net) --- new_buffer ---- (existing_net) ---- loads
+    //
+    buf_input_net = db_network_->makeNet(parent);  // New net
     Port* drvr_port = network_->port(drvr_pin);
     Instance* drvr_inst = network_->instance(drvr_pin);
     sta_->disconnectPin(drvr_pin);
-    sta_->connectPin(drvr_inst, drvr_port, in_net);
-    out_net = db_network_->dbToSta(db_drvr_net);
+    sta_->connectPin(drvr_inst, drvr_port, buf_input_net);
+    buf_output_net = db_network_->dbToSta(db_drvr_net);
   } else {
-    in_net = db_network_->dbToSta(db_drvr_net);
-    // make the output net, put in same module as buffer
-    out_net = db_network_->makeNet(parent);
+    // Do "Load pin buffering": The existing net drives the new buffer.
+    //
+    //     driver --- (existing_net) --- new_buffer ---- (new_net) ---- loads
+    //
+    buf_input_net = db_network_->dbToSta(db_drvr_net);
+    buf_output_net = db_network_->makeNet(parent);  // New net
   }
 
-  dbNet* in_net_db = db_network_->staToDb(in_net);
-
-  // Disconnect the original drvr pin from everything (hierarchical nets
-  // and flat nets).
-  odb::dbITerm* drvr_pin_iterm;
-  odb::dbBTerm* drvr_pin_bterm;
-  odb::dbModITerm* drvr_pin_moditerm;
-  db_network_->staToDb(
-      drvr_pin, drvr_pin_iterm, drvr_pin_bterm, drvr_pin_moditerm);
-  if (drvr_pin_iterm) {
-    // disconnect the iterm from both the modnet and the dbnet
-    // note we will rewire the drvr_pin to connect to the new buffer later.
-    drvr_pin_iterm->disconnect();
-    drvr_pin_iterm->connect(in_net_db);
-  }
-  if (drvr_pin_moditerm) {
-    drvr_pin_moditerm->disconnect();
-  }
-
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-
-  // drvr_pin->drvr_net->hold_buffer->net2->load_pins
-
-  // make the buffer in the driver pin's parent
+  // Make the buffer in the driver pin's parent hierarchy
   Instance* buffer = resizer_->makeBuffer(buffer_cell, "hold", parent, loc);
   inserted_buffer_count_++;
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
 
-  // wire in the buffer
-  sta_->connectPin(buffer, input, in_net);
-  sta_->connectPin(buffer, output, out_net);
-
-  // Now patch in the output of the new buffer to the original hierarchical
-  // net,if any, from the original driver
-  if (mod_drvr_net != nullptr) {
-    Pin* ip_pin = nullptr;
-    Pin* op_pin = nullptr;
-    resizer_->getBufferPins(buffer, ip_pin, op_pin);
-    (void) ip_pin;
-    if (op_pin) {
-      // get the iterm of the op_pin of the buffer (a dbInst)
-      // and connect to the hierarchical net.
-      odb::dbITerm* iterm;
-      odb::dbBTerm* bterm;
-      odb::dbModITerm* moditerm;
-      db_network_->staToDb(op_pin, iterm, bterm, moditerm);
-      // we only need to look at the iterm, the buffer is a dbInst
-      if (iterm) {
-        // hook up the hierarchical net
-        iterm->connect(mod_drvr_net);
-      }
-    }
-  }
-
-  // hook up loads to buffer
-  for (const Pin* load_pin : load_pins) {
-    if (resizer_->dontTouch(load_pin)) {
-      continue;
-    }
-    dbNet* db_load_net = network_->isTopLevelPort(load_pin)
-                             ? db_network_->flatNet(network_->term(load_pin))
-                             : db_network_->flatNet(load_pin);
-    Net* load_net = db_network_->dbToSta(db_load_net);
-
-    if (load_net != out_net) {
-      Instance* load = db_network_->instance(load_pin);
-      Port* load_port = db_network_->port(load_pin);
-      // record the original connections
-      odb::dbModNet* original_mod_net = nullptr;
-      odb::dbNet* original_flat_net = nullptr;
-      db_network_->net(load_pin, original_flat_net, original_mod_net);
-      (void) original_flat_net;
-      // Remove all the connections on load_pin
-      sta_->disconnectPin(const_cast<Pin*>(load_pin));
-      // Connect it to the correct output driver net
-      sta_->connectPin(load, load_port, out_net);
-      // connect the original load  modnet (hierarchical net), if any,
-      // on the iterm of the buffer created.
-      odb::dbITerm* iterm;
-      odb::dbBTerm* bterm;
-      odb::dbModITerm* moditerm;
-      db_network_->staToDb(load_pin, iterm, bterm, moditerm);
-      if (iterm && original_mod_net) {
-        iterm->connect(original_mod_net);
-      }
-    }
-  }
-
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  Pin* buffer_in_pin = network_->findPin(buffer, input);
   Pin* buffer_out_pin = network_->findPin(buffer, output);
+
+  // Connect input and output of the new buffer
+  sta_->connectPin(buffer, input, buf_input_net);
+  sta_->connectPin(buffer, output, buf_output_net);
+
+  // TODO: Revisit this. Looks not good.
+  if (mod_drvr_net) {
+    //  The input of the buffer is a new load on the original hierarchical net.
+    db_network_->connectPin(buffer_in_pin, (Net*) mod_drvr_net);
+  }
+
+  // Buffering target load pins.
+  // - No need in driver pin buffering case
+  if (driver_pin_buffering == false) {
+    // Do load pins buffering
+    for (const Pin* load_pin : load_pins) {
+      if (resizer_->dontTouch(load_pin)) {
+        continue;
+      }
+
+      // Disconnect the load pin
+      db_network_->disconnectPin(const_cast<Pin*>(load_pin));
+
+      // Connect with the buffer output
+      db_network_->hierarchicalConnect(db_network_->flatPin(buffer_out_pin),
+                                       db_network_->flatPin(load_pin));
+    }
+  }
+
+  // Update RC and delay. Resize if necessary
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   estimate_parasitics_->updateParasitics();
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.

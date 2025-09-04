@@ -13,6 +13,7 @@
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
+#include "odb/db.h"
 
 namespace rsz {
 
@@ -405,7 +406,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     }
   }
 
-  // Remove buffer from the database and handle the nets
+  // Disconnect the buffer and handle the nets
   debugPrint(logger_,
              RSZ,
              "remove_buffer",
@@ -423,10 +424,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
-  sta_->deleteInstance(buffer);
-  if (removed) {
-    sta_->deleteNet(removed);
-  }
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
@@ -445,6 +442,12 @@ void UnbufferMove::removeBuffer(Instance* buffer)
                db_network_->name(driver_pin),
                db_network_->name(in_net));
     db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
+  }
+
+  // Deletion
+  sta_->deleteInstance(buffer);
+  if (removed) {
+    sta_->deleteNet(removed);
   }
 
   estimate_parasitics_->removeNetFromParasiticsInvalid(removed);

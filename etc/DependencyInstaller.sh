@@ -91,7 +91,7 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        eval wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        eval wget https://github.com/Kitware/CMake/releases/download/v${cmakeVersionSmall}/cmake-${cmakeVersionSmall}-linux-${arch}.sh
         md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
@@ -861,10 +861,10 @@ while [ "$#" -gt 0 ]; do
             export GIT_SSL_NO_VERIFY=true
             ;;
         -save-deps-prefixes=*)
-            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
+            saveDepsPrefixes=$(realpath ${1#*=})
             ;;
         -threads=*)
-            numThreads=${1}
+            numThreads=${1#*=}
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -910,13 +910,13 @@ esac
 case "${os}" in
     "Ubuntu" )
         ubuntuVersion=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        if [[ ${CI} == "yes" ]]; then
-            _installCI "${ubuntuVersion}"
-        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installUbuntuPackages "${ubuntuVersion}"
             _installUbuntuCleanUp
+        fi
+        if [[ ${CI} == "yes" ]]; then
+            _installCI "${ubuntuVersion}"
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev

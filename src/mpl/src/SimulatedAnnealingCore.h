@@ -69,7 +69,7 @@ class SimulatedAnnealingCore
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
-  bool isValid(const Rect& outline) const;
+  bool fitsIn(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
@@ -83,7 +83,7 @@ class SimulatedAnnealingCore
   float getNormGuidancePenalty() const;
   float getFencePenalty() const;
   float getNormFencePenalty() const;
-  void getMacros(std::vector<T>& macros) const;
+  std::vector<T> getMacros() const;
 
   virtual void initialize() = 0;
   virtual void run() = 0;
@@ -92,6 +92,8 @@ class SimulatedAnnealingCore
  protected:
   struct Result
   {
+    bool empty() const { return sequence_pair.pos_sequence.empty(); }
+
     float cost{std::numeric_limits<float>::max()};
     SequencePair sequence_pair;
     // [Only for SoftMacro] The same sequence pair can represent different
@@ -105,8 +107,8 @@ class SimulatedAnnealingCore
       const BoundaryRegionList& regions);
   void initSequencePair();
   void setDieArea(const Rect& die_area);
-  void updateBestValidResult(float cost);
-  void useBestValidResult();
+  void updateBestResult(float cost);
+  void useBestResult();
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -152,9 +154,6 @@ class SimulatedAnnealingCore
   std::map<int, Rect> guides_;  // Macro Id -> Guide
 
   SACoreWeights core_weights_;
-
-  float original_notch_weight_ = 0.0;
-  float notch_weight_ = 0.0;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
@@ -210,7 +209,8 @@ class SimulatedAnnealingCore
   MplObserver* graphics_ = nullptr;
   odb::dbBlock* block_;
 
-  Result best_valid_result_;
+  Result best_result_;
+  bool is_best_result_valid_ = false;
 
   std::vector<float> cost_list_;  // store the cost in the list
   std::vector<float> T_list_;     // store the temperature

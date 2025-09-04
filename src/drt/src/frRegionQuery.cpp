@@ -3,13 +3,18 @@
 
 #include "frRegionQuery.h"
 
-#include <boost/polygon/polygon.hpp>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstBlockage.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"

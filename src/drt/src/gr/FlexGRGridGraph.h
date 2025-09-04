@@ -9,14 +9,18 @@ constexpr int GRDEMANDSIZE = 16;
 constexpr int GRFRACSIZE = 1;
 
 #include <algorithm>
+#include <bitset>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <vector>
 
 #include "db/grObj/grPin.h"
+#include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "gr/FlexGRWavefront.h"
 
 namespace drt {

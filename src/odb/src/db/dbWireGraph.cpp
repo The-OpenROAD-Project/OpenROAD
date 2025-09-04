@@ -3,12 +3,15 @@
 
 #include "odb/dbWireGraph.h"
 
+#include <cassert>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "dbWire.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 
 namespace odb {

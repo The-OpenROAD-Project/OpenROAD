@@ -128,6 +128,20 @@ set_layer_rc_cmd(odb::dbTechLayer *layer,
   estimate_parasitics->setLayerRC(layer, corner, res, cap);
 }
 
+void
+add_clk_layer_cmd(odb::dbTechLayer *layer)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->addClkLayer(layer);
+}
+
+void
+add_signal_layer_cmd(odb::dbTechLayer *layer)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->addSignalLayer(layer);
+}
+
 double
 layer_resistance(odb::dbTechLayer *layer,
                  const Corner *corner)

@@ -4,7 +4,6 @@
 #include "object.h"
 
 #include <algorithm>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <iterator>
 #include <map>
@@ -14,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/random/uniform_int_distribution.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "util.h"

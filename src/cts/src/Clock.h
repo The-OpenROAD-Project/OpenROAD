@@ -15,6 +15,7 @@
 
 #include "Util.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 
 namespace utl {
 class Logger;

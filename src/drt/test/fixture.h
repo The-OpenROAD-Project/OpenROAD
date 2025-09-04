@@ -31,7 +31,14 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frInst.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;

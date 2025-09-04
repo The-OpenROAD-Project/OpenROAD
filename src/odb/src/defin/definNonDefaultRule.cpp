@@ -8,6 +8,7 @@
 #include <cstdlib>
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {

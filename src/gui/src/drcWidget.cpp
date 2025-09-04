@@ -7,13 +7,19 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
+#include <algorithm>
+#include <any>
 #include <array>
 #include <iomanip>
 #include <map>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "dbDescriptors.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbMarker*);

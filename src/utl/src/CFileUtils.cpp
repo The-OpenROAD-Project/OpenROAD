@@ -1,7 +1,14 @@
 #include "utl/CFileUtils.h"
 
+#include <array>
+#include <cerrno>
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <string>
+
+#include "utl/Logger.h"
 
 namespace utl {
 

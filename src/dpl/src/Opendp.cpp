@@ -3,14 +3,18 @@
 
 #include "dpl/Opendp.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "boost/geometry/geometry.hpp"
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Grid.h"

@@ -5,6 +5,7 @@ module top (a,
  input b;
  output out;
 
+ wire a_int;
 
  INV_X1 _4_ (.ZN(a_int),
     .A(a));

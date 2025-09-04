@@ -4,6 +4,8 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdint>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -15,6 +17,9 @@
 #include "db/drObj/drPin.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frAccess.h"
+#include "frBaseTypes.h"
 #include "global.h"
 
 namespace drt {

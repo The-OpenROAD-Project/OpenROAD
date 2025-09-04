@@ -46,11 +46,11 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/ant/AntennaChecker.hh",
         "include/ant/MakeAntennaChecker.hh",
     ],
     includes = ["include"],
     deps = [
+        ":ant",
         "//:ord",
         "//src/odb",
         "//src/utl",

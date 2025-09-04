@@ -8,13 +8,16 @@ constexpr int CMAPSUPPLYSIZE = 8;
 constexpr int CMAPDEMANDSIZE = 16;
 constexpr int CMAPFRACSIZE = 1;
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 class frTrackPattern;

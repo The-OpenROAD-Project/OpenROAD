@@ -7,6 +7,7 @@
 
 #include "AbstractRoutingCongestionDataSource.h"
 #include "gui/heatMap.h"
+#include "odb/db.h"
 
 namespace grt {
 

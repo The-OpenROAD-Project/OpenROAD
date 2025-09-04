@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <iostream>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frRTree.h"
 #include "ta/FlexTA.h"
 

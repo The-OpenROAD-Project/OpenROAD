@@ -3,10 +3,15 @@
 
 #pragma once
 
-#include <boost/icl/interval_set.hpp>
 #include <utility>
 
+#include "boost/icl/interval_set.hpp"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 class FlexRP

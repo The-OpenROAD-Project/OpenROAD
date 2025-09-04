@@ -88,7 +88,13 @@ add_library(db
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
     dbChip.cpp
+    dbChipBump.cpp
+    dbChipBumpInst.cpp
+    dbChipConn.cpp
     dbChipInst.cpp
+    dbChipNet.cpp
+    dbChipRegion.cpp
+    dbChipRegionInst.cpp
     dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
@@ -145,7 +151,11 @@ add_library(db
     dbTechLayerTwoWiresForbiddenSpcRule.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
+    dbChipBumpInstItr.cpp
+    dbChipConnItr.cpp
     dbChipInstItr.cpp
+    dbChipNetItr.cpp
+    dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
     dbGroupModInstItr.cpp

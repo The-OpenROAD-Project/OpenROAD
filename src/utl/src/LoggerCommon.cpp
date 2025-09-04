@@ -3,6 +3,8 @@
 
 #include "LoggerCommon.h"
 
+#include <string>
+
 #include "utl/Logger.h"
 
 namespace ord {

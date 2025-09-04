@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbCore.h"
@@ -14,6 +16,7 @@
 #include "dbPagedVector.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

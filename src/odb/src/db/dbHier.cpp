@@ -6,6 +6,7 @@
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
@@ -14,6 +15,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

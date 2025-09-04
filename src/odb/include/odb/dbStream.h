@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <string.h>
+
 #include <array>
-#include <boost/container/flat_map.hpp>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <istream>
 #include <map>
@@ -18,6 +20,7 @@
 #include <vector>
 
 #include "ZException.h"
+#include "boost/container/flat_map.hpp"
 #include "dbObject.h"
 #include "odb.h"
 

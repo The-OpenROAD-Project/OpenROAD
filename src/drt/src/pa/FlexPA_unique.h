@@ -8,7 +8,15 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frTrackPattern.h"
+#include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
 
 namespace drt {
 

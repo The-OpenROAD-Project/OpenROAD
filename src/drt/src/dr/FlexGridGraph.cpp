@@ -3,12 +3,19 @@
 
 #include "dr/FlexGridGraph.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <vector>
 
+#include "db/obj/frTrackPattern.h"
+#include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 
 namespace drt {
 void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
