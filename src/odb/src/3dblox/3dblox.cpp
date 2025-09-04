@@ -4,6 +4,7 @@
 #include "odb/3dblox.h"
 
 #include "dbvParser.h"
+#include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -25,18 +26,63 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
                      515,
                      "3DBV Parser Error: Precision is greater than dbu per "
                      "micron already set for database");
-    } else if (data.header.precision % db_->getDbuPerMicron() != 0) {
-      logger_->error(
-          utl::ODB,
-          516,
-          "3DBV Parser Error: Precision is not a multiple of dbu per "
-          "micron already set for database");
+    } else if (db_->getDbuPerMicron() % data.header.precision != 0) {
+      logger_->error(utl::ODB,
+                     516,
+                     "3DBV Parser Error: Database DBU per micron ({}) must be "
+                     "a multiple of the precision ({}) in dbv file {}",
+                     db_->getDbuPerMicron(),
+                     data.header.precision,
+                     dbv_file);
     }
   }
   for (const auto& [_, chiplet] : data.chiplet_defs) {
     createChiplet(chiplet);
   }
 }
+
+std::string ThreeDBlox::resolveIncludePath(const std::string& include_path,
+                                           const std::string& current_file_path)
+{
+  // If include_path is absolute, return as is
+  if (!include_path.empty() && include_path[0] == '/') {
+    return include_path;
+  }
+
+  // Get the directory of the current file
+  size_t last_slash = current_file_path.find_last_of('/');
+  if (last_slash == std::string::npos) {
+    // No directory in current file path, return include_path as is
+    return include_path;
+  }
+
+  std::string current_dir = current_file_path.substr(0, last_slash + 1);
+
+  // Combine directory with include path
+  return current_dir + include_path;
+}
+
+void ThreeDBlox::readDbx(const std::string& dbx_file)
+{
+  DbxParser parser(logger_);
+  DbxData data = parser.parseFile(dbx_file);
+  for (const auto& include : data.header.includes) {
+    std::string resolved_path = resolveIncludePath(include, dbx_file);
+    if (include.find(".3dbv") != std::string::npos) {
+      readDbv(resolved_path);
+    } else if (include.find(".3dbx") != std::string::npos) {
+      readDbx(resolved_path);
+    }
+  }
+  createDesignTopChiplet(data.design);
+  for (const auto& [_, chip_inst] : data.chiplet_instances) {
+    createChipInst(chip_inst);
+  }
+  for (const auto& [_, connection] : data.connections) {
+    createConnection(connection);
+  }
+}
+
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
 {
   if (type == "die") {
@@ -119,5 +165,34 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
     }
   }
   chip_region->setBox(box);
+}
+void ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
+{
+  dbChip* chip = dbChip::create(db_, design.name, dbChip::ChipType::HIER);
+  db_->setTopChip(chip);
+}
+void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
+{
+  auto chip = db_->findChip(chip_inst.reference.c_str());
+  if (chip == nullptr) {
+    logger_->error(utl::ODB,
+                   519,
+                   "3DBX Parser Error: Chiplet instance reference {} not found "
+                   "for chip inst {}",
+                   chip_inst.reference,
+                   chip_inst.name);
+  }
+  dbChipInst* inst = dbChipInst::create(db_->getChip(), chip, chip_inst.name);
+}
+void ThreeDBlox::createConnection(const Connection& connection)
+{
+  // dbChip* top_chip = db_->findChip(connection.top.c_str());
+  // dbChip* bottom_chip = db_->findChip(connection.bot.c_str());
+  // if (top_chip == nullptr || bottom_chip == nullptr) {
+  //   logger_->error(utl::ODB,
+  //                  520,
+  //                  "3DBX Parser Error: Connection top or bottom chip not
+  //                  found " "for connection {}", connection.name);
+  // }
 }
 }  // namespace odb

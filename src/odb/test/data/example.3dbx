@@ -1,0 +1,31 @@
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 1000
+  include:
+    - example.3dbv
+
+Design:
+  name: "TopDesign"
+  external:
+    verilog_file: "/path/to/top.v"
+
+ChipletInst:
+  soc_inst:
+    reference: SoC
+    external:
+      verilog_file: "/path/to/soc.v"
+      sdc_file: "/path/to/soc.sdc"
+      def_file: "/path/to/soc.def"
+
+Stack:
+  soc_inst:
+    loc: [100.0, 200.0]
+    z: 0.0
+    orient: R0
+
+Connection:
+  soc_to_substrate:
+    top: r1
+    bot: ~
+    thickness: 2.0

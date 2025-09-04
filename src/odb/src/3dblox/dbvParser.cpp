@@ -11,17 +11,8 @@
 #include "utl/Logger.h"
 
 namespace odb {
-std::string trim(const std::string& str)
-{
-  size_t start = str.find_first_not_of(" \t\n\r");
-  if (start == std::string::npos) {
-    return "";
-  }
-  size_t end = str.find_last_not_of(" \t\n\r");
-  return str.substr(start, end - start + 1);
-}
 
-DbvParser::DbvParser(utl::Logger* logger) : logger_(logger)
+DbvParser::DbvParser(utl::Logger* logger) : BaseParser(logger)
 {
 }
 
@@ -31,7 +22,7 @@ DbvData DbvParser::parseFile(const std::string& filename)
 {
   std::ifstream file(filename);
   if (!file.is_open()) {
-    logError("Cannot open file: " + filename);
+    logError("3DBV Parser Error: Cannot open file: " + filename);
   }
 
   std::stringstream buffer;
@@ -40,22 +31,10 @@ DbvData DbvParser::parseFile(const std::string& filename)
   file.close();
 
   // Extract include directives from the content
-  std::istringstream stream(content);
-  std::string line;
-  std::ostringstream yaml_content;
   DbvData data;
-  while (std::getline(stream, line)) {
-    if (line.find("#!include") == 0) {
-      std::string include_file = line.substr(9);  // Skip "#!include "
-      include_file = trim(include_file);
-      data.includes.push_back(include_file);
-      // Skip include directives in YAML content
-    } else {
-      yaml_content << line << "\n";
-    }
-  }
+  parseIncludes(data.includes, content);
 
-  parseYamlContent(data, yaml_content.str());
+  parseYamlContent(data, content);
 
   return data;
 }
@@ -71,27 +50,9 @@ void DbvParser::parseYamlContent(DbvData& data, const std::string& content)
       parseChipletDefs(data.chiplet_defs, root["ChipletDef"]);
     }
   } catch (const YAML::Exception& e) {
-    logError("YAML parsing error: " + std::string(e.what()));
+    logError("3DBV YAML parsing error: " + std::string(e.what()));
   } catch (const std::exception& e) {
-    logError("Error parsing YAML content: " + std::string(e.what()));
-  }
-}
-
-void DbvParser::parseHeader(DBVHeader& header, const YAML::Node& header_node)
-{
-  if (header_node["version"]) {
-    extractValue(header_node, "version", header.version);
-  }
-
-  if (header_node["unit"]) {
-    extractValue(header_node, "unit", header.unit);
-  }
-
-  if (header_node["precision"]) {
-    extractValue(header_node, "precision", header.precision);
-  }
-  if (header_node["include"]) {
-    extractValue(header_node, "include", header.includes);
+    logError("3DBV Error parsing YAML content: " + std::string(e.what()));
   }
 }
 
@@ -104,7 +65,7 @@ void DbvParser::parseChipletDefs(
     try {
       chiplet.name = chiplet_pair.first.as<std::string>();
     } catch (const YAML::Exception& e) {
-      logError("Error parsing chiplet name: " + std::string(e.what()));
+      logError("3DBV Error parsing chiplet name: " + std::string(e.what()));
     }
     const YAML::Node& chiplet_node = chiplet_pair.second;
 
@@ -116,9 +77,10 @@ void DbvParser::parseChipletDefs(
 void DbvParser::parseChiplet(ChipletDef& chiplet,
                              const YAML::Node& chiplet_node)
 {
-  if (chiplet_node["type"]) {
-    extractValue(chiplet_node, "type", chiplet.type);
+  if (!chiplet_node["type"]) {
+    logError("3DBV Chiplet type is required for chiplet " + chiplet.name);
   }
+  extractValue(chiplet_node, "type", chiplet.type);
 
   if (chiplet_node["design_area"]) {
     std::vector<double> design_area;
@@ -127,7 +89,8 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
       chiplet.design_width = design_area[0];
       chiplet.design_height = design_area[1];
     } else {
-      logError("design_area must have 2 values for chiplet " + chiplet.name);
+      logError("3DBV design_area must have 2 values for chiplet "
+               + chiplet.name);
     }
   }
 
@@ -140,7 +103,7 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
       chiplet.seal_ring_right = seal_ring_width[2];
       chiplet.seal_ring_top = seal_ring_width[3];
     } else {
-      logError("seal_ring_width must have 4 values for chiplet "
+      logError("3DBV seal_ring_width must have 4 values for chiplet "
                + chiplet.name);
     }
   }
@@ -156,8 +119,9 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
       chiplet.scribe_line_right = scribe_line_remaining_width[2];
       chiplet.scribe_line_top = scribe_line_remaining_width[3];
     } else {
-      logError("scribe_line_remaining_width must have 4 values for chiplet "
-               + chiplet.name);
+      logError(
+          "3DBV scribe_line_remaining_width must have 4 values for chiplet "
+          + chiplet.name);
     }
   }
 
@@ -184,7 +148,7 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
         try {
           chiplet.external.lef_files.push_back(lef_file.as<std::string>());
         } catch (const YAML::Exception& e) {
-          logError("Error parsing extrernal LEF file name for chiplet "
+          logError("3DBV Error parsing external LEF file name for chiplet "
                    + chiplet.name + ": " + std::string(e.what()));
         }
       }
@@ -204,7 +168,7 @@ void DbvParser::parseRegions(std::map<std::string, ChipletRegion>& regions,
     try {
       region.name = region_pair.first.as<std::string>();
     } catch (const YAML::Exception& e) {
-      logError("Error parsing region name: " + std::string(e.what()));
+      logError("3DBV Error parsing region name: " + std::string(e.what()));
     }
     const YAML::Node& region_node = region_pair.second;
     parseRegion(region, region_node);
@@ -238,43 +202,6 @@ void DbvParser::parseRegion(ChipletRegion& region,
   if (region_node["coords"]) {
     parseCoordinates(region.coords, region_node["coords"]);
   }
-}
-
-void DbvParser::parseCoordinates(std::vector<Coordinate>& coords,
-                                 const YAML::Node& coords_node)
-{
-  coords.clear();
-
-  try {
-    if (coords_node.IsSequence()) {
-      for (const auto& coord_pair : coords_node) {
-        if (coord_pair.IsSequence() && coord_pair.size() >= 2) {
-          double x = coord_pair[0].as<double>();
-          double y = coord_pair[1].as<double>();
-          coords.emplace_back(x, y);
-        }
-      }
-    }
-  } catch (const YAML::Exception& e) {
-    logError("Error parsing coordinates: " + std::string(e.what()));
-  }
-}
-
-template <typename T>
-void DbvParser::extractValue(const YAML::Node& node,
-                             const std::string& key,
-                             T& value)
-{
-  try {
-    value = node[key].as<T>();
-  } catch (const YAML::Exception& e) {
-    logError("Error parsing value for " + key + ": " + std::string(e.what()));
-  }
-}
-
-void DbvParser::logError(const std::string& message)
-{
-  logger_->error(utl::ODB, 514, "3DBV Parser Error: {}", message);
 }
 
 }  // namespace odb

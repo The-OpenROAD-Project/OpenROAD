@@ -13,12 +13,16 @@ class dbDatabase;
 class ChipletDef;
 class ChipletRegion;
 class dbChip;
+class ChipletInst;
+class Connection;
+class DesignDef;
 class ThreeDBlox
 {
  public:
   ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db);
   ~ThreeDBlox() = default;
   void readDbv(const std::string& dbv_file);
+  void readDbx(const std::string& dbx_file);
 
  private:
   utl::Logger* logger_ = nullptr;
@@ -26,5 +30,11 @@ class ThreeDBlox
 
   void createChiplet(const ChipletDef& chiplet);
   void createRegion(const ChipletRegion& region, dbChip* chip);
+  void createDesignTopChiplet(const DesignDef& design);
+  void createChipInst(const ChipletInst& chip_inst);
+  void createConnection(const Connection& connection);
+
+  std::string resolveIncludePath(const std::string& include_path,
+                                 const std::string& current_file_path);
 };
 }  // namespace odb

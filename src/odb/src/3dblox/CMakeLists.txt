@@ -4,7 +4,9 @@
 find_package(yaml-cpp REQUIRED)
 
 add_library(3dblox
+  baseParser.cpp
   dbvParser.cpp
+  dbxParser.cpp
   3dblox.cpp
 )
 

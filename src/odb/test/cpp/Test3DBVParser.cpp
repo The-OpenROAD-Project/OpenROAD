@@ -19,8 +19,8 @@ struct F_DBV_PARSER
     logger = new utl::Logger();
     db->setLogger(logger);
     ThreeDBlox parser(logger, db);
-    std::string path = testTmpPath("data", "example.3dbv");
-    parser.readDbv(path);
+    std::string path = testTmpPath("data", "example.3dbx");
+    parser.readDbx(path);
   }
 
   ~F_DBV_PARSER()
@@ -32,14 +32,13 @@ struct F_DBV_PARSER
   utl::Logger* logger;
 };
 
-BOOST_FIXTURE_TEST_CASE(test_parse_example_3dbv, F_DBV_PARSER)
+BOOST_FIXTURE_TEST_CASE(test_3dbv, F_DBV_PARSER)
 {
   // Test that database precision was set correctly
   BOOST_CHECK_EQUAL(db->getDbuPerMicron(), 100000);
 
   auto chips = db->getChips();
-  BOOST_CHECK_EQUAL(chips.size(), 1);
-
+  BOOST_CHECK_EQUAL(chips.size(), 2);
   auto chip = *chips.begin();
   BOOST_CHECK_EQUAL(chip->getName(), "SoC");
   BOOST_TEST((chip->getChipType() == dbChip::ChipType::DIE));
@@ -76,6 +75,15 @@ BOOST_FIXTURE_TEST_CASE(test_parse_example_3dbv, F_DBV_PARSER)
   BOOST_CHECK_EQUAL(region_box.yMin(), expected_y1);
   BOOST_CHECK_EQUAL(region_box.xMax(), expected_x2);
   BOOST_CHECK_EQUAL(region_box.yMax(), expected_y2);
+}
+BOOST_FIXTURE_TEST_CASE(test_3dbx, F_DBV_PARSER)
+{
+  auto chip_insts = db->getChipInsts();
+  BOOST_CHECK_EQUAL(chip_insts.size(), 1);
+  auto chip_inst = *chip_insts.begin();
+  BOOST_CHECK_EQUAL(chip_inst->getName(), "soc_inst");
+  BOOST_CHECK_EQUAL(chip_inst->getMasterChip()->getName(), "SoC");
+  BOOST_CHECK_EQUAL(chip_inst->getParentChip()->getName(), "TopDesign");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

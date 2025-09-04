@@ -60,7 +60,7 @@ struct ChipletDef
   ChipletExternal external;
 };
 
-struct DBVHeader
+struct Header
 {
   std::string version;
   std::string unit;
@@ -71,8 +71,55 @@ struct DBVHeader
 struct DbvData
 {
   std::vector<std::string> includes;
-  DBVHeader header;
+  Header header;
   std::map<std::string, ChipletDef> chiplet_defs;
+};
+
+struct DesignExternal
+{
+  std::string verilog_file;
+};
+
+struct DesignDef
+{
+  std::string name;
+  DesignExternal external;
+};
+
+struct ChipletInstExternal
+{
+  std::string verilog_file;
+  std::string sdc_file;
+  std::string def_file;
+};
+
+struct ChipletInst
+{
+  std::string name;
+  std::string reference;
+  ChipletInstExternal external;
+
+  // Stack information
+  Coordinate loc;
+  double z = 0.0;
+  std::string orient;
+};
+
+struct Connection
+{
+  std::string name;
+  std::string top;
+  std::string bot;
+  double thickness = 0.0;
+};
+
+struct DbxData
+{
+  std::vector<std::string> includes;
+  Header header;
+  DesignDef design;
+  std::map<std::string, ChipletInst> chiplet_instances;
+  std::map<std::string, Connection> connections;
 };
 
 }  // namespace odb
