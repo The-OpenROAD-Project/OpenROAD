@@ -18,6 +18,7 @@
 
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 

@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "frRTree.h"
 #include "ta/FlexTA.h"
 

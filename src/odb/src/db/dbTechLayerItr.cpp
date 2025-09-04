@@ -6,6 +6,7 @@
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 

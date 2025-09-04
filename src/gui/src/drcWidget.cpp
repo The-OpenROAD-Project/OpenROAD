@@ -18,6 +18,8 @@
 #include <vector>
 
 #include "dbDescriptors.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbMarker*);

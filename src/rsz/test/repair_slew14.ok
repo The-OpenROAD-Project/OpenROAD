@@ -9,7 +9,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/A                                    1.50    1.81   -0.31 (VIOLATED)
+u2/A                                    1.50    1.82   -0.32 (VIOLATED)
 
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------

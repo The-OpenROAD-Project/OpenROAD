@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "odb/geom.h"
 #include "odb/poly_decomp.h"
 
 namespace odb {

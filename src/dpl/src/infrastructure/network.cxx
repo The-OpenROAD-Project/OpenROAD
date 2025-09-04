@@ -15,6 +15,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////

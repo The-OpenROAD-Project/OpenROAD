@@ -15,11 +15,11 @@
 #include <utility>
 #include <vector>
 
-#include "FlexMazeTypes.h"
 #include "boost/container/flat_map.hpp"
 #include "boost/container/flat_set.hpp"
 #include "db/drObj/drPin.h"
 #include "db/infra/frBox.h"
+#include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"

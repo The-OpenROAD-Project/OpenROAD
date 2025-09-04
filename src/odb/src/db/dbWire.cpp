@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -19,6 +20,8 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 namespace odb {
 

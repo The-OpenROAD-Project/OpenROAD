@@ -10,6 +10,8 @@
 
 #include "BufferMove.hh"
 #include "SplitLoadMove.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace rsz {
 
@@ -75,12 +77,8 @@ bool CloneMove::doMove(const Path* drvr_path,
   if (fanout <= split_load_min_fanout_) {
     return false;
   }
-  const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-  if (tristate_drvr) {
-    return false;
-  }
-  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  if (resizer_->dontTouch(net)) {
+
+  if (!resizer_->okToBufferNet(drvr_pin)) {
     return false;
   }
   // We can probably relax this with the new ECO code

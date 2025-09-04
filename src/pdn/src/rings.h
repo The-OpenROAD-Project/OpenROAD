@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "grid_component.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbTechLayer;

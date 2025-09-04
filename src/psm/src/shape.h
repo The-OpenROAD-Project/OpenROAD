@@ -13,6 +13,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "ir_network.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace odb {

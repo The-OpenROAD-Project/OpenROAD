@@ -25,7 +25,6 @@
 #include <lemon/smart_graph.h>
 
 #include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -38,10 +37,12 @@
 #include <utility>
 #include <vector>
 
+#include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
 #include "utl/Logger.h"

@@ -8,6 +8,7 @@
 
 #include "dbObject.h"
 #include "dbSet.h"
+#include "odb/dbIterator.h"
 
 namespace odb {
 

@@ -12,6 +12,7 @@ class Logger;
 }
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace dpl {
 

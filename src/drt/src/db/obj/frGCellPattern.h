@@ -4,6 +4,7 @@
 #pragma once
 
 #include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frGCellPattern : public frBlockObject

@@ -5,8 +5,10 @@
 
 #include <tuple>
 
+#include "db/obj/frBlockObject.h"
 #include "db/tech/frConstraint.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 
 namespace drt {

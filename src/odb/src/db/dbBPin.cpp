@@ -11,11 +11,14 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 
 namespace odb {
 

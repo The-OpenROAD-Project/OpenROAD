@@ -8,6 +8,7 @@
 
 #include "ZException.h"
 #include "dbMap.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
