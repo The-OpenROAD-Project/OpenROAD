@@ -5,6 +5,7 @@
 #include "dbChipInst.h"
 
 #include <string>
+#include <unordered_map>
 
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -161,6 +162,26 @@ dbSet<dbChipRegionInst> dbChipInst::getRegions() const
   return dbSet<dbChipRegionInst>(_chipinst, _db->chip_region_inst_itr_);
 }
 
+dbChipRegionInst* dbChipInst::findChipRegionInst(
+    dbChipRegion* chip_region) const
+{
+  if (chip_region == nullptr) {
+    return nullptr;
+  }
+  _dbChipInst* obj = (_dbChipInst*) this;
+  auto it = obj->region_insts_map_.find(chip_region->getId());
+  if (it != obj->region_insts_map_.end()) {
+    auto db = (_dbDatabase*) obj->getOwner();
+    return (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr((*it).second);
+  }
+  return nullptr;
+}
+
+dbChipRegionInst* dbChipInst::findChipRegionInst(const std::string& name) const
+{
+  return findChipRegionInst(getMasterChip()->findChipRegion(name));
+}
+
 dbChipInst* dbChipInst::create(dbChip* parent_chip,
                                dbChip* master_chip,
                                const std::string& name)
@@ -183,6 +204,13 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     db->getLogger()->error(
         utl::ODB, 507, "Cannot create chip instance {} in itself", name);
   }
+  if (parent_chip->findChipInst(name) != nullptr) {
+    db->getLogger()->error(utl::ODB,
+                           514,
+                           "Chip instance {} already exists in parent chip {}",
+                           name,
+                           parent_chip->getName());
+  }
 
   // Create a new chip instance
   _dbChipInst* chipinst = db->chip_inst_tbl_->create();
@@ -198,6 +226,7 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
   // Link the chip instance to the parent chip's linked list
   chipinst->chipinst_next_ = _parent->chipinsts_;
   _parent->chipinsts_ = chipinst->getOID();
+  _parent->chipinsts_map_[name] = chipinst->getOID();
 
   // create chipRegionInsts
   for (auto region : master_chip->getChipRegions()) {
@@ -206,6 +235,7 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     regioninst->parent_chipinst_ = chipinst->getOID();
     regioninst->chip_region_inst_next_ = chipinst->chip_region_insts_;
     chipinst->chip_region_insts_ = regioninst->getOID();
+    chipinst->region_insts_map_[region->getId()] = regioninst->getOID();
     // create chipBumpInsts
     for (auto bump : region->getChipBumps()) {
       _dbChipBumpInst* bumpinst = db->chip_bump_inst_tbl_->create();
@@ -245,6 +275,7 @@ void dbChipInst::destroy(dbChipInst* chipInst)
   }
   // Get parent chip
   _dbChip* parent = db->chip_tbl_->getPtr(inst->parent_chip_);
+  parent->chipinsts_map_.erase(inst->name_);
 
   // Remove from parent's linked list
   if (parent->chipinsts_ == inst->getOID()) {

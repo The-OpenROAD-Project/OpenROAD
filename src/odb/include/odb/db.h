@@ -7018,6 +7018,10 @@ class dbChip : public dbObject
 
   dbSet<dbChipNet> getChipNets() const;
 
+  dbChipInst* findChipInst(const std::string& name) const;
+
+  dbChipRegion* findChipRegion(const std::string& name) const;
+
   dbTech* getTech() const;
 
   ///
@@ -7129,6 +7133,10 @@ class dbChipInst : public dbObject
   dbTransform getTransform() const;
 
   dbSet<dbChipRegionInst> getRegions() const;
+
+  dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
+
+  dbChipRegionInst* findChipRegionInst(const std::string& name) const;
 
   static odb::dbChipInst* create(dbChip* parent_chip,
                                  dbChip* master_chip,

@@ -4,6 +4,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
 #include "dbCore.h"
 #include "odb/geom.h"
 #include "odb/odb.h"
@@ -61,6 +64,8 @@ class _dbChip : public _dbObject
   dbId<_dbChipInst> chipinsts_;
   dbId<_dbChipConn> conns_;
   dbId<_dbChipNet> nets_;
+  std::unordered_map<std::string, dbId<_dbChipInst>> chipinsts_map_;
+  std::unordered_map<std::string, dbId<_dbChipRegion>> chip_region_map_;
   dbId<_dbTech> tech_;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbChipRegion>* chip_region_tbl_;
