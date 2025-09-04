@@ -465,7 +465,10 @@ void Graph2D::saveResources(const int x, const int y, bool is_horizontal)
   }
 }
 
-int Graph2D::getSuggestAdjustment(const int x, const int y, bool is_horizontal)
+bool Graph2D::getSuggestAdjustment(const int x,
+                                   const int y,
+                                   bool is_horizontal,
+                                   int& adjustment)
 {
   float real_capacity, usage;
   if (is_horizontal) {
@@ -476,10 +479,10 @@ int Graph2D::getSuggestAdjustment(const int x, const int y, bool is_horizontal)
     usage = v_edges_[x][y].usage;
   }
   if (real_capacity >= usage) {
-    const int suggest_adj = (1.0 - (usage / real_capacity)) * 100;
-    return suggest_adj;
+    adjustment = (1.0 - (usage / real_capacity)) * 100;
+    return true;
   }
-  return -1;
+  return false;
 }
 
 // Initializes the 3D capacity of the graph.

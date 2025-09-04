@@ -370,7 +370,7 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 
   if (is_congested_) {
-    // Suggest new adjustment value
+    // Suggest adjustment value
     suggestAdjustment();
     if (allow_congestion_) {
       logger_->warn(GRT,
@@ -401,8 +401,9 @@ void GlobalRouter::suggestAdjustment()
   }
   min_adjustment *= 100;
   // Suggest new adjustment value
-  int suggest_adjustment = fastroute_->getSuggestAdjustment();
-  if (suggest_adjustment != -1 && min_adjustment > suggest_adjustment) {
+  int suggest_adjustment;
+  bool has_sug_adj = fastroute_->getSuggestAdjustment(suggest_adjustment);
+  if (has_sug_adj && min_adjustment > suggest_adjustment) {
     logger_->warn(GRT,
                   704,
                   "Try reduce the layer adjustment from {}% to {}%",
@@ -5113,7 +5114,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
-        // Suggest new adjustment value
+        // Suggest adjustment value
         suggestAdjustment();
         logger_->error(GRT,
                        232,

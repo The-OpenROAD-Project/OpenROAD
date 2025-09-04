@@ -1925,20 +1925,21 @@ void FastRouteCore::getPrecisionAdjustment(const int x,
 
 // For each edge with overflow, calculate the ideal adjustment
 // Return the minimum value of all or -1 if no value can be found
-int FastRouteCore::getSuggestAdjustment()
+bool FastRouteCore::getSuggestAdjustment(int& suggested_adjustment)
 {
   int horizontal_suggest = 100, local_suggest;
+  bool has_new_adj;
   // Find horizontal ggrids with congestion
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      local_suggest = graph2d_.getSuggestAdjustment(x, y, true);
-      if (local_suggest != -1) {
+      has_new_adj = graph2d_.getSuggestAdjustment(x, y, true, local_suggest);
+      if (has_new_adj) {
         // modify the value to resolve the congestion at the position
         getPrecisionAdjustment(x, y, true, local_suggest);
         horizontal_suggest = std::min(horizontal_suggest, local_suggest);
       } else {
-        return -1;
+        return false;
       }
     }
   }
@@ -1947,17 +1948,18 @@ int FastRouteCore::getSuggestAdjustment()
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      local_suggest = graph2d_.getSuggestAdjustment(x, y, false);
-      if (local_suggest != -1) {
+      has_new_adj = graph2d_.getSuggestAdjustment(x, y, false, local_suggest);
+      if (has_new_adj) {
         // modify the value to resolve the congestion at the position
         getPrecisionAdjustment(x, y, false, local_suggest);
         vertical_suggest = std::min(vertical_suggest, local_suggest);
       } else {
-        return -1;
+        return false;
       }
     }
   }
-  return std::min(horizontal_suggest, vertical_suggest);
+  suggested_adjustment = std::min(horizontal_suggest, vertical_suggest);
+  return true;
 }
 
 // The function will add the new nets to the congestion_nets set
