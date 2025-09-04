@@ -50,11 +50,11 @@ odb::dbChip* read_def(odb::dbTech* tech, std::string path)
   auto db = tech->getDb();
   odb::dbChip* chip = nullptr;
   if (db->getChip() == nullptr) {
-    chip = odb::dbChip::create(db);
+    chip = odb::dbChip::create(db, tech);
   } else {
     chip = db->getChip();
   }
-  defParser.readChip(libs, path.c_str(), tech, chip);
+  defParser.readChip(libs, path.c_str(), chip);
   return chip;
 }
 

@@ -186,12 +186,10 @@ class OpenRoad
                bool make_library);
 
   void readDef(const char* filename,
-               odb::dbTech* tech,
                odb::dbChip* chip,
                bool continue_on_errors,
                bool floorplan_init,
-               bool incremental,
-               bool child);
+               bool incremental);
 
   void writeLef(const char* filename);
 

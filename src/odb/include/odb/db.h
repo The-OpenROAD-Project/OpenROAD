@@ -1338,7 +1338,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbChip* chip,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -1348,7 +1347,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbBlock* block,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -7020,11 +7018,14 @@ class dbChip : public dbObject
 
   dbSet<dbChipNet> getChipNets() const;
 
+  dbTech* getTech() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
   ///
   static dbChip* create(dbDatabase* db,
+                        dbTech* tech,
                         const std::string& name = "",
                         ChipType type = ChipType::DIE);
 

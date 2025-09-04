@@ -50,14 +50,7 @@ class defin
   /// Create a new chip
   void readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
-                odb::dbTech* tech,
                 dbChip* chip);
-
-  /// Create a new hierachical block
-  dbBlock* createBlock(dbBlock* parent,
-                       std::vector<dbLib*>& search_libs,
-                       const char* def_file,
-                       odb::dbTech* tech);
 };
 
 }  // namespace odb

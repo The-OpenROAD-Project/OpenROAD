@@ -38,7 +38,7 @@ proc read_lef { args } {
   ord::read_lef_cmd $filename $lib_name $tech_name $make_tech $make_lib
 }
 
-sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental|-child]\
+sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental]\
                                    [-continue_on_errors]\
                                    [-tech name] \
                                    [-chip chip_name] \
@@ -47,7 +47,7 @@ sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental|-child]\
 proc read_def { args } {
   sta::parse_key_args "read_def" args keys {-tech -chip} \
     flags {-floorplan_initialize -incremental \
-           -order_wires -continue_on_errors -child}
+           -order_wires -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -56,11 +56,16 @@ proc read_def { args } {
   if { ![file readable $filename] || ![file isfile $filename] } {
     utl::error "ORD" 4 "$filename is not readable."
   }
-  set tech_name ""
   if { [info exists keys(-tech)] } {
     set tech_name $keys(-tech)
+    set tech [[ord::get_db] findTech $tech_name]
+    if { $tech == "NULL" } {
+      utl::error ORD 52 "Technology $tech_name not found."
+    }
   } elseif { ![ord::db_has_tech] } {
     utl::error "ORD" 5 "No technology has been read."
+  } else {
+    set tech [[ord::get_db] getTech]
   }
   if { [info exists flags(-order_wires)] } {
     utl::warn "ORD" 33 "-order_wires is deprecated."
@@ -68,10 +73,9 @@ proc read_def { args } {
   set continue_on_errors [info exists flags(-continue_on_errors)]
   set floorplan_init [info exists flags(-floorplan_initialize)]
   set incremental [info exists flags(-incremental)]
-  set child [info exists flags(-child)]
-  if { $floorplan_init + $incremental + $child > 1 } {
-    utl::error ORD 16 "Options -incremental, -floorplan_initialization,\
-      and -child are mutually exclusive."
+  if { $floorplan_init + $incremental > 1 } {
+    utl::error ORD 16 "Options -incremental and -floorplan_initialization\
+      are mutually exclusive."
   }
   if { [info exists keys(-chip)] } {
     set chip [[ord::get_db] findChip $keys(-chip)]
@@ -80,13 +84,13 @@ proc read_def { args } {
     }
   } else {
     if { [[ord::get_db] getChip] == "NULL" } {
-      set chip [odb::dbChip_create [ord::get_db]]
+      set chip [odb::dbChip_create [ord::get_db] $tech]
     } else {
       set chip [[ord::get_db] getChip]
     }
   }
-  ord::read_def_cmd $filename $tech_name $continue_on_errors $floorplan_init \
-    $incremental $child $chip
+  ord::read_def_cmd $filename $continue_on_errors $floorplan_init \
+    $incremental $chip
 }
 
 sta::define_cmd_args "write_def" {[-version version] filename}

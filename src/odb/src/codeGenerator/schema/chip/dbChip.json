@@ -160,6 +160,12 @@
       "type": "dbId<_dbChipNet>",
       "flags": ["private"],
       "schema": "db_schema_chip_bump"
+    },
+    {
+      "name": "tech_",
+      "type": "dbId<_dbTech>",
+      "flags": ["private"],
+      "schema": "db_schema_chip_tech"
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],

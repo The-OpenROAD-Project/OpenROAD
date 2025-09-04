@@ -301,22 +301,6 @@ static void handle_props(DEF_TYPE* def_obj, CALLBACK* callback)
   }
 }
 
-static std::string renameBlock(dbBlock* parent, const char* old_name)
-{
-  int cnt = 1;
-
-  for (;; ++cnt) {
-    char n[16];
-    snprintf(n, 15, "_%d", cnt);
-    std::string name(old_name);
-    name += n;
-
-    if (!parent->findChild(name.c_str())) {
-      return name;
-    }
-  }
-}
-
 int definReader::versionCallback(
     DefParser::defrCallbackType_e type /* unused: type */,
     const char* value,
@@ -367,38 +351,11 @@ int definReader::designCallback(
   } else {
     block_name = design;
   }
-  if (reader->parent_ != nullptr) {
-    if (reader->parent_->findChild(block_name.c_str())) {
-      if (reader->_mode != defin::DEFAULT) {
-        reader->_block = reader->parent_->findChild(block_name.c_str());
-      } else {
-        std::string new_name = renameBlock(reader->parent_, block_name.c_str());
-        reader->_logger->warn(
-            utl::ODB,
-            261,
-            "Block with name \"{}\" already exists, renaming too \"{}\"",
-            block_name.c_str(),
-            new_name.c_str());
-        reader->_block = dbBlock::create(reader->parent_,
-                                         new_name.c_str(),
-                                         reader->_tech,
-                                         reader->hier_delimiter_);
-      }
-    } else {
-      reader->_block = dbBlock::create(reader->parent_,
-                                       block_name.c_str(),
-                                       reader->_tech,
-                                       reader->hier_delimiter_);
-    }
+  if (reader->_mode != defin::DEFAULT) {
+    reader->_block = reader->chip_->getBlock();
   } else {
-    if (reader->_mode != defin::DEFAULT) {
-      reader->_block = reader->chip_->getBlock();
-    } else {
-      reader->_block = dbBlock::create(reader->chip_,
-                                       block_name.c_str(),
-                                       reader->_tech,
-                                       reader->hier_delimiter_);
-    }
+    reader->_block = dbBlock::create(
+        reader->chip_, block_name.c_str(), reader->hier_delimiter_);
   }
   if (reader->_mode == defin::DEFAULT) {
     reader->_block->setBusDelimiters(reader->left_bus_delimiter_,
@@ -1851,7 +1808,6 @@ void definReader::setLibs(std::vector<dbLib*>& lib_names)
 
 void definReader::readChip(std::vector<dbLib*>& libs,
                            const char* file,
-                           odb::dbTech* tech,
                            dbChip* chip)
 {
   init();
@@ -1865,7 +1821,7 @@ void definReader::readChip(std::vector<dbLib*>& libs,
   }
 
   assert(chip_);
-  setTech(tech);
+  setTech(chip_->getTech());
   _logger->info(utl::ODB, 127, "Reading DEF file: {}", file);
 
   if (!createBlock(file)) {
@@ -1922,58 +1878,6 @@ void definReader::readChip(std::vector<dbLib*>& libs,
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
 
   _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
-}
-
-dbBlock* definReader::createBlock(dbBlock* parent,
-                                  std::vector<dbLib*>& libs,
-                                  const char* def_file,
-                                  odb::dbTech* tech)
-{
-  init();
-  setLibs(libs);
-  parent_ = parent;
-  setTech(tech);
-  _logger->info(utl::ODB, 135, "Reading DEF file: {}", def_file);
-  chip_ = parent->getChip();
-  if (!createBlock(def_file)) {
-    dbBlock::destroy(_block);
-    _logger->warn(utl::ODB, 137, "Error: Failed to read DEF file");
-    return nullptr;
-  }
-
-  if (_pinR->_bterm_cnt) {
-    _logger->info(utl::ODB, 138, "    Created {} pins.", _pinR->_bterm_cnt);
-  }
-
-  if (_componentR->_inst_cnt) {
-    _logger->info(utl::ODB,
-                  139,
-                  "    Created {} components and {} component-terminals.",
-                  _componentR->_inst_cnt,
-                  _componentR->_iterm_cnt);
-  }
-
-  if (_snetR->_snet_cnt) {
-    _logger->info(utl::ODB,
-                  140,
-                  "    Created {} special nets and {} connections.",
-                  _snetR->_snet_cnt,
-                  _snetR->_snet_iterm_cnt);
-  }
-
-  if (_netR->_net_cnt) {
-    _logger->info(utl::ODB,
-                  141,
-                  "    Created {} nets and {} connections.",
-                  _netR->_net_cnt,
-                  _netR->_net_iterm_cnt);
-  }
-
-  _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
-
-  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
-
-  return _block;
 }
 
 static inline bool hasSuffix(const std::string& str, const std::string& suffix)

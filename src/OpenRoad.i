@@ -304,27 +304,15 @@ read_lef_cmd(const char *filename,
 
 void
 read_def_cmd(const char *filename,
-             const char* tech_name,
              bool continue_on_errors,
              bool floorplan_init,
              bool incremental,
-             bool child,
              odb::dbChip* chip)
 {
   OpenRoad *ord = getOpenRoad();
   auto* db = ord->getDb();
-  dbTech* tech;
-  if (tech_name[0] != '\0') {
-    tech = db->findTech(tech_name);
-  } else {
-    tech = db->getTech();
-  }
-  if (!tech) {
-    auto logger = getLogger();
-    logger->error(utl::ORD, 52, "Technology {} not found", tech_name);
-  }
-  ord->readDef(filename, tech, chip, continue_on_errors,
-               floorplan_init, incremental, child);
+  ord->readDef(filename, chip, continue_on_errors,
+               floorplan_init, incremental);
 }
 
 void

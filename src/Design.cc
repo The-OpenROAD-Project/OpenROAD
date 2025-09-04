@@ -54,8 +54,7 @@ void Design::readVerilog(const std::string& file_name)
 void Design::readDef(const std::string& file_name,
                      bool continue_on_errors,  // = false
                      bool floorplan_init,      // = false
-                     bool incremental,         // = false
-                     bool child                // = false
+                     bool incremental          // = false
 )
 {
   if (floorplan_init && incremental) {
@@ -69,15 +68,10 @@ void Design::readDef(const std::string& file_name,
   }
   auto chip = tech_->getDB()->getChip();
   if (chip == nullptr) {
-    chip = odb::dbChip::create(tech_->getDB());
+    chip = odb::dbChip::create(tech_->getDB(), tech_->getDB()->getTech());
   }
-  getOpenRoad()->readDef(file_name.c_str(),
-                         tech_->getDB()->getTech(),
-                         chip,
-                         continue_on_errors,
-                         floorplan_init,
-                         incremental,
-                         child);
+  getOpenRoad()->readDef(
+      file_name.c_str(), chip, continue_on_errors, floorplan_init, incremental);
 }
 
 void Design::link(const std::string& design_name)
