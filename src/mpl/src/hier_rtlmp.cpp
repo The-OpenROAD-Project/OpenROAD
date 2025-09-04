@@ -1529,9 +1529,11 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       }
     }
   } else {
+    // A high target util minimizes the std cells area inside mixed clusters
     const float target_util = 1e6;
+    // A dead space closer to 1 minizes the std cell cluster area
     const float target_dead_space = 0.99999;
-    
+
     target_utils.push_back(target_util);
     target_dead_spaces.push_back(target_dead_space);
   }
