@@ -3,7 +3,9 @@
 
 #include "rp/FlexRP.h"
 
+#include "frDesign.h"
 #include "frProfileTask.h"
+#include "global.h"
 
 namespace drt {
 

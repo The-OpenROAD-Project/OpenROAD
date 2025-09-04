@@ -9,6 +9,7 @@
 #include "db/obj/frBlockObject.h"
 #include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "pa/AbstractPAGraphics.h"
 #include "ta/AbstractTAGraphics.h"
 

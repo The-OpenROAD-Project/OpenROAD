@@ -9,8 +9,13 @@
 #include <set>
 #include <vector>
 
+#include "db/obj/frAccess.h"
+#include "db/obj/frInst.h"
+#include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 
 namespace drt {
