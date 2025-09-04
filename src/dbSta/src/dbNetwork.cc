@@ -2591,7 +2591,7 @@ void dbNetwork::disconnectPin(Pin* pin, Net* net)
       iterm->disconnectDbNet();
     }
     if (mod_net) {
-      iterm->disconnectModNet();
+      iterm->disconnectDbModNet();
     }
   } else if (bterm) {
     if (db_net) {

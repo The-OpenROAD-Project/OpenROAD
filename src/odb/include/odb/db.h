@@ -3202,7 +3202,7 @@ class dbITerm : public dbObject
   /// Disconnect just the mod net
   ///
 
-  void disconnectModNet();
+  void disconnectDbModNet();
 
   ///
   /// Get the average of the centers for the iterm shapes
@@ -8284,6 +8284,7 @@ class dbModNet : public dbObject
   unsigned connectionCount();
   const char* getName() const;
   void rename(const char* new_name);
+  void disconnectAllTerms();
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
