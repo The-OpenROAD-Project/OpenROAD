@@ -11,6 +11,9 @@
 #include <set>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
+
 namespace drt {
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)

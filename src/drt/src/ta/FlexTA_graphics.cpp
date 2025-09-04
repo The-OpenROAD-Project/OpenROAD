@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 
 namespace drt {

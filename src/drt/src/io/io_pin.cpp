@@ -5,6 +5,7 @@
 #include <tuple>
 #include <vector>
 
+#include "frBaseTypes.h"
 #include "io/io.h"
 
 namespace drt {

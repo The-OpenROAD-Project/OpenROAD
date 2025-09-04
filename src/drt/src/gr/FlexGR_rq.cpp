@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 
 namespace drt {

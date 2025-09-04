@@ -2,10 +2,10 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
-#include <boost/functional/hash.hpp>
 #include <unordered_set>
 #include <vector>
 
+#include "boost/functional/hash.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
