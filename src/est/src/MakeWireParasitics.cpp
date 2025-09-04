@@ -171,7 +171,7 @@ void MakeWireParasitics::makeRouteParasitics(
     const int wire_length_dbu = segment.length();
 
     const int init_layer = segment.init_layer;
-    bool is_valid_layer = init_layer >= min_routing_layer;
+    bool is_valid_layer = init_layer >= min_routing_layer || segment.isVia();
     sta::ParasiticNode* n1 = is_valid_layer
                                  ? ensureParasiticNode(segment.init_x,
                                                        segment.init_y,
@@ -182,7 +182,7 @@ void MakeWireParasitics::makeRouteParasitics(
                                  : nullptr;
 
     const int final_layer = segment.final_layer;
-    is_valid_layer = final_layer >= min_routing_layer;
+    is_valid_layer = final_layer >= min_routing_layer || segment.isVia();
     sta::ParasiticNode* n2 = is_valid_layer
                                  ? ensureParasiticNode(segment.final_x,
                                                        segment.final_y,
