@@ -17,15 +17,25 @@ ChipletInst:
       verilog_file: "/path/to/soc.v"
       sdc_file: "/path/to/soc.sdc"
       def_file: "/path/to/soc.def"
+  soc_inst_duplicate:
+    reference: SoC
+    external:
+      verilog_file: "/path/to/soc.v"
+      sdc_file: "/path/to/soc.sdc"
+      def_file: "/path/to/soc.def"
 
 Stack:
   soc_inst:
     loc: [100.0, 200.0]
     z: 0.0
     orient: R0
+  soc_inst_duplicate:
+    loc: [100.0, 200.0]
+    z: 300.0
+    orient: MZ
 
 Connection:
-  soc_to_substrate:
-    top: r1
-    bot: ~
+  soc_to_soc:
+    top: soc_inst_duplicate.regions.r1
+    bot: soc_inst.regions.r1
     thickness: 2.0

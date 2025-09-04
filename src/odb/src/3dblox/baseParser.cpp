@@ -90,7 +90,7 @@ void BaseParser::parseIncludes(std::vector<std::string>& includes,
 
 void BaseParser::logError(const std::string& message)
 {
-  logger_->error(utl::ODB, 520, "Parser Error: {}", message);
+  logger_->error(utl::ODB, 521, "Parser Error: {}", message);
 }
 
 std::string BaseParser::trim(const std::string& str)

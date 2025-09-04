@@ -79,11 +79,34 @@ BOOST_FIXTURE_TEST_CASE(test_3dbv, F_DBV_PARSER)
 BOOST_FIXTURE_TEST_CASE(test_3dbx, F_DBV_PARSER)
 {
   auto chip_insts = db->getChipInsts();
-  BOOST_CHECK_EQUAL(chip_insts.size(), 1);
-  auto chip_inst = *chip_insts.begin();
-  BOOST_CHECK_EQUAL(chip_inst->getName(), "soc_inst");
-  BOOST_CHECK_EQUAL(chip_inst->getMasterChip()->getName(), "SoC");
-  BOOST_CHECK_EQUAL(chip_inst->getParentChip()->getName(), "TopDesign");
+  BOOST_CHECK_EQUAL(chip_insts.size(), 2);
+  auto soc_inst = db->getChip()->findChipInst("soc_inst");
+  auto soc_inst_duplicate = db->getChip()->findChipInst("soc_inst_duplicate");
+  BOOST_CHECK_EQUAL(soc_inst->getName(), "soc_inst");
+  BOOST_CHECK_EQUAL(soc_inst->getMasterChip()->getName(), "SoC");
+  BOOST_CHECK_EQUAL(soc_inst->getParentChip()->getName(), "TopDesign");
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getName(), "soc_inst_duplicate");
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getMasterChip()->getName(), "SoC");
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getParentChip()->getName(),
+                    "TopDesign");
+  BOOST_CHECK_EQUAL(soc_inst->getLoc().x(), 100.0 * db->getDbuPerMicron());
+  BOOST_CHECK_EQUAL(soc_inst->getLoc().y(), 200.0 * db->getDbuPerMicron());
+  BOOST_CHECK_EQUAL(soc_inst->getLoc().z(), 0.0);
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getLoc().x(),
+                    100.0 * db->getDbuPerMicron());
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getLoc().y(),
+                    200.0 * db->getDbuPerMicron());
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getLoc().z(),
+                    300.0 * db->getDbuPerMicron());
+  auto connections = db->getChipConns();
+  BOOST_CHECK_EQUAL(connections.size(), 1);
+  auto connection = *connections.begin();
+  BOOST_CHECK_EQUAL(connection->getName(), "soc_to_soc");
+  BOOST_CHECK_EQUAL(connection->getTopRegion()->getChipInst()->getName(),
+                    "soc_inst_duplicate");
+  BOOST_CHECK_EQUAL(connection->getBottomRegion()->getChipInst()->getName(),
+                    "soc_inst");
+  BOOST_CHECK_EQUAL(connection->getThickness(), 2.0 * db->getDbuPerMicron());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

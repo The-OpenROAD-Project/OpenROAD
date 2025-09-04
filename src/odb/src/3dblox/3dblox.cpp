@@ -183,16 +183,93 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   dbChipInst* inst = dbChipInst::create(db_->getChip(), chip, chip_inst.name);
+  inst->setLoc(Point3D(chip_inst.loc.x * db_->getDbuPerMicron(),
+                       chip_inst.loc.y * db_->getDbuPerMicron(),
+                       chip_inst.z * db_->getDbuPerMicron()));
+  // TODO: set orient
+}
+std::vector<std::string> splitPath(const std::string& path)
+{
+  std::vector<std::string> parts;
+  std::istringstream stream(path);
+  std::string part;
+
+  while (std::getline(stream, part, '/')) {
+    if (!part.empty()) {
+      parts.push_back(part);
+    }
+  }
+
+  return parts;
+}
+
+dbChipRegionInst* ThreeDBlox::resolvePath(const std::string& path,
+                                          std::vector<dbChipInst*>& path_insts)
+{
+  if (path == "~") {
+    return nullptr;
+  }
+  // Split the path by '/'
+  std::vector<std::string> path_parts = splitPath(path);
+
+  if (path_parts.empty()) {
+    logger_->error(utl::ODB, 524, "3DBX Parser Error: Invalid path {}", path);
+  }
+
+  // The last part should contain ".regions.regionName"
+  std::string last_part = path_parts.back();
+  size_t regions_pos = last_part.find(".regions.");
+  if (regions_pos == std::string::npos) {
+    return nullptr;  // Invalid format
+  }
+
+  // Extract chip instance name and region name from last part
+  std::string last_chip_inst = last_part.substr(0, regions_pos);
+  std::string region_name = last_part.substr(regions_pos + 9);
+
+  // Replace the last part with just the chip instance name
+  path_parts.back() = last_chip_inst;
+
+  // TODO: Traverse hierarchy and find region
+  path_insts.reserve(path_parts.size());
+  dbChip* curr_chip = db_->getChip();
+  dbChipInst* curr_chip_inst = nullptr;
+  for (auto inst_name : path_parts) {
+    curr_chip_inst = curr_chip->findChipInst(inst_name);
+    if (curr_chip_inst == nullptr) {
+      logger_->error(utl::ODB,
+                     522,
+                     "3DBX Parser Error: Chip instance {} not found in path {}",
+                     inst_name,
+                     path);
+    }
+    path_insts.push_back(curr_chip_inst);
+    curr_chip = curr_chip_inst->getMasterChip();
+  }
+  auto region = curr_chip_inst->findChipRegionInst(region_name);
+  if (region == nullptr) {
+    logger_->error(utl::ODB,
+                   523,
+                   "3DBX Parser Error: Chip region {} not found in path {}",
+                   region_name,
+                   path);
+  }
+  return region;
 }
 void ThreeDBlox::createConnection(const Connection& connection)
 {
-  // dbChip* top_chip = db_->findChip(connection.top.c_str());
-  // dbChip* bottom_chip = db_->findChip(connection.bot.c_str());
-  // if (top_chip == nullptr || bottom_chip == nullptr) {
-  //   logger_->error(utl::ODB,
-  //                  520,
-  //                  "3DBX Parser Error: Connection top or bottom chip not
-  //                  found " "for connection {}", connection.name);
-  // }
+  auto top_path = connection.top;
+  auto bottom_path = connection.bot;
+  std::vector<dbChipInst*> top_region_path;
+  std::vector<dbChipInst*> bottom_region_path;
+  auto top_region = resolvePath(top_path, top_region_path);
+  auto bottom_region = resolvePath(bottom_path, bottom_region_path);
+  auto conn = odb::dbChipConn::create(connection.name,
+                                      db_->getChip(),
+                                      top_region_path,
+                                      top_region,
+                                      bottom_region_path,
+                                      bottom_region);
+  conn->setThickness(connection.thickness * db_->getDbuPerMicron());
 }
 }  // namespace odb

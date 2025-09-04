@@ -3,6 +3,7 @@
 
 #pragma once
 #include <string>
+#include <vector>
 
 namespace utl {
 class Logger;
@@ -16,6 +17,8 @@ class dbChip;
 class ChipletInst;
 class Connection;
 class DesignDef;
+class dbChipRegionInst;
+class dbChipInst;
 class ThreeDBlox
 {
  public:
@@ -33,6 +36,8 @@ class ThreeDBlox
   void createDesignTopChiplet(const DesignDef& design);
   void createChipInst(const ChipletInst& chip_inst);
   void createConnection(const Connection& connection);
+  dbChipRegionInst* resolvePath(const std::string& path,
+                                std::vector<dbChipInst*>& path_insts);
 
   std::string resolveIncludePath(const std::string& include_path,
                                  const std::string& current_file_path);
