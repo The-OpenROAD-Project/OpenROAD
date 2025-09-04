@@ -88,6 +88,10 @@ void SACoreSoftMacro::run()
     attemptCentralization(calNormCost());
   }
 
+  if (centralization_was_reverted_) {
+    attemptMacroClusterAlignment();
+  }
+
   if (graphics_) {
     graphics_->endSA(calNormCost());
   }
