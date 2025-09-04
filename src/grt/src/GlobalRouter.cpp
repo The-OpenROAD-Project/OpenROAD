@@ -370,26 +370,8 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 
   if (is_congested_) {
-    int min_routing_layer, max_routing_layer;
-    getMinMaxLayer(min_routing_layer, max_routing_layer);
-    float min_adjustment = 100;
-    for (int l = min_routing_layer; l <= max_routing_layer; l++) {
-      odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
-      if (tech_layer->getLayerAdjustment() != 0.0) {
-        min_adjustment
-            = std::min(min_adjustment, tech_layer->getLayerAdjustment());
-      }
-    }
-    min_adjustment *= 100;
     // Suggest new adjustment value
-    int suggest_adjustment = fastroute_->getSuggestAdjustment();
-    if (suggest_adjustment != -1 && min_adjustment > suggest_adjustment) {
-      logger_->warn(GRT,
-                    704,
-                    "Try reduce the layer adjustment from {}% to {}%",
-                    min_adjustment,
-                    suggest_adjustment);
-    }
+    suggestAdjustment();
     if (allow_congestion_) {
       logger_->warn(GRT,
                     115,
@@ -401,6 +383,31 @@ void GlobalRouter::globalRoute(bool save_guides,
                      "Global routing finished with congestion. Check the "
                      "congestion regions in the DRC Viewer.");
     }
+  }
+}
+
+void GlobalRouter::suggestAdjustment()
+{
+  // Get min adjustment apply to layers
+  int min_routing_layer, max_routing_layer;
+  getMinMaxLayer(min_routing_layer, max_routing_layer);
+  float min_adjustment = 100;
+  for (int l = min_routing_layer; l <= max_routing_layer; l++) {
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
+    if (tech_layer->getLayerAdjustment() != 0.0) {
+      min_adjustment
+          = std::min(min_adjustment, tech_layer->getLayerAdjustment());
+    }
+  }
+  min_adjustment *= 100;
+  // Suggest new adjustment value
+  int suggest_adjustment = fastroute_->getSuggestAdjustment();
+  if (suggest_adjustment != -1 && min_adjustment > suggest_adjustment) {
+    logger_->warn(GRT,
+                  704,
+                  "Try reduce the layer adjustment from {}% to {}%",
+                  min_adjustment,
+                  suggest_adjustment);
   }
 }
 
@@ -5107,25 +5114,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         updateDbCongestion();
         saveCongestion();
         // Suggest new adjustment value
-        int min_routing_layer, max_routing_layer;
-        getMinMaxLayer(min_routing_layer, max_routing_layer);
-        float min_adjustment = 100;
-        for (int l = min_routing_layer; l <= max_routing_layer; l++) {
-          odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
-          if (tech_layer->getLayerAdjustment() != 0.0) {
-            min_adjustment
-                = std::min(min_adjustment, tech_layer->getLayerAdjustment());
-          }
-        }
-        min_adjustment *= 100;
-        int suggest_adjustment = fastroute_->getSuggestAdjustment();
-        if (suggest_adjustment != -1 && min_adjustment > suggest_adjustment) {
-          logger_->warn(GRT,
-                        705,
-                        "Try reduce the layer adjustment from {}% to {}%",
-                        min_adjustment,
-                        suggest_adjustment);
-        }
+        suggestAdjustment();
         logger_->error(GRT,
                        232,
                        "Routing congestion too high. Check the congestion "
