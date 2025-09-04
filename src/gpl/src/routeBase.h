@@ -169,7 +169,7 @@ class RouteBase
   //         (e.g. calling NesterovPlace's init())
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
-  int64_t inflatedAreaDelta() const;
+  std::vector<int64_t> inflatedAreaDelta() const;
   int numCall() const;
 
  private:
@@ -183,7 +183,7 @@ class RouteBase
 
   std::unique_ptr<TileGrid> tg_;
 
-  int64_t inflatedAreaDelta_ = 0;
+  std::vector<int64_t> inflatedAreaDelta_;
 
   int numCall_ = 0;
 
