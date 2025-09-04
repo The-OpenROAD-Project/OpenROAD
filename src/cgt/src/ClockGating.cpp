@@ -1222,7 +1222,12 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
   for (size_t i = 1; i < instances.size(); i++) {
     auto clk_pin = getClockPin(network, instances[i]);
     assert(clk_pin);
-    assert(*sta_->clkNetwork()->clocks(clk_pin) == *clocks);
+    if (*sta_->clkNetwork()->clocks(clk_pin) != *clocks) {
+      logger_->error(
+          utl::CGT,
+          12,
+          "Cannot insert a clock gate for multiple distinct clocks.");
+    }
   }
 
   auto gated_clk
