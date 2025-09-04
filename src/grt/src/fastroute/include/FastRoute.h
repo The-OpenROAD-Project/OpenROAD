@@ -204,7 +204,12 @@ class FastRouteCore
                               int used,
                               odb::dbNet* db_net);
   void setMaxNetDegree(int);
-  void updateRouteGridsLayer(int x1, int y1, int x2, int y2, int layer, odb::dbNet* db_net);
+  void updateRouteGridsLayer(int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int layer,
+                             odb::dbNet* db_net);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
