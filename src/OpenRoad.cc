@@ -13,12 +13,6 @@
 #include <thread>
 #include <vector>
 
-#include "ord/Version.hh"
-#ifdef ENABLE_PYTHON3
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-#endif
-
 #include "ant/MakeAntennaChecker.hh"
 #include "cgt/MakeClockGating.h"
 #include "cts/MakeTritoncts.h"
@@ -47,6 +41,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
+#include "ord/Version.hh"
 #include "pad/MakeICeWall.h"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"

@@ -139,17 +139,22 @@ add_subdirectory(src)
 add_subdirectory(test)
 
 # Not currently used but may become useful again with Kokkos
+target_compile_definitions(openroad_lib PRIVATE GPU)
 target_compile_definitions(openroad PRIVATE GPU)
 
 if(BUILD_PYTHON)
+  target_compile_definitions(openroad_lib PRIVATE BUILD_PYTHON=1)
   target_compile_definitions(openroad PRIVATE BUILD_PYTHON=1)
 else()
+  target_compile_definitions(openroad_lib PRIVATE BUILD_PYTHON=0)
   target_compile_definitions(openroad PRIVATE BUILD_PYTHON=0)
 endif()
 
 if(BUILD_GUI)
+  target_compile_definitions(openroad_lib PRIVATE BUILD_GUI=1)
   target_compile_definitions(openroad PRIVATE BUILD_GUI=1)
 else()
+  target_compile_definitions(openroad_lib PRIVATE BUILD_GUI=0)
   target_compile_definitions(openroad PRIVATE BUILD_GUI=0)
 endif()
 
