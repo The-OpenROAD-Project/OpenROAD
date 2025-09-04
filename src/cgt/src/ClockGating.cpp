@@ -53,10 +53,10 @@ ClockGating::ClockGating() = default;
 
 ClockGating::~ClockGating() = default;
 
-void ClockGating::init(utl::Logger* const logger, sta::dbSta* const open_sta)
+void ClockGating::init(utl::Logger* const logger, sta::dbSta* const sta)
 {
   logger_ = logger;
-  sta_ = open_sta;
+  sta_ = sta;
   abc_factory_ = std::make_unique<cut::AbcLibraryFactory>(logger_);
 }
 
@@ -205,15 +205,14 @@ void ClockGating::setDumpDir(const char* const dir)
 }
 
 // Gathers networks downstream of the given instances (until it encounters
-// registers, and no more than max_count).
-static std::vector<sta::Net*> downstreamNets(sta::dbSta* const open_sta,
-                                             sta::Instance* const instance,
-                                             const size_t max_count)
+// registers).
+static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
+                                             sta::Instance* const instance)
 {
   class SearchPred final : public sta::SearchPredNonReg2
   {
    public:
-    SearchPred(sta::dbSta* const open_sta) : SearchPredNonReg2(open_sta) {}
+    SearchPred(sta::dbSta* const sta) : SearchPredNonReg2(sta) {}
     bool searchFrom(const sta::Vertex* const from_vertex) final { return true; }
     bool searchTo(const sta::Vertex* const to_vertex) final
     {
@@ -223,13 +222,13 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const open_sta,
     std::unordered_set<const sta::Vertex*> visited_;
   };
 
-  auto network = open_sta->getDbNetwork();
-  auto graph = open_sta->graph();
-  SearchPred pred(open_sta);
+  auto network = sta->getDbNetwork();
+  auto graph = sta->graph();
+  SearchPred pred(sta);
   std::vector<sta::Net*> nets;
   std::unordered_set<sta::Net*> visited_nets;
   {
-    sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, open_sta);
+    sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, sta);
     auto pin_iter = network->pinIterator(instance);
     while (pin_iter->hasNext()) {
       auto pin = pin_iter->next();
@@ -244,9 +243,6 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const open_sta,
       if (net && visited_nets.find(net) == visited_nets.end()) {
         visited_nets.insert(net);
         nets.push_back(net);
-        if (nets.size() >= max_count) {
-          return nets;
-        }
       }
       pred.visited_.insert(vertex);
       iter.enqueueAdjacentVertices(vertex);
@@ -256,13 +252,13 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const open_sta,
 }
 
 // Gathers nets that are upstream of the given nets.
-static std::vector<sta::Net*> upstreamNets(sta::dbSta* const open_sta,
+static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
                                            std::vector<sta::Net*>& nets)
 {
   class SearchPred final : public sta::SearchPredNonReg2
   {
    public:
-    SearchPred(sta::dbSta* const open_sta) : SearchPredNonReg2(open_sta) {}
+    SearchPred(sta::dbSta* const sta) : SearchPredNonReg2(sta) {}
     bool searchFrom(const sta::Vertex* const from_vertex) final
     {
       return visited_.find(from_vertex) == visited_.end();
@@ -272,12 +268,12 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const open_sta,
     std::unordered_set<const sta::Vertex*> visited_;
   };
 
-  auto network = open_sta->getDbNetwork();
-  auto graph = open_sta->graph();
-  SearchPred pred(open_sta);
+  auto network = sta->getDbNetwork();
+  auto graph = sta->graph();
+  SearchPred pred(sta);
   std::unordered_set<sta::Net*> visited_nets;
   {
-    sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta);
+    sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, sta);
     for (auto& inst : nets) {
       auto pin_iter = network->pinIterator(inst);
       while (pin_iter->hasNext()) {
@@ -413,17 +409,12 @@ void ClockGating::run()
     if (i % 100 == 0) {
       logger_->info(CGT, 3, "Clock gating instance {}/{}", i, instances.size());
     }
-    std::vector<sta::Net*> gate_cond_cover
-        = downstreamNets(sta_, instance, max_cover_);
-    debugPrint(logger_,
-               CGT,
-               "clock_gating",
-               1,
-               "Gate condition cover size: {} for instance {}",
-               gate_cond_cover.size(),
-               network->name(instance));
 
-    auto abc_network = exportToAbc(instance, gate_cond_cover);
+    auto downstream = downstreamNets(sta_, instance);
+    auto gate_cond_cover = downstream;
+    if (max_cover_ < gate_cond_cover.size()) {
+      gate_cond_cover.resize(max_cover_);
+    }
 
     if (gate_cond_cover.empty()) {
       logger_->warn(CGT,
@@ -432,6 +423,16 @@ void ClockGating::run()
                     network->name(instance));
       continue;
     }
+
+    debugPrint(logger_,
+               CGT,
+               "clock_gating",
+               1,
+               "Gate condition cover size: {} for instance {}",
+               gate_cond_cover.size(),
+               network->name(instance));
+
+    auto abc_network = exportToAbc(instance, downstream);
 
     bool inserted = false;
     std::vector<AcceptedIndex> accepted_idxs;
