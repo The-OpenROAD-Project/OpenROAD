@@ -6,6 +6,9 @@
 #include <cmath>
 #include <complex>
 
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+
 namespace grt {
 
 void Grid::init(const odb::Rect& die_area,

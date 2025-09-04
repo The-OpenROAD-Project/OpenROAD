@@ -33,6 +33,12 @@
       "name":"chipinst_next_",
       "type":"dbId<_dbChipInst>",
       "flags":["private"]
+    },
+    {
+      "name":"chip_region_insts_",
+      "type":"dbId<_dbChipRegionInst>",
+      "flags":["private"],
+      "schema":"db_schema_chip_region"
     }
   ],
   "h_includes": [

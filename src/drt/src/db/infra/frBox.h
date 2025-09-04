@@ -5,6 +5,8 @@
 
 #include "db/infra/frPoint.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 

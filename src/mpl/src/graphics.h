@@ -30,7 +30,9 @@ class Graphics : public gui::Renderer, public MplObserver
   void startCoarse() override;
   void startFine() override;
 
-  void startSA() override;
+  void startSA(const char* type,
+               int max_num_step,
+               int num_perturb_per_step) override;
   void saStep(const std::vector<SoftMacro>& macros) override;
   void saStep(const std::vector<HardMacro>& macros) override;
   void endSA(float norm_cost) override;
@@ -117,6 +119,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::vector<odb::Rect> blocked_regions_for_pins_;
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
+  gui::Chart* chart_{nullptr};
 
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
@@ -149,6 +152,7 @@ class Graphics : public gui::Renderer, public MplObserver
 
   float best_norm_cost_ = 0;
   int skipped_ = 0;
+  int iter_ = 0;
 
   Cluster* root_ = nullptr;
 };

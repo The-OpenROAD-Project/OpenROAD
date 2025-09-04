@@ -3,8 +3,12 @@
 
 #include "create_box.h"
 
+#include <cassert>
+#include <cmath>
 #include <cstdio>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 namespace odb {
 

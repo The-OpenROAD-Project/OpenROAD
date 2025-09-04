@@ -127,9 +127,10 @@ def getParallelTests(String image) {
                     stage('no-test Build') {
                         timeout(time: 20, unit: 'MINUTES') {
                             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                                sh label: 'no-test Build', script: 'cmake -B build_no_tests -D ENABLE_TESTS=OFF 2>&1 | tee no_test.log';
+                                sh label: 'no-test Build', script: './etc/Build.sh -no-warnings -no-tests';
                             }
                         }
+                        sh 'mv build/openroad_build.log no_test.log'
                         archiveArtifacts artifacts: 'no_test.log';
                     }
                 }
@@ -176,11 +177,8 @@ def getParallelTests(String image) {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
                     }
-                    stage('C++ Unit Tests Setup') {
-                        sh label: 'C++ Unit Tests Setup', script: 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
-                    }
-                    stage('C++ Unit Tests') {
-                        sh label: 'C++ Unit Tests', script: 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';
+                    stage('C++ Build and Unit Tests') {
+                        sh label: 'C++ Build with Ninja', script: './etc/Build.sh -no-warnings -ninja';
                     }
                 }
             }
@@ -203,48 +201,12 @@ def getParallelTests(String image) {
                         checkout scm;
                     }
                     stage('Compile with C++20') {
-                        sh label: 'Compile C++20', script: "./etc/Build.sh -no-warnings -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
+                        sh label: 'Compile C++20', script: "./etc/Build.sh -cpp20"
                     }
                 }
             }
         }
     ];
-
-    if (env.BRANCH_NAME == 'master') {
-        deb_os = [
-            [name: 'Ubuntu 20.04' , artifact_name: 'ubuntu-20.04', image: 'openroad/ubuntu20.04-dev'],
-            [name: 'Ubuntu 22.04' , artifact_name: 'ubuntu-22.04', image: 'openroad/ubuntu22.04-dev'],
-            [name: 'Debian 11' , artifact_name: 'debian11', image: 'openroad/debian11-dev']
-        ];
-        deb_os.each { os ->
-            ret["Build .deb - ${os.name}"] = {
-                node {
-                    stage('Setup and Build') {
-                        sh label: 'Pull latest image', script: "docker pull ${os.image}:latest";
-                        withDockerContainer(args: '-u root', image: "${os.image}") {
-                            sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                            checkout([
-                                    $class: 'GitSCM',
-                                    branches: [[name: scm.branches[0].name]],
-                                    doGenerateSubmoduleConfigurations: false,
-                                    extensions: [
-                                    [$class: 'CloneOption', noTags: false],
-                                    [$class: 'SubmoduleOption', recursiveSubmodules: true]
-                                    ],
-                                    submoduleCfg: [],
-                                    userRemoteConfigs: scm.userRemoteConfigs
-                            ]);
-                            def version = sh(script: 'git describe | sed s,^v,,', returnStdout: true).trim();
-                            sh label: 'Create Changelog', script: "./debian/create-changelog.sh ${version}";
-                            sh label: 'Run debuild', script: 'debuild --preserve-env --preserve-envvar=PATH -B -j$(nproc)';
-                            sh label: 'Move generated files', script: "./debian/move-artifacts.sh ${version} ${os.artifact_name}";
-                            archiveArtifacts artifacts: '*' + "${version}" + '*';
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     return ret;
 }

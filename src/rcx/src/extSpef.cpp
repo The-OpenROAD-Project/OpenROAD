@@ -3,12 +3,22 @@
 
 #include "rcx/extSpef.h"
 
+#include <stdio.h>  // NOLINT(modernize-deprecated-headers): for popen()
+
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <limits>
 #include <vector>
 
 #include "name.h"
+#include "odb/db.h"
 #include "odb/dbExtControl.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"

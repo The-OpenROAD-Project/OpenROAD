@@ -3,8 +3,8 @@
 
 #include "db/obj/frInst.h"
 
-#include "frBlock.h"
-#include "frMaster.h"
+#include "db/obj/frBlock.h"
+#include "db/obj/frMaster.h"
 namespace drt {
 
 Rect frInst::getBBox() const

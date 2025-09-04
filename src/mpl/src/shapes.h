@@ -14,7 +14,6 @@ struct Interval
   float max{0.0f};
 };
 
-// Coarse shape of a cluster that contains macros.
 class Tiling
 {
  public:

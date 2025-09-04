@@ -3,9 +3,16 @@
 
 #include "odb/gdsout.h"
 
+#include <cstdint>
+#include <ctime>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace odb::gds {
 

@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <any>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>

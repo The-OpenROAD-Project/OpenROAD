@@ -4,8 +4,6 @@
 #include "Multilevel.h"
 
 #include <algorithm>
-#include <boost/random/uniform_int_distribution.hpp>
-#include <boost/range/iterator_range_core.hpp>
 #include <functional>
 #include <limits>
 #include <numeric>
@@ -24,6 +22,8 @@
 #include "KWayPMRefine.h"
 #include "Partitioner.h"
 #include "Utilities.h"
+#include "boost/random/uniform_int_distribution.hpp"
+#include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
 namespace par {

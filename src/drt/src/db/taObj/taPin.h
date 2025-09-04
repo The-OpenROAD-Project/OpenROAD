@@ -10,6 +10,7 @@
 #include "db/taObj/taBlockObject.h"
 #include "db/taObj/taShape.h"
 #include "db/taObj/taVia.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frGuide;

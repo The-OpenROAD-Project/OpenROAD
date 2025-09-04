@@ -2,10 +2,14 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "frBaseTypes.h"
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
 

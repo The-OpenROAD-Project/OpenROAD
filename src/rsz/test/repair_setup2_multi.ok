@@ -8,20 +8,28 @@ worst slack max -0.28
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         7
-    final |    +53.8% |       2 |       0 |             0 |         0
+    final |    +92.3% |       0 |       2 |             2 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 2 capacitance violations.
+[INFO RSZ-0038] Inserted 2 buffers in 2 nets.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 2 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.157 |       -0.3 |      2 | y2
-        3 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.157 |       -0.3 |      2 | y2
-        6 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.157 |       -0.3 |      2 | y2
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.157 |       -0.3 |      2 | y2
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.209 |       -0.3 |      2 | y2
+        4 |       1 |       3 |        0 |      0 |     0 |   +20.0% |   -0.157 |       -0.2 |      2 | y2
+       10 |       1 |       7 |        0 |      0 |     1 |  +112.0% |   -0.157 |       -0.2 |      2 | y2
+       10 |       1 |       3 |        0 |      0 |     0 |   +20.0% |   -0.157 |       -0.2 |      2 | y2
+      10* |       1 |       3 |        0 |      0 |     0 |   +20.0% |   -0.157 |       -0.2 |      2 | y2
+      11* |       1 |       3 |        0 |      0 |     0 |   +20.0% |   -0.157 |       -0.2 |      2 | y2
+      12* |       1 |       3 |        0 |      0 |     0 |   +20.0% |   -0.157 |       -0.2 |      2 | y2
+    final |       1 |       3 |        0 |      0 |     0 |   +20.0% |   -0.157 |       -0.2 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 1 buffers.
+[INFO RSZ-0051] Resized 3 instances: 3 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack max -0.16

@@ -4,12 +4,12 @@
 #include "triton_route/TritonRoute.h"
 
 #include <algorithm>
-#include <boost/asio/post.hpp>
-#include <boost/bind/bind.hpp>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
@@ -19,6 +19,10 @@
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
 #include "PACallBack.h"
+#include "boost/asio/post.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "db/obj/frVia.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -27,6 +31,7 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -34,6 +39,8 @@
 #include "gr/FlexGR.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
+#include "odb/db.h"
+#include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"

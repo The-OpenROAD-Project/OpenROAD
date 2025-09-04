@@ -29,6 +29,7 @@
 
 #include "defiNonDefault.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>

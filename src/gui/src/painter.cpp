@@ -4,8 +4,14 @@
 #include "painter.h"
 
 #include <QFont>
+#include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <map>
 #include <string>
+
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace gui {
 

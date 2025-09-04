@@ -51,8 +51,10 @@
 		$1 = odb::dbOrientType::Value::MX;
 	} else if (strcasecmp(str, "MXR90") == 0) {
 		$1 = odb::dbOrientType::Value::MXR90;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown orientation");
 	}
-}
+ }
 %typemap(typecheck) odb::dbOrientType, dbOrientType {
 	char *str = Tcl_GetStringFromObj($input, 0);
 	bool found = false;
@@ -129,6 +131,8 @@
 		$1 = odb::dbSigType::Value::SCAN;
 	} else if (strcasecmp(str, "TIEOFF") == 0) {
 		$1 = odb::dbSigType::Value::TIEOFF;
+	} else {
+          SWIG_exception(SWIG_ValueError, "Unknown signal type");
 	}
 }
 %typemap(typecheck) odb::dbSigType, dbSigType {
@@ -187,6 +191,8 @@
 		$1 = odb::dbIoType::Value::INOUT;
 	} else if (strcasecmp(str, "FEEDTHRU") == 0) {
 		$1 = odb::dbIoType::Value::FEEDTHRU;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown io type");
 	}
 }
 %typemap(typecheck) odb::dbIoType, dbIoType {
@@ -237,6 +243,8 @@
 		$1 = odb::dbMTermShapeType::Value::FEEDTHRU;
 	} else if (strcasecmp(str, "ABUTMENT") == 0) {
 		$1 = odb::dbMTermShapeType::Value::ABUTMENT;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown shape type");
 	}
 }
 %typemap(typecheck) odb::dbMTermShapeType, dbMTermShapeType {
@@ -303,6 +311,8 @@
 		$1 = odb::dbPlacementStatus::Value::FIRM;
 	} else if (strcasecmp(str, "COVER") == 0) {
 		$1 = odb::dbPlacementStatus::Value::COVER;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown placement status");
 	}
 }
 %typemap(typecheck) odb::dbPlacementStatus, dbPlacementStatus {
@@ -534,6 +544,8 @@
 		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPCORNER;
 	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPCORNER") == 0) {
 		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPCORNER;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown master type");
 	}
 }
 %typemap(typecheck) odb::dbMasterType, dbMasterType {
@@ -731,6 +743,8 @@
 		$1 = odb::dbTechLayerType::Value::IMPLANT;
 	} else if (strcasecmp(str, "NONE") == 0) {
 		$1 = odb::dbTechLayerType::Value::NONE;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown layer type");
 	}
 }
 %typemap(in) odb::dbTechLayer::LEF58_TYPE, dbTechLayer::LEF58_TYPE {
@@ -774,6 +788,8 @@
 		$1 = odb::dbTechLayer::LEF58_TYPE::PADMETAL;
 	} else if (strcasecmp(str, "POLYROUTING") == 0) {
 		$1 = odb::dbTechLayer::LEF58_TYPE::POLYROUTING;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown lef58 layer type");
 	}
 }
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
@@ -875,6 +891,8 @@
 		$1 = odb::dbTechLayerDir::Value::HORIZONTAL;
 	} else if (strcasecmp(str, "VERTICAL") == 0) {
 		$1 = odb::dbTechLayerDir::Value::VERTICAL;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown layer dir");
 	}
 }
 %typemap(typecheck) odb::dbTechLayerDir, dbTechLayerDir {
@@ -913,6 +931,8 @@
 		$1 = odb::dbRowDir::Value::HORIZONTAL;
 	} else if (strcasecmp(str, "VERTICAL") == 0) {
 		$1 = odb::dbRowDir::Value::VERTICAL;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown row dir");
 	}
 }
 %typemap(typecheck) odb::dbRowDir, dbRowDir {
@@ -1009,6 +1029,8 @@
 		$1 = odb::dbBoxOwner::Value::BPIN;
 	} else if (strcasecmp(str, "PBOX") == 0) {
 		$1 = odb::dbBoxOwner::Value::PBOX;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown box owner");
 	}
 }
 %typemap(typecheck) odb::dbBoxOwner, dbBoxOwner {
@@ -1079,6 +1101,8 @@
 		$1 = odb::dbPolygonOwner::Value::OBSTRUCTION;
 	} else if (strcasecmp(str, "SWIRE") == 0) {
 		$1 = odb::dbPolygonOwner::Value::SWIRE;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown polygon owner");
 	}
 }
 %typemap(typecheck) odb::dbPolygonOwner, dbPolygonOwner {
@@ -1139,6 +1163,8 @@
 		$1 = odb::dbWireType::Value::SHIELD;
 	} else if (strcasecmp(str, "NOSHIELD") == 0) {
 		$1 = odb::dbWireType::Value::NOSHIELD;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown wire type");
 	}
 }
 %typemap(typecheck) odb::dbWireType, dbWireType {
@@ -1233,6 +1259,8 @@
 		$1 = odb::dbWireShapeType::Value::FILLWIRE;
 	} else if (strcasecmp(str, "DRCFILL") == 0) {
 		$1 = odb::dbWireShapeType::Value::DRCFILL;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown wire shape type");
 	}
 }
 %typemap(typecheck) odb::dbWireShapeType, dbWireShapeType {
@@ -1294,6 +1322,8 @@
 		$1 = odb::dbSiteClass::Value::PAD;
 	} else if (strcasecmp(str, "CORE") == 0) {
 		$1 = odb::dbSiteClass::Value::CORE;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown site clas");
 	}
 }
 %typemap(typecheck) odb::dbSiteClass, dbSiteClass {
@@ -1332,6 +1362,8 @@
 		$1 = odb::dbOnOffType::Value::OFF;
 	} else if (strcasecmp(str, "ON") == 0) {
 		$1 = odb::dbOnOffType::Value::ON;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown on-off type");
 	}
 }
 %typemap(typecheck) odb::dbOnOffType, dbOnOffType {
@@ -1368,6 +1400,8 @@
 		$1 = odb::dbClMeasureType::Value::EUCLIDEAN;
 	} else if (strcasecmp(str, "MAXXY") == 0) {
 		$1 = odb::dbClMeasureType::Value::MAXXY;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown measure type");
 	}
 }
 %typemap(typecheck) odb::dbClMeasureType, dbClMeasureType {
@@ -1414,6 +1448,8 @@
 		$1 = odb::dbJournalEntryType::Value::ADD;
 	} else if (strcasecmp(str, "DESTROY") == 0) {
 		$1 = odb::dbJournalEntryType::Value::DESTROY;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown journal entry");
 	}
 }
 %typemap(typecheck) odb::dbJournalEntryType, dbJournalEntryType {
@@ -1479,6 +1515,8 @@
 		$1 = odb::dbDirection::Value::UP;
 	} else if (strcasecmp(str, "DOWN") == 0) {
 		$1 = odb::dbDirection::Value::DOWN;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown direction");
 	}
 }
 %typemap(typecheck) odb::dbDirection, dbDirection {
@@ -1530,6 +1568,8 @@
 		$1 = odb::dbRegionType::Value::EXCLUSIVE;
 	} else if (strcasecmp(str, "SUGGESTED") == 0) {
 		$1 = odb::dbRegionType::Value::SUGGESTED;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown region type");
 	}
 }
 %typemap(typecheck) odb::dbRegionType, dbRegionType {
@@ -1588,6 +1628,8 @@
 		$1 = odb::dbSourceType::Value::TIMING;
 	} else if (strcasecmp(str, "TEST") == 0) {
 		$1 = odb::dbSourceType::Value::TEST;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown source type");
 	}
 }
 %typemap(typecheck) odb::dbSourceType, dbSourceType {
@@ -1642,6 +1684,8 @@
 		$1 = odb::dbGroupType::POWER_DOMAIN;
 	} else if (strcasecmp(str, "VISUAL_DEBUG") == 0) {
 		$1 = odb::dbGroupType::VISUAL_DEBUG;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown group type");
 	}
 }
 %typemap(typecheck) odb::dbGroupType, dbGroupType {
@@ -1690,8 +1734,10 @@
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
 	} else if (strcasecmp(str, "MAX") == 0) {
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
-	} else {
+	} else if (strcasecmp(str, "MIN") == 0) {
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown lookup strategy");
 	}
 }
 %typemap(typecheck) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {

@@ -4,6 +4,7 @@
 #include "ScanChain.hh"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -12,6 +13,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

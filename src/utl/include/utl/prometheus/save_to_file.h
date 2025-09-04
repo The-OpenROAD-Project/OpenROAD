@@ -23,6 +23,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <memory>
 #include <string>

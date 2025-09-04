@@ -3,12 +3,15 @@
 
 #include "parse.h"
 
+#include <stdio.h>  // NOLINT(modernize-deprecated-headers): for popen()
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 
 #include "odb/odb.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 

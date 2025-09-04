@@ -24,15 +24,24 @@
 
 namespace rmp {
 
-std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta)
+std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta,
+                                               rsz::Resizer* resizer)
 {
   std::vector<sta::Vertex*> result;
 
   sta::dbNetwork* network = sta->getDbNetwork();
   for (sta::Vertex* vertex : *sta->endpoints()) {
-    sta::PortDirection* direction = network->direction(vertex->pin());
+    sta::Pin* pin = vertex->pin();
+    sta::PortDirection* direction = network->direction(pin);
     if (!direction->isInput()) {
       continue;
+    }
+
+    if (resizer != nullptr) {
+      if (resizer->dontTouch(pin) || resizer->dontTouch(network->net(pin))
+          || resizer->dontTouch(network->instance(pin))) {
+        continue;
+      }
     }
 
     const sta::Slack slack = sta->vertexSlack(vertex, sta::MinMax::max());
@@ -48,6 +57,7 @@ std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta)
 
 void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
                                        UniqueName& name_generator,
+                                       rsz::Resizer* resizer,
                                        utl::Logger* logger)
 {
   sta->ensureGraph();
@@ -57,16 +67,19 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
 
   sta::dbNetwork* network = sta->getDbNetwork();
 
-  std::vector<sta::Vertex*> candidate_vertices = GetNegativeEndpoints(sta);
+  std::vector<sta::Vertex*> candidate_vertices
+      = GetNegativeEndpoints(sta, resizer);
 
   if (candidate_vertices.empty()) {
-    logger->info(
-        utl::RMP, 1030, "All endpoints have positive slack, nothing to do.");
+    logger->info(utl::RMP,
+                 1030,
+                 "All candidate endpoints have positive slack, nothing to do.");
     return;
   }
 
   AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
+  factory.AddResizer(resizer);
   factory.SetCorner(corner_);
   AbcLibrary abc_library = factory.Build();
 
@@ -81,6 +94,12 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   }
 
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  if (cut.IsEmpty()) {
+    logger->warn(
+        utl::RMP, 1032, "Logic cut is empty after extraction, nothing to do.");
+    return;
+  }
 
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, logger);

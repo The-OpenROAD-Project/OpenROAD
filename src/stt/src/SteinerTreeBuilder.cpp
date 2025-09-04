@@ -12,6 +12,8 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "stt/flute.h"
 #include "stt/pd.h"
 

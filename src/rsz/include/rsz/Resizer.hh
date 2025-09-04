@@ -118,6 +118,8 @@ class SizeDownMove;
 class SizeUpMove;
 class SwapPinsMove;
 class UnbufferMove;
+class VTSwapSpeedMove;
+class SizeUpMatchMove;
 class RegisterOdbCallbackGuard;
 
 class NetHash
@@ -138,7 +140,9 @@ enum class MoveType
   SIZEUP,
   SIZEDOWN,
   CLONE,
-  SPLIT
+  SPLIT,
+  VTSWAP_SPEED,  // VT swap for timing (need VT swap for power also)
+  SIZEUP_MATCH   // sizeup to match drive strength vs. prev stage
 };
 
 // Voltage Threshold (VT) category identifier
@@ -155,6 +159,11 @@ struct VTCategory
     }
     return vt_name < other.vt_name;
   }
+  bool operator==(const VTCategory& other) const
+  {
+    return (vt_index == other.vt_index && vt_name == other.vt_name);
+  }
+  bool operator!=(const VTCategory& other) const { return !(*this == other); }
 };
 
 // Leakage statistics for cells in a single VT category
@@ -230,15 +239,17 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
 
+  VertexSeq orderedLoadPinVertices();
+
   void setDontUse(LibertyCell* cell, bool dont_use);
   void resetDontUse();
   bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
-  bool dontTouch(const Instance* inst);
+  bool dontTouch(const Instance* inst) const;
   void setDontTouch(const Net* net, bool dont_touch);
-  bool dontTouch(const Net* net);
-  bool dontTouch(const Pin* pin);
+  bool dontTouch(const Net* net) const;
+  bool dontTouch(const Pin* pin) const;
   void reportDontTouch();
 
   void reportFastBufferSizes();
@@ -276,7 +287,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_last_gasp);
+                   bool skip_last_gasp,
+                   bool skip_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -405,7 +417,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
-  std::pair<int, std::string> cellVTType(dbMaster* master);
+  VTCategory cellVTType(dbMaster* master);
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
@@ -417,10 +429,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell,
                              bool match_cell_footprint,
-                             bool report_all_cells);
+                             bool report_all_cells,
+                             bool report_vt_equiv);
   void reportBuffers(bool filtered);
-  void getBufferList(LibertyCellSeq& buffer_list,
-                     LibraryAnalysisData& lib_data);
+  void getBufferList(LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static MoveType parseMove(const std::string& s);
@@ -432,6 +444,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
     return estimate_parasitics_;
   }
 
+  // Library analysis data
+  std::unique_ptr<LibraryAnalysisData> lib_data_;
+
  protected:
   void init();
   double computeDesignArea();
@@ -442,7 +457,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                         bool verbose);
   void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
-  bool isTristateDriver(const Pin* pin);
+  bool isTristateDriver(const Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
   bool bufferSizeOutmatched(LibertyCell* worse,
@@ -493,6 +508,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
+  LibertyCellSeq getVTEquivCells(LibertyCell* source_cell);
 
   bool getCin(const LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
@@ -661,6 +677,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
                       const Corner*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance* inst);
+
+  bool okToBufferNet(const Pin* driver_pin) const;
+
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -715,6 +734,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Cache results of getSwappableCells() as this is expensive for large PDKs.
   std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+  // Cache VT equivalent cells for each cell, equivalent cells are sorted in
+  // increasing order of leakage
+  // BUF_X1_RVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_LVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // ...
+  std::unordered_map<LibertyCell*, LibertyCellSeq> vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
   VertexSeq level_drvr_vertices_;
@@ -772,7 +797,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double buffer_sizing_cap_ratio_;
 
   // VT layer hash
-  std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
+  std::unordered_map<dbMaster*, VTCategory> vt_map_;
   std::unordered_map<size_t, int>
       vt_hash_map_;  // maps hash value to unique int
 
@@ -787,6 +812,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unique_ptr<SizeUpMove> size_up_move_;
   std::unique_ptr<SwapPinsMove> swap_pins_move_;
   std::unique_ptr<UnbufferMove> unbuffer_move_;
+  std::unique_ptr<VTSwapSpeedMove> vt_swap_speed_move_;
+  std::unique_ptr<SizeUpMatchMove> size_up_match_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
 
@@ -805,6 +832,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
+  friend class SizeUpMatchMove;
+  friend class VTSwapSpeedMove;
   friend class SwapArithModules;
   friend class ConcreteSwapArithModules;
   friend class Rebuffer;

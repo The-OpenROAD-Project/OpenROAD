@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
 #include "rcx/extRCap.h"
 #include "rcx/extRulesPattern.h"
 #include "rcx/extSpef.h"
@@ -10,6 +14,7 @@
 #include "direct.h"
 #endif
 
+#include <cstdio>
 #include <map>
 #include <vector>
 

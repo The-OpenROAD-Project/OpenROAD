@@ -3,12 +3,15 @@
 
 #include "odb/dbStream.h"
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
 #include "dbDatabase.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 

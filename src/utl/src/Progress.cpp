@@ -3,7 +3,10 @@
 
 #include "utl/Progress.h"
 
+#include <algorithm>
+#include <ctime>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <vector>
 

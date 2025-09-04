@@ -4,9 +4,9 @@
 #include "straps.h"
 
 #include <algorithm>
-#include <boost/geometry.hpp>
-#include <boost/polygon/polygon.hpp>
+#include <array>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -15,11 +15,14 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "renderer.h"
 #include "techlayer.h"
 #include "utl/Logger.h"

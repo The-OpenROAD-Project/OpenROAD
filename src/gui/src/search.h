@@ -4,12 +4,15 @@
 #pragma once
 
 #include <QObject>
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
+#include <atomic>
+#include <map>
 #include <mutex>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
@@ -39,13 +42,20 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   class PolygonIntersectPredicate;
 
  public:
+  enum RouteBoxType
+  {
+    WIRE,
+    VIA,
+    BTERM
+  };
+
   template <typename T>
   using LayerMap = std::map<odb::dbTechLayer*, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
   template <typename T>
-  using RouteBoxValue = std::tuple<odb::Rect, bool, T>;
+  using RouteBoxValue = std::tuple<odb::Rect, RouteBoxType, T>;
   template <typename T>
   using SNetValue = std::tuple<odb::dbSBox*, odb::Polygon, T>;
   template <typename T>

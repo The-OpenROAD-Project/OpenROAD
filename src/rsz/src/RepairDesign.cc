@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -17,6 +19,9 @@
 #include "BufferedNet.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
@@ -49,6 +54,7 @@ using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
 using sta::Port;
+using sta::PortDirection;
 using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::TimingRole;
@@ -159,8 +165,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
     db_network_->staToDb(net, net_db, mod_net_db);
     search_->findRequireds(drvr->level() + 1);
 
-    bool not_abut_connection = net_db && !net_db->isConnectedByAbutment();
-    if (net && !resizer_->dontTouch(net) && not_abut_connection
+    if (resizer_->okToBufferNet(drvr_pin)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant()) {
@@ -251,6 +256,52 @@ void RepairDesign::repairDesign(
     performEarlySizingRound(repaired_net_count);
   }
 
+  // keep track of annotations which were added by us
+  std::set<Vertex*> annotations_to_clean_up;
+  std::map<Vertex*, Corner*> drvr_with_load_slew_viol;
+  VertexSeq load_vertices = resizer_->orderedLoadPinVertices();
+
+  // Forward pass: whenever we see violating input pin slew we override
+  // it in the graph. This is in order to prevent second order upsizing.
+  // The load pin slew will get repaired so we shouldn't propagate it
+  // downstream.
+  for (auto vertex : load_vertices) {
+    if (!vertex->slewAnnotated()) {
+      sta_->findDelays(vertex);
+      LibertyPort* port = network_->libertyPort(vertex->pin());
+      if (port) {
+        for (auto corner : *sta_->corners()) {
+          const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+          float limit = resizer_->maxInputSlew(port, corner);
+          for (const RiseFall* rf : RiseFall::range()) {
+            float actual = graph_->slew(vertex, rf, dcalc_ap->index());
+            if (actual > limit) {
+              sta_->setAnnotatedSlew(vertex,
+                                     corner,
+                                     max_->asMinMaxAll(),
+                                     rf->asRiseFallBoth(),
+                                     limit);
+              annotations_to_clean_up.insert(vertex);
+              PinSet* drivers = network_->drivers(vertex->pin());
+              if (drivers) {
+                for (const Pin* drvr_pin : *drivers) {
+                  drvr_with_load_slew_viol[graph_->pinDrvrVertex(drvr_pin)]
+                      = corner;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  debugPrint(logger_,
+             RSZ,
+             "repair_design",
+             1,
+             "annotated slew to non-violating value on {} load vertices",
+             annotations_to_clean_up.size());
+
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int print_iteration = 0;
@@ -284,6 +335,8 @@ void RepairDesign::repairDesign(
       if (debug) {
         logger_->setDebugLevel(RSZ, "repair_net", 3);
       }
+      // Don't check okToBufferNet here as we are going to do a mix of driver
+      // sizing and buffering.  Further checks exist in repairNet.
       if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
           && !sta_->isClock(drvr_pin)
           // Exclude tie hi/low cells and supply nets.
@@ -296,6 +349,9 @@ void RepairDesign::repairDesign(
                   true,
                   max_length,
                   true,
+                  drvr_with_load_slew_viol.count(drvr)
+                      ? drvr_with_load_slew_viol.at(drvr)
+                      : nullptr,
                   repaired_net_count,
                   slew_violations,
                   cap_violations,
@@ -308,6 +364,18 @@ void RepairDesign::repairDesign(
     }
     estimate_parasitics_->updateParasitics();
     printProgress(print_iteration, true, true, repaired_net_count);
+  }
+
+  if (!annotations_to_clean_up.empty()) {
+    for (auto vertex : annotations_to_clean_up) {
+      for (auto corner : *sta_->corners()) {
+        const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+        for (const RiseFall* rf : RiseFall::range()) {
+          vertex->setSlewAnnotated(false, rf, dcalc_ap->index());
+        }
+      }
+    }
+    sta_->delaysInvalid();
   }
 
   if (inserted_buffer_count_ > 0) {
@@ -370,6 +438,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
                       false,
                       max_length,
                       false,
+                      nullptr,
                       repaired_net_count,
                       slew_violations,
                       cap_violations,
@@ -437,6 +506,7 @@ void RepairDesign::repairNet(Net* net,
                 true,
                 max_length,
                 true,
+                nullptr,
                 repaired_net_count,
                 slew_violations,
                 cap_violations,
@@ -466,7 +536,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
       int nports = 0;
       while (port_iter.hasNext()) {
         const LibertyPort* port = port_iter.next();
-        if (port->direction() == sta::PortDirection::input()) {
+        if (port->direction() == PortDirection::input()) {
           size_cin += port->capacitance();
           nports++;
         }
@@ -495,7 +565,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
     int nports = 0;
     while (port_iter.hasNext()) {
       const LibertyPort* port = port_iter.next();
-      if (port->direction() == sta::PortDirection::input()) {
+      if (port->direction() == PortDirection::input()) {
         cin += port->capacitance();
         nports++;
       }
@@ -588,7 +658,7 @@ bool RepairDesign::performGainBuffering(Net* net,
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin != drvr_pin && !network_->isTopLevelPort(pin)
-        && network_->direction(pin) == sta::PortDirection::input()
+        && network_->direction(pin) == PortDirection::input()
         && network_->libertyPort(pin)) {
       Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
@@ -874,6 +944,7 @@ void RepairDesign::repairNet(Net* net,
                              bool check_fanout,
                              int max_length,  // dbu
                              bool resize_drvr,
+                             Corner* corner_w_load_slew_viol,
                              int& repaired_net_count,
                              int& slew_violations,
                              int& cap_violations,
@@ -913,12 +984,6 @@ void RepairDesign::repairNet(Net* net,
       }
     }
 
-    // TO BE REMOVED: Resize the driver to normalize slews before repairing
-    // limit violations.
-    if (parasitics_src_ == est::ParasiticsSrc::placement && resize_drvr) {
-      resize_count_ += resizer_->resizeToCapRatio(drvr_pin, false);
-    }
-
     float max_cap = INF;
     bool repair_cap = false, repair_load_slew = false, repair_wire = false;
 
@@ -946,6 +1011,7 @@ void RepairDesign::repairNet(Net* net,
         slew_violation = true;
         if (repairDriverSlew(corner1, drvr_pin)) {
           resize_count_++;
+          graph_delay_calc_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
         }
 
@@ -975,13 +1041,19 @@ void RepairDesign::repairNet(Net* net,
                      network_->name(drvr_pin),
                      delayAsString(slew1, this, 3),
                      delayAsString(max_slew1, this, 3));
-
           slew_violation = true;
           repair_load_slew = true;
           // If repair_cap is true, corner is already set to correspond
           // to a max_cap violation, do not override in that case
           if (!repair_cap) {
             corner = corner1;
+          }
+        } else if (corner_w_load_slew_viol) {
+          // There's a violation hidden by an annotation. Repair still
+          slew_violation = true;
+          repair_load_slew = true;
+          if (!repair_cap) {
+            corner = corner_w_load_slew_viol;
           }
         }
       }
@@ -1805,6 +1877,7 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
             false /* check_fanout */,
             max_length,
             resize_drvr,
+            nullptr,
             repaired_net_count,
             slew_violations,
             cap_violations,

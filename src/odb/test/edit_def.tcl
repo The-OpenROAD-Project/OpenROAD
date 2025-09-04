@@ -19,7 +19,7 @@ if { [$swire getNet] != "$net" } {
   exit 1
 }
 set site [lindex [$lib getSites] 0]
-set row [odb::dbRow_create $block "row0" $site 0 0 "RO" "HORIZONTAL" 1 10]
+set row [odb::dbRow_create $block "row0" $site 0 0 "R0" "HORIZONTAL" 1 10]
 if { $row == "NULL" } {
   puts "FAIL: row error"
   exit 1

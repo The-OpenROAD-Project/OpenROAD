@@ -75,6 +75,8 @@ cc_library(
         "src/extmeasure_res_v2.cpp",
         "src/extprocess.cpp",
         "src/extstats.cpp",
+        "src/find_some_net.cpp",
+        "src/find_some_net.h",
         "src/findsegments.cpp",
         "src/grids.cpp",
         "src/gs.cpp",
@@ -85,8 +87,6 @@ cc_library(
         "src/parse.cpp",
         "src/parse.h",
         "src/process_ext.cpp",
-        "src/find_some_net.cpp",
-        "src/find_some_net.h",
     ],
     includes = [
         "include",

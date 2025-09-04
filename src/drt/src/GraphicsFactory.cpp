@@ -6,6 +6,8 @@
 #include <memory>
 #include <utility>
 
+#include "odb/db.h"
+
 namespace drt {
 
 GraphicsFactory::GraphicsFactory() = default;

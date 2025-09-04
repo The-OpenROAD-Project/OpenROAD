@@ -2,10 +2,10 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
-#include <boost/functional/hash.hpp>
 #include <unordered_set>
 #include <vector>
 
+#include "boost/functional/hash.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -84,7 +84,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_last_gasp);
+                   bool skip_last_gasp,
+                   bool skip_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.

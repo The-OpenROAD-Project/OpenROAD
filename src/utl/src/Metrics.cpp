@@ -3,6 +3,8 @@
 
 #include "utl/Metrics.h"
 
+#include <list>
+#include <regex>
 #include <string>
 #include <vector>
 

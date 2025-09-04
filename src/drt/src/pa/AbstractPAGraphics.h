@@ -7,9 +7,11 @@
 #include <utility>
 #include <vector>
 
-#include "FlexPA.h"
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "frBaseTypes.h"
+#include "pa/FlexPA.h"
 
 namespace drt {
 

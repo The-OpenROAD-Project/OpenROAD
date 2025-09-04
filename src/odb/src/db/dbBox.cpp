@@ -3,6 +3,8 @@
 
 #include "dbBox.h"
 
+#include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include "dbBPin.h"
@@ -10,6 +12,7 @@
 #include "dbBlock.h"
 #include "dbBlockage.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbLib.h"
@@ -28,7 +31,11 @@
 #include "dbVia.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

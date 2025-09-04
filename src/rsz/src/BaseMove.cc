@@ -3,6 +3,16 @@
 
 #include "BaseMove.hh"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
+
+#include "odb/db.h"
+#include "odb/geom.h"
+
 namespace rsz {
 
 using std::max;
@@ -693,6 +703,4 @@ vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
   return fanouts;
 }
 
-////////////////////////////////////////////////////////////////
-// namespace rsz
 }  // namespace rsz

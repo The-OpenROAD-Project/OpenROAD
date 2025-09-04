@@ -49,18 +49,35 @@ class MockArrayBundle(width: Int, height: Int, singleElementWidth: Int) extends 
   val lsbs = Output(Vec(width * height, Bool()))
 }
 
+class MultiplierIO extends Bundle {
+  val a = Input(UInt(32.W))
+  val b = Input(UInt(32.W))
+  val o = Output(UInt(32.W))
+  val rst = Input(Bool())
+  val clk = Input(Clock())
+}
+
 // Generated with:
 //
 // vlsi-multiplier --register-input --register-post-ppg --register-post-ppa --register-output --bits=32 --algorithm=brentkung --tech=asap7 --output=multiplier.v
-class Multiplier extends BlackBox with HasBlackBoxResource {
+class MultiplierBlackBox extends BlackBox with HasBlackBoxResource {
   override def desiredName = "multiplier"
-  val io = IO(new Bundle {
-    val a = Input(UInt(32.W))
-    val b = Input(UInt(32.W))
-    val o = Output(UInt(32.W))
-    val rst = Input(Bool())
-    val clk = Input(Clock())
-  })
+  val io = IO(new MultiplierIO())
+}
+
+// This module is kept in synthesis for hierarchical power testing purposes
+class Multiplier extends RawModule {
+  val io = IO(new MultiplierIO())
+
+  val mod = Module(new MultiplierBlackBox())
+  mod.io.a := io.a
+  mod.io.b := io.b
+  mod.io.rst := io.rst
+  mod.io.clk := io.clk
+  // reduce output bit-width until we slight negative slack
+  // and also until we run in a few minutes for fast local
+  // smoke-testing
+  io.o := mod.io.o(3, 0)
 }
 
 class MockArray(width: Int, height: Int, singleElementWidth: Int)
@@ -89,10 +106,7 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
         // save some area and complexity by not having reset
         mult.io.rst := false.B
         mult.io.clk := clock
-        // reduce output bit-width until we slight negative slack
-        // and also until we run in a few minutes for fast local
-        // smoke-testing
-        mult.io.o(3, 0)
+        mult.io.o
       })
     }
 

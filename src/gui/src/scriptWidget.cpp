@@ -13,7 +13,10 @@
 #include <QVBoxLayout>
 #include <cerrno>
 #include <functional>
+#include <memory>
 #include <mutex>
+#include <stdexcept>
+#include <string>
 
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
@@ -75,6 +78,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           &TclCmdInputWidget::addResultToOutput,
           this,
           &ScriptWidget::addResultToOutput);
+  connect(input_,
+          &TclCmdInputWidget::addTextToOutput,
+          this,
+          &ScriptWidget::addTextToOutput,
+          Qt::QueuedConnection);
   connect(input_,
           &TclCmdInputWidget::commandFinishedExecuting,
           this,

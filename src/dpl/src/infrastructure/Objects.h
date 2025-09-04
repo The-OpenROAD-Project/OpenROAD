@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbBox;

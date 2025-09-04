@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -12,6 +13,8 @@
 #include "db/grObj/grPin.h"
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;

@@ -23,6 +23,8 @@
 #include "gmock/gmock.h"
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/lefin.h"
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"

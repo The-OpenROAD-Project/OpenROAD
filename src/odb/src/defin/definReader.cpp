@@ -3,15 +3,19 @@
 
 #include "definReader.h"
 
-#include <boost/algorithm/string/replace.hpp>
+#include <cassert>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <optional>
 #include <string>
+#include <type_traits>
+#include <variant>
 #include <vector>
 
+#include "boost/algorithm/string/replace.hpp"
 #include "definBlockage.h"
 #include "definComponent.h"
 #include "definComponentMaskShift.h"
@@ -30,7 +34,11 @@
 #include "definVia.h"
 #include "defzlib.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 #define UNSUPPORTED(msg)              \

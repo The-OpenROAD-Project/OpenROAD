@@ -23,19 +23,37 @@ COMPONENTS 21 ;
     - u2 MOCK_DOUBLE + PLACED ( 8360 11200 ) N ;
 END COMPONENTS
 PINS 6 ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 2470 70 ) N ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 3230 70 ) N ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 3990 70 ) N ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 4750 70 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 5510 70 ) N ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 6270 70 ) N ;
 END PINS
 NETS 6 ;
-    - clk1 ( PIN clk1 ) + USE SIGNAL ;
-    - clk2 ( PIN clk2 ) + USE SIGNAL ;
-    - clk3 ( PIN clk3 ) + USE SIGNAL ;
-    - in1 ( PIN in1 ) + USE SIGNAL ;
-    - in2 ( PIN in2 ) + USE SIGNAL ;
+    - clk1 ( PIN clk1 ) ( t1 A1 ) + USE SIGNAL ;
+    - clk2 ( PIN clk2 ) ( r1 A1 ) + USE SIGNAL ;
+    - clk3 ( PIN clk3 ) ( u2 A1 ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( r3 A1 ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( r2 A1 ) + USE SIGNAL ;
     - out ( PIN out ) + USE SIGNAL ;
 END NETS
 END DESIGN

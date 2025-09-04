@@ -3,6 +3,9 @@
 
 #include "dbBTerm.h"
 
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <optional>
 #include <string>
 
@@ -13,6 +16,7 @@
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHier.h"
 #include "dbITerm.h"
@@ -27,6 +31,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
@@ -394,6 +399,11 @@ void dbBTerm::connect(dbNet* net_)
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  // Same net. Nothing to connect.
+  if (bterm->_net == net_->getId()) {
+    return;
+  }
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(utl::ODB,

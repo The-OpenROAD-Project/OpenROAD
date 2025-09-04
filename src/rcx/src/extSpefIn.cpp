@@ -2,9 +2,14 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 #include <vector>
 
 #include "name.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
