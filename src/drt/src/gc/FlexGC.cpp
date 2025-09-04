@@ -9,8 +9,12 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMarker.h"
+#include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "gc/FlexGC_impl.h"
+#include "global.h"
 
 namespace drt {
 

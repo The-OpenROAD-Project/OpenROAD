@@ -15,9 +15,11 @@
 #include <vector>
 
 #include "../gc/FlexGC.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
+#include "frRegionQuery.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

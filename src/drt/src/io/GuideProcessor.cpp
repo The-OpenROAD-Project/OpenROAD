@@ -23,6 +23,7 @@
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
 #include "odb/db.h"
 #include "utl/Logger.h"

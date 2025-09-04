@@ -11,6 +11,7 @@
 
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frPin.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
 

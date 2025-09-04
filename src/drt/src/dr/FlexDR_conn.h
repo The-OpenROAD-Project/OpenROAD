@@ -10,9 +10,12 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frShape.h"
+#include "db/tech/frTechObject.h"
 #include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
 
 namespace odb {
 class dbDatabase;

@@ -17,11 +17,18 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
+#include "dr/FlexGridGraph.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frRTree.h"
 
 namespace drt {

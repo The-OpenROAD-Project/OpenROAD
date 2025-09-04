@@ -30,6 +30,7 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "global.h"
 #include "odb/db.h"
 #include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
