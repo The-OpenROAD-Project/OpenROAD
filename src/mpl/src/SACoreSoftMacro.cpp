@@ -480,7 +480,7 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
   if (!isValid()) {
     return;
   }
-  
+
   float pre_cost = calNormCost();
   // Cache current solution to allow reversal
   std::map<int, std::pair<float, float>> clusters_locations;
