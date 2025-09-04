@@ -8,6 +8,7 @@
 
 #include "db/grObj/grFig.h"
 #include "db/infra/frSegStyle.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;

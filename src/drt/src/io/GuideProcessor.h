@@ -10,7 +10,9 @@
 #include <vector>
 
 #include "boost/icl/interval_set.hpp"
+#include "db/obj/frBlockObject.h"
 #include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "odb/db.h"
 #include "utl/Logger.h"

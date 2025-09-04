@@ -7,7 +7,9 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "frBaseTypes.h"
 #include "pa/FlexPA.h"
 

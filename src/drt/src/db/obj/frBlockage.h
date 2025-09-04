@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "db/obj/frBPin.h"
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
 namespace drt {

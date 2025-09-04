@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "gc/FlexGC_impl.h"
 
 namespace drt {

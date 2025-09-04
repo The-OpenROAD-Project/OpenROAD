@@ -17,7 +17,10 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "io/io.h"
 #include "triton_route/TritonRoute.h"

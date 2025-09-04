@@ -9,6 +9,7 @@
 
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;

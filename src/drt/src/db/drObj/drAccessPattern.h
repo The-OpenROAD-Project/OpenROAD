@@ -8,6 +8,7 @@
 #include "db/drObj/drBlockObject.h"
 #include "db/infra/frPoint.h"
 #include "dr/FlexMazeTypes.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

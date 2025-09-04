@@ -8,6 +8,7 @@
 #include "db/drObj/drFig.h"
 #include "db/infra/frSegStyle.h"
 #include "dr/FlexMazeTypes.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

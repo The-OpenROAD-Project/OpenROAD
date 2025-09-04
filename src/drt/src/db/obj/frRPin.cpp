@@ -7,6 +7,7 @@
 
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

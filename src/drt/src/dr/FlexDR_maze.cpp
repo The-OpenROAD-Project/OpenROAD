@@ -23,7 +23,12 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 

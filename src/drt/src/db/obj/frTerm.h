@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"

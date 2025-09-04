@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
 

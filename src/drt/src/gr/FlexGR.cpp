@@ -24,7 +24,9 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frGuide.h"
+#include "frBaseTypes.h"
 #include "odb/db.h"
 #include "utl/exception.h"
 

@@ -6,6 +6,7 @@
 #include <map>
 
 #include "db/drObj/drBlockObject.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frConstraint;

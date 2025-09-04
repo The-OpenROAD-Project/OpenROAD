@@ -7,6 +7,7 @@
 
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;

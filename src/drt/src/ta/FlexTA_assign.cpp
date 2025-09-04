@@ -9,6 +9,10 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 
 namespace drt {

@@ -7,6 +7,7 @@
 
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frBox.h"
+#include "db/obj/frBlockObject.h"
 
 namespace drt {
 

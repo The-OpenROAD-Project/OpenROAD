@@ -7,6 +7,7 @@
 
 #include "db/grObj/grRef.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

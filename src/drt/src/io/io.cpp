@@ -23,7 +23,11 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frViaRuleGenerate.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"

@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "odb/db.h"
 

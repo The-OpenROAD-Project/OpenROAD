@@ -17,6 +17,8 @@
 #include "db/drObj/drPin.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
+#include "db/obj/frAccess.h"
+#include "frBaseTypes.h"
 #include "global.h"
 
 namespace drt {

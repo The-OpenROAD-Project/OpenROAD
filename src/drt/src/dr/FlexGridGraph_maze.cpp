@@ -13,6 +13,7 @@
 
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 const int debugMazeIter = std::numeric_limits<int>::max();

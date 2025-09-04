@@ -541,6 +541,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
+  void inDbITermPostSetAccessPoints(odb::dbITerm* iterm) override;
 
   void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
   void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;

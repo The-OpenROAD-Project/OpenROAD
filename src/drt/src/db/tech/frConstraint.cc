@@ -6,6 +6,7 @@
 #include <string>
 
 #include "db/tech/frLayer.h"
+#include "frBaseTypes.h"
 #include "utl/Logger.h"
 namespace drt {
 

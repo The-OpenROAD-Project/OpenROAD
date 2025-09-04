@@ -4,6 +4,7 @@
 #pragma once
 
 #include "db/grObj/grFig.h"
+#include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 
 namespace drt {

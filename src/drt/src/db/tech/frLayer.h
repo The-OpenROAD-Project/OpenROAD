@@ -12,6 +12,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
 namespace odb {

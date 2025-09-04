@@ -9,6 +9,7 @@
 #include "db/obj/frShape.h"
 #include "db/taObj/taFig.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 
 namespace drt {

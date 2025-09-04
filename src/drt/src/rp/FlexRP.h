@@ -6,6 +6,8 @@
 #include <utility>
 
 #include "boost/icl/interval_set.hpp"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 
 namespace drt {
