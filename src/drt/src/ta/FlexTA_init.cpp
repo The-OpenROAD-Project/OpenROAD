@@ -11,7 +11,12 @@
 #include <vector>
 
 #include "db/obj/frAccess.h"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "ta/FlexTA.h"

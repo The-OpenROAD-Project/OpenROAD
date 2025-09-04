@@ -20,9 +20,14 @@
 #include "boost/serialization/export.hpp"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frSegStyle.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
@@ -30,6 +35,7 @@
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
 #include "gc/FlexGC.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;

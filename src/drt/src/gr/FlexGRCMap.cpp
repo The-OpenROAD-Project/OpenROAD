@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 

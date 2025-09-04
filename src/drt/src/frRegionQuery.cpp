@@ -13,6 +13,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstBlockage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"

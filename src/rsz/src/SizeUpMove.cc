@@ -44,10 +44,7 @@ bool SizeUpMove::doMove(const Path* drvr_path,
   Pin* in_pin = in_path->pin(sta_);
   LibertyPort* in_port = network_->libertyPort(in_pin);
 
-  // We always size the cloned gates for some reason, but it would be good if we
-  // also down-sized here instead since we might want smaller original.
-  if (!resizer_->dontTouch(drvr)
-      || resizer_->clone_move_->hasPendingMoves(drvr)) {
+  if (!resizer_->dontTouch(drvr) && resizer_->isLogicStdCell(drvr)) {
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
@@ -120,9 +117,7 @@ bool SizeUpMatchMove::doMove(const Path* drvr_path,
     return false;
   }
 
-  // Also size cloned cells if possible
-  if (!resizer_->dontTouch(drvr)
-      || resizer_->clone_move_->hasPendingMoves(drvr)) {
+  if (!resizer_->dontTouch(drvr) && resizer_->isLogicStdCell(drvr)) {
     LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
     if (drvr_port == nullptr) {
       return false;

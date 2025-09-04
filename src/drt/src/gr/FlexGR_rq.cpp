@@ -9,6 +9,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "gr/FlexGR.h"
 
 namespace drt {

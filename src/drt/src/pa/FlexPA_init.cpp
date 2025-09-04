@@ -11,6 +11,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/infra/frTime.h"
+#include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "gc/FlexGC.h"
 #include "pa/FlexPA.h"

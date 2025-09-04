@@ -26,6 +26,7 @@
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frGuide.h"
+#include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
 #include "utl/exception.h"
