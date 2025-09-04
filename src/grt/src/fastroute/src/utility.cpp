@@ -20,6 +20,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"

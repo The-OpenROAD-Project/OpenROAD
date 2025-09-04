@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 // empty gif writer class
 struct GifWriter

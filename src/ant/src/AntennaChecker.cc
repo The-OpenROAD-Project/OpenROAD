@@ -27,6 +27,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ant {

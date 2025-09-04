@@ -13,6 +13,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {

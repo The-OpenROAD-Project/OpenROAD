@@ -7,6 +7,7 @@
 #include "env.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 namespace {

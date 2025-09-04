@@ -17,6 +17,7 @@
 #include "ir_solver.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "shape.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"

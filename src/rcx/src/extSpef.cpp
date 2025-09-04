@@ -15,7 +15,10 @@
 #include <vector>
 
 #include "name.h"
+#include "odb/db.h"
 #include "odb/dbExtControl.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"

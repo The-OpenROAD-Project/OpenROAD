@@ -910,13 +910,13 @@ esac
 case "${os}" in
     "Ubuntu" )
         ubuntuVersion=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        if [[ ${CI} == "yes" ]]; then
-            _installCI "${ubuntuVersion}"
-        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installUbuntuPackages "${ubuntuVersion}"
             _installUbuntuCleanUp
+        fi
+        if [[ ${CI} == "yes" ]]; then
+            _installCI "${ubuntuVersion}"
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev

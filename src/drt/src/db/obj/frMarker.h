@@ -9,7 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frConstraint;

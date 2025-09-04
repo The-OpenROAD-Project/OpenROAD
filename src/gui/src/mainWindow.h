@@ -20,6 +20,8 @@
 #include "gotoDialog.h"
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "utl/Progress.h"

@@ -11,8 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
-#include "FlexGRCMap.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "gr/FlexGR.h"
+#include "gr/FlexGRCMap.h"
 
 namespace drt {
 

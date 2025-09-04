@@ -19,6 +19,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "staGui.h"
 

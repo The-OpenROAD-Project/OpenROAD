@@ -13,7 +13,8 @@
 
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
-#include "frShape.h"
+#include "db/obj/frShape.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frViaDef;

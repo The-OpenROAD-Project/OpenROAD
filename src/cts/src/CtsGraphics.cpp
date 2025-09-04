@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace cts {

@@ -16,6 +16,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "node.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace psm {

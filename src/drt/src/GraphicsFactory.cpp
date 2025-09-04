@@ -6,6 +6,10 @@
 #include <memory>
 #include <utility>
 
+#include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+
 namespace drt {
 
 GraphicsFactory::GraphicsFactory() = default;

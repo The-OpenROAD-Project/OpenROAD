@@ -14,6 +14,7 @@
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -482,33 +483,17 @@ void Pin::updateCoordi(odb::dbITerm* iTerm)
 //
 void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
 {
-  int lx = INT_MAX;
-  int ly = INT_MAX;
-  int ux = INT_MIN;
-  int uy = INT_MIN;
-
-  for (dbBPin* bPin : bTerm->getBPins()) {
-    Rect bbox = bPin->getBBox();
-    lx = std::min(bbox.xMin(), lx);
-    ly = std::min(bbox.yMin(), ly);
-    ux = std::max(bbox.xMax(), ux);
-    uy = std::max(bbox.yMax(), uy);
-  }
-
-  if (lx == INT_MAX || ly == INT_MAX || ux == INT_MIN || uy == INT_MIN) {
-    logger->warn(GPL,
-                 1,
-                 "{} toplevel port is not placed!\n"
-                 "       Replace will regard {} is placed in (0, 0)",
-                 bTerm->getConstName(),
-                 bTerm->getConstName());
+  Rect bbox = bTerm->getBBox();
+  if (bbox.isInverted()) {
+    logger->error(
+        GPL, 1, "{} toplevel port is not placed.", bTerm->getConstName());
   }
 
   // Just center
   offsetCx_ = offsetCy_ = 0;
 
-  cx_ = (lx + ux) / 2;
-  cy_ = (ly + uy) / 2;
+  cx_ = bbox.xCenter();
+  cy_ = bbox.yCenter();
 }
 
 void Pin::updateLocation(const Instance* inst)

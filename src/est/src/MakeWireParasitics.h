@@ -10,6 +10,7 @@
 #include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
 #include "grt/RoutePt.h"
+#include "odb/db.h"
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
 

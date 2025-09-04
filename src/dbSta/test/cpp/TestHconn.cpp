@@ -24,6 +24,8 @@
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/lefin.h"
 #include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"

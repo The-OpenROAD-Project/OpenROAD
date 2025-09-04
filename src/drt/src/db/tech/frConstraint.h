@@ -13,9 +13,9 @@
 #include <vector>
 
 #include "db/tech/frLookupTbl.h"
+#include "db/tech/frViaDef.h"
+#include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
-#include "frViaDef.h"
-#include "frViaRuleGenerate.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

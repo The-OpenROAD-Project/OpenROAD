@@ -9,12 +9,17 @@
 #include <utility>
 #include <vector>
 
-#include "FlexGRCMap.h"
 #include "boost/icl/interval_map.hpp"
 #include "boost/icl/interval_set.hpp"
 #include "db/grObj/grNet.h"
+#include "db/obj/frBlockObject.h"
+#include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
+#include "frRegionQuery.h"
+#include "global.h"
+#include "gr/FlexGRCMap.h"
 #include "gr/FlexGRGridGraph.h"
 namespace odb {
 class dbDatabase;

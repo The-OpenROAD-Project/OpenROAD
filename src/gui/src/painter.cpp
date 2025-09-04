@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace gui {

@@ -6,6 +6,8 @@
 #include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 

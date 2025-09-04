@@ -34,7 +34,11 @@
 #include "definVia.h"
 #include "defzlib.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 #define UNSUPPORTED(msg)              \

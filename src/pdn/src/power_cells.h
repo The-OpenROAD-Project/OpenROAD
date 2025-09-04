@@ -13,6 +13,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 

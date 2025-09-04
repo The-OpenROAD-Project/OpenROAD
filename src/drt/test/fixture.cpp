@@ -35,6 +35,16 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frFig.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "frRegionQuery.h"
 #include "global.h"
 #include "odb/db.h"
 

@@ -11,6 +11,7 @@
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
