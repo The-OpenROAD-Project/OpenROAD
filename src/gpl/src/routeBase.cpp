@@ -250,8 +250,8 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   nbc_ = std::move(nbc);
   log_ = log;
   nbVec_ = std::move(nbVec);
-  minRcTargetDensity_.resize(nbVec.size());
-  inflatedAreaDelta_.resize(nbVec.size());
+  minRcTargetDensity_.resize(nbVec_.size());
+  inflatedAreaDelta_.resize(nbVec_.size());
   init();
 }
 
@@ -272,16 +272,18 @@ void RouteBase::revertToMinCongestion()
              "iteration with "
              "minimum observed routing congestion.");
   log_->info(GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
-  log_->info(GPL, 57, "Target density at minimum routing congestion:");
 
   // revert
   nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
-    log_->info(GPL,
-               58,
-               "\t{}\t: {:.4f}",
-               nbVec_[j]->group()->getName(),
-               minRcTargetDensity_[j]);
+    if (nbVec_[j]->group()) {
+      log_->info(GPL, 57, "Target density at minimum routing congestion: {:.4f} ({})",
+                minRcTargetDensity_[j],
+                nbVec_[j]->group() ? "" : nbVec_[j]->group()->getName());
+    } else {
+      log_->info(GPL, 58, "Target density at minimum routing congestion: {:.4f}",
+                minRcTargetDensity_[j]);
+      }
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
     nbVec_[j]->updateDensitySize();
@@ -738,9 +740,10 @@ std::pair<bool, bool> RouteBase::routability(
     if (nbVec_[i]->getTargetDensity() > rbVars_.maxDensity) {
       log_->info(GPL,
                  53,
-                 "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
+                 "Target density {:.4f} exceeds the maximum allowed {:.4f} in group {}.",
                  nbVec_[i]->getTargetDensity(),
-                 rbVars_.maxDensity);
+                 rbVars_.maxDensity,
+                 nbVec_[i]->group()->getName());
 
       revertToMinCongestion();
       return std::make_pair(false, true);
