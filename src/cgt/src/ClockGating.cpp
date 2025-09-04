@@ -17,6 +17,7 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Bfs.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -1214,14 +1215,14 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
                         .makeOutputNet("gate_cond_net_");
   }
 
-  sta::Net* clk_net = nullptr;
-  for (const auto inst : instances) {
-    auto clk_pin = getClockPin(network, inst);
+  auto clk_pin = getClockPin(network, instances[0]);
+  assert(clk_pin);
+  auto clk_net = network->net(clk_pin);
+  auto clocks = network->clkNetwork()->clocks(clk_pin);
+  for (size_t i = 1; i < instances.size(); i++) {
+    auto clk_pin = getClockPin(network, instances[i]);
     assert(clk_pin);
-    if (!clk_net) {
-      clk_net = network->net(clk_pin);
-    }
-    assert(clk_net == network->net(clk_pin));
+    assert(*sta_->clkNetwork()->clocks(clk_pin) == *clocks);
   }
 
   auto gated_clk
