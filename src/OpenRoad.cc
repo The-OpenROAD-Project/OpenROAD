@@ -14,11 +14,6 @@
 #include <vector>
 
 #include "ord/Version.hh"
-#ifdef ENABLE_PYTHON3
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-#endif
-
 #include "ant/MakeAntennaChecker.hh"
 #include "cts/MakeTritoncts.h"
 #include "db_sta/MakeDbSta.hh"
