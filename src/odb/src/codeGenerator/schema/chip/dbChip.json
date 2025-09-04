@@ -160,6 +160,16 @@
       "type": "dbId<_dbChipNet>",
       "flags": ["private"],
       "schema": "db_schema_chip_bump"
+    },
+    {
+      "name": "chipinsts_map_",
+      "type": "std::unordered_map<std::string, dbId<_dbChipInst>>",
+      "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "chip_region_map_",
+      "type": "std::unordered_map<std::string, dbId<_dbChipRegion>>",
+      "flags": ["private", "no-serial"]
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],
