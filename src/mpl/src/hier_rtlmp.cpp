@@ -1688,7 +1688,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     }
   } else {
     if (best_sa->centralizationWasReverted()) {
-      best_sa->alignMacroClusters();
+      best_sa->attemptMacroClusterAlignment();
     }
     best_sa->fillDeadSpace();
 
