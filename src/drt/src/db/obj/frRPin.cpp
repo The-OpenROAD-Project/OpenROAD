@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "frRPin.h"
+#include "db/obj/frRPin.h"
+
+#include <iostream>
 
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

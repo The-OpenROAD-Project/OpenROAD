@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -14,9 +15,11 @@
 #include <utility>  // pair
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

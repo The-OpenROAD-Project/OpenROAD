@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace grt {
 

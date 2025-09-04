@@ -11,9 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"

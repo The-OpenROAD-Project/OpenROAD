@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "definBase.h"
+#include "odb/geom.h"
 #include "odb/odb.h"
 
 namespace odb {

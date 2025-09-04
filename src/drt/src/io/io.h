@@ -7,10 +7,17 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "boost/icl/interval_set.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;

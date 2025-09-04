@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cassert>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
@@ -10,6 +12,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

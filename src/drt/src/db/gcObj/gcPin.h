@@ -7,7 +7,9 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcShape.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class gcNet;

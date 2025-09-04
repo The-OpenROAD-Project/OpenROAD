@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <fstream>
 #include <functional>
 #include <set>
 #include <string>

@@ -3,8 +3,12 @@
 
 #include "definBase.h"
 
+#include <cassert>
+
 #include "defiUtil.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
 
 namespace odb {
 

@@ -6,6 +6,7 @@
 #include "Worker.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/tcp.hpp"
+#include "boost/bind/bind.hpp"
 #include "boost/system/system_error.hpp"
 #include "boost/test/included/unit_test.hpp"
 #include "boost/thread/thread.hpp"

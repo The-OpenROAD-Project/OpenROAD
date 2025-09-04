@@ -4,6 +4,9 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>
@@ -16,6 +19,7 @@
 #include "dbCapNode.h"
 #include "dbCapNodeItr.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbGuide.h"
@@ -41,6 +45,8 @@
 #include "odb/dbExtControl.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

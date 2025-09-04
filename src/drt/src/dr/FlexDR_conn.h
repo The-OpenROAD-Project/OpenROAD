@@ -5,10 +5,13 @@
 
 #include <map>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "dr/AbstractDRGraphics.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 
 namespace odb {

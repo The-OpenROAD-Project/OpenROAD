@@ -4,7 +4,12 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <map>
+#include <memory>
 #include <optional>
+#include <ostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -12,6 +17,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
@@ -125,6 +132,9 @@ class EstimateParasitics : public dbStaState
                // Return values.
                double& res,
                double& cap) const;
+  void addClkLayer(odb::dbTechLayer* layer);
+  void addSignalLayer(odb::dbTechLayer* layer);
+  void sortClkAndSignalLayers();
   // Set the resistance and capacitance used for horizontal parasitics on signal
   // nets.
   void setHWireSignalRC(const Corner* corner,
@@ -245,11 +255,16 @@ class EstimateParasitics : public dbStaState
   float subtreeLoad(SteinerTree* tree,
                     float cap_per_micron,
                     SteinerPt pt) const;
+  odb::dbTechLayer* getPinLayer(const Pin* pin);
+  double computeAverageCutResistance(Corner* corner);
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
-                                size_t& resistor_id);
+                                size_t& resistor_id,
+                                Corner* corner,
+                                std::set<const Pin*>& connected_pins,
+                                bool is_clk);
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   double dbuToMeters(int dist) const;
 
@@ -263,6 +278,8 @@ class EstimateParasitics : public dbStaState
   dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
 
+  std::vector<odb::dbTechLayer*> signal_layers_;
+  std::vector<odb::dbTechLayer*> clk_layers_;
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   std::vector<std::vector<double>> layer_res_;  // ohms/meter
   std::vector<std::vector<double>> layer_cap_;  // Farads/meter

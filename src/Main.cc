@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <libgen.h>
+#include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
+#include <strings.h>
 #include <tcl.h>
 
 #include <array>
@@ -14,8 +16,9 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <system_error>
 
-#include "boost/stacktrace.hpp"
+#include "boost/stacktrace/stacktrace.hpp"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed
@@ -236,12 +239,14 @@ int main(int argc, char* argv[])
 
   log_filename = findCmdLineKey(argc, argv, "-log");
   if (log_filename) {
-    remove(log_filename);
+    std::error_code err_ignore;
+    std::filesystem::remove(log_filename, err_ignore);
   }
 
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
   if (metrics_filename) {
-    remove(metrics_filename);
+    std::error_code err_ignored;
+    std::filesystem::remove(metrics_filename, err_ignored);
   }
 
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");

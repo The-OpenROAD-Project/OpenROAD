@@ -5,6 +5,8 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
 

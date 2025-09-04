@@ -5,9 +5,12 @@
 
 #include <triton_route/TritonRoute.h>
 
+#include <cstdint>
 #include <deque>
+#include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
 #include <string>
 #include <utility>
@@ -18,10 +21,14 @@
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "dst/JobMessage.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 

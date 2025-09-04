@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -12,6 +13,8 @@
 
 #include "domain.h"
 #include "grid.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 #include "via.h"

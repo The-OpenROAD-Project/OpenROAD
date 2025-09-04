@@ -2,20 +2,26 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
 #include <vector>
 
-#include "FlexRP.h"
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frTime.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "rp/FlexRP.h"
 
 namespace drt {
 

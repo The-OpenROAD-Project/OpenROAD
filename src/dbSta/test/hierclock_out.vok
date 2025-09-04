@@ -19,6 +19,8 @@ module hierclock (a_count_valid_o,
  output [3:0] b_count_o;
  input [3:0] b_i;
 
+ wire clk2_int;
+ wire clk1_int;
 
  clockgen U1 (.clk_i(clk_i),
     .rst_n_i(rst_n_i),
@@ -58,6 +60,19 @@ module clockgen (clk_i,
  output clk1_o;
  output clk2_o;
 
+ wire _03_;
+ wire _04_;
+ wire _05_;
+ wire _06_;
+ wire _11_;
+ wire _12_;
+ wire _13_;
+ wire _14_;
+ wire _15_;
+ wire _19_;
+ wire _20_;
+ wire _21_;
+ wire _22_;
  wire [3:0] counter_q;
 
  INV_X1 _28_ (.A(rst_n_i),
@@ -124,6 +139,27 @@ module counter (clk_i,
  output count_valid_o;
 
  wire count_valid_q;
+ wire _12_;
+ wire _13_;
+ wire _14_;
+ wire _15_;
+ wire _16_;
+ wire _26_;
+ wire _27_;
+ wire _28_;
+ wire _29_;
+ wire _30_;
+ wire _31_;
+ wire _32_;
+ wire _33_;
+ wire _34_;
+ wire _35_;
+ wire _36_;
+ wire _38_;
+ wire _39_;
+ wire _40_;
+ wire _41_;
+ wire _42_;
  wire [3:0] counter_q;
 
  INV_X1 _49_ (.A(_41_),
@@ -217,6 +253,27 @@ module counter_U3 (clk_i,
  output count_valid_o;
 
  wire count_valid_q;
+ wire _12_;
+ wire _13_;
+ wire _14_;
+ wire _15_;
+ wire _16_;
+ wire _26_;
+ wire _27_;
+ wire _28_;
+ wire _29_;
+ wire _30_;
+ wire _31_;
+ wire _32_;
+ wire _33_;
+ wire _34_;
+ wire _35_;
+ wire _36_;
+ wire _38_;
+ wire _39_;
+ wire _40_;
+ wire _41_;
+ wire _42_;
  wire [3:0] counter_q;
 
  INV_X1 _49_ (.A(_41_),

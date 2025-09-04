@@ -9,12 +9,14 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <sstream>
 #include <string>
 
 #include "db_sta/MakeDbSta.hh"
@@ -22,6 +24,8 @@
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/lefin.h"
 #include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"

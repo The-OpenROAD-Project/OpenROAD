@@ -149,7 +149,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-allow_congestion] \
                                   [-verbose] \
                                   [-start_incremental] \
-                                  [-end_incremental]
+                                  [-end_incremental] \
+                                  [-use_cugr]
 }
 
 proc global_route { args } {
@@ -157,7 +158,7 @@ proc global_route { args } {
     keys {-guide_file -congestion_iterations -congestion_report_file \
           -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
-    flags {-allow_congestion -verbose -start_incremental -end_incremental}
+    flags {-allow_congestion -verbose -start_incremental -end_incremental -use_cugr}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -208,6 +209,8 @@ proc global_route { args } {
     sta::check_percent "-critical_nets_percentage" $percentage
     grt::set_critical_nets_percentage $percentage
   }
+
+  grt::set_use_cugr [info exists flags(-use_cugr)]
 
   set allow_congestion [info exists flags(-allow_congestion)]
   grt::set_allow_congestion $allow_congestion

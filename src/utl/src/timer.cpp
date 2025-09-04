@@ -3,6 +3,8 @@
 
 #include "utl/timer.h"
 
+#include <chrono>
+#include <ostream>
 #include <string>
 
 namespace utl {

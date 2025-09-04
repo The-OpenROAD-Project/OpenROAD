@@ -3,16 +3,22 @@
 
 #include "ScanStitch.hh"
 
+#include <algorithm>
 #include <cstddef>
 #include <deque>
+#include <functional>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace {
 constexpr std::string_view kScanEnable = "scan-enable";

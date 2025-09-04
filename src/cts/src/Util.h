@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <iomanip>
+#include <ios>
 #include <ostream>
 
 #include "utl/Logger.h"

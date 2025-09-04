@@ -3,10 +3,21 @@
 
 #include "staGuiInterface.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/ExceptionPath.hh"

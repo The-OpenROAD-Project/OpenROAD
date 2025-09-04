@@ -19,7 +19,7 @@ COMPULSORY_TESTS = [
     "gcd_asap7",
     "memory_nangate45",
     "aes_dontuse_nangate45",
-    "aes_donttouch_nangate45"
+    "aes_donttouch_nangate45",
 ]
 
 # Disabled in CMakeLists.txt

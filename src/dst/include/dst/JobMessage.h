@@ -2,6 +2,7 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>

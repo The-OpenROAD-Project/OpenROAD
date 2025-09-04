@@ -16,6 +16,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -25,6 +26,7 @@
 #include "boost/unordered/unordered_map.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 

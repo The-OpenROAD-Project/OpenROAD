@@ -1,5 +1,8 @@
 #define BOOST_TEST_MODULE TestAccessPoint
 #include <fstream>
+#include <ios>
+#include <string>
+#include <vector>
 
 #include "boost/test/included/unit_test.hpp"
 #include "env.h"

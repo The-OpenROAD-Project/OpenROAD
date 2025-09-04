@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     bus_route
     clock_route
+    clock_route_cugr
     clock_route_alpha
     clock_route_error1
     clock_route_error2

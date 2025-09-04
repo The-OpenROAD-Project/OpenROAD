@@ -4,14 +4,20 @@
 #include "rsz/Resizer.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -34,6 +40,8 @@
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
@@ -1311,7 +1319,7 @@ bool Resizer::hasTristateOrDontTouchDriver(const Net* net)
   return false;
 }
 
-bool Resizer::isTristateDriver(const Pin* pin)
+bool Resizer::isTristateDriver(const Pin* pin) const
 {
   // Note LEF macro PINs do not have a clue about tristates.
   LibertyPort* port = network_->libertyPort(pin);
@@ -2189,9 +2197,8 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
         size_t next_common_len = getCommonLength(next_name, source_name);
         if (curr_common_len > next_common_len) {
           vt_equiv_cells.erase(std::next(it));
-          ++it;
         } else {
-          vt_equiv_cells.erase(it);
+          it = vt_equiv_cells.erase(it);
         }
       } else {
         ++it;
@@ -2367,8 +2374,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   compressVTLayerName(new_layer_name);
-  VTCategory vt_cat{vt_hash_map_[hash1], new_layer_name};
-  auto [new_it, _] = vt_map_.emplace(master, vt_cat);
+  VTCategory vt_cat{vt_hash_map_[hash1], std::move(new_layer_name)};
+  const auto& [new_it, _] = vt_map_.emplace(master, std::move(vt_cat));
   debugPrint(logger_,
              RSZ,
              "equiv",
@@ -2936,7 +2943,7 @@ void Resizer::setDontTouch(const Instance* inst, bool dont_touch)
   db_inst->setDoNotTouch(dont_touch);
 }
 
-bool Resizer::dontTouch(const Instance* inst)
+bool Resizer::dontTouch(const Instance* inst) const
 {
   dbInst* db_inst = db_network_->staToDb(inst);
   if (!db_inst) {
@@ -2951,7 +2958,7 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
   db_net->setDoNotTouch(dont_touch);
 }
 
-bool Resizer::dontTouch(const Net* net)
+bool Resizer::dontTouch(const Net* net) const
 {
   odb::dbNet* db_net = nullptr;
   odb::dbModNet* db_mod_net = nullptr;
@@ -2962,7 +2969,7 @@ bool Resizer::dontTouch(const Net* net)
   return db_net->isDoNotTouch();
 }
 
-bool Resizer::dontTouch(const Pin* pin)
+bool Resizer::dontTouch(const Pin* pin) const
 {
   return dontTouch(network_->instance(pin)) || dontTouch(network_->net(pin));
 }
@@ -4985,6 +4992,31 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     result.push_back(parseMove(item));
   }
   return result;
+}
+
+bool Resizer::okToBufferNet(const Pin* driver_pin) const
+{
+  if (isTristateDriver(driver_pin)) {
+    return false;
+  }
+
+  const Net* net = db_network_->dbToSta(db_network_->flatNet(driver_pin));
+
+  if (!net) {
+    return false;
+  }
+
+  if (dontTouch(net)) {
+    return false;
+  }
+
+  dbNet* db_net = db_network_->staToDb(net);
+
+  if (db_net->isConnectedByAbutment() || db_net->isSpecial()) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace rsz

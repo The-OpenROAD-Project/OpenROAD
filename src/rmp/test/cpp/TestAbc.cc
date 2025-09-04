@@ -4,14 +4,20 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <string.h>
 #include <tcl.h>
 #include <unistd.h>
 
+#include <array>
+#include <cstddef>
+#include <cstdlib>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
@@ -22,6 +28,10 @@
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
 #include "gtest/gtest.h"
+#include "map/mio/mio.h"
+#include "map/scl/sclLib.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/lefin.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"

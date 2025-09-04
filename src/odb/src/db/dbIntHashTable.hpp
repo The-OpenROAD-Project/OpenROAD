@@ -5,6 +5,7 @@
 
 #include "dbCore.h"
 #include "dbIntHashTable.h"
+#include "odb/dbId.h"
 
 namespace odb {
 

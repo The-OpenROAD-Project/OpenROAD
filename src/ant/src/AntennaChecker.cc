@@ -12,8 +12,10 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <queue>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -21,9 +23,11 @@
 #include "Polygon.hh"
 #include "WireBuilder.hh"
 #include "boost/pending/disjoint_sets.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ant {

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <ostream>
 #include <sstream>
@@ -13,6 +14,9 @@
 #include "db.h"
 #include "dbObject.h"
 #include "odb.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

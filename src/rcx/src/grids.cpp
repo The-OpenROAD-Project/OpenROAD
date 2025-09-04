@@ -4,7 +4,11 @@
 #include "rcx/grids.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
+#include <cstdlib>
+
+#include "odb/db.h"
 
 namespace rcx {
 

@@ -3,13 +3,17 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 
 namespace drt {

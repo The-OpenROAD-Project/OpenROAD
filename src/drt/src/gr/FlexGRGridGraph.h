@@ -9,6 +9,8 @@ constexpr int GRDEMANDSIZE = 16;
 constexpr int GRFRACSIZE = 1;
 
 #include <algorithm>
+#include <bitset>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <vector>

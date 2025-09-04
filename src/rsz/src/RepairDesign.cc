@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -17,6 +19,9 @@
 #include "BufferedNet.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
@@ -160,8 +165,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
     db_network_->staToDb(net, net_db, mod_net_db);
     search_->findRequireds(drvr->level() + 1);
 
-    bool not_abut_connection = net_db && !net_db->isConnectedByAbutment();
-    if (net && !resizer_->dontTouch(net) && not_abut_connection
+    if (resizer_->okToBufferNet(drvr_pin)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant()) {
@@ -331,6 +335,8 @@ void RepairDesign::repairDesign(
       if (debug) {
         logger_->setDebugLevel(RSZ, "repair_net", 3);
       }
+      // Don't check okToBufferNet here as we are going to do a mix of driver
+      // sizing and buffering.  Further checks exist in repairNet.
       if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
           && !sta_->isClock(drvr_pin)
           // Exclude tie hi/low cells and supply nets.

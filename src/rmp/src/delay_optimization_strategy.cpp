@@ -3,6 +3,9 @@
 
 #include "delay_optimization_strategy.h"
 
+#include <string.h>
+
+#include <cstring>
 #include <mutex>
 
 #include "base/abc/abc.h"
@@ -10,6 +13,7 @@
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
+#include "utl/Logger.h"
 #include "utl/deleter.h"
 
 namespace abc {

@@ -9,6 +9,7 @@
 #include "db/obj/frRef.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;

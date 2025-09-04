@@ -10,8 +10,10 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <string>
+#include <utility>
 
 #include "gui/gui.h"
+#include "odb/geom.h"
 
 namespace gui {
 

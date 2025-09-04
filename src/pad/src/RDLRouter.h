@@ -3,16 +3,20 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "boost/geometry.hpp"
+#include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "boost/graph/adjacency_list.hpp"
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 

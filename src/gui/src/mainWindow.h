@@ -9,7 +9,10 @@
 #include <QMainWindow>
 #include <QShortcut>
 #include <QToolBar>
+#include <map>
 #include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -17,6 +20,8 @@
 #include "gotoDialog.h"
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "utl/Progress.h"

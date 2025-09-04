@@ -3,12 +3,17 @@
 
 #include "odb/dbTypes.h"
 
+#include <strings.h>
+
+#include <cassert>
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include <optional>
 #include <string>
 
 #include "odb/dbId.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 

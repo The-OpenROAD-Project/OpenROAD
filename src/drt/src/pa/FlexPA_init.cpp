@@ -6,11 +6,14 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
-#include "FlexPA.h"
+#include "boost/polygon/polygon.hpp"
 #include "db/infra/frTime.h"
+#include "frBaseTypes.h"
 #include "gc/FlexGC.h"
+#include "pa/FlexPA.h"
 
 namespace drt {
 
