@@ -3319,51 +3319,50 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
   int removed_count = 0;
   const int64_t single_filler_area = getFillerCellArea();
-  const int64_t max_fllers_to_remove
-      = std::min(inflation_area / single_filler_area,
-                 static_cast<int64_t>(fillerStor_.size()));
+  const int64_t min_allowed_filler_area = initial_filler_area_ * 0.9;
+  const int64_t max_fllers_to_remove = std::min(
+      inflation_area / single_filler_area,
+      (totalFillerArea_-min_allowed_filler_area) / single_filler_area);
 
   int64_t filler_area_before_removal = totalFillerArea_;
   size_t num_filler_before_removal = fillerStor_.size();
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
-  if (totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) {
-    for (int i = nb_gcells_.size() - 1;
-         i >= 0 && removed_count < max_fllers_to_remove;
-         --i) {
-      if (nb_gcells_[i]->isFiller()) {
-        const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
-        removed_fillers_.push_back(RemovedFillerState{
-            .gcell = removed,
-            .curSLPCoordi = curSLPCoordi_[i],
-            .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
-            .curSLPDensityGrads = curSLPDensityGrads_[i],
-            .curSLPSumGrads = curSLPSumGrads_[i],
+  for (int i = nb_gcells_.size() - 1;
+       i >= 0 && removed_count < max_fllers_to_remove;
+       --i) {
+    if (nb_gcells_[i]->isFiller()) {
+      const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
+      removed_fillers_.push_back(RemovedFillerState{
+          .gcell = removed,
+          .curSLPCoordi = curSLPCoordi_[i],
+          .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
+          .curSLPDensityGrads = curSLPDensityGrads_[i],
+          .curSLPSumGrads = curSLPSumGrads_[i],
 
-            .nextSLPCoordi = nextSLPCoordi_[i],
-            .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
-            .nextSLPDensityGrads = nextSLPDensityGrads_[i],
-            .nextSLPSumGrads = nextSLPSumGrads_[i],
+          .nextSLPCoordi = nextSLPCoordi_[i],
+          .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
+          .nextSLPDensityGrads = nextSLPDensityGrads_[i],
+          .nextSLPSumGrads = nextSLPSumGrads_[i],
 
-            .prevSLPCoordi = prevSLPCoordi_[i],
-            .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
-            .prevSLPDensityGrads = prevSLPDensityGrads_[i],
-            .prevSLPSumGrads = prevSLPSumGrads_[i],
+          .prevSLPCoordi = prevSLPCoordi_[i],
+          .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
+          .prevSLPDensityGrads = prevSLPDensityGrads_[i],
+          .prevSLPSumGrads = prevSLPSumGrads_[i],
 
-            .curCoordi = curCoordi_[i],
-            .nextCoordi = nextCoordi_[i],
-            .initCoordi = initCoordi_[i],
+          .curCoordi = curCoordi_[i],
+          .nextCoordi = nextCoordi_[i],
+          .initCoordi = initCoordi_[i],
 
-            .snapshotCoordi = snapshotCoordi_[i],
-            .snapshotSLPCoordi = snapshotSLPCoordi_[i],
-            .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
+          .snapshotCoordi = snapshotCoordi_[i],
+          .snapshotSLPCoordi = snapshotSLPCoordi_[i],
+          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
 
-        destroyFillerGCell(i);
-        availableFillerArea -= single_filler_area;
-        inflation_area -= single_filler_area;
-        ++removed_count;
-      }
+      destroyFillerGCell(i);
+      availableFillerArea -= single_filler_area;
+      inflation_area -= single_filler_area;
+      ++removed_count;
     }
   }
 
