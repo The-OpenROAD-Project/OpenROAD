@@ -171,6 +171,9 @@ class Cluster
   bool isIOBundle() const { return is_io_bundle_; }
   void setAsIOBundle(const Point& pos, float width, float height);
 
+  bool isFixedMacro() const { return is_fixed_macro_; }
+  void setAsFixedMacro(const HardMacro* hard_macro);
+
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
   bool isEmpty() const;
@@ -262,6 +265,7 @@ class Cluster
   bool is_io_bundle_{false};
 
   bool is_array_of_interconnected_macros_ = false;
+  bool is_fixed_macro_{false};
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
@@ -342,6 +346,7 @@ class HardMacro
   // width, height (include halo_width)
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
+  bool isFixed() const { return fixed_; }
 
   // Note that the real X and Y does NOT include halo_width
   void setRealLocation(const std::pair<float, float>& location);
@@ -411,6 +416,8 @@ class HardMacro
   float pin_x_ = 0.0;
   float pin_y_ = 0.0;
 
+  bool fixed_{false};
+
   odb::dbInst* inst_ = nullptr;
   odb::dbBlock* block_ = nullptr;
 
@@ -427,7 +434,8 @@ class HardMacro
 //  - an IO Cluster (PAD or group of unplaced pins) which has its position
 //    fixed;
 //  - a fixed terminal;
-//  - a blockage.
+//  - a blockage;
+//  - a fixed macro.
 //
 // Obs: The bundled pin of a SoftMacro is always its center.
 class SoftMacro
@@ -440,6 +448,9 @@ class SoftMacro
             float width,
             float height,
             Cluster* cluster);
+  SoftMacro(utl::Logger* logger,
+            const HardMacro* hard_macro,
+            const Point* offset = nullptr);
 
   const std::string& getName() const;
 
@@ -465,6 +476,9 @@ class SoftMacro
   {
     return std::pair<float, float>(x_, y_);
   }
+
+  bool isFixed() const { return fixed_; }
+
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
   float getArea() const;
