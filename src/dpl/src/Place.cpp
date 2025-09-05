@@ -748,8 +748,7 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
   // Check the first candidate to avoid unnecessary priority queue creation.
   GridPt center{x, y};
   if (canBePlaced(cell, center.x, center.y)) {
-    return PixelPt(
-        grid_->gridPixel(center.x, center.y), center.x, center.y);
+    return PixelPt(grid_->gridPixel(center.x, center.y), center.x, center.y);
   }
 
   std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
