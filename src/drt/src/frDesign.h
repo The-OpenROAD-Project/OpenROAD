@@ -59,6 +59,11 @@ class frDesign
     name2master_[in->getName()] = in.get();
     masters_.push_back(std::move(in));
   }
+  frMaster* getMaster(const std::string& master_name)
+  {
+    auto it = name2master_.find(master_name);
+    return it != name2master_.end() ? it->second : nullptr;
+  }
   void addUserSelectedVia(const std::string& viaName)
   {
     user_selected_vias_.push_back(viaName);
