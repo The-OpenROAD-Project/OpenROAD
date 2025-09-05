@@ -1,17 +1,20 @@
 #pragma once
+#include <ostream>
+
 #include "CUGR.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace grt {
 
-BoxT<int> getBoxFromRect(const odb::Rect& bounds);
+BoxT getBoxFromRect(const odb::Rect& bounds);
 
-class BoxOnLayer : public BoxT<int>
+class BoxOnLayer : public BoxT
 {
  public:
   template <typename... Args>
   BoxOnLayer(int layerIndex = -1, Args... params)
-      : BoxT<int>(params...), layer_idx_(layerIndex)
+      : BoxT(params...), layer_idx_(layerIndex)
   {
   }
 
@@ -20,7 +23,7 @@ class BoxOnLayer : public BoxT<int>
   void Set(int layerIndex = -1, Args... params)
   {
     layer_idx_ = layerIndex;
-    BoxT<int>::Set(params...);
+    BoxT::Set(params...);
   }
 
   bool isConnected(const BoxOnLayer& rhs) const;

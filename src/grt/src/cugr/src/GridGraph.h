@@ -1,4 +1,12 @@
 #pragma once
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "CUGR.h"
 #include "Design.h"
 #include "GRTree.h"
@@ -16,7 +24,6 @@ struct GraphEdge
   CapacityT capacity{0};
   CapacityT demand{0};
 
-  GraphEdge() = default;
   CapacityT getResource() const { return capacity - demand; }
 };
 
@@ -24,55 +31,52 @@ class GridGraph
 {
  public:
   GridGraph(const Design* design, const Constants& constants);
-  inline int getLibDBU() const { return lib_dbu_; }
-  inline int getM2Pitch() const { return m2_pitch_; }
-  inline unsigned getNumLayers() const { return num_layers_; }
-  inline unsigned getSize(unsigned dimension) const
+  int getLibDBU() const { return lib_dbu_; }
+  int getM2Pitch() const { return m2_pitch_; }
+  unsigned getNumLayers() const { return num_layers_; }
+  unsigned getSize(unsigned dimension) const
   {
     return (dimension ? y_size_ : x_size_);
   }
-  inline std::string getLayerName(int layer_index) const
+  std::string getLayerName(int layer_index) const
   {
     return layer_names_[layer_index];
   }
-  inline unsigned getLayerDirection(int layer_index) const
+  unsigned getLayerDirection(int layer_index) const
   {
     return layer_directions_[layer_index];
   }
 
-  inline uint64_t hashCell(const GRPoint& point) const
+  uint64_t hashCell(const GRPoint& point) const
   {
     return ((uint64_t) point.getLayerIdx() * x_size_ + point.x) * y_size_
            + point.y;
   };
-  inline uint64_t hashCell(const int x, const int y) const
+  uint64_t hashCell(const int x, const int y) const
   {
     return (uint64_t) x * y_size_ + y;
   }
-  inline int getGridline(const unsigned dimension, const int index) const
+  int getGridline(const unsigned dimension, const int index) const
   {
     return gridlines_[dimension][index];
   }
-  BoxT<int> getCellBox(PointT<int> point) const;
-  BoxT<int> rangeSearchCells(const BoxT<int>& box) const;
-  inline GraphEdge getEdge(const int layer_index,
-                           const int x,
-                           const int y) const
+  BoxT getCellBox(PointT point) const;
+  BoxT rangeSearchCells(const BoxT& box) const;
+  GraphEdge getEdge(const int layer_index, const int x, const int y) const
   {
     return graph_edges_[layer_index][x][y];
   }
 
   // Costs
   int getEdgeLength(unsigned direction, unsigned edge_index) const;
-  CostT getWireCost(int layer_index, PointT<int> u, PointT<int> v) const;
-  CostT getViaCost(int layer_index, PointT<int> loc) const;
-  inline CostT getUnitViaCost() const { return unit_via_cost_; }
+  CostT getWireCost(int layer_index, PointT u, PointT v) const;
+  CostT getViaCost(int layer_index, PointT loc) const;
+  CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
   void selectAccessPoints(
       GRNet* net,
-      robin_hood::unordered_map<uint64_t,
-                                std::pair<PointT<int>, IntervalT<int>>>&
+      robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>&
           selected_access_points) const;
 
   // Methods for updating demands
@@ -80,13 +84,13 @@ class GridGraph
                   bool reverse = false);
 
   // Checks
-  inline bool checkOverflow(int layer_index, int x, int y) const
+  bool checkOverflow(int layer_index, int x, int y) const
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
   int checkOverflow(int layer_index,
-                    PointT<int> u,
-                    PointT<int> v) const;  // Check wire overflow
+                    PointT u,
+                    PointT v) const;  // Check wire overflow
   int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
       const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
@@ -102,7 +106,7 @@ class GridGraph
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
   // For visualization
-  void write(std::string heatmap_file = "heatmap.txt") const;
+  void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
   const int lib_dbu_;
@@ -129,37 +133,37 @@ class GridGraph
   // (l, x, y+1)} depending on the routing direction of the layer
   Constants constants_;
 
-  IntervalT<int> rangeSearchGridlines(unsigned dimension,
-                                      const IntervalT<int>& loc_interval) const;
+  IntervalT rangeSearchGridlines(unsigned dimension,
+                                 const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT<int> rangeSearchRows(unsigned dimension,
-                                 const IntervalT<int>& loc_interval) const;
+  IntervalT rangeSearchRows(unsigned dimension,
+                            const IntervalT& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
-  inline CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
+  CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
   // CostT getUnitViaCost() const { return unit_via_cost_; }
-  inline CostT getUnitLengthShortCost(int layer_index) const
+  CostT getUnitLengthShortCost(int layer_index) const
   {
     return unit_length_short_costs_[layer_index];
   }
 
-  inline double logistic(const CapacityT& input, double slope) const;
+  double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
-                    PointT<int> lower,
+                    PointT lower,
                     CapacityT demand = 1.0) const;
 
   // Methods for updating demands
-  void commit(int layer_index, PointT<int> lower, CapacityT demand);
-  void commitWire(int layer_index, PointT<int> lower, bool reverse = false);
-  void commitVia(int layer_index, PointT<int> loc, bool reverse = false);
+  void commit(int layer_index, PointT lower, CapacityT demand);
+  void commitWire(int layer_index, PointT lower, bool reverse = false);
+  void commitVia(int layer_index, PointT loc, bool reverse = false);
 };
 
 template <typename Type>
 class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 {
  public:
-  bool check(const PointT<int>& u, const PointT<int>& v) const
+  bool check(const PointT& u, const PointT& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     if (u.y == v.y) {
@@ -180,7 +184,7 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
     return false;
   }
 
-  Type sum(const PointT<int>& u, const PointT<int>& v) const
+  Type sum(const PointT& u, const PointT& v) const
   {
     assert(u.x == v.x || u.y == v.y);
     Type res = 0;

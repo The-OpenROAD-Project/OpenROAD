@@ -792,6 +792,11 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   } else {
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
   }
+
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  for (auto callback : block->_callbacks) {
+    callback->inDbITermPostSetAccessPoints(this);
+  }
 }
 
 std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const

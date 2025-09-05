@@ -141,6 +141,7 @@ void GlobalRouter::clear()
 GlobalRouter::~GlobalRouter()
 {
   delete fastroute_;
+  delete cugr_;
   delete grid_;
   for (auto [ignored, net] : db_net_map_) {
     delete net;
@@ -480,7 +481,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
-      fastroute_->clearNDRnets();
       incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
     }
@@ -1662,7 +1662,8 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 bool GlobalRouter::hasAvailableResources(bool is_horizontal,
                                          const int& pos_x,
                                          const int& pos_y,
-                                         const int& layer_level)
+                                         const int& layer_level,
+                                         odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastroute
   int grid_x = (int) ((pos_x - grid_->getXMin()) / grid_->getTileSize());
@@ -1675,7 +1676,7 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
     cap = fastroute_->getAvailableResources(
         grid_x, grid_y, grid_x, grid_y + 1, layer_level);
   }
-  return cap > 0;
+  return cap >= fastroute_->getDbNetLayerEdgeCost(db_net, layer_level);
 }
 
 // Find the position of the middle of a GCell closest to the position
@@ -1689,7 +1690,8 @@ void GlobalRouter::updateResources(const int& init_x,
                                    const int& final_x,
                                    const int& final_y,
                                    const int& layer_level,
-                                   int used)
+                                   int used,
+                                   odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastrouter
   int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
@@ -1698,8 +1700,39 @@ void GlobalRouter::updateResources(const int& init_x,
       = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_final_y
       = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
-  fastroute_->updateEdge2DAnd3DUsage(
-      grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
+
+  fastroute_->updateEdge2DAnd3DUsage(grid_init_x,
+                                     grid_init_y,
+                                     grid_final_x,
+                                     grid_final_y,
+                                     layer_level,
+                                     used,
+                                     db_net);
+}
+
+void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
+                                             const int& init_y,
+                                             const int& final_x,
+                                             const int& final_y,
+                                             const int& layer_level,
+                                             const int& new_layer_level,
+                                             odb::dbNet* db_net)
+{
+  // transform from real position to grid pos of fastrouter
+  int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_init_y = (int) ((init_y - grid_->getYMin()) / grid_->getTileSize());
+  int grid_final_x
+      = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_final_y
+      = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  // update treeedges
+  fastroute_->updateRouteGridsLayer(grid_init_x,
+                                    grid_init_y,
+                                    grid_final_x,
+                                    grid_final_y,
+                                    layer_level - 1,
+                                    new_layer_level - 1,
+                                    db_net);
 }
 
 // Use release flag to increase rather than reduce resources on obstruction
@@ -5192,6 +5225,14 @@ void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 void GRouteDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   // missing net pin update
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
+}
+
+void GRouteDbCbk::inDbITermPostSetAccessPoints(odb::dbITerm* iterm)
+{
   odb::dbNet* net = iterm->getNet();
   if (net != nullptr && !net->isSpecial()) {
     grouter_->addDirtyNet(iterm->getNet());

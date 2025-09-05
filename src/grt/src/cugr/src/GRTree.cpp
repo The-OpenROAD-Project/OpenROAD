@@ -1,5 +1,9 @@
 #include "GRTree.h"
 
+#include <functional>
+#include <iostream>
+#include <memory>
+
 namespace grt {
 
 void GRTreeNode::preorder(

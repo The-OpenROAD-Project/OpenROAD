@@ -8,6 +8,7 @@
 #include "db/drObj/drNet.h"
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

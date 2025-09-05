@@ -1,7 +1,12 @@
 #include "Design.h"
 
+#include <iostream>
+#include <vector>
+
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -255,7 +260,7 @@ void Design::setUnitCosts()
   }
 }
 
-void Design::getAllObstacles(std::vector<std::vector<BoxT<int>>>& all_obstacles,
+void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
                              bool skip_m1) const
 {
   all_obstacles.resize(getNumLayers());
@@ -283,7 +288,7 @@ void Design::printNets() const
 
 void Design::printBlockages() const
 {
-  std::vector<std::vector<BoxT<int>>> all_obstacles;
+  std::vector<std::vector<BoxT>> all_obstacles;
   getAllObstacles(all_obstacles, true);
   std::cout << "design obstacles: " << all_obstacles.size() << std::endl;
   for (int i = 0; i < all_obstacles.size(); i++) {

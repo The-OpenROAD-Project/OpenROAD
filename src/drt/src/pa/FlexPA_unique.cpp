@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "FlexPA_unique.h"
+#include "pa/FlexPA_unique.h"
 
 #include <algorithm>
 #include <limits>
@@ -9,7 +9,13 @@
 #include <set>
 #include <vector>
 
+#include "db/obj/frAccess.h"
+#include "db/obj/frInst.h"
+#include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 
 namespace drt {

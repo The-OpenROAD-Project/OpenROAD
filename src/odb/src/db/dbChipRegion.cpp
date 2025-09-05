@@ -186,11 +186,20 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
                     layer->getName());
     }
   }
+  if (chip->findChipRegion(name) != nullptr) {
+    logger->error(
+        utl::ODB,
+        520,
+        "Cannot create chip region {} for chip {} because chip region "
+        "already exists",
+        name,
+        chip->getName());
+  }
   _dbTechLayer* _layer = (_dbTechLayer*) layer;
 
   // Create a new chip region
   _dbChipRegion* chip_region = _chip->chip_region_tbl_->create();
-
+  _chip->chip_region_map_[name] = chip_region->getOID();
   // Initialize the chip region
   chip_region->name_ = name;
   chip_region->side_ = static_cast<uint8_t>(side);

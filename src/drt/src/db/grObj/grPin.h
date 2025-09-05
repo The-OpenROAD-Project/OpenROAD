@@ -5,6 +5,8 @@
 
 #include "db/grObj/grAccessPattern.h"
 #include "db/grObj/grBlockObject.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class grNet;

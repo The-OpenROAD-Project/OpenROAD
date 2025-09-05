@@ -196,12 +196,6 @@ cc_library(
     ],
     copts = [
         "-Isrc/drt/src",
-        "-Isrc/drt/src/dr",
-        "-Isrc/drt/src/gc",
-        "-Isrc/drt/src/io",
-        "-Isrc/drt/src/pa",
-        "-Isrc/drt/src/rp",
-        "-Isrc/drt/src/ta",
         "-fopenmp",
     ],
     includes = [

@@ -10,6 +10,7 @@
 
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 

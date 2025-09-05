@@ -301,6 +301,19 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   // Set the revision of the database to the current revision
   obj._schema_major = db_schema_major;
   obj._schema_minor = db_schema_minor;
+
+  // Set the chipinsts_map_ of the chip
+  dbDatabase* db = (dbDatabase*) &obj;
+  for (const auto& inst : db->getChipInsts()) {
+    _dbChip* parent_chip = (_dbChip*) inst->getParentChip();
+    parent_chip->chipinsts_map_[inst->getName()] = inst->getId();
+  }
+  // Set the region_insts_map_ of the chipinst
+  for (const auto& chip_region_inst : db->getChipRegionInsts()) {
+    _dbChipInst* chipinst = (_dbChipInst*) chip_region_inst->getChipInst();
+    chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
+        = chip_region_inst->getId();
+  }
   // User Code End >>
   return stream;
 }

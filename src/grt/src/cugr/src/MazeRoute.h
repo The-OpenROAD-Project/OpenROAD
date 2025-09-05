@@ -1,4 +1,9 @@
 #pragma once
+#include <array>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "CUGR.h"
 #include "GRNet.h"
 #include "GridGraph.h"
@@ -9,8 +14,8 @@ namespace grt {
 
 struct SparseGrid
 {
-  PointT<int> interval;
-  PointT<int> offset;
+  PointT interval;
+  PointT offset;
 
   SparseGrid(int x_interval, int y_interval, int x_offset, int y_offset)
       : interval(x_interval, y_interval), offset(x_offset, y_offset)
@@ -42,7 +47,7 @@ class SparseGraph
   void init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid);
   int getNumVertices() const { return vertices_.size(); }
   int getNumPseudoPins() const { return pseudo_pins_.size(); }
-  std::pair<PointT<int>, IntervalT<int>> getPseudoPin(int pin_index) const
+  std::pair<PointT, IntervalT> getPseudoPin(int pin_index) const
   {
     return pseudo_pins_[pin_index];
   }
@@ -67,7 +72,7 @@ class SparseGraph
   GRPoint getPoint(const int vertex) const { return vertices_[vertex]; }
 
  private:
-  inline int getVertexIndex(int direction, int xi, int yi) const
+  int getVertexIndex(int direction, int xi, int yi) const
   {
     return direction * xs_.size() * ys_.size() + yi * xs_.size() + xi;
   }
@@ -75,7 +80,7 @@ class SparseGraph
   GRNet* net_;
   const GridGraph* grid_graph_;
 
-  std::vector<std::pair<PointT<int>, IntervalT<int>>> pseudo_pins_;
+  std::vector<std::pair<PointT, IntervalT>> pseudo_pins_;
 
   std::vector<int> xs_;
   std::vector<int> ys_;
