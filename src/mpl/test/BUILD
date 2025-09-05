@@ -29,6 +29,7 @@ COMPULSORY_TESTS = [
     "boundary_push3",
     "centralization1",
     "clocked_macro",
+    "keep_clustering_data",
 ]
 
 # Disabled in CMakeLists.txt
