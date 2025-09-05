@@ -33,6 +33,27 @@ class Graph2D
     double cap_ndr;  // capacity available for NDR
   };
 
+  struct NDRCongestion
+  {
+    int net_id = -1;  // NDR net id
+    uint16_t num_edges
+        = 0;  // number of congested edges involved with the NDR net
+    // uint8_t clock_tree_level; // zero means root clock level
+  };
+
+  struct NDRCongestionComparator
+  {
+    bool operator()(const NDRCongestion& a, const NDRCongestion& b) const
+    {
+      // if (a.clock_tree_level != b.clock_tree_level){
+      //     return a.clock_tree_level > b.clock_tree_level;
+      // }
+      // if (a.num_edges != b.num_edges){
+      return a.num_edges > b.num_edges;
+      // }
+    }
+  };
+
   void init(int x_grid,
             int y_grid,
             int h_capacity,
@@ -95,6 +116,11 @@ class Graph2D
                    double cap);
 
   void clearNDRnets();
+  std::vector<NDRCongestion> getCongestedNDRnets() { return congested_ndrs_; };
+  void clearCongestedNDRnets() { congested_ndrs_.clear(); };
+  void addCongestedNDRnet(int net_id, uint16_t num_edges);
+  void sortCongestedNDRnets();
+  int getOneCongestedNDRnet();
 
  private:
   int x_grid_;
@@ -125,10 +151,11 @@ class Graph2D
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
   multi_array<Cap3D, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
   multi_array<Cap3D, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  multi_array<std::set<std::string>, 2>
+  multi_array<std::set<FrNet*>, 2>
       v_ndr_nets_;  // The way it is indexed is (X, Y)
-  multi_array<std::set<std::string>, 2>
+  multi_array<std::set<FrNet*>, 2>
       h_ndr_nets_;  // The way it is indexed is (X, Y)
+  std::vector<NDRCongestion> congested_ndrs_;
 
   utl::Logger* logger_;
 

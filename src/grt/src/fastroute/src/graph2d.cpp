@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include "Graph2D.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -456,19 +458,42 @@ void Graph2D::foreachEdge(const std::function<void(Edge&)>& func)
   inner(v_edges_);
 }
 
+// Initializes the NDR nets for each grid cell.
+void Graph2D::initNDRnets()
+{
+  v_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
+  h_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
+
+  // congested_ndrs_.resize(boost::extents[x_grid_][y_grid_]);
+}
+
+void Graph2D::addCongestedNDRnet(const int net_id, const uint16_t num_edges)
+{
+  NDRCongestion ndr_net = {net_id, num_edges};
+  congested_ndrs_.push_back(ndr_net);
+}
+
+void Graph2D::sortCongestedNDRnets()
+{
+  std::sort(congested_ndrs_.begin(),
+            congested_ndrs_.end(),
+            NDRCongestionComparator());
+}
+
+int Graph2D::getOneCongestedNDRnet()
+{
+  if (!congested_ndrs_.empty() && congested_ndrs_[0].num_edges > 0) {
+    return congested_ndrs_[0].net_id;
+  }
+  return -1;
+}
+
 // Initializes the 3D capacity of the graph.
 void Graph2D::initCap3D()
 {
   v_cap_3D_.resize(boost::extents[num_layers_][x_grid_][y_grid_]);
   h_cap_3D_.resize(boost::extents[num_layers_][x_grid_][y_grid_]);
   initNDRnets();
-}
-
-// Initializes the NDR nets for each grid cell.
-void Graph2D::initNDRnets()
-{
-  v_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
-  h_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
 }
 
 // Updates the 3D capacity of a specific edge.
@@ -556,7 +581,7 @@ double Graph2D::getCostNDRAware(FrNet* net,
                                                             : v_ndr_nets_[x][y];
 
   const std::string& net_name = net->getName();
-  bool is_net_present = ndr_nets.find(net_name) != ndr_nets.end();
+  bool is_net_present = ndr_nets.find(net) != ndr_nets.end();
   double final_edge_cost = 0;
 
   if (edge_cost < 0) {  // Rip-up: remove resource
@@ -565,7 +590,7 @@ double Graph2D::getCostNDRAware(FrNet* net,
     // half the edge cost a second time in the initial routing steps. But we
     // only need to count once to avoid problems when managing 3D capacity
     if (is_net_present) {
-      ndr_nets.erase(net_name);
+      ndr_nets.erase(net);
       // If the edge already has an overflow caused by NDR net we need to remove
       // the big edge cost value
       if (edge.ndr_overflow > 0) {
@@ -591,7 +616,7 @@ double Graph2D::getCostNDRAware(FrNet* net,
       } else {
         final_edge_cost = edgeCost;
       }
-      ndr_nets.insert(net_name);
+      ndr_nets.insert(net);
       updateNDRCapLayer(x, y, net, direction, edge_cost);
     }
   }
