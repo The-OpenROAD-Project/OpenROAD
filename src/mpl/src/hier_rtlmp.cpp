@@ -1329,10 +1329,10 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       return;
     }
 
-  // Cover IO Clusters, Leaf Std Cells and Fixed Macros.
-  if (parent->isLeaf()) {
-    return;
-  }
+    // Cover IO Clusters, Leaf Std Cells and Fixed Macros.
+    if (parent->isLeaf()) {
+      return;
+    }
 
     debugPrint(logger_,
                MPL,
