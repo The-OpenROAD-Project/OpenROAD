@@ -9,7 +9,6 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
-#include <vector>
 
 namespace grt {
 
@@ -53,7 +52,7 @@ class PointT
   bool operator==(const PointT& rhs) const { return x == rhs.x && y == rhs.y; }
   bool operator!=(const PointT& rhs) const { return !(*this == rhs); }
 
-  friend inline std::ostream& operator<<(std::ostream& os, const PointT& pt)
+  friend std::ostream& operator<<(std::ostream& os, const PointT& pt)
   {
     os << "(" << pt.x << ", " << pt.y << ")";
     return os;
@@ -190,8 +189,7 @@ class IntervalT
   }
   bool operator!=(const IntervalT& rhs) const { return !(*this == rhs); }
 
-  friend inline std::ostream& operator<<(std::ostream& os,
-                                         const IntervalT& interval)
+  friend std::ostream& operator<<(std::ostream& os, const IntervalT& interval)
   {
     os << "(" << interval.low << ", " << interval.high << ")";
     return os;
@@ -333,7 +331,7 @@ class BoxT
   }
   bool operator!=(const BoxT& rhs) const { return !(*this == rhs); }
 
-  friend inline std::ostream& operator<<(std::ostream& os, const BoxT& box)
+  friend std::ostream& operator<<(std::ostream& os, const BoxT& box)
   {
     os << "[x: " << box.x << ", y: " << box.y << "]";
     return os;

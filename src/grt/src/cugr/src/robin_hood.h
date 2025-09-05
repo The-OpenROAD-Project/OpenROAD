@@ -1911,7 +1911,7 @@ class Table
   }
 
   // Swaps everything between the two maps.
-  void swap(Table& o)
+  void swap(Table& o) noexcept
   {
     ROBIN_HOOD_TRACE(this)
     using std::swap;
