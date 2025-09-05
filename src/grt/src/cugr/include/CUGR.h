@@ -1,22 +1,13 @@
 #pragma once
 
-#include <bitset>
 #include <csignal>
-#include <fstream>
-#include <iostream>
 #include <memory>
-#include <mutex>
-#include <set>
-#include <sstream>
 #include <string>
-#include <thread>
-#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "geo.h"
 #include "grt/GRoute.h"
-#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;

@@ -4,6 +4,12 @@
 #include <unordered_set>
 #include <vector>
 
+#include "GRTree.h"
+#include "GeoTypes.h"
+#include "GridGraph.h"
+#include "Netlist.h"
+#include "geo.h"
+
 namespace grt {
 
 GRNet::GRNet(const CUGRNet& baseNet, GridGraph* gridGraph)

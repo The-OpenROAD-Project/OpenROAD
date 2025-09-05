@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -15,9 +14,14 @@
 
 #include "Design.h"
 #include "GRNet.h"
+#include "GRTree.h"
 #include "GridGraph.h"
+#include "Layers.h"
 #include "MazeRoute.h"
+#include "Netlist.h"
 #include "PatternRoute.h"
+#include "geo.h"
+#include "grt/GRoute.h"
 #include "odb/db.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -163,8 +167,8 @@ void CUGR::write(const std::string& guide_file)
     std::vector<std::pair<int, BoxT>> guides;
     getGuides(net.get(), guides);
 
-    ss << net->getName() << std::endl;
-    ss << "(" << std::endl;
+    ss << net->getName() << '\n';
+    ss << "(\n";
     for (const auto& guide : guides) {
       ss << grid_graph_->getGridline(0, guide.second.x.low) << " "
          << grid_graph_->getGridline(1, guide.second.y.low) << " "
@@ -172,7 +176,7 @@ void CUGR::write(const std::string& guide_file)
          << grid_graph_->getGridline(1, guide.second.y.high + 1) << " "
          << grid_graph_->getLayerName(guide.first) << "\n";
     }
-    ss << ")" << std::endl;
+    ss << ")\n";
   }
   logger_->report("total area of pin access patches: {}", area_of_pin_patches_);
   logger_->report("total area of wire segment patches: {}",

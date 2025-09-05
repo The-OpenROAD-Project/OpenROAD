@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "CUGR.h"
 #include "GeoTypes.h"
 #include "odb/db.h"
 

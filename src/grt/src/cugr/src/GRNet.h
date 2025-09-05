@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "CUGR.h"
-#include "Design.h"
+#include "GRTree.h"
 #include "GridGraph.h"
+#include "Netlist.h"
+#include "geo.h"
 #include "odb/db.h"
 
 namespace grt {
