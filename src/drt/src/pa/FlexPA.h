@@ -215,7 +215,7 @@ class FlexPA
    *
    * @returns True if the current aps are enough for the pin
    */
-  bool EnoughAccessPoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+  bool EnoughAccessPoints(std::vector<frAccessPoint*>& aps,
                           frInstTerm* inst_term,
                           pa_requirements_met& reqs);
 
@@ -227,7 +227,7 @@ class FlexPA
    *
    * @returns True if the requirement is met
    */
-  bool EnoughSparsePoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+  bool EnoughSparsePoints(std::vector<frAccessPoint*>& aps,
                           frInstTerm* inst_term);
 
   /**
@@ -258,6 +258,7 @@ class FlexPA
   template <typename T>
   bool genPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::vector<frAccessPoint*>& valid_aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
@@ -495,15 +496,15 @@ class FlexPA
    * @param pin_shapes vector of pin shapes of the pin
    * @param pin the pin
    * @param inst_term terminal
-   * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
   void filterMultipleAPAccesses(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
-      frInstTerm* inst_term,
-      const bool& is_std_cell_pin);
+      frInstTerm* inst_term);
 
   /**
    * @brief Filters access in a given planar direction.
@@ -681,9 +682,8 @@ class FlexPA
   /**
    * @brief Serially updates some of general pin stats
    */
-  void updatePinStats(
-      const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
-      frInstTerm* inst_term);
+  void updatePinStats(const std::vector<frAccessPoint*>& valid_aps,
+                      frInstTerm* inst_term);
 
   /**
    * @brief Adjusts the coordinates for all access points
