@@ -18,11 +18,12 @@ frString frInstTerm::getName() const
 frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
-  dbTransform shiftXform = inst->getTransform();
-  Point offset(shiftXform.getOffset());
-  x = x - offset.getX();
-  y = y - offset.getY();
-  return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());
+  dbTransform shiftXform;
+  inst->getNoRotationTransform().invert(shiftXform);
+  Point pt = Point(x, y);
+  shiftXform.apply(pt);
+  return term_->getAccessPoint(
+      pt.getX(), pt.getY(), lNum, inst->getPinAccessIdx());
 }
 
 bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
