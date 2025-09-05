@@ -524,6 +524,28 @@ void FastRouteCore::addAdjustment(int x1,
   }
 }
 
+void FastRouteCore::saveResourcesBeforeAdjustments()
+{
+  // Save real horizontal resources
+  for (int x = 0; x < x_grid_ - 1; x++) {
+    for (int y = 0; y < y_grid_; y++) {
+      graph2d_.saveResources(x, y, true);
+      for (int l = 0; l < num_layers_; l++) {
+        h_edges_3D_[l][y][x].real_cap = h_edges_3D_[l][y][x].cap;
+      }
+    }
+  }
+  // Save real vertical resources
+  for (int x = 0; x < x_grid_; x++) {
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      graph2d_.saveResources(x, y, false);
+      for (int l = 0; l < num_layers_; l++) {
+        v_edges_3D_[l][y][x].real_cap = v_edges_3D_[l][y][x].cap;
+      }
+    }
+  }
+}
+
 void FastRouteCore::releaseResourcesOnInterval(
     int x,
     int y,
