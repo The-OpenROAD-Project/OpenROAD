@@ -10,11 +10,12 @@
 #include <ostream>
 
 #include "boost/io/ios_state.hpp"
+#include "utl/Logger.h"
 #include "utl/mem_stats.h"
 
 namespace drt {
 
-void frTime::print(Logger* logger)
+void frTime::print(utl::Logger* logger)
 {
   auto t1 = std::chrono::high_resolution_clock::now();
   auto time_span = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0_);

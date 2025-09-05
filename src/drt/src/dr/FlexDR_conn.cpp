@@ -1363,7 +1363,7 @@ void FlexDRConnectivityChecker::check(int iter)
 
 FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
-    Logger* logger,
+    utl::Logger* logger,
     RouterConfiguration* router_cfg,
     AbstractDRGraphics* graphics,
     bool save_updates)

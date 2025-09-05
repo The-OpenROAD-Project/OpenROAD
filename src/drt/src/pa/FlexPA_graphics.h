@@ -44,7 +44,7 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
   FlexPAGraphics(frDebugSettings* settings,
                  frDesign* design,
                  odb::dbDatabase* db,
-                 Logger* logger,
+                 utl::Logger* logger,
                  RouterConfiguration* router_cfg);
 
   void startPin(frBPin* pin,
@@ -83,7 +83,7 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
   static bool guiActive();
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
   frDebugSettings* settings_;
   frInst* inst_;           // from settings_->pinName
   std::string term_name_;  // from settings_->pinName

@@ -226,7 +226,7 @@ static std::string workerOrigin(FlexDRWorker* worker)
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
-                               Logger* logger)
+                               utl::Logger* logger)
     : worker_(nullptr),
       design_(design),
       net_(nullptr),
