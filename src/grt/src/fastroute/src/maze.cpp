@@ -1925,7 +1925,7 @@ void FastRouteCore::getPrecisionAdjustment(const int x,
 
 // For each edge with overflow, calculate the ideal adjustment
 // Return the minimum value of all or -1 if no value can be found
-bool FastRouteCore::getSuggestAdjustment(int& suggested_adjustment)
+bool FastRouteCore::computeSuggestedAdjustment(int& suggested_adjustment)
 {
   int horizontal_suggest = 100, local_suggest;
   bool has_new_adj;
@@ -1933,7 +1933,8 @@ bool FastRouteCore::getSuggestAdjustment(int& suggested_adjustment)
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      has_new_adj = graph2d_.getSuggestAdjustment(x, y, true, local_suggest);
+      has_new_adj
+          = graph2d_.computeSuggestedAdjustment(x, y, true, local_suggest);
       if (has_new_adj) {
         // modify the value to resolve the congestion at the position
         getPrecisionAdjustment(x, y, true, local_suggest);
@@ -1948,7 +1949,8 @@ bool FastRouteCore::getSuggestAdjustment(int& suggested_adjustment)
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      has_new_adj = graph2d_.getSuggestAdjustment(x, y, false, local_suggest);
+      has_new_adj
+          = graph2d_.computeSuggestedAdjustment(x, y, false, local_suggest);
       if (has_new_adj) {
         // modify the value to resolve the congestion at the position
         getPrecisionAdjustment(x, y, false, local_suggest);

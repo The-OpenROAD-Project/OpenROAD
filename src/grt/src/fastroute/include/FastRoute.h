@@ -152,7 +152,7 @@ class FastRouteCore
       const std::vector<int>& track_space,
       bool release = false);
   void saveResourcesBeforeAdjustments();
-  bool getSuggestAdjustment(int& suggested_adjustment);
+  bool computeSuggestedAdjustment(int& suggested_adjustment);
   void getPrecisionAdjustment(int x,
                               int y,
                               bool is_horizontal,

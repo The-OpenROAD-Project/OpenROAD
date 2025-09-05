@@ -402,7 +402,7 @@ void GlobalRouter::suggestAdjustment()
   min_adjustment *= 100;
   // Suggest new adjustment value
   int suggest_adjustment;
-  bool has_sug_adj = fastroute_->getSuggestAdjustment(suggest_adjustment);
+  bool has_sug_adj = fastroute_->computeSuggestedAdjustment(suggest_adjustment);
   if (has_sug_adj && min_adjustment > suggest_adjustment) {
     logger_->warn(GRT,
                   704,

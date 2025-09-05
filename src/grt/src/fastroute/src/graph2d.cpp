@@ -465,10 +465,10 @@ void Graph2D::saveResources(const int x, const int y, bool is_horizontal)
   }
 }
 
-bool Graph2D::getSuggestAdjustment(const int x,
-                                   const int y,
-                                   bool is_horizontal,
-                                   int& adjustment)
+bool Graph2D::computeSuggestedAdjustment(const int x,
+                                         const int y,
+                                         bool is_horizontal,
+                                         int& adjustment)
 {
   float real_capacity, usage;
   if (is_horizontal) {
