@@ -24,7 +24,7 @@ class MplTest : public ::testing::Test
     odb::dbTech::create(db_.get(), "tech");
     odb::dbLib::create(db_.get(), "lib", db_->getTech(), ',');
 
-    odb::dbChip::create(db_.get());
+    odb::dbChip::create(db_.get(), db_->getTech());
 
     odb::dbBlock::create(db_->getChip(), "block");
     db_->getChip()->getBlock()->setDieArea(

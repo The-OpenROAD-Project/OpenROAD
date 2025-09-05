@@ -74,6 +74,61 @@
 		$1 = 0;
 	}
 }
+%typemap(out) odb::dbChip::ChipType, dbChip::ChipType {
+	PyObject *obj;
+	if ($1 == odb::dbChip::ChipType::DIE) {
+		obj = PyString_FromString("DIE");
+	} else if ($1 == odb::dbChip::ChipType::RDL) {
+		obj = PyString_FromString("RDL");
+	} else if ($1 == odb::dbChip::ChipType::IP) {
+		obj = PyString_FromString("IP");
+	} else if ($1 == odb::dbChip::ChipType::SUBSTRATE) {
+		obj = PyString_FromString("SUBSTRATE");
+	} else if ($1 == odb::dbChip::ChipType::HIER) {
+		obj = PyString_FromString("HIER");
+	} else {
+		SWIG_exception(SWIG_ValueError, "Unknown chip type");
+  }
+	$result=obj;
+}
+%typemap(in) odb::dbChip::ChipType, dbChip::ChipType {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	if (strcasecmp(str, "DIE") == 0) {
+		$1 = odb::dbChip::ChipType::DIE;
+	} else if (strcasecmp(str, "RDL") == 0) {
+		$1 = odb::dbChip::ChipType::RDL;
+	} else if (strcasecmp(str, "IP") == 0) {
+		$1 = odb::dbChip::ChipType::IP;
+	} else if (strcasecmp(str, "SUBSTRATE") == 0) {
+		$1 = odb::dbChip::ChipType::SUBSTRATE;
+	} else if (strcasecmp(str, "HIER") == 0) {
+		$1 = odb::dbChip::ChipType::HIER;
+  } else {
+  	SWIG_exception(SWIG_ValueError, "Unknown chip type");
+	}
+}
+%typemap(typecheck) odb::dbChip::ChipType, dbChip::ChipType {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "DIE") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "RDL") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "IP") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "SUBSTRATE") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "HIER") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
 %typemap(out) odb::dbSigType, dbSigType {
 	PyObject *obj;
 	if ($1.getValue() == odb::dbSigType::Value::SIGNAL) {

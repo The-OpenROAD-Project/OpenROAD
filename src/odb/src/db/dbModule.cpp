@@ -1020,7 +1020,7 @@ bool _dbModule::copyToChildBlock(dbModule* module)
   std::string block_name = module->getName();
   dbTech* tech = top_block->getTech();
   // TODO: strip out instance name from block name
-  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
+  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str());
   if (child_block) {
     child_block->setDefUnits(tech->getLefUnits());
     child_block->setBusDelimiters('[', ']');

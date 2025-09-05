@@ -16,7 +16,7 @@ read_lef ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef
 read_lib ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X_LVT_TT_nldm_FAKE.lib
 
 set db [ord::get_db]
-set chip [odb::dbChip_create $db]
+set chip [odb::dbChip_create $db [$db getTech]]
 set block [odb::dbBlock_create $chip "top"]
 $block setDefUnits 1000
 

@@ -7,7 +7,7 @@ source "helper.tcl"
 
 # Set up data
 lassign [createMultiLayerDB] db tech m1 m2 m3 v12 v23
-set chip [odb::dbChip_create $db]
+set chip [odb::dbChip_create $db $tech]
 set block [odb::dbBlock_create $chip "chip"]
 set net [odb::dbNet_create $block "net"]
 set wire [odb::dbWire_create $net]

@@ -47,7 +47,10 @@ namespace odb {
 inline constexpr uint db_schema_major = 0;  // Not used...
 inline constexpr uint db_schema_initial = 57;
 
-inline constexpr uint db_schema_minor = 117;  // Current revision number
+inline constexpr uint db_schema_minor = 118;  // Current revision number
+
+// Revision where dbTech was moved from dbBlock to dbChip
+inline constexpr uint db_schema_chip_tech = 118;
 
 // Revision where dbChipBump was added
 inline constexpr uint db_schema_chip_bump = 117;

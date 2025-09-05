@@ -1,6 +1,6 @@
 set db [ord::get_db]
-set chip [odb::dbChip_create $db]
 set tech [odb::dbTech_create $db tech]
+set chip [odb::dbChip_create $db $tech]
 set top_block [odb::dbBlock_create $chip top]
 
 set child_block [odb::dbBlock_create $top_block child]

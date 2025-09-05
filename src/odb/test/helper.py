@@ -8,7 +8,7 @@ def createSimpleDB():
     tech = odb.dbTech.create(db, "simple_tech")
     L1 = odb.dbTechLayer_create(tech, "L1", "ROUTING")
     lib = odb.dbLib.create(db, "lib", tech, "/")
-    odb.dbChip.create(db)
+    odb.dbChip.create(db, tech)
     # Creating Master and2 and or2
     and2 = createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o")
     or2 = createMaster2X1(lib, "or2", 500, 500, "a", "b", "o")
@@ -46,7 +46,7 @@ def createMultiLayerDB():
 #            +-----
 def create1LevelBlock(db, lib, parent):
     blockName = "1LevelBlock"
-    block = odb.dbBlock_create(parent, blockName, lib.getTech(), ",")
+    block = odb.dbBlock_create(parent, blockName, ",")
     # Creating Master and2 and instance inst
     and2 = lib.findMaster("and2")
     inst = odb.dbInst.create(block, and2, "inst")
@@ -84,7 +84,7 @@ def create1LevelBlock(db, lib, parent):
 #            +-----
 def create2LevelBlock(db, lib, parent):
     blockName = "2LevelBlock"
-    block = odb.dbBlock_create(parent, blockName, lib.getTech(), ",")
+    block = odb.dbBlock_create(parent, blockName, ",")
 
     and2 = lib.findMaster("and2")
     or2 = lib.findMaster("or2")

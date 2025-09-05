@@ -9,7 +9,7 @@ proc createSimpleDB { { use_default_db 0 } } {
   set tech [odb::dbTech_create $db "simple_tech"]
   set L1 [odb::dbTechLayer_create $tech "L1" "ROUTING"]
   set lib [odb::dbLib_create $db "lib" $tech "/"]
-  set chip [odb::dbChip_create $db]
+  set chip [odb::dbChip_create $db $tech]
   set and2 [createMaster2X1 $lib "and2" 1000 1000 "a" "b" "o"]
   set or2 [createMaster2X1 $lib "or2" 500 500 "a" "b" "o"]
   return [list $db $lib]
@@ -46,7 +46,7 @@ proc createMultiLayerDB { } {
 #            +-----
 proc create1LevelBlock { db lib parent } {
   set blockName "1LevelBlock"
-  set block [odb::dbBlock_create $parent $blockName [$lib getTech] ","]
+  set block [odb::dbBlock_create $parent $blockName ","]
   # Creating Master and2 and instance inst
   set and2 [$lib findMaster "and2"]
   set inst [odb::dbInst_create $block $and2 "inst"]
@@ -85,7 +85,7 @@ proc create1LevelBlock { db lib parent } {
 #            +-----
 proc create2LevelBlock { db lib parent } {
   set blockName "2LevelBlock"
-  set block [odb::dbBlock_create $parent $blockName [$lib getTech] ","]
+  set block [odb::dbBlock_create $parent $blockName ","]
 
   set and2 [$lib findMaster "and2"]
   set or2 [$lib findMaster "or2"]

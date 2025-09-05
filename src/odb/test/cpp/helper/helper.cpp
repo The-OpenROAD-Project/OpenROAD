@@ -81,7 +81,7 @@ dbDatabase* createSimpleDB()
   dbTech* tech = dbTech::create(db, "tech");
   dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   dbLib* lib = dbLib::create(db, "lib1", tech, ',');
-  dbChip* chip = dbChip::create(db);
+  dbChip* chip = dbChip::create(db, tech);
   dbBlock::create(chip, "simple_block");
   createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
   createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");

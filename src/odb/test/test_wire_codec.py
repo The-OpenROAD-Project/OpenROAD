@@ -16,7 +16,7 @@ class TestWireCodec(odbUnitTest.TestCase):
             self.v12,
             self.v23,
         ) = helper.createMultiLayerDB()
-        self.chip = odb.dbChip_create(self.db)
+        self.chip = odb.dbChip_create(self.db, self.tech)
         self.block = odb.dbBlock_create(self.chip, "chip")
         self.net = odb.dbNet_create(self.block, "net")
         self.wire = odb.dbWire_create(self.net)
