@@ -1469,7 +1469,7 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
 
 GuidePathFinder::GuidePathFinder(
     frDesign* design,
-    Logger* logger,
+    utl::Logger* logger,
     RouterConfiguration* router_cfg,
     frNet* net,
     const bool force_feed_through,

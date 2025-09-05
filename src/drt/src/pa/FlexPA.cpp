@@ -62,7 +62,7 @@ static inline void serializePatterns(
 }
 
 FlexPA::FlexPA(frDesign* in,
-               Logger* logger,
+               utl::Logger* logger,
                dst::Distributed* dist,
                RouterConfiguration* router_cfg)
     : design_(in),

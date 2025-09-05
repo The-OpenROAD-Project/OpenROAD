@@ -18,7 +18,7 @@ GraphicsFactory::~GraphicsFactory() = default;
 void GraphicsFactory::reset(frDebugSettings* settings,
                             frDesign* design,
                             odb::dbDatabase* db,
-                            Logger* logger,
+                            utl::Logger* logger,
                             RouterConfiguration* router_cfg)
 {
   settings_ = settings;

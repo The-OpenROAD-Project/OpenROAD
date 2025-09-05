@@ -18,6 +18,7 @@
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
 #include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 namespace io {
@@ -27,7 +28,7 @@ class frDesign
 {
  public:
   // constructors
-  frDesign(Logger* logger, RouterConfiguration* router_cfg)
+  frDesign(utl::Logger* logger, RouterConfiguration* router_cfg)
       : topBlock_(nullptr),
         tech_(std::make_unique<frTechObject>()),
         rq_(std::make_unique<frRegionQuery>(this, logger, router_cfg)),

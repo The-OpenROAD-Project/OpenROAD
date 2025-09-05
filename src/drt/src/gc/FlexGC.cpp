@@ -15,11 +15,12 @@
 #include "frDesign.h"
 #include "gc/FlexGC_impl.h"
 #include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
-                           Logger* logger,
+                           utl::Logger* logger,
                            RouterConfiguration* router_cfg,
                            FlexDRWorker* drWorkerIn)
     : impl_(
@@ -34,7 +35,7 @@ FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr, nullptr)
 }
 
 FlexGCWorker::Impl::Impl(frTechObject* techIn,
-                         Logger* logger,
+                         utl::Logger* logger,
                          RouterConfiguration* router_cfg,
                          FlexDRWorker* drWorkerIn,
                          FlexGCWorker* gcWorkerIn)

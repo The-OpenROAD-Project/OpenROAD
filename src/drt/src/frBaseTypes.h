@@ -19,14 +19,12 @@
 #include "boost/serialization/base_object.hpp"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "utl/Logger.h"
 
 namespace boost::serialization {
 class access;
 }
 
 namespace drt {
-using Logger = utl::Logger;
 const utl::ToolId DRT = utl::DRT;
 using frLayerNum = int;
 using frCoord = int;

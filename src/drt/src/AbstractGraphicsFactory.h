@@ -21,7 +21,7 @@ class AbstractGraphicsFactory
   virtual void reset(frDebugSettings* settings,
                      frDesign* design,
                      odb::dbDatabase* db,
-                     Logger* logger,
+                     utl::Logger* logger,
                      RouterConfiguration* router_cfg)
       = 0;
   virtual bool guiActive() = 0;

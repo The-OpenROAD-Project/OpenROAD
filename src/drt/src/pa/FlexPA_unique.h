@@ -38,7 +38,7 @@ class UniqueInsts
   // those instances.
   UniqueInsts(frDesign* design,
               const frCollection<odb::dbInst*>& target_insts,
-              Logger* logger,
+              utl::Logger* logger,
               RouterConfiguration* router_cfg_);
 
   /**
@@ -160,7 +160,7 @@ class UniqueInsts
 
   frDesign* design_;
   const frCollection<odb::dbInst*>& target_insts_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 
   // All the unique instances

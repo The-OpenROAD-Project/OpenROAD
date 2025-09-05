@@ -6,11 +6,12 @@
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexRP::FlexRP(frDesign* design,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg)
     : design_(design),
       tech_(design->getTech()),

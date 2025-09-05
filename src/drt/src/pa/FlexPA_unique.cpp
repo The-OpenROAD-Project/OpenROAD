@@ -22,7 +22,7 @@ namespace drt {
 
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
-                         Logger* logger,
+                         utl::Logger* logger,
                          RouterConfiguration* router_cfg)
     : design_(design),
       target_insts_(target_insts),

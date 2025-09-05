@@ -537,7 +537,7 @@ void TritonRoute::applyUpdates(
 
 void TritonRoute::init(
     odb::dbDatabase* db,
-    Logger* logger,
+    utl::Logger* logger,
     utl::CallBackHandler* callback_handler,
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,
