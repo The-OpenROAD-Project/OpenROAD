@@ -744,17 +744,29 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
       return manhattan_distance == other.manhattan_distance;
     }
   };
+
+  // Check the first candidate to avoid unnecessary priority queue creation.
+  GridPt center{x, y};
+  if (canBePlaced(cell, center.x, center.y)) {
+    return PixelPt(
+        grid_->gridPixel(center.x, center.y), center.x, center.y);
+  }
+
   std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
       positionsHeap;
-  std::unordered_set<GridPt> visited;
-  GridPt center{x, y};
-  positionsHeap.push(PQ_entry{0, center});
-  visited.insert(center);
 
-  const vector<GridPt> neighbors = {{GridX(-1), GridY(0)},
-                                    {GridX(1), GridY(0)},
-                                    {GridX(0), GridY(-1)},
-                                    {GridX(0), GridY(1)}};
+  auto addIfInBounds = [&](GridPt const& n) {
+    if (n.x >= x_min && n.x <= x_max && n.y >= y_min && n.y <= y_max) {
+      positionsHeap.push(PQ_entry{calcDist(center, n), n});
+    }
+  };
+
+  // Add the 4 immediate neighbors of the center.
+  addIfInBounds({center.x + 1, center.y});
+  addIfInBounds({center.x - 1, center.y});
+  addIfInBounds({center.x, center.y + 1});
+  addIfInBounds({center.x, center.y - 1});
+
   while (!positionsHeap.empty()) {
     const GridPt nearest = positionsHeap.top().p;
     positionsHeap.pop();
@@ -764,21 +776,26 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
           grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
     }
 
-    // Put neighbors in the queue
-    for (GridPt offset : neighbors) {
-      GridPt neighbor = {nearest.x + offset.x, nearest.y + offset.y};
-      // Check if it was already put in the queue
-      if (visited.count(neighbor) > 0) {
-        continue;
+    auto getSign = [](auto const grid_coord, auto center_coord) {
+      if (grid_coord > center_coord) {
+        return 1;
       }
-      // Check limits
-      if (neighbor.x < x_min || neighbor.x > x_max || neighbor.y < y_min
-          || neighbor.y > y_max) {
-        continue;
-      }
+      return -1;
+    };
 
-      visited.insert(neighbor);
-      positionsHeap.push(PQ_entry{calcDist(center, neighbor), neighbor});
+    // Expand out in a "circle"
+    if (nearest.x == center.x) {  // on y-axis
+      // top side only expands up and bottom side only expands down
+      int sign = getSign(nearest.y, center.y);
+      addIfInBounds({nearest.x, nearest.y + sign});
+
+      // go left and right
+      addIfInBounds({nearest.x + 1, nearest.y});
+      addIfInBounds({nearest.x - 1, nearest.y});
+    } else {
+      // Left half expands left, right half expands right.
+      int sign = getSign(nearest.x, center.x);
+      addIfInBounds({nearest.x + sign, nearest.y});
     }
   }
   return PixelPt();
