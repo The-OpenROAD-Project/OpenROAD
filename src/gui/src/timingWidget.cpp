@@ -593,18 +593,23 @@ void TimingWidget::populatePaths()
   const auto from = settings_->getFromPins();
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
+  sta::ClockSet* clks = new sta::ClockSet;
+  settings_->getClocks(clks);
 
-  populateAndSortModels(from, thru, to, "" /* path group name */);
+  populateAndSortModels(from, thru, to, "" /* path group name */, clks);
 }
 
 void TimingWidget::populateAndSortModels(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
-    const std::string& path_group_name)
+    const std::string& path_group_name,
+    sta::ClockSet* clks)
 {
-  setup_timing_paths_model_->populateModel(from, thru, to, path_group_name);
-  hold_timing_paths_model_->populateModel(from, thru, to, path_group_name);
+  setup_timing_paths_model_->populateModel(
+      from, thru, to, path_group_name, clks);
+  hold_timing_paths_model_->populateModel(
+      from, thru, to, path_group_name, clks);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
