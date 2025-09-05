@@ -9,12 +9,6 @@
 
 namespace drt {
 
-static inline int defdist(odb::dbBlock* block, int x)
-{
-  return x * (double) block->getDefUnits()
-         / (double) block->getDbUnitsPerMicron();
-}
-
 void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
 {
   auto design = router_->getDesign();
@@ -22,6 +16,7 @@ void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
     return;
   }
   auto inst = design->getTopBlock()->getInst(db_inst->getName());
+
   if (inst == nullptr) {
     return;
   }
@@ -41,13 +36,7 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
   if (inst == nullptr) {
     return;
   }
-  int x, y;
-  db_inst->getLocation(x, y);
-  auto block = db_inst->getBlock();
-  x = defdist(block, x);
-  y = defdist(block, y);
-  inst->setOrigin({x, y});
-  inst->setOrient(db_inst->getOrient());
+  inst->updateFromDB();
   router_->addInstancePAData(inst);
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->addBlockObj(inst);
@@ -69,6 +58,34 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
     design->getRegionQuery()->removeBlockObj(inst);
   }
   design->getTopBlock()->removeInst(inst);
+}
+
+void DesignCallBack::inDbInstCreate(odb::dbInst* db_inst)
+{
+  auto design = router_->getDesign();
+  frMaster* master = design->getMaster(db_inst->getMaster()->getName());
+  auto inst = std::make_unique<frInst>(master, db_inst);
+  int numInstTerms = 0;
+  inst->setPinAccessIdx(db_inst->getPinAccessIdx());
+  for (auto& term : inst->getMaster()->getTerms()) {
+    std::unique_ptr<frInstTerm> instTerm
+        = std::make_unique<frInstTerm>(inst.get(), term.get());
+    instTerm->setIndexInOwner(numInstTerms++);
+    int pinCnt = term->getPins().size();
+    instTerm->setAPSize(pinCnt);
+    inst->addInstTerm(std::move(instTerm));
+  }
+  for (auto& blk : inst->getMaster()->getBlockages()) {
+    std::unique_ptr<frInstBlockage> instBlk
+        = std::make_unique<frInstBlockage>(inst.get(), blk.get());
+    inst->addInstBlockage(std::move(instBlk));
+  }
+  design->getTopBlock()->addInst(std::move(inst));
+}
+
+void DesignCallBack::inDbITermPreConnect(odb::dbITerm* db_iterm,
+                                         odb::dbNet* db_net)
+{
 }
 
 }  // namespace drt
