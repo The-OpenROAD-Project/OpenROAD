@@ -16,6 +16,7 @@ add_subdirectory(src/lefout)
 add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/cdl)
+add_subdirectory(src/3dblox)
 add_subdirectory(src/gdsin)
 add_subdirectory(src/gdsout)
 
@@ -28,6 +29,7 @@ target_link_libraries(odb
   INTERFACE
     db
     cdl
+    3dblox
     defin
     defout
     lefin
