@@ -34,7 +34,7 @@ proc list_rmp_cells { } {
   set used_rmp_cells {}
   foreach inst $insts {
     set name [odb::dbInst_getName $inst]
-    if { [string match "*rmp*" $name] } {
+    if { [string match "*cut*" $name] } {
       set master [odb::dbInst_getMaster $inst]
       set master_name [odb::dbMaster_getName $master]
       lappend used_rmp_cells $master_name

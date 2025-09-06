@@ -20,6 +20,7 @@
 #endif
 
 #include "ant/MakeAntennaChecker.hh"
+#include "cgt/MakeClockGating.h"
 #include "cts/MakeTritoncts.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -179,6 +180,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   finale_ = fin::makeFinale();
   global_router_ = grt::makeGlobalRouter();
   restructure_ = rmp::makeRestructure();
+  clock_gating_ = cgt::makeClockGating();
   tritonCts_ = cts::makeTritonCts();
   tapcell_ = tap::makeTapcell();
   macro_placer_ = mpl::makeMacroPlacer();
@@ -259,6 +261,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                   resizer_,
                   estimate_parasitics_,
                   tcl_interp);
+  cgt::initClockGating(clock_gating_, tcl_interp, logger_, sta_);
   initTritonRoute(detailed_router_,
                   db_,
                   logger_,

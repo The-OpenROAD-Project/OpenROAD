@@ -4,9 +4,9 @@
 #pragma once
 
 #include "db_sta/dbSta.hh"
-#include "rmp/unique_name.h"
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
+#include "utl/unique_name.h"
 
 namespace rmp {
 
@@ -15,7 +15,7 @@ class ResynthesisStrategy
  public:
   virtual ~ResynthesisStrategy() = default;
   virtual void OptimizeDesign(sta::dbSta* sta,
-                              rmp::UniqueName& name_generator,
+                              utl::UniqueName& name_generator,
                               rsz::Resizer* resizer,
                               utl::Logger* logger)
       = 0;
