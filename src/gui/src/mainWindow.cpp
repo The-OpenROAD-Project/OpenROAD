@@ -1697,6 +1697,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
   exit_check.exec();
 
   if (exit_check.clickedButton() == exit_button) {
+    // close all dialogs
+    for (QWidget* w : QApplication::topLevelWidgets()) {
+      if (w != this) {
+        w->close();
+      }
+    }
     // exit selected so go ahead and close
     event->accept();
   } else if (exit_check.clickedButton() == hide_button) {
