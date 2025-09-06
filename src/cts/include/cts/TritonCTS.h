@@ -34,6 +34,7 @@ class Unit;
 class LibertyCell;
 class Vertex;
 class Graph;
+class Pin;
 }  // namespace sta
 
 namespace stt {
@@ -114,6 +115,7 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
+  void destroyClockModNet(sta::Pin* pin_driver);
   void writeClockNetsToDb(TreeBuilder* builder,
                           std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(TreeBuilder* builder);

@@ -587,7 +587,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       // iterm may be connected to another hierarchical instance
       dbModNet* other_mod_net = old_iterm->getModNet();
       if (other_mod_net != old_mod_net) {
-        old_iterm->disconnectModNet();
+        old_iterm->disconnectDbModNet();
         old_iterm->connect(old_mod_net);  // Reconnect old mod net for later use
         debugRDPrint1("  disconnected old iterm {} from other mod net {}",
                       old_iterm->getName(),

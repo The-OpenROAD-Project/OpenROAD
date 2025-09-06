@@ -405,7 +405,7 @@ void dbITerm::connect(dbModNet* mod_net)
   // accidentally blow away prior flat net connections)
 
   if (iterm->_mnet != 0) {
-    disconnectModNet();
+    disconnectDbModNet();
   }
 
   iterm->_mnet = _mod_net->getId();
@@ -625,7 +625,7 @@ void dbITerm::disconnectDbNet()
 //
 // Disconnect the mod net and allow journaling
 //
-void dbITerm::disconnectModNet()
+void dbITerm::disconnectDbModNet()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
