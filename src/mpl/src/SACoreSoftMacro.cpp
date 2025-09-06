@@ -475,11 +475,19 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
 }
 
 // Align macro clusters to reduce notch
-void SACoreSoftMacro::alignMacroClusters()
+void SACoreSoftMacro::attemptMacroClusterAlignment()
 {
-  if (width_ > outline_.getWidth() || height_ > outline_.getHeight()) {
+  if (!isValid()) {
     return;
   }
+
+  float pre_cost = calNormCost();
+  // Cache current solution to allow reversal
+  std::map<int, std::pair<float, float>> clusters_locations;
+  for (int& id : pos_seq_) {
+    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
+  }
+
   // update threshold value
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
@@ -517,6 +525,21 @@ void SACoreSoftMacro::alignMacroClusters()
                                - macros_[macro_id].getHeight());
       }
     }
+  }
+
+  calPenalty();
+  // Revert macro alignemnt
+  if (calNormCost() > pre_cost) {
+    for (int& id : pos_seq_) {
+      macros_[id].setX(clusters_locations[id].first);
+      macros_[id].setY(clusters_locations[id].second);
+    }
+
+    if (graphics_) {
+      graphics_->saStep(macros_);
+    }
+
+    calPenalty();
   }
 }
 
@@ -924,6 +947,7 @@ void SACoreSoftMacro::attemptCentralization(const float pre_cost)
                                  (outline_.getHeight() - height_) / 2);
   moveFloorplan(offset);
 
+  calPenalty();
   // revert centralization
   if (calNormCost() > pre_cost) {
     centralization_was_reverted_ = true;
@@ -951,8 +975,6 @@ void SACoreSoftMacro::moveFloorplan(const std::pair<float, float>& offset)
   if (graphics_) {
     graphics_->saStep(macros_);
   }
-
-  calPenalty();
 }
 
 Tiling SACoreSoftMacro::computeOverlapShape(const Rect& rect_a,
