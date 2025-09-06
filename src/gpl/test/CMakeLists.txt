@@ -66,5 +66,30 @@ target_sources(fft_test
   ../src/fftsg2d.cpp
 )
 
+add_executable(mbff_test 
+  mbff_test.cpp
+  test_stubs.cpp
+)
 
-add_dependencies(build_and_test fft_test)
+target_include_directories(mbff_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(mbff_test PUBLIC
+  absl::strings
+  GTest::gtest
+  GTest::gtest_main
+  openroad_lib
+)
+
+gtest_discover_tests(mbff_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
+target_sources(mbff_test
+  PRIVATE
+  mbff_test.cpp
+)
+
+add_dependencies(build_and_test fft_test mbff_test)
