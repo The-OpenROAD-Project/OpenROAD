@@ -212,7 +212,7 @@ frInst* Fixture::makeInst(const char* name,
       = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
   dbTransform trans;
   db_inst->setTransform(trans);
-  auto uInst = std::make_unique<frInst>(name, master, db_inst);
+  auto uInst = std::make_unique<frInst>(master, db_inst);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
