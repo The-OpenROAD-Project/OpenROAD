@@ -9,6 +9,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "shape.h"
 
 namespace utl {

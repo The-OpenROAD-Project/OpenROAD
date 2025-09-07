@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbNet.h"
 #include "dbSBox.h"
 #include "dbSBoxItr.h"
@@ -14,6 +15,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 

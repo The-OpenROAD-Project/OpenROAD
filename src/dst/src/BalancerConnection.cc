@@ -17,6 +17,7 @@
 #include "LoadBalancer.h"
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/archive/text_oarchive.hpp"
+#include "boost/asio.hpp"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/serialization/export.hpp"

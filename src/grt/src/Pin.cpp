@@ -9,6 +9,9 @@
 #include <vector>
 
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 

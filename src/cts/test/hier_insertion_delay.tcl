@@ -11,6 +11,10 @@ link_design -hier multi_sink
 initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 #make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 15
+source $tracks_file
+
+place_pins -hor_layers $io_placer_hor_layer \
+  -ver_layers $io_placer_ver_layer
 global_placement -skip_nesterov_place
 detailed_placement
 

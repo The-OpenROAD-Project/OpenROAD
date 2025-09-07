@@ -6,6 +6,8 @@
 #include <cmath>
 #include <vector>
 
+#include "odb/db.h"
+
 namespace grt {
 
 FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech)

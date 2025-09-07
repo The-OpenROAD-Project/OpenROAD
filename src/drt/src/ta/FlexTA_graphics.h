@@ -7,10 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "AbstractTAGraphics.h"
-#include "FlexTA.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
+#include "ta/AbstractTAGraphics.h"
+#include "ta/FlexTA.h"
 
 namespace odb {
 class dbDatabase;

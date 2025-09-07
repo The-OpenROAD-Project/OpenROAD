@@ -4,6 +4,9 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
+#include <string>
+#include <unordered_map>
+
 #include "dbBlock.h"
 #include "dbBlockItr.h"
 #include "dbChipConn.h"
@@ -222,6 +225,10 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   stream >> *obj._name_cache;
   if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
     stream >> obj._next_entry;
+  }
+  auto chip = (dbChip*) &obj;
+  for (const auto& chip_region : chip->getChipRegions()) {
+    obj.chip_region_map_[chip_region->getName()] = chip_region->getId();
   }
   // User Code End >>
   return stream;
@@ -544,6 +551,27 @@ dbSet<dbChipNet> dbChip::getChipNets() const
   _dbChip* chip = (_dbChip*) this;
   _dbDatabase* db = (_dbDatabase*) chip->getOwner();
   return dbSet<dbChipNet>(chip, db->chip_net_itr_);
+}
+
+dbChipInst* dbChip::findChipInst(const std::string& name) const
+{
+  _dbChip* chip = (_dbChip*) this;
+  auto it = chip->chipinsts_map_.find(name);
+  if (it != chip->chipinsts_map_.end()) {
+    auto db = (_dbDatabase*) chip->getOwner();
+    return (dbChipInst*) db->chip_inst_tbl_->getPtr((*it).second);
+  }
+  return nullptr;
+}
+
+dbChipRegion* dbChip::findChipRegion(const std::string& name) const
+{
+  _dbChip* chip = (_dbChip*) this;
+  auto it = chip->chip_region_map_.find(name);
+  if (it != chip->chip_region_map_.end()) {
+    return (dbChipRegion*) chip->chip_region_tbl_->getPtr((*it).second);
+  }
+  return nullptr;
 }
 
 dbChip* dbChip::create(dbDatabase* db_, const std::string& name, ChipType type)

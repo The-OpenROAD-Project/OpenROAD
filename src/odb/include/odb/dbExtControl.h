@@ -6,6 +6,8 @@
 #include <string>
 
 #include "db.h"
+#include "odb/dbObject.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 

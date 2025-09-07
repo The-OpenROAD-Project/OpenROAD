@@ -22,6 +22,7 @@
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "renderer.h"
 #include "techlayer.h"
 #include "utl/Logger.h"

@@ -12,6 +12,7 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frGuide.h"
 #include "db/obj/frNode.h"
 #include "db/obj/frRPin.h"

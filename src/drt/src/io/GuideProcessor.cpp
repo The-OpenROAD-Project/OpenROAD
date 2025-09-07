@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "GuideProcessor.h"
+#include "io/GuideProcessor.h"
 
 #include <omp.h>
 
@@ -20,7 +20,12 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -1464,7 +1469,7 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
 
 GuidePathFinder::GuidePathFinder(
     frDesign* design,
-    Logger* logger,
+    utl::Logger* logger,
     RouterConfiguration* router_cfg,
     frNet* net,
     const bool force_feed_through,

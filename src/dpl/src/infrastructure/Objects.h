@@ -9,6 +9,7 @@
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbBox;

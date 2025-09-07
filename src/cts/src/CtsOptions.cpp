@@ -3,6 +3,8 @@
 
 #include "CtsOptions.h"
 
+#include "odb/db.h"
+
 namespace cts {
 
 CtsOptions::MasterType CtsOptions::getType(odb::dbInst* inst) const

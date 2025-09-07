@@ -290,7 +290,7 @@ struct interior_rings<odb::Polygon>
   {
     return {};
   }
-  static const std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
+  static std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
   {
     return {};
   }

@@ -13,7 +13,9 @@
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
+#include "gr/FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace drt {

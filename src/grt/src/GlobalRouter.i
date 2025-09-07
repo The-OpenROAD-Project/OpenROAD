@@ -135,6 +135,12 @@ set_perturbation_amount(int perturbation)
 }
 
 void
+set_use_cugr(bool use_cugr)
+{
+  getGlobalRouter()->setUseCUGR(use_cugr);
+}
+
+void
 global_route(bool start_incremental, bool end_incremental)
 {
   getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);

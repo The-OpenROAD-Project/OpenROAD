@@ -22,6 +22,8 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "UnbufferMove.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Fuzzy.hh"

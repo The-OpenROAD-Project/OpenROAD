@@ -65,11 +65,7 @@ class Graph2D
 
   void addCapH(int x, int y, int cap);
   void addCapV(int x, int y, int cap);
-  void addEstUsageH(const Interval& xi, int y, double usage);
-  void addEstUsageH(int x, int y, double usage);
   void addEstUsageToUsage();
-  void addEstUsageV(int x, const Interval& yi, double usage);
-  void addEstUsageV(int x, int y, double usage);
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);
   void addUsageH(const Interval& xi, int y, int used);
@@ -82,6 +78,11 @@ class Graph2D
                                bool stop_decreasing,
                                int& max_adj);
   void str_accu(int rnd);
+  void saveResources(int x, int y, bool is_horizontal);
+  bool computeSuggestedAdjustment(int x,
+                                  int y,
+                                  bool is_horizontal,
+                                  int& adjustment);
 
   void updateEstUsageH(const Interval& xi, int y, FrNet* net, double usage);
   void updateEstUsageH(int x, int y, FrNet* net, double usage);

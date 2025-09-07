@@ -33,6 +33,8 @@
 #include "logic_extractor.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/lefin.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"

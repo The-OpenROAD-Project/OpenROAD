@@ -16,9 +16,11 @@ constexpr int GRFRACSIZE = 1;
 #include <vector>
 
 #include "db/grObj/grPin.h"
+#include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "gr/FlexGRWavefront.h"
 
 namespace drt {

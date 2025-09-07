@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "name.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"

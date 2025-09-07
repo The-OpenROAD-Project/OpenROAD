@@ -10,6 +10,7 @@
 #include <tuple>
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "tmg_conn_g.h"

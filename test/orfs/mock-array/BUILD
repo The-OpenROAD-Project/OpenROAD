@@ -103,7 +103,12 @@ filegroup(
     visibility = [":__subpackages__"],
 )
 
-orfs_flow(
+VARIANTS = [
+    "base",
+    "flat",
+]
+
+[orfs_flow(
     name = "MockArray",
     arguments = {
         "PLACE_PINS_ARGS": "-annealing",
@@ -135,7 +140,7 @@ orfs_flow(
         "IO_PLACER_V": "M5 M7",
         "IO_PLACER_H": "M4 M6",
         "DETAILED_ROUTE_END_ITERATION": "6",
-        "OPENROAD_HIERARCHICAL": "1",
+        "OPENROAD_HIERARCHICAL": "1" if variant == "base" else "0",
     },
     macros = ["Element_generate_abstract"],
     sources = {
@@ -143,8 +148,9 @@ orfs_flow(
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
     },
+    variant = variant,
     verilog_files = [":verilog"],
-)
+) for variant in VARIANTS]
 
 filegroup(
     name = "mock-array-element-io",

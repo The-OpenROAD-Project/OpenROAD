@@ -28,6 +28,9 @@
 
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 #include "options.h"
 #include "renderThread.h"
 #include "search.h"

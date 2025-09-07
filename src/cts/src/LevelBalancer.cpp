@@ -14,6 +14,7 @@
 #include "TreeBuilder.h"
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 
 namespace cts {
 

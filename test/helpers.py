@@ -72,4 +72,7 @@ def make_design(tech):
     # suppress ord message with number of threads
     logger.suppressMessage(utl.ORD, 30)
 
+    # suppress grt message with the suggested adjustment
+    logger.suppressMessage(utl.GRT, 704)
+
     return design

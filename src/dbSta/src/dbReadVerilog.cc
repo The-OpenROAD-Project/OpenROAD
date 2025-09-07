@@ -17,6 +17,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkCmp.hh"
@@ -831,8 +832,8 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
 
     // make sure any top level bterms are connected to this net too...
     if (parent_module == block_->getTopModule()) {
-      NetConnectedPinIterator* pin_iter
-          = network_->connectedPinIterator(inst_pin_net);
+      std::unique_ptr<NetConnectedPinIterator> pin_iter{
+          network_->connectedPinIterator(inst_pin_net)};
       while (pin_iter->hasNext()) {
         const Pin* pin = pin_iter->next();
         staToDb(parent_module, pin, bterm, iterm, mod_bterm, mod_iterm);

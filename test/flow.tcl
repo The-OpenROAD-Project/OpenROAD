@@ -56,6 +56,10 @@ source $tracks_file
 # remove buffers inserted by synthesis
 remove_buffers
 
+if { $pre_placed_macros_file != "" } {
+  source $pre_placed_macros_file
+}
+
 ################################################################
 # Macro Placement
 if { [have_macros] } {
