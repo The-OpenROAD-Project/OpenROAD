@@ -135,6 +135,63 @@
 
 namespace odb {
 
+class dbLogicalInstItr : public dbIterator
+{
+ public:
+  dbLogicalInstItr(dbTable<_dbInst>* inst_tbl) : _inst_tbl(inst_tbl) {}
+
+  bool reversible() override { return false; }
+  bool orderReversed() override { return false; }
+  void reverse(dbObject* /*parent*/) override {}
+  uint sequential() override { return 0; }
+
+  uint size(dbObject* parent) override
+  {
+    uint count = 0;
+    for (uint id = begin(parent); id != end(parent); id = next(id)) {
+      count++;
+    }
+    return count;
+  }
+
+  uint begin(dbObject* parent) override
+  {
+    return findNext(_inst_tbl->begin(parent));
+  }
+
+  uint end(dbObject* parent) override { return _inst_tbl->end(parent); }
+
+  uint next(uint id, ...) override { return findNext(_inst_tbl->next(id)); }
+
+  dbObject* getObject(uint id, ...) override
+  {
+    return _inst_tbl->getObject(id);
+  }
+
+ private:
+  uint findNext(uint start_id)
+  {
+    uint cur_id = start_id;
+    const uint end_id = _inst_tbl->end(nullptr);
+
+    while (cur_id != end_id) {
+      if (_inst_tbl->validId(cur_id)) {
+        _dbInst* inst_impl = (_dbInst*) _inst_tbl->getPtr(cur_id);
+        dbInst* inst = reinterpret_cast<dbInst*>(inst_impl);
+        if (inst->isPhysicalOnly() == false) {
+          return cur_id;
+        }
+      }
+      cur_id = _inst_tbl->next(cur_id);
+    }
+
+    return end_id;
+  }
+
+ private:
+  dbTable<_dbInst>* _inst_tbl;
+};
+
 struct OldTransform
 {
   int _orient;
@@ -415,6 +472,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
+  _logical_inst_itr
+      = new dbLogicalInstItr((dbTable<_dbInst>*) getObjectTable(dbInstObj));
+
   _num_ext_dbs = 1;
   _searchDb = nullptr;
   _extmi = nullptr;
@@ -506,6 +566,7 @@ _dbBlock::~_dbBlock()
   delete _group_ground_net_itr;
   delete _bpin_itr;
   delete _prop_itr;
+  delete _logical_inst_itr;
   delete _dft_tbl;
   delete _marker_categories_tbl;
 
@@ -1795,6 +1856,12 @@ dbSet<dbInst> dbBlock::getInsts()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbInst>(block, block->_inst_tbl);
+}
+
+dbSet<dbInst> dbBlock::getLogicalInsts()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbInst>(block, block->_logical_inst_itr);
 }
 
 dbSet<dbModule> dbBlock::getModules()

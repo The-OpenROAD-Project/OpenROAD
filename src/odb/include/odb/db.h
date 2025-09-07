@@ -696,6 +696,11 @@ class dbBlock : public dbObject
   dbSet<dbInst> getInsts();
 
   ///
+  /// Get the logical (non-physical-only) instances of this block.
+  ///
+  dbSet<dbInst> getLogicalInsts();
+
+  ///
   /// Get the modules of this block.
   ///
   dbSet<dbModule> getModules();

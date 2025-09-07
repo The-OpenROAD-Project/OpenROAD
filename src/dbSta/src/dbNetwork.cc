@@ -253,7 +253,7 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
   // original code for non hierarchy
   if (!network->hasHierarchy()) {
     if (instance == network->topInstance() && block) {
-      dbSet<dbInst> insts = block->getInsts();
+      dbSet<dbInst> insts = block->getLogicalInsts();
       top_ = true;
       dbinst_iter_ = insts.begin();
       dbinst_end_ = insts.end();

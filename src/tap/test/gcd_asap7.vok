@@ -1,0 +1,19 @@
+module gcd (clk,
+    req_rdy,
+    req_val,
+    reset,
+    resp_rdy,
+    resp_val,
+    req_msg,
+    resp_msg);
+ input clk;
+ output req_rdy;
+ input req_val;
+ input reset;
+ input resp_rdy;
+ output resp_val;
+ input [31:0] req_msg;
+ output [15:0] resp_msg;
+
+
+endmodule

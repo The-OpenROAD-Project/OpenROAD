@@ -116,6 +116,7 @@ class dbBlockCallBackObj;
 class dbGuideItr;
 class dbNetTrackItr;
 class _dbDft;
+class dbLogicalInstItr;
 
 struct _dbBlockFlags
 {
@@ -289,6 +290,7 @@ class _dbBlock : public _dbObject
   dbBPinItr* _bpin_itr;
   dbPropertyItr* _prop_itr;
   dbBlockSearch* _searchDb;
+  dbLogicalInstItr* _logical_inst_itr;
 
   std::unordered_map<std::string, int> _module_name_id_map;
   std::unordered_map<std::string, int> _inst_name_id_map;
