@@ -141,6 +141,11 @@ VARIANTS = [
         "IO_PLACER_H": "M4 M6",
         "DETAILED_ROUTE_END_ITERATION": "6",
         "OPENROAD_HIERARCHICAL": "1" if variant == "base" else "0",
+        # FIXME HOLD_SLACK_MARGIN should be removed after CTS engine improvement.
+        # - There are many hold violations due to large clock skew.
+        # - It leads to max buffer count limit error.
+        # - To avoid the error, large hold slack margin is temporarily set.
+        "HOLD_SLACK_MARGIN": "-30",
     },
     macros = ["Element_generate_abstract"],
     sources = {
