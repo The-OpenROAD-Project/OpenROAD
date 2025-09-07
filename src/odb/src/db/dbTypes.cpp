@@ -192,17 +192,20 @@ std::optional<dbOrientType3D> dbOrientType3D::fromString(
     const std::string orient)
 {
   std::string orient_str = orient;
-  bool flipZ = false;
+  bool mirror_z = false;
   // check if the orient string contains "MZ"
+  if (orient_str == "MZ") {
+    return dbOrientType3D(dbOrientType::R0, true);
+  }
   if (orient_str.find("MZ_") != std::string::npos) {
-    flipZ = true;
+    mirror_z = true;
     orient_str = orient_str.erase(orient_str.find("MZ_"), 3);
   }
   auto opt = dbOrientType::fromString(orient_str.c_str());
   if (!opt.has_value()) {
     return std::nullopt;
   }
-  return dbOrientType3D(opt.value(), flipZ);
+  return dbOrientType3D(opt.value(), mirror_z);
 }
 
 dbOrientType3D::dbOrientType3D(const char* orient)
