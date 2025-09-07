@@ -318,7 +318,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   // Set the region_insts_map_ of the chipinst
   for (const auto& chip_region_inst : db->getChipRegionInsts()) {
     _dbChipInst* chipinst = (_dbChipInst*) chip_region_inst->getChipInst();
-    chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getName()]
+    chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
         = chip_region_inst->getId();
   }
   // User Code End >>

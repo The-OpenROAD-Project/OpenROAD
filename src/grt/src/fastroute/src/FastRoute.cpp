@@ -373,6 +373,11 @@ void FastRouteCore::initEdges()
   graph2d_.init(
       x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
 
+  init3DEdges();
+}
+
+void FastRouteCore::init3DEdges()
+{
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
@@ -515,6 +520,28 @@ void FastRouteCore::addAdjustment(int x1,
     if (y1 < y_grid_ - 1) {
       graph2d_.addCapV(x1, y1, -reduce);
       graph2d_.addRedV(x1, y1, reduce);
+    }
+  }
+}
+
+void FastRouteCore::saveResourcesBeforeAdjustments()
+{
+  // Save real horizontal resources
+  for (int x = 0; x < x_grid_ - 1; x++) {
+    for (int y = 0; y < y_grid_; y++) {
+      graph2d_.saveResources(x, y, true);
+      for (int l = 0; l < num_layers_; l++) {
+        h_edges_3D_[l][y][x].real_cap = h_edges_3D_[l][y][x].cap;
+      }
+    }
+  }
+  // Save real vertical resources
+  for (int x = 0; x < x_grid_; x++) {
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      graph2d_.saveResources(x, y, false);
+      for (int l = 0; l < num_layers_; l++) {
+        v_edges_3D_[l][y][x].real_cap = v_edges_3D_[l][y][x].cap;
+      }
     }
   }
 }
@@ -762,19 +789,29 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
                                            int x2,
                                            int y2,
                                            int layer,
-                                           int used)
+                                           int used,
+                                           odb::dbNet* db_net)
 {
   const int k = layer - 1;
+  FrNet* net = nullptr;
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  net = nets_[net_id];
+
+  int8_t layer_edge_cost = net->getLayerEdgeCost(k);
+  int8_t edge_cost = net->getEdgeCost();
 
   if (y1 == y2) {  // horizontal edge
-    graph2d_.addUsageH({x1, x2}, y1, used);
+    graph2d_.updateUsageH({x1, x2}, y1, net, used * edge_cost);
     for (int x = x1; x < x2; x++) {
-      h_edges_3D_[k][y1][x].usage += used;
+      h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
     }
   } else if (x1 == x2) {  // vertical edge
-    graph2d_.addUsageV(x1, {y1, y2}, used);
+    graph2d_.updateUsageV(x1, {y1, y2}, net, used * edge_cost);
     for (int y = y1; y < y2; y++) {
-      v_edges_3D_[k][y][x1].usage += used;
+      v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
     }
   }
 }
@@ -842,6 +879,59 @@ NetRouteMap FastRouteCore::getRoutes()
   }
 
   return routes;
+}
+
+// Updates the layer assignment for specific route segments after repair
+// antennas. This function is called after jumper insertion during antenna
+// violation repair. When a jumper is inserted to fix an antenna violation,
+// certain route segments need to be moved to a different layer. This function
+// searches through all edges of the specified net and updates the layer
+// assignment for any route points that fall within the specified region.
+void FastRouteCore::updateRouteGridsLayer(int x1,
+                                          int y1,
+                                          int x2,
+                                          int y2,
+                                          int layer,
+                                          int new_layer,
+                                          odb::dbNet* db_net)
+{
+  // Get the internal net ID from the database net object
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  // Access the routing tree edges for this net
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  // Iterate through all edges in the net's routing tree
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    // Only process edges that have actual routing
+    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+      int routeLen = treeedge->route.routelen;
+      std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+      // If the point is within the specified rectangular region AND on the
+      // original layer
+      for (int i = 0; i <= routeLen; i++) {
+        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
+            && grids[i].y <= y2 && grids[i].layer == layer) {
+          // Update to the new layer
+          grids[i].layer = new_layer;
+        }
+      }
+    }
+  }
+}
+
+int FastRouteCore::getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  return nets_[net_id]->getLayerEdgeCost(layer - 1);
 }
 
 NetRouteMap FastRouteCore::getPlanarRoutes()

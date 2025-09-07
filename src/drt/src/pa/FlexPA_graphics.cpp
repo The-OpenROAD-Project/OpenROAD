@@ -12,15 +12,18 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMPin.h"
 #include "frBaseTypes.h"
+#include "global.h"
 #include "pa/FlexPA.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
-                               Logger* logger,
+                               utl::Logger* logger,
                                RouterConfiguration* router_cfg)
     : logger_(logger),
       settings_(settings),

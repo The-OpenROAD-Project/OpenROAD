@@ -11,9 +11,11 @@
 
 #include "boost/icl/interval_set.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
 #include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -234,7 +236,7 @@ class GuideProcessor
                             frLayerNum& layer_num);
 
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
   RouterConfiguration* router_cfg_;
   frOrderedIdMap<frNet*, std::vector<frRect>> tmp_guides_;
@@ -259,7 +261,7 @@ class GuidePathFinder
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    */
   GuidePathFinder(frDesign* design,
-                  Logger* logger,
+                  utl::Logger* logger,
                   RouterConfiguration* router_cfg,
                   frNet* net,
                   bool force_feed_through,
@@ -433,7 +435,7 @@ class GuidePathFinder
   frTechObject* getTech() const { return design_->getTech(); }
 
   frDesign* design_{nullptr};
-  Logger* logger_{nullptr};
+  utl::Logger* logger_{nullptr};
   RouterConfiguration* router_cfg_{nullptr};
   frNet* net_{nullptr};
   bool force_feed_through_{false};

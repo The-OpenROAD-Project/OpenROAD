@@ -22,7 +22,9 @@
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/geometry/geometry.hpp"
+#include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -535,7 +537,7 @@ void TritonRoute::applyUpdates(
 
 void TritonRoute::init(
     odb::dbDatabase* db,
-    Logger* logger,
+    utl::Logger* logger,
     utl::CallBackHandler* callback_handler,
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,

@@ -3,6 +3,9 @@
 #include <iostream>
 #include <vector>
 
+#include "CUGR.h"
+#include "GeoTypes.h"
+#include "Netlist.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -44,13 +47,13 @@ void Design::read()
 
   computeGrid();
 
-  std::cout << "design statistics" << std::endl;
-  std::cout << "lib DBU:             " << lib_dbu_ << std::endl;
-  std::cout << "die region (in DBU): " << die_region_ << std::endl;
-  std::cout << "num of nets :        " << nets_.size() << std::endl;
-  std::cout << "num of special nets: " << num_special_nets << std::endl;
+  std::cout << "design statistics\n";
+  std::cout << "lib DBU:             " << lib_dbu_ << '\n';
+  std::cout << "die region (in DBU): " << die_region_ << '\n';
+  std::cout << "num of nets :        " << nets_.size() << '\n';
+  std::cout << "num of special nets: " << num_special_nets << '\n';
   std::cout << "gcell grid:          " << gridlines_[0].size() - 1 << " x "
-            << gridlines_[1].size() - 1 << " x " << getNumLayers() << std::endl;
+            << gridlines_[1].size() - 1 << " x " << getNumLayers() << '\n';
 }
 
 void Design::readLayers()
@@ -275,13 +278,13 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
-    std::cout << "Net: " << net.getName() << std::endl;
+    std::cout << "Net: " << net.getName() << '\n';
     for (const auto& pin : net.getPins()) {
       std::cout << "\tPin: " << pin.getName() << "\n";
       for (const auto& box : pin.getPinShapes()) {
         std::cout << "\t\t" << box << "\n";  // adjust to 1-based
       }
-      std::cout << std::endl;
+      std::cout << '\n';
     }
   }
 }
@@ -290,14 +293,14 @@ void Design::printBlockages() const
 {
   std::vector<std::vector<BoxT>> all_obstacles;
   getAllObstacles(all_obstacles, true);
-  std::cout << "design obstacles: " << all_obstacles.size() << std::endl;
+  std::cout << "design obstacles: " << all_obstacles.size() << '\n';
   for (int i = 0; i < all_obstacles.size(); i++) {
     std::cout << "obs in layer " << (i + 1) << ": " << all_obstacles[i].size()
-              << std::endl;
+              << '\n';
     for (const auto& obstacle : all_obstacles[i]) {
       std::cout << "  Obstacle on layer "
                 << (i + 1)  // adjust to 1-based layer index
-                << ": " << obstacle << std::endl;
+                << ": " << obstacle << '\n';
     }
   }
 }

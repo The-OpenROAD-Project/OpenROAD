@@ -13,10 +13,12 @@
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstBlockage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"
+#include "utl/Logger.h"
 #include "utl/algorithms.h"
 
 namespace drt {
@@ -35,7 +37,7 @@ struct frRegionQuery::Impl
   using ObjectsByLayer = std::vector<Objects<T>>;
 
   frDesign* design;
-  Logger* logger;
+  utl::Logger* logger;
   RouterConfiguration* router_cfg;
   // only for pin shapes, obs and snet
   RTreesByLayer<frBlockObject*> shapes;
@@ -78,7 +80,7 @@ struct frRegionQuery::Impl
 };
 
 frRegionQuery::frRegionQuery(frDesign* design,
-                             Logger* logger,
+                             utl::Logger* logger,
                              RouterConfiguration* router_cfg)
     : impl_(std::make_unique<Impl>())
 {

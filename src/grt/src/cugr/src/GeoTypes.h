@@ -1,8 +1,7 @@
 #pragma once
 #include <ostream>
 
-#include "CUGR.h"
-#include "odb/db.h"
+#include "geo.h"
 #include "odb/geom.h"
 
 namespace grt {

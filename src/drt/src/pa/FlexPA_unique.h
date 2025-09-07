@@ -9,8 +9,13 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frTrackPattern.h"
+#include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 
 namespace drt {
@@ -33,7 +38,7 @@ class UniqueInsts
   // those instances.
   UniqueInsts(frDesign* design,
               const frCollection<odb::dbInst*>& target_insts,
-              Logger* logger,
+              utl::Logger* logger,
               RouterConfiguration* router_cfg_);
 
   /**
@@ -155,7 +160,7 @@ class UniqueInsts
 
   frDesign* design_;
   const frCollection<odb::dbInst*>& target_insts_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 
   // All the unique instances

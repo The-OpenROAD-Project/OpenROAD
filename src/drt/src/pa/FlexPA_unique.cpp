@@ -9,15 +9,20 @@
 #include <set>
 #include <vector>
 
+#include "db/obj/frAccess.h"
+#include "db/obj/frInst.h"
+#include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 
 namespace drt {
 
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
-                         Logger* logger,
+                         utl::Logger* logger,
                          RouterConfiguration* router_cfg)
     : design_(design),
       target_insts_(target_insts),

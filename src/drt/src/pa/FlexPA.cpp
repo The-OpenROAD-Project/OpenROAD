@@ -30,6 +30,7 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "global.h"
 #include "odb/db.h"
 #include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
@@ -61,7 +62,7 @@ static inline void serializePatterns(
 }
 
 FlexPA::FlexPA(frDesign* in,
-               Logger* logger,
+               utl::Logger* logger,
                dst::Distributed* dist,
                RouterConfiguration* router_cfg)
     : design_(in),

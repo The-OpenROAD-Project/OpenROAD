@@ -10,6 +10,8 @@
 #include "CUGR.h"
 #include "Design.h"
 #include "GRTree.h"
+#include "Layers.h"
+#include "geo.h"
 #include "robin_hood.h"
 
 namespace grt {

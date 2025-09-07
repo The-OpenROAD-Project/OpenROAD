@@ -9,13 +9,18 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMarker.h"
+#include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "gc/FlexGC_impl.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
-                           Logger* logger,
+                           utl::Logger* logger,
                            RouterConfiguration* router_cfg,
                            FlexDRWorker* drWorkerIn)
     : impl_(
@@ -30,7 +35,7 @@ FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr, nullptr)
 }
 
 FlexGCWorker::Impl::Impl(frTechObject* techIn,
-                         Logger* logger,
+                         utl::Logger* logger,
                          RouterConfiguration* router_cfg,
                          FlexDRWorker* drWorkerIn,
                          FlexGCWorker* gcWorkerIn)

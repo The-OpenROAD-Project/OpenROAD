@@ -18,10 +18,16 @@
 #include "boost/serialization/unordered_map.hpp"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frMPin.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 #include "pa/FlexPA_unique.h"
 namespace gtl = boost::polygon;
@@ -85,7 +91,7 @@ class FlexPA
   };
 
   FlexPA(frDesign* in,
-         Logger* logger,
+         utl::Logger* logger,
          dst::Distributed* dist,
          RouterConfiguration* router_cfg);
   ~FlexPA();
@@ -104,7 +110,7 @@ class FlexPA
 
  private:
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
 

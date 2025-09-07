@@ -187,7 +187,8 @@ class GlobalRouter
   bool hasAvailableResources(bool is_horizontal,
                              const int& pos_x,
                              const int& pos_y,
-                             const int& layer_level);
+                             const int& layer_level,
+                             odb::dbNet* db_net);
   odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
@@ -198,7 +199,15 @@ class GlobalRouter
                        const int& final_x,
                        const int& final_y,
                        const int& layer_level,
-                       int used);
+                       int used,
+                       odb::dbNet* db_net);
+  void updateFastRouteGridsLayer(const int& init_x,
+                                 const int& init_y,
+                                 const int& final_x,
+                                 const int& final_y,
+                                 const int& layer_level,
+                                 const int& new_layer_level,
+                                 odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
@@ -353,6 +362,7 @@ class GlobalRouter
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
+  void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
                          int& root_idx);

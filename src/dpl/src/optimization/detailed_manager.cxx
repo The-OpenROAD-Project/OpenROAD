@@ -2778,6 +2778,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
       return false;
     }
     if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
+      paintInGrid(ndj);
       return false;
     }
     return true;
@@ -2876,6 +2877,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
     return false;
   }
   if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
+    paintInGrid(ndj);
     return false;
   }
   return true;

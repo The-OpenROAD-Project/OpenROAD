@@ -4,13 +4,9 @@
 #pragma once
 
 #include <cmath>
-#include <iostream>
-#include <map>
 #include <vector>
 
-#include "RoutingTracks.h"
 #include "boost/icl/interval.hpp"
-#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
@@ -25,12 +21,12 @@ class Grid
   ~Grid() = default;
 
   void init(const odb::Rect& die_area,
-            const int tile_size,
-            const int x_grids,
-            const int y_grids,
-            const bool perfect_regular_x,
-            const bool perfectR_rgular_y,
-            const int num_layers);
+            int tile_size,
+            int x_grids,
+            int y_grids,
+            bool perfect_regular_x,
+            bool perfectR_rgular_y,
+            int num_layers);
 
   void clear();
 
