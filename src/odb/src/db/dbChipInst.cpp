@@ -58,6 +58,7 @@ bool _dbChipInst::operator<(const _dbChipInst& rhs) const
 
 _dbChipInst::_dbChipInst(_dbDatabase* db)
 {
+  orient_ = dbOrientType::R0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj)

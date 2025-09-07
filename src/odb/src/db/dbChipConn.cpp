@@ -49,6 +49,7 @@ bool _dbChipConn::operator<(const _dbChipConn& rhs) const
 
 _dbChipConn::_dbChipConn(_dbDatabase* db)
 {
+  thickness_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipConn& obj)
