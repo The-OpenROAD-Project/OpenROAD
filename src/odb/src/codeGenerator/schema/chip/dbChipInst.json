@@ -14,9 +14,8 @@
     },
     {
       "name": "orient_",
-      "type": "dbOrientType::Value",
-      "flags": ["private" ,"cmpgt", "no-serial"],
-      "default": "dbOrientType::R0"
+      "type": "dbOrientType3D",
+      "flags": []
     },
     {
       "name": "master_chip_",

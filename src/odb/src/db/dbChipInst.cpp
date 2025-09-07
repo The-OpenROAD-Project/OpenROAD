@@ -58,13 +58,13 @@ bool _dbChipInst::operator<(const _dbChipInst& rhs) const
 
 _dbChipInst::_dbChipInst(_dbDatabase* db)
 {
-  orient_ = dbOrientType::R0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj)
 {
   stream >> obj.name_;
   stream >> obj.loc_;
+  stream >> obj.orient_;
   stream >> obj.master_chip_;
   stream >> obj.parent_chip_;
   stream >> obj.chipinst_next_;
@@ -78,6 +78,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipInst& obj)
 {
   stream << obj.name_;
   stream << obj.loc_;
+  stream << obj.orient_;
   stream << obj.master_chip_;
   stream << obj.parent_chip_;
   stream << obj.chipinst_next_;
@@ -116,6 +117,19 @@ Point3D dbChipInst::getLoc() const
   return obj->loc_;
 }
 
+void dbChipInst::setOrient(dbOrientType3D orient)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  obj->orient_ = orient;
+}
+
+dbOrientType3D dbChipInst::getOrient() const
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+  return obj->orient_;
+}
+
 dbChip* dbChipInst::getMasterChip() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
@@ -137,23 +151,13 @@ dbChip* dbChipInst::getParentChip() const
 }
 
 // User Code Begin dbChipInstPublicMethods
-void dbChipInst::setOrient(const dbOrientType& orient)
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-  obj->orient_ = orient;
-}
-
-dbOrientType dbChipInst::getOrient() const
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-  return obj->orient_;
-}
 
 dbTransform dbChipInst::getTransform() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   // TODO: Add 3d Point handling to the transform
-  return dbTransform(obj->orient_, Point(obj->loc_.x(), obj->loc_.y()));
+  return dbTransform(obj->orient_.getOrientType2D(),
+                     Point(obj->loc_.x(), obj->loc_.y()));
 }
 
 dbSet<dbChipRegionInst> dbChipInst::getRegions() const
@@ -219,8 +223,6 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
   // Initialize the chip instance
   chipinst->name_ = name;
   chipinst->loc_ = Point3D(0, 0, 0);  // Default location
-  chipinst->orient_
-      = dbOrientType::R0;  // Default orientation (already set in constructor)
   chipinst->master_chip_ = _master->getOID();
   chipinst->parent_chip_ = _parent->getOID();
 
