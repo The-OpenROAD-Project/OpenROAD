@@ -23,9 +23,10 @@ class frInst : public frRef
 {
  public:
   // constructors
-  frInst(const frString& name, frMaster* master, odb::dbInst* db_inst)
-      : name_(name), master_(master), db_inst_(db_inst)
+  frInst(frMaster* master, odb::dbInst* db_inst)
+      : name_(db_inst->getName()), master_(master), db_inst_(db_inst)
   {
+    updateFromDB();
   }
   // used for archive serialization
   frInst() : master_(nullptr), db_inst_(nullptr) {}
@@ -69,15 +70,16 @@ class frInst : public frRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return xform_.getOrient(); }
-  void setOrient(const dbOrientType& tmpOrient) override
+  void updateFromDB()
   {
-    xform_.setOrient(tmpOrient);
+    xform_.setOrient(db_inst_->getOrient());
+    int x, y;
+    db_inst_->getLocation(x, y);
+    xform_.setOffset(Point(x, y));
   }
+  dbOrientType getOrient() const override { return xform_.getOrient(); }
   Point getOrigin() const override { return xform_.getOffset(); }
-  void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
   dbTransform getTransform() const override { return xform_; }
-  void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
   odb::dbInst* getDBInst() const { return db_inst_; }
   dbTransform getDBTransform() const { return db_inst_->getTransform(); }
 

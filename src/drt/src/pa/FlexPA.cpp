@@ -125,7 +125,11 @@ void FlexPA::addInst(frInst* inst)
 
 void FlexPA::deleteInst(frInst* inst)
 {
-  const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  auto head = unique_insts_.getUnique(inst);
+  if (!head) {
+    return;
+  }
+  const bool is_class_head = inst == head;
   // if inst is the class head the new head will be returned by deleteInst()
   UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   frInst* class_head = unique_insts_.deleteInst(inst);

@@ -1169,15 +1169,12 @@ void FlexDRWorker::initNet_term(const frDesign* design,
 {
   for (auto term : terms) {
     // ap
-    // TODO is instXform used properly here?
-    dbTransform instXform;  // (0,0), R0
     dbTransform shiftXform;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
         shiftXform = inst->getNoRotationTransform();
-        instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
