@@ -228,6 +228,9 @@ dbOrientType3D::dbOrientType3D(const dbOrientType& orient, bool mirror_z)
 
 std::string dbOrientType3D::getString() const
 {
+  if (mirror_z_ && getOrientType2D() == dbOrientType::R0) {
+    return "MZ";
+  }
   std::string orient_2d_str = getOrientType2D().getString();
   if (orient_2d_str == "MXR90") {
     orient_2d_str = "MX_R90";
