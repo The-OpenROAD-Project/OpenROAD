@@ -34,7 +34,7 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
   } else {
     if (data.header.precision > db_->getDbuPerMicron()) {
       logger_->error(utl::ODB,
-                     515,
+                     526,
                      "3DBV Parser Error: Precision is greater than dbu per "
                      "micron already set for database");
     } else if (db_->getDbuPerMicron() % data.header.precision != 0) {
@@ -108,7 +108,7 @@ dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
     return dbChip::ChipType::HIER;
   }
   logger->error(
-      utl::ODB, 517, "3DBV Parser Error: Invalid chip type: {}", type);
+      utl::ODB, 527, "3DBV Parser Error: Invalid chip type: {}", type);
 }
 void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 {
@@ -150,7 +150,7 @@ dbChipRegion::Side getChipRegionSide(const std::string& side,
     return dbChipRegion::Side::INTERNAL_EXT;
   }
   logger->error(
-      utl::ODB, 518, "3DBV Parser Error: Invalid chip region side: {}", side);
+      utl::ODB, 528, "3DBV Parser Error: Invalid chip region side: {}", side);
 }
 void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
 {

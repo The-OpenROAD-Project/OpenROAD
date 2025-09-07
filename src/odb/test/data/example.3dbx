@@ -39,3 +39,7 @@ Connection:
     top: soc_inst_duplicate.regions.r1
     bot: soc_inst.regions.r1
     thickness: 2.0
+  soc_to_virtual:
+    top: soc_inst_duplicate.regions.r1
+    bot: ~
+    thickness: 0.0

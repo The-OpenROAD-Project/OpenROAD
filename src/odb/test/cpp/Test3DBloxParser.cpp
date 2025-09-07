@@ -101,14 +101,27 @@ BOOST_FIXTURE_TEST_CASE(test_3dbx, F_DBV_PARSER)
                     300.0 * db->getDbuPerMicron());
   BOOST_CHECK_EQUAL(soc_inst_duplicate->getOrient().getString(), "MZ");
   auto connections = db->getChipConns();
-  BOOST_CHECK_EQUAL(connections.size(), 1);
-  auto connection = *connections.begin();
+  BOOST_CHECK_EQUAL(connections.size(), 2);
+  auto itr = connections.begin();
+  auto connection = *itr++;
   BOOST_CHECK_EQUAL(connection->getName(), "soc_to_soc");
   BOOST_CHECK_EQUAL(connection->getTopRegion()->getChipInst()->getName(),
                     "soc_inst_duplicate");
   BOOST_CHECK_EQUAL(connection->getBottomRegion()->getChipInst()->getName(),
                     "soc_inst");
   BOOST_CHECK_EQUAL(connection->getThickness(), 2.0 * db->getDbuPerMicron());
+  connection = *itr;
+  BOOST_CHECK_EQUAL(connection->getName(), "soc_to_virtual");
+  BOOST_CHECK_EQUAL(connection->getTopRegion()->getChipInst()->getName(),
+                    "soc_inst_duplicate");
+  BOOST_CHECK_EQUAL(connection->getTopRegionPath().size(), 1);
+  BOOST_CHECK_EQUAL(connection->getTopRegionPath()[0]->getName(),
+                    "soc_inst_duplicate");
+  BOOST_CHECK_EQUAL(connection->getTopRegion()->getChipRegion()->getName(),
+                    "r1");
+  BOOST_CHECK_EQUAL(connection->getBottomRegionPath().size(), 0);
+  BOOST_CHECK_EQUAL(connection->getBottomRegion(), nullptr);
+  BOOST_CHECK_EQUAL(connection->getThickness(), 0.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
