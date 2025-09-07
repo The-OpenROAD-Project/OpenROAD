@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE Test3DBVParser
+#define BOOST_TEST_MODULE Test3DBloxParser
 #include <iostream>
 #include <string>
 
@@ -92,12 +92,14 @@ BOOST_FIXTURE_TEST_CASE(test_3dbx, F_DBV_PARSER)
   BOOST_CHECK_EQUAL(soc_inst->getLoc().x(), 100.0 * db->getDbuPerMicron());
   BOOST_CHECK_EQUAL(soc_inst->getLoc().y(), 200.0 * db->getDbuPerMicron());
   BOOST_CHECK_EQUAL(soc_inst->getLoc().z(), 0.0);
+  BOOST_CHECK_EQUAL(soc_inst->getOrient().getString(), "R0");
   BOOST_CHECK_EQUAL(soc_inst_duplicate->getLoc().x(),
                     100.0 * db->getDbuPerMicron());
   BOOST_CHECK_EQUAL(soc_inst_duplicate->getLoc().y(),
                     200.0 * db->getDbuPerMicron());
   BOOST_CHECK_EQUAL(soc_inst_duplicate->getLoc().z(),
                     300.0 * db->getDbuPerMicron());
+  BOOST_CHECK_EQUAL(soc_inst_duplicate->getOrient().getString(), "MZ");
   auto connections = db->getChipConns();
   BOOST_CHECK_EQUAL(connections.size(), 1);
   auto connection = *connections.begin();

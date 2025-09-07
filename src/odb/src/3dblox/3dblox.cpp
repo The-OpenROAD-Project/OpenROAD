@@ -9,6 +9,17 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 namespace odb {
+
+static std::map<std::string, std::string> dup_orient_map
+    = {{"MY_R180", "MX"},
+       {"MY_R270", "MX_R90"},
+       {"MX_R180", "MY"},
+       {"MX_R180", "MY_R90"},
+       {"MZ_MY_R180", "MZ_MX"},
+       {"MZ_MY_R270", "MZ_MX_R90"},
+       {"MZ_MX_R180", "MZ_MY"},
+       {"MZ_MX_R270", "MZ_MY_R90"}};
+
 ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db)
     : logger_(logger), db_(db)
 {
@@ -186,7 +197,19 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   inst->setLoc(Point3D(chip_inst.loc.x * db_->getDbuPerMicron(),
                        chip_inst.loc.y * db_->getDbuPerMicron(),
                        chip_inst.z * db_->getDbuPerMicron()));
-  // TODO: set orient
+  auto orient_str = chip_inst.orient;
+  if (dup_orient_map.find(orient_str) != dup_orient_map.end()) {
+    orient_str = dup_orient_map[orient_str];
+  }
+  auto orient = dbOrientType3D::fromString(orient_str);
+  if (!orient.has_value()) {
+    logger_->error(utl::ODB,
+                   525,
+                   "3DBX Parser Error: Invalid orient {} for chip inst {}",
+                   chip_inst.orient,
+                   chip_inst.name);
+  }
+  inst->setOrient(orient.value());
 }
 std::vector<std::string> splitPath(const std::string& path)
 {
