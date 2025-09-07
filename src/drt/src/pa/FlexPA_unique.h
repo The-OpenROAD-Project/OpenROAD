@@ -28,7 +28,7 @@ struct UniqueClassKey
   frInst* ndr_inst{nullptr};
 
   UniqueClassKey(frMaster* master_in,
-                 dbOrientType orient_in,
+                 const dbOrientType& orient_in,
                  std::vector<frCoord> offsets_in,
                  frInst* ndr_inst_in = nullptr)
       : master(master_in),

@@ -157,7 +157,7 @@ void FlexPA::initAllSkipInstTerm()
 void FlexPA::initSkipInstTerm(UniqueClass* unique_class)
 {
   for (const auto& term : unique_class->getMaster()->getTerms()) {
-        bool skip = true;
+    bool skip = true;
     for (const auto& inst : unique_class->getInsts()) {
       auto inst_term = inst->getInstTerm(term->getIndexInOwner());
       skip = isSkipInstTermLocal(inst_term);
