@@ -39,6 +39,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
@@ -257,7 +258,7 @@ class Fixture
                                       frCoord within,
                                       frCoord spc);
   // Public data members are accessible from inside the test function
-  std::unique_ptr<Logger> logger;
+  std::unique_ptr<utl::Logger> logger;
   std::unique_ptr<RouterConfiguration> router_cfg;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;

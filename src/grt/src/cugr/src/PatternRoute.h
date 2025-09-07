@@ -6,7 +6,10 @@
 #include <vector>
 
 #include "CUGR.h"
+#include "Design.h"
 #include "GRNet.h"
+#include "GRTree.h"
+#include "GridGraph.h"
 #include "geo.h"
 
 namespace grt {

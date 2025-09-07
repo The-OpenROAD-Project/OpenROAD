@@ -6,6 +6,7 @@
 #include "GeoTypes.h"
 #include "Layers.h"
 #include "Netlist.h"
+#include "geo.h"
 
 namespace odb {
 class dbDatabase;

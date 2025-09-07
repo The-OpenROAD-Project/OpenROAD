@@ -23,7 +23,7 @@ void GRTreeNode::print(const std::shared_ptr<GRTreeNode>& node)
     for (auto& child : node->children) {
       std::cout << *child << (child == node->children.back() ? "" : ", ");
     }
-    std::cout << std::endl;
+    std::cout << '\n';
   });
 }
 

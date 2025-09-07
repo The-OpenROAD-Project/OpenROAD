@@ -252,7 +252,7 @@ class frTechObject
     }
   }
 
-  void printDefaultVias(Logger* logger, RouterConfiguration* router_cfg)
+  void printDefaultVias(utl::Logger* logger, RouterConfiguration* router_cfg)
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers_) {

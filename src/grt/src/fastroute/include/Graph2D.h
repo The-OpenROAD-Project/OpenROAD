@@ -78,6 +78,11 @@ class Graph2D
                                bool stop_decreasing,
                                int& max_adj);
   void str_accu(int rnd);
+  void saveResources(int x, int y, bool is_horizontal);
+  bool computeSuggestedAdjustment(int x,
+                                  int y,
+                                  bool is_horizontal,
+                                  int& adjustment);
 
   void updateEstUsageH(const Interval& xi, int y, FrNet* net, double usage);
   void updateEstUsageH(int x, int y, FrNet* net, double usage);

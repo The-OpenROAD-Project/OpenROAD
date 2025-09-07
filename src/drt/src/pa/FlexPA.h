@@ -91,7 +91,7 @@ class FlexPA
   };
 
   FlexPA(frDesign* in,
-         Logger* logger,
+         utl::Logger* logger,
          dst::Distributed* dist,
          RouterConfiguration* router_cfg);
   ~FlexPA();
@@ -110,7 +110,7 @@ class FlexPA
 
  private:
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
 

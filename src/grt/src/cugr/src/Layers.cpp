@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 
+#include "geo.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 

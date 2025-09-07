@@ -16,7 +16,12 @@
 #include <utility>
 #include <vector>
 
+#include "CUGR.h"
+#include "Design.h"
 #include "GRNet.h"
+#include "GRTree.h"
+#include "geo.h"
+#include "robin_hood.h"
 
 namespace grt {
 
@@ -747,16 +752,16 @@ void GridGraph::write(const std::string& heatmap_file) const
   printf("writing heatmap to file...");
   std::stringstream ss;
 
-  ss << num_layers_ << " " << x_size_ << " " << y_size_ << " " << std::endl;
+  ss << num_layers_ << " " << x_size_ << " " << y_size_ << '\n';
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
-    ss << layer_names_[layer_index] << std::endl;
+    ss << layer_names_[layer_index] << '\n';
     for (int y = 0; y < y_size_; y++) {
       for (int x = 0; x < x_size_; x++) {
         ss << (graph_edges_[layer_index][x][y].capacity
                - graph_edges_[layer_index][x][y].demand)
            << (x == x_size_ - 1 ? "" : " ");
       }
-      ss << std::endl;
+      ss << '\n';
     }
   }
   std::ofstream fout(heatmap_file);

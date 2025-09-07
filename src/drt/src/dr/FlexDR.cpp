@@ -101,7 +101,7 @@ void serializeViaData(const FlexDRViaData& viaData, std::string& serializedStr)
 
 FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
-               Logger* loggerIn,
+               utl::Logger* loggerIn,
                odb::dbDatabase* dbIn,
                RouterConfiguration* router_cfg)
     : router_(router),
@@ -603,7 +603,9 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
 }
 
 namespace {
-void printIteration(Logger* logger, const int iter, const bool stubborn_flow)
+void printIteration(utl::Logger* logger,
+                    const int iter,
+                    const bool stubborn_flow)
 {
   std::string suffix;
   if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -623,7 +625,7 @@ void printIteration(Logger* logger, const int iter, const bool stubborn_flow)
                stubborn_flow ? "stubborn tiles" : "optimization");
 }
 
-void printIterationProgress(Logger* logger,
+void printIterationProgress(utl::Logger* logger,
                             FlexDR::IterationProgress& iter_prog,
                             const int num_markers,
                             const int max_perc = 90)

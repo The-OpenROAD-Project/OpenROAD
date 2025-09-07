@@ -78,7 +78,7 @@ class FlexGCWorker::Impl
   // constructors
   Impl();  // for serialization
   Impl(frTechObject* techIn,
-       Logger* logger,
+       utl::Logger* logger,
        RouterConfiguration* router_cfg,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
@@ -126,7 +126,7 @@ class FlexGCWorker::Impl
 
  private:
   frTechObject* tech_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
   FlexDRWorker* drWorker_;
 

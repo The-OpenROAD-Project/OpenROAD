@@ -14,6 +14,11 @@
 #include <utility>
 #include <vector>
 
+#include "Design.h"
+#include "GRTree.h"
+#include "GridGraph.h"
+#include "Layers.h"
+#include "geo.h"
 #include "robin_hood.h"
 #include "stt/SteinerTreeBuilder.h"
 

@@ -48,7 +48,7 @@ namespace drt {
 
 io::Parser::Parser(odb::dbDatabase* dbIn,
                    frDesign* designIn,
-                   Logger* loggerIn,
+                   utl::Logger* loggerIn,
                    RouterConfiguration* router_cfg)
     : db_(dbIn),
       design_(designIn),
