@@ -310,7 +310,6 @@ read_def_cmd(const char *filename,
              odb::dbChip* chip)
 {
   OpenRoad *ord = getOpenRoad();
-  auto* db = ord->getDb();
   ord->readDef(filename, chip, continue_on_errors,
                floorplan_init, incremental);
 }

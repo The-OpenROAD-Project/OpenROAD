@@ -611,7 +611,7 @@ dbChip* dbChip::create(dbDatabase* db_,
     chip->tech_ = tech->getId();
   } else if (type == ChipType::DIE) {
     chip->getLogger()->error(
-        utl::ODB, 400, "Cannot create DIE chip without technology");
+        utl::ODB, 422, "Cannot create DIE chip without technology");
   }
   return (dbChip*) chip;
 }

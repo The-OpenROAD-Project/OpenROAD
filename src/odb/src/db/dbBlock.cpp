@@ -1072,8 +1072,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
 
   if (db->isSchema(db_schema_block_tech)
       && !db->isSchema(db_schema_chip_tech)) {
-    dbBlock* block = (dbBlock*) &block;
-    _dbChip* chip = (_dbChip*) block->getChip();
+    _dbChip* chip = db->chip_tbl_->getPtr(block._chip);
     chip->tech_ = old_db_tech;
   }
 
