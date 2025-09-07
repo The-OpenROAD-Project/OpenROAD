@@ -189,7 +189,7 @@ bool dbOrientType::isRightAngleRotation() const
 }
 
 std::optional<dbOrientType3D> dbOrientType3D::fromString(
-    const std::string orient)
+    const std::string& orient)
 {
   std::string orient_str = orient;
   bool mirror_z = false;
@@ -208,7 +208,7 @@ std::optional<dbOrientType3D> dbOrientType3D::fromString(
   return dbOrientType3D(opt.value(), mirror_z);
 }
 
-dbOrientType3D::dbOrientType3D(const char* orient)
+dbOrientType3D::dbOrientType3D(const std::string& orient)
 {
   auto opt = fromString(orient);
   if (opt.has_value()) {

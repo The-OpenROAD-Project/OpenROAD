@@ -102,11 +102,9 @@ class dbOrientType
 class dbOrientType3D
 {
  public:
-  static std::optional<dbOrientType3D> fromString(const std::string orient);
+  static std::optional<dbOrientType3D> fromString(const std::string& orient);
 
-  dbOrientType3D(const std::string orient);
-
-  dbOrientType3D(const char* orient);
+  dbOrientType3D(const std::string& orient);
 
   ///
   /// Create a dbOrientType3D instance with an explicit orientation.
