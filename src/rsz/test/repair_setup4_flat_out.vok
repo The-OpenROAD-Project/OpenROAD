@@ -9,7 +9,6 @@ module reg1 (clk);
  wire u5z;
  wire net1;
  wire net2;
- wire net3;
 
  DFF_X1 r1 (.CK(clk),
     .Q(r1q));
@@ -40,10 +39,8 @@ module reg1 (clk);
     .Z(u4z));
  BUF_X1 u5 (.A(u4z),
     .Z(u5z));
- BUF_X4 rebuffer1 (.A(net3),
+ BUF_X4 rebuffer1 (.A(r1q),
     .Z(net1));
  BUF_X1 split2 (.A(net1),
     .Z(net2));
- BUF_X2 rebuffer3 (.A(r1q),
-    .Z(net3));
 endmodule

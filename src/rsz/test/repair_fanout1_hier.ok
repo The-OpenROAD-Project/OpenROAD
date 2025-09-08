@@ -35,9 +35,9 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000003 HPWL: 24732
 Placement Analysis
 ---------------------------------
-total displacement        283.5 u
+total displacement        283.4 u
 average displacement        7.9 u
-max displacement           13.2 u
+max displacement           13.7 u
 original HPWL               2.3 u
 legalized HPWL             62.4 u
 delta HPWL                 2562 %

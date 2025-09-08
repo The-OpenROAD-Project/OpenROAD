@@ -77,7 +77,7 @@ delta HPWL                    0 %
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 17
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 17.16 um
+[INFO CTS-0101]  Average sink wire length 17.12 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 1
 No differences found.
