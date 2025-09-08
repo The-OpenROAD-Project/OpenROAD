@@ -68,7 +68,7 @@ class SimulatedAnnealingCore
   void setGuides(const std::map<int, Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
-  bool isValid() const;
+  virtual bool isValid() const;
   bool fitsIn(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
@@ -102,6 +102,7 @@ class SimulatedAnnealingCore
   };
 
   void fastSA();
+  bool resultFitsInOutline() const;
 
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);

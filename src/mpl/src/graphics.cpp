@@ -149,6 +149,7 @@ void Graphics::report(const float norm_cost)
   report(guidance_penalty_);
   report(boundary_penalty_);
   report(macro_blockage_penalty_);
+  report(fixed_macros_penalty_);
   report(notch_penalty_);
   report(std::optional<PenaltyData>({"Total", 1.0f, norm_cost, 1.0f}));
 }
@@ -272,6 +273,11 @@ void Graphics::setNotchPenalty(const PenaltyData& penalty)
 void Graphics::setMacroBlockagePenalty(const PenaltyData& penalty)
 {
   macro_blockage_penalty_ = penalty;
+}
+
+void Graphics::setFixedMacrosPenalty(const PenaltyData& penalty)
+{
+  fixed_macros_penalty_ = penalty;
 }
 
 void Graphics::setBoundaryPenalty(const PenaltyData& penalty)
