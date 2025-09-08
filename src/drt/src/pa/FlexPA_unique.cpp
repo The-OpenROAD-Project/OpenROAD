@@ -54,7 +54,12 @@ bool UniqueClass::isSkipTerm(frMTerm* term) const
 
 void UniqueClass::setSkipTerm(frMTerm* term, bool skip)
 {
-  skip_term_[term] = skip;
+  auto it = skip_term_.find(term);
+  if (it == skip_term_.end()) {
+    skip_term_[term] = skip;
+  } else {
+    it->second &= skip;
+  }
 }
 
 UniqueInsts::UniqueInsts(frDesign* design,

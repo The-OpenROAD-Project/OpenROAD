@@ -1356,6 +1356,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   if (pin->getPinAccess(pin_access_idx)->getNumAccessPoints() > 0) {
     pin->getPinAccess(pin_access_idx)->clearAccessPoints();
   }
+
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
@@ -1450,6 +1451,12 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // write to pa
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
+  }
+  if (inst_term) {
+    logger_->report("inst_term {} pin_access_idx {} aps.size() {}",
+                    inst_term->getName(),
+                    pin_access_idx,
+                    aps.size());
   }
   return aps.size();
 }

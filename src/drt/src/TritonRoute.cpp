@@ -1106,10 +1106,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
 void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
 {
   if (pa_) {
-    pa_->removeFromInstsSet(inst);
     if (delete_inst) {
-      pa_->removeDirtyInst(inst);
-      pa_->removeMovedInst(inst);
       pa_->deleteInst(inst);
     }
   }
@@ -1119,9 +1116,6 @@ void TritonRoute::addInstancePAData(frInst* inst, bool move_inst)
 {
   if (pa_) {
     pa_->addDirtyInst(inst);
-    if (move_inst) {
-      pa_->addMovedInst(inst);
-    }
   }
 }
 

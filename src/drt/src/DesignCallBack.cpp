@@ -43,7 +43,6 @@ void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->removeBlockObj(inst);
   }
-  router_->deleteInstancePAData(inst, false);
 }
 
 void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
