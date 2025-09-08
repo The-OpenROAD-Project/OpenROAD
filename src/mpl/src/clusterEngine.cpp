@@ -41,6 +41,7 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
 
 void ClusteringEngine::run()
 {
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
   init();
 
   if (!tree_->has_unfixed_macros) {
@@ -86,9 +87,6 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 // initialize the tree with data from the design.
 void ClusteringEngine::init()
 {
-  setFloorplanShape();
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
-
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
@@ -97,6 +95,7 @@ void ClusteringEngine::init()
   }
 
   setDieArea();
+  setFloorplanShape();
   searchForFixedInstsInsideFloorplanShape();
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
@@ -197,8 +196,6 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   float macro_area = 0.0;
 
   const odb::Rect& core = block_->getCoreArea();
-  const odb::Rect macro_placement_area
-      = micronsToDbu(block_, tree_->floorplan_shape);
 
   for (odb::dbInst* inst : module->getInsts()) {
     if (isIgnoredInst(inst)) {
@@ -207,16 +204,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 
     float inst_area = computeMicronArea(inst);
 
-    if (inst->isBlock()) {
-      if (inst->isFixed()) {
-        const odb::Rect inst_box = inst->getBBox()->getBox();
-        if (!macro_placement_area.contains(inst_box)) {
-          continue;
-        }
-
-        tree_->has_fixed_macros = true;
-      }
-
+    if (inst->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
 
@@ -233,6 +221,10 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
             "Found macro that does not fit in the core.\nName: {}\n{}",
             inst->getName(),
             generateMacroAndCoreDimensionsTable(macro.get(), core));
+      }
+
+      if (macro->isFixed()) {
+        tree_->has_fixed_macros = true;
       }
 
       tree_->maps.inst_to_hard[inst] = std::move(macro);
@@ -889,7 +881,8 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
 bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
 {
   odb::dbMaster* master = inst->getMaster();
-  return master->isPad() || master->isCover() || master->isEndCap();
+  return master->isPad() || master->isCover() || master->isEndCap()
+         || inst->getITerms().empty();
 }
 
 // Forward or Backward DFS search to find sequential paths from/to IO pins based
