@@ -130,6 +130,9 @@ dbChipRegionInst* dbChipConn::getBottomRegion() const
 {
   _dbChipConn* obj = (_dbChipConn*) this;
   _dbDatabase* _db = (_dbDatabase*) obj->getOwner();
+  if (!obj->bottom_region_.isValid()) {
+    return nullptr;
+  }
   return (dbChipRegionInst*) _db->chip_region_inst_tbl_->getPtr(
       obj->bottom_region_);
 }
@@ -191,23 +194,40 @@ dbChipConn* dbChipConn::create(
     const std::vector<dbChipInst*>& bottom_region_path,
     dbChipRegionInst* bottom_region)
 {
-  _dbDatabase* _db = (_dbDatabase*) top_region->getImpl()->getOwner();
-  if (parent_chip == nullptr || top_region_path.empty()
-      || bottom_region_path.empty() || top_region == nullptr
-      || bottom_region == nullptr) {
+  if (parent_chip == nullptr) {
     return nullptr;
+  }
+  _dbDatabase* _db = (_dbDatabase*) parent_chip->getImpl()->getOwner();
+  if (top_region == nullptr || top_region_path.empty()) {
+    _db->getLogger()->error(utl::ODB,
+                            511,
+                            "Cannot create chip connection {}. Top region is "
+                            "not specified correctly",
+                            name);
   }
   if (top_region->getChipInst() != top_region_path.back()) {
     _db->getLogger()->error(utl::ODB,
-                            511,
-                            "Cannot create chip connection. Top region path "
-                            "does not match top region");
+                            515,
+                            "Cannot create chip connection {}. Top region path "
+                            "does not match top region",
+                            name);
   }
-  if (bottom_region->getChipInst() != bottom_region_path.back()) {
-    _db->getLogger()->error(utl::ODB,
-                            512,
-                            "Cannot create chip connection. Bottom region path "
-                            "does not match bottom region");
+  if (bottom_region != nullptr && bottom_region_path.empty()) {
+    _db->getLogger()->error(
+        utl::ODB,
+        517,
+        "Cannot create chip connection {}. Bottom region path "
+        "is empty for non-empty bottom region",
+        name);
+  }
+  if (bottom_region != nullptr
+      && bottom_region->getChipInst() != bottom_region_path.back()) {
+    _db->getLogger()->error(
+        utl::ODB,
+        518,
+        "Cannot create chip connection {}. Bottom region path "
+        "does not match bottom region",
+        name);
   }
   _dbChipConn* obj = (_dbChipConn*) _db->chip_conn_tbl_->create();
   _dbChip* chip = (_dbChip*) parent_chip;
@@ -215,10 +235,14 @@ dbChipConn* dbChipConn::create(
   obj->thickness_ = 0;
   obj->chip_ = chip->getOID();
   obj->top_region_ = top_region->getImpl()->getOID();
-  obj->bottom_region_ = bottom_region->getImpl()->getOID();
+  if (bottom_region != nullptr) {
+    obj->bottom_region_ = bottom_region->getImpl()->getOID();
+  }
   obj->top_region_path_ = extractChipInstsPath(parent_chip, top_region_path);
-  obj->bottom_region_path_
-      = extractChipInstsPath(parent_chip, bottom_region_path);
+  if (bottom_region != nullptr) {
+    obj->bottom_region_path_
+        = extractChipInstsPath(parent_chip, bottom_region_path);
+  }
 
   obj->chip_conn_next_ = chip->conns_;
   chip->conns_ = obj->getOID();
