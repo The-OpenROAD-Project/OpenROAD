@@ -1326,9 +1326,9 @@ NetRouteMap FastRouteCore::run()
         if (i % 2 == 0) {
           logistic_coef += 0.5;
         }
-        if (i > 40) {
-          break;
-        }
+        // if (i > 40) {
+        //   break;
+        // }
       }
       if (i > 10) {
         ripup_threshold = 0;
@@ -1483,10 +1483,6 @@ NetRouteMap FastRouteCore::run()
       if (bmfl < 30 && bwcnt > 50) {
         break;
       }
-      if (i >= mazeRound) {
-        getOverflow2Dmaze(&maxOverflow, &tUsage);
-        break;
-      }
     }
 
     if (i >= mazeRound) {
@@ -1517,19 +1513,19 @@ NetRouteMap FastRouteCore::run()
     }
 
     // Try disabling NDR nets to fix congestion
-    if (total_overflow_ > 0 && i == overflow_iterations_) {
-      logger_->report(">>> Trying disabling NDR nets <<<");
-
+    if (total_overflow_ > 0
+        && (i == overflow_iterations_
+            || overflow_increases == max_overflow_increases)) {
       // Compute all the NDR nets involved in congestion
       computeCongestedNDRnets();
 
       // Select one NDR net to be disabled
       int net_id = graph2d_.getOneCongestedNDRnet();
 
-      if (net_id == -1) {  // The list is empty
-        logger_->report(">>> ERROR: There is no NDR net in the list <<<");
-      } else {
-        logger_->report(">>> Chosen NDR net {} <<<", nets_[net_id]->getName());
+      // If net_id == -1, there is no NDR net involved in congestion
+      if (net_id != -1) {
+        logger_->warn(
+            GRT, 273, "Disabling NDR net {}", nets_[net_id]->getName());
 
         // Remove the usage of all the edges involved with this net
         updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
@@ -1693,8 +1689,11 @@ void FastRouteCore::computeCongestedNDRnets()
     if (num_congested_edges > 0) {
       // Include the NDR net in the list
       graph2d_.addCongestedNDRnet(net_id, num_congested_edges);
-      logger_->report(
-          "Congested NDR net: {} Edges: {}", net->getName(), num_congested_edges);
+      if (logger_->debugCheck(GRT, "softNDR", 1)) {
+        logger_->report("Congested NDR net: {} Edges: {}",
+                        net->getName(),
+                        num_congested_edges);
+      }
     }
   }
 
