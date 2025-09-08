@@ -204,8 +204,8 @@ NetRouteMap CUGR::getRoutes()
           routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
             for (const auto& child : node->children) {
               if (node->getLayerIdx() == child->getLayerIdx()) {
-                auto [min_x, max_x] = std::minmax(node->x, child->x);
-                auto [min_y, max_y] = std::minmax(node->y, child->y);
+                auto [min_x, max_x] = std::minmax(node->x(), child->x());
+                auto [min_y, max_y] = std::minmax(node->y(), child->y());
                 GSegment segment(
                     grid_graph_->getGridline(0, min_x) + half_gcell_size,
                     grid_graph_->getGridline(1, min_y) + half_gcell_size,
@@ -223,11 +223,11 @@ NetRouteMap CUGR::getRoutes()
                 for (int layer_idx = bottom_layer; layer_idx < top_layer;
                      layer_idx++) {
                   GSegment segment(
-                      grid_graph_->getGridline(0, node->x) + half_gcell_size,
-                      grid_graph_->getGridline(1, node->y) + half_gcell_size,
+                      grid_graph_->getGridline(0, node->x()) + half_gcell_size,
+                      grid_graph_->getGridline(1, node->y()) + half_gcell_size,
                       layer_idx + 1,
-                      grid_graph_->getGridline(0, node->x) + half_gcell_size,
-                      grid_graph_->getGridline(1, node->y) + half_gcell_size,
+                      grid_graph_->getGridline(0, node->x()) + half_gcell_size,
+                      grid_graph_->getGridline(1, node->y()) + half_gcell_size,
                       layer_idx + 2,
                       true);
                   route.push_back(segment);
@@ -266,10 +266,10 @@ void CUGR::getGuides(const GRNet* net,
         for (const auto& child : node->children) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             guides.emplace_back(node->getLayerIdx(),
-                                BoxT(std::min(node->x, child->x),
-                                     std::min(node->y, child->y),
-                                     std::max(node->x, child->x),
-                                     std::max(node->y, child->y)));
+                                BoxT(std::min(node->x(), child->x()),
+                                     std::min(node->y(), child->y()),
+                                     std::max(node->x(), child->x()),
+                                     std::max(node->y(), child->y())));
           } else {
             int maxLayerIndex
                 = std::max(node->getLayerIdx(), child->getLayerIdx());
@@ -277,7 +277,7 @@ void CUGR::getGuides(const GRNet* net,
                  = std::min(node->getLayerIdx(), child->getLayerIdx());
                  layerIdx <= maxLayerIndex;
                  layerIdx++) {
-              guides.emplace_back(layerIdx, BoxT(node->x, node->y));
+              guides.emplace_back(layerIdx, BoxT(node->x(), node->y()));
             }
           }
         }
@@ -287,18 +287,18 @@ void CUGR::getGuides(const GRNet* net,
     double resource = std::numeric_limits<double>::max();
     unsigned direction = grid_graph_->getLayerDirection(point.getLayerIdx());
     if (point[direction] + 1 < grid_graph_->getSize(direction)) {
-      resource
-          = std::min(resource,
-                     grid_graph_->getEdge(point.getLayerIdx(), point.x, point.y)
-                         .getResource());
+      resource = std::min(
+          resource,
+          grid_graph_->getEdge(point.getLayerIdx(), point.x(), point.y())
+              .getResource());
     }
     if (point[direction] > 0) {
       GRPoint lower = point;
       lower[direction] -= 1;
-      resource
-          = std::min(resource,
-                     grid_graph_->getEdge(lower.getLayerIdx(), point.x, point.y)
-                         .getResource());
+      resource = std::min(
+          resource,
+          grid_graph_->getEdge(lower.getLayerIdx(), point.x(), point.y())
+              .getResource());
     }
     return resource;
   };
@@ -309,7 +309,7 @@ void CUGR::getGuides(const GRNet* net,
     for (auto& gpt : gpts) {
       if (gpt.getLayerIdx() < constants_.min_routing_layer) {
         int padding = 0;
-        if (getSpareResource({constants_.min_routing_layer, gpt.x, gpt.y})
+        if (getSpareResource({constants_.min_routing_layer, gpt.x(), gpt.y()})
             < constants_.pin_patch_threshold) {
           padding = constants_.pin_patch_padding;
         }
@@ -318,10 +318,11 @@ void CUGR::getGuides(const GRNet* net,
              layerIdx++) {
           guides.emplace_back(
               layerIdx,
-              BoxT(std::max(gpt.x - padding, 0),
-                   std::max(gpt.y - padding, 0),
-                   std::min(gpt.x + padding, (int) grid_graph_->getSize(0) - 1),
-                   std::min(gpt.y + padding,
+              BoxT(std::max(gpt.x() - padding, 0),
+                   std::max(gpt.y() - padding, 0),
+                   std::min(gpt.x() + padding,
+                            (int) grid_graph_->getSize(0) - 1),
+                   std::min(gpt.y() + padding,
                             (int) grid_graph_->getSize(1) - 1)));
           area_of_pin_patches_ += (guides.back().second.x.range() + 1)
                                   * (guides.back().second.y.range() + 1);
@@ -354,8 +355,9 @@ void CUGR::getGuides(const GRNet* net,
                       || layerIndex >= grid_graph_->getNumLayers()) {
                     continue;
                   }
-                  if (getSpareResource({layerIndex, point.x, point.y}) >= 1.0) {
-                    guides.emplace_back(layerIndex, BoxT(point.x, point.y));
+                  if (getSpareResource({layerIndex, point.x(), point.y()})
+                      >= 1.0) {
+                    guides.emplace_back(layerIndex, BoxT(point.x(), point.y()));
                     area_of_wire_patches_ += 1;
                     patched = true;
                   }
