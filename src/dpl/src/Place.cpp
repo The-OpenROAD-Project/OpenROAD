@@ -690,10 +690,106 @@ int Opendp::distChange(const Node* cell, const DbuX x, const DbuY y) const
 
 ////////////////////////////////////////////////////////////////
 
+PixelPt Opendp::searchNearestSiteOG(const Node* cell,
+                                  const GridX x,
+                                  const GridY y) const
+{
+  // Diamond search limits.
+  GridX x_min = x - max_displacement_x_;
+  GridX x_max = x + max_displacement_x_;
+  GridY y_min = y - max_displacement_y_;
+  GridY y_max = y + max_displacement_y_;
+
+  // Restrict search to group boundary.
+  Group* group = cell->getGroup();
+  if (group) {
+    // Map boundary to grid staying inside.
+    const GridRect grid_boundary = grid_->gridWithin(group->getBBox());
+    const GridPt min = grid_boundary.closestPtInside({x_min, y_min});
+    const GridPt max = grid_boundary.closestPtInside({x_max, y_max});
+    x_min = min.x;
+    y_min = min.y;
+    x_max = max.x;
+    y_max = max.y;
+  }
+
+  // Clip limits to grid bounds.
+  x_min = max(GridX{0}, x_min);
+  y_min = max(GridY{0}, y_min);
+  x_max = min(grid_->getRowSiteCount(), x_max);
+  y_max = min(grid_->getRowCount(), y_max);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "Search Nearest Site {} ({}, {}) bounds ({}-{}, {}-{})",
+             cell->name(),
+             x,
+             y,
+             x_min,
+             x_max - 1,
+             y_min,
+             y_max - 1);
+
+  struct PQ_entry
+  {
+    int manhattan_distance;
+    GridPt p;
+    bool operator>(const PQ_entry& other) const
+    {
+      return manhattan_distance > other.manhattan_distance;
+    }
+    bool operator==(const PQ_entry& other) const
+    {
+      return manhattan_distance == other.manhattan_distance;
+    }
+  };
+  std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
+      positionsHeap;
+  std::unordered_set<GridPt> visited;
+  GridPt center{x, y};
+  positionsHeap.push(PQ_entry{0, center});
+  visited.insert(center);
+
+  const vector<GridPt> neighbors = {{GridX(-1), GridY(0)},
+                                    {GridX(1), GridY(0)},
+                                    {GridX(0), GridY(-1)},
+                                    {GridX(0), GridY(1)}};
+  while (!positionsHeap.empty()) {
+    const GridPt nearest = positionsHeap.top().p;
+    positionsHeap.pop();
+
+    if (canBePlaced(cell, nearest.x, nearest.y)) {
+      return PixelPt(
+          grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
+    }
+
+    // Put neighbors in the queue
+    for (GridPt offset : neighbors) {
+      GridPt neighbor = {nearest.x + offset.x, nearest.y + offset.y};
+      // Check if it was already put in the queue
+      if (visited.count(neighbor) > 0) {
+        continue;
+      }
+      // Check limits
+      if (neighbor.x < x_min || neighbor.x > x_max || neighbor.y < y_min
+          || neighbor.y > y_max) {
+        continue;
+      }
+
+      visited.insert(neighbor);
+      positionsHeap.push(PQ_entry{calcDist(center, neighbor), neighbor});
+    }
+  }
+  return PixelPt();
+}
+
 PixelPt Opendp::searchNearestSite(const Node* cell,
                                   const GridX x,
                                   const GridY y) const
 {
+  // Ensure same distance as OG algorithm
+  PixelPt OGPixel = searchNearestSiteOG(cell, x, y);
   // Diamond search limits.
   GridX x_min = x - max_displacement_x_;
   GridX x_max = x + max_displacement_x_;
@@ -761,18 +857,30 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
   };
 
   // Add the 4 immediate neighbors of the center.
-  addIfInBounds({center.x + 1, center.y});
   addIfInBounds({center.x - 1, center.y});
-  addIfInBounds({center.x, center.y + 1});
+  addIfInBounds({center.x + 1, center.y});
   addIfInBounds({center.x, center.y - 1});
+  addIfInBounds({center.x, center.y + 1});
 
   while (!positionsHeap.empty()) {
     const GridPt nearest = positionsHeap.top().p;
     positionsHeap.pop();
 
     if (canBePlaced(cell, nearest.x, nearest.y)) {
-      return PixelPt(
+
+      PixelPt result(
           grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
+      if (result.x != OGPixel.x || result.y != OGPixel.y){
+        auto distOG = calcDist(center, {OGPixel.x, OGPixel.y});
+        auto dist_new = calcDist(center, {result.x, result.y});
+        logger_->error(DPL,
+                       18,
+                       "Returned a different Pixel originally ({}, {})[dist: {}], now ({}, {})[dist: {}]",
+                       OGPixel.x, OGPixel.y, distOG, result.x, result.y, dist_new);
+      }
+
+      return OGPixel;
+
     }
 
     auto getSign = [](auto const grid_coord, auto center_coord) {

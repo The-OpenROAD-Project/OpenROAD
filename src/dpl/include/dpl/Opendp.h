@@ -189,6 +189,7 @@ class Opendp
   bool checkOverlap(const Node* cell, const DbuRect& rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
   bool isInside(const Node* cell, const Rect& rect) const;
+  PixelPt searchNearestSiteOG(const Node* cell, GridX x, GridY y) const;
   PixelPt searchNearestSite(const Node* cell, GridX x, GridY y) const;
   int calcDist(GridPt p0, GridPt p1) const;
   bool canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const;
