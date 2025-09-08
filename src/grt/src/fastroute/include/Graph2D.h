@@ -35,22 +35,15 @@ class Graph2D
 
   struct NDRCongestion
   {
-    int net_id = -1;  // NDR net id
-    uint16_t num_edges
-        = 0;  // number of congested edges involved with the NDR net
-    // uint8_t clock_tree_level; // zero means root clock level
+    int net_id;  // NDR net id
+    uint16_t num_edges;  // number of congested edges
   };
 
   struct NDRCongestionComparator
   {
     bool operator()(const NDRCongestion& a, const NDRCongestion& b) const
     {
-      // if (a.clock_tree_level != b.clock_tree_level){
-      //     return a.clock_tree_level > b.clock_tree_level;
-      // }
-      // if (a.num_edges != b.num_edges){
       return a.num_edges > b.num_edges;
-      // }
     }
   };
 

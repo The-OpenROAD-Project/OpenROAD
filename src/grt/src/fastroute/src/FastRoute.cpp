@@ -1194,7 +1194,7 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
-  const int long_edge_len = 40;
+  const int long_edge_len = BIG_INT;
   const int short_edge_len = 12;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
