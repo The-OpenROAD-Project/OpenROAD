@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <iostream>
+#include <iterator>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 #include "gr/FlexGR.h"
 
 namespace drt {

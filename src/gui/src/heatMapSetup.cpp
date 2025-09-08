@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QVBoxLayout>
+#include <variant>
 
 namespace gui {
 

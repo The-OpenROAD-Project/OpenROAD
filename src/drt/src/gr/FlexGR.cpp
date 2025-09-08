@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexGR.h"
+#include "gr/FlexGR.h"
 
 #include <omp.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
+#include <deque>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <set>
@@ -20,7 +24,10 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frGuide.h"
+#include "db/obj/frInst.h"
+#include "frBaseTypes.h"
 #include "odb/db.h"
 #include "utl/exception.h"
 

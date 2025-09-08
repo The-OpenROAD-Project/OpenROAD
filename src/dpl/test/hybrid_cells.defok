@@ -1011,12 +1011,30 @@ COMPONENTS 10 ;
     - u3 MOCK_HYBRID_AG + PLACED ( 200260 204800 ) N ;
 END COMPONENTS
 PINS 6 ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 2470 70 ) N ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 3230 70 ) N ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 3990 70 ) N ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 4750 70 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 5510 70 ) N ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 6270 70 ) N ;
 END PINS
 NETS 6 ;
     - clk1 ( PIN clk1 ) + USE SIGNAL ;

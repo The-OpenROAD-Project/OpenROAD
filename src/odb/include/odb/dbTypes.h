@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -96,6 +97,42 @@ class dbOrientType
 
  private:
   Value _value;
+};
+
+class dbOrientType3D
+{
+ public:
+  static std::optional<dbOrientType3D> fromString(const std::string& orient);
+
+  dbOrientType3D(const std::string& orient);
+
+  ///
+  /// Create a dbOrientType3D instance with an explicit orientation.
+  ///
+  dbOrientType3D(const dbOrientType& orient, bool mirror_z);
+
+  dbOrientType3D() = default;
+
+  ///
+  /// Copy constructor.
+  ///
+  dbOrientType3D(const dbOrientType3D& orient) = default;
+
+  ///
+  /// Returns the orientation as a string
+  ///
+  std::string getString() const;
+
+  dbOrientType getOrientType2D() const;
+
+  bool isMirrorZ() const;
+
+  friend dbIStream& operator>>(dbIStream& stream, dbOrientType3D& t);
+  friend dbOStream& operator<<(dbOStream& stream, dbOrientType3D t);
+
+ private:
+  dbOrientType::Value value_{dbOrientType::R0};
+  bool mirror_z_{false};
 };
 
 class dbGDSSTrans

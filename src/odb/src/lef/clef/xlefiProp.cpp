@@ -33,6 +33,8 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
 #include "lefiProp.h"
 #include "lefiProp.hpp"
 

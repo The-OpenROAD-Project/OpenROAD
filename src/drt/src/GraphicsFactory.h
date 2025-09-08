@@ -23,7 +23,7 @@ class GraphicsFactory : public AbstractGraphicsFactory
   void reset(frDebugSettings* settings,
              frDesign* design,
              odb::dbDatabase* db,
-             Logger* logger,
+             utl::Logger* logger,
              RouterConfiguration* router_cfg) override;
   bool guiActive() override;
   std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() override;
@@ -34,7 +34,7 @@ class GraphicsFactory : public AbstractGraphicsFactory
   frDebugSettings* settings_;
   frDesign* design_;
   odb::dbDatabase* db_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 };
 

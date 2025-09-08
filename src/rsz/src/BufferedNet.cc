@@ -4,13 +4,17 @@
 #include "BufferedNet.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include <spdlog/fmt/fmt.h>
@@ -743,7 +747,7 @@ static BufferedNetPtr makeBufferedNet(
 BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
                                               const Corner* corner)
 {
-  dbNet* db_net = db_network_->getOrFindFlatDbNet(drvr_pin);
+  dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
   const Net* net = db_network_->dbToSta(db_net);
   assert(db_net != nullptr);
   std::vector<grt::PinGridLocation> pin_grid_locs

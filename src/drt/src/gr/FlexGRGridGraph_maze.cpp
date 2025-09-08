@@ -2,9 +2,12 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <bitset>
 #include <cmath>
+#include <iostream>
 #include <vector>
 
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
 

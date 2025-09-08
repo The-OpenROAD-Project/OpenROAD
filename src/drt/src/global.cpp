@@ -9,7 +9,10 @@
 #include "db/drObj/drNet.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
+#include "db/infra/frSegStyle.h"
 #include "db/obj/frBlock.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frMarker.h"
 #include "db/obj/frMaster.h"
 #include "frDesign.h"
 

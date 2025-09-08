@@ -4,16 +4,27 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
-#include "FlexPA.h"
+#include "boost/polygon/polygon.hpp"
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "pa/AbstractPAGraphics.h"
+#include "pa/FlexPA.h"
 #include "utl/exception.h"
 
 namespace drt {
@@ -1351,9 +1362,9 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::set<std::pair<Point, frLayerNum>> apset;
 
   if (graphics_) {
-    frOrderedIdSet<frInst*>* inst_class = nullptr;
+    UniqueClass* inst_class = nullptr;
     if (inst_term) {
-      inst_class = unique_insts_.getClass(inst_term->getInst());
+      inst_class = unique_insts_.getUniqueClass(inst_term->getInst());
     }
     graphics_->startPin(pin, inst_term, inst_class);
   }
@@ -1474,21 +1485,23 @@ void FlexPA::genAllAccessPoints()
   omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 
-  const std::vector<frInst*>& unique = unique_insts_.getUnique();
+  const auto& unique = unique_insts_.getUniqueClasses();
 #pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {  // NOLINT
+  for (const auto& unique_class : unique) {  // NOLINT
     try {
+      auto candidate_inst = unique_class->getFirstInst();
       // only do for core and block cells
-      if (!isStdCell(unique_inst) && !isMacroCell(unique_inst)) {
+      if (!isStdCell(candidate_inst) && !isMacroCell(candidate_inst)) {
         continue;
       }
 
-      genInstAccessPoints(unique_inst);
+      genInstAccessPoints(candidate_inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
 
-      int inst_terms_cnt = static_cast<int>(unique_inst->getInstTerms().size());
+      int inst_terms_cnt
+          = static_cast<int>(candidate_inst->getInstTerms().size());
 #pragma omp critical
       for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;
@@ -1570,8 +1583,12 @@ void FlexPA::revertAccessPoints(frInst* inst)
 
 void FlexPA::revertAccessPoints()
 {
-  const auto& unique = unique_insts_.getUnique();
-  for (frInst* inst : unique) {
+  const auto& unique = unique_insts_.getUniqueClasses();
+  for (const auto& unique_class : unique) {
+    if (unique_class->getInsts().empty()) {
+      continue;
+    }
+    auto inst = unique_class->getFirstInst();
     revertAccessPoints(inst);
   }
 }

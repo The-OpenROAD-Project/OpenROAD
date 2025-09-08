@@ -16,6 +16,8 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 
 namespace sta {
 class Corner;
@@ -366,7 +368,9 @@ class STAGuiInterface
   StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
-  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name);
+  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name,
+                                         const sta::Clock* clk = nullptr);
+  EndPointSlackMap getEndPointToSlackMap(const sta::Clock* clk);
 
   std::set<std::string> getGroupPathsNames() const;
   void updatePathGroups();

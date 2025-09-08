@@ -8,6 +8,9 @@
 #include <limits>
 #include <string>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/geom.h"
+
 namespace fin {
 
 Graphics::Graphics()

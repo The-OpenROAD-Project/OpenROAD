@@ -1,10 +1,13 @@
 #define BOOST_TEST_MODULE TestModule
-#include <boost/test/included/unit_test.hpp>
+#include <cstdio>
 #include <iostream>
+#include <sstream>
 #include <string>
 
+#include "boost/test/included/unit_test.hpp"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 namespace {

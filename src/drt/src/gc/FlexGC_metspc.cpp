@@ -2,10 +2,15 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "db/obj/frMarker.h"
+#include "frBaseTypes.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 

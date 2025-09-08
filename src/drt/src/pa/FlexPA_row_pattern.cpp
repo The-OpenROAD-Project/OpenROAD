@@ -3,9 +3,11 @@
 
 #include <omp.h>
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -13,14 +15,18 @@
 #include <utility>
 #include <vector>
 
-#include "FlexPA.h"
 #include "db/infra/frTime.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frVia.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "pa/FlexPA.h"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -261,8 +267,8 @@ void FlexPA::genInstRowPatternInit(
   // init inst nodes
   for (int inst_idx = 0; inst_idx < (int) insts.size(); inst_idx++) {
     auto& inst = insts[inst_idx];
-    auto unique_inst = unique_insts_.getUnique(inst);
-    auto& inst_patterns = unique_inst_patterns_[unique_inst];
+    auto unique_class = unique_insts_.getUniqueClass(inst);
+    auto& inst_patterns = unique_inst_patterns_[unique_class];
     nodes[inst_idx]
         = std::vector<std::unique_ptr<FlexDPNode>>(inst_patterns.size());
     for (int acc_pattern_idx = 0; acc_pattern_idx < (int) inst_patterns.size();
@@ -341,9 +347,9 @@ void FlexPA::genInstRowPatternCommit(
 
     frInst* inst = insts[curr_inst_idx];
     int access_point_idx = 0;
-    frInst* unique_inst = unique_insts_.getUnique(inst);
+    auto unique_class = unique_insts_.getUniqueClass(inst);
     auto access_pattern
-        = unique_inst_patterns_[unique_inst][curr_acc_patterns_idx].get();
+        = unique_inst_patterns_[unique_class][curr_acc_patterns_idx].get();
     auto& access_points = access_pattern->getPattern();
 
     // update inst_term ap
@@ -385,9 +391,9 @@ void FlexPA::genInstRowPatternPrint(
       // print debug information
       auto& inst = insts[curr_inst_idx];
       int access_point_idx = 0;
-      auto unique_inst = unique_insts_.getUnique(inst);
+      auto unique_class = unique_insts_.getUniqueClass(inst);
       auto access_pattern
-          = unique_inst_patterns_[unique_inst][curr_acc_pattern_idx].get();
+          = unique_inst_patterns_[unique_class][curr_acc_pattern_idx].get();
       auto& access_points = access_pattern->getPattern();
 
       for (auto& inst_term : inst->getInstTerms()) {
@@ -442,13 +448,13 @@ int FlexPA::getEdgeCost(FlexDPNode* prev_node,
   std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
   // push the vias from prev inst access pattern and curr inst access pattern
   const auto prev_inst = insts[prev_inst_idx];
-  const auto prev_unique_inst = unique_insts_.getUnique(prev_inst);
+  const auto prev_unique_class = unique_insts_.getUniqueClass(prev_inst);
   const auto curr_inst = insts[curr_inst_idx];
-  const auto curr_unique_inst = unique_insts_.getUnique(curr_inst);
+  const auto curr_unique_class = unique_insts_.getUniqueClass(curr_inst);
   const auto prev_pin_access_pattern
-      = unique_inst_patterns_[prev_unique_inst][prev_acc_pattern_idx].get();
+      = unique_inst_patterns_[prev_unique_class][prev_acc_pattern_idx].get();
   const auto curr_pin_access_pattern
-      = unique_inst_patterns_[curr_unique_inst][curr_acc_pattern_idx].get();
+      = unique_inst_patterns_[curr_unique_class][curr_acc_pattern_idx].get();
   addAccessPatternObj(
       prev_inst, prev_pin_access_pattern, objs, temp_vias, true);
   addAccessPatternObj(

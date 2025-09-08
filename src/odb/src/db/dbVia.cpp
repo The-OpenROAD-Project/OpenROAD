@@ -3,6 +3,9 @@
 
 #include "dbVia.h"
 
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -11,6 +14,7 @@
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -20,6 +24,8 @@
 #include "dbTechViaGenerateRule.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 

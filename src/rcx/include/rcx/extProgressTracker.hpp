@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <string>
 

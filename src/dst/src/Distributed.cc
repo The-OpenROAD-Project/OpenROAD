@@ -3,16 +3,20 @@
 
 #include "dst/Distributed.h"
 
-#include <boost/asio.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/system/system_error.hpp>
-#include <boost/thread/thread.hpp>
+#include <cstddef>
+#include <cstring>
+#include <exception>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "LoadBalancer.h"
 #include "Worker.h"
+#include "boost/asio.hpp"
+#include "boost/asio/ip/tcp.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/system/system_error.hpp"
+#include "boost/thread/thread.hpp"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 #include "utl/Logger.h"

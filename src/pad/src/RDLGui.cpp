@@ -3,11 +3,14 @@
 
 #include "RDLGui.h"
 
+#include <cstddef>
 #include <map>
+#include <tuple>
 #include <vector>
 
 #include "RDLRoute.h"
 #include "RDLRouter.h"
+#include "odb/geom.h"
 
 namespace pad {
 

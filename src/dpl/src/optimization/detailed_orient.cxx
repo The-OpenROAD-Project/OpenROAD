@@ -4,12 +4,13 @@
 #include "detailed_orient.h"
 
 #include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
 
+#include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"

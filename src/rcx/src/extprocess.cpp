@@ -3,6 +3,10 @@
 
 #include "rcx/extprocess.h"
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 #include "parse.h"
 #include "utl/Logger.h"
 

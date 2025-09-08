@@ -3,17 +3,21 @@
 
 #pragma once
 
+#include <any>
 #include <functional>
 #include <map>
 #include <set>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbMaster;

@@ -32,6 +32,7 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <cstdio>
 #include <string_view>
 
 #include "defiDefs.hpp"

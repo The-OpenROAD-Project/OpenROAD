@@ -10,10 +10,14 @@
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
+#include <deque>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "gui/gui.h"
@@ -31,7 +35,7 @@ namespace gui {
 struct SlackHistogramData
 {
   StaPins constrained_pins;
-  std::set<sta::Clock*> clocks;
+  sta::ClockSet clocks;
 };
 
 struct Buckets
@@ -54,7 +58,7 @@ class HistogramView : public QChartView
 
   void clear();
   void setData(const SlackHistogramData& data);
-  void setData(const EndPointSlackMap& data);
+  void setData(const EndPointSlackMap& data, sta::ClockSet* clocks);
 
   void save(const QString& path);
 
@@ -95,7 +99,7 @@ class HistogramView : public QChartView
   int computeMaxYSnap(int largest_slack_count);
   int computeFirstDigit(int value, int digits);
 
-  utl::Logger* logger_{nullptr};
+  utl::Logger* logger_;
   STAGuiInterface* sta_{nullptr};
 
   QChart* chart_;
@@ -108,7 +112,7 @@ class HistogramView : public QChartView
   int precision_count_;  // Used to configure the x labels.
 
   // Data
-  std::set<sta::Clock*> clocks_;
+  sta::ClockSet clocks_;
   Buckets buckets_;
   std::unique_ptr<utl::Histogram<float>> histogram_;
 
@@ -160,8 +164,11 @@ class ChartsWidget : public QDockWidget
   void setSlackHistogram();
   void setSlackHistogramLayout();
   void setModeMenu();
+  void clearMenus();
 
-  void setData(HistogramView* view, const std::string& path_group) const;
+  void setData(HistogramView* view,
+               const std::string& path_group,
+               sta::Clock* clock);
 
   SlackHistogramData fetchSlackHistogramData() const;
   void removeUnconstrainedPinsAndSetLimits(SlackHistogramData& data) const;
@@ -173,14 +180,17 @@ class ChartsWidget : public QDockWidget
   QTabWidget* chart_tabs_;
 
   QComboBox* mode_menu_;
-  QComboBox* filters_menu_;
+  QComboBox* path_group_menu_;
+  QComboBox* clock_menu_;
   HistogramView* display_;
   QPushButton* refresh_filters_button_;
 
   std::string path_group_name_;  // Current selected filter
   std::map<int, std::string> filter_index_to_path_group_name_;
+  std::map<int, sta::Clock*> clock_index_to_clock_;
+  sta::ClockSet all_clocks_;
+  sta::Clock* clock_filter_;
 
-  int prev_filter_index_;
   bool resetting_menu_;
 
   QLabel* label_;

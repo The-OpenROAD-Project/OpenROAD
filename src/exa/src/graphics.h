@@ -5,6 +5,7 @@
 
 #include "gui/gui.h"
 #include "observer.h"
+#include "odb/db.h"
 
 // This implements the Observer interface and renders to the GUI
 

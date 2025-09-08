@@ -4,6 +4,14 @@
 #include "mainWindow.h"
 
 #include <QDesktopServices>
+#include <algorithm>
+#include <any>
+#include <exception>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <set>
+#include <variant>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
 #endif
@@ -41,6 +49,8 @@
 #include "inspector.h"
 #include "layoutTabs.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "sta/Liberty.hh"
@@ -1687,6 +1697,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
   exit_check.exec();
 
   if (exit_check.clickedButton() == exit_button) {
+    // close all dialogs
+    for (QWidget* w : QApplication::topLevelWidgets()) {
+      if (w != this) {
+        w->close();
+      }
+    }
     // exit selected so go ahead and close
     event->accept();
   } else if (exit_check.clickedButton() == hide_button) {

@@ -9,6 +9,13 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <utility>
+#include <variant>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else
@@ -26,6 +33,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 

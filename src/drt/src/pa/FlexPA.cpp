@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexPA.h"
+#include "pa/FlexPA.h"
 
 #include <omp.h>
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/io/ios_state.hpp>
-#include <boost/serialization/export.hpp>
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -19,8 +16,13 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/io/ios_state.hpp"
+#include "boost/serialization/export.hpp"
 #include "db/infra/frTime.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
 #include "distributed/paUpdate.h"
@@ -28,6 +30,9 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "global.h"
+#include "odb/db.h"
+#include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -39,7 +44,7 @@ using utl::ThreadException;
 
 static inline void serializePatterns(
     const std::unordered_map<
-        frInst*,
+        UniqueClass*,
         std::vector<std::unique_ptr<FlexPinAccessPattern>>>& patterns,
     const std::string& file_name)
 {
@@ -48,8 +53,8 @@ static inline void serializePatterns(
   registerTypes(ar);
   int sz = patterns.size();
   ar << sz;
-  for (auto& [inst, pattern] : patterns) {
-    frBlockObject* obj = (frBlockObject*) inst;
+  for (auto& [unique_class, pattern] : patterns) {
+    frBlockObject* obj = (frBlockObject*) unique_class->getFirstInst();
     serializeBlockObject(ar, obj);
     ar << pattern;
   }
@@ -57,7 +62,7 @@ static inline void serializePatterns(
 }
 
 FlexPA::FlexPA(frDesign* in,
-               Logger* logger,
+               utl::Logger* logger,
                dst::Distributed* dist,
                RouterConfiguration* router_cfg)
     : design_(in),
@@ -263,7 +268,8 @@ void FlexPA::applyPatternsFile(const char* file_path)
   while (sz--) {
     frBlockObject* obj;
     serializeBlockObject(ar, obj);
-    auto& pattern = unique_inst_patterns_[static_cast<frInst*>(obj)];
+    auto unique_class = unique_insts_.getUniqueClass(static_cast<frInst*>(obj));
+    auto& pattern = unique_inst_patterns_[unique_class];
     ar >> pattern;
   }
   file.close();
@@ -323,7 +329,7 @@ void FlexPA::prepPattern()
 {
   ProfileTask profile("PA:pattern");
 
-  const auto& unique = unique_insts_.getUnique();
+  const auto& unique = unique_insts_.getUniqueClasses();
 
   // revert access points to origin
   unique_inst_patterns_.reserve(unique.size());
@@ -333,15 +339,19 @@ void FlexPA::prepPattern()
   omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {
+  for (auto& unique_class : unique) {
     try {
       // only do for core and block cells
       // TODO the above comment says "block cells" but that's not what the code
       // does?
-      if (!isStdCell(unique_inst)) {
+      if (unique_class->getInsts().empty()) {
         continue;
       }
-      prepPatternInst(unique_inst);
+      auto candidate_inst = *unique_class->getInsts().begin();
+      if (!isStdCell(candidate_inst)) {
+        continue;
+      }
+      prepPatternInst(candidate_inst);
 #pragma omp critical
       {
         cnt++;

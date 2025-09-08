@@ -2,8 +2,11 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdio>
 
 #include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 

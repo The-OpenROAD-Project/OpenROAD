@@ -10,6 +10,7 @@
 
 #include "odb/db.h"
 #include "odb/dbMatrix.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

@@ -9,6 +9,7 @@
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frPin.h"
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"

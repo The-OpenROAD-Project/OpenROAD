@@ -9,6 +9,7 @@
 #include "AbstractGrouteRenderer.h"
 #include "grt/GlobalRouter.h"
 #include "gui/gui.h"
+#include "odb/db.h"
 
 namespace grt {
 

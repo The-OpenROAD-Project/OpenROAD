@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <boost/asio/thread_pool.hpp>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/thread_pool.hpp"
 #include "odb/geom.h"
 
 namespace odb {

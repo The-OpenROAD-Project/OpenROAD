@@ -6,6 +6,10 @@
 #include <memory>
 #include <utility>
 
+#include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+
 namespace drt {
 
 GraphicsFactory::GraphicsFactory() = default;
@@ -14,7 +18,7 @@ GraphicsFactory::~GraphicsFactory() = default;
 void GraphicsFactory::reset(frDebugSettings* settings,
                             frDesign* design,
                             odb::dbDatabase* db,
-                            Logger* logger,
+                            utl::Logger* logger,
                             RouterConfiguration* router_cfg)
 {
   settings_ = settings;

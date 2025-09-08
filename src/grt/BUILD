@@ -22,20 +22,24 @@ cc_library(
 )
 
 cc_library(
+    name = "groute",
+    hdrs = ["include/grt/GRoute.h"],
+)
+
+cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
-        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/RSMT.cpp",
         "src/fastroute/src/RipUp.cpp",
+        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/maze.cpp",
         "src/fastroute/src/maze3D.cpp",
         "src/fastroute/src/route.cpp",
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
-        "include/grt/GRoute.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
@@ -46,6 +50,7 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":groute",
         "//src/dbSta",
         "//src/gui",
         "//src/odb",
@@ -54,6 +59,47 @@ cc_library(
         "@boost.container_hash",
         "@boost.icl",
         "@boost.multi_array",
+    ],
+)
+
+cc_library(
+    name = "cugr",
+    srcs = [
+        "src/cugr/src/CUGR.cpp",
+        "src/cugr/src/Design.cpp",
+        "src/cugr/src/Design.h",
+        "src/cugr/src/GRNet.cpp",
+        "src/cugr/src/GRNet.h",
+        "src/cugr/src/GRTree.cpp",
+        "src/cugr/src/GRTree.h",
+        "src/cugr/src/GeoTypes.cpp",
+        "src/cugr/src/GeoTypes.h",
+        "src/cugr/src/GridGraph.cpp",
+        "src/cugr/src/GridGraph.h",
+        "src/cugr/src/Layers.cpp",
+        "src/cugr/src/Layers.h",
+        "src/cugr/src/MazeRoute.cpp",
+        "src/cugr/src/MazeRoute.h",
+        "src/cugr/src/Netlist.cpp",
+        "src/cugr/src/Netlist.h",
+        "src/cugr/src/PatternRoute.cpp",
+        "src/cugr/src/PatternRoute.h",
+        "src/cugr/src/robin_hood.h",
+    ],
+    hdrs = [
+        "src/cugr/include/CUGR.h",
+        "src/cugr/include/geo.h",
+    ],
+    includes = [
+        "include",
+        "src/cugr/include",
+    ],
+    deps = [
+        ":groute",
+        "//:ord",
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
     ],
 )
 
@@ -75,7 +121,6 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
-        "include/grt/GRoute.h",
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
         "include/grt/RoutePt.h",
@@ -89,7 +134,9 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
+        ":groute",
         "//src/ant",
         "//src/dbSta",
         "//src/dpl",
@@ -125,12 +172,7 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/grt/GRoute.h",
-        "include/grt/GlobalRouter.h",
         "include/grt/MakeGlobalRouter.h",
-        "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
-        "include/grt/Rudy.h",
     ],
     copts = [
         "-Isrc/grt/src",
@@ -142,7 +184,10 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
+        ":groute",
+        ":grt",
         "//:ord",
         "//src/ant",
         "//src/dbSta",

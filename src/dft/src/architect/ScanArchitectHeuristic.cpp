@@ -3,7 +3,9 @@
 
 #include "ScanArchitectHeuristic.hh"
 
+#include <cstdint>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -12,6 +14,7 @@
 #include "ClockDomain.hh"
 #include "Opt.hh"
 #include "ScanArchitect.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

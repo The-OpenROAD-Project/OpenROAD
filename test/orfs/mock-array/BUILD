@@ -25,12 +25,6 @@ MOCK_ARRAY_TABLE = [
     22,
 ]
 
-# Element'd data width
-MOCK_ARRAY_DATAWIDTH = 64
-
-# Must be zero for routing by abutment
-MACRO_BLOCKAGE_HALO = 0
-
 MOCK_ARRAY_SCALE = 45
 
 # Routing pitches for relevant metal layers.
@@ -77,10 +71,6 @@ array_spacing_x = margin_x * 2
 
 array_spacing_y = margin_y * 2
 
-array_offset_x = array_spacing_x + margin_x
-
-array_offset_y = array_spacing_y + margin_y
-
 # top level core and die size
 core_width = (
     2 * array_spacing_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
@@ -113,7 +103,12 @@ filegroup(
     visibility = [":__subpackages__"],
 )
 
-orfs_flow(
+VARIANTS = [
+    "base",
+    "flat",
+]
+
+[orfs_flow(
     name = "MockArray",
     arguments = {
         "PLACE_PINS_ARGS": "-annealing",
@@ -130,10 +125,10 @@ orfs_flow(
         ),
         "MACRO_PLACE_HALO": "0 2.16",
         "RTLMP_BOUNDARY_WT": "0",
-        "RTLMP_MAX_INST" :"250",
-        "RTLMP_MIN_INST" :"50",
-        "RTLMP_MAX_MACRO" :"64",
-        "RTLMP_MIN_MACRO" :"8",
+        "RTLMP_MAX_INST": "250",
+        "RTLMP_MIN_INST": "50",
+        "RTLMP_MAX_MACRO": "64",
+        "RTLMP_MIN_MACRO": "8",
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "MACRO_ROWS_HALO_X": "0.5",
         "MACRO_ROWS_HALO_Y": "0.5",
@@ -145,6 +140,7 @@ orfs_flow(
         "IO_PLACER_V": "M5 M7",
         "IO_PLACER_H": "M4 M6",
         "DETAILED_ROUTE_END_ITERATION": "6",
+        "OPENROAD_HIERARCHICAL": "1" if variant == "base" else "0",
     },
     macros = ["Element_generate_abstract"],
     sources = {
@@ -152,8 +148,9 @@ orfs_flow(
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
     },
+    variant = variant,
     verilog_files = [":verilog"],
-)
+) for variant in VARIANTS]
 
 filegroup(
     name = "mock-array-element-io",
@@ -190,6 +187,12 @@ orfs_flow(
             ce_height,
         ),
         "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        # We want to report power per module using hierarhical .odb
+        "OPENROAD_HIERARCHICAL": "1",
+        # Keep only one module, enough for testing, faster builds. There's
+        # some width in multiply reduction going on here to speed up
+        # builds, so we want to keep this exact module.
+        "SYNTH_KEEP_MODULES": "Multiplier",
     },
     sources = {
         "IO_CONSTRAINTS": [":mock-array-element-io"],
@@ -286,7 +289,6 @@ verilog_library(
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
-        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/work_around_yosys/asap7sc7p5t_OA_RVT_TT_201020.v",
     ],
 )
 
@@ -306,6 +308,10 @@ verilator_cc_library(
         "-Wno-UNUSEDSIGNAL",
         "-Wno-PINMISSING",
         "--trace-underscore",
+        # inline all PDK modules to speed up compilation
+        "--flatten",
+        # No-op option to retrigger a build
+        # "-Wfuture-blah",
     ],
 )
 
@@ -334,6 +340,8 @@ genrule(
     ],
 )
 
+# If we want to measure power after final, instead of with estimated parasitics,
+# we'll need this.
 SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,

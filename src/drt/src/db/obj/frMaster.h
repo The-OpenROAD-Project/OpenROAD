@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frMTerm.h"

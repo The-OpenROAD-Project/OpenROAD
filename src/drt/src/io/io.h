@@ -3,14 +3,27 @@
 
 #pragma once
 
-#include <boost/icl/interval_set.hpp>
 #include <list>
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
+#include "boost/icl/interval_set.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frTrackPattern.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;
@@ -40,7 +53,7 @@ class Parser
   // constructors
   Parser(odb::dbDatabase* dbIn,
          frDesign* design,
-         Logger* loggerIn,
+         utl::Logger* loggerIn,
          RouterConfiguration* router_cfg);
 
   // others
@@ -133,7 +146,7 @@ class Parser
 
   odb::dbDatabase* db_;
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
   // temporary variables
   int readLayerCnt_;
@@ -150,7 +163,7 @@ class Writer
 {
  public:
   // constructors
-  Writer(frDesign* design, Logger* loggerIn)
+  Writer(frDesign* design, utl::Logger* loggerIn)
       : design_(design), logger_(loggerIn)
   {
   }
@@ -188,7 +201,7 @@ class Writer
                            odb::dbBlock* block);
 
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   std::map<frString, std::list<std::shared_ptr<frConnFig>>>
       connFigs_;  // all connFigs ready to def
   std::vector<frViaDef*> viaDefs_;
@@ -204,7 +217,7 @@ class TopLayerBTermHandler
  public:
   TopLayerBTermHandler(frDesign* design,
                        odb::dbDatabase* db,
-                       Logger* logger,
+                       utl::Logger* logger,
                        RouterConfiguration* router_cfg)
       : design_(design), db_(db), logger_(logger), router_cfg_(router_cfg)
   {
@@ -228,7 +241,7 @@ class TopLayerBTermHandler
   Point getBestViaPosition(Rect pin_rect);
   frDesign* design_;
   odb::dbDatabase* db_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 };
 }  // namespace drt::io

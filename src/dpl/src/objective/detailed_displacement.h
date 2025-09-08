@@ -7,6 +7,7 @@
 // - An objective function to help with computation of change in wirelength
 //   if doing some sort of moves (e.g., single, swap, sets, etc.).
 
+#include <cstdint>
 #include <vector>
 
 #include "detailed_objective.h"

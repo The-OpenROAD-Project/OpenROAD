@@ -43,8 +43,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.1831 |  8.458500e+04 |   +0.00% |  2.74e-19 |      
-        0 |   0.1831 |  8.458500e+04 |          |  2.85e-19 |      
+        0 |   0.1831 |  8.458500e+01 |   +0.00% |  2.74e-19 |      
+        0 |   0.1831 |  8.458500e+01 |          |  2.85e-19 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area                3.7536

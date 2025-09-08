@@ -28,6 +28,9 @@
 // *****************************************************************************
 #include "lefrReader.hpp"
 
+#include <string.h>
+
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 

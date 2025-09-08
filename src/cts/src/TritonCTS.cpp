@@ -4,9 +4,11 @@
 #include "cts/TritonCTS.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <functional>
@@ -15,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -29,8 +32,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -481,8 +486,8 @@ void TritonCTS::writeDataToDb()
 
   for (auto& builder : builders_) {
     writeClockNetsToDb(builder.get(), clkLeafNets);
-    if (options_->applyNDR()) {
-      writeClockNDRsToDb(clkLeafNets);
+    if (options_->getApplyNdr() != CtsOptions::NdrStrategy::NONE) {
+      writeClockNDRsToDb(builder.get());
     }
     if (options_->dummyLoadEnabled()) {
       writeDummyLoadsToDb(builder->getClock(), clkDummies);
@@ -1438,6 +1443,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
     }
     odb::dbNet* clkSubNet
         = odb::dbNet::create(block_, subNet.getName().c_str());
+    subNet.setNetObj(clkSubNet);
 
     ++numClkNets_;
     clkSubNet->setSigType(odb::dbSigType::CLOCK);
@@ -1557,11 +1563,110 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
 }
 
-void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
+// Utility function to get all unique clock tree levels
+std::vector<int> TritonCTS::getAllClockTreeLevels(Clock& clockNet)
+{
+  std::set<int> uniqueLevels;
+
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
+    if (!subNet.isLeafLevel()) {
+      uniqueLevels.insert(subNet.getTreeLevel());
+    }
+  });
+
+  return std::vector<int>(uniqueLevels.begin(), uniqueLevels.end());
+}
+
+// Function to apply NDR to specific clock tree levels and return the number of
+// NDR applied nets
+int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
+                                     odb::dbTechNonDefaultRule* clockNDR,
+                                     const std::vector<int>& targetLevels)
+{
+  int ndrAppliedNets = 0;
+
+  debugPrint(
+      logger_, CTS, "clustering", 1, "Applying NDR to clock tree levels: ");
+  for (int level : targetLevels) {
+    debugPrint(logger_, CTS, "clustering", 1, "{} ", level);
+  }
+
+  // Check if the main clock net (level 0) is in the level list
+  if (std::find(targetLevels.begin(), targetLevels.end(), 0)
+      != targetLevels.end()) {
+    odb::dbNet* clk_net = clockNet.getNetObj();
+    clk_net->setNonDefaultRule(clockNDR);
+    ndrAppliedNets++;
+    // clang-format off
+    debugPrint(logger_, CTS, "clustering", 1,
+        "Applied NDR to: {} (level {})", clockNet.getName(), 0);
+    // clang-format on
+  }
+
+  // Check clock sub nets list and apply NDR if level matches
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
+    int level = subNet.getTreeLevel();
+    if (std::find(targetLevels.begin(), targetLevels.end(), level)
+        != targetLevels.end()) {
+      odb::dbNet* net = subNet.getNetObj();
+      if (!subNet.isLeafLevel()) {
+        net->setNonDefaultRule(clockNDR);
+        ndrAppliedNets++;
+        std::string net_name = net->getName();
+        // clang-format off
+        debugPrint(logger_, CTS, "clustering", 1,
+            "Applied NDR to: {} (level {})", net_name, level);
+        // clang-format on
+      }
+    }
+  });
+
+  return ndrAppliedNets;
+}
+
+// Alternative function to apply NDR to a range of clock tree levels
+int TritonCTS::applyNDRToClockLevelRange(Clock& clockNet,
+                                         odb::dbTechNonDefaultRule* clockNDR,
+                                         const int minLevel,
+                                         const int maxLevel)
+{
+  std::vector<int> targetLevels;
+  for (int i = minLevel; i <= maxLevel; i++) {
+    targetLevels.push_back(i);
+  }
+
+  return applyNDRToClockLevels(clockNet, clockNDR, targetLevels);
+}
+
+// Function to apply NDR to the first half of clock tree levels
+int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
+                                         odb::dbTechNonDefaultRule* clockNDR)
+{
+  // Get all unique levels in the design
+  const std::vector<int> allLevels = getAllClockTreeLevels(clockNet);
+
+  // Calculate first half (rounding up if odd number of levels)
+  const int halfCount = (allLevels.size() + 1) / 2;
+
+  // Create vector with first half of levels
+  std::vector<int> firstHalfLevels(allLevels.begin(),
+                                   allLevels.begin() + halfCount);
+
+  // clang-format off
+  debugPrint(logger_, CTS, "clustering", 1, "Total clock tree levels found: {}"
+        " Applying NDR to first {} levels", allLevels.size(), halfCount);
+  // clang-format on
+
+  // Apply NDR to the first half
+  return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
+}
+
+void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
   int ruleIndex = 0;
   odb::dbTechNonDefaultRule* clockNDR;
+  Clock& clockNet = builder->getClock();
 
   // create a new non-default rule in *block* not tech
   while (ruleIndex >= 0) {
@@ -1595,14 +1700,23 @@ void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
     // clang-format on
   }
 
-  // apply NDR to all non-leaf clock nets
   int clkNets = 0;
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType() == odb::dbSigType::CLOCK
-        && (clkLeafNets.find(net) == clkLeafNets.end())) {
-      net->setNonDefaultRule(clockNDR);
-      clkNets++;
-    }
+
+  // Apply NDR following the selected strategy (root_only, half, full)
+  switch (options_->getApplyNdr()) {
+    case CtsOptions::NdrStrategy::ROOT_ONLY:
+      clkNets = applyNDRToClockLevels(clockNet, clockNDR, {0});
+      break;
+    case CtsOptions::NdrStrategy::HALF:
+      clkNets = applyNDRToFirstHalfLevels(clockNet, clockNDR);
+      break;
+    case CtsOptions::NdrStrategy::FULL:
+      clkNets = applyNDRToClockLevels(
+          clockNet, clockNDR, getAllClockTreeLevels(clockNet));
+      break;
+    case CtsOptions::NdrStrategy::NONE:
+      // Should not be called
+      break;
   }
 
   logger_->info(CTS,

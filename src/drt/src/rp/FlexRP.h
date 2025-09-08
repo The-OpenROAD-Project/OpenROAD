@@ -3,16 +3,24 @@
 
 #pragma once
 
-#include <boost/icl/interval_set.hpp>
 #include <utility>
 
+#include "boost/icl/interval_set.hpp"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 class FlexRP
 {
  public:
-  FlexRP(frDesign* design, Logger* logger, RouterConfiguration* router_cfg);
+  FlexRP(frDesign* design,
+         utl::Logger* logger,
+         RouterConfiguration* router_cfg);
 
   void main();
 
@@ -134,7 +142,7 @@ class FlexRP
 
   frDesign* design_;
   frTechObject* tech_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 };
 }  // namespace drt

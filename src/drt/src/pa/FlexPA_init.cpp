@@ -6,11 +6,15 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
-#include "FlexPA.h"
+#include "boost/polygon/polygon.hpp"
 #include "db/infra/frTime.h"
+#include "db/obj/frInst.h"
+#include "frBaseTypes.h"
 #include "gc/FlexGC.h"
+#include "pa/FlexPA.h"
 
 namespace drt {
 
@@ -143,64 +147,26 @@ void FlexPA::initTrackCoords()
 
 void FlexPA::initAllSkipInstTerm()
 {
-  const auto& unique = unique_insts_.getUnique();
+  const auto& unique = unique_insts_.getUniqueClasses();
 #pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {
-    initSkipInstTerm(unique_inst);
+  for (const auto& unique_class : unique) {
+    initSkipInstTerm(unique_class.get());
   }
 }
 
-void FlexPA::initSkipInstTerm(frInst* unique_inst)
+void FlexPA::initSkipInstTerm(UniqueClass* unique_class)
 {
-  for (auto& inst_term : unique_inst->getInstTerms()) {
-    frMTerm* term = inst_term->getTerm();
-    const UniqueInsts::InstSet* inst_class
-        = unique_insts_.getClass(unique_inst);
-    if (skip_unique_inst_term_.find(unique_inst) != skip_unique_inst_term_.end()
-        && skip_unique_inst_term_[unique_inst].find(term)
-               != skip_unique_inst_term_[unique_inst].end()
-        && !skip_unique_inst_term_[unique_inst][term]) {
-      continue;
-    }
-#pragma omp critical
-    skip_unique_inst_term_[unique_inst][term] = false;
-
-    // We have to be careful that the skip conditions are true not only of
-    // the unique instance but also all the equivalent instances.
-    bool skip = isSkipInstTermLocal(inst_term.get());
-    if (skip) {
-      for (frInst* inst : *inst_class) {
-        frInstTerm* it = inst->getInstTerm(inst_term->getIndexInOwner());
-        skip = isSkipInstTermLocal(it);
-        if (!skip) {
-          break;
-        }
+  for (const auto& term : unique_class->getMaster()->getTerms()) {
+    bool skip = true;
+    for (const auto& inst : unique_class->getInsts()) {
+      auto inst_term = inst->getInstTerm(term->getIndexInOwner());
+      skip = isSkipInstTermLocal(inst_term);
+      if (!skip) {
+        break;
       }
     }
-#pragma omp critical
-    skip_unique_inst_term_[unique_inst][term] = skip;
+    unique_class->setSkipTerm(term.get(), skip);
   }
-}
-
-bool FlexPA::updateSkipInstTerm(frInst* inst)
-{
-  const auto unique_inst = unique_insts_.getUnique(inst);
-  if (skip_unique_inst_term_.find(unique_inst)
-      == skip_unique_inst_term_.end()) {
-    return true;
-  }
-  for (auto& inst_term : inst->getInstTerms()) {
-    frMTerm* term = inst_term->getTerm();
-    if (skip_unique_inst_term_.at(unique_inst).find(term)
-        == skip_unique_inst_term_.at(unique_inst).end()) {
-      return true;
-    }
-    if (!isSkipInstTermLocal(inst_term.get())
-        && skip_unique_inst_term_.at(unique_inst).at(term)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 }  // namespace drt

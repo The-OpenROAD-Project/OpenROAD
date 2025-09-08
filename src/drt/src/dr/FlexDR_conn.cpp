@@ -6,14 +6,28 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "frRegionQuery.h"
 #include "io/io.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/exception.h"
@@ -1349,7 +1363,7 @@ void FlexDRConnectivityChecker::check(int iter)
 
 FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
-    Logger* logger,
+    utl::Logger* logger,
     RouterConfiguration* router_cfg,
     AbstractDRGraphics* graphics,
     bool save_updates)

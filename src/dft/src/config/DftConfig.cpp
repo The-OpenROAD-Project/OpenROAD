@@ -3,6 +3,8 @@
 
 #include "DftConfig.hh"
 
+#include "utl/Logger.h"
+
 namespace dft {
 
 ScanArchitectConfig* DftConfig::getMutableScanArchitectConfig()

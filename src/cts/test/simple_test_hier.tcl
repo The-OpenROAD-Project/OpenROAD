@@ -13,6 +13,10 @@ source Nangate45/Nangate45.vars
 source Nangate45/Nangate45.rc
 
 #place_pad -master PADCELL_SIG_V -row IO_EAST -location 500 "clk"
+source $tracks_file
+
+place_pins -hor_layers $io_placer_hor_layer \
+  -ver_layers $io_placer_ver_layer
 
 global_placement -skip_nesterov_place
 detailed_placement
@@ -21,7 +25,7 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal3
 
-clock_tree_synthesis -root_buf CLKBUF_X3 -buf_list CLKBUF_X3 -wire_unit 20 -apply_ndr
+clock_tree_synthesis -root_buf CLKBUF_X3 -buf_list CLKBUF_X3 -wire_unit 20 -apply_ndr root_only
 
 set verilog_file [make_result_file simple_test_hier_out.v]
 write_verilog $verilog_file

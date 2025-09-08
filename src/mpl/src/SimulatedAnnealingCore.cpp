@@ -4,7 +4,6 @@
 #include "SimulatedAnnealingCore.h"
 
 #include <algorithm>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -16,6 +15,7 @@
 #include <vector>
 
 #include "MplObserver.h"
+#include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
 #include "object.h"
 #include "odb/db.h"
@@ -100,8 +100,9 @@ void SimulatedAnnealingCore<T>::initSequencePair()
     return;
   }
 
-  const int sequence_pair_size
-      = macros_to_place_ != 0 ? macros_to_place_ : macros_.size();
+  const int sequence_pair_size = number_of_sequence_pair_macros_ != 0
+                                     ? number_of_sequence_pair_macros_
+                                     : macros_.size();
 
   int macro_id = 0;
 
@@ -157,7 +158,7 @@ bool SimulatedAnnealingCore<T>::isValid() const
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::isValid(const Rect& outline) const
+bool SimulatedAnnealingCore<T>::fitsIn(const Rect& outline) const
 {
   return (width_ <= std::ceil(outline.getWidth()))
          && (height_ <= std::ceil(outline.getHeight()));
@@ -237,9 +238,9 @@ float SimulatedAnnealingCore<T>::getNormFencePenalty() const
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
+std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 {
-  macros = macros_;
+  return macros_;
 }
 
 // Private functions
@@ -444,11 +445,6 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
-  for (auto& macro_id : pos_seq_) {
-    macros_[macro_id].setX(0.0);
-    macros_[macro_id].setY(0.0);
-  }
-
   // Each index corresponds to a macro id whose pair is:
   // <Position in Positive Sequence , Position in Negative Sequence>
   std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
@@ -711,20 +707,13 @@ void SimulatedAnnealingCore<T>::fastSA()
 {
   float cost = calNormCost();
   float pre_cost = cost;
-  float delta_cost = 0.0;
   int step = 1;
   float temperature = init_temperature_;
   const float min_t = 1e-10;
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
 
-  // Used to ensure notch penalty is used only in the latter steps
-  // as it is too expensive
-  notch_weight_ = 0.0;
-
-  if (isValid()) {
-    updateBestValidResult(cost);
-  }
+  updateBestResult(cost);
 
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
@@ -732,21 +721,26 @@ void SimulatedAnnealingCore<T>::fastSA()
       perturb();
       cost = calNormCost();
 
-      const bool keep_result
-          = cost < pre_cost
-            || best_valid_result_.sequence_pair.pos_sequence.empty();
-      if (isValid() && keep_result) {
-        updateBestValidResult(cost);
+      const bool is_valid = isValid();
+      const bool improved = cost < pre_cost || best_result_.empty();
+      if ((!is_best_result_valid_ || is_valid) && improved) {
+        updateBestResult(cost);
+        is_best_result_valid_ = is_valid;
       }
 
-      delta_cost = cost - pre_cost;
-      const float num = distribution_(generator_);
-      const float prob
-          = (delta_cost > 0.0) ? std::exp((-1) * delta_cost / temperature) : 1;
-      if (num < prob) {
+      const float delta_cost = cost - pre_cost;
+      if (delta_cost <= 0) {
+        // always accept improvements
         pre_cost = cost;
       } else {
-        restoreState();
+        // probabilistically accept degradations for hill climbing
+        const float num = distribution_(generator_);
+        const float prob = std::exp(-delta_cost / temperature);
+        if (num < prob) {
+          pre_cost = cost;
+        } else {
+          restoreState();
+        }
       }
     }
 
@@ -755,13 +749,6 @@ void SimulatedAnnealingCore<T>::fastSA()
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-
-    if (step == max_num_step_ - macros_.size() * 2) {
-      notch_weight_ = original_notch_weight_;
-      packFloorplan();
-      calPenalty();
-      pre_cost = calNormCost();
-    }
   }
 
   packFloorplan();
@@ -769,40 +756,42 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->doNotSkip();
   }
   calPenalty();
+  cost = calNormCost();
 
-  if (!best_valid_result_.sequence_pair.pos_sequence.empty()
-      && (!isValid() || best_valid_result_.cost < calNormCost())) {
-    useBestValidResult();
+  const bool is_valid = isValid();
+  const bool improved = cost < best_result_.cost || best_result_.empty();
+  if ((is_best_result_valid_ && !is_valid) || !improved) {
+    useBestResult();
   }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::updateBestValidResult(const float cost)
+void SimulatedAnnealingCore<T>::updateBestResult(const float cost)
 {
-  best_valid_result_.sequence_pair.pos_sequence = pos_seq_;
-  best_valid_result_.sequence_pair.neg_sequence = neg_seq_;
+  best_result_.sequence_pair.pos_sequence = pos_seq_;
+  best_result_.sequence_pair.neg_sequence = neg_seq_;
 
   if constexpr (std::is_same_v<T, SoftMacro>) {
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      best_valid_result_.macro_id_to_width[macro_id] = macro.getWidth();
+      best_result_.macro_id_to_width[macro_id] = macro.getWidth();
     }
   }
 
-  best_valid_result_.cost = cost;
+  best_result_.cost = cost;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::useBestValidResult()
+void SimulatedAnnealingCore<T>::useBestResult()
 {
-  pos_seq_ = best_valid_result_.sequence_pair.pos_sequence;
-  neg_seq_ = best_valid_result_.sequence_pair.neg_sequence;
+  pos_seq_ = best_result_.sequence_pair.pos_sequence;
+  neg_seq_ = best_result_.sequence_pair.neg_sequence;
 
   if constexpr (std::is_same_v<T, SoftMacro>) {
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
       const float valid_result_width
-          = best_valid_result_.macro_id_to_width.at(macro_id);
+          = best_result_.macro_id_to_width.at(macro_id);
 
       if (macro.isMacroCluster()) {
         const float valid_result_height = macro.getArea() / valid_result_width;

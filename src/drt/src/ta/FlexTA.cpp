@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexTA.h"
+#include "ta/FlexTA.h"
 
 #include <omp.h>
 
@@ -14,10 +14,11 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractTAGraphics.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "global.h"
+#include "ta/AbstractTAGraphics.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {
@@ -78,7 +79,7 @@ int FlexTAWorker::main_mt()
 }
 
 FlexTA::FlexTA(frDesign* in,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg,
                bool save_updates)
     : tech_(in->getTech()),

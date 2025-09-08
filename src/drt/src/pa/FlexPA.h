@@ -3,20 +3,33 @@
 
 #pragma once
 
-#include <boost/polygon/polygon.hpp>
-#include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "FlexPA_unique.h"
+#include "boost/polygon/polygon.hpp"
+#include "boost/serialization/unordered_map.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+#include "pa/FlexPA_unique.h"
 namespace gtl = boost::polygon;
 
 namespace odb {
@@ -78,7 +91,7 @@ class FlexPA
   };
 
   FlexPA(frDesign* in,
-         Logger* logger,
+         utl::Logger* logger,
          dst::Distributed* dist,
          RouterConfiguration* router_cfg);
   ~FlexPA();
@@ -104,7 +117,7 @@ class FlexPA
 
  private:
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
 
@@ -120,12 +133,11 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::unordered_map<frInst*,
+  std::unordered_map<UniqueClass*,
                      std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
-  std::map<frInst*, std::map<frMTerm*, bool>> skip_unique_inst_term_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
@@ -161,7 +173,7 @@ class FlexPA
   void initTrackCoords();
   void initViaRawPriority();
   void initAllSkipInstTerm();
-  void initSkipInstTerm(frInst* unique_inst);
+  void initSkipInstTerm(UniqueClass* unique_class);
   bool updateSkipInstTerm(frInst* inst);
   // prep
   void prep();

@@ -3,6 +3,7 @@ load("//test:regression.bzl", "regression_test")
 TESTS = [
     "bus_route",
     "clock_route",
+    "clock_route_cugr",
     "clock_route_alpha",
     "clock_route_error1",
     "clock_route_error2",
@@ -48,6 +49,8 @@ TESTS = [
     "read_segments_error1",
     "read_segments_error2",
     "read_segments_error3",
+    "read_segments_error4",
+    "read_segments_error5",
     "region_adjustment",
     "remove_buffers1",
     "remove_buffers2",

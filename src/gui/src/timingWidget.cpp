@@ -12,11 +12,14 @@
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
+#include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "staGui.h"
 

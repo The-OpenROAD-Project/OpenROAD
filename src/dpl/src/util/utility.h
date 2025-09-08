@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include <boost/random/mersenne_twister.hpp>
+#include <cstdint>
+
+#include "boost/random/mersenne_twister.hpp"
 
 namespace dpl {
 }

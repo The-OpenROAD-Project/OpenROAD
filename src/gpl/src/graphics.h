@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -10,6 +12,8 @@
 
 #include "gui/gui.h"
 #include "gui/heatMap.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

@@ -6,12 +6,13 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
-#include <boost/geometry/geometries/register/ring.hpp>
-#include <boost/polygon/polygon.hpp>
+#include <cstddef>
 #include <vector>
 
+#include "boost/geometry/geometries/register/point.hpp"
+#include "boost/geometry/geometries/register/ring.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/geom.h"
 
 // Make odb's Point work with boost polgyon
@@ -289,7 +290,7 @@ struct interior_rings<odb::Polygon>
   {
     return {};
   }
-  static const std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
+  static std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
   {
     return {};
   }

@@ -3,6 +3,8 @@
 
 #include "db/drObj/drShape.h"
 
+#include <tuple>
+
 #include "db/drObj/drNet.h"
 #include "db/obj/frShape.h"
 

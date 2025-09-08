@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "utl/Logger.h"
+
 namespace grt {
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,

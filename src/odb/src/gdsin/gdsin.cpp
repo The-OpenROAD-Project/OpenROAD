@@ -4,9 +4,16 @@
 #include "odb/gdsin.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace odb ::gds {
 

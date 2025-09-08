@@ -2,12 +2,23 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frAccess.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 
 namespace drt {

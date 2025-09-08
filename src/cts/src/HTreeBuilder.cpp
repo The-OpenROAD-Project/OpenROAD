@@ -17,6 +17,7 @@
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -1849,6 +1850,7 @@ void HTreeBuilder::createClockSubNets()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
+  rootClockSubNet.setTreeLevel(0);
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -1950,6 +1952,11 @@ void HTreeBuilder::createClockSubNets()
                              wireSegmentUnit_,
                              this);
 
+      // Set clock tree level the first time only.
+      if (builder.getDrivingSubNet()->getTreeLevel() < 0) {
+        builder.getDrivingSubNet()->setTreeLevel(levelIdx);
+      }
+
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
       } else {
@@ -2017,6 +2024,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
+  clockSubNet.setTreeLevel(0);
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
