@@ -5397,7 +5397,7 @@ class dbMaster : public dbObject
   ///
   /// Clear the access points of all pins.
   ///
-  void clearPinAccess();
+  void clearPinAccess(int pin_access_idx);
 
   ///
   /// Create a new master.
@@ -5593,6 +5593,8 @@ class dbMPin : public dbObject
   Rect getBBox();
 
   std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
+
+  void clearPinAccess(int pin_access_idx);
 
   ///
   /// Create a new physical pin.

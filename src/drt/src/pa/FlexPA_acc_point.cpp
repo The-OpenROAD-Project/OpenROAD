@@ -1452,12 +1452,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
   }
-  if (inst_term) {
-    logger_->report("inst_term {} pin_access_idx {} aps.size() {}",
-                    inst_term->getName(),
-                    pin_access_idx,
-                    aps.size());
-  }
   return aps.size();
 }
 

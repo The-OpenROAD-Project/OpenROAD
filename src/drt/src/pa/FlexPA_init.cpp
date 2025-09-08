@@ -178,6 +178,7 @@ bool FlexPA::updateSkipInstTerm(frInst* inst)
       return true;
     }
   }
+  return false;
 }
 
 }  // namespace drt

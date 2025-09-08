@@ -23,7 +23,7 @@ namespace drt {
 UniqueClass::UniqueClass(const UniqueClassKey& key) : key_(key)
 {
   for (const auto& term : key_.master->getTerms()) {
-    skip_term_[term.get()] = false;
+    skip_term_[term.get()] = true;
   }
 }
 
@@ -283,6 +283,9 @@ void UniqueInsts::initUniqueInstPinAccess(UniqueClass* unique_class)
       pin->addPinAccess(std::make_unique<frPinAccess>());
     }
   }
+#pragma omp critical
+  unique_class->getMaster()->setHasPinAccessUpdate(
+      unique_class->getPinAccessIdx());
   for (frInst* inst : unique_class->getInsts()) {
     inst->setPinAccessIdx(unique_class->getPinAccessIdx());
   }

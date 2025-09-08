@@ -3750,7 +3750,9 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
     if (db_master == nullptr) {
       logger_->error(DRT, 294, "master {} not found in db", master->getName());
     }
-    db_master->clearPinAccess();
+    for (const auto& updated_pa_index : master->getUpdatedPAIndices()) {
+      db_master->clearPinAccess(updated_pa_index);
+    }
     for (auto& term : master->getTerms()) {
       auto db_mterm = db_master->findMTerm(term->getName().c_str());
       if (db_mterm == nullptr) {
@@ -3771,6 +3773,11 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
         int j = 0;
         int sz = pin->getNumPinAccess();
         while (j < sz) {
+          if (master->getUpdatedPAIndices().find(j)
+              == master->getUpdatedPAIndices().end()) {
+            j++;
+            continue;
+          }
           auto pa = pin->getPinAccess(j);
           for (auto& ap : pa->getAccessPoints()) {
             auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
@@ -3781,7 +3788,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
         }
       }
     }
-    master->setHasPinAccessUpdate(false);
+    master->clearUpdatedPAIndices();
   }
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
     if (!inst->hasPinAccessUpdate()) {

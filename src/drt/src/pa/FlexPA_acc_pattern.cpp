@@ -58,7 +58,12 @@ void FlexPA::buildInstsSet()
 
 void FlexPA::removeFromInstsSet(frInst* inst)
 {
-  insts_set_.erase(inst);
+  // find then erase
+  auto it = insts_set_.find(inst);
+  bool found = it != insts_set_.end() && (*it) == inst;
+  if (found) {
+    insts_set_.erase(it);
+  }
 }
 
 void FlexPA::addToInstsSet(frInst* inst)

@@ -138,14 +138,11 @@ void FlexPA::updateDirtyInsts()
     const auto& old_unique_class = unique_insts_.getUniqueClass(inst);
     const auto& new_unique_class = unique_insts_.computeUniqueClass(inst);
     if (old_unique_class == new_unique_class) {
-      // case 1 or 4
       if (!updateSkipInstTerm(inst)) {
-        // case 4
         dirty_unique_classes.insert(old_unique_class);
         continue;
       }
     } else {
-      // case 2 or 3
       if (old_unique_class != nullptr) {
         unique_insts_.deleteInst(inst);
       }
@@ -156,9 +153,6 @@ void FlexPA::updateDirtyInsts()
       }
     }
     pattern_insts.insert(inst);
-  }
-  for (auto& inst : dirty_insts_) {
-    addToInstsSet(inst);
   }
   std::vector<UniqueClass*> dirty_unique_classes_vec(
       dirty_unique_classes.begin(), dirty_unique_classes.end());
@@ -179,12 +173,16 @@ void FlexPA::updateDirtyInsts()
     }
     revertAccessPoints(candidate_inst);
 #pragma omp critical
-    unique_class->getMaster()->setHasPinAccessUpdate(true);
+    unique_class->getMaster()->setHasPinAccessUpdate(
+        unique_class->getPinAccessIdx());
     for (auto inst : unique_class->getInsts()) {
       inst->setHasPinAccessUpdate(true);
 #pragma omp critical
       pattern_insts.insert(inst);
     }
+  }
+  for (auto& inst : dirty_insts_) {
+    addToInstsSet(inst);
   }
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
