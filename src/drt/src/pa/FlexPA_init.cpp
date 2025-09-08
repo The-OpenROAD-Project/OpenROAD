@@ -11,6 +11,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/infra/frTime.h"
+#include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "gc/FlexGC.h"
 #include "pa/FlexPA.h"
@@ -146,37 +147,25 @@ void FlexPA::initTrackCoords()
 
 void FlexPA::initAllSkipInstTerm()
 {
-  const auto& unique = unique_insts_.getUnique();
+  const auto& unique = unique_insts_.getUniqueClasses();
 #pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {
-    initSkipInstTerm(unique_inst);
+  for (const auto& unique_class : unique) {
+    initSkipInstTerm(unique_class.get());
   }
 }
 
-void FlexPA::initSkipInstTerm(frInst* unique_inst)
+void FlexPA::initSkipInstTerm(UniqueClass* unique_class)
 {
-  for (auto& inst_term : unique_inst->getInstTerms()) {
-    frMTerm* term = inst_term->getTerm();
-    const UniqueInsts::InstSet* inst_class
-        = unique_insts_.getClass(unique_inst);
-
-#pragma omp critical
-    skip_unique_inst_term_[{inst_class, term}] = false;
-
-    // We have to be careful that the skip conditions are true not only of
-    // the unique instance but also all the equivalent instances.
-    bool skip = isSkipInstTermLocal(inst_term.get());
-    if (skip) {
-      for (frInst* inst : *inst_class) {
-        frInstTerm* it = inst->getInstTerm(inst_term->getIndexInOwner());
-        skip = isSkipInstTermLocal(it);
-        if (!skip) {
-          break;
-        }
+  for (const auto& term : unique_class->getMaster()->getTerms()) {
+    bool skip = true;
+    for (const auto& inst : unique_class->getInsts()) {
+      auto inst_term = inst->getInstTerm(term->getIndexInOwner());
+      skip = isSkipInstTermLocal(inst_term);
+      if (!skip) {
+        break;
       }
     }
-#pragma omp critical
-    skip_unique_inst_term_.at({inst_class, term}) = skip;
+    unique_class->setSkipTerm(term.get(), skip);
   }
 }
 

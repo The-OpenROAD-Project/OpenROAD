@@ -17,6 +17,7 @@ constexpr int CMAPFRACSIZE = 1;
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 class frTrackPattern;

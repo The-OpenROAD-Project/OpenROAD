@@ -20,8 +20,10 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -1467,7 +1469,7 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
 
 GuidePathFinder::GuidePathFinder(
     frDesign* design,
-    Logger* logger,
+    utl::Logger* logger,
     RouterConfiguration* router_cfg,
     frNet* net,
     const bool force_feed_through,

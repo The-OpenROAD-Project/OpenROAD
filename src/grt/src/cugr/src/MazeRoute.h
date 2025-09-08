@@ -5,9 +5,12 @@
 #include <vector>
 
 #include "CUGR.h"
+#include "Design.h"
 #include "GRNet.h"
+#include "GRTree.h"
 #include "GridGraph.h"
 #include "PatternRoute.h"
+#include "geo.h"
 #include "robin_hood.h"
 
 namespace grt {

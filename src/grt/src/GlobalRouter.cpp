@@ -189,6 +189,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeObstructionsAdjustments();
   std::vector<int> track_space = grid_->getTrackPitches();
   fastroute_->initBlockedIntervals(track_space);
+  // Save global resources before add adjustment by layer
+  fastroute_->saveResourcesBeforeAdjustments();
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
@@ -368,6 +370,8 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 
   if (is_congested_) {
+    // Suggest adjustment value
+    suggestAdjustment();
     if (allow_congestion_) {
       logger_->warn(GRT,
                     115,
@@ -379,6 +383,32 @@ void GlobalRouter::globalRoute(bool save_guides,
                      "Global routing finished with congestion. Check the "
                      "congestion regions in the DRC Viewer.");
     }
+  }
+}
+
+void GlobalRouter::suggestAdjustment()
+{
+  // Get min adjustment apply to layers
+  int min_routing_layer, max_routing_layer;
+  getMinMaxLayer(min_routing_layer, max_routing_layer);
+  float min_adjustment = 100;
+  for (int l = min_routing_layer; l <= max_routing_layer; l++) {
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
+    if (tech_layer->getLayerAdjustment() != 0.0) {
+      min_adjustment
+          = std::min(min_adjustment, tech_layer->getLayerAdjustment());
+    }
+  }
+  min_adjustment *= 100;
+  // Suggest new adjustment value
+  int suggest_adjustment;
+  bool has_sug_adj = fastroute_->computeSuggestedAdjustment(suggest_adjustment);
+  if (has_sug_adj && min_adjustment > suggest_adjustment) {
+    logger_->warn(GRT,
+                  704,
+                  "Try reduce the layer adjustment from {}% to {}%",
+                  min_adjustment,
+                  suggest_adjustment);
   }
 }
 
@@ -5116,6 +5146,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
+        // Suggest adjustment value
+        suggestAdjustment();
         logger_->error(GRT,
                        232,
                        "Routing congestion too high. Check the congestion "

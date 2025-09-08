@@ -134,6 +134,7 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t cap;    // the capacity of the edge
   uint16_t usage;  // the usage of the edge
   uint16_t red;
+  uint16_t real_cap;  // the real capacity without user adjustment
   int16_t last_usage;
   uint16_t ndr_overflow;  // number of NDR nets in congestion
   double est_usage;       // the estimated usage of the edge
@@ -144,9 +145,10 @@ struct Edge  // An Edge is the routing track holder between two adjacent
 
 struct Edge3D
 {
-  uint16_t cap;    // the capacity of the edge
-  uint16_t usage;  // the usage of the edge
-  uint16_t red;    // the reduction of capacity of the edge
+  uint16_t cap;       // the capacity of the edge
+  uint16_t usage;     // the usage of the edge
+  uint16_t red;       // the reduction of capacity of the edge
+  uint16_t real_cap;  // the real capacity without user adjustment
 };
 
 struct TreeNode

@@ -12,15 +12,18 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMPin.h"
 #include "frBaseTypes.h"
+#include "global.h"
 #include "pa/FlexPA.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
-                               Logger* logger,
+                               utl::Logger* logger,
                                RouterConfiguration* router_cfg)
     : logger_(logger),
       settings_(settings),
@@ -148,7 +151,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              frOrderedIdSet<frInst*>* inst_class)
+                              UniqueClass* inst_class)
 {
   pin_ = nullptr;
 
@@ -157,7 +160,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
     if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (inst_class->find(inst_) == inst_class->end()) {
+    if (!inst_class->hasInst(inst_)) {
       return;
     }
   }
@@ -177,7 +180,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              frOrderedIdSet<frInst*>* inst_class)
+                              UniqueClass* inst_class)
 {
   pin_ = nullptr;
 

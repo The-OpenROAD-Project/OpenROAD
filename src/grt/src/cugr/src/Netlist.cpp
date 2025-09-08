@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "GeoTypes.h"
 #include "odb/db.h"
 
 namespace grt {

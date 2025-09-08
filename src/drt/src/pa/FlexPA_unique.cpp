@@ -9,15 +9,57 @@
 #include <set>
 #include <vector>
 
+#include "db/obj/frAccess.h"
+#include "db/obj/frInst.h"
+#include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 
 namespace drt {
 
+UniqueClass::UniqueClass(const UniqueClassKey& key) : key_(key)
+{
+  for (const auto& term : key_.master->getTerms()) {
+    skip_term_[term.get()] = false;
+  }
+}
+
+void UniqueClass::addInst(frInst* inst)
+{
+  insts_.insert(inst);
+}
+
+void UniqueClass::removeInst(frInst* inst)
+{
+  insts_.erase(inst);
+}
+
+bool UniqueClass::hasInst(frInst* inst) const
+{
+  return insts_.find(inst) != insts_.end();
+}
+
+frInst* UniqueClass::getFirstInst() const
+{
+  return *insts_.begin();
+}
+
+bool UniqueClass::isSkipTerm(frMTerm* term) const
+{
+  return skip_term_.at(term);
+}
+
+void UniqueClass::setSkipTerm(frMTerm* term, bool skip)
+{
+  skip_term_[term] = skip;
+}
+
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
-                         Logger* logger,
+                         utl::Logger* logger,
                          RouterConfiguration* router_cfg)
     : design_(design),
       target_insts_(target_insts),
@@ -104,9 +146,9 @@ bool UniqueInsts::hasTrackPattern(frTrackPattern* tp, const Rect& box) const
   return !(low > box.yMax() || high < box.yMin());
 }
 
-bool UniqueInsts::isNDRInst(frInst& inst)
+bool UniqueInsts::isNDRInst(frInst* inst) const
 {
-  for (auto& a : inst.getInstTerms()) {
+  for (const auto& a : inst->getInstTerms()) {
     if (a->getNet() && a->getNet()->getNondefaultRule()) {
       return true;
     }
@@ -114,7 +156,7 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
-UniqueInsts::InstSet& UniqueInsts::computeUniqueClass(frInst* inst)
+UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
   const Point origin = inst->getOrigin();
   const Rect boundary_bbox = inst->getBoundaryBBox();
@@ -141,37 +183,33 @@ UniqueInsts::InstSet& UniqueInsts::computeUniqueClass(frInst* inst)
       offset.push_back(tp->getTrackSpacing());
     }
   }
+  // Special case for NDR instances, create a separate unique class for them
+  frInst* ndr_inst = nullptr;
+  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(inst)) {
+    ndr_inst = inst;
+  }
+  return UniqueClassKey(inst->getMaster(), orient, offset, ndr_inst);
+}
 
-  // Fills data structure that relate a instance to its unique instance
-  return master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
+UniqueClass* UniqueInsts::computeUniqueClass(frInst* inst)
+{
+  const auto key = computeUniqueClassKey(inst);
+  if (unique_class_by_key_.find(key) == unique_class_by_key_.end()) {
+    // new unique class
+    auto unique_class = std::make_unique<UniqueClass>(key);
+    auto unique_class_ptr = unique_class.get();
+    unique_classes_.emplace_back(std::move(unique_class));
+    unique_class_by_key_[key] = unique_class_ptr;
+  }
+  return unique_class_by_key_.at(key);
 }
 
 bool UniqueInsts::addInst(frInst* inst)
 {
-  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
-    unique_to_idx_[inst] = unique_.size();
-    unique_.push_back(inst);
-    inst_to_unique_[inst] = inst;
-    inst_to_class_[inst] = nullptr;
-  }
-
-  UniqueInsts::InstSet& unique_class = computeUniqueClass(inst);
-  inst_to_class_[inst] = &unique_class;
-
-  frInst* unique_inst = nullptr;
-  bool new_unique_class = unique_class.empty();
-  if (new_unique_class) {
-    int i = unique_.size();
-    unique_.push_back(inst);
-    unique_to_idx_[inst] = i;
-    unique_inst = inst;
-  } else {
-    // guarantees everyone on the class has the same unique_inst (the first
-    // that came)
-    unique_inst = inst_to_unique_[*unique_class.begin()];
-  }
-  unique_class.insert(inst);
-  inst_to_unique_[inst] = unique_inst;
+  auto unique_class = computeUniqueClass(inst);
+  bool new_unique_class = unique_class->getInsts().empty();
+  unique_class->addInst(inst);
+  inst_to_unique_class_[inst] = unique_class;
   return new_unique_class;
 }
 
@@ -228,24 +266,27 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
+void UniqueInsts::initUniqueInstPinAccess(UniqueClass* unique_class)
 {
-  for (auto& inst_term : unique_inst->getInstTerms()) {
-    for (auto& pin : inst_term->getTerm()->getPins()) {
-      unique_inst->setPinAccessIdx(pin->getNumPinAccess());
+  if (unique_class->getInsts().empty()) {
+    return;
+  }
+  for (auto& term : unique_class->getMaster()->getTerms()) {
+    for (auto& pin : term->getPins()) {
+      unique_class->setPinAccessIdx(pin->getNumPinAccess());
       checkFigsOnGrid(pin.get());
       pin->addPinAccess(std::make_unique<frPinAccess>());
     }
   }
-  for (frInst* inst : *inst_to_class_[unique_inst]) {
-    inst->setPinAccessIdx(unique_inst->getPinAccessIdx());
+  for (frInst* inst : unique_class->getInsts()) {
+    inst->setPinAccessIdx(unique_class->getPinAccessIdx());
   }
 }
 
 void UniqueInsts::initPinAccess()
 {
-  for (frInst* unique_inst : unique_) {
-    initUniqueInstPinAccess(unique_inst);
+  for (auto& unique_class : unique_classes_) {
+    initUniqueInstPinAccess(unique_class.get());
   }
 
   // IO terms
@@ -266,101 +307,49 @@ void UniqueInsts::init()
 
 void UniqueInsts::report() const
 {
-  logger_->report("#scanned instances     = {}", inst_to_unique_.size());
-  logger_->report("#unique  instances     = {}", unique_.size());
+  logger_->report("#scanned instances     = {}", inst_to_unique_class_.size());
+  logger_->report("#unique  instances     = {}", unique_classes_.size());
 }
 
-UniqueInsts::InstSet* UniqueInsts::getClass(frInst* inst) const
+UniqueClass* UniqueInsts::getUniqueClass(frInst* inst) const
 {
-  return inst_to_class_.at(inst);
+  if (inst_to_unique_class_.find(inst) == inst_to_unique_class_.end()) {
+    return nullptr;
+  }
+  return inst_to_unique_class_.at(inst);
 }
 
 bool UniqueInsts::hasUnique(frInst* inst) const
 {
-  return inst_to_unique_.find(inst) != inst_to_unique_.end();
-}
-
-void UniqueInsts::forceInstAsClassHead(frInst* target_inst)
-{
-  UniqueInsts::InstSet& unique_class = *inst_to_class_[target_inst];
-  UniqueInsts::InstSet temporary_set;
-  for (frInst* inst : unique_class) {
-    if (inst != target_inst) {
-      temporary_set.insert(inst);
-    }
-  }
-  for (frInst* inst : temporary_set) {
-    deleteInst(inst);
-  }
-  // target inst is now the only inst in the set, therefore its head
-  for (frInst* inst : temporary_set) {
-    addInst(inst);
-  }
+  return inst_to_unique_class_.find(inst) != inst_to_unique_class_.end();
 }
 
 // deleteInst has to be called both when an instance is deleted and might
 // be needed when moved
-frInst* UniqueInsts::deleteInst(frInst* inst)
+void UniqueInsts::deleteInst(frInst* inst)
 {
-  UniqueInsts::InstSet& unique_class = *inst_to_class_[inst];
-  frInst* class_head = inst_to_unique_[inst];
-  if (unique_class.size() == 1) {
-    auto it = std::find(unique_.begin(), unique_.end(), inst);
-    if (it == unique_.end()) {
-      logger_->error(DRT,
-                     25,
-                     "{} not found on unique insts, although being the only "
-                     "one of its unique class");
-    }
-
-    // readjusts unique_to_idx_ to compensate for posterior unique deletion
-    for (int i = unique_to_idx_[inst]; i < unique_.size(); i++) {
-      auto unique_inst = unique_[i];
-      unique_to_idx_[unique_inst]--;
-    }
-    unique_.erase(it);
-    unique_to_idx_.erase(inst);
-    class_head = nullptr;
-
-  } else if (inst == inst_to_unique_[inst]) {
-    // the inst does not belong to the class anymore, but is the reference
-    // unique_inst, so the reference has to be another inst
-    auto class_begin = inst_to_class_[inst]->begin();
-    // new class head
-    class_head = *class_begin != inst ? *class_begin : *(++class_begin);
-    unique_[unique_to_idx_[inst]] = class_head;
-    for (frInst* other_inst : unique_class) {
-      inst_to_unique_[other_inst] = class_head;
-    }
-    unique_to_idx_[class_head] = unique_to_idx_[inst];
-    unique_to_idx_.erase(inst);
+  auto unique_class = getUniqueClass(inst);
+  if (!unique_class) {
+    return;
   }
-  inst_to_class_[inst]->erase(inst);
-  inst_to_class_.erase(inst);
-  inst_to_unique_.erase(inst);
+  unique_class->removeInst(inst);
+  inst_to_unique_class_.erase(inst);
   inst->deletePinAccessIdx();
-  return class_head;
 }
 
-int UniqueInsts::getIndex(frInst* inst)
+void UniqueInsts::deleteUniqueClass(UniqueClass* unique_class)
 {
-  frInst* unique_inst = inst_to_unique_[inst];
-  return unique_to_idx_[unique_inst];
+  unique_class_by_key_.erase(unique_class->key());
+  unique_classes_.erase(std::find_if(
+      unique_classes_.begin(),
+      unique_classes_.end(),
+      [unique_class](const auto& u) { return u.get() == unique_class; }));
 }
 
-const std::vector<frInst*>& UniqueInsts::getUnique() const
+const std::vector<std::unique_ptr<UniqueClass>>& UniqueInsts::getUniqueClasses()
+    const
 {
-  return unique_;
-}
-
-frInst* UniqueInsts::getUnique(int idx) const
-{
-  return unique_[idx];
-}
-
-frInst* UniqueInsts::getUnique(frInst* inst) const
-{
-  return inst_to_unique_.at(inst);
+  return unique_classes_;
 }
 
 }  // namespace drt

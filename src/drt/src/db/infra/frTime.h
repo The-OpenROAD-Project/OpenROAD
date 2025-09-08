@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "frBaseTypes.h"
+#include "utl/Logger.h"
 
 namespace drt {
 class frTime
@@ -15,7 +16,7 @@ class frTime
  public:
   frTime() : t0_(std::chrono::high_resolution_clock::now()), t_(clock()) {}
   std::chrono::high_resolution_clock::time_point getT0() const { return t0_; }
-  void print(Logger* logger);
+  void print(utl::Logger* logger);
   bool isExceed(double in)
   {
     auto t1 = std::chrono::high_resolution_clock::now();

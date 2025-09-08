@@ -5,6 +5,7 @@
 #include "dbChipInst.h"
 
 #include <string>
+#include <unordered_map>
 
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -63,6 +64,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj)
 {
   stream >> obj.name_;
   stream >> obj.loc_;
+  stream >> obj.orient_;
   stream >> obj.master_chip_;
   stream >> obj.parent_chip_;
   stream >> obj.chipinst_next_;
@@ -76,6 +78,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipInst& obj)
 {
   stream << obj.name_;
   stream << obj.loc_;
+  stream << obj.orient_;
   stream << obj.master_chip_;
   stream << obj.parent_chip_;
   stream << obj.chipinst_next_;
@@ -114,6 +117,19 @@ Point3D dbChipInst::getLoc() const
   return obj->loc_;
 }
 
+void dbChipInst::setOrient(dbOrientType3D orient)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  obj->orient_ = orient;
+}
+
+dbOrientType3D dbChipInst::getOrient() const
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+  return obj->orient_;
+}
+
 dbChip* dbChipInst::getMasterChip() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
@@ -135,23 +151,13 @@ dbChip* dbChipInst::getParentChip() const
 }
 
 // User Code Begin dbChipInstPublicMethods
-void dbChipInst::setOrient(const dbOrientType& orient)
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-  obj->orient_ = orient;
-}
-
-dbOrientType dbChipInst::getOrient() const
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-  return obj->orient_;
-}
 
 dbTransform dbChipInst::getTransform() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   // TODO: Add 3d Point handling to the transform
-  return dbTransform(obj->orient_, Point(obj->loc_.x(), obj->loc_.y()));
+  return dbTransform(obj->orient_.getOrientType2D(),
+                     Point(obj->loc_.x(), obj->loc_.y()));
 }
 
 dbSet<dbChipRegionInst> dbChipInst::getRegions() const
@@ -159,6 +165,26 @@ dbSet<dbChipRegionInst> dbChipInst::getRegions() const
   _dbChipInst* _chipinst = (_dbChipInst*) this;
   _dbDatabase* _db = (_dbDatabase*) _chipinst->getOwner();
   return dbSet<dbChipRegionInst>(_chipinst, _db->chip_region_inst_itr_);
+}
+
+dbChipRegionInst* dbChipInst::findChipRegionInst(
+    dbChipRegion* chip_region) const
+{
+  if (chip_region == nullptr) {
+    return nullptr;
+  }
+  _dbChipInst* obj = (_dbChipInst*) this;
+  auto it = obj->region_insts_map_.find(chip_region->getId());
+  if (it != obj->region_insts_map_.end()) {
+    auto db = (_dbDatabase*) obj->getOwner();
+    return (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr((*it).second);
+  }
+  return nullptr;
+}
+
+dbChipRegionInst* dbChipInst::findChipRegionInst(const std::string& name) const
+{
+  return findChipRegionInst(getMasterChip()->findChipRegion(name));
 }
 
 dbChipInst* dbChipInst::create(dbChip* parent_chip,
@@ -183,6 +209,13 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     db->getLogger()->error(
         utl::ODB, 507, "Cannot create chip instance {} in itself", name);
   }
+  if (parent_chip->findChipInst(name) != nullptr) {
+    db->getLogger()->error(utl::ODB,
+                           514,
+                           "Chip instance {} already exists in parent chip {}",
+                           name,
+                           parent_chip->getName());
+  }
 
   // Create a new chip instance
   _dbChipInst* chipinst = db->chip_inst_tbl_->create();
@@ -190,14 +223,13 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
   // Initialize the chip instance
   chipinst->name_ = name;
   chipinst->loc_ = Point3D(0, 0, 0);  // Default location
-  chipinst->orient_
-      = dbOrientType::R0;  // Default orientation (already set in constructor)
   chipinst->master_chip_ = _master->getOID();
   chipinst->parent_chip_ = _parent->getOID();
 
   // Link the chip instance to the parent chip's linked list
   chipinst->chipinst_next_ = _parent->chipinsts_;
   _parent->chipinsts_ = chipinst->getOID();
+  _parent->chipinsts_map_[name] = chipinst->getOID();
 
   // create chipRegionInsts
   for (auto region : master_chip->getChipRegions()) {
@@ -206,6 +238,7 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     regioninst->parent_chipinst_ = chipinst->getOID();
     regioninst->chip_region_inst_next_ = chipinst->chip_region_insts_;
     chipinst->chip_region_insts_ = regioninst->getOID();
+    chipinst->region_insts_map_[region->getId()] = regioninst->getOID();
     // create chipBumpInsts
     for (auto bump : region->getChipBumps()) {
       _dbChipBumpInst* bumpinst = db->chip_bump_inst_tbl_->create();
@@ -245,6 +278,7 @@ void dbChipInst::destroy(dbChipInst* chipInst)
   }
   // Get parent chip
   _dbChip* parent = db->chip_tbl_->getPtr(inst->parent_chip_);
+  parent->chipinsts_map_.erase(inst->name_);
 
   // Remove from parent's linked list
   if (parent->chipinsts_ == inst->getOID()) {

@@ -9,6 +9,7 @@
 
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class Point;
@@ -39,7 +40,7 @@ class frRegionQuery
   using Objects = std::vector<rq_box_value_t<T*>>;
 
   frRegionQuery(frDesign* design,
-                Logger* logger,
+                utl::Logger* logger,
                 RouterConfiguration* router_cfg);
   ~frRegionQuery();
   // getters

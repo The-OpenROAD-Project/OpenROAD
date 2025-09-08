@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frShape.h"
 #include "distributed/drUpdate.h"
 #include "ta/FlexTA.h"
 

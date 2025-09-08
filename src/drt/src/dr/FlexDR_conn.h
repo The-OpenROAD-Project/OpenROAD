@@ -10,9 +10,12 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frShape.h"
+#include "db/tech/frTechObject.h"
 #include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
 
 namespace odb {
 class dbDatabase;
@@ -29,7 +32,7 @@ class FlexDRConnectivityChecker
 {
  public:
   FlexDRConnectivityChecker(drt::TritonRoute* router,
-                            Logger* logger,
+                            utl::Logger* logger,
                             RouterConfiguration* router_cfg,
                             AbstractDRGraphics* graphics,
                             bool save_updates = false);
@@ -174,7 +177,7 @@ class FlexDRConnectivityChecker
   frTechObject* getTech() const;
   frDesign* getDesign() const;
   drt::TritonRoute* router_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
   AbstractDRGraphics* graphics_;
   bool save_updates_;

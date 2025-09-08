@@ -83,7 +83,7 @@ class SimulatedAnnealingCore
   float getNormGuidancePenalty() const;
   float getFencePenalty() const;
   float getNormFencePenalty() const;
-  void getMacros(std::vector<T>& macros) const;
+  std::vector<T> getMacros() const;
 
   virtual void initialize() = 0;
   virtual void run() = 0;

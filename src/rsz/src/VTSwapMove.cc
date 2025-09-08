@@ -91,6 +91,11 @@ bool VTSwapSpeedMove::isSwappable(const Path*& drvr_path,
                     network_->pathName(drvr_pin));
     return false;
   }
+  if (!resizer_->isLogicStdCell(drvr)) {
+    debugMovePrint1("REJECT vt_swap {}: drvr instance is not a standard cell",
+                    network_->pathName(drvr_pin));
+    return false;
+  }
   LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
   if (drvr_port == nullptr) {
     debugMovePrint1("REJECT vt_swap {}: drvr pin has no library port",

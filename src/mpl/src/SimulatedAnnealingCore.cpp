@@ -238,9 +238,9 @@ float SimulatedAnnealingCore<T>::getNormFencePenalty() const
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
+std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 {
-  macros = macros_;
+  return macros_;
 }
 
 // Private functions

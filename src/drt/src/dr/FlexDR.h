@@ -20,14 +20,22 @@
 #include "boost/serialization/export.hpp"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frSegStyle.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
 #include "gc/FlexGC.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
@@ -93,7 +101,7 @@ class FlexDR
   // constructors
   FlexDR(TritonRoute* router,
          frDesign* designIn,
-         Logger* loggerIn,
+         utl::Logger* loggerIn,
          odb::dbDatabase* dbIn,
          RouterConfiguration* router_cfg);
   ~FlexDR();
@@ -111,7 +119,7 @@ class FlexDR
   void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
 
   // For post-deserialization update
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
   void setDB(odb::dbDatabase* db) { db_ = db; }
   AbstractDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
@@ -139,7 +147,7 @@ class FlexDR
   IterationsControl control_;
   TritonRoute* router_;
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
   RouterConfiguration* router_cfg_;
   std::vector<std::vector<
@@ -265,7 +273,7 @@ class FlexDRWorker
   // constructors
   FlexDRWorker(FlexDRViaData* via_data,
                frDesign* design,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg)
       : design_(design),
         logger_(logger),
@@ -421,8 +429,8 @@ class FlexDRWorker
   std::string reloadedMain();
   bool end(frDesign* design);
 
-  Logger* getLogger() { return logger_; }
-  void setLogger(Logger* logger)
+  utl::Logger* getLogger() { return logger_; }
+  void setLogger(utl::Logger* logger)
   {
     logger_ = logger;
     gridGraph_.setLogger(logger);
@@ -485,7 +493,7 @@ class FlexDRWorker
     }
   };
   frDesign* design_{nullptr};
-  Logger* logger_{nullptr};
+  utl::Logger* logger_{nullptr};
   RouterConfiguration* router_cfg_{nullptr};
   AbstractDRGraphics* graphics_{nullptr};  // owned by FlexDR
   frDebugSettings* debugSettings_{nullptr};

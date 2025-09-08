@@ -19,11 +19,15 @@
 #include "boost/container/flat_set.hpp"
 #include "db/drObj/drPin.h"
 #include "db/infra/frBox.h"
+#include "db/obj/frTrackPattern.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
@@ -38,7 +42,7 @@ class FlexGridGraph
  public:
   // constructors
   FlexGridGraph(frTechObject* techIn,
-                Logger* loggerIn,
+                utl::Logger* loggerIn,
                 FlexDRWorker* workerIn,
                 RouterConfiguration* router_cfg)
       : tech_(techIn),
@@ -407,7 +411,7 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
+  void setLogger(utl::Logger* loggerIn) { logger_ = loggerIn; }
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,
@@ -986,7 +990,7 @@ class FlexGridGraph
 
  private:
   frTechObject* tech_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   FlexDRWorker* drWorker_ = nullptr;
   RouterConfiguration* router_cfg_ = nullptr;
   AbstractDRGraphics* graphics_ = nullptr;  // owned by FlexDR

@@ -10,6 +10,13 @@
 #include <utility>
 #include <vector>
 
+#include "Design.h"
+#include "GridGraph.h"
+#include "Layers.h"
+#include "PatternRoute.h"
+#include "geo.h"
+#include "robin_hood.h"
+
 namespace grt {
 
 void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
