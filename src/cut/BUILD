@@ -34,6 +34,9 @@ cc_library(
         "@boost.fusion",
         "@edu_berkeley_abc//:abc-lib",
     ],
-    defines = ["_GLIBCXX_ASSERTIONS"]
+    defines = [
+        "_GLIBCXX_ASSERTIONS",
+        "ABC_NAMESPACE=abc",
+    ],
 )
 
