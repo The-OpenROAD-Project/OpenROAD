@@ -1645,14 +1645,19 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       sa_batch.push_back(std::move(sa));
     }
 
-    std::vector<std::thread> threads;
-    threads.reserve(sa_batch.size());
-    for (auto& sa : sa_batch) {
-      threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
+    if (graphics_) {
+      runSA<SACoreSoftMacro>(sa_batch.front().get());
+    } else {
+      std::vector<std::thread> threads;
+      threads.reserve(sa_batch.size());
+      for (auto& sa : sa_batch) {
+        threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
-    for (auto& th : threads) {
-      th.join();
-    }
+
     remaining_runs -= run_thread;
 
     // add macro tilings

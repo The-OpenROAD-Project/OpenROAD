@@ -51,6 +51,7 @@ bool _dbChipRegion::operator<(const _dbChipRegion& rhs) const
 
 _dbChipRegion::_dbChipRegion(_dbDatabase* db)
 {
+  side_ = static_cast<uint8_t>(dbChipRegion::Side::FRONT);
   chip_bump_tbl_ = new dbTable<_dbChipBump>(
       db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBumpObj);
 }

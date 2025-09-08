@@ -7120,14 +7120,15 @@ class dbChipInst : public dbObject
 
   Point3D getLoc() const;
 
+  void setOrient(dbOrientType3D orient);
+
+  dbOrientType3D getOrient() const;
+
   dbChip* getMasterChip() const;
 
   dbChip* getParentChip() const;
 
   // User Code Begin dbChipInst
-  void setOrient(const dbOrientType& orient);
-
-  dbOrientType getOrient() const;
 
   dbTransform getTransform() const;
 

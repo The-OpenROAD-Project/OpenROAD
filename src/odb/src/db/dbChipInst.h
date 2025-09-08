@@ -34,7 +34,7 @@ class _dbChipInst : public _dbObject
 
   std::string name_;
   Point3D loc_;
-  dbOrientType::Value orient_;
+  dbOrientType3D orient_;
   dbId<_dbChip> master_chip_;
   dbId<_dbChip> parent_chip_;
   dbId<_dbChipInst> chipinst_next_;
