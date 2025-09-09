@@ -8,4 +8,4 @@ create_clock [get_ports clk_i] -name core_clock -period 10
 clock_gating -max_cover 50
 set verilog_file [make_result_file ibex_sky130hd_gated_tcl.v]
 write_verilog $verilog_file
-diff_file ibex_sky130hd_gated_tcl.vok $verilog_file
+diff_file ibex_sky130hd_gated.vok $verilog_file
