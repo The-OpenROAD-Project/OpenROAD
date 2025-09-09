@@ -133,6 +133,11 @@ OpenRoad::~OpenRoad()
   delete logger_;
   delete verilog_reader_;
   delete callback_handler_;
+
+  if (abc_initialized) {
+    abc::Abc_Stop();
+  }
+}
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
