@@ -33,7 +33,7 @@
 #include <tclExtend.h>
 #endif
 
-#include "cut/abc_library_factory.h"
+#include "cut/abc_init.h"
 #include "gui/gui.h"
 #include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"

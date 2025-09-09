@@ -10,6 +10,7 @@
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
 #include "base/main/abcapis.h"
+#include "cut/abc_init.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
