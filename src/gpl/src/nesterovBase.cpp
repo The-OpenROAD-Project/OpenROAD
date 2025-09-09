@@ -3322,7 +3322,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   const int64_t min_allowed_filler_area = initial_filler_area_ * 0.9;
   const int64_t max_fllers_to_remove = std::min(
       inflation_area / single_filler_area,
-      (totalFillerArea_-min_allowed_filler_area) / single_filler_area);
+      (totalFillerArea_ - min_allowed_filler_area) / single_filler_area);
 
   int64_t filler_area_before_removal = totalFillerArea_;
   size_t num_filler_before_removal = fillerStor_.size();
