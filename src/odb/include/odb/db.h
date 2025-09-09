@@ -617,7 +617,7 @@ class dbBlock : public dbObject
   ///
   /// Returns the top module of this block.
   ///
-  dbModule* getTopModule();
+  dbModule* getTopModule() const;
 
   ///
   /// Get the child blocks of this block.
@@ -2947,8 +2947,8 @@ class dbInst : public dbObject
 
   ///
   /// Create a new instance.
-  /// If physical_only is true the instance can't bee added to a dbModule.
-  /// If false, it will be added to the top module.
+  /// If physical_only is true, the instance can only be added to a top module.
+  /// If false, it will be added to the parent module.
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
   /// If dbmodule is non null the dbInst is added to that module.
@@ -8343,6 +8343,7 @@ class dbModule : public dbObject
 
   const dbModBTerm* getHeadDbModBTerm() const;
   bool canSwapWith(dbModule* new_module) const;
+  bool isTop() const;
 
   static dbModule* create(dbBlock* block, const char* name);
 
