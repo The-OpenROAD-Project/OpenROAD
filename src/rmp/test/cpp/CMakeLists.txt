@@ -10,7 +10,7 @@ target_link_libraries(RmpGTests
         rsz_lib
         utl_lib
         libabc
-        rmp
+        rmp_lib
         ${TCL_LIBRARY}
 )
 

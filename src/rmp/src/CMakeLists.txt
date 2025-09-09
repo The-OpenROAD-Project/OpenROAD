@@ -12,12 +12,15 @@ swig_lib(NAME      rmp
          SWIG_INCLUDES ${OPENSTA_HOME}
 )
 
-target_sources(rmp
-  PRIVATE
+add_library(rmp_lib
     Restructure.cpp
-    MakeRestructure.cpp
     delay_optimization_strategy.cpp
     zero_slack_strategy.cpp
+)
+
+target_sources(rmp
+  PRIVATE
+    MakeRestructure.cpp
 )
 
 messages(
@@ -33,19 +36,29 @@ target_include_directories(rmp
     # Unfortunate side-effect of swig include StaTcl.i
     ${OPENSTA_HOME}/include/sta
     ${OPENSTA_HOME}
- )
+)
 
-target_link_libraries(rmp
-  PRIVATE
+target_include_directories(rmp_lib
+  PUBLIC
+    ../include
+)
+  
+target_link_libraries(rmp_lib
+  PUBLIC
     odb
-    dbSta
+    dbSta_lib
     OpenSTA
-    rsz
+    rsz_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
- )
+)
 
+target_link_libraries(rmp
+  PRIVATE
+    rmp_lib
+)
+ 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          rmp_py
            NAMESPACE     rmp
