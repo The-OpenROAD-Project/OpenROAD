@@ -17,5 +17,6 @@ cgt = design.getClockGating()
 cgt.setMaxCover(50)
 cgt.run()
 
-design.evalTclString("write_verilog results/ibex_sky130hd_gated.v")
-helpers.diff_files("ibex_sky130hd_gated.vok", "results/ibex_sky130hd_gated.v")
+verilog_file = helpers.make_result_file("ibex_sky130hd_gated.v")
+design.evalTclString(f"write_verilog {verilog_file}")
+helpers.diff_files("ibex_sky130hd_gated.vok", verilog_file)

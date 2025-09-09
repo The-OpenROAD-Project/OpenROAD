@@ -21,5 +21,6 @@ cgt = design.getClockGating()
 cgt.setMinInstances(1)
 cgt.run()
 
-design.evalTclString("write_verilog results/countdown_asap7_gated.v")
-helpers.diff_files("countdown_asap7_gated.vok", "results/countdown_asap7_gated.v")
+verilog_file = helpers.make_result_file("countdown_asap7_gated.v")
+design.evalTclString(f"write_verilog {verilog_file}")
+helpers.diff_files("countdown_asap7_gated.vok", verilog_file)
