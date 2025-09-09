@@ -161,10 +161,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3749-g8443d760",
+    image = "docker.io/openroad/orfs:v3.0-3766-g33e29bff",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "f84c76855e854e89e54eb87fac2b65038567205ced5f8051e34e2e842047d78a",
+    sha256 = "edaf81aaab215ffa82e21f1b98fadb0d42da35444b39b524452a6ee52db5fea5",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -196,8 +196,8 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "openroad_maven",
     artifacts = [
-        "org.chipsalliance:chisel_2.13:7.0.0-RC3",
-        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC3",
+        "org.chipsalliance:chisel_2.13:7.0.0",
+        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",

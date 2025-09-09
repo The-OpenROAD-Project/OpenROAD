@@ -105,6 +105,7 @@ OpenRoad::~OpenRoad()
   deleteOpendp(opendp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
+  deleteClockGating(clock_gating_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
