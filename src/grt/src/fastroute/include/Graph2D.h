@@ -36,6 +36,11 @@ class Graph2D
   {
     int net_id;          // NDR net id
     uint16_t num_edges;  // number of congested edges
+
+    NDRCongestion(int net_id, uint16_t num_edges)
+        : net_id(net_id), num_edges(num_edges)
+    {
+    }
   };
 
   struct NDRCongestionComparator

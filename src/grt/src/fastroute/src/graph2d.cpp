@@ -493,14 +493,11 @@ void Graph2D::initNDRnets()
 {
   v_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
   h_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
-
-  // congested_ndrs_.resize(boost::extents[x_grid_][y_grid_]);
 }
 
 void Graph2D::addCongestedNDRnet(const int net_id, const uint16_t num_edges)
 {
-  NDRCongestion ndr_net = {net_id, num_edges};
-  congested_ndrs_.push_back(ndr_net);
+  congested_ndrs_.emplace_back(net_id, num_edges);
 }
 
 void Graph2D::sortCongestedNDRnets()
