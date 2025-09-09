@@ -26,6 +26,9 @@ cc_library(
         "include/cgt/NetworkBuilder.h",
         "include/cgt/RandomBits.h",
     ],
+    defines = [
+        "ABC_NAMESPACE=abc",
+    ],
     includes = [
         "include",
     ],
