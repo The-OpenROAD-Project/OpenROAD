@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -511,10 +512,22 @@ void Graph2D::sortCongestedNDRnets()
 
 int Graph2D::getOneCongestedNDRnet()
 {
-  if (!congested_ndrs_.empty() && congested_ndrs_[0].num_edges > 0) {
+  if (!congested_ndrs_.empty()) {
     return congested_ndrs_[0].net_id;
   }
   return -1;
+}
+
+// Get 10% of the NDR nets more involved in congestion
+std::vector<int> Graph2D::getMultipleCongestedNDRnet()
+{
+  std::vector<int> net_ids;
+  if (!congested_ndrs_.empty()) {
+    for (int i = 0; i < ceil((double)congested_ndrs_.size() / 10); i++) {
+      net_ids.push_back(congested_ndrs_[i].net_id);
+    }
+  }
+  return net_ids;
 }
 
 // Initializes the 3D capacity of the graph.

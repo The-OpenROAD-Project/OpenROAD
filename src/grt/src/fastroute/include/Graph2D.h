@@ -8,7 +8,6 @@
 #include <set>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -35,7 +34,7 @@ class Graph2D
 
   struct NDRCongestion
   {
-    int net_id;  // NDR net id
+    int net_id;          // NDR net id
     uint16_t num_edges;  // number of congested edges
   };
 
@@ -119,6 +118,7 @@ class Graph2D
   void addCongestedNDRnet(int net_id, uint16_t num_edges);
   void sortCongestedNDRnets();
   int getOneCongestedNDRnet();
+  std::vector<int> getMultipleCongestedNDRnet();
 
  private:
   int x_grid_;

@@ -253,6 +253,7 @@ class FastRouteCore
   void computeCongestedNDRnets();
   void updateSoftNDRNetUsage(int net_id, int edge_cost);
   void setSoftNDR(int net_id);
+  void applySoftNDR(const std::vector<int>& net_ids);
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }

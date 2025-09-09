@@ -1194,7 +1194,7 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
-  const int long_edge_len = BIG_INT;
+  int long_edge_len = 40;
   const int short_edge_len = 12;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
@@ -1348,9 +1348,6 @@ NetRouteMap FastRouteCore::run()
         if (i % 2 == 0) {
           logistic_coef += 0.5;
         }
-        // if (i > 40) {
-        //   break;
-        // }
       }
       if (i > 10) {
         ripup_threshold = 0;
@@ -1541,27 +1538,32 @@ NetRouteMap FastRouteCore::run()
       // Compute all the NDR nets involved in congestion
       computeCongestedNDRnets();
 
-      // Select one NDR net to be disabled
-      int net_id = graph2d_.getOneCongestedNDRnet();
+      std::vector<int> net_ids;
 
-      // If net_id == -1, there is no NDR net involved in congestion
-      if (net_id != -1) {
-        logger_->warn(
-            GRT, 273, "Disabling NDR net {}", nets_[net_id]->getName());
+      // If the congestion is not that high (note that the overflow is inflated
+      // by 100x when there is no capacity available for a NDR net in a specific
+      // edge)
+      if (total_overflow_ < 10000) {
+        // Select one NDR net to be disabled
+        int net_id = graph2d_.getOneCongestedNDRnet();
+        if (net_id != -1) {
+          net_ids.push_back(net_id);
+        }
+      } else {  // Select multiple NDR nets
+        net_ids = graph2d_.getMultipleCongestedNDRnet();
+      }
 
-        // Remove the usage of all the edges involved with this net
-        updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
-
-        // Reset the edge cost and layer edge cost to 1
-        setSoftNDR(net_id);
-
-        // Update the usage of all the edges involved with this net considering
-        // the new edge cost
-        updateSoftNDRNetUsage(net_id, nets_[net_id]->getEdgeCost());
+      // Only apply soft NDR if there is NDR nets involved in congestion
+      if (!net_ids.empty()) {
+        // Apply the soft NDR to the selected list of nets
+        applySoftNDR(net_ids);
 
         // Reset loop parameters
         overflow_increases = 0;
         i = 0;
+
+        // Increase maze route 3D threshold to fix bad routes
+        long_edge_len = BIG_INT;
       }
     }
 
@@ -1655,6 +1657,23 @@ NetRouteMap FastRouteCore::run()
   NetRouteMap routes = getRoutes();
   net_ids_.clear();
   return routes;
+}
+
+void FastRouteCore::applySoftNDR(const std::vector<int>& net_ids)
+{
+  for (auto net_id : net_ids) {
+    logger_->warn(GRT, 273, "Disabling NDR net {}", nets_[net_id]->getName());
+
+    // Remove the usage of all the edges involved with this net
+    updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
+
+    // Reset the edge cost and layer edge cost to 1
+    setSoftNDR(net_id);
+
+    // Update the usage of all the edges involved with this net considering
+    // the new edge cost
+    updateSoftNDRNetUsage(net_id, nets_[net_id]->getEdgeCost());
+  }
 }
 
 void FastRouteCore::setSoftNDR(const int net_id)
