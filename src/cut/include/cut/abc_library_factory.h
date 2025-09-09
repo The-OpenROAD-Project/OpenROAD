@@ -86,4 +86,7 @@ class AbcLibraryFactory
   rsz::Resizer* resizer_ = nullptr;
 };
 
+void abcInit();
+void abcStop();
+
 }  // namespace cut

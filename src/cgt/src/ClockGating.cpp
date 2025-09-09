@@ -15,7 +15,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Bfs.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
@@ -360,7 +359,7 @@ void ClockGating::run()
   sta_->searchPreamble();
 
   // Initialize ABC
-  ord::abcInit();
+  cut::abcInit();
   abc_factory_->AddDbSta(sta_);
   abc_library_ = std::make_unique<cut::AbcLibrary>(abc_factory_->Build());
 
