@@ -1,0 +1,17 @@
+#!/bin/sh
+# The next line is executed by /bin/sh, but not Tcl \
+exec tclsh $0 ${1+"$@"}
+
+# Directory containing tests.
+set test_dir [file dirname [file normalize [info script]]]
+set openroad_dir [file dirname $test_dir]
+
+source [file join $test_dir "regression.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
+source [file join $test_dir "flow_metrics.tcl"]
+
+compare_flow_metrics_main
+
+# Local Variables:
+# mode:tcl
+# End:

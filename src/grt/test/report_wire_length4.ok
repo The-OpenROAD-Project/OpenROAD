@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 170 components and 1258 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 72 connections.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
+[INFO GRT-0237] Net clk global route wire length: 201.60um
+	Layer met3 : 144.00um
+	Layer met4 : 57.60um
+[INFO GRT-0240] Net clk detailed route wire length: 184.95um
+	Layer met1 :  0.21um
+	Layer met2 :  0.18um
+	Layer met3 : 134.97um
+	Layer met4 : 49.58um
+[INFO GRT-0237] Net net60 global route wire length: 14.40um
+	Layer met2 : 14.40um
+[INFO GRT-0240] Net net60 detailed route wire length: 13.39um
+	Layer met1 :  3.77um
+	Layer met2 :  9.62um
+No differences found.

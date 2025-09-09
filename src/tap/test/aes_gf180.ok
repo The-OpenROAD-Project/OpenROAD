@@ -1,0 +1,15 @@
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef, created 13 layers, 60 vias
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 15174 components and 80931 component-terminals.
+[INFO ODB-0133]     Created 15712 nets and 50583 connections.
+[INFO TAP-0003] Inserted 4 endcap corners.
+[INFO TAP-0004] Inserted 2686 endcaps.
+[INFO TAP-0005] Inserted 1452 tapcells.
+No differences found.

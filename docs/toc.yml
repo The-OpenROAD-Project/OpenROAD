@@ -1,0 +1,110 @@
+root: index
+entries:
+- file: main/README
+  title: Getting Started with OpenROAD
+  entries:
+  - file: user/Build.md
+    title: Building OpenROAD
+  - url: https://openroad-flow-scripts.readthedocs.io/
+    title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
+  - file: tutorials/index
+    title: Tutorials
+  - file: contrib/GitGuide
+    title: Git Quickstart
+  - file: main/src/utl/README
+    title: Man pages
+
+- file: main/README2
+  title: OpenROAD User Guide
+  entries:
+  - file: main/src/README
+    title: OpenROAD APIs
+  - file: main/src/odb/README
+    title: Database
+    entries:
+      - file: main/src/odb/src/codeGenerator/README
+        title: Code Generator
+      - file: main/src/odb/test/unitTestsPython/README
+        title: Unit Tests (Python)
+      - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
+        title: Add Fields in DB Objects
+  - file: main/src/gui/README
+    title: GUI
+  - file: main/src/par/README
+    title: Partition Management
+  - file: main/src/rmp/README
+    title: Restructure
+  - file: main/src/ifp/README
+    title: Floorplan Initialization
+  - file: main/src/ppl/README
+    title: Pin Placement
+  - file: main/src/dft/README
+    title: Design for Test
+  - file: main/src/pad/README
+    title: Chip-level Connections
+  - file: main/src/mpl/README
+    title: Macro Placement
+  - file: main/src/tap/README
+    title: Tapcell Insertion
+  - file: main/src/pdn/README
+    title: PDN Generation
+    entries:
+    - file: main/src/upf/README
+      title: Read UPF Utility
+    - file: main/src/psm/README
+      title: IR Drop Analysis
+      entries:
+      - file: main/src/psm/doc/Vsrc_description
+        title: VSRC Description
+  - file: main/src/gpl/README
+    title: Global Placement
+  - file: main/src/sta/README
+    title: Static Timing Analyzer (external)
+  - file: main/src/rsz/README
+    title: Gate Resizing
+  - file: main/src/dpl/README
+    title: Detailed Placement
+  - file: main/src/cts/README
+    title: Clock Tree Synthesis
+  - file: main/src/grt/README
+    title: Global Routing
+    entries:
+    - file: main/src/stt/src/flt/README
+      title: Flute
+  - file: main/src/ant/README
+    title: Antenna Checker
+  - file: main/src/drt/README
+    title: Detailed Routing
+  - file: main/src/fin/README
+    title: Metal Fill
+  - file: main/src/rcx/README
+    title: Parasitics Extraction
+    entries:
+    - file: main/src/rcx/doc/calibration
+      title: Calibration
+  - file: user/MessagesFinal.md
+    title: Messages Glossary
+
+- file: contrib/GettingInvolved
+  title: Getting Involved
+  entries:
+  - file: contrib/DeveloperGuide
+    title: Developer's Guide
+  - file: contrib/CodingPractices
+    title: Coding Practices
+  - file: contrib/Logger
+    title: Logger
+  - file: contrib/CI
+    title: CI
+  - file: contrib/ReadmeFormat
+    title: README Format
+  - file: contrib/TclFormat
+    title: Tcl Format
+  - file: src/test/README
+    title: Man pages Test Framework
+
+- file: main/CODE_OF_CONDUCT
+  title: Code of Conduct   
+
+- file: user/FAQS
+  title: FAQs

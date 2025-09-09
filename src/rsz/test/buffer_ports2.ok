@@ -1,0 +1,22 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: reg2.def
+Notice 0: Design: top
+Notice 0:     Created 6 pins.
+Notice 0:     Created 5 components and 27 component-terminals.
+Notice 0:     Created 2 special nets and 10 connections.
+Notice 0:     Created 10 nets and 14 connections.
+Notice 0: Finished DEF file: reg2.def
+Error: library 'xxx' not found.
+Error: liberty cell 'NangateOpenCellLibrary/yyy' not found.
+Warning: buffer_ports2.tcl, 10 library 'xxx' not found.
+Error: -buffer_cell required for buffer insertion.
+Error: NOR2_X1 is not a buffer.
+Inserted 5 input buffers.
+Inserted 1 output buffers.
+Inserted 5 input buffers.
+Inserted 1 output buffers.

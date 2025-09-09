@@ -1,0 +1,7 @@
+[WARNING ODB-0220] WARNING (LEFPARS-2007): NAMESCASESENSITIVE statement is obsolete in version 5.6 and later.
+The LEF parser will ignore this statement.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file asap7_data/asap7.lef at line 2.
+
+[INFO ODB-0227] LEF file: asap7_data/asap7.lef, created 24 layers, 9 vias, 212 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+No differences found.

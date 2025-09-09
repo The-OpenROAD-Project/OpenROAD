@@ -1,0 +1,144 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 15 components and 98 component-terminals.
+[INFO ODB-0133]     Created 13 nets and 30 connections.
+********************************************************************************
+Buffer Report:
+There are 13 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 13, 2.6e-10
+
+There are 3 cell footprint types:
+  buf   : 7 [53.85%]
+  delay : 3 [23.08%]
+  dlygate4sd: 3 [23.08%]
+
+There are 1 cell site types:
+  unit   [H=3330]: 13 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sky130_fd_sc_hs__buf_16                     532.1 8.6e-12 2.1e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_16                  538.6 1.7e-12 3.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_8                     1090.2 9.4e-12 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_8                  1267.8 3.0e-12 3.0e-10 3330 buf     -
+sky130_fd_sc_hs__buf_4                     1981.3 7.4e-12 1.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_2                     4229.3 1.2e-11 7.5e-11 3330 buf     -
+sky130_fd_sc_hs__dlymetal6s6s_1            6202.7 9.6e-12 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__dlymetal6s2s_1            6226.4 1.0e-11 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__dlymetal6s4s_1            6240.8 9.5e-12 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__buf_1                     6567.8 1.7e-11 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__dlygate4sd2_1             6688.1 1.0e-11 1.0e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__dlygate4sd3_1             6697.6 1.2e-11 1.0e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__dlygate4sd1_1             6729.6 1.2e-11 1.1e-10 3330 dlygate4sd -
+
+Filtered Buffer Report:
+There are 7 buffers after filtering based on threshold voltage,
+cell footprint, drive strength and cell site
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sky130_fd_sc_hs__bufbuf_16                  538.6 1.7e-12 3.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_16                     532.1 8.6e-12 2.1e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_8                  1267.8 3.0e-12 3.0e-10 3330 buf     -
+sky130_fd_sc_hs__buf_8                     1090.2 9.4e-12 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__buf_4                     1981.3 7.4e-12 1.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_2                     4229.3 1.2e-11 7.5e-11 3330 buf     -
+sky130_fd_sc_hs__buf_1                     6567.8 1.7e-11 1.5e-10 3330 buf     -
+
+Hold Buffer Report:
+sky130_fd_sc_hs__dlygate4sd3_1 is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 6 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+sky130_fd_sc_hs__buf_1                        6.4 2.5e-15 4.6e-11  6567.8
+sky130_fd_sc_hs__buf_16                      35.2 1.6e-14 6.5e-11   532.1
+sky130_fd_sc_hs__buf_2                        8.0 2.7e-15 5.8e-11  4229.3
+sky130_fd_sc_hs__buf_4                       11.2 3.7e-15 6.0e-11  1981.3
+sky130_fd_sc_hs__buf_8                       19.2 8.6e-15 6.5e-11  1090.2
+sky130_fd_sc_hs__bufbuf_8                    24.0 2.3e-15 1.6e-10  1267.8
+--------------------------------------------------------------------------------
+[INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
+********************************************************************************
+Buffer Report:
+There are 13 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 13, 2.6e-10
+
+There are 3 cell footprint types:
+  buf   : 7 [53.85%]
+  delay : 3 [23.08%]
+  dlygate4sd: 3 [23.08%]
+
+There are 1 cell site types:
+  unit   [H=3330]: 13 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sky130_fd_sc_hs__buf_16                     532.1 8.6e-12 2.1e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_16                  538.6 1.7e-12 3.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_8                     1090.2 9.4e-12 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_8                  1267.8 3.0e-12 3.0e-10 3330 buf     -
+sky130_fd_sc_hs__buf_4                     1981.3 7.4e-12 1.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_2                     4229.3 1.2e-11 7.5e-11 3330 buf     -
+sky130_fd_sc_hs__dlymetal6s6s_1            6202.7 9.6e-12 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__dlymetal6s2s_1            6226.4 1.0e-11 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__dlymetal6s4s_1            6240.8 9.5e-12 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__buf_1                     6567.8 1.7e-11 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__dlygate4sd2_1             6688.1 1.0e-11 1.0e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__dlygate4sd3_1             6697.6 1.2e-11 1.0e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__dlygate4sd1_1             6729.6 1.2e-11 1.1e-10 3330 dlygate4sd -
+
+Filtered Buffer Report:
+All 13 buffers are available because buffer pruning has been disabled
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sky130_fd_sc_hs__dlygate4sd1_1             6729.6 1.2e-11 1.1e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__dlygate4sd3_1             6697.6 1.2e-11 1.0e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__dlygate4sd2_1             6688.1 1.0e-11 1.0e-10 3330 dlygate4sd -
+sky130_fd_sc_hs__buf_1                     6567.8 1.7e-11 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__dlymetal6s4s_1            6240.8 9.5e-12 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__dlymetal6s2s_1            6226.4 1.0e-11 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__dlymetal6s6s_1            6202.7 9.6e-12 5.8e-10 3330 delay   -
+sky130_fd_sc_hs__buf_2                     4229.3 1.2e-11 7.5e-11 3330 buf     -
+sky130_fd_sc_hs__buf_4                     1981.3 7.4e-12 1.3e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_8                  1267.8 3.0e-12 3.0e-10 3330 buf     -
+sky130_fd_sc_hs__buf_8                     1090.2 9.4e-12 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_16                  538.6 1.7e-12 3.3e-10 3330 buf     -
+sky130_fd_sc_hs__buf_16                     532.1 8.6e-12 2.1e-10 3330 buf     -
+
+Hold Buffer Report:
+sky130_fd_sc_hs__dlygate4sd3_1 is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 6 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+sky130_fd_sc_hs__buf_1                        6.4 2.5e-15 4.6e-11  6567.8
+sky130_fd_sc_hs__buf_16                      35.2 1.6e-14 6.5e-11   532.1
+sky130_fd_sc_hs__buf_2                        8.0 2.7e-15 5.8e-11  4229.3
+sky130_fd_sc_hs__buf_4                       11.2 3.7e-15 6.0e-11  1981.3
+sky130_fd_sc_hs__buf_8                       19.2 8.6e-15 6.5e-11  1090.2
+sky130_fd_sc_hs__bufbuf_8                    24.0 2.3e-15 1.6e-10  1267.8
+--------------------------------------------------------------------------------

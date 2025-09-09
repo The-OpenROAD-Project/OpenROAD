@@ -1,0 +1,49 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: calibrate_rc
+[INFO ODB-0130]     Created 12 pins.
+[INFO ODB-0131]     Created 6 components and 24 component-terminals.
+[INFO ODB-0133]     Created 12 nets and 12 connections.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: (  0.054  0.270 ) um
+[INFO GPL-0004] CoreBBox: ( 10.044 10.260 ) ( 109.998 109.890 ) um
+[INFO GPL-0006] Number of instances:                 6
+[INFO GPL-0007] Movable instances:                   6
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     12
+[INFO GPL-0011] Number of pins:                     12
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 120.000 120.000 ) um
+[INFO GPL-0013] Core BBox: ( 10.044 10.260 ) ( 109.998 109.890 ) um
+[INFO GPL-0016] Core area:                    9958.417 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:          0.437 um^2
+[INFO GPL-0019] Utilization:                     0.004 %
+[INFO GPL-0020] Standard cells area:             0.437 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      0.073 um^2
+[INFO GPL-0025] Ideal bin area:                  0.104 um^2
+[INFO GPL-0026] Ideal bin count:                 95622
+[INFO GPL-0027] Total bin area:               9958.417 um^2
+[INFO GPL-0028] Bin count (X, Y):         256 ,    256
+[INFO GPL-0029] Bin size (W * H):       0.390 *  0.389 um
+[INFO GPL-0030] Number of bins:                  65536
+[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.0000 |  0.000000e+00 |   +0.00% |  8.00e-05 |      
+        0 |   0.0000 |  0.000000e+00 |          |  8.32e-05 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1002] Placed Cell Area                0.4374
+[INFO GPL-1003] Available Free Area          9958.4170
+[INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0000
+[INFO GPL-1008]     - For 80% usage of free space: 0.0001
+[INFO GPL-1009]     - For 50% usage of free space: 0.0001
+[INFO GPL-1014] Final placement area: 0.44 (+0.00%)
+No differences found.

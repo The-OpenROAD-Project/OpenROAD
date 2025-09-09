@@ -1,0 +1,23 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO ODB-0128] Design: top
+[INFO ODB-0252]     Updated 7 pins.
+[INFO ODB-0253]     Updated 34 components.
+[INFO ODB-0254]     Updated 29 nets and 81 connections.
+worst slack max -0.43
+worst slack min -0.05
+tns max -3.964
+[INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
+[INFO RSZ-0094] Found 19 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 19 out of 19 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
+--------------------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.425 |       -4.0 |     19 | u_mid2/u_leaf3/dff2/D
+    final |       0 |      13 |        3 |      0 |     0 |    +7.5% |   -0.401 |       -4.4 |     19 | u_mid2/u_leaf3/dff2/D
+--------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 13 instances: 13 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.
+No differences found.

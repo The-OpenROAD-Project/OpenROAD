@@ -1,0 +1,174 @@
+VERSION 5.7 ;
+  NOWIREEXTENSIONATPIN ON ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
+  CLASS PAD AREAIO ;
+  FOREIGN sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 20.000 BY 197.965 ;
+  PIN AMUXBUS_A
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met4 ;
+        RECT 0.000 51.090 20.000 54.070 ;
+    END
+  END AMUXBUS_A
+  PIN AMUXBUS_B
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met4 ;
+        RECT 0.000 46.330 20.000 49.310 ;
+    END
+  END AMUXBUS_B
+  PIN VSSA
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 45.700 20.000 54.700 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 54.370 20.000 54.700 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 45.700 20.000 46.030 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 0.000 34.800 20.000 38.050 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 34.700 20.000 38.150 ;
+    END
+  END VSSA
+  PIN VDDA
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 13.000 20.000 16.250 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 12.900 20.000 16.350 ;
+    END
+  END VDDA
+  PIN VSWITCH
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 29.950 20.000 33.200 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 0.990 17.880 19.000 33.200 ;
+      LAYER via3 ;
+        RECT 1.090 30.080 18.740 33.030 ;
+        RECT 1.280 18.080 18.770 22.090 ;
+      LAYER met4 ;
+        RECT 0.000 29.850 20.000 33.300 ;
+        RECT 0.000 17.750 20.000 22.400 ;
+    END
+  END VSWITCH
+  PIN VDDIO_Q
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 62.150 20.000 66.400 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 62.050 20.000 66.500 ;
+    END
+  END VDDIO_Q
+  PIN VCCHIB
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 0.100 20.000 11.400 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 0.000 20.000 5.450 ;
+    END
+  END VCCHIB
+  PIN VDDIO
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 92.950 1.000 92.965 ;
+        RECT 19.000 92.950 20.000 92.965 ;
+        RECT 0.000 68.000 20.000 92.950 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 0.000 17.850 20.000 22.300 ;
+    END
+  END VDDIO
+  PIN VCCD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met4 ;
+        RECT 0.000 6.850 20.000 11.500 ;
+    END
+  END VCCD
+  PIN VSSIO
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 23.900 20.000 28.350 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 23.800 20.000 28.450 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 0.000 173.750 20.000 197.965 ;
+    END
+  END VSSIO
+  PIN VSSD
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 39.650 20.000 44.100 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 39.550 20.000 44.200 ;
+    END
+  END VSSD
+  PIN VSSIO_Q
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 56.300 20.000 60.550 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 56.200 20.000 60.650 ;
+    END
+  END VSSIO_Q
+  OBS
+      LAYER met4 ;
+        RECT 0.000 173.750 20.000 197.965 ;
+        RECT 0.000 68.000 20.000 92.965 ;
+        RECT 0.000 49.610 20.000 50.790 ;
+  END
+END sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
+END LIBRARY
+

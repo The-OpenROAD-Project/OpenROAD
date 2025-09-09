@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_temp_sensor/HEADER.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_temp_sensor/SLC.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_power_switch/power_switch.lef, created 1 library cells
+[INFO ODB-0128] Design: tempsenseInst
+[INFO ODB-0130]     Created 35 pins.
+[INFO ODB-0131]     Created 393 components and 1287 component-terminals.
+[INFO ODB-0133]     Created 157 nets and 491 connections.
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: TempSensor
+No differences found.

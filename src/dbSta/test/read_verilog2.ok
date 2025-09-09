@@ -1,0 +1,70 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+r1
+b1out
+Instance b1/r1
+ Cell: snl_ffqx1
+ Library: liberty1
+ Path cells: block1/snl_ffqx1
+ Input pins:
+  D input b1/u1out
+  CP input clk1
+ Output pins:
+  Q output b1/r1q
+Net b1out
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b1/u2/Z output (snl_bufx1)
+
+Load pins
+ b2/u1/A input (snl_bufx1) 0.00
+
+Net b1/u1out
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b1/u1/Z output (snl_bufx1)
+
+Load pins
+ b1/r1/D input (snl_ffqx1) 0.00
+
+Net b1/r1q
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b1/r1/Q output (snl_ffqx1)
+
+Load pins
+ b1/u2/A input (snl_bufx1) 0.00
+
+Net b2/r1q
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b2/r1/Q output (snl_ffqx1)
+
+Load pins
+ b2/u2/A input (snl_bufx1) 0.00
+
+No differences found.

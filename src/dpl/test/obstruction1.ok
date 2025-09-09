@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: obstruction1.lef, created 1 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0131]     Created 121 components and 621 component-terminals.
+Placement Analysis
+---------------------------------
+total displacement         47.3 u
+average displacement        0.4 u
+max displacement            0.7 u
+original HPWL               0.0 u
+legalized HPWL              0.0 u
+delta HPWL                    0 %
+
+[INFO DPL-0001] Placed 19647 filler instances.
+No differences found.

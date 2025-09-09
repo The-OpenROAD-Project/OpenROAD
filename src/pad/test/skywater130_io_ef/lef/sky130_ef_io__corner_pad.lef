@@ -1,0 +1,384 @@
+VERSION 5.7 ;
+  NOWIREEXTENSIONATPIN ON ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO sky130_ef_io__corner_pad
+  CLASS ENDCAP TOPRIGHT ;
+  FOREIGN sky130_ef_io__corner_pad ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 200.000 BY 204.000 ;
+  PIN AMUXBUS_A
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met4 ;
+        RECT 0.000 57.125 22.910 60.105 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 53.125 0.000 56.105 26.910 ;
+    END
+  END AMUXBUS_A
+  PIN AMUXBUS_B
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met4 ;
+        RECT 0.000 52.365 20.935 55.345 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 48.365 0.000 51.345 20.875 ;
+    END
+  END AMUXBUS_B
+  PIN VSSA
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 51.735 23.155 60.735 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 0.630 56.020 0.640 56.030 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 0.000 40.835 1.335 44.085 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 51.735 19.575 52.065 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 40.735 1.335 44.185 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 55.645 21.550 56.825 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 60.405 23.175 60.735 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 36.840 0.000 40.085 1.270 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 47.735 0.000 56.735 27.155 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 51.285 0.630 51.295 0.640 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 56.405 0.000 56.735 27.175 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 51.645 0.000 52.825 21.555 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 36.735 0.000 40.185 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 47.735 0.000 48.065 23.575 ;
+    END
+  END VSSA
+  PIN VDDA
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 19.035 1.470 22.285 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 18.935 1.470 22.385 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 15.035 0.000 18.285 1.255 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 14.935 0.000 18.385 1.255 ;
+    END
+  END VDDA
+  PIN VSWITCH
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 35.985 1.385 39.235 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 35.885 1.385 39.335 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 31.985 0.000 35.235 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 31.885 0.000 35.335 1.270 ;
+    END
+  END VSWITCH
+  PIN VDDIO_Q
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 68.185 1.480 72.435 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 68.085 1.480 72.535 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 64.185 0.000 68.435 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 64.085 0.000 68.535 1.270 ;
+    END
+  END VDDIO_Q
+  PIN VCCHIB
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 6.135 2.350 11.385 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 6.035 2.350 11.485 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 2.135 0.000 7.385 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 2.035 0.000 7.485 1.270 ;
+    END
+  END VCCHIB
+  PIN VDDIO
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 74.035 2.645 98.985 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 0.000 23.885 1.525 28.335 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 23.785 1.525 28.435 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 74.035 2.645 99.000 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 19.885 0.000 24.335 1.270 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 70.035 0.000 94.985 1.855 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 70.035 0.000 95.000 1.855 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 19.785 0.000 24.435 1.270 ;
+    END
+  END VDDIO
+  PIN VCCD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 12.985 3.785 17.435 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 12.885 3.785 17.535 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 8.985 0.000 13.435 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 8.885 0.000 13.535 1.270 ;
+    END
+  END VCCD
+  PIN VSSIO
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 29.935 1.600 34.385 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 29.835 1.600 34.485 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 179.785 1.435 204.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.630 194.865 0.640 194.875 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 25.935 0.000 30.385 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 25.835 0.000 30.485 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 175.785 0.000 200.000 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 190.865 0.630 190.875 0.640 ;
+    END
+  END VSSIO
+  PIN VSSD
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 45.685 1.475 50.135 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 45.585 1.475 50.235 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 41.685 0.000 46.135 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 41.585 0.000 46.235 1.270 ;
+    END
+  END VSSD
+  PIN VSSIO_Q
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 62.335 1.625 66.585 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 0.000 62.235 1.625 66.685 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 58.335 0.000 62.585 1.270 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 58.235 0.000 62.685 1.270 ;
+    END
+  END VSSIO_Q
+  OBS
+      LAYER met4 ;
+        RECT 1.835 179.385 200.000 204.000 ;
+        RECT 0.000 99.400 200.000 179.385 ;
+        RECT 3.045 73.635 200.000 99.400 ;
+        RECT 0.000 72.935 200.000 73.635 ;
+        RECT 1.880 67.685 200.000 72.935 ;
+        RECT 0.000 67.085 200.000 67.685 ;
+        RECT 2.025 61.835 200.000 67.085 ;
+        RECT 0.000 61.135 200.000 61.835 ;
+        RECT 23.575 60.005 200.000 61.135 ;
+        RECT 23.310 56.725 200.000 60.005 ;
+        RECT 21.950 55.245 200.000 56.725 ;
+        RECT 21.335 51.965 200.000 55.245 ;
+        RECT 19.975 51.335 200.000 51.965 ;
+        RECT 0.000 50.635 200.000 51.335 ;
+        RECT 1.875 45.185 200.000 50.635 ;
+        RECT 0.000 44.585 200.000 45.185 ;
+        RECT 1.735 40.335 200.000 44.585 ;
+        RECT 0.000 39.735 200.000 40.335 ;
+        RECT 1.785 35.485 200.000 39.735 ;
+        RECT 0.000 34.885 200.000 35.485 ;
+        RECT 2.000 29.435 200.000 34.885 ;
+        RECT 0.000 28.835 200.000 29.435 ;
+        RECT 1.925 27.575 200.000 28.835 ;
+        RECT 1.925 27.310 56.005 27.575 ;
+        RECT 1.925 23.975 52.725 27.310 ;
+        RECT 1.925 23.385 47.335 23.975 ;
+        RECT 0.000 22.785 47.335 23.385 ;
+        RECT 1.870 18.535 47.335 22.785 ;
+        RECT 48.465 21.955 52.725 23.975 ;
+        RECT 48.465 21.275 51.245 21.955 ;
+        RECT 0.000 17.935 47.335 18.535 ;
+        RECT 4.185 12.485 47.335 17.935 ;
+        RECT 0.000 11.885 47.335 12.485 ;
+        RECT 2.750 5.635 47.335 11.885 ;
+        RECT 0.000 1.670 47.335 5.635 ;
+        RECT 0.000 1.255 1.635 1.670 ;
+        RECT 7.885 1.255 8.485 1.670 ;
+        RECT 13.935 1.655 19.385 1.670 ;
+        RECT 13.935 1.255 14.535 1.655 ;
+        RECT 18.785 1.255 19.385 1.655 ;
+        RECT 24.835 1.255 25.435 1.670 ;
+        RECT 30.885 1.255 31.485 1.670 ;
+        RECT 35.735 1.255 36.335 1.670 ;
+        RECT 40.585 1.255 41.185 1.670 ;
+        RECT 46.635 1.255 47.335 1.670 ;
+        RECT 57.135 2.255 200.000 27.575 ;
+        RECT 57.135 1.670 69.635 2.255 ;
+        RECT 57.135 1.255 57.835 1.670 ;
+        RECT 63.085 1.255 63.685 1.670 ;
+        RECT 68.935 1.255 69.635 1.670 ;
+        RECT 95.400 1.670 200.000 2.255 ;
+        RECT 95.400 1.255 175.385 1.670 ;
+      LAYER met5 ;
+        RECT 0.000 100.585 200.000 204.000 ;
+        RECT 4.245 72.435 200.000 100.585 ;
+        RECT 3.080 68.185 200.000 72.435 ;
+        RECT 3.225 62.335 200.000 68.185 ;
+        RECT 24.755 50.135 200.000 62.335 ;
+        RECT 3.075 44.085 200.000 50.135 ;
+        RECT 2.935 40.835 200.000 44.085 ;
+        RECT 2.985 35.985 200.000 40.835 ;
+        RECT 3.200 28.755 200.000 35.985 ;
+        RECT 3.200 28.335 46.135 28.755 ;
+        RECT 3.125 22.285 46.135 28.335 ;
+        RECT 3.070 19.035 46.135 22.285 ;
+        RECT 5.385 11.385 46.135 19.035 ;
+        RECT 3.950 4.535 46.135 11.385 ;
+        RECT 0.000 2.870 46.135 4.535 ;
+        RECT 58.335 3.455 200.000 28.755 ;
+        RECT 58.335 2.870 68.435 3.455 ;
+        RECT 0.000 0.000 0.535 2.870 ;
+        RECT 15.035 2.855 18.285 2.870 ;
+        RECT 96.585 0.000 200.000 3.455 ;
+  END
+END sky130_ef_io__corner_pad
+END LIBRARY
+

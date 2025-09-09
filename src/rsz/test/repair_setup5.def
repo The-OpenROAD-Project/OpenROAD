@@ -1,0 +1,31 @@
+# buffer chain
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 6000000 20000 ) ;
+COMPONENTS 5 ;
+    - u1 sky130_fd_sc_hd__buf_1 + PLACED   ( 1000000 10000 ) N ;
+    - u2 sky130_fd_sc_hd__buf_1 + PLACED   ( 2000000 10000 ) N ;
+    - u3 sky130_fd_sc_hd__buf_1 + PLACED   ( 3000000 10000 ) N ;
+    - u4 sky130_fd_sc_hd__buf_1 + PLACED   ( 4000000 10000 ) N ;
+    - u5 sky130_fd_sc_hd__buf_1 + PLACED   ( 5000000 10000 ) N ;
+END COMPONENTS
+PINS 2 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER met1 ( 0 0 ) ( 0 0 ) ;
+    - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 1000 335 ) N + LAYER met1 ( 0 0 ) ( 0 0 ) ;
+END PINS
+SPECIALNETS 2 ;
+    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( * VDD ) + USE POWER ;
+END SPECIALNETS
+NETS 10 ;
+    - in1 ( PIN in1 ) ( u1 A ) + USE SIGNAL ;
+    - n1 ( u1 X ) ( u2 A ) + USE SIGNAL ;
+    - n2 ( u2 X ) ( u3 A ) + USE SIGNAL ;
+    - n3 ( u3 X ) ( u4 A ) + USE SIGNAL ;
+    - n4 ( u4 X ) ( u5 A ) + USE SIGNAL ;
+    - out1 ( u5 X ) ( PIN out1 ) + USE SIGNAL ;
+END NETS
+END DESIGN

@@ -1,0 +1,56 @@
+name: Build on macOS
+on:
+  # Triggers the workflow on push or pull request events
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  Mac-Build:
+    if: github.repository_owner != 'The-OpenROAD-Project' && github.repository_owner != 'The-OpenROAD-Project-private' && github.repository_owner != 'The-OpenROAD-Project-staging'
+    runs-on: macos-latest
+    steps:
+      - name: Setup xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Install dependencies
+        run: |
+          ./etc/DependencyInstaller.sh
+      - name: Build OpenROAD
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$PATH"
+          export PATH="$(brew --prefix flex)/bin:$PATH"
+          export PATH="$(brew --prefix tcl-tk)/bin:$PATH"
+          export CMAKE_PREFIX_PATH="$(brew --prefix or-tools)"
+          export PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig"
+          export MY_QT_PATH=$(find /usr/local/Cellar/qt@5/ -type d -iwholename "*cmake/Qt5")
+          echo "MY_QT_PATH = $MY_QT_PATH"
+          mkdir build
+          cd build
+          cmake ..  -D TCL_LIB_PATHS=/usr/local/opt/tcl-tk/lib \
+                    -D TCL_NO_DEFAULT_PATH=TRUE \
+                    -D Qt5_DIR=${MY_QT_PATH}
+          make -j 12
+
+  build-self-hosted:
+    if: github.repository_owner == 'The-OpenROAD-Project' || github.repository_owner == 'The-OpenROAD-Project-private' || github.repository_owner == 'The-OpenROAD-Project-staging'
+    runs-on: self-hosted-mac
+    steps:
+      - name: Clean runner workspace path
+        run: |
+          echo "Cleaning up previous run: ${{ github.workspace }}"
+          rm -rf "${{ github.workspace }}"
+          mkdir -p "${{ github.workspace }}"
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Build OpenROAD
+        run: |
+          cmake -B build
+          time -p cmake --build build -j $(sysctl -n hw.ncpu 2>/dev/null)

@@ -1,0 +1,42 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+COMPONENTS 15 ;
+    - i1 sky130_fd_sc_hs__buf_2 + PLACED ( 100 100 ) N ;
+    - i2 sky130_fd_sc_hs__buf_2 + PLACED ( 100 200 ) N ;
+    - i3 sky130_fd_sc_hs__buf_2 + PLACED ( 100 300 ) N ;
+    - i4 sky130_fd_sc_hs__buf_2 + PLACED ( 100 400 ) N ;
+    - i5 sky130_fd_sc_hs__buf_2 + PLACED ( 100 500 ) N ;
+    - i6 sky130_fd_sc_hs__buf_2 + PLACED ( 100 600 ) N ;
+    - i7 sky130_fd_sc_hs__buf_2 + PLACED ( 100 700 ) N ;
+    - r1 sky130_fd_sc_hs__dfxbp_1 + PLACED ( 200 200 ) N ;
+    - r2 sky130_fd_sc_hs__dfxbp_1 + PLACED ( 200 300 ) N ;
+    - r3 sky130_fd_sc_hs__dfxbp_1 + PLACED ( 200 400 ) N ;
+    - r4 sky130_fd_sc_hs__dfxbp_1 + PLACED ( 200 500 ) N ;
+    - u1 sky130_fd_sc_hs__buf_2 + PLACED ( 200 600 ) N ;
+    - u2 sky130_fd_sc_hs__buf_2 + PLACED ( 200 600 ) N ;
+    - u3 sky130_fd_sc_hs__buf_2 + PLACED ( 200 600 ) N ;
+    - u4 sky130_fd_sc_hs__buf_2 + PLACED ( 200 600 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 13 ;
+    - clk ( PIN clk ) ( i1 A ) + USE SIGNAL ;
+    - i1z ( i1 X ) ( i2 A ) ( r1 CLK ) + USE SIGNAL ;
+    - i2z ( i2 X ) ( i3 A ) + USE SIGNAL ;
+    - i3z ( i3 X ) ( i4 A ) + USE SIGNAL ;
+    - i4z ( i4 X ) ( i5 A ) + USE SIGNAL ;
+    - i5z ( i5 X ) ( i6 A ) + USE SIGNAL ;
+    - i6z ( i6 X ) ( i7 A ) + USE SIGNAL ;
+    - i7z ( i7 X ) ( r2 CLK ) ( r3 CLK ) ( r4 CLK ) + USE SIGNAL ;
+
+    - r1q ( r1 Q ) ( u1 A ) + USE SIGNAL ;
+    - u1z ( u1 X ) ( u2 A ) ( r2 D ) + USE SIGNAL ;
+    - u2z ( u2 X ) ( u3 A ) ( r3 D ) + USE SIGNAL ;
+    - u3z ( u3 X ) ( u4 A ) + USE SIGNAL ;
+    - u4z ( u4 X ) ( r4 D ) + USE SIGNAL ;
+END NETS
+END DESIGN

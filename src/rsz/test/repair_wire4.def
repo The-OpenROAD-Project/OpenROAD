@@ -1,0 +1,42 @@
+VERSION 5.8 ; 
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN long_wire ;
+
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 8000000 8000000 ) ;
+
+COMPONENTS 4 ;
+- u1 BUF_X1 + PLACED   ( 0 3000000 ) N ;
+- u2 BUF_X1 + PLACED   ( 0 3000000 ) N ;
+- u3 BUF_X1 + PLACED   ( 0 0 ) N ;
+- u4 BUF_X1 + PLACED   ( 0 6000000 ) N ;
+END COMPONENTS
+
+PINS 3 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 3000000 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 0 ) N ;
+- out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 6000000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 5 ;
+- in1 ( PIN in1 ) ( u1 A ) ;
+- n1 ( u1 Z ) ( u2 A ) ;
+- n2 ( u2 Z ) ( u3 A ) ( u4 A ) ;
+- out1 ( PIN out1 ) ( u3 Z ) ;
+- out2 ( PIN out2 ) ( u4 Z ) ;
+END NETS
+
+END DESIGN

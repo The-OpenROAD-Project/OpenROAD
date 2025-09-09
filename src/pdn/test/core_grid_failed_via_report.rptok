@@ -1,0 +1,72 @@
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (54.5700, 67.1150) - (55.5700, 67.2850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (54.5700, 69.9150) - (55.5700, 70.0850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (54.5700, 72.7150) - (55.5700, 72.8850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (54.5700, 75.5150) - (55.5700, 75.6850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (64.5700, 67.1150) - (65.5700, 67.2850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (64.5700, 69.9150) - (65.5700, 70.0850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (64.5700, 72.7150) - (65.5700, 72.8850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (64.5700, 75.5150) - (65.5700, 75.6850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (69.5700, 67.1150) - (70.5700, 67.2850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (69.5700, 69.9150) - (70.5700, 70.0850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (69.5700, 72.7150) - (70.5700, 72.8850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VDD
+	bbox = (69.5700, 75.5150) - (70.5700, 75.6850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (52.0700, 65.7150) - (53.0700, 65.8850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (52.0700, 68.5150) - (53.0700, 68.6850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (52.0700, 71.3150) - (53.0700, 71.4850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (52.0700, 74.1150) - (53.0700, 74.2850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (62.0700, 65.7150) - (63.0700, 65.8850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (62.0700, 68.5150) - (63.0700, 68.6850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (62.0700, 71.3150) - (63.0700, 71.4850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (62.0700, 74.1150) - (63.0700, 74.2850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (67.0700, 65.7150) - (68.0700, 65.8850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (67.0700, 68.5150) - (68.0700, 68.6850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (67.0700, 71.3150) - (68.0700, 71.4850) on Layer -
+violation type: Obstructed - Core - metal1 -> metal4
+	srcs: net:VSS
+	bbox = (67.0700, 74.1150) - (68.0700, 74.2850) on Layer -

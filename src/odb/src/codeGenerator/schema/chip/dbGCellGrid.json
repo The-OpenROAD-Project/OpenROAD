@@ -1,0 +1,111 @@
+{
+  "name": "dbGCellGrid",
+  "fields": [
+    {
+      "name": "x_origin_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_count_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_step_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_origin_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_count_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_step_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_grid_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_grid_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_grid_valid_",
+      "flags": [
+        "private"
+      ],
+      "type": "bit"
+    },
+    {
+      "name": "y_grid_valid_",
+      "flags": [
+        "private"
+      ],
+      "type": "bit"
+    },
+    {
+      "name": "congestion_map_",
+      "type": "std::map<dbId<_dbTechLayer>, dbMatrix<dbGCellGrid::GCellData>>",
+      "flags": [
+        "private",
+        "no-serial",
+        "no-template"
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "name": "GCellData",
+      "fields": [
+        {
+          "name": "usage",
+          "type": "uint8_t",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "capacity",
+          "type": "uint8_t",
+          "flags": [],
+          "default": 0
+        }
+      ],
+      "public": true,
+      "flags": [
+        "no-serializer-in"
+      ]
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbHashTable.h"
+  ]
+}

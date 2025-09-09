@@ -1,0 +1,23 @@
+# create image with dependencies needed to compile openroad app
+# NOTE: don't use this file directly unless you know what you are doing,
+# instead use etc/DockerHelper.sh
+
+# https://github.com/moby/moby/issues/38379#issuecomment-448445652
+ARG fromImage=ubuntu:22.04
+
+FROM $fromImage
+
+ARG INSTALLER_ARGS=""
+
+ARG fromImage
+
+COPY DependencyInstaller.sh /tmp/.
+
+RUN /tmp/DependencyInstaller.sh -base
+RUN /tmp/DependencyInstaller.sh -common $INSTALLER_ARGS
+
+RUN echo "$fromImage" | grep -q "ubuntu" && \
+    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so || \
+    echo "Skipping strip command as fromImage does not contain 'ubuntu'"
+    
+RUN rm -f /tmp/DependencyInstaller.sh

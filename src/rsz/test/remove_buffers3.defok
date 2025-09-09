@@ -1,0 +1,24 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+COMPONENTS 2 ;
+    - b2 BUF_X2 + PLACED ( 200 200 ) N ;
+    - b4 BUF_X8 + PLACED ( 400 400 ) N ;
+END COMPONENTS
+PINS 2 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
+    - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+SPECIALNETS 2 ;
+    - VDD ( * VDD ) + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
+END SPECIALNETS
+NETS 3 ;
+    - in1 ( PIN in1 ) ( b2 A ) + USE SIGNAL ;
+    - n2 ( b4 A ) ( b2 Z ) + USE SIGNAL ;
+    - out1 ( PIN out1 ) ( b4 Z ) + USE SIGNAL ;
+END NETS
+END DESIGN

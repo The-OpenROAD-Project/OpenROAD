@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: sky130hvl/sky130_fd_sc_hvl.tlef, created 15 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hvl/sky130_fd_sc_hvl_merged.lef, created 69 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/capacitor_test_nf.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/LDO_COMPARATOR_LATCH.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/PMOS.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/PT_UNIT_CELL.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/vref_gen_nmos_with_trim.lef, created 1 library cells
+[INFO ODB-0128] Design: ldoInst
+[INFO ODB-0130]     Created 34 pins.
+[INFO ODB-0131]     Created 454 components and 2681 component-terminals.
+[INFO ODB-0133]     Created 260 nets and 856 connections.
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: Region
+No differences found.

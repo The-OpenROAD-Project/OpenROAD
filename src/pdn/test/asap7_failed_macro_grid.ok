@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: asap7_vias/asap7_tech_1x.lef, created 25 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7_vias/asap7sc7p5t_27_R_1x.lef, created 212 library cells
+[INFO ODB-0227] LEF file: asap7_data/fakeram7_256x32.lef, created 1 library cells
+[INFO ODB-0128] Design: riscv_top
+[INFO ODB-0130]     Created 135 pins.
+[INFO ODB-0131]     Created 12240 components and 59302 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6030 connections.
+[INFO ODB-0133]     Created 9695 nets and 790 connections.
+[INFO PDN-0001] Inserting grid: top
+[INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem0
+[INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem1
+[INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem2
+[INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem3
+[WARNING PDN-0232] CORE_macro_grid_1 - dmem/dmem0 does not contain any shapes or vias.
+[WARNING PDN-0232] CORE_macro_grid_1 - dmem/dmem1 does not contain any shapes or vias.
+[WARNING PDN-0232] CORE_macro_grid_1 - dmem/dmem2 does not contain any shapes or vias.
+[ERROR PDN-0233] Failed to generate full power grid.
+PDN-0233

@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: repair_tie7.lef, created 1 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0131]     Created 6 components and 24 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 6 connections.
+[INFO RSZ-0042] Inserted 2 tie TIE_X1 instances.
+[INFO RSZ-0042] Inserted 2 tie TIE_X1 instances.
+10.1 10.6
+10.1 20.6
+20.1 10.6
+20.1 20.6

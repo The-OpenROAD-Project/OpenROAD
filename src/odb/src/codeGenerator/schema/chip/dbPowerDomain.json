@@ -1,0 +1,72 @@
+{
+  "name":"dbPowerDomain",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"_name",
+      "type":"char *",
+      "default": "nullptr",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_next_entry",
+      "type":"dbId<_dbPowerDomain>",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_elements",
+      "type":"dbVector<std::string>",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_power_switch",
+      "type":"dbVector<dbId<_dbPowerSwitch>>",
+      "flags":["no-set","no-get"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_isolation",
+      "type":"dbVector<dbId<_dbIsolation>>",
+      "flags":["no-set","no-get"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_group",
+      "type":"dbId<_dbGroup>",
+      "flags":["no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_top",
+      "type":"bool",
+      "default": "false",
+      "flags":[]
+    },
+    {
+      "name": "_parent",
+      "type": "dbId<_dbPowerDomain>",
+      "parent":"dbBlock"
+    },
+    {
+      "name": "_area",
+      "type": "Rect",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_levelshifters",
+      "type":"dbVector<dbId<_dbLevelShifter>>",
+      "flags":["no-set","no-get", "no-serial"],
+      "parent":"dbBlock"
+    } ,
+    {
+      "name": "_voltage",
+      "type": "float",
+      "default": "0",
+      "flags":["no-serial"]
+    }
+  ],
+  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

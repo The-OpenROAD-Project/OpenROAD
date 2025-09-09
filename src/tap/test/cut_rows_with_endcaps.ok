@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 131 components and 412 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 0 connections.
+[WARNING ODB-0386] ROW_0 contains 41 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_1 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_2 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_3 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_4 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_5 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_6 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_7 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_8 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_53 contains 13 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_54 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_55 contains 2 placed instances and will not be cut.
+[WARNING ODB-0386] ROW_56 contains 52 placed instances and will not be cut.
+[INFO ODB-0303] The initial 57 rows (24054 sites) were cut with 5 shapes for a total of 13 rows (5486 sites).

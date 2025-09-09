@@ -1,0 +1,54 @@
+###############################################################################
+# reg1.v
+###############################################################################
+
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN top ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( -1000 -1000 ) ( 1000 1000 ) ;
+
+
+COMPONENTS 5 ;
+- r1 snl_ffqx1 ;
+- r2 snl_ffqx1 ;
+- r3 snl_ffqx1 ;
+- u1 snl_bufx1 ;
+- u2 snl_and02x1 ;
+END COMPONENTS
+
+PINS 6 ;
+- in\[0\][0] + NET in\[0\][0] + DIRECTION INPUT ;
+- in\[0\][1] + NET in\[0\][1] + DIRECTION INPUT ;
+- clk1 + NET clk1 + DIRECTION INPUT ;
+- clk2 + NET clk2 + DIRECTION INPUT ;
+- clk3 + NET clk3 + DIRECTION INPUT ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 10 ;
+- in\[0\][0] ( PIN in\[0\][0] ) ( r1 D ) ;
+- in\[0\][1] ( PIN in\[0\][1] ) ( r2 D ) ;
+- clk1 ( PIN clk1 ) ( r1 CP ) ;
+- clk2 ( PIN clk2 ) ( r2 CP ) ;
+- clk3 ( PIN clk3 ) ( r3 CP ) ;
+- r1q ( r1 Q ) ( u2 A ) ;
+- r2q ( r2 Q ) ( u1 A ) ;
+- u1z ( u1 Z ) ( u2 B ) ;
+- u2z ( u2 Z ) ( r3 D ) ;
+- out ( r3 Q ) ( PIN out ) ;
+END NETS
+
+END DESIGN

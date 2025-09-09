@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: counter
+[INFO ODB-0130]     Created 10 pins.
+[INFO ODB-0131]     Created 8 components and 40 component-terminals.
+[INFO ODB-0133]     Created 17 nets and 24 connections.
+[INFO RMP-0002] Blif writer successfully dumped file with 3 instances.
+No differences found.

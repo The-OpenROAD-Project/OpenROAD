@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_bsg_black_parrot/dummy_pads.lef, created 24 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 141 pins.
+[INFO ODB-0131]     Created 1489 components and 1523 component-terminals.
+[INFO ODB-0132]     Created 143 special nets and 883 connections.
+[INFO ODB-0133]     Created 219 nets and 267 connections.
+[INFO PDN-0001] Inserting grid: Core
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (174.9000, 1349.2350) - (188.5700, 1350.0000) on VSS
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (174.9000, 1829.2350) - (188.5700, 1830.0000) on VSS
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (174.9000, 2464.2350) - (195.5700, 2465.0000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.3400, 1660.0000) - (2825.1000, 1660.7650) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.3400, 2295.0000) - (2825.1000, 2295.7650) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2811.3400, 535.0000) - (2825.1000, 535.7650) on VSS
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2811.3400, 1175.0000) - (2825.1000, 1175.7650) on VSS
+No differences found.

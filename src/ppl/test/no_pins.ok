@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[ERROR PPL-0019] Design without pins.
+PPL-0019

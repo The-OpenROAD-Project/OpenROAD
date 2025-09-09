@@ -1,0 +1,4 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 29 rows of 219 site FreePDK45_38x28_10R_NP_162NW_34O.
+[ERROR GRT-0057] Missing track structure for layer metal1.
+GRT-0057

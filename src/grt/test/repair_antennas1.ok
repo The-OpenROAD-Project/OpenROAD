@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 411 nets and 1210 connections.
+[INFO ANT-0002] Found 11 net violations.
+[INFO ANT-0001] Found 11 pin violations.
+[INFO GRT-0012] Found 11 antenna violations.
+[INFO GRT-0302] Inserted 11 jumpers for 11 nets.
+[INFO GRT-0012] Found 0 antenna violations.
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
+No differences found.
+No differences found.

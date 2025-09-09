@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, The OpenROAD Authors
+
+cc_library(
+    name = "gif_h",
+    hdrs = ["gif.h"],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    alwayslink = True,
+)

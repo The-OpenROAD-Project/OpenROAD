@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: symmetry.lef, created 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 344 components and 1833 component-terminals.
+[INFO ODB-0133]     Created 415 nets and 1145 connections.
+[INFO TAP-0004] Inserted 56 endcaps.
+[INFO TAP-0005] Inserted 0 tapcells.
+No differences found.

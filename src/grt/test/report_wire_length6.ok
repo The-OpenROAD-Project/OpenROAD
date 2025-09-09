@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: report_wire_length6.lef1, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: report_wire_length6.lef2, created 212 library cells
+[INFO ODB-0127] Reading DEF file: report_wire_length6.def
+[INFO ODB-0128] Design: multiply_add_64x64
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 6 components and 29 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 6 connections.
+[INFO ODB-0134] Finished DEF file: report_wire_length6.def
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
+[INFO GRT-0237] Net o[4] global route wire length: 15.12um
+[INFO GRT-0237] Net final_adder.$signal$2073 global route wire length: 5.40um

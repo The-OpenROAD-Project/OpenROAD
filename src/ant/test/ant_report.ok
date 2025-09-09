@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: ant_check.lef, created 14 layers, 30 vias, 3 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 3 components and 24 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 3 connections.
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 2 pin violations.
+No differences found.

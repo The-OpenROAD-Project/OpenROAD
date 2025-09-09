@@ -1,0 +1,412 @@
+module multi_sink (clk);
+ input clk;
+
+ wire clknet_leaf_15_clk_regs;
+ wire clknet_leaf_13_clk_regs;
+ wire clknet_leaf_12_clk_regs;
+ wire clknet_leaf_11_clk_regs;
+ wire clk_regs;
+ wire clknet_0_clk;
+ wire clknet_1_0__leaf_clk;
+ wire clknet_leaf_0_clk_regs;
+ wire clknet_leaf_1_clk_regs;
+ wire clknet_leaf_2_clk_regs;
+ wire clknet_leaf_3_clk_regs;
+ wire clknet_leaf_4_clk_regs;
+ wire clknet_leaf_5_clk_regs;
+ wire clknet_leaf_6_clk_regs;
+ wire clknet_leaf_7_clk_regs;
+ wire clknet_leaf_8_clk_regs;
+ wire clknet_leaf_9_clk_regs;
+ wire clknet_leaf_10_clk_regs;
+ wire clknet_leaf_14_clk_regs;
+ wire clknet_leaf_16_clk_regs;
+ wire clknet_leaf_17_clk_regs;
+ wire clknet_leaf_18_clk_regs;
+ wire clknet_leaf_19_clk_regs;
+ wire clknet_leaf_20_clk_regs;
+ wire clknet_leaf_21_clk_regs;
+ wire clknet_leaf_22_clk_regs;
+ wire clknet_leaf_23_clk_regs;
+ wire clknet_leaf_24_clk_regs;
+ wire clknet_leaf_25_clk_regs;
+ wire clknet_leaf_26_clk_regs;
+ wire clknet_leaf_27_clk_regs;
+ wire clknet_0_clk_regs;
+ wire clknet_1_0__leaf_clk_regs;
+ wire clknet_1_1__leaf_clk_regs;
+ wire delaynet_0_core;
+ wire delaynet_1_core;
+ wire delaynet_2_core;
+
+ CLKBUF_X3 delaybuf_2_core (.A(delaynet_2_core),
+    .Z(clknet_0_clk));
+ CLKBUF_X3 delaybuf_1_core (.A(delaynet_1_core),
+    .Z(delaynet_2_core));
+ CLKBUF_X3 delaybuf_0_core (.A(delaynet_0_core),
+    .Z(delaynet_1_core));
+ INV_X1 clkload1 (.A(clknet_leaf_27_clk_regs));
+ INV_X4 clkload0 (.A(clknet_1_1__leaf_clk_regs));
+ CLKBUF_X3 clkbuf_1_1__f_clk_regs (.A(clknet_0_clk_regs),
+    .Z(clknet_1_1__leaf_clk_regs));
+ CLKBUF_X3 clkbuf_1_0__f_clk_regs (.A(clknet_0_clk_regs),
+    .Z(clknet_1_0__leaf_clk_regs));
+ CLKBUF_X3 clkbuf_0_clk_regs (.A(clk_regs),
+    .Z(clknet_0_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_27_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_27_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_26_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_26_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_25_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_25_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_24_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_24_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_23_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_23_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_22_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_22_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_21_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_21_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_20_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_20_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_19_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_19_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_18_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_18_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_17_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_17_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_16_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_16_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_15_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_15_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_14_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_14_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_13_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_13_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_12_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_12_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_11_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_11_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_10_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_10_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_9_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_9_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_8_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_8_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_7_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_7_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_6_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_6_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_5_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_5_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_4_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_4_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_3_clk_regs (.A(clknet_1_1__leaf_clk_regs),
+    .Z(clknet_leaf_3_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_2_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_2_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_1_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_1_clk_regs));
+ CLKBUF_X3 clkbuf_leaf_0_clk_regs (.A(clknet_1_0__leaf_clk_regs),
+    .Z(clknet_leaf_0_clk_regs));
+ CLKBUF_X3 clkbuf_1_0__f_clk (.A(clknet_0_clk),
+    .Z(clknet_1_0__leaf_clk));
+ CLKBUF_X3 clkbuf_0_clk (.A(clk),
+    .Z(delaynet_0_core));
+ CLKBUF_X3 clkbuf_regs_0_core (.A(clk),
+    .Z(clk_regs));
+ DFF_X1 ff10 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff100 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff101 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff102 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff103 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff104 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff105 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff106 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff107 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff11 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff111 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff112 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff113 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff114 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff115 (.CK(clknet_leaf_27_clk_regs));
+ DFF_X1 ff116 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff117 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff118 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff119 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff12 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff120 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff121 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff122 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff123 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff124 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff125 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff129 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff13 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff130 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff131 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff132 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff133 (.CK(clknet_leaf_0_clk_regs));
+ DFF_X1 ff134 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff135 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff136 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff137 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff138 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff139 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff14 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff140 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff141 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff142 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff143 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff144 (.CK(clknet_leaf_25_clk_regs));
+ DFF_X1 ff145 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff146 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff147 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff148 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff149 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff15 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff150 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff151 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff152 (.CK(clknet_leaf_26_clk_regs));
+ DFF_X1 ff153 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff154 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff155 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff156 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff157 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff158 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff159 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff16 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff160 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff161 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff162 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff163 (.CK(clknet_leaf_1_clk_regs));
+ DFF_X1 ff164 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff165 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff166 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff167 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff168 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff169 (.CK(clknet_leaf_2_clk_regs));
+ DFF_X1 ff17 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff170 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff171 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff172 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff173 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff174 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff175 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff176 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff177 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff178 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff179 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff18 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff180 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff181 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff182 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff183 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff184 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff185 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff186 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff187 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff188 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff189 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff19 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff190 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff191 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff192 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff193 (.CK(clknet_leaf_24_clk_regs));
+ DFF_X1 ff194 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff195 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff196 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff197 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff198 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff199 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff20 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff200 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff201 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff202 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff203 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff204 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff205 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff206 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff207 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff208 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff209 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff21 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff210 (.CK(clknet_leaf_23_clk_regs));
+ DFF_X1 ff211 (.CK(clknet_leaf_3_clk_regs));
+ DFF_X1 ff212 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff213 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff214 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff215 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff216 (.CK(clknet_leaf_20_clk_regs));
+ DFF_X1 ff217 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff218 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff219 (.CK(clknet_leaf_19_clk_regs));
+ DFF_X1 ff22 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff220 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff221 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff222 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff223 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff224 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff225 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff226 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff227 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff228 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff229 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff23 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff230 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff231 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff232 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff233 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff234 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff235 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff236 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff237 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff238 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff239 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff24 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff240 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff241 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff242 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff243 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff244 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff245 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff246 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff247 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff248 (.CK(clknet_leaf_8_clk_regs));
+ DFF_X1 ff249 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff25 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff250 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff251 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff252 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff253 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff254 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff255 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff256 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff257 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff258 (.CK(clknet_leaf_4_clk_regs));
+ DFF_X1 ff259 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff26 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff260 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff261 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff262 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff263 (.CK(clknet_leaf_18_clk_regs));
+ DFF_X1 ff264 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff265 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff266 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff267 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff268 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff269 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff27 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff270 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff271 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff272 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff273 (.CK(clknet_leaf_7_clk_regs));
+ DFF_X1 ff274 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff275 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff276 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff277 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff278 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff279 (.CK(clknet_leaf_21_clk_regs));
+ DFF_X1 ff28 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff280 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff281 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff282 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff283 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff284 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff285 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff286 (.CK(clknet_leaf_22_clk_regs));
+ DFF_X1 ff287 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff29 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff30 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff31 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff32 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff33 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff34 (.CK(clknet_leaf_17_clk_regs));
+ DFF_X1 ff35 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff36 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff37 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff38 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff39 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff4 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff40 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff41 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff42 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff43 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff44 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff45 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff46 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff47 (.CK(clknet_leaf_5_clk_regs));
+ DFF_X1 ff48 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff49 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff5 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff50 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff51 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff52 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff53 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff54 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff55 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff56 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff57 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff58 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff59 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff6 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff60 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff61 (.CK(clknet_leaf_6_clk_regs));
+ DFF_X1 ff62 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff63 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff64 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff65 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff66 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff67 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff68 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff69 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff7 (.CK(clknet_leaf_9_clk_regs));
+ DFF_X1 ff70 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff71 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff74 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff75 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff76 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff77 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff78 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff79 (.CK(clknet_leaf_10_clk_regs));
+ DFF_X1 ff8 (.CK(clknet_leaf_16_clk_regs));
+ DFF_X1 ff80 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff81 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff82 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff83 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff84 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff85 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff86 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff87 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff88 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff89 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff9 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff92 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff93 (.CK(clknet_leaf_14_clk_regs));
+ DFF_X1 ff94 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff95 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff96 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff97 (.CK(clknet_leaf_12_clk_regs));
+ DFF_X1 ff98 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff99 (.CK(clknet_leaf_11_clk_regs));
+ array_tile inst_0 (.clk(clknet_1_0__leaf_clk));
+ hier_block h1 (.clknet_leaf_15_clk_regs_i(clknet_leaf_15_clk_regs),
+    .clknet_leaf_13_clk_regs_i(clknet_leaf_13_clk_regs),
+    .clknet_leaf_12_clk_regs_i(clknet_leaf_12_clk_regs),
+    .clknet_leaf_11_clk_regs_i(clknet_leaf_11_clk_regs));
+endmodule
+module hier_block (clknet_leaf_15_clk_regs_i,
+    clknet_leaf_13_clk_regs_i,
+    clknet_leaf_12_clk_regs_i,
+    clknet_leaf_11_clk_regs_i);
+ input clknet_leaf_15_clk_regs_i;
+ input clknet_leaf_13_clk_regs_i;
+ input clknet_leaf_12_clk_regs_i;
+ input clknet_leaf_11_clk_regs_i;
+
+
+ DFF_X1 ff0 (.CK(clknet_leaf_15_clk_regs_i));
+ DFF_X1 ff1 (.CK(clknet_leaf_13_clk_regs_i));
+ DFF_X1 ff2 (.CK(clknet_leaf_12_clk_regs_i));
+ DFF_X1 ff3 (.CK(clknet_leaf_11_clk_regs_i));
+endmodule

@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+[WARNING ODB-0026] Pin req_msg[0] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[1] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[2] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[3] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[4] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[5] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[6] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[7] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[8] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[9] is mirrored with another pin. The constraint for this pin will be dropped.
+[WARNING ODB-0026] Pin req_msg[10] is mirrored with another pin. The constraint for this pin will be dropped.
+Found 0 macro blocks.
+[INFO PPL-0044] Pin group: [ req_msg[0] req_msg[1] req_msg[2] req_msg[3] req_msg[4] ... ]
+[INFO PPL-0001] Number of available slots 2494
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0006] Number of I/O Groups    1
+[INFO PPL-0012] I/O nets HPWL: 2033.85 um.
+No differences found.

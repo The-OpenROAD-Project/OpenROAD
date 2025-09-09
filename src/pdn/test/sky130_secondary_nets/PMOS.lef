@@ -1,0 +1,80 @@
+VERSION 5.6 ;
+  BUSBITCHARS "[]" ;
+  DIVIDERCHAR "/" ;
+
+MACRO PMOS
+  CLASS CORE ;
+  ORIGIN 0.000 0.000 ;
+  FOREIGN PMOS 0 0 ;
+  SIZE 1.440 BY 4.070 ;
+  SYMMETRY X Y ;
+  SITE unithv ;
+  PIN vgnd
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met1 ;
+        RECT 0.000 0.255 1.440 0.625 ;
+    END
+  END vgnd
+  PIN vpb
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000 3.985 1.440 4.155 ;
+      LAYER mcon ;
+        RECT 0.155 3.985 0.325 4.155 ;
+        RECT 0.635 3.985 0.805 4.155 ;
+        RECT 1.115 3.985 1.285 4.155 ;
+      LAYER met1 ;
+        RECT 0.000 3.955 1.440 4.185 ;
+    END
+  END vpb
+  PIN vpwr
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER li1 ;
+        RECT 0.090 2.390 0.680 3.730 ;
+      LAYER mcon ;
+        RECT 0.120 3.500 0.290 3.670 ;
+        RECT 0.480 3.500 0.650 3.670 ;
+      LAYER met1 ;
+        RECT 0.000 3.445 1.440 3.815 ;
+    END
+  END vpwr
+  PIN vnb
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000 -0.085 1.440 0.085 ;
+      LAYER mcon ;
+        RECT 0.155 -0.085 0.325 0.085 ;
+        RECT 0.635 -0.085 0.805 0.085 ;
+        RECT 1.115 -0.085 1.285 0.085 ;
+      LAYER met1 ;
+        RECT 0.000 -0.115 1.440 0.115 ;
+    END
+  END vnb
+  PIN VREG
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER li1 ;
+        RECT 0.940 2.655 1.345 3.480 ;
+        RECT 1.025 1.475 1.345 2.655 ;
+    END
+  END VREG
+  PIN cmp_out
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 0.260 1.685 0.840 1.955 ;
+    END
+  END cmp_out
+END PMOS
+END LIBRARY
+

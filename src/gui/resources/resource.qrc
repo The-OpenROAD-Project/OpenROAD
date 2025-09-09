@@ -1,0 +1,21 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file>icon.png</file>
+  <file alias="delete.png">google_icons/round_delete_black_36dp.png</file>
+  <file alias="zoom_to.png">google_icons/round_zoom_in_black_36dp.png</file>
+  <file alias="highlight_on.png">google_icons/baseline_flashlight_on_black_36dp.png</file>
+  <file alias="highlight_off.png">google_icons/baseline_flashlight_off_black_36dp.png</file>
+  <file alias="visible.png">google_icons/baseline_visibility_black_36dp.png</file>
+  <file alias="select.png">google_icons/baseline_touch_app_black_36dp.png</file>
+  <file alias="palette.png">google_icons/baseline_palette_black_36dp.png</file>
+  <file alias="remove.png">google_icons/round_remove_black_36dp.png</file>
+  <file alias="add.png">google_icons/round_add_black_36dp.png</file>
+  <file alias="focus.png">google_icons/round_loupe_black_36dp.png</file>
+  <file alias="defocus.png">google_icons/round_minusloupe_black_36dp.png</file>
+  <file alias="undo.png">google_icons/round_undo_black_36dp.png</file>
+  <file alias="play.png">google_icons/sharp_play_arrow_black_36dp.png</file>
+  <file alias="cancel.png">google_icons/round_cancel_black_36dp.png</file>
+  <file alias="expand_more.png">google_icons/round_unfold_more_black_36dp.png</file>
+  <file alias="expand_less.png">google_icons/round_unfold_less_black_36dp.png</file>
+</qresource>
+</RCC>

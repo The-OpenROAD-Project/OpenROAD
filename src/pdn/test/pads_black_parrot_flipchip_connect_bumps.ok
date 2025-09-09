@@ -1,0 +1,306 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_bsg_black_parrot/dummy_pads.lef, created 24 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 139 pins.
+[INFO ODB-0131]     Created 1489 components and 1523 component-terminals.
+[INFO ODB-0132]     Created 143 special nets and 883 connections.
+[INFO ODB-0133]     Created 221 nets and 350 connections.
+[WARNING PDN-0231] bump_10_13_p_ddr_dqs_p_3_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_14_p_ddr_dq_24_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_15_p_ddr_dqs_n_3_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_16_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_17_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_3_p_ddr_dm_0_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_4_p_ddr_dq_0_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_10_5_p_ddr_dqs_n_0_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_13_p_ddr_dq_25_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_14_p_ddr_dq_27_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_15_p_ddr_dq_26_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_1_p_ddr_dqs_p_0_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_2_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_3_p_ddr_dq_15_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_4_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_11_5_p_ddr_dq_14_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_13_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_14_p_ddr_dq_30_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_15_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_16_p_ddr_dq_29_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_17_p_ddr_dq_28_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_1_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_2_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_3_p_ddr_dq_12_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_4_p_ddr_dq_13_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_12_5_p_ddr_dq_11_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_10_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_11_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_12_p_ddr_ck_n_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_13_p_ddr_dq_31_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_14_p_ddr_dq_17_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_15_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_16_p_ddr_dq_16_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_17_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_1_p_ddr_dq_8_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_2_p_ddr_dq_9_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_4_p_ddr_dq_10_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_5_p_ddr_addr_13_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_6_p_ddr_addr_10_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_7_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_8_p_ddr_addr_4_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_13_9_p_ddr_addr_1_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_11_p_ddr_odt_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_12_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_13_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_14_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_15_p_ddr_dq_18_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_16_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_17_p_ddr_dq_19_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_1_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_3_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_5_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_6_p_ddr_addr_12_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_8_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_14_9_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_10_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_11_p_ddr_cas_n_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_12_p_ddr_cke_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_14_p_ddr_dqs_p_2_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_15_p_ddr_dq_20_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_1_UNASSIGNED_1 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_2_UNASSIGNED_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_4_p_ddr_ba_0_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_5_p_ddr_addr_14_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_6_p_ddr_addr_11_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_7_p_ddr_addr_8_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_8_p_ddr_addr_5_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_15_9_p_ddr_addr_2_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_11_p_ddr_reset_n_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_12_p_ddr_ras_n_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_13_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_14_p_ddr_ck_p_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_15_p_ddr_dm_2_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_16_p_ddr_dq_22_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_17_p_ddr_dq_21_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_1_UNASSIGNED_2 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_2_p_ddr_dqs_n_1_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_3_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_4_p_ddr_ba_2_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_5_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_6_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_8_p_ddr_addr_7_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_16_9_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_10_p_ddr_addr_0_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_11_p_ddr_we_n_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_12_p_ddr_cs_n_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_14_p_ddr_dqs_n_2_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_15_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_16_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_17_p_ddr_dq_23_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_1_p_ddr_dm_1_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_2_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_3_p_ddr_dqs_p_1_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_4_p_ddr_ba_1_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_5_p_ddr_addr_15_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_6_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_7_p_ddr_addr_9_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_8_p_ddr_addr_6_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_17_9_p_ddr_addr_3_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_11_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_12_p_ci2_0_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_13_p_ci2_3_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_14_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_16_p_ci2_6_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_17_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_1_p_co2_8_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_2_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_3_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_4_p_co_2_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_5_p_co_3_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_6_p_co_tkn_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_7_p_co_6_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_1_9_p_clk_C_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_10_p_misc_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_11_p_sel_2_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_12_p_ci2_1_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_13_p_ci2_4_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_14_p_ci2_tkn_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_15_p_ci2_5_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_16_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_17_p_ci2_7_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_1_p_co2_6_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_2_p_co2_7_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_3_p_co_0_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_5_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_6_p_co_v_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_7_p_co_7_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_2_9_DVSS_1 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_10_p_clk_async_reset_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_11_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_12_p_core_async_reset_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_13_p_ci2_2_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_14_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_16_p_ci_0_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_17_p_ci2_8_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_2_p_co2_5_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_4_p_co_1_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_6_p_co_clk_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_7_p_co_5_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_8_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_3_9_DVDD_1 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_10_p_sel_0_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_12_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_13_p_ci2_clk_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_14_p_ci2_v_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_16_p_ci_1_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_1_p_co2_v_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_2_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_3_p_co2_tkn_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_4_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_5_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_6_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_7_p_co_8_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_8_p_clk_A_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_4_9_p_clk_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_11_p_sel_1_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_13_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_14_p_ci_3_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_15_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_16_p_ci_2_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_17_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_1_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_2_p_co2_4_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_3_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_4_p_co2_clk_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_5_p_co2_3_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_6_p_co_4_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_7_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_8_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_5_9_p_clk_B_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_13_p_ci_4_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_14_p_ci_tkn_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_15_p_ci_clk_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_16_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_17_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_1_p_co2_0_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_2_p_co2_1_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_3_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_4_p_co2_2_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_6_5_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_13_p_ci_v_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_14_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_15_p_ci_5_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_16_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_17_p_ci_6_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_3_p_bsg_tag_data_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_4_p_bsg_tag_clk_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_7_5_p_ddr_dq_7_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_13_p_ci_7_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_14_p_bsg_tag_en_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_16_p_ci_8_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_1_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_2_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_3_p_ddr_dq_5_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_4_p_ddr_dq_6_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_8_5_p_ddr_dq_4_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_13_p_bsg_tag_data_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_14_p_ddr_dm_3_o is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_15_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_16_p_bsg_tag_clk_i is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_17_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_1_DVSS_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_2_p_ddr_dq_2_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_3_DVDD_0 is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_4_p_ddr_dq_3_io is not connected to any power/ground nets.
+[WARNING PDN-0231] bump_9_5_p_ddr_dq_1_io is not connected to any power/ground nets.
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_1_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_2_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_10_9_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_16_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_17_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_11_9_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_12_9_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_13_3_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_14_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_14_2_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_14_4_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_14_7_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_15_13_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_15_16_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_15_17_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_15_3_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_16_10_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_16_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_17_13_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_1_10_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_1_15_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_1_8_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_2_4_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_2_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_3_15_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_3_1_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_3_3_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_3_5_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_4_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_4_15_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_4_17_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_5_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_5_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_6_9_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_1_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_2_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_7_9_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_15_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_17_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_8_9_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_10_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_11_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_12_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_6_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_7_VSS
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_8_VDD
+[INFO PDN-0001] Inserting grid: Bumps - bump_9_9_VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 183.7000) - (2174.6250, 188.7000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 222.2000) - (2174.6250, 223.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 542.2000) - (2174.6250, 543.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 1662.2000) - (2426.0000, 1663.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2302.2000) - (2426.0000, 2303.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2462.2000) - (2426.0000, 2463.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2782.2000) - (2426.0000, 2783.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2811.5000) - (2426.0000, 2816.5000) on VSS
+No differences found.

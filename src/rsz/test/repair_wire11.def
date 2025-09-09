@@ -1,0 +1,25 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN RocketTile ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 800000 800000 ) ;
+COMPONENTS 2 ;
+    - u1 BUF_X1 + PLACED ( 31040 28000 ) N ;
+    - pad1 PAD + FIXED ( 2000000 2000000 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( 0 -50 ) ( 0 50 )
+        + FIXED ( 100 50 ) N ;
+END PINS
+SPECIALNETS 2 ;
+    - VDD ( * VDD ) + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
+END SPECIALNETS
+NETS 2 ;
+    - in1 ( PIN in1 ) ( u1 A ) + USE SIGNAL ;
+    - n1 ( u1 Z ) ( pad1 DATA ) + USE SIGNAL ;
+END NETS
+END DESIGN

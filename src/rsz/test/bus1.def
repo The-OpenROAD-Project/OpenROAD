@@ -1,0 +1,37 @@
+VERSION 5.5 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 0 0 ) ;
+
+
+
+COMPONENTS 1 ;
+- bus1 bus4 ;
+END COMPONENTS
+
+PINS 8 ;
+- in[3] + NET in[3] + DIRECTION INPUT ;
+- in[2] + NET in[2] + DIRECTION INPUT ;
+- in[1] + NET in[1] + DIRECTION INPUT ;
+- in[0] + NET in[0] + DIRECTION INPUT ;
+- out[3] + NET out[3] + DIRECTION OUTPUT ;
+- out[2] + NET out[2] + DIRECTION OUTPUT ;
+- out[1] + NET out[1] + DIRECTION OUTPUT ;
+- out[0] + NET out[0] + DIRECTION OUTPUT ;
+END PINS
+
+NETS 8 ;
+- in[0] ( PIN in[0] ) ( bus1 in[0] ) ;
+- in[1] ( PIN in[1] ) ( bus1 in[1] ) ;
+- in[2] ( PIN in[2] ) ( bus1 in[2] ) ;
+- in[3] ( PIN in[3] ) ( bus1 in[3] ) ;
+- out[0] ( PIN out[0] ) ( bus1 out[0] ) ;
+- out[1] ( PIN out[1] ) ( bus1 out[1] ) ;
+- out[2] ( PIN out[2] ) ( bus1 out[2] ) ;
+- out[3] ( PIN out[3] ) ( bus1 out[3] ) ;
+END NETS
+
+END DESIGN
