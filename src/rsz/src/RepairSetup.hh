@@ -111,6 +111,7 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
+  bool swapVTCritCells(const OptoParams& params, const int& num_viols);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

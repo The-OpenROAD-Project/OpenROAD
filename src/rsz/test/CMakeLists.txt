@@ -169,6 +169,8 @@ or_integration_tests(
     report_buffers_sky130hs
     report_buffers_sky130hd
     report_buffers_gf180
+    repair_setup_vt_swap
+    repair_setup_vt_swap2
   PASSFAIL_TESTS
     cpp_tests
 )

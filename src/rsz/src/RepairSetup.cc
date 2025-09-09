@@ -33,9 +33,11 @@
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
@@ -59,9 +61,11 @@ using sta::fuzzyLess;
 using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
+using sta::PathEndSeq;
 using sta::PathExpanded;
 using sta::Slew;
 using sta::VertexOutEdgeIterator;
+using sta::VertexPathIterator;
 
 RepairSetup::RepairSetup(Resizer* resizer,
                          est::EstimateParasitics* estimate_parasitics)
@@ -455,6 +459,16 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       break;
     }
   }  // for each violating endpoint
+
+  if (!skip_vt_swap) {
+    // Swap all critical cells to fastest VT
+    OptoParams params(setup_slack_margin, verbose);
+    if (swapVTCritCells(params, num_viols)) {
+      // Need to update timing
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+    }
+  }
 
   if (!skip_last_gasp) {
     // do some last gasp setup fixing before we give up
@@ -993,6 +1007,102 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       break;
     }
   }  // for each violating endpoint
+}
+
+bool RepairSetup::swapVTCritCells(const OptoParams& params,
+                                  const int& num_viols)
+{
+  std::set<Instance*> crit_insts;
+  std::set<Path*> visited_paths;
+  const size_t paths_per_endpoint = 100;
+  size_t total_paths = std::max(1000, num_viols) * paths_per_endpoint;
+  PathEndSeq path_ends = sta_->search()->findPathEnds(
+      /* ExceptionFrom */ nullptr,
+      /* ExceptionThruSeq */ nullptr,
+      /* ExceptionTo */ nullptr,
+      /* unconstrained */ false,
+      /* Corner - all corners */ nullptr,
+      /* MinMaxAll */ sta::MinMaxAll::max(),
+      /* group_path_count = violating EPs x paths per EP */ total_paths,
+      /* endpoint_path_count */ paths_per_endpoint,
+      /* unique_pins - want all paths */ false,
+      /* slack_min */ -sta::INF,
+      /* slack_max */ params.setup_slack_margin,
+      /* sort_by_slack */ true,
+      /* group_names - all groups */ nullptr,
+      /* setup */ true,
+      /* hold */ false,
+      /* recovery - for async set/reset */ true,
+      /* removal - hold type check */ false,
+      /* clk_gating_setup */ true,
+      /* clk_gating_hold */ false);
+
+  if (path_ends.size() == 0) {
+    return false;
+  }
+
+  for (auto& path_end : path_ends) {
+    if (logger_->debugCheck(RSZ, "swap_crit_vt", 2)) {
+      sta_->reportPathEnd(path_end);
+    }
+    Path* path = path_end->path();
+    if (visited_paths.find(path) != visited_paths.end()) {
+      continue;
+    }
+    visited_paths.insert(path);
+    PathExpanded expanded(path, sta_);
+    if (expanded.size() > 1) {
+      const int start_index = expanded.startIndex();
+      const int path_length = expanded.size();
+      for (int i = start_index; i < path_length; i += 2) {
+        const Path* path_i = expanded.path(i);
+        if (path_i) {
+          Vertex* vertex_i = path_i->vertex(sta_);
+          if (vertex_i) {
+            Pin* pin_i = vertex_i->pin();
+            if (pin_i) {
+              Instance* instance_i = network_->instance(pin_i);
+              if (instance_i) {
+                crit_insts.insert(instance_i);
+                debugPrint(logger_,
+                           RSZ,
+                           "swap_crit_vt",
+                           1,
+                           "swapVTCritCells: found crit inst {}",
+                           network_->name(instance_i));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "swap_crit_vt",
+             1,
+             "swapVTCritCells: found {} critical insts",
+             crit_insts.size());
+
+  bool changed = false;
+  BaseMove* move = resizer_->vt_swap_speed_move_.get();
+  for (Instance* crit_inst : crit_insts) {
+    if (move->doMove(crit_inst)) {
+      changed = true;
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_crit_vt",
+                 1,
+                 "inst {} did crit VT swap",
+                 network_->pathName(crit_inst));
+    }
+  }
+  if (changed) {
+    move->commitMoves();
+  }
+
+  return changed;
 }
 
 }  // namespace rsz

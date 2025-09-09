@@ -58,6 +58,35 @@ bool VTSwapSpeedMove::doMove(const Path* drvr_path,
   return false;
 }
 
+// This is a special move used during separate critical cell VT swap routine
+bool VTSwapSpeedMove::doMove(Instance* drvr)
+{
+  if (!resizer_->dontTouch(drvr) && resizer_->isLogicStdCell(drvr)) {
+    Cell* cell = network_->cell(drvr);
+    LibertyCell* curr_lib_cell = network_->libertyCell(cell);
+    LibertyCellSeq equiv_cells = resizer_->getVTEquivCells(curr_lib_cell);
+    LibertyCell* best_lib_cell
+        = equiv_cells.empty() ? nullptr : equiv_cells.back();
+    if (best_lib_cell && best_lib_cell != curr_lib_cell) {
+      if (replaceCell(drvr, best_lib_cell)) {
+        addMove(drvr);
+        debugMovePrint1("ACCEPT vt_swap {}: {} -> {}",
+                        network_->pathName(drvr),
+                        curr_lib_cell->name(),
+                        best_lib_cell->name());
+        debugMovePrint3("vt_swap {} {} -> {}",
+                        network_->pathName(drvr),
+                        curr_lib_cell->name(),
+                        best_lib_cell->name());
+        return true;
+      }
+    }
+  }
+  debugMovePrint1("REJECT vt_swap {} failed",
+                  network_->pathName(drvr));
+  return false;
+}
+
 bool VTSwapSpeedMove::isSwappable(const Path*& drvr_path,
                                   Pin*& drvr_pin,
                                   Instance*& drvr,
