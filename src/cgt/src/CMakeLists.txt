@@ -37,7 +37,6 @@ target_link_libraries(cgt
     OpenSTA
     cut
     dbSta_lib
-    libabc
     utl_lib
  )
 
@@ -64,7 +63,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dbSta
       OpenSTA
       cut
-      libabc
   )
 
 endif()

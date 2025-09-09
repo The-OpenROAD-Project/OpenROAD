@@ -143,6 +143,7 @@ cc_binary(
         ":openroad_lib",
         ":openroad_version",
         "//:ord",
+        "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
