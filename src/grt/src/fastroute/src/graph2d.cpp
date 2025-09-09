@@ -523,7 +523,7 @@ std::vector<int> Graph2D::getMultipleCongestedNDRnet()
 {
   std::vector<int> net_ids;
   if (!congested_ndrs_.empty()) {
-    for (int i = 0; i < ceil((double)congested_ndrs_.size() / 10); i++) {
+    for (int i = 0; i < ceil((double) congested_ndrs_.size() / 10); i++) {
       net_ids.push_back(congested_ndrs_[i].net_id);
     }
   }
