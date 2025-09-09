@@ -108,6 +108,26 @@ VARIANTS = [
     "flat",
 ]
 
+orfs_run(
+    name = "write_macro_placement",
+    src = ":MockArray_floorplan",
+    outs = [
+        ":macro-placement.tcl",
+    ],
+    script = ":write_macros.tcl",
+    tags = ["manual"],
+)
+
+orfs_run(
+    name = "write_pin_placement",
+    src = ":MockArray_floorplan",
+    outs = [
+        ":io-placement.tcl",
+    ],
+    script = ":write_pin_placement.tcl",
+    tags = ["manual"],
+)
+
 [orfs_flow(
     name = "MockArray",
     arguments = {
@@ -147,7 +167,12 @@ VARIANTS = [
         "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
-    },
+    } | (
+        {
+            "MACRO_PLACEMENT_TCL": [":write_macro_placement"],
+            "IO_CONSTRAINTS": [":write_pin_placement"],
+        } if variant == "flat" else {}
+    ),
     variant = variant,
     verilog_files = [":verilog"],
 ) for variant in VARIANTS]
