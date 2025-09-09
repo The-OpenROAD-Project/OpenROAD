@@ -82,8 +82,7 @@ bool VTSwapSpeedMove::doMove(Instance* drvr)
       }
     }
   }
-  debugMovePrint1("REJECT vt_swap {} failed",
-                  network_->pathName(drvr));
+  debugMovePrint1("REJECT vt_swap {} failed", network_->pathName(drvr));
   return false;
 }
 
