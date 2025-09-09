@@ -7,15 +7,11 @@
 #include <tcl.h>
 #include <unistd.h>
 
-#include <array>
 #include <cstddef>
 #include <cstdio>
 #include <filesystem>
-#include <iostream>
-#include <map>
 #include <memory>
 #include <mutex>
-#include <set>
 #include <sstream>
 #include <string>
 

@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <set>
 #include <vector>

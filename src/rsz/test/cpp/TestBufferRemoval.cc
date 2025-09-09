@@ -7,13 +7,9 @@
 #include <tcl.h>
 #include <unistd.h>
 
-#include <array>
 #include <filesystem>
-#include <iostream>
-#include <map>
 #include <memory>
 #include <mutex>
-#include <set>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"

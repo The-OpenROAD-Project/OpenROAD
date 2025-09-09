@@ -36,7 +36,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 #ifndef WIN32
 #include <unistd.h>

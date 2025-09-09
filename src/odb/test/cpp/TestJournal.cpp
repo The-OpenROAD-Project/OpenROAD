@@ -1,7 +1,5 @@
 #define BOOST_TEST_MODULE TestJournal
 #include <functional>
-#include <iostream>
-#include <string>
 
 #include "boost/test/included/unit_test.hpp"
 #include "env.h"

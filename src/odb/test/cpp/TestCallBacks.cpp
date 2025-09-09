@@ -1,5 +1,4 @@
 #define BOOST_TEST_MODULE TestCallbacks
-#include <iostream>
 
 #include "CallBack.h"
 #include "boost/test/included/unit_test.hpp"

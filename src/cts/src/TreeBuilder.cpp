@@ -6,12 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <limits>
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 

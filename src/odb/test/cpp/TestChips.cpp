@@ -7,6 +7,7 @@
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 namespace {

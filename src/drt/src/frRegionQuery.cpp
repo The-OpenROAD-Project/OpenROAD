@@ -4,7 +4,6 @@
 #include "frRegionQuery.h"
 
 #include <algorithm>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <utility>
