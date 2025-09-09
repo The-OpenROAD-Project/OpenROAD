@@ -1,15 +1,13 @@
 # Restructure
 
-The restructure module in OpenROAD (`rmp`) is based on 
-an interface to ABC for local resynthesis. The package allows
-logic restructuring that targets area or timing. It extracts a cloud of logic
-using the OpenSTA timing engine, and passes it to ABC through `blif` interface.
-Multiple recipes for area or timing are run to obtain multiple structures from ABC;
-the most desirable among these is used to improve the netlist.
-The ABC output is read back by a `blif` reader which is integrated to OpenDB.
-`blif` writer and reader also support constants from and to OpenDB. Reading
-back of constants requires insertion of tie cells which should be provided
-by the user as per the interface described below.
+The restructure module in OpenROAD (`rmp`) is based on an interface to ABC for
+local resynthesis. The package allows logic restructuring that targets area or
+timing. It extracts a cloud of logic to ABC using the [`cut`](../cut/README.md)
+module. Multiple recipes for area or timing are run to obtain multiple
+structures from ABC; the most desirable among these is used to improve the
+netlist. The resynthesized logic is then read back to OpenDB. Reading back of
+constants requires insertion of tie cells which should be provided by the user
+as per the interface described below.
 
 ## Commands
 
@@ -55,19 +53,18 @@ restructure
 
 ### Resynth
 
-Resynthesis can be performed with the resynthesis command it will attempt to drive
-all paths to zero slack. It's an improved version of restructure. If you have multiple
-corners you need to specify witch `-corner` you want to use.
+Resynthesize parts of the design in an attempt to fix negative slack.
 
 ```tcl
-resynth [-corner corner]
+resynth
+    [-corner corner]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Specifies the library corner you intend to use in the optimization loop.
+| `-corner` | Process corner to use. |
 
 ## Example scripts
 

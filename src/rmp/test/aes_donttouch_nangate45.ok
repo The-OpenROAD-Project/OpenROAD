@@ -64,7 +64,7 @@ wns max -0.37
 tns max -83.81
 -- After --
 
-[INFO RMP-1030] All candidate endpoints have positive slack, nothing to do.
+[INFO RMP-0050] All candidate endpoints have positive slack, nothing to do.
 [-0.369, -0.296): ********************************************** (127)
 [-0.296, -0.223): ************************* (69)
 [-0.223, -0.150): ********************* (57)

@@ -30,11 +30,13 @@ std::optional<dbOrientType::Value> dbOrientType::fromString(const char* orient)
     ret = R270;
   } else if (strcasecmp(orient, "MY") == 0) {
     ret = MY;
-  } else if (strcasecmp(orient, "MYR90") == 0) {
+  } else if (strcasecmp(orient, "MYR90") == 0
+             || strcasecmp(orient, "MY_R90") == 0) {
     ret = MYR90;
   } else if (strcasecmp(orient, "MX") == 0) {
     ret = MX;
-  } else if (strcasecmp(orient, "MXR90") == 0) {
+  } else if (strcasecmp(orient, "MXR90") == 0
+             || strcasecmp(orient, "MX_R90") == 0) {
     ret = MXR90;
   } else if (strcasecmp(orient, "N") == 0) {  // LEF/DEF style names
     ret = R0;
@@ -186,6 +188,68 @@ bool dbOrientType::isRightAngleRotation() const
   return false;
 }
 
+std::optional<dbOrientType3D> dbOrientType3D::fromString(
+    const std::string& orient)
+{
+  std::string orient_str = orient;
+  bool mirror_z = false;
+  // check if the orient string contains "MZ"
+  if (orient_str == "MZ") {
+    return dbOrientType3D(dbOrientType::R0, true);
+  }
+  if (orient_str.find("MZ_") != std::string::npos) {
+    mirror_z = true;
+    orient_str = orient_str.erase(orient_str.find("MZ_"), 3);
+  }
+  auto opt = dbOrientType::fromString(orient_str.c_str());
+  if (!opt.has_value()) {
+    return std::nullopt;
+  }
+  return dbOrientType3D(opt.value(), mirror_z);
+}
+
+dbOrientType3D::dbOrientType3D(const std::string& orient)
+{
+  auto opt = fromString(orient);
+  if (opt.has_value()) {
+    value_ = opt.value().value_;
+    mirror_z_ = opt.value().mirror_z_;
+  } else {
+    value_ = dbOrientType::DEFAULT;
+    mirror_z_ = false;
+  }
+}
+
+dbOrientType3D::dbOrientType3D(const dbOrientType& orient, bool mirror_z)
+{
+  value_ = orient.getValue();
+  mirror_z_ = mirror_z;
+}
+
+std::string dbOrientType3D::getString() const
+{
+  if (mirror_z_ && getOrientType2D() == dbOrientType::R0) {
+    return "MZ";
+  }
+  std::string orient_2d_str = getOrientType2D().getString();
+  if (orient_2d_str == "MXR90") {
+    orient_2d_str = "MX_R90";
+  } else if (orient_2d_str == "MYR90") {
+    orient_2d_str = "MY_R90";
+  }
+  return (mirror_z_ ? "MZ_" : "") + orient_2d_str;
+}
+
+dbOrientType dbOrientType3D::getOrientType2D() const
+{
+  return value_;
+}
+
+bool dbOrientType3D::isMirrorZ() const
+{
+  return mirror_z_;
+}
+
 dbGDSSTrans::dbGDSSTrans()
 {
   _flipX = false;
@@ -266,6 +330,22 @@ dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
   stream << t._flipX;
   stream << t._mag;
   stream << t._angle;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, dbOrientType3D& t)
+{
+  uint8_t value;
+  stream >> value;
+  t.value_ = static_cast<dbOrientType::Value>(value);
+  stream >> t.mirror_z_;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const dbOrientType3D t)
+{
+  stream << static_cast<uint8_t>(t.value_);
+  stream << t.mirror_z_;
   return stream;
 }
 
