@@ -14,14 +14,14 @@ cc_library(
     srcs = [
         "src/Restructure.cpp",
         "src/delay_optimization_strategy.cpp",
-        "src/delay_optimization_strategy.h",
-        "src/logic_optimization_strategy.h",
-        "src/resynthesis_strategy.h",
         "src/zero_slack_strategy.cpp",
-        "src/zero_slack_strategy.h",
     ],
     hdrs = [
         "include/rmp/Restructure.h",
+        "src/delay_optimization_strategy.h",
+        "src/logic_optimization_strategy.h",
+        "src/resynthesis_strategy.h",
+        "src/zero_slack_strategy.h",
     ],
     copts = [
         "-Isrc/rmp/src",

@@ -77,6 +77,13 @@ extern "C" {
 extern int Ord_Init(Tcl_Interp* interp);
 }
 
+static bool abc_initialized = false;
+namespace abc {
+// Forward declare instead of including to avoid warnings from ABC
+void Abc_Start();
+void Abc_Stop();
+}  // namespace abc
+
 namespace ord {
 
 using odb::dbBlock;
@@ -147,6 +154,14 @@ void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
     exit(1);
   }
   app_ = app;
+}
+
+void ord::abcInit()
+{
+  if (!abc_initialized) {
+    abc::Abc_Start();
+    abc_initialized = true;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
