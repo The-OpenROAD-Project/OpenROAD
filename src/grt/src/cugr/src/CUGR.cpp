@@ -204,8 +204,8 @@ NetRouteMap CUGR::getRoutes()
           routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
             for (const auto& child : node->children) {
               if (node->getLayerIdx() == child->getLayerIdx()) {
-                auto [min_x, max_x] = std::minmax(node->x(), child->x());
-                auto [min_y, max_y] = std::minmax(node->y(), child->y());
+                auto [min_x, max_x] = std::minmax({node->x(), child->x()});
+                auto [min_y, max_y] = std::minmax({node->y(), child->y()});
                 GSegment segment(
                     grid_graph_->getGridline(0, min_x) + half_gcell_size,
                     grid_graph_->getGridline(1, min_y) + half_gcell_size,

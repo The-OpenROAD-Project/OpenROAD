@@ -167,16 +167,16 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
  public:
   bool check(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
+    assert(u.x() == v.x() || u.y() == v.y());
     if (u.y() == v.y()) {
-      const auto [l, h] = std::minmax(u.x(), v.x());
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
         if ((*this)[MetalLayer::H][x][u.y()]) {
           return true;
         }
       }
     } else {
-      const auto [l, h] = std::minmax(u.y(), v.y());
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
         if ((*this)[MetalLayer::V][u.x()][y]) {
           return true;
@@ -188,15 +188,15 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 
   Type sum(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
+    assert(u.x() == v.x() || u.y() == v.y());
     Type res = 0;
     if (u.y() == v.y()) {
-      const auto [l, h] = std::minmax(u.x(), v.x());
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
         res += (*this)[MetalLayer::H][x][u.y()];
       }
     } else {
-      const auto [l, h] = std::minmax(u.y(), v.y());
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
         res += (*this)[MetalLayer::V][u.x()][y];
       }
