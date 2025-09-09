@@ -13,11 +13,11 @@
 
 #include "clusterEngine.h"
 #include "gui/gui.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {

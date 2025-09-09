@@ -15,9 +15,9 @@
 #include "SimulatedAnnealingCore.h"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {

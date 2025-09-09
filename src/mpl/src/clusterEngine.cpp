@@ -14,13 +14,13 @@
 
 #include "MplObserver.h"
 #include "db_sta/dbNetwork.hh"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
