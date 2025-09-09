@@ -24,11 +24,6 @@ target_sources(cut
     logic_cut.cpp
 )
 
-target_compile_definitions(cut
-  PUBLIC
-    ABC_USE_STDINT_H=1
-)
-
 target_link_libraries(cut
   PUBLIC
     rsz_lib
