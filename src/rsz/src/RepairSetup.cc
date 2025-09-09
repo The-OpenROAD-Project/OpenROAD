@@ -65,7 +65,6 @@ using sta::PathEndSeq;
 using sta::PathExpanded;
 using sta::Slew;
 using sta::VertexOutEdgeIterator;
-using sta::VertexPathIterator;
 
 RepairSetup::RepairSetup(Resizer* resizer,
                          est::EstimateParasitics* estimate_parasitics)
@@ -1037,7 +1036,7 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params,
       /* clk_gating_setup */ true,
       /* clk_gating_hold */ false);
 
-  if (path_ends.size() == 0) {
+  if (path_ends.empty()) {
     return false;
   }
 
