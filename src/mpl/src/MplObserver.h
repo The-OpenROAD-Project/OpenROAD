@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/geom.h"
-#include "util.h"
 
 namespace mpl {
 

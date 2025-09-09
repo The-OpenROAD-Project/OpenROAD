@@ -14,9 +14,9 @@
 #include <vector>
 
 #include "boost/random/uniform_int_distribution.hpp"
+#include "mpl-util.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
