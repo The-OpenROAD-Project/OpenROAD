@@ -206,7 +206,8 @@ void MazeRoute::run()
         continue;
       }
       for (int edgeIndex = 0; edgeIndex < 3; edgeIndex++) {
-        const int nextVertex = graph_.getNextVertex(solution->vertex, edgeIndex);
+        const int nextVertex
+            = graph_.getNextVertex(solution->vertex, edgeIndex);
         if (nextVertex == -1
             || (solution->prev && nextVertex == solution->prev->vertex)) {
           continue;
