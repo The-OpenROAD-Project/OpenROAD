@@ -1194,8 +1194,9 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
-  const int long_edge_len = 40;
+  int long_edge_len = 40;
   const int short_edge_len = 12;
+  const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
@@ -1347,9 +1348,6 @@ NetRouteMap FastRouteCore::run()
       } else if (i > 6) {
         if (i % 2 == 0) {
           logistic_coef += 0.5;
-        }
-        if (i > 40) {
-          break;
         }
       }
       if (i > 10) {
@@ -1505,10 +1503,6 @@ NetRouteMap FastRouteCore::run()
       if (bmfl < 30 && bwcnt > 50) {
         break;
       }
-      if (i >= mazeRound) {
-        getOverflow2Dmaze(&maxOverflow, &tUsage);
-        break;
-      }
     }
 
     if (i >= mazeRound) {
@@ -1536,6 +1530,51 @@ NetRouteMap FastRouteCore::run()
           overflow_iterations_,
           overflow_increases,
           max_overflow_increases);
+    }
+
+    // Try disabling NDR nets to fix congestion
+    if (total_overflow_ > 0
+        && (i == overflow_iterations_
+            || overflow_increases == max_overflow_increases)) {
+      // Compute all the NDR nets involved in congestion
+      computeCongestedNDRnets();
+
+      std::vector<int> net_ids;
+
+      // If the congestion is not that high (note that the overflow is inflated
+      // by 100x when there is no capacity available for a NDR net in a specific
+      // edge)
+      if (total_overflow_ < soft_ndr_overflow_th) {
+        // Select one NDR net to be disabled
+        int net_id = graph2d_.getOneCongestedNDRnet();
+        if (net_id != -1) {
+          net_ids.push_back(net_id);
+        }
+      } else {  // Select multiple NDR nets
+        net_ids = graph2d_.getMultipleCongestedNDRnet();
+      }
+
+      // Only apply soft NDR if there is NDR nets involved in congestion
+      if (!net_ids.empty()) {
+        // Apply the soft NDR to the selected list of nets
+        applySoftNDR(net_ids);
+
+        // Reset loop parameters
+        overflow_increases = 0;
+        i = 1;
+        costheight_ = COSHEIGHT;
+        enlarge_ = ENLARGE;
+        ripup_threshold = Ripvalue;
+        minofl = total_overflow_;
+        bmfl = minofl;
+        stopDEC = false;
+
+        slope = 20;
+        L = 1;
+
+        // Increase maze route 3D threshold to fix bad routes
+        long_edge_len = BIG_INT;
+      }
     }
 
     // generate DRC report each interval
@@ -1628,6 +1667,119 @@ NetRouteMap FastRouteCore::run()
   NetRouteMap routes = getRoutes();
   net_ids_.clear();
   return routes;
+}
+
+void FastRouteCore::applySoftNDR(const std::vector<int>& net_ids)
+{
+  for (auto net_id : net_ids) {
+    logger_->warn(
+        GRT, 273, "Disabled NDR for the {} net.", nets_[net_id]->getName());
+
+    // Remove the usage of all the edges involved with this net
+    updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
+
+    // Reset the edge cost and layer edge cost to 1
+    setSoftNDR(net_id);
+
+    // Update the usage of all the edges involved with this net considering
+    // the new edge cost
+    updateSoftNDRNetUsage(net_id, nets_[net_id]->getEdgeCost());
+  }
+}
+
+void FastRouteCore::setSoftNDR(const int net_id)
+{
+  nets_[net_id]->setIsSoftNDR(true);
+  nets_[net_id]->setEdgeCost(1);
+}
+
+void FastRouteCore::computeCongestedNDRnets()
+{
+  // Clear the old list first
+  graph2d_.clearCongestedNDRnets();
+
+  // Compute all NDR nets to identify those in congestion
+  for (auto net_id : net_ids_) {
+    FrNet* net = nets_[net_id];
+
+    // Ignore non-NDR and soft-NDR nets
+    if (net->getDbNet()->getNonDefaultRule() == nullptr || net->isSoftNDR()) {
+      continue;
+    }
+
+    // Access the routing tree edges for this net
+    std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+    const int num_edges = sttrees_[net_id].num_edges();
+
+    uint16_t num_congested_edges = 0;
+
+    // Iterate through all edges in the net's routing tree
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      TreeEdge* treeedge = &(treeedges[edgeID]);
+      // Only process edges that have actual routing
+      if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+        int routeLen = treeedge->route.routelen;
+        std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+        // Check route
+        for (int i = 0; i < routeLen; i++) {
+          if (grids[i].x == grids[i + 1].x) {  // vertical
+            const int min_y = std::min(grids[i].y, grids[i + 1].y);
+            // Increment congested edges if have overflow
+            if (graph2d_.getOverflowV(grids[i].x, min_y) > 0) {
+              num_congested_edges++;
+            }
+          } else {  // horizontal
+            const int min_x = std::min(grids[i].x, grids[i + 1].x);
+            if (graph2d_.getOverflowH(min_x, grids[i].y) > 0) {
+              num_congested_edges++;
+            }
+          }
+        }
+      }
+    }
+    if (num_congested_edges > 0) {
+      // Include the NDR net in the list
+      graph2d_.addCongestedNDRnet(net_id, num_congested_edges);
+      if (logger_->debugCheck(GRT, "softNDR", 1)) {
+        logger_->report("Congested NDR net: {} Edges: {}",
+                        net->getName(),
+                        num_congested_edges);
+      }
+    }
+  }
+
+  // Sort the congested NDR nets according to the priorities
+  graph2d_.sortCongestedNDRnets();
+}
+
+void FastRouteCore::updateSoftNDRNetUsage(const int net_id, const int edge_cost)
+{
+  FrNet* net = nets_[net_id];
+  // Access the routing tree edges for this net
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  // Iterate through all edges in the net's routing tree
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    // Only process edges that have actual routing
+    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+      int routeLen = treeedge->route.routelen;
+      std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+      // Update route usage
+      for (int i = 0; i < routeLen; i++) {
+        if (grids[i].x == grids[i + 1].x) {  // vertical
+          const int min_y = std::min(grids[i].y, grids[i + 1].y);
+          graph2d_.updateUsageV(grids[i].x, min_y, net, edge_cost);
+        } else {  // horizontal
+          const int min_x = std::min(grids[i].x, grids[i + 1].x);
+          graph2d_.updateUsageH(min_x, grids[i].y, net, edge_cost);
+        }
+      }
+    }
+  }
 }
 
 void FastRouteCore::setVerbose(bool v)
@@ -1820,7 +1972,7 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 int8_t FrNet::getLayerEdgeCost(int layer) const
 {
-  if (edge_cost_per_layer_) {
+  if (edge_cost_per_layer_ && !is_soft_ndr_) {
     return (*edge_cost_per_layer_)[layer];
   }
 
