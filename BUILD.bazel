@@ -131,8 +131,7 @@ OPENROAD_DEFINES = [
     "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
     "GPU=false",
-    "BUILD_PYTHON=true",
-    "ENABLE_PYTHON3",
+    "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
     "TCLRL_VERSION_STR=",
 ]
@@ -141,15 +140,6 @@ cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
-        "src/OpenRoad.cc",
-        ":openroad_swig",
-        ":openroad_swig-py",
-        ":openroad_py",
-        ":openroad_tcl",
-        ":rmp_swig",
-        ":rmp_swig-py",
-        ":rmp_python",
-        ":rmp_tcl",
         "//bazel:runfiles",
     ],
     copts = OPENROAD_COPTS,
@@ -167,12 +157,7 @@ cc_binary(
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
-        "@openroad_rules_python//python/cc:current_py_cc_libs",
     ],
-    data = [
-        "@python_3_13//:py3_runtime",
-    ]
 )
 
 GUI_BUILD_FLAGS = select(
@@ -209,18 +194,8 @@ cc_library(
         "src/Tech.cc",
         "src/Timing.cc",
         ":openroad_swig",
-        ":openroad_swig-py",
-        ":openroad_py",
         ":openroad_tcl",
-        ":rmp_swig",
-        ":rmp_swig-py",
-        ":rmp_python",
-        ":rmp_tcl",
-    ] + glob([
-        "src/rmp/src/*.cpp",
-        "src/rmp/src/*.h",
-    ]),
-    hdrs = glob(["src/rmp/include/rmp/*.h"]),
+    ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
     features = ["-use_header_modules"],
@@ -294,6 +269,55 @@ tcl_wrap_cc(
     ],
 )
 
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_openroadpy.so",
+    srcs = [":openroad_swig-py"],
+    linkshared = True,
+    deps = [
+        ":openroad_lib",  # Depends on the core odb C++ library
+        ":ord",
+        "//src/odb",
+        "//src/ifp",
+        "//src/utl",
+        "//src/gpl",
+        "//src/ant",
+        "//src/cts",
+        "//src/dpl",
+        "//src/drt",
+        "//src/exa",
+        "//src/fin",
+        "//src/grt",
+        "//src/par",
+        "//src/pdn",
+        "//src/ppl",
+        "//src/psm",
+        "//src/rcx",
+        "//src/stt",
+        "//src/gui",
+        "//src/tap",
+        "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "ord_py",
+    srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_openroadpy.so"],
+    deps = [
+        "//src/utl:utl_py",
+        "//src/odb:odb_py",
+    ],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public",]
+)
+
 python_wrap_cc(
     name = "openroad_swig-py",
     srcs = [
@@ -303,64 +327,32 @@ python_wrap_cc(
         "include/ord/Design.h",
         "include/ord/Timing.h",
     ],
-    module = "ord_py",
+    module = "openroadpy",
     root_swig_src = "src/OpenRoad-py.i",
     swig_includes = [
         "include",
         "src",
     ],
-)
-
-tcl_encode(
-    name = "openroad_py",
-    srcs = [
-        ":openroad_swig-py",
-    ],
-    char_array_name = "ord_py_python_inits",
-    namespace = "ord",
-)
-
-tcl_wrap_cc(
-    name = "rmp_swig",
-    srcs = [
-        "src/rmp/src/rmp.i",
-        ":error_swig",
-        "//src/sta:sta_swig_files",
-    ],
-    module = "rmp",
-    namespace_prefix = "rmp",
-    root_swig_src = "src/rmp/src/rmp.i",
-    swig_includes = [
-        "src/rmp/src",
-        "src/sta",
-    ],
-)
-
-python_wrap_cc(
-    name = "rmp_swig-py",
-    srcs = [
-        "src/rmp/include/rmp/blif.h",
-        "src/rmp/include/rmp/Restructure.h",
-        "src/rmp/src/rmp-py.i",
-        ":error_swig-py",
-        "//src/sta:sta_swig_files",
-    ],
-    module = "rmp_py",
-    root_swig_src = "src/rmp/src/rmp-py.i",
-    swig_includes = [
-        "src/rmp/include",
-        "src/rmp/src",
-        "src/sta",
-    ],
-)
-
-tcl_encode(
-    name = "rmp_python",
-    srcs = [
-        ":rmp_swig-py",
-    ],
-    char_array_name = "rmp_py_python_inits",
-    namespace = "rmp",
+    deps = [
+        "//src/gpl:swig-py",
+        "//src/ifp:swig-py",
+        "//src/ant:swig-py",
+        "//src/cts:swig-py",
+        "//src/dpl:swig-py",
+        "//src/drt:swig-py",
+        "//src/exa:swig-py",
+        "//src/fin:swig-py",
+        "//src/grt:swig-py",
+        "//src/par:swig-py",
+        "//src/pdn:swig-py",
+        "//src/ppl:swig-py",
+        "//src/psm:swig-py",
+        "//src/rcx:swig-py",
+        "//src/stt:swig-py",
+        "//src/tap:swig-py",
+        "//src/odb:swig-py",
+        "//src/utl:swig-py",
+    ]
 )
 
 filegroup(

@@ -5,6 +5,19 @@ import re
 from openroad import Design
 
 
+def get_runfiles_path_to(path):
+    # If we're not in bazel mode assume Ctest deals
+    # with our CWD and return "".
+    runfiles_path = os.environ.get("TEST_SRCDIR", "")
+    if runfiles_path:
+        runfiles_path = runfiles_path + path
+    return runfiles_path
+
+def if_bazel_change_working_dir_to(test_dir):
+    test_dir = get_runfiles_path_to(test_dir)
+    if test_dir:
+        os.chdir(test_dir)
+
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
     yl = design.micronToDBU(yl)
@@ -15,6 +28,11 @@ def make_rect(design, xl, yl, xh, yh):
 
 def make_result_file(filename):
     result_dir = os.path.join(os.getcwd(), "results")
+    bazel_tmp_output_dir = os.environ.get("TEST_TMPDIR", "")
+
+    if bazel_tmp_output_dir:
+        result_dir = os.path.join(bazel_tmp_output_dir, )
+
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
 
@@ -39,16 +57,20 @@ def diff_files(file1, file2, ignore=None):
         if ignore and (ignore.search(lines1[i]) or ignore.search(lines2[i])):
             continue
         if lines1[i] != lines2[i]:
-            utl.report(f"Differences found at line {i+1}.")
-            utl.report(lines1[i][:-1])
-            utl.report(lines2[i][:-1])
+            print(f"Differences found at line {i+1}.")
+            print(lines1[i][:-1])
+            print(lines2[i][:-1])
+            if os.environ.get("TEST_SRCDIR", ""):
+                raise Exception("Diffs found")
             return 1
 
     if num_lines1 != num_lines2:
-        utl.report(f"Number of lines differs {num_lines1} vs {num_lines2}.")
+        print(f"Number of lines differs {num_lines1} vs {num_lines2}.")
+        if os.environ.get("TEST_SRCDIR", ""):
+            raise Exception("Diffs found")
         return 1
 
-    utl.report("No differences found.")
+    print("No differences found.")
     return 0
 
 

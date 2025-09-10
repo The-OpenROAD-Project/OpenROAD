@@ -21,8 +21,6 @@ cc_library(
         "src/graphics.h",
         "src/polygon.h",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -42,7 +40,6 @@ cc_library(
         "@boost.property_tree",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -87,13 +84,4 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "fin_py_python_inits",
-    namespace = "fin",
 )

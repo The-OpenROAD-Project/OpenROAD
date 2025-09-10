@@ -37,8 +37,6 @@ cc_library(
         "src/graphics.h",
         "src/observer.h",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -58,7 +56,6 @@ cc_library(
         "//src/utl",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -100,17 +97,5 @@ python_wrap_cc(
     swig_includes = [
         "include",
         "src",
-    ],
-    deps = [
-        "//src/odb:swig-py",
-    ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "exa_py_python_inits",
-    namespace = "exa",
+    ]
 )

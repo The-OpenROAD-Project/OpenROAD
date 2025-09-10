@@ -30,8 +30,6 @@ cc_library(
         "src/shape.cpp",
         "src/shape.h",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -55,7 +53,6 @@ cc_library(
         "@boost.stacktrace",
         "@eigen",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -100,13 +97,4 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "psm_py_python_inits",
-    namespace = "psm",
 )

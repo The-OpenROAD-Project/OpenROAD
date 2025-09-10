@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -42,12 +42,11 @@ cc_library(
         "src/lefin/*.h",
         "src/lefout/*.cpp",
         "src/swig/common/swig_common.cpp",
-        "src/swig/common/swig_common.h",
     ]),
     hdrs = glob([
         "include/odb/*.h",
         "include/odb/*.hpp",
-    ]),
+    ]) + ["src/swig/common/swig_common.h"],
     features = [
         "-use_header_modules",
     ],
@@ -81,6 +80,31 @@ cc_library(
     ],
 )
 
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_odb.so",
+    srcs = [":swig-py"],
+    includes = ["src/swig/common"],
+    linkshared = True,
+    deps = [
+        ":odb",  # Depends on the core odb C++ library
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "odb_py",
+    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_odb.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public",]
+)
+
 cc_library(
     name = "ui",
     srcs = [
@@ -88,8 +112,6 @@ cc_library(
         "src/swig/common/swig_common.h",
         "src/swig/tcl/MakeOdb.cpp",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = glob([
@@ -113,7 +135,6 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -161,7 +182,7 @@ python_wrap_cc(
         "//:src/Design.i",
         "//:src/Exception.i",
     ],
-    module = "odb_py",
+    module = "odb",
     root_swig_src = "src/swig/common/odb.i",
     swig_includes = [
         "include",
@@ -175,13 +196,4 @@ python_wrap_cc(
         # the warnings one by one.
         "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "odb_py_python_inits",
-    namespace = "odb",
 )

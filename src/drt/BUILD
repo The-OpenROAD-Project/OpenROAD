@@ -252,8 +252,6 @@ cc_library(
         "src/ta/FlexTA_graphics.cpp",
         "src/ta/FlexTA_graphics.h",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -281,7 +279,6 @@ cc_library(
         "@boost.serialization",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -326,13 +323,4 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "drt_py_python_inits",
-    namespace = "drt",
 )

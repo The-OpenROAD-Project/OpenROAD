@@ -36,9 +36,7 @@ cc_library(
         "include/ifp/InitFloorplan.hh",
         "src/MakeInitFloorplan.cc",
         ":swig",
-        ":swig-py",
         ":tcl",
-        ":python",
     ],
     hdrs = [
         "include/ifp/MakeInitFloorplan.hh",
@@ -58,7 +56,6 @@ cc_library(
         "//src/utl",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -104,13 +101,4 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "ifp_py_python_inits",
-    namespace = "ifp",
 )

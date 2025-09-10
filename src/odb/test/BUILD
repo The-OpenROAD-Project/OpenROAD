@@ -2,6 +2,140 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+py_library(
+    name = "helper",
+    srcs = [
+        "helper.py",
+    ],
+    imports = ["."]
+)
+
+py_library(
+    name = "odbUnitTest",
+    srcs = [
+        "odbUnitTest.py",
+    ],
+    imports = ["."]
+)
+
+
+py_test(
+    name = "test_block",
+    srcs = [
+        "test_block.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_bterm",
+    srcs = [
+        "test_bterm.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_destroy",
+    srcs = [
+        "test_destroy.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_group",
+    srcs = [
+        "test_group.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_inst",
+    srcs = [
+        "test_inst.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_iterm",
+    srcs = [
+        "test_iterm.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_module",
+    srcs = [
+        "test_module.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_net",
+    srcs = [
+        "test_net.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
+py_test(
+    name = "test_wire_codec",
+    srcs = [
+        "test_wire_codec.py",
+    ],
+    deps = [
+        "//src/odb:odb_py",
+        "//:ord_py",
+        ":odbUnitTest",
+        ":helper",
+    ]
+)
+
 PASSFAIL_TESTS = [
     # FIXME not supported yet
     # "cpp_tests",

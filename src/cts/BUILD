@@ -48,8 +48,10 @@ cc_library(
     ],
     hdrs = [
         "include/cts/TritonCTS.h",
+        "src/CtsOptions.h",
+        "src/TechChar.h",
     ],
-    includes = ["include"],
+    includes = ["include", "src"],
     deps = [
         ":private_hdrs",
         "//src/dbSta",
@@ -73,8 +75,6 @@ cc_library(
         "src/CtsGraphics.h",
         "src/MakeTritoncts.cpp",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -96,7 +96,6 @@ cc_library(
         "//src/utl",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -136,13 +135,4 @@ python_wrap_cc(
     swig_includes = [
         "include",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "cts_py_python_inits",
-    namespace = "cts",
 )

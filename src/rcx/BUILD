@@ -11,32 +11,6 @@ package(
 )
 
 cc_library(
-    name = "hdrs",
-    hdrs = [
-        "include/rcx/box.h",
-        "include/rcx/dbUtil.h",
-        "include/rcx/ext.h",
-        "include/rcx/ext2dBox.h",
-        "include/rcx/extMeasureRC.h",
-        "include/rcx/extModelGen.h",
-        "include/rcx/extPattern.h",
-        "include/rcx/extProgressTracker.hpp",
-        "include/rcx/extRCap.h",
-        "include/rcx/extRulesPattern.h",
-        "include/rcx/extSegment.h",
-        "include/rcx/extSolverGen.h",
-        "include/rcx/extSpef.h",
-        "include/rcx/extViaModel.h",
-        "include/rcx/ext_options.h",
-        "include/rcx/extprocess.h",
-        "include/rcx/grids.h",
-        "include/rcx/name.h",
-        "include/rcx/rcx.h",
-        "include/rcx/util.h",
-    ],
-)
-
-cc_library(
     name = "rcx",
     srcs = [
         "src/dbUtil.cpp",
@@ -89,11 +63,32 @@ cc_library(
         "src/parse.h",
         "src/process_ext.cpp",
     ],
+    hdrs = [
+        "include/rcx/box.h",
+        "include/rcx/dbUtil.h",
+        "include/rcx/ext.h",
+        "include/rcx/ext2dBox.h",
+        "include/rcx/extMeasureRC.h",
+        "include/rcx/extModelGen.h",
+        "include/rcx/extPattern.h",
+        "include/rcx/extProgressTracker.hpp",
+        "include/rcx/extRCap.h",
+        "include/rcx/extRulesPattern.h",
+        "include/rcx/extSegment.h",
+        "include/rcx/extSolverGen.h",
+        "include/rcx/extSpef.h",
+        "include/rcx/extViaModel.h",
+        "include/rcx/ext_options.h",
+        "include/rcx/extprocess.h",
+        "include/rcx/grids.h",
+        "include/rcx/name.h",
+        "include/rcx/rcx.h",
+        "include/rcx/util.h",
+    ],
     includes = [
         "include",
     ],
     deps = [
-        ":hdrs",
         "//src/odb",
         "//src/utl",
     ],
@@ -104,8 +99,6 @@ cc_library(
     srcs = [
         "src/MakeOpenRCX.cpp",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -118,14 +111,12 @@ cc_library(
         "include",
     ],
     deps = [
-        ":hdrs",
         ":rcx",
         "//:ord",
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -171,13 +162,4 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "rcx_py_python_inits",
-    namespace = "rcx",
 )

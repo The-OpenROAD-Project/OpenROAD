@@ -59,6 +59,7 @@ def _python_wrap_cc_impl(ctx):
     swig_options = _get_transitive_options(ctx.attr.swig_options, ctx.attr.deps)
 
     args = ctx.actions.args()
+    args.add("-DBAZEL=1")
     args.add("-python")
     args.add("-c++")
     args.add("-flatstaticmethod")

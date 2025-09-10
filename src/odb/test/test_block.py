@@ -16,16 +16,13 @@ def placeBPin(bpin, layer, x1, y1, x2, y2):
 
 class TestBlock(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, self.lib = helper.createSimpleDB()
+        self.db, self.lib, self.design, self.ord_tech = helper.createSimpleDB()
         self.parentBlock = odb.dbBlock_create(self.db.getChip(), "Parent")
         self.block = helper.create2LevelBlock(self.db, self.lib, self.parentBlock)
         self.block.setCornerCount(4)
         self.extcornerblock = self.block.createExtCornerBlock(1)
         odb.dbTechNonDefaultRule_create(self.block, "non_default_1")
         self.parentRegion = odb.dbRegion_create(self.block, "parentRegion")
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_find(self):
         # bterm
@@ -45,7 +42,7 @@ class TestBlock(odbUnitTest.TestCase):
         # iterm
         self.assertEqual(self.block.findITerm("i1,o").getInst().getName(), "i1")
         self.assertEqual(self.block.findITerm("i1,o").getMTerm().getName(), "o")
-        self.assertIsNone(self.block.findITerm("i1\o"))
+        self.assertIsNone(self.block.findITerm("i1\\o"))
         # extcornerblock
         self.assertEqual(
             self.block.findExtCornerBlock(1).getName(), "extCornerBlock__1"

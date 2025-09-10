@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+%module(package="src.odb") odb
+
 %{
 #define SWIG_FILE_WITH_INIT
 #include "odb/geom.h"

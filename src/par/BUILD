@@ -70,8 +70,6 @@ cc_library(
     srcs = [
         "src/MakePartitionMgr.cpp",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -101,7 +99,6 @@ cc_library(
         "@boost.tokenizer",
         "@boost.utility",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -146,13 +143,4 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "par_py_python_inits",
-    namespace = "par",
 )

@@ -29,8 +29,6 @@ cc_library(
         "src/Slots.cpp",
         "src/Slots.h",
         ":swig",
-        ":swig-py",
-        ":python",
         ":tcl",
     ],
     hdrs = [
@@ -56,7 +54,6 @@ cc_library(
         "@boost.random",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -113,17 +110,5 @@ python_wrap_cc(
     swig_includes = [
         "include",
         "src",
-    ],
-    deps = [
-        "//src/odb:swig-py",
-    ],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "ppl_py_python_inits",
-    namespace = "ppl",
+    ]
 )

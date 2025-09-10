@@ -6,7 +6,7 @@ import unittest
 
 class TestBTerm(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, self.lib = helper.createSimpleDB()
+        self.db, self.lib, self.design, self.ord_tech = helper.createSimpleDB()
         blockName = "1LevelBlock"
         self.block = odb.dbBlock_create(self.db.getChip(), blockName)
         self.and2 = self.lib.findMaster("and2")
@@ -15,9 +15,6 @@ class TestBTerm(odbUnitTest.TestCase):
         self.n_a = odb.dbNet.create(self.block, "na")
         self.n_b = odb.dbNet.create(self.block, "nb")
         self.bterm_a = odb.dbBTerm.create(self.n_a, "IN_a")
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_idle(self):
         self.assertEqual(self.bterm_a.getNet().getName(), "na")

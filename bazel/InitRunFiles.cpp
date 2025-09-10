@@ -59,20 +59,6 @@ class BazelInitializer
       std::exit(1);
     }
 
-    // Set the PYTHONPATH environment variable.  Pretty ugly but functional
-    const char* import_path
-        = "rules_python++python+python_3_13_x86_64-unknown-linux-gnu/lib/"
-          "python3.13";
-    const std::string python_path = runfiles->Rlocation(import_path);
-
-    if (!python_path.empty()) {
-      setenv("PYTHONPATH", python_path.c_str(), 0);
-    } else {
-      std::cerr << "Error: Could not locate '" << import_path
-                << "' in runfiles." << std::endl;
-      std::exit(1);
-    }
-
     // Setup env variables for any other libraries that use runfiles
     std::string manifest = program_location + ".runfiles/MANIFEST";
     std::string runfiles_dir = program_location + ".runfiles";

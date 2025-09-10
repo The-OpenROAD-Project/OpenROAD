@@ -23,7 +23,6 @@ cc_library(
         "src/CommandLineProgress.h",
         "src/Logger.cpp",
         "src/LoggerCommon.cpp",
-        "src/LoggerCommon.h",
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
@@ -70,8 +69,9 @@ cc_library(
         "include/utl/timer.h",
         "include/utl/unique_name.h",
         "include/utl/validation.h",
+        "src/LoggerCommon.h",
     ],
-    includes = ["include"],
+    includes = ["include", "src"],
     deps = [
         "//src/sta:opensta_lib",
         "@boost.algorithm",
@@ -86,15 +86,42 @@ cc_library(
     ],
 )
 
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_utl.so",
+    srcs = [
+        ":swig-py",
+        "src/LoggerCommon.h",
+    ],
+    includes = ["src"],
+    linkshared = True,
+    deps = [
+        "//src/utl",
+        "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "utl_py",
+    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_utl.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public",]
+)
+
 cc_library(
     name = "ui",
     srcs = [
         "src/LoggerCommon.h",
         "src/MakeLogger.cpp",
         ":swig",
-        ":swig-py",
         ":tcl",
-        ":python",
     ],
     hdrs = [
         "include/utl/MakeLogger.h",
@@ -154,20 +181,11 @@ python_wrap_cc(
         "src/LoggerCommon.h",
         "//:error_swig-py",
     ],
-    module = "utl_py",
+    module = "utl",
     root_swig_src = "src/Logger-py.i",
     swig_includes = [
         "include",
         "src",
     ],
     visibility = ["//visibility:public"],
-)
-
-tcl_encode(
-    name = "python",
-    srcs = [
-        ":swig-py",
-    ],
-    char_array_name = "utl_py_python_inits",
-    namespace = "utl",
 )
