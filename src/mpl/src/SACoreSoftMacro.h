@@ -67,9 +67,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
   
-  void setEnhancementsOn(bool enhancements_on_)
+  void enableEnhancements()
   {
-    enhancements_on_ = enhancements_on_;
+    enhancements_on_ = true;
   };
 
  private:
