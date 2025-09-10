@@ -30,6 +30,7 @@ UniqueClass::UniqueClass(const UniqueClassKey& key) : key_(key)
 void UniqueClass::addInst(frInst* inst)
 {
   insts_.insert(inst);
+  inst->setPinAccessIdx(pin_access_idx_);
 }
 
 void UniqueClass::removeInst(frInst* inst)

@@ -154,17 +154,21 @@ void FlexPA::updateDirtyInsts()
     }
     pattern_insts.insert(inst);
   }
+  for (auto& unique_class : dirty_unique_classes) {
+    if (unique_class->getPinAccessIdx() == -1) {  // new unique class
+      unique_insts_.initUniqueInstPinAccess(unique_class);
+    }
+    unique_class->getMaster()->setHasPinAccessUpdate(
+        unique_class->getPinAccessIdx());
+    for (auto inst : unique_class->getInsts()) {
+      inst->setHasPinAccessUpdate(true);
+      pattern_insts.insert(inst);
+    }
+  }
   std::vector<UniqueClass*> dirty_unique_classes_vec(
       dirty_unique_classes.begin(), dirty_unique_classes.end());
 #pragma omp parallel for schedule(dynamic)
   for (auto& unique_class : dirty_unique_classes_vec) {
-    if (unique_class->getPinAccessIdx() == -1) {  // new unique class
-      unique_insts_.initUniqueInstPinAccess(unique_class);
-    } else {  // old unique class with added connections
-      for (auto inst : unique_class->getInsts()) {
-        inst->setPinAccessIdx(unique_class->getPinAccessIdx());
-      }
-    }
     initSkipInstTerm(unique_class);
     auto candidate_inst = unique_class->getFirstInst();
     genInstAccessPoints(candidate_inst);
@@ -172,14 +176,6 @@ void FlexPA::updateDirtyInsts()
       prepPatternInst(candidate_inst);
     }
     revertAccessPoints(candidate_inst);
-#pragma omp critical
-    unique_class->getMaster()->setHasPinAccessUpdate(
-        unique_class->getPinAccessIdx());
-    for (auto inst : unique_class->getInsts()) {
-      inst->setHasPinAccessUpdate(true);
-#pragma omp critical
-      pattern_insts.insert(inst);
-    }
   }
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);
