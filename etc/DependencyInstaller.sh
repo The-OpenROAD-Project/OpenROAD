@@ -408,6 +408,7 @@ _installUbuntuPackages() {
         tcllib \
         unzip \
         wget \
+        yaml-cpp \
         zlib1g-dev
 
     packages=()
