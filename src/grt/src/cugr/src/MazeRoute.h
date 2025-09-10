@@ -17,9 +17,6 @@ namespace grt {
 
 struct SparseGrid
 {
-  PointT interval;
-  PointT offset;
-
   SparseGrid(int x_interval, int y_interval, int x_offset, int y_offset)
       : interval(x_interval, y_interval), offset(x_offset, y_offset)
   {
@@ -27,16 +24,17 @@ struct SparseGrid
 
   void step()
   {
-    offset.x = (offset.x + 1) % interval.x;
-    offset.y = (offset.y + 1) % interval.y;
+    offset = {(offset.x() + 1) % interval.x(), (offset.y() + 1) % interval.y()};
   }
 
   void reset(int x_interval, int y_interval)
   {
-    interval.x = x_interval;
-    interval.y = y_interval;
+    interval = {x_interval, y_interval};
     step();
   }
+
+  PointT interval;
+  PointT offset;
 };
 
 class SparseGraph
@@ -47,7 +45,7 @@ class SparseGraph
   {
   }
 
-  void init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid);
+  void init(const GridGraphView<CostT>& wire_cost_view, const SparseGrid& grid);
   int getNumVertices() const { return vertices_.size(); }
   int getNumPseudoPins() const { return pseudo_pins_.size(); }
   std::pair<PointT, IntervalT> getPseudoPin(int pin_index) const
@@ -97,14 +95,14 @@ class SparseGraph
 
 struct Solution
 {
-  CostT cost;
-  int vertex;
-  std::shared_ptr<Solution> prev;
-
   Solution(CostT c, int v, const std::shared_ptr<Solution>& p)
       : cost(c), vertex(v), prev(p)
   {
   }
+
+  const CostT cost;
+  const int vertex;
+  const std::shared_ptr<Solution> prev;
 };
 
 class MazeRoute
@@ -116,15 +114,15 @@ class MazeRoute
   }
 
   void run();
-  void constructSparsifiedGraph(GridGraphView<CostT>& wire_cost_view,
-                                SparseGrid& grid)
+  void constructSparsifiedGraph(const GridGraphView<CostT>& wire_cost_view,
+                                const SparseGrid& grid)
   {
     graph_.init(wire_cost_view, grid);
   }
   std::shared_ptr<SteinerTreeNode> getSteinerTree() const;
 
  private:
-  GRNet* net_;
+  const GRNet* net_;
   const GridGraph* grid_graph_;
   SparseGraph graph_;
 

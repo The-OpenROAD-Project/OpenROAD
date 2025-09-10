@@ -784,7 +784,7 @@ void dbJournal::redo_disconnectObject()
       } else if (net_id != 0) {
         iterm->disconnectDbNet();
       } else if (mnet_id != 0) {
-        iterm->disconnectModNet();
+        iterm->disconnectDbModNet();
       }
       break;
     }
@@ -2082,7 +2082,7 @@ void dbJournal::undo_connectObject()
         iterm->disconnectDbNet();
       }
       if (mnet_id != 0) {
-        iterm->disconnectModNet();
+        iterm->disconnectDbModNet();
       }
       break;
     }

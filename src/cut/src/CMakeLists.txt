@@ -27,12 +27,12 @@ target_sources(cut
 target_link_libraries(cut
   PUBLIC
     rsz_lib
+    libabc
   PRIVATE
     odb
     dbSta
     OpenSTA
     dbSta_lib
-    libabc
     utl_lib
     ${ABC_LIBRARY}
  )

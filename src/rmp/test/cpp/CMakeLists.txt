@@ -9,14 +9,13 @@ target_link_libraries(RmpGTests
         dbSta_lib
         rsz_lib
         utl_lib
-        libabc
-        rmp
+        cut
+        rmp_lib
         ${TCL_LIBRARY}
 )
 
 target_include_directories(RmpGTests
     PRIVATE
-      ${PROJECT_SOURCE_DIR}/src/cut/include
       ${PROJECT_SOURCE_DIR}/src/rmp/src
 )
 

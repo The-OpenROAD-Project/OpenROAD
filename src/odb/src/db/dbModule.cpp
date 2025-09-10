@@ -201,7 +201,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (_inst->_flags._physical_only) {
+  if (isTop() == false && _inst->_flags._physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -618,6 +618,16 @@ bool dbModule::canSwapWith(dbModule* new_module) const
   }
 
   return true;
+}
+
+bool dbModule::isTop() const
+{
+  const _dbModule* obj = reinterpret_cast<const _dbModule*>(this);
+  const dbBlock* block = static_cast<dbBlock*>(obj->getOwner());
+  if (block == nullptr) {
+    return false;
+  }
+  return (block->getTopModule() == this);
 }
 
 // Do a "deep" copy of old_module based on its instance context into new_module.

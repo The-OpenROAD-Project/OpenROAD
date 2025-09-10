@@ -10,53 +10,69 @@
 #include <iostream>
 #include <limits>
 
+#include "utl/Logger.h"
+
 namespace grt {
+
+using utl::format_as;
 
 // Point template
 class PointT
 {
  public:
-  int x, y;
-  PointT(int xx = std::numeric_limits<int>::max(),
-         int yy = std::numeric_limits<int>::max())
-      : x(xx), y(yy)
+  PointT(int x = std::numeric_limits<int>::max(),
+         int y = std::numeric_limits<int>::max())
+      : x_(x), y_(y)
   {
   }
   bool IsValid() { return *this != PointT(); }
+
+  int x() const { return x_; }
+  int y() const { return y_; }
 
   // Operators
   const int& operator[](const unsigned d) const
   {
     assert(d == 0 || d == 1);
-    return (d == 0 ? x : y);
+    return (d == 0 ? x_ : y_);
   }
   int& operator[](const unsigned d)
   {
     assert(d == 0 || d == 1);
-    return (d == 0 ? x : y);
+    return (d == 0 ? x_ : y_);
   }
-  PointT operator+(const PointT& rhs) { return PointT(x + rhs.x, y + rhs.y); }
-  PointT operator/(int divisor) { return PointT(x / divisor, y / divisor); }
+  PointT operator+(const PointT& rhs)
+  {
+    return PointT(x_ + rhs.x_, y_ + rhs.y_);
+  }
+  PointT operator/(int divisor) { return PointT(x_ / divisor, y_ / divisor); }
   PointT& operator+=(const PointT& rhs)
   {
-    x += rhs.x;
-    y += rhs.y;
+    x_ += rhs.x_;
+    y_ += rhs.y_;
     return *this;
   }
   PointT& operator-=(const PointT& rhs)
   {
-    x -= rhs.x;
-    y -= rhs.y;
+    x_ -= rhs.x_;
+    y_ -= rhs.y_;
     return *this;
   }
-  bool operator==(const PointT& rhs) const { return x == rhs.x && y == rhs.y; }
+  bool operator==(const PointT& rhs) const
+  {
+    return x_ == rhs.x_ && y_ == rhs.y_;
+  }
   bool operator!=(const PointT& rhs) const { return !(*this == rhs); }
 
   friend std::ostream& operator<<(std::ostream& os, const PointT& pt)
   {
-    os << "(" << pt.x << ", " << pt.y << ")";
+    os << "(" << pt.x_ << ", " << pt.y_ << ")";
     return os;
   }
+
+ private:
+  int x_;
+  int y_;
 };
 
 // Interval template
@@ -65,11 +81,9 @@ class IntervalT
  public:
   int low, high;
 
-  template <typename... Args>
-  IntervalT(Args... params)
-  {
-    Set(params...);
-  }
+  IntervalT() { Set(); }
+  IntervalT(int val) { Set(val); }
+  IntervalT(int lo, int hi) { Set(lo, hi); }
 
   // Setters
   void Set()
@@ -202,11 +216,16 @@ class BoxT
  public:
   IntervalT x, y;
 
-  template <typename... Args>
-  BoxT(Args... params)
+  BoxT() { Set(); }
+  BoxT(int xVal, int yVal) { Set(xVal, yVal); }
+  BoxT(const PointT& pt) { Set(pt); }
+  BoxT(int lx, int ly, int hx, int hy) { Set(lx, ly, hx, hy); }
+  BoxT(const IntervalT& xRange, const IntervalT& yRange)
   {
-    Set(params...);
+    Set(xRange, yRange);
   }
+  BoxT(const PointT& low, const PointT& high) { Set(low, high); }
+  BoxT(const BoxT& box) { Set(box); }
 
   // Setters
   int& lx() { return x.low; }
@@ -228,7 +247,7 @@ class BoxT
     x.Set(xVal);
     y.Set(yVal);
   }
-  void Set(const PointT& pt) { Set(pt.x, pt.y); }
+  void Set(const PointT& pt) { Set(pt.x(), pt.y()); }
   void Set(int lx, int ly, int hx, int hy)
   {
     x.Set(lx, hx);
@@ -241,7 +260,7 @@ class BoxT
   }
   void Set(const PointT& low, const PointT& high)
   {
-    Set(low.x, low.y, high.x, high.y);
+    Set(low.x(), low.y(), high.x(), high.y());
   }
   void Set(const BoxT& box) { Set(box.x, box.y); }
 
@@ -282,8 +301,8 @@ class BoxT
     x.FastUpdate(xVal);
     y.FastUpdate(yVal);
   }
-  void Update(const PointT& pt) { Update(pt.x, pt.y); }
-  void FastUpdate(const PointT& pt) { FastUpdate(pt.x, pt.y); }
+  void Update(const PointT& pt) { Update(pt.x(), pt.y()); }
+  void FastUpdate(const PointT& pt) { FastUpdate(pt.x(), pt.y()); }
 
   // Geometric Query/Update
   BoxT UnionWith(const BoxT& rhs) const
@@ -304,15 +323,15 @@ class BoxT
   }  // tighter
   bool Contain(const PointT& pt) const
   {
-    return x.Contain(pt.x) && y.Contain(pt.y);
+    return x.Contain(pt.x()) && y.Contain(pt.y());
   }
   bool StrictlyContain(const PointT& pt) const
   {
-    return x.StrictlyContain(pt.x) && y.StrictlyContain(pt.y);
+    return x.StrictlyContain(pt.x()) && y.StrictlyContain(pt.y());
   }
   PointT GetNearestPointTo(const PointT& pt)
   {
-    return {x.GetNearestPointTo(pt.x), y.GetNearestPointTo(pt.y)};
+    return {x.GetNearestPointTo(pt.x()), y.GetNearestPointTo(pt.y())};
   }
   BoxT GetNearestPointsTo(BoxT val) const
   {
@@ -321,8 +340,8 @@ class BoxT
 
   void ShiftBy(const PointT& rhs)
   {
-    x.ShiftBy(rhs.x);
-    y.ShiftBy(rhs.y);
+    x.ShiftBy(rhs.x());
+    y.ShiftBy(rhs.y());
   }
 
   bool operator==(const BoxT& rhs) const

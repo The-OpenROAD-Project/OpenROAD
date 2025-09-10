@@ -31,14 +31,14 @@ class CUGRPin
   std::string getName() const;
 
  private:
-  int index_;
+  const int index_;
   union
   {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
   };
   std::vector<BoxOnLayer> pin_shapes_;
-  bool is_port_;
+  const bool is_port_;
 };
 
 class CUGRNet
@@ -52,7 +52,7 @@ class CUGRNet
   std::string getName() const { return db_net_->getName(); }
 
  private:
-  int index_;
+  const int index_;
   odb::dbNet* db_net_;
   std::vector<CUGRPin> pins_;
 };

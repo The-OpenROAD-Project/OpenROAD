@@ -65,6 +65,7 @@ cc_library(
 cc_library(
     name = "cugr",
     srcs = [
+        "src/cugr/src/geo.h",
         "src/cugr/src/CUGR.cpp",
         "src/cugr/src/Design.cpp",
         "src/cugr/src/Design.h",
@@ -88,7 +89,6 @@ cc_library(
     ],
     hdrs = [
         "src/cugr/include/CUGR.h",
-        "src/cugr/include/geo.h",
     ],
     includes = [
         "include",

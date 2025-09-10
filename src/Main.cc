@@ -33,6 +33,7 @@
 #include <tclExtend.h>
 #endif
 
+#include "cut/abc_init.h"
 #include "gui/gui.h"
 #include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
@@ -89,7 +90,6 @@ static const char* log_filename = nullptr;
 static const char* metrics_filename = nullptr;
 static bool no_settings = false;
 static bool minimize = false;
-static bool abc_initialized = false;
 
 static const char* init_filename = ".openroad";
 
@@ -168,12 +168,6 @@ static void initPython()
   }
 }
 #endif
-
-namespace abc {
-// Forward declare instead of including to avoid warnings from ABC
-void Abc_Start();
-void Abc_Stop();
-}  // namespace abc
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
@@ -310,9 +304,8 @@ int main(int argc, char* argv[])
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
 
-  if (abc_initialized) {
-    abc::Abc_Stop();
-  }
+  cut::abcStop();
+
   return 0;
 }
 
@@ -526,14 +519,6 @@ int ord::tclAppInit(Tcl_Interp* interp)
 int ord::tclInit(Tcl_Interp* interp)
 {
   return tclAppInit(cmd_argc, cmd_argv, init_filename, interp);
-}
-
-void ord::abcInit()
-{
-  if (!abc_initialized) {
-    abc::Abc_Start();
-    abc_initialized = true;
-  }
 }
 
 static void showUsage(const char* prog, const char* init_filename)
