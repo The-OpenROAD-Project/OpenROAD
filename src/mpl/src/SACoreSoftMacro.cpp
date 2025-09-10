@@ -15,9 +15,9 @@
 #include "SimulatedAnnealingCore.h"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -76,6 +76,16 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
   logger_ = logger;
 }
 
+void SACoreSoftMacro::findFixedMacros()
+{
+  for (const int macro_id : pos_seq_) {
+    const SoftMacro& macro = macros_[macro_id];
+    if (macro.isFixed()) {
+      fixed_macros_.push_back(macro.getBBox());
+    }
+  }
+}
+
 void SACoreSoftMacro::run()
 {
   if (graphics_) {
@@ -94,6 +104,15 @@ void SACoreSoftMacro::run()
   if (graphics_) {
     graphics_->endSA(calNormCost());
   }
+}
+
+bool SACoreSoftMacro::isValid() const
+{
+  if (!fixed_macros_.empty() && fixed_macros_penalty_ > 0.0f) {
+    return false;
+  }
+
+  return resultFitsInOutline();
 }
 
 // acessors functions
@@ -155,6 +174,10 @@ float SACoreSoftMacro::calNormCost() const
     cost += macro_blockage_weight_ * macro_blockage_penalty_
             / norm_macro_blockage_penalty_;
   }
+  if (norm_fixed_macros_penalty_ > 0.0) {
+    cost += fixed_macros_weight_ * fixed_macros_penalty_
+            / norm_fixed_macros_penalty_;
+  }
   if (norm_notch_penalty_ > 0.0) {
     cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;
   }
@@ -170,6 +193,7 @@ void SACoreSoftMacro::calPenalty()
   calBoundaryPenalty();
   calMacroBlockagePenalty();
   calNotchPenalty();
+  calFixedMacrosPenalty();
   if (graphics_) {
     graphics_->setAreaPenalty(
         {"Area", core_weights_.area, getAreaPenalty(), norm_area_penalty_});
@@ -271,6 +295,7 @@ void SACoreSoftMacro::restoreState()
 void SACoreSoftMacro::initialize()
 {
   initSequencePair();
+  findFixedMacros();
 
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
@@ -280,6 +305,7 @@ void SACoreSoftMacro::initialize()
   std::vector<float> macro_blockage_penalty_list;
   std::vector<float> notch_penalty_list;
   std::vector<float> area_penalty_list;
+  std::vector<float> fixed_macros_penalty_list;
   std::vector<float> width_list;
   std::vector<float> height_list;
 
@@ -301,6 +327,7 @@ void SACoreSoftMacro::initialize()
     boundary_penalty_list.push_back(boundary_penalty_);
     macro_blockage_penalty_list.push_back(macro_blockage_penalty_);
     notch_penalty_list.push_back(notch_penalty_);
+    fixed_macros_penalty_list.push_back(fixed_macros_penalty_);
   }
   graphics_ = save_graphics;
 
@@ -312,6 +339,7 @@ void SACoreSoftMacro::initialize()
   norm_boundary_penalty_ = calAverage(boundary_penalty_list);
   norm_macro_blockage_penalty_ = calAverage(macro_blockage_penalty_list);
   norm_notch_penalty_ = calAverage(notch_penalty_list);
+  norm_fixed_macros_penalty_ = calAverage(fixed_macros_penalty_list);
 
   // Reset penalites if lower than threshold
 
@@ -347,6 +375,10 @@ void SACoreSoftMacro::initialize()
     norm_notch_penalty_ = 1.0;
   }
 
+  if (norm_fixed_macros_penalty_ <= 1e-4) {
+    norm_fixed_macros_penalty_ = 1.0;
+  }
+
   // Calculate initial temperature
   std::vector<float> cost_list;
   for (int i = 0; i < outline_penalty_list.size(); i++) {
@@ -359,6 +391,7 @@ void SACoreSoftMacro::initialize()
     boundary_penalty_ = boundary_penalty_list[i];
     macro_blockage_penalty_ = macro_blockage_penalty_list[i];
     notch_penalty_ = notch_penalty_list[i];
+    fixed_macros_penalty_ = fixed_macros_penalty_list[i];
     cost_list.push_back(calNormCost());
   }
   float delta_cost = 0.0;
@@ -386,12 +419,17 @@ void SACoreSoftMacro::calBoundaryPenalty()
     return;
   }
 
-  int tot_num_macros = 0;
+  int number_of_movable_macros = 0;
   for (const auto& macro_id : pos_seq_) {
-    tot_num_macros += macros_[macro_id].getNumMacro();
+    const SoftMacro& soft_macro = macros_[macro_id];
+    if (soft_macro.isFixed()) {
+      continue;
+    }
+
+    number_of_movable_macros += soft_macro.getNumMacro();
   }
 
-  if (tot_num_macros <= 0) {
+  if (number_of_movable_macros == 0) {
     return;
   }
 
@@ -400,11 +438,16 @@ void SACoreSoftMacro::calBoundaryPenalty()
   float x_dist_from_root = 0.0f, y_dist_from_root = 0.0f;
 
   for (const auto& macro_id : pos_seq_) {
-    if (macros_[macro_id].getNumMacro() > 0) {
-      global_lx = macros_[macro_id].getX() + outline_.xMin() - root_->getX();
-      global_ly = macros_[macro_id].getY() + outline_.yMin() - root_->getY();
-      global_ux = global_lx + macros_[macro_id].getWidth();
-      global_uy = global_ly + macros_[macro_id].getHeight();
+    const SoftMacro& soft_macro = macros_[macro_id];
+    if (soft_macro.isFixed()) {
+      continue;
+    }
+
+    if (soft_macro.getNumMacro() > 0) {
+      global_lx = soft_macro.getX() + outline_.xMin() - root_->getX();
+      global_ly = soft_macro.getY() + outline_.yMin() - root_->getY();
+      global_ux = global_lx + soft_macro.getWidth();
+      global_uy = global_ly + soft_macro.getHeight();
 
       x_dist_from_root
           = std::min(global_lx, std::abs(root_->getWidth() - global_ux));
@@ -412,11 +455,11 @@ void SACoreSoftMacro::calBoundaryPenalty()
           = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
 
       boundary_penalty_ += std::min(x_dist_from_root, y_dist_from_root)
-                           * macros_[macro_id].getNumMacro();
+                           * soft_macro.getNumMacro();
     }
   }
   // normalization
-  boundary_penalty_ = boundary_penalty_ / tot_num_macros;
+  boundary_penalty_ = boundary_penalty_ / number_of_movable_macros;
   if (graphics_) {
     graphics_->setBoundaryPenalty({"Boundary",
                                    boundary_weight_,
@@ -474,6 +517,42 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
                                         macro_blockage_weight_,
                                         macro_blockage_penalty_,
                                         norm_macro_blockage_penalty_});
+  }
+}
+
+void SACoreSoftMacro::calFixedMacrosPenalty()
+{
+  if (fixed_macros_.empty()) {
+    return;
+  }
+
+  fixed_macros_penalty_ = 0.0f;
+
+  for (const Rect& fixed_macro : fixed_macros_) {
+    for (const int macro_id : pos_seq_) {
+      const SoftMacro& macro = macros_[macro_id];
+
+      // Skip the current fixed macro itself and unneeded computation.
+      if (macro.isFixed()) {
+        continue;
+      }
+
+      Tiling overlap_shape = computeOverlapShape(fixed_macro, macro.getBBox());
+
+      // If any of the dimensions is negative, then there's no overlap.
+      if (overlap_shape.width() < 0 || overlap_shape.height() < 0) {
+        continue;
+      }
+
+      fixed_macros_penalty_ += overlap_shape.width() * overlap_shape.height();
+    }
+  }
+
+  if (graphics_) {
+    graphics_->setFixedMacrosPenalty({"Fixed Macros",
+                                      fixed_macros_weight_,
+                                      fixed_macros_penalty_,
+                                      norm_fixed_macros_penalty_});
   }
 }
 

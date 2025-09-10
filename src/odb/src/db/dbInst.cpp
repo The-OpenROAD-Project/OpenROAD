@@ -1322,7 +1322,10 @@ dbInst* dbInst::create(dbBlock* block_,
   block->add_rect(box->_shape._rect);
 
   inst->_flags._physical_only = physical_only;
-  if (!physical_only) {
+
+  // Add the new instance to the parent module.
+  bool parent_is_top = parent_module == nullptr || parent_module->isTop();
+  if (physical_only == false || parent_is_top) {
     if (parent_module) {
       parent_module->addInst((dbInst*) inst);
     } else {

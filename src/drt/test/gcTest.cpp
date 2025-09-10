@@ -37,7 +37,6 @@
 #include "boost/test/included/unit_test.hpp"
 #endif
 
-#include <iostream>
 #include <map>
 #include <memory>
 #include <utility>

@@ -3,13 +3,11 @@
 
 #include "ir_solver.h"
 
-#include <Eigen/SparseLU>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <iterator>
-#include <list>
 #include <map>
 #include <memory>
 #include <optional>

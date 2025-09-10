@@ -28,7 +28,7 @@ cc_library(
         "src/rtl_mp.cpp",
         "src/shapes.cpp",
         "src/shapes.h",
-        "src/util.h",
+        "src/mpl-util.h",
     ],
     hdrs = [
         "include/mpl/rtl_mp.h",
@@ -57,7 +57,7 @@ cc_library(
         "src/graphics.h",
         "src/object.h",
         "src/shapes.h",
-        "src/util.h",
+        "src/mpl-util.h",
         ":swig",
         ":tcl",
     ],

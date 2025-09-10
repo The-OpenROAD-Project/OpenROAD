@@ -3,14 +3,13 @@
 
 #include "cut/blif.h"
 
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <streambuf>
+#include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "cut/blifParser.h"

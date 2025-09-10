@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cassert>
+
 #include "odb.h"
 
 namespace odb {

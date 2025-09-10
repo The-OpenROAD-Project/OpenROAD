@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <typeindex>
+#include <utility>
 #include <variant>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
@@ -23,7 +24,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"

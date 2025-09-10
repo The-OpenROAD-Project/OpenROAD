@@ -4,18 +4,29 @@
 #include "cgt/ClockGating.h"
 
 #include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
 #include "base/main/abcapis.h"
+#include "cut/abc_init.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Bfs.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
@@ -360,7 +371,7 @@ void ClockGating::run()
   sta_->searchPreamble();
 
   // Initialize ABC
-  ord::abcInit();
+  cut::abcInit();
   abc_factory_->AddDbSta(sta_);
   abc_library_ = std::make_unique<cut::AbcLibrary>(abc_factory_->Build());
 

@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <string>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "utl/deleter.h"

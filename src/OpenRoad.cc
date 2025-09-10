@@ -105,6 +105,7 @@ OpenRoad::~OpenRoad()
   deleteOpendp(opendp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
+  deleteClockGating(clock_gating_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
@@ -328,14 +329,12 @@ void OpenRoad::readLef(const char* filename,
 }
 
 void OpenRoad::readDef(const char* filename,
-                       dbTech* tech,
+                       dbChip* chip,
                        bool continue_on_errors,
                        bool floorplan_init,
-                       bool incremental,
-                       bool child)
+                       bool incremental)
 {
-  if (!floorplan_init && !incremental && !child && db_->getChip()
-      && db_->getChip()->getBlock()) {
+  if (!floorplan_init && !incremental && chip && chip->getBlock()) {
     logger_->info(ORD, 48, "Loading an additional DEF.");
   }
 
@@ -353,12 +352,7 @@ void OpenRoad::readDef(const char* filename,
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
-  if (child) {
-    auto parent = db_->getChip()->getBlock();
-    def_reader.createBlock(parent, search_libs, filename, tech);
-  } else {
-    def_reader.createChip(search_libs, filename, tech);
-  }
+  def_reader.readChip(search_libs, filename, chip);
 }
 
 static odb::defout::Version stringToDefVersion(const string& version)

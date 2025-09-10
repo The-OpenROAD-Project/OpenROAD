@@ -7,13 +7,9 @@
 #include <tcl.h>
 #include <unistd.h>
 
-#include <array>
 #include <filesystem>
-#include <iostream>
-#include <map>
 #include <memory>
 #include <mutex>
-#include <set>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -74,7 +70,7 @@ class BufRemTest : public ::testing::Test
     db_network_ = sta_->getDbNetwork();
 
     // create a chain consisting of 4 buffers
-    odb::dbChip* chip = odb::dbChip::create(db_.get());
+    odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
     odb::dbBlock* block = odb::dbBlock::create(chip, "top");
     db_network_->setBlock(block);
     block->setDieArea(odb::Rect(0, 0, 1000, 1000));

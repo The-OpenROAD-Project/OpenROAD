@@ -6,13 +6,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <ctime>
 #include <fstream>
 #include <functional>
-#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -178,7 +176,7 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
-  return fanout;
+  return fanout == std::numeric_limits<int>::max() ? 0 : fanout;
 }
 
 void TritonCTS::setupCharacterization()
@@ -215,10 +213,7 @@ void TritonCTS::setupCharacterization()
   }
 
   if (sinkMaxFanout) {
-    if (options_->getSinkClusteringSize() > sinkMaxFanout) {
-      options_->setSinkClusteringSize(sinkMaxFanout);
-    }
-
+    options_->limitSinkClusteringSizes(sinkMaxFanout);
     if (sinkMaxFanout < options_->getMaxFanout()) {
       options_->setMaxFanout(sinkMaxFanout);
     }
@@ -1395,6 +1390,18 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
   }
 };
 
+void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
+{
+  if (pin_driver == nullptr || network_->hasHierarchy() == false) {
+    return;
+  }
+
+  odb::dbModNet* mod_net = network_->hierNet(pin_driver);
+  if (mod_net) {
+    odb::dbModNet::destroy(mod_net);
+  }
+}
+
 void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
@@ -1407,6 +1414,12 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   (void) pin_driver;
 
   disconnectAllSinksFromNet(topClockNet);
+
+  // If exists, remove the dangling dbModNet related to the topClockNet because
+  // topClockNet has no load pin now.
+  // After CTS, the driver pin will drive only a few of root clock buffers.
+  // So the hierarchical net (dbModNet) is not needed any more.
+  destroyClockModNet(pin_driver);
 
   // re-connect top buffer that separates macros from registers
   if (builder->getTreeType() == TreeType::RegisterTree) {

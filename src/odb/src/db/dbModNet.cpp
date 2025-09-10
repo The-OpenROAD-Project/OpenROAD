@@ -178,6 +178,28 @@ void dbModNet::rename(const char* new_name)
   parent->_modnet_hash[new_name] = obj->getOID();
 }
 
+void dbModNet::disconnectAllTerms()
+{
+  // Disconnect all terminals.
+  // - The loops are structured this way to handle the modification of the dbSet
+  // during iteration.
+  while (!getITerms().empty()) {
+    getITerms().begin()->disconnectDbModNet();
+  }
+
+  while (!getBTerms().empty()) {
+    getBTerms().begin()->disconnectDbModNet();
+  }
+
+  while (!getModITerms().empty()) {
+    getModITerms().begin()->disconnect();
+  }
+
+  while (!getModBTerms().empty()) {
+    getModBTerms().begin()->disconnect();
+  }
+}
+
 dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
 {
   _dbBlock* block_ = (_dbBlock*) block;
@@ -224,6 +246,8 @@ void dbModNet::destroy(dbModNet* mod_net)
   _dbModNet* _modnet = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+
+  mod_net->disconnectAllTerms();
 
   // journalling
   if (block->_journal) {
