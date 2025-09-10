@@ -8291,7 +8291,8 @@ class dbModNet : public dbObject
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
   unsigned connectionCount();
-  const char* getName() const;
+  std::string getName() const;
+  const char* getConstName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
 

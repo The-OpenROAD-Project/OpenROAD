@@ -21,6 +21,11 @@ class _dbBTerm;
 class _dbModNet : public _dbObject
 {
  public:
+  enum Field  // dbJournalField name
+  {
+    NAME
+  };
+
   _dbModNet(_dbDatabase*);
 
   ~_dbModNet();
