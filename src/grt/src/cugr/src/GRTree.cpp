@@ -12,7 +12,7 @@ void GRTreeNode::preorder(
     const std::function<void(const std::shared_ptr<GRTreeNode>&)>& visit)
 {
   visit(node);
-  for (auto& child : node->children) {
+  for (auto& child : node->children_) {
     preorder(child, visit);
   }
 }
@@ -22,9 +22,9 @@ void GRTreeNode::print(const std::shared_ptr<GRTreeNode>& node,
 {
   preorder(node, [logger](const std::shared_ptr<GRTreeNode>& node) {
     std::stringstream ss;
-    ss << *node << (!node->children.empty() ? " -> " : "");
-    for (auto& child : node->children) {
-      ss << *child << (child == node->children.back() ? "" : ", ");
+    ss << *node << (!node->children_.empty() ? " -> " : "");
+    for (auto& child : node->children_) {
+      ss << *child << (child == node->children_.back() ? "" : ", ");
     }
     logger->report("{}", ss.str());
   });

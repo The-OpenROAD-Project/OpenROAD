@@ -202,7 +202,7 @@ NetRouteMap CUGR::getRoutes()
     if (routing_tree) {
       GRTreeNode::preorder(
           routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-            for (const auto& child : node->children) {
+            for (const auto& child : node->getChildren()) {
               if (node->getLayerIdx() == child->getLayerIdx()) {
                 auto [min_x, max_x] = std::minmax({node->x(), child->x()});
                 auto [min_y, max_y] = std::minmax({node->y(), child->y()});
@@ -263,7 +263,7 @@ void CUGR::getGuides(const GRNet* net,
   // 0. Basic guides
   GRTreeNode::preorder(
       routingTree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (const auto& child : node->children) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             guides.emplace_back(node->getLayerIdx(),
                                 BoxT(std::min(node->x(), child->x()),
@@ -334,7 +334,7 @@ void CUGR::getGuides(const GRNet* net,
   // 2. Wire segment patches
   GRTreeNode::preorder(
       routingTree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (const auto& child : node->children) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             double wire_patch_threshold = constants_.wire_patch_threshold;
             unsigned direction
@@ -389,7 +389,7 @@ void CUGR::printStatistics() const
   for (const auto& net : gr_nets_) {
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
-          for (const auto& child : node->children) {
+          for (const auto& child : node->getChildren()) {
             if (node->getLayerIdx() == child->getLayerIdx()) {
               unsigned direction
                   = grid_graph_->getLayerDirection(node->getLayerIdx());
