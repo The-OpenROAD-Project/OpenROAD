@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
-#include <map>
-#include <vector>
 
 #include "odb/db.h"
 #include "odb/geom.h"

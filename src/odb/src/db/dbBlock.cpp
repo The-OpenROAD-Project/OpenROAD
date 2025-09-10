@@ -20,7 +20,6 @@
 #include <iterator>
 #include <list>
 #include <map>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <set>

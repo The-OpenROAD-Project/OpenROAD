@@ -2,7 +2,6 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Parser for LEF58 area rules that define minimum area requirements for shapes
-#include <functional>
 #include <string>
 #include <utility>
 #include <vector>

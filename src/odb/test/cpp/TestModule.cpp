@@ -1,6 +1,5 @@
 #define BOOST_TEST_MODULE TestModule
 #include <cstdio>
-#include <iostream>
 #include <sstream>
 #include <string>
 

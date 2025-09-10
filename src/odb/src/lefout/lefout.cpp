@@ -5,7 +5,6 @@
 
 #include <spdlog/fmt/ostr.h>
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>

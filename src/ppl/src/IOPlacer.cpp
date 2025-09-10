@@ -24,6 +24,7 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 #include "ppl/Parameters.h"
 #include "utl/Logger.h"

@@ -5,6 +5,9 @@
 
 #include <qnamespace.h>
 
+#include <string>
+#include <vector>
+
 namespace gui {
 
 DropdownCheckboxes::DropdownCheckboxes(const std::string& name,
