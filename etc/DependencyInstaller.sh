@@ -661,7 +661,7 @@ _installDebianPackages() {
         tcllib \
         unzip \
         wget \
-        yaml-cpp \
+        libyaml-cpp-dev \
         zlib1g-dev
 
     if [[ $1 == 10 ]]; then
