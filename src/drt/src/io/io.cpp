@@ -3770,21 +3770,13 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       auto& pins = term->getPins();
       for (auto db_pin : db_pins) {
         auto& pin = pins[i++];
-        int j = 0;
-        int sz = pin->getNumPinAccess();
-        while (j < sz) {
-          if (master->getUpdatedPAIndices().find(j)
-              == master->getUpdatedPAIndices().end()) {
-            j++;
-            continue;
-          }
+        for (int j : master->getUpdatedPAIndices()) {
           auto pa = pin->getPinAccess(j);
           for (auto& ap : pa->getAccessPoints()) {
             auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
             updateDbAccessPoint(db_ap, ap.get(), db_tech, block);
             ap->setDbAccessPoint(db_ap);
           }
-          j++;
         }
       }
     }

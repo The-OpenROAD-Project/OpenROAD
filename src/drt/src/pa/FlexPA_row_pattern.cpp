@@ -241,6 +241,9 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
   genInstRowPatternInit(nodes, insts);
   genInstRowPatternPerform(nodes, insts);
   genInstRowPatternCommit(nodes, insts);
+  for (auto& inst : insts) {
+    inst->setLatestPATransform();
+  }
 }
 
 // init dp node array for valid access patterns

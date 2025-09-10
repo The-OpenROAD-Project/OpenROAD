@@ -64,7 +64,10 @@ struct frInstLocationComp
     if (lp.getY() != rp.getY()) {
       return lp.getY() < rp.getY();
     }
-    return lp.getX() < rp.getX();
+    if (lp.getX() != rp.getX()) {
+      return lp.getX() < rp.getX();
+    }
+    return lhs < rhs;
   }
 };
 
@@ -104,11 +107,8 @@ class FlexPA
                       int cloud_sz);
 
   void deleteInst(frInst* inst);
-  void removeInstFromInstSet(frInst* inst);
   void addDirtyInst(frInst* inst);
   void removeDirtyInst(frInst* inst);
-  void addMovedInst(frInst* inst);
-  void removeMovedInst(frInst* inst);
   void updateDirtyInsts();
   void removeFromInstsSet(frInst* inst);
   void addToInstsSet(frInst* inst);
@@ -147,7 +147,6 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
   frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
-  frOrderedIdSet<frInst*> moved_insts_;
   std::string remote_host_;
   uint16_t remote_port_ = -1;
   std::string shared_vol_;
@@ -949,14 +948,6 @@ class FlexPA
       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
-
-  /**
-   * @brief Updates the unique_inst pa due to a change in the connections of
-   * the class of the unique instance.
-   *
-   * @param unique_inst The unique instance to redo the class for
-   */
-  void updateUniqueInst(frInst* unique_inst);
 
   friend class RoutingCallBack;
 };

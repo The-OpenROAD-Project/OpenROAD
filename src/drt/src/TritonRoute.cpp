@@ -1113,7 +1113,7 @@ void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
   }
 }
 
-void TritonRoute::addInstancePAData(frInst* inst, bool move_inst)
+void TritonRoute::addInstancePAData(frInst* inst)
 {
   if (pa_) {
     pa_->addDirtyInst(inst);

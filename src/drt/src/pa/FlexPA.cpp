@@ -103,9 +103,6 @@ void FlexPA::init()
   unique_insts_.init();
   initAllSkipInstTerm();
 }
-void FlexPA::updateUniqueInst(frInst* unique_inst)
-{
-}
 
 void FlexPA::addDirtyInst(frInst* inst)
 {
@@ -117,16 +114,6 @@ void FlexPA::removeDirtyInst(frInst* inst)
   dirty_insts_.erase(inst);
 }
 
-void FlexPA::addMovedInst(frInst* inst)
-{
-  moved_insts_.insert(inst);
-}
-
-void FlexPA::removeMovedInst(frInst* inst)
-{
-  moved_insts_.erase(inst);
-}
-
 void FlexPA::updateDirtyInsts()
 {
   std::set<UniqueClass*> dirty_unique_classes;
@@ -134,34 +121,34 @@ void FlexPA::updateDirtyInsts()
       pattern_insts;  // list of insts that need row pattern generation
   for (const auto& inst : dirty_insts_) {
     removeFromInstsSet(inst);
-    // Handling unique classes changes:
     const auto& old_unique_class = unique_insts_.getUniqueClass(inst);
     const auto& new_unique_class = unique_insts_.computeUniqueClass(inst);
-    if (old_unique_class == new_unique_class) {
-      if (!updateSkipInstTerm(inst)) {
+    if (old_unique_class == new_unique_class) {  // same unique class
+      if (!updateSkipInstTerm(inst)) {           // a new connection added
         dirty_unique_classes.insert(old_unique_class);
-        continue;
+      } else if (inst->getLatestPATransform()
+                 != inst->getTransform()) {  // cell has been moved
+        pattern_insts.insert(inst);
       }
-    } else {
+    } else {  // cell changed unique class
       if (old_unique_class != nullptr) {
         unique_insts_.deleteInst(inst);
       }
       const bool is_new_unique = unique_insts_.addInst(inst);
       if (is_new_unique || updateSkipInstTerm(inst)) {
         dirty_unique_classes.insert(new_unique_class);
-        continue;
+      } else {
+        pattern_insts.insert(inst);
       }
     }
-    pattern_insts.insert(inst);
   }
   for (auto& unique_class : dirty_unique_classes) {
-    if (unique_class->getPinAccessIdx() == -1) {  // new unique class
+    if (!unique_class->isInitialized()) {
       unique_insts_.initUniqueInstPinAccess(unique_class);
     }
     unique_class->getMaster()->setHasPinAccessUpdate(
         unique_class->getPinAccessIdx());
     for (auto inst : unique_class->getInsts()) {
-      inst->setHasPinAccessUpdate(true);
       pattern_insts.insert(inst);
     }
   }
@@ -199,8 +186,7 @@ void FlexPA::updateDirtyInsts()
     inst->setHasPinAccessUpdate(true);
   }
   dirty_insts_.clear();
-  moved_insts_.clear();
-}  // namespace drt
+}
 
 void FlexPA::deleteInst(frInst* inst)
 {
@@ -210,13 +196,6 @@ void FlexPA::deleteInst(frInst* inst)
     return;
   }
   unique_insts_.deleteInst(inst);
-
-  removeInstFromInstSet(inst);
-}
-
-void FlexPA::removeInstFromInstSet(frInst* inst)
-{
-  insts_set_.erase(inst);
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
