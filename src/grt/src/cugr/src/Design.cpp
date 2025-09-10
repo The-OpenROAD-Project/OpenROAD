@@ -282,13 +282,13 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
-    std::cout << "Net: " << net.getName() << '\n';
+    logger_->report("Net: {}", net.getName());
     for (const auto& pin : net.getPins()) {
-      std::cout << "\tPin: " << pin.getName() << "\n";
+      logger_->report("\tPin: {}", pin.getName());
       for (const auto& box : pin.getPinShapes()) {
-        std::cout << "\t\t" << box << "\n";  // adjust to 1-based
+        logger_->report("\t\t{}", box);
       }
-      std::cout << '\n';
+      logger_->report("");
     }
   }
 }
@@ -297,14 +297,13 @@ void Design::printBlockages() const
 {
   std::vector<std::vector<BoxT>> all_obstacles;
   getAllObstacles(all_obstacles, true);
-  std::cout << "design obstacles: " << all_obstacles.size() << '\n';
+  logger_->report("design obstacles: {}", all_obstacles.size());
   for (int i = 0; i < all_obstacles.size(); i++) {
-    std::cout << "obs in layer " << (i + 1) << ": " << all_obstacles[i].size()
-              << '\n';
+    logger_->report("obs in layer {}: {}", (i + 1), all_obstacles[i].size());
     for (const auto& obstacle : all_obstacles[i]) {
-      std::cout << "  Obstacle on layer "
-                << (i + 1)  // adjust to 1-based layer index
-                << ": " << obstacle << '\n';
+      logger_->report("  Obstacle on layer {}: {}",
+                      (i + 1),  // adjust to 1-based layer index
+                      obstacle);
     }
   }
 }

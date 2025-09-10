@@ -34,7 +34,8 @@ class GRTreeNode : public GRPoint
   static void preorder(
       const std::shared_ptr<GRTreeNode>& node,
       const std::function<void(const std::shared_ptr<GRTreeNode>&)>& visit);
-  static void print(const std::shared_ptr<GRTreeNode>& node);
+  static void print(const std::shared_ptr<GRTreeNode>& node,
+                    utl::Logger* logger);
 };
 
 }  // namespace grt

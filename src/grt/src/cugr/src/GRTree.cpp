@@ -3,6 +3,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 
 namespace grt {
 
@@ -16,14 +17,16 @@ void GRTreeNode::preorder(
   }
 }
 
-void GRTreeNode::print(const std::shared_ptr<GRTreeNode>& node)
+void GRTreeNode::print(const std::shared_ptr<GRTreeNode>& node,
+                       utl::Logger* logger)
 {
-  preorder(node, [](const std::shared_ptr<GRTreeNode>& node) {
-    std::cout << *node << (!node->children.empty() ? " -> " : "");
+  preorder(node, [logger](const std::shared_ptr<GRTreeNode>& node) {
+    std::stringstream ss;
+    ss << *node << (!node->children.empty() ? " -> " : "");
     for (auto& child : node->children) {
-      std::cout << *child << (child == node->children.back() ? "" : ", ");
+      ss << *child << (child == node->children.back() ? "" : ", ");
     }
-    std::cout << '\n';
+    logger->report("{}", ss.str());
   });
 }
 
