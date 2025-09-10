@@ -170,6 +170,12 @@
       "name": "chip_region_map_",
       "type": "std::unordered_map<std::string, dbId<_dbChipRegion>>",
       "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "tech_",
+      "type": "dbId<_dbTech>",
+      "flags": ["private"],
+      "schema": "db_schema_chip_tech"
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],

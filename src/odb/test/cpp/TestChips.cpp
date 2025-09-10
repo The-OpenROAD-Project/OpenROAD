@@ -36,18 +36,19 @@ struct F_CHIP_HIERARCHY
   }
   void createChips()
   {
-    system_chip = dbChip::create(db, "system_chip", dbChip::ChipType::HIER);
+    system_chip
+        = dbChip::create(db, nullptr, "system_chip", dbChip::ChipType::HIER);
     system_chip->setWidth(5000);
     system_chip->setHeight(4000);
     system_chip->setThickness(500);
     system_chip->setOffset(Point(10, 0));
-    cpu_chip = dbChip::create(db, "cpu_chip", dbChip::ChipType::HIER);
-    memory_chip = dbChip::create(db, "memory_chip");
-    io_chip = dbChip::create(db, "io_chip");
-    cache_chip = dbChip::create(db, "cache_chip");
+    cpu_chip = dbChip::create(db, nullptr, "cpu_chip", dbChip::ChipType::HIER);
+    memory_chip = dbChip::create(db, tech1, "memory_chip");
+    io_chip = dbChip::create(db, tech2, "io_chip");
+    cache_chip = dbChip::create(db, tech2, "cache_chip");
     // Create blocks
-    dbBlock::create(memory_chip, "memory_block", tech1);
-    dbBlock::create(io_chip, "io_block", tech2);
+    dbBlock::create(memory_chip, "memory_block");
+    dbBlock::create(io_chip, "io_block");
   }
   void createChipRegions()
   {

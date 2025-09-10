@@ -251,7 +251,7 @@ void Verilog2db::makeBlock()
 {
   dbChip* chip = db_->getChip();
   if (chip == nullptr) {
-    chip = dbChip::create(db_);
+    chip = dbChip::create(db_, db_->getTech());
   }
   block_ = chip->getBlock();
   if (block_) {
@@ -275,10 +275,9 @@ void Verilog2db::makeBlock()
   } else {
     const char* design
         = network_->name(network_->cell(network_->topInstance()));
-    block_ = dbBlock::create(
-        chip, design, db_->getTech(), network_->pathDivider());
+    block_ = dbBlock::create(chip, design, network_->pathDivider());
   }
-  dbTech* tech = db_->getTech();
+  dbTech* tech = chip->getTech();
   block_->setDefUnits(tech->getLefUnits());
   block_->setBusDelimiters('[', ']');
 }
@@ -1111,14 +1110,14 @@ void Verilog2db::makeUnusedBlock(const char* name)
 {
   dbChip* chip = db_->getChip();
   if (chip == nullptr) {
-    chip = dbChip::create(db_);
+    chip = dbChip::create(db_, db_->getTech());
   }
   // Create a child block
   if (top_block_ == nullptr) {
     top_block_ = chip->getBlock();
   }
-  dbTech* tech = db_->getTech();
-  block_ = dbBlock::create(top_block_, name, tech, network_->pathDivider());
+  dbTech* tech = chip->getTech();
+  block_ = dbBlock::create(top_block_, name, network_->pathDivider());
   block_->setDefUnits(tech->getLefUnits());
   block_->setBusDelimiters('[', ']');
   debugPrint(logger_,

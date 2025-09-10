@@ -297,7 +297,7 @@ class TestHconn : public ::testing::Test
     db_->setLogger(&logger_);
 
     // create a chain consisting of 4 buffers
-    odb::dbChip* chip = odb::dbChip::create(db_.get());
+    odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip, "top");
     db_network_->setBlock(block_);
     block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
