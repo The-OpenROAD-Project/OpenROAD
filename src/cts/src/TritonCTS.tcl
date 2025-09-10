@@ -36,27 +36,28 @@ proc configure_cts_characterization { args } {
   }
 }
 
-sta::define_cmd_args "set_cts_config" {[-wire_unit unit]
-                                       [-tree_buf buf] \
-                                       [-distance_between_buffers] \
+sta::define_cmd_args "set_cts_config" {[-apply_ndr strategy] \
                                        [-branching_point_buffers_distance] \
                                        [-clustering_exponent] \
                                        [-clustering_unbalance_ratio] \
-                                       [-sink_clustering_size] \
-                                       [-sink_clustering_max_diameter] \
-                                       [-macro_clustering_size] \
+                                       [-delay_buffer_derate] \
+                                       [-distance_between_buffers] \
+                                       [-library] \
                                        [-macro_clustering_max_diameter] \
-                                       [-sink_clustering_levels levels] \
+                                       [-macro_clustering_size] \
                                        [-num_static_layers] \
-                                       [-apply_ndr strategy] \
                                        [-sink_buffer_max_cap_derate] \
-                                       [-library]
+                                       [-sink_clustering_levels levels] \
+                                       [-sink_clustering_max_diameter] \
+                                       [-sink_clustering_size] \
+                                       [-tree_buf buf] \
+	                               [-wire_unit unit]
 }
 proc set_cts_config { args } {
 
   sta::parse_key_args "set_cts_config" args \
     keys {-wire_unit -sink_clustering_size \
-          -num_static_layers \
+          -num_static_layers -delay_buffer_derate\
           -distance_between_buffers -branching_point_buffers_distance \
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
@@ -136,6 +137,14 @@ proc set_cts_config { args } {
     set strategy $keys(-apply_ndr)
     cts::set_apply_ndr $strategy
   }
+
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if { $buffer_derate < 0.0 } {
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
+  }
 }
 
 sta::define_cmd_args "clock_tree_synthesis" {[-clk_nets nets] \
@@ -145,7 +154,6 @@ sta::define_cmd_args "clock_tree_synthesis" {[-clk_nets nets] \
                                              [-obstruction_aware] \
                                              [-no_obstruction_aware] \
                                              [-dont_use_dummy_load] \
-                                             [-delay_buffer_derate] \
                                              [-repair_clock_nets] \
 					     [-root_buf] \
 					     [-sink_clustering_buffer] \
@@ -154,8 +162,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-clk_nets nets] \
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-clk_nets -delay_buffer_derate -buf_list\
-          -root_buf -sink_clustering_buffer} \
+    keys {-clk_nets -buf_list -root_buf -sink_clustering_buffer} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -no_obstruction_aware \
            -dont_use_dummy_load -repair_clock_nets -no_insertion_delay
@@ -198,14 +205,6 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer $sink_buf
   } else {
     cts::set_sink_buffer ""
-  }
-
-  if { [info exists keys(-delay_buffer_derate)] } {
-    set buffer_derate $keys(-delay_buffer_derate)
-    if { $buffer_derate < 0.0 } {
-      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
-    }
-    cts::set_delay_buffer_derate $buffer_derate
   }
 
   if { [info exists flags(-obstruction_aware)] } {
