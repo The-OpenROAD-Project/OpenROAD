@@ -1,9 +1,0 @@
-source results/python/gcd/gcd0ord_abc_script.tcl
-source results/python/gcd/gcd1ord_abc_script.tcl
-source results/python/gcd/gcd2ord_abc_script.tcl
-source results/python/const/aes_rcon0ord_abc_script.tcl
-source results/python/const/aes_rcon1ord_abc_script.tcl
-source results/python/const/aes_rcon2ord_abc_script.tcl
-source results/aes_rcon0ord_abc_script.tcl
-source results/aes_rcon1ord_abc_script.tcl
-source results/aes_rcon2ord_abc_script.tcl
