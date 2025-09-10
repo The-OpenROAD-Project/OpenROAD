@@ -1095,13 +1095,6 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
 
 bool AntennaChecker::designIsPlaced()
 {
-  if (db_->getChip() == nullptr) {
-    logger_->error(
-        utl::ANT,
-        18,
-        "Load a design before running the antenna checker commands.");
-  }
-
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
     if (bterm->getFirstPinPlacementStatus() == odb::dbPlacementStatus::NONE) {
       return false;
