@@ -66,9 +66,10 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void addBlockages(const std::vector<Rect>& blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
-  void setCentralizationAttemptOn(bool centralization_on)
+  
+  void setEnhancementsOn(bool enhancements_on_)
   {
-    centralization_on_ = centralization_on;
+    enhancements_on_ = enhancements_on_;
   };
 
  private:
@@ -130,7 +131,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // action prob
   float resize_prob_ = 0.0;
 
-  bool centralization_on_ = false;
+  bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;
 };
 

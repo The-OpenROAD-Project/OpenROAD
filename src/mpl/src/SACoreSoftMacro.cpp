@@ -84,12 +84,11 @@ void SACoreSoftMacro::run()
 
   fastSA();
 
-  if (centralization_on_) {
+  if (enhancements_on_) {
     attemptCentralization(calNormCost());
-  }
-
-  if (centralization_was_reverted_) {
-    attemptMacroClusterAlignment();
+    if (centralization_was_reverted_) {
+      attemptMacroClusterAlignment();
+    }
   }
 
   if (graphics_) {
