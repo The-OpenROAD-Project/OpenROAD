@@ -36,19 +36,19 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
   pxs.reserve(net_->getNumPins());
   pys.reserve(net_->getNumPins());
   for (const auto& pin : pseudo_pins_) {
-    pxs.emplace_back(pin.first.x);
-    pys.emplace_back(pin.first.y);
+    pxs.emplace_back(pin.first.x());
+    pys.emplace_back(pin.first.y());
   }
   std::sort(pxs.begin(), pxs.end());
   std::sort(pys.begin(), pys.end());
 
   const int xSize = grid_graph_->getSize(0);
   const int ySize = grid_graph_->getSize(1);
-  xs_.reserve(xSize / grid.interval.x + pxs.size());
-  ys_.reserve(ySize / grid.interval.y + pys.size());
+  xs_.reserve(xSize / grid.interval.x() + pxs.size());
+  ys_.reserve(ySize / grid.interval.y() + pys.size());
   int j = 0;
   for (int i = 0; true; i++) {
-    int x = i * grid.interval.x + grid.offset.x;
+    int x = i * grid.interval.x() + grid.offset.x();
     for (; j < pxs.size() && pxs[j] <= x; j++) {
       if ((!xs_.empty() && pxs[j] == xs_.back()) || pxs[j] == x) {
         continue;
@@ -63,7 +63,7 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
   }
   j = 0;
   for (int i = 0; true; i++) {
-    int y = i * grid.interval.y + grid.offset.y;
+    int y = i * grid.interval.y() + grid.offset.y();
     for (; j < pys.size() && pys[j] <= y; j++) {
       if ((!ys_.empty() && pys[j] == ys_.back()) || pys[j] == y) {
         continue;
@@ -147,8 +147,8 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
   pin_vertex_.resize(pseudo_pins_.size(), -1);
   for (int pinIndex = 0; pinIndex < pseudo_pins_.size(); pinIndex++) {
     const auto& pin = pseudo_pins_[pinIndex];
-    const int xi = xtoxi[pin.first.x];
-    const int yi = ytoyi[pin.first.y];
+    const int xi = xtoxi[pin.first.x()];
+    const int yi = ytoyi[pin.first.y()];
     const int u = getVertexIndex(0, xi, yi);
     vertex_pin_.emplace(u, pinIndex);
     pin_vertex_[pinIndex] = u;
@@ -288,7 +288,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
              childIndex++) {
           std::shared_ptr<SteinerTreeNode> child
               = node->getChildren()[childIndex];
-          if (node->x == child->x && node->y == child->y) {
+          if (node->x() == child->x() && node->y() == child->y()) {
             for (auto& gradchild : child->getChildren()) {
               node->addChild(gradchild);
             }
@@ -310,7 +310,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (std::shared_ptr<SteinerTreeNode>& child : node->getChildren()) {
           unsigned direction
-              = (node->y == child->y ? MetalLayer::H : MetalLayer::V);
+              = (node->y() == child->y() ? MetalLayer::H : MetalLayer::V);
           std::shared_ptr<SteinerTreeNode> temp = child;
           while (!temp->getFixedLayers().IsValid()
                  && temp->getNumChildren() == 1
@@ -326,7 +326,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   SteinerTreeNode::preorder(
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (const auto& child : node->getChildren()) {
-          if (node->x == child->x && node->y == child->y) {
+          if (node->x() == child->x() && node->y() == child->y()) {
             printf("Error: duplicate tree nodes encountered.");
           }
         }
