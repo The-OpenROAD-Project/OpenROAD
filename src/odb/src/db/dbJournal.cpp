@@ -1139,6 +1139,7 @@ void dbJournal::redo_updateModNetField()
       ((dbModNet*) modnet)->rename(new_name.c_str());
       break;
     }
+
     default:
       break;
   }
@@ -2443,6 +2444,7 @@ void dbJournal::undo_updateModNetField()
       ((dbModNet*) modnet)->rename(prev_name.c_str());
       break;
     }
+
     default:
       break;
   }
@@ -2553,7 +2555,7 @@ void dbJournal::undo_updateCapNodeField()
   uint node_id;
   _log.pop(node_id);
   //_dbCapNode * node = (_dbCapNode *) dbCapNode::getCapNode(_block, node_id
-  // );
+  //);
 
   int field;
   _log.pop(field);
