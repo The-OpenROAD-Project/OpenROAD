@@ -17,8 +17,8 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   index_ = tech_layer->getRoutingLevel() - 1;
   direction_
       = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL ? H : V;
-  width_ = static_cast<int>(std::round(tech_layer->getWidth()));
-  min_width_ = static_cast<int>(std::round(tech_layer->getMinWidth()));
+  width_ = tech_layer->getWidth();
+  min_width_ = tech_layer->getMinWidth();
 
   track_grid->getAverageTrackSpacing(pitch_, first_track_loc_, num_tracks_);
   last_track_loc_ = first_track_loc_ + pitch_ * (num_tracks_ - 1);
@@ -26,8 +26,7 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   // Design rules not parsed thoroughly
   // Min area
   const int database_unit = tech_layer->getTech()->getDbUnitsPerMicron();
-  int min_area = static_cast<int>(
-      std::round(tech_layer->getArea() * database_unit * database_unit));
+  const int min_area = tech_layer->getArea() * database_unit * database_unit;
   min_length_ = std::max(min_area / width_ - width_, 0);
 
   // Parallel run spacing
@@ -42,7 +41,7 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
     if (num_length > 0) {
       parallel_length_.resize(num_length);
       for (int l = 0; l < num_length; l++) {
-        parallel_length_[l] = static_cast<int>(std::round(lengths[l]));
+        parallel_length_[l] = lengths[l];
       }
     }
 
@@ -51,11 +50,10 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
       parallel_width_.resize(num_width);
       parallel_spacing_.resize(num_width);
       for (int w = 0; w < num_width; w++) {
-        parallel_width_[w] = static_cast<int>(std::round(widths[w]));
+        parallel_width_[w] = widths[w];
         parallel_spacing_[w].resize(std::max(1, num_length), 0);
         for (int l = 0; l < num_length; l++) {
-          parallel_spacing_[w][l]
-              = static_cast<int>(std::round(spacing_table[w][l]));
+          parallel_spacing_[w][l] = spacing_table[w][l];
         }
       }
     }
@@ -88,7 +86,7 @@ int MetalLayer::getTrackLocation(const int track_index) const
 }
 
 IntervalT MetalLayer::rangeSearchTracks(const IntervalT& loc_range,
-                                        bool include_bound) const
+                                        const bool include_bound) const
 {
   IntervalT track_range(
       ceil(double(std::max(loc_range.low, first_track_loc_) - first_track_loc_)

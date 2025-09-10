@@ -97,4 +97,7 @@ build:openroad-dev --google_default_credentials=true
 build:openroad-dev --disk_cache=/workspace/.cache/bazel-disk-cache
 build:openroad-dev --repository_cache=/workspace/.cache/bazel-repository-cache
 
+# Without this, bazelisk build ... builds the bazel-orfs tests
+build --build_tag_filters=-orfs
+
 try-import %workspace%/user.bazelrc
