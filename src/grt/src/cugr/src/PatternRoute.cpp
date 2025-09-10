@@ -656,17 +656,16 @@ std::shared_ptr<GRTreeNode> PatternRoute::getRoutingTree(
     }
     if (!pathsOnLayer[parentLayerIndex].empty()) {
       for (auto& path : pathsOnLayer[parentLayerIndex]) {
-        routingNode->children.push_back(getRoutingTree(path, parentLayerIndex));
+        routingNode->addChild(getRoutingTree(path, parentLayerIndex));
       }
     }
     for (int layerIndex = parentLayerIndex - 1; layerIndex >= 0; layerIndex--) {
       if (!pathsOnLayer[layerIndex].empty()) {
-        lowestRoutingNode->children.push_back(
+        lowestRoutingNode->addChild(
             std::make_shared<GRTreeNode>(layerIndex, node->x(), node->y()));
-        lowestRoutingNode = lowestRoutingNode->children.back();
+        lowestRoutingNode = lowestRoutingNode->getChildren().back();
         for (auto& path : pathsOnLayer[layerIndex]) {
-          lowestRoutingNode->children.push_back(
-              getRoutingTree(path, layerIndex));
+          lowestRoutingNode->addChild(getRoutingTree(path, layerIndex));
         }
       }
     }
@@ -674,22 +673,21 @@ std::shared_ptr<GRTreeNode> PatternRoute::getRoutingTree(
          layerIndex < grid_graph_->getNumLayers();
          layerIndex++) {
       if (!pathsOnLayer[layerIndex].empty()) {
-        highestRoutingNode->children.push_back(
+        highestRoutingNode->addChild(
             std::make_shared<GRTreeNode>(layerIndex, node->x(), node->y()));
-        highestRoutingNode = highestRoutingNode->children.back();
+        highestRoutingNode = highestRoutingNode->getChildren().back();
         for (auto& path : pathsOnLayer[layerIndex]) {
-          highestRoutingNode->children.push_back(
-              getRoutingTree(path, layerIndex));
+          highestRoutingNode->addChild(getRoutingTree(path, layerIndex));
         }
       }
     }
   }
   if (lowestRoutingNode->getLayerIdx() > node->getFixedLayers().low) {
-    lowestRoutingNode->children.push_back(std::make_shared<GRTreeNode>(
+    lowestRoutingNode->addChild(std::make_shared<GRTreeNode>(
         node->getFixedLayers().low, node->x(), node->y()));
   }
   if (highestRoutingNode->getLayerIdx() < node->getFixedLayers().high) {
-    highestRoutingNode->children.push_back(std::make_shared<GRTreeNode>(
+    highestRoutingNode->addChild(std::make_shared<GRTreeNode>(
         node->getFixedLayers().high, node->x(), node->y()));
   }
   return routingNode;

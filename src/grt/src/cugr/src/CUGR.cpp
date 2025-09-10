@@ -75,8 +75,8 @@ void CUGR::route()
       netIndices.push_back(net->getIndex());
     }
   }
-  std::cout << netIndices.size() << " / " << gr_nets_.size()
-            << " gr_nets_ have overflows.\n";
+  logger_->report(
+      "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
 
   // Stage 2: Pattern routing with possible detours
   if (!netIndices.empty()) {
@@ -108,13 +108,13 @@ void CUGR::route()
         netIndices.push_back(net->getIndex());
       }
     }
-    std::cout << netIndices.size() << " / " << gr_nets_.size()
-              << " gr_nets_ have overflows.\n";
+    logger_->report(
+        "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
   }
 
   // Stage 3: maze routing on sparsified routing graph
   if (!netIndices.empty()) {
-    std::cout << "stage 3: maze routing on sparsified routing graph\n";
+    logger_->report("stage 3: maze routing on sparsified routing graph");
     for (const int netIndex : netIndices) {
       grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(), true);
     }
@@ -148,8 +148,8 @@ void CUGR::route()
         netIndices.push_back(net->getIndex());
       }
     }
-    std::cout << netIndices.size() << " / " << gr_nets_.size()
-              << " gr_nets_ have overflows.\n";
+    logger_->report(
+        "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
   }
 
   printStatistics();
@@ -202,7 +202,7 @@ NetRouteMap CUGR::getRoutes()
     if (routing_tree) {
       GRTreeNode::preorder(
           routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-            for (const auto& child : node->children) {
+            for (const auto& child : node->getChildren()) {
               if (node->getLayerIdx() == child->getLayerIdx()) {
                 auto [min_x, max_x] = std::minmax({node->x(), child->x()});
                 auto [min_y, max_y] = std::minmax({node->y(), child->y()});
@@ -263,7 +263,7 @@ void CUGR::getGuides(const GRNet* net,
   // 0. Basic guides
   GRTreeNode::preorder(
       routingTree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (const auto& child : node->children) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             guides.emplace_back(node->getLayerIdx(),
                                 BoxT(std::min(node->x(), child->x()),
@@ -334,7 +334,7 @@ void CUGR::getGuides(const GRNet* net,
   // 2. Wire segment patches
   GRTreeNode::preorder(
       routingTree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (const auto& child : node->children) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             double wire_patch_threshold = constants_.wire_patch_threshold;
             unsigned direction
@@ -389,7 +389,7 @@ void CUGR::printStatistics() const
   for (const auto& net : gr_nets_) {
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
-          for (const auto& child : node->children) {
+          for (const auto& child : node->getChildren()) {
             if (node->getLayerIdx() == child->getLayerIdx()) {
               unsigned direction
                   = grid_graph_->getLayerDirection(node->getLayerIdx());
@@ -436,13 +436,13 @@ void CUGR::printStatistics() const
     }
   }
 
-  std::cout << "wire length (metric):  "
-            << wireLength / grid_graph_->getM2Pitch() << "\n";
-  std::cout << "total via count:       " << viaCount << "\n";
-  std::cout << "total wire overflow:   " << (int) overflow << "\n";
+  logger_->report("wire length (metric):  {}",
+                  wireLength / grid_graph_->getM2Pitch());
+  logger_->report("total via count:       {}", viaCount);
+  logger_->report("total wire overflow:   {}", (int) overflow);
 
-  std::cout << "min resource: " << minResource << "\n";
-  std::cout << "bottleneck:   " << bottleneck << "\n";
+  logger_->report("min resource: {}", minResource);
+  logger_->report("bottleneck:   {}", bottleneck);
 }
 
 }  // namespace grt
