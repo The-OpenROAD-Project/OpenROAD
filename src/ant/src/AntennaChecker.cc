@@ -935,7 +935,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
               = std::max(0, diode_count_per_gate - num_diodes_added[gate]);
           num_diodes_added[gate] += diode_count_per_gate;
           // save antenna violation
-          if (violated) {
+          if (violated && diode_count_per_gate > 0) {
             antenna_violations.push_back({layer->getRoutingLevel(),
                                           gates_for_diode_insertion,
                                           diode_count_per_gate,
