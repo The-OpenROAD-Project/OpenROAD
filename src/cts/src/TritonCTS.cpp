@@ -1582,7 +1582,7 @@ std::vector<int> TritonCTS::getAllClockTreeLevels(Clock& clockNet)
   std::set<int> uniqueLevels;
 
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
-    if (!subNet.isLeafLevel()) {
+    if (!subNet.isLeafLevel() && subNet.getTreeLevel() != -1) {
       uniqueLevels.insert(subNet.getTreeLevel());
     }
   });
