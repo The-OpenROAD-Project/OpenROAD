@@ -493,6 +493,7 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
+        yaml-cpp \
         zlib-devel
 
     if [[ ${rhelVersion} == 8 ]]; then
@@ -560,6 +561,7 @@ _installOpenSusePackages() {
         tcl-devel \
         tcllib \
         wget \
+        yaml-cpp \
         zlib-devel
 
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -604,7 +606,7 @@ Then, rerun this script.
 EOF
         exit 1
     fi
-    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
 
     # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
@@ -658,6 +660,7 @@ _installDebianPackages() {
         tcllib \
         unzip \
         wget \
+        yaml-cpp \
         zlib1g-dev
 
     if [[ $1 == 10 ]]; then
