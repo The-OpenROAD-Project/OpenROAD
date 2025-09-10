@@ -1581,7 +1581,7 @@ dbInst* dbBlock::getParentInst()
   return (dbInst*) parent_inst;
 }
 
-dbModule* dbBlock::getTopModule()
+dbModule* dbBlock::getTopModule() const
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbModule*) block->_module_tbl->getPtr(block->_top_module);
