@@ -24,7 +24,6 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "ord/OpenRoad.hh"
 #include "ppl/IOPlacer.h"
 #include "ppl/Parameters.h"
 #include "utl/Logger.h"

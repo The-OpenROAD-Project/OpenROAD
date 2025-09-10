@@ -1,15 +1,16 @@
 include(openroad)
 
 add_executable(RmpGTests TestAbc.cc)
-target_link_libraries(RmpGTests 
+target_link_libraries(RmpGTests
         OpenSTA
         GTest::gtest
         GTest::gtest_main
         GTest::gmock
-        rmp_abc_library
         dbSta_lib
+        rsz_lib
         utl_lib
-        ${ABC_LIBRARY}
+        cut
+        rmp_lib
         ${TCL_LIBRARY}
 )
 
@@ -22,5 +23,4 @@ gtest_discover_tests(RmpGTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_dependencies(build_and_test RmpGTests
-)
+add_dependencies(build_and_test RmpGTests)

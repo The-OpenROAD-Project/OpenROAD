@@ -35,6 +35,10 @@ namespace ppl {
 class IOPlacer;
 }
 
+namespace cgt {
+class ClockGating;
+}
+
 namespace rmp {
 class Restructure;
 }
@@ -146,6 +150,7 @@ class OpenRoad
   odb::dbDatabase* getDb() { return db_; }
   sta::dbSta* getSta() { return sta_; }
   sta::dbNetwork* getDbNetwork();
+  cgt::ClockGating* getClockGating() { return clock_gating_; }
   rsz::Resizer* getResizer() { return resizer_; }
   rmp::Restructure* getRestructure() { return restructure_; }
   cts::TritonCTS* getTritonCts() { return tritonCts_; }
@@ -252,6 +257,7 @@ class OpenRoad
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
+  cgt::ClockGating* clock_gating_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;
   cts::TritonCTS* tritonCts_ = nullptr;
   tap::Tapcell* tapcell_ = nullptr;

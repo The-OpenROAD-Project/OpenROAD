@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <string>
+#include <tuple>
+#include <vector>
+
+namespace utl {
+class Logger;
+}
+
+namespace cut {
+
+enum class GateType
+{
+  None,
+  Mlatch,
+  Gate
+};
+
+struct Gate
+{
+  GateType type;
+  std::string master;
+  std::vector<std::string> connections;
+  Gate(const GateType& type,
+       const std::string& master,
+       const std::vector<std::string>& connections)
+      : type(type), master(master), connections(connections)
+  {
+  }
+};
+
+class BlifParser
+{
+ public:
+  BlifParser();
+  bool parse(std::string& file_contents);
+  void addInput(const std::string& input);
+  void addOutput(const std::string& output);
+  void addClock(const std::string& clock);
+  void addNewInstanceType(const std::string& type);
+  void addNewGate(const std::string& cell_name);
+  void addConnection(const std::string& connection);
+  void endParser();
+
+  const std::vector<std::string>& getInputs() const;
+  const std::vector<std::string>& getOutputs() const;
+  const std::vector<std::string>& getClocks() const;
+  const std::vector<Gate>& getGates() const;
+  int getCombGateCount() const;
+  int getFlopCount() const;
+
+ private:
+  std::vector<std::string> inputs_;
+  std::vector<std::string> outputs_;
+  std::vector<std::string> clocks_;
+  std::vector<Gate> gates_;
+  std::string currentGate_;
+  GateType currentInstanceType_;
+  std::vector<std::string> currentConnections_;
+  int combCount_;
+  int flopCount_;
+};
+
+}  // namespace cut

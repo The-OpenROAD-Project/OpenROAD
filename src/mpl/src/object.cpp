@@ -14,9 +14,9 @@
 #include <vector>
 
 #include "boost/random/uniform_int_distribution.hpp"
+#include "mpl-util.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -218,6 +218,10 @@ std::string Cluster::getClusterTypeString() const
     return "IO Pad";
   }
 
+  if (is_fixed_macro_) {
+    return "Fixed Macro";
+  }
+
   switch (type_) {
     case StdCellCluster:
       cluster_type = "StdCell";
@@ -302,6 +306,12 @@ void Cluster::setAsIOBundle(const Point& pos, float width, float height)
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
+void Cluster::setAsFixedMacro(const HardMacro* hard_macro)
+{
+  is_fixed_macro_ = true;
+  soft_macro_ = std::make_unique<SoftMacro>(logger_, hard_macro);
+}
+
 bool Cluster::isIOCluster() const
 {
   return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_ || is_io_bundle_;
@@ -368,6 +378,10 @@ int Cluster::getNumMacro() const
 
 float Cluster::getArea() const
 {
+  if (isFixedMacro()) {
+    return soft_macro_->getArea();
+  }
+
   return getStdCellArea() + getMacroArea();
 }
 
@@ -758,6 +772,13 @@ HardMacro::HardMacro(odb::dbInst* inst, float halo_width, float halo_height)
   width_ = block_->dbuToMicrons(master->getWidth()) + 2 * halo_width;
   height_ = block_->dbuToMicrons(master->getHeight()) + 2 * halo_height;
 
+  if (inst_->isFixed()) {
+    const odb::Rect& box = inst->getBBox()->getBox();
+    x_ = block_->dbuToMicrons(box.xMin()) - halo_width_;
+    y_ = block_->dbuToMicrons(box.yMin()) - halo_height_;
+    fixed_ = true;
+  }
+
   // Set the position of virtual pins
   odb::Rect bbox;
   bbox.mergeInit();
@@ -981,6 +1002,37 @@ SoftMacro::SoftMacro(const std::pair<float, float>& location,
   area_ = 0.0f;
 
   cluster_ = cluster;
+  fixed_ = true;
+}
+
+// Represent a fixed macro.
+SoftMacro::SoftMacro(utl::Logger* logger,
+                     const HardMacro* hard_macro,
+                     const Point* offset)
+{
+  if (!hard_macro->isFixed()) {
+    logger->error(
+        MPL,
+        37,
+        "Attempting to create fixed soft macro for unfixed hard macro {}.",
+        hard_macro->getName());
+  }
+
+  name_ = hard_macro->getName();
+
+  x_ = hard_macro->getX();
+  y_ = hard_macro->getY();
+
+  if (offset) {
+    x_ += offset->first;
+    y_ += offset->second;
+  }
+
+  width_ = hard_macro->getWidth();
+  height_ = hard_macro->getHeight();
+  area_ = width_ * height_;
+
+  cluster_ = hard_macro->getCluster();
   fixed_ = true;
 }
 
@@ -1321,6 +1373,10 @@ void SoftMacro::setLocationF(float x, float y)
 
 void SoftMacro::setShapeF(float width, float height)
 {
+  if (fixed_) {
+    return;
+  }
+
   width_ = width;
   height_ = height;
   area_ = width * height;
