@@ -20,8 +20,10 @@
 #include "graphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
+#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
+#include "sta/VerilogWriter.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 
@@ -982,7 +984,8 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
 
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
-  for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
+  for (; nesterov_iter < std::min(4, npVars_.maxNesterovIter);
+       nesterov_iter++) {
     const float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
@@ -1020,12 +1023,23 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
       ++npVars_.maxNesterovIter;
     }
 
+    sta::writeVerilog(fmt::format("before_eco_iter{}.v", nesterov_iter).c_str(),
+                      true,
+                      false,
+                      {},
+                      ord::OpenRoad::openRoad()->getSta()->network());
     runTimingDriven(nesterov_iter,
                     timing_driven_dir,
                     routability_driven_revert_count,
                     timing_driven_count,
                     td_accumulated_delta_area,
                     is_routability_gpl_iter);
+
+    sta::writeVerilog(fmt::format("end_eco_iter{}.v", nesterov_iter).c_str(),
+                      true,
+                      false,
+                      {},
+                      ord::OpenRoad::openRoad()->getSta()->network());
 
     if (isDiverged(diverge_snapshot_WlCoefX,
                    diverge_snapshot_WlCoefY,

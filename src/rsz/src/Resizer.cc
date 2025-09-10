@@ -42,6 +42,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "ord/OpenRoad.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
@@ -61,6 +62,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Units.hh"
+#include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/scope.h"
 
@@ -2629,6 +2631,8 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   initBlock();
 
+  sta::writeVerilog("before.v", true, false, {}, network());
+
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
@@ -2663,6 +2667,8 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     db_cbk_->removeOwner();
     level_drvr_vertices_valid_ = false;
   }
+
+  sta::writeVerilog("after.v", true, false, {}, network());
 }
 
 void Resizer::findResizeSlacks1()
