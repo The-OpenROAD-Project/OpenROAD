@@ -7218,6 +7218,10 @@ class dbChipRegionInst : public dbObject
 class dbDatabase : public dbObject
 {
  public:
+  void setDbuPerMicron(uint dbu_per_micron);
+
+  uint getDbuPerMicron() const;
+
   dbSet<dbChip> getChips() const;
 
   dbChip* findChip(const char* name) const;
