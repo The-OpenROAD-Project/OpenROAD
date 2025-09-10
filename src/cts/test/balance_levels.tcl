@@ -12,15 +12,16 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal5
 
-clock_tree_synthesis -root_buf CLKBUF_X3 \
-  -buf_list CLKBUF_X3 \
-  -wire_unit 20 \
-  -sink_clustering_enable \
-  -distance_between_buffers 100 \
+set_cts_config -distance_between_buffers 100 \
   -sink_clustering_size 5 \
   -sink_clustering_max_diameter 60 \
-  -balance_levels \
+  -wire_unit 20 \
   -num_static_layers 1
+
+clock_tree_synthesis -root_buf CLKBUF_X3 \
+  -buf_list CLKBUF_X3 \
+  -sink_clustering_enable \
+  -balance_levels
 
 set def_file [make_result_file balance_levels.def]
 write_def $def_file

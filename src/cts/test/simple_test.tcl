@@ -7,10 +7,11 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal3
 
-clock_tree_synthesis -root_buf CLKBUF_X3 \
-  -buf_list CLKBUF_X3 \
-  -wire_unit 20 \
+set_cts_config -wire_unit 20 \
   -apply_ndr root_only
+
+clock_tree_synthesis -root_buf CLKBUF_X3 \
+  -buf_list CLKBUF_X3
 
 report_cts
 
