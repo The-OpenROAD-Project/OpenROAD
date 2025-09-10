@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include "geo.h"
 #include "grt/GRoute.h"
 
 namespace odb {
@@ -26,6 +25,7 @@ namespace grt {
 class Design;
 class GridGraph;
 class GRNet;
+class BoxT;
 
 struct Constants
 {

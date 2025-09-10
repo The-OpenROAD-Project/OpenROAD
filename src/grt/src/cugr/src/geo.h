@@ -10,7 +10,11 @@
 #include <iostream>
 #include <limits>
 
+#include "utl/Logger.h"
+
 namespace grt {
+
+using utl::format_as;
 
 // Point template
 class PointT
@@ -77,11 +81,9 @@ class IntervalT
  public:
   int low, high;
 
-  template <typename... Args>
-  IntervalT(Args... params)
-  {
-    Set(params...);
-  }
+  IntervalT() { Set(); }
+  IntervalT(int val) { Set(val); }
+  IntervalT(int lo, int hi) { Set(lo, hi); }
 
   // Setters
   void Set()
@@ -214,11 +216,16 @@ class BoxT
  public:
   IntervalT x, y;
 
-  template <typename... Args>
-  BoxT(Args... params)
+  BoxT() { Set(); }
+  BoxT(int xVal, int yVal) { Set(xVal, yVal); }
+  BoxT(const PointT& pt) { Set(pt); }
+  BoxT(int lx, int ly, int hx, int hy) { Set(lx, ly, hx, hy); }
+  BoxT(const IntervalT& xRange, const IntervalT& yRange)
   {
-    Set(params...);
+    Set(xRange, yRange);
   }
+  BoxT(const PointT& low, const PointT& high) { Set(low, high); }
+  BoxT(const BoxT& box) { Set(box); }
 
   // Setters
   int& lx() { return x.low; }

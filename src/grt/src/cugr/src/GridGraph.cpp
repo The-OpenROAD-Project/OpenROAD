@@ -467,7 +467,7 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool reverse)
 {
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->children) {
+    for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
         unsigned direction = layer_directions_[node->getLayerIdx()];
         if (direction == MetalLayer::H) {
@@ -528,7 +528,7 @@ int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
   }
   int num = 0;
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (auto& child : node->children) {
+    for (auto& child : node->getChildren()) {
       // Only check wires
       if (node->getLayerIdx() == child->getLayerIdx()) {
         num += checkOverflow(
@@ -545,7 +545,7 @@ std::string GridGraph::getPythonString(
   std::vector<std::tuple<PointT, PointT, bool>> edges;
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (auto& child : node->children) {
+        for (auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             unsigned direction = getLayerDirection(node->getLayerIdx());
             int r = (*node)[1 - direction];
@@ -713,7 +713,7 @@ void GridGraph::updateWireCostView(
   };
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (const auto& child : node->children) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             unsigned direction = getLayerDirection(node->getLayerIdx());
             if (direction == MetalLayer::H) {
