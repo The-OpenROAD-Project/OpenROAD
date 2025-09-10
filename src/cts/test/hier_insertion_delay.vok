@@ -1,10 +1,10 @@
 module multi_sink (clk);
  input clk;
 
- wire clknet_leaf_15_clk_regs;
- wire clknet_leaf_13_clk_regs;
- wire clknet_leaf_12_clk_regs;
- wire clknet_leaf_11_clk_regs;
+ wire multi_sink_clkbuf_leaf_15_clk_regs_clknet_leaf_15_clk_regs;
+ wire multi_sink_clkbuf_leaf_13_clk_regs_clknet_leaf_13_clk_regs;
+ wire multi_sink_clkbuf_leaf_12_clk_regs_clknet_leaf_12_clk_regs;
+ wire multi_sink_clkbuf_leaf_11_clk_regs_clknet_leaf_11_clk_regs;
  wire clk_regs;
  wire clknet_0_clk;
  wire clknet_1_0__leaf_clk;
@@ -78,15 +78,15 @@ module multi_sink (clk);
  CLKBUF_X3 clkbuf_leaf_16_clk_regs (.A(clknet_1_0__leaf_clk_regs),
     .Z(clknet_leaf_16_clk_regs));
  CLKBUF_X3 clkbuf_leaf_15_clk_regs (.A(clknet_1_0__leaf_clk_regs),
-    .Z(clknet_leaf_15_clk_regs));
+    .Z(multi_sink_clkbuf_leaf_15_clk_regs_clknet_leaf_15_clk_regs));
  CLKBUF_X3 clkbuf_leaf_14_clk_regs (.A(clknet_1_0__leaf_clk_regs),
     .Z(clknet_leaf_14_clk_regs));
  CLKBUF_X3 clkbuf_leaf_13_clk_regs (.A(clknet_1_1__leaf_clk_regs),
-    .Z(clknet_leaf_13_clk_regs));
+    .Z(multi_sink_clkbuf_leaf_13_clk_regs_clknet_leaf_13_clk_regs));
  CLKBUF_X3 clkbuf_leaf_12_clk_regs (.A(clknet_1_1__leaf_clk_regs),
-    .Z(clknet_leaf_12_clk_regs));
+    .Z(multi_sink_clkbuf_leaf_12_clk_regs_clknet_leaf_12_clk_regs));
  CLKBUF_X3 clkbuf_leaf_11_clk_regs (.A(clknet_1_1__leaf_clk_regs),
-    .Z(clknet_leaf_11_clk_regs));
+    .Z(multi_sink_clkbuf_leaf_11_clk_regs_clknet_leaf_11_clk_regs));
  CLKBUF_X3 clkbuf_leaf_10_clk_regs (.A(clknet_1_1__leaf_clk_regs),
     .Z(clknet_leaf_10_clk_regs));
  CLKBUF_X3 clkbuf_leaf_9_clk_regs (.A(clknet_1_1__leaf_clk_regs),
@@ -364,7 +364,7 @@ module multi_sink (clk);
  DFF_X1 ff70 (.CK(clknet_leaf_14_clk_regs));
  DFF_X1 ff71 (.CK(clknet_leaf_13_clk_regs));
  DFF_X1 ff74 (.CK(clknet_leaf_11_clk_regs));
- DFF_X1 ff75 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff75 (.CK(multi_sink_clkbuf_leaf_11_clk_regs_clknet_leaf_11_clk_regs));
  DFF_X1 ff76 (.CK(clknet_leaf_15_clk_regs));
  DFF_X1 ff77 (.CK(clknet_leaf_13_clk_regs));
  DFF_X1 ff78 (.CK(clknet_leaf_12_clk_regs));
@@ -376,24 +376,24 @@ module multi_sink (clk);
  DFF_X1 ff83 (.CK(clknet_leaf_14_clk_regs));
  DFF_X1 ff84 (.CK(clknet_leaf_12_clk_regs));
  DFF_X1 ff85 (.CK(clknet_leaf_11_clk_regs));
- DFF_X1 ff86 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff86 (.CK(multi_sink_clkbuf_leaf_11_clk_regs_clknet_leaf_11_clk_regs));
  DFF_X1 ff87 (.CK(clknet_leaf_15_clk_regs));
- DFF_X1 ff88 (.CK(clknet_leaf_13_clk_regs));
+ DFF_X1 ff88 (.CK(multi_sink_clkbuf_leaf_13_clk_regs_clknet_leaf_13_clk_regs));
  DFF_X1 ff89 (.CK(clknet_leaf_12_clk_regs));
  DFF_X1 ff9 (.CK(clknet_leaf_11_clk_regs));
  DFF_X1 ff92 (.CK(clknet_leaf_15_clk_regs));
  DFF_X1 ff93 (.CK(clknet_leaf_14_clk_regs));
  DFF_X1 ff94 (.CK(clknet_leaf_12_clk_regs));
  DFF_X1 ff95 (.CK(clknet_leaf_11_clk_regs));
- DFF_X1 ff96 (.CK(clknet_leaf_15_clk_regs));
+ DFF_X1 ff96 (.CK(multi_sink_clkbuf_leaf_15_clk_regs_clknet_leaf_15_clk_regs));
  DFF_X1 ff97 (.CK(clknet_leaf_12_clk_regs));
  DFF_X1 ff98 (.CK(clknet_leaf_11_clk_regs));
- DFF_X1 ff99 (.CK(clknet_leaf_11_clk_regs));
+ DFF_X1 ff99 (.CK(multi_sink_clkbuf_leaf_11_clk_regs_clknet_leaf_11_clk_regs));
  array_tile inst_0 (.clk(clknet_1_0__leaf_clk));
- hier_block h1 (.clknet_leaf_15_clk_regs_i(clknet_leaf_15_clk_regs),
-    .clknet_leaf_13_clk_regs_i(clknet_leaf_13_clk_regs),
-    .clknet_leaf_12_clk_regs_i(clknet_leaf_12_clk_regs),
-    .clknet_leaf_11_clk_regs_i(clknet_leaf_11_clk_regs));
+ hier_block h1 (.clknet_leaf_15_clk_regs_i(multi_sink_clkbuf_leaf_15_clk_regs_clknet_leaf_15_clk_regs),
+    .clknet_leaf_13_clk_regs_i(multi_sink_clkbuf_leaf_13_clk_regs_clknet_leaf_13_clk_regs),
+    .clknet_leaf_12_clk_regs_i(multi_sink_clkbuf_leaf_12_clk_regs_clknet_leaf_12_clk_regs),
+    .clknet_leaf_11_clk_regs_i(multi_sink_clkbuf_leaf_11_clk_regs_clknet_leaf_11_clk_regs));
 endmodule
 module hier_block (clknet_leaf_15_clk_regs_i,
     clknet_leaf_13_clk_regs_i,

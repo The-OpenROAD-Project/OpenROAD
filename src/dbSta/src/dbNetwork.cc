@@ -65,6 +65,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Search.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -4041,13 +4042,13 @@ void dbNetwork::checkAxioms()
 {
   checkSanityModBTerms();
   checkSanityModITerms();
-  checkSanityModuleInsts();
   checkSanityModInstTerms();
   checkSanityUnusedModules();
   checkSanityTermConnectivity();
   checkSanityNetConnectivity();
   checkSanityInstNames();
   checkSanityNetNames();
+  checkSanityModuleInsts();
 }
 
 // Given a net that may be hierarchical, find the corresponding flat net.
@@ -4309,27 +4310,59 @@ void dbNetwork::checkSanityNetConnectivity()
   }
 
   // Check for incomplete flat net connections
-  for (odb::dbNet* net : block_->getNets()) {
-    const auto iterm_count = net->getITerms().size();
-    const auto bterm_count = net->getBTerms().size();
+  for (odb::dbNet* net_db : block_->getNets()) {
+    // Check for multiple drivers.
+    Net* net = dbToSta(net_db);
+    PinSeq loads;
+    PinSeq drvrs;
+    PinSet visited_drvrs(this);
+    FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, this);
+    NetSet visited_nets(this);
+    visitConnectedPins(net, visitor, visited_nets);
+
+    if (drvrs.size() > 1) {
+      bool all_tristate = true;
+      for (const Pin* drvr : drvrs) {
+        LibertyPort* port = libertyPort(drvr);
+        if (!port || !port->direction()->isAnyTristate()) {
+          all_tristate = false;
+          break;
+        }
+      }
+
+      if (!all_tristate) {
+        std::string drivers_str;
+        for (const Pin* drvr : drvrs) {
+          drivers_str += " " + std::string(pathName(drvr));
+        }
+        logger_->error(
+            ORD,
+            2049,
+            "SanityCheck: Net '{}' has multiple non-tristate drivers:{}",
+            name(net),
+            drivers_str);
+      }
+    }
+    const auto iterm_count = net_db->getITerms().size();
+    const auto bterm_count = net_db->getBTerms().size();
     if (iterm_count + bterm_count >= 2) {
       continue;
     }
 
     // Skip power/ground net
-    if (net->getSigType() == odb::dbSigType::POWER
-        || net->getSigType() == odb::dbSigType::GROUND) {
+    if (net_db->getSigType() == odb::dbSigType::POWER
+        || net_db->getSigType() == odb::dbSigType::GROUND) {
       continue;  // OK: Unconnected power/ground net
     }
 
     // A net connected to 1 terminal
     if (iterm_count == 1) {
-      odb::dbITerm* iterm = *(net->getITerms().begin());
+      odb::dbITerm* iterm = *(net_db->getITerms().begin());
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         continue;  // OK: Unconnected output pin
       }
     } else if (bterm_count == 1) {  // This is a top level port
-      odb::dbBTerm* bterm = *(net->getBTerms().begin());
+      odb::dbBTerm* bterm = *(net_db->getBTerms().begin());
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         continue;  // OK: Unconnected input port
       }
@@ -4339,7 +4372,7 @@ void dbNetwork::checkSanityNetConnectivity()
                    2039,
                    "SanityCheck: Net '{}' has less than 2 connections (# of "
                    "ITerms = {}, # of BTerms = {}).",
-                   net->getName(),
+                   net_db->getName(),
                    iterm_count,
                    bterm_count);
   }

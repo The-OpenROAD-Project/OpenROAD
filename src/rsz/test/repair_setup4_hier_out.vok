@@ -1,8 +1,8 @@
 module reg1 (clk);
  input clk;
 
- wire net2;
- wire net1;
+ wire reg1_split2_net2;
+ wire reg1_rebuffer1_net1;
  wire r1q;
  wire net3;
  wire net4;
@@ -14,14 +14,14 @@ module reg1 (clk);
     .Z(net4));
  BUF_X4 rebuffer3 (.A(net4),
     .Z(net3));
- BUF_X1 split2 (.A(net1),
-    .Z(net2));
+ BUF_X1 split2 (.A(reg1_rebuffer1_net1),
+    .Z(reg1_split2_net2));
  BUF_X4 rebuffer1 (.A(net3),
-    .Z(net1));
+    .Z(reg1_rebuffer1_net1));
  DFF_X1 r1 (.CK(clk),
     .Q(r1q));
- submodule u1 (.net_i_1(net2),
-    .net_i(net1),
+ submodule u1 (.net_i_1(reg1_split2_net2),
+    .net_i(reg1_rebuffer1_net1),
     .r1q(r1q),
     .clk(clk));
 endmodule

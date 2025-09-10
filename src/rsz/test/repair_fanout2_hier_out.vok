@@ -1,48 +1,48 @@
 module hi_fanout (clk1);
  input clk1;
 
- wire net8;
- wire net7;
- wire net6;
- wire net5;
- wire net4;
- wire net3;
- wire net2;
- wire net1;
+ wire hi_fanout_fanout8_net8;
+ wire hi_fanout_fanout7_net7;
+ wire hi_fanout_fanout6_net6;
+ wire hi_fanout_fanout5_net5;
+ wire hi_fanout_fanout4_net4;
+ wire hi_fanout_fanout3_net3;
+ wire hi_fanout_fanout2_net2;
+ wire hi_fanout_fanout1_net1;
  wire net0;
 
  BUF_X1 fanout8 (.A(net0),
-    .Z(net8));
- BUF_X1 fanout7 (.A(net8),
-    .Z(net7));
- BUF_X1 fanout6 (.A(net8),
-    .Z(net6));
- BUF_X1 fanout5 (.A(net8),
-    .Z(net5));
+    .Z(hi_fanout_fanout8_net8));
+ BUF_X1 fanout7 (.A(hi_fanout_fanout8_net8),
+    .Z(hi_fanout_fanout7_net7));
+ BUF_X1 fanout6 (.A(hi_fanout_fanout8_net8),
+    .Z(hi_fanout_fanout6_net6));
+ BUF_X1 fanout5 (.A(hi_fanout_fanout8_net8),
+    .Z(hi_fanout_fanout5_net5));
  BUF_X1 fanout4 (.A(net0),
-    .Z(net4));
- BUF_X1 fanout3 (.A(net4),
-    .Z(net3));
- BUF_X1 fanout2 (.A(net3),
-    .Z(net2));
- BUF_X1 fanout1 (.A(net4),
-    .Z(net1));
+    .Z(hi_fanout_fanout4_net4));
+ BUF_X1 fanout3 (.A(hi_fanout_fanout4_net4),
+    .Z(hi_fanout_fanout3_net3));
+ BUF_X1 fanout2 (.A(hi_fanout_fanout3_net3),
+    .Z(hi_fanout_fanout2_net2));
+ BUF_X1 fanout1 (.A(hi_fanout_fanout4_net4),
+    .Z(hi_fanout_fanout1_net1));
  DFF_X1 drvr (.CK(clk1),
     .Q(net0));
- hi_fanout_child hi_fanout_inst1 (.net_i_6(net7),
-    .net_i_5(net6),
-    .net_i_4(net5),
-    .net_i_3(net4),
-    .net_i_2(net3),
-    .net_i_1(net2),
-    .net_i(net1),
+ hi_fanout_child hi_fanout_inst1 (.net_i_6(hi_fanout_fanout7_net7),
+    .net_i_5(hi_fanout_fanout6_net6),
+    .net_i_4(hi_fanout_fanout5_net5),
+    .net_i_3(hi_fanout_fanout4_net4),
+    .net_i_2(hi_fanout_fanout3_net3),
+    .net_i_1(hi_fanout_fanout2_net2),
+    .net_i(hi_fanout_fanout1_net1),
     .clk1(clk1));
- hi_fanout_child_hi_fanout_inst2 hi_fanout_inst2 (.net_i_5(net8),
-    .net_i_4(net7),
-    .net_i_3(net6),
-    .net_i_2(net4),
-    .net_i_1(net3),
-    .net_i(net1),
+ hi_fanout_child_hi_fanout_inst2 hi_fanout_inst2 (.net_i_5(hi_fanout_fanout8_net8),
+    .net_i_4(hi_fanout_fanout7_net7),
+    .net_i_3(hi_fanout_fanout6_net6),
+    .net_i_2(hi_fanout_fanout4_net4),
+    .net_i_1(hi_fanout_fanout3_net3),
+    .net_i(hi_fanout_fanout1_net1),
     .net0(net0),
     .clk1(clk1));
 endmodule
