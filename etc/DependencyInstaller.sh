@@ -494,7 +494,7 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
-        yaml-cpp \
+        yaml-cpp-devel \
         zlib-devel
 
     if [[ ${rhelVersion} == 8 ]]; then
@@ -562,7 +562,7 @@ _installOpenSusePackages() {
         tcl-devel \
         tcllib \
         wget \
-        yaml-cpp \
+        yaml-cpp-devel \
         zlib-devel
 
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
