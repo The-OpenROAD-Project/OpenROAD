@@ -27,14 +27,12 @@ struct SparseGrid
 
   void step()
   {
-    offset.x = (offset.x + 1) % interval.x;
-    offset.y = (offset.y + 1) % interval.y;
+    offset = {(offset.x() + 1) % interval.x(), (offset.y() + 1) % interval.y()};
   }
 
   void reset(int x_interval, int y_interval)
   {
-    interval.x = x_interval;
-    interval.y = y_interval;
+    interval = {x_interval, y_interval};
     step();
   }
 };

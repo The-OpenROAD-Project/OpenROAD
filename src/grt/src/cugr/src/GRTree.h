@@ -14,7 +14,7 @@ class GRPoint : public PointT
   GRPoint(int l, int _x, int _y) : PointT(_x, _y), layer_idx_(l) {}
   friend std::ostream& operator<<(std::ostream& os, const GRPoint& pt)
   {
-    os << "(" << pt.layer_idx_ << ", " << pt.x << ", " << pt.y << ")";
+    os << "(" << pt.layer_idx_ << ", " << pt.x() << ", " << pt.y() << ")";
     return os;
   }
   int getLayerIdx() const { return layer_idx_; }
