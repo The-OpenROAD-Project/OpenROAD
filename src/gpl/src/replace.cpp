@@ -16,7 +16,6 @@
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"

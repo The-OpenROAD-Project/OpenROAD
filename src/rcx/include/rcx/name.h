@@ -8,7 +8,7 @@
 #include <cstring>
 
 #include "odb/util.h"
-#include "util.h"
+#include "rcx/util.h"
 
 namespace rcx {
 

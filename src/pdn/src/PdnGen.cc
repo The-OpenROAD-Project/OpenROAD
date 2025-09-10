@@ -20,7 +20,6 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
-#include "ord/OpenRoad.hh"
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"

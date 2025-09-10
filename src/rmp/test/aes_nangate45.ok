@@ -64,8 +64,8 @@ wns max -0.37
 tns max -83.81
 -- After --
 
-[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
-[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC1_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
 Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
 The number of nodes on the critical paths =    411  ( 1.47 %)
 The cell delays are multiplied by the factor: <num_fanins> ^ (2.50).
@@ -97,30 +97,30 @@ Path Type: max
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ _33201_/CK (DFF_X1)
    0.08    0.08 ^ _33201_/Q (DFF_X1)
-   0.04    0.12 ^ rmp_3/Z (CLKBUF_X2)
-   0.02    0.14 v rmp_51/ZN (INV_X1)
-   0.05    0.19 ^ rmp_52/ZN (NAND2_X1)
-   0.02    0.21 v rmp_53/ZN (NOR2_X1)
-   0.04    0.25 ^ rmp_54/ZN (INV_X1)
-   0.02    0.27 v rmp_2480/ZN (NOR2_X1)
-   0.03    0.31 ^ rmp_2481/ZN (NOR2_X1)
-   0.03    0.34 ^ rmp_3739/ZN (AND2_X1)
-   0.01    0.35 v rmp_3740/ZN (INV_X1)
-   0.03    0.37 ^ rmp_3741/ZN (NOR2_X1)
-   0.01    0.38 v rmp_3742/ZN (INV_X1)
-   0.03    0.41 ^ rmp_3743/ZN (NOR2_X1)
-   0.01    0.42 v rmp_3744/ZN (NAND2_X1)
-   0.03    0.45 ^ rmp_3745/ZN (NOR2_X1)
-   0.01    0.46 v rmp_3772/ZN (NAND2_X1)
-   0.07    0.53 ^ rmp_3807/ZN (NOR2_X1)
-   0.02    0.55 v rmp_3808/ZN (INV_X1)
-   0.07    0.62 v rmp_3809/Z (XOR2_X1)
-   0.06    0.68 v rmp_24465/Z (XOR2_X1)
-   0.06    0.74 v rmp_24466/Z (XOR2_X1)
-   0.02    0.76 ^ rmp_24468/ZN (NAND2_X1)
-   0.01    0.77 v rmp_24469/ZN (NAND2_X1)
-   0.01    0.78 ^ rmp_24471/ZN (NAND2_X1)
-   0.01    0.79 v rmp_24474/ZN (NAND2_X1)
+   0.04    0.12 ^ cut_3/Z (CLKBUF_X2)
+   0.02    0.14 v cut_51/ZN (INV_X1)
+   0.05    0.19 ^ cut_52/ZN (NAND2_X1)
+   0.02    0.21 v cut_53/ZN (NOR2_X1)
+   0.04    0.25 ^ cut_54/ZN (INV_X1)
+   0.02    0.27 v cut_2480/ZN (NOR2_X1)
+   0.03    0.31 ^ cut_2481/ZN (NOR2_X1)
+   0.03    0.34 ^ cut_3739/ZN (AND2_X1)
+   0.01    0.35 v cut_3740/ZN (INV_X1)
+   0.03    0.37 ^ cut_3741/ZN (NOR2_X1)
+   0.01    0.38 v cut_3742/ZN (INV_X1)
+   0.03    0.41 ^ cut_3743/ZN (NOR2_X1)
+   0.01    0.42 v cut_3744/ZN (NAND2_X1)
+   0.03    0.45 ^ cut_3745/ZN (NOR2_X1)
+   0.01    0.46 v cut_3772/ZN (NAND2_X1)
+   0.07    0.53 ^ cut_3807/ZN (NOR2_X1)
+   0.02    0.55 v cut_3808/ZN (INV_X1)
+   0.07    0.62 v cut_3809/Z (XOR2_X1)
+   0.06    0.68 v cut_24465/Z (XOR2_X1)
+   0.06    0.74 v cut_24466/Z (XOR2_X1)
+   0.02    0.76 ^ cut_24468/ZN (NAND2_X1)
+   0.01    0.77 v cut_24469/ZN (NAND2_X1)
+   0.01    0.78 ^ cut_24471/ZN (NAND2_X1)
+   0.01    0.79 v cut_24474/ZN (NAND2_X1)
    0.00    0.79 v _33128_/D (DFF_X1)
            0.79   data arrival time
 
@@ -139,8 +139,8 @@ Path Type: max
 
 wns max -0.33
 tns max -59.40
-[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
-[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC1_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
 Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
 The number of nodes on the critical paths =   8225  (23.04 %)
 The cell delays are multiplied by the factor: <num_fanins> ^ (2.50).
@@ -172,26 +172,26 @@ Path Type: max
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ _33140_/CK (DFF_X1)
    0.08    0.08 ^ _33140_/Q (DFF_X1)
-   0.04    0.12 ^ rmp_83853/Z (CLKBUF_X2)
-   0.02    0.14 v rmp_83891/ZN (INV_X1)
-   0.04    0.19 ^ rmp_84038/ZN (NAND2_X1)
-   0.03    0.21 v rmp_84040/ZN (NOR2_X1)
-   0.04    0.25 ^ rmp_85170/ZN (INV_X1)
-   0.01    0.26 v rmp_85330/ZN (NOR2_X1)
-   0.04    0.31 v rmp_85332/ZN (OR2_X1)
-   0.06    0.37 v rmp_85339/ZN (OR3_X1)
-   0.04    0.41 ^ rmp_85340/ZN (NOR2_X1)
-   0.02    0.42 v rmp_85357/ZN (NAND2_X1)
-   0.03    0.45 ^ rmp_85358/ZN (NOR2_X1)
-   0.01    0.47 v rmp_85359/ZN (NAND2_X1)
-   0.08    0.54 ^ rmp_85360/ZN (NOR2_X1)
-   0.07    0.62 ^ rmp_85361/Z (XOR2_X1)
-   0.06    0.67 ^ rmp_85565/Z (XOR2_X1)
-   0.05    0.72 ^ rmp_85566/Z (XOR2_X1)
-   0.02    0.74 v rmp_85567/ZN (NAND2_X1)
-   0.03    0.76 v rmp_85569/ZN (AND2_X1)
-   0.04    0.81 v rmp_85570/ZN (OR2_X1)
-   0.02    0.82 ^ rmp_85571/ZN (NAND2_X1)
+   0.04    0.12 ^ cut_83853/Z (CLKBUF_X2)
+   0.02    0.14 v cut_83891/ZN (INV_X1)
+   0.04    0.19 ^ cut_84038/ZN (NAND2_X1)
+   0.03    0.21 v cut_84040/ZN (NOR2_X1)
+   0.04    0.25 ^ cut_85170/ZN (INV_X1)
+   0.01    0.26 v cut_85330/ZN (NOR2_X1)
+   0.04    0.31 v cut_85332/ZN (OR2_X1)
+   0.06    0.37 v cut_85339/ZN (OR3_X1)
+   0.04    0.41 ^ cut_85340/ZN (NOR2_X1)
+   0.02    0.42 v cut_85357/ZN (NAND2_X1)
+   0.03    0.45 ^ cut_85358/ZN (NOR2_X1)
+   0.01    0.47 v cut_85359/ZN (NAND2_X1)
+   0.08    0.54 ^ cut_85360/ZN (NOR2_X1)
+   0.07    0.62 ^ cut_85361/Z (XOR2_X1)
+   0.06    0.67 ^ cut_85565/Z (XOR2_X1)
+   0.05    0.72 ^ cut_85566/Z (XOR2_X1)
+   0.02    0.74 v cut_85567/ZN (NAND2_X1)
+   0.03    0.76 v cut_85569/ZN (AND2_X1)
+   0.04    0.81 v cut_85570/ZN (OR2_X1)
+   0.02    0.82 ^ cut_85571/ZN (NAND2_X1)
    0.00    0.82 ^ _33182_/D (DFF_X1)
            0.82   data arrival time
 

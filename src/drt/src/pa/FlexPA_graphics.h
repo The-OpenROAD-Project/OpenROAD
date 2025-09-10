@@ -49,11 +49,11 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
 
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
-                frOrderedIdSet<frInst*>* inst_class) override;
+                UniqueClass* inst_class) override;
 
   void startPin(frMPin* pin,
                 frInstTerm* inst_term,
-                frOrderedIdSet<frInst*>* inst_class) override;
+                UniqueClass* inst_class) override;
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,

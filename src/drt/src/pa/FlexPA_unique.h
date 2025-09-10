@@ -20,6 +20,66 @@
 
 namespace drt {
 
+struct UniqueClassKey
+{
+  frMaster* master{nullptr};
+  dbOrientType orient{dbOrientType::R0};
+  std::vector<frCoord> offsets;
+  frInst* ndr_inst{nullptr};
+
+  UniqueClassKey(frMaster* master_in,
+                 const dbOrientType& orient_in,
+                 std::vector<frCoord> offsets_in,
+                 frInst* ndr_inst_in = nullptr)
+      : master(master_in),
+        orient(orient_in),
+        offsets(std::move(offsets_in)),
+        ndr_inst(ndr_inst_in)
+  {
+  }
+
+  bool operator<(const UniqueClassKey& other) const
+  {
+    return std::tie(master, orient, offsets, ndr_inst) < std::tie(
+               other.master, other.orient, other.offsets, other.ndr_inst);
+  }
+
+  bool operator==(const UniqueClassKey& other) const
+  {
+    return std::tie(master, orient, offsets, ndr_inst)
+           == std::tie(
+               other.master, other.orient, other.offsets, other.ndr_inst);
+  }
+};
+
+class UniqueClass
+{
+ public:
+  using InstSet = frOrderedIdSet<frInst*>;
+
+  UniqueClass(const UniqueClassKey& key);
+
+  const UniqueClassKey& key() const { return key_; }
+  frMaster* getMaster() const { return key_.master; }
+  dbOrientType getOrient() const { return key_.orient; }
+  const std::vector<frCoord>& getOffsets() const { return key_.offsets; }
+  const InstSet& getInsts() const { return insts_; }
+  int getPinAccessIdx() const { return pin_access_idx_; }
+  void setPinAccessIdx(int idx) { pin_access_idx_ = idx; }
+  void addInst(frInst* inst);
+  void removeInst(frInst* inst);
+  bool hasInst(frInst* inst) const;
+  frInst* getFirstInst() const;
+  bool isSkipTerm(frMTerm* term) const;
+  void setSkipTerm(frMTerm* term, bool skip);
+
+ private:
+  UniqueClassKey key_;
+  InstSet insts_;
+  std::map<frMTerm*, bool> skip_term_;
+  int pin_access_idx_{-1};
+};
+
 // Instances are grouped into equivalence classes based on master,
 // orientation, and track-offset.  From each equivalence class a
 // representative instance is chosen for analysis - the unique
@@ -33,7 +93,6 @@ namespace drt {
 class UniqueInsts
 {
  public:
-  using InstSet = frOrderedIdSet<frInst*>;
   // if target_insts is non-empty then analysis is limited to
   // those instances.
   UniqueInsts(frDesign* design,
@@ -46,16 +105,23 @@ class UniqueInsts
    */
   void init();
 
-  // Get's the index corresponding to the inst's unique instance
-  int getIndex(frInst* inst);
-
   // Gets the instances in the equivalence set of the given inst
-  InstSet* getClass(frInst* inst) const;
+  UniqueClass* getUniqueClass(frInst* inst) const;
 
-  const std::vector<frInst*>& getUnique() const;
-  frInst* getUnique(int idx) const;
-  frInst* getUnique(frInst* inst) const;
+  const std::vector<std::unique_ptr<UniqueClass>>& getUniqueClasses() const;
   bool hasUnique(frInst* inst) const;
+
+  /**
+   * @brief Computes the unique class key of an inst
+   *
+   * This function is used to compute the unique class key of an inst. The key
+   * is composed by the master, the orientation and the offsets.
+   *
+   * @param inst inst to have its unique class key computed
+   *
+   * @returns the unique class key.
+   */
+  UniqueClassKey computeUniqueClassKey(frInst* inst) const;
 
   /**
    * @brief Computes the unique class of an inst.
@@ -64,7 +130,7 @@ class UniqueInsts
    *
    * @returns the unique class.
    */
-  UniqueInsts::InstSet& computeUniqueClass(frInst* inst);
+  UniqueClass* computeUniqueClass(frInst* inst);
 
   /**
    * @brief Adds the instance to the unique instances structures,
@@ -84,16 +150,11 @@ class UniqueInsts
    * @returns the unique inst that represents the unique class. If the class was
    * deleted returns nullptr
    */
-  frInst* deleteInst(frInst* inst);
+  void deleteInst(frInst* inst);
 
-  void initUniqueInstPinAccess(frInst* unique_inst);
-  /**
-   * @brief this function if for debugging. It makes the inst the class head.
-   * This is relevant when debugguin with the gui, this is the inst that will
-   * fail in PA, not other inst in its family
-   */
-  void forceInstAsClassHead(frInst* inst);
+  void deleteUniqueClass(UniqueClass* unique_class);
 
+  void initUniqueInstPinAccess(UniqueClass* unique_class);
   void report() const;
   void setDesign(frDesign* design) { design_ = design; }
 
@@ -112,7 +173,7 @@ class UniqueInsts
    * @return If instance contains a NonDefaultRule net connected to any
    * terminal.
    */
-  bool isNDRInst(frInst& inst);
+  bool isNDRInst(frInst* inst) const;
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
   /**
@@ -163,19 +224,12 @@ class UniqueInsts
   utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 
-  // All the unique instances
-  std::vector<frInst*> unique_;
-  // Maps all instances to their representative unique instance
-  frOrderedIdMap<frInst*, frInst*> inst_to_unique_;
-  // Maps all instances to the set of instances with the same unique inst
-  std::unordered_map<frInst*, InstSet*> inst_to_class_;
-  // Maps a unique instance to its index in unique_
-  frOrderedIdMap<frInst*, int> unique_to_idx_;
-  // master orient track-offset to instances
-  frOrderedIdMap<
-      frMaster*,
-      std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>>
-      master_orient_trackoffset_to_insts_;
+  // All unique classes
+  std::vector<std::unique_ptr<UniqueClass>> unique_classes_;
+  // Map from UniqueClassKey to UniqueClass
+  std::map<UniqueClassKey, UniqueClass*> unique_class_by_key_;
+  // Map from inst to UniqueClass
+  frOrderedIdMap<frInst*, UniqueClass*> inst_to_unique_class_;
   std::vector<frTrackPattern*> pref_track_patterns_;
   MasterLayerRange master_to_pin_layer_range_;
 };

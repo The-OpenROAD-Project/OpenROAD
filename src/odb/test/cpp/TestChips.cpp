@@ -81,6 +81,7 @@ struct F_CHIP_HIERARCHY
     // Position components
     memory_inst->setLoc(Point3D(2500, 500, 0));
     cache_inst->setLoc(Point3D(100, 100, 50));
+    cache_inst->setOrient(dbOrientType3D("MZ_MY_R90"));
   }
 
   ~F_CHIP_HIERARCHY() { dbDatabase::destroy(db); }
@@ -192,11 +193,17 @@ BOOST_FIXTURE_TEST_CASE(test_chip_hierarchy, F_CHIP_HIERARCHY)
   BOOST_TEST(memory_loc.x() == 2500);
   BOOST_TEST(memory_loc.y() == 500);
   BOOST_TEST(memory_loc.z() == 0);
+  BOOST_TEST(memory_inst->getOrient().getOrientType2D() == dbOrientType::R0);
+  BOOST_TEST(memory_inst->getOrient().isMirrorZ() == false);
+  BOOST_TEST(memory_inst->getOrient().getString() == "R0");
 
   Point3D cache_loc = cache_inst->getLoc();
   BOOST_TEST(cache_loc.x() == 100);
   BOOST_TEST(cache_loc.y() == 100);
   BOOST_TEST(cache_loc.z() == 50);
+  BOOST_TEST(cache_inst->getOrient().getOrientType2D() == dbOrientType::MYR90);
+  BOOST_TEST(cache_inst->getOrient().isMirrorZ() == true);
+  BOOST_TEST(cache_inst->getOrient().getString() == "MZ_MY_R90");
 }
 
 BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)

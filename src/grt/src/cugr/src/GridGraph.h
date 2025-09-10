@@ -51,8 +51,8 @@ class GridGraph
 
   uint64_t hashCell(const GRPoint& point) const
   {
-    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x) * y_size_
-           + point.y;
+    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x()) * y_size_
+           + point.y();
   };
   uint64_t hashCell(const int x, const int y) const
   {
@@ -167,18 +167,18 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
  public:
   bool check(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
-    if (u.y == v.y) {
-      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    assert(u.x() == v.x() || u.y() == v.y());
+    if (u.y() == v.y()) {
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
-        if ((*this)[MetalLayer::H][x][u.y]) {
+        if ((*this)[MetalLayer::H][x][u.y()]) {
           return true;
         }
       }
     } else {
-      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
-        if ((*this)[MetalLayer::V][u.x][y]) {
+        if ((*this)[MetalLayer::V][u.x()][y]) {
           return true;
         }
       }
@@ -188,17 +188,17 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 
   Type sum(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
+    assert(u.x() == v.x() || u.y() == v.y());
     Type res = 0;
-    if (u.y == v.y) {
-      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    if (u.y() == v.y()) {
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
-        res += (*this)[MetalLayer::H][x][u.y];
+        res += (*this)[MetalLayer::H][x][u.y()];
       }
     } else {
-      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
-        res += (*this)[MetalLayer::V][u.x][y];
+        res += (*this)[MetalLayer::V][u.x()][y];
       }
     }
     return res;
