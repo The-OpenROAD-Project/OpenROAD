@@ -487,10 +487,7 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
 
   float pre_cost = calNormCost();
   // Cache current solution to allow reversal
-  std::map<int, std::pair<float, float>> clusters_locations;
-  for (int& id : pos_seq_) {
-    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
-  }
+  auto clusters_locations = getClustersLocations();
 
   // update threshold value
   adjust_h_th_ = notch_h_th_;
@@ -532,12 +529,10 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
   }
 
   calPenalty();
+
   // Revert macro alignemnt
   if (calNormCost() > pre_cost) {
-    for (int& id : pos_seq_) {
-      macros_[id].setX(clusters_locations[id].first);
-      macros_[id].setY(clusters_locations[id].second);
-    }
+    setClustersLocations(clusters_locations);
 
     if (graphics_) {
       graphics_->saStep(macros_);
@@ -932,6 +927,26 @@ void SACoreSoftMacro::addBlockages(const std::vector<Rect>& blockages)
   blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
 }
 
+std::vector<std::pair<float, float>> SACoreSoftMacro::getClustersLocations() {
+  std::vector<std::pair<float, float>> clusters_locations(pos_seq_.size());
+  for (int& id : pos_seq_) {
+    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
+  }
+
+  return clusters_locations;
+}
+
+void SACoreSoftMacro::setClustersLocations(std::vector<std::pair<float, float>> clusters_locations) {
+  if (clusters_locations.size() != pos_seq_.size()) {
+    return;
+  }
+
+  for (int& id : pos_seq_) {
+    macros_[id].setX(clusters_locations[id].first);
+    macros_[id].setY(clusters_locations[id].second);
+  }
+}
+
 void SACoreSoftMacro::attemptCentralization(const float pre_cost)
 {
   if (outline_penalty_ > 0) {
@@ -941,25 +956,18 @@ void SACoreSoftMacro::attemptCentralization(const float pre_cost)
   // In order to revert the centralization, we cache the current location
   // of the clusters to avoid floating-point evilness when creating the
   // x,y grid to fill the dead space by expanding mixed clusters.
-  std::map<int, std::pair<float, float>> clusters_locations;
-
-  for (int& id : pos_seq_) {
-    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
-  }
+  auto clusters_locations = getClustersLocations();
 
   std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
                                  (outline_.getHeight() - height_) / 2);
   moveFloorplan(offset);
-
   calPenalty();
+
   // revert centralization
   if (calNormCost() > pre_cost) {
     centralization_was_reverted_ = true;
 
-    for (int& id : pos_seq_) {
-      macros_[id].setX(clusters_locations[id].first);
-      macros_[id].setY(clusters_locations[id].second);
-    }
+    setClustersLocations(clusters_locations);
 
     if (graphics_) {
       graphics_->saStep(macros_);
