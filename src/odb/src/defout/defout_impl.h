@@ -25,9 +25,41 @@ class dbInst;
 class dbTechNonDefaultRule;
 class dbTechLayerRule;
 
-class defout_impl
+class defout::Impl
 {
-  enum ObjType
+ public:
+  Impl(utl::Logger* logger)
+  {
+    _dist_factor = 0;
+    _out = nullptr;
+    _use_net_inst_ids = false;
+    _use_master_ids = false;
+    _use_alias = false;
+    _select_net_map = nullptr;
+    _select_inst_map = nullptr;
+    _non_default_rule = nullptr;
+    _version = defout::DEF_5_8;
+    _logger = logger;
+  }
+
+  ~Impl() = default;
+
+  void setUseLayerAlias(bool value) { _use_alias = value; }
+
+  void setUseNetInstIds(bool value) { _use_net_inst_ids = value; }
+
+  void setUseMasterIds(bool value) { _use_master_ids = value; }
+
+  void selectNet(dbNet* net);
+
+  void selectInst(dbInst* inst);
+  void setVersion(int v) { _version = v; }
+
+  bool writeBlock(dbBlock* block, const char* def_file);
+  bool writeBlock(dbBlock* block, std::ostream& stream);
+
+private:
+    enum ObjType
   {
     COMPONENT,
     COMPONENTPIN,
@@ -88,37 +120,6 @@ class defout_impl
   void writeProperties(dbObject* object);
   void writePinProperties(dbBlock* block);
   bool hasProperties(dbObject* object, ObjType type);
-
- public:
-  defout_impl(utl::Logger* logger)
-  {
-    _dist_factor = 0;
-    _out = nullptr;
-    _use_net_inst_ids = false;
-    _use_master_ids = false;
-    _use_alias = false;
-    _select_net_map = nullptr;
-    _select_inst_map = nullptr;
-    _non_default_rule = nullptr;
-    _version = defout::DEF_5_8;
-    _logger = logger;
-  }
-
-  ~defout_impl() = default;
-
-  void setUseLayerAlias(bool value) { _use_alias = value; }
-
-  void setUseNetInstIds(bool value) { _use_net_inst_ids = value; }
-
-  void setUseMasterIds(bool value) { _use_master_ids = value; }
-
-  void selectNet(dbNet* net);
-
-  void selectInst(dbInst* inst);
-  void setVersion(int v) { _version = v; }
-
-  bool writeBlock(dbBlock* block, const char* def_file);
-  bool writeBlock(dbBlock* block, std::ostream& stream);
 };
 
 }  // namespace odb

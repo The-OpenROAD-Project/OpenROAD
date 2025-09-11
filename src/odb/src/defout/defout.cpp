@@ -13,14 +13,10 @@ namespace odb {
 
 defout::defout(utl::Logger* logger)
 {
-  _writer = new defout_impl(logger);
-  assert(_writer);
+  _writer = std::make_unique<Impl>(logger);
 }
 
-defout::~defout()
-{
-  delete _writer;
-}
+defout::~defout() = default;
 
 void defout::setUseLayerAlias(bool value)
 {

@@ -100,7 +100,7 @@ const char* defIoType(const dbIoType& type)
 
 }  // namespace
 
-void defout_impl::selectNet(dbNet* net)
+void defout::Impl::selectNet(dbNet* net)
 {
   if (!net) {
     return;
@@ -108,7 +108,7 @@ void defout_impl::selectNet(dbNet* net)
   _select_net_list.push_back(net);
 }
 
-void defout_impl::selectInst(dbInst* inst)
+void defout::Impl::selectInst(dbInst* inst)
 {
   if (!inst) {
     return;
@@ -116,7 +116,7 @@ void defout_impl::selectInst(dbInst* inst)
   _select_inst_list.push_back(inst);
 }
 
-bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
+bool defout::Impl::writeBlock(dbBlock* block, std::ostream& stream)
 {
   if (!_select_net_list.empty()) {
     _select_net_map = new dbMap<dbNet, char>(block->getNets());
@@ -264,13 +264,13 @@ bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
   return true;
 }
 
-bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
+bool defout::Impl::writeBlock(dbBlock* block, const char* def_file)
 {
   utl::OutStreamHandler stream_handler(def_file, false);
   return writeBlock(block, stream_handler.getStream());
 }
 
-void defout_impl::writeRows(dbBlock* block)
+void defout::Impl::writeRows(dbBlock* block)
 {
   dbSet<dbRow> rows = block->getRows();
   dbSet<dbRow>::iterator itr;
@@ -303,7 +303,7 @@ void defout_impl::writeRows(dbBlock* block)
   }
 }
 
-void defout_impl::writeTracks(dbBlock* block)
+void defout::Impl::writeTracks(dbBlock* block)
 {
   dbSet<dbTrackGrid> grids = block->getTrackGrids();
   dbSet<dbTrackGrid>::iterator itr;
@@ -351,7 +351,7 @@ void defout_impl::writeTracks(dbBlock* block)
   }
 }
 
-void defout_impl::writeGCells(dbBlock* block)
+void defout::Impl::writeGCells(dbBlock* block)
 {
   dbGCellGrid* grid = block->getGCellGrid();
 
@@ -376,7 +376,7 @@ void defout_impl::writeGCells(dbBlock* block)
   }
 }
 
-void defout_impl::writeVias(dbBlock* block)
+void defout::Impl::writeVias(dbBlock* block)
 {
   dbSet<dbVia> vias = block->getVias();
 
@@ -412,7 +412,7 @@ void defout_impl::writeVias(dbBlock* block)
   *_out << "END VIAS\n";
 }
 
-void defout_impl::writeVia(dbVia* via)
+void defout::Impl::writeVia(dbVia* via)
 {
   std::string vname = via->getName();
   *_out << "    - " << vname;
@@ -495,7 +495,7 @@ void defout_impl::writeVia(dbVia* via)
   *_out << " ;\n";
 }
 
-void defout_impl::writeComponentMaskShift(dbBlock* block)
+void defout::Impl::writeComponentMaskShift(dbBlock* block)
 {
   const std::vector<dbTechLayer*> layers = block->getComponentMaskShift();
 
@@ -510,7 +510,7 @@ void defout_impl::writeComponentMaskShift(dbBlock* block)
   *_out << ";\n";
 }
 
-void defout_impl::writeInsts(dbBlock* block)
+void defout::Impl::writeInsts(dbBlock* block)
 {
   dbSet<dbInst> insts = block->getInsts();
 
@@ -527,7 +527,7 @@ void defout_impl::writeInsts(dbBlock* block)
   *_out << "END COMPONENTS\n";
 }
 
-void defout_impl::writeNonDefaultRules(dbBlock* block)
+void defout::Impl::writeNonDefaultRules(dbBlock* block)
 {
   dbSet<dbTechNonDefaultRule> rules = block->getNonDefaultRules();
 
@@ -547,7 +547,7 @@ void defout_impl::writeNonDefaultRules(dbBlock* block)
   *_out << "END NONDEFAULTRULES\n";
 }
 
-void defout_impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
+void defout::Impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
 {
   std::string name = rule->getName();
   *_out << "    - " << name << "\n";
@@ -606,7 +606,7 @@ void defout_impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
   *_out << "    ;\n";
 }
 
-void defout_impl::writeLayerRule(dbTechLayerRule* rule)
+void defout::Impl::writeLayerRule(dbTechLayerRule* rule)
 {
   dbTechLayer* layer = rule->getLayer();
   std::string name = layer->getName();
@@ -626,7 +626,7 @@ void defout_impl::writeLayerRule(dbTechLayerRule* rule)
   *_out << "\n";
 }
 
-void defout_impl::writeInst(dbInst* inst)
+void defout::Impl::writeInst(dbInst* inst)
 {
   dbMaster* master = inst->getMaster();
   std::string mname = master->getName();
@@ -742,7 +742,7 @@ void defout_impl::writeInst(dbInst* inst)
   *_out << " ;\n";
 }
 
-void defout_impl::writeBTerms(dbBlock* block)
+void defout::Impl::writeBTerms(dbBlock* block)
 {
   dbSet<dbBTerm> bterms = block->getBTerms();
 
@@ -778,7 +778,7 @@ void defout_impl::writeBTerms(dbBlock* block)
   *_out << "END PINS\n";
 }
 
-void defout_impl::writeRegions(dbBlock* block)
+void defout::Impl::writeRegions(dbBlock* block)
 {
   dbSet<dbRegion> regions = block->getRegions();
 
@@ -852,7 +852,7 @@ void defout_impl::writeRegions(dbBlock* block)
   *_out << "END REGIONS\n";
 }
 
-void defout_impl::writeGroups(dbBlock* block)
+void defout::Impl::writeGroups(dbBlock* block)
 {
   auto groups = block->getGroups();
   uint cnt = 0;
@@ -913,7 +913,7 @@ void defout_impl::writeGroups(dbBlock* block)
   *_out << "END GROUPS\n";
 }
 
-void defout_impl::writeScanChains(dbBlock* block)
+void defout::Impl::writeScanChains(dbBlock* block)
 {
   dbDft* dft = block->getDft();
   dbSet<dbScanChain> scan_chains = dft->getScanChains();
@@ -973,7 +973,7 @@ void defout_impl::writeScanChains(dbBlock* block)
   *_out << "END SCANCHAINS\n\n";
 }
 
-void defout_impl::writeBTerm(dbBTerm* bterm)
+void defout::Impl::writeBTerm(dbBTerm* bterm)
 {
   dbNet* net = bterm->getNet();
   if (net) {
@@ -1036,7 +1036,7 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
   }
 }
 
-void defout_impl::writeBPin(dbBPin* bpin, int cnt)
+void defout::Impl::writeBPin(dbBPin* bpin, int cnt)
 {
   dbBTerm* bterm = bpin->getBTerm();
   dbNet* net = bterm->getNet();
@@ -1171,7 +1171,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
   }
 }
 
-void defout_impl::writeBlockages(dbBlock* block)
+void defout::Impl::writeBlockages(dbBlock* block)
 {
   dbSet<dbObstruction> obstructions_raw = block->getObstructions();
   dbSet<dbBlockage> blockages_raw = block->getBlockages();
@@ -1341,7 +1341,7 @@ void defout_impl::writeBlockages(dbBlock* block)
   }
 }
 
-void defout_impl::writeFills(dbBlock* block)
+void defout::Impl::writeFills(dbBlock* block)
 {
   dbSet<dbFill> fills = block->getFills();
   int num_fills = fills.size();
@@ -1379,7 +1379,7 @@ void defout_impl::writeFills(dbBlock* block)
   *_out << "END FILLS\n";
 }
 
-void defout_impl::writeNets(dbBlock* block)
+void defout::Impl::writeNets(dbBlock* block)
 {
   dbSet<dbNet> nets = block->getNets();
 
@@ -1446,7 +1446,7 @@ void defout_impl::writeNets(dbBlock* block)
   *_out << "END NETS\n";
 }
 
-void defout_impl::writeSNet(dbNet* net)
+void defout::Impl::writeSNet(dbNet* net)
 {
   dbSet<dbITerm> iterms = net->getITerms();
 
@@ -1557,7 +1557,7 @@ void defout_impl::writeSNet(dbNet* net)
   *_out << " ;\n";
 }
 
-void defout_impl::writeWire(dbWire* wire)
+void defout::Impl::writeWire(dbWire* wire)
 {
   dbWireDecoder decode;
   dbTechLayer* layer;
@@ -1762,7 +1762,7 @@ void defout_impl::writeWire(dbWire* wire)
   }
 }
 
-void defout_impl::writeSWire(dbSWire* wire)
+void defout::Impl::writeSWire(dbSWire* wire)
 {
   switch (wire->getWireType().getValue()) {
     case dbWireType::COVER:
@@ -1872,7 +1872,7 @@ void defout_impl::writeSWire(dbSWire* wire)
   }
 }
 
-void defout_impl::writeSpecialPath(dbSBox* box)
+void defout::Impl::writeSpecialPath(dbSBox* box)
 {
   dbTechLayer* l = box->getTechLayer();
   std::string ln;
@@ -1987,7 +1987,7 @@ void defout_impl::writeSpecialPath(dbSBox* box)
   }
 }
 
-void defout_impl::writeNet(dbNet* net)
+void defout::Impl::writeNet(dbNet* net)
 {
   if (_use_net_inst_ids) {
     *_out << "    - N" << net->getId();
@@ -2098,7 +2098,7 @@ void defout_impl::writeNet(dbNet* net)
 //
 // See defin/definProDefs.h
 //
-void defout_impl::writePropertyDefinitions(dbBlock* block)
+void defout::Impl::writePropertyDefinitions(dbBlock* block)
 {
   dbProperty* defs
       = dbProperty::find(block, "__ADS_DEF_PROPERTY_DEFINITIONS__");
@@ -2187,7 +2187,7 @@ void defout_impl::writePropertyDefinitions(dbBlock* block)
   *_out << "END PROPERTYDEFINITIONS\n";
 }
 
-void defout_impl::writePropValue(dbProperty* prop)
+void defout::Impl::writePropValue(dbProperty* prop)
 {
   switch (prop->getType()) {
     case dbProperty::STRING_PROP: {
@@ -2215,7 +2215,7 @@ void defout_impl::writePropValue(dbProperty* prop)
   }
 }
 
-void defout_impl::writeProperties(dbObject* object)
+void defout::Impl::writeProperties(dbObject* object)
 {
   dbSet<dbProperty> props = dbProperty::getProperties(object);
   dbSet<dbProperty>::iterator itr;
@@ -2233,7 +2233,7 @@ void defout_impl::writeProperties(dbObject* object)
   }
 }
 
-bool defout_impl::hasProperties(dbObject* object, ObjType type)
+bool defout::Impl::hasProperties(dbObject* object, ObjType type)
 {
   dbSet<dbProperty> props = dbProperty::getProperties(object);
   dbSet<dbProperty>::iterator itr;
@@ -2250,7 +2250,7 @@ bool defout_impl::hasProperties(dbObject* object, ObjType type)
   return false;
 }
 
-void defout_impl::writePinProperties(dbBlock* block)
+void defout::Impl::writePinProperties(dbBlock* block)
 {
   uint cnt = 0;
 

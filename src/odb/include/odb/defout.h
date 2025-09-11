@@ -3,20 +3,21 @@
 
 #pragma once
 
+#include <memory>
+
 #include "odb.h"
+
 namespace utl {
 class Logger;
 }
+
 namespace odb {
 
-class defout_impl;
 class dbNet;
 class dbBlock;
 
 class defout
 {
-  defout_impl* _writer;
-
  public:
   enum Version
   {
@@ -38,6 +39,10 @@ class defout
   void setVersion(Version v);  // default is 5.8
 
   bool writeBlock(dbBlock* block, const char* def_file);
+
+ private:
+  class Impl;
+  std::unique_ptr<Impl> _writer;
 };
 
 }  // namespace odb
