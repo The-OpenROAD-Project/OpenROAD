@@ -32,8 +32,6 @@ class DefOut
   DefOut(utl::Logger* logger);
   ~DefOut();
 
-  void setUseNetInstIds(bool value);
-  void setUseMasterIds(bool value);
   void selectNet(dbNet* net);
   void setVersion(Version v);  // default is 5.8
 

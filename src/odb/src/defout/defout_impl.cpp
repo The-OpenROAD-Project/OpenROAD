@@ -621,20 +621,7 @@ void DefOut::Impl::writeInst(dbInst* inst)
   dbMaster* master = inst->getMaster();
   std::string mname = master->getName();
 
-  if (_use_net_inst_ids) {
-    if (_use_master_ids) {
-      *_out << "    - I" << inst->getId() << " M" << master->getMasterId();
-    } else {
-      *_out << "    - I" << inst->getId() << " " << mname;
-    }
-  } else {
-    std::string iname = inst->getName();
-    if (_use_master_ids) {
-      *_out << "    - " << iname << " M" << master->getMasterId();
-    } else {
-      *_out << "    - " << iname << " " << mname;
-    }
-  }
+  *_out << "    - " << inst->getName() << " " << mname;
 
   dbSourceType source = inst->getSourceType();
 
@@ -985,12 +972,8 @@ void DefOut::Impl::writeBTerm(dbBTerm* bterm)
 
     std::string bname = bterm->getName();
 
-    if (_use_net_inst_ids) {
-      *_out << "    - " << bname << " + NET N" << net->getId();
-    } else {
-      std::string nname = net->getName();
-      *_out << "    - " << bname << " + NET " << nname;
-    }
+    std::string nname = net->getName();
+    *_out << "    - " << bname << " + NET " << nname;
 
     if (bterm->isSpecial()) {
       *_out << " + SPECIAL";
@@ -1033,20 +1016,11 @@ void DefOut::Impl::writeBPin(dbBPin* bpin, int cnt)
   std::string bname = bterm->getName();
 
   if (cnt == 0 || _version <= DefOut::DEF_5_6) {
-    if (_use_net_inst_ids) {
-      if (cnt == 0) {
-        *_out << "    - " << bname << " + NET N" << net->getId();
-      } else {
-        *_out << "    - " << bname << ".extra" << cnt << "+ NET N"
-              << net->getId();
-      }
+    std::string nname = net->getName();
+    if (cnt == 0) {
+      *_out << "    - " << bname << " + NET " << nname;
     } else {
-      std::string nname = net->getName();
-      if (cnt == 0) {
-        *_out << "    - " << bname << " + NET " << nname;
-      } else {
-        *_out << "    - " << bname << ".extra" << cnt << " + NET " << nname;
-      }
+      *_out << "    - " << bname << ".extra" << cnt << " + NET " << nname;
     }
 
     if (bterm->isSpecial()) {
@@ -1220,12 +1194,8 @@ void DefOut::Impl::writeBlockages(dbBlock* block)
     *_out << "    - LAYER " << layer->getName();
 
     if (inst) {
-      if (_use_net_inst_ids) {
-        *_out << " + COMPONENT I" << inst->getId();
-      } else {
-        std::string iname = inst->getName();
-        *_out << " + COMPONENT " << iname;
-      }
+      std::string iname = inst->getName();
+      *_out << " + COMPONENT " << iname;
     }
 
     if (obs->isSlotObstruction()) {
@@ -1292,12 +1262,8 @@ void DefOut::Impl::writeBlockages(dbBlock* block)
     }
 
     if (inst) {
-      if (_use_net_inst_ids) {
-        *_out << " + COMPONENT I" << inst->getId();
-      } else {
-        std::string iname = inst->getName();
-        *_out << " + COMPONENT " << iname;
-      }
+      std::string iname = inst->getName();
+      *_out << " + COMPONENT " << iname;
     }
 
     if (blk->isPushedDown()) {
@@ -1428,12 +1394,8 @@ void DefOut::Impl::writeSNet(dbNet* net)
 {
   dbSet<dbITerm> iterms = net->getITerms();
 
-  if (_use_net_inst_ids) {
-    *_out << "    - N" << net->getId();
-  } else {
-    std::string nname = net->getName();
-    *_out << "    - " << nname;
-  }
+  std::string nname = net->getName();
+  *_out << "    - " << nname;
 
   int i = 0;
 
@@ -1465,19 +1427,11 @@ void DefOut::Impl::writeSNet(dbNet* net)
       }
     } else {
       if ((++i & 7) == 0) {
-        if (_use_net_inst_ids) {
-          *_out << "\n      ( I" << inst->getId() << " " << mtname << " )";
-        } else {
-          std::string iname = inst->getName();
-          *_out << "\n      ( " << iname << " " << mtname << " )";
-        }
+        std::string iname = inst->getName();
+        *_out << "\n      ( " << iname << " " << mtname << " )";
       } else {
-        if (_use_net_inst_ids) {
-          *_out << " ( I" << inst->getId() << " " << mtname << " )";
-        } else {
-          std::string iname = inst->getName();
-          *_out << " ( " << iname << " " << mtname << " )";
-        }
+        std::string iname = inst->getName();
+        *_out << " ( " << iname << " " << mtname << " )";
       }
     }
   }
@@ -1947,12 +1901,8 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
 
 void DefOut::Impl::writeNet(dbNet* net)
 {
-  if (_use_net_inst_ids) {
-    *_out << "    - N" << net->getId();
-  } else {
-    std::string nname = net->getName();
-    *_out << "    - " << nname;
-  }
+  std::string nname = net->getName();
+  *_out << "    - " << nname;
 
   char ttname[max_name_length];
   int i = 0;
@@ -1982,12 +1932,8 @@ void DefOut::Impl::writeNet(dbNet* net)
       *_out << "\n     ";
     }
 
-    if (_use_net_inst_ids) {
-      *_out << " ( I" << inst->getId() << " " << mtname << " )";
-    } else {
-      std::string iname = inst->getName();
-      *_out << " ( " << iname << " " << mtname << " )";
-    }
+    std::string iname = inst->getName();
+    *_out << " ( " << iname << " " << mtname << " )";
   }
 
   if (net->getXTalkClass() != 0) {

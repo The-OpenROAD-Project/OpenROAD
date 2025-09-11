@@ -18,16 +18,6 @@ DefOut::DefOut(utl::Logger* logger)
 
 DefOut::~DefOut() = default;
 
-void DefOut::setUseNetInstIds(bool value)
-{
-  _writer->setUseNetInstIds(value);
-}
-
-void DefOut::setUseMasterIds(bool value)
-{
-  _writer->setUseMasterIds(value);
-}
-
 void DefOut::selectNet(dbNet* net)
 {
   _writer->selectNet(net);
