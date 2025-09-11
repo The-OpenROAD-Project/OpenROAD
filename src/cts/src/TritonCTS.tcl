@@ -59,20 +59,144 @@ proc set_cts_config { args } {
     keys {-wire_unit -sink_clustering_size \
           -num_static_layers -delay_buffer_derate\
           -distance_between_buffers -branching_point_buffers_distance \
+          -apply_ndr -clustering_exponent \
+          -clustering_unbalance_ratio -sink_clustering_max_diameter \
+          -macro_clustering_size -macro_clustering_max_diameter \
+          -sink_clustering_levels -tree_buf \
+          -sink_buffer_max_cap_derate -library}
+
+  sta::check_argc_eq0 "set_cts_config" $args
+
+  if { [info exists keys(-apply_ndr)] } {
+    set strategy $keys(-apply_ndr)
+    cts::set_apply_ndr $strategy
+  }
+  if { [info exists keys(-branching_point_buffers_distance)] } {
+    set distance $keys(-branching_point_buffers_distance)
+    cts::set_branching_point_buffers_distance [ord::microns_to_dbu $distance]
+  }
+  if { [info exists keys(-clustering_exponent)] } {
+    set exponent $keys(-clustering_exponent)
+    cts::set_clustering_exponent $exponent
+  }
+  if { [info exists keys(-clustering_unbalance_ratio)] } {
+    set unbalance $keys(-clustering_unbalance_ratio)
+    cts::set_clustering_unbalance_ratio $unbalance
+  }
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if { $buffer_derate < 0.0 } {
+      utl::error CTS 129 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
+  }
+  if { [info exists keys(-distance_between_buffers)] } {
+    set distance $keys(-distance_between_buffers)
+    cts::set_distance_between_buffers [ord::microns_to_dbu $distance]
+  }
+  if { [info exists keys(-library)] } {
+    set cts_library $keys(-library)
+    cts::set_cts_library $cts_library
+  }
+  if { [info exists keys(-macro_clustering_max_diameter)] } {
+    set distance $keys(-macro_clustering_max_diameter)
+    cts::set_macro_clustering_diameter $distance
+  }
+  if { [info exists keys(-macro_clustering_size)] } {
+    set size $keys(-macro_clustering_size)
+    cts::set_macro_clustering_size $size
+  }
+  if { [info exists keys(-num_static_layers)] } {
+    set num $keys(-num_static_layers)
+    cts::set_num_static_layers $num
+  }
+  if { [info exists keys(-sink_buffer_max_cap_derate)] } {
+    set derate $keys(-sink_buffer_max_cap_derate)
+    if { $derate > 1.0 || $derate < 0.0 } {
+      utl::error CTS 130 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
+    }
+    cts::set_sink_buffer_max_cap_derate $derate
+  }
+  if { [info exists keys(-sink_clustering_levels)] } {
+    set levels $keys(-sink_clustering_levels)
+    cts::set_sink_clustering_levels $levels
+  }
+  if { [info exists keys(-sink_clustering_max_diameter)] } {
+    set distance $keys(-sink_clustering_max_diameter)
+    cts::set_clustering_diameter $distance
+  }
+  if { [info exists keys(-sink_clustering_size)] } {
+    set size $keys(-sink_clustering_size)
+    cts::set_sink_clustering_size $size
+  }
+  if { [info exists keys(-tree_buf)] } {
+    set buf $keys(-tree_buf)
+    cts::set_tree_buf $buf
+  }
+  if { [info exists keys(-wire_unit)] } {
+    set wire_unit $keys(-wire_unit)
+    cts::set_wire_segment_distance_unit $wire_unit
+  }
+}
+
+sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
+                                             [-buf_list buflist] \
+                                             [-root_buf buf] \
+                                             [-clk_nets nets] \
+                                             [-tree_buf buf] \
+                                             [-distance_between_buffers] \
+                                             [-branching_point_buffers_distance] \
+                                             [-clustering_exponent] \
+                                             [-clustering_unbalance_ratio] \
+                                             [-sink_clustering_size] \
+                                             [-sink_clustering_max_diameter] \
+                                             [-macro_clustering_size] \
+                                             [-macro_clustering_max_diameter] \
+                                             [-sink_clustering_enable] \
+                                             [-balance_levels] \
+                                             [-sink_clustering_levels levels] \
+                                             [-num_static_layers] \
+                                             [-sink_clustering_buffer] \
+                                             [-obstruction_aware] \
+                                             [-no_obstruction_aware] \
+                                             [-apply_ndr strategy] \
+                                             [-sink_buffer_max_cap_derate] \
+                                             [-dont_use_dummy_load] \
+                                             [-delay_buffer_derate] \
+                                             [-library] \
+                                             [-repair_clock_nets] \
+                                             [-no_insertion_delay]
+} ;# checker off
+
+proc clock_tree_synthesis { args } {
+  sta::parse_key_args "clock_tree_synthesis" args \
+    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size \
+          -num_static_layers -sink_clustering_buffer \
+          -distance_between_buffers -branching_point_buffers_distance \
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
           -macro_clustering_size -macro_clustering_max_diameter \
           -sink_clustering_levels -tree_buf \
           -apply_ndr \
-          -sink_buffer_max_cap_derate -delay_buffer_derate -library}
+          -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
+    flags {-post_cts_disable -sink_clustering_enable -balance_levels \
+           -obstruction_aware -no_obstruction_aware \
+           -dont_use_dummy_load -repair_clock_nets -no_insertion_delay
+  } ;# checker off
 
-  sta::check_argc_eq0 "set_cts_config" $args
+  sta::check_argc_eq0 "clock_tree_synthesis" $args
 
   if { [info exists keys(-library)] } {
     set cts_library $keys(-library)
     cts::set_cts_library $cts_library
   }
-  
+
+  if { [info exists flags(-post_cts_disable)] } {
+    utl::warn CTS 115 "-post_cts_disable is obsolete."
+  }
+
+  cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
+
   if { [info exists keys(-sink_clustering_size)] } {
     set size $keys(-sink_clustering_size)
     cts::set_sink_clustering_size $size
@@ -92,6 +216,8 @@ proc set_cts_config { args } {
     set distance $keys(-macro_clustering_max_diameter)
     cts::set_macro_clustering_diameter $distance
   }
+
+  cts::set_balance_levels [info exists flags(-balance_levels)]
 
   if { [info exists keys(-sink_clustering_levels)] } {
     set levels $keys(-sink_clustering_levels)
@@ -121,62 +247,19 @@ proc set_cts_config { args } {
   if { [info exists keys(-clustering_unbalance_ratio)] } {
     set unbalance $keys(-clustering_unbalance_ratio)
     cts::set_clustering_unbalance_ratio $unbalance
-  } 
+  }
+
+  if { [info exists keys(-buf_list)] } {
+    set buf_list $keys(-buf_list)
+    cts::set_buffer_list $buf_list
+  } else {
+    cts::set_buffer_list ""
+  }
 
   if { [info exists keys(-wire_unit)] } {
     set wire_unit $keys(-wire_unit)
     cts::set_wire_segment_distance_unit $wire_unit
-  } 
-
-  if { [info exists keys(-tree_buf)] } {
-    set buf $keys(-tree_buf)
-    cts::set_tree_buf $buf
-  } 
-
-  if { [info exists keys(-apply_ndr)] } {
-    set strategy $keys(-apply_ndr)
-    cts::set_apply_ndr $strategy
   }
-
-  if { [info exists keys(-delay_buffer_derate)] } {
-    set buffer_derate $keys(-delay_buffer_derate)
-    if { $buffer_derate < 0.0 } {
-      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
-    }
-    cts::set_delay_buffer_derate $buffer_derate
-  }
-}
-
-sta::define_cmd_args "clock_tree_synthesis" {[-clk_nets nets] \
-                                             [-sink_clustering_enable] \
-                                             [-balance_levels] \
-					     [-buf_list] \
-                                             [-obstruction_aware] \
-                                             [-no_obstruction_aware] \
-                                             [-dont_use_dummy_load] \
-                                             [-repair_clock_nets] \
-					     [-root_buf] \
-					     [-sink_clustering_buffer] \
-                                             [-no_insertion_delay]
-} ;# checker off
-
-proc clock_tree_synthesis { args } {
-  sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-clk_nets -buf_list -root_buf -sink_clustering_buffer} \
-    flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-           -obstruction_aware -no_obstruction_aware \
-           -dont_use_dummy_load -repair_clock_nets -no_insertion_delay
-  } ;# checker off
-
-  sta::check_argc_eq0 "clock_tree_synthesis" $args
-
-  if { [info exists flags(-post_cts_disable)] } {
-    utl::warn CTS 115 "-post_cts_disable is obsolete."
-  }
-
-  cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
-
-  cts::set_balance_levels [info exists flags(-balance_levels)]
 
   if { [info exists keys(-clk_nets)] } {
     set clk_nets $keys(-clk_nets)
@@ -186,11 +269,9 @@ proc clock_tree_synthesis { args } {
     }
   }
 
-  if { [info exists keys(-buf_list)] } {
-    set buf_list $keys(-buf_list)
-    cts::set_buffer_list $buf_list
-  } else {
-    cts::set_buffer_list ""
+  if { [info exists keys(-tree_buf)] } {
+    set buf $keys(-tree_buf)
+    cts::set_tree_buf $buf
   }
 
   if { [info exists keys(-root_buf)] } {
@@ -207,6 +288,22 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer ""
   }
 
+  if { [info exists keys(-sink_buffer_max_cap_derate)] } {
+    set derate $keys(-sink_buffer_max_cap_derate)
+    if { $derate > 1.0 || $derate < 0.0 } {
+      utl::error CTS 109 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
+    }
+    cts::set_sink_buffer_max_cap_derate $derate
+  }
+
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if { $buffer_derate < 0.0 } {
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
+  }
+
   if { [info exists flags(-obstruction_aware)] } {
     utl::warn CTS 128 "-obstruction_aware is obsolete."
   }
@@ -218,6 +315,11 @@ proc clock_tree_synthesis { args } {
     cts::set_dummy_load false
   } else {
     cts::set_dummy_load true
+  }
+
+  if { [info exists keys(-apply_ndr)] } {
+    set strategy $keys(-apply_ndr)
+    cts::set_apply_ndr $strategy
   }
 
   if { [info exists flags(-repair_clock_nets)] } {
