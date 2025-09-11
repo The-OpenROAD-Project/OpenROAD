@@ -285,7 +285,6 @@ Appendix :
 */
 
 #include <cmath>
-#include <iostream>
 
 namespace gpl {
 

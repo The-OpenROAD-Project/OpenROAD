@@ -3,7 +3,6 @@
 
 #include "dbWire.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <optional>

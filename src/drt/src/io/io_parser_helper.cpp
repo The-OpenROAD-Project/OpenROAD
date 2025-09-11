@@ -2,13 +2,9 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <chrono>
-#include <fstream>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <set>
-#include <sstream>
 #include <tuple>
 #include <utility>
 #include <vector>

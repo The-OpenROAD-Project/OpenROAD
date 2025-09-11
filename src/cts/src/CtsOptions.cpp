@@ -3,6 +3,8 @@
 
 #include "CtsOptions.h"
 
+#include <algorithm>
+
 #include "odb/db.h"
 
 namespace cts {

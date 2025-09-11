@@ -3,12 +3,10 @@
 
 #include "dr/FlexDR_graphics.h"
 
-#include <algorithm>
 #include <any>
 #include <cassert>
 #include <cstdio>
 #include <functional>
-#include <limits>
 #include <string>
 #include <tuple>
 #include <utility>

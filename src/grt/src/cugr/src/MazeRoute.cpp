@@ -89,17 +89,16 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
   // 3. Add same-layer connections
   edges_.resize(vertices_.size(), {-1, -1, -1});
   costs_.resize(vertices_.size(), {-1, -1, -1});
-  auto addSameLayerEdge
-      = [&](const unsigned direction, const int xi, const int yi) {
-          const int u = getVertexIndex(direction, xi, yi);
-          const int v = direction == MetalLayer::H ? u + 1 : u + xs_.size();
-          const PointT U(xs_[xi], ys_[yi]);
-          const PointT V(xs_[xi + 1 - direction], ys_[yi + direction]);
+  auto addSameLayerEdge = [&](const int direction, const int xi, const int yi) {
+    const int u = getVertexIndex(direction, xi, yi);
+    const int v = direction == MetalLayer::H ? u + 1 : u + xs_.size();
+    const PointT U(xs_[xi], ys_[yi]);
+    const PointT V(xs_[xi + 1 - direction], ys_[yi + direction]);
 
-          edges_[u][0] = v;
-          edges_[v][1] = u;
-          costs_[u][0] = costs_[v][1] = wire_cost_view.sum(U, V);
-        };
+    edges_[u][0] = v;
+    edges_[v][1] = u;
+    costs_[u][0] = costs_[v][1] = wire_cost_view.sum(U, V);
+  };
 
   for (int direction = 0; direction < 2; direction++) {
     if (direction == MetalLayer::H) {
