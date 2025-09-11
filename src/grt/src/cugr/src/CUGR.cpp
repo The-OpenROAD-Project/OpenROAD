@@ -50,14 +50,20 @@ void CUGR::init(const int min_routing_layer, const int max_routing_layer)
   }
 }
 
-void CUGR::route()
+void CUGR::updateOverflowNets(std::vector<int>& netIndices)
 {
-  std::vector<int> netIndices;
-  netIndices.reserve(gr_nets_.size());
+  netIndices.clear();
   for (const auto& net : gr_nets_) {
-    netIndices.push_back(net->getIndex());
+    if (grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
+      netIndices.push_back(net->getIndex());
+    }
   }
-  // Stage 1: Pattern routing
+  logger_->report(
+      "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
+}
+
+void CUGR::patternRoute(std::vector<int>& netIndices)
+{
   logger_->report("stage 1: pattern routing");
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
@@ -69,88 +75,81 @@ void CUGR::route()
     grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree());
   }
 
-  netIndices.clear();
+  updateOverflowNets(netIndices);
+}
+
+void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
+{
+  if (netIndices.empty()) {
+    return;
+  }
+  logger_->report("stage 2: pattern routing with possible detours");
+  // (2d) direction -> x -> y -> has overflow?
+  GridGraphView<bool> congestionView;
+  grid_graph_->extractCongestionView(congestionView);
+  sortNetIndices(netIndices);
+  for (const int netIndex : netIndices) {
+    GRNet* net = gr_nets_[netIndex].get();
+    grid_graph_->commitTree(net->getRoutingTree(), true);
+    PatternRoute patternRoute(net, grid_graph_.get(), stt_builder_, constants_);
+    patternRoute.constructSteinerTree();
+    patternRoute.constructRoutingDAG();
+    // KEY DIFFERENCE compared to stage 1 (patternRoute)
+    patternRoute.constructDetours(congestionView);
+    patternRoute.run();
+    grid_graph_->commitTree(net->getRoutingTree());
+  }
+
+  updateOverflowNets(netIndices);
+}
+
+void CUGR::mazeRoute(std::vector<int>& netIndices)
+{
+  if (netIndices.empty()) {
+    return;
+  }
+  logger_->report("stage 3: maze routing on sparsified routing graph");
+  for (const int netIndex : netIndices) {
+    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(), true);
+  }
+  GridGraphView<CostT> wireCostView;
+  grid_graph_->extractWireCostView(wireCostView);
+  sortNetIndices(netIndices);
+  SparseGrid grid(10, 10, 0, 0);
+  for (const int netIndex : netIndices) {
+    GRNet* net = gr_nets_[netIndex].get();
+    MazeRoute mazeRoute(net, grid_graph_.get());
+    mazeRoute.constructSparsifiedGraph(wireCostView, grid);
+    mazeRoute.run();
+    std::shared_ptr<SteinerTreeNode> tree = mazeRoute.getSteinerTree();
+    assert(tree != nullptr);
+
+    PatternRoute patternRoute(net, grid_graph_.get(), stt_builder_, constants_);
+    patternRoute.setSteinerTree(tree);
+    patternRoute.constructRoutingDAG();
+    patternRoute.run();
+
+    grid_graph_->commitTree(net->getRoutingTree());
+    grid_graph_->updateWireCostView(wireCostView, net->getRoutingTree());
+    grid.step();
+  }
+
+  updateOverflowNets(netIndices);
+}
+
+void CUGR::route()
+{
+  std::vector<int> netIndices;
+  netIndices.reserve(gr_nets_.size());
   for (const auto& net : gr_nets_) {
-    if (grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
-      netIndices.push_back(net->getIndex());
-    }
-  }
-  logger_->report(
-      "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
-
-  // Stage 2: Pattern routing with possible detours
-  if (!netIndices.empty()) {
-    logger_->report("stage 2: pattern routing with possible detours");
-    GridGraphView<bool>
-        congestionView;  // (2d) direction -> x -> y -> has overflow?
-    grid_graph_->extractCongestionView(congestionView);
-    // for (const int netIndex : netIndices) {
-    //     GRNet& net = gr_nets_[netIndex];
-    //     grid_graph_->commitTree(net->getRoutingTree(), true);
-    // }
-    sortNetIndices(netIndices);
-    for (const int netIndex : netIndices) {
-      GRNet* net = gr_nets_[netIndex].get();
-      grid_graph_->commitTree(net->getRoutingTree(), true);
-      PatternRoute patternRoute(
-          net, grid_graph_.get(), stt_builder_, constants_);
-      patternRoute.constructSteinerTree();
-      patternRoute.constructRoutingDAG();
-      patternRoute.constructDetours(
-          congestionView);  // KEY DIFFERENCE compared to stage 1
-      patternRoute.run();
-      grid_graph_->commitTree(net->getRoutingTree());
-    }
-
-    netIndices.clear();
-    for (const auto& net : gr_nets_) {
-      if (grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
-        netIndices.push_back(net->getIndex());
-      }
-    }
-    logger_->report(
-        "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
+    netIndices.push_back(net->getIndex());
   }
 
-  // Stage 3: maze routing on sparsified routing graph
-  if (!netIndices.empty()) {
-    logger_->report("stage 3: maze routing on sparsified routing graph");
-    for (const int netIndex : netIndices) {
-      grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(), true);
-    }
-    GridGraphView<CostT> wireCostView;
-    grid_graph_->extractWireCostView(wireCostView);
-    sortNetIndices(netIndices);
-    SparseGrid grid(10, 10, 0, 0);
-    for (const int netIndex : netIndices) {
-      GRNet* net = gr_nets_[netIndex].get();
-      // grid_graph_->commitTree(net->getRoutingTree(), true);
-      // grid_graph_->updateWireCostView(wireCostView, net->getRoutingTree());
-      MazeRoute mazeRoute(net, grid_graph_.get());
-      mazeRoute.constructSparsifiedGraph(wireCostView, grid);
-      mazeRoute.run();
-      std::shared_ptr<SteinerTreeNode> tree = mazeRoute.getSteinerTree();
-      assert(tree != nullptr);
+  patternRoute(netIndices);
 
-      PatternRoute patternRoute(
-          net, grid_graph_.get(), stt_builder_, constants_);
-      patternRoute.setSteinerTree(tree);
-      patternRoute.constructRoutingDAG();
-      patternRoute.run();
+  patternRouteWithDetours(netIndices);
 
-      grid_graph_->commitTree(net->getRoutingTree());
-      grid_graph_->updateWireCostView(wireCostView, net->getRoutingTree());
-      grid.step();
-    }
-    netIndices.clear();
-    for (const auto& net : gr_nets_) {
-      if (grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
-        netIndices.push_back(net->getIndex());
-      }
-    }
-    logger_->report(
-        "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
-  }
+  mazeRoute(netIndices);
 
   printStatistics();
   if (constants_.write_heatmap) {
