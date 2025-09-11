@@ -170,10 +170,10 @@ void CUGR::write(const std::string& guide_file)
     ss << net->getName() << '\n';
     ss << "(\n";
     for (const auto& guide : guides) {
-      ss << grid_graph_->getGridline(0, guide.second.x.low) << " "
-         << grid_graph_->getGridline(1, guide.second.y.low) << " "
-         << grid_graph_->getGridline(0, guide.second.x.high + 1) << " "
-         << grid_graph_->getGridline(1, guide.second.y.high + 1) << " "
+      ss << grid_graph_->getGridline(0, guide.second.x.low()) << " "
+         << grid_graph_->getGridline(1, guide.second.y.low()) << " "
+         << grid_graph_->getGridline(0, guide.second.x.high() + 1) << " "
+         << grid_graph_->getGridline(1, guide.second.y.high() + 1) << " "
          << grid_graph_->getLayerName(guide.first) << "\n";
     }
     ss << ")\n";
@@ -285,7 +285,7 @@ void CUGR::getGuides(const GRNet* net,
 
   auto getSpareResource = [&](const GRPoint& point) {
     double resource = std::numeric_limits<double>::max();
-    unsigned direction = grid_graph_->getLayerDirection(point.getLayerIdx());
+    int direction = grid_graph_->getLayerDirection(point.getLayerIdx());
     if (point[direction] + 1 < grid_graph_->getSize(direction)) {
       resource = std::min(
           resource,
@@ -337,8 +337,7 @@ void CUGR::getGuides(const GRNet* net,
         for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             double wire_patch_threshold = constants_.wire_patch_threshold;
-            unsigned direction
-                = grid_graph_->getLayerDirection(node->getLayerIdx());
+            int direction = grid_graph_->getLayerDirection(node->getLayerIdx());
             int l = std::min((*node)[direction], (*child)[direction]);
             int h = std::max((*node)[direction], (*child)[direction]);
             int r = (*node)[1 - direction];
@@ -391,7 +390,7 @@ void CUGR::printStatistics() const
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
             if (node->getLayerIdx() == child->getLayerIdx()) {
-              unsigned direction
+              int direction
                   = grid_graph_->getLayerDirection(node->getLayerIdx());
               int l = std::min((*node)[direction], (*child)[direction]);
               int h = std::max((*node)[direction], (*child)[direction]);
@@ -417,7 +416,7 @@ void CUGR::printStatistics() const
   for (int layerIndex = constants_.min_routing_layer;
        layerIndex < grid_graph_->getNumLayers();
        layerIndex++) {
-    unsigned direction = grid_graph_->getLayerDirection(layerIndex);
+    int direction = grid_graph_->getLayerDirection(layerIndex);
     for (int x = 0; x < grid_graph_->getSize(0) - 1 + direction; x++) {
       for (int y = 0; y < grid_graph_->getSize(1) - direction; y++) {
         CapacityT resource

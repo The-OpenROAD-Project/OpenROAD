@@ -240,9 +240,9 @@ int Design::readSpecialNetObstructions()
 void Design::computeGrid()
 {
   gridlines_.resize(2);
-  for (unsigned dimension = 0; dimension < 2; dimension++) {
-    const int low = die_region_[dimension].low;
-    const int high = die_region_[dimension].high;
+  for (int dimension = 0; dimension < 2; dimension++) {
+    const int low = die_region_[dimension].low();
+    const int high = die_region_[dimension].high();
     for (int i = low; i + default_gridline_spacing_ < high;
          i += default_gridline_spacing_) {
       gridlines_[dimension].push_back(i);
