@@ -11,39 +11,39 @@
 
 namespace odb {
 
-defout::defout(utl::Logger* logger)
+DefOut::DefOut(utl::Logger* logger)
 {
   _writer = std::make_unique<Impl>(logger);
 }
 
-defout::~defout() = default;
+DefOut::~DefOut() = default;
 
-void defout::setUseLayerAlias(bool value)
+void DefOut::setUseLayerAlias(bool value)
 {
   _writer->setUseLayerAlias(value);
 }
 
-void defout::setUseNetInstIds(bool value)
+void DefOut::setUseNetInstIds(bool value)
 {
   _writer->setUseNetInstIds(value);
 }
 
-void defout::setUseMasterIds(bool value)
+void DefOut::setUseMasterIds(bool value)
 {
   _writer->setUseMasterIds(value);
 }
 
-void defout::selectNet(dbNet* net)
+void DefOut::selectNet(dbNet* net)
 {
   _writer->selectNet(net);
 }
 
-void defout::setVersion(Version v)
+void DefOut::setVersion(Version v)
 {
   _writer->setVersion(v);
 }
 
-bool defout::writeBlock(dbBlock* block, const char* def_file)
+bool DefOut::writeBlock(dbBlock* block, const char* def_file)
 {
   return _writer->writeBlock(block, def_file);
 }

@@ -60,10 +60,10 @@ odb::dbChip* read_def(odb::dbTech* tech, std::string path)
 
 int write_def(odb::dbBlock* block,
               const char* path,
-              odb::defout::Version version)
+              odb::DefOut::Version version)
 {
   utl::Logger* logger = new utl::Logger(nullptr);
-  odb::defout writer(logger);
+  odb::DefOut writer(logger);
   writer.setVersion(version);
   return writer.writeBlock(block, path);
 }

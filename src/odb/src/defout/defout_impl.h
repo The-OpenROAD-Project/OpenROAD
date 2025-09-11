@@ -25,7 +25,7 @@ class dbInst;
 class dbTechNonDefaultRule;
 class dbTechLayerRule;
 
-class defout::Impl
+class DefOut::Impl
 {
  public:
   Impl(utl::Logger* logger)
@@ -38,7 +38,7 @@ class defout::Impl
     _select_net_map = nullptr;
     _select_inst_map = nullptr;
     _non_default_rule = nullptr;
-    _version = defout::DEF_5_8;
+    _version = DefOut::DEF_5_8;
     _logger = logger;
   }
 

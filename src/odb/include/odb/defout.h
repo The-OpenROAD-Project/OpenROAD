@@ -16,7 +16,7 @@ namespace odb {
 class dbNet;
 class dbBlock;
 
-class defout
+class DefOut
 {
  public:
   enum Version
@@ -29,8 +29,8 @@ class defout
     DEF_5_8
   };
 
-  defout(utl::Logger* logger);
-  ~defout();
+  DefOut(utl::Logger* logger);
+  ~DefOut();
 
   void setUseLayerAlias(bool value);
   void setUseNetInstIds(bool value);

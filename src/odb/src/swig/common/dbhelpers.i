@@ -13,7 +13,7 @@ odb::dbChip* read_def(odb::dbTech* tech, std::string path);
 
 int write_def(odb::dbBlock* block,
               const char* path,
-              odb::defout::Version version = odb::defout::Version::DEF_5_8);
+              odb::DefOut::Version version = odb::DefOut::Version::DEF_5_8);
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path);
 
