@@ -355,7 +355,7 @@ void OpenRoad::readDef(const char* filename,
   def_reader.readChip(search_libs, filename, chip);
 }
 
-static odb::defout::Version stringToDefVersion(const string& version)
+static odb::defout::Version stringToDefVersion(const std::string& version)
 {
   if (version == "5.8") {
     return odb::defout::Version::DEF_5_8;
@@ -383,7 +383,7 @@ void OpenRoad::writeDef(const char* filename, const char* version)
   writeDef(filename, std::string(version));
 }
 
-void OpenRoad::writeDef(const char* filename, const string& version)
+void OpenRoad::writeDef(const char* filename, const std::string& version)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
@@ -443,7 +443,7 @@ void OpenRoad::writeLef(const char* filename)
       std::string name(filename);
       if (cnt > 0) {
         auto pos = name.rfind('.');
-        if (pos != string::npos) {
+        if (pos != std::string::npos) {
           name.insert(pos, "_" + std::to_string(cnt));
         } else {
           name += "_" + std::to_string(cnt);

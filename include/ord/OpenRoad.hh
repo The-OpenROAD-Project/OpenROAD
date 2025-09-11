@@ -126,8 +126,6 @@ class EstimateParasitics;
 
 namespace ord {
 
-using std::string;
-
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -205,7 +203,7 @@ class OpenRoad
   void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                const string& version);
+                const std::string& version);
 
   void writeCdl(const char* out_filename,
                 const std::vector<const char*>& masters_filenames,
