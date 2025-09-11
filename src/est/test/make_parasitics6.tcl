@@ -33,5 +33,5 @@ estimate_parasitics -placement -spef_file [make_result_file make_parasitics6.spe
 report_net r1/Q -corner ff
 report_net r1/Q -corner ss
 
-diff_file make_parasitics6_ff.spefok results/make_parasitics6_ff.spef
-diff_file make_parasitics6_ss.spefok results/make_parasitics6_ss.spef
+diff_file make_parasitics6_ff.spefok results/make_parasitics6-tcl_ff.spef
+diff_file make_parasitics6_ss.spefok results/make_parasitics6-tcl_ss.spef
