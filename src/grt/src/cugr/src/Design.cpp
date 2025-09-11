@@ -102,7 +102,7 @@ void Design::readNetlist()
         }
       }
 
-      pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
+      pins.emplace_back(pin_count, db_bterm, pin_shapes);
       pin_count++;
     }
 
@@ -125,7 +125,7 @@ void Design::readNetlist()
         }
       }
 
-      pins.emplace_back(pin_count, db_iterm, pin_shapes, false);
+      pins.emplace_back(pin_count, db_iterm, pin_shapes);
       pin_count++;
     }
     nets_.emplace_back(net_index, db_net, pins);

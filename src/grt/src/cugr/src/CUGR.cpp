@@ -58,8 +58,8 @@ void CUGR::updateOverflowNets(std::vector<int>& netIndices)
       netIndices.push_back(net->getIndex());
     }
   }
-  logger_->report(
-      "{} / {} gr_nets_ have overflows.", netIndices.size(), gr_nets_.size());
+  const int num_nets = gr_nets_.size();
+  logger_->report("{} / {} nets have overflow.", netIndices.size(), num_nets);
 }
 
 void CUGR::patternRoute(std::vector<int>& netIndices)
@@ -195,46 +195,48 @@ NetRouteMap CUGR::getRoutes()
     odb::dbNet* db_net = net->getDbNet();
     GRoute& route = routes[db_net];
 
-    const int half_gcell_size = design_->getGridlineSize() / 2;
+    const int half_gcell = design_->getGridlineSize() / 2;
 
     auto& routing_tree = net->getRoutingTree();
-    if (routing_tree) {
-      GRTreeNode::preorder(
-          routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-            for (const auto& child : node->getChildren()) {
-              if (node->getLayerIdx() == child->getLayerIdx()) {
-                auto [min_x, max_x] = std::minmax({node->x(), child->x()});
-                auto [min_y, max_y] = std::minmax({node->y(), child->y()});
-                GSegment segment(
-                    grid_graph_->getGridline(0, min_x) + half_gcell_size,
-                    grid_graph_->getGridline(1, min_y) + half_gcell_size,
-                    node->getLayerIdx() + 1,
-                    grid_graph_->getGridline(0, max_x) + half_gcell_size,
-                    grid_graph_->getGridline(1, max_y) + half_gcell_size,
-                    child->getLayerIdx() + 1,
-                    false);
-                route.push_back(segment);
-              } else {
-                const int bottom_layer
-                    = std::min(node->getLayerIdx(), child->getLayerIdx());
-                const int top_layer
-                    = std::max(node->getLayerIdx(), child->getLayerIdx());
-                for (int layer_idx = bottom_layer; layer_idx < top_layer;
-                     layer_idx++) {
-                  GSegment segment(
-                      grid_graph_->getGridline(0, node->x()) + half_gcell_size,
-                      grid_graph_->getGridline(1, node->y()) + half_gcell_size,
-                      layer_idx + 1,
-                      grid_graph_->getGridline(0, node->x()) + half_gcell_size,
-                      grid_graph_->getGridline(1, node->y()) + half_gcell_size,
-                      layer_idx + 2,
-                      true);
-                  route.push_back(segment);
-                }
+    if (!routing_tree) {
+      continue;
+    }
+    GRTreeNode::preorder(
+        routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+          for (const auto& child : node->getChildren()) {
+            if (node->getLayerIdx() == child->getLayerIdx()) {
+              auto [min_x, max_x] = std::minmax({node->x(), child->x()});
+              auto [min_y, max_y] = std::minmax({node->y(), child->y()});
+
+              // convert to dbu
+              min_x = grid_graph_->getGridline(0, min_x) + half_gcell;
+              min_y = grid_graph_->getGridline(1, min_y) + half_gcell;
+              max_x = grid_graph_->getGridline(0, max_x) + half_gcell;
+              max_y = grid_graph_->getGridline(1, max_y) + half_gcell;
+
+              route.emplace_back(min_x,
+                                 min_y,
+                                 node->getLayerIdx() + 1,
+                                 max_x,
+                                 max_y,
+                                 child->getLayerIdx() + 1,
+                                 false);
+            } else {
+              const auto [bottom_layer, top_layer]
+                  = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+              for (int layer_idx = bottom_layer; layer_idx < top_layer;
+                   layer_idx++) {
+                const int x
+                    = grid_graph_->getGridline(0, node->x()) + half_gcell;
+                const int y
+                    = grid_graph_->getGridline(1, node->y()) + half_gcell;
+
+                route.emplace_back(
+                    x, y, layer_idx + 1, x, y, layer_idx + 2, true);
               }
             }
-          });
-    }
+          }
+        });
   }
 
   return routes;
@@ -270,7 +272,7 @@ void CUGR::getGuides(const GRNet* net,
                                      std::max(node->x(), child->x()),
                                      std::max(node->y(), child->y())));
           } else {
-            int maxLayerIndex
+            const int maxLayerIndex
                 = std::max(node->getLayerIdx(), child->getLayerIdx());
             for (int layerIdx
                  = std::min(node->getLayerIdx(), child->getLayerIdx());
@@ -284,7 +286,7 @@ void CUGR::getGuides(const GRNet* net,
 
   auto getSpareResource = [&](const GRPoint& point) {
     double resource = std::numeric_limits<double>::max();
-    int direction = grid_graph_->getLayerDirection(point.getLayerIdx());
+    const int direction = grid_graph_->getLayerDirection(point.getLayerIdx());
     if (point[direction] + 1 < grid_graph_->getSize(direction)) {
       resource = std::min(
           resource,
@@ -336,15 +338,16 @@ void CUGR::getGuides(const GRNet* net,
         for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             double wire_patch_threshold = constants_.wire_patch_threshold;
-            int direction = grid_graph_->getLayerDirection(node->getLayerIdx());
-            int l = std::min((*node)[direction], (*child)[direction]);
-            int h = std::max((*node)[direction], (*child)[direction]);
-            int r = (*node)[1 - direction];
+            const int direction
+                = grid_graph_->getLayerDirection(node->getLayerIdx());
+            const int l = std::min((*node)[direction], (*child)[direction]);
+            const int h = std::max((*node)[direction], (*child)[direction]);
+            const int r = (*node)[1 - direction];
             for (int c = l; c <= h; c++) {
               bool patched = false;
-              GRPoint point = (direction == MetalLayer::H
-                                   ? GRPoint(node->getLayerIdx(), c, r)
-                                   : GRPoint(node->getLayerIdx(), r, c));
+              const GRPoint point = (direction == MetalLayer::H
+                                         ? GRPoint(node->getLayerIdx(), c, r)
+                                         : GRPoint(node->getLayerIdx(), r, c));
               if (getSpareResource(point) < wire_patch_threshold) {
                 for (int layerIndex = node->getLayerIdx() - 1;
                      layerIndex <= node->getLayerIdx() + 1;
@@ -389,15 +392,15 @@ void CUGR::printStatistics() const
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
             if (node->getLayerIdx() == child->getLayerIdx()) {
-              int direction
+              const int direction
                   = grid_graph_->getLayerDirection(node->getLayerIdx());
-              int l = std::min((*node)[direction], (*child)[direction]);
-              int h = std::max((*node)[direction], (*child)[direction]);
-              int r = (*node)[1 - direction];
+              const int l = std::min((*node)[direction], (*child)[direction]);
+              const int h = std::max((*node)[direction], (*child)[direction]);
+              const int r = (*node)[1 - direction];
               for (int c = l; c < h; c++) {
                 wireLength += grid_graph_->getEdgeLength(direction, c);
-                int x = direction == MetalLayer::H ? c : r;
-                int y = direction == MetalLayer::H ? r : c;
+                const int x = direction == MetalLayer::H ? c : r;
+                const int y = direction == MetalLayer::H ? r : c;
                 wireUsage[node->getLayerIdx()][x][y] += 1;
               }
             } else {
@@ -415,17 +418,17 @@ void CUGR::printStatistics() const
   for (int layerIndex = constants_.min_routing_layer;
        layerIndex < grid_graph_->getNumLayers();
        layerIndex++) {
-    int direction = grid_graph_->getLayerDirection(layerIndex);
+    const int direction = grid_graph_->getLayerDirection(layerIndex);
     for (int x = 0; x < grid_graph_->getSize(0) - 1 + direction; x++) {
       for (int y = 0; y < grid_graph_->getSize(1) - direction; y++) {
-        CapacityT resource
+        const CapacityT resource
             = grid_graph_->getEdge(layerIndex, x, y).getResource();
         if (resource < minResource) {
           minResource = resource;
           bottleneck = {layerIndex, x, y};
         }
-        CapacityT usage = wireUsage[layerIndex][x][y];
-        CapacityT capacity
+        const CapacityT usage = wireUsage[layerIndex][x][y];
+        const CapacityT capacity
             = std::max(grid_graph_->getEdge(layerIndex, x, y).capacity, 0.0);
         if (usage > 0.0 && usage > capacity) {
           overflow += usage - capacity;
