@@ -1982,6 +1982,41 @@ bool RepairDesign::hasInputPort(const Net* net)
   return has_top_level_port;
 }
 
+bool RepairDesign::renameNetIfNeeded(dbNet* net, sta::Instance* parent_inst)
+{
+  if (db_network_->hasHierarchy() == false) {
+    return false;
+  }
+
+  // Get the target parent dbModule from the given input
+  odb::dbModInst* parent_mod_inst = db_network_->getModInst(parent_inst);
+  odb::dbModule* target_parent_module = db_network_->block()->getTopModule();
+  if (parent_mod_inst) {
+    target_parent_module = parent_mod_inst->getParent();
+  }
+
+  // Get the parent dbModule of the target net
+  odb::dbModule* net_parent_module = net->findMainParentModule();
+
+  // Condition 1: Net parent scope is different from the given parent scope
+  bool need_rename = (target_parent_module != net_parent_module);
+
+  // Condition 2: Check for base name collision in the target parent scope
+  const std::string net_name = net->getName();
+  if (!need_rename && target_parent_module->getModNet(net_name.c_str())) {
+    need_rename = true;
+  }
+
+  // Rename the net
+  if (need_rename) {
+    const std::string new_name
+        = db_network_->block()->makeNewNetName(parent_mod_inst);
+    net->rename(new_name.c_str());
+  }
+
+  return need_rename;
+}
+
 bool RepairDesign::makeRepeater(
     const char* reason,
     int x,
@@ -2341,6 +2376,7 @@ bool RepairDesign::makeRepeater(
 
   odb::dbModNet* driver_pin_mod_net = db_network_->hierNet(driver_pin);
 
+  // TODO: Refactor this later
   // original code to preserve regressions
   // It turns out that original code is sensitive to buffer
   // connection order. To preserve backward compatibility
@@ -2443,7 +2479,7 @@ bool RepairDesign::makeRepeater(
       //
       // Case 1
       //------
-      // A primary input or do not preserve the outputs
+      // Driver is a primary input or loads do not have primary output
       //
       // use orig net as buffer ip (keep primary input name exposed)
       // use new net as buffer op (ok to use new name on op of buffer).
@@ -2455,7 +2491,8 @@ bool RepairDesign::makeRepeater(
       //
       // Copy signal type to new net.
       //
-      dbNet* ip_net_db = load_db_net;
+      dbNet* ip_net_db = load_db_net;  // orig net
+                                       // the name 'load_db_net' is misleading
       dbNet* op_net_db = db_network_->staToDb(new_net);
       op_net_db->setSigType(ip_net_db->getSigType());
       out_net = new_net;
@@ -2469,31 +2506,35 @@ bool RepairDesign::makeRepeater(
       // this means hiearchical connect can use the buffer_op_pin
       // net, a new net, without having to make a new one).
       //
-      db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
+
+      // jk: fix
+      Net* driver_hier_net
+          = db_network_->dbToSta(db_network_->hierNet(driver_pin));
+      db_network_->connectPin(buffer_ip_pin, buffer_ip_net, driver_hier_net);
       db_network_->connectPin(buffer_op_pin, buffer_op_net);
 
       // The new net is on the output side, we leave the driver
       // untouched and clean it up later.
 
-      for (const Pin* pin : load_pins) {
-        Instance* inst = network_->instance(pin);
+      for (const Pin* load_pin : load_pins) {
+        Instance* inst = network_->instance(load_pin);
         if (resizer_->dontTouch(inst)) {
           continue;
         }
 
-        load_db_net = db_network_->flatNet(pin);
+        load_db_net = db_network_->flatNet(load_pin);
 
         Instance* load_instance_parent
-            = db_network_->getOwningInstanceParent(const_cast<Pin*>(pin));
+            = db_network_->getOwningInstanceParent(const_cast<Pin*>(load_pin));
 
         // disconnect the load pin from everything
-        db_network_->disconnectPin(const_cast<Pin*>(pin));
+        db_network_->disconnectPin(const_cast<Pin*>(load_pin));
 
         if (driver_instance_parent != load_instance_parent) {
           db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
-                                           db_network_->flatPin(pin));
+                                           db_network_->flatPin(load_pin));
         } else {
-          db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
+          db_network_->connectPin(const_cast<Pin*>(load_pin), buffer_op_net);
         }
       }
 
@@ -2505,9 +2546,9 @@ bool RepairDesign::makeRepeater(
       // related pins are updated to use the hierarchical net.
       //
 
+      // jk: needed?
       odb::dbModNet* buffer_op_pin_mod_net
           = db_network_->hierNet(buffer_op_pin);
-
       dbNet* buffer_op_pin_flat_net = db_network_->flatNet(buffer_op_pin);
       if (buffer_op_pin_mod_net) {
         db_network_->disconnectPin(buffer_op_pin);
@@ -2521,8 +2562,11 @@ bool RepairDesign::makeRepeater(
       // So detect any hierarchical nets reachable from driver pin
       // at this level of hierarchy and renormalize.
 
+      // jk: needed?
       odb::dbModNet* driver_pin_mod_net
-          = db_network_->findModNetForPin(driver_pin);
+          // = db_network_->findModNetForPin(driver_pin); // buggy. it returns
+          // "any" dbModNet
+          = db_network_->hierNet(driver_pin);
 
       if (driver_pin_mod_net && (driver_pin_mod_net->connectionCount() == 1)) {
         db_network_->disconnectPin(driver_pin, (Net*) driver_pin_mod_net);
@@ -2533,6 +2577,10 @@ bool RepairDesign::makeRepeater(
                                 db_network_->dbToSta(driver_pin_flat_net),
                                 db_network_->dbToSta(driver_pin_mod_net));
       }
+
+      // Rename the flat net if it has duplicate name in the parent scope
+      // renameNetIfNeeded(ip_net_db, parent);
+
     } else /* case 2 */ {
       //
       // case 2. One of the loads is a primary output or a dont touch
