@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <iostream>
 #include <list>
 #include <map>
 #include <memory>
@@ -16,6 +15,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"

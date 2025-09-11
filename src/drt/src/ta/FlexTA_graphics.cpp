@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 

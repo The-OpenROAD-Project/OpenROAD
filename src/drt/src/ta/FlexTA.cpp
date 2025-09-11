@@ -18,6 +18,7 @@
 #include "frProfileTask.h"
 #include "global.h"
 #include "ta/AbstractTAGraphics.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {
@@ -78,7 +79,7 @@ int FlexTAWorker::main_mt()
 }
 
 FlexTA::FlexTA(frDesign* in,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg,
                bool save_updates)
     : tech_(in->getTech()),

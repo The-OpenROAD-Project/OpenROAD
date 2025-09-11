@@ -3,7 +3,6 @@
 
 #include "UnbufferMove.hh"
 
-#include <algorithm>
 #include <cmath>
 #include <string>
 

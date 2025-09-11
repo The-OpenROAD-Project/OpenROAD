@@ -11,11 +11,18 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
+#include "frRegionQuery.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
 

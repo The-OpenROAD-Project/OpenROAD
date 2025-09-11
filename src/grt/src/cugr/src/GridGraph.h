@@ -10,6 +10,8 @@
 #include "CUGR.h"
 #include "Design.h"
 #include "GRTree.h"
+#include "Layers.h"
+#include "geo.h"
 #include "robin_hood.h"
 
 namespace grt {
@@ -33,30 +35,27 @@ class GridGraph
   GridGraph(const Design* design, const Constants& constants);
   int getLibDBU() const { return lib_dbu_; }
   int getM2Pitch() const { return m2_pitch_; }
-  unsigned getNumLayers() const { return num_layers_; }
-  unsigned getSize(unsigned dimension) const
-  {
-    return (dimension ? y_size_ : x_size_);
-  }
+  int getNumLayers() const { return num_layers_; }
+  int getSize(int dimension) const { return (dimension ? y_size_ : x_size_); }
   std::string getLayerName(int layer_index) const
   {
     return layer_names_[layer_index];
   }
-  unsigned getLayerDirection(int layer_index) const
+  int getLayerDirection(int layer_index) const
   {
     return layer_directions_[layer_index];
   }
 
   uint64_t hashCell(const GRPoint& point) const
   {
-    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x) * y_size_
-           + point.y;
+    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x()) * y_size_
+           + point.y();
   };
   uint64_t hashCell(const int x, const int y) const
   {
     return (uint64_t) x * y_size_ + y;
   }
-  int getGridline(const unsigned dimension, const int index) const
+  int getGridline(const int dimension, const int index) const
   {
     return gridlines_[dimension][index];
   }
@@ -68,7 +67,7 @@ class GridGraph
   }
 
   // Costs
-  int getEdgeLength(unsigned direction, unsigned edge_index) const;
+  int getEdgeLength(int direction, int edge_index) const;
   CostT getWireCost(int layer_index, PointT u, PointT v) const;
   CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
@@ -112,13 +111,13 @@ class GridGraph
   const int lib_dbu_;
   int m2_pitch_;
 
-  unsigned num_layers_;
-  unsigned x_size_;
-  unsigned y_size_;
+  int num_layers_;
+  int x_size_;
+  int y_size_;
   std::vector<std::vector<int>> gridlines_;
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;
-  std::vector<unsigned> layer_directions_;
+  std::vector<int> layer_directions_;
   std::vector<int> layer_min_lengths_;
 
   // Unit costs
@@ -133,11 +132,10 @@ class GridGraph
   // (l, x, y+1)} depending on the routing direction of the layer
   Constants constants_;
 
-  IntervalT rangeSearchGridlines(unsigned dimension,
+  IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT rangeSearchRows(unsigned dimension,
-                            const IntervalT& loc_interval) const;
+  IntervalT rangeSearchRows(int dimension, const IntervalT& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
@@ -165,18 +163,18 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
  public:
   bool check(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
-    if (u.y == v.y) {
-      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    assert(u.x() == v.x() || u.y() == v.y());
+    if (u.y() == v.y()) {
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
-        if ((*this)[MetalLayer::H][x][u.y]) {
+        if ((*this)[MetalLayer::H][x][u.y()]) {
           return true;
         }
       }
     } else {
-      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
-        if ((*this)[MetalLayer::V][u.x][y]) {
+        if ((*this)[MetalLayer::V][u.x()][y]) {
           return true;
         }
       }
@@ -186,17 +184,17 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 
   Type sum(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
+    assert(u.x() == v.x() || u.y() == v.y());
     Type res = 0;
-    if (u.y == v.y) {
-      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    if (u.y() == v.y()) {
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
-        res += (*this)[MetalLayer::H][x][u.y];
+        res += (*this)[MetalLayer::H][x][u.y()];
       }
     } else {
-      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
-        res += (*this)[MetalLayer::V][u.x][y];
+        res += (*this)[MetalLayer::V][u.x()][y];
       }
     }
     return res;

@@ -13,11 +13,15 @@
 #include "boost/icl/interval_set.hpp"
 #include "db/grObj/grNet.h"
 #include "db/obj/frBlockObject.h"
+#include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
+#include "frRegionQuery.h"
+#include "global.h"
 #include "gr/FlexGRCMap.h"
 #include "gr/FlexGRGridGraph.h"
+#include "utl/Logger.h"
 namespace odb {
 class dbDatabase;
 class Rect;
@@ -33,7 +37,7 @@ class FlexGR
  public:
   // constructors
   FlexGR(frDesign* designIn,
-         Logger* logger,
+         utl::Logger* logger,
          stt::SteinerTreeBuilder* stt_builder,
          RouterConfiguration* router_cfg)
       : db_(nullptr),
@@ -66,7 +70,7 @@ class FlexGR
   frDesign* design_;
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
-  Logger* logger_;
+  utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   RouterConfiguration* router_cfg_;
   frOrderedIdMap<frNet*, std::map<std::pair<int, int>, std::vector<frNode*>>>

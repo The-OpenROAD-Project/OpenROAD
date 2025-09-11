@@ -119,6 +119,8 @@ class FastRouteCore
   void clearNetRoute(odb::dbNet* db_net);
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
+  void init3DEdges();
+  int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
   void initEdgesCapacityPerLayer();
   void setNumAdjustments(int nAdjustments);
   void addAdjustment(int x1,
@@ -151,6 +153,12 @@ class FastRouteCore
       const interval<int>::type& last_tile_reduce_interval,
       const std::vector<int>& track_space,
       bool release = false);
+  void saveResourcesBeforeAdjustments();
+  bool computeSuggestedAdjustment(int& suggested_adjustment);
+  void getPrecisionAdjustment(int x,
+                              int y,
+                              bool is_horizontal,
+                              int& adjustment);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();
@@ -198,8 +206,16 @@ class FastRouteCore
                               int x2,
                               int y2,
                               int layer,
-                              int used);
+                              int used,
+                              odb::dbNet* db_net);
   void setMaxNetDegree(int);
+  void updateRouteGridsLayer(int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int layer,
+                             int new_layer,
+                             odb::dbNet* db_net);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
@@ -234,6 +250,10 @@ class FastRouteCore
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
   void clearNDRnets();
+  void computeCongestedNDRnets();
+  void updateSoftNDRNetUsage(int net_id, int edge_cost);
+  void setSoftNDR(int net_id);
+  void applySoftNDR(const std::vector<int>& net_ids);
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }

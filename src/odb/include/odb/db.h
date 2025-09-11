@@ -617,7 +617,7 @@ class dbBlock : public dbObject
   ///
   /// Returns the top module of this block.
   ///
-  dbModule* getTopModule();
+  dbModule* getTopModule() const;
 
   ///
   /// Get the child blocks of this block.
@@ -1338,7 +1338,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbChip* chip,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -1348,7 +1347,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbBlock* block,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -2947,8 +2945,8 @@ class dbInst : public dbObject
 
   ///
   /// Create a new instance.
-  /// If physical_only is true the instance can't bee added to a dbModule.
-  /// If false, it will be added to the top module.
+  /// If physical_only is true, the instance can only be added to a top module.
+  /// If false, it will be added to the parent module.
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
   /// If dbmodule is non null the dbInst is added to that module.
@@ -3202,7 +3200,7 @@ class dbITerm : public dbObject
   /// Disconnect just the mod net
   ///
 
-  void disconnectModNet();
+  void disconnectDbModNet();
 
   ///
   /// Get the average of the centers for the iterm shapes
@@ -7020,11 +7018,18 @@ class dbChip : public dbObject
 
   dbSet<dbChipNet> getChipNets() const;
 
+  dbChipInst* findChipInst(const std::string& name) const;
+
+  dbChipRegion* findChipRegion(const std::string& name) const;
+
+  dbTech* getTech() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
   ///
   static dbChip* create(dbDatabase* db,
+                        dbTech* tech,
                         const std::string& name = "",
                         ChipType type = ChipType::DIE);
 
@@ -7116,18 +7121,23 @@ class dbChipInst : public dbObject
 
   Point3D getLoc() const;
 
+  void setOrient(dbOrientType3D orient);
+
+  dbOrientType3D getOrient() const;
+
   dbChip* getMasterChip() const;
 
   dbChip* getParentChip() const;
 
   // User Code Begin dbChipInst
-  void setOrient(const dbOrientType& orient);
-
-  dbOrientType getOrient() const;
 
   dbTransform getTransform() const;
 
   dbSet<dbChipRegionInst> getRegions() const;
+
+  dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
+
+  dbChipRegionInst* findChipRegionInst(const std::string& name) const;
 
   static odb::dbChipInst* create(dbChip* parent_chip,
                                  dbChip* master_chip,
@@ -8282,8 +8292,10 @@ class dbModNet : public dbObject
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
   unsigned connectionCount();
-  const char* getName() const;
+  std::string getName() const;
+  const char* getConstName() const;
   void rename(const char* new_name);
+  void disconnectAllTerms();
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
@@ -8334,6 +8346,7 @@ class dbModule : public dbObject
 
   const dbModBTerm* getHeadDbModBTerm() const;
   bool canSwapWith(dbModule* new_module) const;
+  bool isTop() const;
 
   static dbModule* create(dbBlock* block, const char* name);
 

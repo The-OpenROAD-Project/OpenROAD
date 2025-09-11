@@ -5,18 +5,19 @@
 
 #include "geo.h"
 #include "odb/db.h"
-#include "utl/Logger.h"
 
 namespace grt {
 
 class MetalLayer
 {
  public:
-  const static unsigned H = 0;
-  const static unsigned V = 1;
+  const static int H = 0;
+  const static int V = 1;
+
   MetalLayer(odb::dbTechLayer* tech_layer, odb::dbTrackGrid* track_grid);
+
   std::string getName() const { return name_; }
-  unsigned getDirection() const { return direction_; }
+  int getDirection() const { return direction_; }
   int getWidth() const { return width_; }
   int getPitch() const { return pitch_; }
   int getTrackLocation(int track_index) const;
@@ -32,7 +33,7 @@ class MetalLayer
  private:
   std::string name_;
   int index_;
-  unsigned direction_;
+  int direction_;
   int width_;
   int min_width_;
 
@@ -48,8 +49,8 @@ class MetalLayer
   // Parallel run spacing
   std::vector<int> parallel_width_ = {0};
   std::vector<int> parallel_length_ = {0};
-  std::vector<std::vector<int>> parallel_spacing_
-      = {{0}};  // width, length -> spacing
+  // width, length -> spacing
+  std::vector<std::vector<int>> parallel_spacing_ = {{0}};
   int default_spacing_ = 0;
 
   // End-of-line spacing

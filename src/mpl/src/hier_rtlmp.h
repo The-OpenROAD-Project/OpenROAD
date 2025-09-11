@@ -11,12 +11,12 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "shapes.h"
-#include "util.h"
 
 namespace sta {
 class dbNetwork;
@@ -172,8 +172,7 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void placeChildren(Cluster* parent);
-  void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
+  void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
 
   void findBlockagesWithinOutline(std::vector<Rect>& macro_blockages,
                                   std::vector<Rect>& placement_blockages,
@@ -193,6 +192,9 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
+  void considerFixedMacro(const Rect& outline,
+                          std::vector<SoftMacro>& sa_macros,
+                          Cluster* fixed_macro_cluster) const;
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
@@ -236,6 +238,13 @@ class HierRTLMP
   void printPlacementResult(Cluster* parent,
                             const Rect& outline,
                             SACore* sa_core);
+  void writeNetFile(const std::string& file_name_prefix,
+                    std::vector<SoftMacro>& macros,
+                    std::vector<BundledNet>& nets);
+  void writeFloorplanFile(const std::string& file_name_prefix,
+                          std::vector<SoftMacro>& macros);
+  template <typename SACore>
+  void writeCostFile(const std::string& file_name_prefix, SACore* sa_core);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;

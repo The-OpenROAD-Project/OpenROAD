@@ -6,7 +6,10 @@
 #include <vector>
 
 #include "CUGR.h"
+#include "Design.h"
 #include "GRNet.h"
+#include "GRTree.h"
+#include "GridGraph.h"
 #include "geo.h"
 
 namespace grt {
@@ -14,17 +17,11 @@ namespace grt {
 class SteinerTreeNode : public PointT
 {
  public:
-  SteinerTreeNode(PointT point) : PointT(point) {}
-  SteinerTreeNode(PointT point, IntervalT fixed_layers)
+  SteinerTreeNode(const PointT& point) : PointT(point) {}
+  SteinerTreeNode(const PointT& point, const IntervalT& fixed_layers)
       : PointT(point), fixed_layers_(fixed_layers)
   {
   }
-
-  static void preorder(
-      const std::shared_ptr<SteinerTreeNode>& node,
-      const std::function<void(std::shared_ptr<SteinerTreeNode>)>& visit);
-  static std::string getPythonString(
-      const std::shared_ptr<SteinerTreeNode>& node);
 
   IntervalT& getFixedLayers() { return fixed_layers_; }
 
@@ -38,7 +35,10 @@ class SteinerTreeNode : public PointT
     children_.emplace_back(child);
   }
 
-  void removeChild(int index) { children_.erase(children_.begin() + index); }
+  void removeChild(const int index)
+  {
+    children_.erase(children_.begin() + index);
+  }
 
   std::vector<std::shared_ptr<SteinerTreeNode>>& getChildren()
   {
@@ -46,6 +46,12 @@ class SteinerTreeNode : public PointT
   }
 
   int getNumChildren() const { return children_.size(); }
+
+  static void preorder(
+      const std::shared_ptr<SteinerTreeNode>& node,
+      const std::function<void(std::shared_ptr<SteinerTreeNode>)>& visit);
+  static std::string getPythonString(
+      const std::shared_ptr<SteinerTreeNode>& node);
 
  private:
   IntervalT fixed_layers_;
@@ -55,11 +61,15 @@ class SteinerTreeNode : public PointT
 class PatternRoutingNode : public PointT
 {
  public:
-  PatternRoutingNode(PointT point, int index, bool optional = false)
+  PatternRoutingNode(const PointT& point,
+                     const int index,
+                     const bool optional = false)
       : PointT(point), index_(index), optional_(optional)
   {
   }
-  PatternRoutingNode(PointT point, IntervalT fixed_layers, int index = 0)
+  PatternRoutingNode(const PointT& point,
+                     const IntervalT& fixed_layers,
+                     const int index = 0)
       : PointT(point),
         index_(index),
         fixed_layers_(fixed_layers),

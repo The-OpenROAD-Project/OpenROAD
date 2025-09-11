@@ -3,6 +3,7 @@
 #include <cmath>
 #include <ostream>
 
+#include "geo.h"
 #include "odb/geom.h"
 
 namespace grt {

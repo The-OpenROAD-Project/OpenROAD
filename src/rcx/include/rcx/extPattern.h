@@ -11,7 +11,7 @@
 #include "dbUtil.h"
 #include "ext_options.h"
 #include "odb/db.h"
-#include "util.h"
+#include "rcx/util.h"
 
 namespace rcx {
 

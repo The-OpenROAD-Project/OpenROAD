@@ -364,6 +364,7 @@ const char* dbNet::getConstName()
   _dbNet* net = (_dbNet*) this;
   return net->_name;
 }
+
 void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
 {
   if (idFlag) {
@@ -384,6 +385,17 @@ bool dbNet::rename(const char* name)
 
   if (block->_net_hash.hasMember(name)) {
     return false;
+  }
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: net {}, rename to {}",
+               getId(),
+               name);
+    block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
   }
 
   block->_net_hash.remove(net);

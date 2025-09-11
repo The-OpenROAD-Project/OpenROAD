@@ -12,7 +12,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=v0.55
+    yosysVersion=v0.57
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -75,6 +75,8 @@ _installCommonDev() {
     spdlogVersion=1.15.0
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
+    abslVersion=20250814.0
+    abslChecksum="016feacd6a6b3b9a47ab844e61f4f7bd"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
     flexVersion=2.6.4
@@ -262,6 +264,21 @@ _installCommonDev() {
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
+    # Abseil
+    abslPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${abslPrefix}/absl/base ]]; then
+        cd "${baseDir}"
+        eval wget https://github.com/abseil/abseil-cpp/releases/download/${abslVersion}/abseil-cpp-${abslVersion}.tar.gz
+        md5sum -c <(echo "${abslChecksum} abseil-cpp-${abslVersion}.tar.gz") || exit 1
+        tar xf abseil-cpp-${abslVersion}.tar.gz
+        cd abseil-cpp-${abslVersion}
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${abslPrefix}" -DCMAKE_CXX_STANDARD=17 -B build .
+        ${cmakePrefix}/bin/cmake --build build --target install
+    else
+        echo "Abseil already installed."
+    fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath $abslPrefix) "
+
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
     fi
@@ -391,6 +408,7 @@ _installUbuntuPackages() {
         tcllib \
         unzip \
         wget \
+        libyaml-cpp-dev \
         zlib1g-dev
 
     packages=()
@@ -476,6 +494,7 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
+        yaml-cpp-devel \
         zlib-devel
 
     if [[ ${rhelVersion} == 8 ]]; then
@@ -543,6 +562,7 @@ _installOpenSusePackages() {
         tcl-devel \
         tcllib \
         wget \
+        yaml-cpp-devel \
         zlib-devel
 
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -587,7 +607,7 @@ Then, rerun this script.
 EOF
         exit 1
     fi
-    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
 
     # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
@@ -641,6 +661,7 @@ _installDebianPackages() {
         tcllib \
         unzip \
         wget \
+        libyaml-cpp-dev \
         zlib1g-dev
 
     if [[ $1 == 10 ]]; then

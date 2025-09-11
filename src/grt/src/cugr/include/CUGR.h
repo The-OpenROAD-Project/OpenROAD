@@ -1,22 +1,12 @@
 #pragma once
 
-#include <bitset>
 #include <csignal>
-#include <fstream>
-#include <iostream>
 #include <memory>
-#include <mutex>
-#include <set>
-#include <sstream>
 #include <string>
-#include <thread>
-#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "geo.h"
 #include "grt/GRoute.h"
-#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;
@@ -35,6 +25,7 @@ namespace grt {
 class Design;
 class GridGraph;
 class GRNet;
+class BoxT;
 
 struct Constants
 {
@@ -75,6 +66,10 @@ class CUGR
   NetRouteMap getRoutes();
 
  private:
+  void updateOverflowNets(std::vector<int>& netIndices);
+  void patternRoute(std::vector<int>& netIndices);
+  void patternRouteWithDetours(std::vector<int>& netIndices);
+  void mazeRoute(std::vector<int>& netIndices);
   void sortNetIndices(std::vector<int>& netIndices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);

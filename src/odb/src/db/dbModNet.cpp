@@ -154,7 +154,13 @@ dbModule* dbModNet::getParent() const
 
 // User Code Begin dbModNetPublicMethods
 
-const char* dbModNet::getName() const
+std::string dbModNet::getName() const
+{
+  _dbModNet* obj = (_dbModNet*) this;
+  return obj->_name;
+}
+
+const char* dbModNet::getConstName() const
 {
   _dbModNet* obj = (_dbModNet*) this;
   return obj->_name;
@@ -171,11 +177,45 @@ void dbModNet::rename(const char* new_name)
   }
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: mod_net {}, rename to {}",
+               getId(),
+               new_name);
+    block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
+  }
+
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
   parent->_modnet_hash.erase(obj->_name);
   free((void*) (obj->_name));
   obj->_name = safe_strdup(new_name);
   parent->_modnet_hash[new_name] = obj->getOID();
+}
+
+void dbModNet::disconnectAllTerms()
+{
+  // Disconnect all terminals.
+  // - The loops are structured this way to handle the modification of the dbSet
+  // during iteration.
+  while (!getITerms().empty()) {
+    getITerms().begin()->disconnectDbModNet();
+  }
+
+  while (!getBTerms().empty()) {
+    getBTerms().begin()->disconnectDbModNet();
+  }
+
+  while (!getModITerms().empty()) {
+    getModITerms().begin()->disconnect();
+  }
+
+  while (!getModBTerms().empty()) {
+    getModBTerms().begin()->disconnect();
+  }
 }
 
 dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
@@ -224,6 +264,8 @@ void dbModNet::destroy(dbModNet* mod_net)
   _dbModNet* _modnet = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+
+  mod_net->disconnectAllTerms();
 
   // journalling
   if (block->_journal) {

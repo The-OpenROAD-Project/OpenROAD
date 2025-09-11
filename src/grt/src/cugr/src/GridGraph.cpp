@@ -16,7 +16,12 @@
 #include <utility>
 #include <vector>
 
+#include "CUGR.h"
+#include "Design.h"
 #include "GRNet.h"
+#include "GRTree.h"
+#include "geo.h"
+#include "robin_hood.h"
 
 namespace grt {
 
@@ -29,7 +34,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
   y_size_ = gridlines_[1].size() - 1;
 
   grid_centers_.resize(2);
-  for (unsigned dimension = 0; dimension <= 1; dimension++) {
+  for (int dimension = 0; dimension <= 1; dimension++) {
     grid_centers_[dimension].resize(gridlines_[dimension].size() - 1);
     for (int gridIndex = 0; gridIndex < gridlines_[dimension].size() - 1;
          gridIndex++) {
@@ -67,7 +72,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
                           x_size_, std::vector<GraphEdge>(y_size_)));
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
     const MetalLayer& layer = design->getLayer(layer_index);
-    const unsigned direction = layer.getDirection();
+    const int direction = layer.getDirection();
 
     const int nGrids = gridlines_[1 - direction].size() - 1;
     gridTracks[layer_index].resize(nGrids);
@@ -79,7 +84,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
         gridTracks[layer_index][gridIndex] = trackRange.range() + 1;
         // exclude the track on the higher gridline
         if (gridIndex != nGrids - 1
-            && layer.getTrackLocation(trackRange.high) == locRange.high) {
+            && layer.getTrackLocation(trackRange.high()) == locRange.high()) {
           gridTracks[layer_index][gridIndex]--;
         }
       } else {
@@ -110,7 +115,7 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
   design->getAllObstacles(obstacles, true);
   for (int layer_index = 1; layer_index < num_layers_; layer_index++) {
     const MetalLayer& layer = design->getLayer(layer_index);
-    unsigned direction = layer.getDirection();
+    int direction = layer.getDirection();
     const int nGrids = gridlines_[1 - direction].size() - 1;
     const int nEdges = gridlines_[direction].size() - 2;
     int minEdgeLength = std::numeric_limits<int>::max();
@@ -129,17 +134,17 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
                     + layer.getWidth() / 2 - 1;
       PointT margin(0, 0);
       margin[1 - direction] = spacing;
-      BoxT obsBox(obs.x.low - margin.x,
-                  obs.y.low - margin.y,
-                  obs.x.high + margin.x,
-                  obs.y.high + margin.y);  // enlarged obstacle box
+      BoxT obsBox(obs.x.low() - margin.x(),
+                  obs.y.low() - margin.y(),
+                  obs.x.high() + margin.x(),
+                  obs.y.high() + margin.y());  // enlarged obstacle box
       IntervalT trackRange = layer.rangeSearchTracks(obsBox[1 - direction]);
       std::shared_ptr<std::pair<BoxT, IntervalT>> obstacle
           = std::make_shared<std::pair<BoxT, IntervalT>>(obsBox, trackRange);
       // Get grid range
       IntervalT gridRange
           = rangeSearchRows(1 - direction, obsBox[1 - direction]);
-      for (int gridIndex = gridRange.low; gridIndex <= gridRange.high;
+      for (int gridIndex = gridRange.low(); gridIndex <= gridRange.high();
            gridIndex++) {
         obstaclesInGrid[gridIndex].push_back(obstacle);
       }
@@ -148,11 +153,10 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
     IntervalT gridTrackRange;
     for (int gridIndex = 0; gridIndex < nGrids; gridIndex++) {
       if (gridIndex == 0) {
-        gridTrackRange.low = 0;
-        gridTrackRange.high = gridTracks[layer_index][gridIndex] - 1;
+        gridTrackRange.Set(0, gridTracks[layer_index][gridIndex] - 1);
       } else {
-        gridTrackRange.low = gridTrackRange.high + 1;
-        gridTrackRange.high += gridTracks[layer_index][gridIndex];
+        gridTrackRange.SetLow(gridTrackRange.high() + 1);
+        gridTrackRange.addToHigh(gridTracks[layer_index][gridIndex]);
       }
       if (!gridTrackRange.IsValid()) {
         continue;
@@ -165,9 +169,9 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
       for (auto& obstacle : obstaclesInGrid[gridIndex]) {
         IntervalT gridlineRange
             = rangeSearchGridlines(direction, obstacle->first[direction]);
-        IntervalT edgeRange(std::max(gridlineRange.low - 2, 0),
-                            std::min(gridlineRange.high, nEdges - 1));
-        for (int edge_index = edgeRange.low; edge_index <= edgeRange.high;
+        IntervalT edgeRange(std::max(gridlineRange.low() - 2, 0),
+                            std::min(gridlineRange.high(), nEdges - 1));
+        for (int edge_index = edgeRange.low(); edge_index <= edgeRange.high();
              edge_index++) {
           obstaclesAtEdge[edge_index].emplace_back(obstacle);
         }
@@ -188,20 +192,22 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
           if (!affectedTrackRange.IsValid()) {
             continue;
           }
-          for (int trackIndex = affectedTrackRange.low;
-               trackIndex <= affectedTrackRange.high;
+          for (int trackIndex = affectedTrackRange.low();
+               trackIndex <= affectedTrackRange.high();
                trackIndex++) {
-            int tIdx = trackIndex - gridTrackRange.low;
-            if (obstacle->first[direction].low <= gridline
-                && obstacle->first[direction].high >= gridline) {
+            int tIdx = trackIndex - gridTrackRange.low();
+            if (obstacle->first[direction].low() <= gridline
+                && obstacle->first[direction].high() >= gridline) {
               // Completely blocked
               usable_intervals[tIdx] = {gridline, gridline};
-            } else if (obstacle->first[direction].high < gridline) {
-              usable_intervals[tIdx].low = std::max(
-                  usable_intervals[tIdx].low, obstacle->first[direction].high);
-            } else if (obstacle->first[direction].low > gridline) {
-              usable_intervals[tIdx].high = std::min(
-                  usable_intervals[tIdx].high, obstacle->first[direction].low);
+            } else if (obstacle->first[direction].high() < gridline) {
+              usable_intervals[tIdx].SetLow(
+                  std::max(usable_intervals[tIdx].low(),
+                           obstacle->first[direction].high()));
+            } else if (obstacle->first[direction].low() > gridline) {
+              usable_intervals[tIdx].SetHigh(
+                  std::min(usable_intervals[tIdx].high(),
+                           obstacle->first[direction].low()));
             }
           }
         }
@@ -220,45 +226,45 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
   }
 }
 
-IntervalT GridGraph::rangeSearchGridlines(const unsigned dimension,
+IntervalT GridGraph::rangeSearchGridlines(const int dimension,
                                           const IntervalT& loc_interval) const
 {
   IntervalT range;
-  range.low = lower_bound(gridlines_[dimension].begin(),
-                          gridlines_[dimension].end(),
-                          loc_interval.low)
-              - gridlines_[dimension].begin();
-  range.high = lower_bound(gridlines_[dimension].begin(),
-                           gridlines_[dimension].end(),
-                           loc_interval.high)
-               - gridlines_[dimension].begin();
-  if (range.high >= gridlines_[dimension].size()) {
-    range.high = gridlines_[dimension].size() - 1;
-  } else if (gridlines_[dimension][range.high] > loc_interval.high) {
-    range.high -= 1;
+  range.Set(lower_bound(gridlines_[dimension].begin(),
+                        gridlines_[dimension].end(),
+                        loc_interval.low())
+                - gridlines_[dimension].begin(),
+            lower_bound(gridlines_[dimension].begin(),
+                        gridlines_[dimension].end(),
+                        loc_interval.high())
+                - gridlines_[dimension].begin());
+  if (range.high() >= gridlines_[dimension].size()) {
+    range.SetHigh(gridlines_[dimension].size() - 1);
+  } else if (gridlines_[dimension][range.high()] > loc_interval.high()) {
+    range.addToHigh(-1);
   }
   return range;
 }
 
-IntervalT GridGraph::rangeSearchRows(const unsigned dimension,
+IntervalT GridGraph::rangeSearchRows(const int dimension,
                                      const IntervalT& loc_interval) const
 {
   const auto& lineRange = rangeSearchGridlines(dimension, loc_interval);
-  return {
-      gridlines_[dimension][lineRange.low] == loc_interval.low
-          ? lineRange.low
-          : std::max(lineRange.low - 1, 0),
-      gridlines_[dimension][lineRange.high] == loc_interval.high
-          ? lineRange.high - 1
-          : std::min(lineRange.high, static_cast<int>(getSize(dimension)) - 1)};
+  return {gridlines_[dimension][lineRange.low()] == loc_interval.low()
+              ? lineRange.low()
+              : std::max(lineRange.low() - 1, 0),
+          gridlines_[dimension][lineRange.high()] == loc_interval.high()
+              ? lineRange.high() - 1
+              : std::min(lineRange.high(),
+                         static_cast<int>(getSize(dimension)) - 1)};
 }
 
 BoxT GridGraph::getCellBox(PointT point) const
 {
-  return {getGridline(0, point.x),
-          getGridline(1, point.y),
-          getGridline(0, point.x + 1),
-          getGridline(1, point.y + 1)};
+  return {getGridline(0, point.x()),
+          getGridline(1, point.y()),
+          getGridline(0, point.x() + 1),
+          getGridline(1, point.y() + 1)};
 }
 
 BoxT GridGraph::rangeSearchCells(const BoxT& box) const
@@ -266,7 +272,7 @@ BoxT GridGraph::rangeSearchCells(const BoxT& box) const
   return {rangeSearchRows(0, box[0]), rangeSearchRows(1, box[1])};
 }
 
-int GridGraph::getEdgeLength(unsigned direction, unsigned edge_index) const
+int GridGraph::getEdgeLength(int direction, int edge_index) const
 {
   return grid_centers_[direction][edge_index + 1]
          - grid_centers_[direction][edge_index];
@@ -281,10 +287,10 @@ CostT GridGraph::getWireCost(const int layer_index,
                              const PointT lower,
                              const CapacityT demand) const
 {
-  unsigned direction = layer_directions_[layer_index];
+  int direction = layer_directions_[layer_index];
   int edgeLength = getEdgeLength(direction, lower[direction]);
   int demandLength = demand * edgeLength;
-  const auto& edge = graph_edges_[layer_index][lower.x][lower.y];
+  const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
   CostT cost = demandLength * unit_length_wire_cost_;
   cost += demandLength * unit_length_short_costs_[layer_index]
           * (edge.capacity < 1.0 ? 1.0
@@ -297,18 +303,18 @@ CostT GridGraph::getWireCost(const int layer_index,
                              const PointT u,
                              const PointT v) const
 {
-  unsigned direction = layer_directions_[layer_index];
+  int direction = layer_directions_[layer_index];
   assert(u[1 - direction] == v[1 - direction]);
   CostT cost = 0;
   if (direction == MetalLayer::H) {
-    int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    const auto [l, h] = std::minmax({u.x(), v.x()});
     for (int x = l; x < h; x++) {
-      cost += getWireCost(layer_index, {x, u.y});
+      cost += getWireCost(layer_index, {x, u.y()});
     }
   } else {
-    int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+    const auto [l, h] = std::minmax({u.y(), v.y()});
     for (int y = l; y < h; y++) {
-      cost += getWireCost(layer_index, {u.x, y});
+      cost += getWireCost(layer_index, {u.x(), y});
     }
   }
   return cost;
@@ -320,7 +326,7 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   CostT cost = unit_via_cost_;
   // Estimated wire cost to satisfy min-area
   for (int l = layer_index; l <= layer_index + 1; l++) {
-    unsigned direction = layer_directions_[l];
+    int direction = layer_directions_[l];
     PointT lowerLoc = loc;
     lowerLoc[direction] -= 1;
     int lowerEdgeLength = loc[direction] > 0
@@ -359,19 +365,21 @@ void GridGraph::selectAccessPoints(
       const auto& point = accessPoints[index];
       int accessibility = 0;
       if (point.getLayerIdx() >= constants_.min_routing_layer) {
-        unsigned direction = getLayerDirection(point.getLayerIdx());
+        int direction = getLayerDirection(point.getLayerIdx());
         accessibility
-            += getEdge(point.getLayerIdx(), point.x, point.y).capacity >= 1;
+            += getEdge(point.getLayerIdx(), point.x(), point.y()).capacity >= 1;
         if (point[direction] > 0) {
           auto lower = point;
           lower[direction] -= 1;
           accessibility
-              += getEdge(lower.getLayerIdx(), lower.x, lower.y).capacity >= 1;
+              += getEdge(lower.getLayerIdx(), lower.x(), lower.y()).capacity
+                 >= 1;
         }
       } else {
         accessibility = 1;
       }
-      int distance = abs(netCenter.x - point.x) + abs(netCenter.y - point.y);
+      int distance
+          = abs(netCenter.x() - point.x()) + abs(netCenter.y() - point.y());
       if (accessibility > bestAccessDist.first
           || (accessibility == bestAccessDist.first
               && distance < bestAccessDist.second)) {
@@ -383,14 +391,14 @@ void GridGraph::selectAccessPoints(
       printf("Warning: the pin is hard to access.\n");
     }
     const PointT selectedPoint = accessPoints[bestIndex];
-    const uint64_t hash = hashCell(selectedPoint.x, selectedPoint.y);
+    const uint64_t hash = hashCell(selectedPoint.x(), selectedPoint.y());
     if (selected_access_points.find(hash) == selected_access_points.end()) {
       selected_access_points.emplace(
           hash, std::make_pair(selectedPoint, IntervalT()));
     }
     IntervalT& fixedLayerInterval = selected_access_points[hash].second;
     for (const auto& point : accessPoints) {
-      if (point.x == selectedPoint.x && point.y == selectedPoint.y) {
+      if (point.x() == selectedPoint.x() && point.y() == selectedPoint.y()) {
         fixedLayerInterval.Update(point.getLayerIdx());
       }
     }
@@ -398,7 +406,8 @@ void GridGraph::selectAccessPoints(
   // Extend the fixed layers to 2 layers higher to facilitate track switching
   for (auto& accessPoint : selected_access_points) {
     IntervalT& fixedLayers = accessPoint.second.second;
-    fixedLayers.high = std::min(fixedLayers.high + 2, (int) getNumLayers() - 1);
+    fixedLayers.SetHigh(
+        std::min(fixedLayers.high() + 2, (int) getNumLayers() - 1));
   }
 }
 
@@ -406,14 +415,14 @@ void GridGraph::commit(const int layer_index,
                        const PointT lower,
                        const CapacityT demand)
 {
-  graph_edges_[layer_index][lower.x][lower.y].demand += demand;
+  graph_edges_[layer_index][lower.x()][lower.y()].demand += demand;
 }
 
 void GridGraph::commitWire(const int layer_index,
                            const PointT lower,
                            const bool reverse)
 {
-  unsigned direction = layer_directions_[layer_index];
+  int direction = layer_directions_[layer_index];
   int edgeLength = getEdgeLength(direction, lower[direction]);
   if (reverse) {
     commit(layer_index, lower, -1);
@@ -430,7 +439,7 @@ void GridGraph::commitVia(const int layer_index,
 {
   assert(layer_index + 1 < num_layers_);
   for (int l = layer_index; l <= layer_index + 1; l++) {
-    unsigned direction = layer_directions_[l];
+    int direction = layer_directions_[l];
     PointT lowerLoc = loc;
     lowerLoc[direction] -= 1;
     int lowerEdgeLength = loc[direction] > 0
@@ -460,20 +469,20 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool reverse)
 {
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->children) {
+    for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
-        unsigned direction = layer_directions_[node->getLayerIdx()];
+        int direction = layer_directions_[node->getLayerIdx()];
         if (direction == MetalLayer::H) {
-          assert(node->y == child->y);
-          int l = std::min(node->x, child->x), h = std::max(node->x, child->x);
+          assert(node->y() == child->y());
+          const auto [l, h] = std::minmax({node->x(), child->x()});
           for (int x = l; x < h; x++) {
-            commitWire(node->getLayerIdx(), {x, node->y}, reverse);
+            commitWire(node->getLayerIdx(), {x, node->y()}, reverse);
           }
         } else {
-          assert(node->x == child->x);
-          int l = std::min(node->y, child->y), h = std::max(node->y, child->y);
+          assert(node->x() == child->x());
+          const auto [l, h] = std::minmax({node->y(), child->y()});
           for (int y = l; y < h; y++) {
-            commitWire(node->getLayerIdx(), {node->x, y}, reverse);
+            commitWire(node->getLayerIdx(), {node->x(), y}, reverse);
           }
         }
       } else {
@@ -481,7 +490,7 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
         for (int layerIdx = std::min(node->getLayerIdx(), child->getLayerIdx());
              layerIdx < maxLayerIndex;
              layerIdx++) {
-          commitVia(layerIdx, {node->x, node->y}, reverse);
+          commitVia(layerIdx, {node->x(), node->y()}, reverse);
         }
       }
     }
@@ -493,20 +502,20 @@ int GridGraph::checkOverflow(const int layer_index,
                              const PointT v) const
 {
   int num = 0;
-  unsigned direction = layer_directions_[layer_index];
+  int direction = layer_directions_[layer_index];
   if (direction == MetalLayer::H) {
-    assert(u.y == v.y);
-    int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    assert(u.y() == v.y());
+    const auto [l, h] = std::minmax({u.x(), v.x()});
     for (int x = l; x < h; x++) {
-      if (checkOverflow(layer_index, x, u.y)) {
+      if (checkOverflow(layer_index, x, u.y())) {
         num++;
       }
     }
   } else {
-    assert(u.x == v.x);
-    int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+    assert(u.x() == v.x());
+    const auto [l, h] = std::minmax({u.y(), v.y()});
     for (int y = l; y < h; y++) {
-      if (checkOverflow(layer_index, u.x, y)) {
+      if (checkOverflow(layer_index, u.x(), y)) {
         num++;
       }
     }
@@ -521,7 +530,7 @@ int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
   }
   int num = 0;
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (auto& child : node->children) {
+    for (auto& child : node->getChildren()) {
       // Only check wires
       if (node->getLayerIdx() == child->getLayerIdx()) {
         num += checkOverflow(
@@ -538,9 +547,9 @@ std::string GridGraph::getPythonString(
   std::vector<std::tuple<PointT, PointT, bool>> edges;
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (auto& child : node->children) {
+        for (auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
-            unsigned direction = getLayerDirection(node->getLayerIdx());
+            int direction = getLayerDirection(node->getLayerIdx());
             int r = (*node)[1 - direction];
             const int l = std::min((*node)[direction], (*child)[direction]);
             const int h = std::max((*node)[direction], (*child)[direction]);
@@ -555,7 +564,7 @@ std::string GridGraph::getPythonString(
             for (int c = l; c < h; c++) {
               PointT cpoint
                   = (direction == MetalLayer::H ? PointT(c, r) : PointT(r, c));
-              if (checkOverflow(node->getLayerIdx(), cpoint.x, cpoint.y)
+              if (checkOverflow(node->getLayerIdx(), cpoint.x(), cpoint.y())
                   != congested) {
                 if (lpoint != cpoint) {
                   edges.emplace_back(lpoint, cpoint, congested);
@@ -589,7 +598,7 @@ void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
   for (int layer_index = constants_.min_routing_layer;
        layer_index < num_layers_;
        layer_index++) {
-    unsigned direction = getLayerDirection(layer_index);
+    int direction = getLayerDirection(layer_index);
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
         if (getEdge(layer_index, x, y).capacity >= 1.0) {
@@ -608,7 +617,7 @@ void GridGraph::extractCongestionView(GridGraphView<bool>& view) const
   for (int layer_index = constants_.min_routing_layer;
        layer_index < num_layers_;
        layer_index++) {
-    unsigned direction = getLayerDirection(layer_index);
+    int direction = getLayerDirection(layer_index);
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
         if (checkOverflow(layer_index, x, y)) {
@@ -626,7 +635,7 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
       std::vector<std::vector<CostT>>(
           x_size_,
           std::vector<CostT>(y_size_, std::numeric_limits<CostT>::max())));
-  for (unsigned direction = 0; direction < 2; direction++) {
+  for (int direction = 0; direction < 2; direction++) {
     std::vector<int> layerIndices;
     CostT unitLengthShortCost = std::numeric_limits<CostT>::max();
     for (int layer_index = constants_.min_routing_layer;
@@ -674,12 +683,12 @@ void GridGraph::updateWireCostView(
   for (int layer_index = constants_.min_routing_layer;
        layer_index < getNumLayers();
        layer_index++) {
-    unsigned direction = getLayerDirection(layer_index);
+    int direction = getLayerDirection(layer_index);
     sameDirectionLayers[direction].emplace_back(layer_index);
     unitLengthShortCost[direction] = std::min(
         unitLengthShortCost[direction], getUnitLengthShortCost(layer_index));
   }
-  auto update = [&](unsigned direction, int x, int y) {
+  auto update = [&](int direction, int x, int y) {
     int edge_index = direction == MetalLayer::H ? x : y;
     if (edge_index >= getSize(direction) - 1) {
       return;
@@ -706,22 +715,22 @@ void GridGraph::updateWireCostView(
   };
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (const auto& child : node->children) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
-            unsigned direction = getLayerDirection(node->getLayerIdx());
+            int direction = getLayerDirection(node->getLayerIdx());
             if (direction == MetalLayer::H) {
-              assert(node->y == child->y);
-              int l = std::min(node->x, child->x),
-                  h = std::max(node->x, child->x);
+              assert(node->y() == child->y());
+              int l = std::min(node->x(), child->x()),
+                  h = std::max(node->x(), child->x());
               for (int x = l; x < h; x++) {
-                update(direction, x, node->y);
+                update(direction, x, node->y());
               }
             } else {
-              assert(node->x == child->x);
-              int l = std::min(node->y, child->y),
-                  h = std::max(node->y, child->y);
+              assert(node->x() == child->x());
+              int l = std::min(node->y(), child->y()),
+                  h = std::max(node->y(), child->y());
               for (int y = l; y < h; y++) {
-                update(direction, node->x, y);
+                update(direction, node->x(), y);
               }
             }
           } else {
@@ -731,10 +740,12 @@ void GridGraph::updateWireCostView(
                  = std::min(node->getLayerIdx(), child->getLayerIdx());
                  layerIdx < maxLayerIndex;
                  layerIdx++) {
-              unsigned direction = getLayerDirection(layerIdx);
-              update(direction, node->x, node->y);
+              int direction = getLayerDirection(layerIdx);
+              update(direction, node->x(), node->y());
               if ((*node)[direction] > 0) {
-                update(direction, node->x - 1 + direction, node->y - direction);
+                update(direction,
+                       node->x() - 1 + direction,
+                       node->y() - direction);
               }
             }
           }
@@ -747,16 +758,16 @@ void GridGraph::write(const std::string& heatmap_file) const
   printf("writing heatmap to file...");
   std::stringstream ss;
 
-  ss << num_layers_ << " " << x_size_ << " " << y_size_ << " " << std::endl;
+  ss << num_layers_ << " " << x_size_ << " " << y_size_ << '\n';
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
-    ss << layer_names_[layer_index] << std::endl;
+    ss << layer_names_[layer_index] << '\n';
     for (int y = 0; y < y_size_; y++) {
       for (int x = 0; x < x_size_; x++) {
         ss << (graph_edges_[layer_index][x][y].capacity
                - graph_edges_[layer_index][x][y].demand)
            << (x == x_size_ - 1 ? "" : " ");
       }
-      ss << std::endl;
+      ss << '\n';
     }
   }
   std::ofstream fout(heatmap_file);

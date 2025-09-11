@@ -8,7 +8,9 @@
 #include <vector>
 
 #include "db/obj/frAccess.h"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
 #include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"

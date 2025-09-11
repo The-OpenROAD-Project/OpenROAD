@@ -103,7 +103,12 @@ filegroup(
     visibility = [":__subpackages__"],
 )
 
-orfs_flow(
+VARIANTS = [
+    "base",
+    "flat",
+]
+
+[orfs_flow(
     name = "MockArray",
     arguments = {
         "PLACE_PINS_ARGS": "-annealing",
@@ -135,7 +140,7 @@ orfs_flow(
         "IO_PLACER_V": "M5 M7",
         "IO_PLACER_H": "M4 M6",
         "DETAILED_ROUTE_END_ITERATION": "6",
-        "OPENROAD_HIERARCHICAL": "1",
+        "OPENROAD_HIERARCHICAL": "1" if variant == "base" else "0",
     },
     macros = ["Element_generate_abstract"],
     sources = {
@@ -143,8 +148,13 @@ orfs_flow(
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
     },
+    variant = variant,
     verilog_files = [":verilog"],
-)
+    tags = ["manual"],
+    test_kwargs = {
+        "tags": ["orfs"],
+    },
+) for variant in VARIANTS]
 
 filegroup(
     name = "mock-array-element-io",
@@ -192,6 +202,7 @@ orfs_flow(
         "IO_CONSTRAINTS": [":mock-array-element-io"],
         "SDC_FILE": [":mock-array-constraints"],
     },
+    tags = ["manual"],
     verilog_files = [":verilog"],
 )
 
@@ -203,6 +214,7 @@ chisel_binary(
     deps = [
         "@openroad_maven//:com_github_scopt_scopt_2_13",
     ],
+    tags = ["manual"],
 )
 
 genrule(
@@ -214,6 +226,7 @@ genrule(
         ":generate_verilog",
         "@circt//:bin/firtool",
     ],
+    tags = ["manual"],
 )
 
 filegroup(
@@ -222,6 +235,7 @@ filegroup(
         "src/main/resources/multiplier.v",
         ":genverilog",
     ],
+    tags = ["manual"],
 )
 
 MACROS = [
@@ -284,6 +298,7 @@ verilog_library(
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
     ],
+    tags = ["manual"],
 )
 
 verilator_cc_library(
@@ -307,6 +322,7 @@ verilator_cc_library(
         # No-op option to retrigger a build
         # "-Wfuture-blah",
     ],
+    tags = ["manual"],
 )
 
 cc_binary(
@@ -320,6 +336,7 @@ cc_binary(
     deps = [
         ":array_verilator",
     ],
+    tags = ["manual"],
 )
 
 genrule(
@@ -332,6 +349,7 @@ genrule(
     cmd = "$(execpath :simulator) $(location :MockArrayTestbench.vcd)",
     tools = [
     ],
+    tags = ["manual"],
 )
 
 # If we want to measure power after final, instead of with estimated parasitics,
@@ -387,6 +405,7 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
+    tags = ["manual"],
 )
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
@@ -398,4 +417,5 @@ genrule(
     $(location //src/sta:opensta) >$@
     """,
     tools = ["//src/sta:opensta"],
+    tags = ["manual"],
 )

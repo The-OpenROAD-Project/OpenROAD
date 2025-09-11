@@ -6,10 +6,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <memory>
-#include <set>
 #include <stack>
 #include <string>
 #include <utility>
@@ -2778,6 +2776,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
       return false;
     }
     if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
+      paintInGrid(ndj);
       return false;
     }
     return true;
@@ -2876,6 +2875,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
     return false;
   }
   if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
+    paintInGrid(ndj);
     return false;
   }
   return true;

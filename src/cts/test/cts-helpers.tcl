@@ -7,10 +7,11 @@ proc make_array {
   { clock_gate -1 }
 } {
   set db [ord::get_db]
-  set chip [odb::dbChip_create $db]
+  set tech [$db getTech]
+  set chip [odb::dbChip_create $db $tech]
   set block [odb::dbBlock_create $chip "multi_sink"]
   set master [$db findMaster "DFF_X1"]
-  set tech [$db getTech]
+
   set layer [$tech findLayer "metal6"]
   set min_width [$layer getWidth]
 

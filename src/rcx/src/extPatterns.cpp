@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <map>
 #include <vector>
 
 #include "odb/db.h"
@@ -36,9 +35,9 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
 
   printf("benchPatternsGen= layerCnt %d %s\n", opt.met_cnt, opt.name);
 
-  dbChip* chip = dbChip::create(_db);
+  dbChip* chip = dbChip::create(_db, _tech);
   assert(chip);
-  _block = dbBlock::create(chip, opt.name, nullptr, '/');
+  _block = dbBlock::create(chip, opt.name, '/');
   assert(_block);
   // _prevControl = _block->getExtControl();
   _block->setBusDelimiters('[', ']');

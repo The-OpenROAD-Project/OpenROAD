@@ -9,10 +9,12 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frMarker.h"
 #include "db/obj/frVia.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "global.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

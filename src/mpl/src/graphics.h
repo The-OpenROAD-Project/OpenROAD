@@ -11,10 +11,10 @@
 #include "MplObserver.h"
 #include "clusterEngine.h"
 #include "gui/gui.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "util.h"
 
 namespace mpl {
 class SoftMacro;
@@ -45,6 +45,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setFencePenalty(const PenaltyData& penalty) override;
   void setGuidancePenalty(const PenaltyData& penalty) override;
   void setMacroBlockagePenalty(const PenaltyData& penalty) override;
+  void setFixedMacrosPenalty(const PenaltyData& penalty) override;
   void setNotchPenalty(const PenaltyData& penalty) override;
   void setOutlinePenalty(const PenaltyData& penalty) override;
   void setWirelengthPenalty(const PenaltyData& penalty) override;
@@ -147,6 +148,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::optional<PenaltyData> guidance_penalty_;
   std::optional<PenaltyData> boundary_penalty_;
   std::optional<PenaltyData> macro_blockage_penalty_;
+  std::optional<PenaltyData> fixed_macros_penalty_;
   std::optional<PenaltyData> notch_penalty_;
   std::optional<PenaltyData> area_penalty_;
 

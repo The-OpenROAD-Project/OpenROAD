@@ -37,13 +37,13 @@
 #include "boost/test/included/unit_test.hpp"
 #endif
 
-#include <iostream>
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "boost/test/data/test_case.hpp"
+#include "db/obj/frMarker.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"

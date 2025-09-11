@@ -2,8 +2,9 @@
 [INFO ODB-0227] LEF file: ./Nangate45/fakeram45_64x7.lef, created 1 library cells
 [INFO ODB-0227] LEF file: ./Nangate45/Nangate45_stdcell.lef, created 135 library cells
 [WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
-[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
-[WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC1_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "fakeram45_64x7" with 92 gates.
 [WARNING RMP-1032] Logic cut is empty after extraction, nothing to do.
 Startpoint: i_memory (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: d_o[0] (output port clocked by core_clock)

@@ -110,12 +110,12 @@ bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
 bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
 
 ## Fix the compiler version and avoid any local compiler
-bazel_dep(name = "toolchains_llvm", version = "1.4.0")
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
 # Configure and register the toolchain.
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
-    llvm_version = "20.1.2",
+    llvm_version = "20.1.8",
 )
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
@@ -152,7 +152,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "a94bc4e8e7973750cf818a220fcb2c1e23042469",
+    commit = "f9c37f21de8e1095276e878d1628ac7a2f7908ab",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -161,10 +161,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3695-ga037c3d9",
+    image = "docker.io/openroad/orfs:v3.0-3780-g2f349ade",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "a1e32aa02774b817ccb66813bbf838a6b5174ee90bdfc1a42e7e288a2a6dc25f",
+    sha256 = "637ffa1af0f224e17e3d5cddbe6b45d9b00102016acc9e866226e8c4e830aeab",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -196,8 +196,8 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "openroad_maven",
     artifacts = [
-        "org.chipsalliance:chisel_2.13:7.0.0-RC3",
-        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC3",
+        "org.chipsalliance:chisel_2.13:7.0.0",
+        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",

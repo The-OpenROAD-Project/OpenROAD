@@ -9,6 +9,7 @@
 #include "db/obj/frBlockObject.h"
 #include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "pa/AbstractPAGraphics.h"
 #include "ta/AbstractTAGraphics.h"
 
@@ -20,7 +21,7 @@ class AbstractGraphicsFactory
   virtual void reset(frDebugSettings* settings,
                      frDesign* design,
                      odb::dbDatabase* db,
-                     Logger* logger,
+                     utl::Logger* logger,
                      RouterConfiguration* router_cfg)
       = 0;
   virtual bool guiActive() = 0;
