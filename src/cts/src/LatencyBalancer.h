@@ -42,7 +42,7 @@ struct GraphNode
   int id;
   std::string name;
   std::vector<int> childrenIds;
-  float delay = 0.0;
+  double delay = 0.0;
   int nBuffInsert = -1;
   odb::dbITerm* inputTerm = nullptr;
 };
@@ -56,14 +56,16 @@ class LatencyBalancer
                     odb::dbDatabase* db,
                     sta::dbNetwork* network,
                     sta::dbSta* sta,
-                    double scalingUnit)
+                    double scalingUnit,
+                    double capPerDBU)
       : root_(root),
         options_(options),
         logger_(logger),
         db_(db),
         network_(network),
         openSta_(sta),
-        wireSegmentUnit_(scalingUnit)
+        wireSegmentUnit_(scalingUnit),
+        capPerDBU_(capPerDBU)
   {
   }
 
@@ -77,14 +79,14 @@ class LatencyBalancer
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
                             odb::dbITerm* iterm);
-  sta::ArcDelay computeBufferDelay(sta::LibertyCell* buffer_cell,
-                                   float extra_out_cap);
+  sta::ArcDelay computeBufferDelay(double extra_out_cap);
   float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
                                float& sumArrivals,
                                unsigned& numSinks);
 
+  void computeNumberOfDelayBuffers(int nodeId, int srcX, int srcY);
   // DFS search throw the tree graph to insert delay buffers. At each node,
   // evaluate the delay of the its children, if the children need delay buffers
   // and need different ammount of delay buffers, isert this difference, to the
@@ -114,6 +116,7 @@ class LatencyBalancer
   double wireSegmentUnit_;
   float worseDelay_;
   float bufferDelay_;
+  double capPerDBU_;
   int delayBufIndex_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;

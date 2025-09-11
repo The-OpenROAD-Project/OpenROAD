@@ -2321,6 +2321,12 @@ void TritonCTS::balanceMacroRegisterLatencies()
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
   int totalDelayBuff = 0;
+
+  sta::Corner* corner = openSta_->cmdCorner();
+  // convert from per meter to per dbu
+  double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
+               / block_->getDbUnitsPerMicron();
+
   est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* builder = iter->get();
@@ -2332,7 +2338,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
                               db_,
                               network_,
                               openSta_,
-                              techChar_->getLengthUnit());
+                              techChar_->getLengthUnit(),
+                              capPerDBU);
       totalDelayBuff += balancer.run();
       parasitics_guard.update();
     }

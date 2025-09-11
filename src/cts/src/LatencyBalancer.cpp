@@ -38,10 +38,7 @@ int LatencyBalancer::run()
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());
-  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-  sta::Cell* masterCell = network_->dbToSta(master);
-  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
-  bufferDelay_ = computeBufferDelay(libertyCell, 0);
+  bufferDelay_ = computeBufferDelay(0);
   balanceLatencies(0);
   logger_->info(
              CTS,
@@ -60,10 +57,11 @@ void LatencyBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
-sta::ArcDelay LatencyBalancer::computeBufferDelay(
-    sta::LibertyCell* buffer_cell,
-    float extra_out_cap)
+sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
 {
+  odb::dbMaster* bufferMaster = db_->findMaster(options_->getRootBuffer().c_str());
+  sta::Cell* bufferMasterCell = network_->dbToSta(bufferMaster);
+  sta::LibertyCell* buffer_cell = network_->libertyCell(bufferMasterCell);
   sta::ArcDelay max_rise_delay = 0;
 
   sta::LibertyPort *input, *output;
@@ -83,8 +81,8 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(
         // Only look at rise-rise arcs
         if (model != nullptr && in_rf == sta::RiseFall::rise()
             && out_rf == sta::RiseFall::rise()) {
-          float in_cap = input->capacitance(in_rf, sta::MinMax::max());
-          float load_cap = in_cap + extra_out_cap;
+          double in_cap = input->capacitance(in_rf, sta::MinMax::max());
+          double load_cap = in_cap + extra_out_cap;
           sta::ArcDelay arc_delay;
           sta::Slew arc_slew;
           model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
@@ -171,7 +169,33 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
             float arrival
                 = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
-            graph_[sinkId].delay = arrival;
+            float insDelay = 0.0;
+            sta::LibertyCell* libCell
+                = network_->libertyCell(network_->dbToSta(sinkInst));
+            odb::dbMTerm* mterm = sinkIterm->getMTerm();
+            if (libCell && mterm) {
+              sta::LibertyPort* libPort
+                  = libCell->findLibertyPort(mterm->getConstName());
+              if (libPort) {
+                const float rise = libPort->clkTreeDelay(
+                    0.0, sta::RiseFall::rise(), sta::MinMax::max());
+                const float fall = libPort->clkTreeDelay(
+                    0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+                if (rise != 0 || fall != 0) {
+                  insDelay = (rise + fall) / 2.0;
+                }
+              }
+          }
+            
+            graph_[sinkId].delay = arrival + insDelay;
+            debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             2,
+             "Sink {}: average sink arrival is {:0.3e}",
+             sinkIterm->getName(),
+             arrival);
           }
           continue;
         }
@@ -328,6 +352,31 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
   }
 }
 
+void LatencyBalancer::computeNumberOfDelayBuffers(int nodeId, int srcX, int srcY) {
+  GraphNode* node = &graph_[nodeId];
+  if (node->delay != 0.0) {
+    int numBuffers = (int) ((worseDelay_ - node->delay) / bufferDelay_);
+
+    // adjust buffer delay for wire cap
+    int sinkX, sinkY;
+    graph_[nodeId].inputTerm->getAvgXY(&sinkX, &sinkY);
+    float offsetX = (float) (sinkX - srcX) / (numBuffers + 1);
+    float offsetY = (float) (sinkY - srcY) / (numBuffers + 1);
+    auto newDelay = computeBufferDelay((std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_);
+    numBuffers = (int) ((worseDelay_ - node->delay) / newDelay);
+    if (node->childrenIds.empty()) {
+      debugPrint(logger_,
+                    CTS,
+                    "insertion delay",
+                    3,
+                    "For node {}, isert {:2f} buffers",
+                    node->name,
+                    numBuffers);
+    }
+    node->nBuffInsert = numBuffers;
+  }
+}
+
 void LatencyBalancer::balanceLatencies(int nodeId)
 {
   GraphNode* node = &graph_[nodeId];
@@ -349,14 +398,6 @@ void LatencyBalancer::balanceLatencies(int nodeId)
 
   // If it is not a leaf node compute the amount of buffers needed for its
   // children
-  std::map<int, std::vector<odb::dbITerm*>> buffersNeeded2Childern;
-  for (int child : node->childrenIds) {
-    balanceLatencies(child);
-    buffersNeeded2Childern[graph_[child].nBuffInsert].push_back(
-        graph_[child].inputTerm);
-  }
-
-  // If the children need a different amount of buffers insert this difference
   std::vector<odb::dbITerm*> sinksInput;
   int previouBufToInsert = 0;
   int srcX, srcY;
@@ -370,6 +411,17 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     node->inputTerm->getAvgXY(&srcX, &srcY);
   }
 
+  double maxArrival = std::numeric_limits<double>::min();
+  std::map<int, std::vector<odb::dbITerm*>> buffersNeeded2Childern;
+  for (int child : node->childrenIds) {
+    balanceLatencies(child);
+    computeNumberOfDelayBuffers(child, srcX, srcY);
+    maxArrival = std::max(graph_[child].delay, maxArrival);
+    buffersNeeded2Childern[graph_[child].nBuffInsert].push_back(
+        graph_[child].inputTerm);
+  }
+
+  // If the children need a different amount of buffers insert this difference
   for (auto it = buffersNeeded2Childern.rbegin();
        it != buffersNeeded2Childern.rend();
        ++it) {
@@ -398,6 +450,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   }
 
   node->nBuffInsert = previouBufToInsert;
+  node->delay = maxArrival;
 }
 
 odb::dbITerm* LatencyBalancer::insertDelayBuffers(
@@ -430,6 +483,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
 
   float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (numBuffers + 1);
   float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (numBuffers + 1);
+
   odb::dbInst* returnBuffer = nullptr;
   for (int i = 0; i < numBuffers; i++) {
     double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
