@@ -2547,15 +2547,15 @@ bool RepairDesign::makeRepeater(
       //
 
       // jk: needed?
-      odb::dbModNet* buffer_op_pin_mod_net
-          = db_network_->hierNet(buffer_op_pin);
-      dbNet* buffer_op_pin_flat_net = db_network_->flatNet(buffer_op_pin);
-      if (buffer_op_pin_mod_net) {
-        db_network_->disconnectPin(buffer_op_pin);
-        db_network_->connectPin(buffer_op_pin,
-                                db_network_->dbToSta(buffer_op_pin_flat_net),
-                                db_network_->dbToSta(buffer_op_pin_mod_net));
-      }
+      // odb::dbModNet* buffer_op_pin_mod_net
+      //    = db_network_->hierNet(buffer_op_pin);
+      // dbNet* buffer_op_pin_flat_net = db_network_->flatNet(buffer_op_pin);
+      // if (buffer_op_pin_mod_net) {
+      //  db_network_->disconnectPin(buffer_op_pin);
+      //  db_network_->connectPin(buffer_op_pin,
+      //                          db_network_->dbToSta(buffer_op_pin_flat_net),
+      //                          db_network_->dbToSta(buffer_op_pin_mod_net));
+      //}
 
       // renormalize the driver pin. We have moved a lot of stuff
       // off the driver net, possibly moving away any hierarchical
