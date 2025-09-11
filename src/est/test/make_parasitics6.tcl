@@ -28,7 +28,7 @@ report_layer_rc -corner ff
 puts "Corner: ss"
 report_layer_rc -corner ss
 
-estimate_parasitics -placement -spef_file results/make_parasitics6.spef
+estimate_parasitics -placement -spef_file [make_result_file make_parasitics6.spef]
 
 report_net r1/Q -corner ff
 report_net r1/Q -corner ss
