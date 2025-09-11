@@ -2563,20 +2563,21 @@ bool RepairDesign::makeRepeater(
       // at this level of hierarchy and renormalize.
 
       // jk: needed?
-      odb::dbModNet* driver_pin_mod_net
-          // = db_network_->findModNetForPin(driver_pin); // buggy. it returns
-          // "any" dbModNet
-          = db_network_->hierNet(driver_pin);
+      // odb::dbModNet* driver_pin_mod_net
+      //    // = db_network_->findModNetForPin(driver_pin); // buggy. it returns
+      //    // "any" dbModNet
+      //    = db_network_->hierNet(driver_pin);
 
-      if (driver_pin_mod_net && (driver_pin_mod_net->connectionCount() == 1)) {
-        db_network_->disconnectPin(driver_pin, (Net*) driver_pin_mod_net);
-      } else {
-        dbNet* driver_pin_flat_net = db_network_->flatNet(driver_pin);
-        db_network_->disconnectPin(driver_pin);
-        db_network_->connectPin(driver_pin,
-                                db_network_->dbToSta(driver_pin_flat_net),
-                                db_network_->dbToSta(driver_pin_mod_net));
-      }
+      // if (driver_pin_mod_net && (driver_pin_mod_net->connectionCount() == 1))
+      // {
+      //   db_network_->disconnectPin(driver_pin, (Net*) driver_pin_mod_net);
+      // } else {
+      //   dbNet* driver_pin_flat_net = db_network_->flatNet(driver_pin);
+      //   db_network_->disconnectPin(driver_pin);
+      //   db_network_->connectPin(driver_pin,
+      //                           db_network_->dbToSta(driver_pin_flat_net),
+      //                           db_network_->dbToSta(driver_pin_mod_net));
+      // }
 
       // Rename the flat net if it has duplicate name in the parent scope
       // renameNetIfNeeded(ip_net_db, parent);
