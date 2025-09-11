@@ -1020,7 +1020,10 @@ void SACoreSoftMacro::setClustersLocations(
     std::vector<std::pair<float, float>>& clusters_locations)
 {
   if (clusters_locations.size() != pos_seq_.size()) {
-    return;
+    logger_->error(MPL,
+                   52,
+                   "setClustersLocation called with a different numbers of "
+                   "clusters of that in the sequence pair");
   }
 
   for (int& id : pos_seq_) {
