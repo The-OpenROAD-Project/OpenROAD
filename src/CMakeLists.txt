@@ -289,6 +289,10 @@ add_executable(openroad
   ${OPENROAD_SOURCE}
 )
 
+set_target_properties(openroad PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
 target_compile_options(openroad
   PRIVATE
     -Wextra -pedantic -Wcast-qual

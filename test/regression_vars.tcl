@@ -21,7 +21,7 @@ set app "openroad"
 if { [info exist ::env(OPENROAD_EXE)] } {
   set app_path "$::env(OPENROAD_EXE)"
 } else {
-  set app_path [file join $openroad_dir "build" "src" $app]
+  set app_path [file join $openroad_dir "build" "bin" $app]
 }
 # Application options.
 set app_options "-no_init -no_splash -exit"
