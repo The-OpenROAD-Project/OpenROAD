@@ -13,6 +13,7 @@ class Logger;
 
 namespace odb {
 
+class dbInst;
 class dbNet;
 class dbBlock;
 
@@ -33,6 +34,8 @@ class DefOut
   ~DefOut();
 
   void selectNet(dbNet* net);
+  void selectInst(dbInst* inst);
+
   void setVersion(Version v);  // default is 5.8
 
   bool writeBlock(dbBlock* block, const char* def_file);

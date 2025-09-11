@@ -23,6 +23,11 @@ void DefOut::selectNet(dbNet* net)
   _writer->selectNet(net);
 }
 
+void DefOut::selectInst(dbInst* inst)
+{
+  _writer->selectInst(inst);
+}
+
 void DefOut::setVersion(Version v)
 {
   _writer->setVersion(v);
