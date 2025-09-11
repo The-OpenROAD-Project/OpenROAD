@@ -996,6 +996,8 @@ void GuideProcessor::patchGuides(frNet* net,
   if (isPinCoveredByGuides(pin, guides)) {
     return;
   }
+  logger_->error(
+      DRT, 1008, "Pin {} is not covered by guides.", getPinName(pin));
   // no guide was found that overlaps with any of the pin shapes, then we patch
   // the guides
 
