@@ -18,11 +18,6 @@ DefOut::DefOut(utl::Logger* logger)
 
 DefOut::~DefOut() = default;
 
-void DefOut::setUseLayerAlias(bool value)
-{
-  _writer->setUseLayerAlias(value);
-}
-
 void DefOut::setUseNetInstIds(bool value)
 {
   _writer->setUseNetInstIds(value);

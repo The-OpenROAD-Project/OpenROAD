@@ -32,7 +32,6 @@ class DefOut
   DefOut(utl::Logger* logger);
   ~DefOut();
 
-  void setUseLayerAlias(bool value);
   void setUseNetInstIds(bool value);
   void setUseMasterIds(bool value);
   void selectNet(dbNet* net);

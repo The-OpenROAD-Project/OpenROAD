@@ -32,6 +32,7 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+
 namespace odb {
 
 namespace {
@@ -312,12 +313,7 @@ void DefOut::Impl::writeTracks(dbBlock* block)
     dbTrackGrid* grid = *itr;
     dbTechLayer* layer = grid->getTechLayer();
 
-    std::string lname;
-    if (_use_alias && layer->hasAlias()) {
-      lname = layer->getAlias();
-    } else {
-      lname = layer->getName();
-    }
+    const std::string lname = layer->getName();
 
     for (int i = 0; i < grid->getNumGridPatternsX(); ++i) {
       int orgX, count, step, firstmask;
@@ -472,12 +468,6 @@ void DefOut::Impl::writeVia(dbVia* via)
     for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
       dbBox* box = *bitr;
       dbTechLayer* layer = box->getTechLayer();
-      std::string lname;
-      if (_use_alias && layer->hasAlias()) {
-        lname = layer->getAlias();
-      } else {
-        lname = layer->getName();
-      }
       int x1 = defdist(box->xMin());
       int y1 = defdist(box->yMin());
       int x2 = defdist(box->xMax());
@@ -487,8 +477,8 @@ void DefOut::Impl::writeVia(dbVia* via)
         *_out << "\n      ";
       }
 
-      *_out << " + RECT " << lname << " ( " << x1 << " " << y1 << " ) ( " << x2
-            << " " << y2 << " )";
+      *_out << " + RECT " << layer->getName() << " ( " << x1 << " " << y1
+            << " ) ( " << x2 << " " << y2 << " )";
     }
   }
 
@@ -1109,13 +1099,7 @@ void DefOut::Impl::writeBPin(dbBPin* bpin, int cnt)
     xMax = defdist(box->xMax()) - x;
     yMax = defdist(box->yMax()) - y;
     dbTechLayer* layer = box->getTechLayer();
-    std::string lname;
-
-    if (_use_alias && layer->hasAlias()) {
-      lname = layer->getAlias();
-    } else {
-      lname = layer->getName();
-    }
+    std::string lname = layer->getName();
 
     *_out << "\n       ";
     if (_version == DefOut::DEF_5_5) {
@@ -1232,14 +1216,8 @@ void DefOut::Impl::writeBlockages(dbBlock* block)
 
     dbBox* bbox = obs->getBBox();
     dbTechLayer* layer = bbox->getTechLayer();
-    std::string lname;
-    if (_use_alias && layer->hasAlias()) {
-      lname = layer->getAlias();
-    } else {
-      lname = layer->getName();
-    }
 
-    *_out << "    - LAYER " << lname;
+    *_out << "    - LAYER " << layer->getName();
 
     if (inst) {
       if (_use_net_inst_ids) {
@@ -1578,12 +1556,8 @@ void DefOut::Impl::writeWire(dbWire* wire)
       case dbWireDecoder::VWIRE:
       case dbWireDecoder::JUNCTION: {
         layer = decode.getLayer();
-        std::string lname;
-        if (_use_alias && layer->hasAlias()) {
-          lname = layer->getAlias();
-        } else {
-          lname = layer->getName();
-        }
+        const std::string lname = layer->getName();
+
         dbWireType wire_type = decode.getWireType();
         if (wire->getNet()->getWireType() == dbWireType::FIXED) {
           wire_type = dbWireType::FIXED;
@@ -1813,12 +1787,7 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
       dbTechVia* v = box->getTechVia();
       std::string vn = v->getName();
       dbTechLayer* l = v->getBottomLayer();
-      std::string ln;
-      if (_use_alias && l->hasAlias()) {
-        ln = l->getAlias();
-      } else {
-        ln = l->getName();
-      }
+      const std::string ln = l->getName();
 
       int x, y;
       box->getViaXY(x, y);
@@ -1843,12 +1812,7 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
       dbVia* v = box->getBlockVia();
       std::string vn = v->getName();
       dbTechLayer* l = v->getBottomLayer();
-      std::string ln;
-      if (_use_alias && l->hasAlias()) {
-        ln = l->getAlias();
-      } else {
-        ln = l->getName();
-      }
+      const std::string ln = l->getName();
 
       int x, y;
       box->getViaXY(x, y);
@@ -1875,13 +1839,7 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
 void DefOut::Impl::writeSpecialPath(dbSBox* box)
 {
   dbTechLayer* l = box->getTechLayer();
-  std::string ln;
-
-  if (_use_alias && l->hasAlias()) {
-    ln = l->getAlias();
-  } else {
-    ln = l->getName();
-  }
+  const std::string ln = l->getName();
 
   int x1 = box->xMin();
   int y1 = box->yMin();

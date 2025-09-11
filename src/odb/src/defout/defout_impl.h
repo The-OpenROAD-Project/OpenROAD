@@ -32,8 +32,6 @@ class DefOut::Impl
 
   ~Impl() = default;
 
-  void setUseLayerAlias(bool value) { _use_alias = value; }
-
   void setUseNetInstIds(bool value) { _use_net_inst_ids = value; }
 
   void setUseMasterIds(bool value) { _use_master_ids = value; }
@@ -99,7 +97,6 @@ class DefOut::Impl
   std::ostream* _out{nullptr};
   bool _use_net_inst_ids{false};
   bool _use_master_ids{false};
-  bool _use_alias{false};
   std::list<dbNet*> _select_net_list;
   std::list<dbInst*> _select_inst_list;
   dbMap<dbNet, char>* _select_net_map{nullptr};
