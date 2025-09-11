@@ -246,12 +246,9 @@ bool DefOut::Impl::writeBlock(dbBlock* block, std::ostream& stream)
   writeScanChains(block);
 
   *_out << "END DESIGN\n";
-  {
-    delete _select_net_map;
-  }
-  {
-    delete _select_inst_map;
-  }
+
+  delete _select_net_map;
+  delete _select_inst_map;
 
   _out = nullptr;
 
@@ -481,10 +478,20 @@ void DefOut::Impl::writeInsts(dbBlock* block)
 {
   dbSet<dbInst> insts = block->getInsts();
 
-  *_out << "COMPONENTS " << insts.size() << " ;\n";
+  auto sorted_insts = sortedSet(insts);
+
+  int inst_cnt = 0;
+  for (dbInst* inst : sorted_insts) {
+    if (_select_inst_map && !(*_select_inst_map)[inst]) {
+      continue;
+    }
+    inst_cnt++;
+  }
+
+  *_out << "COMPONENTS " << inst_cnt << " ;\n";
 
   // Sort the components for consistent output
-  for (dbInst* inst : sortedSet(insts)) {
+  for (dbInst* inst : sorted_insts) {
     if (_select_inst_map && !(*_select_inst_map)[inst]) {
       continue;
     }
