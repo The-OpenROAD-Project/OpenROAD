@@ -1009,7 +1009,7 @@ std::vector<std::pair<float, float>> SACoreSoftMacro::getClustersLocations()
     const
 {
   std::vector<std::pair<float, float>> clusters_locations(pos_seq_.size());
-  for (int& id : pos_seq_) {
+  for (int id : pos_seq_) {
     clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
   }
 
