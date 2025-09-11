@@ -145,7 +145,7 @@ void PatternRoute::constructSteinerTree()
           }
           // Connect current to parent
           if (parent == nullptr) {
-            parent = current;
+            parent = std::move(current);
           } else {
             parent->addChild(current);
           }
@@ -186,7 +186,7 @@ void PatternRoute::constructRoutingDAG()
           constructDag(current, steinerChild);
         }
         if (dstNode == nullptr) {
-          dstNode = current;
+          dstNode = std::move(current);
         } else {
           dstNode->addChild(current);
           constructPaths(dstNode, current);
@@ -216,7 +216,7 @@ void PatternRoute::constructPaths(std::shared_ptr<PatternRoutingNode>& start,
           = std::make_shared<PatternRoutingNode>(
               midPoint, num_dag_nodes_++, true);
       mid->getPaths() = {{end}};
-      childPaths.push_back(mid);
+      childPaths.push_back(std::move(mid));
     }
   }
 }
@@ -637,6 +637,7 @@ std::shared_ptr<GRTreeNode> PatternRoute::getRoutingTree(
       }
     }
   }
+  assert(parentLayerIndex >= 0);
   std::shared_ptr<GRTreeNode> routingNode
       = std::make_shared<GRTreeNode>(parentLayerIndex, node->x(), node->y());
   std::shared_ptr<GRTreeNode> lowestRoutingNode = routingNode;

@@ -197,7 +197,7 @@ void MazeRoute::run()
       queue.pop();
       foundPinIndex = graph_.getVertexPin(solution->vertex);
       if (foundPinIndex != -1 && !visited[foundPinIndex]) {
-        foundSolution = solution;
+        foundSolution = std::move(solution);
         break;
       }
       // Pruning
@@ -221,11 +221,12 @@ void MazeRoute::run()
     }
 
     solutions_.emplace_back(foundSolution);
+    assert(foundPinIndex >= 0);
     visited[foundPinIndex] = true;
     numDetached -= 1;
 
     // Update the cost of the vertices_ on the path
-    std::shared_ptr<Solution> temp = foundSolution;
+    std::shared_ptr<Solution> temp = std::move(foundSolution);
     while (temp && temp->cost != 0) {
       updateSolution(std::make_shared<Solution>(0, temp->vertex, temp->prev));
       temp = temp->prev;
@@ -255,7 +256,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       auto it = created.find(temp->vertex);
       if (it == created.end()) {
         const PointT point = graph_.getPoint(temp->vertex);
-        const auto node = std::make_shared<SteinerTreeNode>(point);
+        auto node = std::make_shared<SteinerTreeNode>(point);
         created.emplace(temp->vertex, node);
         if (lastNode) {
           node->addChild(lastNode);
@@ -269,7 +270,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
           assert(pinIndex != -1);
           node->setFixedLayers(graph_.getPseudoPin(pinIndex).second);
         }
-        lastNode = node;
+        lastNode = std::move(node);
         temp = temp->prev;
       } else {
         if (lastNode) {
@@ -279,6 +280,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       }
     }
   }
+  assert(tree);
 
   // Remove redundant tree nodes
   SteinerTreeNode::preorder(
@@ -317,7 +319,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
                         == (*(temp->getChildren()[0]))[1 - direction]) {
             temp = temp->getChildren()[0];
           }
-          child = temp;
+          child = std::move(temp);
         }
       });
 
