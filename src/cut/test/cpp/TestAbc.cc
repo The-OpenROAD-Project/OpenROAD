@@ -9,12 +9,16 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
@@ -27,6 +31,8 @@
 #include "gtest/gtest.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/lefin.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"

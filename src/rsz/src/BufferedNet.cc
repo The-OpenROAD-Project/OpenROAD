@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>

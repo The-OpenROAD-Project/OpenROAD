@@ -3,8 +3,6 @@
 
 #include "EstimateParasiticsCallBack.h"
 
-#include <memory>
-
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
 

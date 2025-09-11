@@ -24,6 +24,7 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 #include "ppl/Parameters.h"
 #include "utl/Logger.h"
@@ -1806,7 +1807,14 @@ void IOPlacer::initConstraints(bool annealing)
         constraints_no_slots++;
       }
     } else {
-      logger_->error(PPL, 76, "Constraint does not have available slots.");
+      logger_->error(PPL,
+                     76,
+                     "Constraint with {} pins on region {:.2f}um-{:.2f}um on "
+                     "the {} edge does not have available slots.",
+                     constraint.pin_list.size(),
+                     getBlock()->dbuToMicrons(region_begin),
+                     getBlock()->dbuToMicrons(region_end),
+                     region_edge);
     }
   }
 

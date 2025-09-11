@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <limits>
 #include <list>
 #include <map>
 #include <memory>

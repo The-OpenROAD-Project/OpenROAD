@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstring>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "odb/db.h"

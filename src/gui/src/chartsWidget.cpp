@@ -9,7 +9,6 @@
 #include <QString>
 #include <QValueAxis>
 #include <QWidget>
-#include <QtCharts>
 #include <algorithm>
 #include <cassert>
 #include <cmath>

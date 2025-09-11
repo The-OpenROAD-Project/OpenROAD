@@ -2,8 +2,6 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <cstdio>
-#include <map>
-#include <vector>
 
 #include "odb/dbSet.h"
 #include "parse.h"

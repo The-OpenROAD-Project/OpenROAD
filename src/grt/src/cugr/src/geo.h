@@ -31,12 +31,12 @@ class PointT
   int y() const { return y_; }
 
   // Operators
-  const int& operator[](const unsigned d) const
+  const int& operator[](const int d) const
   {
     assert(d == 0 || d == 1);
     return (d == 0 ? x_ : y_);
   }
-  int& operator[](const unsigned d)
+  int& operator[](const int d)
   {
     assert(d == 0 || d == 1);
     return (d == 0 ? x_ : y_);
@@ -79,59 +79,65 @@ class PointT
 class IntervalT
 {
  public:
-  int low, high;
-
   IntervalT() { Set(); }
   IntervalT(int val) { Set(val); }
   IntervalT(int lo, int hi) { Set(lo, hi); }
 
+  int low() const { return low_; }
+  int high() const { return high_; }
+
   // Setters
+  void addToLow(const int increment) { low_ += increment; }
+  void addToHigh(const int increment) { high_ += increment; }
+
   void Set()
   {
-    low = std::numeric_limits<int>::max();
-    high = std::numeric_limits<int>::min();
+    low_ = std::numeric_limits<int>::max();
+    high_ = std::numeric_limits<int>::min();
   }
   void Set(int val)
   {
-    low = val;
-    high = val;
+    low_ = val;
+    high_ = val;
   }
   void Set(int lo, int hi)
   {
-    low = lo;
-    high = hi;
+    low_ = lo;
+    high_ = hi;
   }
+  void SetLow(int val) { low_ = val; }
+  void SetHigh(int val) { high_ = val; }
 
   // Getters
-  int center() const { return (high + low) / 2; }
-  int range() const { return high - low; }
+  int center() const { return (high_ + low_) / 2; }
+  int range() const { return high_ - low_; }
 
   // Update
   // Update() is always safe, FastUpdate() assumes existing values
   void Update(int newVal)
   {
-    if (newVal < low) {
-      low = newVal;
+    if (newVal < low_) {
+      low_ = newVal;
     }
-    if (newVal > high) {
-      high = newVal;
+    if (newVal > high_) {
+      high_ = newVal;
     }
   }
   void FastUpdate(int newVal)
   {
-    if (newVal < low) {
-      low = newVal;
-    } else if (newVal > high) {
-      high = newVal;
+    if (newVal < low_) {
+      low_ = newVal;
+    } else if (newVal > high_) {
+      high_ = newVal;
     }
   }
 
   // Two types of intervals: 1. normal, 2. degenerated (i.e., point)
   // is valid interval (i.e., valid closed interval)
-  bool IsValid() const { return low <= high; }
+  bool IsValid() const { return low_ <= high_; }
   // is strictly valid interval (excluding degenerated ones, i.e., valid open
   // interval)
-  bool IsStrictValid() const { return low < high; }
+  bool IsStrictValid() const { return low_ < high_; }
 
   // Geometric Query/Update
   // interval/range of union (not union of intervals)
@@ -145,12 +151,12 @@ class IntervalT
       return *this;
     }
 
-    return IntervalT(std::min(low, rhs.low), std::max(high, rhs.high));
+    return IntervalT(std::min(low_, rhs.low_), std::max(high_, rhs.high_));
   }
   // may return an invalid interval (as empty intersection)
   IntervalT IntersectWith(const IntervalT& rhs) const
   {
-    return IntervalT(std::max(low, rhs.low), std::min(high, rhs.high));
+    return IntervalT(std::max(low_, rhs.low_), std::min(high_, rhs.high_));
   }
   bool HasIntersectWith(const IntervalT& rhs) const
   {
@@ -161,29 +167,29 @@ class IntervalT
     return IntersectWith(rhs).IsStrictValid();
   }
   // contain a val
-  bool Contain(int val) const { return val >= low && val <= high; }
-  bool StrictlyContain(int val) const { return val > low && val < high; }
+  bool Contain(int val) const { return val >= low_ && val <= high_; }
+  bool StrictlyContain(int val) const { return val > low_ && val < high_; }
   // get nearest point(s) to val (assume valid intervals)
   int GetNearestPointTo(int val) const
   {
-    if (val <= low) {
-      return low;
+    if (val <= low_) {
+      return low_;
     }
 
-    if (val >= high) {
-      return high;
+    if (val >= high_) {
+      return high_;
     }
 
     return val;
   }
   IntervalT GetNearestPointsTo(IntervalT val) const
   {
-    if (val.high <= low) {
-      return {low};
+    if (val.high_ <= low_) {
+      return {low_};
     }
 
-    if (val.low >= high) {
-      return {high};
+    if (val.low_ >= high_) {
+      return {high_};
     }
 
     return IntersectWith(val);
@@ -191,23 +197,27 @@ class IntervalT
 
   void ShiftBy(const int& rhs)
   {
-    low += rhs;
-    high += rhs;
+    low_ += rhs;
+    high_ += rhs;
   }
 
   // Operators
   bool operator==(const IntervalT& rhs) const
   {
     return (!IsValid() && !rhs.IsValid())
-           || (low == rhs.low && high == rhs.high);
+           || (low_ == rhs.low_ && high_ == rhs.high_);
   }
   bool operator!=(const IntervalT& rhs) const { return !(*this == rhs); }
 
   friend std::ostream& operator<<(std::ostream& os, const IntervalT& interval)
   {
-    os << "(" << interval.low << ", " << interval.high << ")";
+    os << "(" << interval.low_ << ", " << interval.high_ << ")";
     return os;
   }
+
+ private:
+  int low_;
+  int high_;
 };
 
 // Box template
@@ -227,12 +237,7 @@ class BoxT
   BoxT(const PointT& low, const PointT& high) { Set(low, high); }
   BoxT(const BoxT& box) { Set(box); }
 
-  // Setters
-  int& lx() { return x.low; }
-  int& ly() { return y.low; }
-  int& hy() { return y.high; }
-  int& hx() { return x.high; }
-  IntervalT& operator[](unsigned i)
+  IntervalT& operator[](int i)
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x : y;
@@ -274,17 +279,17 @@ class BoxT
   }  // tighter
 
   // Getters
-  int lx() const { return x.low; }
-  int ly() const { return y.low; }
-  int hy() const { return y.high; }
-  int hx() const { return x.high; }
+  int lx() const { return x.low(); }
+  int ly() const { return y.low(); }
+  int hy() const { return y.high(); }
+  int hx() const { return x.high(); }
   int cx() const { return x.center(); }
   int cy() const { return y.center(); }
   int width() const { return x.range(); }
   int height() const { return y.range(); }
   int hp() const { return width() + height(); }  // half perimeter
   int area() const { return width() * height(); }
-  const IntervalT& operator[](unsigned i) const
+  const IntervalT& operator[](int i) const
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x : y;

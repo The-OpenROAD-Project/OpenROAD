@@ -8,16 +8,12 @@
 #include <tcl.h>
 #include <unistd.h>
 
-#include <array>
-#include <cstddef>
 #include <cstdlib>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
-#include <unordered_set>
-#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"

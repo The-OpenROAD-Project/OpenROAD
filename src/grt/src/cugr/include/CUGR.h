@@ -66,6 +66,10 @@ class CUGR
   NetRouteMap getRoutes();
 
  private:
+  void updateOverflowNets(std::vector<int>& netIndices);
+  void patternRoute(std::vector<int>& netIndices);
+  void patternRouteWithDetours(std::vector<int>& netIndices);
+  void mazeRoute(std::vector<int>& netIndices);
   void sortNetIndices(std::vector<int>& netIndices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);

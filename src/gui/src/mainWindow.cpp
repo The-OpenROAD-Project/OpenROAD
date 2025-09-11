@@ -12,6 +12,7 @@
 #include <optional>
 #include <set>
 #include <variant>
+#include <vector>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
 #endif
@@ -27,12 +28,8 @@
 #include <QUrl>
 #include <QWidgetAction>
 #include <cmath>
-#include <iomanip>
-#include <map>
-#include <sstream>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "GUIProgress.h"
 #include "browserWidget.h"

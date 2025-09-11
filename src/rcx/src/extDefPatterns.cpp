@@ -16,9 +16,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
-#include <map>
 #include <string>
-#include <vector>
 
 #include "utl/Logger.h"
 
@@ -784,9 +782,9 @@ uint extMain::DefWires(extMainOptions* opt)
 
   opt->_tech = _tech;
 
-  dbChip* chip = dbChip::create(_db);
+  dbChip* chip = dbChip::create(_db, _tech);
   assert(chip);
-  _block = dbBlock::create(chip, opt->_name, nullptr, '/');
+  _block = dbBlock::create(chip, opt->_name, '/');
   assert(_block);
 
   _block->setBusDelimiters('[', ']');

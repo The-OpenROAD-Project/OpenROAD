@@ -3,8 +3,6 @@
 
 // Parser for LEF58 array spacing rules that define spacing requirements for
 // arrays of cuts/vias
-#include <functional>
-#include <iostream>
 #include <string>
 
 #include "boost/bind/bind.hpp"
