@@ -42,7 +42,7 @@ struct GraphNode
   int id;
   std::string name;
   std::vector<int> childrenIds;
-  double delay = 0.0;
+  double arrival = 0.0;
   int nBuffInsert = -1;
   odb::dbITerm* inputTerm = nullptr;
 };

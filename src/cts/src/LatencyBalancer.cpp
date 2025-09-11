@@ -159,7 +159,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
           auto builder = inst2builder_[sinkName];
           float builerAvgArrival = computeAveSinkArrivals(builder);
           worseDelay_ = std::max(worseDelay_, builerAvgArrival);
-          graph_[sinkId].delay = builerAvgArrival;
+          graph_[sinkId].arrival = builerAvgArrival;
           continue;
         }
 
@@ -188,7 +188,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
               }
           }
             
-            graph_[sinkId].delay = arrival + insDelay;
+            graph_[sinkId].arrival = arrival + insDelay;
             debugPrint(logger_,
              CTS,
              "insertion delay",
@@ -354,8 +354,8 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
 
 void LatencyBalancer::computeNumberOfDelayBuffers(int nodeId, int srcX, int srcY) {
   GraphNode* node = &graph_[nodeId];
-  if (node->delay != 0.0) {
-    int numBuffers = (int) ((worseDelay_ - node->delay) / bufferDelay_);
+  if (node->arrival != 0.0) {
+    int numBuffers = (int) ((worseDelay_ - node->arrival) / bufferDelay_);
 
     // adjust buffer delay for wire cap
     int sinkX, sinkY;
@@ -363,7 +363,7 @@ void LatencyBalancer::computeNumberOfDelayBuffers(int nodeId, int srcX, int srcY
     float offsetX = (float) (sinkX - srcX) / (numBuffers + 1);
     float offsetY = (float) (sinkY - srcY) / (numBuffers + 1);
     auto newDelay = computeBufferDelay((std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_);
-    numBuffers = (int) ((worseDelay_ - node->delay) / newDelay);
+    numBuffers = (int) ((worseDelay_ - node->arrival) / newDelay);
     if (node->childrenIds.empty()) {
       debugPrint(logger_,
                     CTS,
@@ -383,16 +383,6 @@ void LatencyBalancer::balanceLatencies(int nodeId)
 
   // Compute number of buffer needed for leaf node
   if (node->childrenIds.empty()) {
-    if (node->delay != 0.0) {
-      debugPrint(logger_,
-                 CTS,
-                 "insertion delay",
-                 3,
-                 "For node {}, isert {:2f} buffers",
-                 node->name,
-                 (worseDelay_ - node->delay) / bufferDelay_);
-      node->nBuffInsert = (int) ((worseDelay_ - node->delay) / bufferDelay_);
-    }
     return;
   }
 
@@ -416,7 +406,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   for (int child : node->childrenIds) {
     balanceLatencies(child);
     computeNumberOfDelayBuffers(child, srcX, srcY);
-    maxArrival = std::max(graph_[child].delay, maxArrival);
+    maxArrival = std::max(graph_[child].arrival, maxArrival);
     buffersNeeded2Childern[graph_[child].nBuffInsert].push_back(
         graph_[child].inputTerm);
   }
@@ -450,7 +440,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   }
 
   node->nBuffInsert = previouBufToInsert;
-  node->delay = maxArrival;
+  node->arrival = maxArrival;
 }
 
 odb::dbITerm* LatencyBalancer::insertDelayBuffers(
@@ -608,7 +598,7 @@ void LatencyBalancer::showGraph()
     odb::dbITerm* inputTerm = node.inputTerm;
     logger_->report(" Node {}", node.name);
     logger_->report("   id       = {}", node.id);
-    logger_->report("   delay    = {}", node.delay);
+    logger_->report("   delay    = {}", node.arrival);
     logger_->report("   n buffer = {}", node.nBuffInsert);
     logger_->report("   in Term  = {}",
                     inputTerm == nullptr ? "no dbITerm" : inputTerm->getName());
