@@ -88,9 +88,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calMacroBlockagePenalty();
   void calFixedMacrosPenalty();
 
-  std::vector<std::pair<float, float>> getClustersLocations();
+  std::vector<std::pair<float, float>> getClustersLocations() const;
   void setClustersLocations(
-      std::vector<std::pair<float, float>> clusters_locations);
+      std::vector<std::pair<float, float>>& clusters_locations);
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
