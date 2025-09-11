@@ -3,6 +3,8 @@
 
 #include "cgt/NetworkBuilder.h"
 
+#include <cassert>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"

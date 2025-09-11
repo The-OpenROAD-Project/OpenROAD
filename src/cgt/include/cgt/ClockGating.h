@@ -3,7 +3,12 @@
 
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "cgt/NetworkBuilder.h"
 #include "cgt/RandomBits.h"

@@ -35,16 +35,13 @@ class GridGraph
   GridGraph(const Design* design, const Constants& constants);
   int getLibDBU() const { return lib_dbu_; }
   int getM2Pitch() const { return m2_pitch_; }
-  unsigned getNumLayers() const { return num_layers_; }
-  unsigned getSize(unsigned dimension) const
-  {
-    return (dimension ? y_size_ : x_size_);
-  }
+  int getNumLayers() const { return num_layers_; }
+  int getSize(int dimension) const { return (dimension ? y_size_ : x_size_); }
   std::string getLayerName(int layer_index) const
   {
     return layer_names_[layer_index];
   }
-  unsigned getLayerDirection(int layer_index) const
+  int getLayerDirection(int layer_index) const
   {
     return layer_directions_[layer_index];
   }
@@ -58,7 +55,7 @@ class GridGraph
   {
     return (uint64_t) x * y_size_ + y;
   }
-  int getGridline(const unsigned dimension, const int index) const
+  int getGridline(const int dimension, const int index) const
   {
     return gridlines_[dimension][index];
   }
@@ -70,7 +67,7 @@ class GridGraph
   }
 
   // Costs
-  int getEdgeLength(unsigned direction, unsigned edge_index) const;
+  int getEdgeLength(int direction, int edge_index) const;
   CostT getWireCost(int layer_index, PointT u, PointT v) const;
   CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
@@ -114,13 +111,13 @@ class GridGraph
   const int lib_dbu_;
   int m2_pitch_;
 
-  unsigned num_layers_;
-  unsigned x_size_;
-  unsigned y_size_;
+  int num_layers_;
+  int x_size_;
+  int y_size_;
   std::vector<std::vector<int>> gridlines_;
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;
-  std::vector<unsigned> layer_directions_;
+  std::vector<int> layer_directions_;
   std::vector<int> layer_min_lengths_;
 
   // Unit costs
@@ -135,11 +132,10 @@ class GridGraph
   // (l, x, y+1)} depending on the routing direction of the layer
   Constants constants_;
 
-  IntervalT rangeSearchGridlines(unsigned dimension,
+  IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT rangeSearchRows(unsigned dimension,
-                            const IntervalT& loc_interval) const;
+  IntervalT rangeSearchRows(int dimension, const IntervalT& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation

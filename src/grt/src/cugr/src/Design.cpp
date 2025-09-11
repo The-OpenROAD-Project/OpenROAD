@@ -33,7 +33,7 @@ Design::Design(odb::dbDatabase* db,
 void Design::read()
 {
   lib_dbu_ = block_->getDbUnitsPerMicron();
-  auto dieBound = block_->getDieArea();
+  const odb::Rect dieBound = block_->getDieArea();
   die_region_ = getBoxFromRect(dieBound);
 
   readLayers();
@@ -42,18 +42,19 @@ void Design::read()
 
   readInstanceObstructions();
 
-  int num_special_nets = 0;
-  readSpecialNetObstructions(num_special_nets);
+  const int num_special_nets = readSpecialNetObstructions();
 
   computeGrid();
 
-  std::cout << "design statistics\n";
-  std::cout << "lib DBU:             " << lib_dbu_ << '\n';
-  std::cout << "die region (in DBU): " << die_region_ << '\n';
-  std::cout << "num of nets :        " << nets_.size() << '\n';
-  std::cout << "num of special nets: " << num_special_nets << '\n';
-  std::cout << "gcell grid:          " << gridlines_[0].size() - 1 << " x "
-            << gridlines_[1].size() - 1 << " x " << getNumLayers() << '\n';
+  logger_->report("design statistics");
+  logger_->report("lib DBU:             {}", lib_dbu_);
+  logger_->report("die region (in DBU): {}", die_region_);
+  logger_->report("num of nets :        {}", nets_.size());
+  logger_->report("num of special nets: {}", num_special_nets);
+  logger_->report("gcell grid:          {} x {} x {}",
+                  gridlines_[0].size() - 1,
+                  gridlines_[1].size() - 1,
+                  getNumLayers());
 }
 
 void Design::readLayers()
@@ -101,7 +102,7 @@ void Design::readNetlist()
         }
       }
 
-      pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
+      pins.emplace_back(pin_count, db_bterm, pin_shapes);
       pin_count++;
     }
 
@@ -124,7 +125,7 @@ void Design::readNetlist()
         }
       }
 
-      pins.emplace_back(pin_count, db_iterm, pin_shapes, false);
+      pins.emplace_back(pin_count, db_iterm, pin_shapes);
       pin_count++;
     }
     nets_.emplace_back(net_index, db_net, pins);
@@ -184,14 +185,16 @@ void Design::readInstanceObstructions()
   }
 }
 
-void Design::readSpecialNetObstructions(int& num_special_nets)
+int Design::readSpecialNetObstructions()
 {
+  int num_special_nets = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
     if (!db_net->isSpecial() && !db_net->getSigType().isSupply()) {
       continue;
     }
 
-    odb::uint wire_cnt = 0, via_cnt = 0;
+    odb::uint wire_cnt = 0;
+    odb::uint via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0) {
       continue;
@@ -231,14 +234,15 @@ void Design::readSpecialNetObstructions(int& num_special_nets)
 
     num_special_nets++;
   }
+  return num_special_nets;
 }
 
 void Design::computeGrid()
 {
   gridlines_.resize(2);
-  for (unsigned dimension = 0; dimension < 2; dimension++) {
-    const int low = die_region_[dimension].low;
-    const int high = die_region_[dimension].high;
+  for (int dimension = 0; dimension < 2; dimension++) {
+    const int low = die_region_[dimension].low();
+    const int high = die_region_[dimension].high();
     for (int i = low; i + default_gridline_spacing_ < high;
          i += default_gridline_spacing_) {
       gridlines_[dimension].push_back(i);
@@ -251,7 +255,7 @@ void Design::computeGrid()
 
 void Design::setUnitCosts()
 {
-  int m2_pitch = layers_[1].getPitch();
+  const int m2_pitch = layers_[1].getPitch();
   unit_length_wire_cost_ = constants_.weight_wire_length / m2_pitch;
   unit_via_cost_ = constants_.weight_via_number;
   unit_length_short_costs_.resize(layers_.size());
@@ -264,7 +268,7 @@ void Design::setUnitCosts()
 }
 
 void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
-                             bool skip_m1) const
+                             const bool skip_m1) const
 {
   all_obstacles.resize(getNumLayers());
 
@@ -278,13 +282,13 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
-    std::cout << "Net: " << net.getName() << '\n';
+    logger_->report("Net: {}", net.getName());
     for (const auto& pin : net.getPins()) {
-      std::cout << "\tPin: " << pin.getName() << "\n";
+      logger_->report("\tPin: {}", pin.getName());
       for (const auto& box : pin.getPinShapes()) {
-        std::cout << "\t\t" << box << "\n";  // adjust to 1-based
+        logger_->report("\t\t{}", box);
       }
-      std::cout << '\n';
+      logger_->report("");
     }
   }
 }
@@ -293,14 +297,13 @@ void Design::printBlockages() const
 {
   std::vector<std::vector<BoxT>> all_obstacles;
   getAllObstacles(all_obstacles, true);
-  std::cout << "design obstacles: " << all_obstacles.size() << '\n';
+  logger_->report("design obstacles: {}", all_obstacles.size());
   for (int i = 0; i < all_obstacles.size(); i++) {
-    std::cout << "obs in layer " << (i + 1) << ": " << all_obstacles[i].size()
-              << '\n';
+    logger_->report("obs in layer {}: {}", (i + 1), all_obstacles[i].size());
     for (const auto& obstacle : all_obstacles[i]) {
-      std::cout << "  Obstacle on layer "
-                << (i + 1)  // adjust to 1-based layer index
-                << ": " << obstacle << '\n';
+      logger_->report("  Obstacle on layer {}: {}",
+                      (i + 1),  // adjust to 1-based layer index
+                      obstacle);
     }
   }
 }

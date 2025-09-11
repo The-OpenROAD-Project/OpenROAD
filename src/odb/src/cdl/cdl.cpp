@@ -3,12 +3,9 @@
 
 #include "odb/cdl.h"
 
-#include <algorithm>
 #include <cstddef>
-#include <fstream>
 #include <ios>
 #include <iterator>
-#include <list>
 #include <ostream>
 #include <regex>
 #include <sstream>

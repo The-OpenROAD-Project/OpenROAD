@@ -16,7 +16,6 @@
 #include <QStandardItemModel>
 #include <algorithm>
 #include <cstddef>
-#include <fstream>
 #include <functional>
 #include <iterator>
 #include <limits>

@@ -1338,7 +1338,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbChip* chip,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -1348,7 +1347,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbBlock* block,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -7031,11 +7029,14 @@ class dbChip : public dbObject
 
   dbChipRegion* findChipRegion(const std::string& name) const;
 
+  dbTech* getTech() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
   ///
   static dbChip* create(dbDatabase* db,
+                        dbTech* tech,
                         const std::string& name = "",
                         ChipType type = ChipType::DIE);
 
@@ -8298,7 +8299,8 @@ class dbModNet : public dbObject
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
   unsigned connectionCount();
-  const char* getName() const;
+  std::string getName() const;
+  const char* getConstName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
 

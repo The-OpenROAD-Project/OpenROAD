@@ -4,7 +4,6 @@
 #include <unistd.h>
 
 #include <cstdio>
-#include <list>
 #include <string>
 
 #include "boost/algorithm/string/predicate.hpp"

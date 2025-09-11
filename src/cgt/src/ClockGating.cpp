@@ -4,8 +4,19 @@
 #include "cgt/ClockGating.h"
 
 #include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"

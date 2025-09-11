@@ -10,7 +10,6 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include <istream>
 #include <limits>
 #include <map>
 #include <memory>

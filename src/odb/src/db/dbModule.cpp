@@ -893,7 +893,7 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
              it_map.size());
   // Make boundary port connections.
   for (dbModNet* old_net : old_module->getModNets()) {
-    dbModNet* new_net = dbModNet::create(new_module, old_net->getName());
+    dbModNet* new_net = dbModNet::create(new_module, old_net->getConstName());
     if (new_net) {
       debugPrint(logger,
                  utl::ODB,
@@ -1030,7 +1030,7 @@ bool _dbModule::copyToChildBlock(dbModule* module)
   std::string block_name = module->getName();
   dbTech* tech = top_block->getTech();
   // TODO: strip out instance name from block name
-  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
+  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str());
   if (child_block) {
     child_block->setDefUnits(tech->getLefUnits());
     child_block->setBusDelimiters('[', ']');

@@ -15,8 +15,6 @@
 #endif
 
 #include <cstdio>
-#include <map>
-#include <vector>
 
 #include "utl/Logger.h"
 

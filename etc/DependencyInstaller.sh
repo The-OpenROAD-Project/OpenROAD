@@ -75,6 +75,8 @@ _installCommonDev() {
     spdlogVersion=1.15.0
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
+    abslVersion=20250814.0
+    abslChecksum="016feacd6a6b3b9a47ab844e61f4f7bd"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
     flexVersion=2.6.4
@@ -261,6 +263,21 @@ _installCommonDev() {
         echo "gtest already installed."
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
+
+    # Abseil
+    abslPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${abslPrefix}/absl/base ]]; then
+        cd "${baseDir}"
+        eval wget https://github.com/abseil/abseil-cpp/releases/download/${abslVersion}/abseil-cpp-${abslVersion}.tar.gz
+        md5sum -c <(echo "${abslChecksum} abseil-cpp-${abslVersion}.tar.gz") || exit 1
+        tar xf abseil-cpp-${abslVersion}.tar.gz
+        cd abseil-cpp-${abslVersion}
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${abslPrefix}" -DCMAKE_CXX_STANDARD=17 -B build .
+        ${cmakePrefix}/bin/cmake --build build --target install
+    else
+        echo "Abseil already installed."
+    fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath $abslPrefix) "
 
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
