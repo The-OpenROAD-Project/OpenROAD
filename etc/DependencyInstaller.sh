@@ -306,7 +306,12 @@ _installCommonDev() {
     if [[ ! -z ${PREFIX} ]]; then
         # Emit an environment setup script
         cat > ${PREFIX}/env.sh <<EOF
-depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
+if [ -n "\$ZSH_VERSION" ]; then
+  depRoot="\$(dirname \$(readlink -f "\${(%):-%x}"))"
+else
+  depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
+fi
+
 PATH=\${depRoot}/bin:\${PATH}
 LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
 EOF
