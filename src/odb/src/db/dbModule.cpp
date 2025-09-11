@@ -893,7 +893,7 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
              it_map.size());
   // Make boundary port connections.
   for (dbModNet* old_net : old_module->getModNets()) {
-    dbModNet* new_net = dbModNet::create(new_module, old_net->getName());
+    dbModNet* new_net = dbModNet::create(new_module, old_net->getConstName());
     if (new_net) {
       debugPrint(logger,
                  utl::ODB,

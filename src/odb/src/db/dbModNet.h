@@ -38,6 +38,13 @@ class _dbModNet : public _dbObject
   dbId<_dbModBTerm> _modbterms;
   dbId<_dbITerm> _iterms;
   dbId<_dbBTerm> _bterms;
+
+  // User Code Begin Fields
+  enum Field  // dbJournalField name
+  {
+    NAME
+  };
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj);

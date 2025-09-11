@@ -154,7 +154,13 @@ dbModule* dbModNet::getParent() const
 
 // User Code Begin dbModNetPublicMethods
 
-const char* dbModNet::getName() const
+std::string dbModNet::getName() const
+{
+  _dbModNet* obj = (_dbModNet*) this;
+  return obj->_name;
+}
+
+const char* dbModNet::getConstName() const
 {
   _dbModNet* obj = (_dbModNet*) this;
   return obj->_name;
@@ -171,6 +177,18 @@ void dbModNet::rename(const char* new_name)
   }
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: mod_net {}, rename to {}",
+               getId(),
+               new_name);
+    block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
+  }
+
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
   parent->_modnet_hash.erase(obj->_name);
   free((void*) (obj->_name));
