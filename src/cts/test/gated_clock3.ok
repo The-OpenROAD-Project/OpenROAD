@@ -272,10 +272,9 @@
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (97465 146025)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (93965 146025)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (90465 146025)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (100506 174482)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (101013 149105)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_7_clk is inserted at (101520 123727)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_8_clk is inserted at (102026 98350)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_9_clk is inserted at (102533 72972)
-[INFO CTS-0036]  inserted 10 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 10
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (100608 169407)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (101216 138954)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_7_clk is inserted at (101824 108501)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_8_clk is inserted at (102432 78048)
+[INFO CTS-0036]  inserted 9 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 9
