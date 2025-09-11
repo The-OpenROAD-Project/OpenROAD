@@ -1017,7 +1017,7 @@ std::vector<std::pair<float, float>> SACoreSoftMacro::getClustersLocations()
 }
 
 void SACoreSoftMacro::setClustersLocations(
-    std::vector<std::pair<float, float>>& clusters_locations)
+    const std::vector<std::pair<float, float>>& clusters_locations)
 {
   if (clusters_locations.size() != pos_seq_.size()) {
     logger_->error(MPL,
