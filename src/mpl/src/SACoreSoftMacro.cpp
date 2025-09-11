@@ -1005,7 +1005,8 @@ void SACoreSoftMacro::addBlockages(const std::vector<Rect>& blockages)
   blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
 }
 
-std::vector<std::pair<float, float>> SACoreSoftMacro::getClustersLocations() {
+std::vector<std::pair<float, float>> SACoreSoftMacro::getClustersLocations()
+{
   std::vector<std::pair<float, float>> clusters_locations(pos_seq_.size());
   for (int& id : pos_seq_) {
     clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
@@ -1014,7 +1015,9 @@ std::vector<std::pair<float, float>> SACoreSoftMacro::getClustersLocations() {
   return clusters_locations;
 }
 
-void SACoreSoftMacro::setClustersLocations(std::vector<std::pair<float, float>> clusters_locations) {
+void SACoreSoftMacro::setClustersLocations(
+    std::vector<std::pair<float, float>> clusters_locations)
+{
   if (clusters_locations.size() != pos_seq_.size()) {
     return;
   }

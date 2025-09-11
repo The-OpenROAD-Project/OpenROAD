@@ -67,11 +67,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void addBlockages(const std::vector<Rect>& blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
-  
-  void enableEnhancements()
-  {
-    enhancements_on_ = true;
-  };
+
+  void enableEnhancements() { enhancements_on_ = true; };
 
  private:
   float calNormCost() const override;
@@ -91,9 +88,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calMacroBlockagePenalty();
   void calFixedMacrosPenalty();
 
-
   std::vector<std::pair<float, float>> getClustersLocations();
-  void setClustersLocations(std::vector<std::pair<float, float>> clusters_locations);
+  void setClustersLocations(
+      std::vector<std::pair<float, float>> clusters_locations);
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
