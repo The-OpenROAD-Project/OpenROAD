@@ -164,6 +164,12 @@ void FlexPA::updateDirtyInsts()
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);
   }
+  for (auto& unique_class : dirty_unique_classes) {
+    // In case of unique class that was previously skipped
+    for (auto& inst : unique_class->getInsts()) {
+      addToInstsSet(inst);
+    }
+  }
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
   for (auto& inst : pattern_insts) {

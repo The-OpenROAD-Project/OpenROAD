@@ -95,6 +95,10 @@ bool FlexPA::instancesAreAbuting(frInst* inst_1, frInst* inst_2) const
 std::vector<frInst*> FlexPA::getAdjacentInstancesCluster(frInst* inst) const
 {
   const auto inst_it = insts_set_.find(inst);
+  if (inst_it == insts_set_.end()) {
+    logger_->error(
+        DRT, 9419, "Inst {} not found in insts_set_", inst->getName());
+  }
   std::vector<frInst*> adj_inst_cluster;
 
   adj_inst_cluster.push_back(inst);
