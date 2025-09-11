@@ -33,8 +33,8 @@ class DefOut::Impl
   ~Impl() = default;
 
   void selectNet(dbNet* net);
-
   void selectInst(dbInst* inst);
+
   void setVersion(DefOut::Version v) { _version = v; }
 
   bool writeBlock(dbBlock* block, const char* def_file);
