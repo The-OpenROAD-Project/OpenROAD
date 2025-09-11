@@ -884,9 +884,8 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
             excess_ratio = std::max(violation_info.excess_ratio_PAR,
                                     violation_info.excess_ratio_PSR);
           }
-          bool to_repair = (diode_mterm != nullptr);
           // while it has violation, increase iterm_diff_area
-          if (to_repair) {
+          if (diode_mterm) {
             while (par_violation || psr_violation) {
               // increasing iterm_diff_area and count
               violation_info.iterm_diff_area += diode_diff_area * gates.size();
@@ -935,10 +934,8 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           diode_count_per_gate
               = std::max(0, diode_count_per_gate - num_diodes_added[gate]);
           num_diodes_added[gate] += diode_count_per_gate;
-          // save antenna violation when there is violation and
-          // if number of diodes is greater than 0 or
-          // the function is not called to repair antennas
-          if (violated && (diode_count_per_gate > 0 || !to_repair)) {
+          // save antenna violation
+          if (violated) {
             antenna_violations.push_back({layer->getRoutingLevel(),
                                           gates_for_diode_insertion,
                                           diode_count_per_gate,
