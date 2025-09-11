@@ -16,12 +16,10 @@ class CUGRPin
  public:
   CUGRPin(int index,
           odb::dbITerm* iterm,
-          const std::vector<BoxOnLayer>& pin_shapes,
-          bool is_port);
+          const std::vector<BoxOnLayer>& pin_shapes);
   CUGRPin(int index,
           odb::dbBTerm* bterm,
-          const std::vector<BoxOnLayer>& pin_shapes,
-          bool is_port);
+          const std::vector<BoxOnLayer>& pin_shapes);
 
   int getIndex() const { return index_; }
   odb::dbITerm* getITerm() const;
@@ -31,13 +29,13 @@ class CUGRPin
   std::string getName() const;
 
  private:
-  const int index_;
   union
   {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
   };
   std::vector<BoxOnLayer> pin_shapes_;
+  const int index_;
   const bool is_port_;
 };
 

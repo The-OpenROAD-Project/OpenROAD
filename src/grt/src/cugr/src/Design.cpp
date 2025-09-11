@@ -102,7 +102,7 @@ void Design::readNetlist()
         }
       }
 
-      pins.emplace_back(pin_count, db_bterm, pin_shapes, true);
+      pins.emplace_back(pin_count, db_bterm, pin_shapes);
       pin_count++;
     }
 
@@ -125,7 +125,7 @@ void Design::readNetlist()
         }
       }
 
-      pins.emplace_back(pin_count, db_iterm, pin_shapes, false);
+      pins.emplace_back(pin_count, db_iterm, pin_shapes);
       pin_count++;
     }
     nets_.emplace_back(net_index, db_net, pins);
@@ -240,9 +240,9 @@ int Design::readSpecialNetObstructions()
 void Design::computeGrid()
 {
   gridlines_.resize(2);
-  for (unsigned dimension = 0; dimension < 2; dimension++) {
-    const int low = die_region_[dimension].low;
-    const int high = die_region_[dimension].high;
+  for (int dimension = 0; dimension < 2; dimension++) {
+    const int low = die_region_[dimension].low();
+    const int high = die_region_[dimension].high();
     for (int i = low; i + default_gridline_spacing_ < high;
          i += default_gridline_spacing_) {
       gridlines_[dimension].push_back(i);

@@ -88,20 +88,20 @@ int MetalLayer::getTrackLocation(const int track_index) const
 IntervalT MetalLayer::rangeSearchTracks(const IntervalT& loc_range,
                                         const bool include_bound) const
 {
-  IntervalT track_range(
-      ceil(double(std::max(loc_range.low, first_track_loc_) - first_track_loc_)
-           / double(pitch_)),
-      floor(double(std::min(loc_range.high, last_track_loc_) - first_track_loc_)
-            / double(pitch_)));
+  const int lo = std::max(loc_range.low(), first_track_loc_);
+  const int hi = std::min(loc_range.high(), last_track_loc_);
+  const double pitch = pitch_;
+  IntervalT track_range(std::ceil((lo - first_track_loc_) / pitch),
+                        std::floor((hi - first_track_loc_) / pitch));
   if (!track_range.IsValid()) {
     return track_range;
   }
   if (!include_bound) {
-    if (getTrackLocation(track_range.low) == loc_range.low) {
-      ++track_range.low;
+    if (getTrackLocation(track_range.low()) == loc_range.low()) {
+      track_range.addToLow(1);
     }
-    if (getTrackLocation(track_range.high) == loc_range.high) {
-      --track_range.high;
+    if (getTrackLocation(track_range.high()) == loc_range.high()) {
+      track_range.addToHigh(-1);
     }
   }
   return track_range;
@@ -109,14 +109,14 @@ IntervalT MetalLayer::rangeSearchTracks(const IntervalT& loc_range,
 
 int MetalLayer::getParallelSpacing(const int width, const int length) const
 {
-  unsigned w = parallel_width_.size() - 1;
+  int w = parallel_width_.size() - 1;
   while (w > 0 && parallel_width_[w] >= width) {
     w--;
   }
   if (length == 0) {
     return parallel_spacing_[w][0];
   }
-  unsigned l = parallel_length_.size() - 1;
+  int l = parallel_length_.size() - 1;
   while (l > 0 && parallel_length_[l] >= length) {
     l--;
   }
