@@ -28,19 +28,7 @@ class dbTechLayerRule;
 class DefOut::Impl
 {
  public:
-  Impl(utl::Logger* logger)
-  {
-    _dist_factor = 0;
-    _out = nullptr;
-    _use_net_inst_ids = false;
-    _use_master_ids = false;
-    _use_alias = false;
-    _select_net_map = nullptr;
-    _select_inst_map = nullptr;
-    _non_default_rule = nullptr;
-    _version = DefOut::DEF_5_8;
-    _logger = logger;
-  }
+  Impl(utl::Logger* logger) : _logger(logger) {}
 
   ~Impl() = default;
 
@@ -53,13 +41,13 @@ class DefOut::Impl
   void selectNet(dbNet* net);
 
   void selectInst(dbInst* inst);
-  void setVersion(int v) { _version = v; }
+  void setVersion(DefOut::Version v) { _version = v; }
 
   bool writeBlock(dbBlock* block, const char* def_file);
   bool writeBlock(dbBlock* block, std::ostream& stream);
 
-private:
-    enum ObjType
+ private:
+  enum ObjType
   {
     COMPONENT,
     COMPONENTPIN,
@@ -71,20 +59,6 @@ private:
     ROW,
     SPECIALNET
   };
-
-  double _dist_factor;
-  std::ostream* _out;
-  bool _use_net_inst_ids;
-  bool _use_master_ids;
-  bool _use_alias;
-  std::list<dbNet*> _select_net_list;
-  std::list<dbInst*> _select_inst_list;
-  dbMap<dbNet, char>* _select_net_map;
-  dbMap<dbInst, char>* _select_inst_map;
-  dbTechNonDefaultRule* _non_default_rule;
-  int _version;
-  std::map<std::string, bool> _prop_defs[9];
-  utl::Logger* _logger;
 
   int defdist(int value) { return (int) (((double) value) * _dist_factor); }
 
@@ -120,6 +94,20 @@ private:
   void writeProperties(dbObject* object);
   void writePinProperties(dbBlock* block);
   bool hasProperties(dbObject* object, ObjType type);
+
+  double _dist_factor{0};
+  std::ostream* _out{nullptr};
+  bool _use_net_inst_ids{false};
+  bool _use_master_ids{false};
+  bool _use_alias{false};
+  std::list<dbNet*> _select_net_list;
+  std::list<dbInst*> _select_inst_list;
+  dbMap<dbNet, char>* _select_net_map{nullptr};
+  dbMap<dbInst, char>* _select_inst_map{nullptr};
+  dbTechNonDefaultRule* _non_default_rule{nullptr};
+  DefOut::Version _version{DefOut::DEF_5_8};
+  std::map<std::string, bool> _prop_defs[9];
+  utl::Logger* _logger;
 };
 
 }  // namespace odb
