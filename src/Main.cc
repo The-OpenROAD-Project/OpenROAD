@@ -88,6 +88,7 @@ int cmd_argc;
 char** cmd_argv;
 static const char* log_filename = nullptr;
 static const char* metrics_filename = nullptr;
+static std::unique_ptr<std::set<std::string>> commands, sta_commands;
 static bool no_settings = false;
 static bool minimize = false;
 
@@ -379,6 +380,31 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
 }  // namespace
 #endif
 
+
+static int TraceTclCommand(
+    ClientData clientData,
+    Tcl_Interp* interp,
+    int /* level */,
+    const char* command ,
+    Tcl_Command commandToken,
+    int /* objc */,
+    Tcl_Obj *const objv[])
+{
+
+    auto* commands = static_cast<std::set<std::string>*>(clientData);
+    utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+    if(commands->count(Tcl_GetString(objv[0]))){
+      Tcl_Obj *fullName = Tcl_NewObj();
+      Tcl_GetCommandFullName(interp, commandToken, fullName);
+      string fullName_str = Tcl_GetString(fullName);
+      if(fullName_str.compare(0, 7, "::sta::")==0||!sta_commands->count(Tcl_GetString(objv[0]))){
+        logger->report("[CMD] {}", command);
+      }
+    }
+    return TCL_OK;
+}
+
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -438,6 +464,39 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
+    commands = std::make_unique<std::set<std::string>>();
+    sta_commands = std::make_unique<std::set<std::string>>();
+    if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
+      Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
+      int cmd_size;
+      Tcl_Obj** cmds_objs;
+      if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs)
+          == TCL_OK) {
+        for (int i = 0; i < cmd_size; i++) {
+          commands->insert(Tcl_GetString(cmds_objs[i]));
+        }
+      }
+    }
+    if (Tcl_Eval(interp, "info commands ::sta::*") == TCL_OK) {
+      Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
+      int cmd_size;
+      Tcl_Obj** cmds_objs;
+      if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs)
+          == TCL_OK) {
+        for (int i = 0; i < cmd_size; i++) {
+          string str = Tcl_GetString(cmds_objs[i]);
+          sta_commands->insert(string(str.begin()+7, str.end()));
+        }
+      }
+    }
+    Tcl_CreateObjTrace(
+          interp,
+          0,
+          TCL_ALLOW_INLINE_COMPILATION,
+          TraceTclCommand,
+          commands.get(),
+          nullptr
+    );
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
