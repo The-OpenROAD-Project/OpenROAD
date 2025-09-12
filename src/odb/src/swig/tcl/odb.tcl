@@ -1106,5 +1106,4 @@ proc destroy_net_routes { } {
   set block [ord::get_db_block]
   odb::destroy_routes $block
 }
-
 }
