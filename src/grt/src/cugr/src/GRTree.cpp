@@ -5,6 +5,8 @@
 #include <memory>
 #include <sstream>
 
+#include "utl/Logger.h"
+
 namespace grt {
 
 void GRTreeNode::preorder(

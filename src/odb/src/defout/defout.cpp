@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <memory>
 
 #include "defout_impl.h"
 #include "odb/db.h"
