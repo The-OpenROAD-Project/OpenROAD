@@ -257,6 +257,11 @@ void write_pin_locations(const char* file_name)
   getGlobalRouter()->writePinLocations(file_name);
 }
 
+void destroy_routes()
+{
+  getGlobalRouter()->destroyRoutes();
+}
+
 } // namespace
 
 %} // inline

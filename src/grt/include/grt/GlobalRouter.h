@@ -300,6 +300,7 @@ class GlobalRouter
   Rudy* getRudy();
 
   void writePinLocations(const char* file_name);
+  void destroyRoutes();
 
  private:
   // Net functions
