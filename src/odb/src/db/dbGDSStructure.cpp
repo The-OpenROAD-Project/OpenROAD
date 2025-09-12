@@ -4,6 +4,10 @@
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
 
+#include <cstdlib>
+
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
@@ -16,6 +20,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 namespace odb {

@@ -5,8 +5,11 @@
 #include "dbScanInst.h"
 
 #include <string>
+#include <string_view>
 #include <utility>
+#include <variant>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"

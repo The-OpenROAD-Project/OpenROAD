@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"

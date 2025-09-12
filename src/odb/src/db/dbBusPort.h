@@ -4,7 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cmath>
+
 #include "dbCore.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include "dbModuleBusPortModBTermItr.h"

@@ -4,9 +4,13 @@
 // Generator Code Begin Cpp
 #include "dbIsolation.h"
 
+#include <cstdlib>
 #include <string>
+#include <vector>
 
 #include "dbBlock.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
@@ -15,6 +19,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 namespace odb {
 template class dbTable<_dbIsolation>;
 

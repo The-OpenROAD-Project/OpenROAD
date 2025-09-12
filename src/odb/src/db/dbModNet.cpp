@@ -4,7 +4,13 @@
 // Generator Code Begin Cpp
 #include "dbModNet.h"
 
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 #include "dbBlock.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbITerm.h"
@@ -17,6 +23,7 @@
 #include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include "dbModuleModNetBTermItr.h"
 #include "dbModuleModNetITermItr.h"

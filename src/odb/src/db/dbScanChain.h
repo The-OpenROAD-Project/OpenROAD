@@ -5,10 +5,14 @@
 #pragma once
 
 #include <string>
+#include <variant>
 
 #include "dbCore.h"
 #include "dbScanPin.h"
 #include "dbVector.h"
+#include "odb/db.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 
 namespace odb {

@@ -12,6 +12,8 @@
 
 // Generator Code Begin Cpp
 #include "dbBlock.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
@@ -21,6 +23,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include "dbGroup.h"
 #include "dbModBTerm.h"

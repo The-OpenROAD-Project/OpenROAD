@@ -5,8 +5,11 @@
 #include "dbTechLayerCutClassRule.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.h"
 #include "dbTable.h"

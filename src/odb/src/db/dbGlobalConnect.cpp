@@ -4,13 +4,18 @@
 // Generator Code Begin Cpp
 #include "dbGlobalConnect.h"
 
+#include <map>
 #include <regex>
+#include <set>
 #include <string>
+#include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include "dbInst.h"
 #include "dbLib.h"

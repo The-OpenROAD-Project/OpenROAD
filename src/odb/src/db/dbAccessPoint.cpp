@@ -5,12 +5,18 @@
 #include "dbAccessPoint.h"
 
 #include <array>
+#include <cstdint>
+#include <tuple>
+#include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <vector>

@@ -5,6 +5,8 @@
 #include "dbPowerDomain.h"
 
 #include "dbBlock.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
