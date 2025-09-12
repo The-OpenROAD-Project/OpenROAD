@@ -2091,7 +2091,7 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
         = std::min(single_bit_width_, master->getWidth() / multiplier_);
     sta::PowerResult ff_power
         = sta_->power(network_->dbToSta(insts_[flop.idx]), corner_);
-    single_bit_power_ = std::min(single_bit_power_, ff_power.leakage());
+    single_bit_power_ = std::min(single_bit_power_, ff_power.total());
   }
 }
 
@@ -2309,7 +2309,7 @@ void MBFF::ReadLibs()
 
       if (tray_area_[array_mask][idx] > cur_area) {
         tray_area_[array_mask][idx] = cur_area;
-        tray_power_[array_mask][idx] = tray_power.leakage();
+        tray_power_[array_mask][idx] = tray_power.total();
         best_master_[array_mask][idx] = master;
         pin_mappings_[array_mask][idx] = GetPinMapping(tmp_tray);
         tray_width_[array_mask][idx] = master->getWidth() / multiplier_;
