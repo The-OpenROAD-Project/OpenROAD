@@ -2070,6 +2070,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   LibertyCell* lib_cell = findLibertyCell(cell_name);
   TestCell* test_cell = nullptr;
   if (lib_cell) {
+    registerConcreteCell(reinterpret_cast<const Cell*>(lib_cell));
     ccell->setLibertyCell(lib_cell);
     lib_cell->setExtCell(reinterpret_cast<void*>(master));
     test_cell = lib_cell->testCell();
