@@ -125,11 +125,11 @@ Dummys used:
 [INFO RSZ-0048] Inserted 112 buffers in 38 nets.
 Placement Analysis
 ---------------------------------
-total displacement       4567.0 u
+total displacement       4569.6 u
 average displacement        1.4 u
 max displacement          146.7 u
 original HPWL          189367.9 u
-legalized HPWL         190335.5 u
+legalized HPWL         190345.7 u
 delta HPWL                    1 %
 
 Clock clk
@@ -177,9 +177,9 @@ Path Type: max
    0.04    1.11 ^ wire10/Z (BUF_X8)
    0.05    1.16 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
    0.00    1.16 ^ inst_1_1/clk (array_tile)
-   0.21    1.38 ^ inst_1_1/e_out (array_tile)
-   0.00    1.38 ^ inst_2_1/w_in (array_tile)
-           1.38   data arrival time
+   0.21    1.37 ^ inst_1_1/e_out (array_tile)
+   0.00    1.37 ^ inst_2_1/w_in (array_tile)
+           1.37   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -216,7 +216,7 @@ Path Type: max
            6.07   data required time
 ---------------------------------------------------------
            6.07   data required time
-          -1.38   data arrival time
+          -1.37   data arrival time
 ---------------------------------------------------------
            4.69   slack (MET)
 

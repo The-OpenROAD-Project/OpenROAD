@@ -35,12 +35,12 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 54549
 Placement Analysis
 ---------------------------------
-total displacement          7.4 u
-average displacement        1.9 u
-max displacement            2.7 u
+total displacement          6.8 u
+average displacement        1.7 u
+max displacement            2.4 u
 original HPWL               8.9 u
-legalized HPWL             22.1 u
-delta HPWL                  148 %
+legalized HPWL             19.1 u
+delta HPWL                  114 %
 
 worst slack max -0.04
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -55,12 +55,12 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.0 |      2 | y2
-       10 |       0 |       6 |        1 |      0 |     2 |   +84.6% |   -0.015 |       -0.0 |      2 | y2
-       12 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-       13 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-      14* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-      15* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-    final |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
+       10 |       0 |       6 |        1 |      0 |     2 |   +84.6% |   -0.012 |       -0.0 |      2 | y1
+       12 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+       13 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+      14* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+      15* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+    final |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 1 buffers.
 [INFO RSZ-0051] Resized 7 instances: 7 up, 0 up match, 0 down, 0 VT
