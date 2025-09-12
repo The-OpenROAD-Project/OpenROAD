@@ -690,7 +690,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
     odb::Line empty_line;
     std::vector<Point> slots
         = is_die_polygon ? findLayerSlots(layer, Edge::polygonEdge, line, true)
-                       : findLayerSlots(layer, edge, empty_line, false);
+                         : findLayerSlots(layer, edge, empty_line, false);
 
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
@@ -842,11 +842,11 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
     if (vertical_pin) {
       curr_x = init_tracks + start_idx * min_dst_pins;
       curr_y = is_die_polygon ? edge_start.getY()
-                            : ((edge == Edge::bottom) ? lb_y : ub_y);
+                              : ((edge == Edge::bottom) ? lb_y : ub_y);
     } else {
       curr_y = init_tracks + start_idx * min_dst_pins;
       curr_x = is_die_polygon ? edge_start.getX()
-                            : ((edge == Edge::left) ? lb_x : ub_x);
+                              : ((edge == Edge::left) ? lb_x : ub_x);
     }
 
     for (int i = start_idx; i <= end_idx; ++i) {
