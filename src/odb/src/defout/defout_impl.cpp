@@ -820,6 +820,7 @@ void DefOut::Impl::writeGroups(dbBlock* block)
       std::string name = inst->getName();
 
       *_out << " " << name;
+      ++cnt;
     }
 
     dbRegion* parent = group->getRegion();
