@@ -159,11 +159,11 @@ run_hungarian_matching()
   getIOPlacer()->runHungarianMatching();
 }
 
-void
-run_hungarian_matching_polygon()
-{
-  getIOPlacer()->runHungarianMatchingPolygon();
-}
+// void
+// run_hungarian_matching_polygon()
+// {
+//   getIOPlacer()->runHungarianMatchingPolygon();
+// }
 
 void
 set_report_hpwl(bool report)

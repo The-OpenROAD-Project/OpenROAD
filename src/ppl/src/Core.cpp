@@ -22,7 +22,7 @@ int Core::getPerimeter() const
 
 std::vector<odb::Line> Core::getDieAreaEdges()
 {
-  return polygon_edges_;
+  return die_area_edges_;
 }
 
 odb::Point Core::getMirroredPosition(const odb::Point& position) const
