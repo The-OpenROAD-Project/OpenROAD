@@ -90,7 +90,6 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void runHungarianMatching();
-  // void runHungarianMatchingPolygon();
   void runAnnealing();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
@@ -152,11 +151,11 @@ class IOPlacer
   void findSlots(const std::set<int>& layers,
                  Edge edge,
                  odb::Line line,
-                 bool isDiePolygon);
+                 bool is_die_polygon);
   std::vector<Point> findLayerSlots(int layer,
                                     Edge edge,
                                     odb::Line line,
-                                    bool isDiePolygon);
+                                    bool is_die_polygon);
   void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
@@ -225,8 +224,6 @@ class IOPlacer
                       const Rect& die_boundary);
   Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
-  // bool checkBlockedPolygon(odb::Line& line, const odb::Point& pos, int
-  // layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();

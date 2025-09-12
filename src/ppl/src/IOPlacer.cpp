@@ -684,12 +684,12 @@ int64_t IOPlacer::computeIncrease(int min_dist,
 void IOPlacer::findSlots(const std::set<int>& layers,
                          Edge edge,
                          odb::Line line,
-                         bool isDiePolygon)
+                         bool is_die_polygon)
 {
   for (int layer : layers) {
     odb::Line empty_line;
     std::vector<Point> slots
-        = isDiePolygon ? findLayerSlots(layer, Edge::polygonEdge, line, true)
+        = is_die_polygon ? findLayerSlots(layer, Edge::polygonEdge, line, true)
                        : findLayerSlots(layer, edge, empty_line, false);
 
     // Remove slots that violates the min distance before reversing the vector.
@@ -719,7 +719,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
       slot_count++;
     }
 
-    if (isDiePolygon) {
+    if (is_die_polygon) {
       if ((line.pt0().y() == line.pt1().y() && line.pt0().x() > line.pt1().x())
           || (line.pt0().x() == line.pt1().x()
               && line.pt0().y() > line.pt1().y())) {
@@ -750,14 +750,14 @@ void IOPlacer::findSlots(const std::set<int>& layers,
 std::vector<Point> IOPlacer::findLayerSlots(const int layer,
                                             const Edge edge,
                                             odb::Line line,
-                                            bool isDiePolygon)
+                                            bool is_die_polygon)
 {
   bool vertical_pin;
   int min, max;
   odb::Point edge_start, edge_end, lb, ub;
   int lb_x, lb_y, ub_x, ub_y;
 
-  if (isDiePolygon) {
+  if (is_die_polygon) {
     edge_start = line.pt0();
     edge_end = line.pt1();
 
@@ -829,7 +829,7 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
     int num_tracks_offset
         = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
 
-    int curr_x, curr_y, start_idx, end_idx;
+    int curr_x = 0, curr_y = 0, start_idx = 0, end_idx = 0;
     start_idx
         = std::max(0.0,
                    ceil(static_cast<double>((min + half_width - init_tracks))
@@ -841,11 +841,11 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
               - num_tracks_offset;
     if (vertical_pin) {
       curr_x = init_tracks + start_idx * min_dst_pins;
-      curr_y = isDiePolygon ? edge_start.getY()
+      curr_y = is_die_polygon ? edge_start.getY()
                             : ((edge == Edge::bottom) ? lb_y : ub_y);
     } else {
       curr_y = init_tracks + start_idx * min_dst_pins;
-      curr_x = isDiePolygon ? edge_start.getX()
+      curr_x = is_die_polygon ? edge_start.getX()
                             : ((edge == Edge::left) ? lb_x : ub_x);
     }
 
