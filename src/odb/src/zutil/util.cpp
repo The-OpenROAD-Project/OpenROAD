@@ -267,6 +267,11 @@ void set_bterm_top_layer_grid(dbBlock* block,
   block->setBTermTopLayerGrid(top_layer_grid);
 }
 
+void destroy_routes(dbBlock* block)
+{
+  block->destroyRoutes();
+}
+
 bool hasOneSiteMaster(dbDatabase* db)
 {
   for (dbLib* lib : db->getLibs()) {
