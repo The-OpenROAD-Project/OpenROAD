@@ -1098,6 +1098,8 @@ class NesterovBase
                               int iteration,
                               bool write_header) const;
 
+  odb::dbGroup* group() const { return pb_->group(); }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
