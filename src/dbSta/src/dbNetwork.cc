@@ -2070,7 +2070,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   LibertyCell* lib_cell = findLibertyCell(cell_name);
   TestCell* test_cell = nullptr;
   if (lib_cell) {
-    registerConcreteCell(reinterpret_cast<const Cell*>(lib_cell));
     ccell->setLibertyCell(lib_cell);
     lib_cell->setExtCell(reinterpret_cast<void*>(master));
     test_cell = lib_cell->testCell();
@@ -2149,10 +2148,26 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     }
   }
 
+  // Register all ConcreteCells (including physical-only) from
+  // all libraries (LEF + Liberty)
+  registerConcreteCellsFromAllLib(cell_name);
+
   std::unique_ptr<CellPortIterator> port_iter{portIterator(cell)};
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
+  }
+}
+
+void dbNetwork::registerConcreteCellsFromAllLib(const char* cell_name)
+{
+  std::unique_ptr<LibraryIterator> library_iter{libraryIterator()};
+  while (library_iter->hasNext()) {
+    Library* lib = library_iter->next();
+    Cell* match = findCell(lib, cell_name);
+    if (match) {
+      registerConcreteCell(match);
+    }
   }
 }
 
