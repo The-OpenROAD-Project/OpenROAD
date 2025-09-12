@@ -220,8 +220,6 @@ void set_bterm_top_layer_grid(dbBlock* block,
                               int height,
                               int keepout);
 
-void destroy_routes(dbBlock* block);
-
 class WireLengthEvaluator
 {
  public:

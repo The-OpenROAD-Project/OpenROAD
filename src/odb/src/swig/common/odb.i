@@ -83,4 +83,3 @@ void set_bterm_top_layer_grid(odb::dbBlock* block,
                               int width,
                               int height,
                               int keepout);
-void destroy_routes(odb::dbBlock* block);

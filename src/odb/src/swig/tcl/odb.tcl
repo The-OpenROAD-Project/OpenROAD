@@ -1102,8 +1102,8 @@ proc get_block { } {
   return [$chip getBlock]
 }
 
-proc destroy_net_routes { } {
+proc destroy_routes { } {
   set block [ord::get_db_block]
-  odb::destroy_routes $block
+  $block destroyRoutes
 }
 }
