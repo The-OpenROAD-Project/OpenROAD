@@ -28,13 +28,16 @@ set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
-set(OPENROAD_SOURCE
+set(OPENROAD_LIB_SOURCE
   Design.cc
   Timing.cc
   Tech.cc
   OpenRoad.cc
+)
+
+set(OPENROAD_SOURCE
   Main.cc
-  )
+)
 
 if(USE_SYSTEM_BOOST)
   set(Boost_USE_STATIC_LIBS OFF)
@@ -285,8 +288,16 @@ add_subdirectory(est)
 
 ################################################################
 
+add_library(openroad_lib
+  ${OPENROAD_LIB_SOURCE}
+)
 add_executable(openroad
   ${OPENROAD_SOURCE}
+)
+
+target_compile_options(openroad_lib
+  PRIVATE
+    -Wextra -pedantic -Wcast-qual
 )
 
 target_compile_options(openroad
@@ -296,24 +307,31 @@ target_compile_options(openroad
 
 # Needed for boost stacktrace
 if(APPLE)
-  target_compile_definitions(openroad PUBLIC "-D_GNU_SOURCE")
+  target_compile_definitions(openroad_lib PUBLIC "-D_GNU_SOURCE")
 endif()
 
 
+set_target_properties(openroad_lib PROPERTIES
+  # Disable compiler specific extensions like gnu++11.
+  CXX_EXTENSIONS OFF
+  # Export symbols for stack trace printing
+  ENABLE_EXPORTS ON
+)
 set_target_properties(openroad PROPERTIES
   # Disable compiler specific extensions like gnu++11.
   CXX_EXTENSIONS OFF
   # Export symbols for stack trace printing
   ENABLE_EXPORTS ON
 )
-target_compile_features(openroad PUBLIC cxx_std_17)
+target_compile_features(openroad_lib PUBLIC cxx_std_17)
 
-target_include_directories(openroad
+target_include_directories(openroad_lib
   PUBLIC
     ../include
 )
 
-target_link_libraries(openroad
+target_link_libraries(openroad_lib
+  PUBLIC
   ifp
   pad
   ord
@@ -353,12 +371,20 @@ target_link_libraries(openroad
   ${Boost_LIBRARIES}
 )
 
+target_link_libraries(openroad
+  PRIVATE
+  openroad_lib
+  cts
+  ${TCL_LIBRARY}
+)
+
+target_compile_definitions(openroad_lib PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
   target_compile_definitions(openroad PRIVATE ENABLE_READLINE)
-  target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
+  target_link_libraries(openroad PRIVATE ${TCL_READLINE_LIBRARY})
   target_include_directories(openroad PRIVATE ${TCL_READLINE_H})
   message(STATUS "TCL readline enabled")
 else()
@@ -367,7 +393,7 @@ endif()
 
 if (BUILD_TCLX AND TCLX_LIBRARY AND TCLX_H)
   target_compile_definitions(openroad PRIVATE ENABLE_TCLX)
-  target_link_libraries(openroad ${TCLX_LIBRARY})
+  target_link_libraries(openroad PRIVATE ${TCLX_LIBRARY})
   target_include_directories(openroad PRIVATE ${TCLX_H})
   message(STATUS "Tcl Extended enabled")
 else()
@@ -375,16 +401,17 @@ else()
 endif()
 
 if (ZLIB_FOUND)
-  target_link_libraries(openroad ${ZLIB_LIBRARIES})
+  target_link_libraries(openroad_lib PUBLIC ${ZLIB_LIBRARIES})
 endif()
 
 # Optional CUDD library for OpenSTA
 if (CUDD_LIB)
-  target_link_libraries(openroad ${CUDD_LIB})
+  target_link_libraries(openroad_lib PUBLIC ${CUDD_LIB})
 endif()
 
 if (Python3_FOUND AND BUILD_PYTHON)
   message(STATUS "Python3 enabled")
+  target_compile_definitions(openroad_lib PUBLIC ENABLE_PYTHON3)
   target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
 
   swig_lib(NAME      ord_py
@@ -400,8 +427,9 @@ if (Python3_FOUND AND BUILD_PYTHON)
       odb
       OpenSTA
       ifp
+      openroad_lib
   )
-  target_link_libraries(openroad
+  target_link_libraries(openroad PRIVATE
     ord_py
     odb_py
     ifp_py
@@ -431,6 +459,13 @@ else()
 endif()
 
 messages(
+  TARGET openroad_lib
+  SOURCE_DIR .
+  OUTPUT_DIR ..
+  LOCAL
+)
+
+messages(
   TARGET openroad
   SOURCE_DIR .
   OUTPUT_DIR ..
@@ -443,7 +478,7 @@ messages(
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
     AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_library(LIBRT rt)
-  target_link_libraries(openroad ${LIBRT})
+  target_link_libraries(openroad_lib PUBLIC ${LIBRT})
 endif()
 
 ################################################################
@@ -456,6 +491,7 @@ install(TARGETS openroad DESTINATION bin)
 ################################################################
 
 add_custom_target(openroad_tags etags -o TAGS
+  ${OPENROAD_LIB_SOURCE}
   ${OPENROAD_SOURCE}
   ${OPENROAD_HOME}/include/ord/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.hh
@@ -464,5 +500,5 @@ add_custom_target(openroad_tags etags -o TAGS
   ${RESIZER_HOME}/src/*.hh
   ${RESIZER_HOME}/src/*.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
+  DEPENDS ${OPENROAD_LIB_SOURCE} ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
 )
