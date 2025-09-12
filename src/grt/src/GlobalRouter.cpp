@@ -3750,10 +3750,16 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
 
 void GlobalRouter::destroyRoutes()
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   for (odb::dbNet* db_net : block_->getNets()) {
     if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
       && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
-      odb::dbWire::destroy(db_net->getWire());
+      odb::dbWire* wire = db_net->getWire();
+      if (wire != nullptr) {
+        odb::dbWire::destroy(wire);
+      }
     }
   }
 }
