@@ -2,9 +2,10 @@
 
 set -e
 
-mkdir -p results
+RESULTS_DIR="${RESULTS_DIR:-results}"
+LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"
 
-LOG_FILE=${LOG_FILE:-results/$TEST_NAME-$TEST_EXT.log}
+mkdir -p ${RESULTS_DIR}
 
 ORD_ARGS=""
 if [ "$TEST_TYPE" == "python" ]; then
@@ -12,15 +13,16 @@ if [ "$TEST_TYPE" == "python" ]; then
 fi
 
 echo "Directory: ${PWD}"
-echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT &> $LOG_FILE"
+echo "Results Directory: ${RESULTS_DIR}"
+echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT |& tee $LOG_FILE"
 
-$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit $TEST_NAME.$TEST_EXT &> $LOG_FILE
+$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit $TEST_NAME.$TEST_EXT |& tee $LOG_FILE
 
 echo "Exitcode:  $?"
 
 if [ "$TEST_CHECK_LOG" == "True" ]; then
-    echo "Diff:      ${PWD}/results/$TEST_NAME-$TEST_EXT.diff"
-    diff $LOG_FILE $TEST_NAME.ok > results/$TEST_NAME-$TEST_EXT.diff
+    echo "Diff:      ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"
+    diff $LOG_FILE $TEST_NAME.ok > ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff
 fi
 
 if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then
