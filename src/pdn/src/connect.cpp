@@ -447,9 +447,30 @@ void Connect::makeVia(odb::dbSWire* wire,
 {
   const odb::Rect& lower_rect = lower->getRect();
   const odb::Rect& upper_rect = upper->getRect();
-  const odb::Rect intersection = lower_rect.intersect(upper_rect);
+  odb::Rect intersection = lower_rect.intersect(upper_rect);
 
   auto* tech = layer0_->getTech();
+
+  // Attempt to snap to grid
+  if (tech->hasManufacturingGrid()) {
+    const odb::Rect new_intersection(
+        TechLayer::snapToManufacturingGrid(tech, intersection.xMin(), true, 2),
+        TechLayer::snapToManufacturingGrid(tech, intersection.yMin(), true, 2),
+        TechLayer::snapToManufacturingGrid(tech, intersection.xMax(), false, 2),
+        TechLayer::snapToManufacturingGrid(
+            tech, intersection.yMax(), false, 2));
+    if (intersection != new_intersection) {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "intersection changed: {} -> {}",
+                 Shape::getRectText(intersection, tech->getLefUnits()),
+                 Shape::getRectText(new_intersection, tech->getLefUnits()));
+      intersection = new_intersection;
+    }
+  }
+
   const int x = std::round(0.5 * (intersection.xMin() + intersection.xMax()));
   const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
 
