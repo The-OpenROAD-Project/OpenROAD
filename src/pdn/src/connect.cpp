@@ -456,7 +456,17 @@ void Connect::makeVia(odb::dbSWire* wire,
   // check if off grid and don't add one if it is
   if (!TechLayer::checkIfManufacturingGrid(tech, x)
       || !TechLayer::checkIfManufacturingGrid(tech, y)) {
-    DbGenerateDummyVia dummy_via(this, intersection, layer0_, layer1_, true);
+    DbGenerateDummyVia dummy_via(
+        this,
+        intersection,
+        layer0_,
+        layer1_,
+        true,
+        fmt::format("({:.4f}, {:.4f}) is off manufacturing grid of {:.4f}",
+                    x / static_cast<double>(tech->getLefUnits()),
+                    y / static_cast<double>(tech->getLefUnits()),
+                    tech->getManufacturingGrid()
+                        / static_cast<double>(tech->getLefUnits())));
     dummy_via.generate(
         wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
@@ -559,7 +569,7 @@ void Connect::makeVia(odb::dbSWire* wire,
         odb::Rect area = intersection;
         xfm.apply(area);
         stack.push_back(
-            new DbGenerateDummyVia(this, area, layer0_, layer1_, false));
+            new DbGenerateDummyVia(this, area, layer0_, layer1_, false, ""));
         break;
       }
       stack.push_back(new_via);
