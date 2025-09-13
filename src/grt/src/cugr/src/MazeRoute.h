@@ -108,8 +108,8 @@ struct Solution
 class MazeRoute
 {
  public:
-  MazeRoute(GRNet* net, const GridGraph* graph)
-      : net_(net), grid_graph_(graph), graph_(net, graph)
+  MazeRoute(GRNet* net, const GridGraph* graph, utl::Logger* logger)
+      : net_(net), grid_graph_(graph), graph_(net, graph), logger_(logger)
   {
   }
 
@@ -125,6 +125,7 @@ class MazeRoute
   const GRNet* net_;
   const GridGraph* grid_graph_;
   SparseGraph graph_;
+  utl::Logger* logger_;
 
   std::vector<std::shared_ptr<Solution>> solutions_;
 };

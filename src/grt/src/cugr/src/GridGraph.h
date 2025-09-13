@@ -32,7 +32,9 @@ struct GraphEdge
 class GridGraph
 {
  public:
-  GridGraph(const Design* design, const Constants& constants);
+  GridGraph(const Design* design,
+            const Constants& constants,
+            utl::Logger* logger);
   int getLibDBU() const { return lib_dbu_; }
   int getM2Pitch() const { return m2_pitch_; }
   int getNumLayers() const { return num_layers_; }
@@ -132,6 +134,7 @@ class GridGraph
   void commitWire(int layer_index, PointT lower, bool reverse = false);
   void commitVia(int layer_index, PointT loc, bool reverse = false);
 
+  utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;

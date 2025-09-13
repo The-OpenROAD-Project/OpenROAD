@@ -25,8 +25,11 @@
 
 namespace grt {
 
-GridGraph::GridGraph(const Design* design, const Constants& constants)
-    : gridlines_(design->getGridlines()),
+GridGraph::GridGraph(const Design* design,
+                     const Constants& constants,
+                     utl::Logger* logger)
+    : logger_(logger),
+      gridlines_(design->getGridlines()),
       lib_dbu_(design->getLibDBU()),
       m2_pitch_(design->getLayer(1).getPitch()),
       num_layers_(design->getNumLayers()),
@@ -359,11 +362,11 @@ void GridGraph::selectAccessPoints(
   selected_access_points.reserve(net->getNumPins());
   const auto& boundingBox = net->getBoundingBox();
   const PointT netCenter(boundingBox.cx(), boundingBox.cy());
-  for (const auto& accessPoints : net->getPinAccessPoints()) {
+  for (const std::vector<GRPoint>& accessPoints : net->getPinAccessPoints()) {
     std::pair<int, int> bestAccessDist = {0, std::numeric_limits<int>::max()};
     int bestIndex = -1;
     for (int index = 0; index < accessPoints.size(); index++) {
-      const auto& point = accessPoints[index];
+      const GRPoint& point = accessPoints[index];
       int accessibility = 0;
       if (point.getLayerIdx() >= constants_.min_routing_layer) {
         const int direction = getLayerDirection(point.getLayerIdx());
@@ -389,7 +392,7 @@ void GridGraph::selectAccessPoints(
       }
     }
     if (bestAccessDist.first == 0) {
-      printf("Warning: the pin is hard to access.\n");
+      logger_->warn(utl::GRT, 274, "pin is hard to access.");
     }
     const PointT selectedPoint = accessPoints[bestIndex];
     const uint64_t hash = hashCell(selectedPoint.x(), selectedPoint.y());
@@ -757,7 +760,7 @@ void GridGraph::updateWireCostView(
 
 void GridGraph::write(const std::string& heatmap_file) const
 {
-  printf("writing heatmap to file...");
+  logger_->report("writing heatmap to file...");
   std::stringstream ss;
 
   ss << num_layers_ << " " << x_size_ << " " << y_size_ << '\n';
