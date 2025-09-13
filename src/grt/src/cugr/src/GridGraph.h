@@ -82,7 +82,7 @@ class GridGraph
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                  bool reverse = false);
+                  bool rip_up = false);
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -131,8 +131,8 @@ class GridGraph
 
   // Methods for updating demands
   void commit(int layer_index, PointT lower, CapacityT demand);
-  void commitWire(int layer_index, PointT lower, bool reverse = false);
-  void commitVia(int layer_index, PointT loc, bool reverse = false);
+  void commitWire(int layer_index, PointT lower, bool rip_up = false);
+  void commitVia(int layer_index, PointT loc, bool rip_up = false);
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

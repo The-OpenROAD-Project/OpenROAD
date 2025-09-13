@@ -424,11 +424,11 @@ void GridGraph::commit(const int layer_index,
 
 void GridGraph::commitWire(const int layer_index,
                            const PointT lower,
-                           const bool reverse)
+                           const bool rip_up)
 {
   const int direction = layer_directions_[layer_index];
   const int edgeLength = getEdgeLength(direction, lower[direction]);
-  if (reverse) {
+  if (rip_up) {
     commit(layer_index, lower, -1);
     total_length_ -= edgeLength;
   } else {
@@ -439,7 +439,7 @@ void GridGraph::commitWire(const int layer_index,
 
 void GridGraph::commitVia(const int layer_index,
                           const PointT loc,
-                          const bool reverse)
+                          const bool rip_up)
 {
   assert(layer_index + 1 < num_layers_);
   for (int l = layer_index; l <= layer_index + 1; l++) {
@@ -456,13 +456,13 @@ void GridGraph::commitVia(const int layer_index,
                              / (lowerEdgeLength + higherEdgeLength)
                              * constants_.via_multiplier;
     if (lowerEdgeLength > 0) {
-      commit(l, lowerLoc, (reverse ? -demand : demand));
+      commit(l, lowerLoc, (rip_up ? -demand : demand));
     }
     if (higherEdgeLength > 0) {
-      commit(l, loc, (reverse ? -demand : demand));
+      commit(l, loc, (rip_up ? -demand : demand));
     }
   }
-  if (reverse) {
+  if (rip_up) {
     total_num_vias_ -= 1;
   } else {
     total_num_vias_ += 1;
@@ -470,7 +470,7 @@ void GridGraph::commitVia(const int layer_index,
 }
 
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                           const bool reverse)
+                           const bool rip_up)
 {
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
@@ -480,13 +480,13 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
           assert(node->y() == child->y());
           const auto [l, h] = std::minmax({node->x(), child->x()});
           for (int x = l; x < h; x++) {
-            commitWire(node->getLayerIdx(), {x, node->y()}, reverse);
+            commitWire(node->getLayerIdx(), {x, node->y()}, rip_up);
           }
         } else {
           assert(node->x() == child->x());
           const auto [l, h] = std::minmax({node->y(), child->y()});
           for (int y = l; y < h; y++) {
-            commitWire(node->getLayerIdx(), {node->x(), y}, reverse);
+            commitWire(node->getLayerIdx(), {node->x(), y}, rip_up);
           }
         }
       } else {
@@ -495,7 +495,7 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
         for (int layerIdx = std::min(node->getLayerIdx(), child->getLayerIdx());
              layerIdx < maxLayerIndex;
              layerIdx++) {
-          commitVia(layerIdx, {node->x(), node->y()}, reverse);
+          commitVia(layerIdx, {node->x(), node->y()}, rip_up);
         }
       }
     }

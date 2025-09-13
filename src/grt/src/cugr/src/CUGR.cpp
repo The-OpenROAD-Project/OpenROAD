@@ -93,7 +93,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
     GRNet* net = gr_nets_[netIndex].get();
-    grid_graph_->commitTree(net->getRoutingTree(), true);
+    grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
     PatternRoute patternRoute(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
     patternRoute.constructSteinerTree();
@@ -114,7 +114,8 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
   }
   logger_->report("stage 3: maze routing on sparsified routing graph");
   for (const int netIndex : netIndices) {
-    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(), true);
+    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(),
+                            /*ripup*/ true);
   }
   GridGraphView<CostT> wireCostView;
   grid_graph_->extractWireCostView(wireCostView);
