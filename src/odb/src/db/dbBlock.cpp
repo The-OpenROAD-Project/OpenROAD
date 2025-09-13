@@ -3167,6 +3167,20 @@ std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
   return default_vias;
 }
 
+void dbBlock::destroyRoutes()
+{
+  dbBlock* block = this;
+  for (odb::dbNet* db_net : block->getNets()) {
+    if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
+        && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
+      odb::dbWire* wire = db_net->getWire();
+      if (wire != nullptr) {
+        odb::dbWire::destroy(wire);
+      }
+    }
+  }
+}
+
 void dbBlock::setDrivingItermsforNets()
 {
   for (dbNet* net : getNets()) {
