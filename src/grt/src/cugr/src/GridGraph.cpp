@@ -26,13 +26,14 @@
 namespace grt {
 
 GridGraph::GridGraph(const Design* design, const Constants& constants)
-    : lib_dbu_(design->getLibDBU()), constants_(constants)
+    : gridlines_(design->getGridlines()),
+      lib_dbu_(design->getLibDBU()),
+      m2_pitch_(design->getLayer(1).getPitch()),
+      num_layers_(design->getNumLayers()),
+      x_size_(gridlines_[0].size() - 1),
+      y_size_(gridlines_[1].size() - 1),
+      constants_(constants)
 {
-  gridlines_ = design->getGridlines();
-  num_layers_ = design->getNumLayers();
-  x_size_ = gridlines_[0].size() - 1;
-  y_size_ = gridlines_[1].size() - 1;
-
   grid_centers_.resize(2);
   for (int dimension = 0; dimension <= 1; dimension++) {
     grid_centers_[dimension].resize(gridlines_[dimension].size() - 1);
@@ -44,8 +45,6 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
             / 2;
     }
   }
-
-  m2_pitch_ = design->getLayer(1).getPitch();
 
   layer_names_.resize(num_layers_);
   layer_directions_.resize(num_layers_);

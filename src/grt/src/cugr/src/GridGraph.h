@@ -132,17 +132,18 @@ class GridGraph
   void commitWire(int layer_index, PointT lower, bool reverse = false);
   void commitVia(int layer_index, PointT loc, bool reverse = false);
 
-  const int lib_dbu_;
-  int m2_pitch_;
-
-  int num_layers_;
-  int x_size_;
-  int y_size_;
-  std::vector<std::vector<int>> gridlines_;
+  const std::vector<std::vector<int>> gridlines_;
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;
   std::vector<int> layer_directions_;
   std::vector<int> layer_min_lengths_;
+
+  const int lib_dbu_;
+  const int m2_pitch_;
+
+  const int num_layers_;
+  const int x_size_;
+  const int y_size_;
 
   // Unit costs
   CostT unit_length_wire_cost_;
@@ -154,7 +155,7 @@ class GridGraph
   std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
-  Constants constants_;
+  const Constants constants_;
 };
 
 template <typename Type>
