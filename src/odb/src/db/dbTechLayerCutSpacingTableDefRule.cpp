@@ -4,15 +4,20 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableDefRule.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbTech.h"

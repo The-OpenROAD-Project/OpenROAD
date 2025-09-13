@@ -4,13 +4,16 @@
 // Generator Code Begin Cpp
 #include "dbProperty.h"
 
+#include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <variant>
 
 #include "dbBlock.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbName.h"
@@ -20,6 +23,8 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include <spdlog/fmt/ostr.h>
 

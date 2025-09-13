@@ -9,6 +9,7 @@
 #include "dbBTerm.h"
 #include "dbCore.h"
 #include "dbITerm.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 
 namespace odb {

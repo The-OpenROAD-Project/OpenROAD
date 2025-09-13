@@ -7,6 +7,7 @@
 #include <map>
 
 #include "dbCore.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 
 namespace odb {

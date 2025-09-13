@@ -4,8 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <string>
+
 #include "dbCore.h"
 #include "dbVector.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include "odb/geom.h"
