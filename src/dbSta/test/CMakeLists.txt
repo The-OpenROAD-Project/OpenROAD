@@ -55,6 +55,7 @@ or_integration_tests(
     write_verilog6
     write_verilog7
     write_verilog8
+    write_verilog9_hier
 )
 
 if(ENABLE_TESTS)
