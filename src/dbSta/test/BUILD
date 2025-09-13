@@ -136,6 +136,7 @@ filegroup(
         "reg5.v",
         "reg6.def",
         "report_cell_usage_no_taps.def",
+        "write_verilog9.v",
     ],
 )
 
