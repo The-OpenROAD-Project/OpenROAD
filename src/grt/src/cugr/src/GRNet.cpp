@@ -23,8 +23,8 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
     std::unordered_set<uint64_t> included;
     for (const auto& pinShape : pinShapes) {
       const BoxT cells = gridGraph->rangeSearchCells(pinShape);
-      for (int x = cells.x.low(); x <= cells.x.high(); x++) {
-        for (int y = cells.y.low(); y <= cells.y.high(); y++) {
+      for (int x = cells.lx(); x <= cells.hx(); x++) {
+        for (int y = cells.ly(); y <= cells.hy(); y++) {
           const GRPoint point(pinShape.getLayerIdx(), x, y);
           const uint64_t hash = gridGraph->hashCell(point);
           if (included.find(hash) == included.end()) {
