@@ -2070,7 +2070,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   master->staSetCell(reinterpret_cast<void*>(cell));
   // keep track of db leaf cells. These are cells for which we
   // use the concrete network.
-  registerConcreteCell(cell);
   ConcreteCell* ccell = reinterpret_cast<ConcreteCell*>(cell);
   ccell->setExtCell(reinterpret_cast<void*>(master));
 
@@ -2156,26 +2155,10 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     }
   }
 
-  // Register all ConcreteCells (including physical-only) from
-  // all libraries (LEF + Liberty)
-  registerConcreteCellsFromAllLib(cell_name);
-
   std::unique_ptr<CellPortIterator> port_iter{portIterator(cell)};
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
-  }
-}
-
-void dbNetwork::registerConcreteCellsFromAllLib(const char* cell_name)
-{
-  std::unique_ptr<LibraryIterator> library_iter{libraryIterator()};
-  while (library_iter->hasNext()) {
-    Library* lib = library_iter->next();
-    Cell* match = findCell(lib, cell_name);
-    if (match) {
-      registerConcreteCell(match);
-    }
   }
 }
 
@@ -2332,7 +2315,6 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       // to get timing characteristics, so they have to be
       // concrete
       Cell* inst_cell = dbToSta(master);
-      registerConcreteCell(inst_cell);
       std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
       while (port_iter->hasNext()) {
         Port* cur_port = port_iter->next();
@@ -2350,13 +2332,12 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       dbInst* inst = dbInst::create(block_, master, name, false, parent);
       Cell* inst_cell = dbToSta(master);
       //
-      // Register all liberty cells as being concrete
+      // Register all ports of liberty cells as being concrete
       // Sometimes this method is called by the sta
       // to build "test circuits" eg to find the max wire length
       // And those cells need to use the external api
       // to get timing characteristics, so they have to be
       // concrete
-      registerConcreteCell(inst_cell);
       std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
       while (port_iter->hasNext()) {
         Port* cur_port = port_iter->next();
@@ -3217,20 +3198,6 @@ LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
   return nullptr;
 }
 
-/*
-We keep a registry of the concrete cells.
-For these we know to use the concrete network interface.
-The concrete cells are created outside of the odb world
--- attempting to type cast those can lead to bad pointers.
-So we simply note them and then when we inspect a cell
-we can decide whether or not to use the ConcreteNetwork api.
-*/
-
-void dbNetwork::registerConcreteCell(const Cell* cell)
-{
-  concrete_cells_.insert(cell);
-}
-
 void dbNetwork::registerHierModule(const Cell* cell)
 {
   hier_modules_.insert(cell);
@@ -3241,6 +3208,14 @@ void dbNetwork::unregisterHierModule(const Cell* cell)
   hier_modules_.erase(cell);
 }
 
+/*
+We keep a registry of the concrete cells.
+For these we know to use the concrete network interface.
+The concrete cells are created outside of the odb world
+-- attempting to type cast those can lead to bad pointers.
+So we simply note them and then when we inspect a cell
+we can decide whether or not to use the ConcreteNetwork api.
+*/
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
   if (!hierarchy_) {
