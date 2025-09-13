@@ -128,16 +128,16 @@ GridGraph::GridGraph(const Design* design, const Constants& constants)
         obstaclesInGrid(nGrids);  // obstacle indices sorted in track grids
     // Sort obstacles in track grids
     for (auto& obs : obstacles[layer_index]) {
-      int width = std::min(obs.x.range(), obs.y.range());
+      int width = std::min(obs.x().range(), obs.y().range());
       int spacing = layer.getParallelSpacing(
                         width, std::min(minEdgeLength, obs[direction].range()))
                     + layer.getWidth() / 2 - 1;
       PointT margin(0, 0);
       margin[1 - direction] = spacing;
-      BoxT obsBox(obs.x.low() - margin.x(),
-                  obs.y.low() - margin.y(),
-                  obs.x.high() + margin.x(),
-                  obs.y.high() + margin.y());  // enlarged obstacle box
+      BoxT obsBox(obs.lx() - margin.x(),
+                  obs.ly() - margin.y(),
+                  obs.hx() + margin.x(),
+                  obs.hy() + margin.y());  // enlarged obstacle box
       IntervalT trackRange = layer.rangeSearchTracks(obsBox[1 - direction]);
       std::shared_ptr<std::pair<BoxT, IntervalT>> obstacle
           = std::make_shared<std::pair<BoxT, IntervalT>>(obsBox, trackRange);

@@ -169,10 +169,10 @@ void CUGR::write(const std::string& guide_file)
     ss << net->getName() << '\n';
     ss << "(\n";
     for (const auto& guide : guides) {
-      ss << grid_graph_->getGridline(0, guide.second.x.low()) << " "
-         << grid_graph_->getGridline(1, guide.second.y.low()) << " "
-         << grid_graph_->getGridline(0, guide.second.x.high() + 1) << " "
-         << grid_graph_->getGridline(1, guide.second.y.high() + 1) << " "
+      ss << grid_graph_->getGridline(0, guide.second.lx()) << " "
+         << grid_graph_->getGridline(1, guide.second.ly()) << " "
+         << grid_graph_->getGridline(0, guide.second.hx() + 1) << " "
+         << grid_graph_->getGridline(1, guide.second.hy() + 1) << " "
          << grid_graph_->getLayerName(guide.first) << "\n";
     }
     ss << ")\n";
@@ -325,8 +325,8 @@ void CUGR::getGuides(const GRNet* net,
                             (int) grid_graph_->getSize(0) - 1),
                    std::min(gpt.y() + padding,
                             (int) grid_graph_->getSize(1) - 1)));
-          area_of_pin_patches_ += (guides.back().second.x.range() + 1)
-                                  * (guides.back().second.y.range() + 1);
+          area_of_pin_patches_ += (guides.back().second.x().range() + 1)
+                                  * (guides.back().second.y().range() + 1);
         }
       }
     }
