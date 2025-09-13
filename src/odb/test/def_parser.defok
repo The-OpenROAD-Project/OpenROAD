@@ -90,10 +90,12 @@ NONDEFAULTRULES 1 ;
       + VIA M3_M2_via
       + VIARULE M2_M1
       + MINCUTS via1 2
-    + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 realrangeprop 25.25     ;
+    + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 
+    realrangeprop 25.25     ;
 END NONDEFAULTRULES
 REGIONS 2 ;
-    - region1 ( -500 -500 ) ( 300 100 ) ( 500 500 ) ( 1000 1000 ) + TYPE FENCE + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 realrangeprop 25.25  ;
+    - region1 ( -500 -500 ) ( 300 100 ) ( 500 500 ) ( 1000 1000 ) + TYPE FENCE + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 
+    realrangeprop 25.25  ;
     - region2 ( 4000 0 ) ( 5000 1000 ) + TYPE GUIDE ;
 END REGIONS
 COMPONENTS 12 ;
@@ -186,6 +188,7 @@ NETS 24 ;
     - out[8] ( PIN out[8] ) ( _d8_ Q ) + USE SIGNAL ;
 END NETS
 GROUPS 1 ;
-    - group1 _d0_ _g0_ + REGION region1 + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 realrangeprop 25.25  ;
+    - group1 _d0_ _g0_ + REGION region1 + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 
+    realrangeprop 25.25  ;
 END GROUPS
 END DESIGN
