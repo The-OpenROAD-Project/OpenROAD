@@ -48,7 +48,7 @@ class SparseGraph
   void init(const GridGraphView<CostT>& wire_cost_view, const SparseGrid& grid);
   int getNumVertices() const { return vertices_.size(); }
   int getNumPseudoPins() const { return pseudo_pins_.size(); }
-  std::pair<PointT, IntervalT> getPseudoPin(int pin_index) const
+  GridGraph::AccessPoint getPseudoPin(int pin_index) const
   {
     return pseudo_pins_[pin_index];
   }
@@ -81,7 +81,7 @@ class SparseGraph
   GRNet* net_;
   const GridGraph* grid_graph_;
 
-  std::vector<std::pair<PointT, IntervalT>> pseudo_pins_;
+  std::vector<GridGraph::AccessPoint> pseudo_pins_;
 
   std::vector<int> xs_;
   std::vector<int> ys_;

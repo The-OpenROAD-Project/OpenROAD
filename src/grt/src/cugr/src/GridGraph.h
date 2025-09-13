@@ -75,14 +75,18 @@ class GridGraph
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
-  void selectAccessPoints(
-      const GRNet* net,
-      robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>&
-          selected_access_points) const;
+  struct AccessPoint
+  {
+    PointT point;
+    IntervalT layers;
+  };
+
+  void selectAccessPoints(const GRNet* net,
+                          robin_hood::unordered_map<uint64_t, AccessPoint>&
+                              selected_access_points) const;
 
   // Methods for updating demands
-  void commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                  bool rip_up = false);
+  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const

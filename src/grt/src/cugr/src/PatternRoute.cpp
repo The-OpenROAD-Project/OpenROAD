@@ -79,7 +79,7 @@ std::string PatternRoutingNode::getPythonString(
 
 void PatternRoute::constructSteinerTree()
 {
-  robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>
+  robin_hood::unordered_map<uint64_t, GridGraph::AccessPoint>
       selectedAccessPoints;
   grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
 
@@ -87,7 +87,7 @@ void PatternRoute::constructSteinerTree()
   if (degree == 1) {
     for (auto& accessPoint : selectedAccessPoints) {
       steiner_tree_ = std::make_shared<SteinerTreeNode>(
-          accessPoint.second.first, accessPoint.second.second);
+          accessPoint.second.point, accessPoint.second.layers);
     }
     return;
   }
@@ -95,8 +95,8 @@ void PatternRoute::constructSteinerTree()
   std::vector<int> xs;
   std::vector<int> ys;
   for (auto& accessPoint : selectedAccessPoints) {
-    xs.push_back(accessPoint.second.first.x());
-    ys.push_back(accessPoint.second.first.y());
+    xs.push_back(accessPoint.second.point.x());
+    ys.push_back(accessPoint.second.point.y());
   }
 
   stt::Tree flutetree = stt_builder_->flute(xs, ys, flute_accuracy_);
@@ -139,9 +139,10 @@ void PatternRoute::constructSteinerTree()
             constructTree(current, curIndex, nextIndex);
           }
           // Set fixed layer interval
-          uint64_t hash = grid_graph_->hashCell(current->x(), current->y());
+          const uint64_t hash
+              = grid_graph_->hashCell(current->x(), current->y());
           if (selectedAccessPoints.find(hash) != selectedAccessPoints.end()) {
-            current->setFixedLayers(selectedAccessPoints[hash].second);
+            current->setFixedLayers(selectedAccessPoints[hash].layers);
           }
           // Connect current to parent
           if (parent == nullptr) {
