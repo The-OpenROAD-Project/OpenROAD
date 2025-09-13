@@ -23,10 +23,10 @@ class GridGraphView;
 
 struct GraphEdge
 {
+  CapacityT getResource() const { return capacity - demand; }
+
   CapacityT capacity{0};
   CapacityT demand{0};
-
-  CapacityT getResource() const { return capacity - demand; }
 };
 
 class GridGraph
@@ -108,30 +108,6 @@ class GridGraph
   void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
-  const int lib_dbu_;
-  int m2_pitch_;
-
-  int num_layers_;
-  int x_size_;
-  int y_size_;
-  std::vector<std::vector<int>> gridlines_;
-  std::vector<std::vector<int>> grid_centers_;
-  std::vector<std::string> layer_names_;
-  std::vector<int> layer_directions_;
-  std::vector<int> layer_min_lengths_;
-
-  // Unit costs
-  CostT unit_length_wire_cost_;
-  CostT unit_via_cost_;
-  std::vector<CostT> unit_length_short_costs_;
-
-  int total_length_ = 0;
-  int total_num_vias_ = 0;
-  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
-  // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
-  // (l, x, y+1)} depending on the routing direction of the layer
-  Constants constants_;
-
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
@@ -155,6 +131,30 @@ class GridGraph
   void commit(int layer_index, PointT lower, CapacityT demand);
   void commitWire(int layer_index, PointT lower, bool reverse = false);
   void commitVia(int layer_index, PointT loc, bool reverse = false);
+
+  const int lib_dbu_;
+  int m2_pitch_;
+
+  int num_layers_;
+  int x_size_;
+  int y_size_;
+  std::vector<std::vector<int>> gridlines_;
+  std::vector<std::vector<int>> grid_centers_;
+  std::vector<std::string> layer_names_;
+  std::vector<int> layer_directions_;
+  std::vector<int> layer_min_lengths_;
+
+  // Unit costs
+  CostT unit_length_wire_cost_;
+  CostT unit_via_cost_;
+  std::vector<CostT> unit_length_short_costs_;
+
+  int total_length_ = 0;
+  int total_num_vias_ = 0;
+  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
+  // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
+  // (l, x, y+1)} depending on the routing direction of the layer
+  Constants constants_;
 };
 
 template <typename Type>
