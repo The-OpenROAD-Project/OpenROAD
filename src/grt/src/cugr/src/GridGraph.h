@@ -163,6 +163,7 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
  public:
   bool check(const PointT& u, const PointT& v) const
   {
+    static_assert(std::is_same_v<Type, bool>, "Template argument must be bool");
     assert(u.x() == v.x() || u.y() == v.y());
     if (u.y() == v.y()) {
       const auto [l, h] = std::minmax({u.x(), v.x()});
@@ -184,6 +185,8 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 
   Type sum(const PointT& u, const PointT& v) const
   {
+    static_assert(std::is_integral_v<Type> || std::is_floating_point_v<Type>,
+                  "Template argument must be integral or floating point");
     assert(u.x() == v.x() || u.y() == v.y());
     Type res = 0;
     if (u.y() == v.y()) {
