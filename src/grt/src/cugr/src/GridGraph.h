@@ -152,9 +152,9 @@ class GridGraph
 
   int total_length_ = 0;
   int total_num_vias_ = 0;
-  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
+  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
   const Constants constants_;
 };
 
