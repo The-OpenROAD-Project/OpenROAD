@@ -66,7 +66,8 @@ enum class Edge
   bottom,
   left,
   right,
-  invalid
+  invalid,
+  polygonEdge,
 };
 
 enum class Direction
@@ -147,8 +148,14 @@ class IOPlacer
                                IOPin& first_pin);
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
-  void findSlots(const std::set<int>& layers, Edge edge);
-  std::vector<Point> findLayerSlots(int layer, Edge edge);
+  void findSlots(const std::set<int>& layers,
+                 Edge edge,
+                 odb::Line line,
+                 bool is_die_polygon);
+  std::vector<Point> findLayerSlots(int layer,
+                                    Edge edge,
+                                    odb::Line line,
+                                    bool is_die_polygon);
   void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
@@ -170,9 +177,14 @@ class IOPlacer
   void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
+  void createSectionsPerEdgePolygon(odb::Line poly_edge,
+                                    const std::set<int>& layers);
+  bool isPointOnLine(const odb::Point& point, const odb::Line& line) const;
   void createSections();
+  void createSectionsPolygon();
   void addGroupToFallback(const std::vector<int>& pin_group, bool order);
   bool assignPinsToSections(int assigned_pins_count);
+  bool assignPinsToSectionsPolygon(int assigned_pins_count);
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
@@ -202,6 +214,8 @@ class IOPlacer
   void excludeInterval(Interval interval);
 
   void updateOrientation(IOPin& pin);
+  bool isPointInsidePolygon(odb::Point point, const odb::Polygon& polygon);
+  void updateOrientationPolygon(IOPin& pin);
   void updatePinArea(IOPin& pin);
   void movePinToTrack(odb::Point& pos,
                       int layer,
@@ -209,7 +223,7 @@ class IOPlacer
                       int height,
                       const Rect& die_boundary);
   Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
-  bool checkBlocked(Edge edge, const odb::Point& pos, int layer);
+  bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();

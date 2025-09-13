@@ -30,7 +30,8 @@ class Core
        const std::map<int, int>& min_area_y,
        const std::map<int, int>& min_width_x,
        const std::map<int, int>& min_width_y,
-       const int& database_unit)
+       const int& database_unit,
+       const std::vector<odb::Line>& die_area_edges)
       : boundary_(boundary),
         min_dst_pins_x_(min_dst_pins_x),
         min_dst_pins_y_(min_dst_pins_y),
@@ -42,7 +43,8 @@ class Core
         min_area_y_(min_area_y),
         min_width_x_(min_width_x),
         min_width_y_(min_width_y),
-        database_unit_(database_unit)
+        database_unit_(database_unit),
+        die_area_edges_(die_area_edges)
   {
   }
 
@@ -60,6 +62,7 @@ class Core
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
+  std::vector<odb::Line> getDieAreaEdges();
 
  private:
   Rect boundary_;
@@ -74,6 +77,7 @@ class Core
   std::map<int, int> min_width_x_;
   std::map<int, int> min_width_y_;
   int database_unit_;
+  std::vector<odb::Line> die_area_edges_;  // stores edges of the polygon
 };
 
 }  // namespace ppl
