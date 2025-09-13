@@ -2038,6 +2038,16 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
     for (dbLib* lib : db_->getLibs()) {
       makeLibrary(lib);
     }
+
+    // jk:
+    //hier_modules_.clear();
+    for (dbModule* module : block_->getModules()) {
+      // top_module is not a hierarchical module in this context.
+      if (module != block_->getTopModule()) {
+        registerHierModule(dbToSta(module));
+      }
+    }
+
     readDbNetlistAfter();
   }
 
@@ -3223,12 +3233,49 @@ void dbNetwork::registerConcreteCell(const Cell* cell)
   concrete_cells_.insert(cell);
 }
 
+void dbNetwork::registerHierModule(const Cell* cell)
+{
+  //dbModule* module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
+  //printf("jk: register dbModule: %s %p\n", module->getName(), (void*)cell);
+  hier_modules_.insert(cell);
+}
+
+void dbNetwork::unregisterHierModule(const Cell* cell)
+{
+  //dbModule* module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
+  //printf("jk: unregister dbModule: %s %p\n", module->getName(), (void*)cell);
+  hier_modules_.erase(cell);
+}
+
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
   if (!hierarchy_) {
     return true;
   }
-  return (concrete_cells_.find(cell) != concrete_cells_.end());
+
+  //if (cell == top_cell_) {
+  //  return true;
+  //}
+
+
+  //bool ret1 = (concrete_cells_.find(cell) != concrete_cells_.end());
+  //bool ret2 = (cell != top_cell_) && (hier_modules_.find(cell) == hier_modules_.end());
+  
+  //const char* comp = "SAME";
+  //if (ret1 != ret2) {
+  //  comp = "DIFF!!";
+  //}
+  //const char* name = "na";
+  //if (ret1 == true || cell == top_cell_) {
+  //  name = ConcreteNetwork::name(cell);
+  //} else {
+  //  dbModule* module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
+  //  name = module->getName();
+  //}
+  //printf("jk: isConcreteCell(%s %p) = %d vs %d (%s)\n", name, (void*)cell, ret1, ret2, comp);
+
+  return (cell != top_cell_) && (hier_modules_.find(cell) == hier_modules_.end());
+  //return (concrete_cells_.find(cell) != concrete_cells_.end());
 }
 
 void dbNetwork::registerConcretePort(const Port* port)

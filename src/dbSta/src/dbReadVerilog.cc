@@ -170,6 +170,7 @@ class Verilog2db
   void makeChildInsts(Instance* inst, dbModule* module, InstPairs& inst_pairs);
   void makeModBTerms(Cell* cell, dbModule* module);
   void makeModITerms(Instance* inst, dbModInst* modinst);
+  void registerHierModule(dbModule* module);
   dbIoType staToDb(PortDirection* dir);
   bool staToDb(dbModule* module,
                const Pin* pin,
@@ -390,6 +391,8 @@ void Verilog2db::makeDbModule(
     module = dbModule::makeUniqueDbModule(
         network_->name(cell), network_->name(inst), block_);
 
+    registerHierModule(module);
+
     std::string module_inst_name = network_->name(inst);
 
     dbModInst* modinst
@@ -431,6 +434,14 @@ void Verilog2db::makeDbModule(
     }
   }
   makeChildInsts(inst, module, inst_pairs);
+}
+
+void Verilog2db::registerHierModule(dbModule* module)
+{
+  // Register the module as a hierarchical module in the dbNetwork.
+  dbNetwork* db_network
+      = static_cast<dbVerilogNetwork*>(network_)->getDbNetwork();
+  db_network->registerHierModule(db_network->dbToSta(module));
 }
 
 void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)

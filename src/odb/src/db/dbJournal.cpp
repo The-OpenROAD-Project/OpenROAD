@@ -10,6 +10,7 @@
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbITerm.h"
+#include "dbModule.h"
 #include "dbInst.h"
 #include "dbModNet.h"
 #include "dbNet.h"
