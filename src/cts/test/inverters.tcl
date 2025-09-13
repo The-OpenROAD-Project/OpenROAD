@@ -13,10 +13,11 @@ source Nangate45/Nangate45.rc
 set_wire_rc -signal -layer metal1
 set_wire_rc -clock -layer metal2
 
+set_cts_config -wire_unit 20 \
+  -distance_between_buffers 100 \
+  -num_static_layers 1 
+
 clock_tree_synthesis -root_buf CLKBUF_X3 \
   -buf_list CLKBUF_X3 \
-  -wire_unit 20 \
   -sink_clustering_enable \
-  -distance_between_buffers 100 \
-  -num_static_layers 1 \
   -repair_clock_nets
