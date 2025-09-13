@@ -267,7 +267,8 @@ class dbNetwork : public ConcreteNetwork
                     const std::string& value) override;
 
   bool isConcreteCell(const Cell*) const;
-  void registerConcreteCell(const Cell*);
+  void registerHierModule(const Cell* cell);
+  void unregisterHierModule(const Cell* cell);
 
   ////////////////////////////////////////////////////////////////
   // Port functions
@@ -402,6 +403,7 @@ class dbNetwork : public ConcreteNetwork
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
+  void registerConcreteCellsFromAllLib(const char* cell_name);
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
@@ -425,7 +427,7 @@ class dbNetwork : public ConcreteNetwork
 
  private:
   bool hierarchy_ = false;
-  std::set<const Cell*> concrete_cells_;
+  std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;
 };

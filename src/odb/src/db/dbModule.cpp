@@ -31,6 +31,7 @@
 #include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModNetItr.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -377,6 +378,10 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
     _block->_journal->endAction();
   }
 
+  for (dbBlockCallBackObj* cb : _block->_callbacks) {
+    cb->inDbModuleCreate((dbModule*) module);
+  }
+
   return (dbModule*) module;
 }
 
@@ -439,6 +444,10 @@ void dbModule::destroy(dbModule* module)
   dbSet<dbModNet>::iterator modnet_itr;
   for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
     modnet_itr = dbModNet::destroy(modnet_itr);
+  }
+
+  for (auto cb : block->_callbacks) {
+    cb->inDbModuleDestroy(module);
   }
 
   dbProperty::destroyProperties(_module);
