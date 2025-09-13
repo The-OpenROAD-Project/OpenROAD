@@ -193,6 +193,18 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     }
   }
 
+  debugPrint(
+      getLogger(),
+      utl::PDN,
+      "Straps",
+      1,
+      "Make straps on {} / horizontal {} / die {} / core {} / boundary {}",
+      layer_->getName(),
+      isHorizontal(),
+      Shape::getRectText(die, layer.getLefUnits()),
+      Shape::getRectText(core, layer.getLefUnits()),
+      Shape::getRectText(boundary, layer.getLefUnits()));
+
   if (isHorizontal()) {
     const int x_start = boundary.xMin();
     const int x_end = boundary.xMax();
