@@ -83,6 +83,8 @@ char** cmd_argv;
 static const char* log_filename = nullptr;
 static const char* metrics_filename = nullptr;
 static std::unique_ptr<std::set<std::string>> commands, sta_commands;
+static string last_command;
+static int last_level;
 static bool no_settings = false;
 static bool minimize = false;
 
@@ -369,11 +371,10 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
 }  // namespace
 #endif
 
-
 static int TraceTclCommand(
     ClientData clientData,
     Tcl_Interp* interp,
-    int /* level */,
+    int level,
     const char* command ,
     Tcl_Command commandToken,
     int /* objc */,
@@ -386,9 +387,11 @@ static int TraceTclCommand(
       Tcl_Obj *fullName = Tcl_NewObj();
       Tcl_GetCommandFullName(interp, commandToken, fullName);
       string fullName_str = Tcl_GetString(fullName);
-      if(fullName_str.compare(0, 7, "::sta::")==0||!sta_commands->count(Tcl_GetString(objv[0]))){
-        logger->report("[CMD] {}", command);
-      }
+      if(!(last_command==Tcl_GetString(objv[0])&&level==last_level+1)){
+          logger->report("[CMD] {}", command);
+          last_command = Tcl_GetString(objv[0]);
+          last_level = level;
+        }
     }
     return TCL_OK;
 }
@@ -466,6 +469,7 @@ static int tclAppInit(int& argc,
         }
       }
     }
+    commands->insert("set");
     if (Tcl_Eval(interp, "info commands ::sta::*") == TCL_OK) {
       Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
       int cmd_size;
@@ -478,6 +482,9 @@ static int tclAppInit(int& argc,
         }
       }
     }
+    last_command = "";
+    last_level = 0;
+
     Tcl_CreateObjTrace(
           interp,
           0,
