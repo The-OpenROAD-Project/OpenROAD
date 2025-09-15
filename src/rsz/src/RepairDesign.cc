@@ -2008,7 +2008,6 @@ bool RepairDesign::makeRepeater(
   bool keep_input;
   Instance* parent = nullptr;
   Pin* driver_pin = nullptr;
-  Instance* driver_instance_parent = nullptr;
   PinSet repeater_load_pins(db_network_);
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
@@ -2328,7 +2327,6 @@ bool RepairDesign::makeRepeater(
 
   Point buf_loc(x, y);
   buffer = resizer_->makeBuffer(buffer_cell, reason, parent, buf_loc);
-  driver_instance_parent = parent;
 
   inserted_buffer_count_++;
   buffer_ip_pin = nullptr;
@@ -2471,7 +2469,6 @@ bool RepairDesign::makeRepeater(
       // net, a new net, without having to make a new one).
       //
 
-      // jk: fix
       Net* driver_hier_net
           = db_network_->dbToSta(db_network_->hierNet(driver_pin));
       db_network_->connectPin(buffer_ip_pin, buffer_ip_net, driver_hier_net);
@@ -2493,47 +2490,6 @@ bool RepairDesign::makeRepeater(
                                          db_network_->flatPin(load_pin));
       }
 
-      //
-      // renormalize the buffer_op_pin
-      // We have copied a lot of stuff to the buffer output
-      // net. If we have introduced a new hierarchical connection
-      // driven by the buffer output pin, make sure all the
-      // related pins are updated to use the hierarchical net.
-      //
-
-      // jk: needed?
-      // odb::dbModNet* buffer_op_pin_mod_net
-      //    = db_network_->hierNet(buffer_op_pin);
-      // dbNet* buffer_op_pin_flat_net = db_network_->flatNet(buffer_op_pin);
-      // if (buffer_op_pin_mod_net) {
-      //  db_network_->disconnectPin(buffer_op_pin);
-      //  db_network_->connectPin(buffer_op_pin,
-      //                          db_network_->dbToSta(buffer_op_pin_flat_net),
-      //                          db_network_->dbToSta(buffer_op_pin_mod_net));
-      //}
-
-      // renormalize the driver pin. We have moved a lot of stuff
-      // off the driver net, possibly moving away any hierarchical
-      // So detect any hierarchical nets reachable from driver pin
-      // at this level of hierarchy and renormalize.
-
-      // jk: needed?
-      // odb::dbModNet* driver_pin_mod_net
-      //    // = db_network_->findModNetForPin(driver_pin); // buggy. it returns
-      //    // "any" dbModNet
-      //    = db_network_->hierNet(driver_pin);
-
-      // if (driver_pin_mod_net && (driver_pin_mod_net->connectionCount() == 1))
-      // {
-      //   db_network_->disconnectPin(driver_pin, (Net*) driver_pin_mod_net);
-      // } else {
-      //   dbNet* driver_pin_flat_net = db_network_->flatNet(driver_pin);
-      //   db_network_->disconnectPin(driver_pin);
-      //   db_network_->connectPin(driver_pin,
-      //                           db_network_->dbToSta(driver_pin_flat_net),
-      //                           db_network_->dbToSta(driver_pin_mod_net));
-      // }
-
     } else /* case 2 */ {
       //
       // case 2. One of the loads is a primary output or a dont touch
@@ -2548,7 +2504,6 @@ bool RepairDesign::makeRepeater(
       db_network_->disconnectPin(driver_pin);
 
       out_net = load_net;
-      Net* ip_net = new_net;
       dbNet* op_net_db = load_db_net;
       dbNet* ip_net_db = db_network_->staToDb(new_net);
       ip_net_db->setSigType(op_net_db->getSigType());
