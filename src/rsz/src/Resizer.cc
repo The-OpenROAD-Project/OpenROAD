@@ -61,7 +61,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Units.hh"
-#include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/scope.h"
 
