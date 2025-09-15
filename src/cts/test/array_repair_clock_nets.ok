@@ -128,11 +128,11 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 Placement Analysis
 ---------------------------------
-total displacement       4508.1 u
+total displacement       4509.5 u
 average displacement        1.4 u
 max displacement          146.7 u
 original HPWL          189361.4 u
-legalized HPWL         190291.0 u
+legalized HPWL         190300.6 u
 delta HPWL                    0 %
 
 Clock clk
