@@ -2084,7 +2084,8 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     }
 
     if (grid_compomponent->type() == GridComponent::Strap) {
-      if (shape->getNumberOfConnections() == 0) {
+      if (shape->getNumberOfConnections() == 0
+          || !shape->hasInternalConnections()) {
         // strap is floating and will be removed
         continue;
       }
