@@ -8,6 +8,7 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <fstream>
