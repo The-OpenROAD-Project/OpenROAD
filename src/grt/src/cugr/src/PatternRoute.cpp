@@ -136,10 +136,10 @@ void PatternRoute::constructSteinerTree()
             constructTree(current, curIndex, nextIndex);
           }
           // Set fixed layer interval
-          const uint64_t hash
-              = grid_graph_->hashCell(current->x(), current->y());
-          if (selectedAccessPoints.find(hash) != selectedAccessPoints.end()) {
-            current->setFixedLayers(selectedAccessPoints[hash].layers);
+          const PointT current_pt{current->x(), current->y()};
+          if (selectedAccessPoints.find(current_pt)
+              != selectedAccessPoints.end()) {
+            current->setFixedLayers(selectedAccessPoints[current_pt].layers);
           }
           // Connect current to parent
           if (parent == nullptr) {

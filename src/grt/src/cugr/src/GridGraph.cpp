@@ -354,7 +354,8 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
 
 GridGraph::AccessPointMap GridGraph::selectAccessPoints(const GRNet* net) const
 {
-  AccessPointMap selected_access_points;
+  PointHash hasher(y_size_);
+  AccessPointMap selected_access_points(0, hasher);
   // cell hash (2d) -> access point, fixed layer interval
   selected_access_points.reserve(net->getNumPins());
   const auto& boundingBox = net->getBoundingBox();
@@ -392,11 +393,11 @@ GridGraph::AccessPointMap GridGraph::selectAccessPoints(const GRNet* net) const
       logger_->warn(utl::GRT, 274, "pin is hard to access.");
     }
     const PointT selectedPoint = accessPoints[bestIndex];
-    const uint64_t hash = hashCell(selectedPoint.x(), selectedPoint.y());
-    if (selected_access_points.find(hash) == selected_access_points.end()) {
-      selected_access_points.emplace(hash, AccessPoint{selectedPoint, {}});
+    const PointT key{selectedPoint.x(), selectedPoint.y()};
+    if (selected_access_points.find(key) == selected_access_points.end()) {
+      selected_access_points.emplace(key, AccessPoint{selectedPoint, {}});
     }
-    IntervalT& fixedLayerInterval = selected_access_points[hash].layers;
+    IntervalT& fixedLayerInterval = selected_access_points[key].layers;
     for (const auto& point : accessPoints) {
       if (point.x() == selectedPoint.x() && point.y() == selectedPoint.y()) {
         fixedLayerInterval.Update(point.getLayerIdx());

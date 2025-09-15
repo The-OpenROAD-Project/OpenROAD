@@ -21,6 +21,20 @@ class GRNet;
 template <typename Type>
 class GridGraphView;
 
+class PointHash
+{
+ public:
+  PointHash(int y_size) : y_size_(y_size) {}
+
+  std::size_t operator()(const PointT& pt) const
+  {
+    return robin_hood::hash_int(pt.x() * y_size_ + pt.y());
+  }
+
+ private:
+  const uint64_t y_size_;
+};
+
 struct GraphEdge
 {
   CapacityT getResource() const { return capacity - demand; }
@@ -53,10 +67,6 @@ class GridGraph
     return ((uint64_t) point.getLayerIdx() * x_size_ + point.x()) * y_size_
            + point.y();
   };
-  uint64_t hashCell(const int x, const int y) const
-  {
-    return (uint64_t) x * y_size_ + y;
-  }
   int getGridline(const int dimension, const int index) const
   {
     return gridlines_[dimension][index];
@@ -81,7 +91,8 @@ class GridGraph
     IntervalT layers;
   };
 
-  using AccessPointMap = robin_hood::unordered_map<uint64_t, AccessPoint>;
+  using AccessPointMap
+      = robin_hood::unordered_map<PointT, AccessPoint, PointHash>;
   AccessPointMap selectAccessPoints(const GRNet* net) const;
 
   // Methods for updating demands
