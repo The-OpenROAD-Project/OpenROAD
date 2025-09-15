@@ -2457,7 +2457,6 @@ bool RepairDesign::makeRepeater(
       // Copy signal type to new net.
       //
       dbNet* ip_net_db = load_db_net;  // orig net
-                                       // the name 'load_db_net' is misleading
       dbNet* op_net_db = db_network_->staToDb(new_net);
       op_net_db->setSigType(ip_net_db->getSigType());
       out_net = new_net;
