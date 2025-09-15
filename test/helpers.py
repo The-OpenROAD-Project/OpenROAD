@@ -13,10 +13,12 @@ def get_runfiles_path_to(path):
         runfiles_path = runfiles_path + path
     return runfiles_path
 
+
 def if_bazel_change_working_dir_to(test_dir):
     test_dir = get_runfiles_path_to(test_dir)
     if test_dir:
         os.chdir(test_dir)
+
 
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
@@ -31,7 +33,9 @@ def make_result_file(filename):
     bazel_tmp_output_dir = os.environ.get("TEST_TMPDIR", "")
 
     if bazel_tmp_output_dir:
-        result_dir = os.path.join(bazel_tmp_output_dir, )
+        result_dir = os.path.join(
+            bazel_tmp_output_dir,
+        )
 
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)

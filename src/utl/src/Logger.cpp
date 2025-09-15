@@ -286,7 +286,8 @@ std::string Logger::teeStringEnd()
   return redirectStringEnd();
 }
 
-Logger* Logger::defaultLogger() {
+Logger* Logger::defaultLogger()
+{
   static Logger default_logger;
   return &default_logger;
 }
