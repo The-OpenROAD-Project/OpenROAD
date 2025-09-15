@@ -385,27 +385,19 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
       if (!top_net) {
         dlogHierConnCreatingTopNet(connection_name, highest_common_module);
 
-        // Get full name of source_pin_flat_net
+        // Get base name of source_pin_flat_net
         Pin* sta_source_pin = db_network_->dbToSta(source_pin);
         dbNet* source_pin_flat_net = db_network_->flatNet(sta_source_pin);
-        Instance* sta_inst = db_network_->instance(sta_source_pin);
-        const char* inst_name = db_network_->name(sta_inst);
-        Instance* parent_inst = db_network_->parent(sta_inst);
-        const char* parent_name = db_network_->name(parent_inst);
-
-        std::string full_name = fmt::format(
-            "{}_{}_{}",
-            parent_name,
-            inst_name,
-            db_network_->name(db_network_->dbToSta(source_pin_flat_net)));
+        std::string base_name = fmt::format(
+            "{}", db_network_->name(db_network_->dbToSta(source_pin_flat_net)));
 
         // Decide a new unique net name to avoid collisions.
-        std::string unique_name = full_name;
+        std::string unique_name = base_name;
         int id = 0;
         while (highest_common_module->findModBTerm(unique_name.c_str())
                || highest_common_module->getModNet(unique_name.c_str())) {
           id++;
-          unique_name = fmt::format("{}_{}", full_name, id);
+          unique_name = fmt::format("{}_{}", base_name, id);
         }
 
         // Create and connect dbModNet

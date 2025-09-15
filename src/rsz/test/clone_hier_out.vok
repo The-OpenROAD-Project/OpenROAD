@@ -303,14 +303,14 @@ module hi_fanout (clk1,
  output output98;
  output output99;
 
- wire hi_fanout_split576_net576;
- wire hi_fanout_split575_net575;
+ wire net576;
+ wire net575;
  wire net_o_11;
  wire net_o_10;
  wire net_o_9;
- wire hi_fanout_split174_net174;
+ wire net174;
  wire net_o_8;
- wire hi_fanout_split172_net172;
+ wire net172;
  wire net_o_7;
  wire net_o_6;
  wire net_o_5;
@@ -324,13 +324,13 @@ module hi_fanout (clk1,
  wire clk_to_nand0;
 
  BUF_X8 split576 (.A(clk_to_nand0),
-    .Z(hi_fanout_split576_net576));
+    .Z(net576));
  BUF_X4 split575 (.A(clk_to_nand1),
-    .Z(hi_fanout_split575_net575));
+    .Z(net575));
  BUF_X8 split174 (.A(clk_to_nand0),
-    .Z(hi_fanout_split174_net174));
+    .Z(net174));
  BUF_X8 split172 (.A(clk_to_nand1),
-    .Z(hi_fanout_split172_net172));
+    .Z(net172));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
@@ -787,14 +787,14 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net0),
     .CK(clk1),
     .Q(output99));
- submodule cloneU1 (.net_i_3(hi_fanout_split576_net576),
-    .net_i_2(hi_fanout_split575_net575),
+ submodule cloneU1 (.net_i_3(net576),
+    .net_i_2(net575),
     .net_o_11(net_o_11),
     .net_o_10(net_o_10),
     .net_o_9(net_o_9),
-    .net_i_1(hi_fanout_split174_net174),
+    .net_i_1(net174),
     .net_o_8(net_o_8),
-    .net_i(hi_fanout_split172_net172),
+    .net_i(net172),
     .net_o_7(net_o_7),
     .net_o_6(net_o_6),
     .net_o_5(net_o_5),
