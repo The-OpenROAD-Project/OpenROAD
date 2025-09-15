@@ -1707,12 +1707,23 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
                            ? layer->findTwSpacing(defaultWidth, defaultWidth, 0)
                            : layer->getSpacing();
 
+    // If width or space is 0, something is not right
+    if (defaultWidth == 0 || defaultSpace == 0) {
+      logger_->warn(CTS,
+                    204,
+                    "Clock NDR settings for layer {}: defaultSpace: {} - "
+                    "defaultWidth: {}",
+                    layer->getName(),
+                    defaultSpace,
+                    defaultWidth);
+    }
+
     // Set NDR settings
     int ndr_width = defaultWidth;
     layerRule->setWidth(ndr_width);
     int ndr_space = (layer->hasTwoWidthsSpacingRules())
-                        ? layer->findTwSpacing(ndr_width, ndr_width, 0)
-                        : defaultSpace;
+                        ? 2 * layer->findTwSpacing(ndr_width, ndr_width, 0)
+                        : 2 * defaultSpace;
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
