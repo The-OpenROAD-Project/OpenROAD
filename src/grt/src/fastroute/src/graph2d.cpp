@@ -4,6 +4,7 @@
 #include "Graph2D.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>

@@ -41,6 +41,7 @@ class dbVerilogNetwork : public ConcreteNetwork
   Cell* findAnyCell(const char* name) override;
   void init(dbNetwork* db_network);
   bool isBlackBox(ConcreteCell* cell);
+  dbNetwork* getDbNetwork() { return static_cast<dbNetwork*>(db_network_); }
 
  private:
   NetworkReader* db_network_ = nullptr;

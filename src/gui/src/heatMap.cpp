@@ -224,6 +224,10 @@ Painter::Color HeatMapDataSource::getColor(double value) const
 
 void HeatMapDataSource::showSetup()
 {
+  if (block_ == nullptr) {
+    return;
+  }
+
   if (setup_ == nullptr) {
     setup_ = new HeatMapSetup(*this,
                               QString::fromStdString(name_),

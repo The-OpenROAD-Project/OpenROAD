@@ -350,7 +350,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   std::string dummyload_prefix_ = "clkload";
   MasterCount dummy_count_;
   bool repairClockNets_ = false;
-  NdrStrategy ndrStrategy_ = NdrStrategy::NONE;
+  NdrStrategy ndrStrategy_ = NdrStrategy::HALF;
 };
 
 }  // namespace cts

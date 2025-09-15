@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"

@@ -355,27 +355,27 @@ void OpenRoad::readDef(const char* filename,
   def_reader.readChip(search_libs, filename, chip);
 }
 
-static odb::defout::Version stringToDefVersion(const std::string& version)
+static odb::DefOut::Version stringToDefVersion(const std::string& version)
 {
   if (version == "5.8") {
-    return odb::defout::Version::DEF_5_8;
+    return odb::DefOut::Version::DEF_5_8;
   }
   if (version == "5.7") {
-    return odb::defout::Version::DEF_5_7;
+    return odb::DefOut::Version::DEF_5_7;
   }
   if (version == "5.6") {
-    return odb::defout::Version::DEF_5_6;
+    return odb::DefOut::Version::DEF_5_6;
   }
   if (version == "5.5") {
-    return odb::defout::Version::DEF_5_5;
+    return odb::DefOut::Version::DEF_5_5;
   }
   if (version == "5.4") {
-    return odb::defout::Version::DEF_5_4;
+    return odb::DefOut::Version::DEF_5_4;
   }
   if (version == "5.3") {
-    return odb::defout::Version::DEF_5_3;
+    return odb::DefOut::Version::DEF_5_3;
   }
-  return odb::defout::Version::DEF_5_8;
+  return odb::DefOut::Version::DEF_5_8;
 }
 
 void OpenRoad::writeDef(const char* filename, const char* version)
@@ -395,7 +395,7 @@ void OpenRoad::writeDef(const char* filename, const std::string& version)
       if (hierarchy_set) {
         sta->getDbNetwork()->disableHierarchy();
       }
-      odb::defout def_writer(logger_);
+      odb::DefOut def_writer(logger_);
       def_writer.setVersion(stringToDefVersion(version));
       def_writer.writeBlock(block, filename);
       if (hierarchy_set) {
