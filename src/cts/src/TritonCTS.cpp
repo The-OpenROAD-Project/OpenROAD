@@ -1710,7 +1710,7 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     // If width or space is 0, something is not right
     if (defaultWidth == 0 || defaultSpace == 0) {
       logger_->warn(CTS,
-                    204,
+                    208,
                     "Clock NDR settings for layer {}: defaultSpace: {} - "
                     "defaultWidth: {}",
                     layer->getName(),
