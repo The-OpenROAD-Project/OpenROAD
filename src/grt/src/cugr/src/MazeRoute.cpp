@@ -23,9 +23,7 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
                        const SparseGrid& grid)
 {
   // 0. Create pseudo pins
-  robin_hood::unordered_map<uint64_t, GridGraph::AccessPoint>
-      selectedAccessPoints;
-  grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
+  const auto selectedAccessPoints = grid_graph_->selectAccessPoints(net_);
   pseudo_pins_.reserve(selectedAccessPoints.size());
   for (const auto& selectedPoint : selectedAccessPoints) {
     pseudo_pins_.push_back(selectedPoint.second);

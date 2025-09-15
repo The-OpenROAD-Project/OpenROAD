@@ -79,16 +79,13 @@ std::string PatternRoutingNode::getPythonString(
 
 void PatternRoute::constructSteinerTree()
 {
-  robin_hood::unordered_map<uint64_t, GridGraph::AccessPoint>
-      selectedAccessPoints;
-  grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
+  auto selectedAccessPoints = grid_graph_->selectAccessPoints(net_);
 
   const int degree = selectedAccessPoints.size();
   if (degree == 1) {
-    for (auto& accessPoint : selectedAccessPoints) {
-      steiner_tree_ = std::make_shared<SteinerTreeNode>(
-          accessPoint.second.point, accessPoint.second.layers);
-    }
+    const auto& accessPoint = *selectedAccessPoints.begin();
+    steiner_tree_ = std::make_shared<SteinerTreeNode>(
+        accessPoint.second.point, accessPoint.second.layers);
     return;
   }
 

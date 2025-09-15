@@ -81,9 +81,8 @@ class GridGraph
     IntervalT layers;
   };
 
-  void selectAccessPoints(const GRNet* net,
-                          robin_hood::unordered_map<uint64_t, AccessPoint>&
-                              selected_access_points) const;
+  using AccessPointMap = robin_hood::unordered_map<uint64_t, AccessPoint>;
+  AccessPointMap selectAccessPoints(const GRNet* net) const;
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);

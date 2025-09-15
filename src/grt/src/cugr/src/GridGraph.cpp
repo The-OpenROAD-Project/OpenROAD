@@ -352,12 +352,9 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-void GridGraph::selectAccessPoints(
-    const GRNet* net,
-    robin_hood::unordered_map<uint64_t, AccessPoint>& selected_access_points)
-    const
+GridGraph::AccessPointMap GridGraph::selectAccessPoints(const GRNet* net) const
 {
-  selected_access_points.clear();
+  AccessPointMap selected_access_points;
   // cell hash (2d) -> access point, fixed layer interval
   selected_access_points.reserve(net->getNumPins());
   const auto& boundingBox = net->getBoundingBox();
@@ -412,6 +409,7 @@ void GridGraph::selectAccessPoints(
     fixedLayers.SetHigh(
         std::min(fixedLayers.high() + 2, (int) getNumLayers() - 1));
   }
+  return selected_access_points;
 }
 
 void GridGraph::commit(const int layer_index,
