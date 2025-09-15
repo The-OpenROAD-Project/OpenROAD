@@ -368,6 +368,17 @@ bool dbInst::rename(const char* name)
     return false;
   }
 
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: inst {}, rename to {}",
+               getId(),
+               name);
+    block->_journal->updateField(this, _dbInst::NAME, inst->_name, name);
+  }
+
   block->_inst_hash.remove(inst);
   free((void*) inst->_name);
   inst->_name = safe_strdup(name);

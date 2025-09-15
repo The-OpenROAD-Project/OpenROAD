@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "dbCore.h"
+#include "odb/dbId.h"
 #include "odb/geom.h"
 #include "odb/odb.h"
 

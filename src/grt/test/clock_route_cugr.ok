@@ -26,7 +26,7 @@ num of nets :        15
 num of special nets: 0
 gcell grid:          38 x 38 x 6
 stage 1: pattern routing
-0 / 15 gr_nets_ have overflows.
+0 / 15 nets have overflow.
 routing statistics
 wire length (metric):  2918
 total via count:       169

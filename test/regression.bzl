@@ -96,6 +96,14 @@ def _pop(kwargs, key, default):
 def regression_test(
         name,
         **kwargs):
+    """Macro to instantiate a regression test for a given test name
+
+    Automatically detects test files and configures the test rule.
+
+    Args:
+        name: The base name of the test (without extension).
+        **kwargs: Additional keyword arguments to pass to the regression_rule_test.
+    """
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
     # in here but rather in the BUILD file and just pass the resulting
     # name = "foo-tcl", test_file = "foo.tcl" to this regression test macro.
@@ -112,7 +120,7 @@ def regression_test(
     for test_file in test_files:
         ext = test_file.split(".")[-1]
         regression_rule_test(
-            name = name + "-" + ext,
+            name = name + "-" + ext + "_test",
             test_file = test_file,
             test_name = name,
             data = [

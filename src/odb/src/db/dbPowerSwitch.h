@@ -10,6 +10,7 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbId.h"
 #include "odb/dbSet.h"
 #include "odb/odb.h"
 

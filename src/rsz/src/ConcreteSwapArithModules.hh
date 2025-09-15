@@ -19,14 +19,14 @@ class ConcreteSwapArithModules : public SwapArithModules
                            const std::string& target,
                            float slack_threshold) override;
   void collectArithInstsOnPath(const Path* path,
-                               set<dbModInst*>& arithInsts) override;
+                               std::set<dbModInst*>& arithInsts) override;
   bool isArithInstance(const Instance* inst, dbModInst*& mod_inst) override;
   bool hasArithOperatorProperty(const dbModInst* mod_inst) override;
   void findCriticalInstances(int path_count,
                              const std::string& target,
                              float slack_threshold,
-                             set<dbModInst*>& insts) override;
-  void doSwapInstances(const set<dbModInst*>& insts,
+                             std::set<dbModInst*>& insts) override;
+  void doSwapInstances(const std::set<dbModInst*>& insts,
                        const std::string& target) override;
 
  protected:

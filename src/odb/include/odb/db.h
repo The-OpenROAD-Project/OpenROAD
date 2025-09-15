@@ -1330,6 +1330,11 @@ class dbBlock : public dbObject
 
   std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
 
+  ///
+  /// Destroy all the routing wires from signal and clock nets in this block.
+  ///
+  void destroyRoutes();
+
  public:
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
@@ -8292,7 +8297,8 @@ class dbModNet : public dbObject
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
   unsigned connectionCount();
-  const char* getName() const;
+  std::string getName() const;
+  const char* getConstName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
 

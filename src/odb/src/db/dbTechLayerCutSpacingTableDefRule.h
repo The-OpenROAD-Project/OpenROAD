@@ -6,9 +6,11 @@
 
 #include <map>
 #include <string>
+#include <tuple>
 
 #include "dbCore.h"
 #include "dbVector.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 
 namespace odb {

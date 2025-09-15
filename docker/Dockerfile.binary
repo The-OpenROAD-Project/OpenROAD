@@ -12,6 +12,6 @@ FROM $copyImage AS copyfrom
 
 FROM $fromImage
 
-COPY --from=copyfrom /OpenROAD/build/src/openroad /usr/bin/.
+COPY --from=copyfrom /OpenROAD/build/bin/openroad /usr/bin/.
 
 ENTRYPOINT [ "openroad" ]
