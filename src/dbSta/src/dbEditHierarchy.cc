@@ -99,7 +99,7 @@ void PinModuleConnection::operator()(const Pin* pin)
   }
 }
 
-bool dbEditHierarchy::ConnectionToModuleExists(dbITerm* source_pin,
+bool dbEditHierarchy::connectionToModuleExists(dbITerm* source_pin,
                                                dbModule* dest_module,
                                                dbModBTerm*& dest_modbterm,
                                                dbModITerm*& dest_moditerm) const
@@ -227,7 +227,7 @@ connection_name should be a base name, not a full name.
 */
 void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
                                           dbITerm* dest_pin,
-                                          const char* connection_name) const
+                                          const char* connection_name)
 {
   assert(source_pin != nullptr);
   assert(dest_pin != nullptr);
@@ -315,7 +315,7 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     dbModITerm* dest_moditerm = nullptr;
     // Check do we already have a connection between the source and destination
     // pins? If so, reuse it.
-    if (ConnectionToModuleExists(
+    if (connectionToModuleExists(
             source_pin, dest_db_module, dest_modbterm, dest_moditerm)) {
       dbModNet* dest_mod_net = nullptr;
       if (dest_modbterm) {
