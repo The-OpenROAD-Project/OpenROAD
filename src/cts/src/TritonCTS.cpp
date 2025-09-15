@@ -2348,10 +2348,10 @@ void TritonCTS::balanceMacroRegisterLatencies()
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
 
-  est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* builder = iter->get();
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
+      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
       LatencyBalancer balancer = LatencyBalancer(builder,
                                                  options_,
                                                  logger_,
@@ -2361,7 +2361,6 @@ void TritonCTS::balanceMacroRegisterLatencies()
                                                  techChar_->getLengthUnit(),
                                                  capPerDBU);
       totalDelayBuff += balancer.run();
-      parasitics_guard.update();
     }
   }
   if (totalDelayBuff) {
