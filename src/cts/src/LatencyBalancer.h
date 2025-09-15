@@ -51,13 +51,13 @@ class LatencyBalancer
 {
  public:
   LatencyBalancer(TreeBuilder* root,
-                    const CtsOptions* options,
-                    Logger* logger,
-                    odb::dbDatabase* db,
-                    sta::dbNetwork* network,
-                    sta::dbSta* sta,
-                    double scalingUnit,
-                    double capPerDBU)
+                  const CtsOptions* options,
+                  Logger* logger,
+                  odb::dbDatabase* db,
+                  sta::dbNetwork* network,
+                  sta::dbSta* sta,
+                  double scalingUnit,
+                  double capPerDBU)
       : root_(root),
         options_(options),
         logger_(logger),

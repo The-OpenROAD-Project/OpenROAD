@@ -2338,26 +2338,25 @@ void TritonCTS::balanceMacroRegisterLatencies()
   sta::Corner* corner = openSta_->cmdCorner();
   // convert from per meter to per dbu
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
-               / block_->getDbUnitsPerMicron();
+                     / block_->getDbUnitsPerMicron();
 
   est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* builder = iter->get();
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
-      LatencyBalancer balancer
-          = LatencyBalancer(builder,
-                              options_,
-                              logger_,
-                              db_,
-                              network_,
-                              openSta_,
-                              techChar_->getLengthUnit(),
-                              capPerDBU);
+      LatencyBalancer balancer = LatencyBalancer(builder,
+                                                 options_,
+                                                 logger_,
+                                                 db_,
+                                                 network_,
+                                                 openSta_,
+                                                 techChar_->getLengthUnit(),
+                                                 capPerDBU);
       totalDelayBuff += balancer.run();
       parasitics_guard.update();
     }
   }
-  if(totalDelayBuff) {
+  if (totalDelayBuff) {
     logger_->info(CTS, 37, "Total number of delay buffers: {}", totalDelayBuff);
   }
 }
