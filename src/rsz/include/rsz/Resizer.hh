@@ -645,6 +645,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          const Point& loc,
                          const odb::dbNameUniquifyType& uniquify
                          = odb::dbNameUniquifyType::ALWAYS);
+  void createNewTieCellForLoadPin(const Pin* load_pin,
+                                  const char* new_inst_name,
+                                  Instance* parent,
+                                  LibertyPort* tie_port,
+                                  int separation_dbu);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,

@@ -3242,108 +3242,75 @@ void Resizer::findBufferTargetSlews(LibertyCell* buffer,
 
 // Repair tie hi/low net driver fanout by duplicating the
 // tie hi/low instances for every pin connected to tie hi/low instances.
+// - The new tie instances are placed at a distance from the load pin.
+// - If the load pin is within ALU module, the new tie instances will be placed
+//   in the parent hierarhcy of the ALU module.
+// - Otherwise, the new tie instances are placed in the same hierarchy of the
+// load pin.
+// - The first load pin is reused to avoid creating a new tie instance for it.
 void Resizer::repairTieFanout(LibertyPort* tie_port,
                               double separation,  // meters
                               bool verbose)
 {
   initDesignArea();
-  Instance* top_inst = network_->topInstance();
   LibertyCell* tie_cell = tie_port->libertyCell();
-  InstanceSeq insts;
-  findCellInstances(tie_cell, insts);
+  InstanceSeq tie_insts;
+  findCellInstances(tie_cell, tie_insts);
   int tie_count = 0;
   int separation_dbu = metersToDbu(separation);
-  for (const Instance* inst : insts) {
-    if (!dontTouch(inst)) {
-      Pin* drvr_pin = network_->findPin(inst, tie_port);
-      if (drvr_pin) {
-        dbNet* db_net = db_network_->flatNet(drvr_pin);
-        if (!db_net) {
-          continue;
-        }
-        Net* net = db_network_->dbToSta(db_net);
-        if (net && !dontTouch(net)) {
-          NetConnectedPinIterator* pin_iter
-              = network_->connectedPinIterator(net);
-          bool keep_tie = false;
-          while (pin_iter->hasNext()) {
-            const Pin* load = pin_iter->next();
-            if (!(db_network_->isFlat(load))) {
-              continue;
-            }
+  for (const Instance* tie_inst : tie_insts) {
+    if (dontTouch(tie_inst)) {
+      continue;
+    }
 
-            Instance* load_inst = network_->instance(load);
-            if (dontTouch(load_inst)) {
-              keep_tie = true;
-            } else if (load != drvr_pin) {
-              // Make tie inst.
-              Point tie_loc = tieLocation(load, separation_dbu);
-              const char* inst_name = network_->name(load_inst);
-              Instance* tie = makeInstance(
-                  tie_cell,
-                  inst_name,
-                  top_inst,
-                  tie_loc,
-                  odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+    Pin* drvr_pin = network_->findPin(tie_inst, tie_port);
+    if (drvr_pin == nullptr) {
+      continue;
+    }
 
-              // Put the tie cell instance in the same module with the load
-              // it drives.
-              if (!network_->isTopInstance(load_inst)) {
-                dbInst* load_inst_odb = db_network_->staToDb(load_inst);
-                dbInst* tie_odb = db_network_->staToDb(tie);
-                load_inst_odb->getModule()->addInst(tie_odb);
-              }
+    dbNet* db_net = db_network_->flatNet(drvr_pin);
+    if (!db_net) {
+      continue;
+    }
 
-              // Make tie output net.
-              Net* load_net = db_network_->makeNet();
+    Net* net = db_network_->dbToSta(db_net);
+    if (net == nullptr || dontTouch(net)) {
+      continue;
+    }
 
-              // Connect tie inst output.
-              sta_->connectPin(tie, tie_port, load_net);
-
-              // Connect load to tie output net.
-              sta_->disconnectPin(const_cast<Pin*>(load));
-              Port* load_port = network_->port(load);
-              sta_->connectPin(load_inst, load_port, load_net);
-
-              designAreaIncr(area(db_network_->cell(tie_cell)));
-              tie_count++;
-            }
-          }
-          delete pin_iter;
-
-          if (keep_tie) {
-            continue;
-          }
-
-          // Delete inst output net.
-          Pin* tie_pin = network_->findPin(inst, tie_port);
-          dbNet* tie_flat_net = db_network_->flatNet(tie_pin);
-          Net* tie_net = db_network_->dbToSta(tie_flat_net);
-
-          // network_->net(tie_pin);
-          sta_->deleteNet(tie_net);
-          estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);
-          // Delete the tie instance if no other ports are in use.
-          // A tie cell can have both tie hi and low outputs.
-          bool has_other_fanout = false;
-          std::unique_ptr<InstancePinIterator> inst_pin_iter{
-              network_->pinIterator(inst)};
-          while (inst_pin_iter->hasNext()) {
-            Pin* pin = inst_pin_iter->next();
-            if (pin != drvr_pin) {
-              // hier fix
-              Net* net = db_network_->dbToSta(db_network_->flatNet(pin));
-              if (net && !network_->isPower(net) && !network_->isGround(net)) {
-                has_other_fanout = true;
-                break;
-              }
-            }
-          }
-          if (!has_other_fanout) {
-            sta_->deleteInstance(const_cast<Instance*>(inst));
-          }
-        }
+    // Collect all loads on the net
+    PinSeq loads;
+    std::unique_ptr<NetConnectedPinIterator> pin_iter(
+        network_->connectedPinIterator(net));
+    while (pin_iter->hasNext()) {
+      const Pin* load_pin = pin_iter->next();
+      if (load_pin != drvr_pin && db_network_->isFlat(load_pin)) {
+        loads.push_back(const_cast<Pin*>(load_pin));
       }
+    }
+
+    if (loads.size() <= 1) {
+      continue;  // No need to repair if only one load
+    }
+
+    const char* tie_inst_name = network_->name(tie_inst);
+
+    // The first load reuses the existing tie cell.
+    // For other loads, create a new tie cell for each.
+    for (size_t i = 1; i < loads.size(); ++i) {
+      const Pin* load_pin = loads[i];
+      Instance* load_inst = network_->instance(load_pin);
+      if (dontTouch(load_inst)) {
+        continue;
+      }
+
+      createNewTieCellForLoadPin(load_pin,
+                                 tie_inst_name,
+                                 db_network_->parent(load_inst),
+                                 tie_port,
+                                 separation_dbu);
+      designAreaIncr(area(db_network_->cell(tie_cell)));
+      tie_count++;
     }
   }
 
@@ -3352,6 +3319,56 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
         RSZ, 42, "Inserted {} tie {} instances.", tie_count, tie_cell->name());
     level_drvr_vertices_valid_ = false;
   }
+}
+
+void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
+                                         const char* new_inst_name,
+                                         Instance* parent,
+                                         LibertyPort* tie_port,
+                                         int separation_dbu)
+{
+  LibertyCell* tie_cell = tie_port->libertyCell();
+
+  // Create the tie instance in the parent of the existing tie instance
+  Point new_tie_loc = tieLocation(load_pin, separation_dbu);
+  Instance* new_tie_inst
+      = makeInstance(tie_cell,
+                     new_inst_name,
+                     parent,
+                     new_tie_loc,
+                     odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+
+  // Get the output pin of new_tie_inst
+  Pin* new_tie_out_pin = network_->findPin(new_tie_inst, tie_port);
+  assert(new_tie_out_pin != nullptr);
+
+  // Get dbITerm of new_tie_inst output pin
+  odb::dbITerm* new_tie_iterm = db_network_->flatPin(new_tie_out_pin);
+  if (new_tie_iterm == nullptr) {
+    logger_->error(RSZ,
+                   168,
+                   "Cannot find dbITerm for the output pin of new tie cell {}",
+                   db_network_->name(new_tie_out_pin));
+  }
+
+  // Get dbITerm of load_pin
+  odb::dbITerm* load_iterm = db_network_->flatPin(load_pin);
+  if (load_iterm == nullptr) {
+    logger_->error(RSZ,
+                   169,
+                   "Cannot find dbITerm for load pin {}",
+                   db_network_->name(load_pin));
+  }
+
+  // Connect the tie instance output pin to the load pin.
+  // - It automatically disconnects the existing connection of load pin
+  std::string connection_name
+      = fmt::format("{}_{}",
+                    db_network_->name(new_tie_inst),
+                    new_tie_iterm->getMTerm()->getName());
+  load_iterm->disconnect();
+  db_network_->hierarchicalConnect(
+      new_tie_iterm, load_iterm, connection_name.c_str());
 }
 
 void Resizer::findCellInstances(LibertyCell* cell,
