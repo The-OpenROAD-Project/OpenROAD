@@ -8,6 +8,7 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <fstream>
