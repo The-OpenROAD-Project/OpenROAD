@@ -513,14 +513,33 @@ odb::dbInst* LatencyBalancer::createDelayBuffer(odb::dbNet* driverNet,
   // creat a new input net
   std::string newNetName
       = "delaynet_" + std::to_string(delayBufIndex_) + "_" + clockName;
-  odb::dbNet* newNet = odb::dbNet::create(block, newNetName.c_str());
+
+  // hierarchy fix, make the net in the right scope
+  sta::Pin* driver = nullptr;
+  odb::dbModule* module = network_->getNetDriverParentModule(
+      network_->dbToSta(driverNet), driver);
+  if (module == nullptr) {
+    // if none put in top level
+    module = block->getTopModule();
+  }
+  sta::Instance* scope
+      = (module == nullptr || (module == block->getTopModule()))
+            ? network_->topInstance()
+            : (sta::Instance*) (module->getModInst());
+  odb::dbNet* newNet = network_->staToDb(network_->makeNet(
+      newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
+
   newNet->setSigType(odb::dbSigType::CLOCK);
 
   // create a new delay buffer
   std::string newBufName
       = "delaybuf_" + std::to_string(delayBufIndex_++) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-  odb::dbInst* newBuf = odb::dbInst::create(block, master, newBufName.c_str());
+
+  // fix: make buffer in same hierarchical module as driver
+
+  odb::dbInst* newBuf
+      = odb::dbInst::create(block, master, newBufName.c_str(), false, module);
 
   newBuf->setSourceType(odb::dbSourceType::TIMING);
   newBuf->setLocation(locX, locY);
