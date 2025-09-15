@@ -4805,16 +4805,19 @@ void GlobalRouter::reportLayerWireLengths(bool global_route,
       }
     }
     if (total_length > 0) {
+      logger_->report("Layer    Wire length  Percentage");
+      logger_->report("--------------------------------");
       for (size_t i = 0; i < lengths.size(); i++) {
         int64_t length = lengths[i];
         if (length > 0) {
           odb::dbTechLayer* layer = routing_layers_[i];
-          logger_->report("{} {}um {}%",
+          logger_->report("{:7s} {:8.2f}um {:5}%",
                           layer->getName(),
                           block_->dbuToMicrons(length),
                           static_cast<int>((100.0 * length) / total_length));
         }
       }
+      logger_->report("--------------------------------");
     }
   }
 
@@ -4848,16 +4851,19 @@ void GlobalRouter::reportLayerWireLengths(bool global_route,
     }
 
     if (total_length > 0) {
+      logger_->report("Layer    Wire length  Percentage");
+      logger_->report("--------------------------------");
       for (size_t i = 0; i < lengths.size(); i++) {
         int64_t length = lengths[i];
         if (length > 0) {
           odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
-          logger_->report("{} {}um {}%",
+          logger_->report("{:7s} {:8.2f}um {:5}%",
                           layer->getName(),
                           block_->dbuToMicrons(length),
                           static_cast<int>((100.0 * length) / total_length));
         }
       }
+      logger_->report("--------------------------------");
     }
   }
 }

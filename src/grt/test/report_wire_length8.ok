@@ -65,9 +65,12 @@ Total           143743          3458            2.41%             0 /  0 /  0
 [INFO GRT-0018] Total wirelength: 10367 um
 [INFO GRT-0014] Routed nets: 563
 [INFO GRT-0278] Global route wire length by layer:
-metal1 1522.5um 20%
-metal2 3360um 46%
-metal3 2058um 28%
-metal4 100.8um 1%
-metal5 86.1um 1%
-metal6 134.4um 1%
+Layer    Wire length  Percentage
+--------------------------------
+metal1   1522.50um    20%
+metal2   3360.00um    46%
+metal3   2058.00um    28%
+metal4    100.80um     1%
+metal5     86.10um     1%
+metal6    134.40um     1%
+--------------------------------
