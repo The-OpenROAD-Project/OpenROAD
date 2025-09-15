@@ -3793,6 +3793,10 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
 
 void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
 {
+  if (flat_net == nullptr || mod_net == nullptr) {
+    return;
+  }
+
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(flat_net), visitordb, visited_dbnets);
