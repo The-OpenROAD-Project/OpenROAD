@@ -2486,20 +2486,11 @@ bool RepairDesign::makeRepeater(
           continue;
         }
 
-        load_db_net = db_network_->flatNet(load_pin);
-
-        Instance* load_instance_parent
-            = db_network_->getOwningInstanceParent(const_cast<Pin*>(load_pin));
-
         // disconnect the load pin from everything
         db_network_->disconnectPin(const_cast<Pin*>(load_pin));
 
-        if (driver_instance_parent != load_instance_parent) {
-          db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
-                                           db_network_->flatPin(load_pin));
-        } else {
-          db_network_->connectPin(const_cast<Pin*>(load_pin), buffer_op_net);
-        }
+        db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
+                                         db_network_->flatPin(load_pin));
       }
 
       //
@@ -2599,9 +2590,6 @@ bool RepairDesign::makeRepeater(
         }
         // non-repeater load pins
         if (!repeater_load_pins.hasKey(pin)) {
-          Instance* load_instance_parent
-              = db_network_->getOwningInstanceParent(const_cast<Pin*>(pin));
-
           Instance* inst = network_->instance(pin);
           // do not disconnect/reconnect don't touch instances
           if (resizer_->dontTouch(inst)) {
@@ -2615,14 +2603,8 @@ bool RepairDesign::makeRepeater(
           // non repeater loads go on input side
           db_network_->connectPin(const_cast<Pin*>(pin), buffer_ip_net);
 
-          if (driver_instance_parent != load_instance_parent) {
-            db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
-                                             db_network_->flatPin(pin));
-            // hierarchical connection will implicitly hook up the driver pin
-          } else {
-            // No hierarchy.
-            db_network_->connectPin(const_cast<Pin*>(pin), ip_net);
-          }
+          db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
+                                           db_network_->flatPin(pin));
         }
       }
 
