@@ -2149,26 +2149,10 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     }
   }
 
-  // Register all ConcreteCells (including physical-only) from
-  // all libraries (LEF + Liberty)
-  registerConcreteCellsFromAllLib(cell_name);
-
   std::unique_ptr<CellPortIterator> port_iter{portIterator(cell)};
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
-  }
-}
-
-void dbNetwork::registerConcreteCellsFromAllLib(const char* cell_name)
-{
-  std::unique_ptr<LibraryIterator> library_iter{libraryIterator()};
-  while (library_iter->hasNext()) {
-    Library* lib = library_iter->next();
-    Cell* match = findCell(lib, cell_name);
-    if (match) {
-      registerConcreteCell(match);
-    }
   }
 }
 
