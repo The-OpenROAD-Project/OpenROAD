@@ -2631,8 +2631,6 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   initBlock();
 
-  sta::writeVerilog("before.v", true, false, {}, network());
-
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
@@ -2667,8 +2665,6 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     db_cbk_->removeOwner();
     level_drvr_vertices_valid_ = false;
   }
-
-  sta::writeVerilog("after.v", true, false, {}, network());
 }
 
 void Resizer::findResizeSlacks1()
