@@ -21,6 +21,38 @@ class GRNet;
 template <typename Type>
 class GridGraphView;
 
+struct AccessPoint
+{
+  PointT point;
+  IntervalT layers;
+};
+
+// Only hash and compare on the point, not the layers
+class AccessPointHash
+{
+ public:
+  AccessPointHash(int y_size) : y_size_(y_size) {}
+
+  std::size_t operator()(const AccessPoint& ap) const
+  {
+    return robin_hood::hash_int(ap.point.x() * y_size_ + ap.point.y());
+  }
+
+ private:
+  const uint64_t y_size_;
+};
+
+struct AccessPointEqual
+{
+  bool operator()(const AccessPoint& lhs, const AccessPoint& rhs) const
+  {
+    return lhs.point == rhs.point;
+  }
+};
+
+using AccessPointSet
+    = robin_hood::unordered_set<AccessPoint, AccessPointHash, AccessPointEqual>;
+
 struct GraphEdge
 {
   CapacityT getResource() const { return capacity - demand; }
@@ -53,10 +85,6 @@ class GridGraph
     return ((uint64_t) point.getLayerIdx() * x_size_ + point.x()) * y_size_
            + point.y();
   };
-  uint64_t hashCell(const int x, const int y) const
-  {
-    return (uint64_t) x * y_size_ + y;
-  }
   int getGridline(const int dimension, const int index) const
   {
     return gridlines_[dimension][index];
@@ -75,15 +103,7 @@ class GridGraph
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
-  struct AccessPoint
-  {
-    PointT point;
-    IntervalT layers;
-  };
-
-  void selectAccessPoints(const GRNet* net,
-                          robin_hood::unordered_map<uint64_t, AccessPoint>&
-                              selected_access_points) const;
+  AccessPointSet selectAccessPoints(const GRNet* net) const;
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
