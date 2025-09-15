@@ -4784,6 +4784,10 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net,
 void GlobalRouter::reportLayerWireLengths(bool global_route,
                                           bool detailed_route)
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+
   if (global_route) {
     logger_->info(GRT, 278, "Global route wire length by layer:");
     std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
@@ -4847,7 +4851,7 @@ void GlobalRouter::reportLayerWireLengths(bool global_route,
       for (size_t i = 0; i < lengths.size(); i++) {
         int64_t length = lengths[i];
         if (length > 0) {
-          odb::dbTechLayer* layer = routing_layers_[i];
+          odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
           logger_->report("{} {}um {}%",
                           layer->getName(),
                           block_->dbuToMicrons(length),
