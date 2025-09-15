@@ -11,6 +11,7 @@
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <memory>
@@ -1700,10 +1701,19 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
       layerRule = odb::dbTechLayerRule::create(clockNDR, layer);
     }
     assert(layerRule != nullptr);
-    int defaultSpace = layer->getSpacing();
+
     int defaultWidth = layer->getWidth();
-    layerRule->setSpacing(defaultSpace * 2);
-    layerRule->setWidth(defaultWidth);
+    int defaultSpace = (layer->hasTwoWidthsSpacingRules())
+                           ? layer->findTwSpacing(defaultWidth, defaultWidth, 0)
+                           : layer->getSpacing();
+
+    // Set NDR settings
+    int ndr_width = defaultWidth;
+    layerRule->setWidth(ndr_width);
+    int ndr_space = (layer->hasTwoWidthsSpacingRules())
+                        ? layer->findTwSpacing(ndr_width, ndr_width, 0)
+                        : defaultSpace;
+    layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
                CTS,
