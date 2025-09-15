@@ -266,7 +266,7 @@
 [DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_regs_0_clk is 2.938e-11
 [DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk3 is 3.354e-11
 [DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk2 is 3.355e-11
-[INFO CTS-0033] Balancing latancy for clock clk
+[INFO CTS-0033] Balancing latency for clock clk
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (149560 120545)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (151285 117669)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (89122 143263)

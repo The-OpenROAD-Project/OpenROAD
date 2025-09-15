@@ -37,10 +37,7 @@ module multi_sink (clk);
  wire clknet_1_1__leaf_clk_regs;
  wire delaynet_0_core;
  wire delaynet_1_core;
- wire delaynet_2_core;
 
- CLKBUF_X3 delaybuf_2_core (.A(delaynet_1_core),
-    .Z(delaynet_2_core));
  CLKBUF_X3 delaybuf_1_core (.A(delaynet_0_core),
     .Z(delaynet_1_core));
  CLKBUF_X3 delaybuf_0_core (.A(clk),
@@ -111,7 +108,7 @@ module multi_sink (clk);
     .Z(clknet_leaf_0_clk_regs));
  CLKBUF_X3 clkbuf_1_0__f_clk (.A(clknet_0_clk),
     .Z(clknet_1_0__leaf_clk));
- CLKBUF_X3 clkbuf_0_clk (.A(delaynet_2_core),
+ CLKBUF_X3 clkbuf_0_clk (.A(delaynet_1_core),
     .Z(clknet_0_clk));
  CLKBUF_X3 clkbuf_regs_0_core (.A(clk),
     .Z(clk_regs));
