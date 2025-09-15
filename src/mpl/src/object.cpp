@@ -931,19 +931,6 @@ odb::dbOrientType HardMacro::getOrientation() const
   return orientation_;
 }
 
-// We do not allow rotation of macros
-// This may violate the direction of metal layers
-void HardMacro::flip(bool flip_horizontal)
-{
-  if (flip_horizontal) {
-    orientation_ = orientation_.flipX();
-    pin_y_ = height_ - pin_y_;
-  } else {
-    orientation_ = orientation_.flipY();
-    pin_x_ = width_ - pin_x_;
-  }
-}
-
 // Interfaces with OpenDB
 odb::dbInst* HardMacro::getInst() const
 {
