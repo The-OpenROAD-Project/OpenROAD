@@ -1982,41 +1982,6 @@ bool RepairDesign::hasInputPort(const Net* net)
   return has_top_level_port;
 }
 
-bool RepairDesign::renameNetIfNeeded(dbNet* net, sta::Instance* parent_inst)
-{
-  if (db_network_->hasHierarchy() == false) {
-    return false;
-  }
-
-  // Get the target parent dbModule from the given input
-  odb::dbModInst* parent_mod_inst = db_network_->getModInst(parent_inst);
-  odb::dbModule* target_parent_module = db_network_->block()->getTopModule();
-  if (parent_mod_inst) {
-    target_parent_module = parent_mod_inst->getParent();
-  }
-
-  // Get the parent dbModule of the target net
-  odb::dbModule* net_parent_module = net->findMainParentModule();
-
-  // Condition 1: Net parent scope is different from the given parent scope
-  bool need_rename = (target_parent_module != net_parent_module);
-
-  // Condition 2: Check for base name collision in the target parent scope
-  const std::string net_name = net->getName();
-  if (!need_rename && target_parent_module->getModNet(net_name.c_str())) {
-    need_rename = true;
-  }
-
-  // Rename the net
-  if (need_rename) {
-    const std::string new_name
-        = db_network_->block()->makeNewNetName(parent_mod_inst);
-    net->rename(new_name.c_str());
-  }
-
-  return need_rename;
-}
-
 bool RepairDesign::makeRepeater(
     const char* reason,
     int x,
@@ -2578,9 +2543,6 @@ bool RepairDesign::makeRepeater(
       //                           db_network_->dbToSta(driver_pin_flat_net),
       //                           db_network_->dbToSta(driver_pin_mod_net));
       // }
-
-      // Rename the flat net if it has duplicate name in the parent scope
-      // renameNetIfNeeded(ip_net_db, parent);
 
     } else /* case 2 */ {
       //

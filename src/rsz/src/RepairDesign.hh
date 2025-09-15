@@ -190,7 +190,6 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  bool renameNetIfNeeded(odb::dbNet* net, sta::Instance* parent_inst);
   bool makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
