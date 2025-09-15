@@ -2038,6 +2038,14 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
     for (dbLib* lib : db_->getLibs()) {
       makeLibrary(lib);
     }
+
+    for (dbModule* module : block_->getModules()) {
+      // top_module is not a hierarchical module in this context.
+      if (module != block_->getTopModule()) {
+        registerHierModule(dbToSta(module));
+      }
+    }
+
     readDbNetlistAfter();
   }
 
@@ -2062,7 +2070,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   master->staSetCell(reinterpret_cast<void*>(cell));
   // keep track of db leaf cells. These are cells for which we
   // use the concrete network.
-  registerConcreteCell(cell);
   ConcreteCell* ccell = reinterpret_cast<ConcreteCell*>(cell);
   ccell->setExtCell(reinterpret_cast<void*>(master));
 
@@ -2308,7 +2315,6 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       // to get timing characteristics, so they have to be
       // concrete
       Cell* inst_cell = dbToSta(master);
-      registerConcreteCell(inst_cell);
       std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
       while (port_iter->hasNext()) {
         Port* cur_port = port_iter->next();
@@ -2326,13 +2332,12 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       dbInst* inst = dbInst::create(block_, master, name, false, parent);
       Cell* inst_cell = dbToSta(master);
       //
-      // Register all liberty cells as being concrete
+      // Register all ports of liberty cells as being concrete
       // Sometimes this method is called by the sta
       // to build "test circuits" eg to find the max wire length
       // And those cells need to use the external api
       // to get timing characteristics, so they have to be
       // concrete
-      registerConcreteCell(inst_cell);
       std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
       while (port_iter->hasNext()) {
         Port* cur_port = port_iter->next();
@@ -3193,6 +3198,16 @@ LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
   return nullptr;
 }
 
+void dbNetwork::registerHierModule(const Cell* cell)
+{
+  hier_modules_.insert(cell);
+}
+
+void dbNetwork::unregisterHierModule(const Cell* cell)
+{
+  hier_modules_.erase(cell);
+}
+
 /*
 We keep a registry of the concrete cells.
 For these we know to use the concrete network interface.
@@ -3201,18 +3216,17 @@ The concrete cells are created outside of the odb world
 So we simply note them and then when we inspect a cell
 we can decide whether or not to use the ConcreteNetwork api.
 */
-
-void dbNetwork::registerConcreteCell(const Cell* cell)
-{
-  concrete_cells_.insert(cell);
-}
-
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
   if (!hierarchy_) {
     return true;
   }
-  return (concrete_cells_.find(cell) != concrete_cells_.end());
+
+  if (cell == top_cell_) {
+    return false;
+  }
+
+  return (hier_modules_.find(cell) == hier_modules_.end());
 }
 
 void dbNetwork::registerConcretePort(const Port* port)

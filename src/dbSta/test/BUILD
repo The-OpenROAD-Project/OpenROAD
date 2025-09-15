@@ -58,6 +58,8 @@ COMPULSORY_TESTS = [
     "write_verilog6",
     "write_verilog7",
     "write_verilog8",
+    "write_verilog9",
+    "write_verilog9_hier",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -134,6 +136,7 @@ filegroup(
         "reg5.v",
         "reg6.def",
         "report_cell_usage_no_taps.def",
+        "write_verilog9.v",
     ],
 )
 

@@ -144,7 +144,7 @@ _test() {
         _create
     fi
     if [[ "${testTarget}" == "smoke" ]]; then
-        docker run --rm "${imagePath}" bash -c './build/src/openroad -help'
+        docker run --rm "${imagePath}" bash -c './build/bin/openroad -help'
     else
         docker run --rm "${imagePath}" "./docker/test_wrapper.sh" "${compiler}" "ctest --test-dir build -j ${numThreads}"
     fi

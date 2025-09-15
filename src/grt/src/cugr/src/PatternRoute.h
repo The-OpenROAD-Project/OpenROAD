@@ -133,11 +133,13 @@ class PatternRoute
   PatternRoute(GRNet* net,
                const GridGraph* graph,
                stt::SteinerTreeBuilder* stt_builder,
-               const Constants& constants)
+               const Constants& constants,
+               utl::Logger* logger)
       : net_(net),
         grid_graph_(graph),
         stt_builder_(stt_builder),
-        constants_(constants)
+        constants_(constants),
+        logger_(logger)
   {
   }
   void constructSteinerTree();
@@ -184,6 +186,7 @@ class PatternRoute
 
   Constants constants_;
   const int flute_accuracy_ = 3;
+  utl::Logger* logger_;
 };
 
 }  // namespace grt

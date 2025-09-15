@@ -22,6 +22,7 @@ class dbMarker;
 class dbMarkerCategory;
 class dbMaster;
 class dbModBTerm;
+class dbModule;
 class dbModInst;
 class dbModITerm;
 class dbModNet;
@@ -64,6 +65,11 @@ class dbBlockCallBackObj
   virtual void inDbModInstCreate(dbModInst*) {}
   virtual void inDbModInstDestroy(dbModInst*) {}
   // dbModInst End
+
+  // dbModule Start
+  virtual void inDbModuleCreate(dbModule*) {}
+  virtual void inDbModuleDestroy(dbModule*) {}
+  // dbModule End
 
   // dbNet Start
   virtual void inDbNetCreate(dbNet*) {}

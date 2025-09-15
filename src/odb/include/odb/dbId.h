@@ -13,14 +13,14 @@ template <class T>
 class dbId
 {
   constexpr static unsigned int invalid = 0;
-  unsigned int _id;
+  unsigned int _id = invalid;
 
  public:
   using _type = T;
 
-  dbId() { _id = invalid; }
-  dbId(const dbId<T>& id) : _id(id._id) {}
-  dbId(unsigned int id) { _id = id; }
+  dbId() = default;
+  dbId(const dbId<T>& id) = default;
+  dbId(unsigned int id) : _id(id) {}
 
   operator unsigned int() const { return _id; }
   unsigned int& id() { return _id; }

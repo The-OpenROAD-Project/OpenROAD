@@ -1645,6 +1645,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
   charts_widget_->setLogger(logger);
+  timing_widget_->setLogger(logger);
 }
 
 void MainWindow::fit()
