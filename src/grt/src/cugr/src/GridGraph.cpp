@@ -352,10 +352,10 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-GridGraph::AccessPointMap GridGraph::selectAccessPoints(const GRNet* net) const
+AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
 {
-  PointHash hasher(y_size_);
-  AccessPointMap selected_access_points(0, hasher);
+  AccessPointHash hasher(y_size_);
+  AccessPointSet selected_access_points(0, hasher);
   // cell hash (2d) -> access point, fixed layer interval
   selected_access_points.reserve(net->getNumPins());
   const auto& boundingBox = net->getBoundingBox();
@@ -393,11 +393,9 @@ GridGraph::AccessPointMap GridGraph::selectAccessPoints(const GRNet* net) const
       logger_->warn(utl::GRT, 274, "pin is hard to access.");
     }
     const PointT selectedPoint = accessPoints[bestIndex];
-    const PointT key{selectedPoint.x(), selectedPoint.y()};
-    if (selected_access_points.find(key) == selected_access_points.end()) {
-      selected_access_points.emplace(key, AccessPoint{selectedPoint, {}});
-    }
-    IntervalT& fixedLayerInterval = selected_access_points[key].layers;
+    const AccessPoint ap{selectedPoint, {}};
+    auto it = selected_access_points.emplace(ap).first;
+    IntervalT& fixedLayerInterval = it->layers;
     for (const auto& point : accessPoints) {
       if (point.x() == selectedPoint.x() && point.y() == selectedPoint.y()) {
         fixedLayerInterval.Update(point.getLayerIdx());
@@ -406,7 +404,7 @@ GridGraph::AccessPointMap GridGraph::selectAccessPoints(const GRNet* net) const
   }
   // Extend the fixed layers to 2 layers higher to facilitate track switching
   for (auto& accessPoint : selected_access_points) {
-    IntervalT& fixedLayers = accessPoint.second.layers;
+    IntervalT& fixedLayers = accessPoint.layers;
     fixedLayers.SetHigh(
         std::min(fixedLayers.high() + 2, (int) getNumLayers() - 1));
   }

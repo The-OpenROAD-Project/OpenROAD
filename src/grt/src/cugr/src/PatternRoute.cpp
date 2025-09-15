@@ -84,16 +84,16 @@ void PatternRoute::constructSteinerTree()
   const int degree = selectedAccessPoints.size();
   if (degree == 1) {
     const auto& accessPoint = *selectedAccessPoints.begin();
-    steiner_tree_ = std::make_shared<SteinerTreeNode>(
-        accessPoint.second.point, accessPoint.second.layers);
+    steiner_tree_ = std::make_shared<SteinerTreeNode>(accessPoint.point,
+                                                      accessPoint.layers);
     return;
   }
 
   std::vector<int> xs;
   std::vector<int> ys;
   for (auto& accessPoint : selectedAccessPoints) {
-    xs.push_back(accessPoint.second.point.x());
-    ys.push_back(accessPoint.second.point.y());
+    xs.push_back(accessPoint.point.x());
+    ys.push_back(accessPoint.point.y());
   }
 
   stt::Tree flutetree = stt_builder_->flute(xs, ys, flute_accuracy_);
@@ -136,10 +136,10 @@ void PatternRoute::constructSteinerTree()
             constructTree(current, curIndex, nextIndex);
           }
           // Set fixed layer interval
-          const PointT current_pt{current->x(), current->y()};
-          if (selectedAccessPoints.find(current_pt)
-              != selectedAccessPoints.end()) {
-            current->setFixedLayers(selectedAccessPoints[current_pt].layers);
+          const AccessPoint current_pt{{current->x(), current->y()}, {}};
+          if (auto it = selectedAccessPoints.find(current_pt);
+              it != selectedAccessPoints.end()) {
+            current->setFixedLayers(it->layers);
           }
           // Connect current to parent
           if (parent == nullptr) {
