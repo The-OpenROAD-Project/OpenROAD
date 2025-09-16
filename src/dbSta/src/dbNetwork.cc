@@ -4287,8 +4287,7 @@ void dbNetwork::checkSanityTermConnectivity()
 
   for (odb::dbInst* inst : block_->getInsts()) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
-      if (iterm->getSigType() == dbSigType::POWER
-          || iterm->getSigType() == dbSigType::GROUND) {
+      if (iterm->getSigType().isSupply()) {
         continue;  // Skip power/ground pins
       }
 
@@ -4354,8 +4353,7 @@ void dbNetwork::checkSanityNetConnectivity()
     }
 
     // Skip power/ground net
-    if (net_db->getSigType() == odb::dbSigType::POWER
-        || net_db->getSigType() == odb::dbSigType::GROUND) {
+    if (net_db->getSigType().isSupply()) {
       continue;  // OK: Unconnected power/ground net
     }
 
