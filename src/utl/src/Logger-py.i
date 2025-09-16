@@ -4,7 +4,7 @@
 #ifdef BAZEL
 %module(package="src.utl") utl
 #else
-%module utl
+%module utl_py
 #endif
 
 #ifdef BAZEL
