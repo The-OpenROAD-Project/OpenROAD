@@ -47,7 +47,7 @@ node {
                             stage("Run ${name}") {
                                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                                     timeout(time: 8, unit: 'HOURS') {
-                                        sh "python3 src/drt/test/run-ispd.py --program ${WORKSPACE}/build/src/openroad --tests ispd${ispd_year}_test${test_to_run}";
+                                        sh "python3 src/drt/test/run-ispd.py --program ${WORKSPACE}/build/bin/openroad --tests ispd${ispd_year}_test${test_to_run}";
                                     }
                                 }
                             }

@@ -6,6 +6,7 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <iostream>
@@ -47,10 +48,12 @@ namespace odb {
 inline constexpr uint db_schema_major = 0;  // Not used...
 inline constexpr uint db_schema_initial = 57;
 
-inline constexpr uint db_schema_minor = 118;  // Current revision number
-
+inline constexpr uint db_schema_minor = 119;  // Current revision number
 // Revision where _dbDatabase::dbu_per_micron_ was added
-inline constexpr uint db_schema_dbu_per_micron = 118;
+inline constexpr uint db_schema_dbu_per_micron = 119;
+
+// Revision where dbTech was moved from dbBlock to dbChip
+inline constexpr uint db_schema_chip_tech = 118;
 
 // Revision where dbChipBump was added
 inline constexpr uint db_schema_chip_bump = 117;

@@ -33,8 +33,8 @@ class Sky130TestFixutre : public ::testing::Test
         "sky130", "sky130", DATA_PREFIX "data/sky130hd/sky130_fd_sc_hd.tlef");
     lib_ = OdbUniquePtr<odb::dbLib>(lib, &odb::dbLib::destroy);
 
-    chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
-                                      &odb::dbChip::destroy);
+    chip_ = OdbUniquePtr<odb::dbChip>(
+        odb::dbChip::create(db_.get(), db_->getTech()), &odb::dbChip::destroy);
     block_ = OdbUniquePtr<odb::dbBlock>(
         odb::dbBlock::create(chip_.get(), "top"), &odb::dbBlock::destroy);
     block_->setDefUnits(lib_->getTech()->getLefUnits());

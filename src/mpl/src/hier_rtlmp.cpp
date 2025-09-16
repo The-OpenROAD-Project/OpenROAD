@@ -16,7 +16,6 @@
 #include <regex>
 #include <set>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -26,12 +25,12 @@
 #include "SimulatedAnnealingCore.h"
 #include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -396,13 +395,15 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     graphics_->setCurrentCluster(parent);
   }
 
-  // if the current cluster is the root cluster,
-  // the shape is fixed, i.e., the fixed die.
-  // Thus, we do not need to determine the shapes for it
-  // calculate macro tiling for parent cluster based on
-  // the macro tilings of its children
+  const Rect outline = tree_->root->getBBox();
+
   std::vector<SoftMacro> macros;
   for (auto& cluster : parent->getChildren()) {
+    if (cluster->isFixedMacro()) {
+      considerFixedMacro(outline, macros, cluster.get());
+      continue;
+    }
+
     if (cluster->getNumMacro() > 0) {
       SoftMacro macro = SoftMacro(cluster.get());
       if (macro.isMacroCluster()) {
@@ -432,8 +433,6 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   // the probability of all actions should be summed to 1.0.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
-
-  const Rect outline = tree_->root->getBBox();
 
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
@@ -628,7 +627,7 @@ IntervalList HierRTLMP::computeWidthIntervals(const TilingList& tilings)
 
 void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 {
-  if (cluster->getClusterType() != HardMacroCluster) {
+  if (cluster->isFixedMacro()) {
     return;
   }
 
@@ -1292,6 +1291,15 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   }
 }
 
+void HierRTLMP::considerFixedMacro(const Rect& outline,
+                                   std::vector<SoftMacro>& sa_macros,
+                                   Cluster* fixed_macro_cluster) const
+{
+  const HardMacro* hard_macro = fixed_macro_cluster->getHardMacros().front();
+  Point offset(-outline.xMin(), -outline.yMin());
+  sa_macros.emplace_back(logger_, hard_macro, &offset);
+}
+
 // Recommendation from the original implementation:
 // For single level, increase macro blockage weight to
 // half of the outline weight.
@@ -1320,7 +1328,8 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       return;
     }
 
-    if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
+    // Cover IO Clusters, Leaf Std Cells and Fixed Macros.
+    if (parent->isLeaf()) {
       return;
     }
 
@@ -1392,6 +1401,12 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     }
 
     soft_macro_id_map[cluster->getName()] = macros.size();
+
+    if (cluster->isFixedMacro()) {
+      considerFixedMacro(outline, macros, cluster.get());
+      continue;
+    }
+
     auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
     // Needed for computing the nets.
     clustering_engine_->updateInstancesAssociation(cluster.get());
@@ -1636,7 +1651,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
                                               logger_,
                                               block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
-      sa->setCentralizationAttemptOn(true);
+      sa->enableEnhancements();
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -1692,9 +1707,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
     }
   } else {
-    if (best_sa->centralizationWasReverted()) {
-      best_sa->alignMacroClusters();
-    }
     best_sa->fillDeadSpace();
 
     std::vector<SoftMacro> shaped_macros = best_sa->getMacros();
@@ -1708,7 +1720,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     }
 
     updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
-
     updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
   }
 
@@ -1857,6 +1868,12 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
     if (cluster->isIOCluster()) {
       continue;
     }
+
+    if (cluster->isFixedMacro()) {
+      macro_cluster_area += cluster->getArea();
+      continue;
+    }
+
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_cluster_area += cluster->getStdCellArea();
     } else if (cluster->getClusterType() == HardMacroCluster) {
@@ -1937,7 +1954,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
 
   // set the shape for each macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->isIOCluster()) {
+    if (cluster->isIOCluster() || cluster->isFixedMacro()) {
       continue;
     }
     if (cluster->getClusterType() == StdCellCluster) {
@@ -2018,6 +2035,10 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
 
 void HierRTLMP::placeMacros(Cluster* cluster)
 {
+  if (cluster->isFixedMacro()) {
+    return;
+  }
+
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -2468,7 +2489,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock() || ClusteringEngine::isIgnoredInst(inst)) {
+    if (!inst->isBlock() || inst->isFixed()) {
       continue;
     }
 
@@ -2521,7 +2542,7 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
 {
   odb::dbInst* inst = hard_macro->getInst();
 
-  if (!inst) {
+  if (!inst || inst->isFixed()) {
     return;
   }
 
@@ -2540,7 +2561,7 @@ void HierRTLMP::commitMacroPlacementToDb()
   Snapper snapper(logger_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
-    if (!inst) {
+    if (!inst || inst->isFixed()) {
       continue;
     }
 
@@ -2787,6 +2808,10 @@ void Pusher::pushMacrosToCoreBoundaries()
   fetchMacroClusters(root_, macro_clusters);
 
   for (Cluster* macro_cluster : macro_clusters) {
+    if (macro_cluster->isFixedMacro()) {
+      continue;
+    }
+
     debugPrint(logger_,
                MPL,
                "boundary_push",

@@ -33,6 +33,7 @@
 #include <tclExtend.h>
 #endif
 
+#include "cut/abc_init.h"
 #include "gui/gui.h"
 #include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
@@ -67,6 +68,7 @@ using std::string;
   X(par)                                 \
   X(rcx)                                 \
   X(rmp)                                 \
+  X(cgt)                                 \
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
@@ -301,6 +303,9 @@ int main(int argc, char* argv[])
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
+
+  cut::abcStop();
+
   return 0;
 }
 

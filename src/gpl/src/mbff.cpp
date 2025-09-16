@@ -14,7 +14,6 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <random>
 #include <set>
 #include <string>
 #include <tuple>
@@ -26,6 +25,7 @@
 #include "graphics.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "ortools/linear_solver/linear_solver.h"
 #include "ortools/sat/cp_model.h"

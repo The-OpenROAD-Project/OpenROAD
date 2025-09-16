@@ -262,7 +262,7 @@ void Fixture::makeDesign()
   odb::dbTech* tech = odb::dbTech::create(db_, "tech");
   odb::dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   odb::dbLib::create(db_, "lib1", tech, ',');
-  odb::dbChip* chip = odb::dbChip::create(db_);
+  odb::dbChip* chip = odb::dbChip::create(db_, tech);
   odb::dbBlock::create(chip, "simple_block");
 }
 

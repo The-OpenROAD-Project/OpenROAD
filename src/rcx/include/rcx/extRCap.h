@@ -13,10 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "ext2dBox.h"
-#include "extSegment.h"
-#include "extViaModel.h"
-#include "extprocess.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
@@ -26,10 +22,14 @@
 #include "odb/odb.h"
 #include "odb/util.h"
 #include "rcx/dbUtil.h"
+#include "rcx/ext2dBox.h"
 #include "rcx/extPattern.h"
+#include "rcx/extSegment.h"
 #include "rcx/extSolverGen.h"
+#include "rcx/extViaModel.h"
 #include "rcx/ext_options.h"
-#include "util.h"
+#include "rcx/extprocess.h"
+#include "rcx/util.h"
 
 namespace utl {
 class Logger;

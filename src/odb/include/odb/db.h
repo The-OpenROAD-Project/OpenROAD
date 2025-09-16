@@ -18,17 +18,17 @@
 #include <variant>
 #include <vector>
 
-#include "dbBlockSet.h"
-#include "dbCCSegSet.h"
-#include "dbDatabaseObserver.h"
-#include "dbMatrix.h"
-#include "dbNetSet.h"
-#include "dbObject.h"
-#include "dbSet.h"
-#include "dbTypes.h"
-#include "dbViaParams.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbBlockSet.h"
+#include "odb/dbCCSegSet.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbNetSet.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/dbViaParams.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 constexpr int ADS_MAX_CORNER = 10;
 
@@ -617,7 +617,7 @@ class dbBlock : public dbObject
   ///
   /// Returns the top module of this block.
   ///
-  dbModule* getTopModule();
+  dbModule* getTopModule() const;
 
   ///
   /// Get the child blocks of this block.
@@ -1330,6 +1330,11 @@ class dbBlock : public dbObject
 
   std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
 
+  ///
+  /// Destroy all the routing wires from signal and clock nets in this block.
+  ///
+  void destroyRoutes();
+
  public:
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
@@ -1338,7 +1343,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbChip* chip,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -1348,7 +1352,6 @@ class dbBlock : public dbObject
   ///
   static dbBlock* create(dbBlock* block,
                          const char* name,
-                         dbTech* tech = nullptr,
                          char hier_delimiter = '/');
 
   ///
@@ -1733,12 +1736,12 @@ class dbNet : public dbObject
   ///
   /// Get the net name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the net name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Print net name with or without id and newline
@@ -1946,7 +1949,7 @@ class dbNet : public dbObject
   ///
   /// Get the block this net belongs to.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get all the instance-terminals of this net.
@@ -2424,6 +2427,20 @@ class dbNet : public dbObject
   /// Merge the iterms and bterms of the in_net with this net
   ///
   void mergeNet(dbNet* in_net);
+
+  ///
+  /// Find the parent module instance of this net by parsing its hierarchical
+  /// name.
+  /// Returns nullptr if the parent is the top module.
+  /// Note that a dbNet can be located at multiple hierarchical modules.
+  ///
+  dbModInst* findMainParentModInst() const;
+
+  ///
+  /// Find the parent module of this net by parsing its hierarchical name.
+  /// Returns the top module if the parent is the top module.
+  ///
+  dbModule* findMainParentModule() const;
 
   dbSet<dbGuide> getGuides() const;
 
@@ -2947,8 +2964,8 @@ class dbInst : public dbObject
 
   ///
   /// Create a new instance.
-  /// If physical_only is true the instance can't bee added to a dbModule.
-  /// If false, it will be added to the top module.
+  /// If physical_only is true, the instance can only be added to a top module.
+  /// If false, it will be added to the parent module.
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
   /// If dbmodule is non null the dbInst is added to that module.
@@ -3202,7 +3219,7 @@ class dbITerm : public dbObject
   /// Disconnect just the mod net
   ///
 
-  void disconnectModNet();
+  void disconnectDbModNet();
 
   ///
   /// Get the average of the centers for the iterm shapes
@@ -7024,11 +7041,14 @@ class dbChip : public dbObject
 
   dbChipRegion* findChipRegion(const std::string& name) const;
 
+  dbTech* getTech() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
   ///
   static dbChip* create(dbDatabase* db,
+                        dbTech* tech,
                         const std::string& name = "",
                         ChipType type = ChipType::DIE);
 
@@ -8243,6 +8263,12 @@ class dbModInst : public dbObject
 
   void removeUnusedPortsAndPins();
 
+  dbModNet* findHierNet(const char* base_name) const;
+  dbNet* findFlatNet(const char* base_name) const;
+  bool findNet(const char* base_name,
+               dbNet*& flat_net,
+               dbModNet*& hier_net) const;
+
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
   /// Old mod inst is deleted along with its child insts.
@@ -8295,8 +8321,10 @@ class dbModNet : public dbObject
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
   unsigned connectionCount();
-  const char* getName() const;
+  std::string getName() const;
+  const char* getConstName() const;
   void rename(const char* new_name);
+  void disconnectAllTerms();
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
@@ -8347,6 +8375,7 @@ class dbModule : public dbObject
 
   const dbModBTerm* getHeadDbModBTerm() const;
   bool canSwapWith(dbModule* new_module) const;
+  bool isTop() const;
 
   static dbModule* create(dbBlock* block, const char* name);
 
@@ -10961,4 +10990,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "dbCompare.h"
+#include "odb/dbCompare.h"

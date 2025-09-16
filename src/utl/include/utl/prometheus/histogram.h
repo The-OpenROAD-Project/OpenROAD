@@ -30,10 +30,10 @@
 #include <stdexcept>
 #include <vector>
 
-#include "counter.h"
-#include "family.h"
-#include "gauge.h"
-#include "prometheus_metric.h"
+#include "utl/prometheus/counter.h"
+#include "utl/prometheus/family.h"
+#include "utl/prometheus/gauge.h"
+#include "utl/prometheus/prometheus_metric.h"
 
 namespace utl {
 

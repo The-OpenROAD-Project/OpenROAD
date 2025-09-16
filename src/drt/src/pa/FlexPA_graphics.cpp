@@ -3,9 +3,7 @@
 
 #include "pa/FlexPA_graphics.h"
 
-#include <algorithm>
 #include <cstdio>
-#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -151,7 +149,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              frOrderedIdSet<frInst*>* inst_class)
+                              UniqueClass* inst_class)
 {
   pin_ = nullptr;
 
@@ -160,7 +158,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
     if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (inst_class->find(inst_) == inst_class->end()) {
+    if (!inst_class->hasInst(inst_)) {
       return;
     }
   }
@@ -180,7 +178,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              frOrderedIdSet<frInst*>* inst_class)
+                              UniqueClass* inst_class)
 {
   pin_ = nullptr;
 

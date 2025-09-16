@@ -5,8 +5,6 @@
 
 #include <atomic>
 #include <mutex>
-#include <tuple>
-#include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"

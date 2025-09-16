@@ -11,12 +11,12 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "shapes.h"
-#include "util.h"
 
 namespace sta {
 class dbNetwork;
@@ -192,6 +192,9 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
+  void considerFixedMacro(const Rect& outline,
+                          std::vector<SoftMacro>& sa_macros,
+                          Cluster* fixed_macro_cluster) const;
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);

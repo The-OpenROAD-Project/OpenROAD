@@ -1,5 +1,4 @@
 #define BOOST_TEST_MODULE TestGroup
-#include <iostream>
 #include <string>
 
 #include "boost/test/included/unit_test.hpp"

@@ -20,6 +20,7 @@
 #endif
 
 #include "ant/MakeAntennaChecker.hh"
+#include "cgt/MakeClockGating.h"
 #include "cts/MakeTritoncts.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -104,6 +105,7 @@ OpenRoad::~OpenRoad()
   deleteOpendp(opendp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
+  deleteClockGating(clock_gating_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
@@ -179,6 +181,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   finale_ = fin::makeFinale();
   global_router_ = grt::makeGlobalRouter();
   restructure_ = rmp::makeRestructure();
+  clock_gating_ = cgt::makeClockGating();
   tritonCts_ = cts::makeTritonCts();
   tapcell_ = tap::makeTapcell();
   macro_placer_ = mpl::makeMacroPlacer();
@@ -259,6 +262,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                   resizer_,
                   estimate_parasitics_,
                   tcl_interp);
+  cgt::initClockGating(clock_gating_, tcl_interp, logger_, sta_);
   initTritonRoute(detailed_router_,
                   db_,
                   logger_,
@@ -325,14 +329,12 @@ void OpenRoad::readLef(const char* filename,
 }
 
 void OpenRoad::readDef(const char* filename,
-                       dbTech* tech,
+                       dbChip* chip,
                        bool continue_on_errors,
                        bool floorplan_init,
-                       bool incremental,
-                       bool child)
+                       bool incremental)
 {
-  if (!floorplan_init && !incremental && !child && db_->getChip()
-      && db_->getChip()->getBlock()) {
+  if (!floorplan_init && !incremental && chip && chip->getBlock()) {
     logger_->info(ORD, 48, "Loading an additional DEF.");
   }
 
@@ -350,35 +352,30 @@ void OpenRoad::readDef(const char* filename,
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
-  if (child) {
-    auto parent = db_->getChip()->getBlock();
-    def_reader.createBlock(parent, search_libs, filename, tech);
-  } else {
-    def_reader.createChip(search_libs, filename, tech);
-  }
+  def_reader.readChip(search_libs, filename, chip);
 }
 
-static odb::defout::Version stringToDefVersion(const string& version)
+static odb::DefOut::Version stringToDefVersion(const std::string& version)
 {
   if (version == "5.8") {
-    return odb::defout::Version::DEF_5_8;
+    return odb::DefOut::Version::DEF_5_8;
   }
   if (version == "5.7") {
-    return odb::defout::Version::DEF_5_7;
+    return odb::DefOut::Version::DEF_5_7;
   }
   if (version == "5.6") {
-    return odb::defout::Version::DEF_5_6;
+    return odb::DefOut::Version::DEF_5_6;
   }
   if (version == "5.5") {
-    return odb::defout::Version::DEF_5_5;
+    return odb::DefOut::Version::DEF_5_5;
   }
   if (version == "5.4") {
-    return odb::defout::Version::DEF_5_4;
+    return odb::DefOut::Version::DEF_5_4;
   }
   if (version == "5.3") {
-    return odb::defout::Version::DEF_5_3;
+    return odb::DefOut::Version::DEF_5_3;
   }
-  return odb::defout::Version::DEF_5_8;
+  return odb::DefOut::Version::DEF_5_8;
 }
 
 void OpenRoad::writeDef(const char* filename, const char* version)
@@ -386,7 +383,7 @@ void OpenRoad::writeDef(const char* filename, const char* version)
   writeDef(filename, std::string(version));
 }
 
-void OpenRoad::writeDef(const char* filename, const string& version)
+void OpenRoad::writeDef(const char* filename, const std::string& version)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
@@ -398,7 +395,7 @@ void OpenRoad::writeDef(const char* filename, const string& version)
       if (hierarchy_set) {
         sta->getDbNetwork()->disableHierarchy();
       }
-      odb::defout def_writer(logger_);
+      odb::DefOut def_writer(logger_);
       def_writer.setVersion(stringToDefVersion(version));
       def_writer.writeBlock(block, filename);
       if (hierarchy_set) {
@@ -446,7 +443,7 @@ void OpenRoad::writeLef(const char* filename)
       std::string name(filename);
       if (cnt > 0) {
         auto pos = name.rfind('.');
-        if (pos != string::npos) {
+        if (pos != std::string::npos) {
           name.insert(pos, "_" + std::to_string(cnt));
         } else {
           name += "_" + std::to_string(cnt);

@@ -128,6 +128,7 @@ class dbJournal
   void redo_updateField();
   void redo_updateBlockField();
   void redo_updateNetField();
+  void redo_updateModNetField();
   void redo_updateInstField();
   void redo_updateITermField();
   void redo_updateRSegField();
@@ -142,6 +143,7 @@ class dbJournal
   void undo_swapObject();
   void undo_updateField();
   void undo_updateNetField();
+  void undo_updateModNetField();
   void undo_updateInstField();
   void undo_updateITermField();
   void undo_updateRSegField();

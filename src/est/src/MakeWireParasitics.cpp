@@ -5,8 +5,7 @@
 
 #include <cmath>
 #include <cstddef>
-#include <set>
-#include <utility>
+#include <string>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"

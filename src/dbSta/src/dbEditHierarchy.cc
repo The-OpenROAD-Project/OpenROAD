@@ -99,7 +99,7 @@ void PinModuleConnection::operator()(const Pin* pin)
   }
 }
 
-bool dbEditHierarchy::ConnectionToModuleExists(dbITerm* source_pin,
+bool dbEditHierarchy::connectionToModuleExists(dbITerm* source_pin,
                                                dbModule* dest_module,
                                                dbModBTerm*& dest_modbterm,
                                                dbModITerm*& dest_moditerm) const
@@ -145,18 +145,17 @@ void dbEditHierarchy::createHierarchyBottomUp(dbITerm* pin,
   dbModNet* db_mod_net = nullptr;
   const char* io_type_str = (io_type == dbIoType::OUTPUT) ? "o" : "i";
 
-  while (cur_module != highest_common_module) {
-    // Decide a new unique pin/net name
-    std::string unique_name
-        = fmt::format("{}_{}", connection_name, io_type_str);
-    int id = 0;
-    while (cur_module->findModBTerm(unique_name.c_str())
-           || cur_module->getModNet(unique_name.c_str())) {
-      id++;
-      unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
-    }
-    const char* new_term_net_name = unique_name.c_str();
+  // Decide a new unique pin/net name
+  std::string unique_name = fmt::format("{}_{}", connection_name, io_type_str);
+  int id = 0;
+  while (cur_module->findModBTerm(unique_name.c_str())
+         || cur_module->getModNet(unique_name.c_str())) {
+    id++;
+    unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
+  }
+  const char* new_term_net_name = unique_name.c_str();
 
+  while (cur_module != highest_common_module) {
     // Create BTerm & ModNet and connect them
     dlogCreateHierBTermAndModNet(level, cur_module, new_term_net_name);
     dbModBTerm* mod_bterm = dbModBTerm::create(cur_module, new_term_net_name);
@@ -190,6 +189,14 @@ void dbEditHierarchy::createHierarchyBottomUp(dbITerm* pin,
     dbModITerm* mod_iterm
         = dbModITerm::create(parent_inst, new_term_net_name, mod_bterm);
 
+    // Retry to get a new unique pin/net name in the new hierarchy
+    while (cur_module->findModBTerm(unique_name.c_str())
+           || cur_module->getModNet(unique_name.c_str())) {
+      id++;
+      unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
+    }
+    new_term_net_name = unique_name.c_str();
+
     // Create ModNet for the ITerm
     if (io_type == dbIoType::OUTPUT
         || (io_type == dbIoType::INPUT
@@ -220,7 +227,7 @@ connection_name should be a base name, not a full name.
 */
 void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
                                           dbITerm* dest_pin,
-                                          const char* connection_name) const
+                                          const char* connection_name)
 {
   assert(source_pin != nullptr);
   assert(dest_pin != nullptr);
@@ -308,7 +315,7 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     dbModITerm* dest_moditerm = nullptr;
     // Check do we already have a connection between the source and destination
     // pins? If so, reuse it.
-    if (ConnectionToModuleExists(
+    if (connectionToModuleExists(
             source_pin, dest_db_module, dest_modbterm, dest_moditerm)) {
       dbModNet* dest_mod_net = nullptr;
       if (dest_modbterm) {
@@ -381,11 +388,21 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
         // Get base name of source_pin_flat_net
         Pin* sta_source_pin = db_network_->dbToSta(source_pin);
         dbNet* source_pin_flat_net = db_network_->flatNet(sta_source_pin);
-        const char* base_name
-            = db_network_->name(db_network_->dbToSta(source_pin_flat_net));
+        std::string base_name = fmt::format(
+            "{}", db_network_->name(db_network_->dbToSta(source_pin_flat_net)));
+
+        // Decide a new unique net name to avoid collisions.
+        std::string unique_name = base_name;
+        int id = 0;
+        while (highest_common_module->findModBTerm(unique_name.c_str())
+               || highest_common_module->getModNet(unique_name.c_str())) {
+          id++;
+          unique_name = fmt::format("{}_{}", base_name, id);
+        }
 
         // Create and connect dbModNet
-        source_db_mod_net = dbModNet::create(highest_common_module, base_name);
+        source_db_mod_net
+            = dbModNet::create(highest_common_module, unique_name.c_str());
         top_mod_dest->connect(source_db_mod_net);
         db_network_->disconnectPin(sta_source_pin);
         db_network_->connectPin(sta_source_pin,

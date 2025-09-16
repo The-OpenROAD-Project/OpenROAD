@@ -7,7 +7,7 @@ read_lef ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef
 read_lib ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib
 
 set db [ord::get_db]
-set chip [odb::dbChip_create $db]
+set chip [odb::dbChip_create $db [$db getTech]]
 set block [odb::dbBlock_create $chip "top"]
 $block setDefUnits 1000
 

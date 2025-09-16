@@ -3,7 +3,7 @@
 
 %{
 #include "rmp/Restructure.h"
-#include "rmp/blif.h"
+#include "cut/blif.h"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
@@ -56,19 +56,19 @@ restructure_cmd(char* liberty_file_name, char* target, float slack_threshold,
 }
 
 // Locally Exposed for testing only..
-Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport, const int call_id=1){
-  return new rmp::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport, call_id);
+cut::Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport, const int call_id=1){
+  return new cut::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport, call_id);
 }
 
-void blif_add_instance(Blif* blif_, const char* inst_){
+void blif_add_instance(cut::Blif* blif_, const char* inst_){
   blif_->addReplaceableInstance(getOpenRoad()->getDb()->getChip()->getBlock()->findInst(inst_));
 }
 
-void blif_dump(Blif* blif_, const char* file_name){
+void blif_dump(cut::Blif* blif_, const char* file_name){
   blif_->writeBlif(file_name);
 }
 
-int blif_read(Blif* blif_, const char* file_name){
+int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
 }
 

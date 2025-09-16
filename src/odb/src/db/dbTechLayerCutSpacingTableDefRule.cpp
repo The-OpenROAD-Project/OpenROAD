@@ -8,6 +8,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <tuple>
 
 #include "dbDatabase.h"
 #include "dbTable.h"

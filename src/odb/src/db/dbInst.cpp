@@ -368,6 +368,17 @@ bool dbInst::rename(const char* name)
     return false;
   }
 
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: inst {}, rename to {}",
+               getId(),
+               name);
+    block->_journal->updateField(this, _dbInst::NAME, inst->_name, name);
+  }
+
   block->_inst_hash.remove(inst);
   free((void*) inst->_name);
   inst->_name = safe_strdup(name);
@@ -1322,7 +1333,10 @@ dbInst* dbInst::create(dbBlock* block_,
   block->add_rect(box->_shape._rect);
 
   inst->_flags._physical_only = physical_only;
-  if (!physical_only) {
+
+  // Add the new instance to the parent module.
+  bool parent_is_top = parent_module == nullptr || parent_module->isTop();
+  if (physical_only == false || parent_is_top) {
     if (parent_module) {
       parent_module->addInst((dbInst*) inst);
     } else {

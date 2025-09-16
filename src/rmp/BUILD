@@ -13,16 +13,8 @@ cc_library(
     name = "rmp",
     srcs = [
         "src/Restructure.cpp",
-        "src/abc_library_factory.cpp",
-        "src/abc_library_factory.h",
-        "src/blif.cpp",
-        "src/blifParser.cpp",
         "src/delay_optimization_strategy.cpp",
         "src/delay_optimization_strategy.h",
-        "src/logic_cut.cpp",
-        "src/logic_cut.h",
-        "src/logic_extractor.cpp",
-        "src/logic_extractor.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
         "src/zero_slack_strategy.cpp",
@@ -30,9 +22,6 @@ cc_library(
     ],
     hdrs = [
         "include/rmp/Restructure.h",
-        "include/rmp/blif.h",
-        "include/rmp/blifParser.h",
-        "include/rmp/unique_name.h",
     ],
     copts = [
         "-Isrc/rmp/src",
@@ -42,6 +31,8 @@ cc_library(
         "include",
     ],
     deps = [
+        "//:ord",
+        "//src/cut",
         "//src/dbSta",
         "//src/odb",
         "//src/rsz",
@@ -75,10 +66,11 @@ cc_library(
         "include",
     ],
     deps = [
+        ":rmp",
         "//:ord",
+        "//src/cut",
         "//src/dbSta",
         "//src/odb",
-        "//src/rmp",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
