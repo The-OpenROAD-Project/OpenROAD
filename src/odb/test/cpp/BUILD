@@ -77,5 +77,16 @@ cc_test(
         "@boost.test",
     ],
 )
-
+cc_test(
+    name = "Test3DBloxParser",
+    srcs = [
+        "Test3DBloxParser.cpp",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@boost.test",
+    ],
+)
 # TODO: more to come.
