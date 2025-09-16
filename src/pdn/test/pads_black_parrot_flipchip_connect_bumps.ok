@@ -295,12 +295,4 @@
 [INFO PDN-0001] Inserting grid: Bumps - bump_9_7_VSS
 [INFO PDN-0001] Inserting grid: Bumps - bump_9_8_VDD
 [INFO PDN-0001] Inserting grid: Bumps - bump_9_9_VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 183.7000) - (2174.6250, 188.7000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 222.2000) - (2174.6250, 223.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 542.2000) - (2174.6250, 543.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 1662.2000) - (2426.0000, 1663.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2302.2000) - (2426.0000, 2303.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2462.2000) - (2426.0000, 2463.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2782.2000) - (2426.0000, 2783.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2811.5000) - (2426.0000, 2816.5000) on VSS
 No differences found.

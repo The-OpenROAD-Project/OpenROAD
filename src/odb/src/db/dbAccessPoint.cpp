@@ -5,11 +5,14 @@
 #include "dbAccessPoint.h"
 
 #include <array>
+#include <tuple>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>

@@ -135,8 +135,9 @@ void PdnGen::buildGrids(bool trim)
     }
     logger_->warn(utl::PDN,
                   232,
-                  "{} does not contain any shapes or vias.",
-                  grid->getLongName());
+                  "The grid \"{}\" ({}) does not contain any shapes or vias.",
+                  grid->getLongName(),
+                  Grid::typeToString(grid->type()));
     failed = true;
   }
   if (failed) {

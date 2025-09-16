@@ -20,11 +20,9 @@ using utl::format_as;
 class PointT
 {
  public:
-  PointT(int x = std::numeric_limits<int>::max(),
-         int y = std::numeric_limits<int>::max())
-      : x_(x), y_(y)
-  {
-  }
+  PointT() = default;
+  PointT(int x, int y) : x_(x), y_(y) {}
+
   bool IsValid() { return *this != PointT(); }
 
   int x() const { return x_; }
@@ -71,8 +69,8 @@ class PointT
   }
 
  private:
-  int x_;
-  int y_;
+  int x_{std::numeric_limits<int>::max()};
+  int y_{std::numeric_limits<int>::max()};
 };
 
 // Interval template
@@ -224,8 +222,6 @@ class IntervalT
 class BoxT
 {
  public:
-  IntervalT x, y;
-
   BoxT() { Set(); }
   BoxT(int xVal, int yVal) { Set(xVal, yVal); }
   BoxT(const PointT& pt) { Set(pt); }
@@ -240,71 +236,73 @@ class BoxT
   IntervalT& operator[](int i)
   {
     assert(i == 0 || i == 1);
-    return (i == 0) ? x : y;
+    return (i == 0) ? x_ : y_;
   }
   void Set()
   {
-    x.Set();
-    y.Set();
+    x_.Set();
+    y_.Set();
   }
   void Set(int xVal, int yVal)
   {
-    x.Set(xVal);
-    y.Set(yVal);
+    x_.Set(xVal);
+    y_.Set(yVal);
   }
   void Set(const PointT& pt) { Set(pt.x(), pt.y()); }
   void Set(int lx, int ly, int hx, int hy)
   {
-    x.Set(lx, hx);
-    y.Set(ly, hy);
+    x_.Set(lx, hx);
+    y_.Set(ly, hy);
   }
   void Set(const IntervalT& xRange, const IntervalT& yRange)
   {
-    x = xRange;
-    y = yRange;
+    x_ = xRange;
+    y_ = yRange;
   }
   void Set(const PointT& low, const PointT& high)
   {
     Set(low.x(), low.y(), high.x(), high.y());
   }
-  void Set(const BoxT& box) { Set(box.x, box.y); }
+  void Set(const BoxT& box) { Set(box.x(), box.y()); }
 
   // Two types of boxes: normal & degenerated (line or point)
   // is valid box
-  bool IsValid() const { return x.IsValid() && y.IsValid(); }
+  bool IsValid() const { return x_.IsValid() && y_.IsValid(); }
   // is strictly valid box (excluding degenerated ones)
   bool IsStrictValid() const
   {
-    return x.IsStrictValid() && y.IsStrictValid();
+    return x_.IsStrictValid() && y_.IsStrictValid();
   }  // tighter
 
   // Getters
-  int lx() const { return x.low(); }
-  int ly() const { return y.low(); }
-  int hy() const { return y.high(); }
-  int hx() const { return x.high(); }
-  int cx() const { return x.center(); }
-  int cy() const { return y.center(); }
-  int width() const { return x.range(); }
-  int height() const { return y.range(); }
+  const IntervalT& x() const { return x_; }
+  const IntervalT& y() const { return y_; }
+  int lx() const { return x_.low(); }
+  int ly() const { return y_.low(); }
+  int hy() const { return y_.high(); }
+  int hx() const { return x_.high(); }
+  int cx() const { return x_.center(); }
+  int cy() const { return y_.center(); }
+  int width() const { return x_.range(); }
+  int height() const { return y_.range(); }
   int hp() const { return width() + height(); }  // half perimeter
   int area() const { return width() * height(); }
   const IntervalT& operator[](int i) const
   {
     assert(i == 0 || i == 1);
-    return (i == 0) ? x : y;
+    return (i == 0) ? x_ : y_;
   }
 
   // Update() is always safe, FastUpdate() assumes existing values
   void Update(int xVal, int yVal)
   {
-    x.Update(xVal);
-    y.Update(yVal);
+    x_.Update(xVal);
+    y_.Update(yVal);
   }
   void FastUpdate(int xVal, int yVal)
   {
-    x.FastUpdate(xVal);
-    y.FastUpdate(yVal);
+    x_.FastUpdate(xVal);
+    y_.FastUpdate(yVal);
   }
   void Update(const PointT& pt) { Update(pt.x(), pt.y()); }
   void FastUpdate(const PointT& pt) { FastUpdate(pt.x(), pt.y()); }
@@ -312,11 +310,11 @@ class BoxT
   // Geometric Query/Update
   BoxT UnionWith(const BoxT& rhs) const
   {
-    return {x.UnionWith(rhs.x), y.UnionWith(rhs.y)};
+    return {x_.UnionWith(rhs.x_), y_.UnionWith(rhs.y_)};
   }
   BoxT IntersectWith(const BoxT& rhs) const
   {
-    return {x.IntersectWith(rhs.x), y.IntersectWith(rhs.y)};
+    return {x_.IntersectWith(rhs.x_), y_.IntersectWith(rhs.y_)};
   }
   bool HasIntersectWith(const BoxT& rhs) const
   {
@@ -328,38 +326,42 @@ class BoxT
   }  // tighter
   bool Contain(const PointT& pt) const
   {
-    return x.Contain(pt.x()) && y.Contain(pt.y());
+    return x_.Contain(pt.x()) && y_.Contain(pt.y());
   }
   bool StrictlyContain(const PointT& pt) const
   {
-    return x.StrictlyContain(pt.x()) && y.StrictlyContain(pt.y());
+    return x_.StrictlyContain(pt.x()) && y_.StrictlyContain(pt.y());
   }
   PointT GetNearestPointTo(const PointT& pt)
   {
-    return {x.GetNearestPointTo(pt.x()), y.GetNearestPointTo(pt.y())};
+    return {x_.GetNearestPointTo(pt.x()), y_.GetNearestPointTo(pt.y())};
   }
   BoxT GetNearestPointsTo(BoxT val) const
   {
-    return {x.GetNearestPointsTo(val.x), y.GetNearestPointsTo(val.y)};
+    return {x_.GetNearestPointsTo(val.x_), y_.GetNearestPointsTo(val.y_)};
   }
 
   void ShiftBy(const PointT& rhs)
   {
-    x.ShiftBy(rhs.x());
-    y.ShiftBy(rhs.y());
+    x_.ShiftBy(rhs.x());
+    y_.ShiftBy(rhs.y());
   }
 
   bool operator==(const BoxT& rhs) const
   {
-    return (x == rhs.x) && (y == rhs.y);
+    return (x_ == rhs.x_) && (y_ == rhs.y_);
   }
   bool operator!=(const BoxT& rhs) const { return !(*this == rhs); }
 
   friend std::ostream& operator<<(std::ostream& os, const BoxT& box)
   {
-    os << "[x: " << box.x << ", y: " << box.y << "]";
+    os << "[x: " << box.x() << ", y: " << box.y() << "]";
     return os;
   }
+
+ private:
+  IntervalT x_;
+  IntervalT y_;
 };
 
 }  // namespace grt
