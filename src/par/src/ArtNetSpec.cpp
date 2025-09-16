@@ -436,7 +436,11 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
 
   std::vector<std::vector<int>> hyperedges;
   hyperedges.reserve(cluster_nets.size());
-  for (odb::dbNet* net : cluster_nets) {
+  // Make the iteration order stable
+  std::vector<odb::dbNet*> cluster_nets_sorted(cluster_nets.begin(),
+                                               cluster_nets.end());
+  std::sort(cluster_nets_sorted.begin(), cluster_nets_sorted.end());
+  for (odb::dbNet* net : cluster_nets_sorted) {
     int driver_id = -1;
     std::set<int> loads_id;
     for (odb::dbITerm* iterm : net->getITerms()) {
@@ -575,7 +579,8 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
       modules.begin(),
       modules.end(),
       [](const std::shared_ptr<Module>& m1, const std::shared_ptr<Module>& m2) {
-        return m1->getAvgInsts() < m2->getAvgInsts();
+        return std::make_tuple(m1->getAvgInsts(), m1->getId())
+               < std::make_tuple(m2->getAvgInsts(), m2->getId());
       });
 
   const double b = log(modules[n - 1]->getAvgK());
