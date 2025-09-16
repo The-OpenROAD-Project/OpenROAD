@@ -5,8 +5,8 @@ read_lef Nangate45/Nangate45.lef
 read_def nangate_gcd/floorplan.def
 
 initialize_floorplan -die_area [ord::get_die_area] \
-    -core_area [ord::get_die_area] \
-    -site FreePDK45_38x28_10R_NP_162NW_34O
+  -core_area [ord::get_die_area] \
+  -site FreePDK45_38x28_10R_NP_162NW_34O
 
 add_global_connection -net VDD -pin_pattern VDD -power
 add_global_connection -net VSS -pin_pattern VSS -ground
