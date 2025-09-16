@@ -15,8 +15,6 @@ DbxParser::DbxParser(utl::Logger* logger) : BaseParser(logger)
 {
 }
 
-DbxParser::~DbxParser() = default;
-
 DbxData DbxParser::parseFile(const std::string& filename)
 {
   std::ifstream file(filename);

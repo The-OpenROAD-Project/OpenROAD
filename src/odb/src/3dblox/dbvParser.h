@@ -18,7 +18,6 @@ class DbvParser : public BaseParser
 {
  public:
   DbvParser(utl::Logger* logger);
-  ~DbvParser();
 
   DbvData parseFile(const std::string& filename);
 

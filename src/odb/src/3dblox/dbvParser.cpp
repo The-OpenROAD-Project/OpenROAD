@@ -16,8 +16,6 @@ DbvParser::DbvParser(utl::Logger* logger) : BaseParser(logger)
 {
 }
 
-DbvParser::~DbvParser() = default;
-
 DbvData DbvParser::parseFile(const std::string& filename)
 {
   std::ifstream file(filename);

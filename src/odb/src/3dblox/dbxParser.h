@@ -16,7 +16,6 @@ class DbxParser : public BaseParser
 {
  public:
   DbxParser(utl::Logger* logger);
-  ~DbxParser();
 
   DbxData parseFile(const std::string& filename);
 
