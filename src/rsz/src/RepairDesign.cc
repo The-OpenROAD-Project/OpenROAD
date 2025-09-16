@@ -777,6 +777,10 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     repaired_net = true;
     inserted_buffer_count_++;
+    if (graphics_) {
+      dbInst* db_inst = db_network_->staToDb(inst);
+      graphics_->makeBuffer(db_inst);
+    }
 
     int max_level = 0;
     for (auto it = sinks.begin(); it != group_end; it++) {
@@ -1226,9 +1230,19 @@ void RepairDesign::repairNet(const BufferedNetPtr& bnet,
   max_length_ = max_length;
   corner_ = corner;
 
+  if (graphics_) {
+    Net* net = db_network_->net(drvr_pin);
+    odb::dbNet* db_net = db_network_->staToDb(net);
+    graphics_->repairNetStart(bnet, db_net);
+  }
+
   int wire_length;
   PinSeq load_pins;
   repairNet(bnet, 0, wire_length, load_pins);
+
+  if (graphics_) {
+    graphics_->repairNetDone();
+  }
 }
 
 void RepairDesign::repairNet(const BufferedNetPtr& bnet,
@@ -2573,6 +2587,11 @@ bool RepairDesign::makeRepeater(
             buffer_op_pin, buffer_op_net, (Net*) driver_pin_mod_net);
       }
     }
+  }
+
+  if (graphics_) {
+    dbInst* db_inst = db_network_->staToDb(buffer);
+    graphics_->makeBuffer(db_inst);
   }
 
   // Resize repeater as we back up by levels.
