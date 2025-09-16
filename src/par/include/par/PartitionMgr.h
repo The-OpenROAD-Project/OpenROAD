@@ -38,6 +38,11 @@ class Logger;
 
 namespace par {
 
+struct MasterInfo {
+    int count = 0;
+    bool isMacro = false;
+};
+
 class Cluster;
 using SharedClusterVector = std::vector<std::shared_ptr<Cluster>>;
 class ModuleMgr;
@@ -253,7 +258,7 @@ class PartitionMgr
   // ArtNet SpecGen
   void printMemoryUsage();
   void getFromODB(
-      std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
+      std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
       std::string& top_name,
       int& numInsts,
       int& numPIs,
@@ -283,7 +288,7 @@ class PartitionMgr
   void Partitioning(const std::shared_ptr<TritonPart>& triton_part,
                     const std::shared_ptr<Cluster>& cluster,
                     SharedClusterVector& resultCV);
-  void writeFile(const std::unordered_map<std::string, std::pair<int, bool>>&
+  void writeFile(const std::unordered_map<std::string, MasterInfo>&
                      onlyUseMasters,
                  const std::string& top_name,
                  int numInsts,

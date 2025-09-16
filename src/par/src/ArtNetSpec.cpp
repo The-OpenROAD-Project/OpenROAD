@@ -74,7 +74,7 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
     logger_->error(PAR, 53, "Design not loaded.");
   }
 
-  std::unordered_map<std::string, std::pair<int, bool>> onlyUseMasters;
+  std::unordered_map<std::string, MasterInfo> onlyUseMasters;
   std::string top_name;
   int numInsts = 0;
   int numPIs = 0;
@@ -107,7 +107,7 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
 }
 
 void PartitionMgr::getFromODB(
-    std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
+    std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
     std::string& top_name,
     int& numInsts,
     int& numPIs,
@@ -131,13 +131,15 @@ void PartitionMgr::getFromODB(
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     bool isMacro = (master->getType() == dbMasterType::BLOCK ? 1 : 0);
-    if (master->isSequential()) {
-      numSeq++;
+    if (const sta::LibertyCell* lib_cell = db_network_->libertyCell(inst)) {
+      if (lib_cell->hasSequentials()) {
+        numSeq++;
+      }
     }
-    if (onlyUseMasters.find(master->getName()) == onlyUseMasters.end()) {
-      onlyUseMasters[master->getName()] = std::make_pair(0, isMacro);
-    }
-    onlyUseMasters[master->getName()].first++;
+    auto [it, inserted] = onlyUseMasters.try_emplace(master->getName(), MasterInfo{});
+    MasterInfo& info = it->second;
+    info.isMacro = isMacro;
+    ++info.count;
   }
 }
 
@@ -671,7 +673,7 @@ void PartitionMgr::fit_mul(const double* x,
 }
 
 void PartitionMgr::writeFile(
-    const std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
+    const std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
     const std::string& top_name,
     const int numInsts,
     const int numPIs,
@@ -693,12 +695,12 @@ void PartitionMgr::writeFile(
   outFile << "LIBRARY\n";
   outFile << "NAME lib\n";
 
-  // unordered_map<string, int> --> cellName / isMacro
-  for (const auto& it : onlyUseMasters) {
-    if (!it.second.second) {
-      outFile << "STD_CELL " << it.first << '\n';
+  // unordered_map<string, MasterInfo> --> cellName / cellCount, isMacro
+  for (const auto& [name, info] : onlyUseMasters) {
+    if (!info.isMacro) {
+      outFile << "STD_CELL " << name << '\n';
     } else {
-      outFile << "MACRO_CELL " << it.first << '\n';
+      outFile << "MACRO_CELL " << name << '\n';
     }
   }
   outFile << '\n';
@@ -707,8 +709,8 @@ void PartitionMgr::writeFile(
   outFile << "NAME " << top_name << '\n';
   outFile << "LIBRARIES lib" << '\n';
   outFile << "DISTRIBUTION ";
-  for (const auto& it : onlyUseMasters) {
-    outFile << it.second.first << " ";
+  for (const auto& [name, info] : onlyUseMasters) {
+    outFile << info.count << " ";
   }
   outFile << '\n';
   outFile << "SIZE " << int(numInsts * Rratio) << '\n';

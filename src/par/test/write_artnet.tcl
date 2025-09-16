@@ -9,7 +9,7 @@ link_design gcd
 
 read_sdc gcd_nangate45.sdc
 
-set spec_file [make_result_file  write_artnet.spec]
+set spec_file [make_result_file write_artnet.spec]
 write_artnet_spec -out_file $spec_file
 
 diff_files write_artnet.specok $spec_file
