@@ -38,9 +38,10 @@ class Logger;
 
 namespace par {
 
-struct MasterInfo {
-    int count = 0;
-    bool isMacro = false;
+struct MasterInfo
+{
+  int count = 0;
+  bool isMacro = false;
 };
 
 class Cluster;
@@ -257,13 +258,12 @@ class PartitionMgr
                                              sta::NetworkReader* network);
   // ArtNet SpecGen
   void printMemoryUsage();
-  void getFromODB(
-      std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
-      std::string& top_name,
-      int& numInsts,
-      int& numPIs,
-      int& numPOs,
-      int& numSeq);
+  void getFromODB(std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
+                  std::string& top_name,
+                  int& numInsts,
+                  int& numPIs,
+                  int& numPOs,
+                  int& numSeq);
   void getFromSTA(int& Dmax, int& MDmax);
   void BuildTimingPath(int& Dmax, int& MDmax);
   void getFromPAR(float& Rratio, float& p, float& q);
@@ -288,19 +288,19 @@ class PartitionMgr
   void Partitioning(const std::shared_ptr<TritonPart>& triton_part,
                     const std::shared_ptr<Cluster>& cluster,
                     SharedClusterVector& resultCV);
-  void writeFile(const std::unordered_map<std::string, MasterInfo>&
-                     onlyUseMasters,
-                 const std::string& top_name,
-                 int numInsts,
-                 int numPIs,
-                 int numPOs,
-                 int numSeq,
-                 int Dmax,
-                 int MDmax,
-                 float Rratio,
-                 float p,
-                 float q,
-                 const char* fileName);
+  void writeFile(
+      const std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
+      const std::string& top_name,
+      int numInsts,
+      int numPIs,
+      int numPOs,
+      int numSeq,
+      int Dmax,
+      int MDmax,
+      float Rratio,
+      float p,
+      float q,
+      const char* fileName);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;

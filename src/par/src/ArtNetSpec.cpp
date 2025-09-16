@@ -136,7 +136,8 @@ void PartitionMgr::getFromODB(
         numSeq++;
       }
     }
-    auto [it, inserted] = onlyUseMasters.try_emplace(master->getName(), MasterInfo{});
+    auto [it, inserted]
+        = onlyUseMasters.try_emplace(master->getName(), MasterInfo{});
     MasterInfo& info = it->second;
     info.isMacro = isMacro;
     ++info.count;
