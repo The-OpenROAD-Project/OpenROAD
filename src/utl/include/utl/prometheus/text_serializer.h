@@ -34,7 +34,7 @@
 #include <string>
 #include <vector>
 
-#include "metric_family.h"
+#include "utl/prometheus/metric_family.h"
 
 #if __cpp_lib_to_chars >= 201611L
 #include <charconv>

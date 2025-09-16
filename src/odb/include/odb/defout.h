@@ -5,7 +5,7 @@
 
 #include <memory>
 
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace utl {
 class Logger;

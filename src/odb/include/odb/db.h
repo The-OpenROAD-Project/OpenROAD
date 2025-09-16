@@ -18,17 +18,17 @@
 #include <variant>
 #include <vector>
 
-#include "dbBlockSet.h"
-#include "dbCCSegSet.h"
-#include "dbDatabaseObserver.h"
-#include "dbMatrix.h"
-#include "dbNetSet.h"
-#include "dbObject.h"
-#include "dbSet.h"
-#include "dbTypes.h"
-#include "dbViaParams.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbBlockSet.h"
+#include "odb/dbCCSegSet.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbNetSet.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/dbViaParams.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 constexpr int ADS_MAX_CORNER = 10;
 
@@ -10986,4 +10986,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "dbCompare.h"
+#include "odb/dbCompare.h"
