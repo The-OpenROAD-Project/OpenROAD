@@ -68,21 +68,6 @@ namespace par {
 
 int Cluster::next_id_ = 0;
 
-void PartitionMgr::printMemoryUsage()
-{
-  std::ifstream status_file("/proc/self/status");
-  std::string line;
-  int64_t vm_hwm_kb = 0;
-  while (std::getline(status_file, line)) {
-    if (line.substr(0, 6) == "VmHWM:") {
-      sscanf(line.c_str(), "VmHWM: %ld kB", &vm_hwm_kb);
-      break;
-    }
-  }
-  double vm_hwm_mb = vm_hwm_kb / 1024.0;
-  logger_->report("Peak memory usage (HWM): {} MB", vm_hwm_mb);
-}
-
 void PartitionMgr::writeArtNetSpec(const char* fileName)
 {
   if (!getDbBlock()) {
@@ -107,7 +92,6 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
   logger_->report("getFromSTA done");
   getFromPAR(Rratio, p, q);
   logger_->report("getFromPAR done");
-  printMemoryUsage();
   writeFile(onlyUseMasters,
             top_name,
             numInsts,
@@ -294,12 +278,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
 
 void PartitionMgr::getFromPAR(float& Rratio, float& p, float& q)
 {
-  auto start = std::chrono::steady_clock::now();
   getRents(Rratio, p, q);
-  auto end = std::chrono::steady_clock::now();
-  std::chrono::duration<double> elapsed_seconds = end - start;
-  logger_->report("Rent parameter evaluation finished in {}",
-                  elapsed_seconds.count());
 }
 
 void PartitionMgr::getRents(float& Rratio, float& p, float& q)
@@ -584,7 +563,7 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
                               float& p,
                               float& q)
 {
-  int n = modMgr.getNumModules();
+  const int n = modMgr.getNumModules();
   double* x = new double[n];
   double* y = new double[n];
 
@@ -596,20 +575,12 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
         return m1->getAvgInsts() < m2->getAvgInsts();
       });
 
-  double b = log(modules[n - 1]->getAvgK());
+  const double b = log(modules[n - 1]->getAvgK());
   for (int i = 0; i < n; i++) {
     auto m = modules[i];
     x[i] = log(m->getAvgInsts());
     y[i] = log(m->getAvgT()) - b;
   }
-
-  /*
-  for (int i = 0; i < n; i++)
-  {
-      auto m = modules[i];
-      double numInsts = m->getAvgInsts();
-      double T = m->getAvgT();
-  }*/
 
   auto [ratio, rentP, std_dev] = fitRent(x, y, n);
   delete[] x;
@@ -620,18 +591,19 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
 }
 
 // from RentCon
-std::tuple<double, double, double> PartitionMgr::fitRent(double* x,
-                                                         double* y,
+std::tuple<double, double, double> PartitionMgr::fitRent(const double* x,
+                                                         const double* y,
                                                          int n)
 {
-  int minPntNum = (int) (n * 0.75);
-  double bestRent;
-  int totPoints = n;
+  const int minPntNum = (int) (n * 0.75);
+  const int totPoints = n;
   int bestN = n;
-  double rentP, cov11, sumsq;
+  double rentP;
+  double cov11;
+  double sumsq;
 
   fit_mul(x, 1, y, 1, n, &rentP, &cov11, &sumsq);
-  bestRent = rentP;
+  double bestRent = rentP;
 
   double oldDev = sqrt(sumsq / n);
 
@@ -639,7 +611,7 @@ std::tuple<double, double, double> PartitionMgr::fitRent(double* x,
     n--;
     fit_mul(x, 1, y, 1, n, &rentP, &cov11, &sumsq);
     // compute the standard deviation of the residuals
-    double newDev = sqrt(sumsq / n);
+    const double newDev = sqrt(sumsq / n);
     if (newDev > oldDev) {
       break;
     }
@@ -666,13 +638,15 @@ void PartitionMgr::fit_mul(const double* x,
                            double* cov_11,
                            double* sumsq)
 {
-  double m_x = 0, m_y = 0, m_dx2 = 0, m_dxdy = 0;
-  size_t i;
-  for (i = 0; i < n; i++) {
+  double m_x = 0;
+  double m_y = 0;
+  double m_dx2 = 0;
+  double m_dxdy = 0;
+  for (size_t i = 0; i < n; i++) {
     m_x += (x[i * xstride] - m_x) / (i + 1.0);
     m_y += (y[i * ystride] - m_y) / (i + 1.0);
   }
-  for (i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     const double dx = x[i * xstride] - m_x;
     const double dy = y[i * ystride] - m_y;
     m_dx2 += (dx * dx - m_dx2) / (i + 1.0);
@@ -680,34 +654,34 @@ void PartitionMgr::fit_mul(const double* x,
   }
   /* In terms of y =  b x */
   {
-    double s2 = 0, d2 = 0;
-    double b = (m_x * m_y + m_dxdy) / (m_x * m_x + m_dx2);
+    double d2 = 0;
+    const double b = (m_x * m_y + m_dxdy) / (m_x * m_x + m_dx2);
     *c1 = b;
     /* Compute chi^2 = \sum (y_i -  b * x_i)^2 */
-    for (i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
       const double dx = x[i * xstride] - m_x;
       const double dy = y[i * ystride] - m_y;
       const double d = (m_y - b * m_x) + dy - b * dx;
       d2 += d * d;
     }
-    s2 = d2 / (n - 1.0); /* chisq per degree of freedom */
+    const double s2 = d2 / (n - 1.0); /* chisq per degree of freedom */
     *cov_11 = s2 * 1.0 / (n * (m_x * m_x + m_dx2));
     *sumsq = d2;
   }
 }
 
 void PartitionMgr::writeFile(
-    std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
-    std::string& top_name,
-    int& numInsts,
-    int& numPIs,
-    int& numPOs,
-    int& numSeq,
-    int& Dmax,
-    int& MDmax,
-    float& Rratio,
-    float& p,
-    float& q,
+    const std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
+    const std::string& top_name,
+    const int numInsts,
+    const int numPIs,
+    const int numPOs,
+    const int numSeq,
+    const int Dmax,
+    const int MDmax,
+    const float Rratio,
+    const float p,
+    const float q,
     const char* fileName)
 {
   std::ofstream outFile(fileName);

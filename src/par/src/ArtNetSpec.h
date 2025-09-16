@@ -99,7 +99,7 @@ class Cluster
 
   const std::vector<odb::dbInst*>& getInsts() const { return insts_; }
 
-  odb::dbInst* getInst(int i)
+  odb::dbInst* getInst(const int i)
   {
     if (i < insts_.size()) {
       return insts_[i];
