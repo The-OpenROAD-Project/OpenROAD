@@ -234,8 +234,23 @@ class PartitionMgr
                              const char* port_prefix = "partition_",
                              const char* module_suffix = "_partition");
 
-  // ArtNet SpecGen
   void writeArtNetSpec(const char* fileName);
+
+ private:
+  odb::dbBlock* getDbBlock() const;
+  sta::Instance* buildPartitionedInstance(
+      const char* name,
+      const char* port_prefix,
+      sta::Library* library,
+      sta::NetworkReader* network,
+      sta::Instance* parent,
+      const std::set<sta::Instance*, CompareInstancePtr>* insts,
+      std::map<sta::Net*, sta::Port*>* port_map);
+
+  sta::Instance* buildPartitionedTopInstance(const char* name,
+                                             sta::Library* library,
+                                             sta::NetworkReader* network);
+  // ArtNet SpecGen
   void printMemoryUsage();
   void getFromODB(
       std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
@@ -279,21 +294,6 @@ class PartitionMgr
       float& p,
       float& q,
       const char* fileName);
-
- private:
-  odb::dbBlock* getDbBlock() const;
-  sta::Instance* buildPartitionedInstance(
-      const char* name,
-      const char* port_prefix,
-      sta::Library* library,
-      sta::NetworkReader* network,
-      sta::Instance* parent,
-      const std::set<sta::Instance*, CompareInstancePtr>* insts,
-      std::map<sta::Net*, sta::Port*>* port_map);
-
-  sta::Instance* buildPartitionedTopInstance(const char* name,
-                                             sta::Library* library,
-                                             sta::NetworkReader* network);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
