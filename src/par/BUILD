@@ -60,7 +60,7 @@ cc_library(
         "@boost.range",
         "@boost.tokenizer",
         "@boost.utility",
-        "@or-tools//ortools/linear_solver:linear_solver",
+        "@or-tools//ortools/linear_solver",
     ],
 )
 
