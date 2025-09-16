@@ -3,8 +3,6 @@
 [WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
 [WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
 Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
-Warning: Detected 2 multi-output gates (for example, "FA_X1").
-SC library cannot be found.
 [INFO CGT-0003] Clock gating instance 0/562
 [INFO CGT-0004] Accepted clock enable '_13148_ | _04712_ | _04712_ | _00499_ | _05106_ | _05208_' for instance dcnt\[0\]$_SDFFE_PN0P_
 [INFO CGT-0004] Accepted clock enable '_13151_ | _11055_ | _07150_ | _09231_ | _11144_ | _05152_ | _07152_ | _04670_' for instance ld_r$_DFF_P_

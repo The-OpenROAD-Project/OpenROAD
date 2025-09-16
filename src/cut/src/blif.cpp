@@ -534,7 +534,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
           auto port_ = network_->libertyPort(pin_);
           if (port_->isClock()) {
             mtermName = mTerm->getName();
-            netName = connection;
+            netName = std::move(connection);
             break;
           }
         }

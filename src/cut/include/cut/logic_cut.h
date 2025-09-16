@@ -18,9 +18,9 @@ namespace cut {
 class LogicCut
 {
  public:
-  LogicCut(std::vector<sta::Net*>& primary_inputs,
-           std::vector<sta::Net*>& primary_outputs,
-           sta::InstanceSet& cut_instances)
+  LogicCut(std::vector<sta::Net*>&& primary_inputs,
+           std::vector<sta::Net*>&& primary_outputs,
+           sta::InstanceSet&& cut_instances)
       : primary_inputs_(std::move(primary_inputs)),
         primary_outputs_(std::move(primary_outputs)),
         cut_instances_(std::move(cut_instances))
