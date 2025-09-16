@@ -20,14 +20,23 @@ class Graphics : public gui::Renderer, public ResizerObserver
   void subdivide(const odb::Line& line) override;
   void subdivideDone() override;
 
+  void repairNetStart(const BufferedNetPtr& bnet, odb::dbNet* net) override;
+  void makeBuffer(odb::dbInst* inst) override;
+  void repairNetDone() override;
+
   // Renderer
   void drawObjects(gui::Painter& painter) override;
 
  private:
+  void drawBNet(const BufferedNetPtr& bnet, gui::Painter& painter);
+
+  BufferedNetPtr bnet_;
+  std::vector<odb::dbInst*> buffers_;
   odb::dbNet* net_{nullptr};
   std::vector<odb::Line> lines_;
-  // Ingore this net if true
+  // Ignore this net if true
   bool subdivide_ignore_{false};
+  bool repair_net_ignore_{false};
   // stop at each step?
   bool stop_on_subdivide_step_{false};
 };
