@@ -48,6 +48,10 @@ def make_result_file(filename):
 def diff_files(file1, file2, ignore=None):
     if ignore:
         ignore = re.compile(ignore)
+    
+    report_function = utl.report
+    if os.environ.get("TEST_SRCDIR", ""):
+        report_function = print
 
     with open(file1, "r") as f:
         lines1 = f.readlines()
@@ -61,20 +65,20 @@ def diff_files(file1, file2, ignore=None):
         if ignore and (ignore.search(lines1[i]) or ignore.search(lines2[i])):
             continue
         if lines1[i] != lines2[i]:
-            print(f"Differences found at line {i+1}.")
-            print(lines1[i][:-1])
-            print(lines2[i][:-1])
+            report_function(f"Differences found at line {i+1}.")
+            report_function(lines1[i][:-1])
+            report_function(lines2[i][:-1])
             if os.environ.get("TEST_SRCDIR", ""):
                 raise Exception("Diffs found")
             return 1
 
     if num_lines1 != num_lines2:
-        print(f"Number of lines differs {num_lines1} vs {num_lines2}.")
+        report_function(f"Number of lines differs {num_lines1} vs {num_lines2}.")
         if os.environ.get("TEST_SRCDIR", ""):
             raise Exception("Diffs found")
         return 1
 
-    print("No differences found.")
+    report_function("No differences found.")
     return 0
 
 
