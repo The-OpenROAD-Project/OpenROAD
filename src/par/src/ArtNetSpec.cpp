@@ -278,7 +278,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
 
   int ff_max = 0;
   int mac_max = 0;
-  for (auto path : pathDepthMap) {
+  for (const auto& path : pathDepthMap) {
     auto inst = block->findInst((path.first).c_str());
     if (inst) {
       if (inst->getMaster()->isBlock()) {
@@ -342,9 +342,10 @@ void PartitionMgr::getRents(float& Rratio, float& p, float& q)
   }
 }
 
-bool PartitionMgr::partitionCluster(std::shared_ptr<TritonPart> triton_part,
-                                    ModuleMgr& modMgr,
-                                    SharedClusterVector& cv)
+bool PartitionMgr::partitionCluster(
+    const std::shared_ptr<TritonPart>& triton_part,
+    ModuleMgr& modMgr,
+    SharedClusterVector& cv)
 {
   int MIN_GATE_NUM_PER_CLUSTER = 100;
   bool flag = true;
@@ -396,11 +397,10 @@ bool PartitionMgr::partitionCluster(std::shared_ptr<TritonPart> triton_part,
 
   if (Tvect.size() > 1) {
     double sumSqrtT = 0.0;
-    for (auto itr = Tvect.begin(); itr != Tvect.end(); ++itr) {
-      double t = *itr;
+    for (const double t : Tvect) {
       sumSqrtT += pow((t - avgT), 2);
     }
-    stdevT = sqrt(double(sumSqrtT) / count);
+    stdevT = sqrt(sumSqrtT / count);
   }
 
   if (avgInsts >= 1 && avgT >= 1) {
@@ -417,8 +417,8 @@ bool PartitionMgr::partitionCluster(std::shared_ptr<TritonPart> triton_part,
   return flag;
 }
 
-void PartitionMgr::Partitioning(std::shared_ptr<TritonPart> triton_part,
-                                std::shared_ptr<Cluster> cluster,
+void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
+                                const std::shared_ptr<Cluster>& cluster,
                                 SharedClusterVector& resultCV)
 {
   std::vector<odb::dbInst*> insts;
@@ -534,7 +534,7 @@ void PartitionMgr::Partitioning(std::shared_ptr<TritonPart> triton_part,
 }
 
 int PartitionMgr::getClusterIONum(std::vector<bool>& inside,
-                                  std::shared_ptr<Cluster> cluster)
+                                  const std::shared_ptr<Cluster>& cluster)
 {
   std::vector<odb::dbInst*> cInsts = cluster->getInsts();
   std::unordered_set<odb::dbNet*> cNets;
@@ -589,11 +589,12 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
   double* y = new double[n];
 
   auto modules = modMgr.getModules();
-  std::sort(modules.begin(),
-            modules.end(),
-            [](std::shared_ptr<Module> m1, std::shared_ptr<Module> m2) {
-              return m1->getAvgInsts() < m2->getAvgInsts();
-            });
+  std::sort(
+      modules.begin(),
+      modules.end(),
+      [](const std::shared_ptr<Module>& m1, const std::shared_ptr<Module>& m2) {
+        return m1->getAvgInsts() < m2->getAvgInsts();
+      });
 
   double b = log(modules[n - 1]->getAvgK());
   for (int i = 0; i < n; i++) {
@@ -641,11 +642,10 @@ std::tuple<double, double, double> PartitionMgr::fitRent(double* x,
     double newDev = sqrt(sumsq / n);
     if (newDev > oldDev) {
       break;
-    } else {
-      oldDev = newDev;
-      bestN = n;
-      bestRent = rentP;
     }
+    oldDev = newDev;
+    bestN = n;
+    bestRent = rentP;
   }
   double Rratio;
   if (bestN == totPoints) {
@@ -716,35 +716,35 @@ void PartitionMgr::writeFile(
     exit(0);
   }
 
-  outFile << "LIBRARY" << std::endl;
-  outFile << "NAME lib" << std::endl;
+  outFile << "LIBRARY\n";
+  outFile << "NAME lib\n";
 
   // unordered_map<string, int> --> cellName / isMacro
   for (const auto& it : onlyUseMasters) {
     if (!it.second.second) {
-      outFile << "STD_CELL " << it.first << std::endl;
+      outFile << "STD_CELL " << it.first << '\n';
     } else {
-      outFile << "MACRO_CELL " << it.first << std::endl;
+      outFile << "MACRO_CELL " << it.first << '\n';
     }
   }
-  outFile << std::endl;
+  outFile << '\n';
 
-  outFile << "CIRCUIT" << std::endl;
-  outFile << "NAME " << top_name << std::endl;
-  outFile << "LIBRARIES lib" << std::endl;
+  outFile << "CIRCUIT\n";
+  outFile << "NAME " << top_name << '\n';
+  outFile << "LIBRARIES lib" << '\n';
   outFile << "DISTRIBUTION ";
   for (const auto& it : onlyUseMasters) {
     outFile << it.second.first << " ";
   }
-  outFile << std::endl;
-  outFile << "SIZE " << int(numInsts * Rratio) << std::endl;
-  outFile << "p " << p << std::endl;
-  outFile << "q " << q << std::endl;
-  outFile << "END" << std::endl;
-  outFile << "SIZE " << numInsts << std::endl;
-  outFile << "I " << numPIs << std::endl;
-  outFile << "O " << numPOs << std::endl;
-  outFile << "END" << std::endl;
+  outFile << '\n';
+  outFile << "SIZE " << int(numInsts * Rratio) << '\n';
+  outFile << "p " << p << '\n';
+  outFile << "q " << q << '\n';
+  outFile << "END\n";
+  outFile << "SIZE " << numInsts << '\n';
+  outFile << "I " << numPIs << '\n';
+  outFile << "O " << numPOs << '\n';
+  outFile << "END\n";
   outFile.close();
 }
 

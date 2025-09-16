@@ -79,7 +79,10 @@ struct ModuleMgr
 {
   std::vector<std::shared_ptr<Module>> modules;
 
-  void addModule(std::shared_ptr<Module> module) { modules.push_back(module); }
+  void addModule(std::shared_ptr<Module> module)
+  {
+    modules.push_back(std::move(module));
+  }
 
   int getNumModules() const { return modules.size(); }
 
@@ -94,15 +97,14 @@ class Cluster
 
   int getId() const { return id_; }
 
-  const std::vector<odb::dbInst*> getInsts() const { return insts_; }
+  const std::vector<odb::dbInst*>& getInsts() const { return insts_; }
 
   odb::dbInst* getInst(int i)
   {
     if (i < insts_.size()) {
       return insts_[i];
-    } else {
-      return nullptr;
     }
+    return nullptr;
   }
 
   void addInst(odb::dbInst* inst) { insts_.push_back(inst); }

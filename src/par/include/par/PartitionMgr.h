@@ -258,13 +258,13 @@ class PartitionMgr
                double* c1,
                double* cov_11,
                double* sumsq);
-  bool partitionCluster(std::shared_ptr<TritonPart> triton_part,
+  bool partitionCluster(const std::shared_ptr<TritonPart>& triton_part,
                         ModuleMgr& modMgr,
                         SharedClusterVector& cv);
   int getClusterIONum(std::vector<bool>& inside,
-                      std::shared_ptr<Cluster> cluster);
-  void Partitioning(std::shared_ptr<TritonPart> triton_part,
-                    std::shared_ptr<Cluster> cluster,
+                      const std::shared_ptr<Cluster>& cluster);
+  void Partitioning(const std::shared_ptr<TritonPart>& triton_part,
+                    const std::shared_ptr<Cluster>& cluster,
                     SharedClusterVector& resultCV);
   void writeFile(
       std::unordered_map<std::string, std::pair<int, bool>>& onlyUseMasters,
