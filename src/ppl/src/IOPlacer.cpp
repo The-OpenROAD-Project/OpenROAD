@@ -829,7 +829,11 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
     int num_tracks_offset
         = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
 
-    int curr_x = 0, curr_y = 0, start_idx = 0, end_idx = 0;
+    int curr_x = 0;
+    int curr_y = 0;
+    int start_idx = 0;
+    int end_idx = 0;
+
     start_idx
         = std::max(0.0,
                    ceil(static_cast<double>((min + half_width - init_tracks))
