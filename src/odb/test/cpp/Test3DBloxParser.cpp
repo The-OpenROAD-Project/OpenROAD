@@ -16,6 +16,7 @@ struct F_DBV_PARSER
   F_DBV_PARSER()
   {
     db = dbDatabase::create();
+    dbTech::create(db, "tech");
     logger = new utl::Logger();
     db->setLogger(logger);
     ThreeDBlox parser(logger, db);

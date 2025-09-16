@@ -112,8 +112,9 @@ dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
 }
 void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 {
-  dbChip* chip
-      = dbChip::create(db_, chiplet.name, getChipType(chiplet.type, logger_));
+  auto tech = db_->getTech();  // TODO: specify tech
+  dbChip* chip = dbChip::create(
+      db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
 
   chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
   chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());
@@ -179,7 +180,8 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
 }
 void ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
-  dbChip* chip = dbChip::create(db_, design.name, dbChip::ChipType::HIER);
+  dbChip* chip
+      = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
   db_->setTopChip(chip);
 }
 void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
