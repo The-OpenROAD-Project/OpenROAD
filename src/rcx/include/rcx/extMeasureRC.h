@@ -6,8 +6,8 @@
 #include <cstdio>
 #include <string>
 
-#include "extRCap.h"
 #include "odb/db.h"
+#include "rcx/extRCap.h"
 
 namespace rcx {
 

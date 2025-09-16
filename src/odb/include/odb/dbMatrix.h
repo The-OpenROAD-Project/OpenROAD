@@ -6,8 +6,8 @@
 #include <cassert>
 #include <vector>
 
-#include "dbStream.h"
-#include "odb.h"
+#include "odb/dbStream.h"
+#include "odb/odb.h"
 
 namespace odb {
 

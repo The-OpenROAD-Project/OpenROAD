@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "db.h"
+#include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
 

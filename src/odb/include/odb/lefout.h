@@ -11,12 +11,12 @@
 #include <unordered_map>
 
 #include "boost/polygon/polygon.hpp"
-#include "db.h"
-#include "dbObject.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {

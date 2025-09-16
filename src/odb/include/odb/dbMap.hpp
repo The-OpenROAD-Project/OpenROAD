@@ -6,8 +6,8 @@
 #include <map>
 #include <vector>
 
-#include "ZException.h"
-#include "dbMap.h"
+#include "odb/ZException.h"
+#include "odb/dbMap.h"
 #include "odb/dbSet.h"
 
 namespace odb {

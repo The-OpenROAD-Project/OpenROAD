@@ -30,8 +30,8 @@
 #include <string>
 #include <vector>
 
-#include "collectable.h"
-#include "family.h"
+#include "utl/prometheus/collectable.h"
+#include "utl/prometheus/family.h"
 
 namespace utl {
 

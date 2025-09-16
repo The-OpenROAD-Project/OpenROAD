@@ -58,6 +58,7 @@ COMPULSORY_TESTS = [
     "core_grid_with_rings_with_straps",
     "core_grid_with_rings_with_straps_rings_over_core",
     "core_grid_with_routing_obstructions",
+    "core_grid_with_single_edge_pins",
     "core_grid_with_single_layer_rings",
     "design_width",
     "existing",

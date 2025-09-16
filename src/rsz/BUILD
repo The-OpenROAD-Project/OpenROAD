@@ -77,6 +77,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
+        "src/BufferedNet.hh",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",

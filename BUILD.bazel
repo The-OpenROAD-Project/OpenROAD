@@ -142,7 +142,7 @@ cc_binary(
     deps = [
         ":openroad_lib",
         ":openroad_version",
-        "//:ord",
+        ":ord",
         "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",

@@ -5,7 +5,7 @@
 
 #include <cstddef>
 
-#include "dbStream.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 
