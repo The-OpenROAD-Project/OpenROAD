@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
+#ifdef BAZEL
 %module(package="src.utl") utl
+#else
+%module utl
+#endif
 
 #ifdef BAZEL
 %{
