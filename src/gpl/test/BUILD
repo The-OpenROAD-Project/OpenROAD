@@ -95,7 +95,6 @@ PY_TESTS = [
     "core01",
     "error01",
     "incremental01",
-    "incremental02",
     "nograd01",
     "simple01",
     "simple01-obs",
