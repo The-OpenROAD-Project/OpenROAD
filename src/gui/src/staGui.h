@@ -14,6 +14,7 @@
 #include <QHBoxLayout>
 #include <QHash>
 #include <QListWidget>
+#include <QScrollArea>
 #include <QSpinBox>
 #include <map>
 #include <memory>
@@ -413,6 +414,8 @@ class TimingControlsDialog : public QDialog
   sta::Corner* getCorner() const { return sta_->getCorner(); }
   void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
 
+  QSize sizeHint() const override;
+
  signals:
   void inspect(const Selected& selected);
   void expandClock(bool expand);
@@ -440,6 +443,8 @@ class TimingControlsDialog : public QDialog
   std::vector<PinSetWidget*> thru_;
   PinSetWidget* to_;
   QHash<QString, sta::Clock*> qstring_to_clk_;
+  QScrollArea* scroll_;
+  QWidget* content_widget_;
 
   static constexpr int kThruStartRow = 4;
 

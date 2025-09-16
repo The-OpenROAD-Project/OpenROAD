@@ -1130,7 +1130,9 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       expand_clk_(new QCheckBox(this)),
       from_(new PinSetWidget(false, this)),
       thru_({}),
-      to_(new PinSetWidget(false, this))
+      to_(new PinSetWidget(false, this)),
+      scroll_(new QScrollArea(this)),
+      content_widget_(new QWidget)
 {
   setWindowTitle("Timing Controls");
 
@@ -1149,8 +1151,21 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   setUnconstrained(false);
   layout_->addRow("Unconstrained:", unconstrained_);
   layout_->addRow("One path per endpoint:", one_path_per_endpoint_);
+  content_widget_->setLayout(layout_);
 
-  setLayout(layout_);
+  scroll_->setLayout(new QVBoxLayout);
+  scroll_->setWidget(content_widget_);
+  scroll_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+  scroll_->adjustSize();
+  scroll_->setMinimumWidth(
+      scroll_->size().width()
+      + qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent));
+
+  setLayout(new QVBoxLayout);
+  layout()->addWidget(scroll_);
+  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+  setMaximumWidth(layout()->sizeHint().width());
+  adjustSize();
 
   connect(path_count_spin_box_,
           QOverload<int>::of(&QSpinBox::valueChanged),
@@ -1180,6 +1195,24 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
           &TimingControlsDialog ::expandClock);
 
   sta_->setIncludeCapturePaths(true);
+}
+
+QSize TimingControlsDialog::sizeHint() const
+{
+  int width = minimumWidth();
+  int top = 0, bottom = 0;
+  if (layout())
+  {
+    layout()->getContentsMargins(nullptr, &top, nullptr, &bottom);
+  }
+  int top2 = 0, bottom2 = 0;
+  if (scroll_->layout())
+  {
+    scroll_->layout()->getContentsMargins(nullptr, &top2, nullptr, &bottom2);
+  }
+
+  int height = content_widget_->size().height()+top+bottom+top2+bottom2;
+  return QSize(width, height);
 }
 
 void TimingControlsDialog::setupPinRow(const QString& label,
