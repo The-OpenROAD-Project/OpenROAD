@@ -12,6 +12,7 @@
 #include "dbITerm.h"
 #include "dbInst.h"
 #include "dbModNet.h"
+#include "dbModule.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
 #include "odb/db.h"

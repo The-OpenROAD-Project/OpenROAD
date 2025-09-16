@@ -41,7 +41,7 @@ void CUGR::init(const int min_routing_layer, const int max_routing_layer)
 {
   design_ = std::make_unique<Design>(
       db_, logger_, constants_, min_routing_layer, max_routing_layer);
-  grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_);
+  grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
   gr_nets_.reserve(baseNets.size());
@@ -67,8 +67,11 @@ void CUGR::patternRoute(std::vector<int>& netIndices)
   logger_->report("stage 1: pattern routing");
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
-    PatternRoute patternRoute(
-        gr_nets_[netIndex].get(), grid_graph_.get(), stt_builder_, constants_);
+    PatternRoute patternRoute(gr_nets_[netIndex].get(),
+                              grid_graph_.get(),
+                              stt_builder_,
+                              constants_,
+                              logger_);
     patternRoute.constructSteinerTree();
     patternRoute.constructRoutingDAG();
     patternRoute.run();
@@ -90,8 +93,9 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
     GRNet* net = gr_nets_[netIndex].get();
-    grid_graph_->commitTree(net->getRoutingTree(), true);
-    PatternRoute patternRoute(net, grid_graph_.get(), stt_builder_, constants_);
+    grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
+    PatternRoute patternRoute(
+        net, grid_graph_.get(), stt_builder_, constants_, logger_);
     patternRoute.constructSteinerTree();
     patternRoute.constructRoutingDAG();
     // KEY DIFFERENCE compared to stage 1 (patternRoute)
@@ -110,7 +114,8 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
   }
   logger_->report("stage 3: maze routing on sparsified routing graph");
   for (const int netIndex : netIndices) {
-    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(), true);
+    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(),
+                            /*ripup*/ true);
   }
   GridGraphView<CostT> wireCostView;
   grid_graph_->extractWireCostView(wireCostView);
@@ -118,13 +123,14 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
   SparseGrid grid(10, 10, 0, 0);
   for (const int netIndex : netIndices) {
     GRNet* net = gr_nets_[netIndex].get();
-    MazeRoute mazeRoute(net, grid_graph_.get());
+    MazeRoute mazeRoute(net, grid_graph_.get(), logger_);
     mazeRoute.constructSparsifiedGraph(wireCostView, grid);
     mazeRoute.run();
     std::shared_ptr<SteinerTreeNode> tree = mazeRoute.getSteinerTree();
     assert(tree != nullptr);
 
-    PatternRoute patternRoute(net, grid_graph_.get(), stt_builder_, constants_);
+    PatternRoute patternRoute(
+        net, grid_graph_.get(), stt_builder_, constants_, logger_);
     patternRoute.setSteinerTree(tree);
     patternRoute.constructRoutingDAG();
     patternRoute.run();
@@ -169,10 +175,10 @@ void CUGR::write(const std::string& guide_file)
     ss << net->getName() << '\n';
     ss << "(\n";
     for (const auto& guide : guides) {
-      ss << grid_graph_->getGridline(0, guide.second.x.low()) << " "
-         << grid_graph_->getGridline(1, guide.second.y.low()) << " "
-         << grid_graph_->getGridline(0, guide.second.x.high() + 1) << " "
-         << grid_graph_->getGridline(1, guide.second.y.high() + 1) << " "
+      ss << grid_graph_->getGridline(0, guide.second.lx()) << " "
+         << grid_graph_->getGridline(1, guide.second.ly()) << " "
+         << grid_graph_->getGridline(0, guide.second.hx() + 1) << " "
+         << grid_graph_->getGridline(1, guide.second.hy() + 1) << " "
          << grid_graph_->getLayerName(guide.first) << "\n";
     }
     ss << ")\n";
@@ -325,8 +331,8 @@ void CUGR::getGuides(const GRNet* net,
                             (int) grid_graph_->getSize(0) - 1),
                    std::min(gpt.y() + padding,
                             (int) grid_graph_->getSize(1) - 1)));
-          area_of_pin_patches_ += (guides.back().second.x.range() + 1)
-                                  * (guides.back().second.y.range() + 1);
+          area_of_pin_patches_ += (guides.back().second.x().range() + 1)
+                                  * (guides.back().second.y().range() + 1);
         }
       }
     }

@@ -763,6 +763,7 @@ void DefOut::Impl::writeRegions(dbBlock* block)
       *_out << " ( " << defdist(box->xMin()) << " " << defdist(box->yMin())
             << " ) ( " << defdist(box->xMax()) << " " << defdist(box->yMax())
             << " )";
+      ++cnt;
     }
 
     switch ((dbRegionType::Value) region->getRegionType()) {
@@ -1035,25 +1036,24 @@ void DefOut::Impl::writeBPin(dbBPin* bpin, int cnt)
       *_out << " + LAYER " << lname << " ( " << xMin << " " << yMin << " ) ( "
             << xMax << " " << yMax << " )";
     } else {
-      std::string layer_name = lname;
       if (_version == DefOut::DEF_5_8) {
         uint mask = box->getLayerMask();
         if (mask != 0) {
           // add mask information to layer name
-          layer_name += " MASK " + std::to_string(mask);
+          lname += " MASK " + std::to_string(mask);
         }
       }
       if (bpin->hasEffectiveWidth()) {
         int w = defdist(bpin->getEffectiveWidth());
-        *_out << " + LAYER " << layer_name << " DESIGNRULEWIDTH " << w << " ( "
+        *_out << " + LAYER " << lname << " DESIGNRULEWIDTH " << w << " ( "
               << xMin << " " << yMin << " ) ( " << xMax << " " << yMax << " )";
       } else if (bpin->hasMinSpacing()) {
         int s = defdist(bpin->getMinSpacing());
-        *_out << " + LAYER " << layer_name << " SPACING " << s << " ( " << xMin
+        *_out << " + LAYER " << lname << " SPACING " << s << " ( " << xMin
               << " " << yMin << " ) ( " << xMax << " " << yMax << " )";
       } else {
-        *_out << " + LAYER " << layer_name << " ( " << xMin << " " << yMin
-              << " ) ( " << xMax << " " << yMax << " )";
+        *_out << " + LAYER " << lname << " ( " << xMin << " " << yMin << " ) ( "
+              << xMax << " " << yMax << " )";
       }
     }
   }
@@ -2068,6 +2068,7 @@ void DefOut::Impl::writeProperties(dbObject* object)
     std::string name = prop->getName();
     *_out << name << " ";
     writePropValue(prop);
+    ++cnt;
   }
 }
 

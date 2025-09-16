@@ -382,7 +382,8 @@ class DbGenerateDummyVia : public DbVia
                      const odb::Rect& shape,
                      odb::dbTechLayer* bottom,
                      odb::dbTechLayer* top,
-                     bool add_report);
+                     bool add_report,
+                     const std::string& reason);
 
   ViaLayerShape generate(odb::dbBlock* block,
                          odb::dbSWire* wire,
@@ -400,6 +401,7 @@ class DbGenerateDummyVia : public DbVia
   const odb::Rect shape_;
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* top_;
+  std::string reason_;
 };
 
 // Class to build a generate via, either as a single group or as an array
