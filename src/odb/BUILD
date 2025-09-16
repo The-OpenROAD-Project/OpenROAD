@@ -34,6 +34,8 @@ cc_library(
         "src/lefout/*.cpp",
         "src/swig/common/swig_common.cpp",
         "src/swig/common/swig_common.h",
+        "src/3dblox/*.cpp",
+        "src/3dblox/*.h",
     ]),
     hdrs = glob([
         "include/odb/*.h",
@@ -66,6 +68,7 @@ cc_library(
         "@boost.property_tree",
         "@boost.regex",
         "@boost.spirit",
+        "@yaml-cpp",
         "@spdlog",
         "@tk_tcl//:tcl",
         "@zlib",
