@@ -48,7 +48,7 @@ def make_result_file(filename):
 def diff_files(file1, file2, ignore=None):
     if ignore:
         ignore = re.compile(ignore)
-    
+
     report_function = utl.report
     if os.environ.get("TEST_SRCDIR", ""):
         report_function = print
