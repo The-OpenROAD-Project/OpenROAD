@@ -402,7 +402,7 @@ class SoftMacro
 {
  public:
   SoftMacro(Cluster* cluster);
-  SoftMacro(float width, float height, const std::string& name);
+  SoftMacro(const Rect& blockage, const std::string& name);
   SoftMacro(const std::pair<float, float>& location,
             const std::string& name,
             float width,
@@ -449,7 +449,6 @@ class SoftMacro
   bool isMixedCluster() const;
   bool isClusterOfUnplacedIOPins() const;
   bool isClusterOfUnconstrainedIOPins() const;
-  bool isBlockage() const { return is_blockage_; }
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;

@@ -422,7 +422,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
-    if (isSkippable(macro) && !macro.isBlockage()) {
+    if (isSkippable(macro)) {
       continue;
     }
 
@@ -553,9 +553,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 template <typename T>
 bool Graphics::isSkippable(const T& macro)
 {
-  Cluster* cluster = macro.getCluster();
-
-  return !cluster /*fixed terminal*/ || cluster->isClusterOfUnplacedIOPins();
+  return macro.getCluster() != nullptr && macro.getCluster()->isClusterOfUnplacedIOPins();
 }
 
 // Draw guidance regions for macros.
@@ -662,8 +660,8 @@ void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
-  if (soft_macro.isBlockage()) {
-    painter.setBrush(gui::Painter::kDarkRed);
+  if (soft_macro.getCluster() == nullptr) {
+    painter.setBrush(gui::Painter::kDarkGreen);
     return;
   }
 
