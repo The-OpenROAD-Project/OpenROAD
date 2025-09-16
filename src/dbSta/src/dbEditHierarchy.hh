@@ -42,13 +42,13 @@ class dbEditHierarchy
                           std::vector<dbModule*>& parent_hierarchy) const;
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2) const;
-  bool ConnectionToModuleExists(dbITerm* source_pin,
+  bool connectionToModuleExists(dbITerm* source_pin,
                                 dbModule* dest_module,
                                 dbModBTerm*& dest_modbterm,
                                 dbModITerm*& dest_moditerm) const;
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
-                           const char* connection_name = "net") const;
+                           const char* connection_name = "net");
 
  private:
   void createHierarchyBottomUp(dbITerm* pin,

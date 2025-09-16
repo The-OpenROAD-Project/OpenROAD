@@ -353,13 +353,13 @@ bool _dbNet::operator==(const _dbNet& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbNet::getName()
+std::string dbNet::getName() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_name;
 }
 
-const char* dbNet::getConstName()
+const char* dbNet::getConstName() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_name;
@@ -378,6 +378,7 @@ void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
     fprintf(fp, "\n");
   }
 }
+
 bool dbNet::rename(const char* name)
 {
   _dbNet* net = (_dbNet*) this;
@@ -1129,7 +1130,7 @@ bool dbNet::isRCgraph()
   return net->_flags._rc_graph == 1;
 }
 
-dbBlock* dbNet::getBlock()
+dbBlock* dbNet::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
@@ -2337,6 +2338,31 @@ void dbNet::setJumpers(bool has_jumpers)
   if (db->isSchema(db_schema_has_jumpers)) {
     net->_flags._has_jumpers = has_jumpers ? 1 : 0;
   }
+}
+
+dbModInst* dbNet::findMainParentModInst() const
+{
+  dbBlock* block = getBlock();
+  const char delim = block->getHierarchyDelimiter();
+  const std::string net_name = getName();
+  const size_t last_delim_pos = net_name.find_last_of(delim);
+
+  if (last_delim_pos != std::string::npos) {
+    const std::string net_parent_hier_name = net_name.substr(0, last_delim_pos);
+    return block->findModInst(net_parent_hier_name.c_str());
+  }
+
+  return nullptr;
+}
+
+dbModule* dbNet::findMainParentModule() const
+{
+  dbModInst* parent_mod_inst = findMainParentModInst();
+  if (parent_mod_inst) {
+    return parent_mod_inst->getMaster();
+  }
+
+  return getBlock()->getTopModule();
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)
