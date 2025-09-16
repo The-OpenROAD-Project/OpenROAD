@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -71,7 +71,10 @@ cc_library(
         "include/utl/validation.h",
         "src/LoggerCommon.h",
     ],
-    includes = ["include", "src"],
+    includes = [
+        "include",
+        "src",
+    ],
     deps = [
         "//src/sta:opensta_lib",
         "@boost.algorithm",
@@ -91,9 +94,10 @@ cc_library(
 cc_binary(
     name = "_utl.so",
     srcs = [
-        ":swig-py",
         "src/LoggerCommon.h",
+        ":swig-py",
     ],
+    defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src"],
     linkshared = True,
     deps = [
@@ -112,7 +116,7 @@ py_library(
     data = [":_utl.so"],
     # This allows imports relative to the workspace root.
     imports = ["."],
-    visibility = ["//visibility:public",]
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -141,9 +145,9 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
         "@spdlog",
         "@tk_tcl//:tcl",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
     ],
 )
 

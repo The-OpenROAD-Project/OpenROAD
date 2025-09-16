@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -85,6 +85,7 @@ cc_library(
 cc_binary(
     name = "_odb.so",
     srcs = [":swig-py"],
+    defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src/swig/common"],
     linkshared = True,
     deps = [
@@ -102,7 +103,7 @@ py_library(
     data = [":_odb.so"],
     # This allows imports relative to the workspace root.
     imports = ["."],
-    visibility = ["//visibility:public",]
+    visibility = ["//visibility:public"],
 )
 
 cc_library(

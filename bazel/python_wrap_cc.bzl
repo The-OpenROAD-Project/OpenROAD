@@ -17,6 +17,8 @@ PythonSwigInfo = provider(
     ],
 )
 
+PYTHON_STABLE_API_DEFINE = "Py_LIMITED_API=0x030A0000"
+
 def _get_transitive_srcs(srcs, deps):
     return depset(
         srcs,
