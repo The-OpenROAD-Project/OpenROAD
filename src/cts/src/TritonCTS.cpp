@@ -1675,6 +1675,43 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
   return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
 }
 
+// Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
+// SPACING
+int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
+                             const int width1,
+                             const int width2)
+{
+  int min_spc = 0;
+  if (layer->hasTwoWidthsSpacingRules()) {
+    min_spc = layer->findTwSpacing(width1, width2, 0);
+  }
+  if (layer->hasV55SpacingRules()) {
+    min_spc = layer->findV55Spacing(std::max(width1, width2), 0);
+  }
+  if (!layer->getV54SpacingRules().empty()) {
+    int minSpc = 0;
+    for (auto rule : layer->getV54SpacingRules()) {
+      if (rule->hasRange()) {
+        uint rmin;
+        uint rmax;
+        rule->getRange(rmin, rmax);
+        if (width1 < rmin || width2 > rmax) {
+          continue;
+        }
+      }
+      minSpc = std::max<int>(minSpc, rule->getSpacing());
+    }
+    min_spc = minSpc;
+  }
+  min_spc = layer->getSpacing();
+
+  if (min_spc == 0) {
+    min_spc = layer->getPitch() - layer->getMinWidth();
+  }
+
+  return min_spc;
+}
+
 void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
@@ -1703,9 +1740,7 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     assert(layerRule != nullptr);
 
     int defaultWidth = layer->getWidth();
-    int defaultSpace = (layer->hasTwoWidthsSpacingRules())
-                           ? layer->findTwSpacing(defaultWidth, defaultWidth, 0)
-                           : layer->getSpacing();
+    int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
 
     // If width or space is 0, something is not right
     if (defaultWidth == 0 || defaultSpace == 0) {
@@ -1721,9 +1756,7 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     // Set NDR settings
     int ndr_width = defaultWidth;
     layerRule->setWidth(ndr_width);
-    int ndr_space = (layer->hasTwoWidthsSpacingRules())
-                        ? 2 * layer->findTwSpacing(ndr_width, ndr_width, 0)
-                        : 2 * defaultSpace;
+    int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
