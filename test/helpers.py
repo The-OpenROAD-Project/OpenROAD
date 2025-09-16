@@ -49,9 +49,12 @@ def diff_files(file1, file2, ignore=None):
     if ignore:
         ignore = re.compile(ignore)
 
-    report_function = utl.report
+    # If we're in bazel use print as the global utl functions
+    # have been removed.
     if os.environ.get("TEST_SRCDIR", ""):
         report_function = print
+    else:
+        report_function = utl.report
 
     with open(file1, "r") as f:
         lines1 = f.readlines()
