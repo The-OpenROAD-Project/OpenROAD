@@ -26,7 +26,7 @@ proc estimate_parasitics { args } {
   }
 
   if { [info exists flags(-placement)] } {
-    if { [est::check_corner_wire_cap] } {
+    if { [est::check_corner_wire_caps] } {
       est::estimate_parasitics_cmd "placement" $filename
     }
   } elseif { [info exists flags(-global_routing)] } {

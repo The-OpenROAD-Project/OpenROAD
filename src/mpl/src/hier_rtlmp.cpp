@@ -1651,7 +1651,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
                                               logger_,
                                               block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
-      sa->setCentralizationAttemptOn(true);
+      sa->enableEnhancements();
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -1707,9 +1707,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
     }
   } else {
-    if (best_sa->centralizationWasReverted()) {
-      best_sa->alignMacroClusters();
-    }
     best_sa->fillDeadSpace();
 
     std::vector<SoftMacro> shaped_macros = best_sa->getMacros();

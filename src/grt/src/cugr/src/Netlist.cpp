@@ -13,17 +13,15 @@ namespace grt {
 
 CUGRPin::CUGRPin(const int index,
                  odb::dbITerm* iterm,
-                 const std::vector<BoxOnLayer>& pin_shapes,
-                 const bool is_port)
-    : index_(index), iterm(iterm), pin_shapes_(pin_shapes), is_port_(is_port)
+                 const std::vector<BoxOnLayer>& pin_shapes)
+    : iterm(iterm), pin_shapes_(pin_shapes), index_(index), is_port_(false)
 {
 }
 
 CUGRPin::CUGRPin(const int index,
                  odb::dbBTerm* bterm,
-                 const std::vector<BoxOnLayer>& pin_shapes,
-                 const bool is_port)
-    : index_(index), bterm(bterm), pin_shapes_(pin_shapes), is_port_(is_port)
+                 const std::vector<BoxOnLayer>& pin_shapes)
+    : bterm(bterm), pin_shapes_(pin_shapes), index_(index), is_port_(true)
 {
 }
 

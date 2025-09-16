@@ -264,6 +264,7 @@ report_wire_length
     [-global_route]
     [-detailed_route]
     [-verbose]
+    [-summary]
 ```
 
 #### Options
@@ -275,6 +276,7 @@ report_wire_length
 | `-global_route` | Report the wire length of the global routing. |
 | `-detailed_route` | Report the wire length of the detailed routing. |
 | `-verbose` | This flag enables the full reporting of the layer-wise wirelength information. |
+| `-summary` | This flag reports the wire length for each layer of the design. |
 
 ### Global Route Debug Mode
 

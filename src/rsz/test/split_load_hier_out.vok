@@ -8,8 +8,8 @@ module reg1 (clk);
  wire net5;
  wire net3;
  wire net2;
- wire net1;
  wire r1q;
+ wire net1;
  wire net4;
 
  BUF_X1 rebuffer9 (.A(net5),
