@@ -98,13 +98,17 @@ dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
 {
   if (type == "die") {
     return dbChip::ChipType::DIE;
-  } else if (type == "rdl") {
+  }
+  if (type == "rdl") {
     return dbChip::ChipType::RDL;
-  } else if (type == "ip") {
+  }
+  if (type == "ip") {
     return dbChip::ChipType::IP;
-  } else if (type == "substrate") {
+  }
+  if (type == "substrate") {
     return dbChip::ChipType::SUBSTRATE;
-  } else if (type == "hier") {
+  }
+  if (type == "hier") {
     return dbChip::ChipType::HIER;
   }
   logger->error(
@@ -143,11 +147,14 @@ dbChipRegion::Side getChipRegionSide(const std::string& side,
 {
   if (side == "front") {
     return dbChipRegion::Side::FRONT;
-  } else if (side == "back") {
+  }
+  if (side == "back") {
     return dbChipRegion::Side::BACK;
-  } else if (side == "internal") {
+  }
+  if (side == "internal") {
     return dbChipRegion::Side::INTERNAL;
-  } else if (side == "internal_ext") {
+  }
+  if (side == "internal_ext") {
     return dbChipRegion::Side::INTERNAL_EXT;
   }
   logger->error(
@@ -156,7 +163,7 @@ dbChipRegion::Side getChipRegionSide(const std::string& side,
 void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
 {
   dbTechLayer* layer = nullptr;
-  if (region.layer != "") {
+  if (!region.layer.empty()) {
     // TODO: add layer
   }
   dbChipRegion* chip_region = dbChipRegion::create(
@@ -259,7 +266,7 @@ dbChipRegionInst* ThreeDBlox::resolvePath(const std::string& path,
   path_insts.reserve(path_parts.size());
   dbChip* curr_chip = db_->getChip();
   dbChipInst* curr_chip_inst = nullptr;
-  for (auto inst_name : path_parts) {
+  for (const auto& inst_name : path_parts) {
     curr_chip_inst = curr_chip->findChipInst(inst_name);
     if (curr_chip_inst == nullptr) {
       logger_->error(utl::ODB,
