@@ -375,13 +375,6 @@ void ClockGating::run()
   abc_factory_->AddDbSta(sta_);
   abc_library_ = std::make_unique<cut::AbcLibrary>(abc_factory_->Build());
 
-  abc::Abc_SclInstallGenlib(abc_library_->abc_library(),
-                            /*Slew=*/0,
-                            /*Gain=*/0,
-                            /*fUseAll=*/0,
-                            /*nGatesMin=*/0);
-  abc::Mio_LibraryTransferCellIds();
-
   dump("pre");
 
   std::vector<sta::Instance*> instances;
