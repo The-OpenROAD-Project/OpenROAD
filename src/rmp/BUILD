@@ -34,6 +34,7 @@ cc_library(
         "//:ord",
         "//src/cut",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/rsz",
         "//src/sta:opensta_lib",
