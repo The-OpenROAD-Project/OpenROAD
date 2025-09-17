@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "gdsin.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/gdsin.h"
 #include "odb/geom.h"
 
 namespace odb::gds {

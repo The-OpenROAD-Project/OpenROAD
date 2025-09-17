@@ -65,6 +65,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Search.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -2038,6 +2039,14 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
     for (dbLib* lib : db_->getLibs()) {
       makeLibrary(lib);
     }
+
+    for (dbModule* module : block_->getModules()) {
+      // top_module is not a hierarchical module in this context.
+      if (module != block_->getTopModule()) {
+        registerHierModule(dbToSta(module));
+      }
+    }
+
     readDbNetlistAfter();
   }
 
@@ -2062,7 +2071,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   master->staSetCell(reinterpret_cast<void*>(cell));
   // keep track of db leaf cells. These are cells for which we
   // use the concrete network.
-  registerConcreteCell(cell);
   ConcreteCell* ccell = reinterpret_cast<ConcreteCell*>(cell);
   ccell->setExtCell(reinterpret_cast<void*>(master));
 
@@ -2308,7 +2316,6 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       // to get timing characteristics, so they have to be
       // concrete
       Cell* inst_cell = dbToSta(master);
-      registerConcreteCell(inst_cell);
       std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
       while (port_iter->hasNext()) {
         Port* cur_port = port_iter->next();
@@ -2326,13 +2333,12 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       dbInst* inst = dbInst::create(block_, master, name, false, parent);
       Cell* inst_cell = dbToSta(master);
       //
-      // Register all liberty cells as being concrete
+      // Register all ports of liberty cells as being concrete
       // Sometimes this method is called by the sta
       // to build "test circuits" eg to find the max wire length
       // And those cells need to use the external api
       // to get timing characteristics, so they have to be
       // concrete
-      registerConcreteCell(inst_cell);
       std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
       while (port_iter->hasNext()) {
         Port* cur_port = port_iter->next();
@@ -2592,7 +2598,7 @@ void dbNetwork::disconnectPin(Pin* pin, Net* net)
       iterm->disconnectDbNet();
     }
     if (mod_net) {
-      iterm->disconnectModNet();
+      iterm->disconnectDbModNet();
     }
   } else if (bterm) {
     if (db_net) {
@@ -3193,6 +3199,16 @@ LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
   return nullptr;
 }
 
+void dbNetwork::registerHierModule(const Cell* cell)
+{
+  hier_modules_.insert(cell);
+}
+
+void dbNetwork::unregisterHierModule(const Cell* cell)
+{
+  hier_modules_.erase(cell);
+}
+
 /*
 We keep a registry of the concrete cells.
 For these we know to use the concrete network interface.
@@ -3201,18 +3217,17 @@ The concrete cells are created outside of the odb world
 So we simply note them and then when we inspect a cell
 we can decide whether or not to use the ConcreteNetwork api.
 */
-
-void dbNetwork::registerConcreteCell(const Cell* cell)
-{
-  concrete_cells_.insert(cell);
-}
-
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
   if (!hierarchy_) {
     return true;
   }
-  return (concrete_cells_.find(cell) != concrete_cells_.end());
+
+  if (cell == top_cell_) {
+    return false;
+  }
+
+  return (hier_modules_.find(cell) == hier_modules_.end());
 }
 
 void dbNetwork::registerConcretePort(const Port* port)
@@ -3776,6 +3791,10 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
 
 void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
 {
+  if (flat_net == nullptr || mod_net == nullptr) {
+    return;
+  }
+
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(flat_net), visitordb, visited_dbnets);
@@ -4041,13 +4060,13 @@ void dbNetwork::checkAxioms()
 {
   checkSanityModBTerms();
   checkSanityModITerms();
-  checkSanityModuleInsts();
   checkSanityModInstTerms();
   checkSanityUnusedModules();
   checkSanityTermConnectivity();
   checkSanityNetConnectivity();
   checkSanityInstNames();
   checkSanityNetNames();
+  checkSanityModuleInsts();
 }
 
 // Given a net that may be hierarchical, find the corresponding flat net.
@@ -4282,8 +4301,7 @@ void dbNetwork::checkSanityTermConnectivity()
 
   for (odb::dbInst* inst : block_->getInsts()) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
-      if (iterm->getSigType() == dbSigType::POWER
-          || iterm->getSigType() == dbSigType::GROUND) {
+      if (iterm->getSigType().isSupply()) {
         continue;  // Skip power/ground pins
       }
 
@@ -4309,27 +4327,58 @@ void dbNetwork::checkSanityNetConnectivity()
   }
 
   // Check for incomplete flat net connections
-  for (odb::dbNet* net : block_->getNets()) {
-    const auto iterm_count = net->getITerms().size();
-    const auto bterm_count = net->getBTerms().size();
+  for (odb::dbNet* net_db : block_->getNets()) {
+    // Check for multiple drivers.
+    Net* net = dbToSta(net_db);
+    PinSeq loads;
+    PinSeq drvrs;
+    PinSet visited_drvrs(this);
+    FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, this);
+    NetSet visited_nets(this);
+    visitConnectedPins(net, visitor, visited_nets);
+
+    if (drvrs.size() > 1) {
+      bool all_tristate = true;
+      for (const Pin* drvr : drvrs) {
+        LibertyPort* port = libertyPort(drvr);
+        if (!port || !port->direction()->isAnyTristate()) {
+          all_tristate = false;
+          break;
+        }
+      }
+
+      if (!all_tristate) {
+        std::string drivers_str;
+        for (const Pin* drvr : drvrs) {
+          drivers_str += " " + std::string(pathName(drvr));
+        }
+        logger_->error(
+            ORD,
+            2049,
+            "SanityCheck: Net '{}' has multiple non-tristate drivers:{}",
+            name(net),
+            drivers_str);
+      }
+    }
+    const auto iterm_count = net_db->getITerms().size();
+    const auto bterm_count = net_db->getBTerms().size();
     if (iterm_count + bterm_count >= 2) {
       continue;
     }
 
     // Skip power/ground net
-    if (net->getSigType() == odb::dbSigType::POWER
-        || net->getSigType() == odb::dbSigType::GROUND) {
+    if (net_db->getSigType().isSupply()) {
       continue;  // OK: Unconnected power/ground net
     }
 
     // A net connected to 1 terminal
     if (iterm_count == 1) {
-      odb::dbITerm* iterm = *(net->getITerms().begin());
+      odb::dbITerm* iterm = *(net_db->getITerms().begin());
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         continue;  // OK: Unconnected output pin
       }
     } else if (bterm_count == 1) {  // This is a top level port
-      odb::dbBTerm* bterm = *(net->getBTerms().begin());
+      odb::dbBTerm* bterm = *(net_db->getBTerms().begin());
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         continue;  // OK: Unconnected input port
       }
@@ -4339,7 +4388,7 @@ void dbNetwork::checkSanityNetConnectivity()
                    2039,
                    "SanityCheck: Net '{}' has less than 2 connections (# of "
                    "ITerms = {}, # of BTerms = {}).",
-                   net->getName(),
+                   net_db->getName(),
                    iterm_count,
                    bterm_count);
   }

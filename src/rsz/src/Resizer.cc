@@ -3864,8 +3864,7 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
     logger_->error(RSZ, 70, "no LEF cell for {}.", cell->name());
   }
   // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock* block
-      = dbBlock::create(block_, "wire_delay", block_->getTech(), '/');
+  dbBlock* block = dbBlock::create(block_, "wire_delay", '/');
   std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
 
   const double drvr_r = drvr_port->driveResistance();
@@ -3919,8 +3918,7 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
                               Slew& slew)
 {
   // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock* block
-      = dbBlock::create(block_, "wire_delay", block_->getTech(), '/');
+  dbBlock* block = dbBlock::create(block_, "wire_delay", '/');
   std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
   bufferWireDelay(buffer_cell, wire_length, sta, delay, slew);
   dbBlock::destroy(block);

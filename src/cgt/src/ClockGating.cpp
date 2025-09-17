@@ -4,18 +4,30 @@
 #include "cgt/ClockGating.h"
 
 #include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
 #include "base/main/abcapis.h"
+#include "cut/abc_init.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Bfs.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
@@ -360,16 +372,9 @@ void ClockGating::run()
   sta_->searchPreamble();
 
   // Initialize ABC
-  ord::abcInit();
+  cut::abcInit();
   abc_factory_->AddDbSta(sta_);
   abc_library_ = std::make_unique<cut::AbcLibrary>(abc_factory_->Build());
-
-  abc::Abc_SclInstallGenlib(abc_library_->abc_library(),
-                            /*Slew=*/0,
-                            /*Gain=*/0,
-                            /*fUseAll=*/0,
-                            /*nGatesMin=*/0);
-  abc::Mio_LibraryTransferCellIds();
 
   dump("pre");
 
@@ -508,7 +513,7 @@ void ClockGating::run()
         continue;
       }
 
-      correct_conds = gate_cond_cover;
+      correct_conds = std::move(gate_cond_cover);
       searchClockGates(instance,
                        correct_conds,
                        correct_conds.begin(),
@@ -653,10 +658,11 @@ void ClockGating::searchClockGates(sta::Instance* const instance,
                                    abc::Abc_Ntk_t& abc_network,
                                    const bool clk_enable)
 {
-  if (end - begin < 2) {
+  size_t half_len = (end - begin) / 2;
+  if (half_len == 0) {
     return;
   }
-  auto mid = begin + (end - begin) / 2;
+  auto mid = begin + half_len;
   auto combined_candidate_names
       = combinedGatingCondNames(sta_->getDbNetwork(), mid, end, clk_enable);
   debugPrint(
@@ -680,6 +686,7 @@ void ClockGating::searchClockGates(sta::Instance* const instance,
                "Clock gating signals: '{}' can be dropped",
                combined_candidate_names);
     good_gate_conds.erase(mid, end);
+    mid = begin + half_len;
   } else if (end - mid > 1) {
     debugPrint(logger_,
                CGT,
@@ -821,6 +828,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
       case sta::FuncExpr::op_or:
       case sta::FuncExpr::op_xor:
         expr_stack.push_back(expr->right());
+        expr_stack.push_back(expr->left());
+        break;
       case sta::FuncExpr::op_not:
         expr_stack.push_back(expr->left());
         break;

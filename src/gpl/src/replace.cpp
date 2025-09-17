@@ -5,8 +5,8 @@
 
 #include <algorithm>
 #include <chrono>
-#include <iostream>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "db_sta/dbNetwork.hh"
@@ -16,7 +16,6 @@
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"

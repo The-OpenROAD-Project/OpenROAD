@@ -6,13 +6,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <ctime>
 #include <fstream>
 #include <functional>
-#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -1392,6 +1390,18 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
   }
 };
 
+void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
+{
+  if (pin_driver == nullptr || network_->hasHierarchy() == false) {
+    return;
+  }
+
+  odb::dbModNet* mod_net = network_->hierNet(pin_driver);
+  if (mod_net) {
+    odb::dbModNet::destroy(mod_net);
+  }
+}
+
 void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
@@ -1404,6 +1414,12 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   (void) pin_driver;
 
   disconnectAllSinksFromNet(topClockNet);
+
+  // If exists, remove the dangling dbModNet related to the topClockNet because
+  // topClockNet has no load pin now.
+  // After CTS, the driver pin will drive only a few of root clock buffers.
+  // So the hierarchical net (dbModNet) is not needed any more.
+  destroyClockModNet(pin_driver);
 
   // re-connect top buffer that separates macros from registers
   if (builder->getTreeType() == TreeType::RegisterTree) {
@@ -1566,7 +1582,7 @@ std::vector<int> TritonCTS::getAllClockTreeLevels(Clock& clockNet)
   std::set<int> uniqueLevels;
 
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
-    if (!subNet.isLeafLevel()) {
+    if (!subNet.isLeafLevel() && subNet.getTreeLevel() != -1) {
       uniqueLevels.insert(subNet.getTreeLevel());
     }
   });
@@ -1688,13 +1704,19 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     int defaultWidth = layer->getWidth();
     layerRule->setSpacing(defaultSpace * 2);
     layerRule->setWidth(defaultWidth);
-    // clang-format off
-    debugPrint(logger_, CTS, "clustering", 1, "  NDR rule set to layer {} {} as "
-	       "space={} width={} vs. default space={} width={}",
-	       i, layer->getName(),
-	       layerRule->getSpacing(), layerRule->getWidth(),
-	       defaultSpace, defaultWidth);
-    // clang-format on
+
+    debugPrint(logger_,
+               CTS,
+               "clustering",
+               1,
+               "  NDR rule set to layer {} {} as space={} width={} vs. default "
+               "space={} width={}",
+               i,
+               layer->getName(),
+               layerRule->getSpacing(),
+               layerRule->getWidth(),
+               defaultSpace,
+               defaultWidth);
   }
 
   int clkNets = 0;
@@ -1716,12 +1738,14 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
       break;
   }
 
-  logger_->info(CTS,
-                202,
-                "Non-default rule {} for double spacing has been applied to {} "
-                "clock nets",
-                ruleName,
-                clkNets);
+  debugPrint(logger_,
+             CTS,
+             "clustering",
+             1,
+             "Non-default rule {} for double spacing has been applied to {} "
+             "clock nets",
+             ruleName,
+             clkNets);
 }
 
 std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,

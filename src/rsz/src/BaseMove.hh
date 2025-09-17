@@ -46,9 +46,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using std::string;
-using std::vector;
-
 using odb::dbMaster;
 
 using odb::dbMaster;
@@ -236,7 +233,7 @@ class BaseMove : public sta::dbStaState
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float rebuffer_relaxation_factor_ = 0.03;
 
-  vector<const Pin*> getFanouts(const Instance* inst);
+  std::vector<const Pin*> getFanouts(const Instance* inst);
 };
 
 }  // namespace rsz

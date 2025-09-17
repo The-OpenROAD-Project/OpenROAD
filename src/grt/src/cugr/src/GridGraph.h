@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -21,44 +22,71 @@ class GRNet;
 template <typename Type>
 class GridGraphView;
 
+struct AccessPoint
+{
+  PointT point;
+  IntervalT layers;
+};
+
+// Only hash and compare on the point, not the layers
+class AccessPointHash
+{
+ public:
+  AccessPointHash(int y_size) : y_size_(y_size) {}
+
+  std::size_t operator()(const AccessPoint& ap) const
+  {
+    return robin_hood::hash_int(ap.point.x() * y_size_ + ap.point.y());
+  }
+
+ private:
+  const uint64_t y_size_;
+};
+
+struct AccessPointEqual
+{
+  bool operator()(const AccessPoint& lhs, const AccessPoint& rhs) const
+  {
+    return lhs.point == rhs.point;
+  }
+};
+
+using AccessPointSet
+    = robin_hood::unordered_set<AccessPoint, AccessPointHash, AccessPointEqual>;
+
 struct GraphEdge
 {
+  CapacityT getResource() const { return capacity - demand; }
+
   CapacityT capacity{0};
   CapacityT demand{0};
-
-  CapacityT getResource() const { return capacity - demand; }
 };
 
 class GridGraph
 {
  public:
-  GridGraph(const Design* design, const Constants& constants);
+  GridGraph(const Design* design,
+            const Constants& constants,
+            utl::Logger* logger);
   int getLibDBU() const { return lib_dbu_; }
   int getM2Pitch() const { return m2_pitch_; }
-  unsigned getNumLayers() const { return num_layers_; }
-  unsigned getSize(unsigned dimension) const
-  {
-    return (dimension ? y_size_ : x_size_);
-  }
+  int getNumLayers() const { return num_layers_; }
+  int getSize(int dimension) const { return (dimension ? y_size_ : x_size_); }
   std::string getLayerName(int layer_index) const
   {
     return layer_names_[layer_index];
   }
-  unsigned getLayerDirection(int layer_index) const
+  int getLayerDirection(int layer_index) const
   {
     return layer_directions_[layer_index];
   }
 
   uint64_t hashCell(const GRPoint& point) const
   {
-    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x) * y_size_
-           + point.y;
+    return ((uint64_t) point.getLayerIdx() * x_size_ + point.x()) * y_size_
+           + point.y();
   };
-  uint64_t hashCell(const int x, const int y) const
-  {
-    return (uint64_t) x * y_size_ + y;
-  }
-  int getGridline(const unsigned dimension, const int index) const
+  int getGridline(const int dimension, const int index) const
   {
     return gridlines_[dimension][index];
   }
@@ -70,20 +98,16 @@ class GridGraph
   }
 
   // Costs
-  int getEdgeLength(unsigned direction, unsigned edge_index) const;
+  int getEdgeLength(int direction, int edge_index) const;
   CostT getWireCost(int layer_index, PointT u, PointT v) const;
   CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
-  void selectAccessPoints(
-      GRNet* net,
-      robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>&
-          selected_access_points) const;
+  AccessPointSet selectAccessPoints(const GRNet* net) const;
 
   // Methods for updating demands
-  void commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                  bool reverse = false);
+  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -111,35 +135,10 @@ class GridGraph
   void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
-  const int lib_dbu_;
-  int m2_pitch_;
-
-  unsigned num_layers_;
-  unsigned x_size_;
-  unsigned y_size_;
-  std::vector<std::vector<int>> gridlines_;
-  std::vector<std::vector<int>> grid_centers_;
-  std::vector<std::string> layer_names_;
-  std::vector<unsigned> layer_directions_;
-  std::vector<int> layer_min_lengths_;
-
-  // Unit costs
-  CostT unit_length_wire_cost_;
-  CostT unit_via_cost_;
-  std::vector<CostT> unit_length_short_costs_;
-
-  int total_length_ = 0;
-  int total_num_vias_ = 0;
-  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
-  // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
-  // (l, x, y+1)} depending on the routing direction of the layer
-  Constants constants_;
-
-  IntervalT rangeSearchGridlines(unsigned dimension,
+  IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
-  IntervalT rangeSearchRows(unsigned dimension,
-                            const IntervalT& loc_interval) const;
+  IntervalT rangeSearchRows(int dimension, const IntervalT& loc_interval) const;
   // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
   // Utility functions for cost calculation
@@ -157,8 +156,34 @@ class GridGraph
 
   // Methods for updating demands
   void commit(int layer_index, PointT lower, CapacityT demand);
-  void commitWire(int layer_index, PointT lower, bool reverse = false);
-  void commitVia(int layer_index, PointT loc, bool reverse = false);
+  void commitWire(int layer_index, PointT lower, bool rip_up = false);
+  void commitVia(int layer_index, PointT loc, bool rip_up = false);
+
+  utl::Logger* logger_;
+  const std::vector<std::vector<int>> gridlines_;
+  std::vector<std::vector<int>> grid_centers_;
+  std::vector<std::string> layer_names_;
+  std::vector<int> layer_directions_;
+  std::vector<int> layer_min_lengths_;
+
+  const int lib_dbu_;
+  const int m2_pitch_;
+
+  const int num_layers_;
+  const int x_size_;
+  const int y_size_;
+
+  // Unit costs
+  CostT unit_length_wire_cost_;
+  CostT unit_via_cost_;
+  std::vector<CostT> unit_length_short_costs_;
+
+  int total_length_ = 0;
+  int total_num_vias_ = 0;
+  // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
+  // (l, x, y+1)} depending on the routing direction of the layer
+  std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
+  const Constants constants_;
 };
 
 template <typename Type>
@@ -167,18 +192,19 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
  public:
   bool check(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
-    if (u.y == v.y) {
-      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    static_assert(std::is_same_v<Type, bool>, "Template argument must be bool");
+    assert(u.x() == v.x() || u.y() == v.y());
+    if (u.y() == v.y()) {
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
-        if ((*this)[MetalLayer::H][x][u.y]) {
+        if ((*this)[MetalLayer::H][x][u.y()]) {
           return true;
         }
       }
     } else {
-      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
-        if ((*this)[MetalLayer::V][u.x][y]) {
+        if ((*this)[MetalLayer::V][u.x()][y]) {
           return true;
         }
       }
@@ -188,17 +214,19 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 
   Type sum(const PointT& u, const PointT& v) const
   {
-    assert(u.x == v.x || u.y == v.y);
+    static_assert(std::is_integral_v<Type> || std::is_floating_point_v<Type>,
+                  "Template argument must be integral or floating point");
+    assert(u.x() == v.x() || u.y() == v.y());
     Type res = 0;
-    if (u.y == v.y) {
-      int l = std::min(u.x, v.x), h = std::max(u.x, v.x);
+    if (u.y() == v.y()) {
+      const auto [l, h] = std::minmax({u.x(), v.x()});
       for (int x = l; x < h; x++) {
-        res += (*this)[MetalLayer::H][x][u.y];
+        res += (*this)[MetalLayer::H][x][u.y()];
       }
     } else {
-      int l = std::min(u.y, v.y), h = std::max(u.y, v.y);
+      const auto [l, h] = std::minmax({u.y(), v.y()});
       for (int y = l; y < h; y++) {
-        res += (*this)[MetalLayer::V][u.x][y];
+        res += (*this)[MetalLayer::V][u.x()][y];
       }
     }
     return res;

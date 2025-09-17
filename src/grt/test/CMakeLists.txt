@@ -66,9 +66,12 @@ or_integration_tests(
     report_wire_length4
     report_wire_length5
     report_wire_length6
+    report_wire_length7
+    report_wire_length8
     set_nets_to_route1
     silence
     single_row
+    soft_ndr_4w_6s
     top_level_term1
     top_level_term2
     top_level_term3

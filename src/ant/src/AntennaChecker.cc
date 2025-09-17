@@ -9,14 +9,11 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -1101,9 +1098,15 @@ bool AntennaChecker::designIsPlaced()
     }
   }
 
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isPlaced()) {
-      return false;
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (!inst->isPlaced()) {
+        return false;
+      }
     }
   }
 

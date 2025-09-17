@@ -15,5 +15,6 @@ design.evalTclString("create_clock [get_ports clk] -name core_clock -period 0.5"
 
 design.getClockGating().run()
 
-design.evalTclString("write_verilog results/aes_nangate45_gated.v")
-helpers.diff_files("aes_nangate45_gated.vok", "results/aes_nangate45_gated.v")
+verilog_file = helpers.make_result_file("aes_nangate45_gated.v")
+design.evalTclString(f"write_verilog {verilog_file}")
+helpers.diff_files("aes_nangate45_gated.vok", verilog_file)

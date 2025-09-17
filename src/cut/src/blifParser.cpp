@@ -3,7 +3,6 @@
 
 #include "cut/blifParser.h"
 
-#include <iostream>
 #include <string>
 #include <vector>
 

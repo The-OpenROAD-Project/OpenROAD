@@ -63,7 +63,8 @@ class _dbNet : public _dbObject
     TERM_EXTID,
     HEAD_CAPNODE,
     HEAD_RSEG,
-    REVERSE_RSEG
+    REVERSE_RSEG,
+    NAME
   };
 
   // PERSISTANT-MEMBERS

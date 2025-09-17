@@ -3,7 +3,12 @@
 
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "cgt/NetworkBuilder.h"
 #include "cgt/RandomBits.h"
@@ -138,8 +143,8 @@ class ClockGating
   // Helper for inserting new instances/nets into a network.
   NetworkBuilder network_builder_;
 
-  Logger* logger_;
-  sta::dbSta* sta_;
+  Logger* logger_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
   std::unique_ptr<cut::AbcLibraryFactory> abc_factory_;
   std::unique_ptr<cut::AbcLibrary> abc_library_;
 };

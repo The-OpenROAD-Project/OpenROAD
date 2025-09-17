@@ -26,6 +26,7 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/dft/src/utils",

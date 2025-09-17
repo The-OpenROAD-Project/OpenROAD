@@ -6,8 +6,8 @@
 #include <map>
 #include <vector>
 
-#include "dbSet.h"
-#include "odb.h"
+#include "odb/dbSet.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -85,4 +85,4 @@ class dbMap
 
 }  // namespace odb
 
-#include "dbMap.hpp"
+#include "odb/dbMap.hpp"

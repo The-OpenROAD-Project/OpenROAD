@@ -13,12 +13,18 @@
 %import "dbtypes.i"
 
 %typemap(typecheck,precedence=SWIG_TYPECHECK_STRING) ifp::RowParity {
-  const char *str = PyUnicode_AsUTF8($input);
+  Py_ssize_t size;
+  // Part of stable abi3 for >=3.10
+  const char *str = PyUnicode_AsUTF8AndSize($input, &size);
   $1 = strcasecmp(str, "NONE") != 0 || strcasecmp(str, "EVEN") != 0 || strcasecmp(str, "ODD") != 0;
 }
 
-%typemap(in) ifp::RowParity {
-  const char *str = PyUnicode_AsUTF8($input);
+%typemap(in) ifp::RowParity
+{
+  Py_ssize_t size;
+  // Part of stable abi3 for >=3.10
+  const char *str = PyUnicode_AsUTF8AndSize($input, &size);
+
   if (strcasecmp(str, "NONE") == 0) {
     $1 = ifp::RowParity::NONE;
   } else if (strcasecmp(str, "EVEN") == 0) {
@@ -30,9 +36,9 @@
   }
 }
 
-// These are needed to coax swig into sending or returning Python 
-// lists, arrays, or sets (as appropriate) of opaque pointers. Note 
-// that you must %include (not %import) <std_vector.i> and <std_array.i> 
+// These are needed to coax swig into sending or returning Python
+// lists, arrays, or sets (as appropriate) of opaque pointers. Note
+// that you must %include (not %import) <std_vector.i> and <std_array.i>
 // before these definitions
 namespace std {
   %template(site_list)    std::vector<odb::dbSite*>;

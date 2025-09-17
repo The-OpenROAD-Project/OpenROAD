@@ -50,9 +50,9 @@ class BazelInitializer
     }
 
     // Set the TCL_LIBRARY environment variable
-    std::string path = runfiles->Rlocation("tk_tcl/library/");
-    if (!path.empty()) {
-      setenv("TCL_LIBRARY", path.c_str(), 0);
+    const std::string tcl_path = runfiles->Rlocation("tk_tcl/library/");
+    if (!tcl_path.empty()) {
+      setenv("TCL_LIBRARY", tcl_path.c_str(), 0);
     } else {
       std::cerr << "Error: Could not locate 'tk_tcl/library/' in runfiles."
                 << std::endl;

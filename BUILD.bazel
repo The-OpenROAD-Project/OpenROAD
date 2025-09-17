@@ -4,6 +4,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "PYTHON_STABLE_API_DEFINE")
 
 package(
     features = [
@@ -55,6 +56,10 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cts:ui",
     "//src/cut",
     "//src/dbSta",
+    "//src/dbSta:dbNetwork",
+    "//src/dbSta:dbReadVerilog",
+    "//src/dbSta:dbSdcNetwork",
+    "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
     "//src/dft",
     "//src/dft:ui",
@@ -142,7 +147,8 @@ cc_binary(
     deps = [
         ":openroad_lib",
         ":openroad_version",
-        "//:ord",
+        ":ord",
+        "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -261,10 +267,106 @@ tcl_wrap_cc(
     ],
 )
 
+
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_openroadpy.so",
+    srcs = [":openroad_swig-py"],
+    linkshared = True,
+    deps = [
+        ":openroad_lib",  # Depends on the core odb C++ library
+        ":ord",
+        "//src/odb",
+        "//src/ifp",
+        "//src/utl",
+        "//src/gpl",
+        "//src/ant",
+        "//src/cts",
+        "//src/dpl",
+        "//src/drt",
+        "//src/exa",
+        "//src/fin",
+        "//src/grt",
+        "//src/par",
+        "//src/pdn",
+        "//src/ppl",
+        "//src/psm",
+        "//src/rcx",
+        "//src/stt",
+        "//src/gui",
+        "//src/tap",
+        "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+    defines = [PYTHON_STABLE_API_DEFINE],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "ord_py",
+    srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_openroadpy.so"],
+    deps = [
+        "//src/utl:utl_py",
+        "//src/odb:odb_py",
+    ],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public",]
+)
+
+python_wrap_cc(
+    name = "openroad_swig-py",
+    srcs = [
+        "src/OpenRoad-py.i",
+        ":error_swig-py",
+        "include/ord/Tech.h",
+        "include/ord/Design.h",
+        "include/ord/Timing.h",
+    ],
+    module = "openroadpy",
+    root_swig_src = "src/OpenRoad-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/gpl:swig-py",
+        "//src/ifp:swig-py",
+        "//src/ant:swig-py",
+        "//src/cts:swig-py",
+        "//src/dpl:swig-py",
+        "//src/drt:swig-py",
+        "//src/exa:swig-py",
+        "//src/fin:swig-py",
+        "//src/grt:swig-py",
+        "//src/par:swig-py",
+        "//src/pdn:swig-py",
+        "//src/ppl:swig-py",
+        "//src/psm:swig-py",
+        "//src/rcx:swig-py",
+        "//src/stt:swig-py",
+        "//src/tap:swig-py",
+        "//src/odb:swig-py",
+        "//src/utl:swig-py",
+    ]
+)
+
 filegroup(
     name = "error_swig",
     srcs = [
         "src/Exception.i",
+    ],
+    visibility = ["@//:__subpackages__"],
+)
+
+filegroup(
+    name = "error_swig-py",
+    srcs = [
+        "src/Exception-py.i",
     ],
     visibility = ["@//:__subpackages__"],
 )

@@ -6,5 +6,6 @@ read_verilog aes_nangate45.v
 link_design aes_cipher_top
 create_clock [get_ports clk] -name core_clock -period 0.5
 clock_gating
-write_verilog results/aes_nangate45_gated.v
-diff_file aes_nangate45_gated.vok results/aes_nangate45_gated.v
+set verilog_file [make_result_file aes_nangate45_gated.v]
+write_verilog $verilog_file
+diff_file aes_nangate45_gated.vok $verilog_file

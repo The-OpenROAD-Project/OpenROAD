@@ -447,16 +447,47 @@ void Connect::makeVia(odb::dbSWire* wire,
 {
   const odb::Rect& lower_rect = lower->getRect();
   const odb::Rect& upper_rect = upper->getRect();
-  const odb::Rect intersection = lower_rect.intersect(upper_rect);
+  odb::Rect intersection = lower_rect.intersect(upper_rect);
 
   auto* tech = layer0_->getTech();
+
+  // Attempt to snap to grid
+  if (tech->hasManufacturingGrid()) {
+    const odb::Rect new_intersection(
+        TechLayer::snapToManufacturingGrid(tech, intersection.xMin(), true, 2),
+        TechLayer::snapToManufacturingGrid(tech, intersection.yMin(), true, 2),
+        TechLayer::snapToManufacturingGrid(tech, intersection.xMax(), false, 2),
+        TechLayer::snapToManufacturingGrid(
+            tech, intersection.yMax(), false, 2));
+    if (intersection != new_intersection) {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "intersection changed: {} -> {}",
+                 Shape::getRectText(intersection, tech->getLefUnits()),
+                 Shape::getRectText(new_intersection, tech->getLefUnits()));
+      intersection = new_intersection;
+    }
+  }
+
   const int x = std::round(0.5 * (intersection.xMin() + intersection.xMax()));
   const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
 
   // check if off grid and don't add one if it is
   if (!TechLayer::checkIfManufacturingGrid(tech, x)
       || !TechLayer::checkIfManufacturingGrid(tech, y)) {
-    DbGenerateDummyVia dummy_via(this, intersection, layer0_, layer1_, true);
+    DbGenerateDummyVia dummy_via(
+        this,
+        intersection,
+        layer0_,
+        layer1_,
+        true,
+        fmt::format("({:.4f}, {:.4f}) is off manufacturing grid of {:.4f}",
+                    x / static_cast<double>(tech->getLefUnits()),
+                    y / static_cast<double>(tech->getLefUnits()),
+                    tech->getManufacturingGrid()
+                        / static_cast<double>(tech->getLefUnits())));
     dummy_via.generate(
         wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
@@ -559,7 +590,7 @@ void Connect::makeVia(odb::dbSWire* wire,
         odb::Rect area = intersection;
         xfm.apply(area);
         stack.push_back(
-            new DbGenerateDummyVia(this, area, layer0_, layer1_, false));
+            new DbGenerateDummyVia(this, area, layer0_, layer1_, false, ""));
         break;
       }
       stack.push_back(new_via);

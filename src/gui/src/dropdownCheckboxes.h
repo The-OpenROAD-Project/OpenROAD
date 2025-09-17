@@ -9,6 +9,8 @@
 #include <QComboBox>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <string>
+#include <vector>
 
 namespace sta {
 class dbSta;

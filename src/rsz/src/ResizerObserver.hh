@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "BufferedNet.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -19,6 +20,10 @@ class ResizerObserver
   virtual void subdivideStart(odb::dbNet* net) {}
   virtual void subdivide(const odb::Line& line) {}
   virtual void subdivideDone() {}
+
+  virtual void repairNetStart(const BufferedNetPtr& bnet, odb::dbNet* net) {}
+  virtual void makeBuffer(odb::dbInst* inst) {}
+  virtual void repairNetDone() {}
 };
 
 }  // namespace rsz

@@ -25,7 +25,7 @@
 #include <map>
 #include <string>
 
-#include "registry.h"
+#include "utl/prometheus/registry.h"
 
 namespace utl {
 

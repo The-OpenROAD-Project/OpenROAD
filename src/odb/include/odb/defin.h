@@ -6,7 +6,7 @@
 #include <mutex>
 #include <vector>
 
-#include "odb.h"
+#include "odb/odb.h"
 namespace utl {
 class Logger;
 }
@@ -48,15 +48,9 @@ class defin
   void useBlockName(const char* name);
 
   /// Create a new chip
-  dbChip* createChip(std::vector<dbLib*>& search_libs,
-                     const char* def_file,
-                     odb::dbTech* tech);
-
-  /// Create a new hierachical block
-  dbBlock* createBlock(dbBlock* parent,
-                       std::vector<dbLib*>& search_libs,
-                       const char* def_file,
-                       odb::dbTech* tech);
+  void readChip(std::vector<dbLib*>& search_libs,
+                const char* def_file,
+                dbChip* chip);
 };
 
 }  // namespace odb
