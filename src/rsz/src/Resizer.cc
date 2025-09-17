@@ -4232,7 +4232,8 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_buffering,
                           bool skip_buffer_removal,
                           bool skip_last_gasp,
-                          bool skip_vt_swap)
+                          bool skip_vt_swap,
+                          bool skip_crit_vt_swap)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -4255,7 +4256,8 @@ bool Resizer::repairSetup(double setup_margin,
                                     skip_buffering,
                                     skip_buffer_removal,
                                     skip_last_gasp,
-                                    skip_vt_swap);
+                                    skip_vt_swap,
+                                    skip_crit_vt_swap);
 }
 
 void Resizer::reportSwappablePins()

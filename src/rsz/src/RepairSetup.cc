@@ -93,7 +93,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_buffering,
                               const bool skip_buffer_removal,
                               const bool skip_last_gasp,
-                              const bool skip_vt_swap)
+                              const bool skip_vt_swap,
+                              const bool skip_crit_vt_swap)
 {
   bool repaired = false;
   init();
@@ -459,7 +460,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     }
   }  // for each violating endpoint
 
-  if (!skip_vt_swap) {
+  if (!skip_crit_vt_swap && !skip_vt_swap) {
     // Swap all critical cells to fastest VT
     OptoParams params(setup_slack_margin, verbose);
     if (swapVTCritCells(params, num_viols)) {
@@ -1013,7 +1014,7 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params,
 {
   std::set<Instance*> crit_insts;
   std::set<Path*> visited_paths;
-  const size_t paths_per_endpoint = 100;
+  const size_t paths_per_endpoint = 10;
   size_t total_paths = std::max(1000, num_viols) * paths_per_endpoint;
   PathEndSeq path_ends = sta_->search()->findPathEnds(
       /* ExceptionFrom */ nullptr,

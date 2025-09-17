@@ -288,7 +288,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
-                   bool skip_vt_swap);
+                   bool skip_vt_swap,
+                   bool skip_crit_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
