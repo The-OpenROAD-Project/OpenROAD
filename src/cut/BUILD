@@ -18,8 +18,8 @@ cc_library(
         "src/logic_extractor.cpp",
     ],
     hdrs = [
-        "include/cut/abc_library_factory.h",
         "include/cut/abc_init.h",
+        "include/cut/abc_library_factory.h",
         "include/cut/blif.h",
         "include/cut/blifParser.h",
         "include/cut/logic_cut.h",

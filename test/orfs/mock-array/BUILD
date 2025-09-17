@@ -148,12 +148,12 @@ VARIANTS = [
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
     },
-    variant = variant,
-    verilog_files = [":verilog"],
     tags = ["manual"],
     test_kwargs = {
         "tags": ["orfs"],
     },
+    variant = variant,
+    verilog_files = [":verilog"],
 ) for variant in VARIANTS]
 
 filegroup(
@@ -211,10 +211,10 @@ chisel_binary(
     srcs = glob(["src/main/scala/**/*.scala"]),
     main_class = "GenerateMockArray",
     resources = glob(["src/main/resources/**/*"]),
+    tags = ["manual"],
     deps = [
         "@openroad_maven//:com_github_scopt_scopt_2_13",
     ],
-    tags = ["manual"],
 )
 
 genrule(
@@ -222,11 +222,11 @@ genrule(
     srcs = [],
     outs = ["array.sv"],
     cmd = "$(execpath :generate_verilog) --width 8 --height 8 --dataWidth 64 -- --firtool-binary-path $(execpath @circt//:bin/firtool) -- --default-layer-specialization=disable -o $(location :array.sv)",
+    tags = ["manual"],
     tools = [
         ":generate_verilog",
         "@circt//:bin/firtool",
     ],
-    tags = ["manual"],
 )
 
 filegroup(
@@ -309,6 +309,7 @@ verilator_cc_library(
     ],
     module = ":array",
     module_top = "MockArray",
+    tags = ["manual"],
     trace = True,
     vopts = [
         "--timescale 1ps/1ps",
@@ -322,7 +323,6 @@ verilator_cc_library(
         # No-op option to retrigger a build
         # "-Wfuture-blah",
     ],
-    tags = ["manual"],
 )
 
 cc_binary(
@@ -333,10 +333,10 @@ cc_binary(
     cxxopts = [
         "-std=c++23",
     ],
+    tags = ["manual"],
     deps = [
         ":array_verilator",
     ],
-    tags = ["manual"],
 )
 
 genrule(
@@ -347,9 +347,9 @@ genrule(
     ],
     outs = ["MockArrayTestbench.vcd"],
     cmd = "$(execpath :simulator) $(location :MockArrayTestbench.vcd)",
+    tags = ["manual"],
     tools = [
     ],
-    tags = ["manual"],
 )
 
 # If we want to measure power after final, instead of with estimated parasitics,
@@ -416,6 +416,6 @@ genrule(
     cmd = """
     $(location //src/sta:opensta) >$@
     """,
-    tools = ["//src/sta:opensta"],
     tags = ["manual"],
+    tools = ["//src/sta:opensta"],
 )

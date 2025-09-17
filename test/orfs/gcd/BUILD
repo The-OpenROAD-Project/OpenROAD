@@ -16,9 +16,9 @@ orfs_flow(
         "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":constraint.sdc"],
     },
-    verilog_files = ["gcd.v"],
     tags = ["manual"],
     test_kwargs = {
         "tags": ["orfs"],
     },
+    verilog_files = ["gcd.v"],
 )

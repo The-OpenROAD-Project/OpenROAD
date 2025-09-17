@@ -55,6 +55,7 @@ cc_library(
     deps = [
         ":private_hdrs",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/est",
         "//src/odb",
         "//src/rsz",
