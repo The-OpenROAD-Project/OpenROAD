@@ -28,8 +28,8 @@ using namespace boost::polygon::operators;
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(nullptr);
-  odb::lefin lefParser(db, logger, false);
+  auto logger = std::make_unique<utl::Logger>(nullptr);
+  odb::lefin lefParser(db, logger.get(), false);
   const char* libname = basename(const_cast<char*>(path));
   if (!db->getTech()) {
     return lefParser.createTechAndLib(libname, libname, path);
@@ -39,14 +39,14 @@ odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 
 odb::dbChip* read_def(odb::dbTech* tech, std::string path)
 {
-  utl::Logger* logger = new utl::Logger(nullptr);
+  auto logger = std::make_unique<utl::Logger>(nullptr);
   std::vector<odb::dbLib*> libs;
   for (auto* lib : tech->getDb()->getLibs()) {
     if (lib->getTech() == tech) {
       libs.push_back(lib);
     }
   }
-  odb::defin defParser(tech->getDb(), logger);
+  odb::defin defParser(tech->getDb(), logger.get());
   auto db = tech->getDb();
   odb::dbChip* chip = nullptr;
   if (db->getChip() == nullptr) {
@@ -62,40 +62,40 @@ int write_def(odb::dbBlock* block,
               const char* path,
               odb::DefOut::Version version)
 {
-  utl::Logger* logger = new utl::Logger(nullptr);
-  odb::DefOut writer(logger);
+  auto logger = std::make_unique<utl::Logger>(nullptr);
+  odb::DefOut writer(logger.get());
   writer.setVersion(version);
   return writer.writeBlock(block, path);
 }
 
 int write_lef(odb::dbLib* lib, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(nullptr);
+  auto logger = std::make_unique<utl::Logger>(nullptr);
   std::ofstream os;
   os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
   os.open(path);
-  odb::lefout writer(logger, os);
+  odb::lefout writer(logger.get(), os);
   writer.writeTechAndLib(lib);
   return true;
 }
 
 int write_tech_lef(odb::dbTech* tech, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(nullptr);
+  auto logger = std::make_unique<utl::Logger>(nullptr);
   std::ofstream os;
   os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
   os.open(path);
-  odb::lefout writer(logger, os);
+  odb::lefout writer(logger.get(), os);
   writer.writeTech(tech);
   return true;
 }
 int write_macro_lef(odb::dbLib* lib, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(nullptr);
+  auto logger = std::make_unique<utl::Logger>(nullptr);
   std::ofstream os;
   os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
   os.open(path);
-  odb::lefout writer(logger, os);
+  odb::lefout writer(logger.get(), os);
   writer.writeLib(lib);
   return true;
 }
