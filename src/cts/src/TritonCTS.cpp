@@ -1684,12 +1684,9 @@ int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
   int min_spc = 0;
   if (layer->hasTwoWidthsSpacingRules()) {
     min_spc = layer->findTwSpacing(width1, width2, 0);
-  }
-  if (layer->hasV55SpacingRules()) {
+  } else if (layer->hasV55SpacingRules()) {
     min_spc = layer->findV55Spacing(std::max(width1, width2), 0);
-  }
-  if (!layer->getV54SpacingRules().empty()) {
-    int minSpc = 0;
+  } else if (!layer->getV54SpacingRules().empty()) {
     for (auto rule : layer->getV54SpacingRules()) {
       if (rule->hasRange()) {
         uint rmin;
@@ -1699,12 +1696,13 @@ int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
           continue;
         }
       }
-      minSpc = std::max<int>(minSpc, rule->getSpacing());
+      min_spc = std::max<int>(min_spc, rule->getSpacing());
     }
-    min_spc = minSpc;
+  } else {
+    min_spc = layer->getSpacing();
   }
-  min_spc = layer->getSpacing();
 
+  // Last resort, get pitch - minWidth
   if (min_spc == 0) {
     min_spc = layer->getPitch() - layer->getMinWidth();
   }
