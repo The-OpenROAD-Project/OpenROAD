@@ -21,8 +21,8 @@ cc_library(
         "include",
     ],
     deps = [
-			  ":dbNetwork",
-				":dbSdcNetwork",
+        ":dbNetwork",
+        ":dbSdcNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -104,8 +104,8 @@ cc_library(
     ],
     deps = [
         "//src/odb",
-				"//src/sta:opensta_lib",
-				"//src/utl",
+        "//src/sta:opensta_lib",
+        "//src/utl",
     ],
 )
 

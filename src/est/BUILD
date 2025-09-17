@@ -41,7 +41,7 @@ cc_library(
     deps = [
         ":private_hdrs",
         "//src/dbSta",
-				"//src/dbSta:SpefWriter",
+        "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/odb",

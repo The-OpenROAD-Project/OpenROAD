@@ -66,7 +66,6 @@ cc_library(
 cc_library(
     name = "cugr",
     srcs = [
-        "src/cugr/src/geo.h",
         "src/cugr/src/CUGR.cpp",
         "src/cugr/src/Design.cpp",
         "src/cugr/src/Design.h",
@@ -86,6 +85,7 @@ cc_library(
         "src/cugr/src/Netlist.h",
         "src/cugr/src/PatternRoute.cpp",
         "src/cugr/src/PatternRoute.h",
+        "src/cugr/src/geo.h",
         "src/cugr/src/robin_hood.h",
     ],
     hdrs = [
@@ -140,7 +140,7 @@ cc_library(
         ":groute",
         "//src/ant",
         "//src/dbSta",
-				"//src/dbSta:SpefWriter",
+        "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/gui",

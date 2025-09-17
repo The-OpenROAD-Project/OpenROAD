@@ -49,7 +49,7 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-				"//src/dbSta:dbReadVerilog",
+        "//src/dbSta:dbReadVerilog",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",
