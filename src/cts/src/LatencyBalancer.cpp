@@ -485,11 +485,10 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     Point<double> bufferLoc(locX, locY);
     Point<double> legalBufferLoc
         = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
-    lastBuffer
-        = createDelayBuffer(drivingNet,
-                            root_->getClock().getSdcName(),
-                            legalBufferLoc.getX() * wireSegmentUnit_,
-                            legalBufferLoc.getY() * wireSegmentUnit_);
+    lastBuffer = createDelayBuffer(drivingNet,
+                                   root_->getClock().getSdcName(),
+                                   legalBufferLoc.getX() * wireSegmentUnit_,
+                                   legalBufferLoc.getY() * wireSegmentUnit_);
 
     drivingNet = lastBuffer->getFirstOutput()->getNet();
     if (returnBuffer == nullptr) {
@@ -500,8 +499,9 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
   for (odb::dbITerm* sinkInput : sinksInput) {
     sinkInput->connect(drivingNet);
     if (network_->hasHierarchy()) {
-      network_->hierarchicalConnect(
-          lastBuffer->getFirstOutput(), sinkInput, drivingNet->getName().c_str());
+      network_->hierarchicalConnect(lastBuffer->getFirstOutput(),
+                                    sinkInput,
+                                    drivingNet->getName().c_str());
     }
   }
   return getFirstInput(returnBuffer);
