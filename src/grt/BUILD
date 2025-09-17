@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -226,6 +227,21 @@ tcl_wrap_cc(
     namespace_prefix = "grt",
     root_swig_src = "src/GlobalRouter.i",
     swig_includes = [
+        "src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/grt/GlobalRouter.h",
+        "src/GlobalRouter-py.i",
+        "//:error_swig-py",
+    ],
+    module = "grt_py",
+    root_swig_src = "src/GlobalRouter-py.i",
+    swig_includes = [
+        "include",
         "src",
     ],
 )
