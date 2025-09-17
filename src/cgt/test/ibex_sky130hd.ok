@@ -1,8 +1,6 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 Derived GENLIB library "sky130_fd_sc_hd__ss_n40C_1v40" with 317 gates.
-Warning: Detected 9 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-SC library cannot be found.
 [INFO CGT-0003] Clock gating instance 0/946
 [INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[5\] | _03749_ | _03000_ | _04094_ | _03636_ | _04093_' for instance _20290_
 [INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcountinhibit_q\[0\] | _05037_ | _04531_ | _04533_ | _04495_ | _04405_ | _05854_ | _04404_' for instance cs_registers_i.mcountinhibit_q\[0\]$_DFFE_PN0P_

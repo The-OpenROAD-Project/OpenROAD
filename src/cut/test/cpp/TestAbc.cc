@@ -75,7 +75,7 @@ class AbcTest : public ::testing::Test
     sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
-    library_ = sta_->readLiberty(path.string().c_str(),
+    library_ = sta_->readLiberty(path.c_str(),
                                  sta_->findCorner("default"),
                                  /*min_max=*/sta::MinMaxAll::all(),
                                  /*infer_latches=*/false);
@@ -87,10 +87,9 @@ class AbcTest : public ::testing::Test
         = std::filesystem::canonical("./Nangate45/Nangate45_tech.lef");
     auto stdcell_lef
         = std::filesystem::canonical("./Nangate45/Nangate45_stdcell.lef");
-    odb::dbTech* tech
-        = lef_reader.createTech("nangate45", tech_lef.string().c_str());
+    odb::dbTech* tech = lef_reader.createTech("nangate45", tech_lef.c_str());
     odb::dbLib* lib
-        = lef_reader.createLib(tech, "nangate45", stdcell_lef.string().c_str());
+        = lef_reader.createLib(tech, "nangate45", stdcell_lef.c_str());
 
     sta_->postReadLef(/*tech=*/nullptr, lib);
 
@@ -174,7 +173,7 @@ class AbcTestSky130 : public AbcTest
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical(
         "./sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
-    library_ = sta_->readLiberty(path.string().c_str(),
+    library_ = sta_->readLiberty(path.c_str(),
                                  sta_->findCorner("default"),
                                  /*min_max=*/sta::MinMaxAll::all(),
                                  /*infer_latches=*/false);
@@ -185,10 +184,8 @@ class AbcTestSky130 : public AbcTest
     auto tech_lef = std::filesystem::canonical("./sky130/sky130hd.tlef");
     auto stdcell_lef
         = std::filesystem::canonical("./sky130/sky130hd_std_cell.lef");
-    odb::dbTech* tech
-        = lef_reader.createTech("sky130", tech_lef.string().c_str());
-    odb::dbLib* lib
-        = lef_reader.createLib(tech, "sky130", stdcell_lef.string().c_str());
+    odb::dbTech* tech = lef_reader.createTech("sky130", tech_lef.c_str());
+    odb::dbLib* lib = lef_reader.createLib(tech, "sky130", stdcell_lef.c_str());
 
     sta_->postReadLef(/*tech=*/nullptr, lib);
 
@@ -220,7 +217,7 @@ class AbcTestAsap7 : public AbcTest
 
     for (const std::string& liberty_path : liberty_paths) {
       auto path = std::filesystem::canonical(liberty_path);
-      library_ = sta_->readLiberty(path.string().c_str(),
+      library_ = sta_->readLiberty(path.c_str(),
                                    sta_->findCorner("default"),
                                    /*min_max=*/sta::MinMaxAll::all(),
                                    /*infer_latches=*/false);
@@ -233,10 +230,8 @@ class AbcTestAsap7 : public AbcTest
         = std::filesystem::canonical("./asap7/asap7_tech_1x_201209.lef");
     auto stdcell_lef
         = std::filesystem::canonical("./asap7/asap7sc7p5t_28_R_1x_220121a.lef");
-    odb::dbTech* tech
-        = lef_reader.createTech("asap7", tech_lef.string().c_str());
-    odb::dbLib* lib
-        = lef_reader.createLib(tech, "asap7", stdcell_lef.string().c_str());
+    odb::dbTech* tech = lef_reader.createTech("asap7", tech_lef.c_str());
+    odb::dbLib* lib = lef_reader.createLib(tech, "asap7", stdcell_lef.c_str());
 
     sta_->postReadLef(/*tech=*/nullptr, lib);
 
@@ -667,7 +662,9 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
   std::vector<sta::Net*> primary_outputs = {flop_net};
   sta::InstanceSet cut_instances(network);
   cut_instances.insert(flop_input_instance);
-  LogicCut cut(primary_inputs, primary_outputs, cut_instances);
+  LogicCut cut(std::move(primary_inputs),
+               std::move(primary_outputs),
+               std::move(cut_instances));
 
   // Create abc network that matches the underlying LogicCut
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> abc_network(

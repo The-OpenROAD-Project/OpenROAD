@@ -13,9 +13,9 @@
 #include <utility>
 #include <vector>
 
-#include "GRoute.h"
-#include "RoutePt.h"
+#include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
+#include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
