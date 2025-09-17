@@ -1125,6 +1125,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       clock_box_(new DropdownCheckboxes(QString("Select Clocks"),
                                         QString("All Clocks"),
                                         this)),
+      path_group_box_(new QComboBox(this)),
       unconstrained_(new QCheckBox(this)),
       one_path_per_endpoint_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
@@ -1143,6 +1144,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   layout_->addRow("Expand clock:", expand_clk_);
   layout_->addRow("Corner:", corner_box_);
   layout_->addRow("Clock filter:", clock_box_);
+  layout_->addRow("Path group filter:", path_group_box_);
 
   setupPinRow("From:", from_);
   setThruPin({});
@@ -1201,17 +1203,15 @@ QSize TimingControlsDialog::sizeHint() const
 {
   int width = minimumWidth();
   int top = 0, bottom = 0;
-  if (layout())
-  {
+  if (layout()) {
     layout()->getContentsMargins(nullptr, &top, nullptr, &bottom);
   }
   int top2 = 0, bottom2 = 0;
-  if (scroll_->layout())
-  {
+  if (scroll_->layout()) {
     scroll_->layout()->getContentsMargins(nullptr, &top2, nullptr, &bottom2);
   }
 
-  int height = content_widget_->size().height()+top+bottom+top2+bottom2;
+  int height = content_widget_->size().height() + top + bottom + top2 + bottom2;
   return QSize(width, height);
 }
 
@@ -1290,7 +1290,6 @@ void TimingControlsDialog::populate()
       selection = 0;
     }
   }
-
   corner_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
@@ -1306,6 +1305,24 @@ void TimingControlsDialog::populate()
       clock_box_->model()->appendRow(item);
     }
   }
+
+  int selected_path = 0;
+  if (path_group_box_->count() > 0) {
+    selected_path = path_group_box_->currentIndex();
+  }
+
+  path_group_box_->clear();
+  filter_index_to_path_group_name_.clear();
+  path_group_box_->addItem("No Path Group");
+  filter_index_to_path_group_name_[0] = "";
+
+  int filter_index = 1;
+  for (const std::string& name : sta_->getGroupPathsNames()) {
+    path_group_box_->addItem(name.c_str());
+    filter_index_to_path_group_name_[filter_index] = name;
+    ++filter_index;
+  }
+  path_group_box_->setCurrentIndex(selected_path);
 }
 
 void TimingControlsDialog::setPinSelections()
@@ -1394,6 +1411,11 @@ void TimingControlsDialog::getClocks(sta::ClockSet* clock_set) const
   for (const auto& clk_name : clock_box_->selectedItems()) {
     clock_set->insert(qstring_to_clk_[clk_name]);
   }
+}
+
+std::string TimingControlsDialog::getPathGroup() const
+{
+  return filter_index_to_path_group_name_.at(path_group_box_->currentIndex());
 }
 
 }  // namespace gui

@@ -408,6 +408,7 @@ class TimingControlsDialog : public QDialog
   std::vector<std::set<const sta::Pin*>> getThruPins() const;
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
   void getClocks(sta::ClockSet* clock_set) const;
+  std::string getPathGroup() const;
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 
@@ -434,6 +435,8 @@ class TimingControlsDialog : public QDialog
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
   DropdownCheckboxes* clock_box_;
+  QComboBox* path_group_box_;
+  std::map<int, std::string> filter_index_to_path_group_name_;
 
   QCheckBox* unconstrained_;
   QCheckBox* one_path_per_endpoint_;
@@ -446,7 +449,7 @@ class TimingControlsDialog : public QDialog
   QScrollArea* scroll_;
   QWidget* content_widget_;
 
-  static constexpr int kThruStartRow = 4;
+  static constexpr int kThruStartRow = 5;
 
   void setPinSelections();
 
