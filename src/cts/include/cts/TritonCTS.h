@@ -71,6 +71,7 @@ class TritonCTS
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_.get(); }
+  odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);

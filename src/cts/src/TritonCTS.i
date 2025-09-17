@@ -281,4 +281,109 @@ run_triton_cts()
   getTritonCts()->runTritonCts();
 }
 
+const char*
+get_ndr_strategy()
+{
+  return getTritonCts()->getParms()->getApplyNdrName();
+}
+
+int
+get_branching_buffers_distance()
+{
+  return getTritonCts()->getParms()->getVertexBufferDistance();
+}
+unsigned
+get_clustering_exponent()
+{
+  return getTritonCts()->getParms()->getClusteringPower();
+}
+
+double
+get_clustering_unbalance_ratio()
+{
+  return getTritonCts()->getParms()->getClusteringCapacity();
+}
+
+float
+get_delay_buffer_derate()
+{
+  return getTritonCts()->getParms()->getDelayBufferDerate();
+}
+
+int
+get_distance_between_buffers()
+{
+  return getTritonCts()->getParms()->getBufferDistance();
+}
+
+const char*
+get_library()
+{
+  return getTritonCts()->getParms()->getCtsLibrary();
+}
+
+double
+get_macro_clustering_max_diameter()
+{
+  return getTritonCts()->getParms()->getMacroMaxDiameter();
+}
+
+unsigned
+get_macro_clustering_size()
+{
+  return getTritonCts()->getParms()->getMacroSinkClusteringSize();
+}
+
+unsigned
+get_num_static_layers()
+{
+  return getTritonCts()->getParms()->getNumStaticLayers();
+}
+
+float
+get_sink_buffer_max_cap_derate()
+{
+  return getTritonCts()->getParms()->getSinkBufferMaxCapDerate();
+}
+
+unsigned
+get_sink_clustering_levels()
+{
+  return getTritonCts()->getParms()->getSinkClusteringLevels();
+}
+
+double
+get_sink_clustering_max_diameter()
+{
+  return getTritonCts()->getParms()->getMaxDiameter();
+}
+
+unsigned
+get_sink_clustering_size()
+{
+  return getTritonCts()->getParms()->getSinkClusteringSize();
+}
+
+const char*
+get_tree_buf()
+{
+  return getTritonCts()->getParms()->getTreeBuffer().c_str();
+}
+
+unsigned
+get_wire_unit()
+{
+  return getTritonCts()->getParms()->getWireSegmentUnit();
+}
+
+void
+set_db_unit(bool reset)
+{
+  if (reset) {
+    getTritonCts()->getParms()->setDbUnits(-1);
+  } else {
+    odb::dbBlock* block = getTritonCts()->getBlock();
+    getTritonCts()->getParms()->setDbUnits(block->getDbUnitsPerMicron());
+  }
+}
 %} //inline

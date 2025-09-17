@@ -139,6 +139,57 @@ proc set_cts_config { args } {
   }
 }
 
+sta::define_cmd_args "report_cts_config" {}
+proc report_cts_config {args} {
+  sta::parse_key_args "report_cts_config" args keys {} flags {}
+
+  # set the db unit
+  cts::set_db_unit 0
+  set ndr_strategy [cts::get_ndr_strategy]
+  set vertex_buffer_distance [cts::get_branching_buffers_distance]
+  set clustering_power [cts::get_clustering_exponent]
+  set clustering_capacity [cts::get_clustering_unbalance_ratio]
+  set delay_buffer_derate [cts::get_delay_buffer_derate]
+  set buffer_distance [cts::get_distance_between_buffers]
+  set cts_library [cts::get_library]
+  if {$cts_library eq ""} {
+    set cts_library "undefined"
+  }
+  set macro_max_diameter [cts::get_macro_clustering_max_diameter]
+  set macro_sink_cluster_size [cts::get_macro_clustering_size]
+  set num_static_layers [cts::get_num_static_layers]
+  set sink_buffer_max_cap_derate [cts::get_sink_buffer_max_cap_derate]
+  set sink_clustering_levels [cts::get_sink_clustering_levels]
+  set sink_max_diameter [cts::get_sink_clustering_max_diameter]
+  set sink_cluster_size [cts::get_sink_clustering_size]
+  set tree_buffer [cts::get_tree_buf]
+  if {$tree_buffer eq ""} {
+    set tree_buffer "undefined"
+  }
+  set wire_segment_unit [cts::get_wire_unit]
+  # reset the db units
+  cts::set_db_unit 1
+  puts "*******************************************"
+  puts "CTS config:"
+  puts "-apply_ndr:                          $ndr_strategy"
+  puts "-branching_point_buffers_distance:   $vertex_buffer_distance"
+  puts "-clustering_exponent:                $clustering_power"
+  puts "-clustering_unbalance_ratio:         $clustering_capacity"
+  puts "-delay_buffer_derate:                $delay_buffer_derate"
+  puts "-distance_between_buffers:           $buffer_distance"
+  puts "-library:                            $cts_library"
+  puts "-macro_clustering_max_diameter:      $macro_max_diameter"
+  puts "-macro_clustering_size:              $macro_sink_cluster_size"
+  puts "-num_static_layers:                  $num_static_layers"
+  puts "-sink_buffer_max_cap_derate:         $sink_buffer_max_cap_derate"
+  puts "-sink_clustering_levels:             $sink_clustering_levels"
+  puts "-sink_clustering_max_diameter:       $sink_max_diameter"
+  puts "-sink_clustering_size:               $sink_cluster_size"
+  puts "-tree_buf:                           $tree_buffer"
+  puts "-wire_unit:                          $wire_segment_unit"
+  puts "*******************************************"
+}
+
 sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-buf_list buflist] \
                                              [-root_buf buf] \
