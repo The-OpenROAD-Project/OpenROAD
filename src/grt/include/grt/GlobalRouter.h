@@ -13,9 +13,9 @@
 #include <utility>
 #include <vector>
 
-#include "GRoute.h"
-#include "RoutePt.h"
+#include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
+#include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
@@ -262,7 +262,7 @@ class GlobalRouter
 
   // Report the wire length on each layer.
   void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
-  void reportLayerWireLengths();
+  void reportLayerWireLengths(bool global_route, bool detailed_route);
   odb::Rect globalRoutingToBox(const GSegment& route);
   void boxToGlobalRouting(const odb::Rect& route_bds,
                           int layer,

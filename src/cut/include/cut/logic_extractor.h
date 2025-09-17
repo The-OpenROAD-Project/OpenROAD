@@ -6,9 +6,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "abc_library_factory.h"
+#include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
 #include "db_sta/dbSta.hh"
-#include "logic_cut.h"
 #include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/SearchPred.hh"

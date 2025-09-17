@@ -20,6 +20,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
 #include "straps.h"
@@ -1244,7 +1245,7 @@ CoreGrid::CoreGrid(VoltageDomain* domain,
 odb::Rect CoreGrid::getDomainBoundary() const
 {
   // account for the width of the follow pins for straps
-  odb::Rect core = Grid::getDomainBoundary();
+  const odb::Rect core = Grid::getDomainBoundary();
 
   int follow_pin_width = 0;
   for (const auto& strap : getStraps()) {
@@ -1253,8 +1254,7 @@ odb::Rect CoreGrid::getDomainBoundary() const
     }
   }
 
-  core.bloat(follow_pin_width / 2, core);
-  return core;
+  return core.bloat(follow_pin_width / 2, odb::Orientation2D::Vertical);
 }
 
 void CoreGrid::setupDirectConnect(

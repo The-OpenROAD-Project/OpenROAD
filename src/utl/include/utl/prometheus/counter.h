@@ -25,10 +25,10 @@
 #include <atomic>
 #include <cstdint>
 
-#include "atomic_floating.h"
-#include "builder.h"
-#include "family.h"
-#include "prometheus_metric.h"
+#include "utl/prometheus/atomic_floating.h"
+#include "utl/prometheus/builder.h"
+#include "utl/prometheus/family.h"
+#include "utl/prometheus/prometheus_metric.h"
 
 namespace utl {
 

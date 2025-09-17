@@ -33,9 +33,9 @@
 #include <utility>
 #include <vector>
 
-#include "collectable.h"
-#include "hash.h"
-#include "prometheus_metric.h"
+#include "utl/prometheus/collectable.h"
+#include "utl/prometheus/hash.h"
+#include "utl/prometheus/prometheus_metric.h"
 
 namespace utl {
 

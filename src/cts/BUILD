@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -49,11 +50,14 @@ cc_library(
     ],
     hdrs = [
         "include/cts/TritonCTS.h",
+        "src/CtsOptions.h",
+        "src/TechChar.h",
     ],
-    includes = ["include"],
+    includes = ["include", "src"],
     deps = [
         ":private_hdrs",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/est",
         "//src/odb",
         "//src/rsz",
@@ -118,5 +122,20 @@ tcl_wrap_cc(
     root_swig_src = "src/TritonCTS.i",
     swig_includes = [
         "src/cts/src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/cts/TritonCTS.h",
+        "src/CtsOptions.h",
+        "src/TritonCTS-py.i",
+        "//:error_swig-py",
+    ],
+    module = "cts_py",
+    root_swig_src = "src/TritonCTS-py.i",
+    swig_includes = [
+        "include",
     ],
 )

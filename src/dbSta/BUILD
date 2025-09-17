@@ -12,20 +12,92 @@ package(
 cc_library(
     name = "dbSta",
     srcs = [
-        "src/SpefWriter.cc",
-        "src/dbEditHierarchy.cc",
-        "src/dbEditHierarchy.hh",
-        "src/dbNetwork.cc",
-        "src/dbReadVerilog.cc",
-        "src/dbSdcNetwork.cc",
-        "src/dbSdcNetwork.hh",
         "src/dbSta.cc",
     ],
     hdrs = [
-        "include/db_sta/SpefWriter.hh",
-        "include/db_sta/dbNetwork.hh",
-        "include/db_sta/dbReadVerilog.hh",
         "include/db_sta/dbSta.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dbNetwork",
+        ":dbSdcNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@boost.json",
+        "@spdlog",
+        "@tk_tcl//:tcl",
+    ],
+)
+
+cc_library(
+    name = "dbReadVerilog",
+    srcs = [
+        "src/dbReadVerilog.cc",
+    ],
+    hdrs = [
+        "include/db_sta/dbReadVerilog.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dbNetwork",
+        ":dbSta",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+    ],
+)
+
+cc_library(
+    name = "SpefWriter",
+    srcs = [
+        "src/SpefWriter.cc",
+    ],
+    hdrs = [
+        "include/db_sta/SpefWriter.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dbNetwork",
+        ":dbSta",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+    ],
+)
+
+cc_library(
+    name = "dbSdcNetwork",
+    srcs = [
+        "src/dbSdcNetwork.cc",
+    ],
+    hdrs = [
+        "src/dbSdcNetwork.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//src/sta:opensta_lib",
+        "@spdlog",
+    ],
+)
+
+cc_library(
+    name = "dbNetwork",
+    srcs = [
+        "src/dbEditHierarchy.cc",
+        "src/dbEditHierarchy.hh",
+        "src/dbNetwork.cc",
+    ],
+    hdrs = [
+        "include/db_sta/dbNetwork.hh",
     ],
     includes = [
         "include",
@@ -34,9 +106,6 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.json",
-        "@spdlog",
-        "@tk_tcl//:tcl",
     ],
 )
 
@@ -59,6 +128,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dbNetwork",
         ":dbSta",
         "//:ord",
         "//src/odb",
