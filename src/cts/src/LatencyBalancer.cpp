@@ -478,13 +478,14 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
   float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (numBuffers + 1);
 
   odb::dbInst* returnBuffer = nullptr;
+  odb::dbInst* lastBuffer = nullptr;
   for (int i = 0; i < numBuffers; i++) {
     double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
     double locY = (double) (srcY + offsetY * (i + 1)) / wireSegmentUnit_;
     Point<double> bufferLoc(locX, locY);
     Point<double> legalBufferLoc
         = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
-    odb::dbInst* lastBuffer
+    lastBuffer
         = createDelayBuffer(drivingNet,
                             root_->getClock().getSdcName(),
                             legalBufferLoc.getX() * wireSegmentUnit_,
@@ -498,6 +499,10 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
 
   for (odb::dbITerm* sinkInput : sinksInput) {
     sinkInput->connect(drivingNet);
+    if (network_->hasHierarchy()) {
+      network_->hierarchicalConnect(
+          lastBuffer->getFirstOutput(), sinkInput, drivingNet->getName().c_str());
+    }
   }
   return getFirstInput(returnBuffer);
 }
